@@ -15,6 +15,12 @@ namespace ChessFight.PawnRush
     // Offline the playtest registers its one pawn; online the match link registers the roster (players count,
     // bots do not: they only stand at the start, R92) and only the host judges - the others take its word with
     // the course state (ApplyRemote). The finish times on the result board are when each pawn first stood on it.
+    //
+    // R538 (user 11-10: "승리 조건은 플레이 중인 인원으로 실시간 조정되어야 해. 플레이어가 나가면 그거에 맞춰서 조정되어야하고 다시
+    // 들어오면 복구되어야 해"): "more than half of its players" is of the players in the match right now. The link
+    // takes a player who leaves off the list (Unregister) and puts one who comes back on it again (Register), so the
+    // number a team needs follows who is playing: 4 of 6, 3 of 5 or 4, 2 of 3 or 2, 1 of 1. The count line shows the
+    // number as it stands, and a line under it says so for a few seconds when it changes.
     [DefaultExecutionOrder(-50)]
     public sealed class CrownFinish : MonoBehaviour
     {
@@ -51,6 +57,11 @@ namespace ChessFight.PawnRush
         float decidedAt = -1f;
         bool shown;
         GUIStyle banner, line;
+        // R538: what each team needed last (-1: not looked at yet), and the line that says it has changed.
+        const float NeedNoteSeconds = 6f, NeedQuietSeconds = 3f;
+        int neededWhite = -1, neededBlack = -1;
+        float builtAt, needNoteUntil = -1f;
+        string needNote = "";
 
         public int Winner { get; private set; } = PawnRushFinish.None;
         public float Clock => Time.time - raceStart;
@@ -64,6 +75,7 @@ namespace ChessFight.PawnRush
         {
             Current = this;
             raceStart = Time.time;
+            builtAt = Time.time;
         }
 
         void OnDestroy()
@@ -287,6 +299,22 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ HUD
 
+        // R538: the number a team needs has changed with who is playing (a player left, or came back). Not while the
+        // scene is still filling with its players (the first seconds: every pawn registers one after another).
+        void NoteNeeded(int whitePlayers, int blackPlayers)
+        {
+            int white = whitePlayers > 0 ? PawnRushFinish.Needed(whitePlayers) : 0, black = blackPlayers > 0 ? PawnRushFinish.Needed(blackPlayers) : 0;
+            bool settled = Time.time - builtAt >= NeedQuietSeconds && neededWhite >= 0;
+            if (settled && Winner == PawnRushFinish.None && (white != neededWhite || black != neededBlack))
+            {
+                needNote = $"승리 인원이 바뀌었어요  ·  백 {Say(neededWhite)} → {Say(white)}  ·  흑 {Say(neededBlack)} → {Say(black)}";
+                needNoteUntil = Time.time + NeedNoteSeconds;
+            }
+            neededWhite = white; neededBlack = black;
+        }
+
+        static string Say(int needed) => needed > 0 ? needed + "명" : "없음";
+
         void OnGUI()
         {
             if (!found) return;
@@ -300,6 +328,13 @@ namespace ChessFight.PawnRush
             var box = new Rect((Screen.width - 520) * .5f, 10, 520, 26);
             GUI.Box(box, GUIContent.none);
             GUI.Label(box, count, line);
+            NoteNeeded(w, b);
+            if (Winner == PawnRushFinish.None && Time.time < needNoteUntil)
+            {
+                var under = new Rect((Screen.width - 520) * .5f, 38, 520, 24);
+                GUI.Box(under, GUIContent.none);
+                GUI.Label(under, needNote, line);
+            }
             if (Winner == PawnRushFinish.None) return;
             var self = Self;
             bool won = self != null && self.Team == Winner;

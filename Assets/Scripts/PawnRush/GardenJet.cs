@@ -29,7 +29,13 @@ namespace ChessFight.PawnRush
     public sealed class GardenJet : MonoBehaviour
     {
         const float G = 9.81f;
-        const float TWarn = .8f, TOn = 1f;
+        const float TWarn = (float)RoyalWaterGardenRules.GeyserWarn;
+        // R533 (승규 11-10, "시간에 맞게 물 분수 효과 다시 해줘"): the water now stands in the hit's reach exactly while the
+        // hit is live. GardenGeyser throws pawns for the first GeyserJet - 0.25 s of the jet, up to 2.2 m; the valve shuts
+        // early enough that the column's tail climbs past 2.2 m at that same moment (a pulse that flies on to the top).
+        // The valve opens Lead s before the hit starts so the water is already at a pawn's knees when it throws.
+        const float HitEnd = (float)RoyalWaterGardenRules.GeyserJet - .25f, HitTop = 2.2f, Lead = .06f;
+        float TOn;
         const float R0 = .26f, KAir = .05f, VMin = 1.3f, RCap = .62f, Us = .45f;
         const float JetZ0 = .025f, FloorZ = -.02f, PoolZ = -.032f;
         const int Seg = 20;
@@ -64,6 +70,8 @@ namespace ChessFight.PawnRush
             v0 = Mathf.Sqrt(2f * G * height);
             aTop = v0 / G;
             aLand = 2f * aTop;
+            float clear = (v0 - Mathf.Sqrt(Mathf.Max(0f, v0 * v0 - 2f * G * HitTop))) / G;   // the tail's climb to 2.2 m
+            TOn = Mathf.Max(.2f, Lead + HitEnd - clear);   // in valve time (t = 0 when it opens)
             end = TWarn + TOn + aLand + .45f;
             seed = Hash01(order, 9, 0, 0, 0);
             var go = new GameObject("Jet water");
@@ -76,6 +84,8 @@ namespace ChessFight.PawnRush
             view.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             view.receiveShadows = false;
             view.enabled = false;
+            // R534: the burst it makes as it fires (the geyser component is on the same object).
+            if (GetComponent<GardenGeyser>() != null && GetComponent<GardenGeyserSound>() == null) gameObject.AddComponent<GardenGeyserSound>();
         }
 
         void OnDestroy()
@@ -88,7 +98,7 @@ namespace ChessFight.PawnRush
             double now = ObstacleClock.Now, into;
             var state = RoyalWaterGardenRules.GeyserState(order, now, out into);
             float s = state == RoyalWaterGardenRules.Jet.Warn ? (float)into
-                : state == RoyalWaterGardenRules.Jet.Jet ? TWarn + (float)into : TWarn + TOn + (float)into;
+                : state == RoyalWaterGardenRules.Jet.Jet ? TWarn + (float)into : TWarn + (float)RoyalWaterGardenRules.GeyserJet + (float)into;
             Draw(s, RoyalWaterGardenRules.GeyserCycleIndex(order, now));
         }
 
@@ -97,9 +107,9 @@ namespace ChessFight.PawnRush
         void Draw(float s, long cycle)
         {
             verts.Clear(); normals.Clear(); uvs.Clear(); colors.Clear(); tris.Clear();
-            if (s >= 0f && s <= end)
+            if (s >= 0f && s <= end - Lead)
             {
-                float t = s - TWarn;
+                float t = s - TWarn + Lead;
                 if (t < 0f) Warn(s);
                 else { Column(t); Umbrella(t); Boil(t); Landing(t); }
                 Droplets(t, cycle);
@@ -200,11 +210,13 @@ namespace ChessFight.PawnRush
             Strip(0f);  // a curtain (vertex alpha 0): the falls' shader thins it into strands as it falls
         }
 
-        // White water churning at the jet's foot while the valve is open: as wide as the hit (GardenGeyser.radius 0.9).
+        // White water churning at the jet's foot while the valve is open, fading out as the hit ends: as wide as the hit
+        // (GardenGeyser.radius 0.9).
         void Boil(float t)
         {
-            if (t > TOn + .45f) return;
-            float w = t < TOn ? 1f : 1f - (t - TOn) / .45f;
+            float off = Lead + HitEnd;   // gone when the hit stops
+            if (t > off) return;
+            float w = t < TOn ? 1f : 1f - (t - TOn) / Mathf.Max(.05f, off - TOn);
             float hb = (.4f * Mathf.Exp(-3f * t) + .14f) * w, rb = .85f * (.75f + .25f * w);
             Begin();
             for (int i = 0; i <= 6; i++)

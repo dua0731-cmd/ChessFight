@@ -542,6 +542,9 @@ namespace ChessFight.PawnRush
 
         static bool FloatingPad(Transform content, Transform stone, GameObject model, Material clay)
         {
+            // R558: it dips a little and knocks when a piece lands on it (FloatingPadFx) - also on a stone already
+            // dressed (a scene saved with its pad models).
+            if (!stone.TryGetComponent<FloatingPadFx>(out _)) stone.gameObject.AddComponent<FloatingPadFx>();
             if (stone.Find("Pad model") != null) return false;
             var at = content.InverseTransformPoint(stone.position);
             stone.localRotation = Quaternion.Euler(0f, Mathf.Atan2(at.x - GrandStairHallBuilder.Hub.x, at.z - GrandStairHallBuilder.Hub.y) * Mathf.Rad2Deg, 0f);

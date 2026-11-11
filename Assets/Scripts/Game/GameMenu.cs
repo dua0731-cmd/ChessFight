@@ -50,7 +50,7 @@ namespace ChessFight.Game
             menu.leave = leave;
             menu.online = online;
             menu.warning = online
-                ? "팀은 한 명이 빠진 채로 계속 싸우게 되고, 빈자리는 다른 플레이어가 채울 수 있습니다."
+                ? "팀은 한 명이 빠진 채로 계속 싸웁니다. 끝나기 전에는 로비에서 다시 돌아올 수 있어요."
                 : "연습을 끝내고 로비로 돌아갑니다. 지금까지의 진행은 저장되지 않습니다.";
             current = menu;
             return menu;

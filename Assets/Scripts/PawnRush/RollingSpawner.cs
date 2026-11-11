@@ -19,7 +19,7 @@ namespace ChessFight.PawnRush
     // pushed, the roll never is: the bodies are kinematic.
     //
     // Everything is in the section's frame: x across the stair, z up it (the roll goes -z), y up.
-    public sealed class RollingSpawner : MonoBehaviour, ISectionPart
+    public sealed partial class RollingSpawner : MonoBehaviour, ISectionPart
     {
         [Header("Lanes (section frame)")]
         [SerializeField] float[] laneX = { -6f, -2f, 2f, 6f };
@@ -82,6 +82,9 @@ namespace ChessFight.PawnRush
             public RollingSchedule.Roll roll;     // R356: what PosePicture draws from
             public long serial;
             public readonly HashSet<ImportedObstacleActor> struck = new HashSet<ImportedObstacleActor>();
+            public AudioSource rollLoop, rollHit;  // R531: its sounds (RollingSpawner.Sound.cs)
+            public AudioLowPassFilter muffle;      // R548: muffles them on the runner
+            public int nextHit;
         }
 
         RollingSchedule schedule;
@@ -140,7 +143,12 @@ namespace ChessFight.PawnRush
                 var e = schedule[i];
                 double age = now - e.Time;
                 if (age < -warning) break;
-                if (age < 0 && e.Lane < lit.Length) lit[e.Lane] = true;
+                if (age < 0 && e.Lane < lit.Length)
+                {
+                    lit[e.Lane] = true;
+                    // R574 (승규 11-10 "계단 장애물 나올 때 사운드 지워줘"): the hole no longer rumbles before a roll comes out.
+                    // Warn(e, (float)age);   // R532: the hole rumbled as it glowed (RollingSpawner.Sound.cs)
+                }
                 if (age < -emerge || age > duration) continue;
                 seen.Add(e.Serial);
                 if (!live.TryGetValue(e.Serial, out var item))
@@ -149,6 +157,7 @@ namespace ChessFight.PawnRush
                     item.serial = e.Serial;
                     item.roll = e;
                     item.fresh = true;
+                    item.nextHit = 0;
                     item.struck.Clear();
                     live[e.Serial] = item;
                 }
@@ -405,6 +414,7 @@ namespace ChessFight.PawnRush
         {
             if (item == null || item.root == null) return;
             item.root.SetActive(false);
+            if (item.rollLoop != null) item.rollLoop.volume = 0f;
             (item.statue ? freeStatues : freeCarpets).Add(item);
         }
 

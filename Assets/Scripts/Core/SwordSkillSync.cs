@@ -94,7 +94,7 @@ namespace ChessFight.Network
     /// The Sword Fight state packet's body, host to each client with every snapshot (30 Hz, unreliable: a newer one
     /// replaces a lost one). Every fighter is in it with its life and sword (18 bytes); its skill parts only while they
     /// say something; the floor's collapses while they last. Quantised like SkillWire: times to 1/100 s or 1/10 s,
-    /// points to 2.4 mm, directions to a byte per axis, the sword's grip to 0.13 mm.
+    /// points to about 1 cm (PositionRange), directions to a byte per axis, the sword's grip to 0.13 mm.
     /// </summary>
     public static class SwordWire
     {
@@ -106,6 +106,9 @@ namespace ChessFight.Network
         public const int CollapseBytes = 1 + 1 + 8 + 3 + 3 + 6 + 2 + 1 + 1;   // 26
         public const int MaxFighters = 12, MaxCollapses = 6;
         public const float GripRange = 4.096f;
+        // The arena's points: 16 bits, about 1 cm a step over +-320 m around the scene origin - SkillWire's range until
+        // R541, which now sends WirePoint for the Pawn Rush round's length. A Sword Fight arena is a few tens of metres.
+        public const float PositionRange = 320f;
         const byte FAlive = 1, FDrawn = 2, FClassic = 4, FBlack = 8, FSkill = 16, FEdge = 32, FGlow = 64, FCondition = 128;
 
         public static int FighterSize(in SwordWireFighter f) =>
@@ -379,11 +382,11 @@ namespace ChessFight.Network
         static short Metres(float value)
         {
             if (float.IsNaN(value)) return 0;
-            int q = (int)Math.Round(value / SkillWire.PositionRange * short.MaxValue);
+            int q = (int)Math.Round(value / PositionRange * short.MaxValue);
             return (short)Math.Max(short.MinValue + 1, Math.Min(short.MaxValue, q));
         }
 
-        static float Unmetres(short value) => value / (float)short.MaxValue * SkillWire.PositionRange;
+        static float Unmetres(short value) => value / (float)short.MaxValue * PositionRange;
 
         static void WritePoint(BinaryWriter w, float x, float y, float z)
         {

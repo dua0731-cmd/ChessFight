@@ -126,6 +126,7 @@ namespace ChessFight.PawnRush
             a.SetCustomCurve(AudioSourceCurveType.CustomRolloff, AnimationCurve.Constant(0f, 1f, 1f));
             a.maxDistance = 500f;
             a.volume = 0f;
+            SectionSoundGate.Gate(a);   // R529
             if (clip != null)
             {
                 a.time = Random.value * clip.length;   // the two cannons never share a seam

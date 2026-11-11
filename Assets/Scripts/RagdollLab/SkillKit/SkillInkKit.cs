@@ -112,6 +112,34 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- the kit
 
         public readonly Transform root;
+
+        /// <summary>
+        /// R534 (사용자 11-10: online, the other side's skills drawn red on each screen): the piece whose skill is being
+        /// drawn right now, set by the mode round its own calls (null: nobody's). Effects started while it is set keep it
+        /// and set it again while they step; whatever lands under <see cref="root"/> meanwhile is handed to
+        /// <see cref="Claimed"/>, and <see cref="FlashBody"/> paints a foe's hit red. Nothing changes while
+        /// <see cref="Foe"/> is unset (Pawn Rush).
+        /// </summary>
+        public RagdollPawn Owner;
+        public Action<RagdollPawn, Transform> Claimed;
+        /// <summary>Is this piece on the other side as this screen sees it (the mode's own rule).</summary>
+        public Func<RagdollPawn, bool> Foe;
+        bool OwnerIsFoe => Owner != null && Foe != null && Foe(Owner);
+
+        /// <summary>Hands what was put under the root from child <paramref name="from"/> on to <see cref="Claimed"/>, as
+        /// <see cref="Owner"/>'s. Objects taken out of the root in the meantime are missed, never someone else's.</summary>
+        public void ClaimFrom(int from)
+        {
+            if (Owner == null || Claimed == null) return;
+            for (int i = Mathf.Max(0, from); i < root.childCount; i++) Claimed(Owner, root.GetChild(i));
+        }
+
+        /// <summary>Hands one object to <see cref="Claimed"/> as <see cref="Owner"/>'s (one put elsewhere than the root).</summary>
+        public void Claim(GameObject go)
+        {
+            if (go != null && Owner != null && Claimed != null) Claimed(Owner, go.transform);
+        }
+
         readonly Func<RagdollPawn> viewer;
         readonly Func<Vector3> eye;
         /// <summary>The little pawn the daze draws (a chess pawn mesh, height 1, centred).</summary>
@@ -835,6 +863,8 @@ namespace ChessFight.RagdollLab
             public float age, life = 1f;
             public int touched = -1;
             public bool dead;
+            /// <summary>R534: the piece whose skill this is (the kit's <see cref="Owner"/> when it started), or null.</summary>
+            public RagdollPawn owner;
             public Func<Fx, float, bool> step;
             public Action end;
             public readonly List<Tile> tiles = new List<Tile>();
@@ -866,7 +896,7 @@ namespace ChessFight.RagdollLab
         /// <summary>An effect that runs for <paramref name="life"/> seconds (or until <paramref name="step"/> says no).</summary>
         public Fx Run(float life, Func<Fx, float, bool> step)
         {
-            var f = new Fx { life = life, step = step };
+            var f = new Fx { life = life, step = step, owner = Owner };
             live.Add(f);
             if (stepping) addedWhileStepping++;
             return f;
@@ -880,6 +910,7 @@ namespace ChessFight.RagdollLab
             {
                 f = make();
                 f.life = float.MaxValue;
+                if (f.owner == null) f.owner = Owner;
                 kept[k] = f;
                 live.Add(f);
                 if (stepping) addedWhileStepping++;
@@ -896,7 +927,13 @@ namespace ChessFight.RagdollLab
         {
             var f = live[i];
             f.age += dt;
+            // R534: what an effect makes while it runs (a spark from a scrape, a chip from a hit) is its owner's too.
+            var was = Owner;
+            if (f.owner != null) Owner = f.owner;
+            int before = root.childCount;
             bool alive = !f.dead && f.age <= f.life && f.step(f, dt);
+            ClaimFrom(before);
+            Owner = was;
             if (alive) return;
             f.Destroy();
             live.RemoveAt(i);
@@ -1114,7 +1151,7 @@ namespace ChessFight.RagdollLab
             }
             b.age = 0f;
             b.phase = 0;
-            b.color = color;
+            b.color = OwnerIsFoe ? SkillTeamTint.Red(color) : color;   // R534: the other side's hit flashes red
             b.Paint(Flat(Color.white));
         }
 

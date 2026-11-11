@@ -11,9 +11,9 @@ namespace ChessFight.Network
         public const int TeamSize = 6;
         // The host cannot see who is really in a party (that lobby is the party's own),
         // so a request may declare made-up members who never come and keep their seats
-        // for a reservation's 25 seconds, or a held seat's (Backfill.HoldSeconds). A
-        // sender whose people never came waits this long before it may ask for seats
-        // again, in the waiting room and for the empty seats of a started match alike.
+        // for a reservation's 25 seconds. A sender whose people never came waits this
+        // long before it may ask for seats again. (A started match seats nobody but
+        // the players it started with, each for themselves: R538, Starters.)
         // Only the host keeps it: a new host starts without it (Docs/Network/SESSION.md §4).
         public const double Cooldown = 60;
         public sealed class Group
@@ -43,8 +43,8 @@ namespace ChessFight.Network
             return Admit(sender, party, ticket, members, now, out result);
         }
 
-        // The shape every party request must have, in a waiting room or for the
-        // empty seats of a started match (Backfill).
+        // The shape every seat request must have, in a waiting room or from a player
+        // coming back into a started match (R538: then for themselves alone).
         public static bool ValidRequest(ulong sender, ulong party, string ticket, ulong[] members)
         {
             // A bot has no Steam presence, so it can never be the sender of a request.

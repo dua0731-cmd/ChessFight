@@ -56,6 +56,12 @@ namespace ChessFight.PawnRush
             }
             for (int i = 0; i < Bars.GetLength(0); i++)
                 SpinBar(b, "Spin bar " + (i + 1), V(Bars[i, 0], 0f, Bars[i, 1]), Bars[i, 2], Bars[i, 5] > .5f, Bars[i, 3], Bars[i, 4]);
+            // R530: the plaza's water sounds - the six kerb fountains where they land in the moat (plaza_sample_v1.py:
+            // 2.4 m out from the kerb's outside, 17.0) and the moat lapping at the rim.
+            float[] jetAngles = { 0f, 44f, -44f, 136f, 180f, 224f };
+            var landings = new Vector3[jetAngles.Length];
+            for (int i = 0; i < jetAngles.Length; i++) landings[i] = PlazaPoint(jetAngles[i], 19.4f, EarlyWaterY + .3f);
+            b.Group("Plaza sounds").gameObject.AddComponent<GardenPlazaSound>().Configure(PlazaCenter, PlazaRadius + .6f, EarlyWaterY, landings);
         }
 
         // A spin bar: low (0.25..0.55 m, jumped; one bar through the hub) or tall (0.1..1.2 m, waited out; three arms).
@@ -73,9 +79,35 @@ namespace ChessFight.PawnRush
                     var arm = b.Group("Arm " + (i + 1));
                     arm.localRotation = Quaternion.Euler(0f, i * 360f / arms, 0f);
                     Under(b, arm, () => b.Box("Bar", V(.3f, y0, -half), V(reach, y1, half), b.kit.hazard));
+                    LogColliders(arm.Find("Bar"), arm, reach, tall);
                 }
                 b.Cylinder("Hub", Vector3.zero, tall ? 1.4f : 1f, y1 + .35f, b.kit.rankGold, true, true);
             });
+            // R530: its hub's turning, the arms' whoosh and the thud of a knocked pawn.
+            motion.gameObject.AddComponent<GardenSpinBarSound>().Configure(reach, arms, tall);
+        }
+
+        // R532 (승규 "큰 회전 막대에 기물이랑 회전이랑 충돌 위치가 안맞아 공간이 생겨"): the arms collide as the round logs the
+        // dressing draws (plaza_sample_v4.py: the tall bar two logs of radius 0.25 at 0.36 and 0.94 m, the low one a log of
+        // radius 0.175 at 0.40 m; gold bands 2 cm proud), not as the box round them, whose corners stood off the logs -
+        // most between the tall bar's pair, where a pawn stopped 25 cm short of the wood.
+        // In Play these are the fallback: GardenSpinBarFit seats the dressing back on them and swaps them for the dressing's
+        // own shape (the handmade pass had turned and leaned it off them).
+        static void LogColliders(Transform box, Transform arm, float reach, bool tall)
+        {
+            if (box != null && box.TryGetComponent<BoxCollider>(out var square)) Object.DestroyImmediate(square);
+            var logs = tall ? new[] { (.36f, .27f), (.94f, .27f) } : new[] { (.40f, .19f) };
+            for (int i = 0; i < logs.Length; i++)
+            {
+                var (y, r) = logs[i];
+                var go = new GameObject("Bar log " + (i + 1));
+                go.transform.SetParent(arm, false);
+                var log = go.AddComponent<CapsuleCollider>();
+                log.direction = 0;   // along the arm (x)
+                log.radius = r;
+                log.height = reach - .3f;
+                log.center = new Vector3((.3f + reach) * .5f, y, 0f);
+            }
         }
 
         // ------------------------------------------------------------------ beat 2: the geyser canal (y 0 -> 1.8)

@@ -38,6 +38,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void LightLane(SwordFightSkills s, string key, float alpha, Func<(Vector3 from, Vector3 dir, float start, float reach, float half, float k)> shape)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             var owner = s;
             kit.Keep(s, key, () =>
             {
@@ -679,6 +680,7 @@ namespace ChessFight.RagdollLab
         /// its diagonals through it, brighter with someone there to take) and the stakes it calls up as it winds up.</summary>
         void RealBishopMarks(SwordFightSkills s, SwordFightSkillParams S, bool aim, float alpha)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             var owner = s;
             kit.Keep(s, aim ? "bishop real aim" : "bishop real mark", () =>
             {

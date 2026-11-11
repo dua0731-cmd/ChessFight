@@ -272,6 +272,7 @@ namespace ChessFight.PawnRush
                     voice.rolloffMode = AudioRolloffMode.Linear;
                     voice.minDistance = 4f;
                     voice.maxDistance = 45f;
+                    SectionSoundGate.Gate(voice);   // R529
                 }
                 voice.pitch = Mathf.Pow(2f, note / 12f);
                 voice.PlayOneShot(ringClip);
@@ -503,6 +504,7 @@ namespace ChessFight.PawnRush
                     v = gate.gameObject.AddComponent<AudioSource>();
                     v.playOnAwake = false; v.spatialBlend = 1f; v.rolloffMode = AudioRolloffMode.Linear;
                     v.minDistance = 5f; v.maxDistance = 50f;
+                    SectionSoundGate.Gate(v);   // R529
                 }
                 MiniGameEar.Fit(v, station);   // the same anywhere in this mini-game (user 11-08, D session)
                 v.PlayOneShot(creak);

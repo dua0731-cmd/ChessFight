@@ -59,6 +59,33 @@ namespace ChessFight.RagdollLab.Editor
             }
             catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
+        /// <summary>R534: 승규 님's Sword Fight sandbox (SeoungTest_SwordFight) as a development player, for two copies on one
+        /// PC (-labLoopback host / client) to show each side's skills as the other sees them. Output: -labOut, else
+        /// Builds/SeoungSwordFight. Logs a property block colour round trip first (the team tint reads colours back).</summary>
+        public static void BuildSandboxBatch()
+        {
+            try
+            {
+                var probe = new MaterialPropertyBlock();
+                var gold = new Color(1f, 0.83f, 0.3f, 0.6f);
+                probe.SetColor("_BaseColor", gold);
+                Debug.Log($"[SwordFightBuild] colour space {PlayerSettings.colorSpace}, block colour set {gold} read {probe.GetColor("_BaseColor")}");
+                int at = Array.IndexOf(Environment.GetCommandLineArgs(), "-labOut");
+                string output = Path.GetFullPath(at >= 0 && at + 1 < Environment.GetCommandLineArgs().Length ? Environment.GetCommandLineArgs()[at + 1] : "Builds/SeoungSwordFight");
+                Directory.CreateDirectory(output);
+                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = new[] { "Assets/Scenes/SeoungTest/SeoungTest_SwordFight.unity" },
+                    locationPathName = Path.Combine(output, "ChessFight_SwordFight.exe"), target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development
+                });
+                if (report.summary.result != BuildResult.Succeeded) throw new Exception("Sword Fight sandbox build failed: " + report.summary.result);
+                if (File.Exists("steam_appid.txt")) File.Copy("steam_appid.txt", Path.Combine(output, "steam_appid.txt"), true);
+                Debug.Log("[SwordFightBuild] PASS sandbox -> " + output);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        }
+
         public static void BuildBatch()
         {
             try

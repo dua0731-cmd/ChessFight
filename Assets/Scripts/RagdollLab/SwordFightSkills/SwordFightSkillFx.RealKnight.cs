@@ -82,6 +82,7 @@ namespace ChessFight.RagdollLab
 
         void RealKnightMarks(SwordFightSkills s, SwordFightSkillParams S, float alpha)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             bool aim = s.Stage == SfStage.Aim, air = s.Stage == SfStage.Active;
             if (!aim && !air) return;
             var owner = s;
@@ -282,6 +283,7 @@ namespace ChessFight.RagdollLab
             {
                 var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
                 go.transform.SetParent(on, true);
+                kit.Claim(go);   // R534: on the struck body, not the kit's root
                 go.transform.SetPositionAndRotation(at + normal * 0.006f + offset, Quaternion.LookRotation(-normal, Vector3.Cross(along, -normal)));
                 go.transform.localScale = Vector3.one;
                 go.GetComponent<MeshFilter>().sharedMesh = kit.meshQuad;

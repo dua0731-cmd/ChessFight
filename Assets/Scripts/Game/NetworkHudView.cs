@@ -26,6 +26,9 @@ namespace ChessFight.Game
         public bool Busy, CanPlay, CanCancel, ShowStart, CanStart;
         // R533: why "게임 시작" is off for a while (a deserter's matchmaking stop, with the time left); "" for nothing.
         public string PlayNote;
+        // R538: the match this player left is still running and takes them back: the line under "경기로 돌아가기"
+        // (its mode); "" for no such match, and the button is not there.
+        public string RejoinNote;
         public string BusyTitle, BusySub;
 
         // The matchmaking panel at the top: our side on the left, 6 slots each.
@@ -45,6 +48,8 @@ namespace ChessFight.Game
     public sealed class NetworkHudView : MonoBehaviour
     {
         public event Action Play, StartGame, Cancel, LeaveParty, CreateTest, CopyParty, CopyMatch;
+        // R538: "경기로 돌아가기" - back into the started match this player left.
+        public event Action Rejoin;
         public event Action AddBot, RemoveBot, FillRoom, ClearRoomBots, RetrySteam;
         public event Action AddAllyDummy, RemoveAllyDummy, AddEnemyDummy, RemoveEnemyDummy;
         public event Action FriendsOpened, RefreshFriends, SteamOverlayInvite;
@@ -364,6 +369,7 @@ namespace ChessFight.Game
             BuildModeRail();
             BuildCurrentMode();
             BuildPlayNote();
+            BuildRejoin();
             BuildInviteCard();
             SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
             BuildVoiceMenu();
@@ -1019,6 +1025,26 @@ namespace ChessFight.Game
             play.parent.Insert(play.parent.IndexOf(play) + 1, playNote);
         }
 
+        // R538 (user 11-10: "나간 사람만 돌아올 수 있어야"): over the start button while the match this player left is
+        // still running - the one way back into it. Hidden when there is no such match.
+        Button rejoin;
+        Label rejoinSub;
+        void BuildRejoin()
+        {
+            if (play == null || play.parent == null) return;
+            rejoin = new Button { name = "rejoin", text = "", focusable = false };
+            rejoin.AddToClassList("rejoin-btn");
+            var title = new Label("진행 중인 경기로 돌아가기") { pickingMode = PickingMode.Ignore };
+            title.AddToClassList("rejoin-title");
+            rejoinSub = new Label { pickingMode = PickingMode.Ignore };
+            rejoinSub.AddToClassList("rejoin-sub");
+            rejoin.Add(title);
+            rejoin.Add(rejoinSub);
+            rejoin.clicked += () => Rejoin?.Invoke();
+            rejoin.style.display = DisplayStyle.None;
+            play.parent.Insert(play.parent.IndexOf(play), rejoin);
+        }
+
         void BuildCurrentMode()
         {
             if (play == null || play.parent == null) return;
@@ -1300,6 +1326,13 @@ namespace ChessFight.Game
                 bool noted = !model.Busy && !string.IsNullOrEmpty(model.PlayNote);
                 Show(playNote, noted);
                 if (noted && playNote.text != model.PlayNote) playNote.text = model.PlayNote;
+            }
+            if (rejoin != null)
+            {
+                // Also while this player waits in the lobby for party members still in that match (Busy).
+                bool back = !string.IsNullOrEmpty(model.RejoinNote);
+                Show(rejoin, back);
+                if (back && rejoinSub.text != model.RejoinNote) rejoinSub.text = model.RejoinNote;
             }
             Show(busy, model.Busy);
             if (busyTitle != null) busyTitle.text = model.BusyTitle;

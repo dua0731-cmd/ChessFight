@@ -29,7 +29,7 @@ namespace ChessFight.Network
 
     /// <summary>One piece's skill as the others need to draw it (its warnings, cooldown, aim). The
     /// slots mean different things per mode (RagdollPawn.SkillNet maps them); on the wire they are
-    /// quantised: times to 1/100 s or 1/10 s, points to 2.4 mm, directions to a byte per axis.</summary>
+    /// quantised: times to 1/100 s or 1/10 s, points as WirePoint (1 mm across, 1 cm up, R541), directions to a byte per axis.</summary>
     public struct SkillWireState
     {
         public byte Pawn;                  // the piece: its roster place (SkillWire.Ref)
@@ -119,16 +119,16 @@ namespace ChessFight.Network
         public const byte ModePawnRush = 0, ModeRetiredQueenHill = 1, ModeSwordFight = 2;
         public const byte None = 255;
         public const int HeaderBytes = 4 + 2 + 1 + 1 + 1 + 1;   // host time, first seq, four counts
-        public const int StateBytes = 1 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 6 + 6 + 1 + 1 + 1 + 1 + 1 + 1;   // 29
-        public const int WireBytes = 2 + 1 + 6 + 1 + 2 + 1 + 1 + 1 + 1 + 1 + 1;   // 18
+        // Points (R541): WirePoint, 8 bytes - x and z over +-8388 m, y over +-320 m. They were 16 bits over +-320 m (+-80 m
+        // until R125), short of the Pawn Rush section round's z 580 m, as the ragdoll snapshot (PITFALLS 38).
+        const int Point = WirePoint.Bytes;
+        public const int StateBytes = 1 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + Point + Point + 1 + 1 + 1 + 1 + 1 + 1;   // 33
+        public const int WireBytes = 2 + 1 + Point + 1 + 2 + 1 + 1 + 1 + 1 + 1 + 1;   // 20
         public const int BarricadeBytes = 1 + 1 + 1;
-        public const int EventBytes = 2 + 2 + 1 + 1 + 1 + 1 + 6 + 3 + 6 + 1 + 2 + 2;   // 28
+        public const int EventBytes = 2 + 2 + 1 + 1 + 1 + 1 + Point + 3 + Point + 1 + 2 + 2;   // 32
         public const int MaxStates = 16, MaxWires = 16, MaxBarricades = 8;
         /// <summary>How long ago a moment may have happened and still be sent (ms).</summary>
         public const uint EventLifeMs = 1500;
-        // Metres around the scene origin, 16 bits (about 1 cm a step). +-80 m until R125: the skills now run on Pawn Rush
-        // course 01 too, which reaches z 246 m (as the ragdoll snapshot, R124, PITFALLS 38).
-        public const float PositionRange = 320f;
 
         /// <summary>A piece by its roster place: team and slot are unique in a match and known on every
         /// PC, so a piece costs one byte instead of its eight-byte Steam id.</summary>
@@ -361,26 +361,9 @@ namespace ChessFight.Network
             return m < 0f ? m + range : m;
         }
 
-        static short Metres(float value)
-        {
-            if (float.IsNaN(value)) return 0;
-            int q = (int)Math.Round(value / PositionRange * short.MaxValue);
-            return (short)Math.Max(short.MinValue + 1, Math.Min(short.MaxValue, q));
-        }
+        static void WritePoint(BinaryWriter w, float x, float y, float z) => WirePoint.Write(w, x, y, z);
 
-        static void WritePoint(BinaryWriter w, float x, float y, float z)
-        {
-            w.Write(Metres(x));
-            w.Write(Metres(y));
-            w.Write(Metres(z));
-        }
-
-        static void ReadPoint(BinaryReader r, out float x, out float y, out float z)
-        {
-            x = r.ReadInt16() / (float)short.MaxValue * PositionRange;
-            y = r.ReadInt16() / (float)short.MaxValue * PositionRange;
-            z = r.ReadInt16() / (float)short.MaxValue * PositionRange;
-        }
+        static void ReadPoint(BinaryReader r, out float x, out float y, out float z) => WirePoint.Read(r, out x, out y, out z);
 
         static void WriteDir(BinaryWriter w, float x, float y, float z)
         {

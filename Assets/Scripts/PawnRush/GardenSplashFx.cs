@@ -135,6 +135,7 @@ namespace ChessFight.PawnRush
                 a.rolloffMode = AudioRolloffMode.Linear;
                 a.minDistance = 4f;
                 a.maxDistance = 45f;
+                SectionSoundGate.Gate(a);   // R529
                 voices[i] = a;
             }
         }

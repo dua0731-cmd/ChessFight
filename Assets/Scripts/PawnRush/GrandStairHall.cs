@@ -45,6 +45,13 @@ namespace ChessFight.PawnRush
             if (kit == null) return;
             if (buildIfEmpty && !HasCurrentLayout) GrandStairHallBuilder.Build(this);
             if (dressInPlay && HasContent) Course01v4Builder.DressGrandStairHall(this);
+            // R558: the floating stones dip and knock when a piece lands (FloatingPadFx) - here too, because a scene
+            // saved already dressed skips DressGrandStairHall.
+            var content = transform.Find(ContentName);
+            if (content == null) return;
+            foreach (var t in content.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith("Floating stone ") && t.Find("Pad model") != null && !t.TryGetComponent<FloatingPadFx>(out _))
+                    t.gameObject.AddComponent<FloatingPadFx>();
         }
     }
 }

@@ -237,8 +237,11 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- the roster and the sides
 
+        float nextSwordNameRefresh;
         void SyncSwordRoster()
         {
+            bool refreshNames = Time.unscaledTime >= nextSwordNameRefresh;
+            if (refreshNames) nextSwordNameRefresh = Time.unscaledTime + 1f;
             scratchIds.Clear();
             scratchIds.AddRange(pawns.Keys);
             foreach (ulong id in scratchIds)
@@ -254,7 +257,11 @@ namespace ChessFight.RagdollLab
                 if (team < 0) continue;   // a client waits for the host's word on the side
                 if (pawns.TryGetValue(entry.Key, out var pawn) && pawn != null)
                 {
-                    if (pawn.Team == team) continue;
+                    if (pawn.Team == team)
+                    {
+                        if (refreshNames) pawn.DisplayName = NetName(entry.Key);
+                        continue;
+                    }
                     RemoveFighter(entry.Key);   // drawn onto the other side: made again there
                 }
                 AddFighter(entry.Key, team);

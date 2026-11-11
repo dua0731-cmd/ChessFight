@@ -1,42 +1,63 @@
 using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.ProtectKing;
+using ChessFight.VFX;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace ChessFight.PawnRush
 {
-    // R354 (승규 11-04 "이 부분 예고 동작도 vfx 해줘", the royal balcony's guard knights): a knight charge's warnings on the
-    // obstacle's own clock, in place of the kit's flat landing disc and charge strip (their renderers off; the obstacle
-    // still toggles them). R374 (승규 11-04, a shot of the light curtains round the landing and along the lane: "이 vfx 좀
-    // 마음에 안들어 다른 기술로해줘" - after the floor decal had gone the same way): no decal and no curtain, the warning
-    // is the knight's own rehearsal and particles in the air:
-    //   ghost    a glowing gold ghost of the knight plays its move ahead of it - leaps from the alcove onto the landing
-    //            point, then dashes down the lane and fades - during the warning, so the place and the line read at once
-    //   landing  embers rise off the landing circle and dust swirls in to its middle, thicker as the landing nears; when it
-    //            lands, a ring of dust thrown out along the floor and sparks
-    //   lane     from the landing, wind streaks shoot down the lane its width across, ever thicker until the charge; while it
-    //            charges, dust kicked up behind it
-    // Every frame the obstacle's own sample (Evaluate on the shared clock) gives the time since its warning started, so
-    // the ghost and the moments are the same on every PC; the particles' scatter is each PC's own.
+    // R354 / R374 the royal balcony's guard knights' warnings on the obstacle's own clock (the kit's flat landing disc and
+    // charge strip stay off: the obstacle still toggles them).
+    // R566 (승규 11-10 "지금 전투마 소리는 너무 좋은데 예고랑 이펙트가 별로야 사운드에 맞게 만들어줘 예고는 필요에 따라서
+    // 예고 안넣어도 돼"): the gold ghost, embers, swirl, wind streaks and dust ring are gone. The knight's own body and
+    // the floor answer the war horse sound (R564 B1, CavalryWarnFx.Sound.cs) beat by beat:
+    //   warning   (silent, 1.3 s) it gathers itself on the balcony - leans back, sinks a little, trembles at the end -
+    //             and grit crumbles off the balcony lip
+    //   push-off  (the snort and hoof push 0.22 s into the leap) it springs nose-up, chips kicked off the balcony
+    //   air       (the whoosh) its shadow on the landing floor, wide and faint, smaller and darker as it comes down
+    //   landing   (four heavy hooves at 1.0 s) four strikes round the pedestal 0.12 s apart: stone chips, iron sparks,
+    //             the body squashes and springs back, the view shakes nearby
+    //   windup    (a hoof pawing the floor and a snort) two scrapes at its front: sparks along the floor; it rears then
+    //             coils back
+    //   charge    (the gallop) leaning forward, bobbing on each beat of the sound, chips and sparks off its back edge
+    //   stop      (the skid) leaning back, a spray of sparks and chips off its front edge
+    // No dust, no rings, no glow: chips are lit marble and dark grout, sparks are the only light. Every moment is the
+    // obstacle's own sample (Evaluate on the shared clock), the same on every PC; the scatter is each PC's own.
     [DisallowMultipleComponent]
-    public sealed class CavalryWarnFx : MonoBehaviour
+    // R564: the leap and charge sounds are in CavalryWarnFx.Sound.cs.
+    public sealed partial class CavalryWarnFx : MonoBehaviour
     {
-        static readonly Color Gold = new Color(1f, .74f, .32f), Ember = new Color(1f, .45f, .12f), Dust = new Color(.95f, .86f, .7f);
+        const string ShadowShader = "ChessFight/VFX/Ground Shadow Decal";
+        static readonly int RadiusId = Shader.PropertyToID("_Radius"), DarknessId = Shader.PropertyToID("_Darkness"),
+            BoxId = Shader.PropertyToID("_Box");
+        // Beats in the sound (s): the push-off into the leap, the hooves after the landing, the paws into the windup, the
+        // gallop into the charge (HallGuardLeap / HallGuardCharge, read off their loudness).
+        const float PushOff = .24f;
+        static readonly float[] Hooves = { 0f, .035f, .08f, .12f };
+        static readonly float[] Paws = { .01f, .07f };
+        static readonly float[] Gallop = { .11f, .16f, .22f, .29f, .37f, .47f, .54f, .61f, .70f, .79f };
+        const float SkidFrom = .82f;   // s into the charge when it starts to stop
+        const float BeatLate = .3f;    // a beat first seen later than this is left out
+
         static Texture2D dot;
 
         KnightCavalryCharge knight;
-        Transform ghost;
-        Renderer[] ghostViews;
+        ParticleSystem marble, grout, sparks;
+        Transform shadow;
+        MeshRenderer shadowView;
         MaterialPropertyBlock block;
-        ParticleSystem embers, swirl, dust, sparks, streaks;
+        Vector3 basePosition, baseScale = Vector3.one;
+        Quaternion baseRotation = Quaternion.identity;
+        float runAge = -1f, gritDebt, skidDebt;
+        int fired;      // the beats of this run already played, one bit each
         int lastCycle = int.MinValue;
-        bool landedBurst;
-        float emberDebt, swirlDebt, streakDebt, dustDebt;
 
         void Start()
         {
             knight = GetComponent<KnightCavalryCharge>();
-            if (knight == null || knight.LandingPoint == null || knight.ChargeEndPoint == null || knight.StartPoint == null)
+            if (knight == null || knight.LandingPoint == null || knight.ChargeEndPoint == null || knight.StartPoint == null
+                || knight.Visual == null || knight.KnightRoot == null)
             {
                 enabled = false;
                 return;
@@ -44,14 +65,26 @@ namespace ChessFight.PawnRush
             block = new MaterialPropertyBlock();
             Hide(knight.LandingWarning);
             Hide(knight.ChargeWarning);
-            MakeGhost();
+            basePosition = knight.Visual.localPosition;
+            baseRotation = knight.Visual.localRotation;
+            baseScale = knight.Visual.localScale;
             if (dot == null) dot = SoftDot(64);
-            embers = Particles("Knight warn embers", new Color(2.6f, 1.6f, .55f), true, -.35f);
-            swirl = Particles("Knight warn swirl", new Color(1.4f, 1.2f, .9f), false, 0f);
-            dust = Particles("Knight warn dust", new Color(1.1f, 1f, .85f), false, 0f);
-            sparks = Particles("Knight warn sparks", new Color(3f, 1.9f, .7f), true, 1.6f);
-            streaks = Particles("Knight warn streaks", new Color(3f, 1.6f, .6f), true, 0f);
-            streaks.GetComponent<ParticleSystemRenderer>().velocityScale = .09f;
+            marble = Chips("Knight marble chips", new Color(.82f, .78f, .71f), .35f);
+            grout = Chips("Knight grout chips", new Color(.2f, .17f, .15f), .2f);
+            sparks = Sparks();
+            MakeShadow();
+            Shaker.Hook();
+            MakeFire();   // R567 (CavalryWarnFx.Fire.cs)
+        }
+
+        void OnDisable()
+        {
+            if (knight != null && knight.Visual != null)
+            {
+                knight.Visual.localPosition = basePosition;
+                knight.Visual.localRotation = baseRotation;
+                knight.Visual.localScale = baseScale;
+            }
         }
 
         void LateUpdate()
@@ -64,188 +97,279 @@ namespace ChessFight.PawnRush
                                                                     knight.CycleDuration, knight.Repeat));
             bool running = knight.Active && (knight.context == null || knight.context.Running) && sample.cycle >= 0;
             float age = running ? sample.phase - idle : -1f;
-            if (sample.cycle != lastCycle) { lastCycle = sample.cycle; landedBurst = false; }
+            // R565: the wrapped clock keeps the cycle number at 0, so a new run is also seen by the age going back.
+            if (sample.cycle != lastCycle || age < runAge - .5f) { lastCycle = sample.cycle; fired = 0; }
+            runAge = age;
+            Sound(age, sample.cycle, warn + leap, warn + leap + land);
 
-            Vector3 start = knight.StartPoint.position, landAt = knight.LandingPoint.position, end = knight.ChargeEndPoint.position;
-            var down = Vector3.ProjectOnPlane(end - landAt, Vector3.up);
-            var dir = down.sqrMagnitude > 1e-6f ? down.normalized : transform.forward;
-            var across = Vector3.Cross(Vector3.up, dir);
-            float width = knight.BodyCollider != null ? knight.BodyCollider.size.x : 1.4f;
+            float leapAt = warn, landAt = warn + leap, windupAt = landAt + land, chargeAt = windupAt + windup;
+            var root = knight.KnightRoot.transform;
+            var landing = knight.LandingPoint.position;
+            var start = knight.StartPoint.position;
+            var lane = Vector3.ProjectOnPlane(knight.ChargeEndPoint.position - landing, Vector3.up);
+            var dir = lane.sqrMagnitude > 1e-6f ? lane.normalized : transform.forward;
             float dt = Time.deltaTime;
 
-            Ghost(age, warn, start, landAt, end);
+            Pose(age, leapAt, landAt, windupAt, chargeAt, charge);
+            Shadow(age, leapAt, landAt, windupAt, root.position, landing, start.y);
+            Fire(age, leapAt, landAt, knight.CycleDuration - idle);   // R567: the leap burns, the floor after it
+            if (age < 0f) return;
 
-            // Landing: embers and an inward swirl from the warning to the landing, thickening; the burst as it lands.
-            float landTime = warn + leap;
-            if (age >= 0f && age < landTime)
-            {
-                float k = Mathf.Clamp01(age / landTime);
-                Emit(ref emberDebt, Mathf.Lerp(12f, 70f, k * k) * dt, () => Rise(landAt));
-                Emit(ref swirlDebt, Mathf.Lerp(6f, 40f, k) * dt, () => Swirl(landAt));
-            }
-            if (age >= landTime && !landedBurst && age < landTime + .5f)
-            {
-                landedBurst = true;
-                Landed(landAt);
-            }
-
-            // Lane: wind streaks from the landing to the charge's end, ever thicker until it charges; dust behind it.
-            float chargeAt = warn + leap + land + windup;
-            if (age >= landTime && age < chargeAt + charge * .85f)
-            {
-                float k = Mathf.Clamp01((age - landTime) / Mathf.Max(.05f, chargeAt - landTime));
-                float rate = age < chargeAt ? Mathf.Lerp(20f, 110f, k) : 60f;
-                float length = down.magnitude;
-                Emit(ref streakDebt, rate * dt, () => Streak(landAt, dir, across, width, length));
-            }
-            if (age >= chargeAt && age < chargeAt + charge)
-                Emit(ref dustDebt, 45f * dt, () => KickedUp(knight.KnightRoot != null ? knight.KnightRoot.position : landAt, dir));
+            // warning: grit off the balcony lip, more as the leap nears
+            if (age > leapAt - .6f && age < leapAt + .3f)
+                Emit(ref gritDebt, 22f * dt, () => Grit(start + dir * 1.1f, dir));
+            // push-off
+            if (Beat(0, age, leapAt + PushOff)) PushedOff(start, dir);
+            // landing: the four hooves round the pedestal
+            for (int i = 0; i < Hooves.Length; i++)
+                if (Beat(1 + i, age, landAt + Hooves[i])) Hoof(root, Corner(i), dir, i == 0 ? 1f : .55f);
+            // windup: the paws at its front
+            for (int i = 0; i < Paws.Length; i++)
+                if (Beat(5 + i, age, windupAt + Paws[i])) Paw(root, dir, i);
+            // charge: a beat of the gallop, alternating back corners
+            for (int i = 0; i < Gallop.Length; i++)
+                if (Beat(7 + i, age, chargeAt + Gallop[i])) Stride(root, dir, i);
+            // the stop: sparks and chips off the front edge as it skids
+            float c = age - chargeAt;
+            if (c >= SkidFrom && c < charge)
+                Emit(ref skidDebt, 80f * dt, () => Skid(root, dir));
         }
 
-        // ------------------------------------------------------------------ the ghost's rehearsal
-
-        void Ghost(float age, float warn, Vector3 start, Vector3 landAt, Vector3 end)
+        // True once, the frame a beat's time is passed (not when the run is first seen well after it).
+        bool Beat(int bit, float age, float at)
         {
-            if (ghost == null) return;
-            // Inside the warning: appear at the alcove, leap (0.12 .. 0.55), dash down the lane (0.6 .. 0.9), fade.
-            float u = warn > 0f ? age / warn : -1f;
-            if (u < 0f || u > 1f) { Show(false, 0f); return; }
-            Vector3 at;
-            if (u < .12f) at = start;
-            else if (u < .55f)
+            int mask = 1 << bit;
+            if ((fired & mask) != 0 || age < at) return false;
+            fired |= mask;
+            return age < at + BeatLate;
+        }
+
+        // ------------------------------------------------------------------ the knight's body
+
+        void Pose(float a, float leapAt, float landAt, float windupAt, float chargeAt, float charge)
+        {
+            var visual = knight.Visual;
+            if (a < 0f || !visual.gameObject.activeInHierarchy)
             {
-                float t = Mathf.SmoothStep(0f, 1f, (u - .12f) / .43f);
-                at = Vector3.Lerp(start, landAt, t) + Vector3.up * (4f * Mathf.Max(0f, knight.LeapHeight) * t * (1f - t));
+                visual.localPosition = basePosition;
+                visual.localRotation = baseRotation;
+                visual.localScale = baseScale;
+                return;
             }
-            else if (u < .6f) at = landAt;
-            else at = Vector3.Lerp(landAt, end, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((u - .6f) / .3f)));
-            float alpha = Mathf.Clamp01(u / .1f) * Mathf.Clamp01((1f - u) / .12f) * .55f;
-            ghost.position = at;
-            Show(true, alpha);
-        }
-
-        void MakeGhost()
-        {
-            var source = knight.Visual != null ? knight.Visual : knight.KnightRoot != null ? knight.KnightRoot.transform : null;
-            if (source == null) return;
-            var model = source.Find("Knight model");
-            var copy = Instantiate(model != null ? model.gameObject : source.gameObject);
-            copy.name = "Knight warn ghost";
-            foreach (var c in copy.GetComponentsInChildren<Collider>(true)) Destroy(c);
-            foreach (var b in copy.GetComponentsInChildren<Rigidbody>(true)) Destroy(b);
-            foreach (var m in copy.GetComponentsInChildren<MonoBehaviour>(true)) Destroy(m);
-            ghost = new GameObject("Knight warn ghost").transform;
-            ghost.SetParent(transform, false);
-            ghost.rotation = (knight.KnightRoot != null ? knight.KnightRoot.transform : source).rotation;
-            // The copy keeps its place under the knight's root: offset it so the ghost's origin is the root.
-            var root = knight.KnightRoot != null ? knight.KnightRoot.transform : source;
-            var pos = (model != null ? model : source).position - root.position;
-            var rot = (model != null ? model : source).rotation;
-            var scale = (model != null ? model : source).lossyScale;
-            copy.transform.SetParent(ghost, false);
-            copy.transform.position = ghost.position + pos;
-            copy.transform.rotation = rot;
-            var ls = ghost.lossyScale;
-            copy.transform.localScale = new Vector3(scale.x / ls.x, scale.y / ls.y, scale.z / ls.z);
-            var glow = LitMaterials.NewAdditiveParticles(Texture2D.whiteTexture, new Color(1.6f, 1.15f, .5f, 1f));
-            if (glow != null) glow.name = "Knight warn ghost";
-            ghostViews = copy.GetComponentsInChildren<Renderer>(true);
-            foreach (var r in ghostViews)
+            float pitch = 0f;     // degrees, + leans forward (nose down), - leans back (rears)
+            float lift = 0f;      // m up
+            float side = 0f;      // m across (a tremble)
+            float squash = 0f;    // share the body is pressed down
+            if (a < leapAt)
             {
-                var slots = r.sharedMaterials;
-                for (int i = 0; i < slots.Length; i++) slots[i] = glow;
-                r.sharedMaterials = slots;
-                r.enabled = false;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                r.receiveShadows = false;
+                // Gathering: back and down, a tremble in the last 0.35 s.
+                float k = Mathf.SmoothStep(0f, 1f, a / leapAt);
+                pitch = -7f * k;
+                lift = -.05f * k;
+                float t = a - (leapAt - .35f);
+                if (t > 0f) side = .012f * Mathf.Sin(a * Mathf.PI * 2f * 16f) * (t / .35f);
             }
-        }
-
-        void Show(bool on, float alpha)
-        {
-            if (ghostViews == null) return;
-            foreach (var r in ghostViews)
+            else if (a < landAt)
             {
-                if (r.enabled != on) r.enabled = on;
-                if (!on) continue;
-                r.GetPropertyBlock(block);
-                LitMaterials.SetColor(block, new Color(1.6f, 1.15f, .5f, alpha));
-                r.SetPropertyBlock(block);
-                block.Clear();
+                float p = a - (leapAt + PushOff), u = (a - leapAt) / (landAt - leapAt);
+                if (p < 0f) { pitch = -7f; lift = -.05f; }
+                else if (p < .1f) { pitch = Mathf.Lerp(-7f, -13f, p / .1f); lift = Mathf.Lerp(-.05f, .04f, p / .1f); }
+                else pitch = Mathf.Lerp(-13f, 9f, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.35f, .95f, u)));
             }
-        }
-
-        // ------------------------------------------------------------------ particles
-
-        void Rise(Vector3 centre)
-        {
-            float a = Random.value * Mathf.PI * 2f, r = knight.LandingRadius * Random.Range(.85f, 1.02f);
-            var e = new ParticleSystem.EmitParams
+            else if (a < windupAt + .01f)
             {
-                position = centre + new Vector3(Mathf.Cos(a) * r, .05f, Mathf.Sin(a) * r),
-                velocity = new Vector3(0f, Random.Range(.8f, 2.2f), 0f) + Random.insideUnitSphere * .2f,
-                startLifetime = Random.Range(.6f, 1.1f), startSize = Random.Range(.05f, .1f), startColor = Color.white
-            };
-            embers.Emit(e, 1);
-        }
-
-        void Swirl(Vector3 centre)
-        {
-            float a = Random.value * Mathf.PI * 2f, r = knight.LandingRadius * Random.Range(.7f, 1f);
-            var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-            var tangent = Vector3.Cross(Vector3.up, radial);
-            var e = new ParticleSystem.EmitParams
+                // The landing: pressed flat and springing back, the nose settling.
+                float d = a - landAt;
+                squash = .13f * Mathf.Exp(-7f * d) * Mathf.Cos(d * 20f);
+                pitch = 9f * Mathf.Exp(-12f * d);
+            }
+            else if (a < chargeAt)
             {
-                position = centre + radial * r + Vector3.up * Random.Range(.05f, .35f),
-                velocity = tangent * Random.Range(1.5f, 2.6f) - radial * Random.Range(1.2f, 2f),
-                startLifetime = Random.Range(.6f, .9f), startSize = Random.Range(.25f, .5f), startColor = new Color(1f, 1f, 1f, .45f)
-            };
-            swirl.Emit(e, 1);
-        }
-
-        void Landed(Vector3 centre)
-        {
-            for (int i = 0; i < 48; i++)
+                float d = a - landAt, e = a - windupAt;
+                squash = .13f * Mathf.Exp(-7f * d) * Mathf.Cos(d * 20f);
+                // The paws rear it twice, then it coils back for the charge.
+                float rear = Bump(e, Paws[0], .12f) + Bump(e, Paws[1], .12f) * .8f;
+                float coil = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.18f, chargeAt - windupAt, e));
+                pitch = -6f * rear - 5f * coil;
+                lift = -.04f * coil;
+            }
+            else
             {
-                float a = i / 48f * Mathf.PI * 2f + Random.Range(-.05f, .05f);
-                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                dust.Emit(new ParticleSystem.EmitParams
+                float c = a - chargeAt;
+                float into = Mathf.Clamp01(c / .12f);
+                pitch = Mathf.Lerp(-5f, 7f, into);
+                lift = Mathf.Lerp(-.04f, 0f, into);
+                // Bobbing on the gallop's beats.
+                for (int i = 0; i < Gallop.Length; i++) lift += .06f * Bump(c, Gallop[i], .09f);
+                if (c > SkidFrom)
                 {
-                    position = centre + radial * .4f + Vector3.up * .15f,
-                    velocity = radial * Random.Range(4f, 7f) + Vector3.up * Random.Range(.2f, .8f),
-                    startLifetime = Random.Range(.5f, .9f), startSize = Random.Range(.5f, .9f), startColor = new Color(1f, 1f, 1f, .6f)
-                }, 1);
+                    float s = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(SkidFrom, Mathf.Min(charge, SkidFrom + .15f), c));
+                    pitch = Mathf.Lerp(pitch, -10f, s);
+                    lift = Mathf.Lerp(lift, -.03f, s);
+                }
             }
-            for (int i = 0; i < 30; i++)
-            {
-                var d = Random.onUnitSphere;
-                d.y = Mathf.Abs(d.y) + .4f;
-                sparks.Emit(new ParticleSystem.EmitParams
-                {
-                    position = centre + Vector3.up * .2f, velocity = d.normalized * Random.Range(4f, 8f),
-                    startLifetime = Random.Range(.4f, .8f), startSize = Random.Range(.05f, .1f), startColor = Color.white
-                }, 1);
-            }
+            // Tipped about the pedestal's edge it leans over: the back edge to rear, the front to lean forward.
+            const float Edge = 1.1f;
+            var pivot = new Vector3(0f, 0f, pitch < 0f ? -Edge : Edge);
+            var tilt = Quaternion.AngleAxis(pitch, Vector3.right);
+            visual.localRotation = baseRotation * tilt;
+            visual.localPosition = basePosition + baseRotation * (pivot - tilt * pivot) + new Vector3(side, lift, 0f);
+            visual.localScale = Vector3.Scale(baseScale, new Vector3(1f + squash * .4f, 1f - squash, 1f + squash * .4f));
         }
 
-        void Streak(Vector3 from, Vector3 dir, Vector3 across, float width, float length)
+        // A quick rise and fall around at (0 .. 1 .. 0 over width seconds).
+        static float Bump(float t, float at, float width)
         {
-            float speed = Random.Range(12f, 18f);
-            streaks.Emit(new ParticleSystem.EmitParams
+            float x = (t - at) / width;
+            return x <= 0f || x >= 1f ? 0f : Mathf.Sin(x * Mathf.PI);
+        }
+
+        // ------------------------------------------------------------------ its shadow on the landing floor
+
+        void MakeShadow()
+        {
+            var shader = VfxShaderKeep.Find(ShadowShader);   // R537: Shader.Find alone can miss it in a player build (R526)
+            if (shader == null) return;
+            var go = new GameObject("Knight landing shadow");
+            go.transform.SetParent(transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            shadowView = go.AddComponent<MeshRenderer>();
+            shadowView.sharedMaterial = new Material(shader) { name = "Knight landing shadow" };
+            shadowView.shadowCastingMode = ShadowCastingMode.Off;
+            shadowView.receiveShadows = false;
+            shadowView.lightProbeUsage = LightProbeUsage.Off;
+            shadowView.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            shadowView.enabled = false;
+            shadow = go.transform;
+        }
+
+        // Straight under the knight on the landing floor's height while it flies: wide and faint high up, small and dark
+        // as it comes down, lying under it through the landing, then gone.
+        void Shadow(float a, float leapAt, float landAt, float windupAt, Vector3 at, Vector3 landing, float startY)
+        {
+            if (shadow == null) return;
+            bool on = a >= leapAt && a < windupAt + .2f;
+            shadowView.enabled = on;
+            if (!on) return;
+            float high = Mathf.Max(.5f, startY - landing.y + knight.LeapHeight);
+            float low = 1f - Mathf.Clamp01((at.y - landing.y) / high);
+            float fade = Mathf.Clamp01((a - leapAt) / .15f) * (a < windupAt ? 1f : 1f - (a - windupAt) / .2f);
+            float r = knight.LandingRadius;
+            const float Height = 1.6f, Sink = .7f;
+            float box = 2.4f * r;
+            shadow.position = new Vector3(at.x, landing.y + Height * .5f - Sink, at.z);
+            shadow.rotation = Quaternion.identity;
+            shadow.localScale = new Vector3(box, Height, box);
+            shadowView.GetPropertyBlock(block);
+            block.SetFloat(RadiusId, Mathf.Lerp(1.1f * r, .62f * r, low));
+            block.SetFloat(DarknessId, Mathf.Lerp(.12f, .62f, low * low) * fade);
+            block.SetFloat(BoxId, box);
+            shadowView.SetPropertyBlock(block);
+            block.Clear();
+        }
+
+        // ------------------------------------------------------------------ the beats
+
+        // A corner of the pedestal on the floor (0 front right, 1 back left, 2 front left, 3 back right: the order the
+        // hooves come down in).
+        static Vector3 Corner(int i)
+        {
+            float x = i == 0 || i == 3 ? .7f : -.7f, z = i == 0 || i == 2 ? .75f : -.75f;
+            return new Vector3(x, .06f, z);
+        }
+
+        void Grit(Vector3 lip, Vector3 dir)
+        {
+            var across = Vector3.Cross(Vector3.up, dir);
+            var at = lip + across * Random.Range(-1f, 1f) + Vector3.up * .05f;
+            Chip(Random.value < .6f ? grout : marble, at, dir * Random.Range(.2f, .6f) + Vector3.up * Random.Range(0f, .3f), .02f, .045f);
+        }
+
+        void PushedOff(Vector3 start, Vector3 dir)
+        {
+            var across = Vector3.Cross(Vector3.up, dir);
+            for (int i = 0; i < 16; i++)
             {
-                position = from + across * Random.Range(-width * .5f, width * .5f) + Vector3.up * Random.Range(.08f, 1.1f) + dir * Random.Range(0f, .6f),
-                velocity = dir * speed, startLifetime = Mathf.Max(.05f, length / speed), startSize = Random.Range(.05f, .09f),
-                startColor = Color.white
+                var at = start - dir * .6f + across * Random.Range(-.8f, .8f) + Vector3.up * .08f;
+                var v = -dir * Random.Range(1.5f, 3.5f) + across * Random.Range(-1.2f, 1.2f) + Vector3.up * Random.Range(1.5f, 3.2f);
+                Chip(i % 3 == 0 ? grout : marble, at, v, .03f, .07f);
+            }
+            for (int i = 0; i < 8; i++)
+                Spark(start - dir * .7f + across * Random.Range(-.6f, .6f) + Vector3.up * .05f,
+                      -dir * Random.Range(3f, 6f) + across * Random.Range(-2f, 2f) + Vector3.up * Random.Range(.5f, 2f));
+        }
+
+        void Hoof(Transform root, Vector3 corner, Vector3 dir, float weight)
+        {
+            var at = root.TransformPoint(corner);
+            var outward = Vector3.ProjectOnPlane(at - root.position, Vector3.up).normalized;
+            int chips = Mathf.RoundToInt(12 * weight), lights = Mathf.RoundToInt(10 * weight);
+            for (int i = 0; i < chips; i++)
+            {
+                var v = outward * Random.Range(1.5f, 4.5f) + Random.insideUnitSphere * 1.2f + Vector3.up * Random.Range(2f, 4.5f);
+                Chip(i % 3 == 0 ? grout : marble, at + Random.insideUnitSphere * .12f, v, .03f, .08f);
+            }
+            for (int i = 0; i < lights; i++)
+            {
+                var v = (outward + Random.insideUnitSphere * .6f).normalized * Random.Range(3f, 7f);
+                v.y = Mathf.Abs(v.y) * .5f + Random.Range(.3f, 1.5f);
+                Spark(at, v);
+            }
+            Shaker.Shake(at, weight >= 1f ? .11f : .05f, weight >= 1f ? .4f : .2f, 20f);
+        }
+
+        void Paw(Transform root, Vector3 dir, int i)
+        {
+            var at = root.TransformPoint(new Vector3(i == 0 ? .45f : -.45f, .05f, 1.05f));
+            for (int s = 0; s < 12; s++)
+                Spark(at, dir * Random.Range(2.5f, 5.5f) + Vector3.Cross(Vector3.up, dir) * Random.Range(-1.5f, 1.5f)
+                          + Vector3.up * Random.Range(.2f, 1.2f));
+            for (int c = 0; c < 4; c++)
+                Chip(marble, at, dir * Random.Range(1f, 2.5f) + Vector3.up * Random.Range(1f, 2.2f) + Random.insideUnitSphere * .5f, .025f, .05f);
+            Shaker.Shake(at, .025f, .15f, 14f);
+        }
+
+        void Stride(Transform root, Vector3 dir, int i)
+        {
+            var at = root.TransformPoint(new Vector3(i % 2 == 0 ? .6f : -.6f, .05f, -.9f));
+            for (int c = 0; c < 4; c++)
+                Chip(c % 2 == 0 ? grout : marble, at, -dir * Random.Range(1.5f, 3.5f) + Vector3.up * Random.Range(1f, 2.5f)
+                                                     + Random.insideUnitSphere * .5f, .025f, .06f);
+            for (int s = 0; s < 4; s++)
+                Spark(at, -dir * Random.Range(2f, 5f) + Vector3.up * Random.Range(.2f, 1f) + Random.insideUnitSphere * .8f);
+            Shaker.Shake(at, .03f, .12f, 16f);
+        }
+
+        void Skid(Transform root, Vector3 dir)
+        {
+            var at = root.TransformPoint(new Vector3(Random.Range(-.75f, .75f), .04f, 1.05f));
+            if (Random.value < .75f)
+                Spark(at, dir * Random.Range(4f, 8f) + Vector3.Cross(Vector3.up, dir) * Random.Range(-1.2f, 1.2f)
+                          + Vector3.up * Random.Range(.1f, .9f));
+            else
+                Chip(marble, at, dir * Random.Range(2f, 4f) + Vector3.up * Random.Range(.6f, 1.8f), .025f, .05f);
+        }
+
+        // ------------------------------------------------------------------ chips and sparks
+
+        static void Chip(ParticleSystem ps, Vector3 at, Vector3 velocity, float small, float big)
+        {
+            float s = Random.Range(small, big);
+            ps.Emit(new ParticleSystem.EmitParams
+            {
+                position = at, velocity = velocity, startLifetime = Random.Range(1.2f, 1.9f),
+                startSize3D = new Vector3(s, s * Random.Range(.4f, .9f), s * Random.Range(.6f, 1.2f)),
+                rotation3D = new Vector3(Random.Range(0f, 360f), Random.Range(0f, 360f), Random.Range(0f, 360f)),
+                angularVelocity3D = Random.insideUnitSphere * 720f, startColor = Color.white
             }, 1);
         }
 
-        void KickedUp(Vector3 at, Vector3 dir)
+        void Spark(Vector3 at, Vector3 velocity)
         {
-            dust.Emit(new ParticleSystem.EmitParams
+            sparks.Emit(new ParticleSystem.EmitParams
             {
-                position = new Vector3(at.x, knight.LandingPoint.position.y + .15f, at.z) + Random.insideUnitSphere * .5f,
-                velocity = -dir * Random.Range(.5f, 1.5f) + Vector3.up * Random.Range(.3f, 1f) + Random.insideUnitSphere * .5f,
-                startLifetime = Random.Range(.5f, .8f), startSize = Random.Range(.4f, .7f), startColor = new Color(1f, 1f, 1f, .5f)
+                position = at, velocity = velocity, startLifetime = Random.Range(.22f, .5f),
+                startSize = Random.Range(.018f, .034f), startColor = Color.white
             }, 1);
         }
 
@@ -255,7 +379,57 @@ namespace ChessFight.PawnRush
             while (debt >= 1f) { one(); debt -= 1f; }
         }
 
-        ParticleSystem Particles(string name, Color tint, bool stretch, float gravity)
+        // Little lit stone pieces that fall, bounce on the floor and lie a moment.
+        ParticleSystem Chips(string name, Color color, float smoothness)
+        {
+            var ps = System(name, 400, 2.2f);
+            var main = ps.main;
+            main.startSize3D = true;
+            main.startRotation3D = true;
+            var rotate = ps.rotationOverLifetime;
+            rotate.enabled = true;
+            rotate.separateAxes = true;
+            var size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(.8f, 1f), new Keyframe(1f, 0f)));
+            Bounce(ps, .25f, .45f);
+            var r = ps.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.Mesh;
+            r.mesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            r.alignment = ParticleSystemRenderSpace.World;
+            r.sharedMaterial = LitMaterials.NewLit(color, smoothness);
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            ps.Play();
+            return ps;
+        }
+
+        // Hot iron sparks off the shoes: white-gold, cooling to deep orange, streaking, bouncing once.
+        ParticleSystem Sparks()
+        {
+            var ps = System("Knight shoe sparks", 500, 1.3f);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(new Color(1f, .93f, .75f), 0f), new GradientColorKey(new Color(1f, .55f, .18f), .5f),
+                              new GradientColorKey(new Color(.8f, .25f, .05f), 1f) },
+                      new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, .6f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, .3f));
+            Bounce(ps, .35f, .2f);
+            var r = ps.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.Stretch;
+            r.velocityScale = .035f;
+            r.lengthScale = 1.5f;
+            r.sharedMaterial = LitMaterials.NewAdditiveParticles(dot, new Color(3.2f, 1.9f, .7f));
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            ps.Play();
+            return ps;
+        }
+
+        ParticleSystem System(string name, int max, float gravity)
         {
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
@@ -267,38 +441,26 @@ namespace ChessFight.PawnRush
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.startSpeed = 0f;
             main.gravityModifier = gravity;
-            main.maxParticles = 600;
+            main.maxParticles = max;
             var emission = ps.emission;
             emission.rateOverTime = 0f;
             var shape = ps.shape;
             shape.enabled = false;
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var g = new Gradient();
-            var to = name.Contains("dust") || name.Contains("swirl") ? Dust : name.Contains("embers") ? Ember : Gold;
-            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(to, 1f) },
-                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, .15f), new GradientAlphaKey(0f, 1f) });
-            col.color = g;
-            var size = ps.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, name.Contains("dust") || name.Contains("swirl")
-                ? AnimationCurve.Linear(0f, .6f, 1f, 1.4f) : AnimationCurve.Linear(0f, 1f, 1f, .2f));
-            var limit = ps.limitVelocityOverLifetime;
-            if (name.Contains("dust"))
-            {
-                limit.enabled = true;
-                limit.limit = 1f;
-                limit.dampen = .12f;
-            }
-            var r = go.GetComponent<ParticleSystemRenderer>();
-            r.sharedMaterial = LitMaterials.NewAdditiveParticles(dot, tint);
-            r.renderMode = stretch ? ParticleSystemRenderMode.Stretch : ParticleSystemRenderMode.Billboard;
-            r.velocityScale = .1f;
-            r.lengthScale = 1f;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            ps.Play();
             return ps;
+        }
+
+        // They land on the hall's floor and stairs (world colliders; pieces and players do not catch them).
+        static void Bounce(ParticleSystem ps, float bounce, float dampen)
+        {
+            var hit = ps.collision;
+            hit.enabled = true;
+            hit.type = ParticleSystemCollisionType.World;
+            hit.mode = ParticleSystemCollisionMode.Collision3D;
+            hit.quality = ParticleSystemCollisionQuality.Medium;
+            hit.bounce = bounce;
+            hit.dampen = dampen;
+            hit.radiusScale = .5f;
+            hit.enableDynamicColliders = false;
         }
 
         static void Hide(GameObject mark)
@@ -322,6 +484,69 @@ namespace ChessFight.PawnRush
             texture.SetPixels32(pixels);
             texture.Apply(false, true);
             return texture;
+        }
+
+        // ------------------------------------------------------------------ the view shaking
+
+        // The game camera shaken only while it draws (moved before, put back after), so the camera's own follow never
+        // sees it. Settings → 화면 흔들림 (GameSettings.ShakeScale) scales it; it fades out with distance.
+        static class Shaker
+        {
+            static bool hooked;
+            static float amplitude, until, length;
+            static Camera moved;
+            static Vector3 offset;
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            static void Reset()
+            {
+                hooked = false;
+                amplitude = until = length = 0f;
+                moved = null;
+            }
+
+            public static void Hook()
+            {
+                if (hooked) return;
+                hooked = true;
+                RenderPipelineManager.beginCameraRendering += Before;
+                RenderPipelineManager.endCameraRendering += After;
+            }
+
+            public static void Shake(Vector3 at, float metres, float seconds, float reach)
+            {
+                var cam = Camera.main;
+                if (cam == null) return;
+                float near = 1f - Mathf.Clamp01(Vector3.Distance(cam.transform.position, at) / reach);
+                metres *= near * near * GameSettings.ShakeScale;
+                if (metres <= 0f) return;
+                float now = Left();
+                if (metres < now) return;
+                amplitude = metres;
+                length = seconds;
+                until = Time.time + seconds;
+            }
+
+            static float Left() => length > 0f ? amplitude * Mathf.Clamp01((until - Time.time) / length) : 0f;
+
+            static void Before(ScriptableRenderContext context, Camera cam)
+            {
+                if (cam != Camera.main || cam.cameraType != CameraType.Game) return;
+                float a = Left();
+                if (a <= 0f) return;
+                float t = Time.time * 40f;
+                offset = new Vector3(Mathf.PerlinNoise(t, .3f) - .5f, Mathf.PerlinNoise(.7f, t) - .5f, 0f) * (2f * a);
+                offset = cam.transform.rotation * offset;
+                cam.transform.position += offset;
+                moved = cam;
+            }
+
+            static void After(ScriptableRenderContext context, Camera cam)
+            {
+                if (cam != moved) return;
+                cam.transform.position -= offset;
+                moved = null;
+            }
         }
     }
 }

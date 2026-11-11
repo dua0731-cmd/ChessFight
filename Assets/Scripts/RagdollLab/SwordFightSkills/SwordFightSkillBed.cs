@@ -641,7 +641,7 @@ namespace ChessFight.RagdollLab
 
         void OnGUI()
         {
-            if (Game == null || SwordFightSkillFilm.Rolling) return;
+            if (Game == null || SwordFightSkillFilm.Rolling || LabGame.CleanView) return;   // R534: "panels off" / -labCleanView too
             var me = Local;
             if (me == null || me.Skills == null) return;
             Styles();

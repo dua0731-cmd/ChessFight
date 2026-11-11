@@ -16,15 +16,16 @@ public static class NetworkCoreTests
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
-    // A snapshot pawn with every field set from its id, the hook's gauge and point too (R297).
+    // A snapshot pawn with every field set from its id, the hook's gauge and point too (R297). R541: the points far out on
+    // both sides of the old +-320 m (580 m on, 400 m back, a hook up to 4 km off) and a height at its edge.
     static PoseWire WirePose(int id, byte hook)
     {
         var p = new PoseWire
         {
-            Id = (ulong)id * 7919UL + 76561198000000000UL, HipsX = (short)(id * 101), HipsY = (short)-id, HipsZ = short.MaxValue,
+            Id = (ulong)id * 7919UL + 76561198000000000UL, HipsX = id * 101 - 400000, HipsY = (short)-id, HipsZ = 580000 + id * 7,
             Flags = (byte)((id % 3) | ((id * 37) & 0xFC)), Stamina = (byte)(id * 13), Escape = (byte)(id * 29), Hook = hook,
-            HookCharge = (byte)(id * 3 + 1), HookX = (short)(id * -77), HookY = 5, HookZ = (short)(id * 300), Piece = (byte)(id % ChessPieces.Count),
-            Ack = (ushort)(id * 977),
+            HookCharge = (byte)(id * 3 + 1), HookX = id * -77, HookY = short.MaxValue, HookZ = id * 300000 - WirePoint.FlatSteps / 2,
+            Piece = (byte)(id % ChessPieces.Count), Ack = (ushort)(id * 977),
         };
         for (int b = 0; b < RagdollWire.Bodies; b++) p.Rotations[b] = (uint)id * 2654435761u + (uint)b * 40503u;
         return p;
@@ -132,8 +133,12 @@ public static class NetworkCoreTests
             Fnv(Through(w => SwordWire.Write(w, GoldenSword()))),
         });
     }
-    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 001c4e7168c95ab7 8e55c2b172fd2821 "
-                          + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
+    // R538: the two course states (the sixth and the seventh) are CFP6's - a new magic and a seat count in the header.
+    // R541: the two ragdoll snapshots (the first two) and the busy skills packet (the eighth) carry WirePoints - CFRE, x and
+    // z in 24 bits; the empty skills packet and the sword state (the last two) have no such point and did not change.
+    // The other five are the ones pinned at R297.
+    const string Golden = "5692cf432cb34ea9 1bc69825b8c5743e a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 d8194986b34e5938 6aa7acd5e02fe864 "
+                          + "3d8feeaec99034d7 0a5aaf2e798a59b6 52d23acd7ef29404";
     // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286, R287):
     // RoamingFleet.Yard, the yard the seeds are vetted on; the map checks its own fleet against it.
     static RoamingFleet YardFleet(double start, uint seed) => RoamingFleet.Yard(seed, start);
@@ -1046,6 +1051,28 @@ public static class NetworkCoreTests
                 var none = new PawnRushNetState().Write(7UL);
                 Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
                 bytes[PawnRushNetState.FinisherCountAt] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+            Test("Pawn Rush course state (CFP6, R538): each seat's checkpoint and piece round-trip after everything else, too many are refused", () => {
+                var a = new PawnRushNetState { Tick = 3, HostTimeMs = 99, StationCount = 2, PartsLength = 5, SeatCount = 3 };
+                for (int k = 0; k < 5; k++) a.Parts[k] = (byte)(40 + k);
+                a.SeatRef[0] = SkillWire.Ref(0, 0); a.SeatCheckpoint[0] = PawnRushNetState.CheckpointOf(int.MinValue); a.SeatPiece[0] = (byte)PieceKind.Pawn;
+                a.SeatRef[1] = SkillWire.Ref(1, 4); a.SeatCheckpoint[1] = PawnRushNetState.CheckpointOf(203); a.SeatPiece[1] = (byte)PieceKind.Queen;
+                a.SeatRef[2] = SkillWire.Ref(0, 5); a.SeatCheckpoint[2] = PawnRushNetState.CheckpointOf(-1); a.SeatPiece[2] = (byte)PieceKind.Rook;
+                byte[] sent = (byte[])a.Write(11UL).Clone();
+                Check(sent.Length == a.Bytes && sent.Length == PawnRushNetState.HeaderBytes + 2 + 2 * PawnRushNetState.StationFixedBytes + 5 + 3 * PawnRushNetState.SeatBytes, "size " + sent.Length);
+                var b = new PawnRushNetState();
+                Check(PawnRushNetState.Read(sent, 11UL, b) && b.SeatCount == 3 && b.PartsLength == 5 && b.Parts[4] == 44, "read");
+                Check(b.SeatRef[0] == SkillWire.Ref(0, 0) && b.SeatCheckpoint[0] == PawnRushNetState.NoCheckpoint && b.SeatPiece[0] == (byte)PieceKind.Pawn, "a seat that has reached no checkpoint");
+                Check(b.SeatRef[1] == SkillWire.Ref(1, 4) && b.SeatCheckpoint[1] == 203 && b.SeatPiece[1] == (byte)PieceKind.Queen && b.SeatCheckpoint[2] == -1 && b.SeatPiece[2] == (byte)PieceKind.Rook, "checkpoints and pieces");
+                Check(PawnRushNetState.CheckpointOf(100000) == short.MaxValue && PawnRushNetState.CheckpointOf(int.MinValue) == PawnRushNetState.NoCheckpoint, "the checkpoint's range");
+                var c = new PawnRushNetState(); c.CopyFrom(b);
+                Check(c.SeatCount == 3 && c.SeatCheckpoint[1] == 203 && c.SeatPiece[2] == (byte)PieceKind.Rook, "a copy carries them");
+                // Most states carry none: the same packet a seat table shorter.
+                a.SeatCount = 0; byte[] bare = (byte[])a.Write(11UL).Clone();
+                Check(bare.Length == sent.Length - 3 * PawnRushNetState.SeatBytes && PawnRushNetState.Read(bare, 11UL, b) && b.SeatCount == 0, "a state without the seats");
+                var thirteen = (byte[])sent.Clone(); thirteen[PawnRushNetState.FinisherCountAt + 3] = 13;
+                Check(!PawnRushNetState.Read(thirteen, 11UL, b), "thirteen seats");
+                var cut = new byte[sent.Length - 1]; Array.Copy(sent, cut, cut.Length);
+                Check(!PawnRushNetState.Read(cut, 11UL, b), "a seat byte short"); });
             Test("Pawn Rush course state (CFP5, R508): a round's six stations and its sections' bytes round-trip, too many are refused", () => {
                 var a = new PawnRushNetState { Tick = 5, HostTimeMs = 99, StationCount = 6, PadsUsed = 0x3f };
                 for (int st = 0; st < 6; st++) { a.Game[st] = (sbyte)(st / 2 * 3); a.Progress[st] = st / 6f; a.Completed[st] = st == 5; a.PadChooser[st] = (byte)(st == 4 ? 7 : PawnRushNetState.NoChooser); }
@@ -1410,7 +1437,7 @@ public static class NetworkCoreTests
                 Check(fit>=8,"room for at least eight moments next to everything, got "+fit);
                 Check(header+SkillWire.Size(12,12,4,fit)<=1024,"over 1024");
                 Check(SkillWire.Size(12,0,0,0)<1024-header,"twelve states alone");
-                Check(SkillWire.StateBytes==29&&SkillWire.EventBytes==28&&SkillWire.WireBytes==18,"sizes as documented"); });
+                Check(SkillWire.StateBytes==33&&SkillWire.EventBytes==32&&SkillWire.WireBytes==20,"sizes as documented (R541: 29, 28, 18 before)"); });
             Test("Skills packet round trip keeps every field within its step and rejects bad packets", () => {
                 var p=new SkillWirePacket{HostTimeMs=123456,FirstSeq=65530};
                 p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Flags=0xA5,Flags2=3,StageTime=1.234f,Cooldown=7.25f,CooldownTotal=12f,Dx=0.6f,Dy=0.8f,Px=-12.345f,Py=1.5f,Pz=33.3f,Qx=4,Qy=-0.5f,Qz=79,Target=SkillWire.Ref(0,5),Other=SkillWire.None,A=2.5f,B=25.5f,C=200,D=7});
@@ -1435,6 +1462,35 @@ public static class NetworkCoreTests
                 var badStage=(byte[])b.Clone(); badStage[SkillWire.HeaderBytes+1]=9;
                 Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(badStage)),badStage.Length,q),"stage out of range");
                 SkillWire.Place(SkillWire.Ref(1,5),out int team,out int slot); Check(team==1&&slot==5&&SkillWire.Ref(2,0)==SkillWire.None,"roster places"); });
+            Test("Skills packet (R541): points far down a seven-section round come back to the millimetre (pinned at 320 m before)", () => {
+                var p=new SkillWirePacket{HostTimeMs=1,FirstSeq=1};
+                p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Px=-2000.25f,Py=15.2f,Pz=580.125f,Qx=12,Qy=-0.5f,Qz=-579.5f,Target=SkillWire.None,Other=SkillWire.None});
+                p.Wires.Add(new SkillWireObject{Id=9,Owner=SkillWire.Ref(0,1),X=4.5f,Y=7f,Z=566.75f});
+                p.Events.Add(new SkillWireEvent{Seq=1,TimeMs=1,Mode=SkillWire.ModeRetiredQueenHill,Kind=9,By=SkillWire.Ref(1,3),Target=SkillWire.None,X=-3,Y=15,Z=575.5f,Dz=-1,Ux=1,Uy=2,Uz=600.25f,Count=1});
+                byte[] b=Through(w=>SkillWire.Write(w,p));
+                var q=new SkillWirePacket(); Check(b.Length==SkillWire.Size(1,1,0,1)&&SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b)),b.Length,q),"read");
+                var s=q.States[0]; var o=q.Wires[0]; var e=q.Events[0];
+                Check(Math.Abs(s.Px+2000.25f)<0.0011f&&Math.Abs(s.Pz-580.125f)<0.0011f&&Math.Abs(s.Qz+579.5f)<0.0011f&&Math.Abs(s.Py-15.2f)<0.005f,"state points");
+                Check(Math.Abs(o.X-4.5f)<0.0011f&&Math.Abs(o.Z-566.75f)<0.0011f&&Math.Abs(o.Y-7f)<0.005f,"wire");
+                Check(Math.Abs(e.Z-575.5f)<0.0011f&&Math.Abs(e.Uz-600.25f)<0.0011f&&Math.Abs(e.Y-15f)<0.005f,"event points"); });
+            Test("Wire point (R541): a millimetre across +-8388 m and a centimetre up +-320 m; the edges, the signs, NaN", () => {
+                Check(WirePoint.Bytes==8&&WirePoint.FlatSteps==8388607&&Math.Abs(WirePoint.FlatRange-8388.607f)<0.001f,"sizes");
+                foreach(float m in new[]{0f,0.0004f,-0.0006f,1.5f,-1.5f,319.9f,320.5f,580.25f,-580.25f,-2000f,8388.6f,-8388.6f})
+                {
+                    float back=WirePoint.FromFlat(WirePoint.ToFlat(m));
+                    Check(Math.Abs(back-m)<=0.0005f+Math.Abs(m)*1e-6f,"across "+m+" came back as "+back);
+                }
+                Check(WirePoint.ToFlat(9000f)==WirePoint.FlatSteps&&WirePoint.ToFlat(-9000f)==-WirePoint.FlatSteps&&WirePoint.ToFlat(float.NaN)==0,"across: clamped, NaN");
+                Check(WirePoint.ToFlat(float.PositiveInfinity)==WirePoint.FlatSteps&&WirePoint.ToFlat(float.NegativeInfinity)==-WirePoint.FlatSteps,"across: infinities");
+                foreach(float m in new[]{0f,2.8f,15f,-40f,319f,-319f})
+                    Check(Math.Abs(WirePoint.FromHeight(WirePoint.ToHeight(m))-m)<0.005f,"up "+m);
+                Check(WirePoint.ToHeight(400f)==short.MaxValue&&WirePoint.ToHeight(-400f)==-short.MaxValue&&WirePoint.ToHeight(float.NaN)==0,"up: clamped, NaN");
+                foreach(int x in new[]{0,1,-1,32767,32768,-32768,-32769,65535,65536,-65536,580000,-400000,WirePoint.FlatSteps,-WirePoint.FlatSteps})
+                {
+                    byte[] bytes=Through(w=>WirePoint.Write(w,x,(short)-7,-x));
+                    WirePoint.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(bytes)),out int qx,out short qy,out int qz);
+                    Check(bytes.Length==WirePoint.Bytes&&qx==x&&qy==-7&&qz==-x,"24 bits: "+x+" came back as "+qx+", "+qz);
+                } });
             Test("Skills packet carries the Sword Fight test's moments (R121) and nothing past them", () => {
                 var p=new SkillWirePacket{HostTimeMs=5000,FirstSeq=1};
                 p.Events.Add(new SkillWireEvent{Seq=1,TimeMs=4990,Mode=SkillWire.ModeSwordFight,Kind=36,By=SkillWire.Ref(0,2),Target=SkillWire.Ref(1,0),X=6.5f,Y=0.4f,Z=-1,Dx=1,Count=1,Size=3.5f});
@@ -1577,7 +1633,7 @@ public static class NetworkCoreTests
                 Check(!InputChange.Moved(1,0,0.5f,0)&&!InputChange.Moved(0.05f,0,0,0.05f)&&!InputChange.Moved(0,0,0,0),"slower, the dead zone, standing");
                 Check(InputChange.Moved(1,0,-1,0),"turned round"); });
             Test("Snapshot rate (R306 [5]): 60 a second up to six players or a small party with bots, 30 above", () => {
-                Check(SnapshotRate.SnapshotBytes(4)==290&&SnapshotRate.SnapshotBytes(12)==810,"sizes as HOST_AUTHORITY §6");
+                Check(SnapshotRate.SnapshotBytes(4)==298&&SnapshotRate.SnapshotBytes(12)==834,"sizes as HOST_AUTHORITY §6 (R541)");
                 for(int players=2;players<=6;players++) Check(SnapshotRate.Interval(players-1,players)==SnapshotRate.Fast,players+" players: 60");
                 for(int players=7;players<=12;players++) Check(SnapshotRate.Interval(players-1,players)==SnapshotRate.Normal,players+" players: 30");
                 Check(SnapshotRate.Interval(1,12)==SnapshotRate.Fast&&SnapshotRate.Interval(2,12)==SnapshotRate.Fast&&SnapshotRate.Interval(3,12)==SnapshotRate.Normal,"bots filling up to twelve");
@@ -1800,37 +1856,32 @@ public static class NetworkCoreTests
                 var early = new WarmupMeter();
                 for (int i = 0; i < 20; i++) early.Add(5);
                 Check(!early.Done && early.Fraction < 1, "too soon even when smooth"); });
-            Test("Backfill: an empty seat goes to the team that lost a player, and only up to the size that team started with", () => {
-                Func<int, int, ulong, Backfill.Seat> seat = (t, slot, id) => new Backfill.Seat { Id = id, Team = t, Slot = slot };
-                var sixes = new[] { 6, 6 };
-                var taken = new List<Backfill.Seat>();
-                for (int s = 0; s < 6; s++) taken.Add(seat(0, s, (ulong)(10 + s)));
-                foreach (int s in new[] { 0, 1, 2, 4, 5 }) taken.Add(seat(1, s, (ulong)(20 + s)));
-                Check(Backfill.Free(sixes, taken, 0) == 0 && Backfill.Free(sixes, taken, 1) == 1, "free seats");
-                Check(Backfill.Place(sixes, taken, 1, out int team, out int[] slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "the leaver's seat");
-                Check(!Backfill.Place(sixes, taken, 2, out _, out _), "a party of two split or squeezed in");
-                var fives = new[] { 5, 5 };
-                var five = taken.Where(s => s.Slot < 5).ToList();
-                Check(Backfill.Place(fives, five, 1, out team, out slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "a 5 v 5 match refills its own seat");
-                five.Add(seat(1, 3, 99));
-                Check(Backfill.Free(fives, five, 0) == 0 && Backfill.Free(fives, five, 1) == 0 && !Backfill.Place(fives, five, 1, out _, out _), "a sixth player got into a 5 v 5 team");
-                var few = new List<Backfill.Seat> { seat(0, 1, 1), seat(1, 0, 2), seat(1, 2, 3) };
-                Check(Backfill.Place(sixes, few, 2, out team, out slots) && team == 0 && slots.SequenceEqual(new[] { 0, 2 }), "more empty seats first, lowest free slots");
-                Check(Backfill.Place(new[] { 1, 1 }, new List<Backfill.Seat>(), 1, out team, out _) && team == 0, "a tie goes to white");
-                Check(Backfill.Free(null, few, 0) == 0 && !Backfill.Place(null, few, 1, out _, out _), "no known size, no seat");
+            Test("Starters (R538): a started match knows who it started with, who is away, and gives a player back only their own seat", () => {
+                var starters = new List<Starters.Seat>();
+                for (int k = 0; k < 3; k++) starters.Add(new Starters.Seat { Id = (ulong)(10 + k), Team = 0, Slot = k });
+                for (int k = 0; k < 3; k++) starters.Add(new Starters.Seat { Id = (ulong)(20 + k), Team = 1, Slot = k });
+                var seated = new HashSet<ulong> { 10, 11, 12, 20, 22 };
+                Check(Starters.Away(starters, seated, 0) == 0 && Starters.Away(starters, seated, 1) == 1, "who is away");
+                seated.Add(99);   // someone the match did not start with changes nothing
+                Check(Starters.Away(starters, seated, 1) == 1 && Starters.Away(null, seated, 0) == 0 && Starters.Away(starters, null, 0) == 0, "strangers and nothing known");
+                Check(Starters.SeatOf(starters, 21, out var seat) && seat.Team == 1 && seat.Slot == 1, "a starter's own seat");
+                Check(!Starters.SeatOf(starters, 99, out _) && !Starters.SeatOf(starters, 0, out _) && !Starters.SeatOf(null, 21, out _), "nobody else has one");
                 Check(TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 2 }) && !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 2 }) &&
                       !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 1 }) && !TeamReservations.ValidRequest(1, 101, "t", null), "request shape"); });
-            Test("Backfill: seats are offered for four minutes after the start, and the room keeps sizes and held seats as text", () => {
-                Check(Backfill.OpenSeconds == 240 && Backfill.Open(0, 5) && Backfill.Open(1000, 1000 + Backfill.OpenSeconds - .5) && !Backfill.Open(1000, 1000 + Backfill.OpenSeconds), "window");
-                Check(Backfill.EncodeCapacity(6, 5) == "6,5" && Backfill.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
-                Check(Backfill.DecodeCapacity("") == null && Backfill.DecodeCapacity("7,6") == null && Backfill.DecodeCapacity("6") == null &&
-                      Backfill.DecodeCapacity("-1,6") == null && Backfill.DecodeCapacity("a,b") == null, "bad sizes");
-                var held = new[] { new Backfill.Seat { Id = 76561198000000001, Team = 1, Slot = 3, Until = 1790743925 }, new Backfill.Seat { Id = 5, Team = 0, Slot = 0, Until = 1790743930 } };
-                var back = Backfill.DecodeHeld(Backfill.EncodeHeld(held));
-                Check(back.Count == 2 && back[0].Id == 76561198000000001 && back[0].Team == 1 && back[0].Slot == 3 && back[0].Until == 1790743925 && back[1].Id == 5, "held round trip");
-                Check(Backfill.EncodeHeld(new Backfill.Seat[0]) == "" && Backfill.DecodeHeld(null).Count == 0, "nothing held");
-                var messy = Backfill.DecodeHeld("0:0:0:1;7:2:0:1;8:0:6:1;9:0:1:x;10:1:1:5;10:0:2:5;11:1:1:5;12:0:0:5:9");
-                Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1, "bad held entries kept"); });
+            Test("Starters (R538): the room keeps the starters and the team sizes as text", () => {
+                var two = new[] { new Starters.Seat { Id = 76561198000000001, Team = 1, Slot = 3 }, new Starters.Seat { Id = 5, Team = 0, Slot = 0 } };
+                Check(Starters.Encode(two) == "76561198000000001:1:3;5:0:0", "as text: " + Starters.Encode(two));
+                var back = Starters.Decode(Starters.Encode(two));
+                Check(back.Count == 2 && back[0].Id == 76561198000000001 && back[0].Team == 1 && back[0].Slot == 3 && back[1].Id == 5 && back[1].Team == 0, "round trip");
+                Check(Starters.Encode(new Starters.Seat[0]) == "" && Starters.Decode(null).Count == 0 && Starters.Decode("").Count == 0, "nobody");
+                // A zero id, a third team, a seventh seat, a word for a number, a seat taken twice, an id twice, a field too many.
+                var messy = Starters.Decode("0:0:0;7:2:0;8:0:6;9:0:x;10:1:1;11:1:1;10:0:2;12:0:0:5");
+                Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1 && messy[0].Slot == 1, "bad entries kept: " + messy.Count);
+                var many = string.Join(";", Enumerable.Range(0, 20).Select(k => (100 + k) + ":" + (k % 2) + ":" + (k / 2 % 6)));
+                Check(Starters.Decode(many).Count <= 12, "more starters than a match has seats");
+                Check(Starters.EncodeCapacity(6, 5) == "6,5" && Starters.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
+                Check(Starters.DecodeCapacity("") == null && Starters.DecodeCapacity("7,6") == null && Starters.DecodeCapacity("6") == null &&
+                      Starters.DecodeCapacity("-1,6") == null && Starters.DecodeCapacity("a,b") == null, "bad sizes"); });
             Test("Chat: a line is one clean line of at most eighty characters, and only chat lines decode", () => {
                 Check(ChatText.Clean("  안녕\n하세요\t\t 폰 러시  ") == "안녕 하세요 폰 러시", "white space");
                 Check(ChatText.Clean("a\u202Eb\u200Bc\u0007d") == "abc d", "control and format characters");
@@ -2223,17 +2274,17 @@ public static class NetworkCoreTests
                 Check(AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000001UL, out s1)
                       && AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000002UL, out s2) && s1 != s2 && s1 != 0, "every PC its own");
                 Check(AutoPilot.Requested(new[] { "-autopilot" }, 0, out seed) && seed != 0, "never 0"); });
-            Test("Ragdoll snapshot (R297): 30-byte header, 65 bytes a pawn and 72 while its hook is out of the hand; 12 fit in 1024", () => {
-                Check(RagdollWire.HeaderBytes == 30 && RagdollWire.PoseBytes == 65 && RagdollWire.MaxPoseBytes == 72, "sizes");
+            Test("Ragdoll snapshot (R297, R541): 30-byte header, 67 bytes a pawn and 76 while its hook is out of the hand; 12 fit in 1024", () => {
+                Check(RagdollWire.HeaderBytes == 30 && RagdollWire.PoseBytes == 67 && RagdollWire.MaxPoseBytes == 76 && RagdollWire.HookBytes == 9, "sizes");
                 Check(RagdollWire.HeaderBytes + 12 * RagdollWire.MaxPoseBytes <= RagdollWire.MaxBytes, "12 swung hooks fit");
                 var poses = new List<PoseWire>();
                 for (int i = 0; i < 14; i++) poses.Add(WirePose(i + 1, 0));
-                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "12 pawns, hooks put away: 810 bytes (918 before)");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 834, "12 pawns, hooks put away: 834 bytes (810 from R297, 918 before)");
                 poses[3].Hook = 1;
-                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "a hook in the hand adds nothing");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 834, "a hook in the hand adds nothing");
                 poses[5].Hook = 3;
-                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 817, "a flying hook adds its 7");
-                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 14).Length == 817, "never more than 12 pawns");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 843, "a flying hook adds its 9");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 14).Length == 843, "never more than 12 pawns");
                 Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 0).Length == 30, "none"); });
             Test("Ragdoll snapshot (R297): every field comes back; a hook put away or in the hand reads 0 for its gauge and point", () => {
                 var poses = new List<PoseWire>();
@@ -2253,10 +2304,10 @@ public static class NetworkCoreTests
             Test("Ragdoll snapshot (R297): read only if it ends exactly where its last pawn does, every field in range", () => {
                 var into = new SnapshotWire();
                 byte[] good = RagdollWire.Snapshot(5, 1, 1, 0, new List<PoseWire> { WirePose(1, 0), WirePose(2, 4), WirePose(3, 1) }, 3);
-                Check(good.Length == 30 + 65 + 72 + 65 && RagdollWire.ReadSnapshot(good, 5, into), "good");
+                Check(good.Length == 30 + 67 + 76 + 67 && RagdollWire.ReadSnapshot(good, 5, into), "good");
                 Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 1), 5, into), "a byte short");
                 Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length + 1), 5, into), "a byte over");
-                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 7), 5, into), "a hook's tail short");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - RagdollWire.HookBytes), 5, into), "a hook's tail short");
                 Check(!RagdollWire.ReadSnapshot(Resized(good, 1025), 5, into) && !RagdollWire.ReadSnapshot(Resized(good, 29), 5, into), "too long, too short");
                 Check(!RagdollWire.ReadSnapshot(good, 6, into), "another match");
                 var bad = (byte[])good.Clone(); bad[0] ^= 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "magic");
@@ -2264,13 +2315,14 @@ public static class NetworkCoreTests
                 bad = (byte[])good.Clone(); bad[29] = 2; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 2");
                 bad = (byte[])good.Clone(); bad[29] = 4; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 4");
                 bad = (byte[])good.Clone(); bad[29] = 13; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 13");
-                // The second pawn (from byte 95): its hook at +61. As 1 its tail would be read as the third pawn.
-                bad = (byte[])good.Clone(); bad[95 + 61] = 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "a tail behind a hook in the hand");
-                bad = (byte[])good.Clone(); bad[95 + 61] = 6; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "hook 6");
-                bad = (byte[])good.Clone(); bad[30 + 58] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "state 3");
-                bad = (byte[])good.Clone(); bad[30 + 62] = 200; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "no such piece");
+                // The second pawn (from byte 97): its hook at +63 (R541: id 8, point 8, rotations 44, flags, stamina,
+                // escape). As 1 its tail would be read as the third pawn.
+                bad = (byte[])good.Clone(); bad[97 + 63] = 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "a tail behind a hook in the hand");
+                bad = (byte[])good.Clone(); bad[97 + 63] = 6; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "hook 6");
+                bad = (byte[])good.Clone(); bad[30 + 60] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "state 3");
+                bad = (byte[])good.Clone(); bad[30 + 64] = 200; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "no such piece");
                 bad = (byte[])good.Clone(); Array.Clear(bad, 30, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "id 0");
-                bad = (byte[])good.Clone(); Array.Copy(bad, 30, bad, 30 + 65 + 72, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "an id twice");
+                bad = (byte[])good.Clone(); Array.Copy(bad, 30, bad, 30 + 67 + 76, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "an id twice");
                 Check(!RagdollWire.ReadSnapshot(RagdollWire.Snapshot(5, 1, 1, double.NaN, new List<PoseWire> { WirePose(1, 0) }, 1), 5, into), "NaN clock");
                 Check(RagdollWire.ReadSnapshot(good, 5, into) && into.Count == 3, "a refused packet leaves the next one readable"); });
             Test("Ragdoll snapshot (R297): the 16-bit echo of a send time still gives the round trip across its wrap", () => {
@@ -2393,6 +2445,17 @@ public static class NetworkCoreTests
                 Check(HostFitness.Base(30, 8, 16000, false, 80) < HostFitness.Base(40, 8, 16000, false, 4), "a fast CPU does not make up for an integrated chip");
                 Check(HostFitness.Base(30, 8, 16000, false, 4) > HostFitness.Base(40, 8, 16000, false, 4), "with good cards on both, the processor decides");
                 Check(HostFitness.GpuFactor(double.NaN) == 1 && HostFitness.Base(0, 8, 16000, false, 4) == 0, "nothing measured"); });
+            Test("The host of a running match (R536): a PC a tenth better takes it, one of the same class does not; pings and unknown machines as at the start", () => {
+                var host = new HostElection.Candidate { Id = 5, Fitness = 400, BaseFitness = 1000, PingMs = 20 };
+                Func<int, int, int, HostElection.Candidate> other = (machine, ping, now) => new HostElection.Candidate { Id = 3, Fitness = now > 0 ? now : machine, BaseFitness = machine, PingMs = ping };
+                Func<HostElection.Candidate, ulong> elect = c => HostElection.StartHost(5, new[] { host, c }, HostElection.LiveMargin);
+                Check(HostElection.LiveMargin > HostElection.StartMargin && HostElection.LiveMargin < HostElection.StruggleMargin, "between the start's margin and a struggling host's");
+                Check(elect(other(1099, 20, 0)) == 5 && elect(other(1000, 20, 0)) == 5, "a PC of the same class (a lower Steam ID, too) leaves the host where it is");
+                Check(elect(other(1101, 20, 0)) == 3 && elect(other(1500, 20, 0)) == 3, "a tenth better takes the match");
+                // Machines alone, as at the start: the newcomer's frame rate has just dipped, the host's is low because it hosts.
+                Check(elect(other(1500, 20, 300)) == 3, "frame rates of the moment decided it");
+                Check(elect(other(1500, 240, 0)) == 5, "a far-away PC is not the better host");
+                Check(elect(other(0, 20, 0)) == 5, "an unmeasured machine took the match"); });
             Test("Leave penalty (R533, rule 3): two desertions free, then 10 minutes, 30 minutes, an hour; each counts for 24 hours", () => {
                 Check(LeavePenalty.BanSeconds(0) == 0 && LeavePenalty.BanSeconds(1) == 0 && LeavePenalty.BanSeconds(2) == 0, "two chances");
                 Check(LeavePenalty.BanSeconds(3) == 600 && LeavePenalty.BanSeconds(4) == 1800 && LeavePenalty.BanSeconds(5) == 3600 && LeavePenalty.BanSeconds(9) == 3600,

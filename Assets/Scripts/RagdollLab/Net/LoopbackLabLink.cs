@@ -38,8 +38,22 @@ namespace ChessFight.RagdollLab
             if (mode == null || !SceneWantsLink() || FindFirstObjectByType<LabNetLink>() != null) return;
             if (HasArg("-labTrace")) Trace = true;
             int port = int.TryParse(Arg("-labLoopbackPort"), out int p) ? p : DefaultPort;
-            if (mode == "host") StartHost(port);
+            if (mode == "host")
+            {
+                var link = StartHost(port);
+                // R534: -labScript <file> runs that script (as Script) once a client is in the match (a built host).
+                string file = Arg("-labScript");
+                if (!string.IsNullOrEmpty(file) && System.IO.File.Exists(file)) link.StartCoroutine(link.ScriptWhenJoined(System.IO.File.ReadAllText(file)));
+            }
             else StartClient(Arg("-labLoopback", 2) ?? "127.0.0.1", port);
+        }
+
+        System.Collections.IEnumerator ScriptWhenJoined(string text)
+        {
+            while (!(hosting && peers.Count > 0 && MatchActive)) yield return null;
+            float settle = Time.realtimeSinceStartup + 2f;   // the client's pawn spawned and its first snapshots played
+            while (Time.realtimeSinceStartup < settle) yield return null;
+            Log("script from -labScript: " + Script(text));
         }
 
         /// <summary>Host a loopback match here (any other link in the scene is closed first).</summary>

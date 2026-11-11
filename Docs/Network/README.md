@@ -13,6 +13,7 @@
 | [HOST_AUTHORITY.md](HOST_AUTHORITY.md) | **R117** 방장 판정 방식 점검: 좋은 점·우려·다른 방식 비교, 지연·올림 계산, 다듬을 것 P1~P9, **3인 시험 순서와 수치 읽는 법·보고 양식** |
 | [HOST.md](HOST.md) | 방장 선정(PC 성능·핑)과 이전 |
 | [VALIDATION.md](VALIDATION.md) | 실제 확인 기록과 Unity 확인 목록 |
+| [FOUR_PLAYER_TEST.md](FOUR_PLAYER_TEST.md) | (R539) 여러 PC 테스트 체크리스트: 물리 담당 PC와 참가자 PC의 화면이 어긋나는 것을 잡는 방법 네 가지와 항목, 결과 읽는 법 |
 
 ## 1. 한눈에
 

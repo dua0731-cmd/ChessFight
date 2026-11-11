@@ -77,6 +77,15 @@ namespace ChessFight.Game
         // Raise the version for every build handed to testers, so stale copies
         // are told to update instead of desyncing.
         public static string BuildTag => Application.version + (Debug.isDebugBuild ? "-dev" : "");
+        // R540 (user 11-10: "지금 빌드 파일에서는 AI봇 추가나 1대1일 경우에 게임을 시작하지 못해서 테스트가 불가능해. 나중에 제거하면
+        // 되니까 우선 1대1이상인 경우에도 게임이 가능하도록"): TEMPORARY. The team tests with plain (release) builds, where a
+        // public room started only from three a side and took no bots - four people could not start a match. While
+        // this is true a release build has the development build's room rules: the manager starts from one a side
+        // with the sides even (SteamSession.MinTeamToStart), the room takes bots (the entrance screen's "봇 추가 +"),
+        // and F9 in the lobby wipes this player's desertions (a test leaves matches again and again).
+        // TO REMOVE: set this to false. Nothing else changes: release builds go back to three a side, people only.
+        public const bool TestRulesInEveryBuild = true;
+        public static bool TestRules => Debug.isDebugBuild || TestRulesInEveryBuild;
 
         public static NetworkRuntime Ensure()
         {
@@ -95,14 +104,18 @@ namespace ChessFight.Game
             Controls = MoveInputSources.Create();
             Controls.Enable();
             // Development and release builds never meet: the build tag differs,
-            // and only development builds may take bots into public matches.
-            Session = new SteamSession(BuildTag, Debug.isDebugBuild);
+            // and only development builds may take bots into public matches - or, while TestRulesInEveryBuild
+            // is on (R540), every build.
+            Session = new SteamSession(BuildTag, TestRules);
             // The name chosen on the name screen (R84), shown and published by the session.
             Session.LocalName = PlayerProfile.Name;
             // R502: the host writes the shared start ("go") on the same clock every PC starts by.
             Session.SharedClock = clock.Now;
             // R533 (user 11-10, rule 3: "빌드용, 에디터는 미적용"): desertions are counted and matchmaking stopped in builds
             // only; the list is kept between runs, one for each Steam account on this PC.
+            // R538: the started match this player may come back to, kept between runs (a crash, a closed game).
+            Session.LoadRejoin = () => PlayerPrefs.GetString(RejoinKey, "");
+            Session.SaveRejoin = text => { PlayerPrefs.SetString(RejoinKey, text); PlayerPrefs.Save(); };
             Session.LeavePenaltyOn = !Application.isEditor;
             // Every online match's Esc menu (this one's, Sword Fight's own) says what leaving would cost just now.
             GameMenu.OnlineCost = () => Session != null ? Session.LeaveWarning : "";
@@ -152,6 +165,7 @@ namespace ChessFight.Game
         }
 
         string LeavesKey => "ChessFight.Leaves." + (Session != null ? Session.Self : 0);
+        string RejoinKey => "ChessFight.Rejoin." + (Session != null ? Session.Self : 0);
 
         // The in-game menu's 나가기 in a network match (R533): the player's own choice, a desertion while the match is
         // under way; the menu's warning says first what this one would cost.

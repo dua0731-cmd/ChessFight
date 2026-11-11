@@ -173,6 +173,17 @@ namespace ChessFight.RagdollLab.Net
         readonly Dictionary<ICharacterDriver, Runner> byDriver = new Dictionary<ICharacterDriver, Runner>();
         readonly Dictionary<RagdollPawn, Runner> byPawn = new Dictionary<RagdollPawn, Runner>();
         readonly List<ulong> gone = new List<ulong>();
+        // R538: the seats of players who are away (a match keeps a leaver's seat for them alone, SteamSession): the
+        // checkpoint each had reached and the piece it was, by seat (SkillWire.Ref). Kept on every PC - from its own
+        // runner when the player leaves, or from the host's course state (a PC that was away itself then) - so
+        // whoever hosts when the player comes back puts them there.
+        struct AwaySeat { public int Checkpoint; public PieceKind Piece; }
+        readonly Dictionary<byte, AwaySeat> away = new Dictionary<byte, AwaySeat>();
+        // The course's checkpoints, found once (the round is built before anyone runs).
+        Checkpoint[] checkpoints;
+        // The host's seat table (PawnRushNetState.Seat*): what it sent last, and how many more states carry it.
+        int sentSeats, seatRepeats;
+        const int SeatEvery = 15, SeatRepeat = 3;
         readonly IntPtr[] incoming = new IntPtr[64];
         // Every message read into one reused array of its length (R297): nothing here keeps one past its turn.
         readonly PacketPool inbound = new PacketPool(RagdollNetProtocol.MaxBytes);
@@ -370,33 +381,52 @@ namespace ChessFight.RagdollLab.Net
 
         // ------------------------------------------------------------------ roster
 
+        float nextNameRefresh;
         void SyncRoster()
         {
+            bool refreshNames = Time.unscaledTime >= nextNameRefresh;
+            if (refreshNames) nextNameRefresh = Time.unscaledTime + 1f;
             gone.Clear();
             foreach (var id in runners.Keys) if (!session.Roster.ContainsKey(id)) gone.Add(id);
             foreach (var id in gone) Remove(id);
             foreach (var e in session.Roster)
-                if (!runners.ContainsKey(e.Key)) Spawn(e.Key, Mathf.Clamp(e.Value.Team, 0, 1), Mathf.Max(0, e.Value.Slot));
+            {
+                if (!runners.TryGetValue(e.Key, out var runner)) Spawn(e.Key, Mathf.Clamp(e.Value.Team, 0, 1), Mathf.Max(0, e.Value.Slot));
+                else if (refreshNames) runner.Pawn.DisplayName = session.Name(e.Key);
+            }
         }
 
         void Spawn(ulong id, int team, int slot)
         {
             SpawnSpot(team, slot, out var at, out var rotation);
+            // R538 (user 11-10: "나간 사람만 돌아올 수 있어야 하며 나간 시점의 구간의 체크포인트에서 시작되어야 해"): a player who
+            // comes back starts where its seat left off - on the checkpoint it had reached when it left, the spot a fall
+            // would have put it back on - and as the piece it was. A seat nobody has left starts on the start square.
+            int reached = int.MinValue;
+            var piece = PieceKind.Pawn;
+            if (away.TryGetValue(SkillWire.Ref(team, slot), out var was))
+            {
+                away.Remove(SkillWire.Ref(team, slot));
+                piece = was.Piece;
+                if (CheckpointSpot(was.Checkpoint, team, slot, out var spot, out var facing)) { reached = was.Checkpoint; at = spot; rotation = facing; }
+            }
             var pawn = Instantiate(prefab, at + Vector3.up * .02f, rotation);
             string name = session.Name(id);
             pawn.name = name;
             pawn.DisplayName = name;
             pawn.Team = team;
+            MatchNameplate.Attach(pawn);
             pawn.skin.sharedMaterial = team == Teams.White ? white : black;
             var driver = pawn.GetComponent<RagdollDriver>();
             if (driver == null) driver = pawn.gameObject.AddComponent<RagdollDriver>();
             driver.Teleport(at, rotation);
             if (!authority) pawn.SetNetworkPuppet(true);
             var r = new Runner { Id = id, Team = team, Slot = slot, Bot = BotIdentity.IsBot(id), Pawn = pawn, Driver = driver,
-                                 RespawnAt = at, RespawnRotation = rotation };
+                                 Checkpoint = reached, RespawnAt = at, RespawnRotation = rotation };
             runners[id] = r;
             byDriver[driver] = r;
             byPawn[pawn] = r;
+            if (piece != PieceKind.Pawn) pawn.SetPiece(piece);
             if (finish != null) finish.Register(driver, team, name, counts: !r.Bot, self: id == session.Self, seat: RefOf(r), host: id == session.Host);
             if (id == session.Self)
             {
@@ -416,6 +446,8 @@ namespace ChessFight.RagdollLab.Net
         void Remove(ulong id)
         {
             if (!runners.TryGetValue(id, out var r)) return;
+            // R538: the seat stays that player's - where it had got to and what it was, for when it comes back.
+            if (!r.Bot) away[RefOf(r)] = new AwaySeat { Checkpoint = r.Checkpoint, Piece = r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn };
             runners.Remove(id);
             byDriver.Remove(r.Driver);
             if (r.Pawn != null) byPawn.Remove(r.Pawn);
@@ -423,6 +455,40 @@ namespace ChessFight.RagdollLab.Net
             snaps.Remove(id);
             if (finish != null) finish.Unregister(r.Driver);
             if (r.Pawn != null) Destroy(r.Pawn.gameObject);
+        }
+
+        // R538: where a seat comes back on the checkpoint of this order (its own team's, or a shared one): the same
+        // spot a fall puts it back on (OnCheckpoint). False when it has reached none, or the course has no such one.
+        bool CheckpointSpot(int order, int team, int slot, out Vector3 at, out Quaternion rotation)
+        {
+            at = default; rotation = Quaternion.identity;
+            if (order == int.MinValue) return false;
+            // Twice at most: the checkpoints found before, then the course looked over again (a round built since).
+            for (int pass = 0; pass < 2; pass++)
+            {
+                if (checkpoints == null || pass == 1)
+                    checkpoints = FindObjectsByType<Checkpoint>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                foreach (var checkpoint in checkpoints)
+                {
+                    if (checkpoint == null || checkpoint.Order != order) continue;
+                    var spots = checkpoint.GetComponent<CourseCheckpoint>();
+                    if (spots != null && !spots.Shared && spots.Team != team) continue;
+                    at = spots != null && spots.SpotCount > 0 ? spots.SpotWorld(slot % spots.SpotCount) : checkpoint.RespawnPosition;
+                    rotation = checkpoint.transform.rotation;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // R538: a seat's checkpoint as the host has it, on a PC whose own physics did not see it reached (it was away,
+        // or its puppet skipped the trigger): never back to an earlier one.
+        void TakeCheckpoint(Runner r, int order)
+        {
+            if (order <= r.Checkpoint || !CheckpointSpot(order, r.Team, r.Slot, out var at, out var rotation)) return;
+            r.Checkpoint = order;
+            r.RespawnAt = at;
+            r.RespawnRotation = rotation;
         }
 
         // The start square's spot for this team and slot (six a team, built by the course), else the spawner.
@@ -911,8 +977,39 @@ namespace ChessFight.RagdollLab.Net
                 }
             // A decided race goes out reliably every time, so a client that missed some still hears who won.
             reliable |= finish != null && finish.Winner != PawnRushFinish.None;
+            WriteSeats(reliable);
             byte[] bytes = state.Write(session.Match);
             foreach (var id in session.Roster.Keys) Send(id, bytes, reliable);
+        }
+
+        // R538: each seat's checkpoint and piece into this state - the players in the match and those away - when
+        // they have changed (then SeatRepeat states running: the states go unreliably), every SeatEvery-th state
+        // (a PC that has just come in), and with a reliable one.
+        void WriteSeats(bool always)
+        {
+            int count = 0, hash = 17;
+            foreach (var r in runners.Values)
+            {
+                if (count >= PawnRushNetState.MaxSeats) break;
+                state.SeatRef[count] = RefOf(r);
+                state.SeatCheckpoint[count] = PawnRushNetState.CheckpointOf(r.Checkpoint);
+                state.SeatPiece[count] = (byte)(r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
+                count++;
+            }
+            foreach (var pair in away)
+            {
+                if (count >= PawnRushNetState.MaxSeats) break;
+                state.SeatRef[count] = pair.Key;
+                state.SeatCheckpoint[count] = PawnRushNetState.CheckpointOf(pair.Value.Checkpoint);
+                state.SeatPiece[count] = (byte)pair.Value.Piece;
+                count++;
+            }
+            for (int k = 0; k < count; k++)
+                hash = unchecked((hash * 31 + state.SeatRef[k]) * 31 + state.SeatCheckpoint[k] * 7 + state.SeatPiece[k]);
+            if (hash != sentSeats) { sentSeats = hash; seatRepeats = SeatRepeat; }
+            bool carry = always || seatRepeats > 0 || stateTick % SeatEvery == 0;
+            if (seatRepeats > 0) seatRepeats--;
+            state.SeatCount = carry ? count : 0;
         }
 
         /// <summary>False when <paramref name="id"/> is no one to send to (this PC, a bot, not in the room).</summary>
@@ -1175,6 +1272,28 @@ namespace ChessFight.RagdollLab.Net
             }
             match.ApplyAfter(s);
             if (finish != null) finish.ApplyRemote(s.Winner, s.Clock, s.FinisherSeat, s.FinisherTime, s.FinisherCount);
+            ApplySeats(s);
+        }
+
+        // R538: the host's word on each seat's checkpoint and piece. A seat in play here takes the checkpoint if it
+        // is further on than this PC knew (its piece comes with its pose); a seat nobody sits in here is a player who
+        // is away, kept for when they come back.
+        void ApplySeats(PawnRushNetState s)
+        {
+            for (int k = 0; k < s.SeatCount && k < PawnRushNetState.MaxSeats; k++)
+            {
+                byte seat = s.SeatRef[k];
+                if (seat == SkillWire.None) continue;
+                int order = s.SeatCheckpoint[k] == PawnRushNetState.NoCheckpoint ? int.MinValue : s.SeatCheckpoint[k];
+                SkillWire.Place(seat, out int team, out int slot);
+                Runner runner = null;
+                foreach (var r in runners.Values)
+                    if (r.Team == team && r.Slot == slot) { runner = r; break; }
+                if (runner != null) { TakeCheckpoint(runner, order); continue; }
+                var piece = ChessPieces.IsValid(s.SeatPiece[k]) ? (PieceKind)s.SeatPiece[k] : PieceKind.Pawn;
+                int known = away.TryGetValue(seat, out var was) ? was.Checkpoint : int.MinValue;
+                away[seat] = new AwaySeat { Checkpoint = Math.Max(order, known), Piece = piece };
+            }
         }
 
         // A client keeps the course states until the pawns it draws reach their host time (R126).
