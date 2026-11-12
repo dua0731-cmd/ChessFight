@@ -29,21 +29,24 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Ambient: 0.35
+    - _Ambient: 0.3
     - _BlushEmit: 0.3
     - _EyeEmit: 0.9
     - _EyeGloss: 0.15
     - _GlintEmit: 0.9
     - _Gloss: 0.1
     - _GlossSize: 24
+    - _LimbGloss: 0.45
     - _Rim: 0.1
-    - _ShadeEdge: 0.4
-    - _ShadeSoftness: 0.2
+    - _ShadeEdge: 0.45
+    - _ShadeSoftness: 0.35
     - _Stripes: 1
-    - _Wrap: 0.3
+    - _Wrap: 0.15
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BodyTint: {r: 1, g: 1, b: 1, a: 1}
+    - _LimbColor: {r: 0.07, g: 0.065, b: 0.065, a: 1}
     - _RimColor: {r: 1, g: 0.95, b: 0.88, a: 1}
-    - _ShadeColor: {r: 0.74, g: 0.62, b: 0.56999993, a: 1}
+    - _ShadeColor: {r: 0.58, g: 0.48, b: 0.46, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

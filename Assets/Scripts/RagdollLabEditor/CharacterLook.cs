@@ -70,6 +70,17 @@ namespace ChessFight.RagdollLab.Editor
             mat.SetTexture("_BaseMap", picture);
             mat.SetColor("_BaseColor", tint);
             mat.SetFloat("_Stripes", stripes ? 1f : 0f);
+            // Look A (JY 11-12, RigWork/pieces/look_variants_*.png): deeper, softer shade; the white body a tone toward
+            // the old pieces' beige; hands and feet a dark colour whose highlight shows their shape (warm grey on the
+            // white team, near-black on the black team, darker than its charcoal body).
+            mat.SetColor("_ShadeColor", new Color(0.58f, 0.48f, 0.46f));
+            mat.SetFloat("_ShadeEdge", 0.45f);
+            mat.SetFloat("_ShadeSoftness", 0.35f);
+            mat.SetFloat("_Wrap", 0.15f);
+            mat.SetFloat("_Ambient", 0.3f);
+            mat.SetColor("_BodyTint", blackTeam ? Color.white : new Color(0.94f, 0.91f, 0.95f));
+            mat.SetColor("_LimbColor", blackTeam ? new Color(0.07f, 0.065f, 0.065f, 1f) : new Color(0.19f, 0.17f, 0.165f, 1f));
+            mat.SetFloat("_LimbGloss", 0.45f);
             // White: black eyes that shine, a glint and blush half self-lit. Black: the design's ivory eyes and their
             // hidden glints almost flat, as RigWork/README.md section 2 draws them (ivory x0.2 + emission 0.9).
             mat.SetFloat("_EyeGloss", blackTeam ? 0.15f : 0.6f);

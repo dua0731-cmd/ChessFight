@@ -9,24 +9,30 @@
 //     glint, blush, brow, two spare) the face reads as drawn: eyes glossy (_EyeGloss), eyes, glints and blush partly
 //     self-lit (_EyeEmit, _GlintEmit, _BlushEmit) so they keep their colour on the shaded side. _Stripes off for a
 //     painted texture (the king's and queen's).
-// The teams are two materials on the same mesh: white (cream body, black eyes, white glints) and black (charcoal body,
-// ivory eyes without glints), Resources/PieceModels/Black. Shadows and depth as ChessFight's other URP shaders.
+// Look A (JY 11-12, "a로 갈게", against the old textured pieces: the new ones looked "too new"): the cream a tone
+// toward the old beige (_BodyTint), deeper and softer shade, hands and feet in a warm dark grey whose highlight shows
+// their round shape (_LimbColor, _LimbGloss) instead of flat black. The defaults are the white team's; CharacterLook
+// sets each team's. The teams are two materials on the same mesh: white (cream body, black eyes, white glints) and
+// black (charcoal body), Resources/PieceModels/Black. Shadows and depth as ChessFight's other URP shaders.
 Shader "ChessFight/Character"
 {
     Properties
     {
         [MainTexture] _BaseMap ("Colours (stripe atlas or texture)", 2D) = "white" {}
         [MainColor] _BaseColor ("Tint", Color) = (1, 1, 1, 1)
-        _ShadeColor ("Shade (multiplies the colour)", Color) = (0.74, 0.62, 0.57, 1)
-        _ShadeEdge ("Where the shade starts", Range(0, 1)) = 0.4
-        _ShadeSoftness ("Shade edge softness", Range(0.01, 0.5)) = 0.2
-        _Wrap ("Light wrap", Range(0, 1)) = 0.3
-        _Ambient ("Sky ambient", Range(0, 1)) = 0.35
+        _ShadeColor ("Shade (multiplies the colour)", Color) = (0.58, 0.48, 0.46, 1)
+        _ShadeEdge ("Where the shade starts", Range(0, 1)) = 0.45
+        _ShadeSoftness ("Shade edge softness", Range(0.01, 0.5)) = 0.35
+        _Wrap ("Light wrap", Range(0, 1)) = 0.15
+        _Ambient ("Sky ambient", Range(0, 1)) = 0.3
         _Gloss ("Highlight", Range(0, 1)) = 0.1
         _GlossSize ("Highlight tightness", Range(4, 128)) = 24
         _RimColor ("Rim colour", Color) = (1, 0.95, 0.88, 1)
         _Rim ("Rim", Range(0, 1)) = 0.1
         [ToggleUI] _Stripes ("Stripe atlas (face details)", Float) = 1
+        _BodyTint ("Body tint (stripe atlas)", Color) = (0.94, 0.91, 0.95, 1)
+        _LimbColor ("Hands and feet colour (alpha: use it)", Color) = (0.19, 0.17, 0.165, 1)
+        _LimbGloss ("Hands and feet highlight", Range(0, 1)) = 0.45
         _EyeGloss ("Eye highlight (a small spot)", Range(0, 2)) = 0.6
         _EyeEmit ("Eyes self-lit", Range(0, 1)) = 0.2
         _GlintEmit ("Glints self-lit", Range(0, 1)) = 0.5
@@ -41,9 +47,9 @@ Shader "ChessFight/Character"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
-        half4 _BaseColor, _ShadeColor, _RimColor;
+        half4 _BaseColor, _ShadeColor, _RimColor, _BodyTint, _LimbColor;
         half _ShadeEdge, _ShadeSoftness, _Wrap, _Ambient, _Gloss, _GlossSize, _Rim;
-        half _Stripes, _EyeGloss, _EyeEmit, _GlintEmit, _BlushEmit;
+        half _Stripes, _LimbGloss, _EyeGloss, _EyeEmit, _GlintEmit, _BlushEmit;
         CBUFFER_END
         ENDHLSL
 
@@ -100,8 +106,8 @@ Shader "ChessFight/Character"
             }
 
             // One light, softly stepped. The main light's shade keeps the colour times _ShadeColor (the warm fill the
-            // design's studio light gives); another light adds nothing on its far side.
-            // The eyes' highlight is four times tighter: as wide as the body's, it lit a whole flat eye grey.
+            // design's studio light gives); another light adds nothing on its far side. The eyes' highlight is four
+            // times tighter: as wide as the body's, it lit a whole flat eye grey.
             half3 Shade(Light light, float3 n, float3 v, half3 albedo, half gloss, half size, half floorShade)
             {
                 half wrapped = (dot(n, light.direction) + _Wrap) / (1 + _Wrap);
@@ -120,11 +126,15 @@ Shader "ChessFight/Character"
                 float3 n = NormalizeNormalPerPixel(i.normalWS);
                 float3 v = GetWorldSpaceNormalizeViewDir(i.positionWS);
 
-                // the face details by the stripe their faces sit on
-                half stripe = _Stripes > 0.5 ? floor(saturate(i.uv.x) * 7.999) : 0;
+                // the parts by the stripe their faces sit on
+                half stripe = _Stripes > 0.5 ? floor(saturate(i.uv.x) * 7.999) : -1;
+                half body = stripe == 0 ? 1 : 0;
+                half limb = stripe == 1 ? 1 : 0;
                 half eye = (stripe == 2 || stripe == 5) ? 1 : 0;
                 half emit = eye * _EyeEmit + (stripe == 3 ? _GlintEmit : 0) + (stripe == 4 ? _BlushEmit : 0);
-                half gloss = lerp(_Gloss, _EyeGloss, eye);
+                albedo = lerp(albedo, albedo * _BodyTint.rgb, body);
+                albedo = lerp(albedo, _LimbColor.rgb, limb * _LimbColor.a);
+                half gloss = lerp(lerp(_Gloss, _EyeGloss, eye), _LimbGloss, limb);
                 half size = _GlossSize * (1 + 3 * eye);
 
                 half4 shadowMask = half4(1, 1, 1, 1);
