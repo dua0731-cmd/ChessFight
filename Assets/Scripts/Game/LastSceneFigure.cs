@@ -123,6 +123,34 @@ namespace ChessFight.Game
             return figure;
         }
 
+        // R543: a pawn as it looks in a Pawn Rush match: the pawn's mesh weighted again for Pawn Rush
+        // (Resources/PieceModels/PawnRush/Pawn, as RagdollPawn.ShowPawnRushPawnMesh) and the team colour the match puts on
+        // the pawn's own material (SteamPawnRushLink: cream for white, dark slate for black) instead of the menus' tint.
+        static readonly Color[] PawnRushTeam = { new Color(.96f, .93f, .84f), new Color(.15f, .18f, .24f) };
+        static readonly Material[] pawnRushSkin = new Material[2];
+
+        public void WearPawnRushLook()
+        {
+            if (!model || Kind != PieceKind.Pawn) return;
+            var prefab = Resources.Load<GameObject>("PieceModels/PawnRush/Pawn");
+            var look = prefab != null ? prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+            foreach (var skin in Root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (look != null && look.sharedMesh != null && skin.sharedMesh != null
+                    && look.sharedMesh.bindposes.Length == skin.sharedMesh.bindposes.Length)
+                {
+                    bool on = skin.enabled;
+                    skin.enabled = false;
+                    skin.sharedMesh = look.sharedMesh;
+                    skin.enabled = on;
+                }
+                if (skin.sharedMaterial == null) continue;
+                if (pawnRushSkin[Team] == null)
+                    pawnRushSkin[Team] = new Material(skin.sharedMaterial) { name = "Pawn Rush pawn " + (Team == 0 ? "white" : "black"), color = PawnRushTeam[Team] };
+                skin.sharedMaterial = pawnRushSkin[Team];
+            }
+        }
+
         static LastSceneFigure BuildFigure(PieceKind kind, int team, Transform parent)
         {
             int t = team == 1 ? 1 : 0;

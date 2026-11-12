@@ -399,7 +399,7 @@ namespace ChessFight.RagdollLab
                 Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), ChessPieces.Name(p), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);
                 SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), "F", SwordFightSkills.Name(p), chosen, ui);
                 SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), "E", SwordFightSkills.EdgeName(p), chosen, ui);
-                string foot = takenBy != 0 ? NameOf(takenBy) + " 고름" : mineNow ? "골랐어요" : chosen ? "Enter · 더블클릭으로 확정" : hot ? "클릭해서 선택" : "";
+                string foot = takenBy != 0 ? NameOf(takenBy) + " 고름" : mineNow ? "골랐어요" : chosen ? "Space · 더블클릭으로 확정" : hot ? "클릭해서 선택" : "";
                 if (foot != "") Text(new Rect(cr.x, cr.yMax - 34f * ui, cw, 22f * ui), foot, bodyStyle, Mathf.RoundToInt(12 * ui), takenBy != 0 ? Muted : Amber);
                 GUI.color = old;
                 // One click marks the card, a double click sends it (Enter sends the marked one: PickKeys).
@@ -426,7 +426,7 @@ namespace ChessFight.RagdollLab
                 if (cx > x + iw * 0.5f) break;   // leave room for the hint on the right
                 cx = TeamChip(cx, ly, f.Picked ? $"{NameOf(f.Id)} · {ChessPieces.Name(f.Piece)}" : $"{NameOf(f.Id)} · 고르는 중", false, ui);
             }
-            string waiting = picked ? "골랐어요. 다른 사람을 기다리는 중" : pickAsked.HasValue ? "방장에게 보내는 중" : pickChosen.HasValue ? $"{ChessPieces.Name(pickChosen.Value)} 선택 · Enter나 더블클릭으로 확정" : "클릭 · 1~5로 선택, Enter나 더블클릭으로 확정";
+            string waiting = picked ? "골랐어요. 다른 사람을 기다리는 중" : pickAsked.HasValue ? "방장에게 보내는 중" : pickChosen.HasValue ? $"{ChessPieces.Name(pickChosen.Value)} 선택 · Space나 더블클릭으로 확정" : "클릭 · 1~5로 선택, Space나 더블클릭으로 확정";
             Text(new Rect(x, ly, iw, 32f * ui), waiting, bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleRight);
         }
 

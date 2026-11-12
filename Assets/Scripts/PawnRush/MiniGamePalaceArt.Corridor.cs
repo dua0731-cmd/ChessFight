@@ -13,8 +13,7 @@ namespace ChessFight.PawnRush
         //
         // Nothing reaches into the walked width: the piers' faces stand on the bodies' faces (|x| 6) and the wall between
         // them 0.25 m further back; only the lamps (over 3 m up) and the plinths' 4 cm lips come forward. The floor's
-        // picture sits 5 mm under the floor body's top (0), so where a neighbour's floor picture reaches over it the two
-        // never share a plane (R498).
+        // picture is the mini-games' paving, 2.4 cm proud of the floor body (R547, CorridorFloor).
         public static void Corridor(Transform root, int style, float length, float from, float to, float height, float endHalf,
                                     bool portalStart, bool portalEnd)
         {
@@ -33,31 +32,40 @@ namespace ChessFight.PawnRush
         const float PierWidth = .9f;
         static float CorridorPier(float from, float to, int i) => Mathf.Lerp(from + PierWidth * .5f, to - PierWidth * .5f, i / (float)CorridorBays);
 
+        // R547 (승규 11-11 "미니게임 바닥에 맞추기"): the paving is the mini-games' own (MiniGamePalaceArt.Paving, baked into
+        // their prefabs): the same 1.97 m slabs 2.4 cm proud of the floor body, the same materials (early all limestone; mid
+        // and late a chequer of marble and PavingCool), and the chequer carries on across the join instead of starting
+        // afresh. A corridor touches at most one mini-game (the slots alternate obstacle, mini-game), so its phase is that
+        // mini-game's: leaving one (`from` > 0) the first row continues its exit row, else the last row leads into its
+        // entry row. The late runner is the mini-games' too and runs on to the arch; the mid mini-games have none, so
+        // neither has a mid corridor. Over the ballroom's arch floor (top -0.004) the slabs stand 2.8 cm clear.
         static void CorridorFloor(Transform art, float length, float from, float to, bool closedEnd, bool early, bool late)
         {
             var floor = Group(art, "Corridor floor");
             // The bed under the paving, out to the walls' outer faces: the joints show it, not the sky.
             Box(floor, "Corridor bed", new Vector3(0f, -.2f, length * .5f), new Vector3(13.2f, .35f, length), Stone, false);
             var light = early ? Cream : Marble;
-            var dark = early ? M("Flagstone", "#CDBE9E", 0f, .92f, "PR_StoneGrain")
-                     : late ? M("CorridorCheckLate", "#9A93A6", 0f, .8f, "PR_StoneGrain") : M("CorridorCheckMid", "#9FA4A6", 0f, .82f, "PR_StoneGrain");
+            // Called as MiniGamePalaceArt.Paving calls it, so it is the one material the baked mini-games hold.
+            var dark = M("PavingCool", late ? "#A7AAA9" : "#A0A5A6", 0f, .82f);
             int rows = Mathf.CeilToInt(length / 2f - .01f);
+            // The mini-game's row index of corridor row 0: its exit row 17 is followed by 18; its entry row 0 is led into
+            // by rows -rows .. -1. Its columns are x*2+1 for x -11..10, so corridor column c (centre c*2-5) is its x c-3.
+            int rowShift = from > 0f ? 18 : -rows;
             for (int x = 0; x < 6; x++)
                 for (int z = 0; z < rows; z++)
                 {
                     float z0 = z * 2f, z1 = Mathf.Min(length, z0 + 2f);
-                    // Early: flags of two limestones at random-looking places; mid and late: a chequer.
-                    bool other = early ? (x * 7 + z * 3) % 3 == 0 : ((x + z) & 1) == 1;
-                    Box(floor, "Paving module", new Vector3(x * 2f - 5f, -.0175f, (z0 + z1) * .5f), new Vector3(1.97f, .025f, z1 - z0 - .03f),
+                    bool other = !early && (((x - 3) + (z + rowShift)) & 1) != 0;
+                    Box(floor, "Paving module", new Vector3(x * 2f - 5f, .012f, (z0 + z1) * .5f), new Vector3(1.97f, .024f, z1 - z0 - .03f),
                         other ? dark : light, false);
                 }
-            if (early) return;
-            // A runner down the middle, stopped short of a mini-game's arch floor and of the war room's line.
-            float a = from > 0f ? .85f : 0f, b = to < length ? length - .85f : closedEnd ? length - .6f : length;
+            if (!late) return;
+            // Stopped only at the war room's line; at a mini-game it meets that room's own runner.
+            float a = 0f, b = closedEnd ? length - .6f : length;
             float mid = (a + b) * .5f, run = b - a;
-            Box(floor, "Corridor runner", new Vector3(0f, -.002f, mid), new Vector3(2.4f, .006f, run), late ? Violet : M("CorridorRunner", "#3C4A5C", 0f, .95f), false);
+            Box(floor, "Central velvet runner", new Vector3(0f, .022f, mid), new Vector3(2.4f, .035f, run), Violet, false);
             foreach (float x in new[] { -1.24f, 1.24f })
-                Box(floor, "Runner selvedge", new Vector3(x, -.001f, mid), new Vector3(.08f, .006f, run), Brass, false);
+                Box(floor, "Runner selvedge", new Vector3(x, .045f, mid), new Vector3(.07f, .018f, run), Brass, false);
         }
 
         static void CorridorWall(Transform art, float side, float from, float to, float height, bool early, bool late)
@@ -117,6 +125,7 @@ namespace ChessFight.PawnRush
                     Box(wall, "Pier brass fillet", At(.29f, height - 1f, z), new Vector3(.62f, .08f, .9f), Brass);
                 }
             }
+            CorridorOuterFace(wall, side, from, to, height, early, late);
             if (!early) return;
             // The open-air wall's walk: a coping and battlements along the top.
             Box(wall, "Wall coping", At(.3f, height - .1f, mid), new Vector3(.66f, .2f, run), Stone);
@@ -124,21 +133,56 @@ namespace ChessFight.PawnRush
                 Box(wall, "Battlement", At(.35f, height + .35f, Mathf.Min(z + .35f, to - .35f)), new Vector3(.5f, .7f, .7f), Cream);
         }
 
-        // Running-bond ashlar on the early wall's face between two piers, 0.76 m courses up to under the coping.
-        static void CorridorAshlar(Transform wall, float side, float z0, float z1, float top)
+        // R547 (승규 11-11 "벽 부분 자연스럽게"): the wall's outer face, which a neighbour section shows across its open
+        // ground or hall (the garden's yard, the stair hall's terrace, the temporary floor, a mini-game's courtyard).
+        // It was the bare wall mass and, mid and late, the ceiling slab's raw edge on top: a box set down between the
+        // sections. Now it is masonry like theirs: running-bond ashlar (limestone early and mid, marble late) between piers
+        // standing on the inner piers' lines, a stone plinth, and on a ceilinged corridor a cornice over the slab's edge and
+        // a parapet along the roof. All of it stands outside |x| 6.6 (the bodies) and between `from` and `to`, so nothing
+        // reaches into a section's walls at the ends (a mini-game's end walls, an obstacle end's gate frame).
+        static void CorridorOuterFace(Transform wall, float side, float from, float to, float height, bool early, bool late)
         {
+            float run = to - from, mid = (from + to) * .5f;
+            Vector3 At(float d, float y, float z) => new Vector3(side * d, y, z);
+            var stone = late ? Marble : Cream;
+            float top = early ? height - .2f : height;
+            Box(wall, "Outer plinth", At(.68f, .3f, mid), new Vector3(.16f, .6f, run), Stone);
+            for (int bay = 0; bay < CorridorBays; bay++)
+            {
+                float z0 = CorridorPier(from, to, bay) + PierWidth * .5f, z1 = CorridorPier(from, to, bay + 1) - PierWidth * .5f;
+                CorridorAshlar(wall, side, z0, z1, top, .66f, stone, .6f);
+            }
+            for (int i = 0; i <= CorridorBays; i++)
+            {
+                float z = CorridorPier(from, to, i);
+                Box(wall, "Outer pier", At(.74f, top * .5f, z), new Vector3(.28f, top, PierWidth), stone);
+                Box(wall, "Outer pier plinth", At(.76f, .35f, z), new Vector3(.34f, .7f, 1.05f), Stone);
+                if (!early) Box(wall, "Outer pier capital", At(.75f, height - .55f, z), new Vector3(.32f, .4f, 1.05f), Stone);
+            }
+            if (early) return;
+            // Over the ceiling slab's edge (height .. height + 0.3) and along the roof.
+            Box(wall, "Outer cornice", At(.72f, height + .15f, mid), new Vector3(.3f, .42f, run), Stone);
+            Box(wall, "Roof parapet", At(.42f, height + .6f, mid), new Vector3(.36f, .6f, run), stone);
+            Box(wall, "Roof parapet coping", At(.42f, height + .95f, mid), new Vector3(.46f, .1f, run), Stone);
+        }
+
+        // Running-bond ashlar on a wall face between two piers, 0.76 m courses up to under the coping: the early wall's
+        // inner face by default (0.19 behind the bodies' face), or the outer face (R547) from `bottom` up.
+        static void CorridorAshlar(Transform wall, float side, float z0, float z1, float top, float d = .19f, Material stone = null, float bottom = .15f)
+        {
+            if (stone == null) stone = Cream;
             float span = z1 - z0;
             int n = Mathf.Max(1, Mathf.RoundToInt(span / 1.1f));
             float unit = span / n;
             int course = 0;
-            for (float y = .15f; y < top - .45f; y += .76f, course++)
+            for (float y = bottom; y < top - .45f; y += .76f, course++)
             {
                 float h = Mathf.Min(.72f, top - .24f - y);
                 float shift = (course & 1) == 1 ? unit * .5f : 0f;
                 for (float z = z0 - shift; z < z1 - .05f; z += unit)
                 {
                     float a = Mathf.Max(z0, z) + .02f, b = Mathf.Min(z1, z + unit) - .02f;
-                    if (b - a > .12f) Box(wall, "Ashlar face", new Vector3(side * .19f, y + h * .5f, (a + b) * .5f), new Vector3(.12f, h, b - a), Cream);
+                    if (b - a > .12f) Box(wall, "Ashlar face", new Vector3(side * d, y + h * .5f, (a + b) * .5f), new Vector3(.12f, h, b - a), stone);
                 }
             }
         }
@@ -232,6 +276,22 @@ namespace ChessFight.PawnRush
             }
             Box(portal, "Portal lintel", new Vector3(0f, height + .45f, 0f), new Vector3(16f, .9f, .8f), stone);
             Box(portal, "Portal cornice", new Vector3(0f, height + .97f, 0f), new Vector3(16.4f, .15f, 1f), Stone);
+            // R547: the frame was three plain blocks beside the section's own dressed stone; now coursed like the walls,
+            // on both faces: the piers in running bond with quoins at their edges, the lintel in voussoir-like blocks
+            // round a keystone.
+            foreach (float face in new[] { -1f, 1f })
+            {
+                float zf = face * .43f;
+                foreach (float side in new[] { -1f, 1f })
+                    PortalCourses(portal, side * 6.05f, side * 7.95f, .75f, height + .05f, zf, stone);
+                const int Blocks = 11;
+                for (int i = 0; i < Blocks; i++)
+                {
+                    float x0 = -7.95f + i * 15.9f / Blocks + .025f, x1 = -7.95f + (i + 1) * 15.9f / Blocks - .025f;
+                    Box(portal, "Portal lintel block", new Vector3((x0 + x1) * .5f, height + .45f, zf), new Vector3(x1 - x0, .8f, .06f), stone);
+                }
+                Box(portal, "Portal keystone", new Vector3(0f, height + .4f, face * .47f), new Vector3(.8f, 1f, .1f), Stone);
+            }
             if (early)
             {
                 for (int i = -5; i <= 5; i++)
@@ -240,6 +300,21 @@ namespace ChessFight.PawnRush
             }
             Box(portal, "Portal emblem back", new Vector3(0f, height + .45f, -inward * .42f), new Vector3(2.6f, .72f, .05f), late ? Violet : M("EmblemNavy", "#344350"));
             Crown(portal, new Vector3(0f, height + 1.17f, 0f), .7f);
+        }
+
+        // Running-bond courses (0.6 m) on one face (z `zf`) of a portal pier between x `x0` and `x1` (either order), from
+        // `y0` to `y1`; a course's end blocks alternate long and short at both edges, as quoins do.
+        static void PortalCourses(Transform portal, float x0, float x1, float y0, float y1, float zf, Material stone)
+        {
+            float a = Mathf.Min(x0, x1), b = Mathf.Max(x0, x1);
+            int course = 0;
+            for (float y = y0; y < y1 - .3f; y += .6f, course++)
+            {
+                float h = Mathf.Min(.56f, y1 - y - .04f);
+                float cut = (course & 1) == 0 ? .75f : 1.15f;   // one joint a course, alternating: quoins at both edges
+                Box(portal, "Portal ashlar", new Vector3((a + a + cut) * .5f, y + h * .5f, zf), new Vector3(cut - .04f, h, .06f), stone);
+                Box(portal, "Portal ashlar", new Vector3((a + cut + b) * .5f, y + h * .5f, zf), new Vector3(b - a - cut - .04f, h, .06f), stone);
+            }
         }
 
         // Across the exit's line out to |x| endHalf, either side of the way, and over it: the war room's start floor

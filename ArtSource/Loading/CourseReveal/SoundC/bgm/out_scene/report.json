@@ -1,0 +1,14 @@
+{
+ "F": {
+  "take": "bgmF_1",
+  "loop_period_s": 2.07
+ },
+ "G": {
+  "take": "bgmG_2",
+  "loop_period_s": 2.0
+ },
+ "H": {
+  "take": "bgmH_1",
+  "loop_period_s": 2.18
+ }
+}

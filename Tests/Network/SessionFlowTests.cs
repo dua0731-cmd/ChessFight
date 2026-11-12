@@ -777,10 +777,15 @@ public static class SessionFlowTests
                 Check(leader.Match==0&&member.Match==room&&member.Started&&solo.Started,"the party left with its leader");
                 Check((member.IsHost||solo.IsHost)&&member.Host==solo.Host&&member.Host!=leader.Self,"the host role did not move on");
                 Check(leader.PartyStillPlaying,"the leader does not see its member still playing");
-                As(leader,()=>leader.FindMatch());Check(!leader.Searching&&leader.Error.Contains("경기 중"),"the leader queued a member who is still playing");
+                // 11-11: the leader left a match that still runs, so it is told to go back to it first (RejoinFirstMessage)
+                // before the party-still-playing note; either way it must not queue.
+                As(leader,()=>leader.FindMatch());Check(!leader.Searching&&(leader.Error.Contains("경기 중")||leader.Error==SteamSession.RejoinFirstMessage),"the leader queued a member who is still playing");
                 As(member,member.Cancel);Step(20);
                 Check(!leader.PartyStillPlaying&&!member.Busy,"the member is not back");
-                As(leader,()=>leader.FindMatch(true));Step(20);Check(leader.Match!=0&&member.Match==leader.Match,"the party did not queue together again");});
+                // 11-11: while the match the leader left still runs it may only go back into it, so the last player
+                // leaves first and the match is gone
+                As(solo,solo.Cancel);Step(20);
+                As(leader,()=>leader.FindMatch(true));Step(20);Check(leader.Match!=0&&member.Match==leader.Match,"the party did not queue together again: "+leader.Error);});
             Test("A party leader's crash does not pull its party out of a started match",()=>{
                 Setup(3);var fit=new[]{900,700,500};for(int i=0;i<3;i++)clients[i].LocalFitness=fit[i];
                 var leader=clients[0];var member=clients[1];var solo=clients[2];

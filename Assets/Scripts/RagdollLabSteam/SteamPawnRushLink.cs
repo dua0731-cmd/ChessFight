@@ -415,6 +415,7 @@ namespace ChessFight.RagdollLab.Net
             pawn.name = name;
             pawn.DisplayName = name;
             pawn.Team = team;
+            pawn.IsSelf = id == session.Self;
             MatchNameplate.Attach(pawn);
             pawn.skin.sharedMaterial = team == Teams.White ? white : black;
             var driver = pawn.GetComponent<RagdollDriver>();
@@ -437,7 +438,11 @@ namespace ChessFight.RagdollLab.Net
                 // Whose fanfare is loud, whose aiming arc shows (R508: the match's own pawn, as the playtests do offline).
                 MissionStation.LocalTeam = team;
                 MiniGameBase.LocalDriver = driver;
-                if (staminaBar != null) staminaBar.Follow(driver);
+                if (staminaBar != null)
+                {
+                    staminaBar.Follow(driver);
+                    staminaBar.Piece = () => runners.TryGetValue(session.Self, out var me) && me.Pawn != null ? me.Pawn.Piece : PieceKind.Pawn;
+                }
                 if (PawnRushCourseSkills.Current != null) PawnRushCourseSkills.Current.Local = pawn;
                 if (orbit != null) orbit.Follow(driver.FollowTarget, pawn.transform, rotation * Vector3.forward);
             }

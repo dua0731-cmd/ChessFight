@@ -1,0 +1,14 @@
+{
+ "I": {
+  "take": "bgmI_1",
+  "loop_period_s": null
+ },
+ "J": {
+  "take": "bgmJ_1",
+  "loop_period_s": 2.14
+ },
+ "K": {
+  "take": "bgmK_2",
+  "loop_period_s": 2.0
+ }
+}

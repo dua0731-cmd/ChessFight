@@ -913,3 +913,30 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .play-note { margin-top: 8px; padding: 6px 10px; font-size: 13px; -unity-font-style: bold; color: rgb(255, 190, 176); white-space: normal;
              -unity-text-align: middle-center; border-radius: 8px; border-width: 1px; border-color: rgba(255, 150, 130, 0.55);
              background-color: rgba(70, 20, 24, 0.72); }
+
+/* ---------- R548: Pawn Rush's course board, the stops' name plates (LoadingScreenView, LoadingStudio.Board.cs) ----------
+   Each plate stands over its stop with the middle of its bottom edge on the point LoadingStudio gives (left/top set in
+   code), a gold line down towards the stop. "?" dim until the pawns head for it, rolling bright while they hop, then this
+   round's section with a pop and a flash. Mini-games have a gold edge and a gold name, the war room a gold plate. */
+.course-plates { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.course-plate { position: absolute; translate: -50% -100%; transform-origin: 50% 100%; align-items: center; }
+.course-plate-tail { position: absolute; left: 50%; top: 100%; width: 1px; background-color: rgba(232, 176, 74, 0.55); }
+.course-plate-box { align-items: center; padding: 4px 11px 5px 11px; border-width: 1px; border-radius: 7px; overflow: hidden;
+                    border-color: rgba(241, 230, 207, 0.22); background-color: rgba(16, 11, 7, 0.8); }
+.course-plate-kicker { font-size: 9px; -unity-font-style: bold; letter-spacing: 2px; white-space: nowrap; color: rgba(227, 210, 186, 0.6); }
+.course-plate-name { margin-top: 1px; font-size: 15px; -unity-font-style: bold; white-space: nowrap; color: rgba(246, 236, 223, 0.45); }
+.course-plate-flash { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(255, 236, 190); opacity: 0; }
+.course-plate-game .course-plate-box { border-color: rgba(232, 176, 74, 0.5); }
+.course-plate-game .course-plate-kicker { color: rgba(232, 176, 74, 0.8); }
+.course-plate-rolling .course-plate-name { color: rgb(255, 242, 204); }
+.course-plate-next .course-plate-box { border-color: rgba(255, 226, 160, 0.9); background-color: rgba(28, 19, 10, 0.88); }
+.course-plate-shown .course-plate-box { background-color: rgba(20, 13, 8, 0.9); border-color: rgba(241, 230, 207, 0.5); }
+.course-plate-shown .course-plate-name { color: rgb(246, 236, 223); }
+.course-plate-game.course-plate-shown .course-plate-box { border-color: rgb(232, 176, 74); }
+.course-plate-game.course-plate-shown .course-plate-name { color: rgb(255, 214, 120); }
+.course-plate-final .course-plate-box { border-color: rgb(232, 176, 74); background-color: rgba(58, 38, 12, 0.88); }
+.course-plate-final .course-plate-kicker { color: rgb(255, 214, 120); }
+.course-plate-final .course-plate-name { font-size: 16px; color: rgba(255, 214, 120, 0.7); }
+.course-plate-final.course-plate-shown .course-plate-name { color: rgb(255, 226, 150); }
+.course-start { position: absolute; translate: -50% 0; font-size: 12px; -unity-font-style: bold; letter-spacing: 3px;
+                color: rgba(241, 230, 207, 0.8); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }

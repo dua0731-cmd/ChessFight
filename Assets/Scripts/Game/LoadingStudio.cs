@@ -39,9 +39,10 @@ namespace ChessFight.Game
             public float Side, SpotYaw, StartX;
             public Vector3 At;
             public float EnterAt = -1;   // when the walk began, studio time
-            public bool Queued, Bot;
-            public Material Disc, Ring, Flash;
-            public Transform RingT, FlashT;
+            public bool Queued, Bot, Landed;   // Landed: the LED stage has marked this entrance (LoadingStudio.Stage.cs)
+            public Material Disc, Ring, Flash, Cast;
+            public Transform RingT, FlashT, DiscT, CastT;   // DiscT and CastT: on the picture only (LoadingStudio.Duel.cs)
+            public Vector3 DiscHome, CastHome;
         }
 
         public RenderTexture Texture { get; private set; }
@@ -58,14 +59,33 @@ namespace ChessFight.Game
         float lastStart = -10f;
         int sceneHandle = -1;
 
-        // `course`: the course hologram on its LED plate (Pawn Rush) instead of the chessboard the players walk onto.
+        // `course`: Pawn Rush's course board instead of the chessboard the players walk onto. R551: nothing asks for it any
+        // more (the course reveal is LoadingScreenView.Reveal.cs, over the study); the board stays for now in case it is
+        // wanted back.
         public void Build(Transform parent, int width, int height, bool course = false)
         {
-            courseModel = course;
+            // R548: Pawn Rush reveals the round's sections on its course board (LoadingStudio.Board.cs) once the match
+            // starts. R550 (11-11, 승규 님: "매칭만 잡고 있으면 우리팀이랑 상대팀만 뜨고 체스판 위에 들어오는 걸로 (옛날 거)"):
+            // until then it shows the study's chessboard the players walk onto, as the other modes do. Both are built, each
+            // in its own set, and Animate shows one (ShowSet). R543's picture with the pawns walking onto it
+            // (LoadingStudio.Duel.cs) and the course hologram before it (LoadingStudio.Course.cs) are kept in the code but
+            // no longer shown.
+            board = course;
+            duel = false;
+            courseModel = false;
             root = new GameObject("Loading Studio");
             root.transform.SetParent(parent, false);
             root.transform.position = Origin;
             var t = root.transform;
+            studyRoot = t;
+            Transform boardRoot = null;
+            if (board)
+            {
+                studySet = LastSceneArt.Group(t, "Study Set", Vector3.zero);
+                boardSet = LastSceneArt.Group(t, "Board Set", Vector3.zero);
+                studyRoot = studySet.transform;
+                boardRoot = boardSet.transform;
+            }
 
             Texture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "Loading Studio" };
             Texture.Create();
@@ -94,6 +114,20 @@ namespace ChessFight.Game
 
             camera.backgroundColor = MenuArt.Hex(0x0E0906);
             if (onStairs) StairLights(t);
+            else if (board)
+            {
+                // the study's camera, kept for ShowSet before Board sets its own
+                studyFov = camera.fieldOfView;
+                studyBackground = camera.backgroundColor;
+                Study(studyRoot);
+                Board(boardRoot, width, height);
+                setShown = -1;
+                ShowSet(false);
+                Aim(0f);
+            }
+            else if (duel) Duel(t, width, height);
+            // R608: every mode stands on the LED stage (LoadingStudio.Stage.cs); the study is kept, unused
+            else if (ledStage) Stage(t, width, height);
             else Study(t);
 
             // Every spot glows faintly in its team colour, waiting for its player.
@@ -102,19 +136,22 @@ namespace ChessFight.Game
                 {
                     var p = new Player { Team = team, Spot = spot, Side = team == 0 ? 1f : -1f };
                     players[team * PerTeam + spot] = p;
-                    // 10-26 (승규 님: "플레이어가 들어오는 건 넣지마"): nobody walks onto the course model, so no spots
+                    // 10-26 (승규 님: "플레이어가 들어오는 건 넣지마"): nobody walks onto the course model, so no spots. R550:
+                    // Pawn Rush's players walk onto the study's chessboard again while matching (in its set)
                     if (courseModel) continue;
                     var s = Spots[spot];
                     float x = team == 0 ? s.x : -s.x;
-                    p.At = onStairs ? StairSpot(team, spot) : MenuArt.Web(x, StageHeight, s.y);
-                    p.StartX = onStairs ? p.Side * -6.6f : p.Side * -10.5f;
+                    p.At = onStairs ? StairSpot(team, spot) : duel ? DuelSpot(team, spot) : MenuArt.Web(x, StageHeight, s.y);
+                    // on the picture each pawn comes in from its own side of the brass strip, from out of sight
+                    p.StartX = onStairs ? p.Side * -6.6f : duel ? DuelStart(team, spot) : p.Side * -10.5f;
                     int color = team == 0 ? MenuArt.Cyan : MenuArt.Red, light = team == 0 ? 0x9BE8FF : 0xFF9AA6;
-                    var disc = Blob(t, p.At + Vector3.up * .03f);
+                    var disc = Blob(studyRoot, p.At + Vector3.up * .03f);
                     p.Disc = disc.GetComponent<Renderer>().sharedMaterial;
-                    p.RingT = LastSceneArt.Part(t, "Spot Ring", MenuArt.Torus(.5f, .035f, 48), MenuArt.Glow("ring", null, MenuArt.Hex(light), false),
+                    if (duel) DuelShadows(t, p, disc);
+                    p.RingT = LastSceneArt.Part(studyRoot, "Spot Ring", MenuArt.Torus(.5f, .035f, 48), MenuArt.Glow("ring", null, MenuArt.Hex(light), false),
                                                 p.At + Vector3.up * .02f, null, null, false).transform;
                     p.Ring = p.RingT.GetComponent<Renderer>().sharedMaterial;
-                    p.FlashT = MenuArt.Halo(t, p.At + Vector3.up * .9f, light, 1f, 0f, camera);
+                    p.FlashT = MenuArt.Halo(studyRoot, p.At + Vector3.up * .9f, light, 1f, 0f, camera);
                     p.Flash = p.FlashT.GetComponent<Renderer>().sharedMaterial;
                     SetAlpha(p.Ring, 0);
                 }
@@ -166,10 +203,15 @@ namespace ChessFight.Game
             LastSceneArt.Part(t, "Lamp Shade", LastSceneArt.Cone(1.2f, 1.0f, 48), LastSceneArt.Lit(0x1E3A2A, .5f, .3f), new Vector3(0, 9.0f, 0), null, null, false);
             LastSceneArt.Part(t, "Lamp Bulb", LastSceneArt.Sphere(.28f), MenuArt.Lamp(0xFFE6B0), new Vector3(0, 8.55f, 0), null, null, false);
             // 10-26: 60 % of what it was with the course hologram, so it and its LEDs stand out on the plate
-            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, courseModel ? 1.9f : 3.2f, .95f, .8f, true);
-            // faint warm bounce from the table and cold moonlight from behind, so the shelves just read
+            // R610: the board's pool is warmer and a little tighter, so the table round it falls off into the dark
+            if (courseModel) MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, 1.9f, .95f, .8f, true);
+            else MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD49A, 3.4f, .8f, .75f, true);
+            // faint warm bounce from the table and cold moonlight from behind, so the shelves just read (R610: the moon is
+            // fainter for the board, whose pawns get a rim of their own)
             MenuArt.Spot(t, new Vector3(0, 2f, -12f), new Vector3(0, 2f, 0), 0xC08A5A, .5f, .8f, .9f);
-            MenuArt.Spot(t, new Vector3(0, 6f, 10f), new Vector3(0, 1f, -2f), 0x6A86B8, .7f, .7f, .9f);
+            MenuArt.Spot(t, new Vector3(0, 6f, 10f), new Vector3(0, 1f, -2f), 0x6A86B8, courseModel ? .7f : .3f, .7f, .9f);
+            // R610: the board's lacquer, the plinth, the rims, the wall lamps and the grading (LoadingStudio.StudyLook.cs)
+            if (!courseModel) StudyLook(t);
         }
 
         Material backdrop, blob;
@@ -212,23 +254,26 @@ namespace ChessFight.Game
 
         // The castle picture on a card far behind the stage, held by the camera so it always fills the view
         // (covering it, cropped to the picture's own shape). Unlit, drawn first, no fog.
-        void Backdrop(Transform rig, int width, int height)
+        bool Backdrop(Transform rig, int width, int height, string picture = "Loading/GateCastle")
         {
-            var image = Resources.Load<Texture2D>("Loading/GateCastle");
+            var image = Resources.Load<Texture2D>(picture);
             var shader = Shader.Find("Sprites/Default");
-            if (image == null || shader == null || camera == null) return;
-            backdrop = new Material(shader) { name = "Loading castle", mainTexture = image, renderQueue = 1000 };
+            if (image == null || shader == null || camera == null) return false;
+            backdrop = new Material(shader) { name = "Loading backdrop " + image.name, mainTexture = image, renderQueue = 1000 };
             const float distance = 70f;
             float h = 2f * distance * Mathf.Tan(camera.fieldOfView * .5f * Mathf.Deg2Rad), w = h * width / Mathf.Max(1f, height);
             float aspect = image.width / (float)image.height;
             if (w / h > aspect) h = w / aspect; else w = h * aspect;
-            LastSceneArt.Part(rig, "Castle Backdrop", LastSceneArt.Panel(w, h), backdrop, new Vector3(0, 0, distance), null, null, false);
+            LastSceneArt.Part(rig, "Backdrop", LastSceneArt.Panel(w, h), backdrop, new Vector3(0, 0, distance), null, null, false);
+            return true;
         }
 
         // Hands over who is in the match and who has loaded. Lists are in roster
         // order sorted by team; each team fills its spots in that order.
         public void Sync(IReadOnlyList<int> teams, IReadOnlyList<bool> joined, IReadOnlyList<bool> bots, float now)
         {
+            // R550: the board's pawns keep count too, but the players walking onto the study say who is in (AllIn)
+            if (board) SyncBoard(teams, joined, now);
             int[] next = { 0, 0 };
             int total = 0, entered = 0;
             var listed = new bool[players.Length];
@@ -258,8 +303,12 @@ namespace ChessFight.Game
                     // Facing the camera, turned towards the middle.
                     var s = Spots[spot];
                     float x = team == 0 ? s.x : -s.x;
-                    var look = onStairs ? p.At + new Vector3(p.Side * 1.6f, 0, -6f) : MenuArt.Web(x + 3 * p.Side, StageHeight, s.y + 6);
-                    p.Figure = MenuArt.Figure(root.transform, kind, team, p.At, look, onStairs ? 1.7f : 1.05f);
+                    var look = onStairs ? p.At + new Vector3(p.Side * 1.6f, 0, -6f)
+                             : duel ? p.At + new Vector3(p.Side * DuelTurn, 0, -1f) * 4f
+                             : MenuArt.Web(x + 3 * p.Side, StageHeight, s.y + 6);
+                    p.Figure = MenuArt.Figure(studyRoot, kind, team, p.At, look, onStairs ? 1.7f : duel ? duelScale : 1.05f);
+                    // on the picture: the match's own Pawn Rush pawn, mesh and team colour as in a match
+                    if (duel) p.Figure.WearPawnRushLook();
                     p.SpotYaw = Mathf.Atan2(look.x - p.At.x, look.z - p.At.z);
                     p.Figure.Root.SetActive(false);
                 }
@@ -289,6 +338,7 @@ namespace ChessFight.Game
             p.Figure = null;
             p.Queued = false;
             p.EnterAt = -1;
+            p.Landed = false;
             SetAlpha(p.Ring, 0);
             SetAlpha(p.Flash, 0);
         }
@@ -298,6 +348,15 @@ namespace ChessFight.Game
 
         public void Animate(float now)
         {
+            // R550: Pawn Rush's course board from the reveal's first frame, the study before
+            ShowSet(ShowingBoard);
+            if (ShowingBoard)
+            {
+                AimBoard();
+                AnimateBoard(now);
+                return;
+            }
+            StageClock(now);
             TickRoute(Time.unscaledDeltaTime);
             Aim(now);
             for (int i = 0; i < players.Length; i++)
@@ -305,7 +364,7 @@ namespace ChessFight.Game
                 var p = players[i];
                 if (p.Figure == null || p.EnterAt < 0)
                 {
-                    SetAlpha(p.Disc, 0f);
+                    Shade(p, 0f, 0f);
                     continue;
                 }
                 float age = now - p.EnterAt, walk = Mathf.Abs(p.StartX - p.At.x) / Walk;
@@ -317,13 +376,21 @@ namespace ChessFight.Game
                     run.Yaw = walkYaw;
                     run.Lean = .24f;
                     p.Figure.Pose(run);
-                    SetAlpha(p.Disc, .35f * (age / walk));
+                    // on the picture the shadows walk on with the pawn; on the board the spot darkens as its player comes
+                    Shade(p, duel ? 1f : .35f / .45f * (age / walk), duel ? run.Dx : 0f);
                     continue;
                 }
-                float a = age - walk;
+                float a = age - walk, shade = 1f;
+                // R608: the moment the player hops onto their spot, the stage marks it (wall, lamps, ring)
+                if (!p.Landed)
+                {
+                    p.Landed = true;
+                    if (wall != null) StageJoin(p, now);
+                }
                 if (a < Hop)
                 {
                     float h = Mathf.Sin(Mathf.Min(1, a / .38f) * Mathf.PI), turn = Mathf.SmoothStep(0, 1, a / Hop);
+                    if (duel) shade = 1f - .45f * h;   // lighter while the pawn is up in the hop
                     p.Figure.Pose(new FigurePose
                     {
                         Jump = h * .55f, Squash = a < .05f ? .12f : a > .36f ? .1f : -.06f, Yaw = walkYaw * (1 - turn),
@@ -336,8 +403,20 @@ namespace ChessFight.Game
                 p.FlashT.localScale = Vector3.one * (a < .7f ? .5f + a * 4.2f : .01f);
                 SetAlpha(p.Ring, a < .8f ? Mathf.Max(0, 1 - a * 1.25f) : 0);
                 p.RingT.localScale = Vector3.one * (1 + Mathf.Min(a, .8f) * 2.6f);
-                SetAlpha(p.Disc, .45f);
+                Shade(p, shade, 0f);
             }
+            AnimateStage(now);
+        }
+
+        // A player's floor shadow at `amount` of its full strength; on the picture also the cast one, both `dx` along the
+        // pawn's walk from its spot.
+        void Shade(Player p, float amount, float dx)
+        {
+            SetAlpha(p.Disc, amount * (duel ? ContactDark : .45f));
+            if (p.DiscT != null) p.DiscT.localPosition = p.DiscHome + Vector3.right * dx;
+            if (p.CastT == null) return;
+            SetAlpha(p.Cast, amount * CastDark);
+            p.CastT.localPosition = p.CastHome + Vector3.right * dx;
         }
 
         void Aim(float now)
@@ -351,6 +430,13 @@ namespace ChessFight.Game
                 camera.transform.LookAt(Origin + Stair(0f, 46.5f, 23f));
                 return;
             }
+            if (ShowingBoard)
+            {
+                AimBoard();
+                return;
+            }
+            // the picture's own camera, set once in Duel: it must not move, or the pawns would slide on the picture
+            if (duel) return;
             camera.transform.localPosition = MenuArt.Web(Mathf.Sin(now * .18f) * .5f, 6.2f, 17.5f);
             camera.transform.LookAt(Origin + MenuArt.Web(0, 1.6f, -1f));
         }
@@ -381,6 +467,17 @@ namespace ChessFight.Game
                 if (light != null && light.enabled) { light.enabled = false; on.Add(light); }
 
             MenuArt.HallLighting(24f, 80f);
+            if (wall != null) StageLighting();
+            if (studyLook && !ShowingBoard) StudyLighting();
+            if (duel) RenderSettings.fog = false;
+            if (ShowingBoard)
+            {
+                // the board is 30 units from the camera: no haze, and a warmer, brighter fill so its far side reads
+                RenderSettings.fog = false;
+                RenderSettings.ambientSkyColor = MenuArt.Hex(0x8A7058) * .9f;
+                RenderSettings.ambientEquatorColor = MenuArt.Hex(0x5A4430) * .8f;
+                RenderSettings.ambientGroundColor = MenuArt.Hex(0x1A120C);
+            }
             if (onStairs)
             {
                 RenderSettings.fog = false;
@@ -390,6 +487,7 @@ namespace ChessFight.Game
                 RenderSettings.ambientGroundColor = MenuArt.Hex(0x6B5E4E) * .5f;
             }
             if (sun != null) sun.enabled = true;
+            if (wall != null || (studyLook && !ShowingBoard)) RenderMirror();
             camera.Render();
             if (sun != null) sun.enabled = false;
 
@@ -412,6 +510,8 @@ namespace ChessFight.Game
             if (backdrop != null) Object.Destroy(backdrop);
             if (blob != null) Object.Destroy(blob);
             DisposeCourse();
+            DisposeBoard();
+            DisposeStage();
             if (root != null) Object.Destroy(root);
             root = null;
             camera = null;

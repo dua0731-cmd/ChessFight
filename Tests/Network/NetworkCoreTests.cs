@@ -224,6 +224,38 @@ public static class NetworkCoreTests
                 for (int s = 0; s < 7; s++) Check(x[s] == y[s], "same seed, same round");
                 var holes = PawnRushSections.Choose(3, new[] { new int[0], null, new[] { 5 }, new[] { 5 } });
                 Check(holes[0] == -1 && holes[1] == -1 && holes[2] == 5 && holes[3] == 5, "empty slots and a one-prefab list"); });
+            Test("Pawn Rush course table (R548): read as written, the round's own draw by name", () => {
+                var rows = new List<PawnRushCourseTable.Row>
+                {
+                    new PawnRushCourseTable.Row(0, "A1", "왕실 수로 정원"), new PawnRushCourseTable.Row(0, "A2", "왕실 마차뜰"),
+                    new PawnRushCourseTable.Row(1, "G1", "해자 도개교"), new PawnRushCourseTable.Row(1, "G2", "정문 쇠살문 누각"),
+                    new PawnRushCourseTable.Row(1, "G3", "정문 의장 광장"), new PawnRushCourseTable.Row(2, "B1", "대계단 현관홀"),
+                    new PawnRushCourseTable.Row(3, "G2", "정문 쇠살문 누각"), new PawnRushCourseTable.Row(3, "G4", "왕궁 서고"),
+                    new PawnRushCourseTable.Row(4, "C1", "후반 장애물"), new PawnRushCourseTable.Row(5, "G1", "해자 도개교"),
+                    new PawnRushCourseTable.Row(5, "G5", "국왕 침실"), new PawnRushCourseTable.Row(6, "F", "작전 회의실"),
+                };
+                // A byte order mark, Windows line ends, comments, a line that is not one, a slot out of range and a key
+                // listed twice in its slot: none of them changes the table.
+                string text = "﻿" + PawnRushCourseTable.Format(rows, "two lines\nof header").Replace("\n", "\r\n")
+                            + "junk line\n9\tX\tout of range\n0\tA1\ttwice\n";
+                var table = PawnRushCourseTable.Parse(text);
+                Check(table.Count == rows.Count, "every row once: " + table.Count);
+                Check(table.Names(0)[0] == "왕실 수로 정원" && table.Names(1).Count == 3 && table.Names(1)[1] == "정문 쇠살문 누각", "names in order");
+                // PawnRushSectionSet.Options numbers the prefabs as they first appear, slot after slot: the same by hand.
+                var options = new[] { new[] { 0, 1 }, new[] { 2, 3, 4 }, new[] { 5 }, new[] { 3, 6 }, new[] { 7 }, new[] { 2, 8 }, new[] { 9 } };
+                for (int seed = -50; seed < 400; seed++)
+                {
+                    var ids = PawnRushSections.Choose(seed, options);
+                    var picks = table.Picks(seed);
+                    var shown = table.PickNames(seed);
+                    for (int s = 0; s < PawnRushSections.SlotCount; s++)
+                    {
+                        int k = Array.IndexOf(options[s], ids[s]);
+                        Check(picks[s] == k && shown[s] == table.Names(s)[k], "seed " + seed + " slot " + s);
+                    }
+                }
+                var empty = PawnRushCourseTable.Parse("# nothing yet\n");
+                Check(empty.Count == 0 && empty.PickNames(3).Length == PawnRushSections.SlotCount && empty.PickNames(3)[2] == "", "an empty table names nothing"); });
             Test("Grand stair hall rolls: ten minutes keep the three rules, use all four lanes, about 40% statues", () => {
                 for (int seed = 1; seed <= 30; seed++)
                 {

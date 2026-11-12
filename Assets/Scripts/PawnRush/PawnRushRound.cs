@@ -142,6 +142,7 @@ namespace ChessFight.PawnRush
             holder.SetActive(false);
             holder.transform.SetParent(transform, false);
             var at = new Pose(transform.position, transform.rotation);
+            var built = new string[picks.Length];
             var log = new StringBuilder("[PawnRush] 이번 판 구간 (씨앗 " + roundSeed + ", " + teamSize + "대" + teamSize + "): ");
             for (int slot = 0; slot < picks.Length; slot++)
             {
@@ -173,14 +174,32 @@ namespace ChessFight.PawnRush
                 section.Configure(slot, PawnRushSections.SectionSeed(roundSeed, slot), teamSize, StartClock);
                 at = section.ExitWorld;
                 sections.Add(section);
+                built[slot] = section.DisplayName;
                 log.Append(slot + 1).Append(' ').Append(label).Append(" = ").Append(section.DisplayName).Append(" · ");
             }
             if (startSpots && sections.Count > 0) StartSpots(holder.transform, sections[0]);
             holder.SetActive(true);
             if (finishRace) BindFinish();
             Debug.Log(log.ToString());
+            if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();
             Built?.Invoke(this);
+        }
+
+        // R548: a match's entrance screen revealed this round from the course table (Resources/Loading/PawnRushCourse.txt)
+        // before the scene loaded; the round itself is drawn from the section set. Both draw alike from the same seed, so
+        // they name the same sections unless the table is older than the set (it is rewritten on every Play and build).
+        static void CheckRevealNames(int roundSeed, string[] built)
+        {
+            var revealed = ChessFight.Game.PawnRushCourseNames.Table.PickNames(roundSeed);
+            for (int slot = 0; slot < built.Length && slot < revealed.Length; slot++)
+            {
+                if ((built[slot] ?? "") == revealed[slot]) continue;
+                Debug.LogWarning($"[PawnRush] 입장 화면이 공개한 {slot + 1}번 구간 '{revealed[slot]}'이 실제 판의 '{built[slot]}'과 다릅니다: " +
+                                 "코스 이름표(Resources/Loading/PawnRushCourse.txt)가 구간 목록보다 오래되었습니다. " +
+                                 "ChessFight/Pawn Rush/Build/Course Name Table로 다시 만들어 주세요.");
+                return;
+            }
         }
 
         // R541 (11-11 online test: participants met an unseen wall on the hall's last glass stones while the host walked

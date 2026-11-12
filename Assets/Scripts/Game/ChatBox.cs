@@ -20,9 +20,9 @@ namespace ChessFight.Game
     // its text size; settings → 조작 can move the key that opens it.
     //
     // Closed: the key that opens it, and new lines floating for a few seconds.
-    // Tab opens it on the input line; Tab again moves 파티 → 팀 → 전체; Enter
-    // sends; Esc or the close button closes it. In a match a sent line closes it
-    // too, so the character moves again at once.
+    // Enter opens it on the input line; Tab moves 파티 → 팀 → 전체; Enter
+    // sends and closes it; Esc or the close button closes it too, so the
+    // character moves again at once. (Tab held open the 기보지 sheet, VoiceHud.)
     //
     // While it is open it holds the keyboard (KeysHeld): the scene's own keys
     // (Enter to start, Esc to leave or for a menu) and the character wait.
@@ -185,6 +185,7 @@ namespace ChessFight.Game
             }
             else if (open && submitFrame < 0)
             {
+                KeepCaretInside();
                 if (LegacyKeys.Down(KeyCode.Escape)) Close(true);
                 else if (EnterDown()) submitFrame = Time.frameCount;
                 else if (LegacyKeys.Down(KeyCode.Tab)) { channel = ChatText.Next(channel, Usable); picked = true; scroll = 0; }
@@ -196,6 +197,14 @@ namespace ChessFight.Game
             Refresh();
         }
 
+        // The IME preview inserts at the caret; one left past the end of a cleared line threw
+        // ArgumentOutOfRange (startIndex) every frame while composing Korean (11-11).
+        void KeepCaretInside()
+        {
+            int len = (field.value ?? "").Length;
+            if (field.cursorIndex > len || field.selectIndex > len) field.SelectRange(len, len);
+        }
+
         void OpenPanel()
         {
             if (!(picked && Usable(channel)))
@@ -204,6 +213,7 @@ namespace ChessFight.Game
                     : (Usable(channel) ? channel : ChatChannel.Party);
             if (!Usable(channel)) return;
             open = true; scroll = 0;
+            KeepCaretInside();
             Refresh();
             // Shown this frame; if it cannot take the focus until laid out, Update
             // hands it over on the next.
@@ -228,9 +238,8 @@ namespace ChessFight.Game
             if (refused != "") { ShowNote(refused); return; }
             field.value = "";
             scroll = 0;
-            // The lobby keeps the chat open for the next line; a match gives the
-            // keys back to the character.
-            if (Where == Layout.Match) Close(false);
+            // A sent line closes the chat everywhere, so the keys go back at once.
+            Close(false);
         }
 
         void Pick(ChatChannel c)

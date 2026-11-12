@@ -1332,6 +1332,8 @@ namespace ChessFight.Game
                 // Also while this player waits in the lobby for party members still in that match (Busy).
                 bool back = !string.IsNullOrEmpty(model.RejoinNote);
                 Show(rejoin, back);
+                // 11-11: the mode cards stay down while there is a match to go back to (other modes are shut).
+                if (back && railOpen) SetRail(false);
                 if (back && rejoinSub.text != model.RejoinNote) rejoinSub.text = model.RejoinNote;
             }
             Show(busy, model.Busy);
@@ -1428,6 +1430,7 @@ namespace ChessFight.Game
             }
             if (railHint != null)
                 railHint.text = !model.Online ? "Steam 연결이 필요해요"
+                              : !string.IsNullOrEmpty(model.RejoinNote) ? "진행 중인 경기가 있어 바꿀 수 없어요"
                               : model.Busy ? "매칭 중엔 바꿀 수 없어요"
                               : !model.CanChangeMode ? "파티장만 바꿀 수 있어요"
                               : "";   // 10-27 (승규 님): "모드마다 따로 매칭돼요" taken off

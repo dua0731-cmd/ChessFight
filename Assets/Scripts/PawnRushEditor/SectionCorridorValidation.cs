@@ -263,6 +263,12 @@ namespace ChessFight.PawnRush.Editor
                 var corridor = c;
                 pictures.Enqueue(() => CaptureView(corridor, id + "_approach", new Vector3(0f, 2.8f, -5f), new Vector3(0f, 2.2f, 8f), 68f));
                 pictures.Enqueue(() => CaptureView(corridor, id + "_back", new Vector3(0f, 3f, 16f), new Vector3(0f, 2.6f, 4f), 68f));
+                // R547: each end's wall join close up, where the corridor's west wall meets the section's: from inside the
+                // corridor looking along the wall to the end, and from the section looking back at the mouth's corner.
+                pictures.Enqueue(() => CaptureView(corridor, id + "_joinStartIn", new Vector3(2.5f, 1.7f, 6.5f), new Vector3(-4.5f, 2.6f, -.5f), 66f));
+                pictures.Enqueue(() => CaptureView(corridor, id + "_joinStartOut", new Vector3(3.5f, 2.2f, -6f), new Vector3(-6.3f, 3f, .5f), 66f));
+                pictures.Enqueue(() => CaptureView(corridor, id + "_joinEndIn", new Vector3(2.5f, 1.7f, 3.5f), new Vector3(-4.5f, 2.6f, 10.5f), 66f));
+                pictures.Enqueue(() => CaptureView(corridor, id + "_joinEndOut", new Vector3(3.5f, 2.2f, 16f), new Vector3(-6.3f, 3f, 9.5f), 66f));
                 if (after.Kind == PawnRushSection.SlotKind.Final)
                 {
                     // The war room's start floor: the end walls either side of the way in.
