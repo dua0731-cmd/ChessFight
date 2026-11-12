@@ -1,4 +1,4 @@
-# Put the rigged Tripo pieces into the game, eyes included, with a stand-in texture until Tripo's own textures come.
+# Put the rigged Tripo pieces into the game, eyes included, coloured by stripe atlases (no painted textures: JY 11-12).
 # The game's baker takes one skinned mesh with one material and one UV set (PieceModelBaker), so:
 #   - the eye meshes (RigWork/eyes/mesh/<P>_Eyes.blend: Eye, Glint, Blush, the knight's Brow) are joined into the
 #     piece mesh, each vertex weighted like the body face under it (inverse-distance over that face's corners)
@@ -27,6 +27,10 @@ def base(mat_name, fallback):
     if m.use_nodes:
         for n in m.node_tree.nodes:
             if n.type == "BSDF_PRINCIPLED":
+                # a face part drawn mostly by its emission is its emission colour: the black team's ivory eyes are
+                # ivory x0.2 + emission 0.9 (RigWork/README.md section 2), and their base colour alone came out khaki
+                if n.inputs["Emission Strength"].default_value >= 0.8:
+                    return srgb(n.inputs["Emission Color"].default_value)
                 return srgb(n.inputs["Base Color"].default_value)
     return srgb(m.diffuse_color)
 

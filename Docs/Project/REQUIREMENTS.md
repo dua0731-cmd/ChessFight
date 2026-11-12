@@ -898,3 +898,13 @@ R159(2026-10-25, 사용자): `JY-chessboxing_testgame`의 미추적 체스복싱
 - **상태·남은 확인:** 기본 전투와 피격 반응의 제한된 실제 Play 검사를 수행한 손맛 초안. `OnEnable`에서 재로드 후 소리 생성도 복구한다. 이번 세션 R160 때 공통 Core 131·Session 41을 통과했고 이후 공유 코드 변경은 없으며 R161에서는 새로 실행하지 않았다. 다음은 사람의 시야·조작성·피격/회피 체감 피드백이며 사용자 손맛 승인은 미확인이다.
 - **범위·한계:** `JY-chessboxing_testgame`, `Assets/Prototype/ChessBoxing` 내부. `Assets/Scripts`, `Assets/Prefabs`, `ProjectSettings`, `Packages`의 작업 diff 없음·보호 대상 5개 해시 일치로 공유 변경 보존을 확인했다. 무릎까지 독립된 전신 래그돌은 구현하지 않았으며 발은 시각 자세 처리다. 잡기·패대기·탄성 로프·의자·체스 라운드·네트워크 제외. 커밋·푸시 없음.
 - **근거:** `Docs/Network/VALIDATION.md` R161. R160의 통과 기록은 별도 이력이며 이번 물리 변경의 최종 결과로 재사용하지 않는다.
+
+## JY-piece-rig · 2026-11-12 · 기물 팔 위치 · 캐릭터 셰이더 · 흑/백 팀
+- **요청(JY):** "비숍 팔이 많이 낮게 나왔고 룩은 팔이 안 보인다, 일부러 그런 거야?" "쉐이더 만들고 있었는데 왜 안 넣어? 팀 구분은 체스처럼 흑/백." 비숍 팔다리는 라인업 시트(11-09 첨부)와 비숍 시트(11-12)대로.
+- **결과:**
+  - 팔: 룩은 Pawn 팔을 바깥으로 6.4 cm 옮겼고, 비숍은 자기 팔(`bishop arm.fbx`)을 목 기둥에 단다(`RigWork/scripts/pieces/rig_tripo.py`). 발은 시트와 같아 그대로다.
+  - 셰이더 `ChessFight/Character`를 넣고 폰과 모든 기물을 옮겼다(`CharacterLook`).
+  - 흑/백 팀을 모든 모드에 적용했다(`RagdollPawn.PieceMaterial`, `SwordFightGame`, `LastSceneFigure`, 빌더의 P2).
+  - 흑팀 아이보리 눈과 폰 흰 아틀라스 색을 바로잡았다.
+  - 새 폰 메쉬 에셋이 깨져 있던 문제(`RagdollLabBuilder.SaveAsset`)를 고쳤다.
+- **커밋:** `JY-piece-rig` 11-12 커밋. **상태:** Unity 확인 전([VALIDATION](../Network/VALIDATION.md) 맨 위).

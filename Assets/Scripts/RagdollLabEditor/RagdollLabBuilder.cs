@@ -147,13 +147,13 @@ namespace ChessFight.RagdollLab.Editor
         static Materials BuildMaterials()
         {
             var albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
-            var redCollar = RecolorCollar(0f, GeneratedDir + "/PawnAlbedo_RedCollar.png");
+            var blackAlbedo = AssetDatabase.LoadAssetAtPath<Texture2D>(CharacterLook.PawnBlackAlbedo);
             var grid = GridTexture(GeneratedDir + "/Grid.png");
             return new Materials
             {
-                pawnP1 = Mat("Pawn_P1", Color.white, albedo, 0.25f),
-                pawnP2 = Mat("Pawn_P2", Color.white, redCollar, 0.25f),
-                pawnDummy = Mat("Pawn_Dummy", new Color(0.6f, 0.6f, 0.62f), albedo, 0.15f),
+                pawnP1 = PawnMat("Pawn_P1", albedo, false, Color.white),
+                pawnP2 = PawnMat("Pawn_P2", blackAlbedo, true, Color.white),
+                pawnDummy = PawnMat("Pawn_Dummy", albedo, false, new Color(0.6f, 0.6f, 0.62f)),
                 floor = Mat("Lab_Floor", new Color(0.88f, 0.88f, 0.86f), grid, 0.05f),
                 wall = Mat("Lab_Wall", new Color(0.64f, 0.74f, 0.9f), grid, 0.05f),
                 slope = Mat("Lab_Slope", new Color(0.66f, 0.84f, 0.62f), grid, 0.05f),
@@ -183,29 +183,13 @@ namespace ChessFight.RagdollLab.Editor
             return mat;
         }
 
-        static Texture2D RecolorCollar(float hue, string path)
+        // The pawn's team materials on the character shader (CharacterLook): P1 the white team, P2 the black - chess's
+        // white and black (JY 11-12); P2 used to be the white pawn with its collar recoloured red.
+        static Material PawnMat(string name, Texture texture, bool blackTeam, Color tint)
         {
-            var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            source.LoadImage(File.ReadAllBytes(TexturePath));
-            var pixels = source.GetPixels32();
-            int changed = 0;
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                Color c = pixels[i];
-                Color.RGBToHSV(c, out float h, out float s, out float v);
-                if (s < 0.3f || h < 0.52f || h > 0.75f) continue;
-                Color n = Color.HSVToRGB(hue, Mathf.Min(1f, s * 1.1f), v);
-                n.a = 1f;
-                pixels[i] = n;
-                changed++;
-            }
-            source.SetPixels32(pixels);
-            source.Apply();
-            File.WriteAllBytes(path, source.EncodeToPNG());
-            Object.DestroyImmediate(source);
-            AssetDatabase.ImportAsset(path);
-            Debug.Log($"[RagdollLab] Recolored {changed} collar pixels -> {path}");
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            var mat = CharacterLook.MaterialAt($"{MaterialDir}/{name}.mat");
+            CharacterLook.Apply(mat, texture, blackTeam, true, tint);
+            return mat;
         }
 
         static Texture2D GridTexture(string path)
@@ -775,10 +759,33 @@ namespace ChessFight.RagdollLab.Editor
                 AssetDatabase.CreateAsset(asset, path);
                 return asset;
             }
-            EditorUtility.CopySerialized(asset, existing);
+            if (asset is Mesh from && existing is Mesh to) FillMesh(from, to);
+            else EditorUtility.CopySerialized(asset, existing);
             Object.DestroyImmediate(asset);
             EditorUtility.SetDirty(existing);
             return existing;
+        }
+
+        // A mesh asset is filled in place, as PieceModelBaker fills its own: copied over (CopySerialized), a mesh with a
+        // new vertex count kept the old count beside the new data. The new low-poly pawn (11-11, 10,630 vertices) saved
+        // into the old PawnSkinned (6,960) that way, its weights read against the wrong vertices, and the pawn drew as
+        // stretched shards in every mode (found 11-12 rendering it in a batch run).
+        static void FillMesh(Mesh from, Mesh to)
+        {
+            int n = from.vertexCount;
+            to.Clear();
+            to.indexFormat = from.indexFormat;
+            to.vertices = from.vertices;
+            if (from.normals.Length == n) to.normals = from.normals;
+            if (from.tangents.Length == n) to.tangents = from.tangents;
+            if (from.colors32.Length == n) to.colors32 = from.colors32;
+            if (from.uv.Length == n) to.uv = from.uv;
+            if (from.uv2.Length == n) to.uv2 = from.uv2;
+            to.subMeshCount = from.subMeshCount;
+            for (int s = 0; s < from.subMeshCount; s++) to.SetTriangles(from.GetTriangles(s), s);
+            to.bindposes = from.bindposes;
+            if (from.boneWeights.Length == n) to.boneWeights = from.boneWeights;
+            to.RecalculateBounds();
         }
 
         // ------------------------------------------------------------------ scene

@@ -10,7 +10,8 @@
    0.34,
    0.38,
    0.42
-  ]
+  ],
+  "arms": "pawn's, 6.4 cm out"
  },
  "knight": {
   "vertices": 4205,
@@ -26,9 +27,9 @@
   ]
  },
  "bishop": {
-  "vertices": 10196,
-  "faces": 11782,
-  "stub_root_moved": 56,
+  "vertices": 11256,
+  "faces": 13288,
+  "stub_root_moved": 0,
   "top": 1.447,
   "chain": [
    0.256,
@@ -36,6 +37,7 @@
    0.409,
    0.503,
    0.643
-  ]
+  ],
+  "arms": "bishop arm.fbx at the neck column z 0.665"
  }
 }

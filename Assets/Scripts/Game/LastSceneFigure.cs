@@ -95,20 +95,29 @@ namespace ChessFight.Game
                 Object.Destroy(root);
                 return null;
             }
-            // The black side and the bots in charcoal: the same model, its texture darkened.
+            // The black side and the bots in black (JY 11-12, chess's white and black): the black set's material for
+            // this piece (Resources/PieceModels/Black, charcoal with ivory eyes), else the same model's texture darkened.
             if (t == 1)
+            {
+                var blackSet = Resources.Load<Material>("PieceModels/Black/" + kind);
                 foreach (var r in look.GetComponentsInChildren<Renderer>(true))
                 {
                     var source = r.sharedMaterial;
                     if (source == null) continue;
+                    if (blackSet != null)
+                    {
+                        r.sharedMaterial = blackSet;
+                        continue;
+                    }
                     if (!darkened.TryGetValue(source.name, out var dark) || dark == null)
                     {
                         dark = new Material(source) { name = source.name + " (black)" };
-                        if (dark.HasProperty("_Color")) dark.color = source.color * BlackTeamTint;
+                        if (dark.HasProperty("_Color") || dark.HasProperty("_BaseColor")) dark.color = source.color * BlackTeamTint;
                         darkened[source.name] = dark;
                     }
                     r.sharedMaterial = dark;
                 }
+            }
 
             var figure = new LastSceneFigure(root, kind, t, rig, arms, legs, null) { model = true };
             var toRig = Quaternion.Inverse(rig.rotation);

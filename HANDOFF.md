@@ -123,9 +123,19 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 
 - **새 기물 리깅(2026-11-10, 브랜치 `JY-piece-rig`, 게임 미반영·미검증)**: `RigWork/` 참고(`RigWork/README.md`).
   - 사용자의 Tripo 룩·나이트·비숍(Tripo가 조각한 얼굴은 제거)과 로우폴리 폰을 폰의 Mixamo 뼈대에 리깅했다. 규칙은 `Tools/PieceRig/rig_piece.py`와 같다. FBX/blend와 Blender 스크립트가 들어 있다.
-  - 눈은 메쉬로 붙인다. 룩·나이트·비숍은 눈 메쉬까지 합쳐 `Art/Pieces/<P>/<P>_Rigged.fbx`에 넣었고, Pawn Rush 리그도 다시 만들었다. 텍스처는 Tripo 텍스처가 오기 전까지 쓰는 임시 단색 줄무늬다.
+  - 눈은 메쉬로 붙인다. 룩·나이트·비숍은 눈 메쉬까지 합쳐 `Art/Pieces/<P>/<P>_Rigged.fbx`에 넣었고, Pawn Rush 리그도 다시 만들었다. 텍스처는 쓰지 않기로 했다(사용자 11-12). 단색 줄무늬 아틀라스가 실제 색이고 질감은 셰이더가 맡는다.
   - 베이크 결과(Bake Piece Models, Bake Pawn Rush Piece Models, Bake Menu Pieces)도 커밋했다(2026-11-12, 브랜치 복사본에서 배치로 실행). 이 브랜치를 받으면 바로 새 모델이 보인다. 모델을 다시 내보내면 베이크도 다시 돌려야 한다. 폰도 새 로우폴리 폰으로 바꿨다(`Art/Pawn/Pawn.fbx`). 눈 메쉬가 들어 있고, 단색 줄무늬 `PawnAlbedo.jpg`를 쓴다. `RagdollLabBuilder`와 `rig_pawnrush.py`는 새 폰의 구조를 받도록 고쳤다: 몸통보다 정점이 많은 눈, 따로 떨어진 신발, 팔 뿌리+커프. 몸통은 크기로 고른다. 물리 자동 테스트 결과는 바꾸기 전과 같다(통과 88, 실패 8, 같은 8개).
-  - 다음 할 일: 눈 메쉬 합치기, 최종 디자인 Tripo 비숍, `PieceModelBaker`로 게임에 넣고 테스트. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
+  - **11-12 추가(Unity 확인 전)**:
+    - **폰이 깨져 그려지던 문제를 고쳤다.** 새 폰을 넣은 커밋(`4f0a064d`)의 `PawnSkinned.asset`에는 정점 수가 두 가지로 섞여 있었다(새 데이터 10,630개, 옛 개수 6,960개). 그래서 웨이트가 엉뚱한 뼈를 가리켜 모든 모드에서 폰이 조각나 보였다. 원인은 `RagdollLabBuilder.SaveAsset`이 메쉬를 `CopySerialized`로 덮은 것이다. 이제 `PieceModelBaker`처럼 제자리에서 채운다([PITFALLS §44](Docs/Environment/PITFALLS.md)).
+    - **팔 위치를 사용자의 라인업 시트대로 고쳤다.** 룩은 팔을 몸 밖으로 6.4 cm 옮겼다. 비숍은 자기 팔(`bishop arm.fbx`)을 목 기둥(z 0.665)에 단다. 게임은 이미 기물 모델의 어깨 표시를 기준으로 팔을 돌리고(`RagdollVisualSync.PoseAsPiece`), 물리는 그대로다.
+    - **캐릭터 셰이더 `ChessFight/Character`를 넣었다**(`Assets/Shaders/Characters/CFCharacter.shader`). 부드러운 셀 음영과 따뜻한 그늘을 쓰고, 색 띠 아틀라스로 눈 광택과 반쯤 스스로 빛나는 눈·하이라이트·볼을 표현한다. 폰과 모든 기물 재질을 `CharacterLook`(메뉴 Apply Character Look, 빌더도 사용)으로 옮겼다.
+    - **팀은 체스처럼 흑/백이다.**
+      - 백팀: 크림 몸통에 검은 눈. 흑팀: 차콜 몸통에 아이보리 눈.
+      - `Resources/PieceModels/Black/<기물>`과 새 `Black/Pawn.mat`을 쓴다.
+      - 흑팀 승격 기물은 이제 모든 모드에서 흑 세트를 입는다(전에는 Pawn Rush만). 소드 파이트 흑팀 폰, 엔딩 흑 피규어, 랩 P2도 흑 세트를 입는다(전에는 남색 틴트와 빨간 칼라).
+      - 흑팀 눈 색이 카키로 잘못 들어가 있던 것과 폰 흰 아틀라스가 회색으로 저장돼 있던 것도 고쳤다.
+    - Unity 배치(복사본)에서 셰이더 컴파일 오류 없음, 백·흑 렌더 확인. 물리 코드·충돌체는 바뀌지 않았다.
+  - 다음 할 일: 사용자 Unity 확인([VALIDATION](Docs/Network/VALIDATION.md) 맨 위), 최종 디자인 Tripo 비숍. 비숍 손은 물리 손보다 16 cm 위에 그려지므로 벽 오르기·잡기에서 손이 떠 보이면 `PoseAsPiece`가 손을 뻗을 때 차이를 줄이게 한다. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
 
 - R542 두 PC로 벽 양쪽과 모서리를 왕복하고, 승격 뒤 이름과 아이콘을 확인한다. [확인 목록](Docs/Network/VALIDATION.md#nameplate-check).
 

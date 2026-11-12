@@ -105,6 +105,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `JY-piece-rig`) | 11-12 | JY | 기물 팔 위치(룩 바깥, 비숍 자기 팔 목 기둥), 캐릭터 셰이더 `ChessFight/Character`, 흑/백 팀 모든 모드, 깨진 `PawnSkinned` 메쉬 수리(`SaveAsset` 제자리 채우기) |
 | (이 병합 커밋) | 11-06 | R492 | `seoungtest`(`ef4146c`, R237 ~ R491)를 `main`에 병합: 실제 충돌 32개 — 정원 코드 = seoungtest, 대계단 현관홀 · 구간 설정 · 홀 `.npy` = main, 나머지(키트 · 검증 · 메뉴 · 시험 · 컴파일 스크립트 · 문서) = 양쪽 모두; 폰 조작 = seoungtest; main 장면 5개(Intro · Lobby · QueenOfTheHill · RagdollTest · QotH 스킬 시험)와 빌드 장면 목록은 main 그대로; seoungtest의 `_Recovery` 추가분 · `__pycache__` 뺌, `.gitignore` 캐시 규칙 |
 | 이 기록을 추가한 커밋(`git log --grep=R496`) | 11-06 | R496 | 기존 프로젝트 루트/main 직접 작업으로 통일·수정 프리팹2개와meta 외부 해시 백업/patch/stash/옛3커밋 보존. main 점유 해제만 하고 이전 worktree 내용 유지. 새 worktree 사용 안 함(T13), 게임 코드·프리팹 재생성 없음. Core164·모의55 통과, 기존 경로 Unity MG목록·새메뉴GUI·C Start·숫자5→E 서고 AI관찰, 전체키·퍼즐·사용자/Steam·Desktop선택 미확인 |
 | 이 기록을 추가한 커밋(`git log --grep=R313`) | 11-06 | R313 | Pull 뒤 미니게임 프리팹·메뉴가 안 보인 제보: Desktop의 `api-bridge-main/main` R312와 Unity의 원래 `ChessFighter/claude/bold-johnson` R155 경로 불일치를 Git·파일·Editor.log로 확인(AI). 올바른 Hub 프로젝트 등록·Show in Explorer 대조 안내, 원본 수정2개 보존. 게임 코드·자산·브랜치 변경 없음. 올바른 main을 별도 Unity로 열어 실제 시험 씬 Play·Start/C 궁전·시험 캐릭터·HUD를 AI 관찰. 사용자 입력 감지 후 중지하여 1~0/F5·실제 퍼즐·사용자/Steam은 미확인. Core164·모의55 통과, 새 로그 오류/예외/누락0·공유래그돌 ConvexMesh 경고1건(물리 변경 없음) |

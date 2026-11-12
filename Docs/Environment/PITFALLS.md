@@ -303,3 +303,15 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 ## 43. MonoBehaviour 필드 초기화에서 `new MaterialPropertyBlock()` 금지 (R506)
 
 `readonly MaterialPropertyBlock b = new MaterialPropertyBlock();`처럼 필드에서 만들면 Unity가 "CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer)"를 내고 b가 null로 남는다. 그 뒤 필드 초기화(배열 등)도 함께 실패해 Update가 매 프레임 예외로 멈추고, 화면에는 "아무 일도 안 일어남"으로만 보인다. Awake/Update에서 처음 쓸 때 만든다. 증상이 안 보이면 먼저 Editor.log를 본다.
+
+## 44. 메쉬 에셋을 `EditorUtility.CopySerialized`로 덮으면 정점 수가 섞임 (JY-piece-rig 11-12)
+
+- **증상:** 새 로우폴리 폰(10,630정점)으로 다시 구운 뒤, 폰이 모든 모드에서 늘어난 조각으로 그려졌다. 물리 자동 테스트는 통과했다. 충돌체는 메쉬 에셋이 아니라 계산한 위치로 만들기 때문이다.
+- **원인:**
+  - `RagdollLabBuilder.SaveAsset`이 새 메쉬를 기존 `PawnSkinned.asset`(옛 폰 6,960정점)에 `CopySerialized`로 복사했다.
+  - 저장된 YAML에 `vertexCount: 10630`과 `m_VertexCount: 6960`이 함께 남았다.
+  - Unity는 6,960개로 읽었고, 웨이트 번호가 엉뚱한 뼈(오른팔·손가락)를 가리켰다.
+- **해결:** 메쉬는 `Clear()` 뒤 제자리에서 채운다(`RagdollLabBuilder.FillMesh`, `PieceModelBaker`가 이미 쓰던 방식).
+- **확인 방법:**
+  - 에셋 파일에서 `vertexCount`와 `m_VertexCount`가 같은지 본다.
+  - 배치에서 프리팹을 장면에 꺼내 그려 본다. 자동 물리 테스트만으로는 겉모습이 깨진 것을 못 잡는다.

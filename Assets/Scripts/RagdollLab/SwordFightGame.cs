@@ -63,8 +63,11 @@ namespace ChessFight.RagdollLab
             savedGravity = Physics.gravity;
             if (tuning != null) Physics.gravity = Vector3.down * 9.81f * tuning.values.gravityScale;
             savedLock = Cursor.lockState; savedCursor = Cursor.visible;
-            white = new Material(pawnPrefab.skin.sharedMaterial) { color = new Color(.96f, .93f, .84f) };
-            black = new Material(pawnPrefab.skin.sharedMaterial) { color = new Color(.15f, .18f, .24f) };
+            // JY 11-12 ("팀 구분은 체스처럼 흑/백으로"): white is the pawn's own material, black the black set's pawn
+            // (Resources/PieceModels/Black/Pawn: charcoal body, ivory eyes); a navy tint only if that is missing.
+            white = new Material(pawnPrefab.skin.sharedMaterial);
+            var blackSet = Resources.Load<Material>("PieceModels/Black/Pawn");
+            black = blackSet != null ? new Material(blackSet) : new Material(white) { color = new Color(.15f, .18f, .24f) };
             CameraRig = FindFirstObjectByType<LabCamera>();
             Automated = Array.IndexOf(Environment.GetCommandLineArgs(), "-swordFightTest") >= 0;
             if (Automated) Application.runInBackground = true;
