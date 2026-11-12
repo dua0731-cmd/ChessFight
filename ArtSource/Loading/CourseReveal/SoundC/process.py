@@ -145,7 +145,7 @@ save("RevealCountLast", c)
 # 1, cut dead on it. Its hit is its end; the code lines that end up with the 1. Its length is the countdown's, from
 # LoadingScreenView.Reveal.cs: CountAt[2] - (CountAt[0] - CountIn). R596 slowed the numbers to 1.0 s apart
 # (6.6 / 7.6 / 8.6, CountIn .25): 2.25 s (was 1.85 s for 6.2 / 7.0 / 7.8).
-COUNT_AT, COUNT_IN = (7.8, 8.8, 9.8), .25  # R597 moved the countdown 1.2 s later (same length)
+COUNT_AT, COUNT_IN = (10.2, 11.2, 12.2), .25  # R597 moved the countdown 1.2 s later, R611 0.9 s, R613 1.5 s more (same length)
 bed = round(COUNT_AT[-1] - (COUNT_AT[0] - COUNT_IN), 3)
 a = load("cdPulse_1")
 c = norm(fade(cut(a, int(.3 * SR), bed), bed - .01, 1.0, fade_in=.15), -1)

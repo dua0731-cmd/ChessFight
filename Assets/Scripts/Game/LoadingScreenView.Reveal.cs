@@ -18,6 +18,7 @@ namespace ChessFight.Game
     // "이번 판 미니게임" slides in on an ivory plate; three tall slanted panels drop in (from above, below, above), cut
     // hard through the pictures their slot may draw, slower and slower, and stop on this round's: the panel pops, a
     // brass bar runs under the picture, the name slides in and a light slice crosses it, the screen shakes a little.
+    // R611: the panels roll one after another, each starting once the one before it has stopped (they rolled together).
     // Seven squares under the panels fill one by one, one per section. Then 3, 2, 1 punch in, big, in the middle of
     // the screen while the pictures dim. No gold gradients, glows, rays or sparks, no zone names, no "매칭 완료" and no
     // "코스 확정"; no sound (R583 added sound made in code: LoadingScreenView.RevealSound.cs, CourseRevealSynth).
@@ -35,27 +36,45 @@ namespace ChessFight.Game
         // (were 1.2 s, 1.7 / 2.9 / 4.1), so each roll slows down longer and each mini-game stays a moment on its own.
         // R597 ("미니게임 고르는 장면이 좀 빨라"): 1.8 s apart (were 1.4 s, 2.0 / 3.4 / 4.8), and the cuts start slower
         // (HopTimes' first cut), so the first panel's last cuts no longer rush into its stop.
-        static readonly float[] PanelEnter = { .2f, .28f, .36f }, RollStart = { .55f, .65f, .75f }, RollLand = { 2.4f, 4.2f, 6.0f };
+        // R611 ("미니게임 1 정하고 그다음 미니게임 2 정하고 그 다음 미니게임 3 정하는 방식으로 해야 해"): one panel at a time.
+        // All three used to start cutting together (.55 / .65 / .75) and only stop in turn; now each starts 0.4 s after
+        // the one before it stops, and every roll is the first one's (R597's, 1.85 s: 12 cuts, the last 0.30 s):
+        // 0.55 to 2.4, 2.8 to 4.65, 5.05 to 6.9. A panel still waiting for its turn shows its picture dark under "? ? ?".
+        // R612 (on a still of all three at "? ? ?": "맵이 선택 되기 전에 좀 더 어둡게 맵을 해줘", then on a sheet of .72 / .45
+        // / .16: "고르기 확정 전까지는 다 제일 밑에 꺼 어두운 걸로 해"): every picture not picked yet, waiting or rolling, is
+        // at UnpickedBright (rolling was .72, waiting R611's .25; each cut still flashes it 1.35x), and the picked one
+        // comes up full, so it lights up as it locks.
+        // R615 ("고르기 전 미니게임 밝기를 0.25로 올려"): .25 (R612 .16).
+        const float UnpickedBright = .25f;
+        // R613 ("카운트 다운 빼고 전체적으로 좀만 천천히 해줘"): everything up to the countdown about 1.2x slower, the hits
+        // themselves (slides, pops, slices, shakes) as crisp as before: the panels come in 0.1 s apart (were 0.08), each
+        // roll lasts 2.2 s (was 1.85) with its first cut 1.2x longer (HopTimes: 12 cuts, the last 0.35 s), 0.5 s between a
+        // stop and the next roll (was 0.4): 0.7 to 2.9, 3.4 to 5.6, 6.1 to 8.3 (were 0.55 to 2.4, 2.8 to 4.65, 5.05 to 6.9).
+        static readonly float[] PanelEnter = { .2f, .3f, .4f }, RollStart = { .7f, 3.4f, 6.1f }, RollLand = { 2.9f, 5.6f, 8.3f };
         const float PanelSlide = .22f;
         // The title slides in from TitleAt for TitleSlide, easing out past its place and back (EoBack, pulled back by
         // BackPull).
         const float TitleAt = .1f, TitleSlide = .24f, BackPull = 2.1f;
         // The seven section squares are full at these times (each mini-game's as its panel stops), filling for DotFill.
-        // R597: moved with the stops (were 1.3 / 2.0 / 2.7 / 3.4 / 4.1 / 4.8 / 5.2).
-        static readonly float[] DotAt = { 1.5f, 2.4f, 3.3f, 4.2f, 5.1f, 6.0f, 6.4f };
+        // R597: moved with the stops (were 1.3 / 2.0 / 2.7 / 3.4 / 4.1 / 4.8 / 5.2). R611: with them again (were 1.5 / 2.4
+        // / 3.3 / 4.2 / 5.1 / 6.0 / 6.4): an obstacle's about halfway through the next roll, the final's 0.4 s after the
+        // last stop. R613: with the slower rolls (were 1.5 / 2.4 / 3.7 / 4.65 / 5.95 / 6.9 / 7.3), the final's 0.5 s after.
+        static readonly float[] DotAt = { 1.8f, 2.9f, 4.5f, 5.6f, 7.2f, 8.3f, 8.8f };
         const float DotFill = .1f;
         // 3, 2, 1; the countdown shows CountIn before the 3 and the pictures dim with it. R592: a full second after the
         // last square (5.2 s) to take the whole course in before the countdown (the 3 came 0.4 s after it before).
         // R596 ("카운트 다운 시간도 좀 더 천천히"): the numbers 1.0 s apart (were 0.8 s, 6.2 / 7.0 / 7.8), the 3 0.4 s later.
-        // R597: 1.2 s later with the slower stops (were 6.6 / 7.6 / 8.6), still 1.4 s after the last square.
-        static readonly float[] CountAt = { 7.8f, 8.8f, 9.8f };
+        // R597: 1.2 s later with the slower stops (were 6.6 / 7.6 / 8.6), still 1.4 s after the last square. R611: 0.9 s
+        // later with the last square (were 7.8 / 8.8 / 9.8), still 1.4 s after it. R613: the countdown itself unchanged
+        // ("카운트 다운 빼고"), 1.5 s later with the slower picking (were 8.7 / 9.7 / 10.7).
+        static readonly float[] CountAt = { 10.2f, 11.2f, 12.2f };
         const float CountIn = .25f;
         // Everything has been shown (the 1 has stood CountGo): the match scene may switch on (MatchLoader waits for it).
         // R596 tried switching it on under the reveal at 5.4 s, but in the editor switching on plus the warm-up froze
         // and stuttered for about 7 s and the 3, 2, 1 never showed ("지금 에디터에는 3 2 1 이 안나 오니까 전 처럼 하자"),
         // so it is after the countdown again, as before.
         const float CountGo = .5f;
-        public const float RevealShownSeconds = 9.8f + CountGo;
+        public const float RevealShownSeconds = 12.2f + CountGo;
 
         // ---- the stage (the sample's pixels) ----
 
@@ -334,7 +353,8 @@ namespace ChessFight.Game
 
             float cut = !locked && j >= 0 ? 1f + .35f * (1f - Ph(hopAge, 0f, .05f)) : 1f;
             float dim = t >= CountAt[0] - CountIn ? .45f * Eo3(Ph(t, CountAt[0] - CountIn, .2f)) : 0f;
-            p.Face.Picture(shown >= 0 ? p.Pictures[shown] : null, locked ? 1f - dim : .72f * cut);
+            // R612: dark until it is picked, waiting for its turn (R611) or rolling
+            p.Face.Picture(shown >= 0 ? p.Pictures[shown] : null, locked ? 1f - dim : UnpickedBright * cut);
             p.Face.BarFill(locked ? Eo3(Ph(age, .02f, .18f)) : 0f);
 
             string name = locked ? p.Names[p.Pick] : "? ? ?";
@@ -342,7 +362,13 @@ namespace ChessFight.Game
             p.Name.style.opacity = locked ? 1f : .4f;
             p.Name.style.translate = new Translate(locked ? -50f * (1f - EoBack(Ph(age, .02f, .16f))) : 0f, 0f);
 
-            p.Slice.SliceAt(-90f + 560f * Ph(age, 0f, .14f), locked && age < .14f ? .85f : 0f);
+            // R614 ("정해질 때 대각선 방향으로 흰색 효과가 나오는데 너무 빨리 돼"): the light slice crosses in SliceFor (was
+            // .14 s), easing in and out, and fades over its last third
+            const float SliceFor = .42f;
+            float sweep = Ph(age, 0f, SliceFor);
+            sweep = sweep * sweep * (3f - 2f * sweep);
+            float sliceLight = locked && age < SliceFor ? .85f * Mathf.Clamp01((1f - Ph(age, 0f, SliceFor)) * 3f) : 0f;
+            p.Slice.SliceAt(-90f + 560f * sweep, sliceLight);
             return locked ? Shake(age, 6f, .2f, i + 5) : Vector2.zero;
         }
 
@@ -378,8 +404,9 @@ namespace ChessFight.Game
         // so the last lands on `land`.
         static float[] HopTimes(float start, float land)
         {
-            // R597: first cut .065 s (was .045 s): the rolls flicker a little slower and their last cuts are longer
-            const float first = .065f, grow = 1.15f;
+            // R597: first cut .065 s (was .045 s): the rolls flicker a little slower and their last cuts are longer.
+            // R613: .078 s (1.2x, with the 1.2x longer rolls).
+            const float first = .078f, grow = 1.15f;
             int hops = 1;
             float sum = first;
             while (sum < land - start) { sum += first * Mathf.Pow(grow, hops); hops++; }
