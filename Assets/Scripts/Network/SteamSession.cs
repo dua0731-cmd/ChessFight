@@ -110,7 +110,12 @@ namespace ChessFight.Network
         //      a side, MiniGameScale) - another board, other towers, another number of statues, kings and planks, the
         //      king's road drawn from a seed - and several games' blocks are laid out anew (A, B, F, G). A v36 PC would
         //      build six a side's old games beside a v37 host's and read its blocks wrongly.
-        public const string Protocol = "chessfight.dua0731.network.v37";
+        // v38 (R616): the round's last section - four turrets on the corners of the conveyor's well firing in turn at the
+        //      carriage (TurretVolleys, drawn from the section's seed) instead of the goal's three rooks, and the finish
+        //      beyond the great door, a PushGate whose progress rides in the course state (two more bytes of the
+        //      sections' parts) with a second checkpoint behind it. A v37 PC would draw other shots, end the round on
+        //      the star platform and read the parts' bytes two short.
+        public const string Protocol = "chessfight.dua0731.network.v38";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

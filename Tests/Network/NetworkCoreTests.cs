@@ -2759,6 +2759,44 @@ public static class NetworkCoreTests
                 Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
                 Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
                       "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
+            Test("R616 turret volleys: a turret every three seconds, never the one before, every turret as often, the same on every PC", () => {
+                Check(TurretVolleys.Period == 3.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(2.999) == 0 && TurretVolleys.Volley(3) == 1
+                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 21.0, "a volley every three seconds of the clock");
+                foreach (int turrets in new[] { 3, 4, 5, 8 })
+                    foreach (int seed in new[] { 1, 2, 77, -5, 20261112, int.MaxValue })
+                    {
+                        var count = new int[turrets];
+                        // Across zero and far along the clock (a shared clock may count from anywhere), through many blocks.
+                        foreach (long from in new long[] { -400, 0, 1L << 33 })
+                        {
+                            int before = TurretVolleys.Turret(seed, from - 1, turrets);
+                            for (long n = from; n < from + 4000; n++)
+                            {
+                                int t = TurretVolleys.Turret(seed, n, turrets);
+                                Check(t >= 0 && t < turrets, "one of the turrets: " + t);
+                                Check(t != before, "the same turret twice running at volley " + n + ", seed " + seed + ", " + turrets + " turrets");
+                                Check(t == TurretVolleys.Turret(seed, n, turrets), "the same answer whenever it is asked");
+                                count[t]++;
+                                before = t;
+                            }
+                        }
+                        // 12,000 volleys: each turret near its share (a quarter each of four: 2,700 .. 3,300).
+                        foreach (int c in count)
+                            Check(c > 12000 / turrets * .9 && c < 12000 / turrets * 1.1, "an even share, seed " + seed + ": " + string.Join(" ", count));
+                    }
+                // What comes after a turret is any of the other three, not a fixed order.
+                var follows = new int[4, 4];
+                for (long n = 1; n < 6000; n++) follows[TurretVolleys.Turret(9, n - 1, 4), TurretVolleys.Turret(9, n, 4)]++;
+                for (int a = 0; a < 4; a++)
+                    for (int b = 0; b < 4; b++)
+                        Check(a == b ? follows[a, b] == 0 : follows[a, b] > 350 && follows[a, b] < 650, "after turret " + a + " comes " + b + ": " + follows[a, b]);
+                // Another round, another order.
+                int same = 0;
+                for (long n = 0; n < 400; n++) if (TurretVolleys.Turret(11, n, 4) == TurretVolleys.Turret(12, n, 4)) same++;
+                Check(same > 60 && same < 140, "two seeds agree only by chance: " + same + " of 400");
+                // Two turrets take turns, one fires every time.
+                for (long n = -20; n < 20; n++)
+                    Check(TurretVolleys.Turret(3, n, 2) != TurretVolleys.Turret(3, n + 1, 2) && TurretVolleys.Turret(3, n, 1) == 0, "two take turns"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
