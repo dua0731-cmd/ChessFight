@@ -31,9 +31,9 @@ Material:
     m_Floats:
     - _Ambient: 0.3
     - _BlushEmit: 0.3
-    - _EyeEmit: 0.9
-    - _EyeGloss: 0.15
-    - _GlintEmit: 0.9
+    - _EyeEmit: 0
+    - _EyeGloss: 0.6
+    - _GlintEmit: 0.6
     - _Gloss: 0.1
     - _GlossSize: 24
     - _LimbGloss: 0.45

@@ -130,12 +130,12 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
     - **팔 위치를 사용자의 라인업 시트대로 고쳤다.** 룩은 팔을 몸 밖으로 6.4 cm 옮겼다. 비숍은 자기 팔(`bishop arm.fbx`)을 목 기둥(z 0.665)에 단다. 게임은 이미 기물 모델의 어깨 표시를 기준으로 팔을 돌리고(`RagdollVisualSync.PoseAsPiece`), 물리는 그대로다.
     - **캐릭터 셰이더 `ChessFight/Character`를 넣었다**(`Assets/Shaders/Characters/CFCharacter.shader`). 부드러운 셀 음영과 따뜻한 그늘을 쓰고, 색 띠 아틀라스로 눈 광택과 반쯤 스스로 빛나는 눈·하이라이트·볼을 표현한다. 폰과 모든 기물 재질을 `CharacterLook`(메뉴 Apply Character Look, 빌더도 사용)으로 옮겼다.
     - **팀은 체스처럼 흑/백이다.**
-      - 백팀: 크림 몸통에 검은 눈. 흑팀: 차콜 몸통에 아이보리 눈.
+      - 백팀: 크림 몸통에 검은 눈. 흑팀: 연한 차콜 몸통(89, 89, 97)에 백팀과 같은 검은 눈·흰 하이라이트(11-12 사용자 선택; 아이보리 눈·하이라이트 없음은 "무섭고 귀여움이 없다"). 색은 `RigWork/scripts/pieces/atlas_fix.py`의 `BLACK_BODY`와 `CharacterLook`에서 바꾼다.
       - `Resources/PieceModels/Black/<기물>`과 새 `Black/Pawn.mat`을 쓴다.
       - 흑팀 승격 기물은 이제 모든 모드에서 흑 세트를 입는다(전에는 Pawn Rush만). 소드 파이트 흑팀 폰, 엔딩 흑 피규어, 랩 P2도 흑 세트를 입는다(전에는 남색 틴트와 빨간 칼라).
       - 흑팀 눈 색이 카키로 잘못 들어가 있던 것과 폰 흰 아틀라스가 회색으로 저장돼 있던 것도 고쳤다.
     - Unity 배치(복사본)에서 셰이더 컴파일 오류 없음, 백·흑 렌더 확인. 물리 코드·충돌체는 바뀌지 않았다.
-    - **겉모습 A안(사용자 선택 11-12)**: 예전 텍스처 기물과 비교해 "너무 새 것 같다"는 의견에 시안 A~C(`RigWork/pieces/look_variants_*.png`, 원본 RigWork는 git 밖) 중 A. 크림을 예전 베이지 쪽으로 한 톤 낮춤(`_BodyTint`), 그늘 더 진하고 부드럽게, 손발은 순검정 대신 반사가 보이는 짙은 색(백 따뜻한 회색, 흑 거의 검정, `_LimbColor`·`_LimbGloss`). `CharacterLook`이 팀별로 넣는다. 흑팀 눈 색(아이보리·하이라이트 없음이 무섭다는 의견)은 시안을 보내고 결정 대기.
+    - **겉모습 A안(사용자 선택 11-12)**: 예전 텍스처 기물과 비교해 "너무 새 것 같다"는 의견에 시안 A~C(`RigWork/pieces/look_variants_*.png`, 원본 RigWork는 git 밖) 중 A. 크림을 예전 베이지 쪽으로 한 톤 낮춤(`_BodyTint`), 그늘 더 진하고 부드럽게, 손발은 순검정 대신 반사가 보이는 짙은 색(백 따뜻한 회색, 흑 거의 검정, `_LimbColor`·`_LimbGloss`). `CharacterLook`이 팀별로 넣는다. 흑팀은 검은 눈·흰 하이라이트, 몸은 회색 두 단계(78·100)의 사이로 정했다(`RigWork/pieces/black_eyes_*.png`, `black_body_*.png`). 사용자: 나중에 바뀔 수 있다.
   - 다음 할 일: 사용자 Unity 확인([VALIDATION](Docs/Network/VALIDATION.md) 맨 위), 최종 디자인 Tripo 비숍. 비숍 손은 물리 손보다 16 cm 위에 그려지므로 벽 오르기·잡기에서 손이 떠 보이면 `PoseAsPiece`가 손을 뻗을 때 차이를 줄이게 한다. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
 
 - R542 두 PC로 벽 양쪽과 모서리를 왕복하고, 승격 뒤 이름과 아이콘을 확인한다. [확인 목록](Docs/Network/VALIDATION.md#nameplate-check).

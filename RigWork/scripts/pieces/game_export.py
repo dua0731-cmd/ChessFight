@@ -13,7 +13,8 @@ from mathutils.bvhtree import BVHTree
 
 a = sys.argv[sys.argv.index("--") + 1:]
 SRC, EYES, DST, NAMES = a[0], a[1], a[2], a[3:]
-CREAM, CHARCOAL, DARK = (0.96, 0.88, 0.76), (0.22, 0.22, 0.24), (0.05, 0.045, 0.045)
+CREAM, DARK = (0.96, 0.88, 0.76), (0.05, 0.045, 0.045)
+BLACK_BODY = (89 / 255, 89 / 255, 97 / 255)   # the black team body, sRGB, between the two greys JY looked at (78 and 100); was charcoal (0.22, 0.22, 0.24)
 STRIPES = 8          # body, limbs, eye, glint, blush, brow, spare, spare
 KIND = {"Eye": 2, "Glint": 3, "Blush": 4, "Brow": 5}
 
@@ -95,8 +96,10 @@ for name in NAMES:
         o.parent = None
     white = [CREAM, DARK, base("Eye_WhiteTeam_Black", DARK), base("Glint_WhiteTeam", (1, 1, 1)),
              base("Blush_WhiteTeam", (0.96, 0.6, 0.54)), base("Eye_WhiteTeam_Black", DARK)]
-    ivory = base("Eye_BlackTeam_Ivory", (0.93, 0.9, 0.82))
-    black = [CHARCOAL, DARK, ivory, ivory, base("Blush_BlackTeam", (0.7, 0.4, 0.4)), ivory]
+    # the black team (JY 11-12, picked from RigWork/pieces/black_eyes_*.png and black_body_*.png): the white team's black
+    # eyes and white glints (ivory eyes without a glint looked blank and a little scary), on a lighter charcoal body
+    # (BLACK_BODY) so the black eyes still read from afar; change BLACK_BODY here and run this again to retint it
+    black = [BLACK_BODY, DARK, white[2], white[3], base("Blush_BlackTeam", (0.7, 0.4, 0.4)), white[2]]
     bpy.ops.object.select_all(action="DESELECT")
     for o in eyes:
         o.select_set(True)

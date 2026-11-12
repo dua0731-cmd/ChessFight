@@ -7,7 +7,8 @@ import numpy as np
 a = sys.argv[sys.argv.index("--") + 1:]
 EYE, REPO, NAMES = a[0], a[1], a[2:]
 bpy.ops.wm.open_mainfile(filepath=EYE)
-CREAM, CHARCOAL, DARK = (0.96, 0.88, 0.76), (0.22, 0.22, 0.24), (0.05, 0.045, 0.045)
+CREAM, DARK = (0.96, 0.88, 0.76), (0.05, 0.045, 0.045)
+BLACK_BODY = (89 / 255, 89 / 255, 97 / 255)   # the black team body, sRGB, between the two greys JY looked at (78 and 100); was charcoal (0.22, 0.22, 0.24)
 STRIPES = 8
 def srgb(c):
     return tuple(12.92 * x if x <= 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055 for x in c[:3])
@@ -23,8 +24,10 @@ def base(mat_name, fallback):
     return fallback
 white = [CREAM, DARK, base("Eye_WhiteTeam_Black", DARK), base("Glint_WhiteTeam", (1, 1, 1)),
          base("Blush_WhiteTeam", (0.96, 0.6, 0.54)), base("Eye_WhiteTeam_Black", DARK)]
-ivory = base("Eye_BlackTeam_Ivory", (0.93, 0.9, 0.82))
-black = [CHARCOAL, DARK, ivory, ivory, base("Blush_BlackTeam", (0.7, 0.4, 0.4)), ivory]
+# the black team (JY 11-12, picked from RigWork/pieces/black_eyes_*.png and black_body_*.png): the white team's black
+# eyes and white glints (ivory eyes without a glint looked blank and a little scary), on a lighter charcoal body
+# (BLACK_BODY) so the black eyes still read from afar; change BLACK_BODY here and run this again to retint it
+black = [BLACK_BODY, DARK, white[2], white[3], base("Blush_BlackTeam", (0.7, 0.4, 0.4)), white[2]]
 print("COLOURS white", [tuple(round(x * 255) for x in c) for c in white], "black", [tuple(round(x * 255) for x in c) for c in black])
 sc = bpy.context.scene
 sc.view_settings.view_transform = "Standard"

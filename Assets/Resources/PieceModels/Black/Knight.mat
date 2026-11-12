@@ -112,9 +112,9 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
-    - _EyeEmit: 0.9
-    - _EyeGloss: 0.15
-    - _GlintEmit: 0.9
+    - _EyeEmit: 0
+    - _EyeGloss: 0.6
+    - _GlintEmit: 0.6
     - _Gloss: 0.1
     - _GlossMapScale: 1
     - _GlossSize: 24
