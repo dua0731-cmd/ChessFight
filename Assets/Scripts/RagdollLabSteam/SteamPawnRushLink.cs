@@ -291,8 +291,12 @@ namespace ChessFight.RagdollLab.Net
                 enabled = false;
                 return;
             }
-            white = new Material(prefab.skin.sharedMaterial) { color = new Color(.96f, .93f, .84f) };
-            black = new Material(prefab.skin.sharedMaterial) { color = new Color(.15f, .18f, .24f) };
+            // JY 11-12 ("팀 구분은 체스처럼 흑/백으로"): white is the pawn's own material, black the black set's pawn
+            // (Resources/PieceModels/Black/Pawn: a lighter charcoal with the same eyes); a dark slate tint only if that
+            // is missing. A tint darkened the whole pawn, its eyes and blush with it.
+            white = new Material(prefab.skin.sharedMaterial);
+            var blackSet = Resources.Load<Material>("PieceModels/Black/Pawn");
+            black = blackSet != null ? new Material(blackSet) : new Material(prefab.skin.sharedMaterial) { color = new Color(.15f, .18f, .24f) };
             controls = MoveInputSources.Create();
             controls.Enable();
             authority = session.IsHost;

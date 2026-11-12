@@ -164,7 +164,7 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
       - 흑팀 승격 기물은 이제 모든 모드에서 흑 세트를 입는다(전에는 Pawn Rush만). 소드 파이트 흑팀 폰, 엔딩 흑 피규어, 랩 P2도 흑 세트를 입는다(전에는 남색 틴트와 빨간 칼라).
       - 흑팀 눈 색이 카키로 잘못 들어가 있던 것과 폰 흰 아틀라스가 회색으로 저장돼 있던 것도 고쳤다.
     - Unity 배치(복사본)에서 셰이더 컴파일 오류 없음, 백·흑 렌더 확인. 물리 코드·충돌체는 바뀌지 않았다.
-    - **겉모습 A안(사용자 선택 11-12)**: 예전 텍스처 기물과 비교해 "너무 새 것 같다"는 의견에 시안 A~C(`RigWork/pieces/look_variants_*.png`, 원본 RigWork는 git 밖) 중 A. 크림을 예전 베이지 쪽으로 한 톤 낮춤(`_BodyTint`), 그늘 더 진하고 부드럽게, 손발은 순검정 대신 반사가 보이는 짙은 색(백 따뜻한 회색, 흑 거의 검정, `_LimbColor`·`_LimbGloss`). `CharacterLook`이 팀별로 넣는다. 흑팀은 검은 눈·흰 하이라이트, 몸은 회색 두 단계(78·100)의 사이로 정했다(`RigWork/pieces/black_eyes_*.png`, `black_body_*.png`). 사용자: 나중에 바뀔 수 있다.
+    - **겉모습 A안(사용자 선택 11-12)**: 예전 텍스처 기물과 비교해 "너무 새 것 같다"는 의견에 시안 A~C(`RigWork/pieces/look_variants_*.png`, 원본 RigWork는 git 밖) 중 A. 크림을 예전 베이지 쪽으로 한 톤 낮춤(`_BodyTint`), 그늘 더 진하고 부드럽게, 손발은 순검정 대신 반사가 보이는 짙은 색(백 따뜻한 회색, 흑 거의 검정, `_LimbColor`·`_LimbGloss`). `CharacterLook`이 팀별로 넣는다. Pawn Rush 온라인 경기(`SteamPawnRushLink`)와 엔딩의 Pawn Rush 폰(`LastSceneFigure.WearPawnRushLook`, main R543)도 틴트 대신 흑/백 세트를 입는다(11-12, main 합친 뒤). 흑팀은 검은 눈·흰 하이라이트, 몸은 회색 두 단계(78·100)의 사이로 정했다(`RigWork/pieces/black_eyes_*.png`, `black_body_*.png`). 사용자: 나중에 바뀔 수 있다.
   - 다음 할 일: 사용자 Unity 확인([VALIDATION](Docs/Network/VALIDATION.md) 맨 위), 최종 디자인 Tripo 비숍. 비숍 손은 물리 손보다 16 cm 위에 그려지므로 벽 오르기·잡기에서 손이 떠 보이면 `PoseAsPiece`가 손을 뻗을 때 차이를 줄이게 한다. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
 
 - R542 두 PC로 벽 양쪽과 모서리를 왕복하고, 승격 뒤 이름과 아이콘을 확인한다. [확인 목록](Docs/Network/VALIDATION.md#nameplate-check).
