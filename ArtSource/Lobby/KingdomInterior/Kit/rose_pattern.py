@@ -9,7 +9,9 @@ import numpy as np
 KIT = r"C:\Work\ChessFight\ArtSource\Lobby\KingdomInterior\Kit"
 OUT = os.path.normpath(os.path.join(KIT, "..", "..", "..", "..", "Assets", "Resources", "Lobby", "KingdomHall", "RosePattern.png"))
 SIZE = 1024
-GLASS = {"Rose Glass Gold": 0xFFC24A, "Rose Glass Red": 0xE0352B, "Rose Glass Blue": 0x3E6BFF, "Rose Glass Amber": 0xFF8A2A}
+# R621 (승규 "뒤에 색도 바꿔주고"): warm honey and amber in place of gold / red / blue / amber (was 0xFFC24A, 0xE0352B,
+# 0x3E6BFF, 0xFF8A2A); keep these equal to LobbyStage.Hall.Sunset.cs RosePanes.
+GLASS = {"Rose Glass Gold": 0xF2B04A, "Rose Glass Red": 0xD96A2B, "Rose Glass Blue": 0xF7CF8A, "Rose Glass Amber": 0xE8902F}
 
 K = {"__file__": os.path.join(KIT, "kit_build.py"), "__name__": "kit_build"}
 exec(open(K["__file__"], encoding="utf-8").read(), K)

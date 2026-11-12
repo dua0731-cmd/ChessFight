@@ -18,19 +18,29 @@ namespace ChessFight.Game
         // Where the sun stands: degrees from +Z (the stair end) towards +X, and above the horizon. R563: at 27 degrees
         // the beam through the great rose's centre (7.8 m up) comes down on the stage.
         const float HallSunAzimuth = 6f, HallSunElevation = 27f;
-        const float RoseTurnSpeed = 8f;                                   // degrees a second
+        // degrees a second. R619: 0, the armillary sphere in front of it turns instead (LobbyStage.Hall.Armillary.cs); was 8
+        const float RoseTurnSpeed = 0f;
         const float RosePatternHalf = 2.4984f, RosePatternPixels = 1024f; // RosePattern.png: +-ROSE_HOLE m (rose_pattern.py); R590: 3.47 x 0.72
         const float SunAngularRadius = .00465f;                           // radians: the sun's disc
         const float ShaftLength = 22f, ShaftWidth = 6.6f;                  // the box the shafts are marched in
         const float ShaftDensity = .03f;                                  // AI Play capture: .012 too faint, .035 strong
         const float ShaftSurface = 1f;                                    // the window's colours laid on the floor
+        // R620 (승규 picked "B 꿀빛 샴페인" of five light colours captured in Play): the purple-pink light (glass tint
+        // .75, the intro's orange sun 0xFF9C58) fought the gold armillary, mocha stone and red carpets. A light honey sun
+        // and only a little of the glass's colour in the light; the panes themselves still glow in their colours.
+        const int HallSunColor = 0xFFC98A;
+        // RoseShafts _Tint (shader default .75). R621: .15 -> .45 now the glass (and RosePattern.png) is warm, so the
+        // floor shows the window's honey and amber panes
+        const float ShaftGlassTint = .45f;
         // R563: the panes (mesh, glass colour as in rose_pattern.py, glow)
         static readonly (string mesh, int color, float glow)[] RosePanes =
         {
-            ("Rose_Glass_Gold", 0xFFC24A, 1.6f),
-            ("Rose_Glass_Blue", 0x3E6BFF, 2.2f),
-            ("Rose_Glass_Red", 0xE0352B, 2.0f),
-            ("Rose_Glass_Amber", 0xFF8A2A, 1.7f),
+            // R621 (승규 "뒤에 색도 바꿔주고"): warm honey and amber (were 0xFFC24A 1.6, 0x3E6BFF 2.2, 0xE0352B 2.0,
+            // 0xFF8A2A 1.7: the bloom washed them white-pink); same colours as Kit/rose_pattern.py GLASS
+            ("Rose_Glass_Gold", 0xF2B04A, 1.0f),
+            ("Rose_Glass_Blue", 0xF7CF8A, .9f),
+            ("Rose_Glass_Red", 0xD96A2B, 1.1f),
+            ("Rose_Glass_Amber", 0xE8902F, 1.0f),
         };
 
         Transform rose;
@@ -50,7 +60,7 @@ namespace ChessFight.Game
         void HallSunset(Transform root)
         {
             var travel = HallSunTravel();
-            var sunColor = MenuArt.Hex(0xFF9C58);
+            var sunColor = MenuArt.Hex(HallSunColor);
             var sun = new GameObject("Hall Sunset").AddComponent<Light>();
             sun.transform.SetParent(root, false);
             sun.transform.rotation = Quaternion.LookRotation(travel);
@@ -103,6 +113,7 @@ namespace ChessFight.Game
             roseShafts = new Material(shaftShader) { name = "Rose window shafts" };
             roseShafts.SetVector("_SunColor", (Vector4)sunColor.linear);
             roseShafts.SetFloat("_Density", ShaftDensity);
+            roseShafts.SetFloat("_Tint", ShaftGlassTint);
             roseShafts.SetFloat("_Surface", ShaftSurface);
             roseShafts.SetTexture("_RosePattern", pattern);
             roseShafts.SetVector("_WinCentre", rose.position);
@@ -155,8 +166,8 @@ namespace ChessFight.Game
         static readonly float[] HallSideWindows = { -21.80f, -18.55f, -13.62f, -10.37f, -5.45f, -2.19f, 2.73f, 5.99f };
         const float SideWindowX = 9.586f, SideWindowY = 4.33f;
         static readonly Vector3 WindowSunTravel = new Vector3(-.85f, -.42f, -.32f);   // into the hall, down, away from the stairs
-        const int WindowSunColor = 0xFFB27A;
-        const float WindowSunIntensity = 70f;    // R585 (승규 "창문에 들어오는 빛이 약해 더 세게"): was 28 (the sun is 3.6)
+        const int WindowSunColor = 0xFFA860;     // R621 (승규 "창문 이 마름모에서 바닥에 그려지는 노을 빛도 그려줘"): was 0xFFB27A
+        const float WindowSunIntensity = 180f;   // R621: 70 -> 180, the diamonds clear on the floor. R585 (승규 "창문에 들어오는 빛이 약해 더 세게"): was 28 (the sun is 3.6)
         const float WindowSunBack = 3f, WindowSunRange = 20f, WindowSunAngle = 70f;
 
         void HallWindowSun(Transform root)
@@ -175,7 +186,7 @@ namespace ChessFight.Game
                 spot.spotAngle = WindowSunAngle;
                 spot.innerSpotAngle = WindowSunAngle * .6f;
                 spot.shadows = LightShadows.Soft;
-                spot.shadowStrength = .9f;
+                spot.shadowStrength = 1f;        // R621: crisp diamonds (was .9)
                 spot.shadowNearPlane = .2f;
             }
         }
@@ -194,6 +205,7 @@ namespace ChessFight.Game
         // The tracery turns; the shafts are told the same turn so the light in the air matches its shadows.
         void TickHall(float t)
         {
+            TickArmillary(t);
             if (rose == null) return;
             float turn = Mathf.Repeat(t * RoseTurnSpeed, 360f);
             rose.rotation = Quaternion.AngleAxis(turn, roseAxis) * roseBase;
