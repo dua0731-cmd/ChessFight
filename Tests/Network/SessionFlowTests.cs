@@ -66,6 +66,8 @@ public static class SessionFlowTests
         Step(5);
         Check(players.All(c=>c.Started)&&RoomData(maker,"seats")==perTeam+","+perTeam&&RoomData(maker,"open")=="0"&&!FakeSteam.Lobbies[room].Joinable,
               "the started room's seats: "+RoomData(maker,"seats")+" open "+RoomData(maker,"open"));
+        // R543: every PC of the match reads the size the teams started with (the Pawn Rush mini-games are scaled to it).
+        Check(players.All(c=>c.StartTeamSize==perTeam),"every PC reads the start size "+perTeam+": "+string.Join(" ",players.Select(c=>c.StartTeamSize)));
         var extra=clients[seats];As(extra,()=>extra.FindMatch());Step(40);
         Check(extra.Match!=0&&extra.Match!=room&&extra.IsHost&&extra.IsManager&&!extra.Started&&maker.Roster.Count==seats,"a searcher with the room full should get a room of its own");
         foreach(var c in players){var x=c;As(x,()=>x.ReportLoading(100));}
@@ -74,6 +76,7 @@ public static class SessionFlowTests
         As(leaver,leaver.Cancel);Step(5);
         Check(maker.Roster.Count==seats-1&&RoomData(maker,"open")=="0"&&RoomData(maker,"free"+seat.Team)=="1"&&RoomData(maker,"free"+(1-seat.Team))=="0"&&maker.Away==1,
               "the leaver's seat: open "+RoomData(maker,"open")+" away "+maker.Away);
+        Check(players.Where(c=>c!=leaver).All(c=>c.StartTeamSize==perTeam),"the start size changed when a player left (the mini-games stay the size they were built for)");
         Step(60);
         Check(extra.Match!=room&&!extra.Started&&maker.Roster.Count==seats-1,"a searching player was let into the started match");
         var last=clients[seats+1];As(last,()=>last.FindMatch());Step(40);
@@ -82,6 +85,7 @@ public static class SessionFlowTests
         As(leaver,leaver.Rejoin);for(int t=0;t<60&&!leaver.Started;t++)Step(1);
         Check(leaver.Match==room&&leaver.Started&&maker.Roster.Count==seats&&maker.Roster[leaver.Self].Team==seat.Team&&maker.Roster[leaver.Self].Slot==seat.Slot,
               "the leaver did not get its own seat back: "+leaver.Error);
+        Check(leaver.StartTeamSize==perTeam,"the player who came back reads another start size: "+leaver.StartTeamSize);
         Step(3);
         Check(RoomData(maker,"open")=="0"&&RoomData(maker,"free0")=="0"&&RoomData(maker,"free1")=="0"&&!FakeSteam.Lobbies[room].Joinable&&maker.Away==0,"the room is still open with everyone back");
     }

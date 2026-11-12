@@ -13,8 +13,11 @@ namespace ChessFight.PawnRush
     // Network (§1.2, §4.7): every statue's place, its warning and its window are functions of the shared obstacle
     // clock (EnPassantRules), worked out on every PC; a client reads the clock where it draws the pawns, so a
     // statue it sees step is where the host's statue stepped. The statues are kinematic and moved with
-    // MovePosition, never pushed. Only the host judges; it sends which statues are taken (16 bits), how many,
+    // MovePosition, never pushed. Only the host judges; it sends which statues are taken (32 bits), how many,
     // and a bounce counter. A client plays the capture and the clank from the bits that change.
+    //
+    // R543 (user 11-11: "앙파상 사냥은 사냥감의 개수를 조절해줘"): the statues go with the team's size - ten, thirteen,
+    // sixteen (as before) or nineteen (EnPassantField, Core) - in rows of four from the south, the cycle unchanged.
     public sealed class MgEnPassant : MiniGameBase, IProgressCount
     {
         public const float StatueHeight = .9f, StatueRadius = .38f, TrayV = 9.2f;
@@ -22,6 +25,8 @@ namespace ChessFight.PawnRush
 
         [SerializeField] MissionStation station;
 
+        // The statues of this game (R543: how many, where they stand, when each steps).
+        EnPassantField field = EnPassantField.Baseline;
         Transform[] statues, looks;
         Rigidbody[] bodies;
         Collider[] colliders;
@@ -31,22 +36,24 @@ namespace ChessFight.PawnRush
         TextMesh counter;
         Material skin, glowSkin, ring, warnRing;
 
-        readonly bool[] taken = new bool[EnPassantRules.Statues];
-        readonly float[] guard = new float[EnPassantRules.Statues];
-        readonly float[] takenAt = new float[EnPassantRules.Statues];
-        readonly int[] slot = new int[EnPassantRules.Statues];
-        readonly Vector3[] fallFrom = new Vector3[EnPassantRules.Statues];
-        readonly Vector3[] fallDir = new Vector3[EnPassantRules.Statues];
-        readonly bool[] landed = new bool[EnPassantRules.Statues];
-        readonly int[] stage = new int[EnPassantRules.Statues];
-        readonly float[] secondStep = new float[EnPassantRules.Statues];
-        readonly float[] shake = new float[EnPassantRules.Statues];
+        readonly bool[] taken = new bool[EnPassantField.MaxStatues];
+        readonly float[] guard = new float[EnPassantField.MaxStatues];
+        readonly float[] takenAt = new float[EnPassantField.MaxStatues];
+        readonly int[] slot = new int[EnPassantField.MaxStatues];
+        readonly Vector3[] fallFrom = new Vector3[EnPassantField.MaxStatues];
+        readonly Vector3[] fallDir = new Vector3[EnPassantField.MaxStatues];
+        readonly bool[] landed = new bool[EnPassantField.MaxStatues];
+        readonly int[] stage = new int[EnPassantField.MaxStatues];
+        readonly float[] secondStep = new float[EnPassantField.MaxStatues];
+        readonly float[] shake = new float[EnPassantField.MaxStatues];
         // One capture per rook charge (§4.6): the skill use a charge captured on.
         readonly Dictionary<ICharacterDriver, int> chargeTook = new Dictionary<ICharacterDriver, int>();
         int count, bounces, lastBounce = -1;
 
         public int Done => count;
-        public int Total => EnPassantRules.Statues;
+        public int Total => field.Count;
+        // The statues' field (for the pictures that ride them: MiniGameModels.Ballroom).
+        public EnPassantField Field => field;
 
         public static MgEnPassant Build(CourseBuilder b, MissionStation station)
         {
@@ -61,12 +68,13 @@ namespace ChessFight.PawnRush
 
         void Make(CourseBuilder b)
         {
-            int n = EnPassantRules.Statues;
+            field = EnPassantField.For(station.TeamSize);
+            int n = field.Count;
             float m = MiniGameParts.Mirror(station);
             var lanes = b.Group("Lanes");
             for (int i = 0; i < n; i++)
             {
-                var home = EnPassantRules.Home(i);
+                var home = field.Home(i);
                 for (int s = 0; s < 3; s++)
                 {
                     float u = home.U - s * 1.1f, v = home.V * m;
@@ -97,7 +105,7 @@ namespace ChessFight.PawnRush
             {
                 var go = MiniGameParts.Piece(b.parent, "Statue " + (i + 1), PieceKind.Pawn, StatueHeight, skin, station.Accent(them), true, StatueRadius);
                 statues[i] = go.transform;
-                statues[i].localPosition = MiniGameParts.Local(station, EnPassantRules.Home(i));
+                statues[i].localPosition = MiniGameParts.Local(station, field.Home(i));
                 looks[i] = go.transform.Find("Look");
                 bodies[i] = go.GetComponent<Rigidbody>();
                 colliders[i] = go.GetComponent<Collider>();
@@ -115,7 +123,7 @@ namespace ChessFight.PawnRush
             ShowCount();
         }
 
-        Vector3 StatueLocal(int i, double now) => MiniGameParts.Local(station, EnPassantRules.Position(now, i));
+        Vector3 StatueLocal(int i, double now) => MiniGameParts.Local(station, field.Position(now, i));
 
         Vector3 World(Vector3 local) => transform.TransformPoint(local);
 
@@ -154,25 +162,25 @@ namespace ChessFight.PawnRush
                     var away = p.Local - at;
                     away.y = 0f;
                     away = away.sqrMagnitude > 1e-4f ? away.normalized : Vector3.back;
-                    bool open = EnPassantRules.InWindow(EnPassantRules.Phase(now, i), EnPassantRules.Grace);
+                    bool open = EnPassantRules.InWindow(field.Phase(now, i), EnPassantRules.Grace);
                     bool rook = mg != null && mg.SkillDashing && MiniGameParts.PieceOf(p.Driver) == PieceKind.Rook;
                     bool chargeSpent = rook && chargeTook.TryGetValue(p.Driver, out int use) && use == mg.SkillUses;
                     if (p.Own && open && !chargeSpent)
                     {
                         if (rook) chargeTook[p.Driver] = mg.SkillUses;
                         Take(i, -away);
-                        if (count >= EnPassantRules.Statues) { Progress01 = 1f; Complete(); return; }
+                        if (count >= field.Count) { Progress01 = 1f; Complete(); return; }
                         break;
                     }
                     // Out of the window, an enemy, or a second statue in one charge: the pawn bounces off, upright.
                     if (mg != null) mg.AddVelocity(transform.TransformDirection(away) * EnPassantRules.Bounce);
-                    bounces = (bounces + 1) & 15;
+                    bounces = (bounces + 1) & 127;
                     lastBounce = i;
                     Clank(i);
                     break;
                 }
             }
-            Progress01 = count / (float)EnPassantRules.Statues;
+            Progress01 = count / (float)field.Count;
         }
 
         void Take(int i, Vector3 fall)
@@ -201,7 +209,9 @@ namespace ChessFight.PawnRush
             ArenaFx.Sfx("sfx_ep_clank", World(statues[i].localPosition));
         }
 
-        Vector3 TraySpot(int k) => new Vector3(TrayV * MiniGameParts.Mirror(station), .3f + StatueRadius * .6f, 3.4f + k * 1f);
+        // The tray holds sixteen a metre apart (u 3.4 .. 18.4); more lie closer together.
+        Vector3 TraySpot(int k) =>
+            new Vector3(TrayV * MiniGameParts.Mirror(station), .3f + StatueRadius * .6f, 3.4f + k * Mathf.Min(1f, 15f / Mathf.Max(1, field.Count - 1)));
 
         void Update()
         {
@@ -210,7 +220,7 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < statues.Length; i++)
             {
                 if (taken[i]) { Fly(i); continue; }
-                float ph = EnPassantRules.Phase(now, i);
+                float ph = field.Phase(now, i);
                 Moments(i, ph);
                 // The bob before the step, the hop on landing and a bounce's shake are the look's, not the body's.
                 float y = 0f;
@@ -303,36 +313,39 @@ namespace ChessFight.PawnRush
 
         void ShowCount()
         {
-            if (counter != null) counter.text = $"잡은 폰 {count} / {EnPassantRules.Statues}";
+            if (counter != null) counter.text = $"잡은 폰 {count} / {field.Count}";
         }
 
+        // The wire (6 bytes): the taken statues (a bit each, up to 32), how many, and the last bounce - a counter with
+        // its top bit set once there has been one, and the statue it was off.
         public override void WriteNet(ref NetBlock block)
         {
-            int bits = 0;
-            for (int i = 0; i < taken.Length; i++) if (taken[i]) bits |= 1 << i;
-            block.U16(bits);
+            uint bits = 0;
+            for (int i = 0; i < field.Count; i++) if (taken[i]) bits |= 1u << i;
+            block.U32(bits);
             block.U8(count);
-            block.U8(lastBounce < 0 ? 0 : bounces << 4 | lastBounce);
+            block.U8(lastBounce < 0 ? 0 : 0x80 | bounces);
+            block.U8(Mathf.Max(0, lastBounce));
         }
 
         public override void ReadNet(ref NetBlock block)
         {
-            int bits = block.ReadU16();
+            uint bits = block.ReadU32();
             block.ReadU8();   // the host's count; the bits say the same
-            int bounce = block.ReadU8();
+            int bounce = block.ReadU8(), off = block.ReadU8();
             if (statues == null) return;
             // New bits in index order take the next tray places (§4.7).
-            for (int i = 0; i < taken.Length; i++)
+            for (int i = 0; i < statues.Length; i++)
             {
-                bool now = (bits >> i & 1) != 0;
+                bool now = (bits >> i & 1u) != 0;
                 if (now == taken[i]) continue;
                 if (now) Take(i, FallAway(i));
                 else Restore(i);
             }
-            if (bounce != 0 && bounce >> 4 != bounces)
+            if ((bounce & 0x80) != 0 && (bounce & 127) != bounces)
             {
-                bounces = bounce >> 4;
-                Clank(bounce & 15);
+                bounces = bounce & 127;
+                if (off < statues.Length) Clank(off);
             }
         }
 
@@ -359,14 +372,14 @@ namespace ChessFight.PawnRush
             statues[i].localPosition = StatueLocal(i, ObstacleClock.Now);
             stage[i] = -1;
             count = 0;
-            for (int k = 0; k < taken.Length; k++) if (taken[k]) count++;
+            for (int k = 0; k < field.Count; k++) if (taken[k]) count++;
             ShowCount();
         }
 
         public override void ResetGame()
         {
             base.ResetGame();
-            for (int i = 0; i < taken.Length; i++)
+            for (int i = 0; i < field.Count; i++)
             {
                 guard[i] = 0f;
                 if (taken[i]) Restore(i);

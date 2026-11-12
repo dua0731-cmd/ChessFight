@@ -4,21 +4,27 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // D, the capstan gate: a capstan in the middle of the station (u 10, v 0) with four 2.25 m bars at
+    // D, the capstan gate: a capstan in the middle of the station (u 10, v 0) with 2.25 m bars at
     // waist height. The bars are a real body: pawns push them round with their own bodies (the marked
-    // way - clockwise from above in white's station, the mirror in black's). Eight turns raise the
-    // portcullis in the team gate and open it.
+    // way - clockwise from above in white's station, the mirror in black's). Turning them raises the
+    // portcullis in the team gate and opens it.
     //
     // Physics moves the bars; the rules only cap how fast: each of the team's pawns at the bars (at
     // most four) lets it turn MaxTurnRate a second more, so one pawn needs about a minute and four
-    // about 15 s. The other team can push it back the same way (MissionStation.ReverseSabotage),
+    // about 16 s. The other team can push it back the same way (MissionStation.ReverseSabotage),
     // never below the last quarter reached (the latch).
     //
     // 2026-10-09 (R92): was 16 turns read from walking round the ring, with the bars a decoration
     // at head height and no collider. Halved, lowered, and pushed for real.
+    //
+    // R543 (user 11-11: "캡스턴은 막대는 인원수 만큼으로 정해주고 도개교와 같이 진척도로 조절해줘. 그리고 지금 회전 속도가 조금
+    // 빠른데 지금의 70%정도로 줄여줘"): a bar for each player of the team (three to six), the turns that open the gate
+    // go with the team's size (3.5, 5, 6 and 7), and the bars turn at 70 % of what they did: 0.091 turns a second a
+    // pusher (it was 0.13), 0.364 at most (0.52). Five a side's eight turns became six, which take what eight took.
     public sealed class MgCapstan : MiniGameBase
     {
-        public const float Turns = 8f, MaxTurnRate = .13f, BarInner = .75f, BarRadius = 3f, U = 10f;
+        // Five a side's turns (a capstan saved in a scene before R543 has no number of its own), and the rate.
+        public const float Turns = 6f, MaxTurnRate = MiniGameScale.CapstanTurnRate, BarInner = .75f, BarRadius = 3f, U = 10f;
         public const float BarBottom = .4f, BarTop = .62f;
         // A pawn whose hips are this far from the drum's axis counts as at the bars.
         public const float Ring0 = .4f, Ring1 = BarRadius + .6f;
@@ -26,6 +32,11 @@ namespace ChessFight.PawnRush
 
         [SerializeField] MissionStation station;
         [SerializeField] Rigidbody bars;
+        [Tooltip("Turns that open the gate (MiniGameScale.CapstanTurns for the team's size).")]
+        [SerializeField] float turns = Turns;
+
+        // The turns this capstan takes (the portcullis' jolt at every one of them: MiniGamePortcullisKick).
+        public float TurnsToOpen => turns;
 
         float turned;     // degrees the bars have gone the team's way, net
         float lastYaw;
@@ -45,12 +56,14 @@ namespace ChessFight.PawnRush
             turning.localPosition = V(0f, 0f, U);
             var before = b.parent;
             b.parent = turning;
-            for (int i = 0; i < 4; i++)
+            // R543: a bar a player, evenly round the drum.
+            int count = MiniGameScale.CapstanBars(station.TeamSize);
+            for (int i = 0; i < count; i++)
             {
                 // Solid, so a pawn walking into one pushes it (they start clear of the drum).
                 var bar = b.Box("Bar", V(BarInner, BarBottom, -.1f), V(BarRadius, BarTop, .1f), k.hazard, true, true);
-                bar.transform.localPosition = Quaternion.Euler(0f, i * 90f, 0f) * bar.transform.localPosition;
-                bar.transform.localRotation = Quaternion.Euler(0f, i * 90f, 0f);
+                bar.transform.localPosition = Quaternion.Euler(0f, i * 360f / count, 0f) * bar.transform.localPosition;
+                bar.transform.localRotation = Quaternion.Euler(0f, i * 360f / count, 0f);
             }
             b.parent = before;
             // It only turns about its own axis; heavy enough that a bump does not spin it far.
@@ -79,6 +92,7 @@ namespace ChessFight.PawnRush
             var game = b.parent.gameObject.AddComponent<MgCapstan>();
             game.station = station;
             game.bars = body;
+            game.turns = MiniGameScale.CapstanTurns(station.TeamSize);
             return game;
         }
 
@@ -136,7 +150,7 @@ namespace ChessFight.PawnRush
                 // This PC has just become the host: carry on from the capstan it was showing.
                 shown = false;
                 bars.isKinematic = Completed;
-                turned = progress * Turns * 360f;
+                turned = progress * turns * 360f;
                 lastYaw = Yaw;
             }
             float sign = station.Mirrored ? -1f : 1f;
@@ -152,10 +166,10 @@ namespace ChessFight.PawnRush
             // past the latch, nor at all while sabotage is off.
             var spin = bars.angularVelocity;
             float omega = Vector3.Dot(spin, bars.transform.up) * sign;
-            float latchDegrees = (float)PawnRushMissions.Latched(progress, 0.0) * Turns * 360f;
+            float latchDegrees = (float)PawnRushMissions.Latched(progress, 0.0) * turns * 360f;
             float limit = omega >= 0f
-                ? PawnRushMissions.Workers(own) * MaxTurnRate * 360f * Mathf.Deg2Rad
-                : (MissionStation.ReverseSabotage && turned > latchDegrees ? PawnRushMissions.Workers(other) * MaxTurnRate * 360f * Mathf.Deg2Rad : 0f);
+                ? Pushers(own) * MaxTurnRate * 360f * Mathf.Deg2Rad
+                : (MissionStation.ReverseSabotage && turned > latchDegrees ? Pushers(other) * MaxTurnRate * 360f * Mathf.Deg2Rad : 0f);
             if (Mathf.Abs(omega) > limit)
                 bars.angularVelocity = bars.transform.up * (Mathf.Sign(omega) * limit * sign);
             if (turned < latchDegrees)
@@ -165,7 +179,7 @@ namespace ChessFight.PawnRush
                 turned = latchDegrees;
             }
 
-            progress = (float)PawnRushMissions.Latched(progress, turned / (Turns * 360f));
+            progress = (float)PawnRushMissions.Latched(progress, turned / (turns * 360f));
             Progress01 = progress;
             if (station.Gate != null) station.Gate.SetLift(PortcullisPeek * progress);
             if (progress >= 1f)
@@ -176,6 +190,9 @@ namespace ChessFight.PawnRush
                 bars.isKinematic = true;
             }
         }
+
+        // The pushers that count toward the bars' speed: four at most, however many bars there are.
+        static int Pushers(int count) => Mathf.Clamp(count, 0, MiniGameScale.CapstanSpeedPushers);
 
         public override void ResetGame()
         {

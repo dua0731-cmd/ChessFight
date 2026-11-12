@@ -14,6 +14,9 @@ namespace ChessFight.PawnRush
     // checks, state, immunity) and the count. A client hops its king when the square changes and plays every
     // moment from what changed (a check, a freeze, a capture, a rescue, a stalemate jump); the attacked-square
     // plates are worked out on every PC from the pawns it draws. The kings are kinematic and never pushed.
+    //
+    // R543 (user 11-11: "체크메이트 몰이는 도망다니는 킹의 개수를 조절해줘"): the kings go with the team's size - four, five,
+    // six (as before) or seven (MiniGameScale.CheckmateKings), the first so many of CheckmateHunt.Starts.
     public sealed class MgCheckmate : MiniGameBase, IProgressCount
     {
         public const float KingHeight = .9f, KingRadius = .35f, TrayV = 9.6f;
@@ -30,9 +33,10 @@ namespace ChessFight.PawnRush
 
         [SerializeField] MissionStation station;
 
-        readonly CheckmateHunt hunt = new CheckmateHunt();
-        readonly CheckmateHunt.King[] view = new CheckmateHunt.King[CheckmateHunt.Kings];
-        readonly CheckmateHunt.King[] remote = new CheckmateHunt.King[CheckmateHunt.Kings];
+        // The hunt of this game's kings (made with the game: Make).
+        CheckmateHunt hunt = new CheckmateHunt();
+        readonly CheckmateHunt.King[] view = new CheckmateHunt.King[CheckmateHunt.MaxKings];
+        readonly CheckmateHunt.King[] remote = new CheckmateHunt.King[CheckmateHunt.MaxKings];
         readonly List<StationPoint> ours = new List<StationPoint>(), theirs = new List<StationPoint>();
         bool started;
         int captured;
@@ -49,13 +53,13 @@ namespace ChessFight.PawnRush
         Material skin, gold, dotOff, dotOn;
 
         // The look of each king's last move: from, to, when (Time.time), a stalemate jump or a hop.
-        readonly Vector3[] from = new Vector3[CheckmateHunt.Kings], to = new Vector3[CheckmateHunt.Kings];
-        readonly float[] movedAt = new float[CheckmateHunt.Kings], flinchAt = new float[CheckmateHunt.Kings], takenAt = new float[CheckmateHunt.Kings];
-        readonly bool[] jumped = new bool[CheckmateHunt.Kings], landed = new bool[CheckmateHunt.Kings];
-        readonly int[] slot = new int[CheckmateHunt.Kings];
+        readonly Vector3[] from = new Vector3[CheckmateHunt.MaxKings], to = new Vector3[CheckmateHunt.MaxKings];
+        readonly float[] movedAt = new float[CheckmateHunt.MaxKings], flinchAt = new float[CheckmateHunt.MaxKings], takenAt = new float[CheckmateHunt.MaxKings];
+        readonly bool[] jumped = new bool[CheckmateHunt.MaxKings], landed = new bool[CheckmateHunt.MaxKings];
+        readonly int[] slot = new int[CheckmateHunt.MaxKings];
 
         public int Done => captured;
-        public int Total => CheckmateHunt.Kings;
+        public int Total => hunt.Count;
 
         public static MgCheckmate Build(CourseBuilder b, MissionStation station)
         {
@@ -116,7 +120,8 @@ namespace ChessFight.PawnRush
             gold = Arena.Emissive(Arena.Gold, .5f);
             dotOff = Arena.Lit("M_CheckDotOff", new Color(.25f, .22f, .22f), 0f, .6f);
             dotOn = Arena.Lit("M_CheckDotOn", Arena.Red, .9f, .4f);
-            int n = CheckmateHunt.Kings;
+            hunt = new CheckmateHunt(MiniGameScale.CheckmateKings(station.TeamSize));
+            int n = hunt.Count;
             kings = new Transform[n];
             looks = new Transform[n];
             bodies = new Rigidbody[n];
@@ -153,7 +158,7 @@ namespace ChessFight.PawnRush
             hunt.Reset(0);
             started = false;
             captured = 0;
-            for (int k = 0; k < CheckmateHunt.Kings; k++)
+            for (int k = 0; k < hunt.Count; k++)
             {
                 Copy(hunt.All[k], view[k]);
                 Copy(hunt.All[k], remote[k]);
@@ -213,11 +218,11 @@ namespace ChessFight.PawnRush
             {
                 if (!p.Own || !MiniGameParts.Lunging(p, CheckmateHunt.CaptureSpeed)) continue;
                 var at = MiniGameParts.Board(station, p.Local);
-                for (int k = 0; k < CheckmateHunt.Kings; k++)
+                for (int k = 0; k < hunt.Count; k++)
                     hunt.TryCapture(k, at, true, 0f);
             }
-            for (int k = 0; k < CheckmateHunt.Kings; k++) Present(k, hunt.All[k]);
-            Progress01 = captured / (float)CheckmateHunt.Kings;
+            for (int k = 0; k < hunt.Count; k++) Present(k, hunt.All[k]);
+            Progress01 = captured / (float)hunt.Count;
             if (hunt.Done) Complete();
         }
 
@@ -318,7 +323,9 @@ namespace ChessFight.PawnRush
             return Vector3.Lerp(from[k], to[k], Mathf.Clamp01(age / HopSeconds));
         }
 
-        Vector3 TraySpot(int k) => new Vector3(TrayV * MiniGameParts.Mirror(station), .3f + KingRadius * .6f, 6.6f + k * 1.3f);
+        // Six lie 1.3 m apart on the 8 m tray (u 6.6 .. 13.1); seven a little closer.
+        Vector3 TraySpot(int k) =>
+            new Vector3(TrayV * MiniGameParts.Mirror(station), .3f + KingRadius * .6f, 6.6f + k * Mathf.Min(1.3f, 6.5f / Mathf.Max(1, hunt.Count - 1)));
 
         void Update()
         {
@@ -419,10 +426,10 @@ namespace ChessFight.PawnRush
 
         public override void ReadNet(ref NetBlock block)
         {
-            for (int k = 0; k < CheckmateHunt.Kings; k++) CheckmateHunt.Unpack((ushort)block.ReadU16(), remote[k]);
-            block.ReadU8();
             if (kings == null) return;
-            for (int k = 0; k < CheckmateHunt.Kings; k++) Present(k, remote[k]);
+            for (int k = 0; k < hunt.Count; k++) CheckmateHunt.Unpack((ushort)block.ReadU16(), remote[k]);
+            block.ReadU8();
+            for (int k = 0; k < hunt.Count; k++) Present(k, remote[k]);
         }
 
         public override void ResetGame()

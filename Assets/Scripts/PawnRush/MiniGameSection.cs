@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
         [SerializeField] MissionStation[] stations = new MissionStation[0];
 
         bool configured;
-        int configuredSeed, configuredSlot;
+        int configuredSeed, configuredSlot, builtTeamSize;
         double configuredClock;
 
         public Course01Kit Kit => kit;
@@ -34,6 +34,9 @@ namespace ChessFight.PawnRush
         }
 
         internal void SetStations(MissionStation[] value) => stations = value;
+
+        // The team size the games standing in the stations were built for (MiniGameSectionBuilder.RebuildGames).
+        internal void Built(int teamSize) => builtTeamSize = teamSize;
 
         void Awake()
         {
@@ -63,7 +66,9 @@ namespace ChessFight.PawnRush
                 }
             }
             bool changed = configured && (configuredSeed != section.Seed || configuredSlot != section.Slot || configuredClock != section.StartClock);
-            if (rebound || changed) MiniGameSectionBuilder.RebuildGames(this);
+            // R543: the games are built for the team size (MiniGameScale); another size is another game.
+            bool resized = builtTeamSize != 0 && builtTeamSize != Network.MiniGameScale.Clamp(section.TeamSize);
+            if (rebound || changed || resized) MiniGameSectionBuilder.RebuildGames(this);
             configured = true;
             configuredSeed = section.Seed;
             configuredSlot = section.Slot;

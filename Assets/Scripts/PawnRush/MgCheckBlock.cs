@@ -93,7 +93,8 @@ namespace ChessFight.PawnRush
         void Use(int newSeed)
         {
             seed = newSeed;
-            layout = CheckBlockGenerator.Generate(seed);
+            // R543: how much the position holds goes with the team's size (CheckBlockGenerator.BudgetFor)
+            layout = CheckBlockGenerator.Generate(seed, station != null ? station.TeamSize : MiniGameScale.Baseline);
             for (int i = 0; i < MaxSituations; i++) { progress[i] = shown[i] = 0f; solvedAt[i] = -10f; }
             solvedBits = lastSolved = 0;
             doubleUp = doubleDone = wasDoubleUp = wasDoubleDone = false;

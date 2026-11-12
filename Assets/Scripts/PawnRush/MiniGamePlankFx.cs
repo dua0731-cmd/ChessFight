@@ -50,8 +50,8 @@ namespace ChessFight.PawnRush
         readonly List<Transform> slots = new List<Transform>();
         readonly List<bool> slotOn = new List<bool>();
         readonly int[] pileCount = new int[2];
-        readonly Network.PlankState[] shown = new Network.PlankState[Network.PlankBridge.Planks];
-        readonly Vector3[] last = new Vector3[Network.PlankBridge.Planks];
+        readonly Network.PlankState[] shown = new Network.PlankState[Network.PlankBridge.MaxPlanks];
+        readonly Vector3[] last = new Vector3[Network.PlankBridge.MaxPlanks];
         readonly List<Falling> falling = new List<Falling>();
         readonly List<int> dropAt = new List<int>();
         readonly List<(float at, Vector3 where)> hammer = new List<(float, Vector3)>();
@@ -115,7 +115,7 @@ namespace ChessFight.PawnRush
                 pileCount[p] = n;
             }
             // every plank: taken off the floor, put down on it, or fallen into the chasm on its way home
-            for (int i = 0; i < Network.PlankBridge.Planks; i++)
+            for (int i = 0; i < game.Board.Planks; i++)
             {
                 var state = board.State[i];
                 var look = game.PlankLook(i);
@@ -182,7 +182,7 @@ namespace ChessFight.PawnRush
         void Ghosts()
         {
             ghostNear.Clear();
-            for (int i = 0; i < Network.PlankBridge.Planks; i++)
+            for (int i = 0; i < game.Board.Planks; i++)
             {
                 int slot = game.Preview(i, out float strength);
                 if (slot < 0 || slot >= slots.Count || slots[slot] == null) continue;
@@ -313,12 +313,12 @@ namespace ChessFight.PawnRush
         {
             if (station == null || game == null) return;
             // warm motes rise out of the chasm along the bridge laid so far (u 6 .. 6 + 2 * rows)
-            int rows = Mathf.Clamp(game.Laid / MgPlanks.Columns, 1, MgPlanks.Rows);
+            int rows = Mathf.Clamp(game.Laid / MgPlanks.Columns, 1, game.Layout.Rows);   // R543: the rows go with the team's size
             var g = game.transform;
             // no sound at the quarters in any mini-game (user 11-07, "25 50 75 효과음은 하지마")
             for (int i = 0; i < 18 + 6 * quarter; i++)
             {
-                var at = g.TransformPoint(new Vector3(Random.Range(-3.5f, 3.5f), -1.5f, MgPlanks.Chasm0 + Random.Range(0f, rows * MgPlanks.Row)));
+                var at = g.TransformPoint(new Vector3(Random.Range(-3.5f, 3.5f), -1.5f, MgPlanks.Chasm0 + Random.Range(0f, rows * game.Layout.Row)));
                 Mote(at, new Vector3(Random.Range(-.2f, .2f), Random.Range(1f, 1.8f), Random.Range(-.2f, .2f)), Random.Range(0f, .8f), Random.Range(1.6f, 2.4f), Random.Range(.08f, .15f));
             }
         }

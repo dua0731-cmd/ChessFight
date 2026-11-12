@@ -105,8 +105,18 @@ namespace ChessFight.RagdollLab.Net
             // every PC has loaded, so until then a start ProvisionalStart ahead holds the gates shut and the carriages
             // at home.
             if (round != null)
+            {
+                // R543 (user 11-11: "몇 대 몇이냐에 따라 미니게임 규모를 정할거야"): the round is built for the size the
+                // teams started with (the room's "seats", the same on every PC), so every PC builds the same mini-games
+                // - the board, the towers, the statues, the king's road - for three to six a side. Until now a match's
+                // round kept the scene's six.
+                int teamSize = session.StartTeamSize;
+                round.SetTeamSize(teamSize);
+                int scale = MiniGameScale.Clamp(teamSize);   // one or two a side (a test) plays three a side's games
+                Debug.Log($"[ChessFight] 폰 러쉬: 시작 인원 {teamSize} 대 {teamSize} - 미니게임은 {scale} 대 {scale} 규모로 만듭니다 (방 기록 seats \"{session.StartSeats}\").");
                 round.BuildForMatch(PawnRushSections.MatchSeed(session.Match),
                                     session.StartAt > 0 ? session.StartAt : ObstacleClock.Now + ProvisionalStart);
+            }
             var go = new GameObject("ChessFight Pawn Rush Net");
             SceneManager.MoveGameObjectToScene(go, (course != null ? course.gameObject : round.gameObject).scene);   // gone with the match scene
             var link = go.AddComponent<SteamPawnRushLink>();

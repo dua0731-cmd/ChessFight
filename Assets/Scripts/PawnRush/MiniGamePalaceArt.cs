@@ -12,7 +12,7 @@ namespace ChessFight.PawnRush
     public static partial class MiniGamePalaceArt
     {
         public const string ShellName = "ENV_PalaceArt_R312";
-        const string DressName = "DEC_PalaceGame_R312";
+        public const string DressName = "DEC_PalaceGame_R312";   // public: a game that rebuilds what was dressed drops it (MgKingEscort)
         static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         static Mesh block, torus;
 

@@ -10,6 +10,10 @@ namespace ChessFight.PawnRush
         [SerializeField] GameObject[] prefabs = new GameObject[0];
         [SerializeField] PlaytestSpawner spawner;
         [SerializeField] int selected;
+        // R543: the team size the game is built for (F9: 3 to 6 a side; five is what the games were before), and this
+        // start's seed - a new one every start, so a game that draws its own map (G's road, I's position) shows another.
+        [SerializeField, Range(3, 6)] int teamSize = ChessFight.Network.MiniGameScale.Baseline;
+        int seed;
         GameObject current;
         MiniGameSection plaza;
         GUIStyle style;
@@ -52,7 +56,8 @@ namespace ChessFight.PawnRush
             var instance = Instantiate(prefabs[index], current.transform);
             instance.name = prefabs[index].name;
             plaza = instance.GetComponent<MiniGameSection>();
-            instance.GetComponent<PawnRushSection>()?.Configure(0, 312 + index, 6, ObstacleClock.Now);
+            seed = System.Environment.TickCount & 0xFFFFF;
+            instance.GetComponent<PawnRushSection>()?.Configure(0, seed, teamSize, ObstacleClock.Now);
             for (int team = 0; team < 2; team++)
             {
                 var spawn = new GameObject("Test start " + team);
@@ -87,6 +92,11 @@ namespace ChessFight.PawnRush
                 foreach (var station in plaza.Stations)
                     if (station != null && station.Team == spawner.Team) station.Game?.ForceComplete();
             if (LegacyKeys.Down(KeyCode.F8)) Select(selected);
+            if (LegacyKeys.Down(KeyCode.F9))
+            {
+                teamSize = teamSize >= ChessFight.Network.MiniGameScale.Max ? ChessFight.Network.MiniGameScale.Min : teamSize + 1;
+                Select(selected);
+            }
         }
 
         void OnDestroy()
@@ -98,11 +108,12 @@ namespace ChessFight.PawnRush
         void OnGUI()
         {
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true, wordWrap = true };
-            GUILayout.BeginArea(new Rect(12f, 12f, Mathf.Min(Screen.width - 24f, 560f), 186f), GUI.skin.box);
-            GUILayout.Label("<b>미니게임 프리팹 시험</b> · " + (plaza != null ? MiniGameSectionBuilder.Names[plaza.GameIndex] : "준비 중"), style);
+            GUILayout.BeginArea(new Rect(12f, 12f, Mathf.Min(Screen.width - 24f, 560f), 208f), GUI.skin.box);
+            GUILayout.Label("<b>미니게임 프리팹 시험</b> · " + (plaza != null ? MiniGameSectionBuilder.Names[plaza.GameIndex] : "준비 중")
+                            + $" · <b>{teamSize}대{teamSize} 규모</b> · 씨앗 {seed}", style);
             // R500: one row per phase (slots 2 · 4 · 6), the same order as the number keys.
             GUILayout.Label("<b>1단계</b>  1 도개교 · 2 쇠살문 · 3 의장 광장\n<b>2단계</b>  4 동관 · 5 서고 · 6 무도회장 · 7 세탁장\n<b>3단계</b>  8 행차 회랑 · 9 체스 홀 · 0 침실", style);
-            GUILayout.Label("F5 팀 전환 · F6 자기 팀 완료 시험 · F8 다시 시작\nR 체크포인트 · Backspace 처음 · F1 캐릭터 비행(개발) · F4 자유 카메라", style);
+            GUILayout.Label("F5 팀 전환 · F6 자기 팀 완료 시험 · F8 다시 시작(새 씨앗) · F9 인원 규모 3~6\nR 체크포인트 · Backspace 처음 · F1 캐릭터 비행(개발) · F4 자유 카메라", style);
             if (plaza != null)
                 foreach (var station in plaza.Stations)
                     if (station != null && station.Game != null)

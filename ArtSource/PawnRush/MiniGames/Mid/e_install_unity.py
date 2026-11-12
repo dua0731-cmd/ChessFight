@@ -1,5 +1,5 @@
 # Copies the E Royal Library models into Unity (R507), the same layout as B (b_install_unity.py):
-#   Assets/Resources/PawnRushMiniGames/Mid/E/E_StationEnv.fbx, E_Bell.fbx, E_ShelfDoor.fbx, E_DoorArch.fbx
+#   Assets/Resources/PawnRushMiniGames/Mid/E/E_Tower_9.fbx, E_Bell.fbx, E_ShelfDoor.fbx, E_DoorArch.fbx
 #   Assets/Art/PawnRushMiniGames/Mid/Textures/PR_Mid_LibraryTowerKit/PropKit_BaseColor/Normal.png
 #   Assets/Resources/PawnRushMiniGames/Materials/PR_Mid_LibraryTowerKit/PropKit/BellRung/MatteBrass.mat
 # The ledge decks use B's PR_Mid_WalnutFloor (already installed by b_install_unity.py).
@@ -106,7 +106,8 @@ def main():
     # E_LightsEnv: B's chandelier and sconce bodies round the room, SOCKET_ empties for code flames (e_lights_v1.py;
     # material PR_Mid_HallKit is B's, b_install_unity.py)
     # E_PropsEnv: the props modelled in Blender (e_props_v1.py), placed off the pawns' ways
-    for name in ("E_StationEnv", "E_Bell", "E_ShelfDoor", "E_DoorArch", "E_HallEnv", "E_LightsEnv", "E_PropsEnv"):
+    # R543: E_Tower_9 (one tower, hung on each of the game's towers) replaced E_StationEnv (six towers in one mesh)
+    for name in ("E_Tower_9", "E_Bell", "E_ShelfDoor", "E_DoorArch", "E_HallEnv", "E_LightsEnv", "E_PropsEnv"):
         copy(os.path.join(EXPORT, name + ".fbx"), FBX_DIR + "/" + name + ".fbx", FBX_META)
     g = {}
     for name in ("PR_Mid_LibraryTowerKit", "PR_Mid_LibraryPropKit", "PR_Mid_MatteBrass",

@@ -356,7 +356,7 @@ namespace ChessFight.PawnRush
 
                 // kings: the model rides each king's Look (moves, hops, tips over and flies to the tray with it)
                 if (king == null) continue;
-                for (int k = 1; k <= CheckmateHunt.Kings; k++)
+                for (int k = 1; k <= CheckmateHunt.MaxKings; k++)   // R543: four to seven of them, by the team's size
                 {
                     var look = Find(game, "King " + k)?.Find("Look");
                     if (look == null || look.Find(RideName) != null) continue;
