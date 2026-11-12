@@ -183,11 +183,14 @@ namespace ChessFight.Game
             return materials[key] = material;
         }
 
-        public static Material Board(int squares)
+        public static Material Board(int squares) => Board(squares, Maple, Walnut, .45f);
+
+        // R589: the kingdom hall's board in the reference picture's woods (LobbyStage.Hall.Board.cs).
+        public static Material Board(int squares, int[] light, int[] dark, float gloss)
         {
-            string key = "B" + squares;
+            string key = "B" + squares + "_" + light[0] + "_" + dark[0] + "_" + gloss;
             if (materials.TryGetValue(key, out var cached) && cached != null) return cached;
-            var material = new Material(PieceFigure.Lit(Color.white, .45f, .05f)) { name = "Menu board " + squares, mainTexture = BoardTexture(squares) };
+            var material = new Material(PieceFigure.Lit(Color.white, gloss, .05f)) { name = "Menu board " + squares, mainTexture = BoardTexture(squares, light, dark) };
             return materials[key] = material;
         }
 
@@ -310,9 +313,11 @@ namespace ChessFight.Game
 
         // `squares` x `squares` maple and walnut squares with dark seams and a
         // faint sheen from one corner. a1 (bottom left) is walnut.
-        public static Texture2D BoardTexture(int squares)
+        public static Texture2D BoardTexture(int squares) => BoardTexture(squares, Maple, Walnut);
+
+        public static Texture2D BoardTexture(int squares, int[] light, int[] darkWood)
         {
-            string key = "board" + squares;
+            string key = "board" + squares + "_" + light[0] + "_" + darkWood[0];
             if (textures.TryGetValue(key, out var cached) && cached != null) return cached;
             const int s = 96;
             int size = squares * s;
@@ -321,7 +326,7 @@ namespace ChessFight.Game
                 for (int j = 0; j < squares; j++)
                 {
                     bool dark = (i + j) % 2 == 0;
-                    Grain(px, size, i * s, j * s, s, s, dark ? Walnut : Maple, !dark, i * 31 + j * 17 + 5, 2.6f);
+                    Grain(px, size, i * s, j * s, s, s, dark ? darkWood : light, !dark, i * 31 + j * 17 + 5, 2.6f);
                 }
             var seam = new Color(30 / 255f, 14 / 255f, 5 / 255f);
             for (int y = 0; y < size; y++)

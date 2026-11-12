@@ -1,0 +1,18 @@
+# R548: the Pawn Rush sections each slot may draw (slot, prefab, name), for the entrance screen's course reveal.
+# Written from Assets/Settings/PawnRushSections.asset by PawnRushCourseTableWriter (on every Play, every build, and the
+# menu ChessFight/Pawn Rush/Build/Course Name Table). Do not edit by hand: change the section set or a section's name.
+0	Early_1-1_RoyalWaterGarden	왕실 수로 정원
+0	Early_1-2_RoyalCarriageYard	왕실 마차뜰
+1	Early_MG_C_MoatDrawbridge	해자 도개교
+1	Early_MG_D_PortcullisCourt	정문 쇠살문 누각
+1	Early_MG_A_ParadeCourt	정문 의장 광장
+2	Mid_2-1_GrandStairHall	대계단 현관홀
+3	Mid_MG_B_RepairWing	보수 중인 동관
+3	Mid_MG_E_RoyalLibrary	왕궁 서고
+3	Mid_MG_F_ClockworkBallroom	대무도회장
+3	Mid_MG_J_PalaceLaundry	왕궁 세탁장
+4	Late_3-0_TempFloor	후반 장애물 (임시 바닥)
+5	Late_MG_G_RoyalProcession	왕의 행차 회랑
+5	Late_MG_H_KingsChessHall	국왕 체스 홀
+5	Late_MG_I_KingsBedchamber	국왕 침실
+6	Final_WarRoom	작전 회의실

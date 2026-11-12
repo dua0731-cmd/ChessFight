@@ -103,11 +103,11 @@ namespace ChessFight.PawnRush.Editor
             // shot 1: the towers from the entry side, high
             Aim(game.TransformPoint(new Vector3(-11f, 10f, -4f)), game.TransformPoint(new Vector3(0f, 4.5f, 12f)), 50f);
             int[] semis = { 0, 2, 4, 7, 9, 12 };
-            int last = MgBells.Towers.Length - 1;
+            int last = bells.Towers.Length - 1;   // R543: the towers of the game standing there (three to six)
             void RingWithSound(int i)
             {
                 Ring(bells, station, i);
-                if (bellClip.data != null) voices.Add(new Voice { Data = bellClip.data, Channels = bellClip.channels, Rate = bellClip.rate, Pitch = Mathf.Pow(2f, semis[i] / 12f), Gain = .9f, At = Now() });
+                if (bellClip.data != null) voices.Add(new Voice { Data = bellClip.data, Channels = bellClip.channels, Rate = bellClip.rate, Pitch = Mathf.Pow(2f, semis[Mathf.Min(i, semis.Length - 1)] / 12f), Gain = .9f, At = Now() });
             }
             for (int i = 0; i < last; i++)
             {

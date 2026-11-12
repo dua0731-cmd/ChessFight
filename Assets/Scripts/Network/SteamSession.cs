@@ -106,7 +106,16 @@ namespace ChessFight.Network
         //      Sword Fight input's aimed point). The section round runs to z 580 m and a v35 client drew every pawn past
         //      z 320 m pinned there (11-11 online test: an unseen wall on the grand stair hall's last glass stones). A v35
         //      PC drops every v36 ragdoll packet.
-        public const string Protocol = "chessfight.dua0731.network.v36";
+        // v37 (R543): the Pawn Rush mini-games are built for the size the teams started with (room data "seats": 3 to 6
+        //      a side, MiniGameScale) - another board, other towers, another number of statues, kings and planks, the
+        //      king's road drawn from a seed - and several games' blocks are laid out anew (A, B, F, G). A v36 PC would
+        //      build six a side's old games beside a v37 host's and read its blocks wrongly.
+        // v38 (R616): the round's last section - four turrets on the corners of the conveyor's well firing in turn at the
+        //      carriage (TurretVolleys, drawn from the section's seed) instead of the goal's three rooks, and the finish
+        //      beyond the great door, a PushGate whose progress rides in the course state (two more bytes of the
+        //      sections' parts) with a second checkpoint behind it. A v37 PC would draw other shots, end the round on
+        //      the star platform and read the parts' bytes two short.
+        public const string Protocol = "chessfight.dua0731.network.v38";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -306,6 +315,23 @@ namespace ChessFight.Network
             BotIdentity.IsBot(id) ? MatchStart.Ready : id == Self ? loadPercent : MatchStart.Parse(MemberData(Match, id, "load"));
         // The shared-clock time the host picked for everyone to start; 0 until then.
         public double StartAt => MatchStart.ParseTime(Data(Match, "go"));
+        // R548: the shared-clock time the host started the match (StartNow), 0 until then: every PC's entrance screen plays
+        // Pawn Rush's course reveal from it, so all show the same beat at the same moment.
+        public double BegunAt => MatchStart.ParseTime(Data(Match, "begun"));
+        // R543: the size the teams started the match with, the larger of the two (the room's "seats", written at the
+        // start before "playing": every PC in the match reads the same number, and a player who comes back reads it
+        // again). The Pawn Rush mini-games are scaled to it (MiniGameScale). While the room does not say - a start
+        // from an older build - the players seated now.
+        public string StartSeats => Data(Match, "seats");
+        public int StartTeamSize
+        {
+            get
+            {
+                var seats = Starters.DecodeCapacity(Data(Match, "seats"));
+                if (seats != null && Math.Max(seats[0], seats[1]) > 0) return Math.Max(seats[0], seats[1]);
+                return Math.Max(1, Math.Max(Roster.Values.Count(p => p.Team == 0), Roster.Values.Count(p => p.Team == 1)));
+            }
+        }
         // Only a host that owns the room can write it (HOST.md), so a successor
         // still waiting for ownership leaves the start to the next poll.
         public bool CanAnnounceStart => IsHost && Started && Owner(Match) == Self;
@@ -820,6 +846,7 @@ namespace ChessFight.Network
         public bool SetMode(string key)
         {
             if (!Online || !IsLeader || Busy || GameModes.Find(key) == null) return false;
+            if (CanRejoin) { Error = RejoinFirstMessage; return false; }
             Set(Party, "mode", key);
             return true;
         }
@@ -1047,6 +1074,7 @@ namespace ChessFight.Network
         public void FindMatch(bool privateTest = false)
         {
             if (!Online || !IsLeader || Busy) return;
+            if (CanRejoin) { Error = RejoinFirstMessage; return; }
             if (PartyStillPlaying) { Error = PartyPlayingMessage; return; }
             if (!privateTest && BotsBlockPublicMatch)
             { Error = BotsInPublicMessage; return; }
@@ -1062,9 +1090,12 @@ namespace ChessFight.Network
         {
             if (!IsLeader || Busy || lobby == 0) return;
             if (PartyStillPlaying) { Error = PartyPlayingMessage; return; }
+            if (CanRejoin) { Error = RejoinFirstMessage; return; }
             Error = ""; Searching = true; privateRoom = true; joinedByNumber = true; FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search"); Join(lobby, false);
         }
+        // 11-11 (the user): while the match this player left still runs, the only way into a game is back into it.
+        public const string RejoinFirstMessage = "진행 중인 경기가 있어요. 그 경기로 돌아가거나 끝날 때까지 다른 경기는 할 수 없어요.";
         public const string BotsInPublicMessage = "봇이 있는 파티는 공개 매칭에 들어갈 수 없습니다. 봇을 빼거나 테스트 방을 만드세요.";
         // The queue is fixed for the whole search: humans for change detection,
         // humans + bots for the reservation the host has to honour.
@@ -1243,7 +1274,7 @@ namespace ChessFight.Network
                     foreach (ulong id in Roster.Keys.ToArray())
                         if (!present.Contains(id) && !BotIdentity.IsBot(id)) Roster.Remove(id);
                     // Only the room's owner can write the seats (HOST.md). R504: the match's end first, if it came first.
-                    if (Owner(Match) == Self) { WriteEnded(); PublishSeats(); KeepManager(present); }
+                    if (Owner(Match) == Self) { WriteEnded(); PublishSeats(); KeepManager(present); Beat(now); }
                     AnnounceStartWhenDue(now);
                     PublishMembers();
                     PublishSuccessors(present, now);
@@ -1934,6 +1965,8 @@ namespace ChessFight.Network
             Set(Match, "starters", Starters.Encode(Roster.Values.Where(p => !BotIdentity.IsBot(p.Id)).OrderBy(p => p.Team).ThenBy(p => p.Slot)
                                                          .Select(p => new Starters.Seat { Id = p.Id, Team = p.Team, Slot = p.Slot })));
             PublishSeats();
+            // R548: when it started, written with the phase, for the entrance screens' course reveal (BegunAt).
+            Set(Match, "begun", MatchStart.FormatTime(SharedNow()));
             Set(Match, "phase", "playing");
             hostSince = lastHandoff = now;
             if (next == Self) return;
@@ -2119,7 +2152,7 @@ namespace ChessFight.Network
                 // A party member goes back while its party is idle or still in that match - not while its leader has
                 // the party in a search or another room (the party's seats there wait for this player).
                 if (!IsLeader && Party != 0 && Route(Party) != "idle" && Route(Party) != lobby.ToString(CultureInfo.InvariantCulture)) return 0;
-                if (Data(lobby, "kind") != "match" || Data(lobby, "phase") != "playing" || Data(lobby, "ended") == "1" ||
+                if (Data(lobby, "kind") != "match" || Data(lobby, "phase") != "playing" || Data(lobby, "ended") == "1" || !BeatFresh(Data(lobby, "beat")) ||
                     Data(lobby, "protocol") != Protocol || Data(lobby, "build") != Build) return 0;
                 return Starters.SeatOf(Starters.Decode(Data(lobby, "starters")), Self, out _) ? lobby : 0;
             }
@@ -2164,7 +2197,7 @@ namespace ChessFight.Network
             if (rejoinGone) { ForgetRejoin(); return; }
             // What Steam has told of the room so far (nothing until the first answer).
             if (Data(lobby, "kind") == "match" &&
-                (Data(lobby, "phase") != "playing" || Data(lobby, "ended") == "1" || !Starters.SeatOf(Starters.Decode(Data(lobby, "starters")), Self, out _)))
+                (Data(lobby, "phase") != "playing" || Data(lobby, "ended") == "1" || !BeatFresh(Data(lobby, "beat")) || !Starters.SeatOf(Starters.Decode(Data(lobby, "starters")), Self, out _)))
             { ForgetRejoin(); return; }
             if (now < nextRejoinPoll) return;
             nextRejoinPoll = now + RejoinPoll;
@@ -2274,6 +2307,19 @@ namespace ChessFight.Network
             PublishSeats();
         }
         void WriteEnded() { if (endWanted && Data(Match, "ended") != "1") Set(Match, "ended", "1"); }
+        // 11-11 (the user: an Editor host stopped Play, the room still read "playing" and the lobby still offered to go back):
+        // the room's owner stamps the server clock into it every BeatSeconds while the match runs. A room whose stamp is
+        // older than BeatStale has nobody running it (an Editor stopped, a crash) and is no match to go back to.
+        public const float BeatSeconds = 5f, BeatStale = 20f;
+        float nextBeat;
+        void Beat(float now)
+        {
+            if (now < nextBeat || MatchEnded) return;
+            nextBeat = now + BeatSeconds;
+            Set(Match, "beat", ((long)ServerNow()).ToString(CultureInfo.InvariantCulture));
+        }
+        static bool BeatFresh(string beat) =>
+            long.TryParse(beat, NumberStyles.Integer, CultureInfo.InvariantCulture, out long at) && ServerNow() - at <= BeatStale;
         public bool MatchEnded => Match != 0 && (endWanted || Data(Match, "ended") == "1");
 
         public void Cancel() => Cancel(Started ? "경기에서 나감" : Match != 0 ? "대기실에서 나감(취소)" : "매칭 취소");

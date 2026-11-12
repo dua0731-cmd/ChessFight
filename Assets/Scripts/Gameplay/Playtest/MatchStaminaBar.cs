@@ -1,4 +1,6 @@
+using System;
 using ChessFight.Game;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -11,6 +13,8 @@ namespace ChessFight.Gameplay
     public sealed class MatchStaminaBar : MonoBehaviour
     {
         Component source;   // an IStaminaReadout (the pawn's driver); a Component so a destroyed one reads as null
+        // The piece this PC plays now, for the symbol beside the bar (11-11); null shows the pawn.
+        public Func<PieceKind> Piece;
         GUIStyle style;
 
         /// <summary>The pawn to show (its driver). Anything without a stamina readout shows nothing.</summary>
@@ -20,7 +24,7 @@ namespace ChessFight.Gameplay
         {
             if (source == null || !(source is IStaminaReadout readout)) return;
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
-            StaminaBarGui.Draw(readout.Stamina01, style);
+            StaminaBarGui.Draw(readout.Stamina01, style, Piece != null ? Piece() : PieceKind.Pawn);
         }
     }
 }

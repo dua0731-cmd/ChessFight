@@ -78,6 +78,9 @@ namespace ChessFight.RagdollLab
 
         public string DisplayName { get; set; } = "Pawn";
 
+        /// <summary>The pawn this PC plays. Its own nameplate stays hidden on its own screen.</summary>
+        public bool IsSelf { get; set; }
+
         /// <summary>White 0, black 1, none -1 (Teams). Set by whoever spawns the pawn: the lab, the network
         /// roster, a mode. Only the machine that simulates the pawn uses it. Its colliders are listed under
         /// it in TeamBodies, for paths that hold up one team only (OpenPath).</summary>

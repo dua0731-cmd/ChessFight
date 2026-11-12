@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using ChessFight.ProtectKing;
 using UnityEngine;
 
@@ -32,7 +33,17 @@ namespace ChessFight.PawnRush
     // shot along its line against the still model only (moving parts, pawns and the rooks left out), so every PC draws
     // the same shot with nothing sent. Hits are the authority's (ObstacleClock.Authority), on the pawns it simulates, as
     // ChandelierRain's; the bursts on pawns are drawn on every PC for the pawns it shows.
-    public sealed class LibraryRookTurret : MonoBehaviour
+    //
+    // R616 (the user, 11-12, the round's last section: "포탑을 넓게 퍼뜨려줘 ... 4방면으로 나눠줘(1개 추가)", "중간에 트레일이
+    // 움직이는 것에 따라 포탑은 트레일 쪽으로 공격하게 돼. 4개의 포탑은 3초마다 한 번씩 랜덤한 포탑 하나가 공격하게 해줘. 직전에
+    // 공격한 포탑은 연속으로 공격하지 않게 해줘"): in the round's war room the rooks are four turrets on towers at the corners of
+    // the conveyor's well (Course01v4Builder.WarRoomTurrets) and fire as one battery (ConfigureVolley). Every
+    // TurretVolleys.Period seconds of the shared clock one of them - drawn from the section's seed, never the one that
+    // fired last (Core TurretVolleys) - charges and shoots at the conveyor's carriage: a point on its deck where the
+    // carriage will be when the shot lands, reached with nothing in the way. All four are the light kind (the side
+    // rooks' shot). The others stand still, their windows on the well. Zone E of 승규 님's test scene keeps the three
+    // goal rooks and the rounds above.
+    public sealed class LibraryRookTurret : MonoBehaviour, ISectionPart
     {
         static readonly Color Gold = new Color(1f, .72f, .3f), Hot = new Color(1f, .9f, .62f);
         static Texture2D dot, ring, band, beam;
@@ -46,11 +57,20 @@ namespace ChessFight.PawnRush
         [SerializeField] bool heavy;
         [SerializeField] Transform piece, gap, pedestal, center, goal;
         [SerializeField] float size = 1f;
+        // R616: one of a battery that fires a volley at the conveyor's carriage in turn (TurretVolleys)
+        [SerializeField] bool volley;
+        [SerializeField] int turretIndex, turretCount = 4;
+        // in `frame`'s space (the section's: the room is built at the origin and moved to its place in the round after)
+        [SerializeField] Transform frame;
+        [SerializeField] Vector3 windowFacing = Vector3.back, restAim;
+        int volleySeed = 1;
+        float heldYaw;
+        const float DeckEdge = .35f, DeckEnd = .6f;     // a volley lands this far inside the deck's sides and ends
 
         // the round
         // R450 (승규 11-05 "바닥에 맞았을 때 원도 하지마 그리고 공격 텀이 좀 빨라 지금 보다 조금 천천히 공격 해주는 대신 날아오는
         // 속도는 빠르게 해"): rounds slower (were 7 and 1.6 s), streaks faster (were 24 and 32 m/s), no ring on the floor.
-        float Period => heavy ? 8.5f : 2.2f;
+        float Period => volley ? (float)TurretVolleys.Period : heavy ? 8.5f : 2.2f;
         float ChargeTime => heavy ? 3f : .55f;
         float Speed => heavy ? 60f : 80f;         // R455: faster again (were 38 and 50)
         float Lift => (heavy ? .32f : .12f) * size;
@@ -74,6 +94,12 @@ namespace ChessFight.PawnRush
         LibraryShuttleDriver shuttle;
         BoxCollider deck;
         Vector3 deckFromCarriage;
+        Quaternion deckFrame = Quaternion.identity;     // R616: the deck's level axes (x across it, z along it)
+        // R616: the deck's box is set on the belt on the first physics step (LibraryConveyorSurface, 0.31 m down from
+        // where it is built); a shot is worked out only once it is there, or it would burst in the air over the deck.
+        LibraryConveyorSurface deckSurface;
+        bool started;
+        float startedAt;
         Vector3 origin, fwd, right, gapRest, pieceRestLocal;
         Quaternion pieceRestRot;
         bool ready;
@@ -127,12 +153,68 @@ namespace ChessFight.PawnRush
             goal = goalZone;
         }
 
+        /// <summary>R616: this rook as turret `index` of a battery of `count` that fires one volley every
+        /// TurretVolleys.Period seconds at the conveyor's carriage. In `sectionFrame`'s space: `facing` is where the
+        /// piece's window looks as modelled, `rest` the point it looks at while it waits (the middle of the well).</summary>
+        public void ConfigureVolley(int index, int count, Transform sectionFrame, Vector3 facing, Vector3 rest, Transform movingPiece,
+                                    Transform gapPoint, Transform pedestalPart)
+        {
+            volley = true;
+            heavy = false;
+            size = 1f;
+            turretIndex = index;
+            turretCount = Mathf.Max(1, count);
+            frame = sectionFrame;
+            windowFacing = facing;
+            restAim = rest;
+            piece = movingPiece;
+            gap = gapPoint;
+            pedestal = pedestalPart;
+            center = goal = null;
+        }
+
+        public bool Volley => volley;
+        public int TurretIndex => turretIndex;
+        public Vector3 GapPoint => ready ? gapRest : gap != null ? gap.position : transform.position;
+
+        // The round's seed draws the battery's order (PawnRushSection, when the section is configured).
+        public void OnSection(PawnRushSection section)
+        {
+            if (section == null || volleySeed == section.Seed) return;
+            volleySeed = section.Seed;
+            shots.Clear();
+        }
+
+        /// <summary>R616 (the checks): whether this turret fires the volley a time on the shared clock is in, and
+        /// that volley's shot - where it leaves from, where it lands, when.</summary>
+        public bool FiresAt(double clock, out Vector3 from, out Vector3 to, out double fire, out double impact)
+        {
+            from = to = default;
+            fire = impact = 0;
+            if (!ready || !volley) return false;
+            int k = Round(clock);
+            if (!Mine(k)) return false;
+            var s = ShotOf(k);
+            from = s.from; to = s.to; fire = s.fire; impact = s.impact;
+            return true;
+        }
+
         void Start()
         {
-            if (piece == null || gap == null || center == null || goal == null) { enabled = false; return; }
-            origin = center.position;
-            var goalAt = goal.TryGetComponent<Renderer>(out var zone) ? zone.bounds.center : goal.position;
-            var toGoal = goalAt - origin;
+            if (piece == null || gap == null || (!volley && (center == null || goal == null))) { enabled = false; return; }
+            Vector3 toGoal;
+            if (volley)
+            {
+                // R616: no goal to look down the hall at - the window's own way as modelled
+                origin = transform.position;
+                toGoal = frame != null ? frame.TransformDirection(windowFacing) : windowFacing;
+            }
+            else
+            {
+                origin = center.position;
+                var goalAt = goal.TryGetComponent<Renderer>(out var zone) ? zone.bounds.center : goal.position;
+                toGoal = goalAt - origin;
+            }
             toGoal.y = 0f;
             fwd = toGoal.sqrMagnitude > .01f ? toGoal.normalized : -transform.forward;
             right = Vector3.Cross(Vector3.up, fwd);
@@ -154,16 +236,46 @@ namespace ChessFight.PawnRush
             if (shuttle != null)
                 foreach (var b in shuttle.Carriage.GetComponentsInChildren<BoxCollider>(true))
                     if (b.name == "Conveyor collision") { deck = b; deckFromCarriage = b.transform.TransformPoint(b.center) - shuttle.Carriage.position; }
+            if (deck != null)
+            {
+                // the way the deck runs, level (the carriage only travels; a jolt's nod about the axis across it is left out)
+                var along = deck.transform.forward;
+                along.y = 0f;
+                if (along.sqrMagnitude > .01f) deckFrame = Quaternion.LookRotation(along.normalized, Vector3.up);
+            }
             float own = Vector3.Dot(transform.position - origin, right);
-            phase = heavy ? .37f : own > 0f ? 1.1f : 0f;          // the side rooks half a round apart
+            phase = volley ? 0f : heavy ? .37f : own > 0f ? 1.1f : 0f;          // the side rooks half a round apart
             seed = heavy ? .11f : own > 0f ? .29f : .71f;
             pieceRadius = .56f * size;                  // the piece's foot (goal_rooks.py)
             gapRest = gap.position;
             pieceRestLocal = piece.localPosition;
             pieceRestRot = piece.rotation;
+            if (volley)
+            {
+                if (frame != null) restAim = frame.TransformPoint(restAim);      // from here on in the world
+                var toRest = restAim - gapRest;
+                toRest.y = 0f;
+                heldYaw = toRest.sqrMagnitude > .01f ? Vector3.SignedAngle(fwd, toRest.normalized, Vector3.up) : 0f;
+            }
             Look();
             Sounds();
-            ready = true;
+            deckSurface = deck != null ? deck.GetComponent<LibraryConveyorSurface>() : null;
+            started = true;
+            startedAt = Time.time;
+            Ready();
+        }
+
+        // The rounds begin once the conveyor's deck stands where it will stay (a second at most: a deck that is never
+        // fitted is taken as it is).
+        bool Ready()
+        {
+            if (ready) return true;
+            if (!started) return false;
+            if (deckSurface != null && !deckSurface.Fitted && Time.time - startedAt < 1f) return false;
+            if (deck != null && shuttle != null && shuttle.Carriage != null)
+                deckFromCarriage = deck.transform.TransformPoint(deck.center) - shuttle.Carriage.position;
+            shots.Clear();
+            return ready = true;
         }
 
         // ------------------------------------------------------------------ the round, from the clock
@@ -171,10 +283,14 @@ namespace ChessFight.PawnRush
         int Round(double t) => (int)System.Math.Floor((t + phase) / Period);
         double RoundStart(int k) => k * (double)Period - phase;
 
+        // R616: in a battery a round is a volley, and only one turret's
+        bool Mine(int k) => !volley || TurretVolleys.Turret(volleySeed, k, turretCount) == turretIndex;
+
         Shot ShotOf(int k)
         {
             if (shots.TryGetValue(k, out var s)) return s;
             if (shots.Count > 8) shots.Clear();
+            if (volley) return Keep(k, VolleyShot(k));
             // R451 ("... 컨테이너도 쏠 수 있고 대신 오른쪽 왼쪽 기둥은 못싸"): anywhere between the side piers, near or far.
             // R454 ("확률은 하지 말자 ... 중간에 날아와서 터치지 말고 바닥이나 기둥에 닿아야 터치게 하고 난간은 절대 조준 대상이
             // 아니야"; R453's aimed rounds are gone): a shot only ever ends on the floor, a pier or the conveyor's deck, never
@@ -201,6 +317,56 @@ namespace ChessFight.PawnRush
             Line(floor, ref s);
             s.normal = Vector3.up;
             return Keep(k, s);
+        }
+
+        // R616: a volley's shot goes for the conveyor's carriage - a point on its deck, picked by the volley's number,
+        // where the carriage will be when the shot lands. The first point reached with nothing in the way is the shot
+        // (a pier, a balustrade or the cannon between this turret and that part of the deck: the next point).
+        Shot VolleyShot(int k)
+        {
+            Shot s = default;
+            for (int a = 0; a < Tries; a++)
+            {
+                uint roll = SeededSchedule.Hash(SeededSchedule.Hash(volleySeed, turretIndex + 1), unchecked((uint)(k * Tries + a)));
+                float u = (roll & 0xFFFF) / 65536f, v = (roll >> 16) / 65536f;
+                if (!DeckLanding(k, u, v, out var target)) break;      // no conveyor: the fallback below
+                Line(target, ref s);
+                float length = Vector3.Distance(s.from, target);
+                if (FirstHit(s.from, target, length + .4f, out var hit) && hit.distance < length - .4f) continue;
+                s.normal = Vector3.up;
+                return s;
+            }
+            // Nothing clear (or no conveyor): at the deck's middle, or straight at the well's middle, and the shot
+            // ends on whatever it meets first.
+            if (!DeckLanding(k, .5f, .5f, out var middle)) middle = restAim;
+            Line(middle, ref s);
+            s.normal = Vector3.up;
+            if (FirstHit(s.from, middle, Vector3.Distance(s.from, middle), out var stop))
+            {
+                s.to = stop.point;
+                s.normal = stop.normal;
+            }
+            return s;
+        }
+
+        // Where a volley's shot lands on the conveyor's deck: u along it, v across it (0 .. 1), on its top, with the
+        // carriage where it will be at that moment (the shot's flight is a fraction of a second; three passes settle
+        // the carriage's place and the flight's length together).
+        bool DeckLanding(int k, float u, float v, out Vector3 top)
+        {
+            top = default;
+            if (shuttle == null || deck == null) return false;
+            double fire = RoundStart(k) + ChargeTime, land = fire;
+            var size = Vector3.Scale(deck.size, deck.transform.lossyScale);
+            var offset = deckFrame * new Vector3(Mathf.Lerp(-1f, 1f, v) * Mathf.Max(0f, size.x * .5f - DeckEdge), 0f,
+                                                                  Mathf.Lerp(-1f, 1f, u) * Mathf.Max(0f, size.z * .5f - DeckEnd));
+            for (int pass = 0; pass < 3; pass++)
+            {
+                if (!shuttle.CarriageAt(land, out var carriage)) return false;
+                top = carriage + deckFromCarriage + offset + Vector3.up * (size.y * .5f);
+                land = fire + Vector3.Distance(gapRest, top) / Speed;
+            }
+            return true;
         }
 
         Shot Keep(int k, Shot s)
@@ -358,13 +524,14 @@ namespace ChessFight.PawnRush
 
         void FixedUpdate()
         {
-            if (!ready) return;
+            if (!Ready()) return;
             double now = ObstacleClock.Now;
             if (ObstacleClock.Authority && !double.IsNaN(lastFixed) && now > lastFixed && now - lastFixed < .5)
             {
                 int k = Round(now);
                 for (int j = k - 1; j <= k; j++)
                 {
+                    if (!Mine(j)) continue;
                     var s = ShotOf(j);
                     if (s.impact <= lastFixed || s.fire > now) continue;
                     if (struckShot != j) { struck.Clear(); struckShot = j; }
@@ -408,13 +575,18 @@ namespace ChessFight.PawnRush
 
         void Update()
         {
-            if (!ready) return;
+            if (!Ready()) return;
             double now = ObstacleClock.Now;
             int k = Round(now);
-            var s = ShotOf(k);
-            var before = ShotOf(k - 1);
+            // R616: in a battery only its own volleys are this turret's rounds; through the others it stands still
+            bool mine = Mine(k);
+            var s = mine ? ShotOf(k) : default;
             float tau = (float)(now - RoundStart(k));
-            float charge = tau < ChargeTime ? tau / ChargeTime : -1f;
+            float charge = mine && tau < ChargeTime ? tau / ChargeTime : -1f;
+            // since it last fired (this round's shot, or the round's before)
+            float after = float.MaxValue;
+            if (mine && tau >= ChargeTime) after = tau - ChargeTime;
+            else if (Mine(k - 1)) after = (float)(now - (RoundStart(k - 1) + ChargeTime));
 
             // the piece: rises through the charge, turns to its line, drops back after the shot
             float lift;
@@ -426,20 +598,32 @@ namespace ChessFight.PawnRush
             }
             else
             {
-                float after = tau - ChargeTime;
                 lift = after < Settle ? Lift * (1f - Mathf.SmoothStep(0f, 1f, after / Settle)) : 0f;
                 if (after >= Settle && after < Settle + .15f) lift = -.01f * size * Mathf.Sin((after - Settle) / .15f * Mathf.PI);
             }
-            float turn = charge >= 0f ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(charge / .6f)) : 1f;
-            float yaw = Mathf.LerpAngle(before.yaw, s.yaw, turn);
+            float yaw;
+            if (volley)
+            {
+                // from where it last looked to this volley's line, and it stays there until its next
+                if (charge >= 0f) yaw = Mathf.LerpAngle(heldYaw, s.yaw, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(charge / .6f)));
+                else
+                {
+                    if (mine) heldYaw = s.yaw;
+                    yaw = heldYaw;
+                }
+            }
+            else
+            {
+                float turn = charge >= 0f ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(charge / .6f)) : 1f;
+                yaw = Mathf.LerpAngle(ShotOf(k - 1).yaw, s.yaw, turn);
+            }
             piece.localPosition = pieceRestLocal + (piece.parent != null ? piece.parent.InverseTransformVector(Vector3.up * lift) : Vector3.up * lift);
             piece.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * pieceRestRot;
 
             // the light in the gap
             float glow = charge >= 0f ? Mathf.Pow(charge, heavy ? 1.6f : 1.2f) : 0f;
             if (charge > .7f) glow *= .8f + .2f * Mathf.Sin(Time.time * (heavy ? 45f : 60f));
-            float sinceFire = (float)(now - s.fire);
-            if (charge < 0f && sinceFire < .3f) glow = Mathf.Max(glow, 1.2f * (1f - sinceFire / .3f));
+            if (charge < 0f && after < .3f) glow = Mathf.Max(glow, 1.2f * (1f - after / .3f));
             Glow(glow, lift);
             if (charge >= 0f) Draw(charge);
             Laser(s, charge);
@@ -448,6 +632,7 @@ namespace ChessFight.PawnRush
             bool fresh = !double.IsNaN(lastFrame) && now - lastFrame < .5;
             for (int j = k - 1; j <= k; j++)
             {
+                if (!Mine(j)) continue;
                 var x = ShotOf(j);
                 var streak = streaks[((j % 2) + 2) % 2];
                 if (now >= x.fire && now < x.impact)

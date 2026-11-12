@@ -182,8 +182,12 @@ namespace ChessFight.Game
             gateOpen = Mathf.MoveTowards(gateOpen, gateTarget, dt * 2f);
             float u = gateOpen < 1f ? 1f - Mathf.Pow(1f - gateOpen, 3f) : 1f;
             float angle = u * GateOpenDegrees;
-            leafLeft.localRotation = leafBaseLeft * Quaternion.Euler(0, angle, 0);   // the left leaf is mirrored in the FBX
-            leafRight.localRotation = leafBaseRight * Quaternion.Euler(0, angle, 0);
+            if (hall) HallLeaves(angle);
+            else
+            {
+                leafLeft.localRotation = leafBaseLeft * Quaternion.Euler(0, angle, 0);   // the left leaf is mirrored in the FBX
+                leafRight.localRotation = leafBaseRight * Quaternion.Euler(0, angle, 0);
+            }
             if (gateGlow != null) gateGlow.intensity = PipelineSettings.PointIntensity(2.4f * u, gateGlow.range);
             if (gateLightMaterial != null) gateLightMaterial.SetColor("_EmissionColor", MenuArt.Hex(0xFFD9A0) * (3.2f * u));
         }
@@ -203,6 +207,7 @@ namespace ChessFight.Game
         // The longest the walk can take; MatchLoader's timeout.
         public const float MaxWalkSeconds = 3f;
         const float RunSpeed = 9f, FirstStep = .12f, Stagger = .07f;   // about 2.3 s (10-17: was 4.5 s, too long a wait)
+        float Speed => hall ? HallRunSpeed : RunSpeed;
 
         readonly (Vector3 at, Vector3 look)[] homes = new (Vector3, Vector3)[Spots];
         readonly Vector3[][] paths = new Vector3[Spots][];
@@ -217,6 +222,7 @@ namespace ChessFight.Game
             if (gateLightMaterial != null) Destroy(gateLightMaterial);
             foreach (var p in pennants) p.Dispose();
             foreach (var m in fireMaterials) if (m != null) Destroy(m);
+            DisposeHall();
             mason?.Dispose();
         }
 
@@ -236,7 +242,7 @@ namespace ChessFight.Game
                 if (bodies[i] == null || shown[i].Invite || figures[i] == null) continue;
                 float x = lane[i];
                 var home = homes[i].at;
-                paths[i] = new[]
+                paths[i] = hall ? HallPath(x, home) : new[]
                 {
                     home,
                     new Vector3(x, Top, 5.0f),            // the stage's back edge
@@ -247,7 +253,7 @@ namespace ChessFight.Game
                     new Vector3(0f, 1.68f, 19.6f),        // through it, into the light
                 };
                 delays[i] = FirstStep + Stagger * order++;
-                walkSeconds = Mathf.Max(walkSeconds, delays[i] + Length(paths[i]) / RunSpeed);
+                walkSeconds = Mathf.Max(walkSeconds, delays[i] + RunUp / 2f + Length(paths[i]) / Speed);
             }
             walkSeconds = Mathf.Min(walkSeconds + .15f, MaxWalkSeconds);
         }
@@ -266,28 +272,61 @@ namespace ChessFight.Game
         }
 
         // True when spot i is walking (or hidden for the walk) this frame.
+        // R603 (승규 "기물 걸어가는 동작을 자연스럽게 해줘"): the old run (MenuArt.Run) went from standing to full speed
+        // at once, took about three steps a second at 9 to 10 m/s so the feet slid along the floor, flapped the arms
+        // out sideways and turned the body round in one frame at every bend of the path. Now each runner speeds up over
+        // its first steps, its stride is counted from the ground it covers (a step every StepLength metres), the arms
+        // pump forward and back against the legs, the body leans into the run, bounces in the flight between steps
+        // and squashes as a foot lands (as the intro's runners, IntroStage.Racers.cs Stride), and it faces a point a
+        // little further along the path so it turns smoothly round the bends.
+        const float RunUp = .35f;          // seconds to full speed
+        const float StepLength = 1.5f;     // metres a step at full speed: about 6.5 steps a second at 10 m/s
+        const float LookAhead = 1.1f;      // metres along the path the runner faces
+
         bool TickWalk(int i, float t)
         {
             if (!walking) return false;
             if (shown[i].Invite || paths[i] == null) { bodies[i].SetActive(false); return true; }
-            float s = (t - walkStart - delays[i]) * RunSpeed;
-            if (s < 0) { MenuArt.Idle(figures[i], t, i, .6f); return true; }
+            float age = t - walkStart - delays[i];
+            if (age < 0) { MenuArt.Idle(figures[i], t, i, .6f); return true; }
+            // speeding up: the distance under a speed that rises evenly to full over RunUp
+            float s = (age < RunUp ? age * age / (2f * RunUp) : age - RunUp / 2f) * Speed;
+            float pace = Mathf.Clamp01(age / RunUp);
             var path = paths[i];
+            if (s >= Length(path)) { bodies[i].SetActive(false); return true; }   // through the gate
+            var at = PathPoint(path, s);
+            var ahead = PathPoint(path, s + LookAhead) - at; ahead.y = 0;
+            figures[i].Place(at, at + (ahead.sqrMagnitude > 1e-4f ? ahead : Vector3.forward));
+            figures[i].Pose(Stride(s / StepLength * Mathf.PI, pace));
+            return true;
+        }
+
+        static Vector3 PathPoint(Vector3[] path, float s)
+        {
             for (int k = 1; k < path.Length; k++)
             {
                 float seg = Vector3.Distance(path[k - 1], path[k]);
-                if (s <= seg)
-                {
-                    var at = Vector3.Lerp(path[k - 1], path[k], s / seg);
-                    var dir = path[k] - path[k - 1]; dir.y = 0;
-                    figures[i].Place(at, at + (dir.sqrMagnitude > 1e-4f ? dir : Vector3.forward));
-                    figures[i].Pose(MenuArt.Run(t, i));
-                    return true;
-                }
+                if (s <= seg) return Vector3.Lerp(path[k - 1], path[k], seg > 0 ? s / seg : 1f);
                 s -= seg;
             }
-            bodies[i].SetActive(false);   // through the gate
-            return true;
+            return path[path.Length - 1];
+        }
+
+        // One step every pi of phase. pace 0..1 grows the stride from standing to a full run.
+        static FigurePose Stride(float phase, float pace)
+        {
+            float sn = Mathf.Sin(phase), a = Mathf.Abs(sn);
+            float leg = Mathf.Sign(sn) * Mathf.Pow(a, .7f) * pace;
+            return new FigurePose
+            {
+                Yaw = sn * .06f * pace,                        // the shoulders turn a little against the legs
+                Lean = .08f + .16f * pace + .05f * (1f - a) * pace,
+                Leg = leg * .95f,
+                ArmSwing = -leg * 1.0f,
+                ArmLeft = .3f, ArmRight = .3f,                 // arms down at the sides, pumping
+                Jump = .12f * Mathf.Pow(a, 1.5f) * pace,       // highest in the flight with the legs spread
+                Squash = (.06f * Mathf.Pow(1f - a, 6f) - .025f * a) * pace
+            };
         }
 
         // While the party walks in, the camera follows it from behind and closes in
@@ -303,6 +342,7 @@ namespace ChessFight.Game
             // in: follows the walk; out (cancelled): a quick ease back
             cameraBlend = walking ? target : Mathf.MoveTowards(cameraBlend, 0f, Time.unscaledDeltaTime * 1.5f);
             if (cameraBlend <= 0f) return;
+            if (hall) { HallCamera(ref at, ref look, cameraBlend); return; }   // the gate is behind the camera there
             float u = cameraBlend * cameraBlend * (3f - 2f * cameraBlend);
             var party = GateLook; int count = 0; var sum = Vector3.zero;
             for (int i = 0; i < Spots; i++)

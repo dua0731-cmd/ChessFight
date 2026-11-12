@@ -330,11 +330,14 @@ namespace ChessFight.PawnRush
                 else if (t.name == "Curb") MaterialOn(t, Violet);
             var road = Find(root, "Road");
             if (road == null) return;
+            // R543: the road is this game's own (KingRoad, drawn anew for every game); it says where its rooks stand.
+            var escort = root.GetComponent<MgKingEscort>();
+            var rookCells = escort != null ? escort.Road.RookCells : KingEscortPath.RookCells;
             int garageIndex = 0;
             foreach (Transform garage in road)
             {
-                if (garage.name != "Garage" || garageIndex >= KingEscortPath.RookCells.Length) continue;
-                var from = Find(road, "Road " + KingEscortPath.RookCells[garageIndex++]);
+                if (garage.name != "Garage" || garageIndex >= rookCells.Length) continue;
+                var from = Find(road, "Road " + rookCells[garageIndex++]);
                 if (from == null) continue;
                 // Follow the built road and garage transforms, including the station's mirrored geometry.
                 var at = art.InverseTransformPoint(garage.position);

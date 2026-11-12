@@ -105,8 +105,10 @@ namespace ChessFight.PawnRush.Editor
                         Need(boards.Length == 1, path + ": A must contain one shared board", issues);
                         if (boards.Length == 1)
                         {
-                            Need(boards[0].GetComponentsInChildren<Transform>(true).Count(t => t.name.StartsWith("Square ")) == 64,
-                                path + ": A must contain 64 square cells", issues);
+                            // R543: the board goes with the team's size (6 x 6 to 10 x 8); a saved prefab holds one of them.
+                            int cells = boards[0].GetComponentsInChildren<Transform>(true).Count(t => t.name.StartsWith("Square "));
+                            Need(Enumerable.Range(MiniGameScale.Min, MiniGameScale.Max - MiniGameScale.Min + 1).Any(n => MiniGameScale.PaintBoard(n).Count == cells),
+                                path + ": A must contain a board of 36, 48, 64 or 80 square cells, not " + cells, issues);
                             Need((root.transform.InverseTransformPoint(boards[0].transform.position) - new Vector3(0f, .4f, 4f)).sqrMagnitude < .0001f,
                                 path + ": A board is not centred between its stations", issues);
                         }
@@ -341,7 +343,8 @@ namespace ChessFight.PawnRush.Editor
                     holder.transform.SetPositionAndRotation(new Vector3(3f, 0f, -5f), Quaternion.Euler(0f, 37f, 0f));
                     var instance = Object.Instantiate(prefab, holder.transform, false);
                     current = instance.GetComponent<MiniGameSection>();
-                    instance.GetComponent<PawnRushSection>().Configure(1, 1200 + game, 6, ObstacleClock.Now);
+                    // R543: the games are checked at the size they were made for (five a side); -miniGameTeamSize 3..6 another
+                    instance.GetComponent<PawnRushSection>().Configure(1, 1200 + game, RuntimeTeamSize(), ObstacleClock.Now);
                     holder.SetActive(true);
                     Log("Runtime " + (index + 1) + "/10: " + instance.name);
                     Next(1); return;
@@ -437,6 +440,14 @@ namespace ChessFight.PawnRush.Editor
                 "Static shell duplicated or missing");
         }
 
+        // R543: the team size the runtime check builds the games for (the command line's -miniGameTeamSize, else five).
+        static int RuntimeTeamSize()
+        {
+            var args = Environment.GetCommandLineArgs();
+            int at = Array.IndexOf(args, "-miniGameTeamSize");
+            return at >= 0 && at + 1 < args.Length && int.TryParse(args[at + 1], out int n) ? MiniGameScale.Clamp(n) : MiniGameScale.Baseline;
+        }
+
         // R520: in the ballroom (F) every statue shows its doll and nothing else - the team band ring, the capture halo and
         // the doll with its key draw; the game's pawn and R312's code costume do not (in Play they stayed on, 11-09) - and
         // each has its MiniGameDancerLook (the doll's glow in the capture window).
@@ -456,7 +467,8 @@ namespace ChessFight.PawnRush.Editor
                     Require(stray.Count == 0, "Ballroom statue shows more than its doll: " + station.name + " " + t.name + " (" + string.Join(", ", stray) + ")");
                     Require(look.Find("MODEL_Ride") != null && t.GetComponent<MiniGameDancerLook>() != null, "Ballroom statue has no doll: " + station.name + " " + t.name);
                 }
-            Require(statues == 2 * EnPassantRules.Statues, "Ballroom: " + statues + " statues, expected " + 2 * EnPassantRules.Statues);
+            int expected = 2 * EnPassantField.For(current.GetComponent<PawnRushSection>().TeamSize).Count;
+            Require(statues == expected, "Ballroom: " + statues + " statues, expected " + expected);
             Log("Ballroom dancers: all " + statues + " statues show only their dolls");
         }
 

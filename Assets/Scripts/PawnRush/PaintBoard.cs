@@ -15,10 +15,23 @@ namespace ChessFight.PawnRush
     // board in its game, the second finds it (For). The host steps the board; each station sends its team's half
     // (§3.6: painted bits and four charges), and a client draws the plates and plays the moments from those.
     // Board frame: x = v (toward black's station), y = 0 the dais top, z = u.
+    //
+    // R543 (user 11-11: "체스판 칠하기는 체스판의 사이즈를 조절해줘"): the board goes with the team's size
+    // (MiniGameScale.PaintBoard) - 6 x 6, 8 x 6, 8 x 8 (as before) or 10 x 8 squares of the same 2.25 m, centred where
+    // the 8 x 8 lies, so a team paints 18, 24, 32 or 40 squares. Five of six a side charge at once (four before).
     public sealed class PaintBoard : MonoBehaviour
     {
-        public const int PerTeam = 32;
+        public const int MaxSquares = 80;                 // 10 x 8: ten bytes of squares in a team's block
         public const float Hold = 1.5f, Reach = 1f, Tile = 2.15f, PlateMax = .87f, TileHeight = .1f;
+        const float AisleRim = 2.6f;                      // a station's edge by the aisle is 2 m from the court's middle
+
+        // This board's squares (made with the board; the 8 x 8 for a board saved before R543).
+        BoardGrid grid = new BoardGrid(PawnRushBoard.N, PawnRushBoard.N);
+        int workers = PawnRushMissions.WorkerCap;
+        public BoardGrid Grid => grid;
+        // The squares a team has to paint: half the board.
+        public int PerTeam => grid.Count / 2;
+        float HalfV => grid.HalfWidth;
 
         static readonly List<PaintBoard> boards = new List<PaintBoard>();
 
@@ -31,13 +44,13 @@ namespace ChessFight.PawnRush
         [SerializeField] int plaza;
         [SerializeField] PawnRushSection section;
         [SerializeField] MissionStation white, black;
-        [SerializeField] Transform[] squares = new Transform[64];
-        [SerializeField] Renderer[] tiles = new Renderer[64];
-        [SerializeField] Transform[] plates = new Transform[64];
-        [SerializeField] Renderer[] rims = new Renderer[64];
-        [SerializeField] Renderer[] strokes = new Renderer[64];
-        [SerializeField] GameObject[] emblems = new GameObject[64];
-        [SerializeField] TextMesh[] rankText = new TextMesh[16];
+        [SerializeField] Transform[] squares = new Transform[MaxSquares];
+        [SerializeField] Renderer[] tiles = new Renderer[MaxSquares];
+        [SerializeField] Transform[] plates = new Transform[MaxSquares];
+        [SerializeField] Renderer[] rims = new Renderer[MaxSquares];
+        [SerializeField] Renderer[] strokes = new Renderer[MaxSquares];
+        [SerializeField] GameObject[] emblems = new GameObject[MaxSquares];
+        [SerializeField] TextMesh[] rankText = new TextMesh[20];      // a rank's number at both ends: [r - 1] and [Ranks + r - 1]
 
         struct Charge
         {
@@ -46,20 +59,20 @@ namespace ChessFight.PawnRush
             public bool Blocked;
         }
 
-        readonly bool[] painted = new bool[64];
+        readonly bool[] painted = new bool[MaxSquares];
         readonly List<Charge>[] charging = { new List<Charge>(), new List<Charge>() };
-        readonly float[] target = new float[64], shown = new float[64], hopAt = new float[64], hopHeight = new float[64];
-        readonly bool[] blocked = new bool[64], wasCharging = new bool[64], wasBlocked = new bool[64], rankDone = new bool[9];
-        readonly AudioSource[] chargeVoice = new AudioSource[64];
+        readonly float[] target = new float[MaxSquares], shown = new float[MaxSquares], hopAt = new float[MaxSquares], hopHeight = new float[MaxSquares];
+        readonly bool[] blocked = new bool[MaxSquares], wasCharging = new bool[MaxSquares], wasBlocked = new bool[MaxSquares], rankDone = new bool[10];
+        readonly AudioSource[] chargeVoice = new AudioSource[MaxSquares];
         // R506 sounds back (user, 11-08: "A 로 해주고 사운드도 넣어"): one brush stroke (sfx_paint_stroke_1..8) at each
         // band the brush starts, drawn from a shuffled bag of the 8 so the order is random and no take repeats soon.
-        readonly int[] strokeBand = new int[64];
+        readonly int[] strokeBand = new int[MaxSquares];
         readonly List<int> strokeBag = new List<int>();
         // Takes 6 and 7 dropped (user, 11-08: "기계음 같은게 들리는데 그 사운드 빼줘"): the two with several knocks and
         // almost no bristle hiss (under 10 % of their energy over 4 kHz, the other six 35-80 %).
         static readonly int[] StrokeTakes = { 1, 2, 3, 4, 5, 8 };
         int lastStroke = -1;
-        readonly float[] nextSpark = new float[64];
+        readonly float[] nextSpark = new float[MaxSquares];
         PaintBoardFx fx;
 
         // R506: A's own particle effects (PaintBoardFx), made on first use on this board.
@@ -84,8 +97,8 @@ namespace ChessFight.PawnRush
         public int Count(int team) => team == Teams.Black ? count[1] : count[0];
 
         // The team whose colour a square is: white the light squares, black the dark (a1 is dark).
-        public static int TeamOf(int square) =>
-            PawnRushBoard.IsLight(PawnRushBoard.FileOf(square), PawnRushBoard.RankOf(square)) ? Teams.White : Teams.Black;
+        public int TeamOf(int square) =>
+            grid.IsLight(grid.FileOf(square), grid.RankOf(square)) ? Teams.White : Teams.Black;
 
         static int Slot(int team) => team == Teams.Black ? 1 : 0;
 
@@ -138,14 +151,14 @@ namespace ChessFight.PawnRush
                 foreach (var game in station.GetComponentsInChildren<MgPaint>(true)) ClipRims(game.transform);
             }
             // A saved prefab's joints still end on the board's sides (see Make): pull their ends in the same 2 cm.
-            float full = PawnRushBoard.N * PawnRushBoard.Cell;
+            float deep = grid.Ranks * grid.Cell, wide = grid.Files * grid.Cell;
             foreach (Transform child in transform)
             {
                 bool file = child.name == "Joint file", rank = child.name == "Joint rank";
                 if (!file && !rank) continue;
                 var size = child.localScale;
-                if (file && size.z > full - .01f) child.localScale = new Vector3(size.x, size.y, full - .04f);
-                if (rank && size.x > full - .01f) child.localScale = new Vector3(full - .04f, size.y, size.z);
+                if (file && size.z > deep - .01f) child.localScale = new Vector3(size.x, size.y, deep - .04f);
+                if (rank && size.x > wide - .01f) child.localScale = new Vector3(wide - .04f, size.y, size.z);
             }
         }
 
@@ -161,6 +174,9 @@ namespace ChessFight.PawnRush
         void Make()
         {
             var first = white != null ? white : black;
+            // R543: the board and how many squares charge at once go with the team's size.
+            grid = MiniGameScale.PaintBoard(first.TeamSize);
+            workers = MiniGameScale.Workers(first.TeamSize);
             // Between the two stations, on the dais; files run from white's side to black's.
             var mid = white != null && black != null ? (white.transform.position + black.transform.position) * .5f : first.transform.position;
             transform.SetPositionAndRotation(mid + first.transform.up * Arena.DaisHeight, first.transform.rotation);
@@ -181,29 +197,32 @@ namespace ChessFight.PawnRush
             }
 
             // One collider for the whole board, its slate showing in the joints; gold lines in the joints.
-            float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f, u0 = PawnRushBoard.U0, u1 = u0 + 2f * half;
+            float half = HalfV, u0 = grid.U0, u1 = grid.U1;
             b.Box("Board", new Vector3(-half, 0f, u0), new Vector3(half, TileHeight, u1), Arena.Lit("M_BoardJoint", Arena.Groove, 0f, .8f)).AddComponent<CourseFloor>();
             // Gold lines in the joints. Their ends stop 2 cm inside the board's sides: ending on the sides, their end faces
             // shared the sides' plane and flickered as small gold squares along the board's edge (user, 11-08: "아직도
             // 깜빡 거려", a recording).
             var joint = Arena.Emissive(Arena.Gold, .6f);
             const float JointInset = .02f;
-            for (int k = 1; k < PawnRushBoard.N; k++)
+            for (int k = 1; k < grid.Files; k++)
             {
-                float at = -half + k * PawnRushBoard.Cell;
+                float at = -half + k * grid.Cell;
                 Arena.Picture(transform, "Joint file", new Vector3(at - .035f, 0f, u0 + JointInset), new Vector3(at + .035f, .08f, u1 - JointInset), joint);
-                at = u0 + k * PawnRushBoard.Cell;
+            }
+            for (int k = 1; k < grid.Ranks; k++)
+            {
+                float at = u0 + k * grid.Cell;
                 Arena.Picture(transform, "Joint rank", new Vector3(-half + JointInset, 0f, at - .035f), new Vector3(half - JointInset, .08f, at + .035f), joint);
             }
 
             var slate = (PalaceStyle ? Stone("PR_A_Slate") : null) ?? Arena.Lit("M_BoardSquare", Arena.Slate, 0f, .45f);
             var lightDot = Arena.Lit("M_BoardDotLight", Arena.Hex("#F3EADB"), .3f, .5f);
             var darkDot = Arena.Lit("M_BoardDotDark", Arena.Hex("#15110F"), 0f, .5f);
-            for (int s = 0; s < 64; s++)
+            for (int s = 0; s < grid.Count; s++)
             {
-                int f = PawnRushBoard.FileOf(s), r = PawnRushBoard.RankOf(s);
-                var c = PawnRushBoard.Center(f, r);
-                var sq = new GameObject("Square " + PawnRushBoard.Name(f, r)).transform;
+                int f = grid.FileOf(s), r = grid.RankOf(s);
+                var c = grid.Center(f, r);
+                var sq = new GameObject("Square " + grid.Name(f, r)).transform;
                 sq.SetParent(transform, false);
                 sq.localPosition = new Vector3(c.V, 0f, c.U);
                 squares[s] = sq;
@@ -249,14 +268,14 @@ namespace ChessFight.PawnRush
             // Rank numbers on both sides, file letters along the south edge (the north edge is the gate wall).
             var dim = Arena.Gold * .4f;
             dim.a = 1f;
-            for (int r = 1; r <= PawnRushBoard.N; r++)
+            for (int r = 1; r <= grid.Ranks; r++)
             {
-                float u = PawnRushBoard.Center(0, r).U;
+                float u = grid.Center(0, r).U;
                 rankText[r - 1] = FloorText("Rank " + r, new Vector3(-half - .45f, u), r.ToString(), dim);
-                rankText[7 + r] = FloorText("Rank " + r, new Vector3(half + .45f, u), r.ToString(), dim);
+                rankText[grid.Ranks + r - 1] = FloorText("Rank " + r, new Vector3(half + .45f, u), r.ToString(), dim);
             }
-            for (int f = 0; f < PawnRushBoard.N; f++)
-                FloorText("File " + (char)('a' + f), new Vector3(PawnRushBoard.Center(f, 1).V, u0 - .45f), ((char)('a' + f)).ToString(), dim);
+            for (int f = 0; f < grid.Files; f++)
+                FloorText("File " + (char)('a' + f), new Vector3(grid.Center(f, 1).V, u0 - .45f), ((char)('a' + f)).ToString(), dim);
         }
 
         static Vector3 Flat(Vector3 p) => new Vector3(p.x, 0f, p.z);
@@ -318,7 +337,7 @@ namespace ChessFight.PawnRush
         public void ClipRims(Transform game)
         {
             if (game == null) return;
-            float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f, u0 = PawnRushBoard.U0, u1 = u0 + 2f * half;
+            float half = HalfV, u0 = grid.U0, u1 = grid.U1;
             // The footprint in the game's frame (the frames differ by a shift and a turn of 0 or 180 degrees).
             var a = game.InverseTransformPoint(transform.TransformPoint(new Vector3(-half, 0f, u0)));
             var c = game.InverseTransformPoint(transform.TransformPoint(new Vector3(half, 0f, u1)));
@@ -329,6 +348,14 @@ namespace ChessFight.PawnRush
             {
                 Vector3 p = rim.localPosition, s = rim.localScale;
                 float rx0 = p.x - s.x * .5f, rx1 = p.x + s.x * .5f, rz0 = p.z - s.z * .5f, rz1 = p.z + s.z * .5f;
+                // R543: the rim along the aisle's side of a station (a long strip at the court's middle) went wholly
+                // under the 8 x 8 board; a board of fewer ranks left its ends showing as two gold lines across the one
+                // court the stations share. It goes whole.
+                if (s.z > s.x && Mathf.Abs(transform.InverseTransformPoint(game.TransformPoint(p)).x) < AisleRim)
+                {
+                    Object.DestroyImmediate(rim.gameObject);
+                    continue;
+                }
                 if (rx1 <= x0 || rx0 >= x1 || rz1 <= z0 || rz0 >= z1) continue;
                 // What is left of the strip once the footprint is cut out: (x0, x1, z0, z1) rectangles.
                 var pieces = new List<Vector4>();
@@ -386,12 +413,12 @@ namespace ChessFight.PawnRush
                 }
                 foreach (int s in mine)
                 {
-                    if (list.Count >= PawnRushMissions.WorkerCap) break;
+                    if (list.Count >= workers) break;
                     if (painted[s] || Has(list, s)) continue;
                     list.Add(new Charge { Square = s, Time = 0f, Blocked = blocked[s] });
                 }
             }
-            for (int s = 0; s < 64; s++) target[s] = 0f;
+            for (int s = 0; s < grid.Count; s++) target[s] = 0f;
             for (int team = 0; team < 2; team++)
                 foreach (var c in charging[team])
                 {
@@ -412,11 +439,11 @@ namespace ChessFight.PawnRush
         {
             standing[0].Clear();
             standing[1].Clear();
-            for (int s = 0; s < 64; s++) blocked[s] = false;
+            for (int s = 0; s < grid.Count; s++) blocked[s] = false;
             seen.Clear();
-            float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f;
-            var center = transform.TransformPoint(new Vector3(0f, 1.5f, PawnRushBoard.U0 + half));
-            int n = Physics.OverlapBoxNonAlloc(center, new Vector3(half + .5f, 2.5f, half + .5f), buffer, transform.rotation, ~0, QueryTriggerInteraction.Ignore);
+            float half = HalfV, deep = (grid.U1 - grid.U0) * .5f;
+            var center = transform.TransformPoint(new Vector3(0f, 1.5f, grid.U0 + deep));
+            int n = Physics.OverlapBoxNonAlloc(center, new Vector3(half + .5f, 2.5f, deep + .5f), buffer, transform.rotation, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var driver = buffer[i].GetComponentInParent<ICharacterDriver>();
@@ -427,10 +454,10 @@ namespace ChessFight.PawnRush
                 var local = transform.InverseTransformPoint(driver.FollowTarget.position);
                 if (local.y > 2.5f) continue;
                 var at = new StationPoint(local.x, local.z);
-                if (!PawnRushBoard.SquareAt(at, out int f, out int r)) continue;
-                int s = PawnRushBoard.Index(f, r);
+                if (!grid.SquareAt(at, out int f, out int r)) continue;
+                int s = grid.Index(f, r);
                 if (TeamOf(s) != team) { blocked[s] = true; continue; }
-                var c = PawnRushBoard.Center(f, r);
+                var c = grid.Center(f, r);
                 if (Mathf.Abs(at.V - c.V) <= Reach && Mathf.Abs(at.U - c.U) <= Reach && !standing[Slot(team)].Contains(s)) standing[Slot(team)].Add(s);
             }
         }
@@ -458,47 +485,47 @@ namespace ChessFight.PawnRush
             // new stone (ivory / basalt) splashes on, droplets fly, it twinkles and a soft light ring runs out.
             Fx.Painted(at, color, Arena.Hex(team == Teams.Black ? "#2E2A26" : "#EEE3D0"), Tile, transform.eulerAngles.y);
             ArenaFx.Sfx("sfx_paint_done", at);                       // the user's stamp ("도장 쾅")
-            int rank = PawnRushBoard.RankOf(s);
+            int rank = grid.RankOf(s);
             if (!rankDone[rank])
             {
                 bool all = true;
-                for (int f = 0; f < PawnRushBoard.N && all; f++) all = painted[PawnRushBoard.Index(f, rank)];
+                for (int f = 0; f < grid.Files && all; f++) all = painted[grid.Index(f, rank)];
                 if (all)
                 {
                     rankDone[rank] = true;
                     var gold = Arena.Gold;
                     rankText[rank - 1].color = gold;
-                    rankText[7 + rank].color = gold;
+                    rankText[grid.Ranks + rank - 1].color = gold;
                     sweepAt = Time.time;
                     ArenaFx.Sfx("sfx_rank_complete", at, false, .9f);
                     sweepRank = rank;
                     // R506: a gold fountain of twinkles and a ring at both ends of the rank, where its numbers are.
-                    float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f;
+                    float half = HalfV;
                     foreach (float v in new[] { -half, half })
-                        Fx.RankEnd(transform.TransformPoint(new Vector3(v, TileHeight, PawnRushBoard.Center(0, rank).U)), gold);
+                        Fx.RankEnd(transform.TransformPoint(new Vector3(v, TileHeight, grid.Center(0, rank).U)), gold);
                 }
             }
             if (count[Slot(team)] >= PerTeam) Wave(team);
         }
 
-        // A team done: its 32 squares hop 0.1 m one after another from a1's corner to h8's, 0.8 s in all.
+        // A team done: its squares hop 0.1 m one after another from a1's corner to the far one, 0.8 s in all.
         void Wave(int team)
         {
-            for (int s = 0; s < 64; s++)
+            for (int s = 0; s < grid.Count; s++)
             {
                 if (TeamOf(s) != team) continue;
-                int f = PawnRushBoard.FileOf(s), r = PawnRushBoard.RankOf(s);
-                hopAt[s] = Time.time + (f + r - 1) / 14f * .8f;
+                int f = grid.FileOf(s), r = grid.RankOf(s);
+                hopAt[s] = Time.time + (f + r - 1) / (float)(grid.Files + grid.Ranks - 2) * .8f;
                 hopHeight[s] = .1f;
             }
             // R506: the moment heard and seen from anywhere on the court: a fanfare, confetti thrown up from the board's
             // four corners (team colour, gold, cream), a wide soft ring and glitter over the whole board.
-            float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f, u0 = PawnRushBoard.U0;
-            var centre = transform.TransformPoint(new Vector3(0f, TileHeight, u0 + half));
+            float half = HalfV, u0 = grid.U0;
+            var centre = transform.TransformPoint(new Vector3(0f, TileHeight, (grid.U0 + grid.U1) * .5f));
             var corners = new Vector3[4];
             int i = 0;
             foreach (float v in new[] { -half, half })
-                foreach (float u in new[] { u0, u0 + 2f * half })
+                foreach (float u in new[] { u0, grid.U1 })
                     corners[i++] = transform.TransformPoint(new Vector3(v, TileHeight, u));
             Fx.TeamDone(centre, corners, half, TeamColor(team), Arena.Gold, Arena.Hex("#F3EADB"), transform.eulerAngles.y);
             ArenaFx.Sfx("sfx_paint_team_complete", centre, true);
@@ -599,9 +626,9 @@ namespace ChessFight.PawnRush
         // progress (a client catching up) still leaves a continuous stroke. The sheet's clip stays at 0.5; when the
         // charge stops, the paint fades (clip to 1) as it falls back, and the next charge paints afresh.
         const int MaskSize = 128;
-        readonly Texture2D[] masks = new Texture2D[64];
-        readonly Color32[][] maskPx = new Color32[64][];
-        readonly float[] paintedTo = new float[64], pathSeed = new float[64], stopShown = new float[64];
+        readonly Texture2D[] masks = new Texture2D[MaxSquares];
+        readonly Color32[][] maskPx = new Color32[MaxSquares][];
+        readonly float[] paintedTo = new float[MaxSquares], pathSeed = new float[MaxSquares], stopShown = new float[MaxSquares];
         static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
 
         // The brush's place at `progress`, in the sheet's 0..1 space (x across, y up the bands).
@@ -684,7 +711,7 @@ namespace ChessFight.PawnRush
         }
 
         MaterialPropertyBlock brushBlock;                        // made in Update: Unity refuses one in a MonoBehaviour's field initializer
-        readonly Transform[] brushes = new Transform[64];
+        readonly Transform[] brushes = new Transform[MaxSquares];
 
         // A painter's brush over the square while it is painted (user, 11-07: "실제로 … 칠해보이는 게"): oak handle, brass
         // ferrule, bristles dipped in the team's stone colour; leaning back against its stroke, its bristle tip on the
@@ -767,7 +794,7 @@ namespace ChessFight.PawnRush
             if (squares == null) return;
             if (brushBlock == null) brushBlock = new MaterialPropertyBlock();
             float t = Time.time;
-            for (int s = 0; s < 64; s++)
+            for (int s = 0; s < grid.Count && s < squares.Length; s++)
             {
                 var sq = squares[s];
                 if (sq == null) continue;
@@ -836,8 +863,8 @@ namespace ChessFight.PawnRush
                 if (k > 1f) sweepAt = -1f;
                 else
                 {
-                    float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f;
-                    var at = transform.TransformPoint(new Vector3(Mathf.Lerp(-half, half, k), TileHeight + .05f, PawnRushBoard.Center(0, sweepRank).U));
+                    float half = HalfV;
+                    var at = transform.TransformPoint(new Vector3(Mathf.Lerp(-half, half, k), TileHeight + .05f, grid.Center(0, sweepRank).U));
                     Fx.RankDust(at, Arena.Gold);                    // R506: gold dust and twinkles (PaintBoardFx)
                 }
             }
@@ -845,43 +872,53 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the wire (§3.6, one team's half)
 
+        // R543: a bit a square of the board (a byte for every eight: 5 to 10 bytes), then a charge for each of the
+        // team's squares that may charge at once (four or five): bit 15 a charge, bit 14 blocked, bits 8-11 how far,
+        // bits 0-6 the square. Twenty bytes at most.
         public void Write(int team, ref NetBlock block)
         {
-            ulong bits = 0;
-            for (int s = 0; s < 64; s++) if (painted[s] && TeamOf(s) == team) bits |= 1UL << s;
-            block.U64(bits);
+            for (int k = 0; k < (grid.Count + 7) / 8; k++)
+            {
+                int bits = 0;
+                for (int s = k * 8; s < k * 8 + 8 && s < grid.Count; s++)
+                    if (painted[s] && TeamOf(s) == team) bits |= 1 << (s - k * 8);
+                block.U8(bits);
+            }
             var list = charging[Slot(team)];
-            for (int k = 0; k < PawnRushMissions.WorkerCap; k++)
+            for (int k = 0; k < workers; k++)
             {
                 if (k >= list.Count) { block.U16(0); continue; }
                 var c = list[k];
                 int steps = Mathf.Clamp(Mathf.FloorToInt(c.Time / Hold * 16f), 0, 15);
-                block.U16(1 << 15 | (c.Blocked ? 1 << 10 : 0) | steps << 6 | c.Square & 63);
+                block.U16(1 << 15 | (c.Blocked ? 1 << 14 : 0) | steps << 8 | c.Square & 127);
             }
         }
 
         public void Read(int team, ref NetBlock block)
         {
-            ulong bits = block.ReadU64();
             bool moments = heard[Slot(team)];
             heard[Slot(team)] = true;
-            for (int s = 0; s < 64; s++)
+            for (int k = 0; k < (grid.Count + 7) / 8; k++)
             {
-                if (TeamOf(s) != team) continue;
-                target[s] = 0f;
-                blocked[s] = false;
-                bool on = (bits >> s & 1UL) != 0;
-                if (on && !painted[s]) Paint(s, moments);
-                else if (!on && painted[s]) Unpaint(s);
+                int bits = block.ReadU8();
+                for (int s = k * 8; s < k * 8 + 8 && s < grid.Count; s++)
+                {
+                    if (TeamOf(s) != team) continue;
+                    target[s] = 0f;
+                    blocked[s] = false;
+                    bool on = (bits >> (s - k * 8) & 1) != 0;
+                    if (on && !painted[s]) Paint(s, moments);
+                    else if (!on && painted[s]) Unpaint(s);
+                }
             }
-            for (int k = 0; k < PawnRushMissions.WorkerCap; k++)
+            for (int k = 0; k < workers; k++)
             {
                 int v = block.ReadU16();
                 if ((v & 1 << 15) == 0) continue;
-                int s = v & 63;
-                if (painted[s]) continue;
-                target[s] = Mathf.Max(.001f, ((v >> 6 & 15) + .5f) / 16f);
-                blocked[s] = (v & 1 << 10) != 0;
+                int s = v & 127;
+                if (s >= grid.Count || painted[s]) continue;
+                target[s] = Mathf.Max(.001f, ((v >> 8 & 15) + .5f) / 16f);
+                blocked[s] = (v & 1 << 14) != 0;
             }
         }
 
@@ -891,14 +928,14 @@ namespace ChessFight.PawnRush
             count[Slot(TeamOf(s))]--;
             tiles[s].sharedMaterial = Arena.Lit("M_BoardSquare", Arena.Slate, 0f, .45f);
             emblems[s].SetActive(false);
-            int rank = PawnRushBoard.RankOf(s);
+            int rank = grid.RankOf(s);
             if (rankDone[rank])
             {
                 rankDone[rank] = false;
                 var dim = Arena.Gold * .4f;
                 dim.a = 1f;
                 rankText[rank - 1].color = dim;
-                rankText[7 + rank].color = dim;
+                rankText[grid.Ranks + rank - 1].color = dim;
             }
         }
 
@@ -907,7 +944,7 @@ namespace ChessFight.PawnRush
         {
             charging[Slot(team)].Clear();
             heard[Slot(team)] = false;
-            for (int s = 0; s < 64; s++)
+            for (int s = 0; s < grid.Count; s++)
             {
                 if (TeamOf(s) != team) continue;
                 if (painted[s]) Unpaint(s);

@@ -66,6 +66,8 @@ public static class SessionFlowTests
         Step(5);
         Check(players.All(c=>c.Started)&&RoomData(maker,"seats")==perTeam+","+perTeam&&RoomData(maker,"open")=="0"&&!FakeSteam.Lobbies[room].Joinable,
               "the started room's seats: "+RoomData(maker,"seats")+" open "+RoomData(maker,"open"));
+        // R543: every PC of the match reads the size the teams started with (the Pawn Rush mini-games are scaled to it).
+        Check(players.All(c=>c.StartTeamSize==perTeam),"every PC reads the start size "+perTeam+": "+string.Join(" ",players.Select(c=>c.StartTeamSize)));
         var extra=clients[seats];As(extra,()=>extra.FindMatch());Step(40);
         Check(extra.Match!=0&&extra.Match!=room&&extra.IsHost&&extra.IsManager&&!extra.Started&&maker.Roster.Count==seats,"a searcher with the room full should get a room of its own");
         foreach(var c in players){var x=c;As(x,()=>x.ReportLoading(100));}
@@ -74,6 +76,7 @@ public static class SessionFlowTests
         As(leaver,leaver.Cancel);Step(5);
         Check(maker.Roster.Count==seats-1&&RoomData(maker,"open")=="0"&&RoomData(maker,"free"+seat.Team)=="1"&&RoomData(maker,"free"+(1-seat.Team))=="0"&&maker.Away==1,
               "the leaver's seat: open "+RoomData(maker,"open")+" away "+maker.Away);
+        Check(players.Where(c=>c!=leaver).All(c=>c.StartTeamSize==perTeam),"the start size changed when a player left (the mini-games stay the size they were built for)");
         Step(60);
         Check(extra.Match!=room&&!extra.Started&&maker.Roster.Count==seats-1,"a searching player was let into the started match");
         var last=clients[seats+1];As(last,()=>last.FindMatch());Step(40);
@@ -82,6 +85,7 @@ public static class SessionFlowTests
         As(leaver,leaver.Rejoin);for(int t=0;t<60&&!leaver.Started;t++)Step(1);
         Check(leaver.Match==room&&leaver.Started&&maker.Roster.Count==seats&&maker.Roster[leaver.Self].Team==seat.Team&&maker.Roster[leaver.Self].Slot==seat.Slot,
               "the leaver did not get its own seat back: "+leaver.Error);
+        Check(leaver.StartTeamSize==perTeam,"the player who came back reads another start size: "+leaver.StartTeamSize);
         Step(3);
         Check(RoomData(maker,"open")=="0"&&RoomData(maker,"free0")=="0"&&RoomData(maker,"free1")=="0"&&!FakeSteam.Lobbies[room].Joinable&&maker.Away==0,"the room is still open with everyone back");
     }
@@ -777,10 +781,15 @@ public static class SessionFlowTests
                 Check(leader.Match==0&&member.Match==room&&member.Started&&solo.Started,"the party left with its leader");
                 Check((member.IsHost||solo.IsHost)&&member.Host==solo.Host&&member.Host!=leader.Self,"the host role did not move on");
                 Check(leader.PartyStillPlaying,"the leader does not see its member still playing");
-                As(leader,()=>leader.FindMatch());Check(!leader.Searching&&leader.Error.Contains("경기 중"),"the leader queued a member who is still playing");
+                // 11-11: the leader left a match that still runs, so it is told to go back to it first (RejoinFirstMessage)
+                // before the party-still-playing note; either way it must not queue.
+                As(leader,()=>leader.FindMatch());Check(!leader.Searching&&(leader.Error.Contains("경기 중")||leader.Error==SteamSession.RejoinFirstMessage),"the leader queued a member who is still playing");
                 As(member,member.Cancel);Step(20);
                 Check(!leader.PartyStillPlaying&&!member.Busy,"the member is not back");
-                As(leader,()=>leader.FindMatch(true));Step(20);Check(leader.Match!=0&&member.Match==leader.Match,"the party did not queue together again");});
+                // 11-11: while the match the leader left still runs it may only go back into it, so the last player
+                // leaves first and the match is gone
+                As(solo,solo.Cancel);Step(20);
+                As(leader,()=>leader.FindMatch(true));Step(20);Check(leader.Match!=0&&member.Match==leader.Match,"the party did not queue together again: "+leader.Error);});
             Test("A party leader's crash does not pull its party out of a started match",()=>{
                 Setup(3);var fit=new[]{900,700,500};for(int i=0;i<3;i++)clients[i].LocalFitness=fit[i];
                 var leader=clients[0];var member=clients[1];var solo=clients[2];

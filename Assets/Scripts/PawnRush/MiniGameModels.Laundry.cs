@@ -237,10 +237,12 @@ namespace ChessFight.PawnRush
             var trimSource = Resources.Load<Material>(OwnMaterials + "PR_Mid_J_DollTrim");
             if (linen == null || trimSource == null) return;
             Material body = null, trim = null;
-            for (int i = 0; i < KnightRoute.PieceSquares.Length; i++)
+            // R543: the road goes with the team's size (four to seven pieces); the game says which stand on it.
+            var road = station.Game is MgKnightPads pads ? pads.Road : KnightRoad.Baseline;
+            for (int i = 0; i < road.Pieces; i++)
             {
-                var piece = Find(game, "Piece " + KnightRoute.PieceSquares[i]);
-                var doll = Load(LaundryFolder + "J_Doll_" + KnightRoute.PieceKinds[i]);
+                var piece = Find(game, "Piece " + road.PieceSquares[i]);
+                var doll = Load(LaundryFolder + "J_Doll_" + road.PieceKinds[i]);
                 if (piece == null || doll == null) continue;
                 HideExcept(piece, "Ring");
                 if (piece.Find(RideName) != null) continue;
@@ -280,10 +282,13 @@ namespace ChessFight.PawnRush
                     string name = TubName + road.name.Substring(5);
                     if (game.Find(name) != null) continue;
                     // the square's top middle (a unit cube scaled to the square), in the game's frame; the box's scale is
-                    // not inherited, the tub is modelled at its size
+                    // not inherited, the tub is modelled at its size - 2.2 m across for the 2.05 m square. R543: a square
+                    // of another width (1.9 to 2.2 m, by the team's size) has its tub as much wider or narrower.
                     var at = new GameObject(name).transform;
                     at.SetParent(game, false);
                     at.localPosition = game.InverseTransformPoint(road.TransformPoint(new Vector3(0f, .5f, 0f)));
+                    float wide = Mathf.Abs(road.localScale.x) / KnightRoute.SquareSize;
+                    at.localScale = new Vector3(wide, 1f, wide);
                     Hang(at, RideName, tub, cache);
                 }
             if (nozzle != null)

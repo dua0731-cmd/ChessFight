@@ -65,6 +65,7 @@ namespace ChessFight.PawnRush
                 }
             }
             finally { Random.state = random; }
+            owner.Built(MiniGameScale.Clamp(section.TeamSize));
             MiniGameModels.Apply(owner);
             RefreshText(owner);
         }

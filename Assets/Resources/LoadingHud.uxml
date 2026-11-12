@@ -13,14 +13,14 @@
 
         <ui:VisualElement class="load-head" picking-mode="Ignore">
             <ui:Label name="load-kicker" class="load-kicker" picking-mode="Ignore" />
+            <!-- R609: the mode's name is back here with the study (R608 had put it on the LED stage); the rule and the note
+                 that stood under it stay gone (R607). -->
             <ui:VisualElement class="load-title-box" picking-mode="Ignore">
                 <ui:Label name="load-title" class="disp load-title" picking-mode="Ignore" />
                 <ui:VisualElement class="load-title-hi" picking-mode="Ignore">
                     <ui:Label name="load-title-hi" class="disp load-title load-title-cream" picking-mode="Ignore" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="load-rule" class="load-rule" picking-mode="Ignore" />
-            <ui:Label name="load-note" class="load-note" picking-mode="Ignore" />
         </ui:VisualElement>
 
         <!-- The rosters: one card per player, filled in code. -->
@@ -39,12 +39,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- 10-27 (design A): a gold VS between two fading hairlines -->
-        <ui:VisualElement class="row load-vs-row" picking-mode="Ignore">
-            <ui:VisualElement class="load-vs-line load-vs-line-l" picking-mode="Ignore" />
-            <ui:Label text="VS" class="disp load-vs" picking-mode="Ignore" />
-            <ui:VisualElement class="load-vs-line load-vs-line-r" picking-mode="Ignore" />
-        </ui:VisualElement>
+        <!-- R607: the gold VS that stood here is gone. -->
         <ui:VisualElement class="load-allin-row" picking-mode="Ignore">
             <ui:Label name="load-allin" text="모두 입장 완료 · 곧 출발!" class="disp load-allin" picking-mode="Ignore" />
         </ui:VisualElement>
@@ -56,8 +51,8 @@
             <ui:Button name="load-start" text="게임 시작" class="disp a-btn load-btn load-btn-gold load-start" />
             <ui:Button name="load-cancel" text="매칭 취소" class="disp a-btn a-danger load-btn" />
         </ui:VisualElement>
-        <!-- R148 (폰 러쉬): why the host cannot start yet, or that it can (3+ a side, even sides). -->
-        <ui:Label name="load-start-note" class="load-start-note" picking-mode="Ignore" />
+        <!-- R607: the line that said why the host cannot start yet ("1 대 0 · 팀마다 1명 이상이면 시작할 수 있어요") is gone; the
+             start button is greyed out until it can. -->
         <ui:VisualElement class="load-progress" picking-mode="Ignore">
             <ui:VisualElement class="row load-progress-row" picking-mode="Ignore">
                 <ui:Label name="load-step" class="disp load-step" picking-mode="Ignore" />

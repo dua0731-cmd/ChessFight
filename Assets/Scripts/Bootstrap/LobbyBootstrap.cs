@@ -20,7 +20,7 @@ namespace ChessFight.Game
     public sealed class LobbyBootstrap : MonoBehaviour
     {
         const float RefreshSeconds = .2f;
-        const int InviteSpotsShown = 2;
+        const int InviteSpotsShown = 1;      // R581: one invite spot, right after the last of the party
 
         NetworkRuntime runtime;
         SteamSession session => runtime.Session;
@@ -203,7 +203,7 @@ namespace ChessFight.Game
         }
 
         // Me in the middle, the rest of the party round me, then the party bots,
-        // then up to two empty spots with an invite button.
+        // then one empty spot with an invite button (R581).
         void BuildLineup(bool canInvite)
         {
             lineup.Clear();
@@ -276,8 +276,9 @@ namespace ChessFight.Game
                 FriendsOnline = friendsOnline,
 
                 ModeKey = mode.Key,
-                CanChangeMode = idleLeader,
-                ModeHint = !session.IsLeader ? "파티장만 모드를 바꿀 수 있습니다."
+                CanChangeMode = idleLeader && !session.CanRejoin,
+                ModeHint = session.CanRejoin ? "진행 중인 경기가 끝나기 전에는 모드를 바꿀 수 없습니다."
+                         : !session.IsLeader ? "파티장만 모드를 바꿀 수 있습니다."
                          : session.Busy ? "매칭 중에는 모드를 바꿀 수 없습니다."
                          : "모드마다 따로 매칭합니다. 준비 중인 모드는 아직 고를 수 없습니다.",
 
@@ -293,8 +294,9 @@ namespace ChessFight.Game
                 Busy = busy,
                 // Release builds keep bots out of public matches (M6); the test
                 // room still takes them.
-                CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable && stop == "",
-                PlayNote = stop,
+                CanPlay = canQueue && !session.CanRejoin && !session.BotsBlockPublicMatch && partyMode.Playable && stop == "",
+                // 11-11: while the left match runs, "게임 시작" stays shut and says why (the green button goes back in).
+                PlayNote = stop != "" ? stop : session.CanRejoin && !session.Busy ? "진행 중인 경기가 끝나기 전에는 새 경기를 시작할 수 없어요" : "",
                 RejoinNote = session.CanRejoin ? $"{session.RejoinMode.Name} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요" : "",
                 BusyTitle = waiting ? "파티원 경기 중"
                           : following ? "파티장을 따라가는 중"

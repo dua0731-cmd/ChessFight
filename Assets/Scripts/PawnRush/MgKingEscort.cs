@@ -4,11 +4,11 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // G, king escort (mini-games v1.0 §5, reworked in R128): our king on a square sled is pushed and pulled along
-    // fifteen board squares (KingEscortPath, d1 to e8 in front of the gate); two of the other side's rooks stand in the
-    // road until they are pushed or dragged into their garages; on e8 our rook tower jumps over the king (castling) and
-    // the gate opens. R524: the road ends on e8, the sled whole on the board (a gold frame shows where it stops); it used
-    // to run on into the team door's tunnel, so the sled had to be pushed into the north wall.
+    // G, king escort (mini-games v1.0 §5, reworked in R128): our king on a square sled is pushed and pulled along a road
+    // of board squares (KingRoad, d1 to e8 in front of the gate); the other side's rooks stand in the road until they
+    // are pushed or dragged into their garages; with the sled on e8 the gate opens. R524: the road ends on e8, the sled
+    // whole on the board (a gold frame shows where it stops); it used to run on into the team door's tunnel, so the
+    // sled had to be pushed into the north wall.
     //
     // R128 (user, after playing it): no ropes and no gold handle blocks. The ropes left no room by the walls, the
     // small blocks were hard to catch, grab + forward climbed them, and turning the sled pulled the grips off. Now
@@ -16,59 +16,73 @@ namespace ChessFight.PawnRush
     // them from behind and moves the way the thing has to go (MiniGameParts.Shove); the sled never turns - at a
     // corner the team moves round to push it the new way. They are GrabOnlySurface: held by hand, never climbed.
     //
+    // R543 (user 11-11: "킹 호위는 룩 탑은 제거해주고(왜 있던건지 모르겠음) 킹이 움직이는 속도(무게)와 길의 거리, 장애물 등을
+    // 적절히 조절해줘. 그리고 매번 똑같은 패턴의 맵이 안나오게 해줘"):
+    //   - our rook tower on g8 and its castling jump over the king are gone: the sled on the gold frame is the end;
+    //   - the road is drawn anew for every game from a seed (KingRoad.Generate): 11, 13, 15 or 17 squares for three to
+    //     six a side, with 2 to 5 squares of sand and 1 to 3 rooks in the way;
+    //   - the sled's weight goes with the team: its whole crew (3, 4, 4 and 5 pushers) moves it at full speed.
+    // The seed is drawn where the game is built: a section's games are built from the section's seed on every PC, so
+    // every PC and both teams draw the same road. The host sends the seed anyway, and a PC that drew another builds
+    // the host's.
+    //
     // Physics and the network (§1.2): the sled is one distance s along the road, worked out on the host; the sled
     // and the rooks are kinematic bodies moved to the host's numbers, and a hand that holds one is dragged with
-    // it. The host sends s, both rooks' drag, flags and how many push each way (7 bytes); a client eases to them
-    // and plays every moment from what changed.
+    // it. The host sends the seed, s, the rooks' drag, flags and how many push each way (11 bytes); a client eases to
+    // them and plays every moment from what changed.
     public sealed class MgKingEscort : MiniGameBase
     {
         public const float SledSize = 1.6f, SledHalf = SledSize * .5f, RookHalf = .45f;
-        public const float CastleSeconds = 1.6f, CastleApex = 3.4f, PathCell = 2.22f;
-        // R522: the castling jump's beats - the crouch, the flight (the landing's squash and bounces take the rest of
-        // CastleSeconds) - and where it lands: c8, beside the team door, not d8 in front of the door's open half.
-        const float CastleCrouch = .22f, CastleFlight = 1f, TowerMiddle = 1.1f;
-        const string CastleFrom = "g8", CastleTo = "c8";
+        public const float PathCell = 2.22f;
+        const int MaxRooks = KingRoad.MaxRooks;
 
         [SerializeField] MissionStation station;
+
+        // This game's road and the seed it was drawn from.
+        KingRoad road = KingRoad.Baseline;
+        int seed = -1, crew = PawnRushMissions.WorkerCap;
+        Transform board;
+
+        public KingRoad Road => road;
+        public int Seed => seed;
 
         Rigidbody sled;
         Transform sledLook;
         LineRenderer sledRing;
-        readonly Rigidbody[] rooks = new Rigidbody[2];
-        readonly Renderer[] rookRings = new Renderer[2];
-        readonly Transform[] stops = new Transform[2];
-        Transform tower;
-        Renderer towerRing;
+        readonly Rigidbody[] rooks = new Rigidbody[MaxRooks];
+        readonly Renderer[] rookRings = new Renderer[MaxRooks];
+        readonly Transform[] stops = new Transform[MaxRooks];
         Material ringPlain, ringWarn;
 
         // Host state (a client's copy from the wire).
         float s;
-        readonly float[] rookD = new float[2];
-        readonly bool[] garaged = new bool[2];
-        bool castling;
-        float castleAt = -1f;
+        readonly float[] rookD = new float[MaxRooks];
+        readonly bool[] garaged = new bool[MaxRooks];
         int pushers, holders;                  // ours moving the sled on, theirs holding it back
-        readonly int[] rookPushers = new int[2];
-        readonly float[] rookN = new float[2];
+        readonly int[] rookPushers = new int[MaxRooks];
+        readonly float[] rookN = new float[MaxRooks];
 
         // What is drawn (eased on a client) and the moments already played.
         float shownS;
-        readonly float[] shownRook = new float[2];
+        readonly float[] shownRook = new float[MaxRooks];
         float lastS, dustAt, sandAt, bumpAt = -1f;
-        readonly float[] lastRook = new float[2];
-        readonly bool[] wasGaraged = new bool[2], wasBlocked = new bool[2];
-        readonly float[] popAt = { -1f, -1f };
-        bool wasCastling, tookOff, landed;
+        readonly float[] lastRook = new float[MaxRooks];
+        readonly bool[] wasGaraged = new bool[MaxRooks], wasBlocked = new bool[MaxRooks];
+        readonly float[] popAt = { -1f, -1f, -1f };
+        bool arrived;
         AudioSource drag, sand, stone;
 
         public float Distance => s;
 
         public static MgKingEscort Build(CourseBuilder b, MissionStation station)
         {
+            // First of all, before anything else takes from the stream: a section's builder has seeded it with the
+            // section's seed, so every PC and both of its stations draw the same number here.
+            int seed = Random.Range(0, 65536);
             MissionGames.Floor(b, 0f, 20f);
             var game = b.parent.gameObject.AddComponent<MgKingEscort>();
             game.station = station;
-            game.Make(b);
+            game.Use(seed);
             return game;
         }
 
@@ -86,15 +100,46 @@ namespace ChessFight.PawnRush
 
         Vector3 Groove(int k)
         {
-            var from = Cell(KingEscortPath.RookCells[k]);
-            var to = Cell(KingEscortPath.RookGarages[k]);
+            var from = Cell(road.RookCells[k]);
+            var to = Cell(road.RookGarages[k]);
             return (to - from).normalized;
         }
 
-        void Make(CourseBuilder b)
+        // ------------------------------------------------------------------ the road from the seed
+
+        // Builds the road of this seed for the station's team size in place of the one standing, back at its start.
+        void Use(int newSeed)
         {
-            var road = b.Group("Road");
-            var cells = KingEscortPath.Cells;
+            seed = newSeed;
+            int size = station != null ? station.TeamSize : MiniGameScale.Baseline;
+            road = KingRoad.Generate(seed, size);
+            crew = MiniGameScale.KingSledCrew(size);
+            s = shownS = lastS = 0f;
+            for (int k = 0; k < MaxRooks; k++)
+            {
+                rookD[k] = shownRook[k] = lastRook[k] = 0f;
+                garaged[k] = wasGaraged[k] = wasBlocked[k] = false;
+                popAt[k] = -1f;
+                rookPushers[k] = 0;
+                rooks[k] = null;
+                rookRings[k] = null;
+                stops[k] = null;
+            }
+            pushers = holders = 0;
+            arrived = false;
+            bumpAt = -1f;
+            CutSounds();
+            if (board != null) DestroyImmediate(board.gameObject);
+            board = new GameObject("Road " + seed).transform;
+            board.SetParent(transform, false);
+            Make();
+        }
+
+        void Make()
+        {
+            var lane = new GameObject("Road").transform;
+            lane.SetParent(board, false);
+            var cells = road.Cells;
             var sandTop = Arena.Lit("M_Sand", Arena.Hex("#D9C07A"), 0f, 1f);
             var ripple = Arena.Lit("M_SandRipple", Arena.Hex("#BF9F55"), 0f, 1f);
             var curb = Arena.Lit("M_Curb", Arena.Hex("#CFC5B3"), 0f, .8f);
@@ -104,11 +149,11 @@ namespace ChessFight.PawnRush
             {
                 PawnRushBoard.Parse(cells[i], out int f, out int r);
                 var c = Cell(cells[i]);
-                bool isSand = System.Array.IndexOf(KingEscortPath.Sand, cells[i]) >= 0;
-                Arena.Picture(road, "Road " + cells[i], c + new Vector3(-h, 0f, -h), c + new Vector3(h, .08f, h), isSand ? sandTop : Arena.Wood(PawnRushBoard.IsLight(f, r)));
+                bool isSand = road.IsSandCell(i);
+                Arena.Picture(lane, "Road " + cells[i], c + new Vector3(-h, 0f, -h), c + new Vector3(h, .08f, h), isSand ? sandTop : Arena.Wood(PawnRushBoard.IsLight(f, r)));
                 if (isSand)
                     for (int w = -1; w <= 1; w++)
-                        Arena.Picture(road, "Sand ripple", c + new Vector3(-h + .2f, .08f, w * .6f - .04f), c + new Vector3(h - .2f, .09f, w * .6f + .04f), ripple);
+                        Arena.Picture(lane, "Sand ripple", c + new Vector3(-h + .2f, .08f, w * .6f - .04f), c + new Vector3(h - .2f, .09f, w * .6f + .04f), ripple);
                 // Curbs on the outer sides: not toward the road's neighbours, d1's south (the start) or a rook square's
                 // garage side. The end, e8, is closed all round (R524: it was open north, the road going on to the gate).
                 for (int side = 0; side < 4; side++)
@@ -117,45 +162,45 @@ namespace ChessFight.PawnRush
                     string next = PawnRushBoard.OnBoard(f + df, r + dr) ? PawnRushBoard.Name(f + df, r + dr) : "";
                     if (i > 0 && cells[i - 1] == next || i < cells.Length - 1 && cells[i + 1] == next) continue;
                     if (i == 0 && side == 2) continue;
-                    int rook = System.Array.IndexOf(KingEscortPath.RookCells, cells[i]);
-                    if (rook >= 0 && KingEscortPath.RookGarages[rook] == next) continue;
+                    int rook = System.Array.IndexOf(road.RookCells, cells[i]);
+                    if (rook >= 0 && road.RookGarages[rook] == next) continue;
                     var n = MiniGameParts.Local(station, new StationPoint(df, dr)) - MiniGameParts.Local(station, new StationPoint(0f, 0f));
                     var along = new Vector3(Mathf.Abs(n.z), 0f, Mathf.Abs(n.x));
                     // R498: the curb's outer face stands a centimetre past the road square's, not in its plane.
                     var mid = c + n * (h - .09f + MissionGames.Proud * .5f);
                     var half = along * h + new Vector3(Mathf.Abs(n.x), 0f, Mathf.Abs(n.z)) * (.09f + MissionGames.Proud * .5f);
-                    Arena.Picture(road, "Curb", mid - half, mid + half + Vector3.up * .16f, curb);
+                    Arena.Picture(lane, "Curb", mid - half, mid + half + Vector3.up * .16f, curb);
                 }
                 // A corner: a gold ring and an arrow the way the road goes on (the king does not turn; it is pushed
                 // the new way from its other side).
-                if (KingEscortPath.Turns(i))
+                if (road.Turns(i))
                 {
-                    MiniGameParts.Loop(road, "Corner " + cells[i], c + Vector3.up * .1f, .9f, .16f, Arena.Gold);
-                    var p = KingEscortPath.Points;
+                    MiniGameParts.Loop(lane, "Corner " + cells[i], c + Vector3.up * .1f, .9f, .16f, Arena.Gold);
+                    var p = road.Points;
                     var to = Dir(p[i + 1].V - p[i].V, p[i + 1].U - p[i].U);
                     float yaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
                     foreach (float side in new[] { -1f, 1f })
                     {
-                        var arm = Arena.Picture(road, "Corner arrow", new Vector3(-.04f, 0f, -.3f), new Vector3(.04f, .02f, .3f), gold);
+                        var arm = Arena.Picture(lane, "Corner arrow", new Vector3(-.04f, 0f, -.3f), new Vector3(.04f, .02f, .3f), gold);
                         arm.transform.localPosition = c + Quaternion.Euler(0f, yaw, 0f) * new Vector3(side * .18f, .1f, .1f);
                         arm.transform.localRotation = Quaternion.Euler(0f, yaw - side * 40f, 0f);
                     }
                 }
-                // The end (R524): a gold frame just round the sled's footprint, where it stops for the castling. The
+                // The end (R524): a gold frame just round the sled's footprint, where it stops and the gate opens. The
                 // bars across run between the bars along, so no two tops overlap.
                 if (i == cells.Length - 1)
                 {
                     const float edge = SledHalf + .1f, bar = .05f;
                     foreach (float side in new[] { -1f, 1f })
                     {
-                        Arena.Picture(road, "Goal frame", c + new Vector3(-edge - bar, .081f, side * edge - bar), c + new Vector3(edge + bar, .1f, side * edge + bar), gold);
-                        Arena.Picture(road, "Goal frame", c + new Vector3(side * edge - bar, .081f, -edge + bar), c + new Vector3(side * edge + bar, .1f, edge - bar), gold);
+                        Arena.Picture(lane, "Goal frame", c + new Vector3(-edge - bar, .081f, side * edge - bar), c + new Vector3(edge + bar, .1f, side * edge + bar), gold);
+                        Arena.Picture(lane, "Goal frame", c + new Vector3(side * edge - bar, .081f, -edge + bar), c + new Vector3(side * edge + bar, .1f, edge - bar), gold);
                     }
                 }
             }
-            // The start pad south of d1.
-            var d1 = Cell("d1");
-            Arena.Picture(road, "Start pad", new Vector3(d1.x - 1.5f, 0f, .8f), new Vector3(d1.x + 1.5f, .06f, 2f), Arena.Lit("M_StartPad", Arena.Hex("#5B6170"), 0f, .8f));
+            // The start pad south of the first square.
+            var first = Cell(cells[0]);
+            Arena.Picture(lane, "Start pad", new Vector3(first.x - 1.5f, 0f, .8f), new Vector3(first.x + 1.5f, .06f, 2f), Arena.Lit("M_StartPad", Arena.Hex("#5B6170"), 0f, .8f));
 
             // The rooks in the way (grab-only: held and pushed, never climbed), their grooves, garages and gold stops.
             var them = Opponent;
@@ -163,36 +208,29 @@ namespace ChessFight.PawnRush
             ringWarn = Arena.Lit("M_PieceRingWarn", Arena.Hex("#F08A2C"), .9f, .5f);
             var garageFloor = Arena.Lit("M_Garage", Arena.Hex("#2F333D"), 0f, .8f);
             var grooveMat = Arena.Lit("M_Groove", Arena.Hex("#1D2028"), 0f, .8f);
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < road.Rooks; k++)
             {
-                var from = Cell(KingEscortPath.RookCells[k]);
-                var garage = Cell(KingEscortPath.RookGarages[k]);
+                var from = Cell(road.RookCells[k]);
+                var garage = Cell(road.RookGarages[k]);
                 var g = Groove(k);
                 var across = new Vector3(g.z, 0f, g.x);
-                Arena.Picture(road, "Garage", garage + new Vector3(-h, 0f, -h), garage + new Vector3(h, .05f, h), garageFloor);
+                Arena.Picture(lane, "Garage", garage + new Vector3(-h, 0f, -h), garage + new Vector3(h, .05f, h), garageFloor);
                 var mid = (from + garage) * .5f;
                 var half = g * (KingEscortPath.RookDrag * .5f) + across * .2f;
-                Arena.Picture(road, "Rook groove", mid - Abs(half), mid + Abs(half) + Vector3.up * .09f, grooveMat);
-                var stop = Arena.Picture(road, "Rook stop", -Abs(across * .8f + g * .07f), Abs(across * .8f + g * .07f) + Vector3.up * .2f, gold);
+                Arena.Picture(lane, "Rook groove", mid - Abs(half), mid + Abs(half) + Vector3.up * .09f, grooveMat);
+                var stop = Arena.Picture(lane, "Rook stop", -Abs(across * .8f + g * .07f), Abs(across * .8f + g * .07f) + Vector3.up * .2f, gold);
                 stop.transform.localPosition = garage + g * (h - .1f);
                 stops[k] = stop.transform;
-                var rook = MiniGameParts.Piece(b.parent, "Rook in the way " + (k + 1), PieceKind.Rook, 1.6f, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .4f, grabbable: true);
+                var rook = MiniGameParts.Piece(board, "Rook in the way " + (k + 1), PieceKind.Rook, 1.6f, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .4f, grabbable: true);
                 rook.transform.localPosition = from;
                 rooks[k] = rook.GetComponent<Rigidbody>();
                 foreach (var r in rook.GetComponentsInChildren<Renderer>()) if (r.name == "Ring") rookRings[k] = r;
             }
 
-            // Our rook tower on g8.
-            var g8 = Cell("g8");
-            b.Box("Rook tower base", g8 + new Vector3(-.9f, 0f, -.9f), g8 + new Vector3(.9f, .3f, .9f), Arena.Lit("M_TowerBase", Arena.Hex("#CFC5B3"), 0f, .8f), true);
-            tower = MiniGameParts.Piece(b.parent, "Rook tower", PieceKind.Rook, 2.2f, MiniGameParts.PieceMaterial(station.Team), station.Accent(station.Team), false).transform;
-            tower.localPosition = g8 + Vector3.up * .3f;
-            foreach (var r in tower.GetComponentsInChildren<Renderer>(true)) if (r.name == "Ring") towerRing = r;
-
             // The sled: a square walnut base on runners with our king on it, one kinematic body whose colliders (the
             // base, and the king at hand height) are held by hand or pushed, never climbed. It never turns.
             var sledGo = new GameObject("King sled");
-            sledGo.transform.SetParent(b.parent, false);
+            sledGo.transform.SetParent(board, false);
             sled = sledGo.AddComponent<Rigidbody>();
             sled.isKinematic = true;
             sled.useGravity = false;
@@ -224,12 +262,12 @@ namespace ChessFight.PawnRush
         // The sled's place in the game's frame at s, and the way the road goes there (at a corner, the way on).
         Vector3 SledAt(float at, out Vector3 dir)
         {
-            var p = KingEscortPath.Position(at, out float dv, out float du);
+            var p = road.Position(at, out float dv, out float du);
             dir = Dir(dv, du);
             return MiniGameParts.Local(station, p);
         }
 
-        Vector3 RookAt(int k, float d) => Cell(KingEscortPath.RookCells[k]) + Groove(k) * d;
+        Vector3 RookAt(int k, float d) => Cell(road.RookCells[k]) + Groove(k) * d;
 
         // The sled and the rooks where the numbers put them (kinematic moves, or set outright).
         void Place(float at, bool snap)
@@ -237,8 +275,9 @@ namespace ChessFight.PawnRush
             var pos = World(SledAt(at, out _));
             if (snap) sled.transform.SetPositionAndRotation(pos, transform.rotation);
             else { sled.MovePosition(pos); sled.MoveRotation(transform.rotation); }
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < road.Rooks; k++)
             {
+                if (rooks[k] == null) continue;
                 var rp = World(RookAt(k, shownRook[k]));
                 if (snap) rooks[k].transform.position = rp; else rooks[k].MovePosition(rp);
             }
@@ -254,12 +293,12 @@ namespace ChessFight.PawnRush
             if (Remote)
             {
                 shownS = Mathf.MoveTowards(shownS, s, dt * 1.6f);
-                for (int k = 0; k < 2; k++) shownRook[k] = Mathf.MoveTowards(shownRook[k], rookD[k], dt * 1.6f);
+                for (int k = 0; k < road.Rooks; k++) shownRook[k] = Mathf.MoveTowards(shownRook[k], rookD[k], dt * 1.6f);
             }
             else
             {
                 shownS = s;
-                for (int k = 0; k < 2; k++) shownRook[k] = rookD[k];
+                for (int k = 0; k < road.Rooks; k++) shownRook[k] = rookD[k];
             }
             Place(shownS, false);
         }
@@ -267,15 +306,14 @@ namespace ChessFight.PawnRush
         void Step(float dt)
         {
             var at = SledAt(s, out var dir);
-            int n = 0, e = 0;
-            rookN[0] = rookN[1] = 0f;
-            rookPushers[0] = rookPushers[1] = 0;
+            int n = 0, e = 0, count = road.Rooks;
+            for (int k = 0; k < count; k++) { rookN[k] = 0f; rookPushers[k] = 0; }
             foreach (var p in station.Pawns())
             {
                 int on = MiniGameParts.Shove(p, transform, sled, at, dir, SledHalf);
                 if (p.Own && on > 0) n++;
                 else if (!p.Own && on < 0) e++;
-                for (int k = 0; k < 2; k++)
+                for (int k = 0; k < count; k++)
                 {
                     if (garaged[k]) continue;
                     int r = MiniGameParts.Shove(p, transform, rooks[k], RookAt(k, rookD[k]), Groove(k), RookHalf);
@@ -283,11 +321,12 @@ namespace ChessFight.PawnRush
                     else if (!p.Own && r < 0) rookN[k] -= .5f;
                 }
             }
-            pushers = Mathf.Min(PawnRushMissions.WorkerCap, n);
+            // R543: the sled's crew is as many as the team's size asks for (three to five), and no more count.
+            pushers = Mathf.Min(crew, n);
             holders = e;
 
             // The rooks: 0.6 m/s for one, 1.1 for two or more, into the garage and latched there.
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < count; k++)
             {
                 if (garaged[k]) continue;
                 float r = rookN[k], v = r <= 0f ? 0f : r < 1f ? KingEscortPath.RookDragOne * r : Mathf.Min(KingEscortPath.RookDragTwo, KingEscortPath.RookDragOne + (KingEscortPath.RookDragTwo - KingEscortPath.RookDragOne) * (r - 1f));
@@ -295,23 +334,19 @@ namespace ChessFight.PawnRush
                 if (rookD[k] >= KingEscortPath.RookDrag - 1e-4f) garaged[k] = true;
             }
 
-            // The sled: the speed table for (ours - half of theirs), slower on sand, never back, held at a rook.
-            float effective = Mathf.Max(0f, pushers - .5f * holders);
-            float speed = KingEscortPath.Speed(effective, KingEscortPath.IsSand(s));
+            // The sled: the speed table for its crew's share pushing (theirs each take half a pusher off), slower on
+            // sand, never back, held at a rook.
+            float speed = KingEscortPath.Speed(pushers, holders, road.IsSand(s), crew);
             if (speed > 0f)
             {
                 float next = s + speed * dt;
-                for (int k = 0; k < 2; k++)
-                    if (!garaged[k]) next = Mathf.Min(next, KingEscortPath.RookStop(k));
-                s = Mathf.Max(s, Mathf.Min(KingEscortPath.Length, next));
+                for (int k = 0; k < count; k++)
+                    if (!garaged[k]) next = Mathf.Min(next, road.RookStop(k));
+                s = Mathf.Max(s, Mathf.Min(road.Length, next));
             }
-            Progress01 = Mathf.Min(.999f, s / KingEscortPath.Length);
-            if (!castling && s >= KingEscortPath.Length - 1e-3f)
-            {
-                castling = true;
-                castleAt = Time.time;
-            }
-            if (castling && Time.time - castleAt >= CastleSeconds) Complete();
+            Progress01 = Mathf.Min(.999f, s / road.Length);
+            // R543: on the gold frame the escort is done (no castling: our rook tower is gone).
+            if (s >= road.Length - 1e-3f) Complete();
         }
 
         // ------------------------------------------------------------------ moments (every PC)
@@ -326,11 +361,11 @@ namespace ChessFight.PawnRush
             float speed = Time.deltaTime > 0f ? (shownS - lastS) / Time.deltaTime : 0f;
             lastS = shownS;
             bool moving = speed > .05f && !Completed;
-            bool onSand = KingEscortPath.IsSand(shownS);
+            bool onSand = road.IsSand(shownS);
 
             // The push ring: ours while pushed on, theirs blinking while held back.
             bool held = holders > 0 && Mathf.Repeat(t * 3f, 1f) < .5f;
-            sledRing.enabled = pushers > 0 || held;
+            sledRing.enabled = !Completed && (pushers > 0 || held);
             var rc = held ? station.Accent(Opponent) : station.Accent(station.Team);
             sledRing.startColor = sledRing.endColor = rc;
 
@@ -358,10 +393,12 @@ namespace ChessFight.PawnRush
 
             // The rooks: stopped in front of one, pushing one, one in its garage.
             bool rookMoving = false;
-            for (int k = 0; k < 2; k++)
+            Vector3 movingAt = sledAt;
+            for (int k = 0; k < road.Rooks; k++)
             {
+                if (rooks[k] == null) continue;
                 bool g = shownRook[k] >= KingEscortPath.RookDrag - .01f;
-                bool blocked = !g && !moving && Mathf.Abs(shownS - KingEscortPath.RookStop(k)) < .02f;
+                bool blocked = !g && !moving && Mathf.Abs(shownS - road.RookStop(k)) < .02f;
                 if (blocked && !wasBlocked[k])
                 {
                     bumpAt = t;
@@ -375,6 +412,7 @@ namespace ChessFight.PawnRush
                 if (rv > .05f)
                 {
                     rookMoving = true;
+                    movingAt = rooks[k].transform.position;
                     if (Random.value < .2f) ArenaFx.Burst(rooks[k].transform.position + Vector3.up * .05f, new[] { new Color(.6f, .6f, .6f) }, 2, .5f, .4f, .4f, .05f);
                 }
                 if (g && !wasGaraged[k])
@@ -395,7 +433,7 @@ namespace ChessFight.PawnRush
             }
             if (rookMoving)
             {
-                if (stone == null || !stone.isPlaying) stone = ArenaFx.Hold("sfx_stone_drag", rooks[0].transform.position, 1f, .6f);
+                if (stone == null || !stone.isPlaying) stone = ArenaFx.Hold("sfx_stone_drag", movingAt, 1f, .6f);
             }
             else { ArenaFx.Cut(stone); stone = null; }
 
@@ -403,138 +441,102 @@ namespace ChessFight.PawnRush
             float bump = (t - bumpAt) / .1f;
             sledLook.localPosition = bumpAt >= 0f && bump < 1f ? new Vector3(0f, .04f * Mathf.Sin(bump * Mathf.PI), 0f) : Vector3.zero;
 
-            Castle(t);
-        }
-
-        // At the road's end our rook tower castles over the king. R522 (the user's list, 11-09, 6: "왕의 행차 회랑
-        // 마지막구간 수정 필요. 룩이 점프뛰는 연출도 별로임"): it crouches (0.22 s, down and wide, leaning back), leaps from g8 in an arc
-        // over the king (on e8 since R524, so straight along rank 8) - stretched as it leaves and as it comes down, one
-        // forward somersault round its middle, its floor band left off while it flies - and lands on c8 beside the team door
-        // with a squash and two bounces, dust and its ring; the whoosh goes with the leap. Before, it floated at one speed
-        // along the rank, spun like a top with its band stuck under it, landed without a jolt, and stood on d8, in front of
-        // the half of the door the sled leaves open. Every PC plays it from when it saw the castling start (no clock on the
-        // wire).
-        void Castle(float t)
-        {
-            if (tower == null) return;
-            if (castling && !wasCastling)
+            // The sled on its frame: the team's ring and a burst round it (every PC plays it when it sees the game done).
+            if (Completed && !arrived)
             {
-                if (castleAt < 0f) castleAt = t;
-                ArenaFx.Beam(World(Cell(CastleFrom)), 1.2f, 1.8f, 7f, CastleCrouch + CastleFlight, station.Accent(station.Team));
-                tookOff = landed = false;
-            }
-            wasCastling = castling;
-            var from = Cell(CastleFrom, .3f);
-            if (!castling) { PoseTower(from, Quaternion.identity, Vector3.one, true); return; }
-            float e = t - castleAt;
-            var to = Cell(CastleTo);
-            var dir = to - from;
-            dir.y = 0f;
-            var axis = Vector3.Cross(Vector3.up, dir.normalized);   // a positive turn round it tips the top the way on
-            if (e < CastleCrouch)
-            {
-                float c = Mathf.SmoothStep(0f, 1f, e / CastleCrouch);
-                PoseTower(from, Quaternion.AngleAxis(-8f * c, axis), new Vector3(1f + .1f * c, 1f - .18f * c, 1f + .1f * c), true);
-                return;
-            }
-            if (e < CastleCrouch + CastleFlight)
-            {
-                float u = (e - CastleCrouch) / CastleFlight;
-                if (!tookOff)
-                {
-                    tookOff = true;
-                    ArenaFx.Sfx("sfx_castle_whoosh", World(from));
-                }
-                // On the flat a quadratic curve through the king's place at its middle; up and down a parabola.
-                var king = SledAt(KingEscortPath.Length, out _);
-                Vector3 p0 = Flat(from), p2 = Flat(to), bend = Flat(king) * 2f - (p0 + p2) * .5f;
-                var p = Vector3.Lerp(Vector3.Lerp(p0, bend, u), Vector3.Lerp(bend, p2, u), u);
-                p.y = Mathf.Lerp(from.y, to.y, u) + CastleApex * 4f * u * (1f - u);
-                // out of the crouch's lean, then one somersault, upright again before it lands
-                float turn = Mathf.Lerp(-8f, 0f, Mathf.Clamp01(u / .1f)) + 360f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.1f, .9f, u));
-                var flip = Quaternion.AngleAxis(turn, axis);
-                float stretch = u < .3f ? 1f - u / .3f : u > .8f ? (u - .8f) / .2f : 0f;
-                PoseTower(p, flip, new Vector3(1f - .06f * stretch, 1f + .14f * stretch, 1f - .06f * stretch), false);
-                return;
-            }
-            float a = e - CastleCrouch - CastleFlight;
-            if (!landed)
-            {
-                landed = true;
-                var at = World(to);
+                arrived = true;
+                var at = World(SledAt(road.Length, out _));
                 ArenaFx.Ring(at, 0f, 2.5f, .6f, station.Accent(station.Team));
                 ArenaFx.Burst(at + Vector3.up * .2f, new[] { station.Accent(station.Team), Arena.Gold, new Color(.85f, .8f, .7f) }, 24, 2.2f, 2.5f, .9f, .1f);
                 ArenaFx.Sfx("sfx_castle_land", at);
             }
-            // squashed flat on landing, springing back through a stretch in two bounces
-            float squash = .22f * Mathf.Exp(-a / .12f) * Mathf.Cos(a * 2f * Mathf.PI / .18f);
-            PoseTower(to, Quaternion.identity, new Vector3(1f + squash * .6f, 1f - squash, 1f + squash * .6f), true);
+            if (!Completed) arrived = false;
         }
 
-        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
-
-        // The tower with its foot at `foot` (the game's frame), scaled from its foot. Standing it leans on its foot and shows
-        // its floor band; flying it turns round its middle (`foot` is then where the foot would be, upright) without it.
-        void PoseTower(Vector3 foot, Quaternion turn, Vector3 scale, bool standing)
+        void CutSounds()
         {
-            tower.localRotation = turn;
-            if (standing) tower.localPosition = foot;
-            else
-            {
-                var middle = Vector3.up * (TowerMiddle * scale.y);
-                tower.localPosition = foot + middle - turn * middle;
-            }
-            tower.localScale = scale;
-            if (towerRing != null && towerRing.enabled != standing) towerRing.enabled = standing;
+            ArenaFx.Cut(drag); drag = null;
+            ArenaFx.Cut(sand); sand = null;
+            ArenaFx.Cut(stone); stone = null;
         }
 
-        // ------------------------------------------------------------------ the wire (7 bytes)
+        // ------------------------------------------------------------------ the wire (11 bytes)
 
         public override void WriteNet(ref NetBlock block)
         {
+            block.U16(seed < 0 ? 0 : seed);
             block.U16(Mathf.Clamp(Mathf.RoundToInt(s * 1000f), 0, 65535));
-            block.U8(Mathf.RoundToInt(rookD[0] * 100f));
-            block.U8(Mathf.RoundToInt(rookD[1] * 100f));
-            block.U8((garaged[0] ? 1 : 0) | (garaged[1] ? 2 : 0) | (castling ? 4 : 0) | (KingEscortPath.IsSand(s) ? 8 : 0));
+            int flags = (seed >= 0 ? 0x80 : 0) | (road.IsSand(s) ? 8 : 0), who = 0;
+            for (int k = 0; k < MaxRooks; k++)
+            {
+                block.U8(Mathf.RoundToInt(rookD[k] * 100f));
+                if (garaged[k]) flags |= 1 << k;
+                who |= Mathf.Min(15, rookPushers[k]) << (4 * k);
+            }
+            block.U8(flags);
             block.U8(Mathf.Min(15, pushers) | Mathf.Min(15, holders) << 4);
-            block.U8(Mathf.Min(15, rookPushers[0]) | Mathf.Min(15, rookPushers[1]) << 4);
+            block.U16(who);
         }
 
         public override void ReadNet(ref NetBlock block)
         {
-            s = block.ReadU16() / 1000f;
-            rookD[0] = block.ReadU8() / 100f;
-            rookD[1] = block.ReadU8() / 100f;
+            int hostSeed = block.ReadU16();
+            float hostS = block.ReadU16() / 1000f;
+            int d0 = block.ReadU8(), d1 = block.ReadU8(), d2 = block.ReadU8();
             int flags = block.ReadU8();
-            garaged[0] = (flags & 1) != 0;
-            garaged[1] = (flags & 2) != 0;
-            bool castle = (flags & 4) != 0;
-            if (castle && !castling) castleAt = Time.time;
-            castling = castle;
             int who = block.ReadU8();
+            int rp = block.ReadU16();
+            if ((flags & 0x80) == 0) return;
+            // Another road than the host's (a station whose game was not drawn from a shared seed: course 01): the
+            // host's is built in its place, and the pictures that ride it are dressed again.
+            if (hostSeed != seed)
+            {
+                Use(hostSeed);
+                Redress();
+            }
+            s = hostS;
+            rookD[0] = d0 / 100f;
+            rookD[1] = d1 / 100f;
+            rookD[2] = d2 / 100f;
+            for (int k = 0; k < MaxRooks; k++)
+            {
+                garaged[k] = (flags & 1 << k) != 0;
+                rookPushers[k] = rp >> (4 * k) & 15;
+            }
             pushers = who & 15;
             holders = who >> 4;
-            int rp = block.ReadU8();
-            rookPushers[0] = rp & 15;
-            rookPushers[1] = rp >> 4;
+        }
+
+        // The palace pictures of a road built after the section was dressed (MiniGamePalaceArt's decoration follows the
+        // road it was made for; the models are hung again where they are missing).
+        void Redress()
+        {
+            if (station == null || !station.PalaceStyle) return;
+            var old = transform.Find(MiniGamePalaceArt.DressName);
+            if (old != null) DestroyImmediate(old.gameObject);
+            MiniGamePalaceArt.Dress(station, PawnRushMissions.KingEscort);
+            var section = station.GetComponentInParent<MiniGameSection>(true);
+            if (section != null)
+            {
+                MiniGameModels.Apply(section);
+                MiniGameSectionBuilder.RefreshText(section);
+            }
         }
 
         public override void ResetGame()
         {
             base.ResetGame();
             s = shownS = lastS = 0f;
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < MaxRooks; k++)
             {
                 rookD[k] = shownRook[k] = lastRook[k] = 0f;
                 garaged[k] = wasGaraged[k] = wasBlocked[k] = false;
                 popAt[k] = -1f;
                 rookPushers[k] = 0;
             }
-            castling = wasCastling = tookOff = landed = false;
-            castleAt = -1f;
+            arrived = false;
             pushers = holders = 0;
             if (sled != null) Place(0f, true);
-            if (tower != null) PoseTower(Cell(CastleFrom, .3f), Quaternion.identity, Vector3.one, true);
         }
     }
 }

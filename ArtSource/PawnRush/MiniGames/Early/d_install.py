@@ -37,7 +37,7 @@ MATERIALS = {"PR_Early_Capstan": ("PR_Early_Capstan", .28), "PR_Early_CenterGate
 FLAT = {"PR_Early_DarkIron": ((.39, .36, .32), .45, .6), "PR_Early_Soil": ((.35, .27, .21), .05, 0),
         "PR_Early_Leaf": ((.35, .56, .29), .4, 0), "PR_Early_Petal": ((.94, .93, .91), .4, 0),
         "PR_Early_FlowerHeart": ((.91, .79, .35), .4, 0)}
-FBX = ["D_Capstan_Static", "D_Capstan_Bars", "D_CenterGate", "D_TeamArch", "D_Portcullis",
+FBX = ["D_Capstan_Static", "D_Capstan_Bars", "D_Capstan_Bar", "D_CenterGate", "D_TeamArch", "D_Portcullis",
        "D_PulleyFrame", "D_PulleyWheel", "D_Wall", "D_GatePost", "D_Lantern", "D_BarRack", "D_ChainPile",
        "D_ChainStraight", "D_HelmetBench", "D_FlowerPot", "D_Cypress", "D_CornerTower"]
 

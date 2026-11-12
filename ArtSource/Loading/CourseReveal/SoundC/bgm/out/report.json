@@ -1,0 +1,22 @@
+{
+ "A": {
+  "take": "bgmA_1",
+  "loop_period_s": null
+ },
+ "B": {
+  "take": "bgmB_1",
+  "loop_period_s": 2.0
+ },
+ "C": {
+  "take": "bgmC_2",
+  "loop_period_s": 1.46
+ },
+ "D": {
+  "take": "bgmD_1",
+  "loop_period_s": 1.71
+ },
+ "E": {
+  "take": "bgmE_1",
+  "loop_period_s": 3.6
+ }
+}

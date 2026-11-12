@@ -17,7 +17,8 @@ namespace ChessFight.Game
         // clickable once there is a room with a free seat (CanAddBot).
         public bool ShowAddBot, CanAddBot;
         // "게임 시작" while matching (R148, 폰 러쉬): the room's manager (R533: its maker, not the PC that hosts it) may
-        // start once each side has three or more and the sides are even; StartNote says why it cannot yet.
+        // start once each side has three or more and the sides are even; StartNote says why it cannot yet (R607: no
+        // longer shown - the start button is greyed out until it can).
         public bool ShowStart, CanStart;
         public string StartNote = "";
         public string Step = "", Clock = "";
@@ -46,6 +47,12 @@ namespace ChessFight.Game
         // R533: who each entry is (the player's id), so a card's button names the player the card showed when it was
         // clicked, whatever the list's order has become since (a player leaving moves everyone after them up a card).
         public readonly List<ulong> Keys = new List<ulong>();
+        // R548 (Pawn Rush): the round's seed (PawnRushSections.MatchSeed of the match room) once the room is known, and how
+        // far into the course reveal this PC is: seconds since the host started the match, on the shared clock, so every
+        // PC is at the same beat; below 0 while matching. The course board reveals the round's sections from them.
+        public int CourseSeed;
+        public bool CourseKnown;
+        public float Reveal = -1f;
 
         public void Clear()
         {
@@ -69,7 +76,7 @@ namespace ChessFight.Game
     // runtime object, so it survives the scene switch it hides; Hide() fades it
     // out and removes it.
     [DisallowMultipleComponent]
-    public sealed class LoadingScreenView : MonoBehaviour
+    public sealed partial class LoadingScreenView : MonoBehaviour
     {
         // Above every scene's own HUD panel (those keep the default order, 0).
         const float SortingOrder = 100f;
@@ -116,12 +123,12 @@ namespace ChessFight.Game
         }
 
         PanelSettings ownedPanel;
+        VisualElement shadeLayer;
         Texture2D shade;
         readonly LoadingStudio studio = new LoadingStudio();
         readonly List<Texture2D> washes = new List<Texture2D>();
         VisualElement screen, fill, allIn, ticks;
         Button cancel, addBot, start;
-        Label startNote;
         readonly VisualElement[] rosters = new VisualElement[2];
         Label kicker, step, percent, tipTitle, tipText;
         readonly Label[] counts = new Label[2];
@@ -141,17 +148,20 @@ namespace ChessFight.Game
 
             int width = Mathf.Clamp(Screen.width, 960, 1920);
             int height = Mathf.Max(360, Mathf.RoundToInt(width * (float)Screen.height / Mathf.Max(1, Screen.width)));
-            studio.Build(transform, width, height, content != null && content.CourseModel);
+            // R551: Pawn Rush too shows the study's chessboard the players walk onto (R548's course board is no longer
+            // built); from the host's start its course reveal (design A, LoadingScreenView.Reveal.cs) covers it, blurred.
+            studio.Build(transform, width, height);
             var stage = root.Q<VisualElement>("load-stage");
             if (stage != null && studio.Texture != null) stage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(studio.Texture));
-            Wash(root.Q<VisualElement>("load-side-white"), MenuArt.Hex(0x1E78BE), false);
-            Wash(root.Q<VisualElement>("load-side-black"), MenuArt.Hex(0xC8283C), true);
-            var shadeLayer = root.Q<VisualElement>("load-shade");
-            if (shadeLayer != null)
-            {
-                shade = MenuMarks.Vignette(new Color(8 / 255f, 4 / 255f, 2 / 255f), .55f, .8f);
-                shadeLayer.style.backgroundImage = new StyleBackground(shade);
-            }
+            // The blue and red washes at the sides and the vignette.
+            var vignette = new Color(8 / 255f, 4 / 255f, 2 / 255f);
+            var sideWhite = root.Q<VisualElement>("load-side-white");
+            var sideBlack = root.Q<VisualElement>("load-side-black");
+            shadeLayer = root.Q<VisualElement>("load-shade");
+            if (sideWhite != null) sideWhite.style.backgroundImage = new StyleBackground(Wash(MenuArt.Hex(0x1E78BE), false));
+            if (sideBlack != null) sideBlack.style.backgroundImage = new StyleBackground(Wash(MenuArt.Hex(0xC8283C), true));
+            shade = MenuMarks.Vignette(vignette, .55f, .8f);
+            if (shadeLayer != null) shadeLayer.style.backgroundImage = new StyleBackground(shade);
 
             kicker = root.Q<Label>("load-kicker");
             rosters[0] = root.Q<VisualElement>("load-roster-white");
@@ -183,11 +193,12 @@ namespace ChessFight.Game
                 start.focusable = false;
                 start.clicked += () => { if (State.CanStart) StartRequested?.Invoke(); };
             }
-            startNote = root.Q<Label>("load-start-note");
             ChunkyButtons.Attach(root);
 
             tipTitle = root.Q<Label>("load-tip-kicker");
             tipText = root.Q<Label>("load-tip-text");
+            // R551: Pawn Rush's course reveal, over everything but the dip, from the host's start
+            if (content != null && content.CourseModel) BuildReveal(root, stage);
             SetContent(content, root);
             shownAt = Time.unscaledTime;
             Update();
@@ -200,10 +211,11 @@ namespace ChessFight.Game
         void SetContent(LoadingContent content, VisualElement root)
         {
             if (root == null || content == null) return;
+            // R609: the study is back (LoadingStudio.Stage.cs, ledStage), so the mode's name is on the screen again; the rule
+            // and the note under it stay hidden (R607, 승규 님: "지워주고"). SetTitle only draws when the LED stage is built.
             SetText(root.Q<Label>("load-title"), content.Title);
             SetText(root.Q<Label>("load-title-hi"), content.Title);
-            SetText(root.Q<Label>("load-rule"), content.Rule);
-            SetText(root.Q<Label>("load-note"), content.Note);
+            studio.SetTitle(content.Title);
             tips = content.Tips ?? Array.Empty<LoadingTip>();
             tipIndex = -1;
             var tipRow = root.Q<VisualElement>("load-tip");
@@ -334,19 +346,16 @@ namespace ChessFight.Game
                 start.style.display = matching && State.ShowStart && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
                 start.SetEnabled(State.CanStart);
             }
-            if (startNote != null)
-            {
-                bool note = matching && !Hiding && !string.IsNullOrEmpty(State.StartNote);
-                startNote.style.display = note ? DisplayStyle.Flex : DisplayStyle.None;
-                if (note) startNote.text = State.StartNote;
-            }
 
             studio.Sync(State.Teams, State.Joined, State.Bots, now);
             int total = State.Teams.Count;
             bool everyone = matching ? State.Expected > 0 && joined >= State.Expected : total > 0 && ready >= total;
             studio.Cheer = everyone && studio.AllIn;
+            // R608: the stage's lights go down while Pawn Rush's course reveal covers it
+            studio.House = State.CourseKnown && State.Reveal >= 0f ? 1f : 0f;
             studio.Animate(now);
             SyncCards(now);
+            SyncReveal();
             allIn?.EnableInClassList("load-allin-on", studio.Cheer);
 
             if (tips.Length > 0)
@@ -570,9 +579,8 @@ namespace ChessFight.Game
         }
 
         // A colour wash from the screen edge towards the middle (`fromRight` for black).
-        void Wash(VisualElement element, Color color, bool fromRight)
+        Texture2D Wash(Color color, bool fromRight, float strength = 1f)
         {
-            if (element == null) return;
             const int w = 64;
             var texture = new Texture2D(w, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Loading Wash" };
             for (int x = 0; x < w; x++)
@@ -580,12 +588,12 @@ namespace ChessFight.Game
                 float u = x / (w - 1f);
                 if (fromRight) u = 1 - u;
                 var c = color;
-                c.a = u < .55f ? Mathf.Lerp(.38f, .08f, u / .55f) : Mathf.Lerp(.08f, 0f, (u - .55f) / .45f);
+                c.a = strength * (u < .55f ? Mathf.Lerp(.38f, .08f, u / .55f) : Mathf.Lerp(.08f, 0f, (u - .55f) / .45f));
                 texture.SetPixel(x, 0, c);
             }
             texture.Apply();
             washes.Add(texture);
-            element.style.backgroundImage = new StyleBackground(texture);
+            return texture;
         }
 
         static void SetText(Label label, string text)
@@ -618,6 +626,7 @@ namespace ChessFight.Game
             studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);
+            DisposeReveal();
             foreach (var texture in washes) if (texture != null) Destroy(texture);
         }
     }

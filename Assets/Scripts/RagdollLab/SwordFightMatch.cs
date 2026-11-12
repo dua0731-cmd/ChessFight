@@ -398,7 +398,7 @@ namespace ChessFight.RagdollLab
             if (ChatBox.KeysHeld || game.MenuOpen) return;
             for (int i = 0; i < SwordMatchRules.Pickable.Length; i++)
                 if (Input.GetKeyDown(KeyCode.Alpha1 + i)) pickChosen = SwordMatchRules.Pickable[i];
-            if (pickChosen.HasValue && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+            if (pickChosen.HasValue && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             {
                 var mine = view.Find(game.LocalId);
                 if (!(mine.HasValue && mine.Value.Picked) && !TakenByTeammate(pickChosen.Value)) PickLocal(pickChosen.Value);

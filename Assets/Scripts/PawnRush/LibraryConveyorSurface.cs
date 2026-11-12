@@ -19,6 +19,10 @@ namespace ChessFight.PawnRush
         LibraryShuttleDriver driver;
         bool fitted;
 
+        /// <summary>The box's top has been set on the belt (the first physics step): from then on the deck is where a
+        /// pawn walks on it (LibraryRookTurret lands its shots on it).</summary>
+        public bool Fitted => fitted;
+
         void Awake() { driver = GetComponentInParent<LibraryShuttleDriver>(); }
 
         // R393: the belt's top run as the take moves it (LibraryShuttleDriver.BeltVelocity); the old fixed 0.644 m/s

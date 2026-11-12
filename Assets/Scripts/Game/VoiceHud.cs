@@ -400,8 +400,9 @@ namespace ChessFight.Game
             if (!match && open) SetOpen(false);
             if (match && !ChatBox.KeysHeld && !SettingsWindow.IsOpen)
             {
-                if (GameSettings.Pressed(GameKey.Sheet)) SetOpen(!open);
-                else if (open && LegacyKeys.Down(KeyCode.Escape)) SetOpen(false);
+                // Held open: it shows while the key is down and closes when it is let go.
+                if (!open && GameSettings.Pressed(GameKey.Sheet)) SetOpen(true);
+                else if (open && (!GameSettings.Held(GameKey.Sheet) || LegacyKeys.Down(KeyCode.Escape))) SetOpen(false);
             }
             // The chat opened over it, or the settings: the sheet steps aside.
             if (open && (ChatBox.KeysHeld || SettingsWindow.IsOpen)) SetOpen(false);

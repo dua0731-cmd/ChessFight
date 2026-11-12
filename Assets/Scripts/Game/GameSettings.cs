@@ -148,8 +148,8 @@ namespace ChessFight.Game
             { GameKey.Skill2, new[] { KeyCode.Q, KeyCode.None } },
             { GameKey.Use, new[] { KeyCode.F, KeyCode.None } },
             { GameKey.Respawn, new[] { KeyCode.R, KeyCode.None } },
-            { GameKey.Chat, new[] { KeyCode.Tab, KeyCode.None } },
-            { GameKey.Sheet, new[] { KeyCode.P, KeyCode.None } },
+            { GameKey.Chat, new[] { KeyCode.Return, KeyCode.None } },
+            { GameKey.Sheet, new[] { KeyCode.Tab, KeyCode.None } },
             { GameKey.Talk, new[] { KeyCode.V, KeyCode.None } },
         };
         static readonly Dictionary<GameKey, KeyCode[]> keys = new Dictionary<GameKey, KeyCode[]>();

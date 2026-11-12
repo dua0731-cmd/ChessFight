@@ -12,6 +12,12 @@ namespace ChessFight.RagdollLab
         static readonly Color Ink = new Color32(37, 32, 29, 255);
         static readonly Color Ivory = new Color32(252, 238, 210, 255);
         static readonly RaycastHit[] SightHits = new RaycastHit[32];
+        // 11-11 (the user: "거리에 따라서 닉네임 표시, 멀리 있으면 안 뜨게"): full up to NearMeters from the camera,
+        // fading out to nothing at FarMeters, hidden beyond.
+        // Teammates keep their names at any distance (11-11, the user); only the other team fades. The own pawn is never
+        // drawn but passes through Draw like the rest, which is where its team is learnt.
+        const float NearMeters = 15f, FarMeters = 22f;
+        static RagdollPawn local;
         static readonly Dictionary<int, Texture2D> icons = new Dictionary<int, Texture2D>();
         static readonly GUIContent content = new GUIContent();
         static GUIStyle lettering;
@@ -38,7 +44,11 @@ namespace ChessFight.RagdollLab
         internal static bool Draw(Camera camera, RagdollPawn target, PieceKind piece, bool skillReady, out Vector3 screen)
         {
             screen = default;
+            if (target.IsSelf) { local = target; return false; }
             if (Event.current.type != EventType.Repaint || !camera || string.IsNullOrEmpty(target.DisplayName)) return false;
+            bool teammate = local != null && local.Team == target.Team;
+            float fade = teammate ? 1f : Mathf.InverseLerp(FarMeters, NearMeters, Vector3.Distance(camera.transform.position, target.bodies[(int)BodyId.Head].transform.position));
+            if (fade <= 0f) return false;
             if (!TryProject(camera, target.bodies[(int)BodyId.Head].transform.position, out screen)) return false;
 
             if (lettering == null)
@@ -48,25 +58,25 @@ namespace ChessFight.RagdollLab
             lettering.fontSize = Mathf.RoundToInt(14 * scale);
             content.text = target.DisplayName;
             float textWidth = Mathf.Ceil(lettering.CalcSize(content).x);
-            float height = 24 * scale, pad = 8 * scale, iconWidth = 13 * scale, gap = 4 * scale;
+            float height = 24 * scale, pad = 8 * scale, gap = 4 * scale;
             float badgeWidth = skillReady ? 15 * scale + gap : 0;
-            float width = pad * 2 + iconWidth + gap + textWidth + badgeWidth;
+            float width = pad * 2 + textWidth + badgeWidth;
             var plate = new Rect(screen.x - width * .5f, Screen.height - screen.y - height, width, height);
             bool white = target.Team == Teams.White;
             Color background = white ? Ivory : Ink, foreground = white ? Ink : Ivory;
+            background.a *= fade; foreground.a *= fade;
             var oldColor = GUI.color;
             GUI.color = Color.white;
             Pill(plate, foreground);
             var inset = new Rect(plate.x + scale, plate.y + scale, plate.width - 2 * scale, plate.height - 2 * scale);
             Pill(inset, background);
-            GUI.DrawTexture(new Rect(plate.x + pad, plate.y + 3 * scale, iconWidth, height - 6 * scale), Icon(piece, white, true), ScaleMode.ScaleToFit);
             lettering.normal.textColor = foreground;
-            GUI.Label(new Rect(plate.x + pad + iconWidth + gap, plate.y, textWidth, height), content, lettering);
+            GUI.Label(new Rect(plate.x + pad, plate.y, textWidth, height), content, lettering);
             if (skillReady)
             {
                 var badge = new Rect(plate.xMax - pad - 15 * scale, plate.y + 4 * scale, 15 * scale, height - 8 * scale);
-                Pill(badge, new Color32(242, 193, 78, 255));
-                lettering.normal.textColor = Ink;
+                Pill(badge, new Color(242 / 255f, 193 / 255f, 78 / 255f, fade));
+                lettering.normal.textColor = new Color(Ink.r, Ink.g, Ink.b, fade);
                 GUI.Label(badge, "E", lettering);
             }
             GUI.color = oldColor;

@@ -152,6 +152,7 @@ namespace ChessFight.RagdollLab
             fighter.Initialize(id, slot, bot); fighter.Respawn(at, Facing(team), Authority);
             Fighters.Add(id, fighter);
             Match?.Joined(fighter);
+            pawn.IsSelf = id == LocalId;
             if (Match == null && !Automated) MatchNameplate.Attach(pawn, fighter);
             if (id == LocalId && CameraRig != null) CameraRig.soloTarget = pawn;
             return fighter;

@@ -36,6 +36,7 @@ namespace ChessFight.RagdollLab
             Pawn.Team = team;
             string name = ChessFight.Game.PlayerProfile.Name;
             Pawn.DisplayName = string.IsNullOrEmpty(name) ? "나" : name;
+            Pawn.IsSelf = true;
             MatchNameplate.Attach(Pawn);
         }
 

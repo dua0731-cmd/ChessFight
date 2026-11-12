@@ -24,6 +24,7 @@ namespace ChessFight.PawnRush
         const string DrumName = "MODEL_CapstanDrum";
         const string ArchName = "MODEL_TeamArches";
         const string PortcullisName = "MODEL_Portcullis";
+        const string BarsName = "MODEL_CapstanBars";
         const string OwnMaterials = "PawnRushMiniGames/Materials/";   // textured materials of the user-model sets (R505~)
 
         // Called after a section's games are (re)installed and dressed, and after a build's shell.
@@ -104,8 +105,8 @@ namespace ChessFight.PawnRush
         //   king sled "Look"   -> palanquin (base 1.6 m = SledSize). White: the palanquin with its ivory king; black: the
         //                         empty palanquin with the game's own black king kept. The push ring stays.
         //   "Rook in the way k" -> guard rook 1.6 m in the opponent's colour (ebony for black, ivory for white); ring stays.
-        //   "Rook tower"       -> castling tower 2.2 m (white), the ebony rook grown to 2.2 m (black).
-        //   garages c7 / g7    -> the arched alcove (2.6 m wide), mouth to the road, where DEC_RookParkingBay stood. The
+        //   (R543: the "Rook tower" on g8 and its castling model went with the castling; the road is drawn anew each game.)
+        //   garages            -> the arched alcove (2.6 m wide), mouth to the road, where DEC_RookParkingBay stood. The
         //                         photo's gold bar across its mouth was cut away; the game's gold stop at the back stays.
         const string AlcoveName = "MODEL_RookAlcove";
         const float AlcoveScale = 1f;   // g_garage_alcove_v1.py builds it at the game's size (2.6 m wide, niche 1.6 x 2.4 m)
@@ -115,7 +116,6 @@ namespace ChessFight.PawnRush
             var palanquin = Load("Late/G/G_Palanquin");
             var ebony = Load("Late/G/G_RookEbony");
             var ivory = Load("Late/G/G_RookIvory");
-            var castling = Load("Late/G/G_CastlingRook");
             var alcove = Load("Late/G/G_GarageAlcove");
             foreach (var station in owner.Stations)
             {
@@ -132,27 +132,15 @@ namespace ChessFight.PawnRush
                     if (look.Find(RideName) == null) Hang(look, RideName, carrier, cache);
                 }
 
+                // R543: one to three rooks stand in the road, by the team's size; our rook tower (and its castling
+                // model, G_CastlingRook) went with the castling.
                 var theirs = white ? ebony : ivory;
-                for (int k = 1; k <= 2; k++)
+                for (int k = 1; k <= KingRoad.MaxRooks; k++)
                 {
                     var rook = Find(game, "Rook in the way " + k);
                     if (rook == null || theirs == null) continue;
                     HideExcept(rook, "Ring");
                     if (rook.Find(RideName) == null) Hang(rook, RideName, theirs, cache);
-                }
-
-                var tower = Find(game, "Rook tower");
-                var ours = white ? castling : ebony;
-                if (tower != null && ours != null)
-                {
-                    HideExcept(tower, "Ring");
-                    if (tower.Find(RideName) == null)
-                    {
-                        var at = new GameObject(RideName).transform;
-                        at.SetParent(tower, false);
-                        if (!white) at.localScale = Vector3.one * (2.2f / 1.6f);
-                        Hang(at, "MODEL_Pivot", ours, cache);
-                    }
                 }
 
                 TeamGateDoor(station, cache);
@@ -171,20 +159,26 @@ namespace ChessFight.PawnRush
                     Hang(at, RideName, rampStairs, cache);
                 }
 
+                // R543: the road is drawn anew for every game (KingRoad); the game says where its rooks and garages
+                // are. The alcoves hang on the road itself, so they go with it when another road is built.
                 var road = Find(game, "Road");
                 if (road == null || alcove == null) continue;
+                var kingRoad = station.Game is MgKingEscort escort ? escort.Road : KingRoad.Baseline;
                 int index = 0;
+                var garages = new List<Transform>();
                 foreach (Transform garage in road)
+                    if (garage.name == "Garage") garages.Add(garage);
+                foreach (var garage in garages)
                 {
-                    if (garage.name != "Garage" || index >= KingEscortPath.RookCells.Length) continue;
-                    var from = Find(road, "Road " + KingEscortPath.RookCells[index]);
+                    if (index >= kingRoad.Rooks) break;
+                    var from = Find(road, "Road " + kingRoad.RookCells[index]);
                     index++;
                     Hide(Find(station.transform, "DEC_RookParkingBay " + index));
-                    if (from == null || game.Find(AlcoveName + " " + index) != null) continue;
+                    if (from == null || road.Find(AlcoveName + " " + index) != null) continue;
                     var dir = garage.position - from.position;
-                    var local = game.InverseTransformPoint(garage.position);
+                    var local = road.InverseTransformPoint(garage.position);
                     var at = new GameObject(AlcoveName + " " + index).transform;
-                    at.SetParent(game, false);
+                    at.SetParent(road, false);
                     at.localPosition = new Vector3(local.x, 0f, local.z);
                     at.rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(dir, game.up).normalized, game.up);
                     at.localScale = Vector3.one * AlcoveScale;
@@ -715,6 +709,8 @@ namespace ChessFight.PawnRush
             foreach (var station in owner.Stations)
             {
                 if (station == null) continue;
+                // R543: which squares are slow is this game's road's to say
+                var sandCells = station.Game is MgKingEscort escort ? escort.Road.Sand : KingEscortPath.Sand;
                 foreach (var r in station.GetComponentsInChildren<Renderer>(true))
                 {
                     var t = r.transform;
@@ -727,7 +723,7 @@ namespace ChessFight.PawnRush
                     {
                         string cell = n.Substring(5);
                         PawnRushBoard.Parse(cell, out int f, out int rank);
-                        bool slow = System.Array.IndexOf(KingEscortPath.Sand, cell) >= 0;
+                        bool slow = System.Array.IndexOf(sandCells, cell) >= 0;
                         TileOver(t, slow ? ermine : PawnRushBoard.IsLight(f, rank) ? maple : walnut);
                     }
                 }
@@ -1135,6 +1131,9 @@ namespace ChessFight.PawnRush
                         // A jolt at every full capstan turn (picture only; the gate's own lift and collider unchanged).
                         at.gameObject.AddComponent<MiniGamePortcullisKick>().Watch(station, MgCapstan.Turns);
                     }
+                    // R543: the turns go with the team's size; the game standing in the station now says how many.
+                    var kick = door.Find(PortcullisName).GetComponent<MiniGamePortcullisKick>();
+                    if (kick != null && station.Game is MgCapstan capstan) kick.SetTurns(capstan.TurnsToOpen);
                 }
                 if (station.Game == null) continue;
                 var game = station.Game.transform;
@@ -1152,7 +1151,31 @@ namespace ChessFight.PawnRush
                     Hide(Find(game, "Capstan drum"));
                     Hide(Find(game, "Capstan cap"));
                 }
-                if (bars != null)
+                // R543: a bar a player (three to six). One bar's model (D_Capstan_Bar, d_capstan_bar_v1.py: the +x bar cut
+                // out of the four) rides each of the game's bars, turned as it is; without it the four-bar model still
+                // dresses a capstan of four, and any other number keeps the game's own bars.
+                var gameBars = new List<Transform>();
+                foreach (Transform part in turning)
+                    if (part.name == "Bar") gameBars.Add(part);
+                var oneBar = Resources.Load<GameObject>(Folder + "Early/D/D_Capstan_Bar");
+                if (oneBar != null)
+                {
+                    if (turning.Find(BarsName) == null)
+                    {
+                        var holder = new GameObject(BarsName).transform;
+                        holder.SetParent(turning, false);
+                        foreach (var bar in gameBars)
+                        {
+                            var at = new GameObject("Bar model").transform;
+                            at.SetParent(holder, false);
+                            at.localRotation = bar.localRotation;
+                            Hang(at, RideName, oneBar, cache);
+                        }
+                    }
+                    foreach (Transform part in turning)
+                        if (part.name != BarsName) Hide(part);   // the game's bars, their gold grips, the crown
+                }
+                else if (bars != null && gameBars.Count == 4)
                 {
                     foreach (Transform part in turning)
                         if (part.name != RideName) Hide(part);   // the four bars, their gold grips, the crown

@@ -10,7 +10,8 @@ namespace ChessFight.PawnRush
     {
         // e_library_v1.py: the top storey's lid 2 cm over each top, the bell's stand 0.5 cm on it (BELL_LIFT), 0.55 m to
         // the north of the top's centre
-        const float BellLift = .025f, BellBack = .55f;
+        const float BellLift = .025f, BellBack = .4f;      // R543: 0.55 on the 2.4 m tops; the tops are 2 m now
+        const float TowerModelHeight = 9f;                 // E_Tower_9
         const string DoorFitName = "MODEL_DoorFit";
         const float DoorTop = 5.79f, DoorWidth = 4.2f;   // e_hall_v1.py TUNNEL: ceiling 5.8, walls 4.44 apart
 
@@ -19,7 +20,9 @@ namespace ChessFight.PawnRush
             var content = owner.transform.Find(MiniGameSection.ContentName);
             if (content == null) return;
             var cache = new Dictionary<string, Material>();
-            var env = Load("Mid/E/E_StationEnv");
+            // R543: the towers stand where the team's size puts them (BellTowers), so one tower's model rides each of
+            // the game's towers. (Before: E_StationEnv, one mesh of the six towers where they always stood.)
+            var tower = Load("Mid/E/E_Tower_9");
             var bell = Load("Mid/E/E_Bell");
             var door = Load("Mid/E/E_ShelfDoor");
             var rung = Resources.Load<Material>(OwnMaterials + "PR_Mid_BellRung");
@@ -48,16 +51,29 @@ namespace ChessFight.PawnRush
                 }
                 if (station.Game == null) continue;
                 var game = station.Game.transform;
-                // E_StationEnv in the game frame (x = v, z = u): six towers of bookcase cabinets on the game's storey
-                // boxes, walnut decks on the ledges, a railed platform on every top. The storey boxes, their code
-                // bookshelf faces and the bell posts stop drawing; their colliders stay.
-                if (env != null)
+                // E_Tower_9 (e_library_v1.py: a 9 m tower of bookcase cabinets, 2 m wide, walnut decks on its ledges and
+                // its top; origin on the floor under the top's middle) on each of the game's towers, in the game frame
+                // (x = v, z = u). The storey boxes, their code bookshelf faces and the bell posts stop drawing; their
+                // colliders stay. A tower of another height keeps the game's own look.
+                var towers = station.Game is MgBells bells ? bells.Towers : null;
+                if (tower != null && towers != null)
                 {
-                    if (game.Find(EnvName) == null) Hang(game, EnvName, env, cache);
-                    foreach (var t in game.GetComponentsInChildren<Transform>(true))
-                        if ((t.name.StartsWith("Tower ") && t.name.Contains(" storey ")) ||
-                            t.name == "Bell post W" || t.name == "Bell post E" || t.name == "Bell beam")
-                            Hide(t);
+                    bool all = true;
+                    for (int i = 0; i < towers.Length; i++)
+                    {
+                        if (Mathf.Abs(towers[i].y - TowerModelHeight) > .01f) { all = false; continue; }
+                        string name = "MODEL_Tower " + (i + 1);
+                        if (game.Find(name) != null) continue;
+                        var at = new GameObject(name).transform;
+                        at.SetParent(game, false);
+                        at.localPosition = new Vector3(towers[i].x, 0f, towers[i].z);
+                        Hang(at, RideName, tower, cache);
+                    }
+                    if (all)
+                        foreach (var t in game.GetComponentsInChildren<Transform>(true))
+                            if ((t.name.StartsWith("Tower ") && t.name.Contains(" storey ")) ||
+                                t.name == "Bell post W" || t.name == "Bell post E" || t.name == "Bell beam")
+                                Hide(t);
                 }
                 if (bell != null) LibraryBells(station, game, bell, rung, cache);
                 // the bookcase door's own opening pictures and sound instead of the shared ones (ArenaDressing, IGateFx)
@@ -162,15 +178,17 @@ namespace ChessFight.PawnRush
         static void LibraryBells(MissionStation station, Transform game, GameObject bell, Material rung, Dictionary<string, Material> cache)
         {
             var gold = station.Kit != null ? station.Kit.rankGold : null;
+            var towers = station.Game is MgBells bells ? bells.Towers : null;
+            if (towers == null) return;
             foreach (var t in game.GetComponentsInChildren<Transform>(true))
             {
                 if (t.name != "Bell") continue;
                 var local = game.InverseTransformPoint(t.position);
                 int index = -1;
                 float best = float.MaxValue;
-                for (int i = 0; i < MgBells.Towers.Length; i++)
+                for (int i = 0; i < towers.Length; i++)
                 {
-                    var tower = MgBells.Towers[i];
+                    var tower = towers[i];
                     float d = new Vector2(local.x - tower.x, local.z - tower.z).sqrMagnitude;
                     if (d < best) { best = d; index = i; }
                 }
@@ -179,7 +197,7 @@ namespace ChessFight.PawnRush
                 var flat = t.GetComponent<Renderer>();
                 Hide(t);
                 if (game.Find(name) != null) continue;
-                var top = MgBells.Towers[index];
+                var top = towers[index];
                 var at = new GameObject(name).transform;
                 at.SetParent(game, false);
                 at.localPosition = new Vector3(top.x, top.y + BellLift, top.z + BellBack);

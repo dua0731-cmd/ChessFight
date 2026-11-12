@@ -29,14 +29,22 @@ namespace ChessFight.Game
     {
         public const int Spots = 6;
         const float StageSize = 10.8f, BaseHeight = .9f, FrameHeight = .34f, BoardSize = 9.6f;
-        const float Top = BaseHeight + FrameHeight + .005f;
+        // R545: in the kingdom hall the stage is smaller and low, as in 승규's reference picture
+        // (the board read big and thick next to the hall): the board, the spots and the pawns
+        // at 0.75, the stage 0.4 m high instead of 1.2 m.
+        const float HallStageScale = .75f, HallBaseHeight = .26f, HallFrameHeight = .14f;
+        // This build's stage (Build sets them). Static, as the HUD hangs the nameplates from SpotPosition.
+        static float stageScale = 1f, stageBase = BaseHeight, stageFrame = FrameHeight;
+        static float Top => stageBase + stageFrame + .005f;
         const float MeScale = 1.3f, MemberScale = 1.15f;
         const float InviteHeight = 1.15f;   // the "+" ring, above the brass ring
 
-        // Spot 0 is always the local player, front and centre; then the front row
-        // either side, then the back row in the gaps. Sample coordinates (x, z).
+        // R581 (승규 "플레이 기물을 왼쪽 친구 초대에 넣어주고 친구 초대는 오른쪽에 1개만 있게 해주고 친구 1명이 추가 되면
+        // 계속 오른쪽에서 이어 갈 수 있게 해"): spot 0, the local player, stands on the left of the front row; the party
+        // goes on to the right of it, then the back row from the left, so the one invite spot is always the next one
+        // to the right. Sample coordinates (x, z).
         static readonly Vector2[] Places =
-            { new Vector2(0, .5f), new Vector2(-2.4f, .5f), new Vector2(2.4f, .5f), new Vector2(-1.2f, -1.5f), new Vector2(1.2f, -1.5f), new Vector2(-3.6f, -1.5f) };
+            { new Vector2(-2.4f, .5f), new Vector2(0, .5f), new Vector2(2.4f, .5f), new Vector2(-1.2f, -1.5f), new Vector2(1.2f, -1.5f), new Vector2(3.6f, -1.5f) };
 
         Camera view;
         readonly GameObject[] bodies = new GameObject[Spots];
@@ -54,7 +62,7 @@ namespace ChessFight.Game
             const float chest = .95f;
             var middle = new Vector2(.5f, .62f);
             if (view == null || Screen.width <= 0 || Screen.height <= 0) return middle;
-            var at = view.WorldToScreenPoint(SpotPosition(0) + Vector3.up * chest);
+            var at = view.WorldToScreenPoint(SpotPosition(0) + Vector3.up * (chest * stageScale));
             if (at.z <= 0) return middle;
             return new Vector2(at.x / Screen.width, 1f - at.y / Screen.height);
         }
@@ -69,9 +77,14 @@ namespace ChessFight.Game
             }
             view.fieldOfView = 30f;
             var root = transform;
-            // The chess castle made in Blender (LobbyStage.Castle.cs); the old
-            // dark hall with its lamp pillars only when the castle is missing.
-            bool castle = Castle(root);
+            // The kingdom hall (LobbyStage.Hall.cs, 11-11), else the chess castle courtyard
+            // (LobbyStage.Castle.cs); the old dark hall with its lamp pillars only when both are missing.
+            bool castle = Hall(root) || Castle(root);
+            stageScale = hall ? HallStageScale : 1f;
+            stageBase = hall ? HallBaseHeight : BaseHeight;
+            stageFrame = hall ? HallFrameHeight : FrameHeight;
+            hallStage = hall;
+            if (hall) view.fieldOfView = HallFov;
             if (!castle) MenuArt.Hall(root, view, 22f, 72f);
             Aim(0f);
             Stage(root);
@@ -81,31 +94,37 @@ namespace ChessFight.Game
 
         void Stage(Transform root)
         {
-            MenuArt.Slab(root, "Stage", new Vector3(0, BaseHeight / 2, 0), new Vector3(StageSize, BaseHeight, StageSize),
+            if (hall)
+            {
+                HallStage(root);   // R589: the reference picture's board (LobbyStage.Hall.Board.cs)
+                return;
+            }
+            float k = stageScale, size = StageSize * k, board = BoardSize * k;
+            MenuArt.Slab(root, "Stage", new Vector3(0, stageBase / 2, 0), new Vector3(size, stageBase, size),
                          MenuArt.Wood(MenuArt.DarkWood, .55f, new Vector2(3f, 1f)));
             // In the castle's daylight the glowing edge strip and its halo sprites
             // read as fake: the edge becomes a plain brass trim the sun lights.
             var led = castle != null ? MenuArt.BrassMetal() : MenuArt.Lamp(MenuArt.Led);
             for (int s = -1; s <= 1; s += 2)
             {
-                MenuArt.Slab(root, "Stage Light", new Vector3(0, BaseHeight - .02f, s * StageSize / 2), new Vector3(StageSize + .06f, .05f, .05f), led);
-                MenuArt.Slab(root, "Stage Light", new Vector3(s * StageSize / 2, BaseHeight - .02f, 0), new Vector3(.05f, .05f, StageSize + .06f), led);
+                MenuArt.Slab(root, "Stage Light", new Vector3(0, stageBase - .02f, s * size / 2), new Vector3(size + .06f, .05f, .05f), led);
+                MenuArt.Slab(root, "Stage Light", new Vector3(s * size / 2, stageBase - .02f, 0), new Vector3(.05f, .05f, size + .06f), led);
             }
             if (castle == null)
                 for (int i = -4; i <= 4; i++)
-                    MenuArt.Halo(root, MenuArt.Web(i * 1.3f, BaseHeight, StageSize / 2 + .02f), MenuArt.Warm, .6f, .28f, view);
+                    MenuArt.Halo(root, MenuArt.Web(i * 1.3f, stageBase, size / 2 + .02f), MenuArt.Warm, .6f, .28f, view);
 
-            MenuArt.Slab(root, "Frame", new Vector3(0, BaseHeight + FrameHeight / 2, 0), new Vector3(10.4f, FrameHeight, 10.4f),
+            MenuArt.Slab(root, "Frame", new Vector3(0, stageBase + stageFrame / 2, 0), new Vector3(10.4f * k, stageFrame, 10.4f * k),
                          MenuArt.Wood(MenuArt.Mahogany, .68f, new Vector2(2f, 1f)));
-            MenuArt.Slab(root, "Board", new Vector3(0, Top - .01f, 0), new Vector3(BoardSize, .02f, BoardSize), MenuArt.Board(8));
+            MenuArt.Slab(root, "Board", new Vector3(0, Top - .01f, 0), new Vector3(board, .02f, board), MenuArt.Board(8));
             var brass = MenuArt.BrassMetal();
             for (int s = -1; s <= 1; s += 2)
             {
-                MenuArt.Slab(root, "Inlay", new Vector3(0, Top + .006f, s * (BoardSize / 2 + .06f)), new Vector3(BoardSize + .18f, .025f, .06f), brass);
-                MenuArt.Slab(root, "Inlay", new Vector3(s * (BoardSize / 2 + .06f), Top + .006f, 0), new Vector3(.06f, .025f, BoardSize + .18f), brass);
+                MenuArt.Slab(root, "Inlay", new Vector3(0, Top + .006f, s * (board / 2 + .06f)), new Vector3(board + .18f, .025f, .06f), brass);
+                MenuArt.Slab(root, "Inlay", new Vector3(s * (board / 2 + .06f), Top + .006f, 0), new Vector3(.06f, .025f, board + .18f), brass);
             }
             foreach (var (a, b) in new[] { (-1, -1), (1, -1), (-1, 1), (1, 1) })
-                MenuArt.Slab(root, "Corner", new Vector3(a * 5f, Top + .02f, b * 5f), new Vector3(.42f, .07f, .42f), brass);
+                MenuArt.Slab(root, "Corner", new Vector3(a * 5f * k, Top + .02f, b * 5f * k), new Vector3(.42f * k, .07f, .42f * k), brass);
         }
 
         // Pillars with three lamps each, beams onto the stage, the key light.
@@ -138,6 +157,7 @@ namespace ChessFight.Game
             if (view == null) return;
             var at = MenuArt.Web(.6f + Mathf.Sin(t * .1f) * .3f, 7f, 18.6f);
             var look = MenuArt.Web(.6f, 1.75f, 0);
+            if (hall) { at = HallLobbyAt + Vector3.right * (Mathf.Sin(t * .1f) * .2f); look = HallLobbyLook; }   // R546: low, at the stairs
             WalkCamera(ref at, ref look);   // the close-up into the gate (LobbyStage.Castle.cs)
             view.transform.position = at;
             view.transform.LookAt(look);
@@ -162,25 +182,38 @@ namespace ChessFight.Game
         // Where spot i stands, feet on the board.
         public static Vector3 SpotPosition(int index)
         {
-            var p = Places[Mathf.Clamp(index, 0, Spots - 1)];
+            var p = Places[Mathf.Clamp(index, 0, Spots - 1)] * stageScale;
             return MenuArt.Web(p.x, Top, p.y);
         }
 
         // Nameplates hang from here, just over the head.
-        public static Vector3 Anchor(int index) => SpotPosition(index) + Vector3.up * (index == 0 ? 3.05f : 2.7f);
+        public static Vector3 Anchor(int index) => SpotPosition(index) + Vector3.up * ((index == 0 ? 3.05f : 2.7f) * stageScale);
 
         // The invite "+" floats over the brass ring.
-        public static Vector3 InviteAnchor(int index) => SpotPosition(index) + Vector3.up * InviteHeight;
+        public static Vector3 InviteAnchor(int index) => InvitePosition(index) + Vector3.up * (InviteHeight * stageScale);
+
+        // R595 (승규 "친구초대 살짝만 오른쪽으로 옮겨 빛 안닿게"): in the kingdom hall the rose window's light lands on the
+        // board left of the middle (from the window's centre 7.8 m up along the sun: an ellipse x -4.1..+1.0 m,
+        // z -3.8..+5.9 m), so the invite ring at the middle stood in it. An invite spot keeps its own spot but moves
+        // right until its ring (0.47 m) is out of the light; spots already right of that stay where they are.
+        const float HallInviteClearX = 1.5f;   // metres from the board's middle
+        static bool hallStage;
+        public static Vector3 InvitePosition(int index)
+        {
+            var at = SpotPosition(index);
+            if (hallStage) at.x = Mathf.Max(at.x, HallInviteClearX);
+            return at;
+        }
 
         void Spawn(int index, LineupEntry entry)
         {
             Vector3 at = SpotPosition(index);
-            if (entry.Invite) { bodies[index] = InviteSpot(index, at); return; }
+            if (entry.Invite) { bodies[index] = InviteSpot(index, InvitePosition(index)); return; }
 
             var kind = PieceKind.Pawn;
             // Everyone faces the camera, a little towards the middle (me straight on).
             var lookAt = MenuArt.Web(Places[index].x * .5f, Top, 9f);
-            var figure = MenuArt.Figure(transform, kind, entry.Bot ? 1 : 0, at, lookAt, index == 0 ? MeScale : MemberScale);
+            var figure = MenuArt.Figure(transform, kind, entry.Bot ? 1 : 0, at, lookAt, (index == 0 ? MeScale : MemberScale) * stageScale);
             homes[index] = (at, lookAt);
             figure.Root.name = "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
             figures[index] = figure;
@@ -195,7 +228,7 @@ namespace ChessFight.Game
             if (castle != null)
             {
                 // In the castle's daylight: a thin brass ring set in the board, no glow (the HUD pill says what it is).
-                LastSceneArt.Part(spot.transform, "Ring", MenuArt.Torus(.62f, .028f, 64), MenuArt.BrassMetal(), new Vector3(0, .02f, 0), null, null, false);
+                LastSceneArt.Part(spot.transform, "Ring", MenuArt.Torus(.62f * stageScale, .028f, 64), MenuArt.BrassMetal(), new Vector3(0, .02f, 0), null, null, false);
                 return spot;
             }
             LastSceneArt.Part(spot.transform, "Ring", MenuArt.Torus(.72f, .045f, 64), MenuArt.Lamp(0xFFD08A), new Vector3(0, .04f, 0), null, null, false);
@@ -210,6 +243,7 @@ namespace ChessFight.Game
             TickGate(Time.unscaledDeltaTime);
             TickPennants(t, Time.unscaledDeltaTime);
             TickFires(t);
+            TickHall(t);
             for (int i = 0; i < Spots; i++)
             {
                 if (bodies[i] == null) continue;

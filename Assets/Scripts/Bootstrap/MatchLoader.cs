@@ -29,6 +29,10 @@ namespace ChessFight.Game
         // The screen is drawn at least this long before the scene may switch on,
         // since switching on freezes the frame.
         const float MinimumShow = .4f;
+        // R548: Pawn Rush's course reveal seen to its end already (a player coming back into a running match), and how
+        // long before this PC's own start the host's start time may lie before it counts as left from an earlier round.
+        const float RevealSkipped = 1e5f;
+        const double StaleBegun = 30;
 
         enum Phase { Idle, Matching, Loading, Opening, WarmingUp, Waiting }
 
@@ -42,6 +46,11 @@ namespace ChessFight.Game
         ThreadPriority loadingPriority;
         bool skipFrame;
         float shownAt, readyAt = -1, matchingSince, gateSince = -1;
+        // R548: this PC's own start (the reveal's fallback clock) and whether the reveal is skipped (RevealTime).
+        double revealFrom = -1;
+        bool revealSkip;
+        // R596: when this load reached each step (realtime, -1 not yet), for the one line it logs once warmed up.
+        float loadedAt = -1, openedAt = -1, warmFrom = -1;
 
         public MatchLoader(NetworkRuntime runtime, Func<double> clock)
         {
@@ -76,6 +85,18 @@ namespace ChessFight.Game
             }
             else view = Show(content);
 
+            // R548: Pawn Rush's course reveal plays from the moment the host started the match (RevealTime), the same
+            // on every PC, and shows this round's draw, worked out from the match's number like the round itself
+            // (PawnRushRound.BuildForMatch). A player coming back into a running match (R538) sees it finished.
+            revealSkip = session.StartAt > 0;
+            revealFrom = clock();
+            if (view != null)
+            {
+                view.State.CourseKnown = session.Match != 0;
+                view.State.CourseSeed = PawnRushSections.MatchSeed(session.Match);
+                view.State.Reveal = RevealTime(session);
+            }
+
             session.ReportLoading(0);
             // Loading in the background is throttled by default; nothing else
             // needs the frame while the screen is up.
@@ -84,7 +105,7 @@ namespace ChessFight.Game
             load = SceneManager.LoadSceneAsync(sceneName);
             phase = Phase.Loading;
             shownAt = Time.unscaledTime;
-            readyAt = -1;
+            readyAt = loadedAt = openedAt = warmFrom = -1;
             if (load == null)
             {
                 Debug.LogError("[ChessFight] 경기 씬을 불러오지 못했습니다: " + sceneName + " (File > Build Profiles의 씬 목록 확인)");
@@ -171,6 +192,10 @@ namespace ChessFight.Game
 
             var state = view.State;
             state.Matching = true;
+            // R548/R550/R551: no course yet: the players walk onto the study's chessboard until the host starts the match,
+            // then the course reveal (LoadingScreenView.Reveal.cs) covers it.
+            state.CourseKnown = false;
+            state.Reveal = -1f;
             state.Expected = TeamReservations.TeamSize * 2;
             state.CanCancel = session.Busy && !session.WaitingForParty;
             // Development builds let public rooms take bots (M6); the leader sees
@@ -244,6 +269,7 @@ namespace ChessFight.Game
             // The frame the scene switched on is the load itself, not a warm-up frame.
             skipFrame = true;
             phase = Phase.WarmingUp;
+            warmFrom = Time.unscaledTime;
         }
 
         // Takes the screen down at once: the match ended, or the runtime is going.
@@ -267,17 +293,23 @@ namespace ChessFight.Game
             float now = Time.unscaledTime;
             int percent = 0;
             string step = "";
+            if (view != null) view.State.Reveal = RevealTime(session);
             switch (phase)
             {
                 case Phase.Loading:
                     percent = LoadProgress.Percent(LoadStage.Loading, load.progress);
-                    step = "코스를 불러오는 중";
+                    if (load.progress >= .9f && loadedAt < 0) loadedAt = now;
+                    // R548: the scene switches on only once Pawn Rush's course reveal has been seen: switching on freezes
+                    // the frame (R551: the reels would stop mid-roll), and this PC is not ready before, so nor is the start.
+                    bool revealing = view != null && view.RevealHolding;
+                    step = revealing && load.progress >= .9f ? "이번 판 코스 공개 중" : "코스를 불러오는 중";
                     // A match that ended meanwhile still has to finish this load (Unity
                     // cannot abandon one); NetworkRuntime then heads back to the lobby.
-                    if ((load.progress >= .9f && now - shownAt >= MinimumShow) || session.Match == 0)
+                    if ((load.progress >= .9f && now - shownAt >= MinimumShow && !revealing) || session.Match == 0)
                     {
                         load.allowSceneActivation = true;
                         phase = Phase.Opening;
+                        openedAt = now;
                     }
                     break;
                 case Phase.Opening:
@@ -290,7 +322,15 @@ namespace ChessFight.Game
                     else warmup.Add(Time.unscaledDeltaTime * 1000.0);
                     percent = LoadProgress.Percent(LoadStage.WarmingUp, warmup.Fraction);
                     step = "캐릭터를 준비하는 중";
-                    if (warmup.Done) { phase = Phase.Waiting; readyAt = now; percent = MatchStart.Ready; }
+                    if (warmup.Done)
+                    {
+                        phase = Phase.Waiting; readyAt = now; percent = MatchStart.Ready;
+                        // R596: where this PC's load went, against the reveal (the scene may switch on from
+                        // RevealShownSeconds), to see which step keeps the 1 standing.
+                        Debug.Log($"[ChessFight] 경기 씬 준비 완료: 불러오기 {Since(loadedAt)} · 켜기 {Since(openedAt)} · 켜짐 {Since(warmFrom)} · " +
+                                  $"데우기 끝 {now - shownAt:0.00}초 (코스 공개 {(view != null ? view.State.Reveal : -1f):0.00}초, 씬 켜기는 " +
+                                  $"{LoadingScreenView.RevealShownSeconds:0.0}초부터)");
+                    }
                     break;
                 case Phase.Waiting:
                     percent = MatchStart.Ready;
@@ -309,6 +349,19 @@ namespace ChessFight.Game
             foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
                 Add(state, session, p.Id, p.Team, session.LoadPercent(p.Id) >= MatchStart.Ready);
         }
+
+        // R548: how far into Pawn Rush's course reveal this PC is, counted from the shared-clock moment the host started
+        // the match (SteamSession.BegunAt), so every PC's board shows the same hop at the same moment. From this PC's
+        // own start when the host's time is missing (an older host build) or left from an earlier round.
+        float RevealTime(SteamSession session)
+        {
+            if (revealSkip) return RevealSkipped;
+            double begun = session.BegunAt;
+            double from = begun > 0 && begun > revealFrom - StaleBegun ? begun : revealFrom;
+            return (float)Math.Max(0, clock() - from);
+        }
+
+        string Since(float at) => at < 0 ? "-" : (at - shownAt).ToString("0.00") + "초";
 
         // Ready: wait for the host's start time (the session picks it as the host, R502).
         string Wait(SteamSession session, float now)

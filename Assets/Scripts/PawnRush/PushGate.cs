@@ -40,6 +40,9 @@ namespace ChessFight.PawnRush
         Transform fill;
         float progress;
         bool built;
+        // R616: the leaves' own look (Dress), and the sign's size
+        Transform leftDress, rightDress;
+        float labelSize = 1.1f;
 
         public float Progress => progress;
         public bool IsOpen => progress >= 1f;
@@ -65,12 +68,35 @@ namespace ChessFight.PawnRush
             this.frontDepth = frontDepth;
         }
 
+        // R616 (the war room's exit keeps its own carved door): the leaves in another look. Before the gate wakes: each
+        // model stands where its closed leaf is (the left one from the left hinge to the middle) and rides the leaf from
+        // then on; the leaf's own boards, bands, crown and ring are not drawn (their colliders stay - the door and its
+        // ring are still what a hand holds). The leaves `leafThickness` thick, swinging `openDegrees` (90: flat against
+        // the sides of a passage through a thick wall), the sign `signSize` (1.1 fits an 8 m gate).
+        public void Dress(Transform leftModel, Transform rightModel, float leafThickness, float openDegrees, float signSize = 1.1f)
+        {
+            leftDress = leftModel;
+            rightDress = rightModel;
+            thickness = leafThickness;
+            openAngle = openDegrees;
+            labelSize = signSize;
+        }
+
+        void Wear(Rigidbody leaf, Transform model)
+        {
+            if (leaf == null || model == null) return;
+            foreach (var drawn in leaf.GetComponentsInChildren<Renderer>(true)) drawn.enabled = false;
+            model.SetParent(leaf.transform, true);
+        }
+
         void Awake()
         {
             if (built) return;
             built = true;
             left = Leaf("Left leaf", -1f);
             right = Leaf("Right leaf", 1f);
+            Wear(left, leftDress);
+            Wear(right, rightDress);
             // The progress bar over the opening: a dark frame and a gold fill growing from the left, on the face of the
             // wall over the gate (R287: inside the map's 2 m wall it was never seen).
             float bar = openingWidth * .6f, front = Mathf.Max(thickness, frontDepth) + .06f;
@@ -82,7 +108,7 @@ namespace ChessFight.PawnRush
             pivot.localScale = new Vector3(.0001f, 1f, 1f);
             fill = pivot;
             // Read from the platform (looking +z), like every sign on the course.
-            YardKit.Label(transform, "우클릭을 누른 채로 밀기", new Vector3(0f, height + 1.7f, -front), 1.1f, new Color(1f, .9f, .6f));
+            YardKit.Label(transform, "우클릭을 누른 채로 밀기", new Vector3(0f, height + 1.7f, -front), labelSize, new Color(1f, .9f, .6f));
         }
 
         // A leaf hinged at the outer edge of the opening (side -1 left, +1 right), running to the middle.

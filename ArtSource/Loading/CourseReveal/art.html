@@ -1,0 +1,245 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Course reveal parts</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Exo+2:ital,wght@1,900&display=swap">
+<body style="background:#222;color:#eee;font:14px sans-serif">
+<div id="out"></div>
+<script type="module">
+// The entrance screen's course reveal (design A "왕실 룰렛", R551): every decorative part drawn at twice its size on the
+// 1280 x 720 stage, as transparent PNGs for Assets/Resources/Loading/CourseReveal/UI. Open it on the local preview
+// server (serve.py) and each part is posted to /shot.
+import { emblemSVG } from './js/common.js';
+
+const K = 2;                       // drawn at twice the stage size
+const GOLD = '#f0c46a';
+const parts = [];
+
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+function save(name, c) { parts.push([name, c]); const im = new Image(); im.src = c.toDataURL(); im.title = name; im.style.cssText = 'max-width:600px;margin:6px;background:repeating-conic-gradient(#555 0 25%,#333 0 50%) 0 0/16px 16px'; document.getElementById('out').append(im); }
+function lin(g, x0, y0, x1, y1, stops) { const gr = g.createLinearGradient(x0, y0, x1, y1); for (const [o, c] of stops) gr.addColorStop(o, c); return gr; }
+function rad(g, x, y, r0, r1, stops, x1 = x, y1 = y) { const gr = g.createRadialGradient(x, y, r0, x1, y1, r1); for (const [o, c] of stops) gr.addColorStop(o, c); return gr; }
+
+async function svgImage(kind, color, size) {
+  const svg = emblemSVG(kind, color).replace('<svg ', `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" `);
+  const im = new Image();
+  im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  await im.decode();
+  return im;
+}
+
+const GOLD_STOPS = [[0, '#6e4512'], [.18, '#f6d58c'], [.34, '#b9802e'], [.5, '#fff0c4'], [.66, '#a46c22'], [.82, '#e9b860'], [1, '#6e4512']];
+
+// The gilded frame: 352 x 210, its window (324 x 182 at 14, 14) cut out.
+function frame() {
+  const W = 352 * K, H = 210 * K, [c, g] = canvas(W, H);
+  rr(g, 0, 0, W, H, 8 * K); g.fillStyle = lin(g, 0, 0, W, H, GOLD_STOPS); g.fill();
+  // the bevel: a light hairline, a dark groove and a light lip
+  const ring = (inset, width, color) => { g.lineWidth = width; g.strokeStyle = color; rr(g, inset + width / 2, inset + width / 2, W - 2 * inset - width, H - 2 * inset - width, 8 * K - inset); g.stroke(); };
+  ring(0, 2 * K, 'rgba(255,240,200,.55)');
+  ring(2 * K, 3 * K, 'rgba(90,52,12,.55)');
+  ring(5 * K, 2 * K, 'rgba(255,226,160,.4)');
+  g.lineWidth = 1.5 * K; g.strokeStyle = 'rgba(70,40,8,.7)'; rr(g, 9 * K, 9 * K, W - 18 * K, H - 18 * K, 4 * K); g.stroke();
+  // the window
+  g.globalCompositeOperation = 'destination-out';
+  rr(g, 14 * K, 14 * K, 324 * K, 182 * K, 2 * K); g.fill();
+  g.globalCompositeOperation = 'source-over';
+  g.lineWidth = 1 * K; g.strokeStyle = 'rgba(0,0,0,.6)'; rr(g, 14 * K + .5, 14 * K + .5, 324 * K - 1, 182 * K - 1, 2 * K); g.stroke();
+  save('Frame', c);
+}
+
+// The window's cover before the roll: navy, a faint checker and a gold "?".
+async function cover() {
+  const W = 324 * K, H = 182 * K, [c, g] = canvas(W, H);
+  g.fillStyle = rad(g, W / 2, H * .45, 0, W * .62, [[0, '#2d4a7c'], [.75, '#0c1631'], [1, '#0a1228']]); g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(217,180,106,.08)';
+  for (let y = 0; y < H; y += 20 * K) for (let x = 0; x < W; x += 20 * K) if (((x + y) / (20 * K)) % 2 === 0) g.fillRect(x, y, 20 * K, 20 * K);
+  const q = await svgImage('question', GOLD, 104 * K);
+  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 10 * K; g.shadowOffsetY = 4 * K;
+  g.drawImage(q, (W - 104 * K) / 2, (H - 104 * K) / 2);
+  save('Cover', c);
+}
+
+// Light on the glass over the picture: a soft diagonal sheen and a darker rim.
+function glare() {
+  const W = 324 * K, H = 182 * K, [c, g] = canvas(W, H);
+  g.fillStyle = lin(g, 0, 0, W * .34, H, [[0, 'rgba(255,255,255,.16)'], [1, 'rgba(255,255,255,0)']]); g.fillRect(0, 0, W, H);
+  g.save(); g.scale(1, H / W);
+  g.fillStyle = rad(g, W / 2, W / 2, 0, W * .62, [[0, 'rgba(0,0,0,0)'], [.62, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.45)']]); g.fillRect(0, 0, W, W);
+  g.restore();
+  save('Glare', c);
+}
+
+// The glint that sweeps over a frame as its picture lands (a slanted band, moved across in code).
+function glint() {
+  const W = 260 * K, H = 210 * K, [c, g] = canvas(W, H);
+  g.save(); g.translate(W / 2, H / 2); g.transform(1, 0, -.42, 1, 0, 0);
+  const b = 70 * K;
+  g.fillStyle = lin(g, -b, 0, b, 0, [[0, 'rgba(255,244,214,0)'], [.5, 'rgba(255,244,214,.85)'], [1, 'rgba(255,244,214,0)']]);
+  g.fillRect(-b, -H, 2 * b, H * 2);
+  g.restore();
+  save('Glint', c);
+}
+
+// A small gold diamond (the plates' and stamp's end ornaments).
+function diamond(g, x, y, r, color) { g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x - r, y); g.closePath(); g.fillStyle = color; g.fill(); }
+
+// The name plate: 272 x 46, deep navy with a fine double gold rule and a diamond at each end; the lit one once its
+// section has landed (R554: slimmer rules instead of the one thick rim).
+function plate(lit) {
+  const W = 272 * K, H = 46 * K, [c, g] = canvas(W, H);
+  rr(g, 0, 0, W, H, 7 * K); g.fillStyle = lin(g, 0, 0, 0, H, [[0, '#1b2a4d'], [.55, '#111c38'], [1, '#0a1126']]); g.fill();
+  const rim = lit ? '#fff0c4' : '#d9a654';
+  g.lineWidth = 1.5 * K; g.strokeStyle = rim; rr(g, .75 * K, .75 * K, W - 1.5 * K, H - 1.5 * K, 6.5 * K); g.stroke();
+  g.lineWidth = .75 * K; g.strokeStyle = lit ? 'rgba(255,240,196,.7)' : 'rgba(217,166,84,.45)'; rr(g, 4 * K, 4 * K, W - 8 * K, H - 8 * K, 4 * K); g.stroke();
+  g.lineWidth = .75 * K; g.strokeStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.moveTo(12 * K, 5.5 * K); g.lineTo(W - 12 * K, 5.5 * K); g.stroke();
+  diamond(g, 4 * K, H / 2, 3.2 * K, rim); diamond(g, W - 4 * K, H / 2, 3.2 * K, rim);
+  save(lit ? 'PlateLit' : 'Plate', c);
+}
+
+// The chessboard track: a gold band 1148 x 44 holding 32 squares of ivory and walnut (35.6 x 36, from x 4)
+// (R554: the squares a touch softer, a fine dark line inside the gold).
+function track() {
+  const W = 1148 * K, H = 44 * K, [c, g] = canvas(W, H);
+  rr(g, 0, 0, W, H, 6 * K); g.fillStyle = lin(g, 0, 0, 0, H, [[0, '#f3cf7e'], [.5, '#c48d3a'], [1, '#7e5219']]); g.fill();
+  for (let k = 0; k < 32; k++) {
+    const x = (4 + k * 35.6) * K, y = 4 * K, w = 35.6 * K, h = 36 * K;
+    g.fillStyle = k % 2 ? '#56321f' : '#e8d7b2'; g.fillRect(x, y, w + .5, h);
+    g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x, y, w + .5, 2 * K);
+    g.fillStyle = 'rgba(0,0,0,.16)'; g.fillRect(x, y + h - 3 * K, w + .5, 3 * K);
+  }
+  g.lineWidth = 1 * K; g.strokeStyle = 'rgba(60,34,8,.7)'; g.strokeRect(4 * K + .5 * K, 4 * K + .5 * K, (32 * 35.6 - 1) * K, 35 * K);
+  save('Track', c);
+}
+
+// A medallion (drawn for the 84 px final one, scaled down for the others): navy, three gold rings.
+function medal(lit) {
+  const S = 84 * K, [c, g] = canvas(S, S), r = S / 2;
+  g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2);
+  g.fillStyle = rad(g, r * .9, r * .76, 0, r, [[0, '#2d4a7c'], [.72, '#0c1631'], [1, '#0c1631']]); g.fill();
+  const ring = (inset, width, color) => { g.lineWidth = width; g.strokeStyle = color; g.beginPath(); g.arc(r, r, r - inset - width / 2, 0, Math.PI * 2); g.stroke(); };
+  ring(0, 3 * K, lit ? '#fff0c4' : '#e2ae55');
+  ring(3 * K, 3 * K, '#6e4512');
+  ring(6 * K, 1.5 * K, 'rgba(255,226,160,.6)');
+  save(lit ? 'MedalLit' : 'Medal', c);
+}
+
+// The mini-game stop on the track: a gold diamond with a navy (or, lit, a zone-coloured) heart.
+function gem(name, heart, rim) {
+  const S = 52 * K, [c, g] = canvas(S, S);
+  g.translate(S / 2, S / 2); g.rotate(Math.PI / 4);
+  const a = 26 * K;
+  rr(g, -a / 2 - 2 * K, -a / 2 - 2 * K, a + 4 * K, a + 4 * K, 5 * K); g.fillStyle = rim; g.fill();
+  rr(g, -a / 2, -a / 2, a, a, 4 * K); g.fillStyle = heart; g.fill();
+  rr(g, -a / 2 + 5 * K, -a / 2 + 5 * K, a - 10 * K, a - 10 * K, 2 * K); g.fillStyle = lin(g, -a / 2, -a / 2, a / 2, a / 2, [[0, '#fff0c4'], [1, '#c48a32']]); g.fill();
+  save(name, c);
+}
+
+// The start: a small navy medallion with a gold rim and a crimson pennant on a gold pole (R554: was a plain crimson
+// square with "출발" under it).
+function flag() {
+  const S = 40 * K, [c, g] = canvas(S, S), r = 17 * K, m = S / 2;
+  g.beginPath(); g.arc(m, m, r, 0, Math.PI * 2);
+  g.fillStyle = rad(g, m * .9, m * .8, 0, r, [[0, '#2d4a7c'], [.75, '#0c1631'], [1, '#0c1631']]); g.fill();
+  g.lineWidth = 2 * K; g.strokeStyle = '#e2ae55'; g.stroke();
+  g.lineWidth = .75 * K; g.strokeStyle = 'rgba(255,226,160,.5)'; g.beginPath(); g.arc(m, m, r - 3.5 * K, 0, Math.PI * 2); g.stroke();
+  g.lineCap = 'round'; g.lineWidth = 1.6 * K; g.strokeStyle = '#f0c46a';
+  g.beginPath(); g.moveTo(15 * K, 11 * K); g.lineTo(15 * K, 29 * K); g.stroke();
+  g.beginPath(); g.moveTo(16 * K, 11.5 * K); g.lineTo(27.5 * K, 15.5 * K); g.lineTo(16 * K, 19.5 * K); g.closePath();
+  g.fillStyle = lin(g, 0, 11 * K, 0, 20 * K, [[0, '#c9374b'], [1, '#7a1424']]); g.fill();
+  g.lineWidth = .8 * K; g.strokeStyle = '#f0c46a'; g.lineJoin = 'round'; g.stroke();
+  save('Flag', c);
+}
+
+// The emblems (gold strokes) for the "?" and the sections without a picture.
+async function emblems() {
+  for (const [name, kind] of [['Question', 'question'], ['Early_1-1_RoyalWaterGarden', 'canal'], ['Early_1-2_RoyalCarriageYard', 'carriage'],
+                              ['Mid_2-1_GrandStairHall', 'stair'], ['Late_3-0_TempFloor', 'planks'], ['Final_WarRoom', 'crown']]) {
+    const S = 128, [c, g] = canvas(S, S);
+    g.drawImage(await svgImage(kind, GOLD, S), 0, 0);
+    save('Emblem_' + name, c);
+  }
+}
+
+// "이번 판 코스": gold leaf letters with a dark drop and a soft shadow.
+function title() {
+  const W = 420 * K, H = 76 * K, [c, g] = canvas(W, H);
+  g.font = `${50 * K}px "Black Han Sans"`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  const x = W / 2, y = 56 * K;
+  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 24 * K; g.shadowOffsetY = 10 * K;
+  g.fillStyle = 'rgba(60,30,6,.9)'; g.fillText('이번 판 코스', x, y + 3 * K);
+  g.shadowColor = 'transparent';
+  g.fillStyle = 'rgba(60,30,6,.9)'; g.fillText('이번 판 코스', x, y + 3 * K);
+  g.fillStyle = lin(g, 0, y - 46 * K, 0, y + 6 * K, [[.1, '#fff6dc'], [.55, '#f0c46a'], [.9, '#b9802e']]);
+  g.fillText('이번 판 코스', x, y);
+  save('Title', c);
+}
+
+// "COURSE REVEAL" between two gold hairlines.
+function kicker() {
+  const W = 420 * K, H = 20 * K, [c, g] = canvas(W, H);
+  g.font = `italic 900 ${13 * K}px "Exo 2"`; g.textBaseline = 'middle'; g.fillStyle = '#e2ae55';
+  const text = 'COURSE REVEAL', sp = .34 * 13 * K;
+  let w = 0; for (const ch of text) w += g.measureText(ch).width + sp; w -= sp;
+  let x = (W - w) / 2;
+  for (const ch of text) { g.fillText(ch, x, H / 2 + K); x += g.measureText(ch).width + sp; }
+  const lx0 = (W - w) / 2 - 14 * K, rx0 = (W + w) / 2 + 14 * K;
+  g.fillStyle = lin(g, lx0 - 90 * K, 0, lx0, 0, [[0, 'rgba(226,174,85,0)'], [1, '#e2ae55']]); g.fillRect(lx0 - 90 * K, H / 2, 90 * K, K);
+  g.fillStyle = lin(g, rx0, 0, rx0 + 90 * K, 0, [[0, '#e2ae55'], [1, 'rgba(226,174,85,0)']]); g.fillRect(rx0, H / 2, 90 * K, K);
+  save('Kicker', c);
+}
+
+// "코스 확정!": 330 x 112 holding a 290 x 72 crimson plate with a fine double gold rule and a diamond at each end,
+// cream letters (R554: smaller and finer than the first one with its thick rim; room left for the whole shadow).
+function stamp() {
+  const W = 330 * K, H = 112 * K, [c, g] = canvas(W, H);
+  const pad = 20 * K, x = pad, y = pad, w = W - 2 * pad, h = H - 2 * pad;
+  g.shadowColor = 'rgba(0,0,0,.65)'; g.shadowBlur = 14 * K; g.shadowOffsetY = 5 * K;
+  rr(g, x, y, w, h, 9 * K); g.fillStyle = lin(g, 0, y, 0, y + h, [[0, '#8f1d2e'], [.55, '#6e1322'], [1, '#4f0b17']]); g.fill();
+  g.shadowColor = 'transparent';
+  g.lineWidth = 2 * K; g.strokeStyle = '#e2ae55'; rr(g, x + K, y + K, w - 2 * K, h - 2 * K, 8 * K); g.stroke();
+  g.lineWidth = .9 * K; g.strokeStyle = 'rgba(240,196,106,.6)'; rr(g, x + 6 * K, y + 6 * K, w - 12 * K, h - 12 * K, 5 * K); g.stroke();
+  diamond(g, x + 6 * K, H / 2, 4 * K, '#f0c46a'); diamond(g, x + w - 6 * K, H / 2, 4 * K, '#f0c46a');
+  g.font = `${42 * K}px "Black Han Sans"`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = 'rgba(40,4,10,.85)'; g.fillText('코스 확정!', W / 2, H / 2 + 5 * K);
+  g.fillStyle = lin(g, 0, H / 2 - 20 * K, 0, H / 2 + 20 * K, [[0, '#fffaf0'], [1, '#f3dca8']]); g.fillText('코스 확정!', W / 2, H / 2 + 2 * K);
+  save('Stamp', c);
+}
+
+// The light that bursts out behind "코스 확정!" as it lands (R555): 560 x 560, long and short gold rays fading out
+// from a soft middle (turned slowly in code).
+function rays() {
+  const S = 560 * K, [c, g] = canvas(S, S), m = S / 2, R = S / 2;
+  g.save(); g.translate(m, m);
+  const n = 24;
+  for (let k = 0; k < n; k++) {
+    const a = k / n * Math.PI * 2, long = k % 2 === 0, len = R * (long ? 1 : .68), half = (long ? 2.6 : 1.7) / 180 * Math.PI;
+    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, len, a - half, a + half); g.closePath();
+    g.fillStyle = rad(g, 0, 0, 0, len, [[0, 'rgba(255,236,186,.75)'], [.35, 'rgba(255,214,130,.4)'], [1, 'rgba(255,200,110,0)']]); g.fill();
+  }
+  g.fillStyle = rad(g, 0, 0, 0, R * .45, [[0, 'rgba(255,240,200,.55)'], [1, 'rgba(255,220,150,0)']]); g.beginPath(); g.arc(0, 0, R * .45, 0, Math.PI * 2); g.fill();
+  g.restore();
+  save('Rays', c);
+}
+
+// Over the blurred study: a faint warm glow in the middle and a deep rim (R554: less brown haze, darker edges).
+function tint() {
+  const W = 640, H = 360, [c, g] = canvas(W, H);
+  g.save(); g.scale(1, (H * .55) / (W * .6));
+  g.fillStyle = rad(g, W / 2, (H * .42) * (W * .6) / (H * .55), 0, W * .6, [[0, 'rgba(150,98,40,.14)'], [.7, 'rgba(150,98,40,0)']]); g.fillRect(0, 0, W, W * 2);
+  g.restore();
+  g.save(); g.scale(1, (H * .8) / (W * .85));
+  g.fillStyle = rad(g, W / 2, (H / 2) * (W * .85) / (H * .8), 0, W * .85, [[0, 'rgba(3,2,2,0)'], [.5, 'rgba(3,2,2,0)'], [1, 'rgba(3,2,2,.92)']]); g.fillRect(0, 0, W, W * 2);
+  g.restore();
+  save('Tint', c);
+}
+
+await document.fonts.load(`${50 * K}px "Black Han Sans"`);
+await document.fonts.load(`italic 900 ${13 * K}px "Exo 2"`);
+frame(); await cover(); glare(); glint(); plate(false); plate(true); track(); medal(false); medal(true);
+gem('Gem', '#13213f', '#6e4512');
+gem('GemLit0', '#6fae73', '#fff0c4'); gem('GemLit1', '#5b8fe0', '#fff0c4'); gem('GemLit2', '#e05468', '#fff0c4');
+flag(); await emblems(); title(); kicker(); stamp(); rays(); tint();
+for (const [name, c] of parts) await fetch('/shot?name=cr_' + name, { method: 'POST', body: c.toDataURL('image/png') });
+window.__done = parts.length;
+</script>
