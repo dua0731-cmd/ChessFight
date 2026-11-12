@@ -1,9 +1,9 @@
 {
- "blend": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/pawn_lowpoly/Pawn_Rigged.blend",
- "out": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/work/expr_white",
+ "blend": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/pawn_lowpoly/Pawn_Rigged.blend",
+ "out": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/work/expr_white",
  "team": "white",
- "atlas": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_oval_white.png",
- "height": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_oval_white_height.png",
+ "atlas": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/atlas/eyes_oval_white.png",
+ "height": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/atlas/eyes_oval_white_height.png",
  "eye": {
   "az": 24.85,
   "el": -16.3,

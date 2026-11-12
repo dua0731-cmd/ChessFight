@@ -1,10 +1,10 @@
 {
  "body": "C:/Users/trews/Downloads/rook.fbx",
- "out": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/work/rook_white_final",
+ "out": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/work/rook_white_final",
  "team": "white",
  "style": "rect",
- "atlas": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_rect_white.png",
- "height": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_rect_white_height.png",
+ "atlas": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/atlas/eyes_rect_white.png",
+ "height": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/atlas/eyes_rect_white_height.png",
  "eye": {
   "az": 23.2,
   "z": 0.704,
@@ -59,7 +59,7 @@
   }
  ],
  "lathe_sides": 0,
- "body_blend": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/pieces/models/Rook_LowPoly.blend",
+ "body_blend": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/pieces/models/Rook_LowPoly.blend",
  "body_object": "Rook",
  "smooth": "mesh"
 }

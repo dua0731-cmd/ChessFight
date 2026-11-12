@@ -3,7 +3,7 @@
 # python piece_calib.py <rook|bishop> <white|black> <name> '<json: style_over, eye, blush, ...>'
 import json, os, subprocess, sys
 SP = os.path.dirname(os.path.abspath(__file__))
-RW = "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork"
+RW = "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork"
 B = r"C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe"
 DES = "C:/Users/trews/.codex/visualizations/2026/11/09/01a1bf32-96d3-7940-bc68-578364f54aa6/ChessFight/FinalMultiview/WhiteBlack_WithFace_BodyOnly_v1"
 piece, team, name = sys.argv[1:4]

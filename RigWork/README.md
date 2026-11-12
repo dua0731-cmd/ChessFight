@@ -1,6 +1,8 @@
 # RigWork: 새 기물 모델 리깅·로우폴리·눈 작업 모음 (2026-11-09~10)
 
-git에 올리지 않는 작업 폴더입니다(`.gitignore`가 폴더 전체를 무시). 실제 게임은 바탕화면 `chess3333\ChessFight`의 `main`(URP)입니다.
+> **2026-11-12: 이 폴더는 이제 `C:\Users\trews\OneDrive\Desktop\chess3333\ChessFight\RigWork`에 있다.** GitHub에서 새로 받은 main 클론 안이다. 예전 `문서\GitHub\ChessFight\RigWork`(버려진 JY-pieces 체크아웃 안)에서 옮겼고, 그쪽은 `RigWork_moved_to_Desktop`으로 이름을 바꿔 두었다. 스크립트와 설정의 절대 경로도 새 자리로 바꿨다.
+
+작업 폴더입니다. Blender 장면·렌더 같은 작업 파일은 git이 무시합니다(`RigWork/.gitignore`). 공유할 파일(스크립트, 게임에 들어가는 모델, 이 README)만 `git add -f`로 올립니다. 실제 게임은 이 저장소(`chess3333\ChessFight`)의 `main`(URP)입니다.
 지금까지의 테스트는 이 OneDrive 체크아웃(버려진 `JY-pieces`, 기본 렌더 파이프라인)의 복사본이나 Blender에서 한 것입니다. **Unity나 Steam에서 사용자가 직접 확인한 것은 아직 없습니다.**
 
 ## 1. 결정된 것

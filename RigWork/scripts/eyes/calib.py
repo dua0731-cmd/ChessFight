@@ -2,7 +2,7 @@
 # prints ours against the design's numbers. python calib.py <name> '<json overrides>'
 import json, os, subprocess, sys
 SP = os.path.dirname(os.path.abspath(__file__))
-RW = "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork"
+RW = "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork"
 B = r"C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe"
 name = sys.argv[1]
 over = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
