@@ -322,20 +322,45 @@ namespace ChessFight.RagdollLab.Editor
                     list.Add(i);
                 }
                 var comps = groups.Values.OrderByDescending(l => l.Count).ToList();
+                // The body is the biggest part by size, not by vertex count: the low-poly pawn's body has fewer
+                // vertices than one of its smooth eyes.
+                int bodyComp = 0;
+                float bodyVolume = -1f;
+                for (int c = 0; c < comps.Count; c++)
+                {
+                    Vector3 size = BoundsOf(comps[c].Select(i => world[i])).size;
+                    if (size.x * size.y * size.z > bodyVolume)
+                    {
+                        bodyVolume = size.x * size.y * size.z;
+                        bodyComp = c;
+                    }
+                }
+                if (bodyComp != 0)
+                {
+                    var bodyVerts = comps[bodyComp];
+                    comps.RemoveAt(bodyComp);
+                    comps.Insert(0, bodyVerts);
+                }
                 var compOf = new int[n];
                 for (int c = 0; c < comps.Count; c++)
                     foreach (int v in comps[c]) compOf[v] = c;
                 var compBounds = comps.Select(l => BoundsOf(l.Select(i => world[i]))).ToList();
 
                 float leftSign = Mathf.Sign(Bone("LeftHand").position.x);
-                // 0 = main body, 1 = hand, 2 = arm stub, 3 = face detail
+                float footTop = 0.12f * height;
+                // 0 = main body, 1 = hand, 2 = arm stub, 3 = face detail, 4 = a shoe of its own (the low-poly pawn's
+                // shoes are separate parts; the first pawn's were welded into its body)
                 var kind = new int[comps.Count];
                 for (int c = 1; c < comps.Count; c++)
                 {
                     Vector3 center = compBounds[c].center;
                     float ax = Mathf.Abs(center.x);
-                    kind[c] = ax > 0.27f * height ? 1 : ax > 0.13f * height && center.y > 0.4f * height && center.y < 0.65f * height ? 2 : 3;
+                    kind[c] = ax > 0.27f * height ? 1
+                        : ax > 0.13f * height && center.y > 0.4f * height && center.y < 0.65f * height ? 2
+                        : center.y < footTop && ax > 0.035f * height ? 4
+                        : 3;
                 }
+                bool ownShoes = kind.Contains(4);
                 for (int c = 0; c < comps.Count; c++)
                     Debug.Log($"[RagdollLab] component {c}: {comps[c].Count} verts, kind {kind[c]}, center {compBounds[c].center:F3}, size {compBounds[c].size:F3}");
                 int CompOfKind(int k, bool left)
@@ -344,7 +369,18 @@ namespace ChessFight.RagdollLab.Editor
                         if (kind[c] == k && (Mathf.Sign(compBounds[c].center.x) == leftSign) == left) return c;
                     throw new Exception($"Pawn part kind {k} ({(left ? "left" : "right")}) not found");
                 }
-                int stubL = CompOfKind(2, true), stubR = CompOfKind(2, false);
+                // Each side's stub is its innermost stub-height part; another one there (the low-poly pawn's cuff)
+                // goes with the hand.
+                int StubOf(bool left)
+                {
+                    int best = -1;
+                    for (int c = 1; c < comps.Count; c++)
+                        if (kind[c] == 2 && (Mathf.Sign(compBounds[c].center.x) == leftSign) == left &&
+                            (best < 0 || Mathf.Abs(compBounds[c].center.x) < Mathf.Abs(compBounds[best].center.x))) best = c;
+                    if (best < 0) throw new Exception($"Pawn arm stub ({(left ? "left" : "right")}) not found");
+                    return best;
+                }
+                int stubL = StubOf(true), stubR = StubOf(false);
                 int handCompL = CompOfKind(1, true), handCompR = CompOfKind(1, false);
 
                 // ---- skin weights by region
@@ -360,7 +396,6 @@ namespace ChessFight.RagdollLab.Editor
                 float yHips = Bone("Hips").position.y, ySpine = Bone("Spine").position.y;
                 float ySpine1 = Bone("Spine1").position.y, ySpine2 = Bone("Spine2").position.y;
                 float yNeck = Bone("Neck").position.y, yHead = Bone("Head").position.y;
-                float footTop = 0.12f * height;
                 float[] chainY = { yHips + 0.03f, ySpine + 0.03f, ySpine1 + 0.03f, ySpine2 + 0.03f };
                 int[] chainBone = { iHips, iSpine, iSpine1, iSpine2 };
 
@@ -373,12 +408,13 @@ namespace ChessFight.RagdollLab.Editor
                     if (c == 0)
                     {
                         float radius = new Vector2(p.x, p.z).magnitude;
-                        if (p.y < footTop && Mathf.Abs(p.x) > 0.035f * height) weights[i] = One(left ? iFootL : iFootR);
+                        if (!ownShoes && p.y < footTop && Mathf.Abs(p.x) > 0.035f * height) weights[i] = One(left ? iFootL : iFootR);
                         else if (p.y >= yHead || (p.y > yNeck - 0.025f * height && radius < 0.13f * height)) weights[i] = One(iHead);
                         else weights[i] = Chain(p.y, chainY, chainBone);
                     }
-                    else if (kind[c] == 1) weights[i] = One(c == handCompL ? iHandL : iHandR);
-                    else if (kind[c] == 2) weights[i] = One(c == stubL ? iArmL : iArmR);
+                    else if (kind[c] == 1) weights[i] = One(left ? iHandL : iHandR);
+                    else if (kind[c] == 2) weights[i] = c == stubL ? One(iArmL) : c == stubR ? One(iArmR) : One(left ? iHandL : iHandR);
+                    else if (kind[c] == 4) weights[i] = One(left ? iFootL : iFootR);
                     else weights[i] = One(iHead);
                 }
                 var skinned = Object.Instantiate(source);
@@ -445,8 +481,10 @@ namespace ChessFight.RagdollLab.Editor
                 var palmR = AddPalm(bodies[(int)BodyId.HandR], compBounds[handCompR]);
                 AddThigh(bodies[(int)BodyId.ThighL], pivots[(int)BodyId.FootL]);
                 AddThigh(bodies[(int)BodyId.ThighR], pivots[(int)BodyId.FootR]);
-                var footBoxL = AddFoot(bodies[(int)BodyId.FootL], BoundsOf(main.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) == leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
-                var footBoxR = AddFoot(bodies[(int)BodyId.FootR], BoundsOf(main.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) != leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
+                // The shoes: the body's own below the hem, or the separate shoe parts.
+                var shoes = main.Concat(Enumerable.Range(1, comps.Count - 1).Where(c => kind[c] == 4).SelectMany(c => comps[c])).ToList();
+                var footBoxL = AddFoot(bodies[(int)BodyId.FootL], BoundsOf(shoes.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) == leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
+                var footBoxR = AddFoot(bodies[(int)BodyId.FootR], BoundsOf(shoes.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) != leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
 
                 // ---- joints (child -> parent)
                 var joints = new ConfigurableJoint[RagdollPawn.Count];

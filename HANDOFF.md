@@ -124,7 +124,7 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 - **새 기물 리깅(2026-11-10, 브랜치 `JY-piece-rig`, 게임 미반영·미검증)**: `RigWork/` 참고(`RigWork/README.md`).
   - 사용자의 Tripo 룩·나이트·비숍(Tripo가 조각한 얼굴은 제거)과 로우폴리 폰을 폰의 Mixamo 뼈대에 리깅했다. 규칙은 `Tools/PieceRig/rig_piece.py`와 같다. FBX/blend와 Blender 스크립트가 들어 있다.
   - 눈은 메쉬로 붙인다. 룩·나이트·비숍은 눈 메쉬까지 합쳐 `Art/Pieces/<P>/<P>_Rigged.fbx`에 넣었고, Pawn Rush 리그도 다시 만들었다. 텍스처는 Tripo 텍스처가 오기 전까지 쓰는 임시 단색 줄무늬다.
-  - 베이크 결과(Bake Piece Models, Bake Pawn Rush Piece Models, Bake Menu Pieces)도 커밋했다(2026-11-12, 브랜치 복사본에서 배치로 실행). 이 브랜치를 받으면 바로 새 모델이 보인다. 모델을 다시 내보내면 베이크도 다시 돌려야 한다. 폰은 아직 옛 모델이다(바꾸면 모든 모드의 물리가 바뀌므로 텍스처가 나온 뒤에 바꾼다).
+  - 베이크 결과(Bake Piece Models, Bake Pawn Rush Piece Models, Bake Menu Pieces)도 커밋했다(2026-11-12, 브랜치 복사본에서 배치로 실행). 이 브랜치를 받으면 바로 새 모델이 보인다. 모델을 다시 내보내면 베이크도 다시 돌려야 한다. 폰도 새 로우폴리 폰으로 바꿨다(`Art/Pawn/Pawn.fbx`). 눈 메쉬가 들어 있고, 단색 줄무늬 `PawnAlbedo.jpg`를 쓴다. `RagdollLabBuilder`와 `rig_pawnrush.py`는 새 폰의 구조를 받도록 고쳤다: 몸통보다 정점이 많은 눈, 따로 떨어진 신발, 팔 뿌리+커프. 몸통은 크기로 고른다. 물리 자동 테스트 결과는 바꾸기 전과 같다(통과 88, 실패 8, 같은 8개).
   - 다음 할 일: 눈 메쉬 합치기, 최종 디자인 Tripo 비숍, `PieceModelBaker`로 게임에 넣고 테스트. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
 
 - R542 두 PC로 벽 양쪽과 모서리를 왕복하고, 승격 뒤 이름과 아이콘을 확인한다. [확인 목록](Docs/Network/VALIDATION.md#nameplate-check).

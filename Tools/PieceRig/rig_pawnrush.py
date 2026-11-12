@@ -103,9 +103,18 @@ for name in names:
     label = ["Body"] * n           # Body, or one of LIMBS (whole-island limb parts keep their weights)
     keep = [False] * n             # a limb island (stub, mitten, foot, leg post) keeps rig_piece's weights
     main = max(range(len(isl)), key=lambda k: len(isl[k]))
+    own_shoes = False
     if name == "Pawn":
-        # As RagdollLabBuilder: the biggest island is the body (feet included), hands far out, stubs at shoulder
-        # height, everything else face detail on the head.
+        # As RagdollLabBuilder: the biggest island by size is the body (the low-poly pawn's body has fewer vertices
+        # than one of its smooth eyes), hands far out, stubs at shoulder height (the innermost on each side; another
+        # there, the low-poly pawn's cuff, goes with the hand), shoes of their own low down, everything else face
+        # detail on the head.
+        def volume(ids):
+            ps = [verts[i] for i in ids]
+            return ((max(p.x for p in ps) - min(p.x for p in ps)) * (max(p.y for p in ps) - min(p.y for p in ps))
+                    * (max(p.z for p in ps) - min(p.z for p in ps)))
+        main = max(range(len(isl)), key=lambda k: volume(isl[k]))
+        stubs = {}
         for k, ids in enumerate(isl):
             if k == main:
                 continue
@@ -116,10 +125,18 @@ for name in names:
                 kind = side + "Hand"
             elif ax > 0.13 * height and 0.4 * height < c.z < 0.65 * height:
                 kind = side + "Arm"
+                stubs.setdefault(side, []).append((ax, k))
+            elif c.z < 0.12 * height and ax > 0.035 * height:
+                kind = side + "Foot"
+                own_shoes = True
             else:
                 kind = "Body"
             for i in ids:
                 label[i] = kind
+        for side, found in stubs.items():
+            for ax, k in sorted(found)[1:]:
+                for i in isl[k]:
+                    label[i] = side + "Hand"
     else:
         for k, ids in enumerate(isl):
             if any(old[i].get(l, 0) > 0.01 for i in ids for l in LIMBS):
@@ -179,7 +196,7 @@ for name in names:
             new[i] = dict(old[i])
         elif label[i] in LIMBS:
             new[i] = {label[i]: 1.0}
-        elif name == "Pawn" and island_of[i] == main and p.z < foot_top and abs(p.x) > 0.035 * height:
+        elif name == "Pawn" and not own_shoes and island_of[i] == main and p.z < foot_top and abs(p.x) > 0.035 * height:
             # The pawn's shoe is part of its skin (below 0.12 of its height; the skirt's hem starts there): all foot
             # at the sole, fading into the hips over its top 4 cm, all of it under the skirt. Reaching past the hem,
             # the first try dragged the skirt's edge out with each step.
