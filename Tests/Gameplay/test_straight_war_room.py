@@ -16,28 +16,31 @@ class StraightWarRoom(unittest.TestCase):
         for p in t.route(b,'checkpoints'):self.assertIn(p,route)
         self.assertEqual(transform(t.data,number(f['exit'])),(0,0,169))
         self.assertEqual(vector(f['m_Center']) if 'm_Center' in f else (0,20,10),(0,20,10))
-    def test_scroll_pits_have_no_fixed_bypass_floor(self):
-        t=self.t;bridges=t.scripts_of('RollingMapBridge');self.assertEqual(len(bridges),2)
-        for _,f,b in bridges:
-            segments=re.findall(r'^  - \{fileID: (\d+)\}',b,re.M)
-            self.assertEqual(len(segments),8)
-            self.assertNotEqual(number(f['handle']),0)
+    def test_books_replace_maps_and_return_to_previous_table(self):
+        t=self.t;books=t.scripts_of('ClosingBook');self.assertEqual(len(books),2)
+        self.assertEqual(len(t.scripts_of('RollingMapBridge')),0)
+        for _,f,b in books:
             origin=transform(t.data,t.owners[number(f['m_GameObject'])])
+            recovery=transform(t.data,number(f['recoveryPoint']))
+            self.assertIn(recovery[2],(-106,-80))
+            self.assertLess(recovery[2],origin[2])
+            self.assertEqual(float(f['respawnSeconds']),2)
             for z in (origin[2]+1,origin[2]+15):
-                floors=[name for name,lo,hi,_ in t.boxes if lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.5<hi[1]<.1]
-                self.assertTrue(floors);self.assertTrue(all(n=='Walkable parchment' for n in floors),floors)
-    def test_saved_stamp_timing_and_side_map_deployment(self):
+                floors=[name for name,lo,hi,_ in t.boxes if lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.1<hi[1]<.1]
+                self.assertEqual(floors,['Walkable book pages'])
+            hinge=transform(t.data,number(f['cover']))
+            self.assertAlmostEqual(hinge[0],-9)
+    def test_stamps_unchanged_and_library_walls_have_previews(self):
         t=self.t
         for _,f,_ in t.scripts_of('CommandStampPress'):
             self.assertAlmostEqual(float(f['slamSeconds']),.18)
             self.assertAlmostEqual(float(f['retractSeconds']),2.5)
-        maps=t.scripts_of('RollingMapBridge')
-        self.assertEqual({int(f['unfoldFromRight']) for _,f,_ in maps},{0,1})
-        for _,f,_ in maps:
-            self.assertEqual(float(f['deploymentHeight']),6)
-            self.assertEqual(float(f['descentDrift']),.6)
-            self.assertEqual(float(f['lowerSeconds']),1.5)
-            self.assertNotEqual(number(f['hangingParchment']),0)
+        walls=[(lo,hi) for name,lo,hi,_ in t.boxes if name.startswith('Royal library gallery wall')]
+        self.assertEqual(len(walls),2)
+        for _,f,b in t.scripts_of('WarRoomScoreLabel'):
+            p=transform(t.data,t.owners[number(f['m_GameObject'])])
+            self.assertAlmostEqual(abs(p[0]),37)
+        self.assertEqual(len([name for name in t.names.values() if name.startswith('Royal library bookcase')]),8)
 
     def test_concept_obstacles_and_preview_sources(self):
         t=self.t

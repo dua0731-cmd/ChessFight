@@ -8,13 +8,13 @@ namespace UnityEngine {
  public class SerializeField:Attribute {} public class DefaultExecutionOrder:Attribute { public DefaultExecutionOrder(int n){} } public class RequireComponent:Attribute {public RequireComponent(Type t){}} public class MinAttribute:Attribute {public MinAttribute(float f){}}
  public class MonoBehaviour {public bool enabled=true;public bool isActiveAndEnabled=true;public Transform transform=new Transform();public T GetComponentInParent<T>() where T:class=>null;public T GetComponent<T>() where T:new()=>new T();}
  public class GameObject {public bool activeInHierarchy=true;public Transform transform=new Transform();public GameObject(){}public GameObject(string n){}public T AddComponent<T>() where T:new()=>new T();public T GetComponent<T>() where T:new()=>new T();}
- public class Transform {public Vector3 position,localScale,lossyScale=Vector3.one;public object rotation;public Transform parent;public Vector3 localPosition,up=Vector3.up;public bool IsChildOf(Transform t)=>this==t||parent==t;public void SetParent(Transform t,bool b){}public Vector3 TransformPoint(Vector3 v)=>position+v;public Vector3 InverseTransformPoint(Vector3 v)=>v-position;public Vector3 TransformDirection(Vector3 v)=>v;}
+ public class Transform {public Quaternion localRotation;public Vector3 position,localScale,lossyScale=Vector3.one;public object rotation;public Transform parent;public Vector3 localPosition,up=Vector3.up;public bool IsChildOf(Transform t)=>this==t||parent==t;public void SetParent(Transform t,bool b){}public Vector3 TransformPoint(Vector3 v)=>position+v;public Vector3 InverseTransformPoint(Vector3 v)=>v-position;public Vector3 TransformDirection(Vector3 v)=>v;}
  public struct Vector3 {public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 back=>new Vector3(0,0,-1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);public static Vector3 Scale(Vector3 a,Vector3 b)=>new Vector3(a.x*b.x,a.y*b.y,a.z*b.z);}
  public struct Color {public static Color white=>default(Color);public static Color black=>default(Color);public static Color red=>default(Color);}
  public class Font {public object material;}
  public enum TextAnchor {MiddleCenter} public enum TextAlignment {Center}
  public class TextMesh {public string text;public TextAnchor anchor;public TextAlignment alignment;public Font font;public int fontSize;public float characterSize;public Color color;}
- public struct Quaternion {public static Quaternion identity=>default(Quaternion);}
+ public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>default(Quaternion);public static Quaternion identity=>default(Quaternion);}
  public struct Bounds {public Vector3 size,center;public Vector3 extents=>size*.5f;public bool Contains(Vector3 p)=>Math.Abs(p.x-center.x)<=size.x*.5f&&Math.Abs(p.y-center.y)<=size.y*.5f&&Math.Abs(p.z-center.z)<=size.z*.5f;}
  public enum RigidbodyInterpolation {Interpolate}
  public class Rigidbody {public Vector3 position;public bool isKinematic,useGravity;public RigidbodyInterpolation interpolation;public void MovePosition(Vector3 p){position=p;}}
@@ -31,8 +31,8 @@ namespace UnityEngine {
  public static class Debug {public static void LogError(string m,object o){throw new Exception(m);}}
 }
 namespace ChessFight.Game {public static class RuntimePanels {public static Font KoreanFont;}public static class LitMaterials {public static void SetColor(MaterialPropertyBlock m,Color c){}}}
-namespace ChessFight.Gameplay {public class Obstacle:MonoBehaviour{} public interface IMovingSurface {Quaternion DeltaRotation{get;}Vector3 PointVelocity(Vector3 p);}}
-namespace ChessFight.ProtectKing {public class ObstacleContext {public bool Running=true,Authority=true;}public class ImportedObstacleActor {public bool CanReceiveObstacle=true,Grounded=true;public Vector3 Position,Impulse;public Collider support;public bool TryGetGroundCollider(out Collider c){c=support;return Grounded&&c!=null;}public int hits;public static ImportedObstacleActor Find(Collider c)=>c.actor;public void AddObstacleHit(Vector3 v,float stun){hits++;Impulse=v;}}}
+namespace ChessFight.Gameplay {public static class ObstacleClock {public static bool Shared;}public class Obstacle:MonoBehaviour{} public interface IMovingSurface {Quaternion DeltaRotation{get;}Vector3 PointVelocity(Vector3 p);}}
+namespace ChessFight.ProtectKing {public class ObstacleContext {public bool Running=true,Authority=true;}public class ImportedObstacleActor {public GameObject gameObject=new GameObject();public bool CanReceiveObstacle=true,Grounded=true;public Vector3 Position,Impulse;public Collider support;public bool TryGetGroundCollider(out Collider c){c=support;return Grounded&&c!=null;}public int hits;public static ImportedObstacleActor Find(Collider c)=>c.actor;public void AddObstacleHit(Vector3 v,float stun){hits++;Impulse=v;}}}
 class Harness {
  static void Check(bool b,string m){if(!b)throw new Exception(m);}
  static void Set(object o,string field,object v)=>o.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).SetValue(o,v);
@@ -86,6 +86,19 @@ class Harness {
   var text=new TextMesh[23];for(int i=0;i<23;i++)text[i]=new TextMesh();var clues=new TextMesh[5];for(int i=0;i<5;i++)clues[i]=new TextMesh();Set(stairs,"keyText",text);Set(stairs,"clueText",clues);
   string before=puzzle.Sequence;stairs.NewRound();var next=(TypewriterMemory)typeof(TypewriterStairs).GetField("layout",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(stairs);
   Check(next.Sequence!=before,"New round changes clues");for(int i=0;i<5;i++)Check(clues[i].text==(i+1)+"\n"+next.Sequence[i],"Clue order");for(int i=0;i<23;i++)Check(text[i].text==next.Keys[i].ToString(),"Keyboard matches clues");
+  Check(ClosingBook.Fold(0,6,1,.65f,2,1.3f)==0,"Book begins horizontal");
+  Check(ClosingBook.Fold(6.8f,6,1,.65f,2,1.3f)==0,"Warning before closing");
+  Check(Math.Abs(ClosingBook.Fold(7.325f,6,1,.65f,2,1.3f)-.5f)<.001f,"Half fold is vertical");
+  Check(ClosingBook.Fold(8,6,1,.65f,2,1.3f)==1,"Closed cover on page");
+  Check(Math.Abs(ClosingBook.Fold(10.3f,6,1,.65f,2,1.3f)-.5f)<.001f,"Opening reverses hinge");
+  var book=new ClosingBook();Set(book,"cover",new Transform());Set(book,"recoveryPoint",new Transform());
+  Set(book,"crushVolume",new BoxCollider{center=new Vector3(0,1.7f,8),size=new Vector3(18,4,16)});
+  Set(book,"clock",8f);int crushes=0;book.Crushed+=(victim,point,seconds)=>{crushes++;Check(seconds==2,"Recovery delay");};
+  actor.Position=new Vector3(0,0,8);Physics.found=new[]{new Collider{actor=actor},new Collider{actor=actor}};
+  var bookStep=typeof(ClosingBook).GetMethod("FixedUpdate",BindingFlags.NonPublic|BindingFlags.Instance);
+  bookStep.Invoke(book,null);Check(crushes==0,"Paused book cannot crush");book.Simulating=true;
+  bookStep.Invoke(book,null);Check(crushes==1,"Ragdoll colliders deduplicated");
+  actor.Position=new Vector3(10,0,8);bookStep.Invoke(book,null);Check(crushes==1,"Outside-page feet excluded");
   Console.WriteLine("PASS: 2000 memory layouts, row rules, hits, key depression, jump-only rebound and new-round clues");
  }
 }

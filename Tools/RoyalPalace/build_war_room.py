@@ -440,24 +440,35 @@ class Builder(LegacyBuilder):
             for z in (a+1.2,b-1.2):
                 self.box(self.root,name+' carved leg '+str(side)+' '+str(z),(side*(width/2-1.2),-11,z),(1.8,20,1.8),'Wood',False)
                 self.box(self.root,name+' leg ferrule '+str(side)+' '+str(z),(side*(width/2-1.2),-20.5,z),(2,1,2),'Gold',False)
-    def scroll(self,z,phase):
-        g=self.group('Rolling command map '+str(z),pos=(0,0,z));segments=[]
-        right=phase>0; direction=-1 if right else 1
-        width=12;drift=.6;strip=(width-drift)/8
-        for i in range(8):
-            x=direction*(-width/2+drift+(i+.5)*strip)
-            part=self.group('Parchment strip '+str(i),g,(x,0,8))
-            self.box(part,'Walkable parchment',(0,-.15,0),(strip,.3,16),'Ivory')
-            self.box(part,'Map advance line',(0,.025,0),(.15,.03,15.8),'Teal',False)
-            segments.append(part)
-        roller=self.box(g,'Brass scroll roller',(direction*6,.6,8),(1.2,8.2,1.2),'Gold',False,rot=(.70710678,0,0,.70710678),shape='Cylinder')
-        hanging=self.box(g,'Descending parchment',(direction*(-6+.3),3,8),(.12,6.03,16),'Ivory',False)
-        self.box(g,'Elevated map mount',(direction*-6,6.2,8),(.5,.4,16.5),'Gold',False)
-        h=self.group('Grab to slow map',g,(direction*-5,1,-2));rb=self.d.rigidbody(h,True)
-        self.box(h,'Handle',(0,0,0),(.3,.3,1.4),'Gold')
-        self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),hangingParchment=kit.ref(hanging['tr']),handle=kit.ref(rb),
-            length=16,mapWidth=12,deploymentHeight=6,descentDrift=.6,unfoldFromRight=1 if right else 0,lowerSeconds=1.5,
-            openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
+    def book(self,z,phase):
+        self.table('Royal folio desk '+str(z),z,z+16,18,True,-.85)
+        g=self.group('Closing royal folio '+str(z),pos=(0,0,z))
+        width=18;length=16
+        self.box(g,'Walkable book pages',(0,-.25,8),(width,.5,length),'Ivory')
+        self.box(g,'Fixed leather cover',(0,-.65,8),(width+.4,.3,length+.4),'Purple')
+        self.box(g,'Gilded book spine',(-width/2,-.1,8),(.5,.8,length+.6),'Gold',False,shape='Cylinder')
+        for line in range(7):
+            self.box(g,'Printed folio line '+str(line),(0,.015,2+line*1.8),(12,.02,.07),'Slate',False)
+        hinge=self.group('Horizontal closing cover',g,(-width/2,.35,8))
+        self.box(hinge,'Moving leather cover',(-width/2,0,0),(width,.3,length+.4),'Purple',False)
+        self.box(hinge,'Moving ivory page',(-width/2,.18,0),(width-.3,.04,length),'Ivory',False)
+        self.box(hinge,'Royal cover crest',(-width/2,-.18,0),(4,.04,5),'Gold',False)
+        strip=self.box(g,'Book warning bookmark',(width/2-.4,.025,8),(.4,.04,length),'Gold',False)
+        volume=self.d.box(g,size=(width,4,16),center=(0,1.7,8),trigger=True)
+        recovery=self.group('Previous safe book point',g,(0,0,-6 if z==-100 else -4))
+        self.d.script(g,'ClosingBook',kit.fields(cover=kit.ref(hinge['tr']),recoveryPoint=kit.ref(recovery['tr']),crushVolume=kit.ref(volume),warningStrip=kit.ref(strip['comps'][2]),openSeconds=6,warningSeconds=1,closeSeconds=.65,closedSeconds=2,reopenSeconds=1.3,respawnSeconds=2,phaseSeconds=phase))
+    def library_shelf(self,x,z,side):
+        g=self.group('Royal library bookcase '+str(x)+' '+str(z),pos=(x,-22.5,z),rot=kit.yaw(-90 if side<0 else 90))
+        self.box(g,'Walnut bookcase back',(0,17,1),(14,34,1),'Wood')
+        for xside in (-7,7):self.box(g,'Carved upright',(xside,17,0),(1,34,3),'Wood')
+        for level in range(5):
+            y=level*8
+            self.box(g,'Library shelf '+str(level),(0,y+.4,0),(14,.8,3),'Gold',False)
+            if level==4:continue
+            for i in range(9):
+                height=4.5+(i+level)%3
+                self.box(g,'Leather bound volume '+str(level)+' '+str(i),(-5.7+i*1.4,y+.8+height/2,-.5),(1.15,height,2),'Purple' if (i+level)%2 else 'Teal',False)
+                self.box(g,'Book spine gold title '+str(level)+' '+str(i),(-5.7+i*1.4,y+2,-1.52),(.8,.3,.05),'Gold',False)
     def typewriter(self):
         import math
         g=self.group('Typewriter stairs - printed command',pos=(0,0,-51));ctx=self.c.context(g)
@@ -526,8 +537,8 @@ class Builder(LegacyBuilder):
         for name,values in [('keyAreas',areas),('keyFaces',faces),('keyVisuals',visuals),('keys',keys),('clueFaces',clues)]:
             data+='  '+name+':\n'+''.join('  - '+kit.ref(x)+'\n' for x in values)
         self.d.script(g,'TypewriterStairs',data)
-    def exhibit(self,pos,fraction):
-        g=self.group('Random GM replay preview '+str(fraction),pos=pos)
+    def exhibit(self,pos,fraction,rotation=0):
+        g=self.group('Random GM replay preview '+str(fraction),pos=pos,rot=kit.yaw(rotation))
         self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')
         for sq in range(64):
             self.box(g,'Square '+str(sq),(sq%8-3.5,4+sq//8-3.5,-.3),(.98,.98,.08),'White' if (sq%8+sq//8)%2 else 'Slate',False)
@@ -539,14 +550,14 @@ class Builder(LegacyBuilder):
         self.box(self.root,'Operations ceiling',(0,30,-80),(320,1,140),'Slate')
         # An open room with discrete tables, not a walled corridor. Gaps stay open for jumps/maps.
         self.box(self.root,'Distant operations room floor',(0,-23,-80),(318,1,138),'Slate',False)
-        self.table('Approach floor -146',-146,-129)
-        self.table('Dispatch table after jump',-127,-100)
-        self.table('Approach floor -60',-60,-51)
+        self.table('Approach floor -146',-146,-129,18)
+        self.table('Dispatch table after jump',-127,-100,18)
+        self.table('Approach floor -60',-60,-51,18)
         self.table('Approach floor -27',-27,-8,16)
         self.table('Typewriter furniture base',-51,-27,25,True,-.8)
         self.press(-122,-3,6,0);self.press(-122,3,6,2.675)
-        self.scroll(-100,0);self.scroll(-76,3)
-        self.table('Fixed seal island',-84,-76,8)
+        self.book(-100,0);self.book(-76,3)
+        self.table('Fixed seal island',-84,-76,18)
         self.box(self.root,'Royal seal rest island',(0,.025,-80),(5,.05,5),'Gold',False,shape='Cylinder')
         self.typewriter()
         self.headquarters()
@@ -558,18 +569,18 @@ class Builder(LegacyBuilder):
         self.exit['pos']=(0,0,169)
         # The outer square's north edge is the HQ rear wall extended to both corners.
         for x in (-142,142):self.wall(self.root,'North perimeter return '+str(x),(x,20,170),(36,60,2))
-        for x in (-28,28):
-            for z in (-130,-82,-30):
-                self.banner(self.root,(x,10,z))
-                self.shelf(self.root,(x,0,z))
-        for pos,ply in (((-10,0,-132),0),((10,0,-112),.25),((-10,0,-57),.55),((80,0,138),.9)):
-            self.exhibit(pos,ply)
+        # Broad library walls leave the table route open, with framed score previews hung between shelves.
+        for side in (-1,1):
+            self.wall(self.root,'Royal library gallery wall '+str(side),(side*38,4,-80),(1.5,54,140))
+            for z in (-140,-102,-64,-24):self.library_shelf(side*35,z,side)
+        for pos,ply,rotation in (((-37,4,-121),0,-90),((37,4,-121),.25,90),((-37,4,-45),.55,-90),((37,4,-45),.9,90)):
+            self.exhibit(pos,ply,rotation)
         entry=self.group('Entry - travel forward',pos=(0,0,-142))
         cps=[self.group('Checkpoint '+str(i),pos=(0,0,z)) for i,z in enumerate((-106,-80,-30),1)]
         end=self.group('Approach exit',pos=(0,0,-4));self.chessEntry=end
         route=[entry]+[self.group('Forward waypoint '+str(z),pos=(0,0,z)) for z in (-128,-106,-100,-84,-80,-76,-60,-49,-38,-30,-18)]+[end]
         def arr(name,objs):return '  '+name+':\n'+''.join('  - '+kit.ref(o['tr'])+'\n' for o in objs)
-        module=self.d.script(self.root,'CourseModule',kit.fields(courseId='"3-1-HQ"',displayName='"직선 작전실과 총지휘부"',entry=kit.ref(entry['tr']),exit=kit.ref(self.exit['tr']),minigameSlot=kit.ref(self.hq['tr']),targetSeconds=150,laneWidth=12)+arr('checkpoints',cps)+arr('route',route)+'  placementBounds:\n    m_Center: {x: 0, y: 20, z: 10}\n    m_Extent: {x: 162, y: 50, z: 162}\n')
+        module=self.d.script(self.root,'CourseModule',kit.fields(courseId='"3-1-HQ"',displayName='"왕의 서재와 거대 체스판"',entry=kit.ref(entry['tr']),exit=kit.ref(self.exit['tr']),minigameSlot=kit.ref(self.hq['tr']),targetSeconds=150,laneWidth=18)+arr('checkpoints',cps)+arr('route',route)+'  placementBounds:\n    m_Center: {x: 0, y: 20, z: 10}\n    m_Extent: {x: 162, y: 50, z: 162}\n')
         self.c.context(self.root);self.d.script(self.root,'PhysicsProfile',kit.fields(physicsRate=120,solverIterations=24))
         self.d.script(self.root,'GiantChessCourse',kit.fields(pawnPrefab='{fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}',tuning='{fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}',tileSize=16,replaySpeed=5,moveSeconds=3,warningSeconds=5,restSeconds=2,knockbackSpeed=12,upwardSpeed=9,botsEnabled=1,boardPreview=kit.ref(self.preview['go']),chessSpawnDepth=4))
         self.d.script(self.root,'GiantChessApproach',kit.fields(course=kit.ref(module),chessEntry=kit.ref(end['tr']))+'  transitionRoute: []\n')

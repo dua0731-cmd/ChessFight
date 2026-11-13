@@ -72,6 +72,8 @@ namespace ChessFight.RagdollLab
         {
             cameraRig = FindFirstObjectByType<LabCamera>();
             approach = GetComponent<GiantChessApproach>();
+            books = GetComponentsInChildren<ChessFight.ProtectKing.ClosingBook>();
+            foreach (var book in books) book.Crushed += BookCrush;
             if (approach != null) approach.ResetProgress();
             var data = Resources.Load<TextAsset>("GiantChessGames");
             if (!pawnPrefab || !tuning || !cameraRig || !data) { Debug.LogError("Giant chess requires pawn, tuning, camera and score.", this); enabled = false; return; }
@@ -193,8 +195,41 @@ namespace ChessFight.RagdollLab
             return root;
         }
         void ResetPlayers() { if (approach != null) approach.ResetProgress(); for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
+        readonly float[] bookRecovery = new float[12];
+        readonly Transform[] bookRecoveryPoints = new Transform[12];
+        readonly GameObject[] flattened = new GameObject[12];
+        ChessFight.ProtectKing.ClosingBook[] books;
+        void BookCrush(GameObject victim, Transform recovery, float delay)
+        {
+            int i = players.FindIndex(p => p.gameObject == victim);
+            if (i < 0 || bookRecovery[i] > 0) return;
+            var pawn = players[i]; pawn.SetInput(default); pawn.Teleport(pawn.Hips.position,pawn.Facing);
+            var flat = new GameObject("Flattened book victim");
+            flat.transform.position = pawn.Hips.position - Vector3.up * pawn.standHeight;
+            foreach (var mesh in pawn.GetComponentsInChildren<MeshFilter>())
+            {
+                var renderer = mesh.GetComponent<MeshRenderer>();
+                if (mesh.sharedMesh == null || renderer == null || !renderer.enabled) continue;
+                var part = new GameObject("Flattened body part"); part.transform.SetParent(flat.transform,false);
+                part.transform.position = mesh.transform.position; part.transform.rotation = mesh.transform.rotation;
+                part.transform.localScale = mesh.transform.lossyScale;
+                part.AddComponent<MeshFilter>().sharedMesh = mesh.sharedMesh;
+                part.AddComponent<MeshRenderer>().sharedMaterials = renderer.sharedMaterials;
+            }
+            flat.transform.localScale = new Vector3(1.4f,.1f,1.4f);
+            flat.transform.position += Vector3.up * .65f;
+            flattened[i] = flat; bookRecovery[i] = delay; bookRecoveryPoints[i] = recovery;
+            pawn.gameObject.SetActive(false);
+        }
+        void ClearBookCrush(int i)
+        {
+            bookRecovery[i] = 0; bookRecoveryPoints[i] = null;
+            if (flattened[i] != null) Destroy(flattened[i]); flattened[i] = null;
+            if (i < players.Count) players[i].gameObject.SetActive(true);
+        }
         void Place(int i)
         {
+            ClearBookCrush(i);
             bool onApproach = approach != null && approach.Available && !approach.Entered(i);
             Vector3 facing = onApproach ? approach.Facing(i) : transform.forward;
             players[i].SetInput(default);
@@ -269,11 +304,13 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.F3))
                 {
                     ChooseGame(); ResetBoard(); ResetPlayers();
+                    foreach (var book in books) book.ResetCycle();
                     foreach (var keyboard in GetComponentsInChildren<ChessFight.ProtectKing.TypewriterStairs>()) keyboard.NewRound();
                 }
                 if (Input.GetKeyDown(KeyCode.N) && running && (approach == null || !approach.Available || approach.ChessStarted)) elapsed = 1000; // Advance one phase, never skip a chess move.
             }
             bool active = running && !menu && Application.isFocused;
+            foreach (var book in books) book.Simulating = !menu && Application.isFocused;
             if (approach != null) approach.AdvanceTimer(!menu && Application.isFocused ? Time.deltaTime : 0);
             if (active && (approach == null || !approach.Available || approach.ChessStarted))
             {
@@ -306,6 +343,19 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i]; pawn.SetInput(default);
+                if (bookRecovery[i] > 0)
+                {
+                    if (!menu && Application.isFocused) bookRecovery[i] = Mathf.Max(0,bookRecovery[i]-Time.deltaTime);
+                    if (bookRecovery[i] <= 0)
+                    {
+                        var point = bookRecoveryPoints[i];
+                        ClearBookCrush(i);
+                        if (point != null) pawn.Teleport(point.TransformPoint(new Vector3((i%4-1.5f)*1.5f,pawn.standHeight+.1f,(i/4-1)*1.2f)),point.forward);
+                        else Place(i);
+                        if (approach != null) approach.RecoverRoute(i);
+                    }
+                    continue;
+                }
                 if (!pawn.IsFinite() || transform.InverseTransformPoint(pawn.Hips.position).y < -8) Place(i);
                 if (approach != null) approach.Observe(i, pawn);
                 var boardPosition = transform.InverseTransformPoint(pawn.Hips.position);
@@ -313,7 +363,7 @@ namespace ChessFight.RagdollLab
                 if (i != selected && active && botsEnabled && !finished[i]) DriveBot(i);
             }
             // Manual movement remains available after the last move and after crossing the finish.
-            if (!menu && Application.isFocused)
+            if (!menu && Application.isFocused && bookRecovery[selected] <= 0)
             {
                 var input = GameSettings.Move;
                 players[selected].SetInput(new PawnInput { move = Vector3.ClampMagnitude(cameraRig.FlatRight * input.x + cameraRig.FlatForward * input.y, 1), aim = cameraRig.AimForward,
@@ -355,17 +405,19 @@ namespace ChessFight.RagdollLab
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "기보 종료 · " + CurrentGame.result;
             int officeSeconds = approach != null ? Mathf.FloorToInt(approach.Elapsed(selected)) : 0;
             string stage = approach != null && approach.Available && !approach.Entered(selected)
-                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 전체 목표 2~3분"
-                : $"총지휘부 · 거인 체스 · 작전실 기록 {officeSeconds / 60}:{officeSeconds % 60:00}";
+                ? $"왕의 서재 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 전체 목표 2~3분"
+                : $"왕의 체스 탁자 · 거인 체스 · 서재 기록 {officeSeconds / 60}:{officeSeconds % 60:00}";
             string state = approach != null && approach.Available && !approach.ChessStarted
                 ? "체스판 입구 도착 대기"
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
             GUI.Label(new Rect(24, 20, 690, 175), $"{CurrentGame.Title}\n{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
             if (inOffices) GUI.Label(new Rect(24, 202, 690, 50),
-                "작전지도: 펼쳐질 때 전진 · 타자기: 힌트 1~5를 기억하고 각 단의 글자 선택\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
+                "왕의 서재: 책이 열렸을 때 전진 · 타자기: 힌트 1~5를 기억하고 각 단의 글자 선택\n책이 덮히면 납작해진 뒤 직전 지점 부활 · 액자: 후반 기보 예고", hud);
         }
         void OnDestroy()
         {
+            if (books != null) foreach (var book in books) if (book != null) book.Crushed -= BookCrush;
+            for (int i=0;i<players.Count;i++) if (flattened[i] != null) Destroy(flattened[i]);
             if (!initialized) return;
             Physics.gravity = savedGravity; Cursor.lockState = savedLock; Cursor.visible = savedCursor;
             foreach (var m in materials) if (m) Destroy(m);

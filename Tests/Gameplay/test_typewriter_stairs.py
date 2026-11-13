@@ -13,7 +13,7 @@ class TypewriterTests(unittest.TestCase):
     def test_actual_rules_and_footing(self):
         with tempfile.TemporaryDirectory() as temp:
             exe=str(Path(temp)/'Keys.exe')
-            subprocess.run(['mcs','-langversion:experimental','-out:'+exe,str(ROOT/'Assets/Scripts/Gameplay/ImportedObstacles/TypewriterStairs.cs'),str(ROOT/'Tests/Gameplay/Fixtures/TypewriterHarness.cs'),str(ROOT/'Assets/Scripts/Core/TypewriterMemory.cs'),str(ROOT/'Assets/Scripts/Gameplay/ImportedObstacles/TypewriterKey.cs'),str(ROOT/'Assets/Scripts/Gameplay/Obstacles/IJumpSpringSurface.cs')],check=True)
+            subprocess.run(['mcs','-langversion:experimental','-out:'+exe,str(ROOT/'Assets/Scripts/Gameplay/ImportedObstacles/TypewriterStairs.cs'),str(ROOT/'Tests/Gameplay/Fixtures/TypewriterHarness.cs'),str(ROOT/'Assets/Scripts/Core/TypewriterMemory.cs'),str(ROOT/'Assets/Scripts/Gameplay/ImportedObstacles/TypewriterKey.cs'),str(ROOT/'Assets/Scripts/Gameplay/Obstacles/IJumpSpringSurface.cs'),str(ROOT/'Assets/Scripts/Gameplay/ImportedObstacles/ClosingBook.cs')],check=True)
             subprocess.run(['mono',exe],check=True)
 
     def test_active_prefab_has_printed_document_and_reachable_safe_keys(self):
@@ -95,6 +95,6 @@ class TypewriterTests(unittest.TestCase):
             legs=[n for n in names if n.startswith(name+' carved leg ')]
             self.assertEqual(len(legs),4,name)
         for z in (-128,-92,-68):
-            floors=[name for name,lo,hi,moving in r.boxes if not moving and name!='Walkable parchment' and lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.1<hi[1]<.1]
+            floors=[name for name,lo,hi,moving in r.boxes if not moving and name not in ('Walkable parchment','Walkable book pages') and lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.1<hi[1]<.1]
             self.assertEqual(floors,[],(z,floors))
         self.assertFalse(any(n.startswith('Side room scenery floor') for n in names))
