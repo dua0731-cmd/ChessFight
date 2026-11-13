@@ -74,7 +74,9 @@ namespace ChessFight.Game
         // and stuttered for about 7 s and the 3, 2, 1 never showed ("지금 에디터에는 3 2 1 이 안나 오니까 전 처럼 하자"),
         // so it is after the countdown again, as before.
         const float CountGo = .5f;
-        public const float RevealShownSeconds = 12.2f + CountGo;
+        // In the screen's time: R625's versus scene (LoadingScreenView.Versus.cs) plays first, so every time above is
+        // RevealOffset later on screen.
+        public const float RevealShownSeconds = RevealOffset + 12.2f + CountGo;
 
         // ---- the stage (the sample's pixels) ----
 
@@ -220,6 +222,8 @@ namespace ChessFight.Game
             }
             // each number slams in from 2.1x over the squares, not under them
             revealCountNumber.BringToFront();
+            // R625: the versus scene, over everything until its panels gather into these
+            BuildVersus(s);
             WarmRevealClips();
         }
 
@@ -302,19 +306,38 @@ namespace ChessFight.Game
                     revealStage.style.scale = on ? new Scale(new Vector2(1.05f, 1.05f)) : new StyleScale(StyleKeyword.Null);
                 }
             }
-            if (!on) { StopRevealSound(); return; }
+            if (!on) { StopRevealSound(); ResetVersus(); return; }
             if (!revealSeedKnown || revealSeed != State.CourseSeed) FillReveal(State.CourseSeed);
             FitReveal();
+            // R625: `t` is the screen's time (the versus scene first), `r` the reveal's own (LoadingScreenView.Versus.cs)
+            // (the versus scene first: its panels are the roster the sound's cues are built from)
+            bool versusOn = SyncVersus(t);
             SyncRevealSound(t);
+            float r = RevealLocal(t);
 
             revealDim.style.opacity = Eo3(Ph(t, 0f, .2f));
-            revealTitle.style.opacity = t < TitleAt ? 0f : 1f;
-            revealTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(t, TitleAt, TitleSlide))), 0f);
+            // while the versus scene plays it moves the title in itself
+            if (!versusOn)
+            {
+                revealTitle.style.opacity = r < TitleAt ? 0f : 1f;
+                revealTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(r, TitleAt, TitleSlide))), 0f);
+            }
 
             var shake = Vector2.zero;
-            foreach (var p in revealPanels) shake += SyncPanel(p, t);
-            for (int k = 0; k < revealDots.Count; k++) revealDots[k].BarFill(Eo3(Ph(t, DotAt[k] - DotFill, DotFill)));
-            shake += SyncCount(t);
+            foreach (var p in revealPanels)
+            {
+                shake += SyncPanel(p, r, t);
+                if (versusOn) p.Root.style.opacity = 0f;
+            }
+            for (int k = 0; k < revealDots.Count; k++)
+            {
+                revealDots[k].BarFill(Eo3(Ph(r, DotAt[k] - DotFill, DotFill)));
+                // the squares come up once the versus panels have gathered
+                float up = Ph(t, VersusMerge + .25f + k * .03f, .1f);
+                revealDots[k].style.opacity = up;
+                revealDots[k].style.translate = new Translate(0f, 20f * (1f - Eo3(up)));
+            }
+            shake += SyncCount(r);
             revealShake.style.translate = new Translate(shake.x, shake.y);
 
             string sub = t >= RevealShownSeconds && !State.Matching && !string.IsNullOrEmpty(State.Step)
@@ -333,12 +356,14 @@ namespace ChessFight.Game
             revealBox.style.scale = new Scale(new Vector2(k, k));
         }
 
-        // One panel at `t`; returns its share of the screen's shake.
-        Vector2 SyncPanel(RevealPanel p, float t)
+        // One panel at the reveal's time `t` (`screen`: the screen's); returns its share of the screen's shake.
+        Vector2 SyncPanel(RevealPanel p, float t, float screen)
         {
             int i = p.Index, count = p.Names.Length;
             float a = PanelEnter[i], from = i % 2 == 1 ? 1f : -1f;
-            var settle = Shake(t - (a + PanelSlide), 5f, .14f, i);
+            // R625: no landing shake: the panels no longer slide in (the versus scene's gather into them), and `t` holds at
+            // RevealJoin, where it would have stood still mid-shake
+            var settle = Vector2.zero;
             int j = HopIndex(p.Hops, t), last = p.Hops.Length - 1;
             bool known = count > 0 && p.Pick >= 0;
             int shown = !known ? -1 : j >= 0 ? Mod(p.Pick - (last - j), count) : Mod(p.Pick + 1, count);
@@ -360,7 +385,9 @@ namespace ChessFight.Game
             string name = locked ? p.Names[p.Pick] : "? ? ?";
             if (p.Name.text != name) p.Name.text = name;
             p.Name.style.opacity = locked ? 1f : .4f;
-            p.Name.style.translate = new Translate(locked ? -50f * (1f - EoBack(Ph(age, .02f, .16f))) : 0f, 0f);
+            // R625: "? ? ?" slides in once the versus panels have gathered into this one
+            p.Name.style.translate = new Translate(locked ? -50f * (1f - EoBack(Ph(age, .02f, .16f)))
+                                                          : -380f * (1f - Eo3(Ph(screen, VersusMerge + .1f + i * .08f, .22f))), 0f);
 
             // R614 ("정해질 때 대각선 방향으로 흰색 효과가 나오는데 너무 빨리 돼"): the light slice crosses in SliceFor (was
             // .14 s), easing in and out, and fades over its last third
@@ -396,6 +423,8 @@ namespace ChessFight.Game
         {
             revealArt.Clear();
             if (revealVignette != null) Destroy(revealVignette);
+            // R625: the versus scene's 3D stage and its texture
+            DisposeVersus();
         }
 
         // ---- timing helpers (the sample's) ----
@@ -518,7 +547,13 @@ namespace ChessFight.Game
         {
             readonly float lean;
             Color fill;
-            Texture2D picture;
+            // R625: any texture (the versus scene's panels show its 3D stage's render texture), and optionally a part of it
+            // (pictureUv, in the texture's 0..1 with v up) stretched over the shape's box instead of cropped to cover it
+            Texture picture;
+            Rect pictureUv;
+            bool pictureUvSet;
+            float edgeWide;
+            Color edge;
             float bright = 1f;
             float bandTop = -1f;
             Color band;
@@ -545,12 +580,29 @@ namespace ChessFight.Game
                 MarkDirtyRepaint();
             }
 
-            public void Picture(Texture2D image, float brightness)
+            public void Picture(Texture image, float brightness)
             {
                 brightness = Mathf.Round(brightness * 200f) / 200f;
                 if (image == picture && brightness == bright) return;
                 picture = image;
                 bright = brightness;
+                MarkDirtyRepaint();
+            }
+
+            // R625: show only this part of the picture (0..1, v up), stretched over the shape's box.
+            public void PictureRegion(Rect uv)
+            {
+                if (pictureUvSet && uv == pictureUv) return;
+                pictureUv = uv;
+                pictureUvSet = true;
+                MarkDirtyRepaint();
+            }
+
+            // R625: a thin light line down the slanted left edge, `wide` px, as a bevel catching the light.
+            public void Edge(float wide, Color color)
+            {
+                edgeWide = wide;
+                edge = color;
                 MarkDirtyRepaint();
             }
 
@@ -606,7 +658,8 @@ namespace ChessFight.Game
                 Shape.Add(new Vector2(0f, h));
 
                 if (fill.a > 0f) Fan(context, Shape, fill, null, w, h);
-                if (picture != null) Fan(context, Shape, new Color(bright, bright, bright, 1f), picture, w, h);
+                if (picture != null && bright > 0f)
+                    Fan(context, Shape, new Color(bright, bright, bright, 1f), picture, w, h, pictureUvSet ? pictureUv : (Rect?)null);
                 if (bandTop >= 0f && band.a > 0f) Clipped(context, 0f, bandTop, w, h, 0f, band, w, h);
                 if (bar.a > 0f && barFill > 0f) Clipped(context, 0f, barTop, w * barFill, barTop + barTall, 0f, bar, w, h);
                 if (slice.a > 0f && sliceAlpha > 0f)
@@ -615,6 +668,8 @@ namespace ChessFight.Game
                     c.a *= sliceAlpha;
                     Clipped(context, sliceX, -sliceOver, sliceX + sliceWide, h + sliceOver, sliceLean, c, w, h);
                 }
+                // the left edge runs from (lean, 0) to (0, h): a band from lean / 2 skewed by -lean / h about its middle
+                if (edgeWide > 0f && edge.a > 0f) Clipped(context, lean / 2f, 0f, lean / 2f + edgeWide, h, -lean / h, edge, w, h);
             }
 
             // The rectangle (x0, y0)-(x1, y1), skewed by `skew` about its middle, cut to the shape and drawn.
@@ -646,8 +701,9 @@ namespace ChessFight.Game
 
             static float Side(Vector2 a, Vector2 b, Vector2 p) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
 
-            // A convex polygon (clockwise on screen) as a triangle fan; with a picture, cropped to cover w x h.
-            static void Fan(MeshGenerationContext context, List<Vector2> points, Color color, Texture2D image, float w, float h)
+            // A convex polygon (clockwise on screen) as a triangle fan; with a picture, cropped to cover w x h, or (`part`)
+            // that part of it stretched over w x h.
+            static void Fan(MeshGenerationContext context, List<Vector2> points, Color color, Texture image, float w, float h, Rect? part = null)
             {
                 int n = points.Count;
                 var mesh = context.Allocate(n, (n - 2) * 3, image);
@@ -666,7 +722,17 @@ namespace ChessFight.Game
                     var uv = Vector2.zero;
                     if (image != null)
                     {
-                        float u = .5f + (p.x / w - .5f) * su, v = .5f - (p.y / h - .5f) * sv;
+                        float u, v;
+                        if (part.HasValue)
+                        {
+                            u = part.Value.x + p.x / w * part.Value.width;
+                            v = part.Value.y + (1f - p.y / h) * part.Value.height;
+                        }
+                        else
+                        {
+                            u = .5f + (p.x / w - .5f) * su;
+                            v = .5f - (p.y / h - .5f) * sv;
+                        }
                         uv = new Vector2(region.x + u * region.width, region.y + v * region.height);
                     }
                     mesh.SetNextVertex(new Vertex { position = new Vector3(p.x, p.y, Vertex.nearZ), tint = tint, uv = uv });

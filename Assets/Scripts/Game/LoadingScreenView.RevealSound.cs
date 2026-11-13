@@ -28,6 +28,10 @@ namespace ChessFight.Game
     //                9.8 s, RevealMusicLoop one bar that follows it seamlessly and repeats (SoundC/bgm/bake.py), both
     //                put on the audio clock so the join is sample exact; it fades out with the screen. It follows the
     //                music volume, not the effects one. (R600 had D and R601 G, both cut dead on the 1.)
+    // R625: the versus scene (LoadingScreenView.Versus.cs) now plays first, and every time above is that much later
+    // (RevealOffset); its own cues reuse these clips: a light slam per player's panel, a tap as this PC's bar fills, the
+    // bolt as the blade lands, a steel clunk on VS, the title swipe as the reveal's title comes in, and the three panel
+    // slams as the versus panels gather into them.
     // Repeated hits keep one pitch (no rising scale). A cue found already past (a PC that joins the reveal late, or a
     // long freeze) starts part-way in so the rest still keeps time, or is left out when its hit is already gone.
     public sealed partial class LoadingScreenView
@@ -99,14 +103,30 @@ namespace ChessFight.Game
                 cues.Add(new RevealCue { Start = hit - lead / pitch, Hit = hit, Clip = c, Pitch = pitch, Gain = gain, Pan = pan, Click = click });
             }
 
+            // R625: cue times are the screen's: the versus scene's (LoadingScreenView.Versus.cs) as they are, the reveal's
+            // RevealOffset later. The reveal's own entrance (title swipe, panel slams) no longer plays: the versus scene's
+            // cues stand in for it, made of the same clips until 승규 님 has heard them.
+            const float O = RevealOffset;
+            // where a plate sliding in with EoBack first reaches its place
+            float backLands = 1f - BackPull / (BackPull + 1f);
             Add("RevealOpen", 0f, LeadSharp, .8f);
-            // the title first reaches its place where EoBack first reaches 1
-            Add("RevealTitle", TitleAt + TitleSlide * (1f - BackPull / (BackPull + 1f)), LeadTitle, .55f, StagePan(200f));
+            Add("RevealTitle", VTitleAt + VPlateSlide * backLands, LeadTitle, .55f, StagePan(200f));
+            foreach (var s in versusStrips)
+                Add("RevealSlam", s.At + StripDrop, LeadSlam, .32f, StagePan(s.X + s.W / 2f));
+            foreach (var s in versusStrips)
+                if (s.Me) Add("RevealDot", MeAt, LeadSharp, .5f, StagePan(s.X + s.W / 2f), 1f, true);
+            // the VS panel lands: the bolt and the steel clunk together (VsAt = BladeAt + BladeDrop)
+            Add("RevealLock", VsAt, LeadSharp, .7f);
+            Add("RevealCount", VsAt + .02f, LeadSharp, .85f);
+            float swapHalf = TitleSwap / 2f;
+            Add("RevealTitle", TitleSwapAt + swapHalf + swapHalf * backLands, LeadTitle, .5f, StagePan(200f));
+            foreach (var p in revealPanels)
+                Add("RevealSlam", VersusMerge, LeadSlam, .6f, StagePan(PanelLeft + p.Index * PanelStep + PanelWide / 2f));
+
             foreach (var p in revealPanels)
             {
                 int i = p.Index;
                 float pan = StagePan(PanelLeft + i * PanelStep + PanelWide / 2f);
-                Add("RevealSlam", PanelEnter[i] + PanelSlide, LeadSlam, .6f, pan);
                 if (p.Names.Length == 0 || p.Pick < 0) continue;
                 int last = p.Hops.Length - 1;
                 for (int j = 0; j < last; j++)
@@ -114,21 +134,21 @@ namespace ChessFight.Game
                     // fuller as the cuts slow down; three takes in turn, each a hair apart in pitch (never a rising run)
                     float slow = last > 1 ? j / (float)(last - 1) : 1f;
                     float wobble = ((j * 7 + i * 3) % 5 - 2) * .012f;
-                    Add("RevealTick" + (j + i) % RevealTicks, p.Hops[j], LeadSharp, .5f + .3f * slow * slow, pan * .9f, 1f + wobble, true);
+                    Add("RevealTick" + (j + i) % RevealTicks, O + p.Hops[j], LeadSharp, .5f + .3f * slow * slow, pan * .9f, 1f + wobble, true);
                 }
-                Add("RevealLock", RollLand[i], LeadSharp, .85f, pan * .8f);
+                Add("RevealLock", O + RollLand[i], LeadSharp, .85f, pan * .8f);
             }
             for (int k = 0; k < DotAt.Length && k < PawnRushSections.SlotCount; k++)
                 if (PawnRushSections.Kind[k] != PawnRushSections.KindMiniGame)
-                    Add("RevealDot", DotAt[k] - DotFill + .012f, LeadSharp, .4f, StagePan(DotLeft + k * DotStep + DotWide / 2f), 1f, true);
-            Add("RevealCountIn", CountAt[0] - CountIn, LeadCountIn, .5f);
+                    Add("RevealDot", O + DotAt[k] - DotFill + .012f, LeadSharp, .4f, StagePan(DotLeft + k * DotStep + DotWide / 2f), 1f, true);
+            Add("RevealCountIn", O + CountAt[0] - CountIn, LeadCountIn, .5f);
             // the drone's hit is its end, on the 1, so it starts its own length before (from the number's first showing)
             var bed = RevealClip("RevealCountBed");
-            if (bed != null) Add("RevealCountBed", CountAt[CountAt.Length - 1], bed.length, .32f);
+            if (bed != null) Add("RevealCountBed", O + CountAt[CountAt.Length - 1], bed.length, .32f);
             for (int q = 0; q < CountAt.Length; q++)
             {
                 bool last = q == CountAt.Length - 1;
-                Add(last ? "RevealCountLast" : "RevealCount", CountAt[q], LeadSharp, last ? 1f : .9f);
+                Add(last ? "RevealCountLast" : "RevealCount", O + CountAt[q], LeadSharp, last ? 1f : .9f);
             }
             cues.Sort((a, b) => a.Start.CompareTo(b.Start));
             revealCues = cues;

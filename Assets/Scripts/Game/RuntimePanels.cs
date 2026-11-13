@@ -72,6 +72,11 @@ namespace ChessFight.Game
             element.style.unityFontStyleAndWeight = FontStyle.Normal;
         }
 
+        // R625: editor captures only (PawnRushEditor/VersusSceneCapture): while set, a panel made here draws into this texture
+        // instead of the screen (batch mode has no screen). Set before the panel is made: a panel that already draws to
+        // the screen does not move to a texture set afterwards.
+        public static RenderTexture CaptureTarget;
+
         public static VisualElement Create(GameObject host, VisualTreeAsset layout, ThemeStyleSheet theme,
                                            PanelSettings settings, Vector2Int referenceResolution, out PanelSettings owned)
         {
@@ -83,6 +88,12 @@ namespace ChessFight.Game
                 settings = owned = ScriptableObject.CreateInstance<PanelSettings>();
                 settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
                 settings.referenceResolution = referenceResolution;
+                if (CaptureTarget != null)
+                {
+                    settings.targetTexture = CaptureTarget;
+                    settings.clearColor = true;
+                    settings.colorClearValue = Color.black;
+                }
                 // A PanelSettings without a theme renders nothing at all, so say so
                 // loudly rather than leaving an invisible HUD to explain.
                 if (theme != null) settings.themeStyleSheet = theme;
