@@ -213,6 +213,18 @@ namespace ChessFight.RagdollLab
             sword.Authority = true;
             sword.LocalId = 1;
             sword.LeaveMatch = null;
+            if (RealMatch)
+            {
+                // A lobby match is leaving this scene, not returning to an offline test round.
+                // Keep its old pick HUD and simulation off until NetworkRuntime loads the lobby.
+                sword.UiWantsCursor = false;
+                sword.PieceRequest = null;
+                if (sword.Match != null) sword.Match.enabled = false;
+                sword.enabled = false;
+                ResetStream();
+                if (Trace) Log("sword match off; returning to lobby");
+                return;
+            }
             if (sword.Match != null) { sword.Match.PresetPicks = null; sword.Match.StartHeld = null; }
             sword.ResetRound();
             sword.SpawnOffline();

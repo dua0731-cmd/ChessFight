@@ -126,13 +126,13 @@ namespace ChessFight.Game
 
         // ① found
         VisualElement foundGroup;
-        RSlant foundTitle;
+        VisualElement foundTitle;
         Label foundSub, foundVs;
         readonly List<RSlant> foundSquares = new List<RSlant>();
         readonly List<NamePlate>[] foundPlates = { new List<NamePlate>(), new List<NamePlate>() };
         // ② pick
-        VisualElement pickGroup, pickConfirm;
-        RSlant pickTitle, pickTimer;
+        VisualElement pickGroup, pickConfirm, pickTitle;
+        RSlant pickTimer;
         Label pickClock, pickHint;
         readonly List<PickCard> pickCards = new List<PickCard>();
         readonly List<Chip> pickChips = new List<Chip>();
@@ -144,7 +144,7 @@ namespace ChessFight.Game
         // ④ clash
         VisualElement clashGroup, clashShake, clashFlash;
         SwordPoly clashLeft, clashRight, clashSlash;
-        RSlant clashTitle;
+        VisualElement clashTitle;
         Label clashVs, clashSub;
         readonly List<VisualElement>[] clashFigures = { new List<VisualElement>(), new List<VisualElement>() };
         readonly List<VisualElement> clashShards = new List<VisualElement>();
@@ -240,9 +240,9 @@ namespace ChessFight.Game
         void BuildFound(VisualElement box)
         {
             foundGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            foundTitle = TitlePlate(foundGroup, "매칭 완료!", 330f);
+            foundTitle = BuildMatchAnnouncement(foundGroup, "소드 파이트", 26f, 48f);
             foundSub = Left(RLabel(foundGroup, "", 16f, InkSoft, false));
-            RPlace(foundSub, 66f, 104f, 900f, 24f);
+            RPlace(foundSub, 66f, 144f, 900f, 24f);
             var ours = Bold(Left(RLabel(foundGroup, "우리 팀", 14f, UsLight, false)));
             RPlace(ours, 90f, 196f, 300f, 22f);
             var theirs = Bold(Right(RLabel(foundGroup, "상대 팀", 14f, ThemLight, false)));
@@ -281,7 +281,7 @@ namespace ChessFight.Game
         void BuildPick(VisualElement box)
         {
             pickGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            pickTitle = TitlePlate(pickGroup, "기물을 선택하십시오", 430f);
+            pickTitle = BuildMatchAnnouncement(pickGroup, "소드 파이트", 16f, 40f, true, "기물을 선택하십시오", "");
             var sub = Left(RLabel(pickGroup, "팀원끼리 같은 기물은 못 골라요 · 상대 팀 기물은 경기 시작 직전에 공개", 16f, InkSoft, false));
             RPlace(sub, 66f, 104f, 900f, 24f);
             pickClock = Right(RLabel(pickGroup, "15", 56f, Ivory, false));
@@ -347,11 +347,37 @@ namespace ChessFight.Game
 
             pickConfirm = RBox(pickGroup, StageWide - RowMargin - 210f, 574f, 210f, 52f);
             pickConfirm.pickingMode = PickingMode.Position;
-            var button = new RSlant(12f, Brass);
-            RPlace(button, 0f, 0f, 210f, 52f);
-            pickConfirm.Add(button);
-            var press = Bold(RLabel(pickConfirm, "확정  Space", 18f, Ebony, false));
-            RPlace(press, 0f, 0f, 210f, 52f);
+            var shadow = RBox(pickConfirm, 2f, 4f, 206f, 50f);
+            shadow.style.backgroundColor = new Color(0f, 0f, 0f, .35f);
+            shadow.style.borderTopLeftRadius = shadow.style.borderTopRightRadius =
+                shadow.style.borderBottomLeftRadius = shadow.style.borderBottomRightRadius = 8f;
+            var button = RBox(pickConfirm, 0f, 0f, 210f, 52f);
+            button.name = "pick-confirm-face";
+            button.style.backgroundColor = MenuArt.Hex(0x25221e);
+            button.style.borderTopLeftRadius = button.style.borderTopRightRadius =
+                button.style.borderBottomLeftRadius = button.style.borderBottomRightRadius = 8f;
+            button.style.borderTopWidth = button.style.borderRightWidth = button.style.borderBottomWidth = button.style.borderLeftWidth = 1f;
+            var rim = new Color(Ivory.r, Ivory.g, Ivory.b, .18f);
+            button.style.borderTopColor = button.style.borderRightColor = button.style.borderBottomColor = button.style.borderLeftColor = rim;
+            var press = Left(RLabel(button, "확정", 22f, Ivory, true));
+            RPlace(press, 22f, 0f, 84f, 52f);
+            var key = RBox(button, 126f, 12f, 64f, 28f);
+            key.style.backgroundColor = new Color(Ivory.r, Ivory.g, Ivory.b, .07f);
+            key.style.borderTopLeftRadius = key.style.borderTopRightRadius =
+                key.style.borderBottomLeftRadius = key.style.borderBottomRightRadius = 5f;
+            var shortcut = RLabel(key, "SPACE", 12f, InkSoft, false);
+            shortcut.style.letterSpacing = 1.2f;
+            RPlace(shortcut, 0f, 0f, 64f, 28f);
+            pickConfirm.RegisterCallback<PointerEnterEvent>(e =>
+            {
+                button.style.backgroundColor = MenuArt.Hex(0x34302a);
+                button.style.translate = new Translate(0f, -1f);
+            });
+            pickConfirm.RegisterCallback<PointerLeaveEvent>(e =>
+            {
+                button.style.backgroundColor = MenuArt.Hex(0x25221e);
+                button.style.translate = new Translate(0f, 0f);
+            });
             pickConfirm.RegisterCallback<PointerDownEvent>(e =>
             {
                 if (e.button == 0 && swordMarked.HasValue) ConfirmPiece(swordMarked.Value);
@@ -428,11 +454,7 @@ namespace ChessFight.Game
             }
             clashVs = BigVs(clashShake, 250f);
             clashCoat = TextCoat.Apply(clashVs, StageWide, 200f, VsGloss, VsGlint, VsFrom, VsTo);
-            clashTitle = new RSlant(14f, Ivory);
-            RPlace(clashTitle, 450f, 520f, 380f, 70f);
-            var title = RLabel(clashTitle, "결투 준비 완료!", 42f, Ebony, true);
-            RPlace(title, 0f, 0f, 380f, 70f);
-            clashShake.Add(clashTitle);
+            clashTitle = BuildMatchAnnouncement(clashShake, "소드 파이트", 508f, 40f);
             clashSub = RLabel(clashGroup, "", 15f, InkSoft, false);
             RPlace(clashSub, 0f, 684f, StageWide, 24f);
         }
@@ -524,7 +546,7 @@ namespace ChessFight.Game
 
         void SyncFound(float t)
         {
-            foundTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(t, .1f, .24f))), 0f);
+            SyncMatchAnnouncement(foundTitle, t - .1f);
             Text(foundSub, "소드 파이트 · " + Mathf.Max(1, sideUs.Count) + " VS " + Mathf.Max(1, sideThem.Count) + " · 떨어뜨리고 빼앗기");
             for (int side = 0; side < 2; side++)
             {
@@ -556,7 +578,7 @@ namespace ChessFight.Game
 
         void SyncPick(float t, float since)
         {
-            pickTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(t, 0f, .24f))), 0f);
+            SyncMatchAnnouncement(pickTitle, t);
             double left = SwordPickDraft.Left(since);
             Text(pickClock, Mathf.CeilToInt((float)left).ToString());
             pickTimer.BarFill((float)(left / SwordPickDraft.PickSeconds));
@@ -752,8 +774,7 @@ namespace ChessFight.Game
             float scale = 1f + 2.2f * (1f - Eo3(vs));
             clashVs.style.scale = new Scale(new Vector2(scale, scale));
             clashCoat.Sync(c - (ClashVsAt + .35f));
-            clashTitle.style.opacity = Ph(c, ClashTitleAt, .1f);
-            clashTitle.style.translate = new Translate(0f, -120f * (1f - EoBack(Ph(c, ClashTitleAt, .25f))));
+            SyncMatchAnnouncement(clashTitle, c - ClashTitleAt);
             var shake = Shake(hit, 14f, .25f, 3);
             clashShake.style.translate = new Translate(shake.x, shake.y);
             Text(clashSub, c >= ClashSeconds && !string.IsNullOrEmpty(State.Step) ? State.Step + "  ·  " + State.Percent + "%" : "");
