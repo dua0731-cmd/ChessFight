@@ -23,7 +23,7 @@
 
 | 명세 | 구현 |
 |---|---|
-| §4 상태 기계 | `Core/SwordMatch.cs` `SwordMatchRules`: Pick 15초 → Countdown 3초 → Playing 4:00 / 10점 → SuddenDeath(다음 1점, 60초 넘으면 무승부) → Result. 방장만 진행, 수치는 `SwordMatchSettings` 한 곳 |
+| §4 상태 기계 | (R624) **로비 경기는 입장 화면에서 기물을 고른다**(`Game/LoadingScreenView.SwordPick.cs`: ① 매칭 완료 3초 → ② 기물을 선택하십시오 15초 → ③ 우리 팀이 선택한 기물 3초 → ④ A 갈라지는 결투 3.5초, Core `SwordPickDraft`, [P50](../../Project/DECISIONS.md)) — 씬의 Pick은 공유 시작 시각까지 멈췄다가 그 기물로 바로 Countdown(`SwordFightMatch.PresetPicks`), 아래 카드는 오프라인 · 랩 · 스킬 시험 장면에서만. `Core/SwordMatch.cs` `SwordMatchRules`: Pick 15초 → Countdown 3초 → Playing 4:00 / 10점 → SuddenDeath(다음 1점, 60초 넘으면 무승부) → Result. 방장만 진행, 수치는 `SwordMatchSettings` 한 곳 |
 | §5 경기장 | 판 8×8, 칸 2 m(한 팀 4명 이상이면 2.5 m) — 씬의 바닥 상자를 Play 때 키우고 `ChessFight/Skill Ground` 체스판 셰이더를 입힘(`SwordFightMatch.Board.cs`). 출발 칸 = 1·2랭크(흑 7·8) 가운데부터 한 명씩(`SwordBoard.StartCell`). 부활 칸 = 2·3랭크, 1.2 m 비어 있고 가장 가까운 적이 가장 먼 칸(`ChooseSpawn`) |
 | §6 조작 | F 기물 스킬(조준형은 좌클릭 발동, 우클릭/F 취소), E 가장자리 스킬, 좌클릭 클릭 베기. 고르기 화면에서 1~5·클릭 |
 | §7.1 칼 | 기존 클릭 베기 그대로(README 값). 판정은 기존 칼 캡슐(명세의 "원뿔 ±45°·1.45 m"와 모양이 다름 → §5 미정) |

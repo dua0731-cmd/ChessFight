@@ -517,7 +517,7 @@ namespace ChessFight.Game
         sealed class RSlant : VisualElement
         {
             readonly float lean;
-            readonly Color fill;
+            Color fill;
             Texture2D picture;
             float bright = 1f;
             float bandTop = -1f;
@@ -535,6 +535,14 @@ namespace ChessFight.Game
                 this.fill = fill;
                 pickingMode = PickingMode.Ignore;
                 generateVisualContent += Draw;
+            }
+
+            // R624: the Sword Fight pick cards change colour with their state (free, marked, mine, taken).
+            public void SetFill(Color color)
+            {
+                if (color == fill) return;
+                fill = color;
+                MarkDirtyRepaint();
             }
 
             public void Picture(Texture2D image, float brightness)

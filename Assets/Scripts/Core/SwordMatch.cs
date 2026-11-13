@@ -142,6 +142,17 @@ namespace ChessFight.Network
             return true;
         }
 
+        /// <summary>R624: the piece this fighter was given on the entrance screen (SwordPickDraft.Final), whoever else on
+        /// its side holds it (a sixth player doubles one up). Only while the pick is open.</summary>
+        public bool Assign(ulong id, PieceKind piece)
+        {
+            Fighter f = Get(id);
+            if (f == null || Phase != SwordPhase.Pick || Array.IndexOf(Pickable, piece) < 0) return false;
+            f.Piece = piece;
+            f.Picked = true;
+            return true;
+        }
+
         /// <summary>Everyone still without a piece gets one of the pieces left on their side, at random.</summary>
         public void PickRest()
         {

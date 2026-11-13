@@ -13,6 +13,9 @@ public static class NetworkCoreTests
     // tests on Linux (Tools/run-tests-linux.sh), cannot parse local functions.
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
+    // R624: one player's pick on the entrance screen.
+    static SwordPickDraft.Entry Pick(ulong id, int team, PieceKind piece, double at, bool bot = false) =>
+        new SwordPickDraft.Entry { Id = id, Team = team, Piece = piece, At = at, Bot = bot };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
@@ -2797,6 +2800,59 @@ public static class NetworkCoreTests
                 // Two turrets take turns, one fires every time.
                 for (long n = -20; n < 20; n++)
                     Check(TurretVolleys.Turret(3, n, 2) != TurretVolleys.Turret(3, n + 1, 2) && TurretVolleys.Turret(3, n, 1) == 0, "two take turns"); });
+            Test("R624 sword pick on the entrance screen: the earlier pick keeps a piece, the close draws the rest, the same on every PC", () => {
+                // The member data's text, both ways; a broken or unpickable one is no pick.
+                PieceKind kind; double at;
+                Check(SwordPickDraft.Decode(SwordPickDraft.Encode(PieceKind.Queen, 1794508000.125), out kind, out at) && kind == PieceKind.Queen && at == 1794508000.125, "the pick's text round trip");
+                foreach (var bad in new[] { "", "x", "1,", ",5", "0,10", "9,10", "2,abc", "2,NaN" })
+                    Check(!SwordPickDraft.Decode(bad, out kind, out at) && kind == PieceKind.Pawn, "not a pick: '" + bad + "'");
+                const double begun = 1000;
+                // Two teammates on the queen: the earlier keeps it; the same moment: the lower id. The other side may take it too.
+                var picks = new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.Queen, begun + 5.2), Pick(2, 0, PieceKind.Queen, begun + 5.1),
+                                                             Pick(3, 1, PieceKind.Queen, begun + 9), Pick(4, 0, PieceKind.Rook, begun + 6), Pick(5, 0, PieceKind.Pawn, 0) };
+                var held = SwordPickDraft.Resolve(picks, begun);
+                Check(held[2] == PieceKind.Queen && !held.ContainsKey(1) && held[3] == PieceKind.Queen && held[4] == PieceKind.Rook && !held.ContainsKey(5), "earlier keeps it");
+                picks[0] = Pick(1, 0, PieceKind.Queen, begun + 5.1);
+                held = SwordPickDraft.Resolve(picks, begun);
+                Check(held[1] == PieceKind.Queen && !held.ContainsKey(2), "a tie goes to the lower id");
+                // A pick left over from an earlier round in the same room does not count, nor a bot's.
+                held = SwordPickDraft.Resolve(new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.King, begun - 30), Pick(2, 0, PieceKind.King, begun + 1, true) }, begun);
+                Check(held.Count == 0, "stale or bot picks count for nothing");
+                // Every human holds a piece: the picks close early; the stages from the host's start.
+                var all = new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.King, begun + 4), Pick(2, 1, PieceKind.Rook, begun + 4), Pick(9, 0, PieceKind.Pawn, 0, true) };
+                Check(SwordPickDraft.AllPicked(all, begun) && !SwordPickDraft.AllPicked(picks, begun), "all picked counts humans only");
+                Check(SwordPickDraft.StageAt(0, false) == SwordPickDraft.Stage.Found && SwordPickDraft.StageAt(4.99, true) == SwordPickDraft.Stage.Found
+                      && SwordPickDraft.StageAt(5, false) == SwordPickDraft.Stage.Picking && SwordPickDraft.StageAt(19.9, false) == SwordPickDraft.Stage.Picking
+                      && SwordPickDraft.StageAt(5, true) == SwordPickDraft.Stage.Closed && SwordPickDraft.StageAt(20, false) == SwordPickDraft.Stage.Closed, "found 5 s, cards 15 s");
+                Check(SwordPickDraft.Left(0) == 15 && SwordPickDraft.Left(12) == 8 && SwordPickDraft.Left(30) == 0, "seconds left on the cards");
+                // The close: picks kept, everyone else one of their side's pieces left, the same draw for the same room.
+                foreach (int seed in new[] { SwordPickDraft.Seed(109775240000000001UL), SwordPickDraft.Seed(2), 7 })
+                    for (int size = 1; size <= 6; size++)
+                    {
+                        var room = new List<SwordPickDraft.Entry>();
+                        for (int i = 0; i < size; i++)
+                        {
+                            room.Add(Pick((ulong)(10 + i), 0, i == 0 ? PieceKind.Knight : PieceKind.Pawn, i == 0 ? begun + 3 : 0));
+                            room.Add(Pick((ulong)(20 + i), 1, PieceKind.Pawn, 0, i % 2 == 1));
+                        }
+                        var final = SwordPickDraft.Final(room, begun, seed);
+                        Check(final.Count == room.Count && final[10] == PieceKind.Knight, "everyone gets a piece, the pick kept");
+                        foreach (int team in new[] { 0, 1 })
+                        {
+                            var pieces = room.Where(e => e.Team == team).Select(e => final[e.Id]).ToList();
+                            Check(pieces.All(p => SwordMatchRules.Pickable.Contains(p)), "a pickable piece");
+                            Check(pieces.Distinct().Count() == Math.Min(5, pieces.Count), "no piece twice on a side while five go round: " + string.Join(",", pieces));
+                        }
+                        var again = SwordPickDraft.Final(room.AsEnumerable().Reverse().ToList(), begun, seed);
+                        Check(room.All(e => again[e.Id] == final[e.Id]), "the same draw on every PC, whatever order it reads the room in");
+                    }
+                // The scene's rules take the draw: a sixth player may double a piece up.
+                var rules = new SwordMatchRules(5);
+                rules.Add(1, 0); rules.Add(2, 0);
+                Check(rules.Assign(1, PieceKind.Queen) && rules.Assign(2, PieceKind.Queen) && !rules.Assign(3, PieceKind.King) && !rules.Assign(1, PieceKind.Pawn), "assign within the pick");
+                Check(rules.AllPicked && rules.Advance(.02) && rules.Phase == SwordPhase.Countdown, "all assigned: straight to 3, 2, 1");
+                Check(!rules.Assign(1, PieceKind.King), "no assigning after the pick");
+                Check(SwordSkillNames.Skill(PieceKind.Queen) == "꼬치 베기" && SwordSkillNames.Edge(PieceKind.Knight) == "벼랑 끝 역전", "skill names"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

@@ -95,6 +95,8 @@ namespace ChessFight.Game
                 view.State.CourseKnown = session.Match != 0;
                 view.State.CourseSeed = PawnRushSections.MatchSeed(session.Match);
                 view.State.Reveal = RevealTime(session);
+                // R624: Sword Fight's found / pick / team / clash screens (not for a player coming back into a running match)
+                view.State.SwordPick = content.SwordPick && !revealSkip;
             }
 
             session.ReportLoading(0);
@@ -131,6 +133,8 @@ namespace ChessFight.Game
                 // R533: the manager's buttons on a player's card, with that player's id (LoadingState.Keys).
                 screen.GiveRequested += id => runtime.Session.GiveManager(id);
                 screen.KickRequested += id => runtime.Session.Kick(id);
+                // R624: a Sword Fight piece card confirmed on this screen
+                screen.SwordPickRequested += piece => runtime.Session.PickSword(piece);
                 return screen;
             }
             catch (Exception e)
@@ -301,8 +305,10 @@ namespace ChessFight.Game
                     if (load.progress >= .9f && loadedAt < 0) loadedAt = now;
                     // R548: the scene switches on only once Pawn Rush's course reveal has been seen: switching on freezes
                     // the frame (R551: the reels would stop mid-roll), and this PC is not ready before, so nor is the start.
-                    bool revealing = view != null && view.RevealHolding;
-                    step = revealing && load.progress >= .9f ? "이번 판 코스 공개 중" : "코스를 불러오는 중";
+                    // R624: so do Sword Fight's pick, our team's pieces and the clash (the cards must stay clickable).
+                    bool picking = view != null && view.SwordHolding;
+                    bool revealing = view != null && (view.RevealHolding || picking);
+                    step = picking ? "경기장을 불러오는 중" : revealing && load.progress >= .9f ? "이번 판 코스 공개 중" : "코스를 불러오는 중";
                     // A match that ended meanwhile still has to finish this load (Unity
                     // cannot abandon one); NetworkRuntime then heads back to the lobby.
                     if ((load.progress >= .9f && now - shownAt >= MinimumShow && !revealing) || session.Match == 0)
@@ -348,6 +354,26 @@ namespace ChessFight.Game
             state.Clear();
             foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
                 Add(state, session, p.Id, p.Team, session.LoadPercent(p.Id) >= MatchStart.Ready);
+            if (state.SwordPick) FillSwordPicks(state, session);
+        }
+
+        // R624: each player's Sword Fight piece for the entrance screen (State.Keys order): the picks held while the cards
+        // are open, everyone's (the leftovers drawn, PickAuto) once they close - the draw the scene's host starts with.
+        static void FillSwordPicks(LoadingState state, SteamSession session)
+        {
+            var entries = session.SwordPickEntries();
+            double begun = session.BegunAt;
+            var held = SwordPickDraft.Resolve(entries, begun);
+            state.SwordAllPicked = SwordPickDraft.AllPicked(entries, begun);
+            bool closed = SwordPickDraft.StageAt(state.Reveal, state.SwordAllPicked) == SwordPickDraft.Stage.Closed;
+            var shown = closed ? SwordPickDraft.Final(entries, begun, SwordPickDraft.Seed(session.Match)) : held;
+            state.Picks.Clear();
+            state.PickAuto.Clear();
+            foreach (ulong id in state.Keys)
+            {
+                state.Picks.Add(shown.TryGetValue(id, out var piece) ? piece : PieceKind.Pawn);
+                state.PickAuto.Add(closed && !held.ContainsKey(id));
+            }
         }
 
         // R548: how far into Pawn Rush's course reveal this PC is, counted from the shared-clock moment the host started

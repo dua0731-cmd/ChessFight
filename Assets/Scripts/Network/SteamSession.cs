@@ -115,7 +115,10 @@ namespace ChessFight.Network
         //      beyond the great door, a PushGate whose progress rides in the course state (two more bytes of the
         //      sections' parts) with a second checkpoint behind it. A v37 PC would draw other shots, end the round on
         //      the star platform and read the parts' bytes two short.
-        public const string Protocol = "chessfight.dua0731.network.v38";
+        // v39 (R624): Sword Fight's pieces are picked on the entrance screen before the scene (member data "pick",
+        //      SwordPickDraft) and the scene's host starts with them, holding the pick until the shared start. A v38 host
+        //      would open its own 15 s pick in the scene over picks already made.
+        public const string Protocol = "chessfight.dua0731.network.v39";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -318,6 +321,42 @@ namespace ChessFight.Network
         // R548: the shared-clock time the host started the match (StartNow), 0 until then: every PC's entrance screen plays
         // Pawn Rush's course reveal from it, so all show the same beat at the same moment.
         public double BegunAt => MatchStart.ParseTime(Data(Match, "begun"));
+        // ---- Sword Fight's pick on the entrance screen (R624, SwordPickDraft) ----
+        // A started Sword Fight match: its entrance screen shows "매칭 완료!" and the piece cards from BegunAt.
+        public bool SwordPicking => Match != 0 && Started && MatchMode != null && MatchMode.Key == GameModes.SwordFight.Key;
+        // This player's pick, as member data "pick" ("<piece>,<shared time>"): each player writes only its own, so it
+        // survives a change of host. Picking again (after a teammate took the piece first) writes over it.
+        public void PickSword(PieceKind piece)
+        {
+            if (!SwordPicking || !SwordPickDraft.Pickable(piece)) return;
+            string text = SwordPickDraft.Encode(piece, SharedNow());
+            ownPick = text; ownPickMatch = Match;
+            SteamMatchmaking.SetLobbyMemberData(Id(Match), "pick", text);
+        }
+        string ownPick = "";
+        ulong ownPickMatch;
+        // Everyone in the match with the pick each has written (bots none: they are drawn at the close), by id.
+        public List<SwordPickDraft.Entry> SwordPickEntries()
+        {
+            var list = new List<SwordPickDraft.Entry>();
+            foreach (var p in Roster.Values.OrderBy(p => p.Id))
+            {
+                var e = new SwordPickDraft.Entry { Id = p.Id, Team = p.Team, Bot = BotIdentity.IsBot(p.Id) };
+                if (!e.Bot)
+                {
+                    string text = MemberData(Match, p.Id, "pick");
+                    // Our own write reads back at once here, whatever Steam's cache does meanwhile.
+                    if (p.Id == Self && ownPickMatch == Match && ownPick != "") text = ownPick;
+                    PieceKind piece; double at;
+                    if (SwordPickDraft.Decode(text, out piece, out at)) { e.Piece = piece; e.At = at; }
+                }
+                list.Add(e);
+            }
+            return list;
+        }
+        // Everyone's piece once the picks have closed: what the scene's host starts the match with (SwordFightMatch).
+        public Dictionary<ulong, PieceKind> SwordPicksFinal() =>
+            SwordPickDraft.Final(SwordPickEntries(), BegunAt, SwordPickDraft.Seed(Match));
         // R543: the size the teams started the match with, the larger of the two (the room's "seats", written at the
         // start before "playing": every PC in the match reads the same number, and a player who comes back reads it
         // again). The Pawn Rush mini-games are scaled to it (MiniGameScale). While the room does not say - a start

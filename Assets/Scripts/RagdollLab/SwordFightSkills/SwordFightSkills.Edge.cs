@@ -135,15 +135,8 @@ namespace ChessFight.RagdollLab
         bool edgeDown;
         bool? holdOverride;
 
-        public static string EdgeName(PieceKind kind) => kind switch
-        {
-            PieceKind.King => "왕의 귀환",
-            PieceKind.Queen => "체크메이트 일섬",
-            PieceKind.Rook => "성벽 붕괴",
-            PieceKind.Bishop => "대각선 미끄럼",
-            PieceKind.Knight => "벼랑 끝 역전",
-            _ => "(폰은 스킬 없음)",
-        };
+        // R624: from Core (SwordSkillNames), shared with the entrance screen's pick cards.
+        public static string EdgeName(PieceKind kind) => SwordSkillNames.Edge(kind);
 
         // ---------------------------------------------------------------- the step
 

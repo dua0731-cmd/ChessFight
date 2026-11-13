@@ -54,6 +54,17 @@ namespace ChessFight.RagdollLab
         public float Remaining => view.Phase == SwordPhase.Pick || view.Phase == SwordPhase.Countdown ? (float)settings.Duration
             : Mathf.Max(0f, (float)(settings.Duration - Clock));
         bool Authority => game != null && game.Authority && rules != null;
+
+        /// <summary>R624: in a lobby match the pieces were picked on the entrance screen (SwordPickDraft, set by
+        /// LabNetLink.Sword): the host holds the pick until the shared start (<see cref="StartHeld"/>), then gives every
+        /// fighter its piece and goes straight to 3·2·1. The scene's pick cards never show then. Null offline and in the
+        /// lab rooms: the scene's own 15 s pick runs as before.</summary>
+        public System.Func<Dictionary<ulong, PieceKind>> PresetPicks;
+        public System.Func<bool> StartHeld;
+        bool PicksBefore => PresetPicks != null;
+        // When the held pick began (realtime, -1 not yet): a start that never comes stops holding after MaxHold.
+        float heldSince = -1f;
+        const float MaxHold = 90f;
         static bool Live(SwordPhase p) => p == SwordPhase.Playing || p == SwordPhase.SuddenDeath;
 
         void Awake()
@@ -100,6 +111,7 @@ namespace ChessFight.RagdollLab
             rules = new SwordMatchRules(Random.Range(1, int.MaxValue), settings);
             view = rules.State();
             overReported = false;
+            heldSince = -1f;
             ResetBoard();
         }
 
@@ -188,8 +200,8 @@ namespace ChessFight.RagdollLab
             if (Authority) view = HostView();
             var phase = view.Phase;
             SwordFightGame.InputLocked = phase == SwordPhase.Pick || phase == SwordPhase.Countdown || phase == SwordPhase.Result;
-            // The pick and the result want the mouse for their buttons.
-            game.UiWantsCursor = phase == SwordPhase.Pick || phase == SwordPhase.Result;
+            // The pick and the result want the mouse for their buttons (R624: not a pick made on the entrance screen).
+            game.UiWantsCursor = (phase == SwordPhase.Pick && !PicksBefore) || phase == SwordPhase.Result;
 
             var me = game.Local;
             if (me != null && me.Skills != null)
@@ -206,7 +218,7 @@ namespace ChessFight.RagdollLab
                 // R236: the bishop picks his diagonal while E is held (let go: he goes).
                 if (!LabNetLink.SwordClient) me.Skills.HoldEdge(game.KeysFree && !SwordFightGame.InputLocked && GameSettings.Held(GameKey.Skill));
             }
-            if (phase == SwordPhase.Pick) PickKeys();
+            if (phase == SwordPhase.Pick && !PicksBefore) PickKeys();
             DevKeys();
             if (slowing && Time.realtimeSinceStartup >= slowUntil) { Time.timeScale = 1f; slowing = false; }
             StepBoard(Clock, view.Seed);
@@ -232,8 +244,16 @@ namespace ChessFight.RagdollLab
         {
             if (!Authority) return;
             float dt = Time.fixedDeltaTime;
+            // R624: picked on the entrance screen: wait for the shared start, then everyone takes their piece.
+            bool hold = false;
+            if (rules.Phase == SwordPhase.Pick && PicksBefore)
+            {
+                if (heldSince < 0f) heldSince = Time.realtimeSinceStartup;
+                hold = StartHeld != null && StartHeld() && Time.realtimeSinceStartup - heldSince < MaxHold;
+                if (!hold) TakePresetPicks();
+            }
             // Dummies pick at once.
-            if (rules.Phase == SwordPhase.Pick)
+            else if (rules.Phase == SwordPhase.Pick)
                 foreach (var f in game.Fighters.Values)
                 {
                     if (f == null || !f.Bot) continue;
@@ -242,7 +262,7 @@ namespace ChessFight.RagdollLab
                     foreach (var p in SwordMatchRules.Pickable) if (rules.Pick(f.Id, p)) break;
                 }
             var before = rules.Phase;
-            rules.Advance(dt);
+            if (!hold) rules.Advance(dt);
             if (rules.Phase != before) EnterPhase(rules.Phase);
             foreach (var f in game.Fighters.Values)
             {
@@ -379,6 +399,17 @@ namespace ChessFight.RagdollLab
             if (!Debug.isDebugBuild) return false;
             DevSetPiece(id, kind);
             return true;
+        }
+
+        /// <summary>R624: every fighter takes the piece the entrance screen gave it; anyone it missed (a development
+        /// dummy) draws one of the pieces left, so the next step goes on to 3·2·1.</summary>
+        void TakePresetPicks()
+        {
+            var picks = PresetPicks();
+            if (picks != null)
+                foreach (var f in game.Fighters.Values)
+                    if (f != null && picks.TryGetValue(f.Id, out var kind)) rules.Assign(f.Id, kind);
+            rules.PickRest();
         }
 
         public void PickLocal(PieceKind kind)

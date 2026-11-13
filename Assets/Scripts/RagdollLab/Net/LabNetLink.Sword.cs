@@ -171,6 +171,13 @@ namespace ChessFight.RagdollLab
             sword.Authority = NetIsHost;
             sword.LocalId = NetSelf;
             sword.LeaveMatch = () => NetLeave(LeftByChoice);
+            // R624: a lobby match's pieces were picked on the entrance screen: the scene's pick waits for the shared start
+            // and then takes them (SwordFightMatch.PresetPicks), and its cards never show.
+            if (sword.Match != null)
+            {
+                sword.Match.PresetPicks = RealMatch ? NetSwordPicks : (Func<Dictionary<ulong, PieceKind>>)null;
+                sword.Match.StartHeld = () => !NetStarted;
+            }
             sword.ResetRound();
             SwordFightEdgeFloor.Current?.ClearAll();
             ResetStream();
@@ -206,6 +213,7 @@ namespace ChessFight.RagdollLab
             sword.Authority = true;
             sword.LocalId = 1;
             sword.LeaveMatch = null;
+            if (sword.Match != null) { sword.Match.PresetPicks = null; sword.Match.StartHeld = null; }
             sword.ResetRound();
             sword.SpawnOffline();
             // Back offline with the piece it had.

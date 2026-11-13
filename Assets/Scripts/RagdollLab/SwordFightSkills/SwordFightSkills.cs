@@ -1328,15 +1328,8 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- small things
 
-        public static string Name(PieceKind kind) => kind switch
-        {
-            PieceKind.King => "왕의 반격",
-            PieceKind.Queen => "꼬치 베기",
-            PieceKind.Rook => "열린 파일 포격",
-            PieceKind.Bishop => "관통 핀",
-            PieceKind.Knight => "포크 강하",
-            _ => "(폰은 스킬 없음)",
-        };
+        // R624: the names live in Core (SwordSkillNames) so the entrance screen's pick cards show them too.
+        public static string Name(PieceKind kind) => SwordSkillNames.Skill(kind);
 
         void Raise(SfFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, float size, int order = 0)
             => Fx?.Invoke(new SfFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, size = size, order = order });

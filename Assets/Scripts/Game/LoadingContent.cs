@@ -21,6 +21,8 @@ namespace ChessFight.Game
         // The entrance screen shows the course hologram (Pawn Rush only, 10-27: the other modes keep the chessboard
         // until their own designs are settled).
         public bool CourseModel;
+        // R624: Sword Fight's pick moved here from the match scene (LoadingScreenView.SwordPick.cs).
+        public bool SwordPick;
 
         // `teamSize`: players on the larger team, for the rules that count heads.
         public static LoadingContent For(GameModeInfo mode, int teamSize)
@@ -58,6 +60,7 @@ namespace ChessFight.Game
                     return new LoadingContent
                     {
                         Title = title,
+                        SwordPick = true,
                         Kicker = versus + " · 떨어뜨리고 빼앗기",
                         Rule = "상대를 판 밖으로 떨어뜨리면 1점 · 먼저 10점 또는 4분",
                         Note = "시작할 때 기물을 고르고, 떨어지면 폰으로 돌아와요",

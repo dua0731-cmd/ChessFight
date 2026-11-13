@@ -207,7 +207,8 @@ namespace ChessFight.RagdollLab
             DrawCaption(w, h, ui, me);
             switch (view.Phase)
             {
-                case SwordPhase.Pick: DrawPick(w, h, ui, myTeam); break;
+                // R624: a lobby match picked on the entrance screen; the scene's cards are for offline and the lab rooms.
+                case SwordPhase.Pick: if (!PicksBefore) DrawPick(w, h, ui, myTeam); break;
                 case SwordPhase.Countdown: BigStamp(w, h, Mathf.Clamp(3 - (int)PhaseTime, 1, 3).ToString(), null, (float)(PhaseTime % 1.0), 1f); break;
                 case SwordPhase.Playing:
                     if (view.Clock < 1.0 && PhaseTime < 1.0) BigStamp(w, h, "시작!", null, (float)PhaseTime, 1f);

@@ -85,6 +85,9 @@ namespace ChessFight.RagdollLab.Net
         }
         protected override void NetMatchOver() => session.EndMatch();
         protected override void NetSawResult() => session.SawResult();
+        // R624: the pieces picked on the entrance screen, with the leftovers drawn (SwordPickDraft.Final).
+        protected override Dictionary<ulong, PieceKind> NetSwordPicks() =>
+            session != null && session.SwordPicking ? session.SwordPicksFinal() : null;
         protected override void DrawLobby() { }
 
         void OnHostChanged(ulong previous, ulong next) => HostChanged(previous, next);

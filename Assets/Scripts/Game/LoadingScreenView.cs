@@ -53,11 +53,19 @@ namespace ChessFight.Game
         public int CourseSeed;
         public bool CourseKnown;
         public float Reveal = -1f;
+        // R624 (Sword Fight): "매칭 완료!", the piece cards, our team's pieces and the two sides' clash
+        // (LoadingScreenView.SwordPick.cs), timed from Reveal (seconds since the host started). SwordPick: this screen
+        // plays them (not for a player coming back into a running match). Per entry, the piece it holds (Pawn: none yet)
+        // and whether it was drawn for it at the close rather than picked; SwordAllPicked: every player holds one.
+        public bool SwordPick, SwordAllPicked;
+        public readonly List<PieceKind> Picks = new List<PieceKind>();
+        public readonly List<bool> PickAuto = new List<bool>();
 
         public void Clear()
         {
             Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear();
             CanGive.Clear(); CanKick.Clear(); Scores.Clear(); Keys.Clear();
+            Picks.Clear(); PickAuto.Clear();
             Me = -1; Host = -1; Manager = -1;
         }
     }
@@ -106,6 +114,8 @@ namespace ChessFight.Game
         // over, "강퇴" puts the player out. Each asks twice: the first click only arms the button ("확인") for
         // ArmSeconds, so a stray click neither gives the room away nor puts anyone out.
         public event Action<ulong> GiveRequested, KickRequested;
+        // R624: this player confirmed a piece card (Sword Fight).
+        public event Action<PieceKind> SwordPickRequested;
         const float ArmSeconds = 3f;
 
         sealed class Card
@@ -199,6 +209,8 @@ namespace ChessFight.Game
             tipText = root.Q<Label>("load-tip-text");
             // R551: Pawn Rush's course reveal, over everything but the dip, from the host's start
             if (content != null && content.CourseModel) BuildReveal(root, stage);
+            // R624: Sword Fight's found / pick / team / clash screens, from the host's start
+            if (content != null && content.SwordPick) BuildSword(stage);
             SetContent(content, root);
             shownAt = Time.unscaledTime;
             Update();
@@ -356,6 +368,7 @@ namespace ChessFight.Game
             studio.Animate(now);
             SyncCards(now);
             SyncReveal();
+            SyncSword(now);
             allIn?.EnableInClassList("load-allin-on", studio.Cheer);
 
             if (tips.Length > 0)
@@ -627,6 +640,7 @@ namespace ChessFight.Game
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);
             DisposeReveal();
+            DisposeSword();
             foreach (var texture in washes) if (texture != null) Destroy(texture);
         }
     }

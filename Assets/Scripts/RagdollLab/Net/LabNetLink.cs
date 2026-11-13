@@ -106,6 +106,9 @@ namespace ChessFight.RagdollLab
         protected virtual void NetMatchOver() { }
         /// <summary>R533: this PC saw the match's result (leaving from here on is not a desertion).</summary>
         protected virtual void NetSawResult() { }
+        /// <summary>R624: everyone's Sword Fight piece as picked on the entrance screen before the scene (SwordPickDraft),
+        /// null when this carrier has no such pick (the lab rooms, the loopback test: the scene's own pick runs).</summary>
+        protected virtual Dictionary<ulong, PieceKind> NetSwordPicks() => null;
 
         /// <summary>R149: the match has a result (SwordFightMatch, on every PC): the host tells the room it is over.
         /// R533: every PC notes that it saw the result.</summary>
