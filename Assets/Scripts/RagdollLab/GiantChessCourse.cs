@@ -194,7 +194,7 @@ namespace ChessFight.RagdollLab
             root.transform.rotation = transform.rotation * Quaternion.Euler(0, light ? -90 : 90, 0);
             return root;
         }
-        void ResetPlayers() { if (approach != null) approach.ResetProgress(); for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
+        void ResetPlayers() { var portal=GetComponent<RoyalLibraryPortal>(); if(portal!=null) portal.ResetPresentation(); if (approach != null) approach.ResetProgress(); for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
         readonly float[] bookRecovery = new float[12];
         readonly Transform[] bookRecoveryPoints = new Transform[12];
         readonly GameObject[] flattened = new GameObject[12];

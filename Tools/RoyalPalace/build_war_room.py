@@ -334,17 +334,7 @@ class LegacyBuilder:
             for z in (-10,138):
                 self.box(g,'Table leg',(side*56,-12,z),(7,20,7),'Wood',False)
                 self.box(g,'Brass leg collar',(side*56,-19,z),(8,2,8),'Gold',False)
-            for z in (10,45,85,130):
-                self.banner(g,(side*122,24,z),True,side<0)
-                self.shelf(g,(side*120,0,z),kit.yaw(-90 if side<0 else 90))
-            for z in (-3,140):
-                self.shelf(g,(side*80,0,z))
-                self.box(g,'Open command report',(side*78,6.5,z),(8,.1,5),'Ivory',False)
-                self.box(g,'Command pointer at rest',(side*79,6.7,z),(12,.3,.3),'Gold',False)
-        frame=self.group('Grand campaign map',g,(0,26,168),rot=(0,0,0,1))
-        frame['scale']=(5,4,1)
-        self.map(frame,(0,0,0))
-        for x in (-44,44):self.banner(g,(x,30,168))
+        if hasattr(self,'royal_chess_library'):self.royal_chess_library()
         # Foreground banner/crest and paneled door jambs read as a command entrance.
         for x in (-8.7,8.7):self.box(g,'HQ door carved jamb',(x,3.4,-11.3),(1.4,6.8,1),'Wood')
         for x in (-9,9):self.banner(g,(x,9,-11.5))
@@ -469,6 +459,46 @@ class Builder(LegacyBuilder):
                 height=4.5+(i+level)%3
                 self.box(g,'Leather bound volume '+str(level)+' '+str(i),(-5.7+i*1.4,y+.8+height/2,-.5),(1.15,height,2),'Purple' if (i+level)%2 else 'Teal',False)
                 self.box(g,'Book spine gold title '+str(level)+' '+str(i),(-5.7+i*1.4,y+2,-1.52),(.8,.3,.05),'Gold',False)
+    def houseplant(self,parent,name,pos,size=1):
+        import math
+        g=self.group(name,parent,pos);g['scale']=(size,size,size)
+        self.box(g,'Ceramic planter',(0,2,0),(6,2,6),'Ivory',False,shape='Cylinder')
+        self.box(g,'Pot rim',(0,4,0),(6.4,.3,6.4),'Gold',False,shape='Cylinder')
+        self.box(g,'Soil',(0,4.25,0),(5.7,.1,5.7),'Wood',False,shape='Cylinder')
+        self.box(g,'Plant trunk',(0,9,0),(.7,5,.7),'Wood',False,shape='Cylinder')
+        for i in range(9):
+            angle=math.radians(i*137.5);height=8+i*.85
+            leaf=self.group('Broad tropical leaf '+str(i),g,(math.cos(angle)*2.5,height,math.sin(angle)*2.5),kit.yaw(i*137.5))
+            self.box(leaf,'Leaf',(0,0,0),(2.5,.45,6),'Teal',False,rot=kit.pitch(20 if i%2 else -20),shape='Sphere')
+    def portal(self):
+        import math
+        g=self.group('Dimensional entry vestibule',pos=(0,0,-137))
+        for side in (-1,1):
+            self.box(g,'Narrow portal passage side '+str(side),(side*5.5,4,-4),(1,8,8),'Wood')
+            self.box(g,'Entry shoulder '+str(side),(side*7,4,0),(4,8,1),'Wood')
+        self.box(g,'Narrow portal passage roof',(0,8,-4),(12,.6,8),'Wood')
+        for i in range(24):
+            angle=math.radians(i*15)
+            self.box(g,'Portal rune '+str(i),(math.cos(angle)*5.2,5.2+math.sin(angle)*5.2,0),(.65,.65,.35),'Teal',False,rot=kit.pitch(i*15))
+        veil=self.box(g,'Dimensional veil',(0,4.5,.2),(10,9,.08),'Teal',False)
+        trigger=self.group('Portal threshold',g,(0,0,.6))
+        self.d.script(self.root,'RoyalLibraryPortal',kit.fields(threshold=kit.ref(trigger['tr']),veil=kit.ref(veil['go']),revealSeconds=1.6,fovExpansion=16,cameraPullback=7))
+    def royal_chess_library(self):
+        # Deliberately different wall rhythms: west archives, east reading alcoves and plants.
+        for z in (12,43,105,145):self.library_shelf(-119,z,-1)
+        for z in (28,123):self.library_shelf(119,z,1)
+        for pos,size in (((104,-22,5),1.8),((107,-22,90),2.3),((-105,-22,142),2),((-104,-22,12),1.6)):
+            self.houseplant(self.hq,'Giant chess conservatory plant '+str(pos),pos,size)
+        self.box(self.hq,'Reading alcove rug',(105,-21.8,62),(30,.15,36),'Purple',False)
+        self.box(self.hq,'Reading chaise',(108,-14,65),(12,5,24),'Purple',False)
+        self.box(self.hq,'Chaise back',(115,-8,65),(3,14,24),'Wood',False)
+        self.box(self.hq,'Reading side table',(99,-10,48),(10,1,8),'Wood',False)
+        for i in range(4):self.box(self.hq,'Oversized stacked volume '+str(i),(99,-9+i*.8,48),(8,.7,6),'Teal' if i%2 else 'Ivory',False,rot=kit.yaw(i*9))
+        for z in (65,88):
+            self.box(self.hq,'Tall arched window frame',(122,18,z),(1,28,16),'Gold',False)
+            self.box(self.hq,'Moonlit window pane',(121.4,18,z),(.1,26,14),'Teal',False)
+        self.box(self.hq,'Royal library rear portrait',(32,22,168),(24,30,.5),'Gold',False)
+        self.box(self.hq,'Portrait velvet',(32,22,167.6),(21,27,.2),'Purple',False)
     def typewriter(self):
         import math
         g=self.group('Typewriter stairs - printed command',pos=(0,0,-51));ctx=self.c.context(g)
@@ -572,9 +602,12 @@ class Builder(LegacyBuilder):
         # Broad library walls leave the table route open, with framed score previews hung between shelves.
         for side in (-1,1):
             self.wall(self.root,'Royal library gallery wall '+str(side),(side*38,4,-80),(1.5,54,140))
-            for z in (-140,-102,-64,-24):self.library_shelf(side*35,z,side)
+            for z in ((-140,-102,-64,-24) if side<0 else (-135,-88,-20)):self.library_shelf(side*35,z,side)
         for pos,ply,rotation in (((-37,4,-121),0,-90),((37,4,-121),.25,90),((-37,4,-45),.55,-90),((37,4,-45),.9,90)):
             self.exhibit(pos,ply,rotation)
+        for pos,size in (((28,-22.5,-112),1.5),((29,-22.5,-53),1.8),((-28,-22.5,-35),1.2)):
+            self.houseplant(self.root,'Library gallery houseplant '+str(pos),pos,size)
+        self.portal()
         entry=self.group('Entry - travel forward',pos=(0,0,-142))
         cps=[self.group('Checkpoint '+str(i),pos=(0,0,z)) for i,z in enumerate((-106,-80,-30),1)]
         end=self.group('Approach exit',pos=(0,0,-4));self.chessEntry=end

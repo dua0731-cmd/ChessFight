@@ -23,11 +23,10 @@ def matrix(t):
  cache[t]=(matrix(parent)@m if parent else m);return cache[t]
 def included(go):
  t=trans[go]
- pos=matrix(t).translation
- if pos.z > -9 or pos.z < -150:return False
  while t:
   g=ref(blocks[t],'m_GameObject');name=names[g]
-  if name.startswith(('Square perimeter','Operations ceiling','Entrance header','Distant operations','Headquarters -','Royal library gallery wall -1')):return False
+  if name.startswith(('Square perimeter','Operations ceiling','Entrance header','Distant operations','Room floor below','Royal library gallery wall -1','HQ front facade','HQ doorway header','HQ coffered ceiling','Carved ceiling beam','Ceiling cross beam','Narrow portal passage roof')):return False
+  if name=='HQ side wall' and matrix(t).translation.x<0:return False
   t=ref(blocks[t],'m_Father')
  return True
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
@@ -63,8 +62,13 @@ for go,name in names.items():
 bpy.ops.mesh.primitive_plane_add(size=400,location=(0,-80,-23));floor=bpy.context.object;floor.data.materials.append(material('floor'))
 scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=32;scene.cycles.use_denoising=False
 scene.world.color=(.3,.3,.3)
-for pos,power,size in [((0,-95,90),110000,70),((-50,-30,50),90000,50),((30,-140,50),90000,40)]:
- bpy.ops.object.light_add(type='AREA',location=pos);o=bpy.context.object;o.data.energy=power;o.data.shape='DISK';o.data.size=size;o.rotation_euler=(Vector((0,-80,0))-o.location).to_track_quat('-Z','Y').to_euler()
-bpy.ops.object.camera_add(location=(-135,-190,135));camera=bpy.context.object;camera.rotation_euler=(Vector((0,-80,0))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.type='ORTHO';camera.data.ortho_scale=195;scene.camera=camera
-scene.render.resolution_x=1200;scene.render.resolution_y=900;scene.render.resolution_percentage=100
-scene.render.filepath=str(ROOT/'Docs/PawnRush/ROYAL_LIBRARY_PREVIEW.png');bpy.ops.render.render(write_still=True)
+for pos,power,size in [((0,-90,130),200000,100),((-120,80,130),200000,90),((70,130,100),200000,100),((25,-140,60),90000,50)]:
+ bpy.ops.object.light_add(type='AREA',location=pos);o=bpy.context.object;o.data.energy=power;o.data.shape='DISK';o.data.size=size;o.rotation_euler=(Vector((0,10,0))-o.location).to_track_quat('-Z','Y').to_euler()
+bpy.ops.object.camera_add();camera=bpy.context.object;camera.data.type='ORTHO';scene.camera=camera
+scene.render.resolution_x=1400;scene.render.resolution_y=1100;scene.render.resolution_percentage=100
+for filename,pos,target,scale in [
+ ('ROYAL_LIBRARY_OVERVIEW.png',(-270,-330,320),(0,5,0),465),
+ ('ROYAL_CHESS_LIBRARY.png',(-230,-115,210),(0,78,0),310),
+ ('ROYAL_LIBRARY_PREVIEW.png',(-135,-190,135),(0,-80,0),195)]:
+ camera.location=pos;camera.rotation_euler=(Vector(target)-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.ortho_scale=scale
+ scene.render.filepath=str(ROOT/'Docs/PawnRush'/filename);bpy.ops.render.render(write_still=True)

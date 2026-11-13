@@ -40,7 +40,7 @@ class StraightWarRoom(unittest.TestCase):
         for _,f,b in t.scripts_of('WarRoomScoreLabel'):
             p=transform(t.data,t.owners[number(f['m_GameObject'])])
             self.assertAlmostEqual(abs(p[0]),37)
-        self.assertEqual(len([name for name in t.names.values() if name.startswith('Royal library bookcase')]),8)
+        self.assertEqual(len([name for name in t.names.values() if name.startswith('Royal library bookcase')]),13)
 
     def test_concept_obstacles_and_preview_sources(self):
         t=self.t
@@ -56,3 +56,17 @@ class StraightWarRoom(unittest.TestCase):
         for name,lo,hi,_ in t.boxes:
             self.assertGreaterEqual(lo[0],-162);self.assertLessEqual(hi[0],162)
             self.assertGreaterEqual(lo[2],-152);self.assertLessEqual(hi[2],172)
+
+    def test_asymmetric_library_and_portal(self):
+        t=self.t;left=[];right=[]
+        for go,name in t.names.items():
+            if name.startswith('Royal library bookcase'):
+                p=transform(t.data,t.owners[go]);(left if p[0]<0 else right).append(p[2])
+        self.assertNotEqual(sorted(left),sorted(right))
+        self.assertEqual(len([n for n in t.names.values() if n.startswith('Giant chess conservatory plant')]),4)
+        self.assertEqual(len([n for n in t.names.values() if n.startswith('Library gallery houseplant')]),3)
+        portal=t.scripts_of('RoyalLibraryPortal');self.assertEqual(len(portal),1)
+        _,f,_=portal[0]
+        self.assertAlmostEqual(transform(t.data,number(f['threshold']))[2],-136.4)
+        self.assertEqual(float(f['revealSeconds']),1.6)
+        self.assertNotEqual(number(f['veil']),0)
