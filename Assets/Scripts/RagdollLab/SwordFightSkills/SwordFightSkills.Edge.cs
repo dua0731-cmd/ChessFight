@@ -1,0 +1,1224 @@
+using ChessFight.Network;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    /// <summary>R236: Aim (appended, the codes before it stay) is the bishop's while E is held: his diagonals show and the
+    /// mouse picks one; letting E go slides him along it.</summary>
+    public enum SfEdge : byte { None, Windup, Active, Recovery, Aim }
+
+    /// <summary>
+    /// The edge skills (R103, 승규 님 2026-10-10 "가장자리 스킬"): a second skill per piece on its own key (E, the settings'
+    /// skill key), one press, no aim, only where a fight is won or lost - at the platform's edge (within
+    /// <see cref="SwordFightEdgeParams.edgeZone"/> of it). When its condition holds the HUD's E lights up and the nearest
+    /// edge glows in the piece's colour. Each has one dramatic beat (slow motion, the view pulled in, the edge flashing;
+    /// see <see cref="SwordFightSkillFx"/>). A telegraph whose condition breaks calls the skill off at half the cooldown.
+    /// <list type="bullet">
+    /// <item>킹 · 왕의 귀환: pushed off and falling (within <see cref="SwordFightEdgeParams.fallWindow"/>, not 2 m down yet),
+    /// he drives his sword into the edge and hangs from it, then springs back up onto the platform; landing shoves every
+    /// enemy round him. The landing spot shows while he hangs; a cut at the hilt (or any hit) drops him.</item>
+    /// <item>퀸 · 체크메이트 일섬: an enemy in the edge zone within 5 m: a gold line to it for 0.5 s, then she is beside it
+    /// and cuts it out and up off the platform. It escapes by stepping in out of the zone (cancels), jumping, or a king's
+    /// guard.</item>
+    /// <item>룩 · 성벽 붕괴: standing in the edge zone he hacks the edge he aims at: a 3 × 2 m chunk cracks for 0.8 s and
+    /// falls away with whoever is on it (him too); it rises back after 5 s (<see cref="SwordFightEdgeFloor"/>).</item>
+    /// <item>비숍 · 대각선 미끄럼 (R236, 10-29, 승규 님: "가장자리에서 비숍이 궁지에 몰렸을 때 비숍이 서 있는 자리부터 색칠된
+    /// 대각선이 보이고 미끄러지듯이 가는 건데", then "바깥으로 가는 대각선은 안 보이게. 칠하는 범위는 대각선 2칸. 색은 비숍의
+    /// 고유 색으로"; it was 구원의 손, the hands that caught a falling ally): standing in the edge zone, E held shows his
+    /// diagonals from his square, two squares each, in his silver - only those that stay on the board (not over a hole,
+    /// not into a pedestal) - the one nearest where the camera looks bold, the others faint. Letting E go slides him along
+    /// it to the far square, pushing enemies on the way aside (<see cref="SwordFightEdgeParams.bishopPush"/>, 0 = off);
+    /// the right click calls it off (no cooldown).</item>
+    /// <item>나이트 · 벼랑 끝 역전: its back to the edge (1.5 m) and an enemy within 3 m ahead: it crouches 0.35 s (the
+    /// landing mark shows behind the enemy), springs out over the cliff and somersaults over the enemy's head, lands
+    /// behind it and kicks it back toward the cliff 3.5 m. Backing off past 3 m calls it off; a hit stops it.</item>
+    /// </list>
+    /// The edge skill and the F skill do not run together. Online in the test scene like the rest since R121
+    /// (<c>SwordFightSkills.Net.cs</c>).
+    /// </summary>
+    public partial class SwordFightSkills
+    {
+        public SwordFightEdgeParams EdgeParams { get; private set; }
+        public SfEdge EdgeStage { get; private set; }
+        public float EdgeTime { get; private set; }
+        public string EdgeDetail { get; private set; } = "";
+        public float EdgeCooldown => Mathf.Max(0f, edgeCooldownLeft);
+        public float EdgeCooldownTotal { get; private set; }
+        public int EdgeUses { get; private set; }
+
+        /// <summary>Seconds this piece has been off the floor over the void (pushed off, falling); -1 on the floor.</summary>
+        public float FallTime { get; private set; } = -1f;
+
+        // ---------------------------------------------------------------- the condition, as it stands now
+
+        public bool EdgeCondition { get; private set; }
+        /// <summary>Why it cannot be used now (empty when it can).</summary>
+        public string EdgeWhy { get; private set; } = "";
+        public bool EdgeReady => EdgeParams != null && EdgeCondition && EdgeStage == SfEdge.None && edgeCooldownLeft <= 0f
+                                 && (Stage == SfStage.None || Stage == SfStage.Aim);
+        /// <summary>The edge that glows: the one this skill would use.</summary>
+        public bool HasEdgeGlow { get; private set; }
+        public EdgeHit EdgeGlow { get; private set; }
+        /// <summary>The queen's and the knight's enemy, the bishop's falling ally.</summary>
+        public RagdollPawn EdgeTarget { get; private set; }
+        /// <summary>The rook's chunk as he aims now (x / z on the floor).</summary>
+        public Rect EdgeChunk { get; private set; }
+
+        // ---------------------------------------------------------------- the skill once it goes
+
+        /// <summary>King: the lip his sword goes in under; rook: the middle of the chunk's outer edge; bishop: the hole
+        /// on the lip; knight: the edge at its back; queen: where her enemy stood.</summary>
+        public Vector3 EdgeAt { get; private set; }
+        /// <summary>Flat, toward the void at <see cref="EdgeAt"/>.</summary>
+        public Vector3 EdgeOut { get; private set; } = Vector3.forward;
+        /// <summary>King, knight: where it lands; bishop: where the ally is set down.</summary>
+        public Vector3 EdgeLand { get; private set; }
+        /// <summary>The hips where it set off (the queen's blink, the king's catch, the knight's flip).</summary>
+        public Vector3 EdgeStart { get; private set; }
+        public SwordFightEdgeFloor.Collapse EdgeCollapse { get; private set; }
+        /// <summary>The bishop's ally in its hands. R236: nothing any more (the rescue is gone); kept for the rescue rope's
+        /// drawing (SwordFightSkillFx.RopeHand), whose look the Pawn Rush bishop's lasso copies.</summary>
+        public RagdollPawn Carried => carried;
+        public bool CarriedHeld => held;
+        /// <summary>The king's sword is in the stone (catching and hanging), not yet pulled out for the vault.</summary>
+        public bool KingHanging => Piece == PieceKind.King && EdgeStage == SfEdge.Active && !vaulted;
+        /// <summary>The king's hilt sticking out of the edge's face. 10-14: 0.18 m out (it was 0.1), so the guard stands clear of
+        /// the crater the sword breaks into the wall (SwordFightSkillFx.Breach) and a hand of blade shows going into it.</summary>
+        public Vector3 Hilt => EdgeAt + EdgeOut * 0.18f + Vector3.down * 0.12f;
+        /// <summary>The king's blade in the stone: into the face, a little down.</summary>
+        public Vector3 StuckBlade => (-EdgeOut + Vector3.down * 0.22f).normalized;
+        /// <summary>How long the king's sword takes to drive the last <see cref="KingPlungeDepth"/> into the stone (s).</summary>
+        const float KingPlunge = 0.05f, KingPlungeDepth = 0.3f;
+
+        /// <summary>The king's blade this moment: into the stone, and once it is in, quivering a moment (10-14, 승규 님: "칼이
+        /// 박혔다!라는 느낌") - a fast shake dying away in a third of a second, pivoting where it went into the face.</summary>
+        Vector3 KingBladeNow()
+        {
+            float t = EdgeTime - KingPlunge;
+            if (t <= 0f) return StuckBlade;
+            float a = Mathf.Sin(t * 58f) * Mathf.Exp(-t * 10f) * 0.11f;
+            Vector3 side = Vector3.Cross(Vector3.up, EdgeOut);
+            return (StuckBlade + Vector3.up * a + side * (a * 0.35f)).normalized;
+        }
+
+        /// <summary>Where the king's grip is: the blade goes into the face at one point; plunging, the sword comes in along it,
+        /// quivering, it turns about it.</summary>
+        Vector3 KingGrip()
+        {
+            Vector3 d0 = StuckBlade;
+            float outLen = 0.18f / Mathf.Max(0.2f, Vector3.Dot(d0, -EdgeOut));
+            Vector3 entry = Hilt + d0 * outLen;
+            float plunge = KingPlungeDepth * (1f - SkillInkKit.EaseOut(EdgeTime / KingPlunge));
+            return entry - KingBladeNow() * (outLen + plunge);
+        }
+
+        bool edgeKey, held, vaulted, knightAir;
+        float edgeCooldownLeft;
+        int edgeHits;
+        Vector3 hangHips, flipFrom, flipOver, rookLip, rookOut, rookAlong;
+        RagdollPawn carried;
+
+        /// <summary>The edge skill's key went down (E). Kept until the next step.</summary>
+        public void PressEdge() => edgeKey = true;
+
+        /// <summary>R236: whether E is held now (online a client's comes in its input). 10-29: no skill acts on it any more
+        /// (the bishop's aim goes on a left click, E again calls it off); kept with its wire bit for a later hold skill.</summary>
+        public void HoldEdge(bool down) => edgeDown = down;
+
+        /// <summary>Scripted runs: E held (or not) whatever the keyboard says, until called with null.</summary>
+        public void OverrideHold(bool? down) => holdOverride = down;
+
+        /// <summary>E held now (see <see cref="HoldEdge"/>).</summary>
+        public bool EdgeHeld => holdOverride ?? edgeDown;
+
+        bool edgeDown;
+        bool? holdOverride;
+
+        public static string EdgeName(PieceKind kind) => kind switch
+        {
+            PieceKind.King => "왕의 귀환",
+            PieceKind.Queen => "체크메이트 일섬",
+            PieceKind.Rook => "성벽 붕괴",
+            PieceKind.Bishop => "대각선 미끄럼",
+            PieceKind.Knight => "벼랑 끝 역전",
+            _ => "(폰은 스킬 없음)",
+        };
+
+        // ---------------------------------------------------------------- the step
+
+        /// <summary>Over the void and off its feet: the fall's clock runs (the king's and the bishop's window).</summary>
+        void TrackFall(float dt)
+        {
+            var floor = SwordFightEdgeFloor.Current;
+            if (floor == null || !floor.Find() || Pawn == null) { FallTime = -1f; return; }
+            bool over = !floor.OnFloor(Pawn.Hips.position) && !Pawn.Grounded;
+            FallTime = over ? (FallTime < 0f ? 0f : FallTime + dt) : -1f;
+        }
+
+        /// <summary>The edge skill's part of the step; true while one runs (the F skill waits). <paramref name="cancel"/>:
+        /// the right click (R236: calls the bishop's aim off).</summary>
+        bool StepEdge(bool press, bool cancel, float dt)
+        {
+            var X = EdgeParams;
+            if (X == null) return false;
+            edgeCooldownLeft -= dt;
+            StepClearance(dt);
+            if (EdgeStage == SfEdge.None)
+            {
+                CheckEdge();
+                if (!press) return false;
+                if (edgeCooldownLeft > 0f) { Say($"{Pawn.DisplayName}: {EdgeName(Piece)} 쿨타임 {edgeCooldownLeft:0.0}초"); return false; }
+                if (Stage != SfStage.None && Stage != SfStage.Aim) { Say($"{Pawn.DisplayName}: 다른 스킬을 쓰는 중"); return false; }
+                if (!EdgeCondition) { Say($"{Pawn.DisplayName}: {EdgeName(Piece)} — {EdgeWhy}"); return false; }
+                if (Stage == SfStage.Aim) Clear();
+                BeginEdge();
+                return EdgeStage != SfEdge.None;
+            }
+            EdgeTime += dt;
+            switch (Piece)
+            {
+                case PieceKind.King: StepKingEdge(); break;
+                case PieceKind.Queen: StepQueenEdge(); break;
+                case PieceKind.Rook: StepRookEdge(); break;
+                case PieceKind.Bishop: StepBishopEdge(press, cancel); break;
+                case PieceKind.Knight: StepKnightEdge(); break;
+                default: ClearEdge(); break;
+            }
+            return EdgeStage != SfEdge.None;
+        }
+
+        void SetEdge(SfEdge stage, string detail)
+        {
+            EdgeStage = stage;
+            EdgeTime = 0f;
+            EdgeDetail = detail;
+        }
+
+        void ClearEdge()
+        {
+            // 10-25: a queen's cut that has gone through someone lands even if she is cut short before its beat.
+            if (queenCut != null)
+            {
+                var cut = queenCut;
+                queenCut = null;
+                if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null && EdgeParams != null)
+                    Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, EdgeParams.queenFling);
+            }
+            if (Pawn != null && Pawn.OuterFlying) Pawn.EndFlight();
+            if (carried != null && carried.OuterFlying) carried.EndFlight();
+            // R236: the bishop's slide went through the enemies on its way.
+            if (EdgeStage != SfEdge.None && Piece == PieceKind.Bishop) PassThrough(false);
+            ReleaseClearance(0.3f);
+            carried = null;
+            held = vaulted = knightAir = false;
+            EdgeStage = SfEdge.None;
+            EdgeTime = 0f;
+            EdgeDetail = "";
+            EdgeTarget = null;
+        }
+
+        void StartEdgeCooldown(float share)
+        {
+            var X = EdgeParams;
+            float c = X.testCooldown > 0f ? X.testCooldown : X.Cooldown(Piece);
+            EdgeCooldownTotal = c;
+            edgeCooldownLeft = c * share;
+        }
+
+        void FinishEdge()
+        {
+            ClearEdge();
+            StartEdgeCooldown(1f);
+        }
+
+        /// <summary>The telegraph's condition broke: called off, half the cooldown.</summary>
+        void CancelEdge(string why)
+        {
+            Raise(SfFxKind.EdgeCancel, EdgeTarget, Pawn.Hips.position, Vector3.zero, 0f);
+            Say($"{Pawn.DisplayName}: {EdgeName(Piece)} 취소 ({why}) — 쿨타임 반");
+            ClearEdge();
+            StartEdgeCooldown(0.5f);
+        }
+
+        /// <summary>Stopped by a hit: the whole cooldown.</summary>
+        void InterruptEdge(string why)
+        {
+            Raise(SfFxKind.EdgeCancel, EdgeTarget, Pawn.Hips.position, Vector3.zero, 1f);
+            Say($"{Pawn.DisplayName}: {EdgeName(Piece)} 끊김 ({why})");
+            ClearEdge();
+            StartEdgeCooldown(1f);
+        }
+
+        // ---------------------------------------------------------------- the condition
+
+        void CheckEdge()
+        {
+            EdgeCondition = false;
+            HasEdgeGlow = false;
+            EdgeTarget = null;
+            EdgeWhy = "";
+            var X = EdgeParams;
+            var floor = SwordFightEdgeFloor.Current;
+            if (floor == null || !floor.Find()) { EdgeWhy = "발판을 못 찾음"; return; }
+            Vector3 hips = Pawn.Hips.position;
+            switch (Piece)
+            {
+                case PieceKind.King:
+                {
+                    if (FallTime < 0f) { EdgeWhy = "밀려 떨어지는 중에만"; return; }
+                    if (FallTime > X.fallWindow || hips.y < floor.Top - X.fallDepth) { EdgeWhy = "너무 늦음"; return; }
+                    if (!floor.Nearest(hips, out var e) || e.distance > X.kingReach) { EdgeWhy = "가장자리가 멂"; return; }
+                    Glow(e);
+                    EdgeCondition = true;
+                    return;
+                }
+                case PieceKind.Queen:
+                {
+                    if (!Standing(floor)) return;
+                    var target = QueenPick(floor, out var e);
+                    if (target == null) { EdgeWhy = $"가장자리 구역({X.edgeZone:0.#} m)에 있는 적이 {X.queenRange:0.#} m 안에 없음"; return; }
+                    EdgeTarget = target;
+                    Glow(e);
+                    EdgeCondition = true;
+                    return;
+                }
+                case PieceKind.Rook:
+                {
+                    if (!Standing(floor)) return;
+                    if (!floor.Nearest(hips, out var near) || near.distance > X.edgeZone) { EdgeWhy = $"가장자리 구역({X.edgeZone:0.#} m)에 서야 함"; return; }
+                    // The edge he looks at (if it is close enough), else the one he stands by.
+                    var plan = floor.Cast(hips, AimFlat(), X.rookAimReach, out var aimed) ? aimed : near;
+                    EdgeChunk = floor.ChunkAt(plan, X.rookChunkWidth, X.rookChunkDepth, out rookLip);
+                    rookOut = plan.outward;
+                    rookAlong = plan.along;
+                    Glow(plan);
+                    if (floor.Overlaps(EdgeChunk)) { EdgeWhy = "그 자리는 이미 무너지는 중"; return; }
+                    EdgeCondition = true;
+                    return;
+                }
+                case PieceKind.Bishop:
+                {
+                    // R236: in the edge zone, as the rook, with somewhere to slide.
+                    if (!Standing(floor)) return;
+                    if (!floor.Nearest(hips, out var near) || near.distance > X.edgeZone) { EdgeWhy = $"가장자리 구역({X.edgeZone:0.#} m)에 서야 함"; return; }
+                    Glow(near);
+                    if (BishopWays(out _, out _, null) < 0) { EdgeWhy = "갈 수 있는 대각선 칸이 없음"; return; }
+                    EdgeCondition = true;
+                    return;
+                }
+                case PieceKind.Knight:
+                {
+                    // R109 (승규 님: "링 밖을 나가면 스킬이 켜져야 하는데 안 켜질 때가 있어"): it lit only standing with the
+                    // hips over the floor and the camera looking inward. Now also with the hips a little past the lip, with
+                    // the camera any way (then "ahead" is straight in from the edge), and in the first moment of a fall
+                    // off it (pushed or stepped off: the knight catches itself in the air, then flips back over).
+                    bool air = FallTime >= 0f;
+                    if (!floor.Nearest(hips, out var back) || back.distance > X.knightBackEdge)
+                    { EdgeWhy = $"가장자리를 등지고({X.knightBackEdge:0.#} m 안) 서야 함"; return; }
+                    if (air)
+                    {
+                        if (FallTime > X.fallWindow || hips.y < floor.Top - X.fallDepth * 0.5f) { EdgeWhy = "떨어진 지 너무 오래됨"; return; }
+                    }
+                    else
+                    {
+                        if (Pawn.State != PawnState.Active) { EdgeWhy = "넘어져 있음"; return; }
+                        if (!floor.OnFloor(hips) && !floor.OnFloor(hips - back.outward * KnightLipSlack)) { EdgeWhy = "발판 위에서만"; return; }
+                    }
+                    Vector3 inward = -back.outward, aim = AimFlat();
+                    bool looking = !air && Vector3.Dot(aim, inward) > 0.2f;
+                    Vector3 front = looking ? aim : inward;
+                    var foe = KnightPick(floor, front, looking ? 0.5f : 0.35f, X.knightFront + (air ? KnightAirReach : 0f));
+                    if (foe == null) { EdgeWhy = $"앞 {X.knightFront:0.#} m 안에 적이 없음"; return; }
+                    EdgeTarget = foe;
+                    Glow(back);
+                    EdgeCondition = true;
+                    return;
+                }
+                default:
+                    EdgeWhy = "폰은 스킬이 없어요";
+                    return;
+            }
+        }
+
+        bool Standing(SwordFightEdgeFloor floor)
+        {
+            if (Pawn.State != PawnState.Active) { EdgeWhy = "넘어져 있음"; return false; }
+            if (!floor.OnFloor(Pawn.Hips.position)) { EdgeWhy = "발판 위에서만"; return false; }
+            return true;
+        }
+
+        void Glow(EdgeHit e)
+        {
+            HasEdgeGlow = true;
+            EdgeGlow = e;
+        }
+
+        /// <summary>Where the camera looks, flat (the scripted runs' override first); the facing if none.</summary>
+        Vector3 AimFlat()
+        {
+            Vector3 a = Flat(aimOverride ?? rawAim);
+            return a.sqrMagnitude > 1e-4f ? a.normalized : Flat(Pawn.Facing).normalized;
+        }
+
+        /// <summary>The queen's enemy: in the edge zone, within range; the one the camera looks at most, then the nearest.</summary>
+        RagdollPawn QueenPick(SwordFightEdgeFloor floor, out EdgeHit edge)
+        {
+            var X = EdgeParams;
+            edge = default;
+            RagdollPawn best = null;
+            float bestScore = float.MaxValue;
+            Vector3 me = Flat(Pawn.Hips.position), aim = AimFlat();
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 h = other.Pawn.Hips.position;
+                if (!floor.OnFloor(h) || !floor.Nearest(h, out var e) || e.distance > X.edgeZone) continue;
+                Vector3 d = Flat(h) - me;
+                if (d.magnitude > X.queenRange) continue;
+                float score = Vector3.Angle(aim, d) + d.magnitude * 4f;
+                if (score >= bestScore) continue;
+                bestScore = score;
+                best = other.Pawn;
+                edge = e;
+            }
+            return best;
+        }
+
+        /// <summary>The four diagonals, in square steps along x and z.</summary>
+        public static readonly Vector2Int[] BishopDiagonals = { new Vector2Int(1, 1), new Vector2Int(1, -1), new Vector2Int(-1, -1), new Vector2Int(-1, 1) };
+
+        /// <summary>
+        /// R236, any machine (the host's step and its owner's preview run the same): the bishop's diagonals from the square he
+        /// stands on (<paramref name="square"/>, its middle on the floor; <paramref name="cell"/> its side: the board's
+        /// squares, or squares round where he stands on a floor without them). <paramref name="ways"/> (4, or null) gets
+        /// how many squares each goes, up to <see cref="SwordFightEdgeParams.bishopSquares"/>: it stops at the first square
+        /// that is off the board or over a hole, or has something solid standing on it (a rook's pedestal). Returns the one
+        /// nearest where the camera looks (-1: none goes anywhere).
+        /// </summary>
+        public int BishopWays(out Vector3 square, out float cell, int[] ways)
+        {
+            var X = EdgeParams;
+            var floor = SwordFightEdgeFloor.Current;
+            square = Pawn != null ? Pawn.Hips.position : Vector3.zero;
+            cell = 2f;
+            if (X == null || floor == null || !floor.Find() || Pawn == null) return -1;
+            Vector3 hips = Pawn.Hips.position;
+            if (floor.Snap > 0f)
+            {
+                cell = floor.Snap;
+                square = new Vector3((Mathf.Floor(hips.x / cell) + 0.5f) * cell, floor.Top, (Mathf.Floor(hips.z / cell) + 0.5f) * cell);
+            }
+            else square = new Vector3(hips.x, floor.Top, hips.z);
+            Vector3 aim = AimFlat();
+            int best = -1;
+            float bestDot = -2f;
+            for (int i = 0; i < BishopDiagonals.Length; i++)
+            {
+                var d = BishopDiagonals[i];
+                int n = 0;
+                while (n < X.bishopSquares)
+                {
+                    Vector3 at = square + new Vector3(d.x, 0f, d.y) * (cell * (n + 1));
+                    if (!floor.OnFloor(at) || SquareTaken(at, cell)) break;
+                    n++;
+                }
+                if (ways != null) ways[i] = n;
+                if (n == 0) continue;
+                float dot = Vector3.Dot(new Vector3(d.x, 0f, d.y).normalized, aim);
+                if (dot > bestDot) { bestDot = dot; best = i; }
+            }
+            return best;
+        }
+
+        /// <summary>Something solid stands on the square (a rook's pedestal): not a piece, nothing loose.</summary>
+        static bool SquareTaken(Vector3 at, float cell)
+        {
+            var half = new Vector3(cell * 0.3f, 0.35f, cell * 0.3f);
+            foreach (var c in Physics.OverlapBox(at + Vector3.up * 0.6f, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (RagdollPawn.ColliderOwner.ContainsKey(c) || c.attachedRigidbody != null) continue;
+                if (c.GetComponentInParent<SwordFightPawn>() != null) continue;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>How far past the lip the knight's hips may be and still count as standing at the edge (R109).</summary>
+        const float KnightLipSlack = 0.6f;
+        /// <summary>Falling, the knight is already out past the edge: the enemy may be this much further (R109).</summary>
+        const float KnightAirReach = 1.0f;
+
+        /// <summary>The knight's enemy: on the floor, within <paramref name="range"/>, within the cone
+        /// (<paramref name="cone"/> = the least cosine) round <paramref name="front"/>; the nearest.</summary>
+        RagdollPawn KnightPick(SwordFightEdgeFloor floor, Vector3 front, float cone, float range)
+        {
+            RagdollPawn best = null;
+            float bestDistance = float.MaxValue;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 h = other.Pawn.Hips.position;
+                if (!floor.OnFloor(h)) continue;
+                Vector3 d = Flat(h - Pawn.Hips.position);
+                float m = d.magnitude;
+                if (m > range || m >= bestDistance || m < 0.3f || Vector3.Dot(d / m, front) < cone) continue;
+                bestDistance = m;
+                best = other.Pawn;
+            }
+            return best;
+        }
+
+        // ---------------------------------------------------------------- using it
+
+        void BeginEdge()
+        {
+            var X = EdgeParams;
+            var floor = SwordFightEdgeFloor.Current;
+            edgeHits = Pawn.Hits;
+            held = vaulted = knightAir = false;
+            carried = null;
+            EdgeStart = Pawn.Hips.position;
+            Vector3 hips = Pawn.Hips.position;
+            switch (Piece)
+            {
+                case PieceKind.King:
+                {
+                    var e = EdgeGlow;
+                    EdgeAt = e.point;
+                    EdgeOut = e.outward;
+                    // The sword goes into the face just under the lip; he hangs from its hilt, his hips under his raised hand.
+                    hangHips = e.point + e.outward * 0.22f + Vector3.down * 0.42f;
+                    EdgeLand = Inward(floor, e, X.kingLandIn);
+                    Pawn.StandUp();
+                    Pawn.Face(-e.outward);
+                    SetEdge(SfEdge.Active, "칼 박기");
+                    Raise(SfFxKind.EdgeCast, null, Hilt, e.outward, 0f);
+                    Raise(SfFxKind.KingStab, null, Hilt, e.outward, X.kingHang);
+                    Say($"{Pawn.DisplayName}: 왕의 귀환 — 칼을 가장자리에 박고 매달림 (떨어진 지 {Mathf.Max(0f, FallTime):0.00}초)");
+                    break;
+                }
+                case PieceKind.Queen:
+                {
+                    var target = EdgeTarget;
+                    EdgeAt = target.Hips.position;
+                    EdgeOut = EdgeGlow.outward;
+                    Pawn.Face(target.Hips.position - hips);
+                    SetEdge(SfEdge.Windup, "금색 선");
+                    Raise(SfFxKind.EdgeCast, target, Floor(hips), Flat(target.Hips.position - hips).normalized, 0f);
+                    Raise(SfFxKind.QueenMark, target, target.Hips.position, Flat(target.Hips.position - hips).normalized, X.queenLine);
+                    Say($"{Pawn.DisplayName}: 체크메이트 일섬 예고 → {target.DisplayName} ({Flat(target.Hips.position - hips).magnitude:0.0} m)");
+                    break;
+                }
+                case PieceKind.Rook:
+                {
+                    EdgeCollapse = floor.Begin(EdgeChunk, rookOut, rookAlong, rookLip, X.rookCrack, X.rookRestore, this);
+                    if (EdgeCollapse == null) { Say($"{Pawn.DisplayName}: 성벽 붕괴 — 발판을 나눌 수 없음"); return; }
+                    EdgeAt = rookLip;
+                    EdgeOut = rookOut;
+                    Pawn.Face(rookLip - hips);
+                    SetEdge(SfEdge.Windup, "내려치기");
+                    Raise(SfFxKind.EdgeCast, null, Floor(hips), rookOut, 0f);
+                    Raise(SfFxKind.RookBreak, null, rookLip, rookOut, X.rookChunkWidth);
+                    Say($"{Pawn.DisplayName}: 성벽 붕괴 — {X.rookChunkWidth:0.#} × {X.rookChunkDepth:0.#} m에 금이 감, {X.rookCrack:0.0}초 뒤 무너짐");
+                    break;
+                }
+                case PieceKind.Bishop:
+                {
+                    // R236: the diagonals show and the mouse picks; a left click slides him, E again or a right click
+                    // calls it off (StepBishopEdge).
+                    SetEdge(SfEdge.Aim, AimLine);
+                    bishopClick = false;
+                    BishopAims();
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 — {AimLine}");
+                    break;
+                }
+                case PieceKind.Knight:
+                {
+                    var target = EdgeTarget;
+                    EdgeAt = EdgeGlow.point;
+                    EdgeOut = EdgeGlow.outward;
+                    EdgeLand = KnightLanding(floor, target);
+                    // Off the edge already (R109): it stops in the air where it is (a little up to the lip if it has
+                    // dropped below it) and crouches there, then the flip starts from the air.
+                    knightAir = FallTime >= 0f;
+                    if (knightAir)
+                    {
+                        hangHips = new Vector3(hips.x, Mathf.Max(hips.y, floor.Top - 0.25f), hips.z);
+                        if (Pawn.State != PawnState.Active) Pawn.StandUp();
+                    }
+                    Pawn.Face(target.Hips.position - hips);
+                    SetEdge(SfEdge.Windup, "웅크림");
+                    Raise(SfFxKind.EdgeCast, target, Floor(hips), Flat(target.Hips.position - hips).normalized, 0f);
+                    Raise(SfFxKind.KnightCrouch, target, EdgeLand, Flat(EdgeLand - hips).normalized, X.knightCrouch);
+                    Say($"{Pawn.DisplayName}: 벼랑 끝 역전 — 웅크림 ({target.DisplayName} 뒤에 착지 예정)");
+                    break;
+                }
+            }
+            if (EdgeStage != SfEdge.None && EdgeStage != SfEdge.Aim) EdgeUses++;
+        }
+
+        /// <summary>A spot on the floor <paramref name="inward"/> in from an edge (less if the floor is not there).</summary>
+        Vector3 Inward(SwordFightEdgeFloor floor, EdgeHit e, float inward)
+        {
+            for (float d = inward; d >= 0.3f; d -= 0.2f)
+            {
+                Vector3 p = e.point - e.outward * d;
+                if (floor.OnFloor(p)) return Floor(p);
+            }
+            return Floor(e.point - e.outward * 0.3f);
+        }
+
+        // While the knight goes over its enemy's head, and a moment after, the two do not collide (bodies and swords; it was
+        // the bishop's hands pulling an ally up past him until R236).
+        readonly List<(Collider, Collider)> clearance = new List<(Collider, Collider)>();
+        RagdollPawn clearedFrom;
+        float clearanceLeft;
+        bool clearanceEnding;
+
+        void Clearance(RagdollPawn other, bool on)
+        {
+            foreach (var (a, b) in clearance) if (a != null && b != null) Physics.IgnoreCollision(a, b, false);
+            clearance.Clear();
+            clearedFrom = null;
+            clearanceEnding = false;
+            if (!on || other == null || Pawn == null) return;
+            var mine = Pawn.GetComponentsInChildren<Collider>();
+            foreach (var c in other.GetComponentsInChildren<Collider>())
+                foreach (var m in mine)
+                {
+                    if (c == null || m == null || c.isTrigger || m.isTrigger) continue;
+                    Physics.IgnoreCollision(m, c, true);
+                    clearance.Add((m, c));
+                }
+            clearedFrom = other;
+        }
+
+        /// <summary>After the set-down the pair stays apart for <paramref name="seconds"/>, and then until they are clear of
+        /// each other.</summary>
+        void ReleaseClearance(float seconds) { if (clearedFrom != null && !clearanceEnding) { clearanceLeft = seconds; clearanceEnding = true; } }
+
+        void StepClearance(float dt)
+        {
+            if (clearedFrom == null || !clearanceEnding) return;
+            clearanceLeft -= dt;
+            bool apart = Pawn == null || (Flat(clearedFrom.Hips.position) - Flat(Pawn.Hips.position)).magnitude > 0.9f;
+            if (clearanceLeft <= 0f && (apart || clearanceLeft < -2f)) Clearance(null, false);
+        }
+
+        Vector3 KnightLanding(SwordFightEdgeFloor floor, RagdollPawn target)
+        {
+            var X = EdgeParams;
+            Vector3 t = Flat(target.Hips.position), d = t - Flat(Pawn.Hips.position);
+            d = d.sqrMagnitude > 1e-4f ? d.normalized : -EdgeOut;
+            for (float b = X.knightLandBehind; b >= 0.3f; b -= 0.15f)
+            {
+                Vector3 p = t + d * b + Vector3.up * floor.Top;
+                if (floor.OnFloor(p) && floor.Nearest(p, out var e) && e.distance > 0.35f) return Floor(p);
+            }
+            return Floor(t + d * 0.3f + Vector3.up * floor.Top);
+        }
+
+        // ---------------------------------------------------------------- king
+
+        void StepKingEdge()
+        {
+            var X = EdgeParams;
+            float t = EdgeTime, c = X.kingCatch, h = X.kingHang, v = X.kingVault;
+            if (EdgeStage == SfEdge.Recovery)
+            {
+                // 10-26 (SwordFightSkills.Motion): the landing taken in the legs - held on the spot, the hips down by what
+                // the split legs lose, tipped over the chop - then up; let go once he stands.
+                if (BodyMotion && t < 0.30f && Pawn.OuterFlying) FlyKingLanding(t);
+                else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
+                if (t >= 0.35f) FinishEdge();
+                return;
+            }
+            if (t < c + h)
+            {
+                // A hit, or a cut at the hilt sticking out of the stone, and he falls.
+                if (Pawn.Hits != edgeHits) { KingDrops(null); return; }
+                if (HiltStruck(out var by)) { KingDrops(by); return; }
+                if (t < c)
+                {
+                    float k = Mathf.Clamp01(t / c), e = 1f - (1f - k) * (1f - k);
+                    Pawn.Fly(Vector3.Lerp(EdgeStart, hangHips, e), (hangHips - EdgeStart) * (2f * (1f - k) / c), 0f, default, 24f);
+                }
+                else
+                {
+                    if (EdgeDetail != "매달림") EdgeDetail = "매달림";
+                    // A short swing on the hilt as the fall is caught. 10-26: in its last moment he tips back with his
+                    // soles to the face (into the vault's own start), his hips held: the stub has no elbow to give.
+                    float s = Mathf.Sin((t - c) * 15f) * Mathf.Exp(-(t - c) * 6f) * 0.07f;
+                    float plant = BodyMotion ? Smooth((t - (c + h - 0.12f)) / 0.12f) : 0f;
+                    Pawn.Fly(hangHips + EdgeOut * s, Vector3.zero, -10f * plant, default, 18f);
+                }
+                return;
+            }
+            if (!vaulted)
+            {
+                vaulted = true;
+                EdgeDetail = "귀환";
+                Raise(SfFxKind.KingVault, null, Pawn.Hips.position, -EdgeOut, v);
+                Say($"{Pawn.DisplayName}: 몸을 튕겨 발판 위로");
+            }
+            // Up over the lip onto the landing spot. R129 (승규 님 10-13: "모션 임펙트 강한걸 넣어줘 부자연스럽지 않게"): not the
+            // even arc any more but a jump with weight: a fast spring out of the stone slowing into the top, a moment up
+            // there, then down gathering speed, tipped a little forward over the spot, and landing with it (a heavier fall).
+            float u = Mathf.Clamp01((t - c - h) / v);
+            Vector3 a = hangHips, b = EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f);
+            if (u < 1f)
+            {
+                float dt = Time.fixedDeltaTime;
+                Vector3 pos = VaultPoint(a, b, u), next = VaultPoint(a, b, Mathf.Min(1f, u + dt / v));
+                float tip = u < 0.42f ? Mathf.Lerp(-10f, 0f, u / 0.42f) : Mathf.Lerp(0f, 20f, (u - 0.42f) / 0.58f);
+                Pawn.Fly(pos, (next - pos) / dt, tip, default, 22f);
+                return;
+            }
+            if (BodyMotion)
+            {
+                // A dead stop on the spot, taken in the legs (Recovery goes on flying it).
+                KingLands();
+                FlyKingLanding(0f);
+                return;
+            }
+            Pawn.EndFlight(Vector3.down * 3f);
+            KingLands();
+        }
+
+        /// <summary>10-26: the king held on his landing spot <paramref name="t"/> s after it, his hips down by what his split
+        /// legs lose (SwordFightSkills.Motion: KingLandSplit), tipped forward over his chop.</summary>
+        void FlyKingLanding(float t)
+        {
+            float dt = Time.fixedDeltaTime;
+            float dip = StanceDrop(KingLandSplit(t)), next = StanceDrop(KingLandSplit(t + dt));
+            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f - dip), Vector3.down * ((next - dip) / dt), KingLandTip(t), default, 20f);
+        }
+
+        /// <summary>The king's vault (R129): the top 1.25 m over the higher end at 42% of the way; up fast and slowing (ease
+        /// out), down slow and gathering (ease in); across steadily (smooth step), so he rises clear of the lip first.</summary>
+        static Vector3 VaultPoint(Vector3 a, Vector3 b, float u)
+        {
+            const float Rise = 1.25f, Top = 0.42f;
+            float peak = Mathf.Max(a.y, b.y) + Rise;
+            float y;
+            if (u < Top)
+            {
+                float k = u / Top;
+                y = Mathf.Lerp(a.y, peak, 1f - (1f - k) * (1f - k) * (1f - k));
+            }
+            else
+            {
+                float k = (u - Top) / (1f - Top);
+                y = Mathf.Lerp(peak, b.y, k * k);
+            }
+            float s = u * u * (3f - 2f * u);
+            return new Vector3(Mathf.Lerp(a.x, b.x, s), y, Mathf.Lerp(a.z, b.z, s));
+        }
+
+        void KingLands()
+        {
+            var X = EdgeParams;
+            Raise(SfFxKind.KingLand, null, EdgeLand, -EdgeOut, X.kingLandRadius);
+            int n = 0;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position - EdgeLand);
+                if (d.magnitude > X.kingLandRadius) continue;
+                Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : -EdgeOut, X.kingLandPush, "왕의 귀환 착지", SfFxKind.KingLandHit, n++);
+            }
+            Say($"{Pawn.DisplayName}: 착지 — 반경 {X.kingLandRadius:0.#} m 안 적 {n}명 밀어냄");
+            SetEdge(SfEdge.Recovery, "착지");
+        }
+
+        void KingDrops(SwordFightSkills by)
+        {
+            Pawn.EndFlight();
+            Raise(SfFxKind.KingDrop, by != null ? by.Pawn : null, Hilt, EdgeOut, 0f);
+            Say($"{Pawn.DisplayName}: 왕의 귀환 실패 — " + (by != null ? $"박힌 칼을 맞아 떨어짐 ({by.Pawn.DisplayName})" : "맞아서 떨어짐"));
+            ClearEdge();
+            StartEdgeCooldown(1f);
+        }
+
+        /// <summary>An enemy's cut passing the hilt (its blade within 0.4 m of it).</summary>
+        bool HiltStruck(out SwordFightSkills by)
+        {
+            by = null;
+            Vector3 hilt = Hilt;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other) || !other.Fighter.Attacking) continue;
+                Vector3 a = other.Fighter.BladeRoot, b = other.Fighter.BladeTip, ab = b - a;
+                float k = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(hilt - a, ab) / ab.sqrMagnitude) : 0f;
+                if ((a + ab * k - hilt).magnitude > 0.4f) continue;
+                by = other;
+                return true;
+            }
+            return false;
+        }
+
+        // ---------------------------------------------------------------- queen
+
+        void StepQueenEdge()
+        {
+            var X = EdgeParams;
+            var floor = SwordFightEdgeFloor.Current;
+            if (EdgeStage == SfEdge.Windup)
+            {
+                if (Pawn.State != PawnState.Active) { InterruptEdge("넘어짐"); return; }
+                if (!QueenHolds(floor, EdgeTarget, out string why)) { CancelEdge(why); return; }
+                if (EdgeTime >= X.queenLine) QueenStrikes(floor);
+                return;
+            }
+            if (EdgeStage == SfEdge.Recovery)
+            {
+                // 10-25: the cut lands a beat after she has gone past (QueenStrikes): now it is thrown.
+                if (queenCut != null && EdgeTime >= X.queenDelay)
+                {
+                    var cut = queenCut;
+                    queenCut = null;
+                    if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null)
+                        Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, X.queenFling);
+                }
+                if (queenCut == null && EdgeTime >= Mathf.Max(X.queenRecovery, X.queenDelay + 0.05f)) FinishEdge();
+            }
+        }
+
+        /// <summary>10-25: whoever her cut went through, standing a beat before it lands (and how it will be thrown).</summary>
+        SwordFightSkills queenCut;
+        Vector3 queenPush;
+
+        bool QueenHolds(SwordFightEdgeFloor floor, RagdollPawn target, out string why)
+        {
+            var X = EdgeParams;
+            var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
+            why = "";
+            if (ts == null || ts.Fighter == null || !ts.Fighter.Alive) { why = "적이 사라짐"; return false; }
+            Vector3 h = target.Hips.position;
+            if (!floor.OnFloor(h)) return true;   // already going over: let the cut land
+            if (!floor.Nearest(h, out var e) || e.distance > X.edgeZone + 0.1f) { why = "적이 가장자리 구역 밖으로 들어옴"; return false; }
+            if (Flat(h - Pawn.Hips.position).magnitude > X.queenRange + 0.5f) { why = "적이 멀어짐"; return false; }
+            return true;
+        }
+
+        /// <summary>She is beside it in an instant, on its inner side, and cuts it out and up off the platform - unless it
+        /// is in the air (a jump: the cut goes under it) or a king in his guard takes it.</summary>
+        void QueenStrikes(SwordFightEdgeFloor floor)
+        {
+            var X = EdgeParams;
+            var target = EdgeTarget;
+            var ts = target.GetComponent<SwordFightSkills>();
+            if (!floor.Nearest(target.Hips.position, out var e)) e = new EdgeHit { outward = EdgeOut };
+            Vector3 tf = Flat(target.Hips.position), from = Flat(Pawn.Hips.position);
+            Vector3 spot = tf - e.outward * 0.8f;
+            if (!floor.OnFloor(spot + Vector3.up * floor.Top)) spot = tf + (from - tf).normalized * 0.8f;
+            Vector3 ground = Floor(spot + Vector3.up * floor.Top);
+            Vector3 face = Flat(tf - spot);
+            face = face.sqrMagnitude > 1e-4f ? face.normalized : e.outward;
+            EdgeStart = Pawn.Hips.position;
+            EdgeAt = target.Hips.position;
+            EdgeOut = e.outward;
+            // 10-26 (SwordFightSkills.Motion): she arrives already through the cut, low in her stance - not upright in a
+            // T-pose her arms then sink out of.
+            QueenArrives(ground, face, target);
+            Raise(SfFxKind.QueenBlink, target, ground, face, Vector3.Distance(from, spot));
+            // R130: a king in his guard blocks it and the queen is flung off him (SwordFightSkills.Block).
+            if (ts != null && ts.Block(this, Pawn, target.bodies[(int)BodyId.Chest].position, SfBlock.QueenEdge))
+            {
+                Say($"{Pawn.DisplayName}: 체크메이트 일섬 — {target.DisplayName}의 받아내기에 막힘");
+                SetEdge(SfEdge.Recovery, "막힘");
+                return;
+            }
+            float air = target.Hips.position.y - (floor.Top + target.standHeight);
+            if (!target.Grounded && air > 0.2f)
+            {
+                Raise(SfFxKind.QueenMiss, target, target.Hips.position, face, 0f);
+                Say($"{Pawn.DisplayName}: 체크메이트 일섬 — 점프로 피함 ({target.DisplayName})");
+                SetEdge(SfEdge.Recovery, "헛벰");
+                return;
+            }
+            Vector3 dir = Flat(e.outward * 0.85f + face * 0.15f).normalized;
+            // 10-25 (승규 님: "베인 뒤 한 박자 늦게 반응 … 멀티 플레이 고려해서"): she has gone through it; it stands where it
+            // is, held (the pin everyone's copy already carries) and out of the fight, and is thrown a beat later
+            // (StepQueenEdge) - on the host, so every screen sees the same beat.
+            queenCut = ts;
+            queenPush = dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp;
+            ts.pinLeft = Mathf.Max(ts.pinLeft, X.queenDelay + 0.05f);
+            ts.Fighter.StopCombat();
+            // 10-26: and held as it stood - it does not know yet.
+            ts.HoldStruck(X.queenDelay + 0.05f);
+            SetEdge(SfEdge.Recovery, "후딜");
+        }
+
+        /// <summary>A hit that throws a piece at a set speed (not a slide: it goes off the platform).</summary>
+        void Fling(SwordFightSkills other, Vector3 push, string cause, SfFxKind kind, float size)
+        {
+            var target = other.Pawn;
+            target.TakeHit(push, S.knockdownSeconds, 0f, true);
+            other.Fighter.StopCombat();
+            other.pinLeft = 0f;
+            other.struckLeft = 0f;
+            if (other.Stage != SfStage.None && other.Stage != SfStage.Aim) other.StartCooldown();
+            if (other.Stage != SfStage.None) other.Clear();
+            Raise(kind, target, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.7f), Flat(push).normalized, size);
+            Say($"{Pawn.DisplayName} → {target.DisplayName}: {cause} (바깥 {Flat(push).magnitude:0.0} · 위 {push.y:0.0} m/s)");
+        }
+
+        // ---------------------------------------------------------------- rook
+
+        void StepRookEdge()
+        {
+            if (EdgeStage == SfEdge.Windup && EdgeTime >= EdgeParams.rookSlam) FinishEdge();
+        }
+
+        // ---------------------------------------------------------------- bishop
+
+        /// <summary>The bishop's aim line on the key card (R236).</summary>
+        public const string AimLine = "조준 (좌클릭 = 미끄러짐 · E 또는 우클릭 = 취소)";
+
+        readonly int[] bishopWays = new int[4];
+        /// <summary>A left click came in while he picks (taken from the input in <see cref="Filter"/>, so a client's click
+        /// on the host too): it sends him.</summary>
+        bool bishopClick;
+        readonly HashSet<RagdollPawn> slideHit = new HashSet<RagdollPawn>();
+
+        /// <summary>
+        /// R236, the slide's time (any machine, from the replicated start and end): its length at
+        /// <see cref="SwordFightEdgeParams.bishopSlideSpeed"/> on average - a push off, a long glide, a soft stop.
+        /// </summary>
+        public float BishopSlideTime
+        {
+            get
+            {
+                var X = EdgeParams;
+                float metres = Flat(EdgeLand - EdgeStart).magnitude;
+                return X != null ? Mathf.Clamp(metres / Mathf.Max(1f, X.bishopSlideSpeed), 0.25f, 1.2f) : 0.6f;
+            }
+        }
+
+        /// <summary>The slide's share of its way at <paramref name="u"/> (0..1 of its time): it pushes off at once, glides
+        /// and comes to a stop (part ease-out, part smooth step).</summary>
+        public static float Glide(float u)
+        {
+            u = Mathf.Clamp01(u);
+            return 0.4f * u * u * (3f - 2f * u) + 0.6f * (1f - (1f - u) * (1f - u));
+        }
+
+        static float GlideRate(float u)
+        {
+            u = Mathf.Clamp01(u);
+            return 0.4f * 6f * u * (1f - u) + 0.6f * 2f * (1f - u);
+        }
+
+        void StepBishopEdge(bool press, bool cancel)
+        {
+            var X = EdgeParams;
+            switch (EdgeStage)
+            {
+                case SfEdge.Aim:
+                {
+                    // Knocked over or hit while he picks: called off, no cooldown (it never went).
+                    if (Pawn.State != PawnState.Active || Pawn.Hits != edgeHits) { BishopCallsOff("넘어짐"); return; }
+                    if (cancel) { BishopCallsOff("우클릭"); return; }
+                    // 10-29 (승규 님: "e 쓰고 e 두번 쓰면 취소. e 쓰고 좌클릭 시 스킬 사용, 우클릭도 스킬 취소"): E again calls
+                    // the aim off like the right click; only a left click sends him.
+                    if (press) { BishopCallsOff("E 한 번 더"); return; }
+                    int pick = BishopAims();
+                    bool click = bishopClick;
+                    bishopClick = false;
+                    if (!click) return;
+                    if (pick < 0) { BishopCallsOff("갈 수 있는 대각선 칸이 없음"); return; }
+                    // He pushes off along the bold one.
+                    EdgeStart = Pawn.Hips.position;
+                    slideHit.Clear();
+                    Pawn.Face(EdgeOut);
+                    SetEdge(SfEdge.Windup, "준비");
+                    EdgeUses++;
+                    Raise(SfFxKind.EdgeCast, null, Floor(EdgeStart), EdgeOut, 0f);
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 — {bishopWays[pick]}칸 ({Flat(EdgeLand - EdgeStart).magnitude:0.0} m)");
+                    return;
+                }
+                case SfEdge.Windup:
+                {
+                    if (Pawn.State != PawnState.Active || Pawn.Hits != edgeHits) { InterruptEdge("미끄러지기 전에 맞음"); return; }
+                    // The push off: down a little, tipped into the way.
+                    float k = Smooth(EdgeTime / Mathf.Max(0.02f, X.bishopPushOff));
+                    Pawn.Fly(EdgeStart + Vector3.down * (0.04f * k), Vector3.zero, 8f * k, Vector3.Cross(Vector3.up, EdgeOut), 22f);
+                    if (EdgeTime < X.bishopPushOff) return;
+                    EdgeStart = Pawn.Hips.position;
+                    PassThrough(true);
+                    SetEdge(SfEdge.Active, "미끄럼");
+                    Raise(SfFxKind.BishopSlide, null, Floor(EdgeStart), EdgeOut, Flat(EdgeLand - EdgeStart).magnitude);
+                    return;
+                }
+                case SfEdge.Active:
+                {
+                    if (Pawn.Hits != edgeHits) { InterruptEdge("미끄러지다 맞음"); return; }
+                    float time = BishopSlideTime, u = Mathf.Clamp01(EdgeTime / time);
+                    Vector3 a = EdgeStart, b = EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f);
+                    Vector3 pos = Vector3.Lerp(a, b, Glide(u)), vel = (b - a) * (GlideRate(u) / time);
+                    // Into the way at the push, upright through the glide, back on his heels as he stops.
+                    float tip = u < 0.15f ? Mathf.Lerp(8f, 3f, u / 0.15f) : Mathf.Lerp(3f, -6f, Smooth((u - 0.6f) / 0.4f));
+                    if (u < 1f)
+                    {
+                        Pawn.Fly(pos, vel, tip, Vector3.Cross(Vector3.up, EdgeOut), 22f);
+                        BishopPushes(pos);
+                        return;
+                    }
+                    Pawn.EndFlight(Vector3.zero);
+                    PassThrough(false);
+                    Raise(SfFxKind.BishopSlideStop, null, EdgeLand, EdgeOut, slideHit.Count);
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 도착" + (slideHit.Count > 0 ? $" (적 {slideHit.Count}명 밀어냄)" : ""));
+                    SetEdge(SfEdge.Recovery, "후딜");
+                    return;
+                }
+                case SfEdge.Recovery:
+                    if (EdgeTime >= X.bishopRecovery) FinishEdge();
+                    return;
+            }
+        }
+
+        /// <summary>The diagonals as he stands now: the bold one's way and its far square (replicated, so every screen
+        /// can draw it), him turned to it. Returns the bold one (-1: none).</summary>
+        int BishopAims()
+        {
+            int pick = BishopWays(out var square, out float cell, bishopWays);
+            EdgeAt = square;
+            if (pick < 0) return -1;
+            var d = BishopDiagonals[pick];
+            EdgeOut = new Vector3(d.x, 0f, d.y).normalized;
+            EdgeLand = square + new Vector3(d.x, 0f, d.y) * (cell * bishopWays[pick]);
+            Pawn.Face(EdgeOut);
+            return pick;
+        }
+
+        /// <summary>The aim called off before he went: no cooldown.</summary>
+        void BishopCallsOff(string why)
+        {
+            Say($"{Pawn.DisplayName}: 대각선 미끄럼 조준 취소 ({why})");
+            ClearEdge();
+        }
+
+        /// <summary>Enemies he passes close to are pushed aside off his way (once each; <see cref="SwordFightEdgeParams.bishopPush"/>
+        /// 0 = he only slides through them).</summary>
+        void BishopPushes(Vector3 hips)
+        {
+            var X = EdgeParams;
+            if (X.bishopPush <= 0f) return;
+            Vector3 side = Vector3.Cross(Vector3.up, EdgeOut);
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other) || slideHit.Contains(other.Pawn)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position - hips);
+                if (d.magnitude > X.bishopPushReach) continue;
+                slideHit.Add(other.Pawn);
+                float s = Vector3.Dot(d, side) >= 0f ? 1f : -1f;
+                Hit(other, side * s + EdgeOut * 0.35f, X.bishopPush, "대각선 미끄럼", SfFxKind.BishopSlideHit, slideHit.Count - 1);
+            }
+        }
+
+        // ---------------------------------------------------------------- knight
+
+        void StepKnightEdge()
+        {
+            var X = EdgeParams;
+            var floor = SwordFightEdgeFloor.Current;
+            switch (EdgeStage)
+            {
+                case SfEdge.Windup:
+                {
+                    // In the air it is held where it caught itself (and is getting up from a knock meanwhile).
+                    if (Pawn.Hits != edgeHits || (!knightAir && Pawn.State != PawnState.Active)) { InterruptEdge("웅크린 채 맞음"); return; }
+                    // 10-26 (SwordFightSkills.Motion): it sinks into its coil, tipped forward over its legs.
+                    float sink = BodyMotion ? Smooth(EdgeTime / 0.2f) : 0f;
+                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero, KnightCoilTip * sink);
+                    else if (BodyMotion) Pawn.Fly(EdgeStart + Vector3.down * (0.025f * sink), Vector3.zero, KnightCoilTip * sink, default, 20f);
+                    var target = EdgeTarget;
+                    var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
+                    float reach = X.knightFront + (knightAir ? KnightAirReach : 0f);
+                    if (ts == null || !ts.Fighter.Alive || !floor.OnFloor(target.Hips.position)
+                        || Flat(target.Hips.position - Pawn.Hips.position).magnitude > reach + 0.05f)
+                    { CancelEdge($"적이 {reach:0.#} m 밖으로 물러남"); return; }
+                    // The mark behind it follows it until the spring.
+                    EdgeLand = KnightLanding(floor, target);
+                    Pawn.Face(target.Hips.position - Pawn.Hips.position);
+                    if (EdgeTime < X.knightCrouch) return;
+                    flipFrom = Pawn.Hips.position;
+                    flipOver = target.Hips.position;
+                    EdgeStart = flipFrom;
+                    // R130: it goes over its enemy's head untouched (a tall king's head clipped the somersault and was
+                    // knocked flat before the kick); the kick is the hit.
+                    Clearance(target, true);
+                    SetEdge(SfEdge.Active, "공중제비");
+                    Raise(SfFxKind.KnightFlip, target, Floor(flipFrom), Flat(EdgeLand - flipFrom).normalized, X.knightFlip);
+                    Say($"{Pawn.DisplayName}: 벼랑 밖으로 뛰어 공중제비");
+                    return;
+                }
+                case SfEdge.Active:
+                {
+                    if (Pawn.Hits != edgeHits) { InterruptEdge("공중에서 맞음"); return; }
+                    float k = Mathf.Clamp01(EdgeTime / X.knightFlip);
+                    Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
+                    if (k < 1f)
+                    {
+                        FlipPath(floor, k, out var pos, out var vel);
+                        // A forward somersault over the top (nose down about its right). 10-26: thrown back off the lip
+                        // first, held there for the look, then over and on into the buck (KnightFlipTurn).
+                        float turn = KnightFlipTurn(k);
+                        Pawn.Fly(pos, vel, turn, Vector3.Cross(Vector3.up, dir), 24f);
+                        return;
+                    }
+                    KnightKicks(dir);
+                    ReleaseClearance(0.3f);
+                    SetEdge(SfEdge.Recovery, "뒷발차기");
+                    return;
+                }
+                case SfEdge.Recovery:
+                {
+                    // The kick: head down, hind legs up behind it for a moment.
+                    Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
+                    float t = EdgeTime;
+                    if (BodyMotion)
+                    {
+                        // 10-26: it lands already kicking (the flip's turn ran on into the buck), follows through, then the
+                        // weight comes down and rocks back onto the hind legs.
+                        if (t < 0.26f)
+                        {
+                            float tip = t < 0.09f ? Mathf.Lerp(KnightBuckTip, KnightBuckTip + 8f, Out2(t / 0.06f))
+                                : t < 0.22f ? Mathf.Lerp(KnightBuckTip + 8f, -6f, 1f - Mathf.Pow(1f - (t - 0.09f) / 0.13f, 3f))
+                                : Mathf.Lerp(-6f, 0f, (t - 0.22f) / 0.04f);
+                            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, tip, Vector3.Cross(Vector3.up, dir), 16f);
+                        }
+                        else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
+                    }
+                    else if (t < 0.18f)
+                        Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, 55f * Mathf.Sin(t / 0.18f * Mathf.PI), Vector3.Cross(Vector3.up, dir), 16f);
+                    else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
+                    if (EdgeTime >= X.knightRecovery) FinishEdge();
+                    return;
+                }
+            }
+        }
+
+        /// <summary>The share of the knight's flight spent springing out over the cliff.</summary>
+        public const float FlipOut = 0.3f;
+
+        /// <summary>The knight's way (0..1 of its flight): back out over the cliff and up (arriving there going straight
+        /// up), then up and over the enemy's head and down behind it. Also used to draw it.</summary>
+        public void FlipPath(SwordFightEdgeFloor floor, float k, out Vector3 pos, out Vector3 vel)
+        {
+            var X = EdgeParams;
+            float top = floor != null ? floor.Top : 0f;
+            Vector3 s = flipFrom;
+            Vector3 q = new Vector3(EdgeAt.x, top, EdgeAt.z) + EdgeOut * 0.7f + Vector3.up * 0.95f;
+            Vector3 c = q - Vector3.up * 0.5f;
+            Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
+            Vector3 apex = Flat(flipOver) + dir * 0.2f + Vector3.up * (top + X.knightFlipHeight + 0.35f);
+            Vector3 land = EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f);
+            if (k < FlipOut)
+            {
+                float u = k / FlipOut, w = 1f - u;
+                pos = w * w * s + 2f * w * u * c + u * u * q;
+                vel = (2f * w * (c - s) + 2f * u * (q - c)) / (FlipOut * X.knightFlip);
+                return;
+            }
+            float v = (k - FlipOut) / (1f - FlipOut);
+            Vector3 q2 = q + Vector3.up * 0.6f;
+            pos = Bezier(q, q2, apex, land, v);
+            vel = BezierTangent(q, q2, apex, land, v) / ((1f - FlipOut) * X.knightFlip);
+        }
+
+        void KnightKicks(Vector3 dir)
+        {
+            var X = EdgeParams;
+            var target = EdgeTarget;
+            var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
+            Raise(SfFxKind.KnightKick, target, EdgeLand, -dir, X.knightKick);
+            if (ts != null && IsEnemy(ts) && Flat(target.Hips.position - EdgeLand).magnitude <= 1.9f)
+            {
+                // Back toward the cliff where the knight stood.
+                Vector3 back = Flat(flipFrom - target.Hips.position);
+                back = back.sqrMagnitude > 1e-4f ? back.normalized : -dir;
+                Hit(ts, back, X.knightKick, "벼랑 끝 역전 뒷발차기", SfFxKind.KnightKickHit, 0, 1.6f);
+            }
+            else Say($"{Pawn.DisplayName}: 뒷발차기 — 적이 없음");
+        }
+
+        // ---------------------------------------------------------------- the sword while it runs
+
+        /// <summary>Where the blade points during an edge skill (null: none).</summary>
+        Vector3? EdgeBlade()
+        {
+            if (EdgeStage == SfEdge.None || Pawn == null) return null;
+            Vector3 f = Flat(Pawn.Facing).normalized, side = Vector3.Cross(Vector3.up, f);
+            switch (Piece)
+            {
+                case PieceKind.King:
+                {
+                    if (KingHanging) return KingBladeNow();   // in the stone
+                    Vector3 held = (Vector3.up + f * 0.3f).normalized, chop = (f * 0.8f - Vector3.up * 0.6f).normalized;
+                    if (!BodyMotion) return EdgeStage == SfEdge.Active ? held : (f - Vector3.up * 0.75f).normalized;
+                    // 10-26 (SwordFightSkills.Motion): torn out of the stone and swung up as he springs, drawn back over his
+                    // head at the top, then chopped down to arrive with his feet; held down, then handed back.
+                    if (EdgeStage == SfEdge.Active)
+                    {
+                        var X = EdgeParams;
+                        Vector3 cocked = (Vector3.up * 0.9f - f * 0.35f).normalized;
+                        float u = Mathf.Clamp01((EdgeTime - X.kingCatch - X.kingHang) / Mathf.Max(0.05f, X.kingVault));
+                        if (u < 0.16f) return Vector3.Slerp(StuckBlade, held, Out2(u / 0.16f));
+                        if (u < 0.42f) return Vector3.Slerp(held, cocked, Smooth((u - 0.16f) / 0.26f));
+                        return u < 0.8f ? cocked : Vector3.Slerp(cocked, chop, In2((u - 0.8f) / 0.2f));
+                    }
+                    return EdgeTime < 0.15f || Fighter == null ? chop : Vector3.Slerp(chop, Fighter.HomeBlade, Smooth((EdgeTime - 0.15f) / 0.2f));
+                }
+                case PieceKind.Queen:
+                    return QueenEdgeBlade(f, side);
+                case PieceKind.Rook:
+                    // 10-26 (SwordFightSkills.Motion): brought down hard on the lip, not laid on it.
+                    if (BodyMotion) return RookEdgeBlade();
+                    return (Flat(EdgeAt - Pawn.Hips.position).normalized - Vector3.up * 0.9f).normalized;
+                case PieceKind.Bishop:
+                {
+                    // R236: low ahead toward the way he picks; held out behind his sword side as he glides (a counterweight
+                    // to his free arm); let back to his guard as he stops.
+                    Vector3 low = (f * 0.75f - Vector3.up * 0.45f + side * 0.2f).normalized;
+                    Vector3 trail = (side * 0.65f - f * 0.6f - Vector3.up * 0.2f).normalized;
+                    if (EdgeStage == SfEdge.Aim) return low;
+                    if (EdgeStage == SfEdge.Windup) return Vector3.Slerp(low, trail, Smooth(EdgeTime / 0.1f));
+                    if (EdgeStage == SfEdge.Active) return trail;
+                    return Fighter == null ? trail : Vector3.Slerp(trail, Fighter.HomeBlade, Smooth(EdgeTime / 0.2f));
+                }
+                case PieceKind.Knight when BodyMotion:
+                    return KnightEdgeBlade(f, side);
+                case PieceKind.Knight:
+                    return EdgeStage == SfEdge.Windup ? (-f + Vector3.up * 0.25f).normalized
+                         : EdgeStage == SfEdge.Active ? (Vector3.up + f * 0.25f).normalized
+                         : (-f - Vector3.up * 0.3f).normalized;
+            }
+            return null;
+        }
+
+        /// <summary>The sword arm reaching somewhere else than along the blade: the king's hand on his hilt in the stone.</summary>
+        public Vector3? Arm => KingHanging && Pawn != null
+            // 10-26: from his own shoulder to the grip as it drives in (it aimed at the hilt from the chest: the fist was off it).
+            ? (BodyMotion ? (KingGrip() - Pivot(BodyId.ArmR)).normalized : (Hilt - Pawn.bodies[(int)BodyId.Chest].position).normalized)
+            : (Vector3?)null;
+
+        /// <summary>The sword stays put where its hilt is (the king's, stuck in the stone), not in the hand. 10-14 (승규 님: "실제로
+        /// 칼이 박히는 연출"): it drives the last 0.3 m in over the first three frames, then quivers (KingBladeNow).</summary>
+        public Vector3? SwordAt => KingHanging ? KingGrip() : (Vector3?)null;
+
+        static Vector3 Bezier(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
+        {
+            float u = 1f - t;
+            return u * u * u * a + 3f * u * u * t * b + 3f * u * t * t * c + t * t * t * d;
+        }
+
+        static Vector3 BezierTangent(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
+        {
+            float u = 1f - t;
+            return 3f * u * u * (b - a) + 6f * u * t * (c - b) + 3f * t * t * (d - c);
+        }
+    }
+}

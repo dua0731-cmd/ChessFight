@@ -1,0 +1,26 @@
+Use case: stylized-concept.
+Create a finished, high quality environment-and-obstacle concept art board for the medieval party platformer PAWN RUSH. This is NEW concept art, not a screenshot and not a technical diagram.
+FORMAT: very large portrait 2:3 image. EXACTLY FIVE separated scene panels: one full-width panoramic panel across the upper third, two equal panels in the middle row, two equal panels in the bottom row. Thin warm ivory gutters. Narrow ivory title band at top; narrow ivory caption bands beneath each panel. Fill the canvas, five scenes only. Korean labels must be crisp and correct; no other text.
+VISUAL STYLE: polished stylized 3D game art, charming faceted forms, rich but readable materials, warm cream limestone and chunky oak/brass/iron machinery. The supplied visual direction is an inviting medieval castle race with deep vertical atriums, gaps, elevated traversable walkways, red/blue heraldic banners. Keep obstacles substantial and mechanically believable with visible hinges, rails, pivots and supports. Every panel must show an obvious entry ledge in the foreground, a main obstacle crossing in the middle, and a reachable exit doorway/ledge in the background. No uniformly repeated generic wooden bridge in every scene.
+CHARACTERS: 2 or 3 small cute ivory pawn adventurers per scene, spherical subtly faceted heads, simple flared pawn-shaped bodies, short black mitten hands and feet, blue or red collar. Most seen from behind or three-quarter view. Use them as scale and to demonstrate waiting, jumping, or riding. They are around 1m tall; ordinary jump gaps are small (~1–1.5 pawn heights), giant shafts are crossed by moving devices. No realistic humans.
+READABILITY: obstacle mechanism is the focal point, foreground unobscured, camera elevated three-quarter view wide enough to see route. One small elegant pale amber movement arrow near each main device is allowed, no UI overlays, no dense diagrams, no paragraphs. Warm high detail, clear silhouettes. Avoid photorealism, sci-fi, modern plastic, gore, random floating structures, huge impossible jumps, invisible support machinery, watermarks.
+BOARD TITLE (verbatim): "초반 B · 성문과 생활 시설".
+PANEL 1 (top full width):
+Caption verbatim: "06 성문 · 교대 쇠살문".
+Grand sunny castle gatehouse over a moat. TWO adjacent iron portcullises in separate stone arches operate alternately, one high/open, one low/closed, connected to large exposed brass clock faces and chains. A pawn enters the open arch. In front a huge oak crossbar mounted on horizontal guide rails slides laterally across a different short section of route, with obvious safe waiting alcove. Red heraldic pennants, strong cream stone architecture.
+
+PANEL 2 (middle left):
+Caption verbatim: "07 안뜰 · 우물 회전축".
+Sunlit covered castle courtyard around a square well pool, linen shade sails and crates. A low oak rotating sweep arm powered by the well winch crosses a circular paved route just above ankle height. Beyond it two short timber inspection bridges on curved metal guides exchange positions by taking separate forward/back detour lanes, not clipping through each other. Show one bridge midway with safe square stone waiting islands.
+
+PANEL 3 (middle right):
+Caption verbatim: "08 대장간 · 회전 단조망치".
+Open-sided brick forge under timber roof, warmly glowing furnace, hanging tools. A huge squared iron-and-oak forging hammer rotates like a WINDMILL in a vertical plane around a supported horizontal axle; its head sweeps down across a stone race lane, visibly clear vertical circular motion. A second chunky leather bellows ejects pale air sideways across a nearby bridge, no flames touching players. Broad safe forge workstations to wait.
+
+PANEL 4 (bottom left):
+Caption verbatim: "09 과수원 · 수확 바구니 진자".
+Bright royal apple orchard with low cream stone irrigation walls. A large ROUND wicker basket full of apples hangs from two chains and swings as a pendulum across the raised orchard walkway. A separate sturdy wooden harvest rack carrying barrels travels SIDEWAYS on horizontal rails to shove across a second lane; barrels are secured, not rolling loose. Cheerful fruit colors, canal below, pawn ducks aside on a safe stone landing.
+
+PANEL 5 (bottom right):
+Caption verbatim: "10 해자 · 양쪽 도개교".
+Wide blue castle moat and high crenellated wall. Main focal point is a two-leaf oak bascule bridge; both outer ends are hinged to stone abutments, the two center ends lift UP to form an opening, brass hinges and lifting chains highly visible. Show one portion of the cycle with center tips above the water and pawns waiting safely on shore, another farther crossing horizontal. No downward trapdoor. The passage reaches an open castle door.

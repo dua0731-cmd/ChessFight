@@ -11,7 +11,7 @@ namespace ChessFight.ProtectKing
     public sealed class KnightCavalryCharge : Obstacle
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
+        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
         public Rigidbody KnightRoot;
         public Transform Visual, StartPoint, LandingPoint, ChargeEndPoint;
@@ -28,6 +28,7 @@ namespace ChessFight.ProtectKing
         [Min(.1f)] [SerializeField] public float LandingRadius = 2;
         [Min(0)] [SerializeField] public float LandingKnockbackForce = 9, LandingUpwardForce = 3;
         [Min(0)] [SerializeField] public float ChargeKnockbackForce = 13, ChargeUpwardForce = 2;
+        [SerializeField] public float phaseOffset;
         public LayerMask PlayerLayerMask = ~0;
         public UnityEvent OnWarning = new UnityEvent(), OnLanding = new UnityEvent(), OnCharge = new UnityEvent();
         public CavalryState State { get; private set; }

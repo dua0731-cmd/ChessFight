@@ -1,0 +1,402 @@
+using System;
+using ChessFight.Network;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    /// <summary>
+    /// The piece skills over the network (R111, Docs/Network/SKILLS_ONLINE.md). The host runs every skill; each
+    /// snapshot it sends what the others need to draw them (stage, timers, aim, warnings) as one SkillWireState per
+    /// busy piece. A client writes that into its puppets' own skill fields, so the effects, which read those fields,
+    /// draw the same warnings and the same cooldown on every screen without knowing about the network.
+    ///
+    /// The state is written the moment it arrives, not 70 ms later with the bodies (D-S4): a warning shows as early as
+    /// it can, so there is that much more time to see it and step away. The local player's own aim is drawn from this
+    /// PC's camera at once and a press starts its warning at once (D-S3, <see cref="ViewAim"/>, <see cref="PredictPress"/>);
+    /// the host's state takes over when it arrives. The bodies always follow the host.
+    ///
+    /// The active skill state uses the established Pawn Rush wire slots; the maps are below and in
+    /// SKILLS_ONLINE §8.
+    /// </summary>
+    public partial class RagdollPawn
+    {
+        // Pawn Rush flags (R153: the rook's air charge and the knight's second press are gone; 2, 16 and 64 are free)
+        const byte NetLocked = 1, NetDashing = 4, NetValid = 8, NetTapped = 32;
+        // Wire bit 128 belonged to a retired mode. Keep it reserved and ignore its old states.
+        const byte RetiredModeFlag = 128;
+
+        // ---------------------------------------------------------------- the visual hit stop (D-S2)
+
+        float visualHoldUntil = -1f;
+
+        /// <summary>The skin is held where it is (a per-screen hit stop): RagdollVisualSync leaves it alone. Online a
+        /// hit stop must not stop the game (the host's physics and everyone's inputs), so only these two pieces' picture
+        /// stops, on each screen by itself; the bodies go on and the skin catches up when it lets go.</summary>
+        public bool VisualHeld => Time.unscaledTime < visualHoldUntil;
+
+        public void HoldVisual(float seconds)
+        {
+            if (seconds <= 0f) return;
+            visualHoldUntil = Mathf.Max(visualHoldUntil, Time.unscaledTime + seconds);
+            // One hit stop holds two pieces in the same frame: count it once (the test screen, R112).
+            if (Time.frameCount != lastHoldFrame)
+            {
+                lastHoldFrame = Time.frameCount;
+                NetStats.HitStops++;
+                NetStats.LastHitStopFrames = Mathf.RoundToInt(seconds * 60f);
+            }
+        }
+
+        static int lastHoldFrame = -1;
+
+        /// <summary>What the skills' online side did on this PC, for the skill network test screen (R112): the hit stops
+        /// drawn here and the press guesses (made, matched by the host, given up when the host never did it).</summary>
+        public static class NetStats
+        {
+            public static int HitStops, LastHitStopFrames;
+            public static int Guesses, GuessesMatched, GuessesDropped;
+
+            public static void Clear() => HitStops = LastHitStopFrames = Guesses = GuessesMatched = GuessesDropped = 0;
+        }
+
+        /// <summary>The host's last word on this puppet's skill (the guess above draws over it for a moment).</summary>
+        public SkillStage HostStage => netStage;
+        public bool HostAimLocked => netLocked;
+        /// <summary>The host says this Pawn Rush knight has come down on its target's head (R153: no second press any more).</summary>
+        public bool HostKnightKicked => netKicked;
+
+        /// <summary>The skill key would start a skill as far as this client can tell (the host has the last word): not doing
+        /// one, off cooldown, standing, and on the floor unless the piece may start in the air (the Pawn Rush knight and
+        /// rook). The test screen times only these presses (R118).</summary>
+        public bool CouldStartSkill =>
+            PawnRushSkills != null && State == PawnState.Active && skillStage == SkillStage.None && skillCooldownLeft <= 0.05f
+            && (Grounded || piece == PieceKind.Knight || piece == PieceKind.Rook)
+            // R153: the Pawn Rush knight's key does nothing without an enemy to leap at.
+            && (piece != PieceKind.Knight || knightCandidate != null);
+
+        /// <summary>R153: the Pawn Rush knight has no second press any more (kept for the test screen's timing).</summary>
+        public bool KnightSecondReady => false;
+
+        // ---------------------------------------------------------------- host: what the others need
+
+        /// <summary>Nothing about this piece's skill is worth sending (an idle piece is left out of the packet, D-S5).</summary>
+        public bool SkillNetIdle =>
+            PawnRushSkills == null
+            || (skillStage == SkillStage.None && skillCooldownLeft <= 0f && getUpGuardLeft <= 0f && chainPhase == ChainPhase.None
+                && lassoPhase == LassoPhase.None);
+
+        /// <summary>This piece's skill as the others need to draw it. <paramref name="refOf"/> turns a piece into its
+        /// roster place.</summary>
+        public void CaptureSkillNet(ref SkillWireState s, Func<RagdollPawn, byte> refOf)
+        {
+            s.Stage = (byte)skillStage;
+            s.StageTime = stageTime;
+            s.Cooldown = Mathf.Max(0f, skillCooldownLeft);
+            s.CooldownTotal = Mathf.Max(0f, cooldownTotal);
+            s.Flags = 0;
+            s.Flags2 = 0;
+            s.Target = s.Other = SkillWire.None;
+            Vector3 dir, p = Vector3.zero, q = Vector3.zero;
+            // R153 slots: A the rook chain's time in its phase; C the bishop's flight (1/100 s); D the pawn's step or the
+            // rook chain's phase; P the bishop's point, the knight's landing or the chain's tip; Target the pawn's second
+            // step, the knight's target in flight, or the piece on the rook's chain.
+            if (aimLocked) s.Flags |= NetLocked;
+            if (dashing) s.Flags |= NetDashing;
+            if (bishopValid) s.Flags |= NetValid;
+            if (knightTapped) s.Flags |= NetTapped;
+            dir = piece == PieceKind.Bishop ? bishopYaw : skillDir;
+            RagdollPawn target = null;
+            switch (piece)
+            {
+                case PieceKind.Bishop when PawnRushSkills != null && PawnRushSkills.bishopRope:
+                    // 10-26, the X rope: D its phase, A its length, P its tip, Q where it left from, Target the piece
+                    // it is round (or, aiming, the enemy it would go to).
+                    dir = lassoDir;
+                    p = lassoTip;
+                    q = lassoFrom;
+                    s.D = (byte)lassoPhase;
+                    s.A = lassoRest;
+                    target = lassoOn != null ? lassoOn : skillStage == SkillStage.Windup ? lassoAim : null;
+                    break;
+                case PieceKind.Bishop:
+                    p = bishopPoint;
+                    q = bishopFrom;
+                    s.C = (byte)Mathf.Clamp(Mathf.RoundToInt(bishopFlight * 100f), 0, 255);
+                    break;
+                case PieceKind.Knight:
+                    p = knightSpot;
+                    target = knightTarget;
+                    break;
+                case PieceKind.Rook:
+                    p = chainTip;
+                    target = chainOn != null ? chainOn : skillStage == SkillStage.Windup ? chainAimTarget : null;
+                    s.A = chainT;
+                    s.D = (byte)chainPhase;
+                    break;
+                case PieceKind.Pawn:
+                    target = pawnTarget;
+                    s.D = (byte)Mathf.Clamp(pawnStep, 0, 255);
+                    break;
+            }
+            if (target != null) s.Target = refOf(target);
+            s.B = Mathf.Max(0f, getUpGuardLeft);
+            s.Dx = dir.x; s.Dy = dir.y; s.Dz = dir.z;
+            s.Px = p.x; s.Py = p.y; s.Pz = p.z;
+            s.Qx = q.x; s.Qy = q.y; s.Qz = q.z;
+        }
+
+        // ---------------------------------------------------------------- client: the puppet's skill fields
+
+        // The host's state as it last arrived (the prediction draws over it for a moment).
+        SkillStage netStage;
+        bool netLocked, netKicked;
+        // The local player's own press, drawn before the host has answered (D-S3), with its own clock.
+        float predictLeft, predictTime;
+        SkillStage predictStage;
+        bool predictLocked;
+
+        /// <summary>The host's state for this piece arrived (a client's puppet). <paramref name="pawnOf"/> turns a roster
+        /// place back into a piece.</summary>
+        public void ApplySkillNet(in SkillWireState s, Func<byte, RagdollPawn> pawnOf)
+        {
+            if ((s.Flags2 & RetiredModeFlag) != 0) return;
+            netStage = (SkillStage)s.Stage;
+            netLocked = (s.Flags & NetLocked) != 0;
+            skillStage = netStage;
+            aimLocked = netLocked;
+            stageTime = s.StageTime;
+            skillCooldownLeft = s.Cooldown;
+            cooldownTotal = s.CooldownTotal;
+            var dir = new Vector3(s.Dx, s.Dy, s.Dz);
+            var p = new Vector3(s.Px, s.Py, s.Pz);
+            var q = new Vector3(s.Qx, s.Qy, s.Qz);
+            var target = s.Target != SkillWire.None ? pawnOf(s.Target) : null;
+            dashing = (s.Flags & NetDashing) != 0;
+            bishopValid = (s.Flags & NetValid) != 0;
+            knightTapped = (s.Flags & NetTapped) != 0;
+            netKicked = knightTapped;
+            if (piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope)
+            {
+                // 10-26, the X rope (see the host's side above).
+                bishopYaw = FlatDir(dir, bishopYaw);
+                if (dir.sqrMagnitude > 0.5f) lassoDir = dir.normalized;
+                lassoPhase = (LassoPhase)s.D;
+                lassoRest = s.A;
+                lassoFrom = q;
+                lassoOn = lassoPhase == LassoPhase.Hold ? target : null;
+                if (skillStage == SkillStage.Windup && !IsLocalView) lassoAim = target;
+                lassoTip = lassoPhase == LassoPhase.Hold && target != null ? target.LassoBelly : p;
+            }
+            else if (piece == PieceKind.Bishop)
+            {
+                bishopYaw = FlatDir(dir, bishopYaw);
+                bishopPoint = p;
+                bishopFrom = q;
+                bishopFlight = s.C / 100f;
+            }
+            else if (dir.sqrMagnitude > 0.5f) skillDir = dir;
+            knightTarget = null;
+            pawnTarget = null;
+            switch (piece)
+            {
+                case PieceKind.Knight:
+                    knightSpot = p;
+                    knightTarget = target;
+                    break;
+                case PieceKind.Rook:
+                    chainPhase = (ChainPhase)s.D;
+                    chainT = s.A;
+                    chainOn = chainPhase != ChainPhase.None ? target : null;
+                    if (skillStage == SkillStage.Windup && !IsLocalView) chainAimTarget = target;
+                    // Pulling, the tip is the piece's chest on this screen (its body is drawn here every frame).
+                    chainTip = chainPhase == ChainPhase.Pull && target != null ? target.bodies[(int)BodyId.Chest].position : p;
+                    break;
+                case PieceKind.Pawn:
+                    pawnStep = s.D;
+                    pawnTarget = target;
+                    break;
+            }
+            getUpGuardLeft = s.B;
+            // A piece doing its skill faces the skill's way (the effects lean on it: the queen's blade, a fallback aim).
+            if (skillStage != SkillStage.None)
+            {
+                Vector3 face = piece == PieceKind.Bishop ? bishopYaw : skillDir;
+                facing = FlatDir(face, facing);
+            }
+            ApplyPrediction();
+        }
+
+        /// <summary>This piece is not in the host's packet: its skill is idle (a client's puppet).</summary>
+        public void ClearSkillNet()
+        {
+            if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None) return;
+            netStage = SkillStage.None;
+            netLocked = netKicked = false;
+            skillStage = SkillStage.None;
+            aimLocked = dashing = knightTapped = false;
+            skillCooldownLeft = cooldownTotal = 0f;
+            getUpGuardLeft = 0f;
+            knightTarget = pawnTarget = chainOn = null;
+            chainPhase = ChainPhase.None;
+            lassoOn = null;
+            lassoPhase = LassoPhase.None;
+            stageTime = 0f;
+            ApplyPrediction();
+        }
+
+        /// <summary>Between two of the host's packets a client runs the timers on itself, so a warning fills smoothly
+        /// at the screen's rate rather than in 30 steps a second.</summary>
+        public void AdvanceSkillView(float dt)
+        {
+            if (PawnRushSkills == null) return;
+            if (skillStage != SkillStage.None) stageTime += dt;
+            skillCooldownLeft -= dt;
+            getUpGuardLeft -= dt;
+            if (chainPhase != ChainPhase.None)
+            {
+                chainT += dt;
+                if (chainPhase == ChainPhase.Pull && chainOn != null) chainTip = chainOn.bodies[(int)BodyId.Chest].position;
+            }
+            if (lassoPhase != LassoPhase.None)
+            {
+                lassoT += dt;
+                if (lassoPhase == LassoPhase.Hold && lassoOn != null) lassoTip = lassoOn.LassoBelly;
+            }
+            if (predictLeft > 0f)
+            {
+                predictLeft -= dt;
+                predictTime += dt;
+                if (predictLeft <= 0f)
+                {
+                    // The host never took the press (on its own cooldown, knocked down meanwhile): back to what it says.
+                    skillStage = netStage;
+                    aimLocked = netLocked;
+                    NetStats.GuessesDropped++;
+                }
+            }
+        }
+
+        /// <summary>The local player's own piece on a client: while it aims, the aim follows this PC's camera at once
+        /// instead of a round trip later (D-S3). What the host decides (the lock, the target) still comes from it.</summary>
+        public void ViewAim(Vector3 aim)
+        {
+            if (PawnRushSkills == null) return;
+            // R153: the Pawn Rush knight's target is found on its own screen at once (its icon and the ring over the enemy);
+            // the host finds its own when the key arrives.
+            if (piece == PieceKind.Knight)
+                knightCandidate = skillStage == SkillStage.None && State == PawnState.Active ? FindKnightTarget(PawnRushSkills, aim) : null;
+            if (skillStage != SkillStage.Windup || aimLocked) return;
+            input.aim = aim;
+            if (piece == PieceKind.Rook) { skillDir = ChainAim(PawnRushSkills); localView = Time.frameCount; }
+            else if (piece == PieceKind.Bishop) BishopAim(PawnRushSkills);
+        }
+
+        /// <summary>
+        /// The local player pressed something on a client (D-S3): draw what the host will most likely do with it at once,
+        /// for at most <paramref name="hold"/> seconds (about a round trip) until the host's own state says the same.
+        /// <paramref name="key"/> 0 = the skill key, 1 = the left click (go), 2 = the right click (call it off).
+        /// </summary>
+        public void PredictPress(int key, float hold)
+        {
+            if (PawnRushSkills == null || State != PawnState.Active) return;
+            bool aims = piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King;
+            bool aiming = skillStage == SkillStage.Windup && !aimLocked && aims;
+            switch (key)
+            {
+                case 0:
+                    // Called by a king: the key accepts the call rather than starting another skill.
+                    if (KingCallSeen) break;
+                    if (CouldStartSkill)
+                    {
+                        // The pieces whose skill opens with a warning or an aim; a dash or a leap is the body's to show.
+                        bool windup = piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
+                                      || piece == PieceKind.King
+                                      || (piece == PieceKind.Knight && Grounded && knightCandidate != null);
+                        if (windup) Predict(SkillStage.Windup, false, hold, true);
+                    }
+                    else if (aiming) Predict(SkillStage.None, false, hold, false);
+                    break;
+                case 1:
+                    // R146: the king's list takes its clicks on the screen (the picks go with its key).
+                    if (!aiming || piece == PieceKind.King) break;
+                    bool valid = piece != PieceKind.Bishop || bishopValid;
+                    if (!valid) break;
+                    // The Pawn Rush bishop throws at once (its X in flight); the others lock their aim and wind up.
+                    if (piece == PieceKind.Bishop) Predict(SkillStage.Active, false, hold, true);
+                    else Predict(SkillStage.Windup, true, hold, true);
+                    break;
+                case 2:
+                    if (aiming) Predict(SkillStage.None, false, hold, false);
+                    break;
+            }
+        }
+
+        void Predict(SkillStage stage, bool locked, float hold, bool restartClock)
+        {
+            NetStats.Guesses++;
+            predictStage = stage;
+            predictLocked = locked;
+            predictLeft = Mathf.Max(0.1f, hold);
+            predictTime = restartClock ? 0f : stageTime;
+            skillStage = stage;
+            aimLocked = locked;
+            stageTime = predictTime;
+        }
+
+        /// <summary>The host's state has caught up with the guess: the same step, or one past it (a quick skill can be a
+        /// step further by the time its state arrives).</summary>
+        bool PredictionConfirmed()
+        {
+            if (predictStage == SkillStage.None) return netStage == SkillStage.None;
+            if (netStage == SkillStage.None) return false;
+            if ((int)netStage > (int)predictStage) return true;
+            return netStage == predictStage && (!predictLocked || netLocked);
+        }
+
+        void ApplyPrediction()
+        {
+            if (predictLeft <= 0f) return;
+            if (PredictionConfirmed())
+            {
+                predictLeft = 0f;   // the host did it: its state from now on
+                NetStats.GuessesMatched++;
+                return;
+            }
+            // Until then the guess holds, on its own clock (the host's state still says the step before).
+            skillStage = predictStage;
+            aimLocked = predictLocked;
+            stageTime = predictTime;
+        }
+
+        /// <summary>A client becomes the host mid-match (D-S6): what it was drawing becomes what it runs. Cooldowns, the
+        /// guard after getting up and the king's guard carry on; a skill caught half way (a dash, a leap,
+        /// an aim) is called off and its cooldown starts, as if it had ended there.</summary>
+        public void AdoptSkillNet()
+        {
+            predictLeft = 0f;
+            if (PawnRushSkills == null) return;
+            bool midway = skillStage != SkillStage.None;
+            float cooldown = skillCooldownLeft, total = cooldownTotal, guard = getUpGuardLeft;
+            ClearSkills();
+            skillCooldownLeft = Mathf.Max(0f, cooldown);
+            cooldownTotal = total;
+            if (midway && skillCooldownLeft <= 0f)
+                StartCooldown(PieceCooldown(PawnRushSkills));
+            getUpGuardLeft = Mathf.Max(0f, guard);
+        }
+
+        // The local player's own rook aims on this screen (ViewAim): its aim target is its own, not the host's late one.
+        int localView = -10;
+        bool IsLocalView => Time.frameCount - localView < 5;
+
+        /// <summary>The way a puppet faces, from its hips (the host's facing is not sent; the effects lean on it). A piece
+        /// lying down keeps the way it last faced.</summary>
+        void FaceFromPose(RagdollPose pose)
+        {
+            if (pose.state != 0 || skillStage != SkillStage.None) return;
+            Vector3 f = pose.rotations[0] * Vector3.forward;
+            f.y = 0f;
+            if (f.sqrMagnitude > 1e-4f) facing = f.normalized;
+        }
+    }
+}

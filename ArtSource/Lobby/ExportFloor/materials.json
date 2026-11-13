@@ -1,0 +1,32 @@
+{
+ "materials": {
+  "Grout": {
+   "objects": 1,
+   "kind": "solid",
+   "color": [
+    0.3569,
+    0.3216,
+    0.2784
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.05
+  },
+  "Tile Cream": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Tile_Cream_Albedo.png",
+   "normal": "Tile_Cream_Normal.png",
+   "metalsmooth": "Tile_Cream_MetalSmooth.png"
+  },
+  "Tile Slate": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Tile_Slate_Albedo.png",
+   "normal": "Tile_Slate_Normal.png",
+   "metalsmooth": "Tile_Slate_MetalSmooth.png"
+  }
+ },
+ "leaves_blender": {}
+}

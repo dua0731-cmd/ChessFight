@@ -1,0 +1,772 @@
+{
+ "budget": 1200000,
+ "ratio_heavy_lod0": 0.7235,
+ "heavy": [
+  "PR_EG_Banner",
+  "PR_EG_Bookshelf_0",
+  "PR_EG_Bookshelf_1",
+  "PR_EG_Bookshelf_2",
+  "PR_EG_Bookshelf_3",
+  "PR_EG_Chandelier",
+  "PR_EG_HallPillar"
+ ],
+ "parts": {
+  "PR_EG_ArchCrest": {
+   "uses": 1,
+   "old_lod0": 192,
+   "lods": [
+    192,
+    150,
+    38
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.301
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_ArchWindow": {
+   "uses": 26,
+   "old_lod0": 776,
+   "lods": [
+    776,
+    388,
+    232
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.077
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_ArrowSign": {
+   "uses": 7,
+   "old_lod0": 472,
+   "lods": [
+    472,
+    236,
+    140
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.027
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Balcony": {
+   "uses": 26,
+   "old_lod0": 564,
+   "lods": [
+    564,
+    338,
+    168
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Banner": {
+   "uses": 26,
+   "old_lod0": 3206,
+   "lods": [
+    2318,
+    1390,
+    694
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Bookshelf_0": {
+   "uses": 117,
+   "old_lod0": 1644,
+   "lods": [
+    1188,
+    712,
+    356
+   ],
+   "bounds_drift_m": 0.0067
+  },
+  "PR_EG_Bookshelf_1": {
+   "uses": 118,
+   "old_lod0": 1644,
+   "lods": [
+    1188,
+    712,
+    356
+   ],
+   "bounds_drift_m": 0.0067
+  },
+  "PR_EG_Bookshelf_2": {
+   "uses": 117,
+   "old_lod0": 1644,
+   "lods": [
+    1188,
+    712,
+    356
+   ],
+   "bounds_drift_m": 0.0067
+  },
+  "PR_EG_Bookshelf_3": {
+   "uses": 116,
+   "old_lod0": 1644,
+   "lods": [
+    1188,
+    712,
+    356
+   ],
+   "bounds_drift_m": 0.0067
+  },
+  "PR_EG_BridgeLanding": {
+   "uses": 4,
+   "old_lod0": 144,
+   "lods": [
+    144,
+    72,
+    80
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.36
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_BridgePanel": {
+   "uses": 4,
+   "old_lod0": 288,
+   "lods": [
+    288,
+    172,
+    86
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_CeilingBeam": {
+   "uses": 26,
+   "old_lod0": 324,
+   "lods": [
+    324,
+    194,
+    96
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Chandelier": {
+   "uses": 26,
+   "old_lod0": 2092,
+   "lods": [
+    1512,
+    906,
+    452
+   ],
+   "bounds_drift_m": 0.0004
+  },
+  "PR_EG_CompassDisc": {
+   "uses": 1,
+   "old_lod0": 2288,
+   "lods": [
+    2288,
+    1144,
+    686
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.073
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_CompassInlay": {
+   "uses": 1,
+   "old_lod0": 302,
+   "lods": [
+    302,
+    181,
+    90
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_CraneRail": {
+   "uses": 1,
+   "old_lod0": 768,
+   "lods": [
+    768,
+    460,
+    230
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_CrownCircle": {
+   "uses": 2,
+   "old_lod0": 407,
+   "lods": [
+    407,
+    244,
+    122
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_FerryDeck": {
+   "uses": 1,
+   "old_lod0": 1740,
+   "lods": [
+    1740,
+    1044,
+    522
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_EX": {
+   "uses": 1,
+   "old_lod0": 1196,
+   "lods": [
+    1196,
+    716,
+    358
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R1": {
+   "uses": 1,
+   "old_lod0": 504,
+   "lods": [
+    504,
+    252,
+    150
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.072
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R2": {
+   "uses": 1,
+   "old_lod0": 272,
+   "lods": [
+    272,
+    136,
+    80
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.079
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R3": {
+   "uses": 1,
+   "old_lod0": 212,
+   "lods": [
+    212,
+    106,
+    80
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.076
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R4": {
+   "uses": 1,
+   "old_lod0": 164,
+   "lods": [
+    164,
+    150,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R5": {
+   "uses": 1,
+   "old_lod0": 376,
+   "lods": [
+    376,
+    224,
+    112
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_R6": {
+   "uses": 1,
+   "old_lod0": 352,
+   "lods": [
+    352,
+    210,
+    104
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_S1": {
+   "uses": 1,
+   "old_lod0": 200,
+   "lods": [
+    200,
+    100,
+    80
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.158
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_S3": {
+   "uses": 1,
+   "old_lod0": 236,
+   "lods": [
+    236,
+    118,
+    80
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.079
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Floor_S4": {
+   "uses": 1,
+   "old_lod0": 176,
+   "lods": [
+    176,
+    150,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_GateDoor": {
+   "uses": 2,
+   "old_lod0": 252,
+   "lods": [
+    252,
+    150,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_GateFrame": {
+   "uses": 1,
+   "old_lod0": 1936,
+   "lods": [
+    1936,
+    1160,
+    580
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_GiantPawn": {
+   "uses": 2,
+   "old_lod0": 1432,
+   "lods": [
+    1432,
+    858,
+    286
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.15
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_HallFloorTile": {
+   "uses": 104,
+   "old_lod0": 704,
+   "lods": [
+    704,
+    422,
+    210
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_HallPillar": {
+   "uses": 52,
+   "old_lod0": 1032,
+   "lods": [
+    746,
+    446,
+    232
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_HallWallPanel": {
+   "uses": 52,
+   "old_lod0": 3756,
+   "lods": [
+    3756,
+    1878,
+    499
+   ],
+   "kept": true
+  },
+  "PR_EG_HangingCrate": {
+   "uses": 4,
+   "old_lod0": 2180,
+   "lods": [
+    2180,
+    1308,
+    654
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_HurdleBaton": {
+   "uses": 1,
+   "old_lod0": 584,
+   "lods": [
+    584,
+    350,
+    174
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Ladder": {
+   "uses": 18,
+   "old_lod0": 1064,
+   "lods": [
+    1064,
+    638,
+    318
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Lamp": {
+   "uses": 52,
+   "old_lod0": 414,
+   "lods": [
+    414,
+    206,
+    78
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.037
+    ],
+    [
+     2,
+     0.027
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_LiftShaft": {
+   "uses": 2,
+   "old_lod0": 480,
+   "lods": [
+    480,
+    288,
+    144
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_MapBelt": {
+   "uses": 2,
+   "old_lod0": 620,
+   "lods": [
+    620,
+    372,
+    186
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_MapChestTile": {
+   "uses": 8,
+   "old_lod0": 576,
+   "lods": [
+    576,
+    344,
+    114
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.319
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_MapTable": {
+   "uses": 2,
+   "old_lod0": 792,
+   "lods": [
+    792,
+    474,
+    236
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_PendulumGantry": {
+   "uses": 2,
+   "old_lod0": 672,
+   "lods": [
+    672,
+    402,
+    200
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_PendulumWeight": {
+   "uses": 2,
+   "old_lod0": 2904,
+   "lods": [
+    2904,
+    1742,
+    870
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Plinth": {
+   "uses": 2,
+   "old_lod0": 216,
+   "lods": [
+    216,
+    150,
+    42
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.024
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_RailPost": {
+   "uses": 71,
+   "old_lod0": 444,
+   "lods": [
+    444,
+    222,
+    132
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.022
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Rail_0p5m": {
+   "uses": 18,
+   "old_lod0": 372,
+   "lods": [
+    372,
+    222,
+    110
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Rail_1p0m": {
+   "uses": 4,
+   "old_lod0": 372,
+   "lods": [
+    372,
+    222,
+    74
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.083
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Rail_2p0m": {
+   "uses": 19,
+   "old_lod0": 372,
+   "lods": [
+    372,
+    186,
+    74
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.037
+    ],
+    [
+     2,
+     0.094
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Rail_4p0m": {
+   "uses": 54,
+   "old_lod0": 420,
+   "lods": [
+    420,
+    252,
+    84
+   ],
+   "old_lod_kept": [
+    [
+     2,
+     0.182
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_RookScreen6": {
+   "uses": 3,
+   "old_lod0": 792,
+   "lods": [
+    792,
+    396,
+    236
+   ],
+   "old_lod_kept": [
+    [
+     1,
+     0.195
+    ]
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_RookStatue": {
+   "uses": 2,
+   "old_lod0": 1632,
+   "lods": [
+    1632,
+    978,
+    488
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_ShelfHousing": {
+   "uses": 4,
+   "old_lod0": 648,
+   "lods": [
+    648,
+    388,
+    194
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_ShelfWall6": {
+   "uses": 4,
+   "old_lod0": 5420,
+   "lods": [
+    5420,
+    3252,
+    1626
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_SweepBar": {
+   "uses": 1,
+   "old_lod0": 1280,
+   "lods": [
+    1280,
+    768,
+    384
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_EX": {
+   "uses": 1,
+   "old_lod0": 648,
+   "lods": [
+    648,
+    388,
+    194
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_R2": {
+   "uses": 1,
+   "old_lod0": 216,
+   "lods": [
+    216,
+    150,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_R4": {
+   "uses": 1,
+   "old_lod0": 324,
+   "lods": [
+    324,
+    194,
+    96
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_R5": {
+   "uses": 1,
+   "old_lod0": 108,
+   "lods": [
+    108,
+    108,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_S1": {
+   "uses": 1,
+   "old_lod0": 108,
+   "lods": [
+    108,
+    108,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_Walls_S2": {
+   "uses": 1,
+   "old_lod0": 216,
+   "lods": [
+    216,
+    150,
+    80
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_WarTable16": {
+   "uses": 1,
+   "old_lod0": 2488,
+   "lods": [
+    2488,
+    1492,
+    746
+   ],
+   "bounds_drift_m": 0.0
+  },
+  "PR_EG_WindVent": {
+   "uses": 2,
+   "old_lod0": 1096,
+   "lods": [
+    1096,
+    656,
+    328
+   ],
+   "bounds_drift_m": 0.0
+  }
+ },
+ "placed_triangles": {
+  "LOD0": 1199184,
+  "LOD1": 690549,
+  "LOD2": 320910
+ }
+}

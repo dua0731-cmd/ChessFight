@@ -9,7 +9,7 @@
 | Steamworks.NET | 2025.164.1, git 커밋 `c21a8f0e31c56ae8707130967faf491f7dd7c0d8`에 고정 |
 | Input System | **설치하지 않는다**(2026-09-25, R20 `JY-lobby`). 설치돼 있으면 Unity가 켤 때마다 "native platform backend not enabled" 창을 띄우고, 켜면 HUD 클릭이 죽는다. 입력은 Active Input Handling = Old |
 | uGUI (`com.unity.ugui`) | **없다.** UI는 UI Toolkit |
-| URP | 패키지 없음. 템플릿 URP 에셋만 남아 있고 `RenderPipelineOverride`가 Built-in으로 그린다 |
+| URP | `com.unity.render-pipelines.universal` 17.3.0(R151, `urp-conversion` 브랜치 — `Packages/manifest.json`에 그 줄이 있어야 함). `Settings/PC_RPAsset`(PC 품질, Forward+)·`Mobile_RPAsset` |
 | Multiplayer Center | 템플릿 기본. **UGS를 쓴다는 뜻이 아니다** |
 | Steam App ID | 480 (루트 `steam_appid.txt`). 출시 전에 자체 App ID로 바꾼다 |
 

@@ -1,0 +1,29 @@
+{
+  "meshes": 418,
+  "tracks": 15,
+  "frames": 721,
+  "max_roundtrip_bounds_error_m": 0.10000038146972656,
+  "worst": [
+    [
+      0.10000038146972656,
+      "V07 Waterfall | right reservoir lip"
+    ],
+    [
+      0.10000038146972656,
+      "V07 Waterfall | left reservoir lip"
+    ],
+    [
+      0.0799722671508789,
+      "V07 Water | upper reservoir | gentle wave"
+    ],
+    [
+      0.0799180269241333,
+      "V07 Water | lower moat | gentle wave"
+    ],
+    [
+      8.58306884765625e-06,
+      "V18 | round garden plaza | diameter36m"
+    ]
+  ],
+  "unity_runtime_tested": false
+}

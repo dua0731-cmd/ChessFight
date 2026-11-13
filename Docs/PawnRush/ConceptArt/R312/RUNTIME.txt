@@ -1,0 +1,30 @@
+R312 runtime smoke: loaded baked prefabs, completion wiring, reset, seed rebuild, duplicate A ownership.
+Not player-input or multiplayer validation.
+Beginning Play Mode after Editor startup settled
+Runtime 1/10: Early_MG_C_MoatDrawbridge(Clone)
+Captured Logs/MiniGameValidation\C_Drawbridge_entry.png
+Captured Logs/MiniGameValidation\C_Drawbridge_overview.png
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 2/10: Early_MG_D_PortcullisCourt(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 3/10: Early_MG_A_ParadeCourt(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 4/10: Mid_MG_B_RepairWing(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 5/10: Mid_MG_E_RoyalLibrary(Clone)
+Captured Logs/MiniGameValidation\E_Bells_entry.png
+Captured Logs/MiniGameValidation\E_Bells_overview.png
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 6/10: Mid_MG_F_ClockworkBallroom(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 7/10: Mid_MG_J_PalaceLaundry(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 8/10: Late_MG_G_RoyalProcession(Clone)
+Captured Logs/MiniGameValidation\G_KingEscort_entry.png
+Captured Logs/MiniGameValidation\G_KingEscort_overview.png
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 9/10: Late_MG_H_KingsChessHall(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime 10/10: Late_MG_I_KingsBedchamber(Clone)
+PASS: loaded runtime caches, independent gates, repeated reset and seed rebuild
+Runtime result: PASS

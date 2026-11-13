@@ -16,6 +16,10 @@ namespace ChessFight.Game
         // "봇 추가" while matching: shown to whoever may fill the room (ShowAddBot),
         // clickable once there is a room with a free seat (CanAddBot).
         public bool ShowAddBot, CanAddBot;
+        // "게임 시작" while matching (R148, 폰 러쉬): the room's host may start once each side has three or more
+        // and the sides are even; StartNote says why it cannot yet.
+        public bool ShowStart, CanStart;
+        public string StartNote = "";
         public string Step = "", Clock = "";
         public int Percent;
         // Players the match will hold (12 for a public match): one card per seat,
@@ -31,11 +35,14 @@ namespace ChessFight.Game
         public readonly List<string> Names = new List<string>();
         public readonly List<bool> Bots = new List<bool>();
         public int Me = -1;
+        // R294: which entry is the room's host (-1: none); its card says "방장" while
+        // matching, so everyone sees the role move to the best PC.
+        public int Host = -1;
 
         public void Clear()
         {
             Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear();
-            Me = -1;
+            Me = -1; Host = -1;
         }
     }
 
@@ -64,15 +71,27 @@ namespace ChessFight.Game
 
         public readonly LoadingState State = new LoadingState();
         public bool Hiding => hideAt >= 0;
+        // True while an entrance screen covers the view, fading out included: what
+        // sits on the match underneath (the skill card) waits until it is gone.
+        public static bool Showing => open > 0;
+        static int open;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOpen() => open = 0;
+
+        void Awake() => open++;
         // "매칭 취소" clicked while matching (R64: not Esc, which is the settings window).
         public event Action CancelRequested;
         // "봇 추가" while matching: one more bot in the room.
         public event Action AddBotRequested;
+        // "게임 시작" while matching (R148).
+        public event Action StartRequested;
 
         sealed class Card
         {
             public VisualElement Root, Avatar, Flash;
             public Label Name, Sub, Status;
+            public GlassPlate Plate;
             public int Team, Spot;
             public float Side, OnAt = -1;
             public bool Present, Bot;
@@ -83,13 +102,13 @@ namespace ChessFight.Game
         readonly LoadingStudio studio = new LoadingStudio();
         readonly List<Texture2D> washes = new List<Texture2D>();
         VisualElement screen, fill, allIn, ticks;
-        Button cancel, addBot;
+        Button cancel, addBot, start;
+        Label startNote;
         readonly VisualElement[] rosters = new VisualElement[2];
         Label kicker, step, percent, tipTitle, tipText;
         readonly Label[] counts = new Label[2];
         readonly List<Card>[] cards = { new List<Card>(), new List<Card>() };
         LoadingTip[] tips = Array.Empty<LoadingTip>();
-        string kickerText = "";
         int tipIndex = -1;
         float shownAt, hideAt = -1;
 
@@ -104,7 +123,7 @@ namespace ChessFight.Game
 
             int width = Mathf.Clamp(Screen.width, 960, 1920);
             int height = Mathf.Max(360, Mathf.RoundToInt(width * (float)Screen.height / Mathf.Max(1, Screen.width)));
-            studio.Build(transform, width, height);
+            studio.Build(transform, width, height, content != null && content.CourseModel);
             var stage = root.Q<VisualElement>("load-stage");
             if (stage != null && studio.Texture != null) stage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(studio.Texture));
             Wash(root.Q<VisualElement>("load-side-white"), MenuArt.Hex(0x1E78BE), false);
@@ -127,6 +146,7 @@ namespace ChessFight.Game
             fill = root.Q<VisualElement>("load-fill");
             if (fill != null) fill.style.backgroundImage = new StyleBackground(MenuArt.Line(MenuArt.Hex(MenuArt.Cyan), MenuArt.Hex(MenuArt.Gold), MenuArt.Hex(MenuArt.Red)));
             ticks = Ticks(root.Q<VisualElement>("load-line"));
+            BuildSquares(root.Q<VisualElement>("load-line"));
             cancel = root.Q<Button>("load-cancel");
             if (cancel != null)
             {
@@ -139,6 +159,13 @@ namespace ChessFight.Game
                 addBot.focusable = false;
                 addBot.clicked += () => AddBotRequested?.Invoke();
             }
+            start = root.Q<Button>("load-start");
+            if (start != null)
+            {
+                start.focusable = false;
+                start.clicked += () => { if (State.CanStart) StartRequested?.Invoke(); };
+            }
+            startNote = root.Q<Label>("load-start-note");
             ChunkyButtons.Attach(root);
 
             tipTitle = root.Q<Label>("load-tip-kicker");
@@ -155,7 +182,6 @@ namespace ChessFight.Game
         void SetContent(LoadingContent content, VisualElement root)
         {
             if (root == null || content == null) return;
-            kickerText = content.Kicker ?? "";
             SetText(root.Q<Label>("load-title"), content.Title);
             SetText(root.Q<Label>("load-title-hi"), content.Title);
             SetText(root.Q<Label>("load-rule"), content.Rule);
@@ -175,6 +201,68 @@ namespace ChessFight.Game
             if (screen == null) return;
             screen.pickingMode = PickingMode.Ignore;
             screen.AddToClassList("loading-out");
+        }
+
+        // 10-18 (승규 님, loading design 2): instead of the thin line, a row of twelve chess squares, ivory and
+        // walnut, that turn gold one by one as players come in (or as this PC loads), with a gold knight that
+        // hops on the next square and leaps ahead when it fills. The line stays in the layout, hidden, so
+        // the row takes its place. 10-27 (design A): thin gold segments under the middle of the screen; the knight went.
+        const int SquareCount = 12;
+        readonly List<VisualElement> squares = new List<VisualElement>();
+        int squaresLit = -1, popIndex = -1;
+        float popAt = -10f;
+
+        void BuildSquares(VisualElement line)
+        {
+            if (line == null || line.parent == null) return;
+            line.style.display = DisplayStyle.None;
+            var row = new VisualElement { name = "load-squares", pickingMode = PickingMode.Ignore };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.height = 9;
+            row.style.marginTop = 2;
+            line.parent.Add(row);
+            // 10-27 (design A): thin rounded glass segments with a gold edge, turning gold; no knight on them
+            for (int i = 0; i < SquareCount; i++)
+            {
+                var sq = new VisualElement { pickingMode = PickingMode.Ignore };
+                sq.style.flexGrow = 1;
+                sq.style.marginLeft = sq.style.marginRight = 2;
+                sq.style.backgroundColor = SquareOff;
+                sq.style.borderTopWidth = sq.style.borderBottomWidth = sq.style.borderLeftWidth = sq.style.borderRightWidth = 1;
+                sq.style.borderTopLeftRadius = sq.style.borderTopRightRadius = sq.style.borderBottomLeftRadius = sq.style.borderBottomRightRadius = 3;
+                var rim = new Color(.91f, .78f, .48f, .22f);
+                sq.style.borderTopColor = sq.style.borderBottomColor = sq.style.borderLeftColor = sq.style.borderRightColor = rim;
+                sq.style.transitionProperty = new List<StylePropertyName> { "background-color", "scale" };
+                sq.style.transitionDuration = new List<TimeValue> { new TimeValue(.25f), new TimeValue(.25f) };
+                sq.style.transitionTimingFunction = new List<EasingFunction> { new EasingFunction(EasingMode.EaseOut), new EasingFunction(EasingMode.EaseOutBack) };
+                row.Add(sq);
+                squares.Add(sq);
+            }
+        }
+
+        static readonly Color SquareOff = new Color(1f, .93f, .8f, .1f), SquareOn = new Color(.96f, .82f, .5f, 1f);
+
+        void TickSquares(float lit, float now)
+        {
+            if (squares.Count == 0) return;
+            int n = Mathf.Clamp(Mathf.FloorToInt(lit + .001f), 0, SquareCount);
+            if (n != squaresLit)
+            {
+                for (int i = 0; i < squares.Count; i++)
+                {
+                    bool on = i < n;
+                    squares[i].style.backgroundColor = on ? SquareOn : SquareOff;
+                    squares[i].style.scale = new Scale(Vector2.one);
+                }
+                if (squaresLit >= 0 && n > squaresLit)
+                {
+                    // the square just won pops up, then settles (below)
+                    popIndex = n - 1; popAt = now;
+                    squares[popIndex].style.scale = new Scale(new Vector2(1.08f, 1.3f));
+                }
+                squaresLit = n;
+            }
+            if (popIndex >= 0 && now - popAt > .22f) { squares[popIndex].style.scale = new Scale(Vector2.one); popIndex = -1; }
         }
 
         // A tick on the line for each rank a pawn passes, numbered 2 to 8 (loading only).
@@ -209,17 +297,30 @@ namespace ChessFight.Game
                 if (i < State.Ready.Count && State.Ready[i]) ready++;
             }
 
-            if (kicker != null) SetText(kicker, matching ? "빠른 매칭 · " + kickerText : kickerText);
+            // 10-27 (승규 님): the line over the mode's name ("빠른 매칭 · 6 VS 6 · 팀 레이스") is taken off
+            if (kicker != null) SetText(kicker, "");
             if (step != null) step.text = State.Step;
             if (percent != null) percent.text = matching ? State.Clock : State.Percent + "%";
             float filled = matching ? (State.Expected > 0 ? 100f * joined / State.Expected : 0f) : Mathf.Clamp(State.Percent, 0, 100);
             if (fill != null) fill.style.width = new Length(filled, LengthUnit.Percent);
+            TickSquares(filled / 100f * SquareCount, now);
             if (ticks != null) ticks.style.display = matching ? DisplayStyle.None : DisplayStyle.Flex;
             if (cancel != null) cancel.style.display = matching && State.CanCancel && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
             if (addBot != null)
             {
                 addBot.style.display = matching && State.ShowAddBot && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
                 addBot.SetEnabled(State.CanAddBot);
+            }
+            if (start != null)
+            {
+                start.style.display = matching && State.ShowStart && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
+                start.SetEnabled(State.CanStart);
+            }
+            if (startNote != null)
+            {
+                bool note = matching && !Hiding && !string.IsNullOrEmpty(State.StartNote);
+                startNote.style.display = note ? DisplayStyle.Flex : DisplayStyle.None;
+                if (note) startNote.text = State.StartNote;
             }
 
             studio.Sync(State.Teams, State.Joined, State.Bots, now);
@@ -260,11 +361,12 @@ namespace ChessFight.Game
                 bool isReady = i < State.Ready.Count && State.Ready[i];
                 SetCard(card, isIn, bot, i < State.Names.Count ? State.Names[i] : "", now);
                 card.Root.EnableInClassList("load-me", i == State.Me);
+                card.Plate.Set(isIn && i == State.Me, !isIn);
                 if (isIn) joined[team]++;
                 if (isReady) ready[team]++;
                 float age = card.OnAt >= 0 ? now - card.OnAt : -1;
                 card.Status.text = !isIn ? "찾는 중" : age < ArrivedSeconds ? "입장!"
-                                 : State.Matching ? "대기 중" : isReady ? "준비 완료" : "불러오는 중";
+                                 : State.Matching ? (i == State.Host ? "방장" : "대기 중") : isReady ? "준비 완료" : "불러오는 중";
                 Slide(card, age);
             }
             for (int team = 0; team < 2; team++)
@@ -276,6 +378,7 @@ namespace ChessFight.Game
                     var empty = CardAt(team, k);
                     SetCard(empty, false, false, "", now);
                     empty.Root.RemoveFromClassList("load-me");
+                    empty.Plate.Set(false, true);
                     empty.Status.text = "찾는 중";
                     Slide(empty, -1);
                 }
@@ -333,7 +436,9 @@ namespace ChessFight.Game
             var card = new Card { Team = team, Spot = spot, Side = team == 0 ? 1f : -1f };
             card.Root = new VisualElement { pickingMode = PickingMode.Ignore };
             card.Root.AddToClassList("load-card");
-            card.Root.style.backgroundImage = new StyleBackground(MenuArt.PanelTexture());
+            // 10-27 (design A): smoked glass with a gold hairline; an empty seat only a dashed edge
+            card.Plate = GlassPlate.On(card.Root, 10f);
+            card.Plate.Set(false, true);
             var bar = new VisualElement { pickingMode = PickingMode.Ignore };
             bar.AddToClassList("load-card-bar");
             card.Root.Add(bar);
@@ -416,6 +521,7 @@ namespace ChessFight.Game
 
         void OnDestroy()
         {
+            open = Mathf.Max(0, open - 1);
             studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);

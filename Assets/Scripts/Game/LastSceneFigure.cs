@@ -8,6 +8,9 @@ namespace ChessFight.Game
     public struct FigurePose
     {
         public float Jump, Yaw, Tip, Pitch, Flip, Lean, Sit, Squash, Arm, Leg, Dx, Dz;
+        // Arms swung forward (+) and back about the shoulders, the left arm one way and the right the other
+        // (10-17, the title screen's run: arms pumping against the legs instead of flapping sideways).
+        public float ArmSwing;
         public float? ArmLeft, ArmRight;
     }
 
@@ -48,7 +51,79 @@ namespace ChessFight.Game
 
         public Vector3 Position => Root.transform.position;
 
+        // The match's own models (R148, Resources/MenuPieces, baked by MenuPieceBaker from the ragdoll pawn and
+        // Resources/PieceModels): the pawn's Mixamo bones with the piece's skin. A pose turns the upper arm and
+        // thigh bones from where the model holds them: the model's own arms (straight out) are the idle Arm .25,
+        // and a cheer lifts them from there, about the piece's own shoulder (its LeftShoulder and RightShoulder
+        // marks; the pawn's arm bones) and less far than the figures did, at most ModelArmUp: straight up, the
+        // pawn's short arms went behind its head.
+        const float ModelScale = 1.75f, ModelArmRest = .25f, ModelArmGain = .65f, ModelArmUp = 1.15f, ModelArmDown = .7f;
+        static readonly Color BlackTeamTint = new Color(.3f, .29f, .32f);
+        static readonly System.Collections.Generic.Dictionary<string, Material> darkened = new System.Collections.Generic.Dictionary<string, Material>();
+        bool model;
+        readonly Quaternion[] armRest = new Quaternion[2], legRest = new Quaternion[2];
+        readonly Vector3[] armAt = new Vector3[2], shoulder = new Vector3[2];   // rig space, at rest
+
         public static LastSceneFigure Build(PieceKind kind, int team, Transform parent)
+        {
+            var prefab = Resources.Load<GameObject>("MenuPieces/" + kind);
+            if (prefab != null)
+            {
+                var built = BuildModel(prefab, kind, team == 1 ? 1 : 0, parent);
+                if (built != null) return built;
+            }
+            return BuildFigure(kind, team, parent);
+        }
+
+        static LastSceneFigure BuildModel(GameObject prefab, PieceKind kind, int t, Transform parent)
+        {
+            var root = new GameObject(kind + (t == 0 ? " (white)" : " (black)"));
+            root.transform.SetParent(parent, false);
+            var rig = LastSceneArt.Group(root.transform, "Body", Vector3.zero).transform;
+            var look = Object.Instantiate(prefab, rig, false);
+            look.name = "Model";
+            look.transform.localScale = Vector3.one * ModelScale;
+            Transform Bone(string name)
+            {
+                foreach (var b in look.GetComponentsInChildren<Transform>(true)) if (b.name == name) return b;
+                return null;
+            }
+            var arms = new[] { Bone("mixamorig:LeftArm"), Bone("mixamorig:RightArm") };
+            var legs = new[] { Bone("mixamorig:LeftUpLeg"), Bone("mixamorig:RightUpLeg") };
+            if (arms[0] == null || arms[1] == null || legs[0] == null || legs[1] == null)
+            {
+                Object.Destroy(root);
+                return null;
+            }
+            // The black side and the bots in charcoal: the same model, its texture darkened.
+            if (t == 1)
+                foreach (var r in look.GetComponentsInChildren<Renderer>(true))
+                {
+                    var source = r.sharedMaterial;
+                    if (source == null) continue;
+                    if (!darkened.TryGetValue(source.name, out var dark) || dark == null)
+                    {
+                        dark = new Material(source) { name = source.name + " (black)" };
+                        if (dark.HasProperty("_Color")) dark.color = source.color * BlackTeamTint;
+                        darkened[source.name] = dark;
+                    }
+                    r.sharedMaterial = dark;
+                }
+
+            var figure = new LastSceneFigure(root, kind, t, rig, arms, legs, null) { model = true };
+            var toRig = Quaternion.Inverse(rig.rotation);
+            for (int i = 0; i < 2; i++)
+            {
+                figure.armRest[i] = toRig * arms[i].rotation;
+                figure.legRest[i] = toRig * legs[i].rotation;
+                figure.armAt[i] = rig.InverseTransformPoint(arms[i].position);
+                var mark = look.transform.Find(i == 0 ? "LeftShoulder" : "RightShoulder");
+                figure.shoulder[i] = mark != null ? rig.InverseTransformPoint(mark.position) : figure.armAt[i];
+            }
+            return figure;
+        }
+
+        static LastSceneFigure BuildFigure(PieceKind kind, int team, Transform parent)
         {
             int t = team == 1 ? 1 : 0;
             Material body = LastSceneArt.Lit(BodyColor[t], .5f), trim = LastSceneArt.Lit(TrimColor[t], .45f);
@@ -183,8 +258,25 @@ namespace ChessFight.Game
             rig.localRotation = Quaternion.Euler((p.Lean - p.Sit * .35f) * Mathf.Rad2Deg, 0, 0);
             rig.localScale = new Vector3(1 + squash * .5f, 1 - squash, 1 + squash * .5f);
             float left = p.ArmLeft ?? p.Arm, right = p.ArmRight ?? p.Arm;
-            arms[0].localRotation = Quaternion.Euler(0, 0, -left * Mathf.Rad2Deg);
-            arms[1].localRotation = Quaternion.Euler(0, 0, right * Mathf.Rad2Deg);
+            if (model)
+            {
+                // Raise each arm about the body's forward axis (the left arm is on -X) and swing the legs about
+                // its side axis, from where the model holds them.
+                var r = rig.rotation;
+                for (int i = 0; i < 2; i++)
+                {
+                    float lift = Mathf.Clamp(((i == 0 ? left : right) - ModelArmRest) * ModelArmGain, -ModelArmDown, ModelArmUp);
+                    var turn = Quaternion.AngleAxis((i == 0 ? p.ArmSwing : -p.ArmSwing) * Mathf.Rad2Deg, Vector3.left)
+                             * Quaternion.AngleAxis((i == 0 ? -lift : lift) * Mathf.Rad2Deg, Vector3.forward);
+                    arms[i].rotation = r * turn * armRest[i];
+                    arms[i].position = rig.TransformPoint(shoulder[i] + turn * (armAt[i] - shoulder[i]));
+                }
+                legs[0].rotation = r * Quaternion.AngleAxis(p.Leg * Mathf.Rad2Deg, Vector3.right) * legRest[0];
+                legs[1].rotation = r * Quaternion.AngleAxis(-p.Leg * Mathf.Rad2Deg, Vector3.right) * legRest[1];
+                return;
+            }
+            arms[0].localRotation = Quaternion.Euler(-p.ArmSwing * Mathf.Rad2Deg, 0, -left * Mathf.Rad2Deg);
+            arms[1].localRotation = Quaternion.Euler(p.ArmSwing * Mathf.Rad2Deg, 0, right * Mathf.Rad2Deg);
             legs[0].localRotation = Quaternion.Euler(p.Leg * Mathf.Rad2Deg, 0, 0);
             legs[1].localRotation = Quaternion.Euler(-p.Leg * Mathf.Rad2Deg, 0, 0);
         }

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ac589c1ecbf86139117087358f8e57, type: 3}
+  m_Name: PawnRushSections
+  m_EditorClassIdentifier: 
+  slots:
+  - name: "\uC7A5\uC560\uBB3C 1 (\uCD08\uBC18 \xB7 \uBC14\uAE65\uB730)"
+    kind: 0
+    prefabs:
+    - {fileID: 1000, guid: c1c3a74ebadb6049a082ae6410fe9b70, type: 3}
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 1"
+    kind: 1
+    prefabs:
+    - {fileID: 4604260313012973995, guid: 68f1dbee2bc645145a98902582f1b2aa, type: 3}
+    - {fileID: 7662261989850996596, guid: c77d25be87835b54d80b296cc82a80a4, type: 3}
+    - {fileID: 6534332427189170471, guid: 1a79567a860ef464192a9fe6ab189d83, type: 3}
+  - name: "\uC7A5\uC560\uBB3C 2 (\uC911\uBC18 \xB7 \uC544\uB7AB\uAD81)"
+    kind: 0
+    prefabs:
+    - {fileID: 1000, guid: e572d026a1c6be428f9716d3217c5699, type: 3}
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 2"
+    kind: 1
+    prefabs:
+    - {fileID: 35635044001276062, guid: 49ba8c75268070842b23d45c65236569, type: 3}
+    - {fileID: 20688990030008111, guid: 4d5e4f3e33b958c4ca89f3c7669c1df7, type: 3}
+    - {fileID: 4733812153994822467, guid: 88d911636d315304c8b2f383a337df59, type: 3}
+    - {fileID: 3916480530429441579, guid: 0a9181e8643e0ec47973004fd211639e, type: 3}
+  - name: "\uC7A5\uC560\uBB3C 3 (\uD6C4\uBC18 \xB7 \uC717\uAD81)"
+    kind: 0
+    prefabs: []
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 3"
+    kind: 1
+    prefabs:
+    - {fileID: 5858197817157441221, guid: 31b3db13fbf3dd94382b6867b2944a72, type: 3}
+    - {fileID: 6385314910667157141, guid: 8b0e7479e5ff9184e9ea50494dd8454c, type: 3}
+    - {fileID: 8712495754233133013, guid: 6a3bbe9aa1842674da53e95d8f49dbed, type: 3}
+  - name: "\uB9C8\uC9C0\uB9C9 \uAD6C\uAC04"
+    kind: 2
+    prefabs:
+    - {fileID: 1000, guid: 059960ab5c944997acc8d8e393fd203d, type: 3}

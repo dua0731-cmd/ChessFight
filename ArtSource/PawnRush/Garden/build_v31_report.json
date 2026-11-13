@@ -1,0 +1,55 @@
+{
+ "meshes": {
+  "V19 | shared brick structural module": {
+   "before": 21404,
+   "after": 2600,
+   "users": 77
+  },
+  "V19 | supplied brick morphed into round pillar": {
+   "before": 21404,
+   "after": 2600,
+   "users": 14
+  },
+  "V19 | shared brick structural module.001": {
+   "before": 21404,
+   "after": 2600,
+   "users": 1
+  },
+  "meshes[0].009": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].013": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].008": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].014": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].011": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].015": {
+   "before": 186546,
+   "after": 93272,
+   "users": 1
+  },
+  "meshes[0].005": {
+   "before": 186474,
+   "after": 93236,
+   "users": 2
+  }
+ },
+ "triangles_removed_in_scene": 2476088
+}

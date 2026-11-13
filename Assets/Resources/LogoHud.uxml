@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The opening logo (R84): the video rendered from the design page, over
+         everything else for one run of it. LogoIntro looks up both names. -->
+    <ui:VisualElement name="logo-screen" class="logo-screen">
+        <ui:VisualElement name="logo-video" class="logo-video" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

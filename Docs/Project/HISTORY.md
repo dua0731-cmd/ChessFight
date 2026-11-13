@@ -1,5 +1,75 @@
 # 변경 이력
 
+**2026-11-13 · 거대 체스 서재/차원문:** 후반 거대 체스 방도 서재로 개편. 좌측 연속 서가, 우측 창문·독서 의자·책 더미·화초로 비대칭 배치. 앞 구간 책장7개+체스 방6개, 대형 화초7개(앞3/뒤4). 기존 GM 의자·체스판·기보 예고 기능 유지. 입구 좁은 목재 통로/룬 차원문과 RoyalLibraryPortal 추가: 앞에서 뒤로 통과하면 가림막 해제·0.3초 옅은 빛·1.6초 FOV 확장/카메라 후퇴 후 원래 값 복구. F3/컴포넌트 비활성화/관전 대상 변경 시 카메라 복구. 실제 물리 크기는 바꾸지 않음. 자동55검사·외부 런타임9개 컴파일 통과, Unity 연출 확인 대기. Blender 전경/체스방 이미지와 저장 앵커 기반 미니맵 제작.
+
+**2026-11-13 · 왕의 서재:** 탁자 코스 폭12→18m, 서재 벽X=±38m, 책장8개/벽걸이 기보 액자4개. 지도2개를 ClosingBook으로 교체: 한 면18×16m 고정 발판, 옆 면이 수평0°→책등 축180°로 덮힘. 열림6초·경고1초·닫힘0.65초·닫힌 상태2초·다시 열림1.3초. 책에 깔리면 캐릭터 메시를 납작한 비충돌 시각 복제본으로 표시하고 원래 물리 캐릭터를 비활성화,2초 후 해당 책 바로 앞(-106/-80)으로 복구. Esc/포커스 이탈은 책/복구 시간을 멈추고 R/F3는 대기 상태를 정리. 도장·타자기23키·무작위 기보 유지. 자동53·외부 런타임9개 컴파일 통과, Unity 플레이 확인 대기.
+
+**2026-11-11 · 거대한 작전 탁자 코스:** 복도/타자기 주변의 내부 차단벽과 옆쪽 평면 바닥을 제거하고, 이동 바닥을 목재 상판·황동 테두리·긴 다리의 개별 탁자로 변경. 시작 탁자와 도장 탁자 사이2m 점프, 지도 사이 휴식 탁자, 타자기 앞/아래/출구 탁자, 최종 출구 탁자 배치. 지도 펼침 공간은 바닥으로 메우지 않음. 외곽 작전실 벽과 총지휘부 가림벽/연결 문은 유지. 기존 씬 설정/타자기23키/무작위 힌트 유지. 자동53검사 통과, Unity 실제 시야·점프 감각 확인 대기.
+
+**2026-11-09 · 타자기 엇갈림 배열/출구 연결:** 사용자 요청대로 5·4·5·4·5개 총23키로 변경. 각 행 정답1개, 다음 행 정답의 가로 거리1.5m로 제한해 엇갈린 경로 생성. 앞쪽 본체 측면을 낮추고 타자기 구간 벽을 ±20m로 넓혀 외형을 가리던 좁은 통로를 해소. 타자기 출구/총지휘부 문은 폭16m·통과 높이6.8m·중앙X=0·연결Z=-10으로 일치. 문 이동거리9m, 진입 감지폭18m. 활성/생성 프리팹 함께 갱신, 기존 씬/타일 설정 보존. 자동52검사(전체51 및 추가 연결 형상 검사)·외부 런타임9개 컴파일 통과. Unity 카메라 시야/주행은 사용자 확인 대기.
+
+**2026-11-09 · 타자기 정답 발판 판정 보정:** 사용자 제보: 4개 키 중 밟을 수 있는 정답이 없음. 생성 규칙은 각 행 정답1개였으나 중심 투영 위치가 원형 키 밖이면 틈 바닥 타격으로 분류할 수 있었다. 접지 SphereCast의 가장 가까운 실제 지지 Collider에서 TypewriterKey를 찾아 판정하도록 수정. 정답 키 지지 중에는 틈 바닥 타격 제외. 행/표시/Collider/힌트 배열 연결, 각 행의 정답 가장자리 및 무관한 바닥 회귀 검사 추가. 자동51·외부 런타임9개 컴파일 통과, Unity 사용자 재현/해결 확인은 대기.
+
+**2026-11-09 · 빈티지 기억 타자기:** 활성/원본 프리팹 타자기 교체, TypewriterMemory 무작위 경로·힌트, TypewriterKey 눌림·점프 반동, RagdollPawn의 IJumpSpringSurface 선택적 연결 추가. 저장된 접근로와 런타임 Entry platform 경계를 분리. 형상 Blender 미리보기 추가. 외부 런타임9개 컴파일 통과, Unity 확인 전. Gameplay 자동50검사 통과.
+
+**2026-11-08 · Fork 타자기 계단:** 작전실 병력 대열 두 줄을 CHECK 문서 기반 타자기 계단으로 교체. 20키·안전 경로·보행 경사·오답 타격 구현. 자동49·런타임9개 컴파일 통과, Unity 확인 전.
+
+
+**2026-11-08 · 지도 수평 발판 보정:** 작전 지도 발판의 조각별 출현을 연속 수평 확장으로 수정, 롤러와 바닥 사이 간격 제거. 양방향 경계 검사·런타임9개 컴파일 통과.
+
+
+**2026-11-08 · Fork 작전실 동작:** 도장 상승/타격 시간 분리 조정, 작전 지도 좌우 측면의 2단계 펼침·발판 판정 구현. 자동47검사·런타임9개 외부 컴파일 통과, Unity 확인 전.
+
+
+**2026-11-08 · Fork GM 기보:** 후보자 결정전 40경기 무작위 재생 및 작전실 액자 갱신. 3,764반수 대조·선택10,000회 검사 통과. [목록](../PawnRush/GIANT_CHESS_GAME_LIST.md).
+
+**2026-11-08 · Fork 병합 복구:** 원격 b93100f의 충돌 표식·잘못된 씬/프리팹 병합·장애물 API 불일치 복구. [검사 결과](../Environment/UPSTREAM_MERGE_FIX_20261108.md).
+
+
+- 2026-11-06 R498: 공기 대포 런타임 공전 XYZ 모드 불일치 수정(X/Y=0~0·Z=2.5~5 TwoConstants, Local 유지·설정 후 활성화). Native Play3방향 수정 전 원문 오류30건+모드 실패3건=FAIL33→수정 후 독립 그룹 대조군 포함 PASS·issues0. 저장 자산145개/입자계22개 감사 불일치0·자산 재굽기/씬 저장 없음. Core162·모의55·전체 외부 컴파일 통과. 기존 루트 SeoungTest_PawnRush GUI Play 약25초 AI관찰·Console 빨간 오류0·원문 로그0, 같은 씬 편집 상태 유지. 사용자 입력·연출·Steam·성능 미확인. 이 기록을 추가한 커밋(`git log --grep=R498`).
+
+- 2026-11-06 R497: main 종류별 폴더 정리·Docs/PawnRush·구형 맵 Prototype/GUID·asmref 보존·Queen 폐기/공용기능 중립화·메뉴4그룹·오래된 원격8/로컬8브랜치 bundle 보관 후 삭제·HANDOFF 원문 archive 보존. Core162·모의55·전체컴파일·Unity저장10종/씬 실패0, 실제 Unity Play10종 기능캐시/문/초기화/씨앗/A분리/I외형 자동검사 통과. 사용자 Unity/Steam 미확인. 이 기록을 추가한 커밋(`git log --grep=R497`).
+
+- 2026-11-06 R496: 사용자 지정 기존 `C:\Users\dua07\GitHub\ChessFighter`를 최신 main으로 전환, 원래 수정2프리팹+meta·해시·patch·stash·옛 브랜치 보존. 새 워크트리 없이 지정 루트에서 직접 작업(T13). 게임 코드·프리팹 재생성 없음, Core164·모의55 통과, 기존 경로 Unity MG목록·새메뉴GUI·C Start·숫자5→E 서고 AI관찰, 전체키·퍼즐·사용자/Steam·Desktop선택 미확인.
+- 2026-11-06 R493~R495: Open Section Test에 작전 회의실(슬롯 7 `Final_WarRoom`), 홀 프리팹 출구 값 고침, 구간 시험 `[` `]` 이동, 구간 시험에 폰 러쉬 기물 이동 · 스킬, 작전 회의실 소리는 회의실 안에서만(대포 회전 소리 상자에 원점의 룩 레이저 선이 들어가던 것 포함) — `main`에 커밋 · 푸시
+- 2026-11-04 R340~R398: 대계단 홀 H와 작전 회의실 작업, 낮은 턱 점프 되튐 고침 모음 커밋(R399, `seoungtest`, 푸시 안 함) — 대계단 홀: 착지 공간 난간 · 떨어지는 샹들리에와 기사 말 예고(투영 데칼 · 유령 리허설 · 입자, `Scripts/VFX` 위험물 VFX · `Assets/VFX/Shaders`), 왕실 발코니 · 환풍기 바람 VFX · 해머(진자) · 동상 · 대계단 카펫과 난간 · 굴림대(카펫 · 석상 폰) · 입구와 현관 옆벽 · 나선 길 체스판 · 칼라카타 오로 바닥 · 무광 은 창살 · 금 테두리 없는 원형 벽(Blender 원본 · 렌더 · FBX). 작전 회의실: 출발 소품(나침반 원판 · 작전 지도 · 혼천의) · 공기 대포 · 컨베이어 재질 · 돌아오는 계단 · 지붕 볼트와 앵커 · 맵 전체 메시 충돌 · 컨셉 재질 칠하기(`PR_LibraryPaint` · `LibraryPaint`) · 골 발판 나침반 · 문 · 돌 · 천장 메달리온 · 컨베이어 벨트 높이와 역방향 운반 · 캐리지 충돌 · 계단 경사. 폰 러쉬 물리: 낮은 턱에 붙어 점프하면 뒤로 튕기던 것(`lipNoRecoil`, R398). PawnRush asmdef → VFX 참조(컴파일 스크립트 둘도), 패키지 `com.unity.ide.visualstudio`. 뺀 것: `Assets/_Recovery`, `__pycache__`.
+- 2026-11-03 R323~R339: 대계단 홀 H와 작전 회의실(도서관) 작업 모음 커밋 — 원형 홀(건축 벽을 원 따라 휘어 계단 끝 r 31에 맞춤, 별 볼트 반돔 + 유리 오큘러스, `round_hall_v21~v24`), 진자 샹들리에가 벽을 안 뚫게, 동상 4개를 대계단 양옆으로, 카펫 · 금테, 가운데 샹들리에 재질 · 빛 · 흔들림(`HallChandelierSway`), 발판 2종 텍스처(`pads_v28`), URP 유리 셰이더(`PR_Glass`: 오큘러스 · 징검다리 크리스탈 클리어), 벽 석회암 + 몰딩 선 금(`PR_PalaceStone` · `PR_PalaceWall` · `PalaceTrim.png`), 떨어지는 기사 말 칠함(`knight_v34`, 534k면), 다른 채팅의 작전 회의실 이름 · 혼천의(`LibraryArmillary`) · 대포 팬 소리; `.npy`를 LFS로. Version 61.
+- 2026-11-03 R316: 컨베이어 소리에 돌 홀 울림 — `NearFarSound.Hall`(AudioReverbFilter, 벨트 · 미끄럼 2.8초, 쿵 3.6초), 먼 층 더 멀리 · 크게.
+- 2026-11-03 R315: 도서관 안쪽 기둥 10개를 돌기둥 에셋으로 — `Library/inner_piers_stone.py`(받침 −8 ~ 머리 9.44, 띠 6개, 3,000 삼각형, 벽 기둥은 그대로), 환경 FBX 덮어씀, Version 41.
+- 2026-11-03 R314: 도서관 대포 팬 소리 — 먼 소리 층(바람처럼 들림) 지움, D 팬 고리를 거리 감쇠 없이 도서관 홀 경계 상자 안 어디서나 같은 크기로(밖 4 m에서 0), spatialBlend 0.5.
+- 2026-11-03 R310: 작전 회의실 홀 기둥 교체 — `pillar_r310.py`: Tripo 돌기둥(0.24 × 0.34 × 0.98, 28.6만 삼각형)을 깊은 쪽이 벽을 향하게 90° 돌림, 줄눈 z 0.278 · 0.614에서 잘라 조각마다 막고 줄인 뒤(받침 18 % · 머리 28 % · 띠 나머지) 띠 11개 쌓음(0.996배), 높이 51.72(바닥 −30 ~ 들보 밑 21.72), 받침 반 깊이 2.03(벽 28에 3 cm 묻힘), 한 칸 돌 바닥 띠(|x| 24 ~ 28, 3 m 판 · 2 cm 틈, 기둥 앞쪽 y 0 ~ 12), 법선은 35° 안이면 축으로, UV0 상자 투영 1 = 4 m, UV1 smart project. 렌더(벽 · 들보 · 바닥 타일과 함께 Unity FBX로 세 칸 다시 세움)로 확인, 4,000 삼각형과 2,500 차이가 작아 2,500. 회의실 LOD0 합계 129만(R296 목표 120만보다 +9만).
+- 2026-11-03 R309: 정원 G의 남은 v31 블록아웃을 모델로("지금 코스는 확정이야") — `build_v33.py`가 V19 벽돌 모듈 · V21 난간 · 둥근 벽돌 기둥 · 줄인 통 발판을 다시 써서 바닥 · 벽 · 난간 · 터널 · 출구 · 지름길 기둥을 덮고, 배 · 수문 판 · 연잎 · 회전봉 · 간헐천 테두리는 새 회색 클레이(237개 추가, 43개는 코드 부품에 붙음), `export_unity_v33.py`(424 메시), Unity는 꺼진 묶음에서 지어 쉬는 자세에 붙이고 덮인 블록아웃을 숨김, Version 34. Blender 렌더 · 컴파일만 확인, 커밋 안 함.
+- 2026-11-03 R307: 정원 G를 main v31 배치로 — main 4ff598f1의 v31 코드 · 프리팹을 seoungtest로 복사해 구역 G가 v31 블록아웃을 짓고, `build_v32.py`가 Blender 모델을 그 자리로 옮김(성문 · 승선 블록 1.2 m 아래, 통 발판 8개 → 떠 있는 발판, 로봇 팔 2대 → 로봇 둑), 자리가 없는 모델 180개 지움(왕실 배는 v31 줄에 안 들어가 블록아웃 배 유지), `export_unity_v32.py`(187메시 · 로봇 트랙 4), 모델이 덮는 블록아웃은 그림만 끔, `Version` 32. 컴파일 · Blender 렌더만 확인, Unity 미확인, 커밋 안 함.
+- 2026-11-02 R296: 정원 · 작전 회의실 삼각형 줄이기 — 승규 님 "정원 삼각형을 400만 V19 위주로 줄이고, 작전 회의실 120만으로 맞추면서 level of detail 다시 해". 정원 v31: V19 공유 메시 3개 21,404 → 2,600(35° 각진 모서리), V16 발판 6 · 왕실 배 0.5배 → 646만 → 399만. 작전 회의실: `relod_r296.py`로 반복 장식 LOD0 0.72배 → 147만 → 119.9만, LOD1/LOD2 0.6/0.3, 벽 패널은 그대로, 면 뒤집힘 검사, `WarLod` 전환 높이 0.30/0.12/장식 1.5% 끔. Version 27. 첫 시도(V19 2,000)는 윗면 줄무늬, 첫 LOD(0.5/0.25)는 책장 LOD1이 예전보다 뭉개져 다시 함. 커밋 안 함, Unity 확인 전.
+- 2026-11-02 R294: 대포 소리 고름 — 승규 님 "D의 팬, 지금 충전, 지금 발사. 발사 크게, 충전 조금 길게". `CannonFanLoop(+Far)` = R293 시안 D 팬 반복(이음새 0.4초 교차), `CannonCharge(+Far)` = R292 만드는 법 그대로 R292 팬 소리로 1.4초, `CannonFire(+Far)` = R292 발사에 저역 더하고 부드러운 포화로 RMS −19.5 → −11.6 dB(최고 −1 dB 그대로). `LibraryAirCannon`: ChargeAt 3 → 2.6(충전 1.4초), 발사 소리 거리 NearFull 9 · NearEnd 40 · FarStart 8 · FarEnd 100, 팬 최대 0.6. 6개 울림 검사 통과, 컴파일은 기존 WarRoomModels 오류 4개만. 커밋 · 푸시 안 함, Unity · 소리 미확인.
+- 2026-11-02 R293: 대포 소리 다른 시안 — 같은 flow로 A 공기 압축기 · B 나무 풀무 · C 증기 피스톤 · D 만화 장난감 × 팬 · 충전 · 발사 12개, 울림 · 너무 작음 4개 다시 뽑음, 고르기 페이지만 만듦.
+- 2026-11-02 R292: 공기 대포 소리 — 승규 님 "소리도 넣어줘". ElevenLabs(같은 flow)로 팬 반복 · 충전 · 발사 2개씩 뽑음. 충전 두 개는 1.8 kHz 고정 휘파람 울림(coin 검사)이 있어 버리고, 팬 반복 소리를 1 → 2.2배로 빨라지게 재생 + 올라가는 바람으로 직접 만듦. 발사는 더 낮고 묵직한 쪽. `Resources/PawnRushLibrarySfx/CannonFanLoop · CannonCharge · CannonFire.wav` + 먼 층 `…Far.wav` 3개(저역 통과 + 홀 잔향). `LibraryAirCannon`: 팬 소리는 회전 속도를 따라 커지고 높아짐, 충전(3초) · 발사(4초) 순간에 한 번씩, 모두 `NearFarSound`(발사는 가까이 5 → 30 m, 멀리 ~80 m). 6개 모두 울림 검사 통과, 컴파일 검사는 기존 WarRoomModels 오류 4개만. 커밋 · 푸시 안 함, Unity · 소리 미확인.
+
+- 2026-11-02 R291: 도서관 대포 = 공기 발사 대포 — 승규 님 "대포도 빨아드리는 대포가 아니라 공기 발사 대포로 해서 애니메이션 넣어줘 시계방향으로 vfx는 아직 넣지마". 대포 두 대(`BLOWER_A_left` · `BLOWER_B_right`)가 한 메시라 팬이 못 돌았음 → `ArtSource/PawnRush/Library/air_cannons.py`가 환경 FBX에서 허브 + 날개 10장을 `BLOWER_<x>_Fan`(허브 가운데가 원점)으로 떼어 냄(B는 A의 메시를 같이 써서 팬 메시도 같이 씀, 몸통 · 테 · 볼트는 그대로, 렌더로 모양 같음 확인). `LibraryAirCannon.cs`: 공유 시계 5초 한 바퀴(B는 2.5초 늦게) — 0 ~ 3초 팬 천천히(120°/초), 3 ~ 4초 충전(팬 1440°/초까지 · 포신 3 cm 뒤로 · 떨림), 4초 발사(포신 0.05초에 15 cm 뒤로 튕겼다 0.7초 스프링 복귀, 0.3초 동안 앞 12 m × 폭 3.2 m 공기 기둥 안 폰을 밖으로 · 조금 위로 밀기, 입구 가까이 최대 10 m/s · 끝 5 m/s), 4 ~ 5초 팬 감속. 팬은 입구 앞에서 볼 때 시계방향. 이 PC가 시뮬레이션하는 몸만 밂(네트워크 인형 제외). VFX 없음. 시험 씬 `Version=26`. 컴파일 검사는 기존 WarRoomModels 오류 4개만. 커밋 · 푸시 안 함, Unity 미확인.
+
+- 2026-11-02 R290: 근거리 · 원거리 소리 — 승규 님 "근거리 원거리 사운드 시스템 넣어줘". `NearFarSound.cs`(다른 소리에도 쓸 수 있는 부품): 한 소리를 같은 자리의 두 층으로, 듣는 사람과의 거리로 섞음. 가까운 층 = 자세한 원래 소리, NearFull까지 그대로 → NearEnd까지 작아지며 저역 통과 필터가 22 kHz → 1.5 kHz로 닫힘(공기가 높은 소리를 먹음). 먼 층 = 먹먹하고 홀에 울리는 소리, FarStart부터 커지고 FarEnd 근처에서 사라짐, 넓게 퍼짐(spread 120). Unity 거리 감쇠는 끔(평평한 곡선), 크기는 이 부품이 직접. 컨베이어: 벨트(가까이 4 → 24 m, 멀리 ~65 m) · 미끄럼(3 → 18 m, 멀리 ~40 m, 약하게) · 철컥(4 → 26 m, 멀리 ~75 m). 먼 층 파일 3개(`…Far.wav`)는 원래 소리를 저역 통과(450 ~ 800 Hz) + 돌 홀 잔향(1.6 ~ 2.2초)으로 만듦, 반복 소리는 세 번 이어 붙여 가운데를 잘라 이음매가 없게. 컴파일 검사는 기존 WarRoomModels 오류 4개만. 커밋 · 푸시 안 함, Unity · 소리 미확인.
+
+- 2026-11-02 R289: 도서관 컨베이어 소리 — 승규 님 "컨베이어서 나는 sfx 넣어줘". ElevenLabs(flow `SsseNEjgrzO8OYi98PaU`)로 3개: 벨트 · 모터 반복(나무 판 · 고무 롤러 · 낮은 모터, 첫 판은 2.3 kHz 쇳소리 울림이 있어 다시 뽑음), 레일 슈 미끄럼 반복(낮게 갈리는 소리), 끝에서 돌아설 때 둔탁한 철컥. 반복 소리는 이음매를 0.4초 겹쳐 WAV로(`Resources/PawnRushLibrarySfx/ConveyorBeltLoop · ConveyorSlideLoop · ConveyorTurnClunk.wav`). `LibraryConveyorSound.cs`가 움직이는 캐리지에 3D 소리 3개를 붙임: 벨트는 늘 웅웅(속도에 따라 크기 · 음높이), 미끄럼은 움직일 때만, 속도가 0.15 m/s 밑으로 떨어지면(양 끝) 철컥 한 번. 공유 시계 속도를 읽어 모든 PC가 같은 때에 들음. 시험 씬 `Version=25`. 울림 검사(coin) 통과, 컴파일 검사는 기존 WarRoomModels 오류 4개만. 커밋 · 푸시 안 함, Unity · 소리 미확인.
+
+- 2026-11-02 R288: 도서관 구역 E 컨베이어 — 승규 님 "컨베이어 벨트에 있는 바퀴 지워주고 레일이랑 접합부를 자연스럽게 연결". 셔틀 FBX에서 `Carriage_guide_wheel` 4개 · `Carriage_bogie_axle_bracket` 4개를 지우고, 그 자리(레일 가운데 x ±2.10)에 `Carriage_rail_shoe` 4개: 섀시 발 밑에 볼트로 붙은 미끄럼 슈가 I빔 윗날개를 감쌈(윗판 · 양옆 볼 · 날개 밑 걸쇠 · 1.2 cm 틈, 0.9 m). `CONVEYOR_CARRIAGE` 아래라 16초 왕복 그대로(5개 시점 위치 같음 확인). `ArtSource/PawnRush/Library/rail_shoes.py`(FBX 직접 고침, 다시 돌려도 변화 없음), 시험 씬 `Version=24`. Blender 렌더로만 확인, 커밋 · 푸시 안 함, Unity 미확인.
+
+- 2026-11-02 R287: 정원 v30 — 양옆 폭포 구간(테라스 · 수조 · 분출구 · 폭포 · 부두 · 화단 · 나무 12 · 덤불 126 · 꽃, 98개)을 북쪽으로 10.5 m(수조 앞벽 y 27 = 분홍 선), 구조물 모양은 그대로 위치만(첫 판의 테라스 판 줄이기가 공유 메시로 V19 블록 전체를 바꿔 되돌림, PITFALLS 31), 출발 대기장 바닥 블록 4장 → 1장(가운데 구멍 · 틈 없앰), 둥근 섬 2개(78개) 지움, 동쪽 성벽 아치 앞 Tripo 수문 · 아치 물, Tripo 왕실 배가 동쪽 호수를 70초 행차(`parade_v30.json` · `GardenBoatParade.cs`: 출발 대기장 들어온 뒤 2초 · 회전 광장 지난 뒤, 한 판 최대 2번), 물 셰이더 배 3척(`_GardenHull*`), 313메시 · 13트랙, 부품 이름을 Blender 이름 해시로(같은 버전 재내보내기로 씬이 엉망이 된 것 고침, PITFALLS 32), 시험 씬 버전23. 커밋 · 푸시 안 함, Unity 미확인.
+- 2026-11-02 R286: 정원 v29 — 옛 둘레 성벽 · 원형 탑 지움(159개), Tripo 말굽 성벽을 곧게 펴 7구간으로 잘라 직사각형 둘레에(배율 150, 탑 끝 약 29 m, 남쪽 성문 = 출발 뒤), Tripo 탑을 네 모퉁이에(약 49 m), 숨은 충돌 판 4장, 성 밖 풀밭, 391메시 · 13트랙, 시험 씬 버전21. 커밋 · 푸시 안 함, Unity 미확인.
+- 2026-11-02 R285: 정원 v28 — 분수 기둥 6개(`V04_중반_분수`) 지움, 건널목 · 둥근 단 꽃 지움(정원 덤불 80 · 꽃 391, 화분 덤불 6 · 꽃 28), 뜬 덤불 · 꽃을 바닥에 내림(최대 1.18m), 배가 벽 4cm 앞(y 38.96 · 45.52)에서 0.35m/s로 닿고 쿵 튕김 · 끄덕임 · 가라앉음(키 프레임), 527메시 · 13트랙, 시험 씬 버전20. 커밋 · 푸시 안 함, Unity 미확인.
+- 2026-11-02 R284: 정원 v27 — 물 색 E(밝은 하늘 파랑 한 색, 물마루 청록 없앰), 어두운 입구 4곳 법선 뒤집음(막혀 보이던 분출구), 3cm 수조 물은 `PR_GardenWaterShallow`(물결 0.006m), 수조 물줄기를 난간벽 구멍 안에서 시작 · 벽 뒤는 수면 아래, 배 흔들림 9cm · 3.4° · `_BoatRingHeight` · `_BoatGlow` · `_WakeHeight 0.13`, 시험 씬 버전19. dxc · C# 컴파일 · FBX 왕복 통과; 커밋 안 함; Unity 미확인.
+- 2026-11-02 R283: 정원 v26 — 폭포 분출구 17개(아치 · 어두운 입구 · 돌 홈통, 수조 난간벽) · 분출구별 폭포 · 착수선 · 물보라, 옛 벽 폭포 조각 제거, 배 흔들림 7cm · 1.7° · 2.9°, 물 색 깊이 · 짙은 파랑 · 물마루 청록 · 더 큰 물결, 착수선 둘레 일렁임, 폭포 발밑 물 색 전환(큐 +5 · `_GardenFoot`), 배 들썩임 고리(`_GardenBoatInfo`), 착수선 배열 `_GardenLanding*` 24개, 시험 씬 버전18. Core133 · 세션45 · 컴파일 · FBX · dxc 셰이더 통과; Unity 미확인.
+- 2026-11-01 R282: 정원 Resources 이름 고정(`RoyalWaterGarden.fbx` · `_Motion.json`), 시험 씬 구역별 try/catch · 루트 finally 활성, 정원 모델 누락 시 LFS 포인터 안내, 시험 씬 버전17. Core133 · 컴파일 통과; Unity 미확인.
+- 2026-11-01 R281: 정원 v25 — 물 흰 거품 제거, 폭포 막+물줄기 149개(정점 색) · 소스 이름 재질 연결, 저수지 수면 +0.24m · 배 흔들림 · 켈빈 항적/선수파, 발판 밑동 연장, 맑은 청록 물, 시험 씬 버전16. Core133 · 컴파일 · FBX · HLSL 문법 통과; Unity 미확인.
+- 2026-11-01 R280: 정원 v24 — 연잎 196장 재제작, 로봇 절단면 막음 · 관절 구 1.6m, 물 Gerstner 4파(유한 수심 분산) · 발판 고리, C발판 6개 지그재그 · 구역 24→28m(입구 턱 4m 이동 · 경사로 7m), 시험 씬 버전15. Core133 · 컴파일 · FBX · HLSL 문법 통과; Unity 미확인.
+- 2026-11-01 R279: 정원 v23 — 광장 구멍 3쌍 메움, 나무 접지·GLB 14%·잎 3색, 덤불 224 잎/꽃 1,123 3D, 폭포 막 9개(UV)·물보라·수조 받침, `PR_GardenFallSheet`·`PR_GardenSpray`, 물 상호작용 `GardenWaterInteraction`, 더 푸른 물, 시험 씬 버전14. Core133·컴파일·FBX·HLSL 문법 점검; Unity 미확인.
+- 2026-11-01 R278: 정원 v22 — 가장 가까운 바닥 시작점, 로봇팔 1.25배 IK 강스윙(길 0.25m 위) · 관절 구 · 어깨 힌지, 수조 폭포 재배치 · 수조 물 · 배출구 턱, `PR_GardenClearWater` 굴절 물 · 폭포 셰이더, 시험 씬 버전13. Core133 · 컴파일 · FBX 점검; Unity 미확인.
+- 2026-11-01 R277: 정원 v21 — 회전봉에서 경계석·허브 고리 조각 분리(벽 뜯김 원인), 남북 입구 마감 기둥, 허브 고리, 나무 GLB2종 12그루, 광장 매끈한 충돌 프록시, 시험 씬 버전12. Core133·컴파일·FBX 점검; Unity 미확인.
+- 2026-11-01 R276: 정원 v20 FBX/15트랙과 Unity 공용시계 샘플러·이동표면 연결, 충돌/물/단색 재질·낙사 범위·시험 씬 버전11. Core133, FBX/루프 점검 통과; Unity 컴파일/화면/플레이 미확인.
+
+- 2026-11-01 R275: 정원 Blender v20에 기물3/후반 촛대 제거, 시계방향 회전봉·상하발판·두 관절 로봇팔·반대위상 보트 왕복, 24초 반복. Blender 데이터/렌더 점검, Unity 미반영.
+
+- 2026-11-01 R265: 정원 수면/폭포 슬롯에 Unity 전용 재질 연결, UV 없는 폭포의 월드 좌표 흐름 셰이더, 시험 씬 버전10. Core 133 통과; Unity 컴파일/화면/사용자 미확인.
+
 커밋마다 한 줄. 무엇을 왜 바꿨는지는 [REQUIREMENTS](REQUIREMENTS.md)의 같은 번호를 본다.
 `git log --oneline`과 같은 순서(최신이 위)다.
 
@@ -7,6 +77,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| 이 기록을 추가한 커밋 (main) | 11-05 | R122 | 컨셉 미니맵의 직선 정사각 코스·말리는 지도/잡기 감속·기보 예고 전시·후반 거인 체스를 단일 프리팹으로 구현 |
+| 이 기록을 추가한 커밋 (main) | 11-02 | R121 | Prefab mismatch 원인인 순번 ID 재사용 제거·고정 ID 생성·프리팹/씬 동시 이전·타입 회귀검사 |
+| 이 기록을 추가한 커밋 (main) | 11-02 | R120 | 작전실160m 정사각 외벽·4구간 단축·체크포인트 이동·2~3분 목표/개별 경과시간 표시 |
+| 이 기록을 추가한 커밋 (main) | 11-02 | R119 | 작전실 전술 지도 포격·역상 폰 대열·2인 승인문/1인 우회로와 통과 안내 추가, 구조/로직44·런타임7 통과 |
+| 이 기록을 추가한 커밋 (main) | 11-02 | R118 | 작전실과 총지휘부 단일 프리팹·실내 벽/천장/소품·시야 차단 전실/문·압인기/지휘봉/돌풍/관문 추가 |
+| 이 기록을 추가한 커밋 (main) | 11-02 | R117 | GiantChessCourse에 작전실 코스/12명 진행 연결·체크포인트와 기보 시작 연동, 별도 RoyalPalaceCourseTest 씬 삭제 |
+| 이 기록을 추가한 커밋 (main) | 11-01 | R116 | 거인 체스 씬에 작전 탁자·지휘관 의자·전쟁 지도·군기·문서 소품·병력 전시대를 추가, 기존 규칙과 씬 수치 유지 |
+| 이 기록을 추가한 커밋 (main) | 10-31 | R115 | 윗궁 코스5개 독립 프리팹·입출구/체크포인트/경계 공간·상향 다리·래그돌 시험 씬·저장 도구, 자동검사 통과/Unity 대기 |
 | 이 기록을 추가한 커밋 (main) | 10-26 | R114 | 체스타이머 씬 직접 Steam 방 생성/코드 참가(F2)·방장 물리/퍼즐 판정·입력/자세/전체 상태 공유·방장 이전 복구, 로비 연결 제외. Core113·세션40·런타임7 통과 |
 | 이 기록을 추가한 커밋 (main) | 10-26 | R113 | 거인 체스 진행을 직전의4배(Replay Speed 2→8)로 변경, Inspector/런타임 상한16으로 확장 |
 | 이 기록을 추가한 커밋 (main) | 10-23 | R112 | 거인 체스 기보2배속·좌표/공격90도 회전(백 왼쪽/흑 오른쪽), 기물 칸 전체 차단·금색 테두리·착지 겹침 탈출/봇 점유 회피 |
@@ -55,12 +133,302 @@
 | 이 기록을 추가한 커밋 (`main`) | 10-10 | R69 | 원판 외향 밀기 제거·접지 원형 운반·점프 관성 유지, 회전 속도/발사 높이 SerializeField. Core83·세션39·7개 런타임 컴파일 통과, Unity 재확인 대기 |
 | 이 기록을 추가한 커밋 (`main`) | 10-10 | R68 | 래그돌 장애물 시험장 15종: 새 씬·선택 메뉴·현재 시험대 복귀. 공통 물리/기존 씬 보존. Linux Core83·세션39·7개 어셈블리 컴파일 및 씬 정적 검사 통과, Unity 직접 확인 대기 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
+
+| (이 병합 커밋) | 11-06 | R492 | `seoungtest`(`ef4146c`, R237 ~ R491)를 `main`에 병합: 실제 충돌 32개 — 정원 코드 = seoungtest, 대계단 현관홀 · 구간 설정 · 홀 `.npy` = main, 나머지(키트 · 검증 · 메뉴 · 시험 · 컴파일 스크립트 · 문서) = 양쪽 모두; 폰 조작 = seoungtest; main 장면 5개(Intro · Lobby · QueenOfTheHill · RagdollTest · QotH 스킬 시험)와 빌드 장면 목록은 main 그대로; seoungtest의 `_Recovery` 추가분 · `__pycache__` 뺌, `.gitignore` 캐시 규칙 |
+| 이 기록을 추가한 커밋(`git log --grep=R496`) | 11-06 | R496 | 기존 프로젝트 루트/main 직접 작업으로 통일·수정 프리팹2개와meta 외부 해시 백업/patch/stash/옛3커밋 보존. main 점유 해제만 하고 이전 worktree 내용 유지. 새 worktree 사용 안 함(T13), 게임 코드·프리팹 재생성 없음. Core164·모의55 통과, 기존 경로 Unity MG목록·새메뉴GUI·C Start·숫자5→E 서고 AI관찰, 전체키·퍼즐·사용자/Steam·Desktop선택 미확인 |
+| 이 기록을 추가한 커밋(`git log --grep=R313`) | 11-06 | R313 | Pull 뒤 미니게임 프리팹·메뉴가 안 보인 제보: Desktop의 `api-bridge-main/main` R312와 Unity의 원래 `ChessFighter/claude/bold-johnson` R155 경로 불일치를 Git·파일·Editor.log로 확인(AI). 올바른 Hub 프로젝트 등록·Show in Explorer 대조 안내, 원본 수정2개 보존. 게임 코드·자산·브랜치 변경 없음. 올바른 main을 별도 Unity로 열어 실제 시험 씬 Play·Start/C 궁전·시험 캐릭터·HUD를 AI 관찰. 사용자 입력 감지 후 중지하여 1~0/F5·실제 퍼즐·사용자/Steam은 미확인. Core164·모의55 통과, 새 로그 오류/예외/누락0·공유래그돌 ConvexMesh 경고1건(물리 변경 없음) |
+| 이 기록을 추가한 커밋(`git log --grep=R312`) | 11-06 | R312 | 미니게임 구간 프리팹10종 실제 제작·저장(`*_MG_*`, 메시2·재질83), 슬롯2/4/6 후보3/4/3개·오프라인 시험 씬·제작/열기 메뉴·기능 소켓 재설치. Core164·세션55·Roslyn·Unity 네이티브 굽기·정적10·시험 씬 참조·Play10종 팀 문/초기화/씨앗/A 공유판 분리 검사 통과(AI). C/E/G 대표6장 배치 관찰(천장 표시). 실제 퍼즐 입력·시험 씬 Start/키·사용자 Unity/Steam·12명 성능 미확인, CFP4·기존 사용자 프리팹 수정2개 보존. [안내](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) |
+| 이 기록을 추가한 커밋(`git log --grep=R311`) | 11-05 | R311 | 초반C/D/A를 공용3D로개편·C다리4m진입·D8바퀴·A공유18m판, 전체10종 공간모델링 컨셉보드/갤러리/제작지침/프롬프트. 70장면·3팀문·50장소조합·표시13종·고유구조·Core164·세션55 통과. 이미지/CPU배치 AI확인, 실제브라우저·Unity·사용자확인전, 게임자산변경없음 |
+| 이 기록을 추가한 커밋(`git log --grep=R310`) | 11-05 | R310 | 지정 Claude Code 세션의 초반 3D·구역 원문을 기준으로 중반 4종·후반 3종 3D HTML 작성, Claude 문맥 검토 반영. 전체·테라스·위·스테이션 단면·걸어 들어가기·동작 예시·팀 문. 장면 49·팀 문 7·Core 164·세션 55 통과, CPU 배치 그림 AI 확인. 실제 브라우저 조작·사용자 확인 전, Unity 구현 없음 |
+| 이 기록을 추가한 커밋(`git log --grep=R308`) | 11-05 | R308 | API 키 없이 Codex·Claude Code 계정 로그인으로 연결: 기본 실행·설정 버튼 변경, 공식 Claude Code 로컬 설치·SHA256 대조, 요청·답변 파일 교환, 참고 문서 첨부, API 자격증명 제외. 실제 GPT → Claude → GPT 3단계 시험, 자동 26개·키 저장 1개·Core 164·세션 55 통과. 사용자가 Claude 로그인 완료, 게임 변경 없음 |
+| 이 기록을 추가한 커밋(`git log --grep=R307`) | 11-05 | R307 | GPT ↔ Claude API 연결 도구(`Tools/AiBridge`): 번갈아 답변·최종 정리, Windows DPAPI 키 설정·실행, 대화 기록, 모의 API 시험 13개·Core 164·세션 55 통과. **키 미설정 · 실제 연결 미시험**. 사용자 프리팹 변경을 보존하고 별도 main 작업 폴더에서 추가 |
+| `8f624263` · `ec2418e6` | 11-03 | R306 | 지연 줄이기: 측정 상자 지연 줄 · 연결 직접/릴레이(`SteamRoute`) · `-latencyBefore` 전후 스위치, 폰 러쉬 스냅샷 예약표(Core `SendSchedule`), 입력 바뀌면 바로(Core `InputSendGate` · `InputChange`), 방장이 물리 전에 입력 읽기, 인원 적으면 초당 60번(Core `SnapshotRate`, `PlaybackDelay` 바닥 · 간격 추정), 폰 러쉬 내 폰 먼저 그리기 F7(기본 꺼짐), `-queuedFrames` 시험 스위치, 랩 빌더 `-labDevelopment`, 고르지 않은 프레임에서 예약표 박자 유지(루프백 측정에서 찾음). 승규 님 "커밋 하지말고 로컬로" → 확인 뒤 "커밋해" → "다 main에 푸쉬 해" |
+| `4ff598f1` | 11-03 | R305 | 폰 러시 1-1 왕실 수로 정원 v31 그레이박스: 슬롯 1 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹, `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden), 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad` · `GardenHits`, Core `RoyalWaterGardenRules` + 시험 3개, 검증기 · 시험 씬 · 생성기, 문서(PAWN_RUSH_ROYAL_GARDEN · SECTIONS · VALIDATION · DECISIONS P30 · REQUIREMENTS · HANDOFF) |
+| `7b86e99a` | 11-02 | R297 | 문서: VALIDATION 맨 위(빌드 두 개로 기준값 재는 순서 · Profiler 순서 · (가)~(바) · [4] · [5] 미확인) · HOST_AUTHORITY(§0 · §1.1 · W3 · W7 · §6 표 · P5 · P6 · §8.4 · 새 §10) · MOTION · SESSION(v26) · SKILLS_ONLINE · RAGDOLL · DECISIONS K13 · PITFALLS 65~66 · REQUIREMENTS · HANDOFF |
+| `f5b21ab1` | 11-02 | R297 [5] | 받은 메시지 실패 로그마다 채널 줄(`Steam channel ○: …`)을 먼저 남김(첫 실패가 예외만 남아 `Player.log`에서 못 찾던 것) |
+| `7d248b0b` | 11-02 | R297 [5] | 모든 Steam 받기 루프가 메시지 하나의 예외만 버리고 계속 읽음(`ReceiveErrors`), 폰 러쉬 받기 최대 8번, 이동 스냅샷 12명까지만(`MotionProtocol.MaxPawns`), 스킬 받은 번호 0 = 아직 없음(`SkillWire.TakeAck`, 랩 · 폰 러쉬) |
+| `c0073862` | 11-02 | R297 [3] | 패킷 스트림 · 배열을 다시 씀(Core `PacketStreams` · `PacketPool`, 모든 Core 프로토콜 · 받기 루프), 매 프레임 목록 · 람다 · 위임 · `GetRange` 할당 없앰, 지연 시뮬레이터는 복사, 다시 쓴 스트림 시험 |
+| `d66873e2` | 11-02 | R297 [3] | 바꾸기 전에 모든 Core 패킷 바이트를 고정 입력의 FNV-1a 해시로 고정하는 시험 |
+| `92985d5a` | 11-02 | R297 [4] | 사람이 안 온 예약의 발신자는 60초 쉼(`TeamReservations.Cooldown`), 시작한 경기의 잡아 둔 자리는 한 발신자 한 그룹(`Backfill.Seat.Leader`), SESSION §4 "보안 범위", Core · 모의 시험 |
+| `e00ea7b6` | 11-02 | R297 [2] | 래그돌 스냅샷 말 74 → 65바이트(갈고리 꼬리 · 받은 보낸 시각 16비트 · 정확한 길이), Core `RagdollWire`, magic `CFRD`, 프로토콜 v26, Core 시험 |
+| `985a8941` | 11-02 | R297 [1] | 개발 빌드 경기에 F3 측정 상자(`NetMetricsOverlay`), Core `AutoPilot`(`-autopilot`)과 시험 |
+| `0da22ed3` | 11-02 | R304 | `claude/bold-johnson-8ez95n`(R300~R303 대계단 현관홀·구간 프리팹)을 `main`에 병합. 브랜치의 R149~R152를 R300~R303으로 바꾼 커밋(`b7a0106` → `df3819a`, main이 R149~R157·R295를 이미 씀) 포함. 충돌: `CoursePattern.shader`(main의 URP 판에 1 m 격자 두 갈래를 옮김), HANDOFF·REQUIREMENTS·DECISIONS·HISTORY·VALIDATION(양쪽 줄 모두 둠) |
+| `df3819a` · `b7a0106` | 11-02 | R304 | 병합 전 번호 바꾸기: R149~R152 → (R295~R298) → R300~R303 |
+| `926ec24` | 11-02 | R303 | 사용자가 나선 길 + 유리 징검다리 구조를 확정("좋아 이렇게 확정하자"): DECISIONS P29·REQUIREMENTS·HANDOFF·PAWN_RUSH_SECTIONS에 적음. 코드 그대로 |
+| `f77b242` | 11-02 | R303 | 대계단 현관홀 비트 3~5를 둥근 홀 한 나선 길로(휘어 오르는 계단·떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말·왕실 단 탑), 유리 징검다리 `GuessBridge`, `IntendedGap` + 검증기, 비트 6을 북쪽·아래로, 둥근 벽, 날개·다리·섬·룩 탑·`SwingingStair` 없앰, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `decc344` | 11-02 | R302 | 꺾임 계단참을 룩 탑을 도는 C자 길 + 탑 북쪽 틈 + 스위퍼 팔 2개(`ObstacleMotion` 회전 + `ObstacleImpact`)로, 날개 계단 2를 움직이는 계단(새 `SwingingStair`)으로, 새 CP2(번호 하나씩 밀림), 경로 248.3 m, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `28535a5` | 11-02 | R301 | 첫 Unity 검증의 `Wind span W1/E1` 오류: 첫 바람이 날개 계단 2 꼭대기 위(|x| 45)에 있어 계단 안쪽 끝으로 올라오면 건너뜀 → 바람 넷을 |x| 41.5/37/32.5/28(폭 3, 쉼 1.5)로, CP2 |x| 47·CP3 25.65, 문서 |
+| `0b6bb27` | 11-02 | R301 | 대계단 현관홀 재미 검토 → 세 곳 고침: 바람이 폰을 실어 나름(새 `IWindReceiver`·`RagdollPawn.Wind`·`ImportedObstacleActor.Blow`·`AirVent.DriftSpeed`, 홀 바람 3.5 m/s·폭 3·화살표 6 m, 계단 도착 자리 밖), 날개를 11 m 바깥으로(홀 ±51·중앙 계단참 ±25·샹들리에 영역과 간격) + 다리 A·섬·다리 B(11.5초, 닫힘 3), 날개 계단 1 진자 셋·난간 없음·아래 턱·가는 들보·카펫 2 m/s, 검증기 이름 목록, 문서(§10 재미 검토). 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `1f037f1` | 11-02 | R300 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
+| `b0a678b2` | 11-02 | R295 | 문서: REQUIREMENTS · HOST · MOTION · SESSION · VALIDATION 맨 위 (가)~(라) · DECISIONS K8 · PITFALLS 62~64 · HANDOFF |
+| `17f45b00` | 11-02 | R295 [6] | 방장 교체 때 옛 방장과의 그 링크 채널만 닫음(`CloseChannelWithUser`: `SteamMotion` 31 · `SteamRagdollLink` 32, 새 경기 때도 랩은 채널만). 음성(40)은 그대로 |
+| `efb3c3f6` | 11-02 | R295 [2] | 폰 러쉬: 모든 PC가 `session.Host` 바뀜을 보고 받은 것을 지움(Core `HostWatch` + 시험), 새 방장은 `stateTick = lastState`, 왕복 시간도 지움 |
+| `d005e578` | 11-02 | R295 [3] | 폰 러쉬: 참가자가 매 프레임 방장 침묵을 `ReportHostSilence`로 보고(첫 패킷 · 공동 시작부터), 방장은 0 |
+| `1036da2a` | 11-02 | R295 [1] | 로딩 중에는 방장 침묵을 재지 않음(`SteamMotion.Loading`), 경기 씬 링크(`LabNetLink` · `SteamMatchLabLink` · `SteamPawnRushLink`)는 첫 패킷 · 공동 시작 중 먼저 온 때부터(Core `HostSilence` + 시험, 30초 마지막 수단), 모의 시험 1개 |
+| `e05779af` | 11-02 | R295 [5] | 대기실 넘김 중 받을 PC가 나가면 넘긴 PC가 다시 방장(`resv`로 예약 되살림), 방 주인이 된 직후 나가도 예약을 들고 넘김, 모의 시험 2개 |
+| `d366f46f` | 11-02 | R295 [4] | 방장 claim은 방 기록에서 다음 순번의 것만, 볼 수 있는 번호 + 1까지만(`HostElection.Follow` · `ClaimLimit` · `NextEpoch`), 프로토콜 v25, Core · 모의 시험 |
+| `6b227192` | 11-02 | R294 | 매칭 대기실 방장 = PC 성능 1등 보강(R159는 `404f44ef`): 성능 점수 다시 재기(6~120초, 오르기만), 방 주인 넘김 10초 기다림, 입장 화면 카드 "방장" · 알림, 비교 로그, 모의 시험 3개(`FakeSteam.OwnerDelay`), 문서(HOST · SESSION · VALIDATION · DECISIONS K8 · PITFALLS 60 · 61) |
+| (이 커밋) | 10-31 | R240 | 경기 채팅 시안 B1: 왼쪽 아래, 줄마다 채널 색 띠, 열면 띠가 위로 펼쳐지고 입력 줄 · 채널 범례 |
+| (이 커밋) | 10-30 | R238 · R239 | 설정 창 시안 A(탭 밑줄 · 오른쪽 설명 칸 · 둥근 상자 줄 · 끔/켬 스위치), 소드 파이트 기물 고르기 · 경기 Esc 메뉴 시안 A(어두운 유리 · 금 테두리), 고르기는 클릭 · 1~5 선택 → Enter · 더블클릭 확정 |
+| (이 문서 커밋, 로컬 main) | 10-28 | R160 | 폰 러시 30개 장소의 장애물 컨셉아트 PNG 6장(각 1024×1536)·프롬프트·장소별 기존 동작과 외형 매핑, 신규 탑승 샹들리에 그네·회전 병풍문 구분. 오프라인 전용 07·14·16 제외. Unity 코드·씬 변경 없음. Core 131·모의 세션 41 통과(컨셉의 Unity·Steam 실기 확인 아님). R159 인증 오류 뒤 푸시 재시도 안 함, Desktop Push 필요 |
+| `ddea471` (로컬 main) | 10-27 | R159 | 폰 러시 공간별 미니게임 구상: 10종 대표 장소·솔로/협동·완료 연출·구간별 변형 30개·조합, 기본 미션 2곳/후반 추가 구별, 최신 G·I·J 반영. 문서만, 사용자 선택 전. Core 131·모의 세션 41 통과(테마 실기 검증 아님). 원격 푸시는 GitHub 인증 오류로 실패, Desktop Push 필요 |
+| (이 커밋) | 11-01 | R263 | `seoungtest`: 왕실 수로 정원을 시험 씬 구역 G로(도서관 E 옆) — Blender v06 FBX `Resources/PawnRushGarden/PawnRushRoyalWaterGarden.fbx`, `Course01v4Builder.RoyalGarden.cs`(메시 충돌체 · `Spinner` · `Pendulum` 둘 · `Oscillator` 둘 · 해자 · 저수지 `KillVolume`), 구역 목록에 G, `SeoungTestCourse.Version` 9, 문서 `Docs/PawnRush/PAWN_RUSH_GARDEN.md` |
+| (이 커밋) | 10-30 | R257 | `seoungtest`: 시험 씬 길 줄의 엔드게임 E · F는 승규 님 노트북(`KKND1236_LENOVO`)에서만, 다른 PC는 코스 01 A · B · C · 탑(`Course01v4Builder.ShowsEndgame`) |
+| (이 커밋) | 11-01 | R262 | `seoungtest` 위(세션 브랜치): 도서관 맵 그레이박스 스크립트 `ArtSource/PawnRush/Library/build_graybox.py`, README §6, 문서 |
+| `5b2cba1` | 10-31 | R261 | `seoungtest` 위(세션 브랜치 `claude/upbeat-mendel-j2a14x`): 도서관 컨베이어 맵 Blender 작업 파일 `ArtSource/PawnRush/Library/`(`build_library_blend.py` · `export_library_fbx.py` · README; `.blend`는 LFS 업로드 403으로 미포함), 문서 |
+| `35789f3` | 10-30 | R256 | `seoungtest`: 엔드게임 LD v1 §6을 `Course01v4Builder.WarRoom.cs`에, Blender 모델 붙이기 `Course01v4Builder.WarRoomModels.cs` · 가져오기 메뉴 `EndgameModelImport`, `Assets/Art/PawnRushMap/Endgame/`(FBX 63 · 텍스처 · 재질 · 배치 목록, LFS), Blender 배치 목록 버그 둘 고침(`eg_bl_scene.record` · `eg_bl_anim.clear`), `SeoungTestCourse.Version` 3. ArtSource의 FBX · .blend · 렌더는 커밋 안 함(스크립트로 다시 만듦), 승규 님의 시험 씬 변경도 안 넣음 |
+| `3f20a91` … | 10-30 | R255 | `claude/eloquent-ptolemy-bhtpfr`(`seoungtest` 위): 엔드게임 고난이도 LD v1 문서, `ArtSource/PawnRush/Endgame/` Blender 빌드 스크립트(키트 · 배치 · 검증 · 렌더 · 내보내기) · 검증 보고 · 배치 목록. FBX 63개 · 텍스처 · 리뷰 렌더 · .blend는 Git LFS 서버가 네트워크 정책에 막혀 커밋 안 함(스크립트로 다시 만듦) |
+| (이 커밋) | 10-28 | R191 | `skill-network-test`: 소드 파이트 경기장을 Blender · Tripo 모델로 — 판 부품(오크 · 월넛 칸, 둥근 월넛 테두리 + 청동 줄, 난간, 책상, 쟁반), Tripo 책 더미 · 체스 시계 · 램프 · 룩(폭 1.45 · 높이 0.9 m, 오크/월넛) · 아치 창 + 달 배경, 램프 빛줄기 · 먼지 · 흔들림, 서재 배경 · 달빛, 칸 착지 · 흔들림 먼지, 시험 씬 K · L 키. `Assets/Resources/SwordFightMap`, `SwordFightArena.cs`, `ArtSource/SwordFight`(Blender 스크립트 · 렌더 · Tripo 원본). Core 132 · 세션 41 · 전 어셈블리 컴파일 |
+| (이 커밋) | 10-30 | R237 | 룩 F 후딜 칼이 `HomeBlade`로 천천히 돌아감, R160~R171 문서 커밋 표기 정정. `skill-clips-wip`(`22cb0b3`, 그 브랜치에서는 R191)을 main에 병합 |
+| `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
+| `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |
+| `7507810` | 10-27 | R160~R171 | 소드 파이트 스킬 VFX(킹 · 룩 · 퀸 · 비숍 1 · 2층), 공용 `Vfx*` 부품 · 셰이더, `ChessFight.VFX.Editor` |
+| `06c7c93` | 10-27 | R159 | Unity가 VFX Graph를 설치하며 채운 `ProjectSettings/VFXManager.asset`(VFX 런타임 셰이더 · 리소스 참조) |
+| `4d581e3` | 10-27 | R159 | `skill-network-test`: VFX Graph 17.3.0, `Assets/VFX/`(기물별 `Prefabs/<기물>/`), `ChessFight.VFX`(`VfxCue`, `VfxWorkbench`), 작업대 씬 · 시험 블룸 볼륨 · HDR 견본, 컴파일 검사에 VFX 추가, 문서 VFX · FX1~FX4. 시험: Core 131 · 세션 41 · 전 어셈블리 컴파일 |
+| (이 병합) | 10-24 | R158 | `urp-conversion`(승규 님, URP·메뉴·스킬 R148~R157)과 소드 파이트(R149·R150)를 `main`에 병합. 프로토콜 v23 두 개 → v24, 문서 충돌은 양쪽 모두 남김(R148~R150 번호가 두 계열에 겹침) |
+| `2e304c4` | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
+| `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 50) |
+| `e69a7ff` | 10-21 | R149 | 소드 파이트 프로토타입(명세 v1.0): Core `SwordMatch`(규칙·판·유령 기물·상태 글자, 시험 4개), `SwordFightMatch`(+Board·Hud·Dev), 폰 F·킹 F 칼만·기획 쿨, 지운 칸·일반 가장자리, `SteamMatchLabLink`(로비 경기에 스킬 온라인), 소드 파이트 3 대 3 시작, 프로토콜 v23, 문서. 시험: Core 129·세션 41 |
+| `4ec62ec` | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
+| `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
+| `62552df`·`cb36113` | 10-22 | R151~R157 | `urp-conversion`: URP 17.3 전환·화면 느낌·스킬 R153~R156·지도·로비 그림, manifest에 URP |
+| `a3fa728` | 10-16 | R148~R150 (승규 님 계열) | 메뉴 화면 기물 = 경기 모델(`Bake Menu Pieces`)·스킬 카드, 높은 바닥에 눕는 스킬 이펙트(`SkillInkKit.FloorDrape`), 시작 화면 성벽 대회장 레이스(Exo 2) |
+| `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
+| `86a34de` | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
+| `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
+| `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
+| `1c21f1c` | 10-15 | R126 | 11단계: 검증기 v1.0 검사(입구 띠·승격 발판·손잡이·움직이는 것 `NoClimbSurface`), B·E 문 위 개수, H 울타리 u 2.75부터 |
+| `afec51f` | 10-15 | R126 | J 나이트 도약대(`MgKnightPads`, 조준·준비·랩 던지기·착지·충돌·깃발, `MgWaterReturn`), `WaterZone.Report`, `MiniGameBase.LocalDriver` |
+| `977fc41` | 10-15 | R126 | I 체크 막기(`MgCheckBlock`, 방장 씨앗 → 같은 배치, 레일 수레·나이트·폰·이중 체크) |
+| `821f710` | 10-15 | R126 | G 킹 호위(`MgKingEscort`, 썰매 거리 s, 손잡이 8개, 회전판, 룩 차고, 캐슬링) |
+| `9fe2c0b` | 10-15 | R126 | C 도개교 다시 만듦(`MgDrawbridge`, 매듭 `GrabHandle`, 질주 1.8, 버팀, 밧줄 길이, 톱니 걸쇠), `IMiniGamePawn.Sprinting` |
+| `ce11595` | 10-15 | R126 | H 체크메이트 몰이(`MgCheckmate`, Core `CheckmateHunt`, 공격 칸은 각 PC가) |
+| `6294714` | 10-15 | R126 | A 공유 체스판(`PaintBoard`, `MgPaint` 다시 만듦), `ArenaFx` 목소리 고침·끊을 수 있는 소리 |
+| `68f8e84` | 10-15 | R126 | F 앙파상 사냥(`MgEnPassant`, 공유 시계 조각상), `MiniGameParts` |
+| `cf3df08` | 10-15 | R126 | 2~3단계: 아레나 단·간판·문 위 막대·공통 연출(`Arena`·`ArenaFx`·`InstallRise`), `GrabHandle`, `IMiniGamePawn`(`RagdollDriver`), `MiniGameHooks.JumpIntercept` |
+| `6b4dc8b` | 10-15 | R126 | 1단계 Core: 게임 10종·묶음 뽑기, 판·F·C·J·G 규칙(`PawnRushGames`), `CheckmateHunt`, `CheckBlockGenerator`, Core 115 |
+| `a10e647` | 10-15 | R126 | 0단계: 장애물 판정 `ObstacleClock.Authority`(방장에서 꺼져 있던 것), 참가자 장애물을 그리는 순간의 방장 시각으로, 출발 막대 공유 시각, 코스 상태 `CFP3`(스테이션 블록, 스냅샷마다·그 시각에 적용), 든 판자 자리 번호로, 프로토콜 v21, 기획서 v1.0 저장 |
+| `56ad187` | 10-11 | R125 | 폰 러쉬 코스 01: 기물 스킬(오프라인·온라인, `PawnRushCourseSkills`, `SteamPawnRushLink` 스킬 동기화), 1회용 승격 발판(`StationPromotion`, `MissionPicker` 발판 기물), 왕관 발판 과반 승리(`CrownFinish`) → Victory/Lose(`PawnRushResultFlow`) → 로비, `SteamSession.EndMatch`(`ended`), `NetworkRuntime.LateStart`, Core `PawnRushCourseRules`·`PawnRushNetState` CFP2, `SkillWire.PositionRange` 320, `CharacterCommand.Skill`·`CourseSkills`, 결과 씬 빌드 목록, 프로토콜 v20·`CFRB`. 시험: Core 106·세션 41 |
+| `4125cf9` | 10-11 | R124 | 래그돌 스냅샷 위치 범위 ±80 → ±320 m(`RagdollNetProtocol.PositionRange`, magic `CFRA`): 폰 러쉬 코스 01에서 z 80 m 너머 폰이 참가자 화면에 80 m에 붙어 보이던 것. 프로토콜 v19 주석. 문서: HANDOFF, REQUIREMENTS R124, DECISIONS T10, PITFALLS 38, VALIDATION R124 표, PAWN_RUSH_COURSE01 §7-2, HISTORY |
+| `22d2204` | 10-11 | R124 | 병합: bold-johnson의 남은 2커밋(`Tools/Sfx/SwordFightEdgeSkills`, 그쪽 R115). 문서 충돌은 양쪽 기록을 남김 |
+| `924ea55` | 10-11 | R124 | 병합: `skill-network-test`(138커밋)를 `main`에. 폴더는 `main` 배치로, 게임 씬 모두 유지 + `Scenes/SkillTest/` 셋(빌드 목록엔 꺼짐), 프로토콜 v19, `SwordFightEdgeFloor` 상태형 표시, 문서 양쪽 기록(번호 겹침 표시) |
+| `3fbc10a` | 10-10 | R115(bold-johnson) | 소드 파이트 가장자리 스킬 효과음 시안: 25개 고르기 페이지(SmP9pDnP9xTaNSRvH5TJMB), 도구 `Tools/Sfx/SwordFightEdgeSkills/`(spec·페이지 만들기·내려받기·띠용 검사), Skills/SWORD_FIGHT §R115, REQUIREMENTS R115, HANDOFF, HISTORY. Unity 안 건드림 |
+| (커밋 전) | 10-15 | R146 | (`skill-network-test`, R129~R145와 함께 커밋 안 함) 새 `RagdollPawn.KingCall.cs`, `PawnRushSkillFx.KingCall.cs`, `PawnRushKingCallUi.cs`, 셰이더 `SkillNano` · `SkillBeam`; `SkillFxKind` KingCall · KingCallGo · KingCallLand · KingCallEnd, 킹 단계 · 이름 · 쿨, 오는 동안 무적(`Knockdown` · `TakeHit` · `Squash` · `Stagger` · `SkillHit` · `SkillBind`), `RagdollNetProtocol.TypeKingCall`, `LabGame.AskKingCall` · `SkillListOpen`, `LabNetLink` 보내기 · 받기, `PawnRushSkillParams` 킹 수치, 시험대(킹 설명 · 더미 모두 내 팀 · 구간 둘로 · 더미 자동 대답), 시험 `king-call` · `king-call-hit` · `king-call-miss`, 녹화 장면, 문서 |
+| (커밋 전) | 10-15 | R145 | (`skill-network-test`, 커밋 안 함) `RagdollVisualSync` 기물 팔 흔들림 줄임 · 장갑 붙임 · 끌 때 팔 늘임, `ChessPieces` 킹 전력질주, `LabAutoTest.Piece` M11 · `NetworkCoreTests` 기대값, `PawnRushSkillProbe.Steered/Steer`, 문서 |
+| (커밋 전) | 10-15 | R144 | (`skill-network-test`, R129~R143과 함께 커밋 안 함) `PawnRushSkillBed.Pieces`에 킹 추가, 킹 설명 글 |
+| (커밋 전) | 10-15 | R143 | (`skill-network-test`, R129~R142와 함께 커밋 안 함) `SkillArc`(꽉 찬 몸통 · 가늘어지며 꺼짐 · 깜빡임은 심에만 · 최소 굵기 · 금색 점 조명), 셰이더 `SkillArc`(`_Edge` · `_GlowCover`, uv x = 뜨거움), 퀸 `ShockGather` 발밑 번개 · `ShockBlast` 팔방 번개 0.3초 · 바닥 기는 번개 · 잔전기 · `ArcThrough` 느려짐 · 맞은 기물 0.6초, `PawnRushSkillFilm.EyeOverride`/`LookOverride`/`FovOverride`, 문서 |
+| (커밋 전) | 10-15 | R142 | (`skill-network-test`, R129~R141과 함께 커밋 안 함) 새 `SkillKit/SkillArc.cs` + 셰이더 `SkillArc`(번개), 새 `PawnRushSkillFx.Stake.cs` + 셰이더 `SkillWood`(나무 말뚝), 퀸 번개 `ShockGather`/`ShockBlast`/`ArcThrough`/`GatherChess`, 매듭 `RopeKnotMesh`(클로브 히치) · `RopeAlong` · `BuildRope` 마개 선택, `SkillRope` 양면 · 그림자, `SkillTripwire.PegsDrawnElsewhere`/`PegFoot`, `SinkPegs` 나무 말뚝, 녹화 장면 설명, 문서 |
+| (커밋 전) | 10-14 | R141 | (`skill-network-test`, R129~R140과 함께 커밋 안 함) 새 셰이더 `SkillAir` + `SkillKit/SkillAir.cs`(공기 임팩트, 두 모드), 폰 러쉬 `AirKick`(폰 쐐기 `SpeedWedges` · 나이트 `ForceStroke`/`KickLines`/`AirKickLines` 지움), 퀸 오브 더 힐 `AirKick` · 캐슬링 `RookSwap`/`Spring`/`CastleLand` · 조준 구슬 `Beads` · 착지 로고 `BadgeStamp`/`PaintBadge`(`Tile.gloss`/`sheenAt`) · 강철 편자 `ShoeSteel` · 흙빛 발굽 자국, `AimX` · `WindTrail` · `SpeedWedges` · `Socket` · `Horseshoe` 지움, 스킬 씬 나이트 E 끔(`RagdollPawn.Abilities.cs`), 시험 `knight-e`(두 모드) · `knight-land`, `QueenHillSkillFilm.StillsOnly` · 장면 묶음 `r141`, 문서 |
+| (커밋 전) | 10-14 | R140 | (`skill-network-test`, R129~R139와 함께 커밋 안 함) 새 셰이더 `SkillRope` + 밧줄 메시 `BuildRope`(세 가닥 · 끝 막음, `RopeCoil`·`RopeLine`), 밧줄 재질 `BuildRope()`/`DestroyRope()`, `SkillInkKit.Prop`의 `material`, 나이트 밟기 `StompImpact`(먼지, 힘줄 선 · 검정 번쩍 뺌), 녹화 장면 설명, 문서 |
+| (커밋 전) | 10-14 | R139 | (`skill-network-test`, R129~R138과 함께 커밋 안 함) 먼지 양 `SkillDust.Amount` 0.55(두 모드), `SkillShock` 색 가르기 없이 `_Tint`(옅은 금빛), 퀸 충격파 더 진하게 · 먼지 없음(`SkillInkKit.Down` `throwDust`), 비숍 X 줄 밧줄(`RopeSpan`·`RopeLine`, `SkillTripwire.LinesDrawnElsewhere`·`PegTie`), `PawnRushSkillFx.Steed.cs` → `.Knight.cs`(은빛 말 · 머리·공중 도장 · 공기 고리 대신 힘줄 선 `ForceStroke`, 밟기 `StompCrush`), 편자 로고 광택(`SkillTileBoard` `_Gloss`, 타일 `gloss`·`sheenAt`), 밟을 적 표시 빨간 칸, 착지 바닥 찾기, 녹화 `StillsOnly`, 자동 시험 `bishop` 둘째 줄 기대값 글, 녹화 장면 설명, 문서 |
+| (커밋 전) | 10-14 | R138 | (`skill-network-test`, R129~R137과 함께 커밋 안 함) 폰 러쉬·퀸 오브 더 힐: 맞힐 때 반원·고리 뺌, 새 셰이더 `SkillDust`·`SkillShock` + `SkillKit/SkillDust.cs`(먼지), `SkillInkKit.UseRealDust`, 타일 셰이더 두 개에 모양 4(편자 로고), 폰 러쉬 `PawnRushSkillFx.Shock`·`.Rope`·`.Steed`(퀸 충격파 · 비숍 밧줄 · 나이트 말과 로고), 비숍 묶임 (`RagdollPawn.SkillBind`·`SkillBound`, `SkillTripwire`, `bishopBind` 1.6초), 나이트 앞발 들기·뛰는 말 자세, 자동 시험 `bishop-trip`·`bishop` 기대값, 녹화 장면 설명, 문서 |
+| (커밋 전) | 10-14 | R137 | (`skill-network-test`, R129~R134와 함께 커밋 안 함) 퀸 오브 더 힐: 시험 씬 블록 54개에 새 셰이더 `SkillGround`(위 면 체스판 + 비숍 포격이 깬 모양을 블록에서 빼냄: 구덩이 · 홈 · 덩어리, `QueenHillSkillGround`), 칼날이 바닥을 따라감(층 끝에서 떨어짐 · 턱 · 벽에 박힘), 언덕 턱 · 가장자리 · 벽이 깨지고 깨진 것 색 조각(`QueenHillSkillFx.Dig`), `SkillDig` 지움, 자동 시험 `bishop-hill` · `bishop-wall`, `FreezeAfter`가 이펙트도 멈춤, 녹화 장면 묶음 `r137`, 문서 |
+| (커밋 전) | 10-14 | R134 | (`skill-network-test`, R129~R133과 함께 커밋 안 함) 퀸 오브 더 힐 비숍 포격: 비숍 모자 모형(금 테·보석·구슬, `QueenHillSkillFx.Mitre`), 바닥 파임 셰이더 `SkillDig` + 구덩이·홈·깨진 바닥판·조각·불꽃(`QueenHillSkillFx.Dig`), 옛 잉크 홈·보라 X 막대·고리·방울 지움, 자동 시험 `bishop-dig`, 녹화 장면 묶음 `r134`, 문서 |
+| (커밋 전) | 10-14 | R133 | (`skill-network-test`, R129·R130·R132와 함께 커밋 안 함) 미리보기 칸 같이 차오름(폰 러쉬 룩 · 퀸 오브 더 힐 킹 · 소드 파이트 나이트 포크), 퀸 오브 더 힐 비숍 양탄자 움직임(`QueenHillSkillFx.Carpet`, 떠 있는 출렁임 `RagdollPawn.QueenHillSkills`), 나이트 편자 모형(`SkillMeshes.Horseshoe`·`HorseshoeHoles`)·발굽 자국(타일 셰이더 두 개에 모양 3), 소드 파이트 킹 방패 3층·금색 조각(`SwordFightSkillFx.King`)·반격 때 벽 놓기, 자동 시험 `bishop-glide`, 녹화 장면 목록, 문서 |
+| (커밋 전) | 10-13 | R132 | (`skill-network-test`, R129·R130과 함께 커밋 안 함) 소드 파이트: 머리 위 표시 작게·`SkillMeshes.PieceIcon`·한 번만, 시험 씬 `respawnDelay` 0, 킹 룩 F 못 막음·둘레 방패벽(`SkillShield`), 비숍 에너지 구슬·빛 가닥·빨려 듦(`SkillEnergy`), 옛 불·연기 셰이더 지움, 자동 시험 `respawn`·`king-whiff` 타이밍, 녹화 장면 목록, 문서 |
+| (커밋 전) | 10-13 | R130 | (`skill-network-test`, R129와 함께 커밋 안 함) 적 미리보기 빨강 · 칸 점 차오름·네온(셰이더 `_Charge`·`_Dot`·`_Glow`) · 퀸 금 · 폰 러쉬 룩 벽 칸 · 다이빙 낑김(`RagdollPawn`), 퀸 오브 더 힐 킹 홀·왕관·호위 2.9초, 룩 캐슬링 유령 미리보기, 비숍 양탄자(`SkillCarpet`·`SkillSoftShadow`), 나이트 말 동작·3D 말굽, 소드 파이트 3D 말 표시(`SkillMeshes`), 왕의 반격 막기·반격(`SwordFightSkillFx.King`), 비숍 흑요석·검은 불(`SkillBlackFire`, `SwordFightSkillFx.Bishop`), 비숍 E 구출 조건, 나이트 E 통과, 자동 시험·녹화 장면, 문서 |
+| (커밋 전) | 10-13 | R129 | (`skill-network-test`, 승규 님 "아직 하지마"로 커밋 안 함) 세 모드 바닥 칸 반투명 · 잡힌 칸 없앰 · 킹·퀸 색, 폰 거리, 퀸 오브 더 힐 폰 소리, 나이트 밟기 점프, 소드 파이트 퀸 장외 · 왕의 귀환 · 룩 미리보기 · 비숍 연기 · 나이트 포크 강하 새 동작, 문서 |
+| `c04df4d` | 10-13 | R128 | (`skill-network-test`) 스킬 평가 기호 도장: Core `SkillGrades`(+시험 2개), `SkillKit/SkillGradeJudge`·`SkillGradeStamps`, `Resources/SkillGradeFx/SkillGrade.shader`, `SwordFightSkillFx.Grade`, 문서 Skills/GRADES·README, HANDOFF, REQUIREMENTS. 기존 파일은 시험 파일만 바뀜, 다른 채팅 미커밋 변경은 안 넣음 |
+| (이 커밋) | 10-13 | R122 | (`skill-network-test`) 퀸 오브 더 힐 나이트 소리 5개를 폰 러쉬 나이트 E "묵직한 말" 파일로(`KnightLock`←`KnightTurn`, `KnightLeap`, `KnightLand`, `KnightFlatten`←`KnightStomp`, `KnightFall`←`KnightDaze`), 문서(Skills/QUEEN_HILL·SOUND §R122, REQUIREMENTS, HANDOFF, HISTORY) |
+| `fd57f1d` | 10-11 | R123 | (`skill-network-test`) 5명 시험용 빌드 세 개 `SkillNet_PawnRush_1011c.zip`·`SkillNet_QueenOfTheHill_1011c.zip`·`SkillNet_SwordFight_1011c.zip`(`7eedc08`, v18) 이름을 HANDOFF·VALIDATION·SKILLS_ONLINE에 |
+| `7eedc08` | 10-11 | R123 | (`skill-network-test`) 문서: Network/SKILLS_ONLINE §15 R123(AI가 zip 그대로 다시 본 것·핑·방장 멈춤과 고친 것), VALIDATION R121 표(zip `_1011b`, 14 킹 F 받아내기·15 방장 멈춤), REQUIREMENTS R123, DECISIONS SK11, HANDOFF, HISTORY |
+| `4924093` | 10-11 | R123 | (`skill-network-test`) 방장이 잠깐 멈춘 뒤 참가자 재생이 바로 따라잡음: `PlaybackDelay.Advance`(Core, 0.25초 넘게 뒤처지면 건너뜀, 시험 1개 → 102), `LabNetLink.Playback`이 씀 + 건너뛴 횟수(보고 `jumps`·추적 로그), 시험 화면 "따라잡기 n번". 패킷 그대로(v18). 새 빌드 `SkillNet_SwordFightOnline_1011b.zip` |
+| `bb59542` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 온라인 문서: Network/SKILLS_ONLINE §15(정한 것·보내는 것·그리는 법·AI 로컬 시험·한계·빌드), VALIDATION R121 5명 시험 표, Skills/SWORD_FIGHT §R121, REQUIREMENTS R121, HANDOFF, HISTORY |
+| `897fc47` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 참가자의 카메라 방향을 개발 명령 뒤 3초 동안 입력에 실음(창이 앞에 없어 방향이 지워져 퀸이 옛 방향으로 돌진하던 것, 시험 명령에만 해당) |
+| `136d476` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 보고에 PC마다 재생한 소리 횟수, 개발 명령 `classic`(F6) |
+| `a9b370e` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 스킬 시험 씬 온라인: `LabNetLink` partial + `LabNetLink.Sword.cs`(방장 무작위 팀 3:2·F5, 입력 `TypeSwordInput`, 소드 상태 `TypeSword`·Core `SwordWire`, 칼·스킬·바닥 붕괴·순간 신호 `ModeSwordFight`, 방장 이전), `SwordFightSkills.Net.cs`(상태 받기·미리 그림·내 조준), 온라인 멈춤·박자(슬로 없음), 시험장 키·기물 요청·도우미 끔, `SkillNetTest` 소드 파이트 줄, Steam·로컬 시험 부팅, 프로토콜 v18(`CFR9`), Core 시험 2개(101) |
+| `ae19d2c` | 10-11 | R120 | (`skill-network-test`) 소드 파이트 비숍 소리: `CastBishop`·`BishopFire`·`BishopPin`을 원소 에너지 재료로 교체, `BishopSet` 새로(레벨 0.7), 문서(Skills/SWORD_FIGHT §R120, REQUIREMENTS R120, HANDOFF, HISTORY) |
+| `453b2d0` | 10-11 | R119 | (`skill-network-test`) 스킬 소리: 세 재생기 맞춤 크기 −15 → −21 dB, 쇳소리 칼 소리 9개(퀸 오브 더 힐 5 · 소드 파이트 4) 부드러운 소리로 교체, 문서(Skills/QUEEN_HILL·SWORD_FIGHT·SOUND §R119, VALIDATION, REQUIREMENTS, HANDOFF, HISTORY) |
+| `0efc7f7` | 10-11 | R118 | (`skill-network-test`) 시험 화면에 방장 성능 수치(프레임·물리 단계·방장 고르기 점수·핑·다음 방장, 방장 바뀜 메시지), 누름 → 반응은 스킬을 시작할 수 있는 누름만(나이트 두 번째 F는 그 동작까지), 퀸 오브 더 힐 미리 그림은 땅에서만, 나이트 머리 찍기의 마지막 0.1초 재겨냥 없앰·속도 상한(움직이는 상대가 멀리 날아가던 것), 문서(HOST_AUTHORITY §8.7, VALIDATION R118, REQUIREMENTS, HANDOFF) |
+| `00d78a5`·`fb7dd12` | 10-10 | R117 | (`skill-network-test`) 문서만: 방장 판정 방식 점검(좋은 점·우려·다른 방식 비교·지연·올림 계산), 다듬을 것 P1~P9, 3인 시험 순서·수치 읽는 법·보고 양식([Network/HOST_AUTHORITY](../Network/HOST_AUTHORITY.md)), VALIDATION R117 표, Network/README 목록·방장 이전 줄 바로잡음, REQUIREMENTS R117, HANDOFF |
+| `d841480` | 10-10 | R116 | (`skill-network-test`) 소드 파이트 가장자리 스킬 효과음: 승규 님이 고른 킹 D · 퀸 B · 룩 B · 비숍 E · 나이트 D(`KingStab`·`QueenMark`·`RookCollapse`·`BishopReach`·`KnightFlip`), 나이트는 늦춰 시작, 취소·놓침이면 줄어듦(녹화 트랙도), 문서(Skills/SWORD_FIGHT §R116, REQUIREMENTS R116, HANDOFF, HISTORY) |
+| `b1a229f` | 10-10 | R115 | (`skill-network-test`) 폰 러쉬 룩이 적과 부딪히는 소리: 음 없는 묵직한 퍽(`RookHit.mp3`), 맞음마다 음 올리기 뺌, 벽 쾅 그대로, 문서 |
+| `12fae6c` | 10-10 | R114 | (`skill-network-test`) 폰 러쉬 스킬 효과음: `PawnRushSkillSfx`(이펙트 신호·스킬 단계로 재생, 돌진·팽팽한 줄·비행은 이어지는 소리), `Resources/PawnRushSkillSfx` 19개, 시험장 소리 버튼, `Tools/Sfx/PawnRushSkills/export_unity.py`, 문서(Skills/SOUND §효과음 넣기, VALIDATION R114, REQUIREMENTS R114, HANDOFF, HISTORY) |
+| `3770810` | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
+| `0c9f628` | 10-10 | R112 | (`skill-network-test`) 교대 수락 F는 방장이 요청을 거둘 때까지 재고 스킬 키로 세지 않음(로컬 시험에서 "반응 없음"으로 나왔음) |
+| `132d053` | 10-10 | R112 | (`skill-network-test`) 방장이 보낸 스냅샷 개/초를 실제로 잼(늘 30이라고 적었음), 시험 화면 긴 줄 줄 바꿈 |
+| `cf2de62` | 10-10 | R112 | (`skill-network-test`) bold-johnson의 씬 삭제 `9a94131`을 `merge -s ours`로 합친 것으로만 기록(이 브랜치는 씬을 그대로 둠) |
+| `9a94131` | 10-10 | R112 | (bold-johnson) `Assets/Scenes/SkillTest` 스킬 시험 씬 셋 삭제, "Open Skill Test" 메뉴 셋은 옮겨 간 곳 안내(퀸 오브 더 힐·소드 파이트 메뉴가 씬을 다시 만들지 않게) |
+| `08744a9` | 10-10 | R112 | (`skill-network-test`) 스킬 네트워크 시험 화면: `LabGame.NetTestMode`(튜닝 패널·값 세트·슬로모션·자유 카메라·화면 분할·P2·[7] 시험대 없음), `SkillNetTest`(키 안내 줄, 늘 보이는 수치, 방장의 참가자 줄), 연결 전 온라인 창 열기, 입력에 참가자 왕복·재생 지연·손실(`CFR8`, v17), 신호 중복·놓침 셈(Core 시험) |
+| `c9cb187` | 10-10 | R111 | 문서: Network/SKILLS_ONLINE §8~§13(R111 구현), VALIDATION R111 표, REQUIREMENTS R111, DECISIONS SK7·SK8, PITFALLS 33~35, HANDOFF, HISTORY (`claude/skills-online`, 푸시 안 함) |
+| `aef76d3` | 10-10 | R111 | 랩 왕복 지연을 스냅샷이 도착할 때 잼(그릴 때 재서 재생 지연이 섞였음), 입력을 아직 못 들은 사람에게 방장 시계 대신 0 |
+| `27a0735` | 10-10 | R111 | 재생 지연의 손실 "한 장 더": 8% 켜짐·5% 꺼짐, 4초 평균(손실 10%에서 1초에 한 번 넘게 왔다 갔다 했음), F3 창·보고 줄에 손실 %, Core 시험 1개 |
+| `0afe27f` | 10-10 | R111 | 룩에게 교대를 청받은 참가자의 F(수락)를 자기 스킬로 미리 그리지 않음 |
+| `5e04efe` | 10-10 | R111 | 손실 8% 넘는 연결은 스냅샷 한 장 더 기다림, 로컬 시험 시간표가 참가자 하나에게(`client2 …`) |
+| `8557f31` | 10-10 | R111 | 로컬 시험의 개발 명령은 지연 시뮬레이터를 건너뜀(손실 10%에 빠져 누름 횟수가 틀렸음) |
+| `f447b3c` | 10-10 | R111 | 기록 줄에 벽시계(같은 PC 두 창 기록이 ms까지 맞음), 방장이 단계 변화를 기록, `report` 명령 |
+| `f005b9b` | 10-10 | R111 | 내 누름 미리 그리기를 자기 시계로, 방장이 한 단계 앞서도 맞은 것으로, 폰 러쉬 비숍 클릭은 던짐, 연속 화면 저장(`burst`)·히트스톱 기록 |
+| `a2a0f00` | 10-10 | R111 | 빌드에서 맞음 번쩍 셰이더(`Unlit/Color`가 빌드에 없음 → `Sprites/Default`), 오류 낸 이펙트가 다음 신호를 막지 않음, 로컬 시험 포트 넘겨받기·다시 시도 |
+| `1d9f894` | 10-10 | R111 | 로컬 시험 시간표(방장·참가자 개발 명령, `hud`) |
+| `22cabf6` | 10-10 | R111 | 기물 스킬 온라인: 누른 횟수(D-S7), 참가자별 스킬 패킷(상태·밧줄·바리케이드·순간 신호, D-S5·D-S1), 화면만 히트스톱(D-S2), 내 누름·조준 즉시(D-S3), 방장 이전 이어받기(D-S6), 잰 재생 지연, F12 지연 시뮬레이터, 랩 경기를 `LabNetLink`로 빼고 `SteamRagdollLink`·`LoopbackLabLink`, 프로토콜 v16 `CFR7`, Core `SkillSync`와 시험 7개 |
+| `4c7d035` | 10-10 | R110 | 문서: Skills/SWORD_FIGHT §R110, VALIDATION R110 표, REQUIREMENTS R110, HANDOFF, HISTORY |
+| `7f1d142` | 10-10 | R110 | 나이트 벼랑 끝 역전: 골반이 밖 0.6 m까지·카메라 방향 무관·떨어지기 시작한 0.6초 안에도 켜짐(허공에서 멈췄다 공중제비), 자동 시험 edge-knight-side·edge-knight-fall |
+| `7ce76d0` | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
+| `e7d4fdf` | 10-10 | R109 | 자동 시험 edge-bishop-close: 아군이 떨어진 뒤 비숍을 내려질 자리에 세움 |
+| `b273529` | 10-10 | R109 | 비숍 구원의 손: 끌어올리는 동안·내려놓은 뒤 비숍과 아군이 부딪히지 않음, 자리가 비숍과 겹치면 옆으로 비켜 내려놓음 |
+| `d662aea` | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
+| `8f31888` | 10-10 | R108 | 토큰 옆면을 거리장의 잉크 테두리선에서 칸마다(점을 밀어내면 홈에서 꼬였음) |
+| `644e127` | 10-10 | R108 | 머리 위 표시를 3D 토큰으로(셰이더 `Skill Icon 3D`, 앞뒤 그림·옆면, 팝할 때 한 바퀴), 룩 소리 4개를 돌 재료로(띠용 없음) |
+| `8b9a11c` | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
+| `d685910` | 10-10 | R106 | 동전 같은 울림 없애기: 폰 러쉬 채팅의 울림 검사(`coin.py`)에 걸린 5개(킹 받아냄·빈틈, 룩 내려침, 끊김, 퀸 예고 = 퀸 오브 더 힐 `QueenLock`)를 다시 만들어 바꿈 |
+| `206a807` | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
+| `a31c4b0` | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
+| `36a4342` | 10-10 | R106 | 자동 시험 보고에 그 시험에서 난 소리, 녹화 묶음 `"f"` = F 스킬 장면만 |
+| `2f6125c` | 10-10 | R105 | 녹화 파일 한국어 되살림(직전 편집이 PowerShell로 다른 인코딩에 저장해 컴파일이 깨졌음) |
+| `f6b7f9e` | 10-10 | R105 | 녹화 장면 묶음 r105(비숍 양탄자·취소·2발째 기다림) |
+| `c268084` | 10-10 | R106 | 소드 파이트 F 스킬 효과음: 퀸 오브 더 힐에서 고른 방향을 기물마다(킹·비숍 묵직, 퀸·룩 만화, 나이트 8비트), 순간마다 하나 `Resources/SwordFightSkillSfx/*.mp3` 19개(새 14 + 퀸 오브 더 힐 5), `SwordFightSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기, 녹화에 소리 트랙 |
+| `f925d94` | 10-10 | R105 | 떠 있는 비숍은 손으로 준 이동(`givenMove`, `RagdollPawn.cs` `SetInput`)으로 미끄러짐(스킬이 물리 단계마다 이동 입력을 지워서) |
+| `cb87532` | 10-10 | R105 | 자동 시험 bishop-wait에 양탄자 속도·받은 이동 표시 |
+| `9072f20` | 10-10 | R105 | 떠 있는 동안 고정점(anchor)을 몸보다 한 걸음 앞에 직접 옮김 |
+| `4d3fd28` | 10-10 | R105 | 몸을 천천히 붙는 양탄자 속도에 매 단계 맞춤 |
+| `c5cdcf5` | 10-10 | R105 | 고정점이 떠 있는 비숍을 따라감(제자리 고정점이 몸을 끌어당김) |
+| `07f0b5c` | 10-10 | R105 | 떠 있는 비숍의 이동 키를 미끄러짐에 넘김 |
+| `33bb4cb` | 10-10 | R105 | 자동 시험 bishop-wait: 스킬이 준비될 때까지 기다린 뒤 첫 F |
+| `cd032c6` | 10-10 | R105 | 비숍: 3초 안에 안 쏘면 취소(저절로 쏘지 않음), 첫 발 뒤에는 2발째까지 기다림, 이동 키로 천천히 미끄러짐(`bishopDrift` 0.7 m/s · `bishopDriftEase` 0.9초), 자동 시험 bishop-wait |
+| `3a6842e` | 10-10 | R104 | 승규 님 "맞을 때 동전 소리 나는 거 빼줘": 넘어짐 공통 소리 `Down` 파일 삭제(그 순간은 소리 없음), 문서 |
+| `e720d30` | 10-10 | R104 | 문서: Skills/QUEEN_HILL §효과음 넣기, VALIDATION R104 표, REQUIREMENTS R104, HANDOFF, HISTORY |
+| `8e4e1e9` | 10-10 | R104 | 효과음 28개의 Unity 가져오기 설정(.meta), 퀸 맞음 다시 만든 것(첫 결과가 거의 무음) |
+| `dc889f5` | 10-10 | R104 | 퀸 오브 더 힐 효과음: `Resources/QueenHillSkillSfx/<신호>.mp3` 28개, `QueenHillSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기 버튼, 녹화 인코더에 소리 트랙 |
+| `70c5d00` | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
+| `19ade3c` | 10-10 | R103 | E 표시를 오른쪽 아래로(칼 게이지와 겹쳤음), 자동 시험의 피하기 동작 짧게 |
+| `25777e0` | 10-10 | R103 | 첫 Unity 시험에서 고친 것: 비숍이 맞아 놓치면 아군이 허공으로 떨어짐(끌던 속도로 발판 안까지 날아갔음, 길도 마지막에야 가장자리를 넘게), 나이트 취소 3 m(3.3 아님)·공중제비 1.1 m, 퀸 화면 베기 자국 얇고 짧게, 장외로 날아간 기물 밑 허공의 잡힌 칸 없앰(`SkillInkKit.Down`, 모든 모드), 녹화 자막 고정·가까운 카메라 |
+| `60453c8` | 10-10 | R103 | 소드 파이트 가장자리 스킬: 기물마다 두 번째 스킬 E(킹 왕의 귀환·퀸 체크메이트 일섬·룩 성벽 붕괴·비숍 구원의 손·나이트 벼랑 끝 역전), 시험 쿨 2초, 슬로 0.3초·화면 당김/돌기, 공용 `RagdollPawn.Fly`(`OuterFlight.cs`), 발판 덩어리 `SwordFightEdgeFloor`, Shift+F7·F8, 자동 시험·녹화 10장면 |
+| `9c1546f` | 10-10 | R102 | 룩 탑을 기물 모양으로 깎은 돌탑으로(계단 받침·돌 이음매·주황 띠, 얼굴·팔 없음, 1.4 m; 승규 님 "사진은 참고만, 캐릭터 느낌") |
+| `b2b8623` | 10-10 | R102 | 머리 위 표시에서 크림 바탕을 빼고 기물 모양만(승규 님 "배경 사진은 빼고 참고만") |
+| `94bc761` | 10-10 | R102 | 소드 파이트 시험 씬: 경기가 끝나지 않게 999점·1시간(240초에 끝나 칼질이 다 멈췄음), `bishopPinBehind` 삭제 |
+| `64d5e05` | 10-10 | R102 | 표시 테두리가 아이콘을 따라가게(거리장 폭), 비숍 손 크게·발목 바깥쪽에서, 팔 굵게, 돌탑 한 뼘 크게 |
+| `1f3d122` | 10-10 | R102 | 머리 위 기물 표시(아이콘 윤곽 → 거리장 셰이더 `Skill Icon`), 룩 체스 말 탑(무작위 순서), 비숍 대각선 손·맵 어디서든 묶임, 킹 F8 맵 어디서든(`BringNear`·`HoldGuard`), 자동 시험 king-mid·bishop-mid·bishop-miss |
+| `1a34135` | 10-10 | R101 | 문서·도구: 폰 러쉬 스킬 효과음 시안 — Skills/SOUND(새), Tools/Sfx/PawnRushSkills(새: 설명문·시간표·다듬기·페이지), Skills README·EFFECTS, HANDOFF, REQUIREMENTS, HISTORY. 소리 파일은 시안 페이지와 ElevenLabs 작업판에 |
+| `16ea8c2` | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
+| `663701d` | 10-10 | R99 | 녹화: 룩 장면을 비스듬히 뒤에서(옆에서는 통로 끝이 잘림) |
+| `dcd4709` | 10-10 | R99 | 소드 파이트 시험 씬에 `rookLiftCarry` 0.65 저장 |
+| `fe8646c` | 10-10 | R99 | `rookLiftCarry` 0.65(자동 시험 rook: 가까운 적 2.45 m, 기획 2.6) |
+| `38266a0` | 10-10 | R99 | 룩 탑에 띄워진 기물은 수평 밀기를 줄임(`rookLiftCarry`, 그대로면 4.58 / 2.72 m 날아감) |
+| `32d02e4` | 10-10 | R99 | 비숍 발목 손: 1.5배·금색·기물 밑동 바깥에서 솟아 기물을 웅크리게 누름, 묶인 동안 감속 고리 숨김(손이 치마 밑에 숨어 안 보였음) |
+| `f375400` | 10-10 | R99 | 룩 탑이 첫 장면 전까지 땅속에서 대기(효과 원점에 한 장면 보였음), 룩·비숍·나이트 녹화 카메라 |
+| `d273456` | 10-10 | R100 | 문서: 퀸 오브 더 힐 효과음 시안(ElevenLabs 30개, 시안 페이지) — Skills/QUEEN_HILL §효과음 시안, REQUIREMENTS R100, HANDOFF, HISTORY. 코드·Unity 변경 없음 |
+| `0076424` | 10-10 | R99 | 잔상을 반투명 잉크 실루엣으로(새 셰이더 `Skill Ghost`, 만화 연기 잔상은 금 덩어리로 뭉침), 화면 물듦 약하게, 퀸 녹화 카메라 뒤로, 씬에 새 수치 |
+| `1535f6f` | 10-10 | R99 | 퀸이 발로 달리는 돌진(`RagdollPawn.BeginDash`·`StopDash` = 폰 러쉬 돌진 장치를 밖에서, `RagdollPawn.OuterDash.cs`; 던졌더니 착지에서 넘어져 혼자 장외) |
+| `18ef1eb` | 10-10 | R99 | 소드 파이트 스킬 수정: 칼끝을 바닥 위로(`SwordFightPawn.AboveFloor`), 발동·기 모으기·잔상·화면 당김, 퀸 돌진, 룩 돌탑, 비숍 발목 잡는 손, 킹 왕관·한 바퀴 베기, 나이트 갈래 줄 |
+| `2eaa54f` | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
+| `b12766b` | 10-10 | R98 | 녹화: 경사로를 내려가는 검격을 옆에서(경사가 보이게) |
+| `8eb54d1` | 10-10 | R98 | 자동 시험: 탑 위 퀸을 3층 블록에서 0.3 m 떨어진 곳에(블록 속에 세워져 한 번 1층으로 튕겨 나감) |
+| `080401a` | 10-10 | R98 | 퀸 경고 칸을 격자로 바닥에 붙여 깖(경사로를 따라 휨, 턱 벽면은 빼서 위아래 바닥으로 나뉨, `Tile.Drape`·`SlashFloorAt`), 판정에 적이 선 자리 바닥도, 초승달 검기가 경사를 부드럽게, 시험 도우미가 더미를 그 자리 바닥에(`WalkFloor`), 자동 시험 `queen-slope*` 4개·검격 줄 끝 높이, 녹화 R98 |
+| `73bc0f0` | 10-10 | R97 | 문서: Skills/QUEEN_HILL §R97, VALIDATION R97 표(R95 퀸 두 줄은 R97이 대신함), REQUIREMENTS R97, HANDOFF, HISTORY |
+| `2a9d526` | 10-10 | R97 | 자동 시험 `queen`(돌벽)이 이번에 넘어진 횟수로 셈(앞 시험의 맞은 기록이 남아 벽 너머 적도 맞은 것처럼 보였음) |
+| `c794d09` | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
+| `c06bf7b` | 10-10 | R97 | 씬에 `queenClimb` 1.05 저장 |
+| `6fd3892` | 10-10 | R97 | 퀸 검기가 바닥의 경고 칸을 따라감(아래층으로 내려가고 1.05 m까지 턱은 타고 오름, 돌벽에 막힘), 맞는 판정도 그 길 바닥 기준, R95의 "퀸 높이에서 똑바로" 되돌림, 자동 시험 `queen-high`·`queen-low` 새 기대·`queen`은 돌벽 1 m 가까이, 녹화 R97 3장면 |
+| `6018d68` | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
+| `823e2c4` | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
+| `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
+| `7011440` | 10-10 | R95 | 씬에 저장된 수치를 새 값으로(나이트 머리 조준 1.05 m, 비숍 2발, 퀸 높이 범위) |
+| `b6710fc` | 10-10 | R95 | 퀸 경고 칸을 퀸 높이에서 똑바로·검기가 가는 데까지(아래층·위층에 그리던 것), 같은 높이 적만 맞음(`queenDrop`), 비숍 2발(`bishopShots`), 나이트 머리 조준 1.05 m, 자동 시험 `queen-high`·`queen-low`, 녹화 R95 장면 |
+| `9d3507c` | 10-10 | R94 | 문서: Skills/QUEEN_HILL §R94, REQUIREMENTS R94, VALIDATION R94 표, HANDOFF, HISTORY |
+| `b449452` | 10-10 | R94 | 씬에 저장된 수치를 새 값으로(룩 범위 9 m, 나이트 머리 조준 1.15 m) |
+| `c3a3511` | 10-10 | R94 | 룩 범위 6 → 9 m, 교대 리본을 한 줄로 그려 가운데 틈 없앰(`Skill Band` `_Mirror`), 나이트 머리 조준 1.3 → 1.15 m, 자동 시험 `rook-far`, 녹화 R94 장면 |
+| `16db3d9` | 10-09 | R93 | 문서: Skills/QUEEN_HILL §R93, REQUIREMENTS R93, VALIDATION R93 표, HANDOFF, HISTORY |
+| `468772d` | 10-09 | R93 | 나이트가 머리를 밟은 적은 벽 없는 쪽으로 빠져나가고, 둘이 떨어진 뒤에야 다시 부딪힘(겹친 채 부딪혀 하늘로 튕기던 것), 퀸·킹 녹화 구도 |
+| `bf871ef` | 10-09 | R93 | 씬에 저장된 수치를 새 기본값으로(나이트 호 1.6 m, 머리 조준 1.3 m, 퀸 휘두르기 0.12초, 도우미 켬), 녹화 R93 장면 6개 |
+| `fe7ae43` | 10-09 | R93 | 킹 시험 도우미·호위 몸 윤곽선, 퀸 아래에서 위로 올려 베기(칼이 바닥을 뚫지 않음), 룩 리본 기물 색 그라데이션·룩 시험 도우미, 나이트 더 높게·머리 자동 조준 |
+| (이 커밋) | 10-09 | R92 | 문서: HANDOFF, REQUIREMENTS R92, DECISIONS SK5(나이트 4.5 m), EFFECTS 룩 벽 고리, Skills README 측정·녹화, DESIGN 나이트 수치, VALIDATION R92 표 |
+| `fe627b7` | 10-09 | R92 | 룩 벽 고리를 부딪힌 벽면에 납작하게(벽면 방향을 신호에 싣고 벽 끝·바닥에 맞춰 밀고 줄임), 나이트 비거리 5.5 → 4.5 m·두 번째 F 7.5 → 6.2 m/s, 시험·녹화에 벽 35°·바리케이드 장면 |
+| `73c2c06` | 10-09 | R90·R91 | 병합(`C:/Work`, 승규 님 "R90·R91도 푸시해 줘"): `claude/sword-fight-skill-design-1b90a8`(`5d6e9da`: R90 폰 러쉬 스킬 디자인 A `67fce2b`·`2c0669f` + R91 소드 파이트 스킬 시험 `2559493`·`32c4ad0`·`94713a5`·`5d6e9da`)을 bold-johnson에. 코드 충돌 없음, 문서 2개(HISTORY·REQUIREMENTS)는 같은 자리에 새 줄 → 둘 다 남김. Unity 폴더에 미리 복사해 시험하던 파일은 브랜치와 똑같아 정리한 뒤 합침 |
+| `f12048d` | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
+| `2c0669f` | 10-09 | R90 | 문서: EFFECTS 디자인 A, Skills README R90 녹화, REQUIREMENTS R90, DECISIONS SK4, VALIDATION R90 표, HANDOFF |
+| `67fce2b` | 10-09 | R90 | 폰 러쉬 다섯 기물 이펙트를 디자인 A로: 공통 부품 `SkillInkKit`, 바닥 칸 경고·왕관 고리·성벽 고리·비숍 겉·나이트 말굽·폰 도장, 맞을 때 번쩍·잡힌 칸, 이펙트 시간이 게임 속도를 따라감, 폰 스킬 신호, 녹화 장면 8개 |
+| `5572719` | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
+| `9d06d83` | 10-09 | — | 병합(이 PC의 `C:/Work`, 승규 님 "충돌 해결, 내 것은 푸시하지 마"): 10-08부터 멈춰 있던 `upstream/claude/bold-johnson-8ez95n`(`1fb198f`: R86 코스 01 v0.4 + R85 커밋 번호) 받기를 마무리. DECISIONS·REQUIREMENTS 충돌은 양쪽 줄(P6·P7·R86과 R87·SK1 새 경로)을 모두 살림. 푸시 안 함 |
+| `0a910f2` | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
+| `6fcb900` | 10-09 | R89 | 녹화 도구: 장면마다 시야각이 달라도 제목·키 표시가 같은 자리·크기(좁은 장면에서 제목이 위로 잘리던 것), 긴 줄은 화면에 맞게 줄임 |
+| `fdc0408` | 10-09 | R89 | 나이트·폰 피하기 장면을 옆에서 찍는 구도, 킹 홀·룩 점선 굵게 |
+| `ccc6604` | 10-09 | R89 | 시험 씬 `SkillTest/QueenOfTheHill_SkillTest`, 교대·도약 호와 카메라 조정, 문서 Skills/QUEEN_HILL·README |
+| `dd9e6ad` | 10-09 | R89 | 퀸 오브 더 힐 스킬 시험장, 스킬 6개(1.B 2.A 3.B 4.B 5.B 6.B)와 A 디자인 이펙트, 자동 시험·녹화 도구(첫 판) |
+| `ae87ddc` | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
+| (이 커밋) | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
+| `c289a81` | 10-10 | R113 | 소드 파이트 현황 기획서 `Docs/GameModes/SwordFight/STATUS.md`(bold-johnson 기준), PLANNING_BRIEF 스킬 안내, 오전 R93 → R112 번호 변경 |
+| `2497935` | 10-10 | R112 | 소드 파이트 재기획 상담 문서 `Docs/GameModes/SwordFight/PLANNING_BRIEF.md`(Claude AI 채팅용), DESIGN 머리 연결, HANDOFF·REQUIREMENTS |
+| `ed5d527` | 10-09 | R92 | 캡스턴 8바퀴·허리 높이 막대·몸으로 밀기(Rigidbody), 폰 러쉬 코스 01 온라인(`SteamPawnRushLink`, `Core/PawnRushNetState`, 미니게임 원격 상태, HUD 내 폰, `escapeLeavesMatch`, `InputBlocked`), 프로토콜 v16, 컴파일 스크립트, 문서(SCENES·GameModes·PAWN_RUSH_COURSE01 §7-2·DECISIONS T9·VALIDATION·REQUIREMENTS·HANDOFF) |
+| `78f6003` | 10-08 | R90 | main 중간 점검: 폴더를 종류별로(Assets/ChessFight·Maps·Scenes/PawnRush 없앰, 스크립트는 Scripts/ 아래 어셈블리별), 안 쓰는 씬 5개 삭제(생성기 틀은 Tools/Generators/templates), 폰 러쉬 경기 씬 = PawnRush_Course01(`GameSceneConfig.soloInMatch`, Esc 나가기), 경로 문자열·검사 스크립트·문서(STRUCTURE·SCENES·GameModes·DECISIONS T7·T8 등) |
+| `3d49a18` | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
+| `67dc468` | 10-08 | R89 2차 | bold-johnson 기준으로: 요청 번호 R68~R70 → R87~R89, 폰 러시 코스 01 A1 회전 막대 0.2~0.52 m·턱 0.15 m, A3 원판 사이 1.49 m(A2 벽 윗면 z 33), 검증기 필수 틈 1.5 m, 점프 상승 보정은 스킬 돌진 중 멈춤. `Tools/run-tests-linux.sh`: Unity 6 전용 API 4개를 임시 복사본에서 2021.3로 바꿈(bold-johnson부터 컴파일 검사가 Game에서 멈춰 있었다). Core 91·세션 40·8개 어셈블리 컴파일 통과. 문서: PAWN_RUSH_COURSE01 §6·§7, VALIDATION, REQUIREMENTS, HANDOFF |
+| `d13022a` | 10-08 | R89 2차 | `claude/bold-johnson-8ez95n` 병합(이 작업의 기준을 main → bold-johnson으로) |
+| `85bf7a7` | 10-08 | R89 | 폰러시 시험 맵: 회전 점프 막대 7개(윗면 0.45 m)·회전 체스판(0.6 m)·점프 계단(0.3·0.45·0.6 m) 낮춤, 08 컨베이어 1.5 m/s. 킹 러쉬 자동 점검 기준(점프 0.6 m, 제한 시간 속도 비율). 문서: MAP_IMPORT, PAWN_RUSH_MAP_KIT, VALIDATION, REQUIREMENTS R89, HANDOFF |
+| `4e93ae3` | 10-08 | R88 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R88, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R88, HANDOFF |
+| `4a3c569` | 10-08 | R88 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
+| `cd4bd57` | 10-08 | R87 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R87, HANDOFF |
+| `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
+| `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
+| `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
+| `a78f5d6` | 10-08 | R84 | 로고 기다림과 장면 전환을 보인 프레임으로 셈(한 프레임 최대 0.05초): Play 직후 로고가 영상 전에 사라지던 것 고침 |
+| `5c97820` | 10-08 | R84 | 문서: UI §15(시작 로고·이름 설정 화면·장면 전환), SCENES(Intro 흐름), SESSION(`nick`), VALIDATION R84 표, DECISIONS U15·U16, REQUIREMENTS R84, HANDOFF |
+| `f381dcc` | 10-08 | R84 | 게임을 켜면 시작 로고 영상(`LogoIntro`, `StreamingAssets/LogoIntro.mp4`, 소리 A), 처음 한 번 이름 설정 화면(`NameScreen`·도는 유리 폰 `GlassPawn`·글자 수 옆 추천 이름 → 입력칸 위 말풍선, 규칙 `Core/PlayerNames` + 테스트 5), 고른 이름을 멤버 데이터 `nick`으로(`PlayerProfile`·`SteamSession.LocalName` + 세션 테스트 1), 킹 구멍 → 카드 → 나이트 구멍 장면 전환(`SceneTransition`), 그림·영상 3개(LFS) |
+| `82e38ed` | 10-08 | R83 | 로비 UI를 A 시안으로: `NetworkHud.uxml`·`.uss` 로비 부분(`a-` 클래스), `NetworkHudView.Dress`(그늘·판·금은 줄·은색 제목·선 아이콘·아이보리 게임 시작), `MenuArt.Ramp`·`HudBlend`·`LineCard`, `MenuMarks.IconMark`, 로고 `Resources/Menu/LobbyLogo.png`(LFS), 대체 클릭은 판 버튼에만 `Pulse`. 문서: UI §14, DECISIONS U14, PITFALLS 30·31, VALIDATION 로비 표, REQUIREMENTS R83, HANDOFF |
+| `54faa02` | 10-08 | R82 | 문서: Skills README(키 표·측정·R82 녹화), EFFECTS, REQUIREMENTS R82, VALIDATION, HANDOFF |
+| `51cfde3` | 10-08 | R82 | 퀸 불씨: 더 진한 금색·크게·많이(흰 바닥에서 보이게) |
+| `883bb21` | 10-08 | R82 | 비숍 줄이 더 오래 붙잡음·팽팽한 빛 줄임·걸린 순간 빛 작게·줄 흰색, 퀸 불씨 진하게, 나이트 표식 테두리 진하게, 비숍 녹화 각도 |
+| `2c86d2b` | 10-08 | R82 | 퀸 예고 원 금색·원에서 불씨 연기, 비숍 줄이 지나가는 적을 따라 늘어남, 나이트 도는 하얀 착지 표식, 시험(비숍 늘어난 길이·다시 지나가기)·녹화 |
+| `aadcf4e` | 10-08 | R81 | 문서: Skills README(키 표·측정·R81 녹화), EFFECTS, REQUIREMENTS R81, VALIDATION, HANDOFF |
+| `298ac5f` | 10-08 | R81 | 비숍 걸림: 튀어 오른 칸을 분홍으로만(하얗게 번짐) |
+| `c3724b4` | 10-08 | R81 | 비숍 걸림: 맞은 말의 빛 껍질 삭제, 조명 약하게 |
+| `ca670e7` | 10-08 | R81 | 비숍 걸림: 빛 기둥 작게, 팽팽한 줄 빛 약하게 |
+| `1c5b6e9` | 10-08 | R81 | 퀸 진짜 체스말 모양·작게·빙글빙글 돌다 팡, 룩 슈퍼맨 자세, 비숍 줄이 다리를 잡아당김(줄이 휘었다 튕김), 나이트 공중 도약, 시험 knight-air |
+| `123dc6d` | 10-08 | R80 | 문서: Skills README(키 표·측정·R80 녹화), EFFECTS(퀸·룩·나이트 줄), REQUIREMENTS R80, VALIDATION, HANDOFF |
+| `e1fbee7` | 10-08 | R80 | 녹화: 룩 공중 돌진 장면 카메라를 위로 |
+| `bdc1dd5` | 10-08 | R80 | 비숍 조준 흰 선 아래 옅은 남색 테두리, 룩 공중 장면 카메라 가깝게 |
+| `993c011` | 10-08 | R80 | 퀸 체스말 튀는 속도 줄임(카메라로 날아옴), 룩 공중 장면 옆에서 |
+| `aaab2c9` | 10-08 | R80 | 룩 내리꽂기: 바닥을 발 높이로 판정(공중 돌진 중 Grounded가 켜지지 않음) |
+| `9bd9df9` | 10-08 | R80 | 룩 내리꽂기: 바닥 충격으로 넘어지지 않게, 다이빙 기울기 70 → 50° |
+| `2a2162f` | 10-08 | R80 | 퀸 금색 체스말 모였다 팡, 룩 반투명 흰 조준선·공중 돌진·내리꽂기·공중 자세, 비숍 조준 파란색 없앰, 나이트 다시 차고 나감("다~당"), 시험 rook-air·knight-straight |
+| `798bdaa` | 10-08 | R79 | 문서: Skills EFFECTS(3D 빛 이펙트 표·밝은 바닥 규칙), README(코드 표·R79 녹화), REQUIREMENTS R79, VALIDATION, HANDOFF, Tools/Generators README(묶는 도구 줄 삭제) |
+| `9b0c259` | 10-08 | R79 | 녹화 설명 글을 3D 이펙트에 맞게(별 없음) |
+| `907e358` | 10-08 | R79 | 나이트 빛을 진한 파랑·칠하기로, 흐린 후광 삭제 |
+| `772a09d` | 10-08 | R79 | 퀸 충격파·나이트 찍기에 빛줄기, 나이트 파랑 진하게, 궤적·번개 굵게 |
+| `492134c` | 10-08 | R79 | 먼지를 연하고 얇게 |
+| `f182d90` | 10-08 | R79 | 빛 번짐 약하게, 밝은 속을 작게(노란 안개) |
+| `9ae446d` | 10-08 | R79 | 밝은 바닥에서 색이 보이게: 몸통 칠하기, 번짐 기준 2.2, 조명 약하게 |
+| `2bf42db` | 10-08 | R79 | 3D 빛 이펙트(셰이더·빛 번짐·조각·입자·조명·궤적·번개), 공방 그림과 묶는 도구 삭제 |
+| `7cce84e` | 10-07 | R78 | 문서: Skills EFFECTS(공방 그림 표·바꾼 것·다시 만드는 법), README(코드 표·R78 녹화), REQUIREMENTS R78, VALIDATION, HANDOFF, Tools/Generators README |
+| `1574f90` | 10-07 | R78 | 비숍 튀어오르는 칸을 칸 하나 크기로(두 배로 나오던 것), 공방 그림 묶는 도구 `Tools/Generators/pack_skill_fx.py` |
+| `837a7d0` | 10-07 | R78 | 게임 화면에 맞춤: 불꽃 크게·카메라 쪽으로 당겨 그림, 튀어오르는 칸 바닥 위로, 테두리·색, 비숍 미리보기 안 나오던 실수 |
+| `25f64e8` | 10-07 | R78 | 녹화: 기물마다 이펙트 장면(퀸·비숍 다시 넣음, 나이트 착지) |
+| `fff83a5` | 10-07 | R78 | 이펙트 공방 그림으로 바꿈(별 삭제, 룩 불꽃), `Resources/PawnRushSkillFx` 11장 |
+| `3025125` (병합) | 10-07 | R76 | `JY-kingrush`(`12772fe`)를 병합: 폰 러쉬 결과 화면(`JY-kingrush`에서는 R65) — `LastScene` 삭제, `PawnRushVictory`·`PawnRushLose`(아래 `12772fe`·`5972c7e`). 코드 충돌 없음. 문서 충돌 정리: 결과 화면 번호 R65 → R76(REQUIREMENTS·VALIDATION·HISTORY·HANDOFF·UI §10·§13·DECISIONS U13·SCENES·STRUCTURE·ROADMAP·코드 주석 3곳), PITFALLS 25~27 → 26~28, 새 29. Windows 컴파일 검사 `Test-NetworkCompile.ps1`이 `RagdollLab/Scripts` 하위 폴더(`PawnRushSkills`)도 읽게(이 브랜치에서 실패하던 것) |
+| `c75b8ca` | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
+| `338704e` | 10-07 | R75 | 화면 흔들림: 위치 + 회전, −1~1 사인, 제곱 감쇠 / 벽 흔들림 더 크게 / 조준 중 걷기 시험 짧게 |
+| `5fa903b` | 10-07 | R75 | 시험 도구: 조준 중 룩의 질주 상태 |
+| `a28a24a` | 10-07 | R75 | 룩 조준 중 걷기(질주 X), 이펙트 조각 삭제, 벽 흔들림, 나이트 감지 3 m·주황 표시·착지 원 한 벌만 |
+| `7c0658a` | 10-07 | R74 | 문서: Skills README(F·조준·나이트 찍기·측정·녹화), EFFECTS(글자 뺌), REQUIREMENTS R74, VALIDATION, HANDOFF |
+| `2e0d5e9` | 10-07 | R74 | 녹화: 룩 장면 가깝게, 나이트 꺾기는 위에서 |
+| `836adb4` | 10-07 | R74 | 모든 스킬 F(이 씬 F 상호작용 끔), 룩·비숍 F 조준 → 좌클릭, 비숍 근거리 4.5 m·반투명 미리보기, 나이트 공중 F = 감지한 적 머리 자동 찍기(없으면 90° 꺾기), 이펙트 글자·숫자 제거, 시험 도구·녹화 맞춤 |
+| `941da62` | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
+| `88a91de` | 10-07 | R73 | 녹화: P2를 화면 밖으로 |
+| `a465780` | 10-07 | R73 | 녹화: 녹화 중 키보드 입력 막기 |
+| `3c14943` · `c7d8ae9` · `d38f48b` | 10-07 | R73 | 녹화: 느린 화면은 맞는 순간 앞뒤만, 장면 사이 밧줄 지우기, 카메라·자막 띠 / 이펙트: 납작 오래, 글자 위치, 퀸 안쪽 고리 진하게 |
+| `c6c51eb` | 10-07 | R73 | 타격감 이펙트(퀸 A·룩 A·비숍 B·나이트 B) `PawnRushSkillFx`, 스킬 이벤트 `RagdollPawn.SkillFx`, 녹화 도구 `PawnRushSkillFilm` + mp4 인코더, 시험 `bishop-trip` |
+| `4091d33` | 10-07 | R72 | 문서: Skills EFFECTS(이펙트 시안 기물마다 3개), README(V 키·시험용 쿨), REQUIREMENTS R72, VALIDATION, HANDOFF |
+| `f2cf4e6` | 10-07 | R72 | 시험 도구 rook-cluster: 돌진이 끝날 때 넘어진 수를 셈 |
+| `d807606` | 10-07 | R72 | 시험용 쿨타임 2초(모든 기물), 룩 시험용 더미 4명 뭉치기(V·버튼·룩 고르면 저절로), 시험 도구 rook-cluster |
+| `30292b2` | 10-07 | R71 | 문서: Skills README(쓰는 법·실측)·DESIGN(D1~D3 결정), VALIDATION 스킬 표, DECISIONS SK1·SK2, AI_WORKFLOW(Unity MCP 다리), REQUIREMENTS R71, HANDOFF. 비숍 조준 미리보기 굵게 |
+| `7947e4a` | 10-07 | R71 | 바닥 예고선을 바닥에 눕힘, 시험 도구가 그 프레임의 조준·누름과 함께 키를 누름 |
+| `be0c63d` | 10-07 | R71 | 시험 도구: 스킬 단계에서 시간 멈추기(예고 표시 캡처용) |
+| `023be98` | 10-07 | R71 | 룩 돌진 끝에 발을 디딤(미끄러짐 줄임) |
+| `ea3dee7` | 10-07 | R71 | 나이트 도약 공중 손실 보정(기획 1.6 m · 5.5 m에 맞춤), 시험 도구에 룩 빈 바닥 돌진 |
+| `aea87df` | 10-07 | R71 | 시험 도구: 걷는 더미 멈추기, 나이트 꺾기 타이밍, 밟기·착지 더미 위치, 착지를 출발 높이로 잼 |
+| `215051d` | 10-07 | R71 | 자동 시험 도구 `PawnRushSkillProbe`, 쿨 막대 글씨 대비 |
+| `401ac15` | 10-07 | R71 | 폰 러쉬 스킬 시험 씬 `PawnRush_SkillTest`(RagdollTest 복사 + `PawnRushSkillBed`), 스킬 5개(`RagdollPawn.PawnRushSkills`), 밧줄·바리케이드·예고선, 메뉴 Open Skill Test, `RagdollPawn.cs`·`Abilities.cs` 연결 |
+| `cf69513` (`claude/bold-johnson-8ez95n`) | 10-07 | R70 | 문서: 기물 스킬 기획서 v0.2 상세판 `Docs/Skills/DESIGN.md`(+ `README.md`), REQUIREMENTS R70, HANDOFF·Docs/README 지도. 코드 변경 없음 |
+| `cc6373f` (`claude/bold-johnson-8ez95n`) | 10-07 | R69 | 폰 러시 코스 01 v0.2: 같은 씬을 탑을 감아 오르는 3층 고리로(`Course01v2Builder`, 월드 좌표), `FallDistanceRespawn`·`TeamZone`·`FinishZone` 원형/골반만, `ProgressPath`, v0.2 검증기, 메뉴 Build Course01 v2, v0.1 모듈 코드·레이아웃 에셋 삭제, 기획서 v0.2 원문, 문서 |
+| `c4015ff` (`claude/bold-johnson-8ez95n`) | 10-06 | R68 | 폰 러시 코스 01 「여덟 번째 랭크」: 새 씬·모듈 18개(코드)·키트 스크립트(`Assets/Maps/PawnRush/Course01`), `NoClimbSurface`·`KillVolume`, 래그돌 등반·잡기에 등반 불가 연결, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사 영역·팀 바꾸기, 생성기 `gen_pawnrush_course01.py`, Linux 검사에 PawnRush·에디터 컴파일, 문서 |
+| (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/PawnRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
+| `12772fe` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | 문서: UI §13(폰 러쉬 결과 화면)·§10(바뀜 안내), SCENES·STRUCTURE·ROADMAP, DECISIONS U13, VALIDATION 결과 화면 표(12개, R62 표는 끝남), PITFALLS 25~27(이 브랜치에서는 26~28), REQUIREMENTS R65(이 브랜치에서는 R76), HANDOFF |
+| `5972c7e` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | `LastScene` 삭제(씬·`LastSceneDirector`·`LastSceneCeremony`·`LastSceneStage`·`LastSceneHud`·uxml·uss·tss·생성기) → 폰 러쉬 결과 씬 `PawnRushVictory`·`PawnRushLose`(`PawnRushResultDirector`·`PawnRushResultStage`·`PawnRushResultHud`, `PawnRushResultHud.uxml`·`.uss`·`PawnRushResultTheme.tss`, 생성기 `gen_pawnrush_result.py`), 메뉴 2개, `SceneNames`. 시안(결승 중계 on B 장면)의 three.js·CSS를 그대로 옮김: 갈색 홀 반사 큐브맵, 배경 판·빛줄기, 보드 글자, 램프, 더하는 빛(칸·고리), 점·꽃가루, 웹 자세·카메라, Painter2D 그라데이션 결과판, 육각 얼굴, 그라데이션 글자. 미리보기 `holdAt`·`holdHidden`·`Hold()` |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |
 | (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |
 | `deabde0` (`main` 병합) | 10-06 | R65 | Linux 검사 유지: 테스트 지역 함수 → 클래스 함수(`f8efbfb` 이식), `MatchResult.Example` 대리자, 장애물 시계 검사의 `StateDrivenMover:` 예외, `--compile`이 Unity 6 API(Painter2D·채팅 입력 칸·칼 무게중심)를 임시 복사본에서 2021.3용으로 바꿈 |
 | `104b18c` (`main` 병합, 원본 `27e052c` `JY-lobby`) | 10-06 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사. 프로토콜 v14 → **v15** |
-| `a54b89e` (`main` 병합, 원본 `487f62b` `JY-ragdoll_v2`) | 10-06 | R65 | 지성 님 "기존 킹러시 맵 추가": `ImportedChessFightMap.unity`, 장애물 프리팹 19개, `Gameplay/ImportedObstacles` 어댑터, 재질·에디터 메뉴, [MAP_IMPORT](../KingRush/MAP_IMPORT.md) |
+| `a54b89e` (`main` 병합, 원본 `487f62b` `JY-ragdoll_v2`) | 10-06 | R65 | 지성 님 "기존 킹러시 맵 추가": `ImportedChessFightMap.unity`, 장애물 프리팹 19개, `Gameplay/ImportedObstacles` 어댑터, 재질·에디터 메뉴, [MAP_IMPORT](../PawnRush/MAP_IMPORT.md) |
 | (이 커밋, `claude/menu-c`) | 10-05 | R64 | 문서: REQUIREMENTS R64, VALIDATION 설정 창 표·R63 6-b 고침, HANDOFF. 컴파일 도구: Windows는 Game에 `UnityEditor.dll` 참조, Linux는 Game을 플레이어 정의로(설정 창의 `#if UNITY_EDITOR` 종료 코드) |
 | `728f583` (`claude/settings-window`) | 10-05 | R64 | 설정 창(`SettingsWindow`·`SettingsHud.uxml`·`GameSettings`, 탭 5개·항목 10개, `PlayerPrefs`), 인트로는 판 클릭으로 시작·Esc 설정 창, 로비 Esc 설정 창, 입장 화면 Esc는 매칭 취소 안 함, 이동·카메라·채팅·경기 HUD가 설정을 읽음, `ChunkyButtons` 클릭 감 강화, UI §12 |
 | `82ef0ca` (`claude/menu-c`) | 10-03 | R63 3차 | 문서: UI §11-3·§4 안내, VALIDATION 5·6-d, DECISIONS U12 덧붙임, REQUIREMENTS R63 3차, HANDOFF |

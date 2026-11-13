@@ -12,6 +12,7 @@ namespace ChessFight.ProtectKing
         readonly ICharacterDriver driver;
         readonly IHitReceiver hits;
         readonly ILaunchable launcher;
+        readonly IWindReceiver wind;
         readonly Rigidbody[] bodies;
         readonly RaycastHit[] groundHits = new RaycastHit[24];
         public GameObject gameObject => owner != null ? owner.gameObject : null;
@@ -20,22 +21,27 @@ namespace ChessFight.ProtectKing
         Rigidbody MainBody => driver.FollowTarget != null ? driver.FollowTarget.GetComponent<Rigidbody>() : null;
         public Vector3 Velocity => MainBody != null ? MainBody.linearVelocity : Vector3.zero;
         public bool CanReceiveObstacle => isActiveAndEnabled && hits != null && (MainBody == null || !MainBody.isKinematic);
-        public bool Grounded
+        public bool Grounded => TryGetGroundCollider(out _);
+        // Return the support used for grounding, rather than guessing a surface from hip position.
+        public bool TryGetGroundCollider(out Collider support)
         {
-            get
+            support = null;
+            if (!isActiveAndEnabled || Velocity.y > 1.5f) return false;
+            int n = Physics.SphereCastNonAlloc(Position + Vector3.up * .24f, .15f, Vector3.down,
+                groundHits, .4f, ~0, QueryTriggerInteraction.Ignore);
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < n; i++)
             {
-                if (!isActiveAndEnabled || Velocity.y > 1.5f) return false;
-                int n = Physics.SphereCastNonAlloc(Position + Vector3.up * .24f, .15f, Vector3.down,
-                    groundHits, .4f, ~0, QueryTriggerInteraction.Ignore);
-                for (int i = 0; i < n; i++)
-                    if (!groundHits[i].collider.transform.IsChildOf(owner.transform) && groundHits[i].normal.y > .55f) return true;
-                return false;
+                var hit = groundHits[i];
+                if (hit.collider.transform.IsChildOf(owner.transform) || hit.normal.y <= .55f || hit.distance >= nearest) continue;
+                nearest = hit.distance; support = hit.collider;
             }
+            return support != null;
         }
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {
             this.owner=owner; this.driver=driver;
-            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>();
+            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>(); wind=owner.GetComponent<IWindReceiver>();
             bodies=owner.GetComponentsInChildren<Rigidbody>();
         }
         public static ImportedObstacleActor Find(Collider collider)
@@ -55,6 +61,10 @@ namespace ChessFight.ProtectKing
         static void Reset() => actors.Clear();
         public void AddObstacleImpulse(Vector3 velocity)
         { if (CanReceiveObstacle) hits.ApplyHit(velocity,0,0,true); }
+        // A hit that also knocks the character down for a while (0 = a stagger, as AddObstacleImpulse).
+        // The Pawn Rush grand stair hall's rolling statues and falling chandeliers (level design v0.3 §5).
+        public void AddObstacleHit(Vector3 velocity, float knockdownSeconds)
+        { if (CanReceiveObstacle) hits.ApplyHit(velocity,Mathf.Max(0,knockdownSeconds),0,true); }
         public void LaunchFromObstacle(Vector3 velocity)
         {
             if (!CanReceiveObstacle) return;
@@ -69,6 +79,9 @@ namespace ChessFight.ProtectKing
             else
                 LaunchFromObstacle(Vector3.ProjectOnPlane(Velocity, Vector3.up) + Vector3.up * upwardSpeed);
         }
+        // A wind that carries the character over the ground (AirVent.DriftSpeed): false when it is not that
+        // kind of character or cannot be carried right now, and the vent pushes its bodies instead.
+        public bool Blow(Vector3 velocity) => CanReceiveObstacle && wind != null && wind.Blow(velocity);
         // Wind is continuous acceleration, not a repeated hit/stagger. Reject
         // puppets via their kinematic body, then push every body part equally.
         public Vector3 Accelerate(Vector3 acceleration, float limit, float dt)

@@ -1,0 +1,10 @@
+{
+  "name": "ChessFight.VFX.Editor",
+  "rootNamespace": "ChessFight.VFX.Editor",
+  "references": ["ChessFight.VFX", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "versionDefines": [
+    { "name": "com.unity.render-pipelines.universal", "expression": "17.0", "define": "CF_URP" }
+  ],
+  "autoReferenced": false
+}

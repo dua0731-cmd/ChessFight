@@ -1,0 +1,21 @@
+{
+    "name": "ChessFight.RagdollLab.Editor",
+    "rootNamespace": "ChessFight.RagdollLab.Editor",
+    "references": [
+        "ChessFight.RagdollLab",
+        "ChessFight.Game",
+        "ChessFight.Gameplay",
+        "ChessFight.Network.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

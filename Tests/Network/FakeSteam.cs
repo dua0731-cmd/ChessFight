@@ -8,6 +8,7 @@ using System.Web.Script.Serialization;
 namespace UnityEngine
 {
     public static class Time { public static float realtimeSinceStartup; }
+    public static class Debug { public static readonly List<string> Lines = new List<string>(); public static void Log(object message) => Lines.Add(message?.ToString() ?? ""); }
     public static class Random { public static float Range(float a,float b) => (a+b)/2; }
     public static class JsonUtility
     {
@@ -73,8 +74,14 @@ namespace Steamworks
         // Relay-network ping locations per user and estimated pings between them (host election).
         public static Dictionary<ulong,string> PingLocations=new Dictionary<ulong,string>();
         public static Dictionary<(string,string),int> Pings=new Dictionary<(string,string),int>();
+        // Real Steam moves a room's ownership a moment after SetLobbyOwner: until then the old owner still
+        // owns it. Seconds of that delay (0 = at once), and the changes still on their way.
+        public static float OwnerDelay;
+        public static Dictionary<ulong,(ulong to,float at)> OwnerChanges=new Dictionary<ulong,(ulong,float)>();
+        // Users whose connection to Steam is down (SteamUser.BLoggedOn false). Their lobby calls still go through here.
+        public static HashSet<ulong> LoggedOff=new HashSet<ulong>();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();OwnerDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -85,14 +92,20 @@ namespace Steamworks
         public static SteamAPICall_t Result(object value) {int id=++nextCall;Results[id]=value;return new SteamAPICall_t{Value=id};}
         public static void Enqueue(ulong user,Action action) {if(!Pending.ContainsKey(user))Pending[user]=new Queue<Action>();Pending[user].Enqueue(action);}
         public static void Dispatch() {if(!Pending.TryGetValue(User,out var q))return;int n=q.Count;for(int i=0;i<n;i++)q.Dequeue()();}
-        public static Lobby Get(CSteamID id) => Lobbies.TryGetValue(id.m_SteamID,out var l)?l:null;
+        public static Lobby Get(CSteamID id)
+        {
+            if(!Lobbies.TryGetValue(id.m_SteamID,out var l))return null;
+            if(OwnerChanges.TryGetValue(l.Id,out var change)&&UnityEngine.Time.realtimeSinceStartup>=change.at)
+            {OwnerChanges.Remove(l.Id);if(l.Members.Contains(change.to))l.Owner=change.to;}
+            return l;
+        }
         public static SteamAPICall_t Create(ELobbyType type,int limit)
         {ulong id=++nextLobby;var l=new Lobby{Id=id,Owner=User,Limit=limit,Type=type};l.Members.Add(User);Lobbies[id]=l;return Result(new LobbyCreated_t{m_ulSteamIDLobby=id,m_eResult=EResult.k_EResultOK});}
     }
     public static class Packsize { public static bool Test()=>true; }
     public static class DllCheck { public static bool Test()=>true; }
     public static class SteamAPI {public static bool Init()=>true;public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
-    public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>true; }
+    public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>!FakeSteam.LoggedOff.Contains(FakeSteam.User); }
     public struct SteamNetworkPingLocation_t { public string Text; }
     public static class Constants { public const int k_cchMaxSteamNetworkingPingLocationString=1024; }
     public static class SteamNetworkingUtils
@@ -135,7 +148,15 @@ namespace Steamworks
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
         public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)=>true;
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
-        public static bool SetLobbyOwner(CSteamID id,CSteamID owner) {var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;l.Owner=owner.m_SteamID;return true;}
+        public static bool SetLobbyOwner(CSteamID id,CSteamID owner)
+        {
+            var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;
+            if(FakeSteam.OwnerDelay<=0){l.Owner=owner.m_SteamID;return true;}
+            // Asking again for the same new owner does not restart Steam's clock.
+            if(!FakeSteam.OwnerChanges.TryGetValue(l.Id,out var change)||change.to!=owner.m_SteamID)
+                FakeSteam.OwnerChanges[l.Id]=(owner.m_SteamID,UnityEngine.Time.realtimeSinceStartup+FakeSteam.OwnerDelay);
+            return true;
+        }
         public static SteamAPICall_t CreateLobby(ELobbyType type,int limit)=>FakeSteam.Create(type,limit);
         public static SteamAPICall_t JoinLobby(CSteamID id)
         {

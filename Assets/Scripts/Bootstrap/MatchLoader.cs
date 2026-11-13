@@ -22,6 +22,8 @@ namespace ChessFight.Game
     // host announces one start time on the shared Steam clock ("go") once all
     // are ready or the slowest has had MatchStart.MaxWait. Every PC lifts its
     // screen at that moment, and local input stays blocked until then.
+    // R502: the session picks that time (SteamSession.AnnounceStartWhenDue), not
+    // this screen, so a host that takes over after its screen has gone still does.
     sealed class MatchLoader
     {
         // The screen is drawn at least this long before the scene may switch on,
@@ -39,7 +41,7 @@ namespace ChessFight.Game
         WarmupMeter warmup;
         ThreadPriority loadingPriority;
         bool skipFrame;
-        float shownAt, readyAt = -1, hostSince = -1, matchingSince;
+        float shownAt, readyAt = -1, matchingSince, gateSince = -1;
 
         public MatchLoader(NetworkRuntime runtime, Func<double> clock)
         {
@@ -82,7 +84,7 @@ namespace ChessFight.Game
             load = SceneManager.LoadSceneAsync(sceneName);
             phase = Phase.Loading;
             shownAt = Time.unscaledTime;
-            readyAt = hostSince = -1;
+            readyAt = -1;
             if (load == null)
             {
                 Debug.LogError("[ChessFight] 경기 씬을 불러오지 못했습니다: " + sceneName + " (File > Build Profiles의 씬 목록 확인)");
@@ -104,6 +106,7 @@ namespace ChessFight.Game
                 screen.Build(content);
                 screen.CancelRequested += () => runtime.Session.Cancel();
                 screen.AddBotRequested += () => runtime.Session.AddRoomBot();
+                screen.StartRequested += () => runtime.Session.StartGame();
                 return screen;
             }
             catch (Exception e)
@@ -133,14 +136,34 @@ namespace ChessFight.Game
             bool wanted = PublicMatching(session);
             if (phase == Phase.Idle)
             {
-                if (!wanted) return;
+                // The lobby castle's walk in (LobbyStage.EnterGate): the party goes
+                // through the great gate first, then the matchmaking screen comes up.
+                // Only the screen waits; the search is already running.
+                var stage = LobbyStage.Current;
+                if (!wanted)
+                {
+                    if (gateSince >= 0) { gateSince = -1; if (stage != null) stage.LeaveGate(); }
+                    return;
+                }
+                if (stage != null && stage.HasGate)
+                {
+                    if (gateSince < 0) { gateSince = Time.unscaledTime; stage.EnterGate(); }
+                    if (!stage.GateEntered && Time.unscaledTime - gateSince < LobbyStage.MaxWalkSeconds) return;
+                }
+                gateSince = -1;
                 var mode = session.MatchMode ?? session.PartyMode;
                 // Built once per search: if it fails, the busy card under it still cancels.
                 view = Show(LoadingContent.For(mode, TeamReservations.TeamSize));
                 phase = Phase.Matching;
                 matchingSince = Time.unscaledTime;
             }
-            else if (!wanted) { Finish(); return; }
+            else if (!wanted)
+            {
+                Finish();
+                // Back in the lobby: the party stands on the stage again, the gate shuts.
+                if (LobbyStage.Current != null) LobbyStage.Current.LeaveGate();
+                return;
+            }
             if (view == null) return;
 
             var state = view.State;
@@ -151,9 +174,20 @@ namespace ChessFight.Game
             // the button from the start, usable once it hosts the room it made.
             state.ShowAddBot = session.AllowPublicBots && (session.Match == 0 ? session.IsLeader : session.IsHost);
             state.CanAddBot = session.CanAddRoomBot;
+            // R148: the 폰 러쉬 room's host may start short of twelve (3+ a side, even sides).
+            state.ShowStart = session.EarlyStartMode && session.IsHost && !session.Started;
+            state.CanStart = session.CanStartGame;
+            int white = session.TeamCount(0), black = session.TeamCount(1), min = TeamReservations.MinTeamToStart;
+            state.StartNote = !session.EarlyStartMode || session.Started ? ""
+                : state.CanStart ? (session.IsHost ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)" : $"{white} 대 {black} · 방장이 시작할 수 있어요")
+                : white < min || black < min ? $"{white} 대 {black} · 팀마다 {min}명 이상이면 시작할 수 있어요"
+                : white != black ? $"{white} 대 {black} · 두 팀 인원이 같아야 시작할 수 있어요"
+                : $"{white} 대 {black} · 모두 입장하면 시작할 수 있어요";
             int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
-            state.Step = session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
+            // R294: a new host in the waiting room says so for a few seconds (who, and why: the best PC).
+            state.Step = session.NoteShowing ? session.Note
+                       : session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
             state.Clear();
             if (session.Match != 0 && session.Roster.Count > 0)
             {
@@ -176,6 +210,7 @@ namespace ChessFight.Game
         static void Add(LoadingState state, SteamSession session, ulong id, int team, bool ready)
         {
             if (id == session.Self) state.Me = state.Teams.Count;
+            if (id == session.Host) state.Host = state.Teams.Count;
             state.Teams.Add(team);
             state.Joined.Add(true);
             state.Ready.Add(ready);
@@ -258,22 +293,13 @@ namespace ChessFight.Game
                 Add(state, session, p.Id, p.Team, session.LoadPercent(p.Id) >= MatchStart.Ready);
         }
 
-        // Ready: wait for the host's start time, and as the host, pick it.
+        // Ready: wait for the host's start time (the session picks it as the host, R502).
         string Wait(SteamSession session, float now)
         {
             // Nobody to wait for without a live match.
             if (!session.Online || session.Match == 0) { Finish(); return ""; }
-            // A player who takes the host role while waiting counts its wait from then.
-            if (session.IsHost) { if (hostSince < 0) hostSince = now; }
-            else hostSince = -1;
 
             double start = session.StartAt;
-            if (start == 0 && session.CanAnnounceStart &&
-                MatchStart.ShouldStart(session.Roster.Keys.Select(session.LoadPercent), now - Mathf.Max(readyAt, hostSince)))
-            {
-                session.AnnounceStart(clock() + MatchStart.Lead);
-                start = session.StartAt;
-            }
             // A late player finds the start already past and goes at once.
             if (start > 0 && clock() >= start) { Finish(); return ""; }
             if (start == 0 && now - readyAt >= MatchStart.ClientGiveUp) { Finish(); return ""; }

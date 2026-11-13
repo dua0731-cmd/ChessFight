@@ -31,7 +31,7 @@ namespace ChessFight.Gameplay
             this.phase = phase;
         }
 
-        // Is it solid at this time? Tools/QueenHill/preview/index.html mirrors this.
+        // Is this platform solid at the shared-clock time?
         public static bool On(double time, float period, float onFrom, float onTo, float phase)
         {
             if (period <= 1e-3f) return true;

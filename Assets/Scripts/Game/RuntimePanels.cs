@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -44,6 +45,25 @@ namespace ChessFight.Game
             root.Query<VisualElement>(className: DisplayClass).ForEach(Display);
         }
 
+        // Exo 2 Black Italic (SIL OFL 1.1, Resources/Fonts with its licence), the
+        // title screen's CHESS FIGHT since R150. Latin only; null if missing.
+        static Font title;
+        static bool titleTried;
+
+        public static Font TitleFont
+        {
+            get
+            {
+                if (title == null && !titleTried)
+                {
+                    titleTried = true;
+                    title = Resources.Load<Font>("Fonts/Exo2-BlackItalic");
+                    if (title == null) Debug.LogWarning("[ChessFight] 시작 화면 제목 글꼴(Resources/Fonts/Exo2-BlackItalic)을 찾지 못했습니다.");
+                }
+                return title;
+            }
+        }
+
         public static void Display(VisualElement element)
         {
             if (element == null || DisplayFont == null) return;
@@ -70,6 +90,9 @@ namespace ChessFight.Game
                                     "테마가 없으면 HUD가 아예 보이지 않습니다.");
             }
             document.panelSettings = settings;
+            // Settings → 접근성 → 메뉴 크기 (R77): every menu this makes, not the
+            // settings window itself, follows it, also when it changes.
+            if (owned != null && host.GetComponent<SettingsWindow>() == null) Scale(owned);
             var root = document.rootVisualElement;
             // Unity's default runtime theme is what normally stretches a UIDocument
             // root over the whole screen. NetworkTheme.tss does not import it, so
@@ -81,6 +104,22 @@ namespace ChessFight.Game
             layout.CloneTree(root);
             ApplyDisplay(root);
             return root;
+        }
+
+        static readonly List<PanelSettings> scaled = new List<PanelSettings>();
+        static bool rescaling;
+
+        static void Scale(PanelSettings settings)
+        {
+            if (!rescaling) { rescaling = true; GameSettings.Changed += Rescale; }
+            scaled.Add(settings);
+            settings.scale = GameSettings.UiScale;
+        }
+
+        static void Rescale()
+        {
+            scaled.RemoveAll(s => s == null);
+            foreach (var s in scaled) s.scale = GameSettings.UiScale;
         }
 
         static Font ResolveFont()

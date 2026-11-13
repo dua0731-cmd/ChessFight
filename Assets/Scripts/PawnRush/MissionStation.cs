@@ -1,0 +1,212 @@
+using System.Collections.Generic;
+using ChessFight.Gameplay;
+using ChessFight.Network;
+using UnityEngine;
+
+namespace ChessFight.PawnRush
+{
+    // One team's 20 x 20 m mini-game station in a mission plaza (design doc v0.4 §5; replaces the
+    // team-only slot island). Station-local frame: origin at the middle of its south edge on the
+    // floor, u = local z (north, toward the team gate, 0..20), v = local x (-10..10).
+    //
+    // There is no wall between the two stations: the other team walks in and gets in the way, but
+    // only this team's pawns move the progress (at most four at once). The game picked for the
+    // round is built into GameSocket (MissionGames); its done signal opens this station's gate.
+    public sealed class MissionStation : MonoBehaviour
+    {
+        public const float Size = 20f, Half = 10f;
+
+        // C's rope and D's capstan worked backwards by the other team (v0.4 §5). On by default; the
+        // design doc wants a switch in test builds (the playtest's F7).
+        public static bool ReverseSabotage = true;
+
+        // The team of the person at this PC (the playtest, or the match link's own pawn): whose fanfare is loud.
+        public static int LocalTeam = Teams.White;
+
+        // Mini-games v1.0 §2.1: every station is a dais Arena.DaisHeight over the plaza floor. The game socket
+        // (the games' own frame, floor top at 0) sits that much up; Pawns() gives heights from the dais top.
+
+        [SerializeField, Range(0, 1)] int team = Teams.White;
+        [SerializeField, Range(1, 3)] int plaza = 1;
+        [Tooltip("Black's station is the mirror of white's: D's capstan turns the other way.")]
+        [SerializeField] bool mirrored;
+        [SerializeField] TeamGate gate;
+        [SerializeField] Transform gameSocket;
+        [SerializeField] Course01Kit kit;
+        [SerializeField] int gameIndex = PawnRushMissions.None;
+        [Tooltip("The standalone palace section supplies its own architectural dressing and promotion layout.")]
+        [SerializeField] bool palaceStyle;
+
+        public int Team => team;
+        public int Plaza => plaza;
+        public bool Mirrored => mirrored;
+        public TeamGate Gate => gate;
+        public Course01Kit Kit => kit;
+        public int GameIndex => gameIndex;
+        public MiniGameBase Game => gameSocket != null ? gameSocket.GetComponentInChildren<MiniGameBase>(true) : null;
+        public Transform Socket => gameSocket;
+        public bool PalaceStyle => palaceStyle;
+        public Color Accent(int forTeam) => Arena.TeamColor(forTeam, palaceStyle);
+        public void SetPalaceStyle(bool value) => palaceStyle = value;
+        // The single-use promotion pad beside the game (R125), made the first time it is asked for in Play (after
+        // Configure: a course built from code at Play adds this component before configuring it).
+        public StationPromotion Promotion
+        {
+            get
+            {
+                if (!palaceStyle && promotion == null && Application.isPlaying && gameSocket != null)
+                {
+                    // One pad by the game instead of the design doc's four placeholder pads (a scene built before
+                    // R125 still has those: they go).
+                    foreach (var zone in GetComponentsInChildren<PromotionZone>(true)) zone.gameObject.SetActive(false);
+                    promotion = StationPromotion.Make(this);
+                }
+                return promotion;
+            }
+        }
+        StationPromotion promotion;
+
+        public void Configure(int team, int plaza, bool mirrored, TeamGate gate, Transform gameSocket, Course01Kit kit)
+        {
+            this.team = team;
+            this.plaza = plaza;
+            this.mirrored = mirrored;
+            this.gate = gate;
+            this.gameSocket = gameSocket;
+            this.kit = kit;
+        }
+
+        // Builds the given game in place of the current one (a new round, or the playtest's keys).
+        public MiniGameBase Install(int game)
+        {
+            if (gameSocket == null) throw new System.InvalidOperationException("A mission station needs a game socket before installing a game.");
+            RaiseSocket();
+            for (int i = gameSocket.childCount - 1; i >= 0; i--) DestroyImmediate(gameSocket.GetChild(i).gameObject);
+            gameIndex = game;
+            if (gate != null && Application.isPlaying) gate.Close();
+            var built = MissionGames.Build(game, this);
+            if (Application.isPlaying)
+            {
+                Hook(built);
+                // §2.4: the game rises out of the dais, dust rings the floor, the sign nods.
+                if (built != null && !palaceStyle) InstallRise.Play(built.transform);
+                var at = transform.TransformPoint(new Vector3(0f, Arena.DaisHeight, 10f));
+                if (!palaceStyle)
+                {
+                    ArenaFx.Ring(at, 2f, 9f, .8f, new Color(.85f, .78f, .65f));
+                    ArenaFx.Sfx("sfx_mg_install", at);
+                }
+                var dressing = Dressing;
+                if (dressing != null) dressing.Installed(game);
+            }
+            last.Clear();
+            return built;
+        }
+
+        void RaiseSocket()
+        {
+            if (gameSocket != null) gameSocket.localPosition = new Vector3(0f, Arena.DaisHeight, 0f);
+        }
+
+        ArenaDressing dressing;
+
+        // The ramp, flags, sign and gate bar (built the first time it is asked for in Play).
+        public ArenaDressing Dressing
+        {
+            get
+            {
+                if (!palaceStyle && dressing == null && Application.isPlaying && kit != null) dressing = Arena.Dress(this);
+                return dressing;
+            }
+        }
+
+        MiniGameBase hooked;
+
+        // The game built in the Editor (saved with the scene) opens the gate too.
+        void Start()
+        {
+            RaiseSocket();
+            if (!palaceStyle && Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
+            if (Dressing != null && dressing.isActiveAndEnabled) dressing.Installed(gameIndex);
+            if (hooked == null) Hook(Game);
+        }
+
+        void Hook(MiniGameBase game)
+        {
+            if (hooked != null) hooked.Finished -= OpenGate;
+            hooked = game;
+            if (game != null) game.Finished += OpenGate;
+        }
+
+        void OpenGate()
+        {
+            if (gate != null) gate.Open();
+        }
+
+        void OnDestroy()
+        {
+            if (hooked != null) hooked.Finished -= OpenGate;
+        }
+
+        public void ResetRound()
+        {
+            var game = Game;
+            if (game != null) game.ResetGame();
+            if (gate != null) gate.Close();
+            if (Promotion != null) Promotion.ResetPad();
+        }
+
+        // ------------------------------------------------------------------ the pawns in the station
+
+        public struct Pawn
+        {
+            public ICharacterDriver Driver;
+            public int Team;
+            public Vector3 Local;      // hips, station-local
+            public Vector3 Velocity;   // station-local, m/s
+            public bool Own;           // of this station's team
+        }
+
+        readonly List<Pawn> pawns = new List<Pawn>();
+        readonly Dictionary<ICharacterDriver, Vector3> last = new Dictionary<ICharacterDriver, Vector3>();
+        readonly Dictionary<ICharacterDriver, Vector3> next = new Dictionary<ICharacterDriver, Vector3>();
+        readonly Collider[] buffer = new Collider[256];
+        float gatheredAt = -1f;
+
+        // Every character whose hips are over the station (up to 12 m up: E's towers), with its
+        // velocity since the last call. Call it from FixedUpdate: once per physics step.
+        public List<Pawn> Pawns()
+        {
+            if (gatheredAt == Time.fixedTime) return pawns;
+            gatheredAt = Time.fixedTime;
+            pawns.Clear();
+            next.Clear();
+            var center = transform.TransformPoint(new Vector3(0f, 6f + Arena.DaisHeight, Half));
+            int n = Physics.OverlapBoxNonAlloc(center, new Vector3(Half + .5f, 9f, Half + .5f), buffer, transform.rotation, ~0, QueryTriggerInteraction.Ignore);
+            float dt = Mathf.Max(Time.fixedDeltaTime, 1e-4f);
+            for (int i = 0; i < n; i++)
+            {
+                var driver = buffer[i].GetComponentInParent<ICharacterDriver>();
+                if (driver == null || next.ContainsKey(driver) || driver.FollowTarget == null) continue;
+                var local = transform.InverseTransformPoint(driver.FollowTarget.position) - new Vector3(0f, Arena.DaisHeight, 0f);
+                if (Mathf.Abs(local.x) > Half + .3f || local.z < -.3f || local.z > Size + .3f) { next[driver] = local; continue; }
+                var velocity = last.TryGetValue(driver, out var before) ? (local - before) / dt : Vector3.zero;
+                // A respawn or a throw across the map is not a walk.
+                if (velocity.sqrMagnitude > 400f) velocity = Vector3.zero;
+                int t = driver is ITeamMember m ? m.Team : Teams.None;
+                pawns.Add(new Pawn { Driver = driver, Team = t, Local = local, Velocity = velocity, Own = t == team });
+                next[driver] = local;
+            }
+            last.Clear();
+            foreach (var kv in next) last[kv.Key] = kv.Value;
+            return pawns;
+        }
+
+        void OnDrawGizmos()
+        {
+            Gizmos.color = team == Teams.White ? new Color(1f, 1f, 1f, .5f) : new Color(.1f, .1f, .12f, .6f);
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Gizmos.DrawWireCube(new Vector3(0f, .05f, Half), new Vector3(Size, .1f, Size));
+        }
+    }
+}

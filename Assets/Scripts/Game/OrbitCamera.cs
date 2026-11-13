@@ -8,7 +8,8 @@ namespace ChessFight.Game
     // Clicking the game view captures the mouse; Esc lets it go.
     //
     // V toggles a free-flying camera for looking round the map: WASD, Space / C up
-    // and down, Shift fast. The character gets no input while it flies.
+    // and down, Shift fast. The character gets no input while it flies. Not while
+    // voice chat runs: V is push to talk then (R131).
     //
     // It only knows a Transform to follow, never the character type, so it works
     // with the capsule stand-in and the ragdoll alike.
@@ -40,6 +41,30 @@ namespace ChessFight.Game
 
         public bool FreeFly { get; private set; }
         public float Yaw => yaw;
+        // R442 (승규 11-05): the lowest the following camera may go at a point - over water: its surface is drawn from
+        // above only, so from under it the sky showed through where a piece had fallen in. The gameplay side sets it
+        // (WaterZone); null or -infinity, no floor. Not for the free camera.
+        public static System.Func<Vector3, float> FloorAt;
+        // The key that toggles the free camera (승규 님's test scene takes F1 and flies with F2 itself: None).
+        public static KeyCode FlyKey = KeyCode.F1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => FlyKey = KeyCode.F1;
+
+        // Fly from a given place and view (the test scene's look over the whole map).
+        public void FlyAt(Vector3 position, float yawDegrees, float pitchDegrees)
+        {
+            FreeFly = true;
+            yaw = yawDegrees;
+            pitch = Mathf.Clamp(pitchDegrees, -85f, 85f);
+            transform.SetPositionAndRotation(position, Quaternion.Euler(pitch, yaw, 0f));
+        }
+
+        public void StopFly()
+        {
+            FreeFly = false;
+            initialized = false;
+        }
 
         // Where the player aims: along the view, pitch included.
         public Vector3 AimForward => FreeFly ? transform.forward : Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
@@ -64,12 +89,15 @@ namespace ChessFight.Game
         {
             try
             {
-                if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
-                else if (Cursor.lockState != CursorLockMode.Locked && Application.isFocused
+                // Esc frees the mouse, unless the scene has the in-game menu (R148): then the menu takes it.
+                if (Input.GetKeyDown(KeyCode.Escape) && !GameMenu.Installed) Cursor.lockState = CursorLockMode.None;
+                // Not while the match sheet holds the mouse (R131): its clicks are its own.
+                else if (Cursor.lockState != CursorLockMode.Locked && Application.isFocused && !GameSettings.PointerTaken
                          && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
                     Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = Cursor.lockState != CursorLockMode.Locked;
-                if (Input.GetKeyDown(KeyCode.V))
+                // F1 flies the free camera (승규 10-22; was V, which push-to-talk took over in R131).
+                if (FlyKey != KeyCode.None && Input.GetKeyDown(FlyKey))
                 {
                     FreeFly = !FreeFly;
                     if (!FreeFly) initialized = false;
@@ -131,7 +159,13 @@ namespace ChessFight.Game
                 allowed = Mathf.Min(allowed, h.distance);
             }
             shown = Mathf.Lerp(shown, allowed, 1f - Mathf.Exp((allowed < shown ? -25f : -4f) * dt));
-            transform.SetPositionAndRotation(pivot + back * Mathf.Max(0.3f, shown), rot);
+            Vector3 at = pivot + back * Mathf.Max(0.3f, shown);
+            if (FloorAt != null)
+            {
+                float floor = FloorAt(at);
+                if (at.y < floor) at.y = floor;
+            }
+            transform.SetPositionAndRotation(at, rot);
         }
 
         void Fly(float dt)

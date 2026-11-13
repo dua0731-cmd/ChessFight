@@ -1,0 +1,546 @@
+[
+  {
+    "id": "3-1",
+    "name": "국왕 작전실",
+    "prefab": "Assets/Maps/RoyalPalace/Courses/3-1_RoyalWarRoom.prefab",
+    "root": 100001,
+    "transform": 100002,
+    "component": 101657,
+    "hazards": [
+      {
+        "beat": 1,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 22
+      },
+      {
+        "beat": 1,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 48
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 22
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 48
+      },
+      {
+        "beat": 2,
+        "kind": "round_table",
+        "name": "01 Round strategy table",
+        "local_z": 20
+      },
+      {
+        "beat": 2,
+        "kind": "pusher",
+        "name": "03 High pusher - wait for withdrawal",
+        "local_z": 42
+      },
+      {
+        "beat": 2,
+        "kind": "pusher",
+        "name": "03 High pusher - wait for withdrawal",
+        "local_z": 58
+      },
+      {
+        "beat": 3,
+        "kind": "falling_piece",
+        "name": "10 Falling Knight",
+        "local_z": 24
+      },
+      {
+        "beat": 3,
+        "kind": "falling_piece",
+        "name": "10 Falling Knight",
+        "local_z": 50
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 21
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 42
+      },
+      {
+        "beat": 5,
+        "kind": "cavalry",
+        "name": "17 Knight cavalry charge",
+        "local_z": 24
+      },
+      {
+        "beat": 5,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall -1",
+        "local_z": 55
+      },
+      {
+        "beat": 5,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall 1",
+        "local_z": 55
+      },
+      {
+        "beat": 6,
+        "kind": "drawbridge",
+        "name": "12 Upward royal drawbridge - timed variant",
+        "local_z": 26
+      },
+      {
+        "beat": 6,
+        "kind": "clock_gate",
+        "name": "09 Paired chess-clock gate",
+        "local_z": 53
+      }
+    ],
+    "route_length_m": 644.58,
+    "checkpoints": 3,
+    "target_seconds": 240,
+    "prototype_only": true
+  },
+  {
+    "id": "3-2",
+    "name": "왕실 금고실",
+    "prefab": "Assets/Maps/RoyalPalace/Courses/3-2_RoyalVault.prefab",
+    "root": 100001,
+    "transform": 100002,
+    "component": 101894,
+    "hazards": [
+      {
+        "beat": 1,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 21
+      },
+      {
+        "beat": 1,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 42
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 12
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 58
+      },
+      {
+        "beat": 2,
+        "kind": "clock_gate",
+        "name": "09 Paired chess-clock gate",
+        "local_z": 16
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall -1",
+        "local_z": 36
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall 1",
+        "local_z": 36
+      },
+      {
+        "beat": 2,
+        "kind": "clock_gate",
+        "name": "09 Paired chess-clock gate",
+        "local_z": 58
+      },
+      {
+        "beat": 3,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 23
+      },
+      {
+        "beat": 3,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 51
+      },
+      {
+        "beat": 4,
+        "kind": "jump_pad",
+        "name": "02 Jump pad - steer in air",
+        "local_z": 22
+      },
+      {
+        "beat": 4,
+        "kind": "jump_pad",
+        "name": "02 Jump pad - steer in air",
+        "local_z": 22
+      },
+      {
+        "beat": 5,
+        "kind": "falling_piece",
+        "name": "10 Falling Crown chest",
+        "local_z": 18
+      },
+      {
+        "beat": 5,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 40
+      },
+      {
+        "beat": 5,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 59
+      },
+      {
+        "beat": 6,
+        "kind": "drawbridge",
+        "name": "12 Upward royal drawbridge - timed variant",
+        "local_z": 36
+      }
+    ],
+    "route_length_m": 644.58,
+    "checkpoints": 3,
+    "target_seconds": 240,
+    "prototype_only": true
+  },
+  {
+    "id": "3-3",
+    "name": "국왕 집무실",
+    "prefab": "Assets/Maps/RoyalPalace/Courses/3-3_RoyalStudy.prefab",
+    "root": 100001,
+    "transform": 100002,
+    "component": 101564,
+    "hazards": [
+      {
+        "beat": 1,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 22
+      },
+      {
+        "beat": 1,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 48
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 22
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 48
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall -1",
+        "local_z": 23
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall 1",
+        "local_z": 23
+      },
+      {
+        "beat": 2,
+        "kind": "pusher",
+        "name": "03 High pusher - wait for withdrawal",
+        "local_z": 52
+      },
+      {
+        "beat": 3,
+        "kind": "falling_piece",
+        "name": "10 Falling Royal seal",
+        "local_z": 24
+      },
+      {
+        "beat": 3,
+        "kind": "falling_piece",
+        "name": "10 Falling Royal seal",
+        "local_z": 50
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 21
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 42
+      },
+      {
+        "beat": 5,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 23
+      },
+      {
+        "beat": 5,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 51
+      },
+      {
+        "beat": 6,
+        "kind": "pendulum",
+        "name": "11 Royal pendulum",
+        "local_z": 24
+      },
+      {
+        "beat": 6,
+        "kind": "clock_gate",
+        "name": "09 Paired chess-clock gate",
+        "local_z": 52
+      }
+    ],
+    "route_length_m": 644.58,
+    "checkpoints": 3,
+    "target_seconds": 240,
+    "prototype_only": true
+  },
+  {
+    "id": "3-4",
+    "name": "왕의 옷방",
+    "prefab": "Assets/Maps/RoyalPalace/Courses/3-4_RoyalWardrobe.prefab",
+    "root": 100001,
+    "transform": 100002,
+    "component": 101689,
+    "hazards": [
+      {
+        "beat": 1,
+        "kind": "round_table",
+        "name": "01 Round strategy table",
+        "local_z": 32
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 14
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 56
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall -1",
+        "local_z": 23
+      },
+      {
+        "beat": 2,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall 1",
+        "local_z": 23
+      },
+      {
+        "beat": 2,
+        "kind": "clock_gate",
+        "name": "09 Paired chess-clock gate",
+        "local_z": 52
+      },
+      {
+        "beat": 3,
+        "kind": "pendulum",
+        "name": "11 Royal pendulum",
+        "local_z": 23
+      },
+      {
+        "beat": 3,
+        "kind": "pendulum",
+        "name": "11 Royal pendulum",
+        "local_z": 51
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 21
+      },
+      {
+        "beat": 4,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 42
+      },
+      {
+        "beat": 5,
+        "kind": "falling_piece",
+        "name": "10 Falling Crown box",
+        "local_z": 18
+      },
+      {
+        "beat": 5,
+        "kind": "falling_piece",
+        "name": "10 Falling Crown box",
+        "local_z": 42
+      },
+      {
+        "beat": 5,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 30
+      },
+      {
+        "beat": 5,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 57
+      },
+      {
+        "beat": 6,
+        "kind": "vortex",
+        "name": "01 Static vortex surface",
+        "local_z": 20
+      },
+      {
+        "beat": 6,
+        "kind": "drawbridge",
+        "name": "12 Upward royal drawbridge - timed variant",
+        "local_z": 52
+      }
+    ],
+    "route_length_m": 644.58,
+    "checkpoints": 3,
+    "target_seconds": 240,
+    "prototype_only": true
+  },
+  {
+    "id": "3-5",
+    "name": "왕실 천문대",
+    "prefab": "Assets/Maps/RoyalPalace/Courses/3-5_RoyalObservatory.prefab",
+    "root": 100001,
+    "transform": 100002,
+    "component": 101513,
+    "hazards": [
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 14
+      },
+      {
+        "beat": 1,
+        "kind": "vortex",
+        "name": "01 Static vortex surface",
+        "local_z": 34
+      },
+      {
+        "beat": 1,
+        "kind": "low_bar",
+        "name": "Low rotating pointer - jump or time",
+        "local_z": 56
+      },
+      {
+        "beat": 2,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 21
+      },
+      {
+        "beat": 2,
+        "kind": "rising_tiles",
+        "name": "05 Rising floor - ride to upper gallery",
+        "local_z": 42
+      },
+      {
+        "beat": 3,
+        "kind": "pusher",
+        "name": "03 High pusher - wait for withdrawal",
+        "local_z": 16
+      },
+      {
+        "beat": 3,
+        "kind": "pusher",
+        "name": "03 High pusher - wait for withdrawal",
+        "local_z": 34
+      },
+      {
+        "beat": 3,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall -1",
+        "local_z": 57
+      },
+      {
+        "beat": 3,
+        "kind": "sliding_wall",
+        "name": "06 Sliding wall 1",
+        "local_z": 57
+      },
+      {
+        "beat": 4,
+        "kind": "castling",
+        "name": "18 Castling crossing platforms",
+        "local_z": 36
+      },
+      {
+        "beat": 5,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 16
+      },
+      {
+        "beat": 5,
+        "kind": "hammer",
+        "name": "04 Vertical armillary hammer",
+        "local_z": 36
+      },
+      {
+        "beat": 5,
+        "kind": "air_vent",
+        "name": "15 Rectangular observatory wind",
+        "local_z": 57
+      },
+      {
+        "beat": 6,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 14
+      },
+      {
+        "beat": 6,
+        "kind": "conveyor",
+        "name": "08 Conveyor - reverse travel",
+        "local_z": 33
+      },
+      {
+        "beat": 6,
+        "kind": "drawbridge",
+        "name": "12 Upward royal drawbridge - timed variant",
+        "local_z": 57
+      }
+    ],
+    "route_length_m": 644.58,
+    "checkpoints": 3,
+    "target_seconds": 240,
+    "prototype_only": true
+  }
+]

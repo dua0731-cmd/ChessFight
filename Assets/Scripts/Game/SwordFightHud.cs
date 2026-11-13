@@ -43,6 +43,11 @@ namespace ChessFight.Game
                 pressed = null;
             }
         }
+        /// <summary>R149: the prototype match hides this HUD and draws its own.</summary>
+        public void SetVisible(bool shown)
+        {
+            if (root != null) root.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+        }
         public void Draw(int white, int black, float remaining, int target, int localTeam, string localStatus, bool menuOpen, bool finished, bool classic = false)
         {
             if (root == null) return;

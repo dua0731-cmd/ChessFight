@@ -12,12 +12,20 @@ namespace ChessFight.Network
     // an average PC both show 60 fps in the lobby. So the probe times a fixed
     // physics-like workload (vector integration with square roots and branches)
     // and keeps the best of a few rounds, which ignores a busy moment.
+    //
+    // R294: one sitting is not enough. The first comes while the game is still
+    // loading its first scenes (the logo film, shaders), and a PC busy then read
+    // slower than a weaker one and kept losing the host role to it. So the probe
+    // sits again a few times over the first two minutes, mostly in the lobby,
+    // and the best time stands: a busy moment can only make a run slower.
     public static class HostFitnessProbe
     {
         static double benchMs = -1;
         static int started;
+        // When each sitting starts, in milliseconds after Start().
+        static readonly int[] SittingsAt = { 1500, 6000, 15000, 30000, 60000, 120000 };
 
-        // Best workload time in milliseconds, -1 until the probe has finished.
+        // Best workload time in milliseconds so far, -1 until the first sitting has finished.
         public static double BenchMs => Interlocked.CompareExchange(ref benchMs, 0, 0);
 
         public static void Start()
@@ -28,28 +36,41 @@ namespace ChessFight.Network
         }
 
         // This machine's HostFitness.Base: the benchmark and the hardware, 0 until
-        // the probe has finished. SteamSession adds the live frame rate itself.
-        public static int BaseScore() =>
-            HostFitness.Base(BenchMs, SystemInfo.processorCount, SystemInfo.systemMemorySize, Application.isEditor);
+        // the first sitting has finished; it only rises after that. SteamSession adds
+        // the live frame rate itself. Main thread (SystemInfo).
+        public static int BaseScore()
+        {
+            double ms = BenchMs;
+            if (ms != scoredMs) { scoredMs = ms; score = HostFitness.Base(ms, SystemInfo.processorCount, SystemInfo.systemMemorySize, Application.isEditor); }
+            return score;
+        }
+        static double scoredMs = double.NaN;
+        static int score;
 
         static void Run()
         {
-            try
+            int slept = 0;
+            foreach (int at in SittingsAt)
             {
-                // Let the first scene finish loading before measuring.
-                Thread.Sleep(1500);
-                double best = double.MaxValue;
-                for (int round = 0; round < 3; round++)
+                Thread.Sleep(Math.Max(0, at - slept));
+                slept = at;
+                try
                 {
-                    var watch = Stopwatch.StartNew();
-                    Work();
-                    watch.Stop();
-                    best = Math.Min(best, watch.Elapsed.TotalMilliseconds);
-                    Thread.Sleep(50);
+                    double best = double.MaxValue;
+                    for (int round = 0; round < 3; round++)
+                    {
+                        var watch = Stopwatch.StartNew();
+                        Work();
+                        watch.Stop();
+                        best = Math.Min(best, watch.Elapsed.TotalMilliseconds);
+                        Thread.Sleep(50);
+                    }
+                    double current = BenchMs;
+                    if (current < 0 || best < current) Interlocked.Exchange(ref benchMs, best);
                 }
-                Interlocked.Exchange(ref benchMs, best);
+                // A sitting that fails leaves the best time so far.
+                catch (Exception) { }
             }
-            catch (Exception) { Interlocked.Exchange(ref benchMs, -1); }
         }
 
         // 256 bodies pulled towards targets under gravity, integrated 6000 steps.

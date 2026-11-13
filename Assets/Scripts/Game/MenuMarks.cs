@@ -99,6 +99,114 @@ namespace ChessFight.Game
             }
         }
 
+        public enum Icon { People, Info, Hash, Lock, Copy, Exit, Arrow, Check }
+
+        // The lobby's line icons (design A, R83), drawn in a 24-unit box with round
+        // ends, in the element's own text colour unless a tint is given. Only
+        // MoveTo, LineTo and clockwise Arc, the calls the Linux compile check's
+        // Painter2D stand-in knows; the curves are short polylines.
+        public sealed class IconMark : VisualElement
+        {
+            readonly Icon icon;
+            readonly float width;
+            readonly Color? tint;
+
+            public IconMark(Icon kind, float lineWidth = 2f, Color? color = null)
+            {
+                icon = kind;
+                width = lineWidth;
+                tint = color;
+                pickingMode = PickingMode.Ignore;
+                generateVisualContent += Draw;
+            }
+
+            void Draw(MeshGenerationContext context)
+            {
+                var rect = contentRect;
+                if (rect.width <= 0 || rect.height <= 0) return;
+                float s = Mathf.Min(rect.width, rect.height) / 24f;
+                var origin = rect.center - new Vector2(12f, 12f) * s;
+                Vector2 P(float x, float y) => origin + new Vector2(x, y) * s;
+                var p = context.painter2D;
+                p.strokeColor = tint ?? resolvedStyle.color;
+                p.lineWidth = width * s;
+                p.lineCap = LineCap.Round;
+                p.lineJoin = LineJoin.Round;
+                p.BeginPath();
+                void Line(float x0, float y0, float x1, float y1) { p.MoveTo(P(x0, y0)); p.LineTo(P(x1, y1)); }
+                void Arc(float cx, float cy, float r, float from, float to) =>
+                    p.Arc(P(cx, cy), r * s, new Angle(from, AngleUnit.Degree), new Angle(to, AngleUnit.Degree));
+                void Circle(float cx, float cy, float r) { p.MoveTo(P(cx + r, cy)); Arc(cx, cy, r, 0f, 360f); }
+                void Curve(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+                {
+                    for (int i = 1; i <= 8; i++)
+                    {
+                        float t = i / 8f, u = 1f - t;
+                        var q = u * u * u * a + 3f * u * u * t * b + 3f * u * t * t * c + t * t * t * d;
+                        p.LineTo(P(q.x, q.y));
+                    }
+                }
+                void Box(float x, float y, float w, float h, float r)
+                {
+                    p.MoveTo(P(x + r, y));
+                    p.LineTo(P(x + w - r, y)); Arc(x + w - r, y + r, r, 270f, 360f);
+                    p.LineTo(P(x + w, y + h - r)); Arc(x + w - r, y + h - r, r, 0f, 90f);
+                    p.LineTo(P(x + r, y + h)); Arc(x + r, y + h - r, r, 90f, 180f);
+                    p.LineTo(P(x, y + r)); Arc(x + r, y + r, r, 180f, 270f);
+                }
+                switch (icon)
+                {
+                    case Icon.People:
+                        Circle(9f, 8f, 3.5f);
+                        p.MoveTo(P(2.5f, 19f));
+                        Curve(new Vector2(2.5f, 19f), new Vector2(3.4f, 16f), new Vector2(5.9f, 14.4f), new Vector2(9f, 14.4f));
+                        Curve(new Vector2(9f, 14.4f), new Vector2(12.1f, 14.4f), new Vector2(14.6f, 16f), new Vector2(15.5f, 19f));
+                        p.MoveTo(P(16f, 4.8f));
+                        Arc(15.19f, 8f, 3.3f, -75.9f, 75.9f);
+                        p.MoveTo(P(18.4f, 14.6f));
+                        Curve(new Vector2(18.4f, 14.6f), new Vector2(20f, 15.2f), new Vector2(21.1f, 16.6f), new Vector2(21.5f, 19f));
+                        break;
+                    case Icon.Info:
+                        Circle(12f, 12f, 9f);
+                        Line(12f, 11f, 12f, 17f);
+                        Line(12f, 7.5f, 12f, 8f);
+                        break;
+                    case Icon.Hash:
+                        Line(9f, 3f, 7f, 21f); Line(17f, 3f, 15f, 21f);
+                        Line(4f, 8.5f, 21f, 8.5f); Line(3f, 15.5f, 20f, 15.5f);
+                        break;
+                    case Icon.Lock:
+                        Box(5f, 10.5f, 14f, 10f, 1.5f);
+                        p.MoveTo(P(8f, 10.5f)); p.LineTo(P(8f, 8f));
+                        Arc(12f, 8f, 4f, 180f, 360f);
+                        p.LineTo(P(16f, 10.5f));
+                        break;
+                    case Icon.Copy:
+                        Box(8f, 8f, 12f, 12f, 1.5f);
+                        p.MoveTo(P(8f, 16f)); p.LineTo(P(5.5f, 16f)); Arc(5.5f, 14.5f, 1.5f, 90f, 180f);
+                        p.LineTo(P(4f, 5.5f)); Arc(5.5f, 5.5f, 1.5f, 180f, 270f);
+                        p.LineTo(P(14.5f, 4f)); Arc(14.5f, 5.5f, 1.5f, 270f, 360f);
+                        p.LineTo(P(16f, 8f));
+                        break;
+                    case Icon.Exit:
+                        p.MoveTo(P(14f, 4f)); p.LineTo(P(18.5f, 4f)); Arc(18.5f, 5.5f, 1.5f, 270f, 360f);
+                        p.LineTo(P(20f, 18.5f)); Arc(18.5f, 18.5f, 1.5f, 0f, 90f);
+                        p.LineTo(P(14f, 20f));
+                        p.MoveTo(P(10f, 8f)); p.LineTo(P(6f, 12f)); p.LineTo(P(10f, 16f));
+                        Line(6f, 12f, 16f, 12f);
+                        break;
+                    case Icon.Arrow:
+                        Line(5f, 12f, 19f, 12f);
+                        p.MoveTo(P(13f, 6f)); p.LineTo(P(19f, 12f)); p.LineTo(P(13f, 18f));
+                        break;
+                    case Icon.Check:
+                        p.MoveTo(P(4f, 12.5f)); p.LineTo(P(9f, 17.5f)); p.LineTo(P(20f, 6.5f));
+                        break;
+                }
+                p.Stroke();
+            }
+        }
+
         // Dark at the edges, clear in the middle (the samples' vignette).
         public static Texture2D Vignette(Color edge, float clear, float strength)
         {

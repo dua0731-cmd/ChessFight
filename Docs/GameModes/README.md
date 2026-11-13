@@ -1,75 +1,57 @@
 # 게임 모드
 
-> **2026-09-27 R44:** GPT의 게임모드 개발 브랜치는 **`JY-gpt_gamemode`**다(`JY-ragdoll_v2`의 `cdcc9fe`에서 분기). 이전 `JY-lobby`로 합치지 않는다. 원본의 미완성 물리 튜닝은 보존하며, 새 브랜치에는 마지막 커밋까지의 기능만 포함한다. 작업 폴더와 규칙은 [HANDOFF §1·§3](../../HANDOFF.md)을 따른다.
+2026-11-06 · R497 정리 기준. 현재 로비 모드는 **폰 러시와 소드 파이트 두 개**다. Queen of the Hill은 사용자 요청으로 폐기했고 선택 카드·전용 맵·스킬·테스트·메뉴를 정리했다.
 
-사용자 정의(R19, 2026-09-25): **게임 모드 하나 = 미니게임 하나.** 로비에서 파티장이 모드를 고르고, **모드마다 따로 매칭**한다. 경기가 시작되면 그 모드의 씬으로 간다.
+## 1. 현재 모드
 
-## 1. 모드 목록
+| 모드 | 통신 키 | 현재 경기 씬 | 개발 문서 |
+|---|---|---|---|
+| 폰 러시 | `kingrush` | `PawnRush_Course01` · 실제 파일은 `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity` | [현재 구간 개편](../PawnRush/README.md) · [구형 Course01](../PawnRush/Prototype/PAWN_RUSH_COURSE01.md) |
+| 소드 파이트 | `swordfight` | `SwordFight` | [실행·현재 구현](SwordFight/README.md) · [기획](SwordFight/DESIGN.md) |
 
-| 모드 | 키(`mode`) | 한 줄 설명 | 상태 | 씬 | 상세 |
-|---|---|---|---|---|---|
-| **폰 러쉬**(옛 화면 이름 킹 러시, R63) | `kingrush` | 장애물 달리기 구간과 팀 배틀 구간이 **세 번 번갈아** 나오는 모드. 기획이 아직 다 안 됨 | 선택 가능. 씬은 코스 뼈대만 있음 | `KingRush` | [KingRush](../KingRush/README.md) |
-| **퀸 오브 더 힐** | `queenhill` | 탑을 올라 기물로 승격하고 퀸 등장 후 사냥하는 모드(세부는 최신 DESIGN) | Claude에서 이어갈 수 있으므로 GPT 작업은 보류(R45). 로비에는 "준비 중" | 없음 | **[QueenOfTheHill/README](QueenOfTheHill/README.md)** |
-| **소드 파이트** | `swordfight` | 칼로 상대를 넘어뜨리고 장외로 떨어뜨려 팀 +1점인 귀여운 물리 난투전 | **R51 보이는 검·무게감 있는 보정 드래그·강한 베기만 넉다운(v10)**. 클릭/물리 F6 전환·빠른 발도 유지. R50 사용자 검 가림/손맛 피드백 반영, R51/두 PC 미확인. 기물·스킬·맵은 후속 | `SwordFight` | **[실행/구현](SwordFight/README.md)** · [기획](SwordFight/DESIGN.md) |
+모드 목록은 `Assets/Scripts/Core/GameModes.cs`의 `GameModes.All`이다. 기본 모드는 폰 러시다. 예전 화면 이름에서 온 `GameModes.KingRush`와 `kingrush` 키는 호환을 위해 유지한다. 사용자에게 보이는 이름과 폴더 이름은 폰 러시 기준이다.
 
-- 최신 순서(09-27 사용자, R47): **GPT는 폰 칼싸움부터 구현하고 맵은 마지막**. 퀸 오브 더 힐·공통 물리 튜닝은 여기서 재개하지 않는다.
-- 소드 파이트의 **누운 상대 연속 타격은 금지하지 않는다**(R46). 너무 쉽게·자주 성공하지 않도록 성립 조건을 조절하는 것이 목표이며 무조건적인 기상 무적을 기본으로 정하지 않는다.
-- 나중에 모드가 더 늘 수 있다. 추가 방법은 §4.
-- 모드 목록의 코드: `Assets/Scripts/Core/GameModes.cs`(`GameModes.All`). Unity 없이 테스트된다.
+폰 러시는 새 구간 맵을 개편하고 있지만 **로비의 온라인 목적지는 아직 구형 Course01**이다. 구형 맵을 Prototype으로 옮겼다는 이유로 현재 경기 진입·빌드 활성 상태를 끊지 않는다. `PawnRush_Sections`와 `PawnRush_MiniGames`를 여는 것은 오프라인 개발 시험이며 새3광장 구간 코스의 온라인 구현 완료를 뜻하지 않는다.
 
-**R52 · 별도 `JY-kingrush` 작업:** 사용자 요청으로 소드파이트는 원본 채팅에서 계속하고, `JY-gpt_gamemode@852eb2b` 기반의 새 폴더에서 킹 러쉬를 개발한다. [새 오프라인 래그돌 시험장](../KingRush/README.md)을 추가했다. **아직 로비 KingRush 선택을 새 시험장으로 바꾸지 않았다.** 기존 매칭/캡슐 씬·소드파이트·공통 물리는 보존한다. 기획의 능력 재미 확인 뒤 미션, 온라인은 후속.
+Queen of the Hill의 이전 전송 번호는 다른 모드 번호로 재사용하지 않는다. 남아 있는 `ModeRetiredQueenHill` 예약 값은 호환용 빈자리이고, 현재 모드·카드·장면이 아니다. 다른 모드에서 사용하는 공용 기물 동작·물리·Pioneer/SkillKit은 보존한다.
 
 ## 2. 모드가 흐르는 길
 
 ```text
-로비 모드 카드 ─(파티장이 고름)─▶ 파티 로비 데이터 mode
-       │
-게임 시작 ─▶ FindMatch: 검색 필터 mode = 파티 모드 ─▶ 경기 로비 데이터 mode
-       │                                  (다른 모드의 방은 검색에 안 나옴)
-경기 시작 ─▶ NetworkRuntime.FollowMatch: GameModes.Resolve(경기 mode).Scene 로드
-       │                                  씬이 없는 모드면 경기를 끝내고 안내
-모드 씬 ─▶ KingRush: MatchSceneView / SwordFight: 전용 래그돌 경기 ─▶ 로비
+파티장이 모드를 선택
+  → 파티 로비 데이터 mode
+  → 같은 mode의 공개 방 검색
+  → 경기 로비 데이터 mode
+  → NetworkRuntime.FollowMatch
+  → GameModes의 Scene 이름으로 경기 진입
+  → 결과 또는 나가기 뒤 Lobby
 ```
 
-| 규칙 | 이유 |
+| 규칙 | 적용 |
 |---|---|
-| 모드는 **파티장만**, 파티가 한가할 때만 바꾼다(`SteamSession.SetMode`) | 검색 중에는 큐가 고정된다. 파티원은 파티 로비 데이터로 같은 값을 본다 |
-| 공개 매칭은 **같은 모드끼리만** 만난다 | 사용자 결정(R19). 테스트: `Public search only pairs parties that picked the same mode` |
-| 번호로 들어간 비공개 방은 **방장의 모드**를 따른다 | 방은 하나의 모드로 만들어진다. 파티 모드와 달라도 입장은 된다 |
-| 세션은 목록에 있는 모드면 받는다. **씬이 없는 모드는 로비가 막는다**("준비 중") | 씬 유무는 콘텐츠 문제라 세션(네트워크)이 몰라도 된다. 만약 들어오면 `FollowMatch`가 경기를 끝내고 이유를 보여 준다 |
-| `mode` 키 값은 **바꾸지 않는다** | 로비 데이터로 비교한다. 이름(`Name`)은 바꿔도 된다 |
+| 모드 선택 | 파티장이 한가한 파티에서 변경한다. 검색 중에는 선택 큐를 고정한다 |
+| 공개 검색 | 같은 모드끼리만 연결한다 |
+| 번호로 들어가는 비공개 방 | 그 방의 모드를 따른다 |
+| 모드 키 | 예전 빌드·로비 데이터와 비교하므로 표시 이름 정리를 이유로 바꾸지 않는다 |
+| 지원하지 않는 모드 | 현재 `GameModes` 목록과 세션 검증 범위를 따른다. 폐기 모드를 새 모드로 되살리지 않는다 |
+| 권한 | 모드별 기존 호스트 판정·입력·상태 전송을 유지한다 |
 
-네트워크 약속이 바뀌었으므로 프로토콜은 `chessfight.dua0731.network.v3`이다(v2 빌드는 필터 없이 다른 모드 방에 들어갈 수 있어서 올렸다). `JY-ragdoll_v2`는 래그돌 랩 입력 패킷(v4)과 스냅샷(버둥대기 게이지 R36, 갈고리 R40)이 바뀌어 **v6**이다(09-26, [Player/RAGDOLL §8](../Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13)).
+폰 러시의 `SteamPawnRushLink`와 소드 파이트의 래그돌 경기 연결, 공통 세션·매칭·방장 이전은 [Network 문서](../Network/README.md)를 따른다. 과거 문서에 적힌 프로토콜 번호를 현재 버전으로 재사용하지 않는다.
 
-## 3. 퀸 오브 더 힐 (다음 작업) — 참고 기획
+## 3. 개발 메뉴와 장면
 
-> **2026-09-25: 전체 인수인계는 [QueenOfTheHill/README](QueenOfTheHill/README.md)로 옮겼다.** 아래는 요약이다. N4 원문은 [QueenOfTheHill/N4_REFERENCE.md](QueenOfTheHill/N4_REFERENCE.md)에 보관한다.
+- **ChessFight → Pawn Rush:** 현재 구간·미니게임·스킬 시험, Build·Validate.
+- **ChessFight → Sword Fight:** 경기·스킬 시험 열기.
+- **ChessFight → Development:** 공용 제작·VFX·네트워크·랩·씬 도구.
+- **ChessFight → Prototype:** 구형 Course01·체스복싱 등 보존 콘텐츠.
 
-출처: 사용자가 준 `N4_HANDOFF_FOR_GPT.md`(2026-09-20, 다른 프로젝트에서 만든 "프로모션 쟁탈전" 프로토타입 핸드오프). 그 문서의 **사용자 확정**과 **임시값**을 구분해 옮긴다. 그 프로토타입의 코드(`PlayerMotor`, `BrawlMatch`, Netcode 등)는 이 저장소와 구조가 달라 **가져오지 않고, 규칙과 레벨 수치만 참고**한다.
+옛 KingRush 시험장의 규칙·브랜치·메뉴 기록은 [프로토타입 역사 사본](../PawnRush/Prototype/README_HISTORICAL.md)에 분리했다. 현재 작업은 [HANDOFF](../../HANDOFF.md)의 고정 경로 `main`을 따른다.
 
-**사용자 확정(9/19~20 세션)**
-- 폰 여러 명이 주인공. 가운데 구조물 꼭대기까지 올라가 **승격**하는 것이 목표.
-- 구성: **폰 4~8명 + 나머지 기물 각 1~2개**. (팀당인지 두 팀 합계인지 **미확인**)
-- 가운데 **구조물의 레벨 디자인과 등반 액션은 최소한 제대로** 되어 있어야 한다.
-- 혼자 테스트할 수 있게 아군·적군을 **전부 AI로 채울 수 있어야** 한다. 모든 기물을 직접 플레이해 볼 수 있어야 한다.
-- 기물 능력(9/19 기획): 나이트 2단 점프 + 밟기 찌그러뜨림 / 룩 선딜 후 고정 방향 긴 돌진 / 비숍 6초 호버 + 돌조각 투사체 / 폰 능력 없음 + 뒤에서 치면 "앙파상" / 퀸은 승격한 폰 딱 1명.
+## 4. 새 모드 추가
 
-**그 프로토타입의 임시값(사용자 미승인)**
-- 퀸은 라운드당 1명: 정상 판정 구역에 먼저 들어간 폰. 퀸이 생기면 이후 사망은 부활 없음. 퀸 팀은 상대 전멸, 상대 팀은 퀸을 맵 밖으로 떨어뜨리면 승리. 6분이면 무승부. 퀸 등장 전 추락은 3초 뒤 부활.
-- 구조물 "The Keep": 40×60m 바닥, 1층 2.6m → 2층 5.2m → 성탑 4.6m → 3층 발코니 7.8m → 정상 기둥 10.4m(금색 판 = 승격 구역). 180도 회전 대칭.
-- 한 번에 잡고 오르는 벽 2.0~3.2m, 올라설 수 있는 상자 1.3m 이하 등 캡슐 캐릭터 기준 수치.
-
-**이 저장소에서 먼저 정해야 할 것**
-1. **인원:** 지금 매칭은 **6 대 6 고정**(`TeamReservations.TeamSize = 6`)이다. "폰 4~8 + 나머지"가 팀당이면 7~14명이 되어 매칭 구조를 바꿔야 한다. 6 대 6 안에서 기물 구성을 정할지 결정이 필요하다.
-2. **캐릭터:** 이 저장소의 캐릭터는 준영 님 래그돌(`ICharacterDriver`)이다. 래그돌 랩에는 벽 등반이 이미 있다(짧은 팔로 짚기, 모서리 돌기). 구조물 수치는 **래그돌 등반 기준으로 다시 재야** 한다.
-3. **네트워크 래그돌 권한:** 호스트가 전부 시뮬레이션할지 등. 래그돌 랩의 1단계 온라인(호스트 권위 2인)이 참고가 된다([RagdollLab README](../RagdollLab/README.md) "온라인").
-
-## 4. 새 모드 추가 체크리스트
-
-1. `GameModes.cs`에 항목 추가(`Scene`은 비워 둠 → 로비에 "준비 중"). 키는 영문 소문자, 16자 이하(테스트가 검사).
-2. 로비 모드 카드 색을 원하면 `NetworkHudView.ModeColor`에 키 추가.
-3. 씬을 만든다: `Assets/Scenes/<이름>.unity`, `ChessFight Game Root`(`GameSceneConfig`), 필요하면 `PhysicsProfile`·`Playtest`([SCENES §5](../Architecture/SCENES.md)).
-4. 빌드 목록(`EditorBuildSettings.asset`)과 `NetworkSetup.ShippedScenes`에 씬 추가, `SceneNames`에 상수 추가.
-5. `GameModes.cs`의 그 모드 `Scene`에 씬 이름을 넣는다 → 로비에서 고를 수 있게 된다.
-6. 모드 규칙(점수·승패)은 모드 씬 쪽 코드에 둔다. 공통 경기 화면은 `MatchSceneView`.
-7. `Docs/GameModes/README.md`(이 문서) 표와 [VALIDATION](../Network/VALIDATION.md) 확인 목록을 갱신한다.
+1. `GameModes.cs`에 고유 키·표시 이름·설명을 추가한다. 키는 영문 소문자,16자 이하이고 기존 키와 겹치지 않아야 한다.
+2. 준비 전 Scene은 비워 두고 로비에서 플레이 가능으로 표시하지 않는다.
+3. 경기 씬과 필요한 `GameSceneConfig`·캐릭터 권한·승패 처리를 만든다.
+4. `SceneNames`·`EditorBuildSettings`·개발 빌드의 `ShippedScenes`를 맞춘다. 상세는 [SCENES](../Architecture/SCENES.md)다.
+5. 모드별 전송 값은 기존 번호와 충돌하지 않게 정하고 Core·세션·실제 경기 검사를 구분한다.
+6. 이 문서와 [사용자 확인 목록](../Network/VALIDATION.md)을 갱신한다. 컴파일·AI 화면 관찰을 사용자 Unity·Steam 확인으로 표시하지 않는다.

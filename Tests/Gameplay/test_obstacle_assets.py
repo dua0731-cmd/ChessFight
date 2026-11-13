@@ -9,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "Assets"
-PREFABS = ASSETS / "Maps/ImportedChessFight/Prefabs/Obstacles"
+PREFABS = ASSETS / "Prefabs/Obstacles"
 CODE = ASSETS / "Scripts/Gameplay/ImportedObstacles"
 TYPES = (
     "SpinningDisc", "JumpPad", "ReciprocatingPusher", "RotatingHammer",
@@ -33,7 +33,7 @@ class ObstacleAssets(unittest.TestCase):
     def setUpClass(cls):
         cls.scripts = {}
         cls.parents = {}
-        for path in (ASSETS / "Scripts/Gameplay").rglob("*.cs"):
+        for path in list((ASSETS / "Scripts/Gameplay").rglob("*.cs")) + list((ASSETS / "Prototype/PawnRush/Scripts/Gameplay").rglob("*.cs")):
             meta = Path(str(path) + ".meta")
             if meta.exists():
                 cls.scripts[re.search(r"guid: (\w+)", meta.read_text())[1]] = path
@@ -101,7 +101,7 @@ class ObstacleAssets(unittest.TestCase):
             "20_GiantHandStair": {"KingRushSweepingHand": 1},
         }
         for prefab, types in expected.items():
-            records = list(blocks((ASSETS / "Prefabs/KingRushOpening" / (prefab + ".prefab")).read_text()).values())
+            records = list(blocks((ASSETS / "Prototype/PawnRush/Prefabs/OpeningCourse" / (prefab + ".prefab")).read_text()).values())
             for name, count in types.items():
                 matching = [b for b in records if "::ChessFight.Gameplay." + name + "\n" in b]
                 self.assertEqual(len(matching), count, prefab)
@@ -268,7 +268,9 @@ class ObstacleAssets(unittest.TestCase):
                 visited.add(name); name = self.parents.get(name, "")
             return False
         checked = 0
-        for prefab in ASSETS.rglob("*.prefab"):
+        for prefab in [*PREFABS.rglob("*.prefab"),
+                       *(ASSETS / "Prototype/PawnRush/Prefabs/OpeningCourse").rglob("*.prefab"),
+                       *(ASSETS / "Resources/RoyalPalace").rglob("*.prefab")]:
             records = blocks(prefab.read_text())
             obstacle_owners, settings_owners = set(), set()
             for block in records.values():
@@ -335,7 +337,7 @@ class ObstacleAssets(unittest.TestCase):
         for block in records.values():
             if "m_Name: Warning strip" in block:
                 self.assertEqual(fields(block)["m_IsActive"], "0")
-        editor = (ROOT / "Assets/Maps/ImportedChessFight/Editor/ImportedMapTools.cs").read_text()
+        editor = (ROOT / "Assets/Scripts/ImportedMapEditor/ImportedMapTools.cs").read_text()
         self.assertNotIn("기타 설정·연결 참조 보기", editor)
         self.assertNotIn("if (!connections", editor)
         self.assertIn("if (!hasChildParts)", editor)

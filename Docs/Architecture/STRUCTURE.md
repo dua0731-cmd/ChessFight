@@ -1,84 +1,80 @@
 # 폴더·어셈블리 구조
 
-사용자 요구(R3): **꼭 필요한 최소 폴더로, 한눈에 구조가 보이게.** 그래서 `Assets/` 바로 아래는 종류별 폴더만 두고, 스크립트는 **폴더 하나 = 어셈블리 하나**다.
+2026-11-06 · R497 정리 기준. 기존 R3·R90의 **종류별 최소 폴더, 스크립트는 어셈블리별 관리** 원칙을 유지한다. 사용자가 명시한 `Prototype`은 구형 콘텐츠와 시험 결과를 구분하는 예외다.
 
 ## 1. 폴더
 
 ```text
 Assets/
-  Art/                원본 모델·텍스처·애니메이션 (README만 있음)
-  Materials/          Team{Blue,Orange} Board{Dark,Light} Course CourseEdge Obstacle Finish Prop .mat + NetworkColor.shader(Unlit)
-  Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
-    Characters/       PlaytestCharacter (임시 캐릭터)
-    Obstacles/        Spinner · SlidingWall · Pendulum
-  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, ChatHud.uxml(채팅), LoadingHud.uxml, Fonts/BlackHanSans-Regular.ttf(메뉴 표시 글꼴, OFL, LFS, R63), NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
-  Scenes/             Intro · Lobby · KingRush · RagdollTest · QueenOfTheHill(그레이박스, 맵은 코드가 만듦) (+ SampleScene 템플릿, 빌드 제외·비활성)
-  Scripts/            ↓ 폴더 하나 = 어셈블리 하나
-  Settings/           템플릿 URP 에셋 (현재 미사용)
-  TutorialInfo/       Unity 템플릿 잔재
-Docs/                 문서 트리 (HANDOFF.md에서 시작)
-Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
-Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이터 원본과 미리보기)
+  Art/                  현재 모델·텍스처·생성 메시
+  Materials/            공유 재질·셰이더
+  Prefabs/              현재 캐릭터·장애물·PawnRushSections
+  Resources/            코드가 이름으로 읽는 현재 UI·글꼴·모델·VFX 세트
+  Scenes/               Intro·Lobby·현재 시험 장면·결과 화면·SwordFight
+  Scripts/              원래 어셈블리별 현재 코드
+  Settings/             기물 튜닝·Course01Kit·PawnRushSections·URP 설정
+  Shaders/              공유 URP HLSL
+  StreamingAssets/      시작 영상
+  VFX/                  현재 이펙트 묶음(기존 FX1 예외)
+  Prototype/            구형 콘텐츠·독립 프로토타입
+    PawnRush/
+      Scenes/           구형 전체 맵 PawnRush_Course01
+      Prefabs/OpeningCourse/  초기 구간 프리팹24개
+      Resources/        구형 맵이 이름으로 읽는 보존 자산
+      Scripts/          구형 코드41개, 원래 어셈블리에 대한 asmref7개
+    ChessBoxing/        독립 체스복싱 프로토타입
+    Previews/           기물 미리보기 장면
+ArtSource/              Blender 원본·가공 스크립트·내보내기 자료
+Docs/                   HANDOFF에서 분야별 문서로 이동
+  PawnRush/             현재 폰 러시 문서(KingRush 폴더명 대체)
+    Prototype/          초기 KingRush 설명의 역사 사본
+Tests/Network/          Unity 밖 Core·모의 세션 시험
+Tools/                  검사·제작·생성 도구
 ```
 
-`Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. **예외: 준영 님 래그돌 랩은 `Assets/ChessFight/RagdollLab/`에 그대로 둔다**(2026-09-25 병합). 빌더 메뉴가 이 경로를 알고 있고, 랩은 Art·Generated·Materials·Prefabs·Scripts·Settings를 한 덩어리로 관리한다. 랩 씬만 `Assets/Scenes/RagdollTest.unity`로 옮겼다. `Assets/ChessFight.meta`는 PC마다 GUID가 달라지지 않게 커밋되어 있다.
+`Assets/_Recovery`와 폐기된 Queen of the Hill 전용 장면·자산·코드·제작 도구는 R497에 정리한다. 같은 기능을 새 모드로 등록하지 않는다. 폰 러시·소드 파이트가 계속 사용하는 기물 동작·물리·이펙트는 공용 코드로 남긴다.
+
+자산을 옮길 때는 `.meta`를 함께 옮겨 GUID를 유지하고, 코드의 경로 문자열·빌드 장면 목록·생성기도 새 위치에 맞춘다. `Resources.Load`는 `Resources/` 아래 상대 이름을 계약으로 사용한다.
 
 ## 2. 어셈블리
 
-| 폴더 | 어셈블리 | 참조 | 게이트 | 책임 |
-|---|---|---|---|---|
-| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**, 채팅 규칙(`Chat`: 글 다듬기·채널·1초 제한·로그), 퀸 오브 더 힐 규칙·기물·코스 숫자(`QueenHillRules`·`ChessPieces`·`QueenHillCourse`). **Unity 없이 테스트** |
-| `Scripts/Network/` | `ChessFight.Network.Steam` | Core, Steamworks.NET | `CHESSFIGHT_STEAM` | `SteamSession`(파티·매칭·로비), `SteamMotion`(이동 전송) |
-| `Scripts/Game/` | `ChessFight.Game` | Core | — | HUD 뷰, 로비 3D 라인업(`LobbyStage`), 카메라, 입력 추상화, 씬 이름, 패널·폰트, 파이프라인 우회, 프리팹 스크립트. **Steam 무참조** |
-| `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트, 퀸 오브 더 힐(`QueenHill/`: 종·열린 길·체크포인트·승격·그레이박스 맵 `QueenHillLevel`). **Steam 무참조** |
-| `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
-| `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
-| `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |
-| `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
-| `ChessFight/RagdollLab/Editor/` | `ChessFight.RagdollLab.Editor` | RagdollLab | Editor 전용 | 래그돌 리그·프리팹·씬 빌더 |
-
-Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.
-
-## 3. 의존 방향
-
-```text
-Core  ←  Network.Steam  ←┐
-  ↑                       Bootstrap (Game.Steam)
-Game  ←  Gameplay      ←┘
-  ↑         ↑
-  │       RagdollLab (래그돌. Gameplay만 참조, 아무도 참조하지 않음)
-Input (자기 등록, 아무도 참조하지 않음)
-```
-
-- **프리팹과 씬이 참조하는 스크립트는 `Game`·`Gameplay`에만 있다.** 그래서 Steamworks가 설치되기 전에 열어도 missing script가 없다.
-- `Bootstrap`만 모든 것을 안다. 씬 컨트롤러는 씬에 저장되지 않고 `NetworkRuntime`이 붙인다([SCENES](SCENES.md)).
-- 래그돌(`ChessFight.RagdollLab`)은 `Gameplay`를 참조하지만 `Gameplay`·`Bootstrap`·네트워크는 래그돌을 참조하지 않는다. 그래서 캐릭터 호출은 항상 `ICharacterDriver`로 한다. **이 경계는 `Tools/run-tests-linux.sh`의 경계 검사가 매번 확인한다.**
-
-## 4. define 규칙
-
-| define | 뜻 | 어디서 |
+| 현재 코드 폴더 | 어셈블리 | 역할 |
 |---|---|---|
-| `CHESSFIGHT_STEAM` | Steamworks.NET 2025.164.1 이상이 설치됨 | asmdef `versionDefines` → `defineConstraints` |
-| `CHESSFIGHT_INPUTSYSTEM` | Input System 패키지가 설치됨 | 〃 |
-| `ENABLE_INPUT_SYSTEM` | Active Input Handling **설정**이 New/Both | Unity. **설치 여부로 쓰지 않는다.** 런타임 분기에만 |
-| `STEAMWORKS_NET` | Steamworks 패키지 자체 define | 우리 코드는 쓰지 않는다 |
+| `Scripts/Core` | `ChessFight.Network.Core` | Unity 없는 규칙·패킷·모드 목록·예약·세션 보조 |
+| `Scripts/Network` | `ChessFight.Network.Steam` | Steam 세션·이동 전송, Steam 패키지 게이트 |
+| `Scripts/Game` | `ChessFight.Game` | 화면·카메라·입력 추상화·씬 이름·공유 패널 |
+| `Scripts/Gameplay` | `ChessFight.Gameplay` | 캐릭터 계약·코스·장애물·오프라인 플레이테스트 |
+| `Scripts/Bootstrap` | `ChessFight.Game.Steam` | 세션과 씬 연결·게임 진입·온라인 컨트롤러 |
+| `Scripts/Input` | `ChessFight.Game.Input` | 선택형 Input System 어댑터 |
+| `Scripts/Editor` | 기본 Editor 어셈블리 | 설치·개발 빌드·씬·캡처 도구 |
+| `Scripts/RagdollLab` | `ChessFight.RagdollLab` | 공용 래그돌·기물 스킬·소드 파이트·랩 |
+| `Scripts/RagdollLabEditor` | `ChessFight.RagdollLab.Editor` | 기물·스킬·장면 제작 |
+| `Scripts/RagdollLabSteam` | `ChessFight.RagdollLab.Net` | 래그돌·폰 러시·소드 파이트 온라인 다리 |
+| `Scripts/PawnRush` | `ChessFight.PawnRush` | 현재 구간·미니게임·정원·홀·작전 회의실 |
+| `Scripts/PawnRushEditor` | `ChessFight.PawnRush.Editor` | 현재 구간·모델·프리팹 제작·검사 |
+| `Scripts/ImportedMapEditor` | `ChessFight.ImportedMap.Editor` | 보존한 장애물 자산 도구 |
+| `Scripts/VFX`·`VFXEditor` | `ChessFight.VFX`·`ChessFight.VFX.Editor` | 공유 VFX·제작·캡처 |
 
-## 5. 주요 파일 한눈에
+프로토타입 코드의 `Core`·`Game`·`Gameplay`·`RagdollLab`·`RagdollLabEditor`·`PawnRush`·`PawnRushEditor` 폴더는 **새 어셈블리를 만들지 않는다.** 각각의 asmref가 위 원래 asmdef GUID를 가리킨다. partial 클래스·스크립트 형식·직렬화 식별자가 바뀌지 않도록 코드 파일명·namespace·메타를 유지했다.
 
-| 바꾸고 싶은 것 | 파일 |
-|---|---|
-| 캐릭터 겉모습(로비·경기) | `Prefabs/PawnAvatar.prefab` |
-| 로비 배경·라인업 | `Scripts/Game/LobbyStage.cs` (색·카메라·자리 간격) |
-| 게임 모드 목록 | `Scripts/Core/GameModes.cs` ([GameModes](../GameModes/README.md)) |
-| 색 | `Materials/*.mat` |
-| HUD 배치·스타일 | `Resources/NetworkHud.uxml` / `.uss` (이름은 `NetworkHudView`와 계약) |
-| 키 배치 | `Resources/ChessFightControls.inputactions` |
-| 씬 배선 | 각 씬의 `ChessFight Game Root` (`GameSceneConfig`) |
-| 매칭·예약 규칙 | `Scripts/Core/TeamReservations.cs` |
-| 경기 중 빈자리 규칙(R59) | `Scripts/Core/Backfill.cs` |
-| 로비·파티 | `Scripts/Network/SteamSession.cs` |
-| 채팅(R61) | `Scripts/Core/Chat.cs`(규칙), `Scripts/Network/SteamSession.cs`(`Say`·`Hear`), `Scripts/Game/ChatBox.cs`(화면), `Resources/ChatHud.uxml` |
-| 메뉴 디자인 C(R63) | `Scripts/Game/MenuArt.cs`(텍스처·조명·3D 글씨·말 그림), `ChunkyButtons.cs`(판 버튼), `MenuMarks.cs`(왕관·화살표), `IntroStage.cs`, `LobbyStage.cs`, `LoadingStudio.cs`·`LoadingScreenView.cs`(로딩 입장), `Resources/Fonts/` ([UI §11](UI.md#11-메뉴-디자인-c-그랜드-아레나-수정안-r63-2026-10-03)) |
-| 결과 화면(R62) | `Scenes/LastScene.unity`, `Scripts/Game/LastScene*.cs`(진행·결과판·연출·무대·말, Steam 모름), `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/LastSceneHud.uxml` / `.uss`, `LastSceneTheme.tss` ([UI §10](UI.md#10-결과-화면-r62-2026-10-01)) |
-| 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
-| 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |
+외부 검사도 같은 논리 소속을 수집한다. `Tools/Test-NetworkCore.ps1`은 현재 Core와 프로토타입 Core를 함께 읽고, `Test-NetworkCompile.ps1`·`run-tests-linux.sh`도 각 원래 어셈블리에 프로토타입 소스를 포함한다.
+
+## 3. 공용 코드와 이름
+
+폐기 모드의 전용 규칙·카드·맵을 제거해도 다른 모드가 사용하는 구현은 유지한다. 현재 공용 명칭은 `Core/PioneerRules.cs`, `Gameplay/Course/PioneerCourse.cs`, `RagdollLab/PhysicsMechanicsBed.cs`, `RagdollLab/SkillKit/` 등이다. `ModeRetiredQueenHill` 같은 예약 번호는 이전 전송 값과 충돌하지 않게 남긴 호환 자리이며 모드 선택 항목이 아니다.
+
+예전 `KingRush*` 타입은 `Prototype/PawnRush/Scripts` 안에서 보존한다. 예전 네트워크 키 `kingrush`와 씬 이름 `PawnRush_Course01`은 현재 온라인 호환 계약이므로 폴더명과 함께 바꾸지 않는다.
+
+`Prototype`은 관리용 분류다. asmref가 원래 어셈블리에 연결된 코드와 `Resources` 자산이 자동으로 플레이어 빌드에서 제외되는 것은 아니다. 특히 구형 Course01은 아직 로비의 온라인 목적지다.
+
+## 4. 의존 방향과 게이트
+
+- Core는 Unity·Steam을 참조하지 않는다.
+- Game·Gameplay는 Steam을 참조하지 않는다. 캐릭터 구현은 `ICharacterDriver` 같은 계약으로 호출한다.
+- Bootstrap과 각 Net 어셈블리가 세션·장면·캐릭터 온라인 연결을 소유한다.
+- 프로토타입 폴더로 이동해도 같은 어셈블리의 참조 경계·Editor 전용 여부·플랫폼 게이트를 그대로 적용한다.
+- `CHESSFIGHT_STEAM`·`CHESSFIGHT_INPUTSYSTEM`은 패키지 설치 상태, `ENABLE_INPUT_SYSTEM`은 Unity 입력 설정이다. 서로 바꾸어 쓰지 않는다.
+
+## 5. 메뉴·씬 작업 안내
+
+상단 메뉴는 **Pawn Rush / Sword Fight / Development / Prototype**으로 나눈다. 현재 구간 작업은 [폰 러시](../PawnRush/README.md), 장면과 빌드의 역할은 [SCENES](SCENES.md), 모드 키와 로비 흐름은 [GameModes](../GameModes/README.md)를 따른다. 파일 정리만으로 새 구간 코스의 온라인 연결이나 사용자 확인이 완료되지는 않는다.
