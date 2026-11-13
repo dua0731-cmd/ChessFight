@@ -1,0 +1,7577 @@
+[
+  {
+    "key": "knight",
+    "path": "Assets/Resources/PawnRushGrandStairHall/FallingKnight.fbx",
+    "ratio": 0.7,
+    "before": 534136,
+    "after": 373894,
+    "inventory": [
+      {
+        "name": "Falling_knight",
+        "tris": 534136,
+        "vertices": 267070,
+        "materials": [
+          "Knight_Ivory",
+          "Knight_Cream",
+          "Knight_Dark",
+          "Knight_Gold"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Falling_knight",
+        "before": 534136,
+        "after": 373894,
+        "boundsBefore": [
+          [
+            -0.8871385455131531,
+            -0.8999999761581421,
+            -1.4662859371128434e-07
+          ],
+          [
+            0.8871385455131531,
+            0.9000003933906555,
+            2.38924503326416
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -0.8871385455131531,
+            -0.8999999761581421,
+            -1.5172247003647499e-05
+          ],
+          [
+            0.8871385455131531,
+            0.9000003933906555,
+            2.38924503326416
+          ]
+        ]
+      }
+    ],
+    "seconds": 10.90653371810913
+  },
+  {
+    "key": "pad",
+    "path": "Assets/Resources/PawnRushGrandStairHall/FloatingPad.fbx",
+    "ratio": 0.75,
+    "before": 23956,
+    "after": 17966,
+    "inventory": [
+      {
+        "name": "Floating_pad",
+        "tris": 23956,
+        "vertices": 11980,
+        "materials": [
+          "FloatingPad_Top",
+          "FloatingPad_Side"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Floating_pad",
+        "before": 23956,
+        "after": 17966,
+        "boundsBefore": [
+          [
+            -1.2999999523162842,
+            -1.2999999523162842,
+            -0.5000002384185791
+          ],
+          [
+            1.2999999523162842,
+            1.3000000715255737,
+            2.117968449510954e-07
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -1.2999999523162842,
+            -1.3000178337097168,
+            -0.4999828338623047
+          ],
+          [
+            1.2999999523162842,
+            1.3000000715255737,
+            6.138789467513561e-05
+          ]
+        ]
+      }
+    ],
+    "seconds": 0.8758091926574707
+  },
+  {
+    "key": "plaza",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenPlaza.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 316114,
+    "after": 313866,
+    "inventory": [
+      {
+        "name": "Plaza fountain jets",
+        "tris": 6768,
+        "vertices": 3708,
+        "materials": [
+          "GC | gold",
+          "GC | fountain jet",
+          "GC | foam"
+        ]
+      },
+      {
+        "name": "Plaza lily pads",
+        "tris": 1824,
+        "vertices": 980,
+        "materials": [
+          "GC | lily pad",
+          "GC | flower pink"
+        ]
+      },
+      {
+        "name": "Plaza paving",
+        "tris": 5114,
+        "vertices": 5118,
+        "materials": [
+          "GC | floor tile"
+        ]
+      },
+      {
+        "name": "Plaza planter flowers",
+        "tris": 110960,
+        "vertices": 100680,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower coral",
+          "GC | flower heart",
+          "GC | flower white",
+          "GC | flower yellow",
+          "GC | flower pink",
+          "GC | leaf dark"
+        ]
+      },
+      {
+        "name": "Plaza planters",
+        "tris": 95840,
+        "vertices": 49720,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | planter soil",
+          "GC | gold",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Plaza wall stones",
+        "tris": 43324,
+        "vertices": 22284,
+        "materials": [
+          "GC | grout",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | cream stone"
+        ]
+      },
+      {
+        "name": "Spin bar 1",
+        "tris": 5464,
+        "vertices": 2880,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "Spin bar 2",
+        "tris": 5464,
+        "vertices": 2880,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "Spin bar 3",
+        "tris": 12116,
+        "vertices": 6440,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "Spin bar 4",
+        "tris": 5464,
+        "vertices": 2880,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "Spin bar 5",
+        "tris": 5464,
+        "vertices": 2880,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "Start yard balustrade",
+        "tris": 17760,
+        "vertices": 9080,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | gold"
+        ]
+      },
+      {
+        "name": "Start yard banners",
+        "tris": 552,
+        "vertices": 328,
+        "materials": [
+          "GC | royal blue",
+          "GC | gold"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Plaza planter flowers",
+        "before": 110960,
+        "after": 108752,
+        "boundsBefore": [
+          [
+            -17.26093101501465,
+            -50.678627014160156,
+            0.5100568532943726
+          ],
+          [
+            17.443490982055664,
+            -19.334209442138672,
+            3.0540573596954346
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -17.26093101501465,
+            -50.678627014160156,
+            0.5100568532943726
+          ],
+          [
+            17.443490982055664,
+            -19.334209442138672,
+            3.0540573596954346
+          ]
+        ]
+      },
+      {
+        "name": "Plaza planters",
+        "before": 95840,
+        "after": 95800,
+        "boundsBefore": [
+          [
+            -17.384653091430664,
+            -50.84052658081055,
+            -0.0027423554565757513
+          ],
+          [
+            17.383468627929688,
+            -19.163034439086914,
+            2.6969680786132812
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -17.384653091430664,
+            -50.84052658081055,
+            -0.0027423554565757513
+          ],
+          [
+            17.383468627929688,
+            -19.163034439086914,
+            2.6969680786132812
+          ]
+        ]
+      }
+    ],
+    "seconds": 6.5901899337768555
+  },
+  {
+    "key": "trees",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenTrees.fbx",
+    "ratio": 0.8,
+    "method": "planar_0.05deg",
+    "before": 399638,
+    "after": 399638,
+    "inventory": [
+      {
+        "name": "Garden tree E1",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E10",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E11",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E2",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E3",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E4",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E5",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E6",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E7",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E8",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree E9",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W1",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W10",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W11",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W12",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W13",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W14",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W15",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W2",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W3",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W4",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W5",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W6",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W7",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W8",
+        "tris": 14528,
+        "vertices": 7583,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      },
+      {
+        "name": "Garden tree W9",
+        "tris": 16719,
+        "vertices": 8578,
+        "materials": [
+          "GC | bark",
+          "GC | moss band",
+          "GC | leaf",
+          "GC | leaf light",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower heart"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Garden tree E1",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            24.22344207763672,
+            52.11636734008789,
+            3.6840062141418457
+          ],
+          [
+            30.663806915283203,
+            59.143070220947266,
+            12.16037368774414
+          ]
+        ],
+        "boundsAfter": [
+          [
+            24.22344207763672,
+            52.11636734008789,
+            3.6840062141418457
+          ],
+          [
+            30.663806915283203,
+            59.143070220947266,
+            12.16037368774414
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E10",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            46.32552719116211,
+            9.622719764709473,
+            0.5007207989692688
+          ],
+          [
+            51.54142761230469,
+            14.417900085449219,
+            6.795124530792236
+          ]
+        ],
+        "boundsAfter": [
+          [
+            46.32552719116211,
+            9.622719764709473,
+            0.5007207989692688
+          ],
+          [
+            51.54142761230469,
+            14.417900085449219,
+            6.795124530792236
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E11",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            47.659236907958984,
+            6.239022731781006,
+            0.5173361301422119
+          ],
+          [
+            51.832763671875,
+            10.620343208312988,
+            7.517423152923584
+          ]
+        ],
+        "boundsAfter": [
+          [
+            47.659236907958984,
+            6.239022731781006,
+            0.5173361301422119
+          ],
+          [
+            51.832763671875,
+            10.620343208312988,
+            7.517423152923584
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E2",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            18.16276741027832,
+            50.33534622192383,
+            3.7171454429626465
+          ],
+          [
+            23.996347427368164,
+            56.72289276123047,
+            13.338887214660645
+          ]
+        ],
+        "boundsAfter": [
+          [
+            18.16276741027832,
+            50.33534622192383,
+            3.7171454429626465
+          ],
+          [
+            23.996347427368164,
+            56.72289276123047,
+            13.338887214660645
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E3",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            28.18657112121582,
+            45.85888671875,
+            3.712934732437134
+          ],
+          [
+            33.099910736083984,
+            51.19214630126953,
+            12.055535316467285
+          ]
+        ],
+        "boundsAfter": [
+          [
+            28.18657112121582,
+            45.85888671875,
+            3.712934732437134
+          ],
+          [
+            33.099910736083984,
+            51.19214630126953,
+            12.055535316467285
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E4",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            35.07835388183594,
+            44.685211181640625,
+            3.7106001377105713
+          ],
+          [
+            41.45747375488281,
+            50.6258544921875,
+            13.786931037902832
+          ]
+        ],
+        "boundsAfter": [
+          [
+            35.07835388183594,
+            44.685211181640625,
+            3.7106001377105713
+          ],
+          [
+            41.45747375488281,
+            50.6258544921875,
+            13.786931037902832
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E5",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            37.7252082824707,
+            41.20148468017578,
+            3.7211971282958984
+          ],
+          [
+            43.32041931152344,
+            46.27302169799805,
+            12.38456916809082
+          ]
+        ],
+        "boundsAfter": [
+          [
+            37.7252082824707,
+            41.20148468017578,
+            3.7211971282958984
+          ],
+          [
+            43.32041931152344,
+            46.27302169799805,
+            12.38456916809082
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E6",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            27.842815399169922,
+            39.742088317871094,
+            3.7006888389587402
+          ],
+          [
+            33.71321105957031,
+            45.19987869262695,
+            12.977395057678223
+          ]
+        ],
+        "boundsAfter": [
+          [
+            27.842815399169922,
+            39.742088317871094,
+            3.7006888389587402
+          ],
+          [
+            33.71321105957031,
+            45.19987869262695,
+            12.977395057678223
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E7",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            40.2148551940918,
+            33.65876388549805,
+            3.69091534614563
+          ],
+          [
+            44.87937927246094,
+            38.913028717041016,
+            11.714052200317383
+          ]
+        ],
+        "boundsAfter": [
+          [
+            40.2148551940918,
+            33.65876388549805,
+            3.69091534614563
+          ],
+          [
+            44.87937927246094,
+            38.913028717041016,
+            11.714052200317383
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E8",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            45.29975509643555,
+            25.471858978271484,
+            0.5066267251968384
+          ],
+          [
+            49.499961853027344,
+            30.03797149658203,
+            7.64819860458374
+          ]
+        ],
+        "boundsAfter": [
+          [
+            45.29975509643555,
+            25.471858978271484,
+            0.5066267251968384
+          ],
+          [
+            49.499961853027344,
+            30.03797149658203,
+            7.64819860458374
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree E9",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            44.839054107666016,
+            20.436372756958008,
+            0.5202409625053406
+          ],
+          [
+            49.33502960205078,
+            24.557279586791992,
+            7.525282382965088
+          ]
+        ],
+        "boundsAfter": [
+          [
+            44.839054107666016,
+            20.436372756958008,
+            0.5202409625053406
+          ],
+          [
+            49.33502960205078,
+            24.557279586791992,
+            7.525282382965088
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W1",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -24.621774673461914,
+            53.644344329833984,
+            3.6709883213043213
+          ],
+          [
+            -16.507457733154297,
+            61.025535583496094,
+            13.388815879821777
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -24.621774673461914,
+            53.644344329833984,
+            3.6709883213043213
+          ],
+          [
+            -16.507457733154297,
+            61.025535583496094,
+            13.388815879821777
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W10",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -52.10768508911133,
+            3.383002281188965,
+            0.47960761189460754
+          ],
+          [
+            -47.04517364501953,
+            8.910396575927734,
+            6.735490798950195
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -52.10768508911133,
+            3.383002281188965,
+            0.47960761189460754
+          ],
+          [
+            -47.04517364501953,
+            8.910396575927734,
+            6.735490798950195
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W11",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -50.07130432128906,
+            -4.28865385055542,
+            0.49964091181755066
+          ],
+          [
+            -45.54145431518555,
+            0.14932091534137726,
+            7.794632911682129
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -50.07130432128906,
+            -4.28865385055542,
+            0.49964091181755066
+          ],
+          [
+            -45.54145431518555,
+            0.14932091534137726,
+            7.794632911682129
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W12",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -49.663177490234375,
+            -9.21877670288086,
+            0.5162508487701416
+          ],
+          [
+            -45.70441436767578,
+            -5.080374717712402,
+            7.1013503074646
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -49.663177490234375,
+            -9.21877670288086,
+            0.5162508487701416
+          ],
+          [
+            -45.70441436767578,
+            -5.080374717712402,
+            7.1013503074646
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W13",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -52.156837463378906,
+            -13.084075927734375,
+            0.4742901027202606
+          ],
+          [
+            -46.74350357055664,
+            -7.999642848968506,
+            6.878453254699707
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -52.156837463378906,
+            -13.084075927734375,
+            0.4742901027202606
+          ],
+          [
+            -46.74350357055664,
+            -7.999642848968506,
+            6.878453254699707
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W14",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -49.87760925292969,
+            -19.688819885253906,
+            0.48012158274650574
+          ],
+          [
+            -44.57899475097656,
+            -13.835862159729004,
+            7.053020000457764
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -49.87760925292969,
+            -19.688819885253906,
+            0.48012158274650574
+          ],
+          [
+            -44.57899475097656,
+            -13.835862159729004,
+            7.053020000457764
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W15",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -49.33921813964844,
+            -23.68295669555664,
+            0.4860328435897827
+          ],
+          [
+            -44.27165985107422,
+            -18.095848083496094,
+            7.215818405151367
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -49.33921813964844,
+            -23.68295669555664,
+            0.4860328435897827
+          ],
+          [
+            -44.27165985107422,
+            -18.095848083496094,
+            7.215818405151367
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W2",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -27.448728561401367,
+            52.85178756713867,
+            3.72119402885437
+          ],
+          [
+            -22.510583877563477,
+            58.15275573730469,
+            12.119535446166992
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -27.448728561401367,
+            52.85178756713867,
+            3.72119402885437
+          ],
+          [
+            -22.510583877563477,
+            58.15275573730469,
+            12.119535446166992
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W3",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -40.28751754760742,
+            45.23271560668945,
+            3.6624138355255127
+          ],
+          [
+            -33.111000061035156,
+            51.80881881713867,
+            12.345586776733398
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -40.28751754760742,
+            45.23271560668945,
+            3.6624138355255127
+          ],
+          [
+            -33.111000061035156,
+            51.80881881713867,
+            12.345586776733398
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W4",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -34.14559555053711,
+            41.967708587646484,
+            3.700601816177368
+          ],
+          [
+            -27.664546966552734,
+            48.189449310302734,
+            14.044410705566406
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -34.14559555053711,
+            41.967708587646484,
+            3.700601816177368
+          ],
+          [
+            -27.664546966552734,
+            48.189449310302734,
+            14.044410705566406
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W5",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -43.35802459716797,
+            38.81257629394531,
+            3.703561305999756
+          ],
+          [
+            -35.42476272583008,
+            45.999141693115234,
+            13.209153175354004
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -43.35802459716797,
+            38.81257629394531,
+            3.703561305999756
+          ],
+          [
+            -35.42476272583008,
+            45.999141693115234,
+            13.209153175354004
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W6",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -38.810035705566406,
+            36.11964416503906,
+            3.714967966079712
+          ],
+          [
+            -33.079776763916016,
+            42.20246124267578,
+            13.301590919494629
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -38.810035705566406,
+            36.11964416503906,
+            3.714967966079712
+          ],
+          [
+            -33.079776763916016,
+            42.20246124267578,
+            13.301590919494629
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W7",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -33.48686218261719,
+            34.15623092651367,
+            3.7091143131256104
+          ],
+          [
+            -28.099178314208984,
+            39.030433654785156,
+            12.056413650512695
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -33.48686218261719,
+            34.15623092651367,
+            3.7091143131256104
+          ],
+          [
+            -28.099178314208984,
+            39.030433654785156,
+            12.056413650512695
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W8",
+        "before": 14528,
+        "after": 14528,
+        "boundsBefore": [
+          [
+            -49.58197021484375,
+            11.430120468139648,
+            0.5170121192932129
+          ],
+          [
+            -45.373870849609375,
+            15.715693473815918,
+            7.438168048858643
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -49.58197021484375,
+            11.430120468139648,
+            0.5170121192932129
+          ],
+          [
+            -45.373870849609375,
+            15.715693473815918,
+            7.438168048858643
+          ]
+        ]
+      },
+      {
+        "name": "Garden tree W9",
+        "before": 16719,
+        "after": 16719,
+        "boundsBefore": [
+          [
+            -51.61087417602539,
+            7.052826404571533,
+            0.4899386167526245
+          ],
+          [
+            -46.24597930908203,
+            11.991491317749023,
+            6.9495720863342285
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -51.61087417602539,
+            7.052826404571533,
+            0.4899386167526245
+          ],
+          [
+            -46.24597930908203,
+            11.991491317749023,
+            6.9495720863342285
+          ]
+        ]
+      }
+    ],
+    "seconds": 5.3343236446380615
+  },
+  {
+    "key": "gate",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenGate.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 208071,
+    "after": 203969,
+    "inventory": [
+      {
+        "name": "Exit gate",
+        "tris": 128181,
+        "vertices": 64561,
+        "materials": [
+          "GC | gate stone",
+          "GC | gate moss",
+          "GC | gate gold",
+          "GC | gate blue",
+          "GC | rose stone",
+          "GC | shield olive",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Gate flowers",
+        "tris": 3828,
+        "vertices": 3384,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower yellow",
+          "GC | flower heart",
+          "GC | flower pink",
+          "GC | flower coral",
+          "GC | flower white"
+        ]
+      },
+      {
+        "name": "Gate stonework",
+        "tris": 76062,
+        "vertices": 39144,
+        "materials": [
+          "GC | floor tile",
+          "GC | grout",
+          "GC | cream stone warm",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | gold",
+          "GC | royal blue",
+          "GC | crown blue",
+          "GC | gate joint",
+          "GC | gate stone"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Exit gate",
+        "before": 128181,
+        "after": 124243,
+        "boundsBefore": [
+          [
+            -24.819677352905273,
+            61.17048263549805,
+            2.799988269805908
+          ],
+          [
+            24.821918487548828,
+            71.82952117919922,
+            32.48031234741211
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -24.819677352905273,
+            61.17048263549805,
+            2.799988269805908
+          ],
+          [
+            24.821918487548828,
+            71.82952117919922,
+            32.48031234741211
+          ]
+        ]
+      },
+      {
+        "name": "Gate flowers",
+        "before": 3828,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            -14.44582462310791,
+            52.40972900390625,
+            5.295451641082764
+          ],
+          [
+            14.433525085449219,
+            60.63318634033203,
+            5.678650379180908
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -14.44582462310791,
+            52.40972900390625,
+            5.295451641082764
+          ],
+          [
+            14.433525085449219,
+            60.63318634033203,
+            5.678650379180908
+          ]
+        ]
+      },
+      {
+        "name": "Gate stonework",
+        "before": 76062,
+        "after": 75982,
+        "boundsBefore": [
+          [
+            -25.260000228881836,
+            48.55000305175781,
+            -1.1844314940390177e-05
+          ],
+          [
+            25.260000228881836,
+            72.69989013671875,
+            5.498536586761475
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -25.260000228881836,
+            48.55000305175781,
+            -1.1844314940390177e-05
+          ],
+          [
+            25.260000228881836,
+            72.69989013671875,
+            5.498536586761475
+          ]
+        ]
+      }
+    ],
+    "seconds": 3.185983180999756
+  },
+  {
+    "key": "stonework",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenLockDyke.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 280120,
+    "after": 276588,
+    "inventory": [
+      {
+        "name": "Lock and dyke stonework",
+        "tris": 109498,
+        "vertices": 56564,
+        "materials": [
+          "GC | floor tile",
+          "GC | grout",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | cream stone",
+          "GC | gold"
+        ]
+      },
+      {
+        "name": "Lock bed",
+        "tris": 8328,
+        "vertices": 4320,
+        "materials": [
+          "GC | channel joint",
+          "GC | channel stone"
+        ]
+      },
+      {
+        "name": "Lock flowers",
+        "tris": 3828,
+        "vertices": 3384,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower coral",
+          "GC | flower heart",
+          "GC | flower white",
+          "GC | flower yellow",
+          "GC | flower pink"
+        ]
+      },
+      {
+        "name": "Lock gate frames",
+        "tris": 13644,
+        "vertices": 7140,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | gold",
+          "GC | grout",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | crown blue"
+        ]
+      },
+      {
+        "name": "Robot arm 1",
+        "tris": 24308,
+        "vertices": 12195,
+        "materials": [
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | moss band",
+          "GC | gold",
+          "GC | bar wood",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Robot arm 2",
+        "tris": 24308,
+        "vertices": 12195,
+        "materials": [
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | moss band",
+          "GC | gold",
+          "GC | bar wood",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Robot banners",
+        "tris": 2512,
+        "vertices": 1368,
+        "materials": [
+          "GC | royal blue",
+          "GC | gold"
+        ]
+      },
+      {
+        "name": "Robot pillar 1",
+        "tris": 39083,
+        "vertices": 19647,
+        "materials": [
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | moss band",
+          "GC | gold",
+          "GC | bar wood",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Robot pillar 2",
+        "tris": 39083,
+        "vertices": 19647,
+        "materials": [
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | moss band",
+          "GC | gold",
+          "GC | bar wood",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Sluice gate 1",
+        "tris": 5176,
+        "vertices": 2764,
+        "materials": [
+          "GC | gate blue dark",
+          "GC | gate blue",
+          "GC | gold",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Sluice gate 2",
+        "tris": 5176,
+        "vertices": 2764,
+        "materials": [
+          "GC | gate blue dark",
+          "GC | gate blue",
+          "GC | gold",
+          "GC | royal blue"
+        ]
+      },
+      {
+        "name": "Sluice gate 3",
+        "tris": 5176,
+        "vertices": 2764,
+        "materials": [
+          "GC | gate blue dark",
+          "GC | gate blue",
+          "GC | gold",
+          "GC | royal blue"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Lock and dyke stonework",
+        "before": 109498,
+        "after": 109438,
+        "boundsBefore": [
+          [
+            7.600008487701416,
+            -0.4522562026977539,
+            -2.2500054836273193
+          ],
+          [
+            35.65000534057617,
+            33.04998779296875,
+            5.611938953399658
+          ]
+        ],
+        "boundsAfter": [
+          [
+            7.600008487701416,
+            -0.4522562026977539,
+            -2.2500054836273193
+          ],
+          [
+            35.65000534057617,
+            33.04998779296875,
+            5.611938953399658
+          ]
+        ]
+      },
+      {
+        "name": "Lock bed",
+        "before": 8328,
+        "after": 8328,
+        "boundsBefore": [
+          [
+            27.0,
+            10.000000953674316,
+            3.649996280670166
+          ],
+          [
+            35.0,
+            24.0,
+            3.7749338150024414
+          ]
+        ],
+        "boundsAfter": [
+          [
+            27.0,
+            10.000000953674316,
+            3.649996280670166
+          ],
+          [
+            35.0,
+            24.0,
+            3.7749338150024414
+          ]
+        ]
+      },
+      {
+        "name": "Lock flowers",
+        "before": 3828,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            12.878439903259277,
+            -0.4479125142097473,
+            5.294850826263428
+          ],
+          [
+            35.259010314941406,
+            30.523927688598633,
+            5.675367832183838
+          ]
+        ],
+        "boundsAfter": [
+          [
+            12.878439903259277,
+            -0.4479125142097473,
+            5.294850826263428
+          ],
+          [
+            35.259010314941406,
+            30.523927688598633,
+            5.675367832183838
+          ]
+        ]
+      },
+      {
+        "name": "Lock gate frames",
+        "before": 13644,
+        "after": 13548,
+        "boundsBefore": [
+          [
+            26.20701026916504,
+            12.377571105957031,
+            3.7999966144561768
+          ],
+          [
+            35.805267333984375,
+            22.573572158813477,
+            10.83572769165039
+          ]
+        ],
+        "boundsAfter": [
+          [
+            26.20701026916504,
+            12.377571105957031,
+            3.7999966144561768
+          ],
+          [
+            35.805267333984375,
+            22.573572158813477,
+            10.83572769165039
+          ]
+        ]
+      },
+      {
+        "name": "Robot arm 1",
+        "before": 24308,
+        "after": 23118,
+        "boundsBefore": [
+          [
+            25.040464401245117,
+            26.126174926757812,
+            4.185981273651123
+          ],
+          [
+            26.959239959716797,
+            28.040576934814453,
+            9.164850234985352
+          ]
+        ],
+        "boundsAfter": [
+          [
+            25.040464401245117,
+            26.126174926757812,
+            4.185981273651123
+          ],
+          [
+            26.959239959716797,
+            28.040576934814453,
+            9.164850234985352
+          ]
+        ]
+      },
+      {
+        "name": "Robot arm 2",
+        "before": 24308,
+        "after": 23066,
+        "boundsBefore": [
+          [
+            12.040464401245117,
+            26.126174926757812,
+            4.185981273651123
+          ],
+          [
+            13.959239959716797,
+            28.040576934814453,
+            9.164850234985352
+          ]
+        ],
+        "boundsAfter": [
+          [
+            12.040464401245117,
+            26.126174926757812,
+            4.185981273651123
+          ],
+          [
+            13.959239959716797,
+            28.040576934814453,
+            9.164850234985352
+          ]
+        ]
+      },
+      {
+        "name": "Robot banners",
+        "before": 2512,
+        "after": 2512,
+        "boundsBefore": [
+          [
+            14.09211254119873,
+            30.498977661132812,
+            5.859584808349609
+          ],
+          [
+            29.004806518554688,
+            32.30370330810547,
+            8.817442893981934
+          ]
+        ],
+        "boundsAfter": [
+          [
+            14.09211254119873,
+            30.498977661132812,
+            5.859584808349609
+          ],
+          [
+            29.004806518554688,
+            32.30370330810547,
+            8.817442893981934
+          ]
+        ]
+      },
+      {
+        "name": "Robot pillar 1",
+        "before": 39083,
+        "after": 38818,
+        "boundsBefore": [
+          [
+            25.231937408447266,
+            26.263957977294922,
+            3.7563915252685547
+          ],
+          [
+            28.946537017822266,
+            32.342159271240234,
+            10.331864356994629
+          ]
+        ],
+        "boundsAfter": [
+          [
+            25.231937408447266,
+            26.263957977294922,
+            3.7563915252685547
+          ],
+          [
+            28.946537017822266,
+            32.342159271240234,
+            10.331864356994629
+          ]
+        ]
+      },
+      {
+        "name": "Robot pillar 2",
+        "before": 39083,
+        "after": 38800,
+        "boundsBefore": [
+          [
+            12.135384559631348,
+            26.324172973632812,
+            3.7563915252685547
+          ],
+          [
+            15.946537017822266,
+            32.342159271240234,
+            10.310490608215332
+          ]
+        ],
+        "boundsAfter": [
+          [
+            12.135384559631348,
+            26.324172973632812,
+            3.7563915252685547
+          ],
+          [
+            15.946537017822266,
+            32.342159271240234,
+            10.310490608215332
+          ]
+        ]
+      },
+      {
+        "name": "Sluice gate 1",
+        "before": 5176,
+        "after": 5072,
+        "boundsBefore": [
+          [
+            26.999897003173828,
+            12.66334056854248,
+            3.799954652786255
+          ],
+          [
+            35.0001106262207,
+            13.336600303649902,
+            6.399998188018799
+          ]
+        ],
+        "boundsAfter": [
+          [
+            26.999897003173828,
+            12.66334056854248,
+            3.799954652786255
+          ],
+          [
+            35.0001106262207,
+            13.336600303649902,
+            6.399998188018799
+          ]
+        ]
+      },
+      {
+        "name": "Sluice gate 2",
+        "before": 5176,
+        "after": 5072,
+        "boundsBefore": [
+          [
+            26.999916076660156,
+            17.16352653503418,
+            3.7999515533447266
+          ],
+          [
+            35.00004959106445,
+            17.836706161499023,
+            6.399997234344482
+          ]
+        ],
+        "boundsAfter": [
+          [
+            26.999916076660156,
+            17.16352653503418,
+            3.7999515533447266
+          ],
+          [
+            35.00004959106445,
+            17.836706161499023,
+            6.399997234344482
+          ]
+        ]
+      },
+      {
+        "name": "Sluice gate 3",
+        "before": 5176,
+        "after": 5072,
+        "boundsBefore": [
+          [
+            26.99993324279785,
+            21.66378402709961,
+            3.799929618835449
+          ],
+          [
+            35.000064849853516,
+            22.337100982666016,
+            6.399996757507324
+          ]
+        ],
+        "boundsAfter": [
+          [
+            26.99993324279785,
+            21.66378402709961,
+            3.799929618835449
+          ],
+          [
+            35.000064849853516,
+            22.337100982666016,
+            6.399996757507324
+          ]
+        ]
+      }
+    ],
+    "seconds": 3.621567964553833
+  },
+  {
+    "key": "hall",
+    "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 2250803,
+    "after": 2233315,
+    "inventory": [
+      {
+        "name": "HallV15_B1_GrandStair__Foyer_floor (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Lower_flight_risers",
+        "tris": 256,
+        "vertices": 160,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Lower_flight_treads",
+        "tris": 11508,
+        "vertices": 6028,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Marble_floor",
+        "tris": 33354,
+        "vertices": 19068,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Middle_landing (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.002"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Porch_floor (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.001"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Upper_flight_risers",
+        "tris": 256,
+        "vertices": 160,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Upper_flight_treads",
+        "tris": 11928,
+        "vertices": 6248,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B2_CentralLanding__Central_landing (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.003"
+        ]
+      },
+      {
+        "name": "HallV15_B2_CentralLanding__Marble_floor",
+        "tris": 17474,
+        "vertices": 9988,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Curving_stair (smooth)",
+        "tris": 1572,
+        "vertices": 788,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Dive_landing_1 (smooth)",
+        "tris": 564,
+        "vertices": 284,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Dive_landing_2 (smooth)",
+        "tris": 420,
+        "vertices": 212,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Dive_landing_3 (smooth)",
+        "tris": 420,
+        "vertices": 212,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Last_stair (smooth)",
+        "tris": 1668,
+        "vertices": 836,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Marble_floor",
+        "tris": 3812,
+        "vertices": 2184,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__North_landing (smooth)",
+        "tris": 996,
+        "vertices": 500,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Onto_the_dais (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.005"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Spiral_foot (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.004"
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Windy_way (smooth)",
+        "tris": 1380,
+        "vertices": 692,
+        "materials": [
+          "Section_Floor"
+        ]
+      },
+      {
+        "name": "HallV15_B5_RoyalDais__Marble_floor",
+        "tris": 28146,
+        "vertices": 14416,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B5_RoyalDais__Royal_dais (under marble)",
+        "tris": 384,
+        "vertices": 390,
+        "materials": [
+          "Section_Floor_under.014"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Exit_terrace (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.008"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Marble_floor",
+        "tris": 22556,
+        "vertices": 12912,
+        "materials": [
+          "Marble_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Mini-game_entrance_band (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.013"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Royal_balcony (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.006"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Runout (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.007"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Step_down_1 (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.009"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Step_down_2 (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.010"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Step_down_3 (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.011"
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Step_down_4 (under marble)",
+        "tris": 12,
+        "vertices": 24,
+        "materials": [
+          "Section_Floor_under.012"
+        ]
+      },
+      {
+        "name": "HallV15_Balcony portal",
+        "tris": 996,
+        "vertices": 664,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Balustrades",
+        "tris": 133272,
+        "vertices": 68466,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Central_landing moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_1",
+        "tris": 50415,
+        "vertices": 26373,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_2",
+        "tris": 50415,
+        "vertices": 26373,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_3",
+        "tris": 50415,
+        "vertices": 26373,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_4",
+        "tris": 50415,
+        "vertices": 26373,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_5",
+        "tris": 48492,
+        "vertices": 25378,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_6",
+        "tris": 44646,
+        "vertices": 23388,
+        "materials": [
+          "CH_Gold",
+          "CH_Crystal",
+          "CH_Candle",
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Corner_column_NE",
+        "tris": 42908,
+        "vertices": 21456,
+        "materials": [
+          "Palace_Stone"
+        ]
+      },
+      {
+        "name": "HallV15_Corner_column_NW",
+        "tris": 42908,
+        "vertices": 21456,
+        "materials": [
+          "Palace_Stone"
+        ]
+      },
+      {
+        "name": "HallV15_Crown_ring",
+        "tris": 4032,
+        "vertices": 2016,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_archway",
+        "tris": 38729,
+        "vertices": 19354,
+        "materials": [
+          "Palace_Stone"
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_base_E",
+        "tris": 9360,
+        "vertices": 5104,
+        "materials": [
+          "Palace_Stone"
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_base_W",
+        "tris": 9360,
+        "vertices": 5104,
+        "materials": [
+          "Palace_Stone"
+        ]
+      },
+      {
+        "name": "HallV15_Exit_terrace moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_floor moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_north_E",
+        "tris": 2590,
+        "vertices": 1420,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_north_W",
+        "tris": 2590,
+        "vertices": 1420,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_E",
+        "tris": 32088,
+        "vertices": 16017,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_E tracery",
+        "tris": 3744,
+        "vertices": 1900,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_W",
+        "tris": 32327,
+        "vertices": 16141,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_W tracery",
+        "tris": 3744,
+        "vertices": 1900,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_00",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_01",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_02",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_03",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_04",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_05",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_06",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_07",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_08",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_09",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_10",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_11",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_12",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_13",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_14",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_15",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_16",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_17",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_18",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_Hub_chandelier_light_19",
+        "tris": 20,
+        "vertices": 12,
+        "materials": [
+          "CH_Bulb"
+        ]
+      },
+      {
+        "name": "HallV15_King statue (arch)",
+        "tris": 2416,
+        "vertices": 1216,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_00_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_00_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_01_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_01_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_02_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_02_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_03_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_03_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_04_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_04_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_05_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_05_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_06_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_06_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_07_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_07_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_08_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_08_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_09_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_09_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_10_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_10_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_11_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_11_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_12_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_12_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_13_L",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Lamella_13_R",
+        "tris": 780,
+        "vertices": 392,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Landing_side_E",
+        "tris": 9290,
+        "vertices": 5076,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Landing_side_W",
+        "tris": 11138,
+        "vertices": 6084,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Landing_south_E",
+        "tris": 4978,
+        "vertices": 2724,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Landing_south_W",
+        "tris": 4978,
+        "vertices": 2724,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Mini-game_entrance_band moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_boss",
+        "tris": 224,
+        "vertices": 114,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_frame",
+        "tris": 768,
+        "vertices": 384,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_glass",
+        "tris": 384,
+        "vertices": 194,
+        "materials": [
+          "Glass_TeamDivider"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_0",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_1",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_2",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_3",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_4",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_5",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_6",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_7",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_ring_1_7",
+        "tris": 768,
+        "vertices": 384,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_lead_ring_3_4",
+        "tris": 768,
+        "vertices": 384,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_1_a",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_1_b",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_3_a",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_3_b",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_5_a",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_5_b",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_7_a",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Oculus_star_7_b",
+        "tris": 12,
+        "vertices": 8,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_0",
+        "tris": 82811,
+        "vertices": 41354,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_0 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_1",
+        "tris": 82811,
+        "vertices": 41354,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_1 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_east",
+        "tris": 32327,
+        "vertices": 16141,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_east tracery",
+        "tris": 3744,
+        "vertices": 1900,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_west",
+        "tris": 32088,
+        "vertices": 16017,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_west tracery",
+        "tris": 3744,
+        "vertices": 1900,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_0",
+        "tris": 82811,
+        "vertices": 41354,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_0 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_1",
+        "tris": 82811,
+        "vertices": 41354,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_1 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_00",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_01",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_02",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_03",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_04",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_05",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_06",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_07",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_08",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_09",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_10",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_11",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_12",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Rib_corbel_13",
+        "tris": 80,
+        "vertices": 42,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_0",
+        "tris": 143743,
+        "vertices": 71820,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_0 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_1",
+        "tris": 143743,
+        "vertices": 71820,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_1 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_0",
+        "tris": 143743,
+        "vertices": 71820,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_0 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_1",
+        "tris": 143743,
+        "vertices": 71820,
+        "materials": [
+          "Palace_Wall"
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_1 tracery",
+        "tris": 7488,
+        "vertices": 3800,
+        "materials": [
+          "Palace_Gold"
+        ]
+      },
+      {
+        "name": "HallV15_Royal dais tower (arch)",
+        "tris": 2488,
+        "vertices": 1280,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Royal_balcony moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Runout moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Spiral_foot moulding",
+        "tris": 80,
+        "vertices": 48,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_side_E",
+        "tris": 19950,
+        "vertices": 10904,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_side_W",
+        "tris": 19950,
+        "vertices": 10904,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Bishop",
+        "tris": 78978,
+        "vertices": 39493,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Bishop plinth",
+        "tris": 140,
+        "vertices": 80,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_King",
+        "tris": 81036,
+        "vertices": 40469,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_King plinth",
+        "tris": 140,
+        "vertices": 80,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Knight",
+        "tris": 79762,
+        "vertices": 39855,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Knight plinth",
+        "tris": 140,
+        "vertices": 80,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Queen",
+        "tris": 79924,
+        "vertices": 39956,
+        "materials": [
+          "Arch_Clay"
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Queen plinth",
+        "tris": 140,
+        "vertices": 80,
+        "materials": [
+          "Arch_Clay"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "HallV15_B1_GrandStair__Lower_flight_treads",
+        "before": 11508,
+        "after": 11508,
+        "boundsBefore": [
+          [
+            -8.000060081481934,
+            13.999821662902832,
+            0.14588506519794464
+          ],
+          [
+            8.000096321105957,
+            30.040185928344727,
+            4.002132415771484
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.000060081481934,
+            13.999821662902832,
+            0.14588506519794464
+          ],
+          [
+            8.000096321105957,
+            30.040185928344727,
+            4.002132415771484
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Marble_floor",
+        "before": 33354,
+        "after": 33354,
+        "boundsBefore": [
+          [
+            -20.0,
+            -12.0,
+            -0.03167503699660301
+          ],
+          [
+            20.0,
+            36.0,
+            4.000320911407471
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.0,
+            -12.0,
+            -0.03167503699660301
+          ],
+          [
+            20.0,
+            36.0,
+            4.000320911407471
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B1_GrandStair__Upper_flight_treads",
+        "before": 11928,
+        "after": 11928,
+        "boundsBefore": [
+          [
+            -8.000092506408691,
+            35.99983596801758,
+            4.146453857421875
+          ],
+          [
+            8.000081062316895,
+            52.04018020629883,
+            8.002018928527832
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.000092506408691,
+            35.99983596801758,
+            4.146453857421875
+          ],
+          [
+            8.000081062316895,
+            52.04018020629883,
+            8.002018928527832
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B2_CentralLanding__Marble_floor",
+        "before": 17474,
+        "after": 17474,
+        "boundsBefore": [
+          [
+            -14.0,
+            51.0,
+            7.968420028686523
+          ],
+          [
+            14.0,
+            66.0,
+            8.000393867492676
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -14.0,
+            51.0,
+            7.968420028686523
+          ],
+          [
+            14.0,
+            66.0,
+            8.000393867492676
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Curving_stair (smooth)",
+        "before": 1572,
+        "after": 1572,
+        "boundsBefore": [
+          [
+            11.873554229736328,
+            64.31725311279297,
+            6.796152114868164
+          ],
+          [
+            31.001874923706055,
+            98.63304138183594,
+            10.005988121032715
+          ]
+        ],
+        "boundsAfter": [
+          [
+            11.873554229736328,
+            64.31725311279297,
+            6.796152114868164
+          ],
+          [
+            31.001874923706055,
+            98.63304138183594,
+            10.005988121032715
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Last_stair (smooth)",
+        "before": 1668,
+        "after": 1668,
+        "boundsBefore": [
+          [
+            1.8819340467453003,
+            77.1256332397461,
+            13.595571517944336
+          ],
+          [
+            11.890249252319336,
+            91.69824981689453,
+            16.009498596191406
+          ]
+        ],
+        "boundsAfter": [
+          [
+            1.8819340467453003,
+            77.1256332397461,
+            13.595571517944336
+          ],
+          [
+            11.890249252319336,
+            91.69824981689453,
+            16.009498596191406
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Marble_floor",
+        "before": 3812,
+        "after": 3812,
+        "boundsBefore": [
+          [
+            4.0,
+            63.5,
+            7.968505859375
+          ],
+          [
+            15.5,
+            93.34464263916016,
+            16.000123977661133
+          ]
+        ],
+        "boundsAfter": [
+          [
+            4.0,
+            63.5,
+            7.968505859375
+          ],
+          [
+            15.5,
+            93.34464263916016,
+            16.000123977661133
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B3_Spiral__Windy_way (smooth)",
+        "before": 1380,
+        "after": 1380,
+        "boundsBefore": [
+          [
+            -14.602608680725098,
+            76.40399932861328,
+            13.396010398864746
+          ],
+          [
+            2.778427839279175,
+            83.64479064941406,
+            14.805461883544922
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -14.602608680725098,
+            76.40399932861328,
+            13.396010398864746
+          ],
+          [
+            2.778427839279175,
+            83.64479064941406,
+            14.805461883544922
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B5_RoyalDais__Marble_floor",
+        "before": 28146,
+        "after": 28146,
+        "boundsBefore": [
+          [
+            -8.000001907348633,
+            84.0,
+            15.968255043029785
+          ],
+          [
+            8.0,
+            100.0,
+            16.00048065185547
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.000001907348633,
+            84.0,
+            15.968255043029785
+          ],
+          [
+            8.0,
+            100.0,
+            16.00048065185547
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_B6_RoyalBalcony__Marble_floor",
+        "before": 22556,
+        "after": 22556,
+        "boundsBefore": [
+          [
+            -8.0,
+            121.0,
+            14.968446731567383
+          ],
+          [
+            8.0,
+            158.3000030517578,
+            16.000335693359375
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.0,
+            121.0,
+            14.968446731567383
+          ],
+          [
+            8.0,
+            158.3000030517578,
+            16.000335693359375
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Balustrades",
+        "before": 133272,
+        "after": 133272,
+        "boundsBefore": [
+          [
+            -20.0,
+            13.208999633789062,
+            -2.579034298832994e-05
+          ],
+          [
+            20.0,
+            158.3000030517578,
+            17.519996643066406
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.0,
+            13.208999633789062,
+            -2.579034298832994e-05
+          ],
+          [
+            20.0,
+            158.3000030517578,
+            17.519996643066406
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_1",
+        "before": 50415,
+        "after": 50415,
+        "boundsBefore": [
+          [
+            -10.422085762023926,
+            53.68266677856445,
+            17.686189651489258
+          ],
+          [
+            -7.577914237976074,
+            56.31734848022461,
+            30.699987411499023
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -10.422085762023926,
+            53.68266677856445,
+            17.686189651489258
+          ],
+          [
+            -7.577914237976074,
+            56.31734848022461,
+            30.699987411499023
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_2",
+        "before": 50415,
+        "after": 50415,
+        "boundsBefore": [
+          [
+            7.577913761138916,
+            53.68266677856445,
+            17.686189651489258
+          ],
+          [
+            10.422085762023926,
+            56.31734848022461,
+            30.699987411499023
+          ]
+        ],
+        "boundsAfter": [
+          [
+            7.577913761138916,
+            53.68266677856445,
+            17.686189651489258
+          ],
+          [
+            10.422085762023926,
+            56.31734848022461,
+            30.699987411499023
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_3",
+        "before": 50415,
+        "after": 50415,
+        "boundsBefore": [
+          [
+            -10.422085762023926,
+            61.68266677856445,
+            17.686189651489258
+          ],
+          [
+            -7.577914237976074,
+            64.31735229492188,
+            30.699987411499023
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -10.422085762023926,
+            61.68266677856445,
+            17.686189651489258
+          ],
+          [
+            -7.577914237976074,
+            64.31735229492188,
+            30.699987411499023
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_4",
+        "before": 50415,
+        "after": 50415,
+        "boundsBefore": [
+          [
+            7.577913761138916,
+            61.68266677856445,
+            17.686189651489258
+          ],
+          [
+            10.422085762023926,
+            64.31735229492188,
+            30.699987411499023
+          ]
+        ],
+        "boundsAfter": [
+          [
+            7.577913761138916,
+            61.68266677856445,
+            17.686189651489258
+          ],
+          [
+            10.422085762023926,
+            64.31735229492188,
+            30.699987411499023
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_5",
+        "before": 48492,
+        "after": 48492,
+        "boundsBefore": [
+          [
+            -1.4220858812332153,
+            55.68266677856445,
+            18.686189651489258
+          ],
+          [
+            1.4220858812332153,
+            58.31734848022461,
+            30.699987411499023
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -1.4220858812332153,
+            55.68266677856445,
+            18.686189651489258
+          ],
+          [
+            1.4220858812332153,
+            58.31734848022461,
+            30.699987411499023
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Chandelier_6",
+        "before": 44646,
+        "after": 44646,
+        "boundsBefore": [
+          [
+            -4.2662577629089355,
+            88.04796600341797,
+            23.778593063354492
+          ],
+          [
+            4.266257286071777,
+            95.9520263671875,
+            45.59998321533203
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -4.2662577629089355,
+            88.04796600341797,
+            23.778593063354492
+          ],
+          [
+            4.266257286071777,
+            95.9520263671875,
+            45.59998321533203
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Corner_column_NE",
+        "before": 42908,
+        "after": 42552,
+        "boundsBefore": [
+          [
+            32.5,
+            89.9000015258789,
+            -4.020015239715576
+          ],
+          [
+            36.69999694824219,
+            94.10000610351562,
+            26.579984664916992
+          ]
+        ],
+        "boundsAfter": [
+          [
+            32.5,
+            89.9000015258789,
+            -4.020015239715576
+          ],
+          [
+            36.69999694824219,
+            94.10000610351562,
+            26.579984664916992
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Corner_column_NW",
+        "before": 42908,
+        "after": 42546,
+        "boundsBefore": [
+          [
+            -36.69999694824219,
+            89.9000015258789,
+            -4.020015239715576
+          ],
+          [
+            -32.5,
+            94.10000610351562,
+            26.579984664916992
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -36.69999694824219,
+            89.9000015258789,
+            -4.020015239715576
+          ],
+          [
+            -32.5,
+            94.10000610351562,
+            26.579984664916992
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Crown_ring",
+        "before": 4032,
+        "after": 4032,
+        "boundsBefore": [
+          [
+            -8.399999618530273,
+            83.60000610351562,
+            44.39998245239258
+          ],
+          [
+            8.399999618530273,
+            100.40000915527344,
+            47.59998321533203
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.399999618530273,
+            83.60000610351562,
+            44.39998245239258
+          ],
+          [
+            8.399999618530273,
+            100.40000915527344,
+            47.59998321533203
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_archway",
+        "before": 38729,
+        "after": 38677,
+        "boundsBefore": [
+          [
+            -20.69611358642578,
+            -12.58802604675293,
+            0.0003362287534400821
+          ],
+          [
+            20.692014694213867,
+            -0.011486069299280643,
+            11.611699104309082
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.69611358642578,
+            -12.58802604675293,
+            0.0003362287534400821
+          ],
+          [
+            20.692014694213867,
+            -0.011486069299280643,
+            11.611699104309082
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_base_E",
+        "before": 9360,
+        "after": 9360,
+        "boundsBefore": [
+          [
+            5.75,
+            -13.05000114440918,
+            -5.0
+          ],
+          [
+            20.75,
+            0.25,
+            -0.01999787427484989
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.75,
+            -13.05000114440918,
+            -5.0
+          ],
+          [
+            20.75,
+            0.25,
+            -0.01999787427484989
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Entrance_base_W",
+        "before": 9360,
+        "after": 9360,
+        "boundsBefore": [
+          [
+            -20.75,
+            -13.05000114440918,
+            -5.0
+          ],
+          [
+            -5.75,
+            0.25,
+            -0.01999787427484989
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.75,
+            -13.05000114440918,
+            -5.0
+          ],
+          [
+            -5.75,
+            0.25,
+            -0.01999787427484989
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_north_E",
+        "before": 2590,
+        "after": 2590,
+        "boundsBefore": [
+          [
+            8.0,
+            13.999999046325684,
+            -4.000002384185791
+          ],
+          [
+            20.0,
+            14.260000228881836,
+            -0.4800022840499878
+          ]
+        ],
+        "boundsAfter": [
+          [
+            8.0,
+            13.999999046325684,
+            -4.000002384185791
+          ],
+          [
+            20.0,
+            14.260000228881836,
+            -0.4800022840499878
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_north_W",
+        "before": 2590,
+        "after": 2590,
+        "boundsBefore": [
+          [
+            -20.0,
+            13.999999046325684,
+            -4.000002384185791
+          ],
+          [
+            -8.0,
+            14.260000228881836,
+            -0.4800022840499878
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.0,
+            13.999999046325684,
+            -4.000002384185791
+          ],
+          [
+            -8.0,
+            14.260000228881836,
+            -0.4800022840499878
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_E",
+        "before": 32088,
+        "after": 31903,
+        "boundsBefore": [
+          [
+            20.001771926879883,
+            -2.749413251876831,
+            -4.99879264831543
+          ],
+          [
+            20.999439239501953,
+            13.986310958862305,
+            12.004165649414062
+          ]
+        ],
+        "boundsAfter": [
+          [
+            20.001771926879883,
+            -2.749413251876831,
+            -4.99879264831543
+          ],
+          [
+            20.999439239501953,
+            13.986310958862305,
+            12.004165649414062
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_E tracery",
+        "before": 3744,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            20.147977828979492,
+            4.595720291137695,
+            -0.07288333028554916
+          ],
+          [
+            20.623504638671875,
+            10.034658432006836,
+            7.861185073852539
+          ]
+        ],
+        "boundsAfter": [
+          [
+            20.147977828979492,
+            4.595720291137695,
+            -0.07288333028554916
+          ],
+          [
+            20.623504638671875,
+            10.034658432006836,
+            7.861185073852539
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_W",
+        "before": 32327,
+        "after": 32123,
+        "boundsBefore": [
+          [
+            -20.99995231628418,
+            -2.721600294113159,
+            -4.999700546264648
+          ],
+          [
+            -20.001277923583984,
+            14.013692855834961,
+            12.003105163574219
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.99995231628418,
+            -2.721600294113159,
+            -4.999700546264648
+          ],
+          [
+            -20.001277923583984,
+            14.013692855834961,
+            12.003105163574219
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Foyer_side_W tracery",
+        "before": 3744,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            -20.623506546020508,
+            4.623102188110352,
+            -0.07288333773612976
+          ],
+          [
+            -20.147979736328125,
+            10.062040328979492,
+            7.861185073852539
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -20.623506546020508,
+            4.623102188110352,
+            -0.07288333773612976
+          ],
+          [
+            -20.147979736328125,
+            10.062040328979492,
+            7.861185073852539
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_King statue (arch)",
+        "before": 2416,
+        "after": 2320,
+        "boundsBefore": [
+          [
+            -2.0,
+            61.0,
+            7.9999847412109375
+          ],
+          [
+            2.0,
+            65.0,
+            14.09998607635498
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -2.0,
+            61.0,
+            7.9999847412109375
+          ],
+          [
+            2.0,
+            65.0,
+            14.09998607635498
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Landing_side_E",
+        "before": 9290,
+        "after": 9290,
+        "boundsBefore": [
+          [
+            14.0,
+            51.0,
+            -4.0000104904174805
+          ],
+          [
+            14.260000228881836,
+            63.5,
+            7.519991874694824
+          ]
+        ],
+        "boundsAfter": [
+          [
+            14.0,
+            51.0,
+            -4.0000104904174805
+          ],
+          [
+            14.260000228881836,
+            63.5,
+            7.519991874694824
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Landing_side_W",
+        "before": 11138,
+        "after": 11138,
+        "boundsBefore": [
+          [
+            -14.260000228881836,
+            51.0,
+            -4.000010967254639
+          ],
+          [
+            -14.0,
+            66.0,
+            7.519991874694824
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -14.260000228881836,
+            51.0,
+            -4.000010967254639
+          ],
+          [
+            -14.0,
+            66.0,
+            7.519991874694824
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Landing_south_E",
+        "before": 4978,
+        "after": 4978,
+        "boundsBefore": [
+          [
+            8.0,
+            50.7400016784668,
+            -4.0000081062316895
+          ],
+          [
+            14.180000305175781,
+            51.0,
+            7.519991874694824
+          ]
+        ],
+        "boundsAfter": [
+          [
+            8.0,
+            50.7400016784668,
+            -4.0000081062316895
+          ],
+          [
+            14.180000305175781,
+            51.0,
+            7.519991874694824
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Landing_south_W",
+        "before": 4978,
+        "after": 4978,
+        "boundsBefore": [
+          [
+            -14.180000305175781,
+            50.7400016784668,
+            -4.0000081062316895
+          ],
+          [
+            -8.0,
+            51.0,
+            7.519991874694824
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -14.180000305175781,
+            50.7400016784668,
+            -4.0000081062316895
+          ],
+          [
+            -8.0,
+            51.0,
+            7.519991874694824
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_0",
+        "before": 82811,
+        "after": 82735,
+        "boundsBefore": [
+          [
+            34.00019836425781,
+            50.82480239868164,
+            -3.9994821548461914
+          ],
+          [
+            38.044830322265625,
+            91.99949645996094,
+            26.007343292236328
+          ]
+        ],
+        "boundsAfter": [
+          [
+            34.00019836425781,
+            50.82480239868164,
+            -3.9994821548461914
+          ],
+          [
+            38.044830322265625,
+            91.99949645996094,
+            26.007343292236328
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_0 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            36.249977111816406,
+            57.23999786376953,
+            4.694900989532471
+          ],
+          [
+            36.72550964355469,
+            85.58391571044922,
+            18.589141845703125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            36.249977111816406,
+            57.23999786376953,
+            4.694900989532471
+          ],
+          [
+            36.72550964355469,
+            85.58391571044922,
+            18.589141845703125
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_1",
+        "before": 82811,
+        "after": 82728,
+        "boundsBefore": [
+          [
+            34.00019836425781,
+            9.955174446105957,
+            -3.9994757175445557
+          ],
+          [
+            38.044830322265625,
+            53.19948959350586,
+            26.007349014282227
+          ]
+        ],
+        "boundsAfter": [
+          [
+            34.00019836425781,
+            9.955174446105957,
+            -3.9994757175445557
+          ],
+          [
+            38.044830322265625,
+            53.19948959350586,
+            26.007349014282227
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_E_1 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            36.249977111816406,
+            16.692825317382812,
+            4.694907188415527
+          ],
+          [
+            36.72550964355469,
+            46.46144485473633,
+            18.589149475097656
+          ]
+        ],
+        "boundsAfter": [
+          [
+            36.249977111816406,
+            16.692825317382812,
+            4.694907188415527
+          ],
+          [
+            36.72550964355469,
+            46.46144485473633,
+            18.589149475097656
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_east",
+        "before": 32327,
+        "after": 32247,
+        "boundsBefore": [
+          [
+            20.33199691772461,
+            9.955172538757324,
+            -3.999469518661499
+          ],
+          [
+            34.61062240600586,
+            13.999809265136719,
+            26.00547981262207
+          ]
+        ],
+        "boundsAfter": [
+          [
+            20.33199691772461,
+            9.955172538757324,
+            -3.999469518661499
+          ],
+          [
+            34.61062240600586,
+            13.999809265136719,
+            26.00547981262207
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_east tracery",
+        "before": 3744,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            27.322402954101562,
+            11.274497032165527,
+            4.694912910461426
+          ],
+          [
+            31.54366683959961,
+            11.750027656555176,
+            18.589149475097656
+          ]
+        ],
+        "boundsAfter": [
+          [
+            27.322402954101562,
+            11.274497032165527,
+            4.694912910461426
+          ],
+          [
+            31.54366683959961,
+            11.750027656555176,
+            18.589149475097656
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_west",
+        "before": 32088,
+        "after": 32008,
+        "boundsBefore": [
+          [
+            -34.589378356933594,
+            9.95717716217041,
+            -3.9978678226470947
+          ],
+          [
+            -20.274635314941406,
+            13.997734069824219,
+            26.007349014282227
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -34.589378356933594,
+            9.95717716217041,
+            -3.9978678226470947
+          ],
+          [
+            -20.274635314941406,
+            13.997734069824219,
+            26.007349014282227
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_S_west tracery",
+        "before": 3744,
+        "after": 3744,
+        "boundsBefore": [
+          [
+            -31.522422790527344,
+            11.274494171142578,
+            4.694912910461426
+          ],
+          [
+            -27.301158905029297,
+            11.75002384185791,
+            18.589149475097656
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -31.522422790527344,
+            11.274494171142578,
+            4.694912910461426
+          ],
+          [
+            -27.301158905029297,
+            11.75002384185791,
+            18.589149475097656
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_0",
+        "before": 82811,
+        "after": 82734,
+        "boundsBefore": [
+          [
+            -38.04482650756836,
+            9.957179069519043,
+            -3.9994757175445557
+          ],
+          [
+            -34.00019454956055,
+            53.17520523071289,
+            26.007349014282227
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -38.04482650756836,
+            9.957179069519043,
+            -3.9994757175445557
+          ],
+          [
+            -34.00019454956055,
+            53.17520523071289,
+            26.007349014282227
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_0 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            -36.72550964355469,
+            16.691129684448242,
+            4.694907188415527
+          ],
+          [
+            -36.24997329711914,
+            46.441646575927734,
+            18.589149475097656
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -36.72550964355469,
+            16.691129684448242,
+            4.694907188415527
+          ],
+          [
+            -36.24997329711914,
+            46.441646575927734,
+            18.589149475097656
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_1",
+        "before": 82811,
+        "after": 82728,
+        "boundsBefore": [
+          [
+            -38.044830322265625,
+            50.800514221191406,
+            -3.9994821548461914
+          ],
+          [
+            -34.00019836425781,
+            91.97521209716797,
+            26.007343292236328
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -38.044830322265625,
+            50.800514221191406,
+            -3.9994821548461914
+          ],
+          [
+            -34.00019836425781,
+            91.97521209716797,
+            26.007343292236328
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Outer_wall_W_1 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            -36.72550964355469,
+            57.216087341308594,
+            4.694900989532471
+          ],
+          [
+            -36.249977111816406,
+            85.56000518798828,
+            18.589141845703125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -36.72550964355469,
+            57.216087341308594,
+            4.694900989532471
+          ],
+          [
+            -36.249977111816406,
+            85.56000518798828,
+            18.589141845703125
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_0",
+        "before": 143743,
+        "after": 139825,
+        "boundsBefore": [
+          [
+            -34.33518600463867,
+            64.72992706298828,
+            -3.9994828701019287
+          ],
+          [
+            -18.41318702697754,
+            97.21638488769531,
+            26.007339477539062
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -34.33518600463867,
+            64.72992706298828,
+            -3.9994828701019287
+          ],
+          [
+            -18.41318702697754,
+            97.21638488769531,
+            26.007339477539062
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_0 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            -33.0816764831543,
+            68.94755554199219,
+            4.694900035858154
+          ],
+          [
+            -23.49623680114746,
+            91.5152816772461,
+            18.589139938354492
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -33.0816764831543,
+            68.94755554199219,
+            4.694900035858154
+          ],
+          [
+            -23.49623680114746,
+            91.5152816772461,
+            18.589139938354492
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_1",
+        "before": 143743,
+        "after": 139851,
+        "boundsBefore": [
+          [
+            -33.76557159423828,
+            96.90785217285156,
+            -3.9994874000549316
+          ],
+          [
+            -9.706263542175293,
+            124.36845397949219,
+            26.007335662841797
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -33.76557159423828,
+            96.90785217285156,
+            -3.9994874000549316
+          ],
+          [
+            -9.706263542175293,
+            124.36845397949219,
+            26.007335662841797
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_0_1 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            -31.306020736694336,
+            102.5660171508789,
+            4.694895267486572
+          ],
+          [
+            -15.306697845458984,
+            121.24250030517578,
+            18.589134216308594
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -31.306020736694336,
+            102.5660171508789,
+            4.694895267486572
+          ],
+          [
+            -15.306697845458984,
+            121.24250030517578,
+            18.589134216308594
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_0",
+        "before": 143743,
+        "after": 139751,
+        "boundsBefore": [
+          [
+            9.68887996673584,
+            96.9249267578125,
+            -3.9994874000549316
+          ],
+          [
+            33.75654602050781,
+            124.37409210205078,
+            26.007335662841797
+          ]
+        ],
+        "boundsAfter": [
+          [
+            9.68887996673584,
+            96.9249267578125,
+            -3.9994874000549316
+          ],
+          [
+            33.75654602050781,
+            124.37409210205078,
+            26.007335662841797
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_0 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            15.288204193115234,
+            102.58580780029297,
+            4.694895267486572
+          ],
+          [
+            31.29920768737793,
+            121.25234985351562,
+            18.589134216308594
+          ]
+        ],
+        "boundsAfter": [
+          [
+            15.288204193115234,
+            102.58580780029297,
+            4.694895267486572
+          ],
+          [
+            31.29920768737793,
+            121.25234985351562,
+            18.589134216308594
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_1",
+        "before": 143743,
+        "after": 139897,
+        "boundsBefore": [
+          [
+            18.4246768951416,
+            64.74237823486328,
+            -3.9994828701019287
+          ],
+          [
+            34.33418655395508,
+            97.24971771240234,
+            26.007339477539062
+          ]
+        ],
+        "boundsAfter": [
+          [
+            18.4246768951416,
+            64.74237823486328,
+            -3.9994828701019287
+          ],
+          [
+            34.33418655395508,
+            97.24971771240234,
+            26.007339477539062
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Round_wall_1_1 tracery",
+        "before": 7488,
+        "after": 7488,
+        "boundsBefore": [
+          [
+            23.51080894470215,
+            68.96269226074219,
+            4.694900035858154
+          ],
+          [
+            33.082183837890625,
+            91.53618621826172,
+            18.589139938354492
+          ]
+        ],
+        "boundsAfter": [
+          [
+            23.51080894470215,
+            68.96269226074219,
+            4.694900035858154
+          ],
+          [
+            33.082183837890625,
+            91.53618621826172,
+            18.589139938354492
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Royal dais tower (arch)",
+        "before": 2488,
+        "after": 2488,
+        "boundsBefore": [
+          [
+            -8.300000190734863,
+            83.69999694824219,
+            -4.000016212463379
+          ],
+          [
+            8.300000190734863,
+            100.30000305175781,
+            15.879980087280273
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.300000190734863,
+            83.69999694824219,
+            -4.000016212463379
+          ],
+          [
+            8.300000190734863,
+            100.30000305175781,
+            15.879980087280273
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_side_E",
+        "before": 19950,
+        "after": 19948,
+        "boundsBefore": [
+          [
+            8.0,
+            14.179999351501465,
+            -4.0000081062316895
+          ],
+          [
+            8.260000228881836,
+            50.81999969482422,
+            8.054998397827148
+          ]
+        ],
+        "boundsAfter": [
+          [
+            8.0,
+            14.179999351501465,
+            -4.0000081062316895
+          ],
+          [
+            8.260000228881836,
+            50.81999969482422,
+            8.054998397827148
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_side_W",
+        "before": 19950,
+        "after": 19948,
+        "boundsBefore": [
+          [
+            -8.260000228881836,
+            14.179999351501465,
+            -4.0000081062316895
+          ],
+          [
+            -8.0,
+            50.81999969482422,
+            8.054998397827148
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -8.260000228881836,
+            14.179999351501465,
+            -4.0000081062316895
+          ],
+          [
+            -8.0,
+            50.81999969482422,
+            8.054998397827148
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Bishop",
+        "before": 78978,
+        "after": 78976,
+        "boundsBefore": [
+          [
+            -17.65958023071289,
+            41.022857666015625,
+            5.999986171722412
+          ],
+          [
+            -12.762393951416016,
+            46.86882781982422,
+            16.999736785888672
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -17.65958023071289,
+            41.022857666015625,
+            5.999986171722412
+          ],
+          [
+            -12.762393951416016,
+            46.86882781982422,
+            16.999736785888672
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_King",
+        "before": 81036,
+        "after": 81034,
+        "boundsBefore": [
+          [
+            12.612342834472656,
+            19.49833106994629,
+            1.9999854564666748
+          ],
+          [
+            17.957576751708984,
+            24.892417907714844,
+            12.999841690063477
+          ]
+        ],
+        "boundsAfter": [
+          [
+            12.612342834472656,
+            19.49833106994629,
+            1.9999854564666748
+          ],
+          [
+            17.957576751708984,
+            24.892417907714844,
+            12.999841690063477
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Knight",
+        "before": 79762,
+        "after": 79762,
+        "boundsBefore": [
+          [
+            11.578962326049805,
+            40.95432662963867,
+            6.0005784034729
+          ],
+          [
+            19.418903350830078,
+            47.87480163574219,
+            17.00118064880371
+          ]
+        ],
+        "boundsAfter": [
+          [
+            11.578962326049805,
+            40.95432662963867,
+            6.0005784034729
+          ],
+          [
+            19.418903350830078,
+            47.87480163574219,
+            17.00118064880371
+          ]
+        ]
+      },
+      {
+        "name": "HallV15_Stair_statue_Queen",
+        "before": 79924,
+        "after": 79826,
+        "boundsBefore": [
+          [
+            -19.225614547729492,
+            18.844430923461914,
+            2.00170636177063
+          ],
+          [
+            -11.576190948486328,
+            25.656909942626953,
+            12.99999713897705
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -19.225614547729492,
+            18.844430923461914,
+            2.00170636177063
+          ],
+          [
+            -11.576190948486328,
+            25.656909942626953,
+            12.99999713897705
+          ]
+        ]
+      }
+    ],
+    "seconds": 20.935511827468872
+  },
+  {
+    "key": "boats",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 415540,
+    "after": 394652,
+    "inventory": [
+      {
+        "name": "Boat 1-1",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 1-2",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 2-1",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 2-2",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 3-1",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 3-2",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 4-1",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat 4-2",
+        "tris": 32812,
+        "vertices": 16982,
+        "materials": [
+          "GC | boat cream",
+          "GC | gold",
+          "GC | boat blue",
+          "GC | boat blue seam",
+          "GC | bar wood",
+          "GC | boat floor shade",
+          "GC | lantern glow",
+          "GC | flower white",
+          "GC | fender blue",
+          "GC | rope",
+          "GC | velvet purple",
+          "GC | velvet purple light",
+          "GC | cream upholstery"
+        ]
+      },
+      {
+        "name": "Boat tunnels",
+        "tris": 102044,
+        "vertices": 52844,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | cream stone pale",
+          "GC | cream stone",
+          "GC | floor tile",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | grout",
+          "GC | tunnel shade"
+        ]
+      },
+      {
+        "name": "Lane ropes",
+        "tris": 2964,
+        "vertices": 1560,
+        "materials": [
+          "GC | rope",
+          "GC | flower white",
+          "GC | gold"
+        ]
+      },
+      {
+        "name": "Quay flowers",
+        "tris": 5742,
+        "vertices": 5076,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower white",
+          "GC | flower heart",
+          "GC | flower coral",
+          "GC | flower pink",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Quay stonework",
+        "tris": 42294,
+        "vertices": 21772,
+        "materials": [
+          "GC | floor tile",
+          "GC | grout",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | cream stone warm",
+          "GC | gold"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Boat 1-1",
+        "before": 32812,
+        "after": 30226,
+        "boundsBefore": [
+          [
+            -12.218829154968262,
+            34.24364471435547,
+            2.849993944168091
+          ],
+          [
+            -5.920291900634766,
+            36.62067413330078,
+            5.410736560821533
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -12.218829154968262,
+            34.24364471435547,
+            2.849993944168091
+          ],
+          [
+            -5.920291900634766,
+            36.62067413330078,
+            5.410736560821533
+          ]
+        ]
+      },
+      {
+        "name": "Boat 1-2",
+        "before": 32812,
+        "after": 30238,
+        "boundsBefore": [
+          [
+            5.788641452789307,
+            34.25935363769531,
+            2.849993944168091
+          ],
+          [
+            12.069161415100098,
+            36.6129264831543,
+            5.370468616485596
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.788641452789307,
+            34.25935363769531,
+            2.849993944168091
+          ],
+          [
+            12.069161415100098,
+            36.6129264831543,
+            5.370468616485596
+          ]
+        ]
+      },
+      {
+        "name": "Boat 2-1",
+        "before": 32812,
+        "after": 30226,
+        "boundsBefore": [
+          [
+            -12.211112022399902,
+            37.75837326049805,
+            2.8499934673309326
+          ],
+          [
+            -5.922966480255127,
+            40.12773513793945,
+            5.360713005065918
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -12.211112022399902,
+            37.75837326049805,
+            2.8499934673309326
+          ],
+          [
+            -5.922966480255127,
+            40.12773513793945,
+            5.360713005065918
+          ]
+        ]
+      },
+      {
+        "name": "Boat 2-2",
+        "before": 32812,
+        "after": 30226,
+        "boundsBefore": [
+          [
+            5.7928972244262695,
+            37.80402374267578,
+            2.8499934673309326
+          ],
+          [
+            12.068910598754883,
+            40.179405212402344,
+            5.361822605133057
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.7928972244262695,
+            37.80402374267578,
+            2.8499934673309326
+          ],
+          [
+            12.068910598754883,
+            40.179405212402344,
+            5.361822605133057
+          ]
+        ]
+      },
+      {
+        "name": "Boat 3-1",
+        "before": 32812,
+        "after": 30224,
+        "boundsBefore": [
+          [
+            -12.198874473571777,
+            41.39439010620117,
+            2.8499927520751953
+          ],
+          [
+            -5.934114456176758,
+            43.83011245727539,
+            5.370023250579834
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -12.198874473571777,
+            41.39439010620117,
+            2.8499927520751953
+          ],
+          [
+            -5.934114456176758,
+            43.83011245727539,
+            5.370023250579834
+          ]
+        ]
+      },
+      {
+        "name": "Boat 3-2",
+        "before": 32812,
+        "after": 30224,
+        "boundsBefore": [
+          [
+            5.791369438171387,
+            41.43362808227539,
+            2.8499927520751953
+          ],
+          [
+            12.06069278717041,
+            43.832401275634766,
+            5.344143867492676
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.791369438171387,
+            41.43362808227539,
+            2.8499927520751953
+          ],
+          [
+            12.06069278717041,
+            43.832401275634766,
+            5.344143867492676
+          ]
+        ]
+      },
+      {
+        "name": "Boat 4-1",
+        "before": 32812,
+        "after": 30224,
+        "boundsBefore": [
+          [
+            -12.201467514038086,
+            44.926307678222656,
+            2.849992275238037
+          ],
+          [
+            -5.927773475646973,
+            47.34763717651367,
+            5.350895881652832
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -12.201467514038086,
+            44.926307678222656,
+            2.849992275238037
+          ],
+          [
+            -5.927773475646973,
+            47.34763717651367,
+            5.350895881652832
+          ]
+        ]
+      },
+      {
+        "name": "Boat 4-2",
+        "before": 32812,
+        "after": 30236,
+        "boundsBefore": [
+          [
+            5.776416301727295,
+            45.02478790283203,
+            2.849992275238037
+          ],
+          [
+            12.068257331848145,
+            47.4503173828125,
+            5.368262767791748
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.776416301727295,
+            45.02478790283203,
+            2.849992275238037
+          ],
+          [
+            12.068257331848145,
+            47.4503173828125,
+            5.368262767791748
+          ]
+        ]
+      },
+      {
+        "name": "Boat tunnels",
+        "before": 102044,
+        "after": 101996,
+        "boundsBefore": [
+          [
+            -26.0,
+            32.849998474121094,
+            1.5999919176101685
+          ],
+          [
+            26.0,
+            48.75,
+            9.001450538635254
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -26.0,
+            32.849998474121094,
+            1.5999919176101685
+          ],
+          [
+            26.0,
+            48.75,
+            9.001450538635254
+          ]
+        ]
+      },
+      {
+        "name": "Lane ropes",
+        "before": 2964,
+        "after": 2964,
+        "boundsBefore": [
+          [
+            -18.0,
+            37.01518249511719,
+            2.9039928913116455
+          ],
+          [
+            18.0,
+            44.58736038208008,
+            3.1915066242218018
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -18.0,
+            37.01518249511719,
+            2.9039928913116455
+          ],
+          [
+            18.0,
+            44.58736038208008,
+            3.1915066242218018
+          ]
+        ]
+      },
+      {
+        "name": "Quay flowers",
+        "before": 5742,
+        "after": 5616,
+        "boundsBefore": [
+          [
+            -18.438493728637695,
+            26.571125030517578,
+            5.295372486114502
+          ],
+          [
+            18.446964263916016,
+            48.57277297973633,
+            9.18554973602295
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -18.438493728637695,
+            26.571125030517578,
+            5.295372486114502
+          ],
+          [
+            18.446964263916016,
+            48.57277297973633,
+            9.18554973602295
+          ]
+        ]
+      },
+      {
+        "name": "Quay stonework",
+        "before": 42294,
+        "after": 42252,
+        "boundsBefore": [
+          [
+            -10.45285415649414,
+            26.54781150817871,
+            -2.2500054836273193
+          ],
+          [
+            10.0,
+            33.30295944213867,
+            5.4997477531433105
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -10.45285415649414,
+            26.54781150817871,
+            -2.2500054836273193
+          ],
+          [
+            10.0,
+            33.30295944213867,
+            5.4997477531433105
+          ]
+        ]
+      }
+    ],
+    "seconds": 4.66635537147522
+  },
+  {
+    "key": "walls",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 347730,
+    "after": 345322,
+    "inventory": [
+      {
+        "name": "Castle banners and planters",
+        "tris": 4800,
+        "vertices": 2664,
+        "materials": [
+          "GC | gate gold",
+          "GC | gate blue",
+          "GC | castle stone",
+          "GC | leaf dark"
+        ]
+      },
+      {
+        "name": "Castle grounds",
+        "tris": 60430,
+        "vertices": 31406,
+        "materials": [
+          "GC | floor tile",
+          "GC | cream stone warm",
+          "GC | grout",
+          "GC | cream stone",
+          "GC | cream stone pale"
+        ]
+      },
+      {
+        "name": "Castle lawn",
+        "tris": 208,
+        "vertices": 168,
+        "materials": [
+          "GC | lawn"
+        ]
+      },
+      {
+        "name": "Castle tower E1",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower E2",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower E3",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower E4",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower E5",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower E6",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W1",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W2",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W3",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W4",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W5",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle tower W6",
+        "tris": 18000,
+        "vertices": 8995,
+        "materials": [
+          "GC | castle stone",
+          "GC | gate blue",
+          "GC | gate gold",
+          "GC | leaf",
+          "GC | flower pink",
+          "GC | flower white",
+          "GC | flower yellow"
+        ]
+      },
+      {
+        "name": "Castle towers",
+        "tris": 1728,
+        "vertices": 888,
+        "materials": [
+          "GC | castle stone"
+        ]
+      },
+      {
+        "name": "Castle walls",
+        "tris": 64564,
+        "vertices": 39094,
+        "materials": [
+          "GC | castle stone",
+          "GC | arch shade",
+          "GC | gate joint"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Castle banners and planters",
+        "before": 4800,
+        "after": 4800,
+        "boundsBefore": [
+          [
+            -52.0357666015625,
+            -56.22491455078125,
+            5.9983954429626465
+          ],
+          [
+            52.04343795776367,
+            54.73517608642578,
+            10.039758682250977
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -52.0357666015625,
+            -56.22491455078125,
+            5.9983954429626465
+          ],
+          [
+            52.04343795776367,
+            54.73517608642578,
+            10.039758682250977
+          ]
+        ]
+      },
+      {
+        "name": "Castle grounds",
+        "before": 60430,
+        "after": 60430,
+        "boundsBefore": [
+          [
+            -53.86377716064453,
+            -35.07579803466797,
+            -2.400010824203491
+          ],
+          [
+            53.86377716064453,
+            65.7701187133789,
+            3.811960220336914
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -53.86377716064453,
+            -35.07579803466797,
+            -2.400010824203491
+          ],
+          [
+            53.86377716064453,
+            65.7701187133789,
+            3.811960220336914
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E1",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            38.92341232299805,
+            44.11297607421875,
+            3.8060805797576904
+          ],
+          [
+            48.971168518066406,
+            53.715736389160156,
+            26.217315673828125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            38.92341232299805,
+            44.11297607421875,
+            3.8060805797576904
+          ],
+          [
+            48.971168518066406,
+            53.715736389160156,
+            26.217315673828125
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E2",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            48.824806213378906,
+            16.88365936279297,
+            0.6074572205543518
+          ],
+          [
+            56.42708969116211,
+            28.478103637695312,
+            28.069114685058594
+          ]
+        ],
+        "boundsAfter": [
+          [
+            48.824806213378906,
+            16.88365936279297,
+            0.6074572205543518
+          ],
+          [
+            56.42708969116211,
+            28.478103637695312,
+            28.069114685058594
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E3",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            50.165061950683594,
+            -9.502664566040039,
+            0.6074613332748413
+          ],
+          [
+            57.52183532714844,
+            3.1882059574127197,
+            28.06911849975586
+          ]
+        ],
+        "boundsAfter": [
+          [
+            50.165061950683594,
+            -9.502664566040039,
+            0.6074613332748413
+          ],
+          [
+            57.52183532714844,
+            3.1882059574127197,
+            28.06911849975586
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E4",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            44.57481384277344,
+            -35.89430236816406,
+            0.6074659824371338
+          ],
+          [
+            52.876434326171875,
+            -25.31033706665039,
+            28.069122314453125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            44.57481384277344,
+            -35.89430236816406,
+            0.6074659824371338
+          ],
+          [
+            52.876434326171875,
+            -25.31033706665039,
+            28.069122314453125
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E5",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            28.981773376464844,
+            -56.04851531982422,
+            -1.8916202783584595
+          ],
+          [
+            40.2258186340332,
+            -47.587345123291016,
+            28.919370651245117
+          ]
+        ],
+        "boundsAfter": [
+          [
+            28.981773376464844,
+            -56.04851531982422,
+            -1.8916202783584595
+          ],
+          [
+            40.2258186340332,
+            -47.587345123291016,
+            28.919370651245117
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower E6",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            1.7980122566223145,
+            -66.25311279296875,
+            -1.8914566040039062
+          ],
+          [
+            15.947383880615234,
+            -57.86664962768555,
+            29.51584243774414
+          ]
+        ],
+        "boundsAfter": [
+          [
+            1.7980122566223145,
+            -66.25311279296875,
+            -1.8914566040039062
+          ],
+          [
+            15.947383880615234,
+            -57.86664962768555,
+            29.51584243774414
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W1",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -48.675193786621094,
+            44.187339782714844,
+            3.8060805797576904
+          ],
+          [
+            -39.26811599731445,
+            53.72465896606445,
+            26.217315673828125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -48.675193786621094,
+            44.187339782714844,
+            3.8060805797576904
+          ],
+          [
+            -39.26811599731445,
+            53.72465896606445,
+            26.217315673828125
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W2",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -56.40834045410156,
+            16.798484802246094,
+            0.6074572205543518
+          ],
+          [
+            -48.947017669677734,
+            28.55912208557129,
+            28.069114685058594
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -56.40834045410156,
+            16.798484802246094,
+            0.6074572205543518
+          ],
+          [
+            -48.947017669677734,
+            28.55912208557129,
+            28.069114685058594
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W3",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -57.38044738769531,
+            -9.300511360168457,
+            0.6074613928794861
+          ],
+          [
+            -50.187164306640625,
+            2.9121253490448,
+            28.06911849975586
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -57.38044738769531,
+            -9.300511360168457,
+            0.6074613928794861
+          ],
+          [
+            -50.187164306640625,
+            2.9121253490448,
+            28.06911849975586
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W4",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -52.77197265625,
+            -36.329872131347656,
+            0.607465922832489
+          ],
+          [
+            -44.770965576171875,
+            -24.970762252807617,
+            28.069122314453125
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -52.77197265625,
+            -36.329872131347656,
+            0.607465922832489
+          ],
+          [
+            -44.770965576171875,
+            -24.970762252807617,
+            28.069122314453125
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W5",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -40.38992691040039,
+            -55.86906051635742,
+            -1.8917434215545654
+          ],
+          [
+            -28.876863479614258,
+            -48.05426025390625,
+            28.465700149536133
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -40.38992691040039,
+            -55.86906051635742,
+            -1.8917434215545654
+          ],
+          [
+            -28.876863479614258,
+            -48.05426025390625,
+            28.465700149536133
+          ]
+        ]
+      },
+      {
+        "name": "Castle tower W6",
+        "before": 18000,
+        "after": 18000,
+        "boundsBefore": [
+          [
+            -15.813600540161133,
+            -66.1976318359375,
+            -1.8914566040039062
+          ],
+          [
+            -2.0007219314575195,
+            -57.81606674194336,
+            29.51584243774414
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -15.813600540161133,
+            -66.1976318359375,
+            -1.8914566040039062
+          ],
+          [
+            -2.0007219314575195,
+            -57.81606674194336,
+            29.51584243774414
+          ]
+        ]
+      },
+      {
+        "name": "Castle towers",
+        "before": 1728,
+        "after": 1680,
+        "boundsBefore": [
+          [
+            -56.213775634765625,
+            -64.8180923461914,
+            -2.4000084400177
+          ],
+          [
+            56.213775634765625,
+            50.9422721862793,
+            4.0000104904174805
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -56.213775634765625,
+            -64.8180923461914,
+            -2.4000084400177
+          ],
+          [
+            56.213775634765625,
+            50.9422721862793,
+            4.0000104904174805
+          ]
+        ]
+      },
+      {
+        "name": "Castle walls",
+        "before": 64564,
+        "after": 62204,
+        "boundsBefore": [
+          [
+            -55.23127746582031,
+            -62.81991195678711,
+            -2.350010871887207
+          ],
+          [
+            55.23127746582031,
+            67.88397979736328,
+            12.288276672363281
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -55.23127746582031,
+            -62.81991195678711,
+            -2.350010871887207
+          ],
+          [
+            55.23127746582031,
+            67.88397979736328,
+            12.288276672363281
+          ]
+        ]
+      }
+    ],
+    "seconds": 4.999100685119629
+  },
+  {
+    "key": "platforms",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenPlatforms.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 244576,
+    "after": 243612,
+    "inventory": [
+      {
+        "name": "Bobbing platform P1",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P2",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P3",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P4",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P5",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P6",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P7",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Bobbing platform P8",
+        "tris": 17484,
+        "vertices": 8984,
+        "materials": [
+          "GC | platform stone",
+          "GC | grout",
+          "GC | gold",
+          "GC | crown blue",
+          "GC | teal dark",
+          "GC | teal paint"
+        ]
+      },
+      {
+        "name": "Landing flowers",
+        "tris": 1276,
+        "vertices": 1128,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower yellow",
+          "GC | flower heart",
+          "GC | flower coral",
+          "GC | flower pink",
+          "GC | flower white"
+        ]
+      },
+      {
+        "name": "Platform piers",
+        "tris": 3856,
+        "vertices": 2024,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | gold",
+          "GC | bronze",
+          "GC | lotus stalk",
+          "GC | lotus pink",
+          "GC | lotus white",
+          "GC | flower heart",
+          "GC | lily pad"
+        ]
+      },
+      {
+        "name": "Shortcut K4 pedestal",
+        "tris": 41980,
+        "vertices": 21176,
+        "materials": [
+          "GC | grout",
+          "GC | floor tile",
+          "GC | cream stone pale",
+          "GC | gold",
+          "GC | cream stone",
+          "GC | cream stone warm"
+        ]
+      },
+      {
+        "name": "Shortcut lotus L1",
+        "tris": 4382,
+        "vertices": 2290,
+        "materials": [
+          "GC | lily pad",
+          "GC | leaf dark",
+          "GC | lotus stalk",
+          "GC | leaf light"
+        ]
+      },
+      {
+        "name": "Shortcut lotus L2",
+        "tris": 4382,
+        "vertices": 2290,
+        "materials": [
+          "GC | lily pad",
+          "GC | leaf dark",
+          "GC | lotus stalk",
+          "GC | leaf light"
+        ]
+      },
+      {
+        "name": "Shortcut post K1",
+        "tris": 4662,
+        "vertices": 2358,
+        "materials": [
+          "GC | grout",
+          "GC | floor tile",
+          "GC | gold",
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | stone band",
+          "GC | bronze"
+        ]
+      },
+      {
+        "name": "Shortcut post K2",
+        "tris": 8282,
+        "vertices": 4178,
+        "materials": [
+          "GC | grout",
+          "GC | floor tile",
+          "GC | cream stone pale",
+          "GC | gold",
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | stone band",
+          "GC | bronze"
+        ]
+      },
+      {
+        "name": "Shortcut post K3",
+        "tris": 8282,
+        "vertices": 4178,
+        "materials": [
+          "GC | grout",
+          "GC | floor tile",
+          "GC | cream stone pale",
+          "GC | gold",
+          "GC | cream stone",
+          "GC | stone band",
+          "GC | bronze"
+        ]
+      },
+      {
+        "name": "Shortcut post K4 spin bar",
+        "tris": 5464,
+        "vertices": 2880,
+        "materials": [
+          "GC | gold",
+          "GC | stone band",
+          "GC | cream stone warm",
+          "GC | emblem leaf",
+          "GC | bar wood"
+        ]
+      },
+      {
+        "name": "West landing dressing",
+        "tris": 22138,
+        "vertices": 11408,
+        "materials": [
+          "GC | floor tile",
+          "GC | grout",
+          "GC | cream stone pale",
+          "GC | cream stone",
+          "GC | cream stone warm",
+          "GC | gold"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Bobbing platform P1",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            -24.100000381469727,
+            -0.7145337462425232,
+            -0.058540523052215576
+          ],
+          [
+            -17.899999618530273,
+            5.744075775146484,
+            2.4851038455963135
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -24.100000381469727,
+            -0.7145337462425232,
+            -0.058540523052215576
+          ],
+          [
+            -17.899999618530273,
+            5.744075775146484,
+            2.4851038455963135
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P2",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            -18.100000381469727,
+            3.255204200744629,
+            0.1862604320049286
+          ],
+          [
+            -11.899999618530273,
+            9.73853588104248,
+            2.740821599960327
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -18.100000381469727,
+            3.255204200744629,
+            0.1862604320049286
+          ],
+          [
+            -11.899999618530273,
+            9.73853588104248,
+            2.740821599960327
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P3",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            -12.100000381469727,
+            -0.7085768580436707,
+            0.4423156678676605
+          ],
+          [
+            -5.900000095367432,
+            5.7329792976379395,
+            2.991910934448242
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -12.100000381469727,
+            -0.7085768580436707,
+            0.4423156678676605
+          ],
+          [
+            -5.900000095367432,
+            5.7329792976379395,
+            2.991910934448242
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P4",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            -6.099999904632568,
+            3.2742786407470703,
+            0.6948259472846985
+          ],
+          [
+            0.09999990463256836,
+            9.70263385772705,
+            3.2374727725982666
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -6.099999904632568,
+            3.2742786407470703,
+            0.6948259472846985
+          ],
+          [
+            0.09999990463256836,
+            9.70263385772705,
+            3.2374727725982666
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P5",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            -0.09999990463256836,
+            -0.7402070760726929,
+            0.945539653301239
+          ],
+          [
+            6.099999904632568,
+            5.7500834465026855,
+            3.474947214126587
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -0.09999990463256836,
+            -0.7402070760726929,
+            0.945539653301239
+          ],
+          [
+            6.099999904632568,
+            5.7500834465026855,
+            3.474947214126587
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P6",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            5.900000095367432,
+            3.2537097930908203,
+            1.1900461912155151
+          ],
+          [
+            12.100000381469727,
+            9.721108436584473,
+            3.736726760864258
+          ]
+        ],
+        "boundsAfter": [
+          [
+            5.900000095367432,
+            3.2537097930908203,
+            1.1900461912155151
+          ],
+          [
+            12.100000381469727,
+            9.721108436584473,
+            3.736726760864258
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P7",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            11.899999618530273,
+            -0.7157806158065796,
+            1.4420671463012695
+          ],
+          [
+            18.100000381469727,
+            5.736484527587891,
+            3.9680442810058594
+          ]
+        ],
+        "boundsAfter": [
+          [
+            11.899999618530273,
+            -0.7157806158065796,
+            1.4420671463012695
+          ],
+          [
+            18.100000381469727,
+            5.736484527587891,
+            3.9680442810058594
+          ]
+        ]
+      },
+      {
+        "name": "Bobbing platform P8",
+        "before": 17484,
+        "after": 17400,
+        "boundsBefore": [
+          [
+            17.899999618530273,
+            3.2767677307128906,
+            1.6944091320037842
+          ],
+          [
+            24.100000381469727,
+            9.740450859069824,
+            4.240123748779297
+          ]
+        ],
+        "boundsAfter": [
+          [
+            17.899999618530273,
+            3.2767677307128906,
+            1.6944091320037842
+          ],
+          [
+            24.100000381469727,
+            9.740450859069824,
+            4.240123748779297
+          ]
+        ]
+      },
+      {
+        "name": "Landing flowers",
+        "before": 1276,
+        "after": 1248,
+        "boundsBefore": [
+          [
+            -32.00850296020508,
+            7.846485614776611,
+            3.2954559326171875
+          ],
+          [
+            -24.918127059936523,
+            8.439216613769531,
+            3.6731317043304443
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -32.00850296020508,
+            7.846485614776611,
+            3.2954559326171875
+          ],
+          [
+            -24.918127059936523,
+            8.439216613769531,
+            3.6731317043304443
+          ]
+        ]
+      },
+      {
+        "name": "Platform piers",
+        "before": 3856,
+        "after": 3796,
+        "boundsBefore": [
+          [
+            1.255408525466919,
+            9.763604164123535,
+            -2.0000035762786865
+          ],
+          [
+            17.80256462097168,
+            22.623571395874023,
+            2.7529823780059814
+          ]
+        ],
+        "boundsAfter": [
+          [
+            1.255408525466919,
+            9.763604164123535,
+            -2.0000035762786865
+          ],
+          [
+            17.80256462097168,
+            22.623571395874023,
+            2.7529823780059814
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut K4 pedestal",
+        "before": 41980,
+        "after": 41976,
+        "boundsBefore": [
+          [
+            8.958086967468262,
+            15.543792724609375,
+            -2.251631736755371
+          ],
+          [
+            11.678709983825684,
+            18.26544952392578,
+            3.4232404232025146
+          ]
+        ],
+        "boundsAfter": [
+          [
+            8.958086967468262,
+            15.543792724609375,
+            -2.251631736755371
+          ],
+          [
+            11.678709983825684,
+            18.26544952392578,
+            3.4232404232025146
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut lotus L1",
+        "before": 4382,
+        "after": 4380,
+        "boundsBefore": [
+          [
+            12.788850784301758,
+            18.649049758911133,
+            2.699084520339966
+          ],
+          [
+            14.628734588623047,
+            20.484683990478516,
+            3.407343864440918
+          ]
+        ],
+        "boundsAfter": [
+          [
+            12.788850784301758,
+            18.649049758911133,
+            2.699084520339966
+          ],
+          [
+            14.628734588623047,
+            20.484683990478516,
+            3.407343864440918
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut lotus L2",
+        "before": 4382,
+        "after": 4378,
+        "boundsBefore": [
+          [
+            15.865161895751953,
+            21.018590927124023,
+            2.699047088623047
+          ],
+          [
+            17.728315353393555,
+            22.89434051513672,
+            3.4191675186157227
+          ]
+        ],
+        "boundsAfter": [
+          [
+            15.865161895751953,
+            21.018590927124023,
+            2.699047088623047
+          ],
+          [
+            17.728315353393555,
+            22.89434051513672,
+            3.4191675186157227
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut post K1",
+        "before": 4662,
+        "after": 4650,
+        "boundsBefore": [
+          [
+            0.9014873504638672,
+            9.396217346191406,
+            1.9491395950317383
+          ],
+          [
+            2.2508692741394043,
+            10.745611190795898,
+            3.6739959716796875
+          ]
+        ],
+        "boundsAfter": [
+          [
+            0.9014873504638672,
+            9.396217346191406,
+            1.9491395950317383
+          ],
+          [
+            2.2508692741394043,
+            10.745611190795898,
+            3.6739959716796875
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut post K2",
+        "before": 8282,
+        "after": 8270,
+        "boundsBefore": [
+          [
+            3.6683990955352783,
+            11.565253257751465,
+            2.0499284267425537
+          ],
+          [
+            4.988346576690674,
+            12.885805130004883,
+            3.7624800205230713
+          ]
+        ],
+        "boundsAfter": [
+          [
+            3.6683990955352783,
+            11.565253257751465,
+            2.0499284267425537
+          ],
+          [
+            4.988346576690674,
+            12.885805130004883,
+            3.7624800205230713
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut post K3",
+        "before": 8282,
+        "after": 8270,
+        "boundsBefore": [
+          [
+            6.427027225494385,
+            13.720542907714844,
+            2.14872670173645
+          ],
+          [
+            7.746357440948486,
+            15.040227890014648,
+            3.8626351356506348
+          ]
+        ],
+        "boundsAfter": [
+          [
+            6.427027225494385,
+            13.720542907714844,
+            2.14872670173645
+          ],
+          [
+            7.746357440948486,
+            15.040227890014648,
+            3.8626351356506348
+          ]
+        ]
+      },
+      {
+        "name": "Shortcut post K4 spin bar",
+        "before": 5464,
+        "after": 5326,
+        "boundsBefore": [
+          [
+            9.087296485900879,
+            16.29747772216797,
+            3.396298408508301
+          ],
+          [
+            11.542040824890137,
+            17.514047622680664,
+            4.6841325759887695
+          ]
+        ],
+        "boundsAfter": [
+          [
+            9.087296485900879,
+            16.29747772216797,
+            3.396298408508301
+          ],
+          [
+            11.542040824890137,
+            17.514047622680664,
+            4.6841325759887695
+          ]
+        ]
+      },
+      {
+        "name": "West landing dressing",
+        "before": 22138,
+        "after": 22118,
+        "boundsBefore": [
+          [
+            -35.30282974243164,
+            -1.4505561590194702,
+            -2.2500014305114746
+          ],
+          [
+            -24.770004272460938,
+            8.452231407165527,
+            3.500492572784424
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -35.30282974243164,
+            -1.4505561590194702,
+            -2.2500014305114746
+          ],
+          [
+            -24.770004272460938,
+            8.452231407165527,
+            3.500492572784424
+          ]
+        ]
+      }
+    ],
+    "seconds": 3.033827304840088
+  },
+  {
+    "key": "canal",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenCanal.fbx",
+    "ratio": 0.85,
+    "method": "planar_0.05deg",
+    "before": 182220,
+    "after": 181430,
+    "inventory": [
+      {
+        "name": "Canal balustrade",
+        "tris": 72288,
+        "vertices": 36958,
+        "materials": [
+          "GC | cream stone warm",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | gold"
+        ]
+      },
+      {
+        "name": "Canal flowers",
+        "tris": 7018,
+        "vertices": 6204,
+        "materials": [
+          "GC | leaf light",
+          "GC | leaf",
+          "GC | flower white",
+          "GC | flower heart",
+          "GC | flower coral",
+          "GC | flower yellow",
+          "GC | flower pink"
+        ]
+      },
+      {
+        "name": "Canal geysers",
+        "tris": 46304,
+        "vertices": 25508,
+        "materials": [
+          "GC | cream stone pale",
+          "GC | gold",
+          "GC | cream stone warm",
+          "GC | mosaic deep",
+          "GC | mosaic light",
+          "GC | mosaic teal",
+          "GC | basin water",
+          "GC | bronze",
+          "GC | nozzle dark"
+        ]
+      },
+      {
+        "name": "Canal paving",
+        "tris": 402,
+        "vertices": 396,
+        "materials": [
+          "GC | floor tile"
+        ]
+      },
+      {
+        "name": "Canal wall stones",
+        "tris": 26940,
+        "vertices": 14040,
+        "materials": [
+          "GC | grout",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | cream stone warm"
+        ]
+      },
+      {
+        "name": "Canal west wall",
+        "tris": 29268,
+        "vertices": 15156,
+        "materials": [
+          "GC | grout",
+          "GC | cream stone warm",
+          "GC | cream stone",
+          "GC | cream stone pale",
+          "GC | gold"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "name": "Canal balustrade",
+        "before": 72288,
+        "after": 72184,
+        "boundsBefore": [
+          [
+            -35.302825927734375,
+            -18.952926635742188,
+            -0.0026480387896299362
+          ],
+          [
+            7.453172206878662,
+            -0.6983318328857422,
+            3.3775851726531982
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -35.302825927734375,
+            -18.952926635742188,
+            -0.0026480387896299362
+          ],
+          [
+            7.453172206878662,
+            -0.6983318328857422,
+            3.3775851726531982
+          ]
+        ]
+      },
+      {
+        "name": "Canal flowers",
+        "before": 7018,
+        "after": 6864,
+        "boundsBefore": [
+          [
+            -31.728919982910156,
+            -18.910913467407227,
+            1.4950164556503296
+          ],
+          [
+            3.85933518409729,
+            -0.7224028706550598,
+            3.6713457107543945
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -31.728919982910156,
+            -18.910913467407227,
+            1.4950164556503296
+          ],
+          [
+            3.85933518409729,
+            -0.7224028706550598,
+            3.6713457107543945
+          ]
+        ]
+      },
+      {
+        "name": "Canal geysers",
+        "before": 46304,
+        "after": 45800,
+        "boundsBefore": [
+          [
+            -34.29999923706055,
+            -18.299999237060547,
+            -0.07799948006868362
+          ],
+          [
+            -1.7000000476837158,
+            -3.210998296737671,
+            1.4798698425292969
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -34.29999923706055,
+            -18.299999237060547,
+            -0.07799948006868362
+          ],
+          [
+            -1.7000000476837158,
+            -3.210998296737671,
+            1.4798698425292969
+          ]
+        ]
+      },
+      {
+        "name": "Canal wall stones",
+        "before": 26940,
+        "after": 26940,
+        "boundsBefore": [
+          [
+            -35.0,
+            -18.902332305908203,
+            -2.249999761581421
+          ],
+          [
+            7.432243824005127,
+            -0.9999997019767761,
+            1.8053895235061646
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -35.0,
+            -18.902332305908203,
+            -2.249999761581421
+          ],
+          [
+            7.432243824005127,
+            -0.9999997019767761,
+            1.8053895235061646
+          ]
+        ]
+      },
+      {
+        "name": "Canal west wall",
+        "before": 29268,
+        "after": 29240,
+        "boundsBefore": [
+          [
+            -35.70000457763672,
+            -19.160045623779297,
+            -2.2500014305114746
+          ],
+          [
+            -34.797264099121094,
+            8.56293773651123,
+            3.684971809387207
+          ]
+        ],
+        "boundsAfter": [
+          [
+            -35.70000457763672,
+            -19.160045623779297,
+            -2.2500014305114746
+          ],
+          [
+            -34.797264099121094,
+            8.56293773651123,
+            3.684971809387207
+          ]
+        ]
+      }
+    ],
+    "seconds": 2.227271556854248
+  }
+]

@@ -1,0 +1,497 @@
+[
+ {
+  "tag": "source",
+  "before": 399638,
+  "items": [],
+  "after": 399638
+ },
+ {
+  "tag": "0.75",
+  "before": 399638,
+  "items": [
+   {
+    "name": "Garden tree E1",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8505
+   },
+   {
+    "name": "Garden tree E10",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8506
+   },
+   {
+    "name": "Garden tree E11",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree E3",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7460
+   },
+   {
+    "name": "Garden tree E4",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E5",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree E6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree E7",
+    "before": 14528,
+    "after": 14464,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E8",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7459
+   },
+   {
+    "name": "Garden tree E9",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree W1",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W10",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8512
+   },
+   {
+    "name": "Garden tree W11",
+    "before": 14528,
+    "after": 14456,
+    "lockedVerts": 7456
+   },
+   {
+    "name": "Garden tree W12",
+    "before": 14528,
+    "after": 14460,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W13",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8509
+   },
+   {
+    "name": "Garden tree W14",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8510
+   },
+   {
+    "name": "Garden tree W15",
+    "before": 16719,
+    "after": 16711,
+    "lockedVerts": 8515
+   },
+   {
+    "name": "Garden tree W2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W3",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8508
+   },
+   {
+    "name": "Garden tree W4",
+    "before": 14528,
+    "after": 14458,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree W5",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree W7",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W8",
+    "before": 14528,
+    "after": 14452,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W9",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8514
+   }
+  ],
+  "after": 398364
+ },
+ {
+  "tag": "0.6",
+  "before": 399638,
+  "items": [
+   {
+    "name": "Garden tree E1",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8505
+   },
+   {
+    "name": "Garden tree E10",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8506
+   },
+   {
+    "name": "Garden tree E11",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree E3",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7460
+   },
+   {
+    "name": "Garden tree E4",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E5",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree E6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree E7",
+    "before": 14528,
+    "after": 14464,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E8",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7459
+   },
+   {
+    "name": "Garden tree E9",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree W1",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W10",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8512
+   },
+   {
+    "name": "Garden tree W11",
+    "before": 14528,
+    "after": 14456,
+    "lockedVerts": 7456
+   },
+   {
+    "name": "Garden tree W12",
+    "before": 14528,
+    "after": 14460,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W13",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8509
+   },
+   {
+    "name": "Garden tree W14",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8510
+   },
+   {
+    "name": "Garden tree W15",
+    "before": 16719,
+    "after": 16711,
+    "lockedVerts": 8515
+   },
+   {
+    "name": "Garden tree W2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W3",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8508
+   },
+   {
+    "name": "Garden tree W4",
+    "before": 14528,
+    "after": 14458,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree W5",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree W7",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W8",
+    "before": 14528,
+    "after": 14452,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W9",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8514
+   }
+  ],
+  "after": 398364
+ },
+ {
+  "tag": "0.45",
+  "before": 399638,
+  "items": [
+   {
+    "name": "Garden tree E1",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8505
+   },
+   {
+    "name": "Garden tree E10",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8506
+   },
+   {
+    "name": "Garden tree E11",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree E3",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7460
+   },
+   {
+    "name": "Garden tree E4",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E5",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree E6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree E7",
+    "before": 14528,
+    "after": 14464,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree E8",
+    "before": 14528,
+    "after": 14462,
+    "lockedVerts": 7459
+   },
+   {
+    "name": "Garden tree E9",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7458
+   },
+   {
+    "name": "Garden tree W1",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W10",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8512
+   },
+   {
+    "name": "Garden tree W11",
+    "before": 14528,
+    "after": 14456,
+    "lockedVerts": 7456
+   },
+   {
+    "name": "Garden tree W12",
+    "before": 14528,
+    "after": 14460,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W13",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8509
+   },
+   {
+    "name": "Garden tree W14",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8510
+   },
+   {
+    "name": "Garden tree W15",
+    "before": 16719,
+    "after": 16711,
+    "lockedVerts": 8515
+   },
+   {
+    "name": "Garden tree W2",
+    "before": 14528,
+    "after": 14448,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W3",
+    "before": 16719,
+    "after": 16705,
+    "lockedVerts": 8508
+   },
+   {
+    "name": "Garden tree W4",
+    "before": 14528,
+    "after": 14458,
+    "lockedVerts": 7452
+   },
+   {
+    "name": "Garden tree W5",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8513
+   },
+   {
+    "name": "Garden tree W6",
+    "before": 14528,
+    "after": 14446,
+    "lockedVerts": 7447
+   },
+   {
+    "name": "Garden tree W7",
+    "before": 14528,
+    "after": 14466,
+    "lockedVerts": 7455
+   },
+   {
+    "name": "Garden tree W8",
+    "before": 14528,
+    "after": 14452,
+    "lockedVerts": 7449
+   },
+   {
+    "name": "Garden tree W9",
+    "before": 16719,
+    "after": 16707,
+    "lockedVerts": 8514
+   }
+  ],
+  "after": 398364
+ }
+]

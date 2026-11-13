@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-13",
+  "branch": "main",
+  "headAtHandoff": "ddc8e628",
+  "commitPushAllowed": false,
+  "status": "User stopped Codex; hand off to Claude Code. Two FBX files applied and Unity import completed; after-capture/audit/tests not run.",
+  "applied": [
+    {
+      "key": "hall",
+      "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+      "angle": 0.25,
+      "before": 2233315,
+      "after": 2160695
+    },
+    {
+      "key": "boats",
+      "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+      "angle": 0.5,
+      "before": 394652,
+      "after": 388390
+    }
+  ],
+  "notApplied": [
+    "towers",
+    "plinths"
+  ],
+  "additionalSavedFileTriangles": 78882,
+  "expectedButUnmeasuredSectionTriangles": {
+    "garden": 2621741,
+    "hall": 3944237
+  }
+}

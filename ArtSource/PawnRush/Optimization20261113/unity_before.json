@@ -1,0 +1,27 @@
+[
+  {
+    "prefab": "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab",
+    "triangles": 2662945,
+    "renderers": 155,
+    "colliders": 245,
+    "colliderHash": "45-B4-9C-4C-50-6B-A3-4A-FB-FD-8D-C1-CC-C2-8A-10-9D-8E-AB-10-98-F2-B5-4D-D4-75-D1-78-A4-CD-1F-B8",
+    "snapshots": [
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Garden_tree_E1_before.png",
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Plaza_planter_flowers_before.png",
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Exit_gate_before.png",
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Lock_and_dyke_stonework_before.png"
+    ]
+  },
+  {
+    "prefab": "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab",
+    "triangles": 4722590,
+    "renderers": 757,
+    "colliders": 229,
+    "colliderHash": "21-D9-A6-4D-77-69-31-08-6E-BA-87-80-B5-EA-85-3A-8B-EB-4D-EE-B1-2F-12-6F-19-8B-9A-F1-57-67-9A-45",
+    "snapshots": [
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Falling_knight_before.png",
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_Floating_pad_before.png",
+      "C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass/unity_HallV15_Round_wall_0_1_before.png"
+    ]
+  }
+]
