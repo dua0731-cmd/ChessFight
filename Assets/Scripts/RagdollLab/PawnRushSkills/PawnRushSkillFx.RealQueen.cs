@@ -22,6 +22,22 @@ namespace ChessFight.RagdollLab
         /// <summary>The queen's light: a warm white, a little gold, as a lamp gives - not her cartoon gold.</summary>
         static readonly Color QueenLight = new Color(1f, 0.86f, 0.62f);
 
+        /// <summary>R646 8차 (승규 님 11-14 "내가 쓰면 지금 이 색이지만 상대가 쓰는 거 보일 때 전부 빨간색은 아닌 금빛 빨간빛 섞인 온라인에서
+        /// 피아식별이 가능 하게"): an enemy queen, as this PC sees her, lights in a red gold - gold with red in it, not all red;
+        /// my own queen and my team's keep the warm gold. Decided on each screen from its own player (online too).</summary>
+        static readonly Color FoeQueenLight = new Color(1f, 0.58f, 0.4f);
+        static readonly Color FoeQueenGold = new Color(1f, 0.4f, 0.2f);
+        static readonly Color QueenGold = new Color(1f, 0.74f, 0.32f);
+
+        bool QueenIsFoe(RagdollPawn q)
+        {
+            var v = Viewer;
+            return q != null && v != null && v != q && !OnSide(v, q);
+        }
+
+        Color QueenLightOf(RagdollPawn q) => QueenIsFoe(q) ? FoeQueenLight : QueenLight;
+        Color QueenGoldOf(RagdollPawn q) => QueenIsFoe(q) ? FoeQueenGold : QueenGold;
+
         Material ghostRealMat;
 
         /// <summary>
@@ -37,7 +53,8 @@ namespace ChessFight.RagdollLab
             kit.Keep(q, "queen real warning", () =>
             {
                 var fx = new Kit.Fx();
-                for (int i = 0; i < 2; i++) fx.strips.Add(LightStrip());
+                for (int i = 0; i < 2; i++) fx.strips.Add(LightStrip(QueenIsFoe(q) ? FoeQueenLight : LightLine));
+                var squares = new QueenSquares(this, fx, outer, QueenGoldOf(q), QueenLightOf(q));   // R646 5차: her eight chess ways (after the two circles: strips 0 and 1)
                 var line = new List<Vector3>();
                 float released = -1f, k = 0f;
                 fx.step = (x, d) =>
@@ -66,16 +83,223 @@ namespace ChessFight.RagdollLab
                         st.opacity = fade * (i == 0 ? 0.75f * pulse : 0.42f) * (0.4f + 0.6f * k);
                         st.Apply();
                     }
+                    // R646 5차 · 6차: her eight chess ways as squares of light lighting up one by one from her feet outward as she
+                    // charges, a low beam of light standing on each lit square.
+                    Vector3 fwd = Flat(q.Facing).sqrMagnitude > 1e-4f ? Flat(q.Facing).normalized : Vector3.forward;
+                    squares.Draw(c, fwd, inner, Kit.EaseOut(k) * 1.05f, fade, 0.85f + 0.3f * k, 0.55f + 0.15f * k, fade * 0.85f);
                     return true;
                 };
                 return fx;
             });
         }
 
-        Kit.Strip LightStrip()
+        /// <summary>
+        /// R646 5차 (승규 님 "이건 그냥 화살표 잖아" → A "칸이 차례로 켜짐" · "빛줄기로 하라고") → 6차 ("뭔가 그냥 그려놓은 거 같은
+        /// 느낌이야 진짜 vfx로 해줘"): the queen's eight chess ways as the squares a queen can go to, made of light, not paint.
+        /// Along forward, back, the two sides and the four diagonals the squares under her light up one by one from her feet
+        /// outward: each is light added onto the floor (bright along its four seams as if light leaked up through the joints
+        /// of an inlaid tile, a softer glow inside, a haze round it, bright enough for the bloom), the ones inside her inner
+        /// circle brighter; from each a shaft of light stands up (the king's call shaft, streaks rising up it). At the "펑"
+        /// every square flares, its shaft shoots up tall, real lights light the floor along her eight ways and gold flecks
+        /// rise off the squares. Squares stand square to her facing (diagonal ones too, as on a board).
+        /// </summary>
+        sealed class QueenSquares
         {
-            var pal = new Kit.Palette { main = LightLine, light = LightLine, deep = LightLine, ink = LightLine };
-            return new Kit.Strip(kit, pal) { core = LightLine, coreShare = 1f, inkShare = 0f };
+            const float Size = 0.5f, Step = 0.6f;
+            readonly Color Gold, Light;
+            readonly PawnRushSkillFx owner;
+            readonly Transform[] tile, beam;
+            readonly MeshRenderer[] tileR, beamR;
+            readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+            readonly float[] dist;
+            readonly Vector3[] way;
+            readonly float far;
+
+            public QueenSquares(PawnRushSkillFx owner, Kit.Fx fx, float outer, Color gold, Color light)
+            {
+                this.owner = owner;
+                Gold = gold;
+                Light = light;
+                owner.EnsureKingCall();   // the shaft material (Skill Beam)
+                // Straight ways: a square every Step out to her reach. Diagonal ways: one board step out both ways (x and z
+                // each Step, as on a board), only as far as her reach goes (her push is round).
+                var d = new List<float>();
+                var w = new List<Vector3>();
+                for (int i = 0; i < 8; i++)
+                {
+                    float step = Step * (i % 2 == 0 ? 1f : Mathf.Sqrt(2f));
+                    int per = Mathf.Max(1, Mathf.FloorToInt(outer / step + 0.01f));
+                    for (int j = 0; j < per; j++)
+                    {
+                        d.Add((j + 1) * step);
+                        w.Add(Quaternion.Euler(0f, i * 45f, 0f) * Vector3.forward);
+                    }
+                }
+                dist = d.ToArray();
+                way = w.ToArray();
+                int n = dist.Length;
+                tile = new Transform[n];
+                beam = new Transform[n];
+                tileR = new MeshRenderer[n];
+                beamR = new MeshRenderer[n];
+                for (int at = 0; at < n; at++)
+                {
+                    far = Mathf.Max(far, dist[at]);
+                    (tile[at], tileR[at]) = Quad("Queen square light", owner.RealSquareMaterial());
+                    (beam[at], beamR[at]) = Quad("Queen square shaft", owner.matBeam);
+                }
+                var before = fx.end;
+                fx.end = () =>
+                {
+                    before?.Invoke();
+                    for (int i = 0; i < tile.Length; i++)
+                    {
+                        if (tile[i] != null) Object.Destroy(tile[i].gameObject);
+                        if (beam[i] != null) Object.Destroy(beam[i].gameObject);
+                    }
+                };
+            }
+
+            (Transform, MeshRenderer) Quad(string name, Material m)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(owner.root, false);
+                go.AddComponent<MeshFilter>().sharedMesh = owner.kit.meshQuad;
+                var r = go.AddComponent<MeshRenderer>();
+                r.sharedMaterial = m;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                r.enabled = false;
+                return (go.transform, r);
+            }
+
+            /// <summary>The centre of each square on the floor (for the blast's lights and flecks).</summary>
+            public IEnumerable<(Vector3 at, bool strong)> Squares(Vector3 c, Vector3 fwd, float inner)
+            {
+                Quaternion turn = Quaternion.LookRotation(fwd, Vector3.up);
+                for (int s = 0; s < dist.Length; s++)
+                    yield return (Kit.FloorUnder(c + turn * way[s] * dist[s], 1.5f), dist[s] <= inner + 0.05f);
+            }
+
+            /// <param name="lit">how far out the squares have lit (0 none .. 1 all, as a share of the farthest square)</param>
+            /// <param name="glow">how bright a lit square is (1 = while she charges)</param>
+            /// <param name="beamHeight">how tall a lit square's shaft stands (m)</param>
+            public void Draw(Vector3 c, Vector3 fwd, float inner, float lit, float alpha, float glow, float beamHeight, float beamAlpha)
+            {
+                Quaternion turn = Quaternion.LookRotation(fwd, Vector3.up);
+                Quaternion flat = Quaternion.LookRotation(Vector3.down, fwd);
+                var cam = owner.ViewCamera;
+                float clock = owner.kit.Clock;
+                for (int s = 0; s < tile.Length; s++)
+                {
+                    float share = dist[s] / Mathf.Max(0.01f, far);
+                    float on = Mathf.Clamp01((lit - share * 0.9f) / 0.1f);
+                    if (on <= 0.001f || alpha <= 0.001f)
+                    {
+                        tileR[s].enabled = false;
+                        beamR[s].enabled = false;
+                        continue;
+                    }
+                    Vector3 floor = Kit.FloorUnder(c + turn * way[s] * dist[s], 1.5f);
+                    bool strong = dist[s] <= inner + 0.05f;
+                    float pop = Kit.EaseOut(on);
+                    // A light flickering a little, as a real one does, each square on its own beat.
+                    float flicker = 0.92f + 0.08f * Mathf.Sin(clock * 23f + s * 1.7f);
+                    // Just lit: a flare that settles (the square catching).
+                    float flare = 1f + 1.4f * (1f - pop);
+                    tile[s].SetPositionAndRotation(floor + Vector3.up * 0.012f, flat);
+                    tile[s].localScale = Vector3.one * (Size * 1.3f * Mathf.Lerp(0.7f, 1f, pop));
+                    // R646 8차: blended over the floor, not only added (added light on the white floor burnt to white and
+                    // a foe's red gold read as pale yellow): brighter than white for the bloom, its alpha the fade.
+                    float k = glow * flicker * flare * (strong ? 1.8f : 1.35f);
+                    float a = Mathf.Clamp01(alpha * on * (strong ? 0.95f : 0.75f));
+                    block.Clear();
+                    block.SetColor(LitMaterials.BaseColorId, new Color(Gold.r * k, Gold.g * k, Gold.b * k, a));
+                    tileR[s].SetPropertyBlock(block);
+                    tileR[s].enabled = true;
+                    // Its shaft: standing up from the square, turned to the camera about its upright.
+                    float h = beamHeight * (strong ? 1f : 0.8f) * pop;
+                    if (owner.matBeam != null && h > 0.02f && beamAlpha > 0.001f)
+                    {
+                        Vector3 toCam = cam != null ? cam.transform.position - floor : Vector3.back;
+                        toCam.y = 0f;
+                        Quaternion face = toCam.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(-toCam.normalized, Vector3.up) : Quaternion.identity;
+                        beam[s].SetPositionAndRotation(floor + Vector3.up * (h * 0.5f), face);
+                        beam[s].localScale = new Vector3(Size * 0.95f, h, 1f);
+                        block.Clear();
+                        block.SetColor("_Color", Hdr(Light, (strong ? 1.9f : 1.3f) * flicker));
+                        block.SetFloat("_Fade", beamAlpha * on);
+                        beamR[s].SetPropertyBlock(block);
+                        beamR[s].enabled = true;
+                    }
+                    else beamR[s].enabled = false;
+                }
+            }
+        }
+
+        Material realSquareMat;
+        Texture2D realSquareTex;
+
+        /// <summary>Light added onto the floor in the shape of a board square: bright along its four seams, a soft glow inside,
+        /// a haze outside fading to nothing (the quad is 1.3 squares across).</summary>
+        Material RealSquareMaterial()
+        {
+            if (realSquareMat != null) return realSquareMat;
+            const int N = 96;
+            realSquareTex = new Texture2D(N, N, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp, name = "Queen square light" };
+            var px = new Color[N * N];
+            const float edge = 1f / 1.3f;   // the square's edge in the quad's -1..1
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float dx = Mathf.Abs((x + 0.5f) / N * 2f - 1f), dy = Mathf.Abs((y + 0.5f) / N * 2f - 1f);
+                    float dd = Mathf.Max(dx, dy);
+                    float seam = Mathf.Exp(-Mathf.Pow((dd - edge * 0.96f) / 0.035f, 2f));
+                    float inside = dd < edge ? 0.22f + 0.18f * Mathf.Exp(-(dx * dx + dy * dy) * 2.5f) : 0f;
+                    float haze = dd >= edge ? Mathf.Exp(-Mathf.Pow((dd - edge) / 0.09f, 2f)) * 0.45f : 0f;
+                    float v = Mathf.Clamp01(seam + inside + haze) * Mathf.Clamp01((1f - dd) / 0.05f);
+                    px[y * N + x] = new Color(1f, 1f, 1f, v);
+                }
+            realSquareTex.SetPixels(px);
+            realSquareTex.Apply();
+            realSquareMat = new Material(Shader.Find(LitMaterials.ParticlesUnlitName)) { hideFlags = HideFlags.HideAndDontSave, name = "Queen square light" };
+            LitMaterials.MakeTransparent(realSquareMat, false);   // R646 8차: alpha blended so its colour holds on light floors
+            realSquareMat.SetTexture("_BaseMap", realSquareTex);
+            realSquareMat.SetFloat("_Cull", 0f);
+            return realSquareMat;
+        }
+
+        /// <summary>R646 6차: at the "펑" every square flares on at once and its shaft shoots up to 1.8 m in four frames; a real
+        /// light along each of her eight ways lights the floor; gold flecks rise off the squares. Holds a moment and fades.</summary>
+        void RealQueenSquaresBlast(RagdollPawn queen, Vector3 c, Vector3 fwd, float outer, float inner)
+        {
+            fwd = Flat(fwd).sqrMagnitude > 1e-4f ? Flat(fwd).normalized : Vector3.forward;
+            var f = kit.Run(34f * Frame, null);
+            var squares = new QueenSquares(this, f, outer, QueenGoldOf(queen), QueenLightOf(queen));
+            f.step = (fx, d) =>
+            {
+                float a = fx.age / Frame;
+                float up = Kit.EaseOut(Mathf.Clamp01(a / 4f));
+                float fade = 1f - Mathf.Clamp01((a - 10f) / 22f);
+                float flare = 1f + 1.8f * (1f - Mathf.Clamp01(a / 6f));
+                squares.Draw(c, fwd, inner, 1f, fade, flare, Mathf.Lerp(0.3f, 1.8f, up), fade);
+                return true;
+            };
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 way = Quaternion.Euler(0f, i * 45f, 0f) * fwd;
+                RealLight(Kit.FloorUnder(c + way * outer * 0.55f, 1.5f) + Vector3.up * 0.35f, 3.5f, 0.45f, 2.4f, (QueenIsFoe(queen) ? new Color(1f, 0.5f, 0.3f) : new Color(1f, 0.8f, 0.45f)));
+            }
+            foreach (var (at, strong) in squares.Squares(c, fwd, inner))
+                MoteBurst(at + Vector3.up * 0.05f, strong ? 3 : 2, (QueenIsFoe(queen) ? new Color(1f, 0.52f, 0.3f) : new Color(1f, 0.82f, 0.45f)), 0.2f, 1.6f, 0.25f, 0.8f, 0.05f);
+        }
+
+        Kit.Strip LightStrip() => LightStrip(LightLine);
+
+        Kit.Strip LightStrip(Color c)
+        {
+            var pal = new Kit.Palette { main = c, light = c, deep = c, ink = c };
+            return new Kit.Strip(kit, pal) { core = c, coreShare = 1f, inkShare = 0f };
         }
 
         /// <summary>
@@ -88,13 +312,14 @@ namespace ChessFight.RagdollLab
         {
             if (kit == null) return;
             float windup = Params != null ? Params.queenWindup : 0.35f;
+            Color light = QueenLightOf(q);
             Vector3 floor = FloorUnder(q);
             Air orb = matShockShell != null ? new Air(this, false, "Queen real gathering air") : null;
             Air ring = matShockShell != null ? new Air(this, true, "Queen real gathering ring") : null;
             var glow = new GameObject("Queen real glow").AddComponent<Light>();
             glow.transform.SetParent(root, false);
             glow.type = LightType.Point;
-            glow.color = QueenLight;
+            glow.color = light;
             glow.shadows = LightShadows.None;
             glow.intensity = 0f;
             bool glinted = false;
@@ -107,7 +332,7 @@ namespace ChessFight.RagdollLab
                 float on = Mathf.Clamp01(fx.age / (3f * Frame));
                 Vector3 heart = ChestOf(q) + Vector3.up * 0.05f;
                 Vector3 c = new Vector3(q.Hips.position.x, floor.y + 0.02f, q.Hips.position.z);
-                Color edge = Kit.A(QueenLight * Mathf.Lerp(0.25f, 0.6f, k), 1f);
+                Color edge = Kit.A(light * Mathf.Lerp(0.25f, 0.6f, k), 1f);
                 orb?.Shell(heart, Mathf.Lerp(0.85f, 0.3f, Kit.EaseIn(k) * 0.6f + k * 0.4f), floor.y - 10f,
                            Mathf.Lerp(0.03f, 0.1f, k), edge, on, Mathf.Lerp(0.08f, 0.18f, k));
                 float rr = Mathf.Lerp(2.6f, 0.35f, Kit.EaseIn(Mathf.Clamp01(k * 1.05f)));
@@ -177,6 +402,7 @@ namespace ChessFight.RagdollLab
             Vector3 c = Ground(e.at);
             float outer = e.size > 0f ? e.size : 3f;
             var queen = e.by;
+            Color light = QueenLightOf(queen);
             Vector3 heart = queen != null ? ChestOf(queen) + Vector3.up * 0.05f : c + Vector3.up * 0.5f;
             if (matShockShell != null)
             {
@@ -189,21 +415,21 @@ namespace ChessFight.RagdollLab
                 {
                     float a = fx.age / Frame;
                     float kp = Kit.EaseOut(a / 5f);
-                    pop.Shell(heart, Mathf.Lerp(0.3f, 1.6f, kp), c.y, 0.2f * (1f - kp) + 0.04f, Kit.A(QueenLight * 0.9f, 1f),
+                    pop.Shell(heart, Mathf.Lerp(0.3f, 1.6f, kp), c.y, 0.2f * (1f - kp) + 0.04f, Kit.A(light * 0.9f, 1f),
                               1f - Mathf.Clamp01((a - 3f) / 5f), 0.12f);
                     float k = Kit.EaseOut(a / 12f);
                     float edge = Mathf.Lerp(1.1f, 0.25f, Mathf.Clamp01(a / 20f));
                     dome.Shell(c, Mathf.Lerp(0.4f, outer * 1.15f, k), c.y, 0.14f * (1f - Mathf.Clamp01(a / 30f)) + 0.02f,
-                               Kit.A(QueenLight * edge, 1f), 1f - Mathf.Clamp01((a - 12f) / 18f), Mathf.Lerp(0.2f, 0.06f, Mathf.Clamp01(a / 16f)), 0.55f);
+                               Kit.A(light * edge, 1f), 1f - Mathf.Clamp01((a - 12f) / 18f), Mathf.Lerp(0.2f, 0.06f, Mathf.Clamp01(a / 16f)), 0.55f);
                     float kr = Kit.EaseOut(a / 10f);
                     wave.Ring(c + Vector3.up * 0.02f, Mathf.Lerp(0.3f, outer * 1.06f, kr), Mathf.Lerp(0.35f, 0.9f, kr), 0.12f,
-                              Kit.A(QueenLight * Mathf.Lerp(1.9f, 0.6f, Mathf.Clamp01(a / 18f)), 1f), 1f - Mathf.Clamp01((a - 12f) / 16f), 0.24f);
+                              Kit.A(light * Mathf.Lerp(1.9f, 0.6f, Mathf.Clamp01(a / 18f)), 1f), 1f - Mathf.Clamp01((a - 12f) / 16f), 0.24f);
                     float ae = a - 4f, ke = Kit.EaseOut(Mathf.Max(0f, ae) / 13f);
                     echo.Ring(c + Vector3.up * 0.025f, Mathf.Lerp(0.3f, outer * 0.94f, ke), Mathf.Lerp(0.25f, 0.6f, ke), 0.085f,
-                              Kit.A(QueenLight * 0.9f, 1f), ae <= 0f ? 0f : 1f - Mathf.Clamp01((ae - 12f) / 12f), 0.12f);
+                              Kit.A(light * 0.9f, 1f), ae <= 0f ? 0f : 1f - Mathf.Clamp01((ae - 12f) / 12f), 0.12f);
                     float al = a - 9f, kl = Kit.EaseOut(Mathf.Max(0f, al) / 14f);
                     last.Ring(c + Vector3.up * 0.03f, Mathf.Lerp(0.3f, outer * 0.76f, kl), Mathf.Lerp(0.18f, 0.38f, kl), 0.04f,
-                              Kit.A(QueenLight * 0.35f, 1f), al <= 0f ? 0f : 1f - Mathf.Clamp01((al - 10f) / 12f), 0.08f);
+                              Kit.A(light * 0.35f, 1f), al <= 0f ? 0f : 1f - Mathf.Clamp01((al - 10f) / 12f), 0.08f);
                     return true;
                 });
                 f.end = () =>
@@ -228,8 +454,9 @@ namespace ChessFight.RagdollLab
                 var way = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
                 RealChips(c + way * Random.Range(0.4f, 0.9f) + Vector3.up * 0.03f, way + Vector3.up * Random.Range(0.25f, 0.7f), grit, 1, Random.Range(5f, 9f));
             }
+            RealQueenSquaresBlast(queen, c, e.dir, outer, Params != null ? Params.queenInner : 1.8f);   // R646 5차: her eight chess ways flash
             RealFlash(heart, 1.9f);
-            RealLight(heart + Vector3.up * 0.2f, 9f, 0.4f, 8f, QueenLight);
+            RealLight(heart + Vector3.up * 0.2f, 9f, 0.4f, 8f, light);
             HitStop(8f * Frame);
             Shake(0.28f, 16f * Frame);
         }

@@ -784,6 +784,19 @@ namespace ChessFight.RagdollLab
                     }
                     else if (knightAir > 0.2f && Grounded)
                     {
+                        // R646: came down without the head but right on top of its target (it jumped under the knight or
+                        // ducked out of the window at the last moment): that still takes it.
+                        var t = knightTarget;
+                        if (!knightTapped && t != null && t.State == PawnState.Active && !skillHitSet.Contains(t))
+                        {
+                            Vector3 d = t.bodies[0].position - bodies[0].position;
+                            if (Flat(d).magnitude <= s.knightLandCatch && Mathf.Abs(d.y) <= 1.5f)
+                            {
+                                var h = t.bodies[(int)BodyId.Head];
+                                var hc = h.GetComponent<Collider>();
+                                StompOn(t, new Vector3(h.position.x, hc != null ? hc.bounds.max.y : h.position.y + 0.12f, h.position.z), s, false);
+                            }
+                        }
                         KnightLand(s);
                         skillStage = SkillStage.Recovery;
                         stageTime = 0f;
@@ -935,25 +948,60 @@ namespace ChessFight.RagdollLab
                 if (other == null || other == this || !IsEnemyOf(other) || other.State == PawnState.Ragdoll || skillHitSet.Contains(other)) continue;
                 // R129: judged against the head, closing on each other counts; the target a little more readily.
                 bool locked = other == knightTarget;
+                // R646 (승규 님 "상대가 점프를 하면 그게 상쇄가 돼"): the locked target is not judged by speeds at all (its jump
+                // straight up into the knight's hooves used to make it "not closing" and the stomp was skipped).
                 float closing = vy - other.bodies[0].linearVelocity.y;
-                if (locked ? closing > 1.5f : vy > 1f || closing > -1f) continue;
+                if (!locked && (vy > 1f || closing > -1f)) continue;
                 var headCollider = other.bodies[(int)BodyId.Head].GetComponent<Collider>();
                 Vector3 head = other.bodies[(int)BodyId.Head].position;
                 float top = headCollider != null ? headCollider.bounds.max.y : head.y + 0.12f;
-                float reach = s.knightStompReach + (locked ? 0.25f : 0.1f);
-                if (Flat(feet - head).magnitude > reach || feet.y < top - (locked ? 0.45f : 0.25f) || feet.y > top + (locked ? 0.5f : 0.35f)) continue;
-                skillHitSet.Add(other);
-                string result = SkillHit(other, Flat(facing) * 1f + Vector3.down * 1f, true, "나이트 머리 찍기");
-                Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
-                // A tap on the head, up off it, then down right beside it.
-                knightTapped = true;
-                knightTarget = null;
-                Launch(Flat(facing) * s.knightStompHop + Vector3.up * s.knightStompBounce);
-                knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
-                SkillDetail = "머리 찍고 착지";
-                Log($"나이트 → {other.DisplayName}: 머리 찍기 → {result}, 바로 옆에 착지");
+                // R646: the locked target's window is wider (knightLock*), so a jump or a landing under the knight still counts,
+                // and so does the knight's body simply meeting its head (it jumped up into the knight).
+                float reach = s.knightStompReach + (locked ? s.knightLockReach : 0.1f);
+                bool onHead = Flat(feet - head).magnitude <= reach && feet.y >= top - (locked ? s.knightLockBelow : 0.25f)
+                              && feet.y <= top + (locked ? s.knightLockAbove : 0.35f);
+                bool touching = locked && Vector3.Distance(bodies[0].position, head) <= s.knightLockContact;
+                if (!onHead && !touching) continue;
+                StompOn(other, new Vector3(head.x, top, head.z), s, true);
                 return;
             }
+        }
+
+        /// <summary>The head is taken: R646 (승규 님 "머리 찍기를 한 후 상대가 해롱해롱을 좀 더 길게 … 넘어지면 안되고 일어나 있어야 돼")
+        /// the piece is not knocked over; it stays on its feet, its jump cut short, swaying with no control for knightStompDaze
+        /// seconds (the stagger). In the air the knight bounces up off it and comes down beside it.</summary>
+        void StompOn(RagdollPawn other, Vector3 headTop, PawnRushSkillParams s, bool bounce)
+        {
+            skillHitSet.Add(other);
+            string result = KnightDaze(other, s);
+            Fx(SkillFxKind.KnightStomp, other, headTop, Flat(facing));
+            knightTapped = true;
+            knightTarget = null;
+            if (bounce)
+            {
+                // A tap on the head, up off it, then down right beside it.
+                Launch(Flat(facing) * s.knightStompHop + Vector3.up * s.knightStompBounce);
+                knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
+            }
+            SkillDetail = "머리 찍고 착지";
+            Log($"나이트 → {other.DisplayName}: 머리 찍기 → {result}" + (bounce ? ", 바로 옆에 착지" : " (착지하며)"));
+        }
+
+        string KnightDaze(RagdollPawn other, PawnRushSkillParams s)
+        {
+            const string cause = "나이트 머리 찍기";
+            if (other == null || other.NetworkPuppet) return "-";
+            if (other.SkillUntargetable)
+            {
+                other.LastSkillHit = $"{cause}: 스킬 대상 아님";
+                return "대상 아님";
+            }
+            // Its jump is cancelled: no more rising (it comes back down onto its feet).
+            float up = other.bodies[0].linearVelocity.y;
+            if (up > 0f) other.AddVelocity(Vector3.down * up);
+            string result = other.Stagger(s.knightStompDaze) ? $"선 채로 해롱해롱 {s.knightStompDaze:0.#}초" : "해롱해롱 안 걸림";
+            other.LastSkillHit = $"{cause}: {result}";
+            return result;
         }
 
         /// <summary>Where the hips must be for the feet to come down on top of <paramref name="target"/>'s head.</summary>

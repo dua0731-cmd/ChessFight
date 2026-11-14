@@ -52,19 +52,29 @@ namespace ChessFight.RagdollLab
 
         [Header("나이트 — 포크 도약 (R153)")]
         public float knightWindup = 0.15f;
-        [Tooltip("최고 높이 (m)")]
-        public float knightHeight = 1.6f;
-        [Tooltip("대상: 조준 방향 좌우 이 각도 안 (도), 땅 위 거리 이 사이 (m), 높이 차 이 안 (m), 가려지지 않은 서 있는 적")]
+        [Tooltip("최고 높이 (m). R646: 1.6 → 2.1 (먼 도약 1.3초가 이 높이 아래로 들어가게: g·t²/8 ≈ 2.07 m)")]
+        public float knightHeight = 2.1f;
+        [Tooltip("대상: 조준 방향 좌우 이 각도 안 (도), 땅 위 거리 이 사이 (m), 높이 차 이 안 (m), 가려지지 않은 서 있는 적. R646 승규 님 11-14 \"나이트는 1.5~9m로\": 5 → 9 m")]
         public float knightTargetAngle = 60f;
         public float knightTargetMin = 1.5f;
-        public float knightTargetMax = 5f;
+        public float knightTargetMax = 9f;
         public float knightTargetHeight = 2f;
-        [Tooltip("체공: 가까울 때와 멀 때 (초)")]
+        [Tooltip("체공: 가까울 때와 멀 때 (초). R646: 먼 쪽 1.14 → 1.3 (9 m를 약 6.9 m/s로)")]
         public float knightFlightNear = 0.8f;
-        public float knightFlightFar = 1.14f;
-        [Tooltip("체공 중 대상의 지금 위치로 착지점을 옮기는 최대 빠르기 (m/s)")]
-        public float knightCorrection = 3f;
+        public float knightFlightFar = 1.3f;
+        [Tooltip("체공 중 대상의 지금 위치로 착지점을 옮기는 최대 빠르기 (m/s). R646 승규 님 \"상대가 점프나 빠르게 움직여 버리면 무용지물\": 3 → 10 (전력질주 9.6 m/s · 점프도 따라잡음)")]
+        public float knightCorrection = 10f;
+        [Tooltip("머리 찍기 가로 판정 (m). 잡힌 대상은 여기에 knightLockReach를 더함")]
         public float knightStompReach = 0.45f;
+        [Tooltip("R646: 잡힌 대상에게만 더하는 가로 판정 (m, 0.25 → 0.45), 머리 꼭대기 아래 · 위 여유 (m, 0.45 · 0.5 → 0.7 · 0.8): 점프 중 · 착지 순간에도 맞게")]
+        public float knightLockReach = 0.45f;
+        public float knightLockBelow = 0.7f;
+        public float knightLockAbove = 0.8f;
+        [Tooltip("R646 승규 님 \"상대가 점프를 해도 맞을 수 있게\": 잡힌 대상의 머리가 나이트 골반에서 이 거리 안에 닿으면 맞음 (m, 점프로 올라와 부딪힌 때), 머리를 못 찍고 착지했어도 대상이 이 가로 거리 안이면 맞음 (m)")]
+        public float knightLockContact = 0.8f;
+        public float knightLandCatch = 1.0f;
+        [Tooltip("R646 승규 님 \"해롱해롱을 좀 더 길게 … 넘어지면 안되고 일어나 있어야 돼\": 머리 찍힌 상대는 넘어지지 않고 선 채로 조작 없이 휘청이는 시간 (초). 예전엔 넘어짐(누워 0.6초 + 일어나기)")]
+        public float knightStompDaze = 2.0f;
         [Tooltip("머리 찍은 뒤 위로 튀는 속도와 옆으로 비키는 속도 (m/s)")]
         public float knightStompBounce = 4f;
         public float knightStompHop = 0.3f;
@@ -124,15 +134,15 @@ namespace ChessFight.RagdollLab
         public float bishopRopeFlingMax = 7f;
 
         [Header("룩 — 직선 사슬 견인 (R153)")]
-        [Tooltip("사슬이 닿는 거리 (m), 위아래 조준 한계 (도). 기획서 6 m → 10-22 승규 님 \"룩 사거리가 좀 많이 짧은 거 같아 많이 늘려줘\" 12 m → \"8m로 줄여줘\" 8 m")]
-        public float rookChainRange = 8f;
+        [Tooltip("사슬이 닿는 거리 (m), 위아래 조준 한계 (도). 기획서 6 m → 10-22 승규 님 \"룩 사거리가 좀 많이 짧은 거 같아 많이 늘려줘\" 12 m → \"8m로 줄여줘\" 8 m → R646 11-14 \"사슬 거리를 10.5로\" 10.5 m (빠르기는 그대로)")]
+        public float rookChainRange = 10.5f;
         public float rookChainPitch = 45f;
         [Tooltip("조준 도움 (10-22 승규 님 \"마우스를 좀 많이 내려야 걸려\"): 조준 방향 좌우 이 각도 안 (도)에 걸 수 있는 기물이 있으면 사슬이 그 가슴으로. 없으면 카메라 기본 각도(내려다보는 각도, 도)일 때 수평으로 나감")]
         public float rookAimAssist = 10f;
         public float rookAimNeutralPitch = 14f;
         [Tooltip("좌클릭 뒤 팔 휘두르기 (초), 사슬 빠르기 (m/s), 빗나가면 되감기 (초)")]
         public float rookSwing = 0.1f;
-        public float rookChainSpeed = 32f;   // 24 → 32 with the longer reach (8 m in 0.25 s)
+        public float rookChainSpeed = 32f;   // 24 → 32 with the longer reach (8 m in 0.25 s; R646 kept: 10.5 m in 0.33 s)
         public float rookRewind = 0.2f;
         [Tooltip("사슬 끝이 사람에게 걸리는 굵기 (m)")]
         public float rookChainRadius = 0.2f;   // (the pieces' chests are only 0.32 m up)
@@ -160,9 +170,11 @@ namespace ChessFight.RagdollLab
         [Header("퀸 — 팔방 밀치기")]
         public float queenWindup = 0.35f;
         public float queenRadius = 3f;
-        public float queenInner = 1.5f;
-        public float queenInnerPush = 6.5f;
-        public float queenOuterPush = 3.8f;
+        [Tooltip("세게 밀리는 안쪽 원 (m). R646 3차 승규 님 11-14 \"세게 밀리는 범위를 살짝 높여주고\": 1.5 → 1.8")]
+        public float queenInner = 1.8f;
+        [Tooltip("미는 속도: 안쪽 원 · 바깥 (m/s). R646 승규 님 11-14 \"범위 · 높이는 그대로, 미는 힘은 더 세게\": 6.5 · 3.8 → 8.5 · 5.0")]
+        public float queenInnerPush = 8.5f;
+        public float queenOuterPush = 5.0f;
         [Tooltip("위아래로 이만큼 안에 있어야 맞는다 (m)")]
         public float queenHeight = 1.5f;
         public float queenRecovery = 0.45f;

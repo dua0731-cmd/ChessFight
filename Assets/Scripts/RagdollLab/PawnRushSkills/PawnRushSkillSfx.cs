@@ -9,6 +9,10 @@ namespace ChessFight.RagdollLab
     /// The Pawn Rush skills' sounds in the test bed (R114). 승규 picked on the R107 page (each piece its own family, no
     /// coin-like rings, the moments run on into each other): pawn = the Queen of the Hill pawn's sounds as they are
     /// ("퀸 오브 더 힐 사운드랑 똑같게"), queen A 만화 효과음, rook A 만화 효과음, bishop B 마법 줄, knight E 묵직한 말.
+    /// R647 (승규 님 11-14 "퀸 사운드만 다시 넣어줘 스킬에 맞게"): the queen's three clips made again for her real look (air,
+    /// light, a shock wave - no longer cartoon): QueenWindup = air drawn in, rising for exactly her 0.35 s windup and peaking
+    /// on the "펑"; QueenBlast = a punchy air-cannon thump and outward gust over a low air boom; QueenHit = a short hard
+    /// wooden knock (the piece struck). ElevenLabs takes, cut and mixed (no ring, no voice); same names, so nothing else changed.
     ///
     /// The clips are in Resources/PawnRushSkillSfx, named after the moment (Tools/Sfx/PawnRushSkills/export_unity.py
     /// wrote them); the pawn's come from Resources/SharedSkills/Sfx (PawnDash, PawnBump, PawnCrouch). Prepared once when

@@ -846,7 +846,7 @@ namespace ChessFight.RagdollLab
             yield return Until(() => p1.SkillStage != SkillStage.Active, 2.5f);
             Vector3 land = p1.Hips.position, targetAt = target.Hips.position;
             yield return Until(() => { forked |= other.Staggered; return false; }, 0.3f);
-            Add($"나이트 포크: 대상 표시 {(marked == target ? "더미 1" : marked != null ? marked.DisplayName : "없음")}, 머리까지 {toHead:0.00}초 (0.8~1.14) → 대상 {atStomp} · {target.LastSkillHit}, 착지는 대상에서 {FlatDistance(land, targetAt):0.0} m · 옆 더미에서 {FlatDistance(land, other.Hips.position):0.0} m, 옆 더미 {(forked ? "휘청" : StateText(other))} (휘청 기대)");
+            Add($"나이트 포크: 대상 표시 {(marked == target ? "더미 1" : marked != null ? marked.DisplayName : "없음")}, 머리까지 {toHead:0.00}초 (0.8~1.3) → 대상 {atStomp} · {target.LastSkillHit}, 착지는 대상에서 {FlatDistance(land, targetAt):0.0} m · 옆 더미에서 {FlatDistance(land, other.Hips.position):0.0} m, 옆 더미 {(forked ? "휘청" : StateText(other))} (휘청 기대)");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             Add($"  쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
             yield return new WaitForSeconds(0.6f);
@@ -865,12 +865,12 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.7f);
             Tap();
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            Place(target, new Vector3(5f, 0f, -8f), Vector3.back);
+            Place(target, new Vector3(12f, 0f, -8f), Vector3.back);   // R646: 5 → 12 m (the knight now follows 10 m/s)
             target.LastSkillHit = "-";
             bool staggered = false;
             yield return Until(() => p1.SkillStage != SkillStage.Active, 2.5f);
             yield return Until(() => { staggered |= near.Staggered; return false; }, 0.3f);
-            Add($"나이트 빗나감: 대상 {StateText(target)} · {target.LastSkillHit} (서 있음 기대), 착지 x {p1.Hips.position.x:0.0} (대상은 x 5로 피함, 따라가기 초당 3 m), 가까운 더미 {(staggered ? "휘청 (틀림)" : StateText(near))}");
+            Add($"나이트 빗나감: 대상 {StateText(target)} · {target.LastSkillHit} (서 있음 기대), 착지 x {p1.Hips.position.x:0.0} (대상은 x 12로 피함, 따라가기 초당 10 m), 가까운 더미 {(staggered ? "휘청 (틀림)" : StateText(near))}");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             Add($"  쿨 {p1.SkillCooldown:0.0}초 (빗나가도 7)");
             yield return new WaitForSeconds(0.5f);

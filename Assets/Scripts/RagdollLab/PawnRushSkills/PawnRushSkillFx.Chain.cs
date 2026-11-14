@@ -29,7 +29,10 @@ namespace ChessFight.RagdollLab
         static readonly Kit.Palette Walnut = new Kit.Palette("#6E4A2A", "#9C7048", "#40281A", "#1A0F07");
         static readonly Kit.Palette Ebony = new Kit.Palette("#2E2824", "#5E544D", "#161210", "#050403") { metal = 0.2f };
         // R153 4th: the stake's iron band (dark forged iron) and the cross stake's rope (hemp, as the trap's rope).
-        static readonly Kit.Palette Iron = new Kit.Palette("#4A4A50", "#8A8A92", "#26262B", "#0E0E12") { metal = 0.35f };
+        /// <summary>R646 7차: the thrown chain's black iron - near black with a grey highlight so the links still read as
+        /// metal rings (not a black hole) on dark floors.</summary>
+        static readonly Kit.Palette BlackIron = new Kit.Palette("#1C1C20", "#5A5B62", "#0D0D10", "#040405") { metal = 0.4f };
+        static readonly Kit.Palette Iron =new Kit.Palette("#4A4A50", "#8A8A92", "#26262B", "#0E0E12") { metal = 0.35f };
         static readonly Kit.Palette Hemp = new Kit.Palette("#B08E5E", "#D9BC8C", "#6E5333", "#2E2114");
         static readonly Kit.Palette PawnAlly = new Kit.Palette("#2EC4C6", "#D8FFFB", "#167E80", "#0B3D3E");
         static readonly Kit.Palette PawnFoe = new Kit.Palette("#F28C28", "#FFE2BF", "#B85E10", "#3E1E04");
@@ -254,7 +257,9 @@ namespace ChessFight.RagdollLab
                 int most = Mathf.CeilToInt(((s != null ? s.rookChainRange : 6f) + 1.5f) / LinkPitch);
                 for (int i = 0; i < most; i++)
                 {
-                    var link = new Kit.Prop(kit, meshChainLink, steel, "Chain link") { inkWidth = 0f };   // no ink hull: on a 1.3 cm bar it swallowed the steel (it read black)
+                    // R646 7차 (승규 님 11-14 "룩 미리보기 색은 유지 하고 끌 때 검정색으로 사슬 해줘"): the thrown and pulling chain is
+                    // black iron; the aim preview (RealRook.cs) keeps its see-through steel.
+                    var link = new Kit.Prop(kit, meshChainLink, BlackIron, "Chain link") { inkWidth = 0f };   // no ink hull: on a 1.3 cm bar it swallowed the links
                     link.Show(false);
                     fx.props.Add(link);
                 }
