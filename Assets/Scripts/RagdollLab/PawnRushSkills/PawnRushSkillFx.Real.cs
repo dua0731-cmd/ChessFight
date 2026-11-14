@@ -32,6 +32,8 @@ namespace ChessFight.RagdollLab
             if (realChipMat != null) Destroy(realChipMat);
             if (realGlowTex != null) Destroy(realGlowTex);
             if (ghostRealMat != null) Destroy(ghostRealMat);
+            if (realSquareMat != null) Destroy(realSquareMat);   // R646 6차: the queen's squares of light
+            if (realSquareTex != null) Destroy(realSquareTex);
         }
 
         // The queen: PawnRushSkillFx.RealQueen.cs.

@@ -1,0 +1,42 @@
+[
+  {
+    "key": "Falling_knight",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.0011908002197742462
+  },
+  {
+    "key": "Floating_pad",
+    "silhouetteIoU": 0.9999637067505444,
+    "meanForegroundRGBDifference": 0.00794044230133295
+  },
+  {
+    "key": "Exit_gate",
+    "silhouetteIoU": 0.9999951903422072,
+    "meanForegroundRGBDifference": 0.006818246562033892
+  },
+  {
+    "key": "Garden_tree_E1",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 6.153604203973373e-07
+  },
+  {
+    "key": "Plaza_planter_flowers",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 6.232796295080334e-05
+  },
+  {
+    "key": "Lock_and_dyke_stonework",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.008197804912924767
+  },
+  {
+    "key": "HallV15_Round_wall_0_1",
+    "silhouetteIoU": 0.9999921466379758,
+    "meanForegroundRGBDifference": 0.0018823945429176092
+  },
+  {
+    "key": "Tree_far",
+    "silhouetteIoU": 0.9770285614464145,
+    "meanForegroundRGBDifference": 0.0315999872982502
+  }
+]

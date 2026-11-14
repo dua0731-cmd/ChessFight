@@ -35,6 +35,8 @@ namespace ChessFight.Game
         public readonly List<bool> Ready = new List<bool>();
         public readonly List<string> Names = new List<string>();
         public readonly List<bool> Bots = new List<bool>();
+        // R645: each player's Steam profile picture (null: a bot, offline, or not fetched yet - the card shows the pawn).
+        public readonly List<Texture2D> Faces = new List<Texture2D>();
         public int Me = -1;
         // R294: which entry is the room's host (-1: none), the PC that simulates the match: the best PC in the room.
         // R533: its card says "물리 담당" under the name while matching, and the manager's (Manager) "방장" - the one
@@ -53,11 +55,19 @@ namespace ChessFight.Game
         public int CourseSeed;
         public bool CourseKnown;
         public float Reveal = -1f;
+        // R624 (Sword Fight): "매칭 완료!", the piece cards, our team's pieces and the two sides' clash
+        // (LoadingScreenView.SwordPick.cs), timed from Reveal (seconds since the host started). SwordPick: this screen
+        // plays them (not for a player coming back into a running match). Per entry, the piece it holds (Pawn: none yet)
+        // and whether it was drawn for it at the close rather than picked; SwordAllPicked: every player holds one.
+        public bool SwordPick, SwordAllPicked;
+        public readonly List<PieceKind> Picks = new List<PieceKind>();
+        public readonly List<bool> PickAuto = new List<bool>();
 
         public void Clear()
         {
-            Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear();
+            Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear(); Faces.Clear();
             CanGive.Clear(); CanKick.Clear(); Scores.Clear(); Keys.Clear();
+            Picks.Clear(); PickAuto.Clear();
             Me = -1; Host = -1; Manager = -1;
         }
     }
@@ -91,9 +101,26 @@ namespace ChessFight.Game
         // sits on the match underneath (the skill card) waits until it is gone.
         public static bool Showing => open > 0;
         static int open;
+        // R651: true from the moment an entrance screen's own music starts (the course reveal's, Sword Fight's) until
+        // that screen is gone: the lobby music (LobbyMusic) gives way to it.
+        public static bool MusicPlaying => musicScreens > 0;
+        static int musicScreens;
+        bool musicCounted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetOpen() => open = 0;
+        static void ResetOpen()
+        {
+            open = 0;
+            musicScreens = 0;
+        }
+
+        // Where this screen's music starts (SyncRevealMusic, SyncSwordBed): counted once per screen.
+        void MusicStarts()
+        {
+            if (musicCounted) return;
+            musicCounted = true;
+            musicScreens++;
+        }
 
         void Awake() => open++;
         // "매칭 취소" clicked while matching (R64: not Esc, which is the settings window).
@@ -106,6 +133,8 @@ namespace ChessFight.Game
         // over, "강퇴" puts the player out. Each asks twice: the first click only arms the button ("확인") for
         // ArmSeconds, so a stray click neither gives the room away nor puts anyone out.
         public event Action<ulong> GiveRequested, KickRequested;
+        // R624: this player confirmed a piece card (Sword Fight).
+        public event Action<PieceKind> SwordPickRequested;
         const float ArmSeconds = 3f;
 
         sealed class Card
@@ -199,6 +228,8 @@ namespace ChessFight.Game
             tipText = root.Q<Label>("load-tip-text");
             // R551: Pawn Rush's course reveal, over everything but the dip, from the host's start
             if (content != null && content.CourseModel) BuildReveal(root, stage);
+            // R624: Sword Fight's found / pick / team / clash screens, from the host's start
+            if (content != null && content.SwordPick) BuildSword(stage);
             SetContent(content, root);
             shownAt = Time.unscaledTime;
             Update();
@@ -356,6 +387,7 @@ namespace ChessFight.Game
             studio.Animate(now);
             SyncCards(now);
             SyncReveal();
+            SyncSword(now);
             allIn?.EnableInClassList("load-allin-on", studio.Cheer);
 
             if (tips.Length > 0)
@@ -623,10 +655,12 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             open = Mathf.Max(0, open - 1);
+            if (musicCounted) musicScreens = Mathf.Max(0, musicScreens - 1);
             studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);
             DisposeReveal();
+            DisposeSword();
             foreach (var texture in washes) if (texture != null) Destroy(texture);
         }
     }

@@ -1,0 +1,32 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenPlaza.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Plaza paving",
+   "tris": 5114,
+   "chunks": 4,
+   "sum": 5114
+  },
+  {
+   "name": "Plaza planter flowers",
+   "tris": 108752,
+   "chunks": 4,
+   "sum": 108752
+  },
+  {
+   "name": "Plaza planters",
+   "tris": 95800,
+   "chunks": 4,
+   "sum": 95800
+  },
+  {
+   "name": "Plaza wall stones",
+   "tris": 43324,
+   "chunks": 6,
+   "sum": 43324
+  }
+ ],
+ "objects": 27,
+ "tris": 313866
+}

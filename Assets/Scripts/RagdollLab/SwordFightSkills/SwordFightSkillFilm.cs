@@ -79,7 +79,7 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(5.2f, 0.3f, 0.3f), fov = 50f },
             new Shot { run = "edge-queen-step", title = "퀸 · 체크메이트 일섬 (안쪽으로 피함)", note = "금색 선이 보이는 동안 적이 가장자리 구역 밖으로 들어오면 취소 · 쿨타임 반",
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(4.6f, 0.3f, 0.3f), fov = 50f },
-            new Shot { run = "edge-queen-jump", title = "퀸 · 체크메이트 일섬 (점프로 피함)", note = "베는 순간 적이 공중에 있으면 칼이 아래로 지나감",
+            new Shot { run = "edge-queen-jump", title = "퀸 · 체크메이트 일섬 (점프해도 맞음, R650)", note = "베는 순간 적이 공중에 있어도 베여 날아감",
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(5.2f, 0.3f, 0.3f), fov = 50f },
             new Shot { run = "edge-rook", title = "룩 · 성벽 붕괴 (E)", note = "가장자리를 내려쳐 3 × 2 m에 0.8초 금 → 무너져 위의 기물이 모두 떨어짐(룩은 걸어 나옴) → 5초 뒤 바닥이 다시 솟음",
                 eye = new Vector3(10.4f, 2.3f, -3.6f), look = new Vector3(5.9f, -0.5f, -0.3f), fov = 50f },

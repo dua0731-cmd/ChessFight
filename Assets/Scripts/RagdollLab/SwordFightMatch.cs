@@ -54,6 +54,29 @@ namespace ChessFight.RagdollLab
         public float Remaining => view.Phase == SwordPhase.Pick || view.Phase == SwordPhase.Countdown ? (float)settings.Duration
             : Mathf.Max(0f, (float)(settings.Duration - Clock));
         bool Authority => game != null && game.Authority && rules != null;
+
+        /// <summary>R624: in a lobby match the pieces were picked on the entrance screen (SwordPickDraft, set by
+        /// LabNetLink.Sword): the host holds the pick until the shared start (<see cref="StartHeld"/>), then gives every
+        /// fighter its piece and goes straight to 3·2·1. The scene's pick cards never show then. Null offline and in the
+        /// lab rooms: the scene's own 15 s pick runs as before.</summary>
+        public System.Func<Dictionary<ulong, PieceKind>> PresetPicks;
+        public System.Func<bool> StartHeld;
+        bool PicksBefore => PresetPicks != null;
+        /// <summary>R645: a lobby match opens on the camera's flight round the map (FlySeconds) before 3·2·1; the entrance
+        /// screen's music carries on over it (SwordMusicCarry) and fades as the count starts.</summary>
+        public const float FlySeconds = 6.5f;
+        public float IntroSeconds => PicksBefore ? FlySeconds : 0f;
+        /// <summary>R645 (사용자 "카메라 무빙 할 때 이름이 뜨고 … 초기 상태에서 이상해"): the held pick before it (the
+        /// screen gone, the shared start not yet in, or a client still without the host's countdown) counts as the
+        /// flight's first frame, so the camera waits at the flight's start rather than circling for the scene's own pick.</summary>
+        public bool Flying => PicksBefore && (view.Phase == SwordPhase.Pick || (view.Phase == SwordPhase.Countdown && PhaseTime < IntroSeconds));
+        /// <summary>Seconds into the flight (0 while the pick is still held).</summary>
+        public float FlyTime => view.Phase == SwordPhase.Countdown ? (float)PhaseTime : 0f;
+        /// <summary>Seconds into 3·2·1 (below 0 during the flight).</summary>
+        public double CountTime => PhaseTime - IntroSeconds;
+        // When the held pick began (realtime, -1 not yet): a start that never comes stops holding after MaxHold.
+        float heldSince = -1f;
+        const float MaxHold = 90f;
         static bool Live(SwordPhase p) => p == SwordPhase.Playing || p == SwordPhase.SuddenDeath;
 
         void Awake()
@@ -89,6 +112,8 @@ namespace ChessFight.RagdollLab
             SwordFightSkills.GuardTakesSwordOnly = false;
             SwordFightSkills.PawnSteps = false;
             SwordFightGame.InputLocked = false;
+            ChessFight.Game.SwordMusicCarry.Release();
+            MatchNameplate.Hidden = false;
             if (slowing) Time.timeScale = 1f;
             DestroyBoardPictures();
         }
@@ -100,6 +125,7 @@ namespace ChessFight.RagdollLab
             rules = new SwordMatchRules(Random.Range(1, int.MaxValue), settings);
             view = rules.State();
             overReported = false;
+            heldSince = -1f;
             ResetBoard();
         }
 
@@ -146,8 +172,13 @@ namespace ChessFight.RagdollLab
         public void Joined(SwordFightPawn f)
         {
             if (rules != null && (game == null || game.Authority)) rules.Add(f.Id, f.Pawn.Team);
+            // R655: only the host (or an offline round) chooses the board; a client builds the one the host's state says.
+            if (ClientBoard) return;
             if (Cell > 0f && TeamSize() >= 4 && !Mathf.Approximately(Cell, bigCellSize) && view.Phase == SwordPhase.Pick) SizeBoard(bigCellSize);
         }
+
+        /// <summary>R655: an online client: its board's size comes from the host (SwordMatchState.Cell).</summary>
+        bool ClientBoard => game != null && game.Networked && !game.Authority;
 
         public void Left(ulong id) => rules?.Remove(id);
 
@@ -185,11 +216,15 @@ namespace ChessFight.RagdollLab
                 if (f == null || f.Skills != null) continue;
                 f.gameObject.AddComponent<SwordFightSkills>().Init(f, skills, edge);
             }
+            settings.IntroSeconds = IntroSeconds;
             if (Authority) view = HostView();
             var phase = view.Phase;
+            // R645: the entrance screen's music lasts until the flight is over (or the pick is over without one)
+            if (phase != SwordPhase.Pick && !Flying) ChessFight.Game.SwordMusicCarry.Release();
+            MatchNameplate.Hidden = Flying;
             SwordFightGame.InputLocked = phase == SwordPhase.Pick || phase == SwordPhase.Countdown || phase == SwordPhase.Result;
-            // The pick and the result want the mouse for their buttons.
-            game.UiWantsCursor = phase == SwordPhase.Pick || phase == SwordPhase.Result;
+            // The pick and the result want the mouse for their buttons (R624: not a pick made on the entrance screen).
+            game.UiWantsCursor = (phase == SwordPhase.Pick && !PicksBefore) || phase == SwordPhase.Result;
 
             var me = game.Local;
             if (me != null && me.Skills != null)
@@ -206,7 +241,7 @@ namespace ChessFight.RagdollLab
                 // R236: the bishop picks his diagonal while E is held (let go: he goes).
                 if (!LabNetLink.SwordClient) me.Skills.HoldEdge(game.KeysFree && !SwordFightGame.InputLocked && GameSettings.Held(GameKey.Skill));
             }
-            if (phase == SwordPhase.Pick) PickKeys();
+            if (phase == SwordPhase.Pick && !PicksBefore) PickKeys();
             DevKeys();
             if (slowing && Time.realtimeSinceStartup >= slowUntil) { Time.timeScale = 1f; slowing = false; }
             StepBoard(Clock, view.Seed);
@@ -218,6 +253,7 @@ namespace ChessFight.RagdollLab
         SwordMatchState HostView()
         {
             var s = rules.State();
+            s.Cell = Cell;   // R655: the clients build this board
             for (int i = 0; i < s.Fighters.Count; i++)
             {
                 var v = s.Fighters[i];
@@ -232,8 +268,16 @@ namespace ChessFight.RagdollLab
         {
             if (!Authority) return;
             float dt = Time.fixedDeltaTime;
+            // R624: picked on the entrance screen: wait for the shared start, then everyone takes their piece.
+            bool hold = false;
+            if (rules.Phase == SwordPhase.Pick && PicksBefore)
+            {
+                if (heldSince < 0f) heldSince = Time.realtimeSinceStartup;
+                hold = StartHeld != null && StartHeld() && Time.realtimeSinceStartup - heldSince < MaxHold;
+                if (!hold) TakePresetPicks();
+            }
             // Dummies pick at once.
-            if (rules.Phase == SwordPhase.Pick)
+            else if (rules.Phase == SwordPhase.Pick)
                 foreach (var f in game.Fighters.Values)
                 {
                     if (f == null || !f.Bot) continue;
@@ -242,7 +286,7 @@ namespace ChessFight.RagdollLab
                     foreach (var p in SwordMatchRules.Pickable) if (rules.Pick(f.Id, p)) break;
                 }
             var before = rules.Phase;
-            rules.Advance(dt);
+            if (!hold) rules.Advance(dt);
             if (rules.Phase != before) EnterPhase(rules.Phase);
             foreach (var f in game.Fighters.Values)
             {
@@ -278,6 +322,9 @@ namespace ChessFight.RagdollLab
                         f.Pawn.SetPiece(r.Piece);
                         f.Skills?.Ready(0f);
                         Place(f, StartPoint(f.Pawn.Team, f.Slot));
+                        // R645 (11-14, 사용자 "카메라 돌 때 잠깐 보호막이 형성 돼"): putting them on their squares is not a
+                        // respawn: no protection bubble (nobody can move until 3·2·1 is over anyway).
+                        f.EndProtection();
                     }
                     break;
                 case SwordPhase.Result:
@@ -301,20 +348,19 @@ namespace ChessFight.RagdollLab
         {
             var result = rules.RingOut(f.Id);
             if (!result.Valid) return;
+            // R640: no steal (spec §8.3 is gone): the credit keeps its own piece.
             f.Eliminate();
-            if (!result.Stole || !game.Fighters.TryGetValue(result.Credit, out var credit) || credit == null) return;
-            // The steal (spec §8.3): the pawn becomes the fallen piece at once, F ready, E half its cooldown away.
-            credit.Pawn.SetPiece(result.NewPiece);
-            credit.Skills?.Ready(0.5f);
         }
 
+        /// <summary>R640 (승규 님: "떨어져도 처음 고른 기물 되살아나게"): back as the piece it picked, not a pawn, and its F
+        /// and E cooldowns go on from where the fall left them (they kept running while it was out,
+        /// SwordFightSkills.StepSkills): a fall refills nothing.</summary>
         void Respawn(SwordFightPawn f, SwordMatchRules.Fighter r)
         {
             int cell = r != null && r.SpawnCell >= 0 ? r.SpawnCell : ChooseSpawn(f);
             if (r != null) r.SpawnCell = -1;
             f.Respawn(CellCentre(cell), SwordFightGame.Facing(f.Pawn.Team), true);
-            f.Pawn.SetPiece(PieceKind.Pawn);
-            f.Skills?.Ready(0f);
+            if (r != null && f.Pawn.Piece != r.Piece) f.Pawn.SetPiece(r.Piece);
         }
 
         int ChooseSpawn(SwordFightPawn who)
@@ -381,6 +427,17 @@ namespace ChessFight.RagdollLab
             return true;
         }
 
+        /// <summary>R624: every fighter takes the piece the entrance screen gave it; anyone it missed (a development
+        /// dummy) draws one of the pieces left, so the next step goes on to 3·2·1.</summary>
+        void TakePresetPicks()
+        {
+            var picks = PresetPicks();
+            if (picks != null)
+                foreach (var f in game.Fighters.Values)
+                    if (f != null && picks.TryGetValue(f.Id, out var kind)) rules.Assign(f.Id, kind);
+            rules.PickRest();
+        }
+
         public void PickLocal(PieceKind kind)
         {
             if (Authority) rules.Pick(game.LocalId, kind);
@@ -431,7 +488,12 @@ namespace ChessFight.RagdollLab
             view = state;
             viewAt = Time.realtimeSinceStartup;
             viewHeard = true;
-            if (TeamSize() >= 4 && !Mathf.Approximately(Cell, bigCellSize) && state.Phase == SwordPhase.Pick) SizeBoard(bigCellSize);
+            // R640 (승규 님 팀 시험: "경기 끝나고 탈주됨"): a client sees the result too. Only the host's EnterPhase used to
+            // say so, so a client leaving from the end card before the room's "ended" arrived was counted a deserter.
+            if (state.Phase == SwordPhase.Result && !overReported) { overReported = true; link.ReportMatchOver(); }
+            // R655: the host's board, in whatever phase this text found the client (it used to choose its own, during the
+            // pick only, and a client that heard of the fourth fighter a side after it kept the small board).
+            if (state.Cell >= SwordMatchState.MinCell && !Mathf.Approximately(Cell, state.Cell)) SizeBoard(state.Cell);
         }
 
         /// <summary>R504: another PC hosts now (LabNetLink.Sword.cs): its texts are compared from scratch. Its clock goes

@@ -73,6 +73,7 @@ namespace ChessFight.RagdollLab
             fx.ParamsOverride = skills;
             fx.ViewerOverride = () => Viewer;
             sfx = gameObject.AddComponent<PawnRushSkillSfx>();
+            gameObject.AddComponent<PawnRushStepSfx>();   // R652: footsteps, timed on every PC from what it sees
             spawner = FindFirstObjectByType<PlaytestSpawner>(FindObjectsInactive.Include);
         }
 

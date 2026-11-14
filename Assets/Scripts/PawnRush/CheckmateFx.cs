@@ -118,6 +118,22 @@ namespace ChessFight.PawnRush
             }
         }
 
+        public void CaptureTrail(Vector3 at, Color team)
+        {
+            Emit(stars, at, Vector3.down * .24f, .32f, .33f, Glow(Gold, 3f));
+            Emit(sparks, at, Vector3.down * .45f, .24f, .09f, Glow(team, 2.4f));
+        }
+
+        public void TrayLand(Vector3 at, Color team)
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                float angle = i * Mathf.PI * 2f / 9f;
+                var outwards = new Vector3(Mathf.Cos(angle), .65f, Mathf.Sin(angle));
+                Emit(stars, at + Vector3.up * .12f, outwards * 1.65f, .46f, .26f, Glow(i % 3 == 0 ? team : Gold, 2.6f));
+            }
+        }
+
         public void Vanish(Vector3 at)
         {
             for (int i = 0; i < 12; i++)

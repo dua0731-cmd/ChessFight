@@ -13,6 +13,9 @@ public static class NetworkCoreTests
     // tests on Linux (Tools/run-tests-linux.sh), cannot parse local functions.
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
+    // R624: one player's pick on the entrance screen.
+    static SwordPickDraft.Entry Pick(ulong id, int team, PieceKind piece, double at, bool bot = false) =>
+        new SwordPickDraft.Entry { Id = id, Team = team, Piece = piece, At = at, Bot = bot };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
@@ -425,18 +428,22 @@ public static class NetworkCoreTests
                 Check(RoyalWaterGardenRules.RobotAngle(2.2) == RoyalWaterGardenRules.RobotDown, "holds over the water");
                 Check(RoyalWaterGardenRules.RobotAngle(5.0) == RoyalWaterGardenRules.RobotRest, "rests raised");
                 Check(RoyalWaterGardenRules.RobotPhase(6.0 * 283333333 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
-            Test("Royal Carriage Yard roaming fleet: four carriages share the yard, never meet, stay in it, never jump, roam all of it, one plan however it is advanced", () => {
+            Test("Royal Carriage Yard roaming fleet: horse-drawn carriages share the yard between the sheds, never meet, stay in it, never jump, roam all of it, one plan however it is advanced", () => {
                 foreach (double origin in new[] { 3.0, 1762000003.25 })
                 {
                     var fleet = YardFleet(origin, RoamingFleet.YardSeeds[0]);
                     var r = fleet.Settings;
-                    double spacing = fleet.Spacing;
                     const double dt = 1.0 / 60.0;
                     int n = fleet.Count;
-                    Check(n == 4, "four carriages");
+                    // The user (R659): "'말+마차'를 말하는 거지 말이나 마차가 따로 떨어져서 돌아다니고 있는 장애물을 만들어 달라는
+                    // 이야기가 아니었어" - every body a carriage with its pair of horses.
+                    Check(n == RoamingFleet.YardTeams && RoamingFleet.YardHorses == 0 && n >= 5, "horse-drawn carriages only: " + n);
+                    for (int i = 0; i < n; i++)
+                        Check(fleet.Radius(i) > 3.6 && fleet.HalfTurn(i) == 3.4, "body " + i + " is a team (6.95 m long, a half turn in 3.4 s)");
+                    Check(r.Timed, "kept apart in time");
                     var before = new RoamingFleet.Pose[n];
                     for (int i = 0; i < n; i++) before[i] = fleet.At(i, origin - 1);
-                    var reached = new bool[n, 4];   // within 3 m of the west, east, south, north edge of the centres' area
+                    var reached = new bool[n, 4];   // within 3 m of the west, east, south, north edge of the body's own area
                     double last = origin;
                     for (double s = -1 + dt; s < 600; s += dt)
                     {
@@ -446,35 +453,40 @@ public static class NetworkCoreTests
                         {
                             var p = fleet.At(i, last);
                             now[i] = p;
-                            Check(p.X >= r.MinX - 1e-6 && p.X <= r.MaxX + 1e-6 && p.Z >= r.MinZ - 1e-6 && p.Z <= r.MaxZ + 1e-6, "inside the yard");
+                            fleet.Area(i, out double minX, out double maxX, out double minZ, out double maxZ);
+                            Check(p.X >= minX - 1e-6 && p.X <= maxX + 1e-6 && p.Z >= minZ - 1e-6 && p.Z <= maxZ + 1e-6, "inside its area");
+                            // Its whole reach stays 0.8 m inside the sheds' fronts and the parapet: nobody is pinned against them.
+                            Check(Math.Abs(p.X) + fleet.Radius(i) <= RoamingFleet.YardShedFront - .8 + 1e-6 && p.Z + fleet.Radius(i) <= 50 - .8 + 1e-6,
+                                  "0.8 m off the sheds and the parapet");
                             var b = before[i];
                             double moved = Math.Sqrt((p.X - b.X) * (p.X - b.X) + (p.Z - b.Z) * (p.Z - b.Z));
-                            Check(moved <= (9 + .3 * i) * dt * 1.02 + 1e-6, "no jump: " + moved.ToString("0.000") + " m at " + s.ToString("0.00"));
-                            Check(p.Speed <= 9 + .3 * i + 1e-6, "never over its top speed");
+                            Check(moved <= fleet.TopSpeed(i) * dt * 1.02 + 1e-6, "no jump: " + moved.ToString("0.000") + " m at " + s.ToString("0.00"));
+                            Check(p.Speed <= fleet.TopSpeed(i) + 1e-6, "never over its top speed");
                             double turned = Math.Abs(RoamingFleet.Delta(b.Yaw, p.Yaw));
                             if (p.Stage != RoamingFleet.Stage.Turning && b.Stage != RoamingFleet.Stage.Turning)
                                 Check(turned < 1e-6, "turns only while turning");
-                            else Check(turned <= 180.0 * 1.5 / r.Turn * dt + 1e-6, "turns smoothly");
+                            // At the half turn's peak the step is exactly the bound: a hair of slack for Unix time's rounding.
+                            else Check(turned <= 180.0 * 1.5 / fleet.HalfTurn(i) * dt * 1.0001 + 1e-6, "turns smoothly");
                             if (p.Stage != RoamingFleet.Stage.Charging && b.Stage != RoamingFleet.Stage.Charging)
                                 Check(moved < 1e-9, "stands still off the charge");
-                            if (p.X < r.MinX + 3) reached[i, 0] = true;
-                            if (p.X > r.MaxX - 3) reached[i, 1] = true;
-                            if (p.Z < r.MinZ + 3) reached[i, 2] = true;
-                            if (p.Z > r.MaxZ - 3) reached[i, 3] = true;
+                            if (p.X < minX + 3) reached[i, 0] = true;
+                            if (p.X > maxX - 3) reached[i, 1] = true;
+                            if (p.Z < minZ + 3) reached[i, 2] = true;
+                            if (p.Z > maxZ - 3) reached[i, 3] = true;
                         }
                         for (int i = 0; i < n; i++)
                             for (int j = i + 1; j < n; j++)
                             {
                                 double d = Math.Sqrt((now[i].X - now[j].X) * (now[i].X - now[j].X) + (now[i].Z - now[j].Z) * (now[i].Z - now[j].Z));
-                                Check(d >= spacing - 1e-6, "carriages " + i + " and " + j + " never meet: " + d.ToString("0.00") + " m at " + s.ToString("0.00"));
+                                Check(d >= fleet.SpacingOf(i, j) - 1e-6, "bodies " + i + " and " + j + " never meet: " + d.ToString("0.00") + " m at " + s.ToString("0.00"));
                             }
                         before = now;
                     }
                     for (int i = 0; i < n; i++)
                         for (int e = 0; e < 4; e++)
-                            Check(reached[i, e], "carriage " + i + " comes within 3 m of side " + e + " of its area: it roams the whole yard");
-                    // Every leg is a real charge, or now and then a short wait when nothing is free.
-                    int charges = 0, waits = 0;
+                            Check(reached[i, e], "body " + i + " comes within 3 m of side " + e + " of its area: it roams the whole yard");
+                    // Every leg is a real charge - a short dart when no full charge is free - or now and then a short wait.
+                    int charges = 0, darts = 0, waits = 0;
                     for (int i = 0; i < n; i++)
                         for (int k = 0; k < fleet.LegCount(i); k++)
                         {
@@ -483,11 +495,12 @@ public static class NetworkCoreTests
                             if (l.Charge > 0)
                             {
                                 charges++;
-                                Check(d >= r.MinCharge - 1e-6 && d <= r.MaxCharge + 1e-6, "charge length " + d.ToString("0.0"));
+                                if (d < r.MinCharge - 1e-6) darts++;
+                                Check(d >= r.ShortCharge - 1e-6 && d <= r.MaxCharge + 1e-6, "charge length " + d.ToString("0.0"));
                             }
                             else waits++;
                         }
-                    Check(charges > 200 && waits * 10 < charges, "mostly charging: " + charges + " charges, " + waits + " waits");
+                    Check(charges > 300 && waits * 25 < charges && darts * 5 < charges, "mostly full charges: " + charges + " charges (" + darts + " darts), " + waits + " waits");
                     // One plan however the clock moves on: in one jump instead of step by step.
                     var whole = YardFleet(origin, RoamingFleet.YardSeeds[0]);
                     whole.Advance(last);
@@ -505,10 +518,39 @@ public static class NetworkCoreTests
                     other.Advance(origin + 30);
                     Check(other.LegAt(0, 0).ToX != fleet.LegAt(0, 0).ToX, "another seed, another plan");
                 }
-                // The segment distance the plan keeps carriages apart with.
+                // The segment distance the plan keeps bodies apart with.
                 Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 5, -3, 5, 3)) < 1e-9, "crossing segments touch");
                 Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 12, 0, 20, 0) - 2) < 1e-9, "end to end");
                 Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 4, 3, 4, 3) - 3) < 1e-9, "point over a segment"); });
+            Test("Royal Carriage Yard roaming fleet: kept apart in time, two bodies may cross the same line one after the other, never at once (R659)", () => {
+                // Two carriages facing each other across a narrow yard: over whole legs neither may ever cross the
+                // other's line, in time they take turns. Both plans never bring the two within their spacing.
+                foreach (bool timed in new[] { false, true })
+                {
+                    var rules = new RoamingFleet.Rules { MinX = -12, MaxX = 12, MinZ = 0, MaxZ = 30, BodyRadius = 2.4, Timed = timed, Tries = 64, MinCharge = 8, MaxCharge = 26 };
+                    var fleet = new RoamingFleet(7, 3.0, new double[] { 9, 9.3 }, new double[] { -6, 6 }, new double[] { 15, 15 }, new double[] { 90, -90 }, rules);
+                    int crossings = 0;
+                    double closest = double.MaxValue;
+                    for (double s = 0; s < 300; s += 1.0 / 30.0)
+                    {
+                        var a = fleet.At(0, 3.0 + s);
+                        var b = fleet.At(1, 3.0 + s);
+                        closest = Math.Min(closest, Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Z - b.Z) * (a.Z - b.Z)));
+                    }
+                    for (int k = 1; k < fleet.LegCount(0); k++)
+                        for (int m = 1; m < fleet.LegCount(1); m++)
+                        {
+                            var p = fleet.LegAt(0, k);
+                            var q = fleet.LegAt(1, m);
+                            // Both charging at once along lines nearer than the spacing.
+                            if (p.Charge > 0 && q.Charge > 0 && p.ChargeStart < q.ChargeEnd && q.ChargeStart < p.ChargeEnd
+                                && RoamingFleet.SegmentDistance(p.FromX, p.FromZ, p.ToX, p.ToZ, q.FromX, q.FromZ, q.ToX, q.ToZ) < fleet.Spacing)
+                                crossings++;
+                        }
+                    Check(closest >= fleet.Spacing - 1e-6, (timed ? "timed" : "whole legs") + ": never closer than the spacing, " + closest.ToString("0.00") + " m");
+                    if (timed) Check(crossings >= 3, "in time, charges at once may share lines: " + crossings);
+                    else Check(crossings == 0, "over whole legs, charges at once keep their lines apart: " + crossings);
+                } });
             Test("Royal Carriage Yard roaming fleet: a clock leaping to the match clock or back starts the plan again there", () => {
                 var fleet = YardFleet(3.0, 101);
                 for (double t = 3.0; t < 63.0; t += .5) fleet.At(0, t);   // a minute on scene time
@@ -516,7 +558,7 @@ public static class NetworkCoreTests
                 {
                     var fresh = YardFleet(leap, 101);
                     for (double s = 0; s < 120; s += .25)
-                        for (int i = 0; i < 4; i++)
+                        for (int i = 0; i < fleet.Count; i++)
                         {
                             var a = fleet.At(i, leap + s);
                             var b = fresh.At(i, leap + s);
@@ -531,17 +573,17 @@ public static class NetworkCoreTests
                 var q = YardFleet(3.0, 101).At(2, 3000.0);
                 Check(gap.StartTime == 3.0 && p.X == q.X && p.Z == q.Z && p.Yaw == q.Yaw, "a 50 minute gap is planned through"); });
             Test("Royal Carriage Yard roaming fleet: every vetted seed dances well, a match draws them all, a turn takes its share of a half turn", () => {
-                // Each seed's first leg end per carriage, as vetted: a change to the yard's numbers lands here first.
+                // Each seed's first leg end per body, as vetted (R659): a change to the yard's numbers lands here first.
                 var firstLegs = new Dictionary<uint, double[]>
                 {
-                    { 38, new[] { -16.321, 38.928, -2.125, 14.221, 6.854, 25.727, 16.157, 25.131 } },
-                    { 41, new[] { 13.202, 27.596, -7.393, 9.162, 3.671, 45.379, -7.809, 31.444 } },
-                    { 160, new[] { 15.929, 27.580, 2.979, 8.514, 3.319, 38.004, 9.403, 37.028 } },
-                    { 44, new[] { -15.679, 39.021, -8.416, 8.170, .619, 27.839, -5.639, 46.785 } },
-                    { 18, new[] { -3.830, 31.294, 11.426, 28.510, 3.925, 42.585, 1.663, 23.373 } },
-                    { 252, new[] { 1.483, 30.537, 17.563, 38.619, 7.423, 42.731, .910, 11.091 } },
-                    { 20, new[] { 3.671, 18.924, 14.004, 28.901, -4.335, 26.815, 14.970, 45.768 } },
-                    { 113, new[] { -.181, 36.691, 12.110, 28.487, -4.218, 45.895, 2.736, 26.924 } },
+                    { 217, new[] { -13.085, 14.819, -0.445, 21.540, -14.231, 37.528, 13.918, 17.182, 7.353, 28.577 } },
+                    { 18, new[] { 1.636, 20.754, 5.477, 11.082, -9.744, 40.883, -4.270, 31.721, 4.028, 40.021 } },
+                    { 3, new[] { 1.162, 9.385, 9.216, 18.615, -9.606, 37.387, -5.582, 17.858, 14.465, 31.445 } },
+                    { 64, new[] { 1.603, 9.384, 0.091, 23.256, -13.427, 13.719, 14.002, 35.858, 8.656, 24.825 } },
+                    { 76, new[] { -2.728, 17.518, 1.129, 9.479, -14.390, 12.884, 10.909, 44.113, 1.608, 20.936 } },
+                    { 153, new[] { -2.307, 13.998, 6.219, 10.975, -13.518, 17.583, 12.673, 40.469, 1.840, 26.929 } },
+                    { 181, new[] { -1.181, 14.447, 10.295, 10.552, -9.526, 15.370, -6.434, 26.739, -14.345, 36.154 } },
+                    { 226, new[] { 0.650, 21.409, -11.497, 9.138, -8.318, 38.545, 8.730, 42.966, -1.951, 15.976 } },
                 };
                 Check(firstLegs.Count == RoamingFleet.YardSeeds.Length, "every listed seed is pinned");
                 foreach (uint seed in RoamingFleet.YardSeeds)
@@ -562,25 +604,26 @@ public static class NetworkCoreTests
                         for (int i = 0; i < n; i++)
                         {
                             p[i] = fleet.At(i, start + s);
+                            fleet.Area(i, out double minX, out double maxX, out double minZ, out double maxZ);
                             if (p[i].Stage == RoamingFleet.Stage.Charging)
                             {
                                 any = true;
                                 charged[i] = true;
                                 still[i] = 0;
                                 // A body over the straight way up the middle, |x| <= 3.
-                                if (Math.Abs(p[i].X) < 3 + r.BodyRadius) overMiddle = true;
+                                if (Math.Abs(p[i].X) < 3 + fleet.Radius(i)) overMiddle = true;
                                 // The first 20 s near the gate: which half of the yard the charges are in.
                                 if (s < 20 && p[i].Z < r.MinZ + 20) { if (p[i].X < 0) west += dt; else east += dt; }
                             }
                             else if (charged[i]) longest = Math.Max(longest, still[i] += dt);
-                            if (p[i].X < r.MinX + 3) reached[i, 0] = true;
-                            if (p[i].X > r.MaxX - 3) reached[i, 1] = true;
-                            if (p[i].Z < r.MinZ + 3) reached[i, 2] = true;
-                            if (p[i].Z > r.MaxZ - 3) reached[i, 3] = true;
+                            if (p[i].X < minX + 3) reached[i, 0] = true;
+                            if (p[i].X > maxX - 3) reached[i, 1] = true;
+                            if (p[i].Z < minZ + 3) reached[i, 2] = true;
+                            if (p[i].Z > maxZ - 3) reached[i, 3] = true;
                         }
                         for (int i = 0; i < n; i++)
                             for (int j = i + 1; j < n; j++)
-                                closest = Math.Min(closest, Math.Sqrt((p[i].X - p[j].X) * (p[i].X - p[j].X) + (p[i].Z - p[j].Z) * (p[i].Z - p[j].Z)));
+                                closest = Math.Min(closest, Math.Sqrt((p[i].X - p[j].X) * (p[i].X - p[j].X) + (p[i].Z - p[j].Z) * (p[i].Z - p[j].Z)) - fleet.SpacingOf(i, j));
                         total += dt;
                         if (any) charging += dt;
                         if (overMiddle) middle += dt;
@@ -604,43 +647,47 @@ public static class NetworkCoreTests
                     }
                     string name = "seed " + seed + ": ";
                     Check(charging / total >= .85, name + "someone charging " + (charging / total).ToString("0.000") + " of the time");
-                    Check(middle / total >= .3, name + "a charge over the middle way " + (middle / total).ToString("0.000") + " of the time");
+                    Check(middle / total >= .5, name + "a charge over the middle way " + (middle / total).ToString("0.000") + " of the time");
                     Check(waits < .04 * (charges + waits), name + waits + " waits in " + (charges + waits) + " legs");
-                    Check(longest <= 5.5, name + "a carriage stood " + longest.ToString("0.0") + " s after its first charge");
-                    Check(closest >= fleet.Spacing - 1e-6, name + "two carriages came " + closest.ToString("0.000") + " m apart");
+                    // A team's longest stand between charges is its rest, a half turn and its aim: 0.9 + 3.4 + 1.2 s.
+                    Check(longest <= 6.0, name + "a body stood " + longest.ToString("0.0") + " s after its first charge");
+                    Check(closest >= -1e-6, name + "two bodies came " + closest.ToString("0.000") + " m inside their spacing");
                     Check(same, name + "the same dance on the match clock");
                     for (int i = 0; i < n; i++)
                         for (int e = 0; e < 4; e++)
-                            Check(reached[i, e], name + "carriage " + i + " reaches side " + e);
+                            Check(reached[i, e], name + "body " + i + " reaches side " + e);
                     Check(west + east > 0 && Math.Min(west, east) >= .4 * (west + east), name + "the gate's halves get " + west.ToString("0.0") + " / " + east.ToString("0.0") + " s");
                     var pin = firstLegs[seed];
                     for (int i = 0; i < n; i++)
                     {
                         var l = fleet.LegAt(i, 0);
                         Check(Math.Abs(l.ToX - pin[2 * i]) < 2e-3 && Math.Abs(l.ToZ - pin[2 * i + 1]) < 2e-3,
-                              name + "carriage " + i + "'s first leg ends at " + l.ToX.ToString("0.000") + ", " + l.ToZ.ToString("0.000") + " as vetted");
+                              name + "body " + i + "'s first leg ends at " + l.ToX.ToString("0.000") + ", " + l.ToZ.ToString("0.000") + " as vetted");
                     }
                 }
                 // The map's fleet as CarriageFleet.Plan builds it from the Inspector, in floats, matches the vetted yard;
                 // another area does not.
                 Func<float, RoamingFleet> mapFleet = margin =>
                 {
-                    float reach = .5f * (float)Math.Sqrt(4.2f * 4.2f + 2.3f * 2.3f), keep = reach + margin;
+                    float team = .5f * (float)Math.Sqrt(6.95f * 6.95f + 2.3f * 2.3f), keep = team + margin;
                     var rules = new RoamingFleet.Rules
                     {
-                        MinX = -(22f - keep), MaxX = 22f - keep, MinZ = 2f + keep + 2.5f, MaxZ = 50f - keep, BodyRadius = reach, Turn = 2.2f,
-                        MinAim = .6f, MaxAim = 1.2f, MinRest = .4f, MaxRest = 1.4f, MinCharge = 10f, MaxCharge = 32f,
+                        MinX = -(19f - keep), MaxX = 19f - keep, MinZ = 2f + keep + 2.5f, MaxZ = 50f - keep, BodyRadius = team, Turn = 2.2f,
+                        MinAim = .6f, MaxAim = 1.2f, MinRest = .3f, MaxRest = .9f, MinCharge = 10f, MaxCharge = 30f, Timed = true, Tries = 128, ShortCharge = 4f,
                     };
-                    var speeds = new double[4]; var hx = new double[4]; var hz = new double[4]; var yaw = new double[4];
-                    for (int i = 0; i < 4; i++)
+                    int n = RoamingFleet.YardTeams, rows = (n + 1) / 2;
+                    var speeds = new double[n]; var hx = new double[n]; var hz = new double[n]; var yaw = new double[n]; var radii = new double[n]; var turns = new double[n];
+                    for (int i = 0; i < n; i++)
                     {
-                        speeds[i] = 9f + .3f * i;
-                        double side = i % 2 == 0 ? -1 : 1;
+                        speeds[i] = 9.3f + .3f * i;
+                        radii[i] = team;
+                        turns[i] = 3.4f;
+                        double side = n % 2 == 1 && i == n - 1 ? 0 : i % 2 == 0 ? -1 : 1;
                         hx[i] = (rules.MinX + rules.MaxX) * .5 + side * (rules.MaxX - rules.MinX) * .25;
-                        hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / 2;
-                        yaw[i] = side < 0 ? 90 : -90;
+                        hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / rows;
+                        yaw[i] = side < 0 ? 90 : side > 0 ? -90 : 0;
                     }
-                    return new RoamingFleet(38, 3, speeds, hx, hz, yaw, rules);
+                    return new RoamingFleet(38, 3, speeds, hx, hz, yaw, rules, radii, turns);
                 };
                 Check(mapFleet(.8f).Matches(RoamingFleet.Yard(38, 3)) && RoamingFleet.Yard(41, 9).Matches(RoamingFleet.Yard(38, 3)), "the map's yard is the vetted one");
                 Check(!mapFleet(.5f).Matches(RoamingFleet.Yard(38, 3)), "another area is not");
@@ -659,27 +706,31 @@ public static class NetworkCoreTests
                     drawn.Add(s);
                 }
                 Check(drawn.Count == RoamingFleet.YardSeeds.Length, "every listed seed comes up");
-                // A half turn takes Turn, a quarter its share, a nudge MinTurn; every leg turns so.
+                // A half turn takes Turn, a quarter its share, a nudge MinTurn; each body its own half turn; every leg turns so.
                 var f = YardFleet(3.0, RoamingFleet.YardSeeds[0]);
                 Check(Math.Abs(f.TurnSeconds(0, 180) - 2.2) < 1e-9 && Math.Abs(f.TurnSeconds(-45, 45) - 1.1) < 1e-9
                       && Math.Abs(f.TurnSeconds(150, -150) - 2.2 * 60 / 180) < 1e-9 && Math.Abs(f.TurnSeconds(170, -170) - .4) < 1e-9
                       && Math.Abs(f.TurnSeconds(0, 5) - .4) < 1e-9, "turn times: the short way round, never under MinTurn");
+                Check(Math.Abs(f.TurnSeconds(0, 0, 180) - 3.4) < 1e-9 && Math.Abs(f.TurnSeconds(0, -45, 45) - 1.7) < 1e-9,
+                      "a team's half turn 3.4 s, a quarter turn its share");
                 f.Advance(120);
                 int legAt = -1;
                 for (int k = 0; k < f.LegCount(1); k++)
                 {
                     var l = f.LegAt(1, k);
                     if (l.Charge <= 0) continue;
-                    Check(Math.Abs(l.Turn - f.TurnSeconds(l.HeadingFrom, l.Heading)) < 1e-9, "each charge's turn is its share of a half turn");
+                    Check(Math.Abs(l.Turn - f.TurnSeconds(1, l.HeadingFrom, l.Heading)) < 1e-9, "each charge's turn is its share of the body's half turn");
                     Check(l.Turn + l.Aim >= f.Settings.MinLead - 1e-9 && l.Aim >= f.Settings.MinAim - 1e-9, "each charge shows its line MinLead ahead");
                     if (legAt < 0 && k > 0) legAt = k;
                 }
-                // A pose names its leg: what a hit counts by and where the charge line ends.
+                // A pose names its leg: what a hit counts by, where the charge line ends, and its stage's times.
                 var leg = f.LegAt(1, legAt);
                 var mid = f.At(1, leg.ChargeStart + leg.Charge * .5);
-                Check(mid.Stage == RoamingFleet.Stage.Charging && mid.LegStart == leg.Start && mid.ToX == leg.ToX && mid.ToZ == leg.ToZ, "a pose names its leg");
+                Check(mid.Stage == RoamingFleet.Stage.Charging && mid.LegStart == leg.Start && mid.ToX == leg.ToX && mid.ToZ == leg.ToZ
+                      && mid.StageStart == leg.ChargeStart && mid.StageEnd == leg.ChargeEnd, "a pose names its leg");
                 var aim = f.At(1, leg.ChargeStart - 1e-3);
-                Check(aim.LegStart == leg.Start && aim.X == leg.FromX && aim.Z == leg.FromZ, "aiming, it is on the same leg, where it starts");
+                Check(aim.LegStart == leg.Start && aim.X == leg.FromX && aim.Z == leg.FromZ && aim.Stage == RoamingFleet.Stage.Aiming
+                      && aim.StageStart == leg.Start + leg.Turn && aim.StageEnd == leg.ChargeStart, "aiming, it is on the same leg, where it starts");
                 Check(double.IsNaN(YardFleet(3.0, 12).At(3, 2.0).LegStart), "no leg before the start"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
@@ -870,9 +921,52 @@ public static class NetworkCoreTests
             Test("Partial join timeout releases whole party", () => {
                 var r = new TeamReservations(); Reserve(r,1,4); var removed=r.Reconcile(new HashSet<ulong> {1,2,3},26);
                 Check(removed.Count == 1 && r.Count == 0 && Reserve(r,8,6,27), "partial group retained"); });
-            Test("Disconnect after admission removes the whole waiting party", () => {
+            // R644 (user 11-14: "그 사람만 나가고, 나머지 파티원과 방은 그대로"): it used to release the whole party.
+            Test("A member gone after its party was seated gives up only its own seat; a party with nobody left goes, bots and all", () => {
                 var r=new TeamReservations(); Reserve(r,1,3); r.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
-                r.Reconcile(new HashSet<ulong> {1,2},2); Check(r.Count == 0,"disconnected slot retained"); });
+                var removed=r.Reconcile(new HashSet<ulong> {1,2},2);
+                Check(removed.Count==0&&r.Count==2&&r.Find(3)==null&&r.Find(1)!=null&&r.Find(2)!=null,"the mates lost their seats, or the one gone kept its own");
+                // The leader gone: the others keep their seats under the same reservation.
+                removed=r.Reconcile(new HashSet<ulong> {2},3);
+                Check(removed.Count==0&&r.Count==1&&r.Find(2)!=null&&r.Groups[0].Leader==1,"the party did not outlast its leader");
+                removed=r.Reconcile(new HashSet<ulong>(),4);
+                Check(removed.Count==1&&r.Count==0,"an empty party kept a seat");
+                var bots=new TeamReservations(); ulong lead=500;
+                Check(bots.Reserve(lead,77,"t",new[] {lead,BotIdentity.Id(lead,0)},0,out _),"setup: a leader and its bot");
+                bots.Reconcile(new HashSet<ulong> {lead},1); bots.Reconcile(new HashSet<ulong>(),2);
+                Check(bots.Count==0,"a party's bot stayed without its people");
+                var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
+                Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
+            Test("R644: the waiting room's line of succession, a claim that passes over several in it, and the order by machines alone", () => {
+                Func<ulong,int,HostElection.Candidate> Heir=(id,fit)=>new HostElection.Candidate{Id=id,Fitness=fit,PingMs=-1};
+                var heirs=new[]{Heir(2,900),Heir(3,800),Heir(4,700),Heir(5,600)};
+                var published=new List<ulong>{3,2};
+                Check(HostElection.Line(published,new List<ulong>{2,3,4,5},1,heirs).SequenceEqual(new ulong[]{3,2,4,5}),"the line: the published order, then the rest by score");
+                Check(HostElection.Line(published,new List<ulong>{2,4,5},3,heirs).SequenceEqual(new ulong[]{2,4,5})&&HostElection.Line(null,new List<ulong>(),1,heirs).Count==0,"the line without the one leaving");
+                // Host 1 (number 1) is gone; 3 and 2 before 4 in line are dead as well. 4 claims three up and names both.
+                var claims=new Dictionary<ulong,int>{{2,0},{3,0},{4,4},{5,0}};
+                var passed=new Dictionary<ulong,ICollection<ulong>>{{4,new List<ulong>{3,2}}};
+                int e;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"a claim that names everyone before it in line: "+e);
+                passed[4]=new List<ulong>{3};
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1&&e==1,"a claim that names only one of the two before it was followed");
+                passed.Clear();
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1&&HostElection.FollowLine(1,1,1,published,claims,heirs,out e,null)==1,"a claim out of turn that names nobody was followed");
+                passed[4]=new List<ulong>{3,2};claims[4]=9;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1,"a claim far above what it names was followed");
+                // The first in line claims plainly; one passed over that claims after all is followed first, then the one that passed it over.
+                claims[4]=0;claims[3]=2;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==3&&e==2,"the first in line: "+e);
+                claims[4]=4;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"the one passed over came first, then the one that passed it over: "+e);
+                // Those it named that Steam has dropped since are no obstacle.
+                claims=new Dictionary<ulong,int>{{4,4},{5,0}};
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"a claim whose passed-over PCs have left the room");
+                // Machines alone, best first, whatever they measure against an unknown one's 300 (a room of weak laptops).
+                Func<ulong,int,int,HostElection.Candidate> Machine=(id,fit,machine)=>new HostElection.Candidate{Id=id,Fitness=fit,BaseFitness=machine,PingMs=-1};
+                Check(HostElection.RankAlone(new[]{Machine(1,120,250),Machine(2,400,200),Machine(3,90,280)}).SequenceEqual(new ulong[]{3,1,2}),"RankAlone");
+                Check(HostElection.WaitingMargin>HostElection.StartMargin&&HostElection.StartHost(1,new[]{Machine(1,500,500),Machine(2,540,540)},HostElection.WaitingMargin)==1&&
+                      HostElection.StartHost(1,new[]{Machine(1,500,500),Machine(2,560,560)},HostElection.WaitingMargin)==2,"a room that has moved its host moves it again only for 10% more"); });
             Test("Reject spoofed leader, zero IDs, repeated IDs and overlaps", () => {
                 var r=new TeamReservations(); Check(!r.Reserve(9,99,"x",new ulong[]{1,2},0,out _),"spoof");
                 Check(!r.Reserve(1,99,"x",new ulong[]{1,1},0,out _),"duplicate");
@@ -887,7 +981,9 @@ public static class NetworkCoreTests
                 Check(r.Count==0&&r.CoolingDown(1,26)&&!Reserve(r,1,1,27)&&!Reserve(r,1,6,26+TeamReservations.Cooldown-.5),"asked again during the cooldown");
                 Check(Reserve(r,7,6,27)&&Reserve(r,1,1,26+TeamReservations.Cooldown+.5),"the cooldown held up others or never ended");
                 var came=new TeamReservations(); Reserve(came,1,2); came.Reconcile(new HashSet<ulong>(Ids(1,2)),1); came.Reconcile(new HashSet<ulong> {1},2);
-                Check(came.Count==0&&!came.CoolingDown(1,2)&&Reserve(came,1,1,3),"people who came were made to wait");
+                Check(came.Count==1&&!came.CoolingDown(1,2),"people who came were made to wait");
+                came.Reconcile(new HashSet<ulong>(),3);
+                Check(came.Count==0&&!came.CoolingDown(1,3)&&Reserve(came,1,1,4),"people who came and left were made to wait");
                 var bots=new TeamReservations(); ulong host=900;
                 Check(bots.Reserve(host,77,"t",new[] {host,BotIdentity.Id(host,0)},0,out _)&&bots.ReserveBots(host,BotIdentity.Fill(host,2,6),0,out _),"setup: bots");
                 bots.Reconcile(new HashSet<ulong> {host},26);
@@ -1786,6 +1882,11 @@ public static class NetworkCoreTests
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(twice)),twice.Length,q),"a place twice");
                 var stage=(byte[])b.Clone(); stage[SwordWire.HeaderBytes+SwordWire.BaseBytes*2]=7;   // the second fighter's F stage
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(stage)),stage.Length,q),"stage out of range");
+                // The bishop's diagonal pick (SfEdge.Aim = 4) goes through; past it does not.
+                var aim=(byte[])b.Clone(); aim[SwordWire.HeaderBytes+SwordWire.BaseBytes*2+SwordWire.SkillBytes]=4;   // the second fighter's E stage
+                Check(SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(aim)),aim.Length,q)&&q.Fighters[1].EdgeStage==4,"E stage Aim read");
+                aim[SwordWire.HeaderBytes+SwordWire.BaseBytes*2+SwordWire.SkillBytes]=5;
+                Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(aim)),aim.Length,q),"E stage out of range");
                 // Twelve busy fighters and six collapses fit 1024 bytes once what does not fit is left off; lives and swords always go.
                 var big=new SwordWirePacket(); for(int i=0;i<12;i++) big.Fighters.Add(new SwordWireFighter{Ref=(byte)i,Alive=true,Skill=true,Edge=true,Glow=true});
                 for(int i=0;i<6;i++) big.Collapses.Add(new SwordWireCollapse{Id=(byte)(i+1),X1=1,Z1=1});
@@ -2360,7 +2461,7 @@ public static class NetworkCoreTests
                 Check(SkillGrades.Raises(SkillGrade.Mistake,SkillGrade.Brilliant)&&SkillGrades.Raises(SkillGrade.None,SkillGrade.Brilliant),"a late ring-out raises");
                 Check(!SkillGrades.Raises(SkillGrade.Brilliant,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.Interesting,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.None,SkillGrade.Great),"only to !!, once");
                 Check(SkillGrades.Symbol(SkillGrade.Interesting)=="!?"&&SkillGrades.Symbol(SkillGrade.Blunder)=="??","symbols"); });
-            Test("Sword Fight prototype: pick, countdown, every fall a point, ten wins, and the respawn is always a pawn", () => {
+            Test("Sword Fight prototype: pick, countdown, every fall a point, ten wins, and the respawn is the piece it picked (R640)", () => {
                 var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(2, 0); r.Add(3, 1);
                 Check(r.Pick(1, PieceKind.Knight) && !r.Pick(2, PieceKind.Knight) && r.Pick(3, PieceKind.Knight), "no doubles in a team, across teams fine");
                 Check(!r.Pick(1, PieceKind.Queen) && !r.Pick(2, PieceKind.Pawn), "one pick, never a pawn");
@@ -2371,18 +2472,20 @@ public static class NetworkCoreTests
                 {
                     var o = r.RingOut(3); Check(o.Valid && !o.Stole && o.Feed.Cause == SwordCause.Self, "self fall " + i);
                     Check(!r.RingOut(3).Valid, "once per life " + i);
-                    Check(!r.TryRespawn(3), "not before 3 s"); r.Advance(3.01); Check(r.TryRespawn(3) && r.Get(3).Piece == PieceKind.Pawn && r.Get(3).Alive, "back as a pawn, flag cleared " + i);
+                    Check(!r.TryRespawn(3), "not before 3 s"); r.Advance(3.01); Check(r.TryRespawn(3) && r.Get(3).Piece == PieceKind.Knight && r.Get(3).Alive, "back as its own knight, flag cleared " + i);
                 }
                 Check(r.White == 9 && r.Phase == SwordPhase.Playing, "nine");
                 r.RingOut(3); Check(r.Phase == SwordPhase.Result && r.Winner == 0 && r.Outs[0] == 10, "ten wins"); });
-            Test("Sword Fight prototype: the last enemy within 3 s takes the credit, a pawn steals the piece, an ally or a stale hit does not", () => {
+            Test("Sword Fight prototype: the last enemy within 3 s takes the credit, nobody steals a piece (R640), an ally or a stale hit is no credit", () => {
                 var r = new SwordMatchRules(1); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);
                 r.Advance(1); r.Advance(15); r.Advance(3.01);
                 r.Get(1).Piece = PieceKind.Pawn;
                 r.Hit(1, 2, SwordCause.PawnStep, 0); r.Advance(2.5);
-                var o = r.RingOut(2); Check(o.Credit == 1 && o.Stole && o.NewPiece == PieceKind.Queen && r.Get(1).Piece == PieceKind.Queen && r.Steals[0] == 1, "steal");
-                Check(o.Feed.Stolen == (byte)PieceKind.Queen && o.Feed.Cause == SwordCause.PawnStep, "feed");
-                r.Hit(1, 3, SwordCause.Sword, 5); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Queen, "not a pawn: no steal");
+                var o = r.RingOut(2); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Pawn && r.Steals[0] == 0, "a pawn's credit takes no piece");
+                Check(o.Feed.Stolen == 255 && o.Feed.Cause == SwordCause.PawnStep, "feed");
+                r.Get(1).Piece = PieceKind.Rook;
+                r.Hit(1, 3, SwordCause.Sword, 5); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Rook, "a piece's credit: no steal");
+                r.Advance(3.1); r.TryRespawn(2); Check(r.Get(2).Piece == PieceKind.Queen, "the fallen queen is back a queen");
                 r.Advance(3.1); r.TryRespawn(2); r.TryRespawn(3);
                 r.Hit(3, 2, SwordCause.Sword, 0); o = r.RingOut(2); Check(o.Credit == 0 && o.Feed.Cause == SwordCause.Self, "an ally's hit is no credit");
                 r.Advance(3.1); r.TryRespawn(2);
@@ -2401,15 +2504,31 @@ public static class NetworkCoreTests
                 Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
                 Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
                 Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            // R655 (승규 님 온라인 시험: 바닥이 감지되지 않고 떨어짐): every PC chose its own board (2 or 2.5 m squares); now the
+            // host's square side rides in the state and a client builds that board.
+            Test("Sword Fight board size: the host's square side rides in the match state; an older text and a wild size are refused", () => {
+                var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(2, 1);
+                var s = r.State(); s.Cell = 2.5f;
+                string text = SwordMatchWire.Encode(s, id => (byte)id); SwordMatchState back = null;
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && Math.Abs(back.Cell - 2.5f) < 1e-4f, "2.5 m back: " + text);
+                s.Cell = 2f; text = SwordMatchWire.Encode(s, id => (byte)id);
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && Math.Abs(back.Cell - 2f) < 1e-4f, "2 m back");
+                s.Cell = 0f; text = SwordMatchWire.Encode(s, id => (byte)id);
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && back.Cell == 0f, "not said: 0");
+                string head = text.Substring(0, text.IndexOf('|')), tail = text.Substring(text.IndexOf('|'));
+                string v40 = head.Substring(0, head.LastIndexOf(',')) + tail;
+                Check(!SwordMatchWire.Decode(v40, b => (ulong)b, out back), "an older text (12 header fields) refused");
+                Check(!SwordMatchWire.Decode(head.Substring(0, head.LastIndexOf(',')) + ",40" + tail, b => (ulong)b, out back)
+                    && !SwordMatchWire.Decode(head.Substring(0, head.LastIndexOf(',')) + ",NaN" + tail, b => (ulong)b, out back), "a wild size refused"); });
             // R502: the old host's last text can be a tenth of a second older than the bodies a new host takes over.
             Test("Sword Fight takeover: the new host's rules take who is out and each piece from the bodies, so no piece stays out or falls for ever", () => {
                 var r = new SwordMatchRules(4); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);
                 r.Advance(15.1); r.Advance(3.1);
                 Check(!r.Adopt(1, true, PieceKind.Rook, 0) && !r.Adopt(2, true, PieceKind.Queen, 0) && r.White == 0 && r.Black == 0, "bodies that agree change nothing");
                 Check(r.Adopt(2, false, PieceKind.Queen, 2.8) && !r.Get(2).Alive && r.White == 1 && r.Feed.Count == 1 && r.Feed[0].Credit == 0 && r.Feed[0].Cause == SwordCause.Self, "a fall in the gap: the point, no credit");
-                Check(!r.TryRespawn(2), "back before the body's own count"); r.Advance(2.85); Check(r.TryRespawn(2) && r.Get(2).Piece == PieceKind.Pawn, "not back after the body's count, as a pawn");
+                Check(!r.TryRespawn(2), "back before the body's own count"); r.Advance(2.85); Check(r.TryRespawn(2) && r.Get(2).Piece == PieceKind.Queen, "back after the body's count, as its own queen (R640)");
                 r.RingOut(3); Check(!r.Get(3).Alive && r.White == 2, "setup: out in the rules");
-                Check(r.Adopt(3, true, PieceKind.Pawn, 0) && r.Get(3).Alive && r.Get(3).Piece == PieceKind.Pawn && r.RespawnLeft(3) == 0, "a comeback in the gap is not taken");
+                Check(r.Adopt(3, true, PieceKind.King, 0) && r.Get(3).Alive && r.Get(3).Piece == PieceKind.King && r.RespawnLeft(3) == 0, "a comeback in the gap is not taken (its own king, R640)");
                 Check(r.RingOut(3).Valid && r.White == 3, "a piece taken back does not fall again");
                 r.Get(1).Piece = PieceKind.Pawn; Check(r.Adopt(1, true, PieceKind.Queen, 0) && r.Get(1).Piece == PieceKind.Queen, "a steal in the gap: the body's piece");
                 Check(r.Adopt(2, false, PieceKind.Pawn, double.NaN) && Math.Abs(r.RespawnLeft(2) - r.Settings.RespawnDelay) < 1e-9, "no count on the body: the full delay");
@@ -2759,9 +2878,9 @@ public static class NetworkCoreTests
                 Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
                 Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
                       "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
-            Test("R616 turret volleys: a turret every three seconds, never the one before, every turret as often, the same on every PC", () => {
-                Check(TurretVolleys.Period == 3.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(2.999) == 0 && TurretVolleys.Volley(3) == 1
-                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 21.0, "a volley every three seconds of the clock");
+            Test("War room turret volleys: a turret every two seconds, never the one before, every turret as often, the same on every PC", () => {
+                Check(TurretVolleys.Period == 2.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.999) == 0 && TurretVolleys.Volley(2) == 1
+                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 14.0, "a volley every two seconds of the clock");
                 foreach (int turrets in new[] { 3, 4, 5, 8 })
                     foreach (int seed in new[] { 1, 2, 77, -5, 20261112, int.MaxValue })
                     {
@@ -2797,6 +2916,59 @@ public static class NetworkCoreTests
                 // Two turrets take turns, one fires every time.
                 for (long n = -20; n < 20; n++)
                     Check(TurretVolleys.Turret(3, n, 2) != TurretVolleys.Turret(3, n + 1, 2) && TurretVolleys.Turret(3, n, 1) == 0, "two take turns"); });
+            Test("R624 sword pick on the entrance screen: the earlier pick keeps a piece, the close draws the rest, the same on every PC", () => {
+                // The member data's text, both ways; a broken or unpickable one is no pick.
+                PieceKind kind; double at;
+                Check(SwordPickDraft.Decode(SwordPickDraft.Encode(PieceKind.Queen, 1794508000.125), out kind, out at) && kind == PieceKind.Queen && at == 1794508000.125, "the pick's text round trip");
+                foreach (var bad in new[] { "", "x", "1,", ",5", "0,10", "9,10", "2,abc", "2,NaN" })
+                    Check(!SwordPickDraft.Decode(bad, out kind, out at) && kind == PieceKind.Pawn, "not a pick: '" + bad + "'");
+                const double begun = 1000;
+                // Two teammates on the queen: the earlier keeps it; the same moment: the lower id. The other side may take it too.
+                var picks = new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.Queen, begun + 5.2), Pick(2, 0, PieceKind.Queen, begun + 5.1),
+                                                             Pick(3, 1, PieceKind.Queen, begun + 9), Pick(4, 0, PieceKind.Rook, begun + 6), Pick(5, 0, PieceKind.Pawn, 0) };
+                var held = SwordPickDraft.Resolve(picks, begun);
+                Check(held[2] == PieceKind.Queen && !held.ContainsKey(1) && held[3] == PieceKind.Queen && held[4] == PieceKind.Rook && !held.ContainsKey(5), "earlier keeps it");
+                picks[0] = Pick(1, 0, PieceKind.Queen, begun + 5.1);
+                held = SwordPickDraft.Resolve(picks, begun);
+                Check(held[1] == PieceKind.Queen && !held.ContainsKey(2), "a tie goes to the lower id");
+                // A pick left over from an earlier round in the same room does not count, nor a bot's.
+                held = SwordPickDraft.Resolve(new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.King, begun - 30), Pick(2, 0, PieceKind.King, begun + 1, true) }, begun);
+                Check(held.Count == 0, "stale or bot picks count for nothing");
+                // Every human holds a piece: the picks close early; the stages from the host's start.
+                var all = new List<SwordPickDraft.Entry> { Pick(1, 0, PieceKind.King, begun + 4), Pick(2, 1, PieceKind.Rook, begun + 4), Pick(9, 0, PieceKind.Pawn, 0, true) };
+                Check(SwordPickDraft.AllPicked(all, begun) && !SwordPickDraft.AllPicked(picks, begun), "all picked counts humans only");
+                Check(SwordPickDraft.StageAt(0, false) == SwordPickDraft.Stage.Found && SwordPickDraft.StageAt(4.99, true) == SwordPickDraft.Stage.Found
+                      && SwordPickDraft.StageAt(5, false) == SwordPickDraft.Stage.Picking && SwordPickDraft.StageAt(19.9, false) == SwordPickDraft.Stage.Picking
+                      && SwordPickDraft.StageAt(5, true) == SwordPickDraft.Stage.Closed && SwordPickDraft.StageAt(20, false) == SwordPickDraft.Stage.Closed, "found 5 s, cards 15 s");
+                Check(SwordPickDraft.Left(0) == 15 && SwordPickDraft.Left(12) == 8 && SwordPickDraft.Left(30) == 0, "seconds left on the cards");
+                // The close: picks kept, everyone else one of their side's pieces left, the same draw for the same room.
+                foreach (int seed in new[] { SwordPickDraft.Seed(109775240000000001UL), SwordPickDraft.Seed(2), 7 })
+                    for (int size = 1; size <= 6; size++)
+                    {
+                        var room = new List<SwordPickDraft.Entry>();
+                        for (int i = 0; i < size; i++)
+                        {
+                            room.Add(Pick((ulong)(10 + i), 0, i == 0 ? PieceKind.Knight : PieceKind.Pawn, i == 0 ? begun + 3 : 0));
+                            room.Add(Pick((ulong)(20 + i), 1, PieceKind.Pawn, 0, i % 2 == 1));
+                        }
+                        var final = SwordPickDraft.Final(room, begun, seed);
+                        Check(final.Count == room.Count && final[10] == PieceKind.Knight, "everyone gets a piece, the pick kept");
+                        foreach (int team in new[] { 0, 1 })
+                        {
+                            var pieces = room.Where(e => e.Team == team).Select(e => final[e.Id]).ToList();
+                            Check(pieces.All(p => SwordMatchRules.Pickable.Contains(p)), "a pickable piece");
+                            Check(pieces.Distinct().Count() == Math.Min(5, pieces.Count), "no piece twice on a side while five go round: " + string.Join(",", pieces));
+                        }
+                        var again = SwordPickDraft.Final(room.AsEnumerable().Reverse().ToList(), begun, seed);
+                        Check(room.All(e => again[e.Id] == final[e.Id]), "the same draw on every PC, whatever order it reads the room in");
+                    }
+                // The scene's rules take the draw: a sixth player may double a piece up.
+                var rules = new SwordMatchRules(5);
+                rules.Add(1, 0); rules.Add(2, 0);
+                Check(rules.Assign(1, PieceKind.Queen) && rules.Assign(2, PieceKind.Queen) && !rules.Assign(3, PieceKind.King) && !rules.Assign(1, PieceKind.Pawn), "assign within the pick");
+                Check(rules.AllPicked && rules.Advance(.02) && rules.Phase == SwordPhase.Countdown, "all assigned: straight to 3, 2, 1");
+                Check(!rules.Assign(1, PieceKind.King), "no assigning after the pick");
+                Check(SwordSkillNames.Skill(PieceKind.Queen) == "꼬치 베기" && SwordSkillNames.Edge(PieceKind.Knight) == "벼랑 끝 역전", "skill names"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

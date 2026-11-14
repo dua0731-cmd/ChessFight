@@ -1,0 +1,45 @@
+// In-memory Unity MCP code body for Play mode (not installed). Set SECTION and VIEWS. Every setting is restored in finally.
+var section="SECTION";
+var outDir="C:/Work/ChessFight/Temp/ModelOptimization20261113Pass3/light";
+var cam=Camera.main;
+var orbit=cam.GetComponents<MonoBehaviour>().Concat(cam.GetComponentsInParent<MonoBehaviour>()).Where(m=>m.GetType().Name=="OrbitCamera").ToArray();
+foreach(var o in orbit)o.enabled=false;
+var a=(UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset)UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+var rds=(UnityEngine.Rendering.Universal.ScriptableRendererData[])typeof(UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset).GetField("m_RendererDataList",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(a);
+var ssao=rds[0].rendererFeatures.First(f=>f.name.Contains("Ambient"));
+var sf=ssao.GetType().GetField("m_Settings",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+var s=sf.GetValue(ssao);var st=s.GetType();
+var fDown=st.GetField("Downsample",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
+var fBlur=st.GetField("BlurQuality",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
+object down0=fDown.GetValue(s),blur0=fBlur.GetValue(s);
+int res0=a.mainLightShadowmapResolution;float dist0=a.shadowDistance;bool ssaoOn=ssao.isActive;
+var all=UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None).Where(r=>r.enabled&&r.gameObject.activeInHierarchy).ToArray();
+var small=all.Where(r=>r.shadowCastingMode!=UnityEngine.Rendering.ShadowCastingMode.Off&&r.bounds.size.magnitude<0.6f).ToArray();var smallMode=small.Select(r=>r.shadowCastingMode).ToArray();
+var points=UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Where(l=>l.type==LightType.Point&&l.isActiveAndEnabled).ToArray();
+var views=new[]{VIEWS};
+var modes=new[]{"base","ssaoHalf","ssaoBlurMed","shadow2048","dist30","smallNoShadow","combo","ssaoOff","pointsOff"};
+var rt=new RenderTexture(1920,1080,24);var oldT=cam.targetTexture;cam.targetTexture=rt;
+System.Action sync=()=>{var q=RenderTexture.active;RenderTexture.active=rt;var t2=new Texture2D(1,1);t2.ReadPixels(new Rect(0,0,1,1),0,0);t2.Apply();UnityEngine.Object.DestroyImmediate(t2);RenderTexture.active=q;};
+System.Action<string> save=(file)=>{var q=RenderTexture.active;RenderTexture.active=rt;var t2=new Texture2D(1920,1080,TextureFormat.RGB24,false);t2.ReadPixels(new Rect(0,0,1920,1080),0,0);t2.Apply();System.IO.File.WriteAllBytes(file,t2.EncodeToPNG());UnityEngine.Object.DestroyImmediate(t2);RenderTexture.active=q;};
+var res=new System.Collections.Generic.List<string>();
+try{
+foreach(var v in views){cam.transform.position=v.pos;cam.transform.LookAt(v.look);
+foreach(var mode in modes){
+ fDown.SetValue(s,mode=="ssaoHalf"||mode=="combo"?(object)true:down0);
+ fBlur.SetValue(s,mode=="ssaoBlurMed"||mode=="combo"?System.Enum.Parse(fBlur.FieldType,"Medium"):blur0);
+ ssao.SetActive(mode!="ssaoOff"&&ssaoOn);
+ a.mainLightShadowmapResolution=mode=="shadow2048"||mode=="combo"?2048:res0;
+ a.shadowDistance=mode=="dist30"||mode=="combo"?30f:dist0;
+ for(int i=0;i<small.Length;i++)small[i].shadowCastingMode=mode=="smallNoShadow"||mode=="combo"?UnityEngine.Rendering.ShadowCastingMode.Off:smallMode[i];
+ foreach(var l in points)l.enabled=mode!="pointsOff";
+ double best=1e9;
+ for(int rep=0;rep<3;rep++){for(int i=0;i<4;i++)cam.Render();sync();var sw=System.Diagnostics.Stopwatch.StartNew();for(int i=0;i<15;i++)cam.Render();sync();best=Math.Min(best,sw.Elapsed.TotalMilliseconds/15);}
+ cam.Render();save(outDir+"/"+section+"_"+v.name+"_"+mode+".png");
+ res.Add(section+"\t"+v.name+"\t"+mode+"\t"+best.ToString("F2"));
+}}
+}finally{
+ fDown.SetValue(s,down0);fBlur.SetValue(s,blur0);ssao.SetActive(ssaoOn);a.mainLightShadowmapResolution=res0;a.shadowDistance=dist0;
+ for(int i=0;i<small.Length;i++)small[i].shadowCastingMode=smallMode[i];foreach(var l in points)l.enabled=true;
+ cam.targetTexture=oldT;rt.Release();UnityEngine.Object.DestroyImmediate(rt);foreach(var o in orbit)o.enabled=true;}
+System.IO.File.WriteAllText(outDir+"/"+section+".tsv",string.Join("\n",res));
+return new{small=small.Length,res,restored=new{a.mainLightShadowmapResolution,a.shadowDistance,ssao=ssao.isActive,down=fDown.GetValue(s),blur=fBlur.GetValue(s)}};

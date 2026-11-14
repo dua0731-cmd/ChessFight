@@ -341,9 +341,12 @@ namespace ChessFight.Gameplay
 
         void OnGUI()
         {
-            if (!showHelp || driver == null) return;
+            if (driver == null) return;
             if (style == null)
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
+            // R642: held / holding another piece (this spawner is only in the Pawn Rush scenes), with the help or without.
+            if (driver is IGripReadout grip) GripHudGui.Draw(grip, style);
+            if (!showHelp) return;
             string text =
                 "<b>플레이테스트 (오프라인)</b>" + (team >= 0 ? $" · {Teams.Name(team)}팀" : "") + "\n" +
                 "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기\n" +

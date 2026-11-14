@@ -1,0 +1,14 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenLockDyke.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Lock and dyke stonework",
+   "tris": 109438,
+   "chunks": 4,
+   "sum": 109438
+  }
+ ],
+ "objects": 15,
+ "tris": 276588
+}

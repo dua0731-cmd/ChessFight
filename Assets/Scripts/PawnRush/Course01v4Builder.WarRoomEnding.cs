@@ -20,8 +20,8 @@ namespace ChessFight.PawnRush
     //      stairs. On the well's corners every turret sees the whole of the carriage's travel between the inner piers
     //      (from out on the balconies a pier hides half of it), and on a tower 1.5 m high its shots clear the
     //      balustrades.
-    //   2  They fire as one battery (LibraryRookTurret.ConfigureVolley, Core TurretVolleys): one turret every three
-    //      seconds, drawn from the section's seed, never the one before, at the carriage's deck where it will be.
+    //   2  They fire as one battery (LibraryRookTurret.ConfigureVolley, Core TurretVolleys): one turret every two
+    //      seconds, drawn from the section's seed, never the one before, through the carriage at rider height.
     //   3  The great door behind the star platform - until now a relief on the solid rear wall - is the way out: the
     //      relief's two leaves are cut out of it and hung on a PushGate (the carriage yard's final gate: held with the
     //      right mouse button and walked open, its progress in the course state), the wall behind them is opened, and
@@ -31,6 +31,51 @@ namespace ChessFight.PawnRush
     // Section frame throughout (x east, y up from the start floor, z north = the way on), as WarRoomSection.
     public static partial class Course01v4Builder
     {
+        // Enclose a section of each balcony from the well to the side wall. Both ends and the well-facing side
+        // are closed, so diving around a single gate cannot land back on the balcony beyond it. The enclosures
+        // stand on the opposite half of each balcony from its blower. The basement stairs still return to the start.
+        static void WarRoomBalconyScreens(Transform content)
+        {
+            var iron = LibraryPaintLook(Kind.Iron, LibraryPaint.Iron);
+            var brass = LibraryPaintLook(Kind.Brass, LibraryPaint.Brass);
+            foreach (int side in new[] { -1, 1 })
+            {
+                var enclosure = new GameObject(side < 0 ? "West balcony enclosure" : "East balcony enclosure");
+                var t = enclosure.transform;
+                t.SetParent(content, false);
+                t.localPosition = new Vector3(side * 11.55f, 0f, -side * 4.25f);
+                const float width = 7.5f, depth = 8.5f, top = 7.5f;
+                var box = enclosure.AddComponent<BoxCollider>();
+                box.size = new Vector3(width, top + .15f, depth);
+                box.center = new Vector3(0f, (top - .15f) * .5f, 0f);
+                enclosure.AddComponent<NoClimbSurface>();
+                // Reuse the room's iron and brass. One smooth solid backs all three faces of the grille.
+                for (int i = 0; i <= 12; i++)
+                {
+                    float x = Mathf.Lerp(-width * .5f, width * .5f, i / 12f);
+                    foreach (int end in new[] { -1, 1 })
+                        YardKit.Box(t, "End grille bar", new Vector3(x, top * .5f, end * depth * .5f),
+                            new Vector3(.09f, top, .11f), iron, YardKit.Solid.None);
+                }
+                float inner = -side * width * .5f;
+                for (int i = 1; i < 14; i++)
+                    YardKit.Box(t, "Gallery grille bar", new Vector3(inner, top * .5f, depth * (i / 14f - .5f)),
+                        new Vector3(.11f, top, .09f), iron, YardKit.Solid.None);
+                foreach (float y in new[] { .15f, 1.18f, top - .15f })
+                {
+                    foreach (int end in new[] { -1, 1 })
+                        YardKit.Box(t, "End rail", new Vector3(0f, y, end * depth * .5f),
+                            new Vector3(width, .14f, .15f), brass, YardKit.Solid.None);
+                    YardKit.Box(t, "Gallery rail", new Vector3(inner, y, 0f),
+                        new Vector3(.15f, .14f, depth), brass, YardKit.Solid.None);
+                }
+            }
+            // The long, narrow fixed supports below the carriage are scenery in the race. The moving deck and
+            // its fittings still carry riders, and the take-off strip still supports their jump onto it.
+            foreach (var collider in content.GetComponentsInChildren<MeshCollider>(true))
+                if (collider.name.StartsWith("Fixed_guide_")) collider.enabled = false;
+        }
+
         // ------------------------------------------------------------------ 1, 2: the turrets
 
         public const int WarRoomTurretCount = 4;
@@ -93,7 +138,7 @@ namespace ChessFight.PawnRush
                 rook.name = "Goal_rook_" + WarRoomTurretNames[i];
                 rook.GetComponent<LibraryRookTurret>().ConfigureVolley(i, WarRoomTurretCount, content, facing, rest, piece, gap, pedestal);
             }
-            Debug.Log("[작전 회의실] 포탑 4개를 컨베이어 구덩이 네 귀퉁이의 탑 위에(R616): 3초마다 무작위 한 대가 캐리지 쪽으로, 같은 포탑이 연달아 쏘지 않음");
+            Debug.Log("[작전 회의실] 2초마다 포탑 한 대가 캐리지 위의 플레이어 높이를 가로질러 발사합니다.");
             return true;
         }
 

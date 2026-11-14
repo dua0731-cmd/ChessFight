@@ -28,6 +28,18 @@ public static class SessionFlowTests
         for(int i=1;i<clients.Count;i++){var c=clients[i];As(c,()=>c.JoinPrivateMatch(clients[0].Match));}
         Step(20);Check(clients.All(c=>c.Match==clients[0].Match&&c.Roster.Count==fitness.Length),"room did not fill");
     }
+    // R644: a public waiting room of solo players found by matchmaking, one after another, with the given machine
+    // scores; the first one makes it (and manages it). `configure` runs before anyone searches.
+    static void PublicRoom(int[] fitness,Action configure=null)
+    {
+        Setup(fitness.Length);configure?.Invoke();
+        for(int i=0;i<fitness.Length;i++)clients[i].LocalFitness=fitness[i];
+        foreach(var c in clients.ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+        Step(20);Check(clients.All(c=>c.Match==clients[0].Match&&c.Match!=0&&c.Roster.Count==fitness.Length&&c.Error==""),"the public room did not fill");
+    }
+    // R644: a PC that loses power: nothing of it runs again, but Steam keeps it in its rooms (and their owner, if it
+    // was) until FakeSteam.Crash takes it out.
+    static void PowerOff(SteamSession c){clients.Remove(c);}
     static ulong Owner(SteamSession c)=>FakeSteam.Lobbies[c.Match].Owner;
     static string RoomData(SteamSession c,string key)=>FakeSteam.Lobbies[c.Match].Data.TryGetValue(key,out var v)?v:"";
     // A modified client in the host's room asks for seats with whatever members it likes; the host's answer.
@@ -115,8 +127,25 @@ public static class SessionFlowTests
                 Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();
                 As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
                 Check(clients.All(c=>c.Roster.Count==2),"admission failed");Check(clients[0].Roster[1].Team!=clients[0].Roster[2].Team,"team balance");});
-            Test("Follower cancellation returns whole party to idle",()=>{
-                Setup(2);JoinParty(1,0);As(clients[0],()=>clients[0].FindMatch(true));Step(20);
+            // R644 (user 11-14: "대기실에서 파티원 한 명이 나가면 … 그 사람만 나가고, 나머지 파티원과 방은 그대로"). Before,
+            // a member's cancel called the whole party's search off.
+            Test("A party member that leaves the waiting room goes alone; its party stays seated, and it is back with the party afterwards",()=>{
+                Setup(3);JoinParty(1,0);JoinParty(2,0);var leader=clients[0];var member=clients[1];var mate=clients[2];
+                As(leader,()=>leader.FindMatch(true));Step(20);
+                Check(clients.All(c=>c.Match==leader.Match&&c.Roster.Count==3),"setup: the party of three seated");
+                ulong room=leader.Match;
+                As(member,member.Cancel);Step(20);
+                Check(member.Match==0&&!member.Searching&&member.Party==leader.Party,"the member did not leave alone: "+member.Status);
+                Check(leader.Match==room&&mate.Match==room&&leader.Searching&&leader.Roster.Count==2&&mate.Roster.Count==2&&!leader.Roster.ContainsKey(member.Self),
+                      "the party lost its seats with the member: "+leader.Roster.Count+" "+leader.Error);
+                Step(20);Check(member.Match==0,"the member walked back into the room it left");
+                // The leader calls the search off: everyone is back in the party, and the next search takes the member along again.
+                As(leader,leader.Cancel);Step(20);
+                Check(clients.All(c=>c.Match==0&&!c.Searching&&!c.Busy&&c.Party==leader.Party),"the party did not gather again");
+                As(leader,()=>leader.FindMatch(true));Step(20);
+                Check(clients.All(c=>c.Match==leader.Match&&c.Match!=0&&c.Roster.Count==3),"the member was left out of the party's next room");});
+            Test("A party member still on its way into the room calls the whole search off, as before",()=>{
+                Setup(2);JoinParty(1,0);As(clients[0],()=>clients[0].FindMatch(true));Step(1);
                 As(clients[1],clients[1].Cancel);Step(20);Check(clients.All(c=>c.Match==0&&!c.Searching),"cancel did not propagate");});
             Test("Cancelled asynchronous lobby join is not resurrected",()=>{
                 Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();
@@ -133,10 +162,15 @@ public static class SessionFlowTests
                 var host=clients[0];var next=clients[1];ulong room=host.Match;As(host,host.Dispose);clients.Remove(host);Step(20);
                 Check(next.Match==room&&next.IsHost&&Owner(next)==next.Self&&next.Roster.Count==1&&next.Roster.ContainsKey(next.Self),"the room did not go on under the next player");
                 bool ok=false;As(next,()=>ok=next.AddTestBot(1));Check(ok&&next.CanStartGame,"the new host cannot run the room");});
-            Test("A crashed waiting-room host still ends the room without accidental host migration",()=>{
+            // R644 (user 11-14: the waiting room's host "강제 종료 됐을 때 혹은 나갔을 때 남은 사람에게 pc 성능이 가장 좋은
+            // 사람에게 바로! 전이 … 기존 대기실에서 진행"). Before, a crashed host ended the waiting room.
+            Test("A waiting-room host that crashes is followed by the next player in the same room, who can start it",()=>{
                 Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
-                var host=clients[0];FakeSteam.Crash(host.Self);clients.Remove(host);Step(20);
-                Check(clients[0].Match==0,"new lobby owner incorrectly became game host");});
+                var host=clients[0];var next=clients[1];ulong room=host.Match;FakeSteam.Crash(host.Self);clients.Remove(host);Step(20);
+                Check(next.Match==room&&next.IsHost&&Owner(next)==next.Self&&next.Error=="","the room ended with its host: "+next.Error);
+                Check(next.Roster.Count==1&&next.Roster.ContainsKey(next.Self)&&next.IsManager&&RoomData(next,"host")==next.Self.ToString(),"the room's seats, manager or record after the crash");
+                bool ok=false;As(next,()=>ok=next.AddTestBot(1));Check(ok&&next.CanStartGame,"the new host cannot run the room");
+                As(next,next.StartGame);Step(6);Check(next.Started,"the room did not start under its new host");});
             Test("Twelve simultaneous solo searches converge and start six versus six",()=>{
                 Setup(12);foreach(var c in clients)As(c,()=>c.FindMatch());Step(400);
                 Check(clients.All(c=>c.Match!=0&&c.Started)&&clients.Select(c=>c.Match).Distinct().Count()==1,"queues fragmented");
@@ -567,9 +601,24 @@ public static class SessionFlowTests
                 As(leader,()=>leader.FindMatch());Step(40);
                 ulong room=host.Match;
                 Check(room!=0&&leader.Match==room&&member.Match==room&&host.Roster.Count==3&&host.IsHost&&!host.Started,"setup: one public waiting room");
+                // R644: a room whose host crashes no longer ends while someone seated is left: the party stays where it is.
                 FakeSteam.Crash(host.Self);clients.Remove(host);Step(60);
-                Check(leader.Searching&&leader.Error==""&&member.Error==""&&leader.Match!=0&&leader.Match!=room&&member.Match==leader.Match,
-                      "the party left the queue with the room: "+leader.Status+" / "+leader.Error+" / "+member.Error);});
+                Check(leader.Searching&&leader.Error==""&&member.Error==""&&leader.Match==room&&member.Match==room&&clients.Count(c=>c.IsHost)==1&&leader.Roster.Count==2,
+                      "the party did not stay in the room after its host crashed: "+leader.Status+" / "+leader.Error+" / "+member.Error);
+                // A room that does end - its host gone before the party had its seats, by a crash or by leaving - still sends the party on.
+                foreach(bool crash in new[]{true,false})
+                {
+                    Setup(3);host=clients[0];leader=clients[1];member=clients[2];JoinParty(2,1);
+                    As(host,()=>host.FindMatch());Step(20);room=host.Match;
+                    As(leader,()=>leader.FindMatch());
+                    for(int i=0;i<60&&leader.Match!=room;i++)Step(1);
+                    Check(leader.Match==room&&host.Roster.Count==1,"setup: the party in the room, not seated yet");
+                    if(crash)FakeSteam.Crash(host.Self);else As(host,host.Cancel);
+                    clients.Remove(host);Step(60);
+                    Check(leader.Searching&&leader.Error==""&&member.Error==""&&leader.Match!=0&&leader.Match!=room&&member.Match==leader.Match,
+                          "the party left the queue with the room ("+(crash?"crash":"leave")+"): "+leader.Status+" / "+leader.Error+" / "+member.Error);
+                    if(crash)foreach(var c in clients.ToArray())As(c,c.Dispose);
+                }});
             // R503 [9]: a short drop of Steam's connection threw the player out of a live match at once, and Cancel ran on every poll.
             Test("A short Steam logoff is waited out; a long one leaves the match, once",()=>{
                 Room(new[]{900,700});var a=clients[0];var b=clients[1];As(a,a.StartGame);Step(20);
@@ -1068,6 +1117,174 @@ public static class SessionFlowTests
                 // A player gone is a change as well: weighed, and the best PC already hosts.
                 As(c,c.Cancel);Step(40);
                 Check(b.IsHost&&a.Host==b.Self&&a.Epoch==2&&b.Roster.Count==2,"a leaver moved the host");});
+            // ---- R644 (user 11-14, the team's test of the R640 build) ----
+            // "물리담당PC가 (방장아님) 나갔을 경우 방이 터져서 각각의 참가자들이 새로운 방으로 전이됨": a leaving host was
+            // weighed against itself as an unknown machine (300 points); in a room of laptops that all measured less,
+            // nobody was "better" and the room was closed instead of handed on.
+            Test("R644: a waiting-room host that leaves hands the room on although every machine measures below an unknown one's 300; the manager stays",()=>{
+                PublicRoom(new[]{250,280,200,260});var maker=clients[0];var host=clients[1];var heir=clients[3];ulong room=maker.Match;
+                Check(clients.All(c=>c.Host==host.Self&&c.Manager==maker.Self)&&Owner(host)==host.Self,"setup: the best PC hosts, the maker manages");
+                As(host,host.Cancel);clients.Remove(host);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Error==""&&c.Searching),"the room ended with its host: "+maker.Error);
+                Check(clients.All(c=>c.Host==heir.Self&&c.Manager==maker.Self&&c.Roster.Count==3)&&Owner(heir)==heir.Self&&RoomData(heir,"host")==heir.Self.ToString(),
+                      "the best PC left did not take the room, or the manager moved: host "+maker.Host+" manager "+maker.Manager);
+                Check(maker.CanStartGame==false&&maker.TeamCount(0)+maker.TeamCount(1)==3,"three in the room: "+maker.TeamCount(0)+" v "+maker.TeamCount(1));});
+            // "물리 담당 PC 이전 안됨 버그 (깜빡이면서 물리 담당이 완전히 이전되지 않음)" · "양도, 강퇴 버튼이 깜빡이면서": Steam
+            // sends room data a moment after it is written and a change of owner at once (FakeSteam.DataDelay). The
+            // record of a handover written in the same breath as SetLobbyOwner was lost: the room stood under its new
+            // owner with the old host on record, went back, and was handed over again every few seconds; in the end
+            // the old host threw itself out and everyone was sent off to find another room.
+            Test("R644: with room data that lags a change of owner, a waiting-room handover happens once and stays; leaving, a manager handed on and the start all hold",()=>{
+                var changes=new Dictionary<ulong,int>();
+                PublicRoom(new[]{500,560,480,520},()=>{FakeSteam.DataDelay=.5f;foreach(var c in clients){var x=c;changes[x.Self]=0;x.HostChanged+=(a,b)=>changes[x.Self]++;}});
+                var maker=clients[0];var best=clients[1];ulong room=maker.Match;
+                Check(clients.All(c=>c.Host==best.Self&&c.Manager==maker.Self&&c.WaitingEpoch==2)&&Owner(best)==best.Self&&RoomData(maker,"host")==best.Self.ToString(),
+                      "setup: the room went to the best PC once: host "+maker.Host+" number "+maker.WaitingEpoch);
+                // A minute in the room: nothing moves, and the manager's buttons stand still.
+                int before=changes.Values.Sum();bool steady=true;
+                for(int t=0;t<200;t++){Step(1);steady&=clients.Skip(1).All(c=>maker.CanKick(c.Self)&&maker.CanGiveManager(c.Self))&&!maker.CanKick(maker.Self);}
+                Check(steady&&changes.Values.Sum()==before&&changes[maker.Self]==1&&clients.All(c=>c.Host==best.Self&&c.Match==room&&c.Error==""),
+                      "the host role or the manager's buttons flickered: "+string.Join(" ",changes.Select(k=>k.Key+":"+k.Value)));
+                // The host leaves: its record of the handover never reaches Steam (it has left by then), so the next in line steps in by itself.
+                As(best,best.Cancel);clients.Remove(best);Step(20);
+                var heir=clients[2];   // 520 of 500 / 480 / 520
+                Check(clients.All(c=>c.Match==room&&c.Error==""&&c.Host==heir.Self&&c.Manager==maker.Self&&c.Roster.Count==3)&&Owner(heir)==heir.Self,
+                      "the room did not go on under the best PC left: host "+maker.Host+" "+maker.Error);
+                // The manager hands the role to another player, who then leaves: the next one in the seats' order manages.
+                var third=clients[1];As(maker,()=>maker.GiveManager(third.Self));Step(10);
+                Check(clients.All(c=>c.Manager==third.Self),"setup: the manager's role handed on");
+                As(third,third.Cancel);clients.Remove(third);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Manager==maker.Self&&c.Roster.Count==2&&c.Error=="")&&maker.CanStartGame,"the manager's role did not pass on when the manager left: "+maker.Manager);
+                As(maker,maker.StartGame);Step(20);
+                Check(clients.All(c=>c.Started&&c.Match==room&&c.Error==""&&c.Host==heir.Self)&&Owner(heir)==heir.Self&&RoomData(heir,"phase")=="playing","the start: "+maker.Error+" / "+heir.Error);});
+            Test("R644: the start and a running match's handovers hold as well when room data lags a change of owner",()=>{
+                // The stronger PC's score arrives while the start waits for it, so the start itself moves the host.
+                Room(new[]{1000,0,600},()=>FakeSteam.DataDelay=.5f);var maker=clients[0];var strong=clients[1];var third=clients[2];
+                As(maker,maker.StartGame);Step(2);strong.LocalFitness=1400;Step(20);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self&&c.Epoch==1&&c.Error=="")&&Owner(strong)==strong.Self&&RoomData(third,"host")==strong.Self.ToString()&&RoomData(third,"phase")=="playing",
+                      "the start that moves the host: host "+third.Host+" owner "+Owner(third));
+                foreach(var c in clients){var x=c;As(x,()=>x.ReportLoading(100));}
+                Step(20);Check(strong.StartAt>0&&clients.All(c=>c.StartAt==strong.StartAt),"the shared start under the new host");
+                // The host leaves the running match: the record it writes on its way out is lost, the successor steps in.
+                As(strong,strong.Cancel);clients.Remove(strong);Step(20);
+                Check(clients.All(c=>c.Started&&c.Host==maker.Self&&c.Error=="")&&Owner(maker)==maker.Self&&RoomData(third,"host")==maker.Self.ToString(),"the running match after its host left: host "+third.Host);});
+            // "물리 담당이 강제 종료 됐을 때 혹은 나갔을 때 남은 사람에게 pc 성능이 가장 좋은 사람에게 바로! 전이 … 기존 대기실에서
+            // 진행": a host whose game dies. Steam takes a crashed game out of the room at once.
+            Test("R644: a waiting-room host that crashes is followed by the best PC left, in the same room; its manager's role passes on and the room starts",()=>{
+                PublicRoom(new[]{900,700,500,600,650});var dead=clients[0];var heir=clients[1];ulong room=dead.Match;
+                Check(clients.All(c=>c.Host==dead.Self&&c.Manager==dead.Self),"setup: the maker hosts and manages");
+                FakeSteam.Crash(dead.Self);clients.Remove(dead);Step(4);
+                Check(clients.All(c=>c.Host==heir.Self&&c.Match==room),"the next in line did not step in at once: host "+heir.Host);
+                Step(16);
+                // The manager's role goes to the player seated first among those left (the seats' order), on every screen.
+                var boss=clients.FirstOrDefault(c=>c.IsManager);
+                Check(boss!=null&&clients.All(c=>c.Match==room&&c.Error==""&&c.Host==heir.Self&&c.Roster.Count==4&&c.Manager==boss.Self)&&Owner(heir)==heir.Self,
+                      "the room after its host and manager crashed: manager "+heir.Manager+" "+heir.Error);
+                Check(boss.CanStartGame&&clients.Count(c=>c.CanStartGame)==1,"the new manager cannot start two against two");
+                As(boss,boss.StartGame);Step(10);Check(clients.All(c=>c.Started&&c.Host==heir.Self),"the start after the crash");});
+            // "컴퓨터 강제 종료 됐을 때 해당 플레이어가 안나가졌음 … 물리담당 이였는데 컴퓨터 과열로 꺼졌는데 그 나간 플레이어가 아직
+            // 매칭 대기실에 있었음 꽤 긴 시간 동안": a PC that loses power stays in Steam's room - and its owner - for a long
+            // while. The others stop hearing it on the lobby's stream; after 3 seconds the next PC hosts, and the dead
+            // one is off every screen. The room itself can only be written again once Steam lets go of it.
+            Test("R644: a waiting-room host that loses power is replaced after 3 seconds of silence and taken off the roster; once Steam drops it the room is written again and starts",()=>{
+                PublicRoom(new[]{900,700,500,600,650});var dead=clients[0];var heir=clients[1];ulong room=dead.Match;
+                PowerOff(dead);
+                foreach(var c in clients){var x=c;As(x,()=>x.ReportHostSilence(SteamSession.WaitingQuietAfter+.1f));}
+                Step(4);Check(clients.All(c=>c.Host==dead.Self&&c.Roster.Count==5),"the host was replaced before it had been silent for 3 seconds");
+                foreach(var c in clients){var x=c;As(x,()=>x.ReportHostSilence(SteamSession.WaitingSilence+.1f));}
+                Step(2);Check(clients.All(c=>c.Host==heir.Self&&c.Match==room)&&heir.IsHost,"the next in line did not take the silent host's role: host "+heir.Host);
+                Step(24);
+                Check(Owner(heir)==dead.Self&&clients.All(c=>c.RoomHeld&&c.Roster.Count==4&&!c.Roster.ContainsKey(dead.Self)&&c.Error==""&&c.Match==room),
+                      "the dead PC is still on someone's roster, or the room is not held: "+string.Join(" ",clients.Select(c=>c.Roster.Count+(c.RoomHeld?"h":"-"))));
+                Check(clients.All(c=>!c.CanStartGame)&&heir.Status==SteamSession.RoomHeldMessage,"a room that cannot be written offered its start: "+heir.Status);
+                // Steam lets go of the dead PC at last.
+                FakeSteam.Crash(dead.Self);Step(12);
+                var boss=clients.FirstOrDefault(c=>c.IsManager);
+                Check(boss!=null&&Owner(heir)==heir.Self&&RoomData(heir,"host")==heir.Self.ToString()&&clients.All(c=>!c.RoomHeld&&c.Host==heir.Self&&c.Roster.Count==4&&c.Manager==boss.Self&&c.Error==""),
+                      "the room after Steam dropped the dead PC: manager "+heir.Manager+" owner "+Owner(heir));
+                Check(boss.CanStartGame,"the new manager cannot start");
+                As(boss,boss.StartGame);Step(10);Check(clients.All(c=>c.Started&&c.Host==heir.Self),"the start after the power cut");});
+            Test("R644: one PC that alone stops hearing the waiting room's host moves nothing; a host taken for dead that is not steps down, hands the room over and keeps its seat",()=>{
+                PublicRoom(new[]{900,700,500,600});var host=clients[0];var heir=clients[1];ulong room=host.Match;
+                // The next in line alone hears nothing (its own link dropped): the others still hear the host.
+                for(int t=0;t<20;t++){As(heir,()=>heir.ReportHostSilence(6));Step(1);}
+                Check(clients.All(c=>c.Host==host.Self&&c.WaitingEpoch==1),"one PC's own outage moved the waiting room's host");
+                // Everyone stops hearing it (its game hangs for a while), and then it runs again.
+                foreach(var c in clients.Skip(1)){var x=c;As(x,()=>x.ReportHostSilence(6));}
+                Step(12);
+                Check(clients.All(c=>c.Host==heir.Self&&c.Match==room&&c.Error==""&&c.WaitingEpoch==2)&&Owner(heir)==heir.Self&&!host.IsHost,"the silent host was not replaced everywhere: "+host.Host);
+                Check(clients.All(c=>!c.RoomHeld&&c.Roster.Count==4&&c.Roster.ContainsKey(host.Self)&&c.Manager==host.Self)&&host.CanStartGame,"a live host lost its seat or its manager's role with the host role");});
+            // A seated player (not the host) whose PC dies: the host stops hearing it and gives up its seat after 3
+            // seconds, though Steam still lists it. Its party stays ("그 사람만 나가고, 나머지 파티원과 방은 그대로").
+            Test("R644: a seated player whose PC loses power gives up its seat after 3 seconds of silence; its party mates and the room stay, and the manager's role passes on if it was the manager",()=>{
+                Setup(4);var maker=clients[0];var solo=clients[1];var leader=clients[2];var dead=clients[3];JoinParty(3,2);
+                maker.LocalFitness=900;solo.LocalFitness=500;leader.LocalFitness=600;dead.LocalFitness=550;
+                As(maker,()=>maker.FindMatch());Step(20);As(solo,()=>solo.FindMatch());Step(20);As(leader,()=>leader.FindMatch());Step(40);
+                ulong room=maker.Match;
+                Check(clients.All(c=>c.Match==room&&c.Roster.Count==4&&c.Host==maker.Self)&&maker.Roster[leader.Self].Team==maker.Roster[dead.Self].Team,"setup: four seated, the party on one team");
+                As(maker,()=>maker.GiveManager(dead.Self));Step(6);Check(clients.All(c=>c.Manager==dead.Self),"setup: the party's member manages the room");
+                PowerOff(dead);
+                As(maker,()=>maker.ReportPeerSilence(dead.Self,SteamSession.PeerLostAfter-1));Step(6);
+                Check(clients.All(c=>c.Roster.Count==4),"a short silence cost a seat");
+                As(maker,()=>maker.ReportPeerSilence(dead.Self,SteamSession.PeerLostAfter+.1f));Step(6);
+                Check(clients.All(c=>c.Roster.Count==3&&!c.Roster.ContainsKey(dead.Self)&&c.Match==room&&c.Error==""),"the dead PC kept its seat, or someone left with it: "+leader.Error);
+                Check(FakeSteam.Lobbies[room].Members.Contains(dead.Self)&&leader.Searching&&clients.All(c=>c.Manager==maker.Self),"the party's leader was pulled out, or the manager's role stayed with the dead PC: "+maker.Manager);
+                // Steam drops the dead PC from the room and from its party: the party's leader stays in the room with one seat less.
+                FakeSteam.Crash(dead.Self);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Roster.Count==3&&c.Error=="")&&leader.Searching,"the party left the room when Steam dropped its member: "+leader.Error);});
+            Test("R644: a party whose leader's PC dies stays seated in the waiting room",()=>{
+                Setup(3);var maker=clients[0];var leader=clients[1];var member=clients[2];JoinParty(2,1);
+                maker.LocalFitness=900;leader.LocalFitness=600;member.LocalFitness=500;
+                As(maker,()=>maker.FindMatch());Step(20);As(leader,()=>leader.FindMatch());Step(40);ulong room=maker.Match;
+                Check(clients.All(c=>c.Match==room&&c.Roster.Count==3),"setup: the party seated");
+                FakeSteam.Crash(leader.Self);clients.Remove(leader);Step(30);
+                Check(member.Match==room&&member.Error==""&&maker.Roster.Count==2&&member.Roster.ContainsKey(member.Self),"the member left the waiting room with its leader: "+member.Error);
+                // Its own leave still works, and takes it back to its party alone.
+                As(member,member.Cancel);Step(10);Check(member.Match==0&&maker.Match==room&&maker.Roster.Count==1,"the member could not leave afterwards");});
+            Test("R644: a waiting-room handover the new host never answers goes back to the old host; one that only comes late is followed once it answers",()=>{
+                Setup(2);var creator=clients[0];var strong=clients[1];creator.LocalFitness=900;strong.LocalFitness=1300;
+                As(creator,()=>creator.FindMatch(true));Step();As(strong,()=>strong.JoinPrivateMatch(creator.Match));
+                Action<SteamSession> alone=x=>{UnityEngine.Time.realtimeSinceStartup+=.3f;As(x,x.Tick);};
+                for(int i=0;i<80&&creator.Host!=strong.Self;i++){alone(creator);if(creator.Host!=strong.Self)As(strong,strong.Tick);}
+                ulong room=creator.Match;
+                Check(creator.Host==strong.Self&&Owner(creator)==creator.Self&&strong.Host==creator.Self,"setup: handed over on the record, the new host has not looked yet");
+                // The new host's game hangs: it never answers, so the room stays the old host's, who takes the role back.
+                for(int i=0;i<20;i++)alone(creator);
+                Check(creator.Host==strong.Self&&Owner(creator)==creator.Self,"the room moved to a host that never answered");
+                for(int i=0;i<30;i++)alone(creator);
+                Check(creator.IsHost&&Owner(creator)==creator.Self&&creator.WaitingEpoch==3&&creator.Roster.Count==2&&creator.CanStartGame,"the old host did not take the role back: "+creator.Host+" number "+creator.WaitingEpoch);
+                // Not handed to it again at once (it would come back every few seconds while that PC hangs).
+                for(int i=0;i<40;i++)alone(creator);
+                Check(creator.IsHost&&creator.WaitingEpoch==3,"the room went straight back to the PC that had not answered");
+                // It runs again: it follows the record, and the room goes to it once it is weighed again and answers.
+                Step((int)(SteamSession.UnansweredFor/.3f)+40);
+                Check(clients.All(c=>c.Match==room&&c.Error==""&&c.Host==strong.Self)&&Owner(strong)==strong.Self&&creator.CanStartGame,"the handover did not complete once the new host ran again: host "+creator.Host);});
+            Test("R644: a waiting room whose host and the next ones in line all lose power goes to the first live PC after them; a search does not walk back into a room that never seats it",()=>{
+                PublicRoom(new[]{900,800,700,600});var dead=clients[0];var alsoDead=clients[1];var third=clients[2];var last=clients[3];ulong room=dead.Match;
+                Check(RoomData(dead,"successors").StartsWith(alsoDead.Self+","+third.Self),"setup: the room's order: "+RoomData(dead,"successors"));
+                PowerOff(dead);PowerOff(alsoDead);
+                foreach(var c in clients){var x=c;As(x,()=>x.ReportHostSilence(SteamSession.WaitingSilence+.1f));}
+                Step(4);Check(clients.All(c=>c.Host==dead.Self),"someone out of turn stepped in at once");
+                Step((int)(SteamSession.PassOverAfter/.3f)+6);
+                Check(third.IsHost&&last.Host==third.Self&&clients.All(c=>c.Match==room&&c.Error==""),"the one after the dead next in line did not take the room: host "+last.Host);
+                FakeSteam.Crash(dead.Self);FakeSteam.Crash(alsoDead.Self);Step(20);
+                Check(Owner(third)==third.Self&&clients.All(c=>c.Host==third.Self&&c.Roster.Count==2&&c.Match==room&&!c.RoomHeld&&c.Error==""),"the room after Steam dropped both: "+third.Roster.Count);
+                // Three dead in a row before the first one alive: it waits its turn (a place at a time) and takes the room.
+                PublicRoom(new[]{900,800,700,600,500});room=clients[0].Match;var lastAlive=clients[3];
+                foreach(var c in clients.Take(3).ToList())PowerOff(c);
+                foreach(var c in clients){var x=c;As(x,()=>x.ReportHostSilence(SteamSession.WaitingSilence+.1f));}
+                Step((int)(SteamSession.PassOverAfter/.3f)+6);Check(clients.All(c=>c.Host==1),"the third in line stepped in after one turn");
+                Step((int)(SteamSession.PassOverAfter/.3f)+6);
+                Check(lastAlive.IsHost&&clients.All(c=>c.Host==lastAlive.Self&&c.Match==room&&c.Error==""),"the first live PC in line did not take the room: host "+clients[1].Host);
+                foreach(ulong id in new ulong[]{1,2,3})FakeSteam.Crash(id);Step(20);
+                Check(Owner(lastAlive)==lastAlive.Self&&clients.All(c=>c.Roster.Count==2&&c.Match==room&&!c.RoomHeld&&c.Error==""),"the room after Steam dropped the three");
+                // A room left to a dead PC alone stays listed while Steam keeps it: a search that got no seat there makes its own room.
+                Setup(2);var gone=clients[0];var searcher=clients[1];
+                As(gone,()=>gone.FindMatch());Step(20);ulong stale=gone.Match;PowerOff(gone);
+                As(searcher,()=>searcher.FindMatch());Step(20);
+                Check(searcher.Match==stale&&!searcher.Roster.ContainsKey(searcher.Self),"setup: the search walked into the dead PC's room");
+                Step(200);
+                Check(searcher.Match!=0&&searcher.Match!=stale&&searcher.IsHost&&searcher.Searching&&searcher.Error=="","the search kept walking into a room that never seats it: "+searcher.Match+" "+searcher.Status);});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

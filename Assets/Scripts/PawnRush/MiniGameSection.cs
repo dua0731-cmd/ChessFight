@@ -5,7 +5,7 @@ namespace ChessFight.PawnRush
     // One fixed mini-game plaza, drawn as a section prefab rather than rebuilt by the legacy two-plaza picker.
     [DefaultExecutionOrder(-450)]
     [RequireComponent(typeof(PawnRushSection))]
-    public sealed class MiniGameSection : MonoBehaviour, ISectionPart
+    public sealed partial class MiniGameSection : MonoBehaviour, ISectionPart
     {
         public const string ContentName = "Content";
         public const string LayoutMark = "MiniGameSection_R312";
@@ -36,7 +36,12 @@ namespace ChessFight.PawnRush
         internal void SetStations(MissionStation[] value) => stations = value;
 
         // The team size the games standing in the stations were built for (MiniGameSectionBuilder.RebuildGames).
-        internal void Built(int teamSize) => builtTeamSize = teamSize;
+        internal void Built(int teamSize)
+        {
+            builtTeamSize = teamSize;
+            for (int i = 0; i < stations.Length; i++)
+                if (stations[i] != null) teamHunts[stations[i].Team] = stations[i].Game as MgCheckmate;
+        }
 
         void Awake()
         {

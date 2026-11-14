@@ -1,0 +1,62 @@
+[
+  {
+    "key": "knight",
+    "path": "Assets/Resources/PawnRushGrandStairHall/FallingKnight.fbx",
+    "objects": 1,
+    "errors": []
+  },
+  {
+    "key": "pad",
+    "path": "Assets/Resources/PawnRushGrandStairHall/FloatingPad.fbx",
+    "objects": 1,
+    "errors": []
+  },
+  {
+    "key": "plaza",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenPlaza.fbx",
+    "objects": 13,
+    "errors": []
+  },
+  {
+    "key": "gate",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenGate.fbx",
+    "objects": 3,
+    "errors": []
+  },
+  {
+    "key": "stonework",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenLockDyke.fbx",
+    "objects": 12,
+    "errors": []
+  },
+  {
+    "key": "hall",
+    "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+    "objects": 177,
+    "errors": []
+  },
+  {
+    "key": "boats",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+    "objects": 12,
+    "errors": []
+  },
+  {
+    "key": "walls",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+    "objects": 17,
+    "errors": []
+  },
+  {
+    "key": "platforms",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenPlatforms.fbx",
+    "objects": 18,
+    "errors": []
+  },
+  {
+    "key": "canal",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenCanal.fbx",
+    "objects": 6,
+    "errors": []
+  }
+]

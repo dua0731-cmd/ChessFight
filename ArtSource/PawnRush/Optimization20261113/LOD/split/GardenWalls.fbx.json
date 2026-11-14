@@ -1,0 +1,20 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenWalls.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Castle grounds",
+   "tris": 60430,
+   "chunks": 19,
+   "sum": 60430
+  },
+  {
+   "name": "Castle walls",
+   "tris": 62204,
+   "chunks": 22,
+   "sum": 62204
+  }
+ ],
+ "objects": 56,
+ "tris": 345322
+}

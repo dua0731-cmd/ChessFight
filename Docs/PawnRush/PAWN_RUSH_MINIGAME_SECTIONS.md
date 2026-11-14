@@ -1,5 +1,28 @@
 # 폰 러시 미니게임 구간 프리팹
 
+## R653 · 미니게임 진영과 킹 잡기 (2026-11-14)
+
+미니게임에 들어가기 8 m 전부터 자기 팀과 갈 곳을 스태미나 바 위에 표시한다. 입구에서 방을 바라볼 때 백팀은 왼쪽(청록), 흑팀은 오른쪽(주황)이다. 각 진영 간판과 출구에도 팀 이름을 쓴다. 상대편 진영으로 들어가면 자기 진영의 위치를 다시 보여준다. A 의장 광장은 두 팀이 중앙 판을 같이 쓰므로 백팀은 밝은 칸, 흑팀은 어두운 칸을 칠하라고 안내한다. 우리 팀 문이 열리면 해당 출구 방향을 표시한다. 경기에서는 이 PC의 자리, 프리팹 시험에서는 F5로 고른 팀을 따른다.
+
+H 국왕 체스 홀에서 킹이 굳으면 머리 위 금빛 고리가 맥동하고, 자기 진영 화면에 다이빙·질주 안내가 뜬다. 포획하면 잡은 수를 표시하고 킹이 쟁반까지 팀색과 금빛 꼬리를 남긴다. 쟁반에 닿으면 짧은 빛과 착지음이 나온다. 체크음은 체크 횟수에 따라 높아지고 마지막 킹에는 별도 마무리음이 난다. 짧은 시간에 여러 킹이 함께 움직이면 체크·깡충 착지음을 각각 제한한다. 재접속 시 이미 잡힌 킹은 쟁반에서 시작한다.
+
+### H 효과음 교체
+
+아래 이름으로 만든 음원을 `Assets/Resources/PawnRushMiniGameSfx/`에 저장한다. WAV · 모노 · 드라이한 단발로 준비한다. 전용 파일이 들어오기 전에는 프로젝트의 체스판·매칭 효과음을 재사용한다. 방장과 참가자 모두 기존 킹 상태 변화에서 소리를 한 번 재생한다.
+
+| 사건 | 파일 이름 | ElevenLabs 프롬프트 |
+|---|---|---|
+| 체크 | `sfx_check.wav` | Single crisp ivory chess clock tick with a tiny pitched metal accent, dry and close, 0.18 seconds. |
+| 포획 가능 | `sfx_mate.wav` | Two short muted brass mallet notes, rising into a firm stop as a marble chess king locks in place, 0.45 seconds. |
+| 킹 한 개 포획 | `sfx_king_capture.wav` | Weighty polished chess piece lifted with a wooden snap and one bright brass accent, short dry tail, 0.4 seconds. |
+| 마지막 킹 포획 | `sfx_king_sweep.wav` | Three-note miniature royal cadence on warm brass and wooden mallets, decisive and playful, 0.75 seconds. |
+| 상대 팀이 킹 구출 | `sfx_rescue.wav` | Small stone shell loosening in two dry clicks, descending pitch, 0.35 seconds. |
+| 스테일메이트 이동 | `sfx_stalemate.wav` | Soft silk flick with a quick airy disappear-and-return gesture, 0.32 seconds. |
+| 한 칸 이동 후 착지 | `sfx_king_hop.wav` | One tiny boxwood king touching a wooden chessboard, muted tap, 0.10 seconds. |
+| 쟁반 착지 | `sfx_ep_tray.wav` | Single light ivory piece landing in a shallow wooden tray, short close clack, 0.16 seconds. |
+
+`sfx_ep_tray`는 F 대무도회장 쟁반에서도 사용하는 소리다. 팀 안내는 `MiniGameSection.Guidance.cs`와 `MiniGamePalaceArt.GoalSign`, 킹 연출은 `MgCheckmate`와 `CheckmateFx`에서 조정한다. 시험 씬에서 3은 A, 9는 H, F5는 팀 전환이다. 사용자 Unity·Steam 확인 전.
+
 2026-11-06 · R312 · **프로젝트 구현 작업 / 사용자 Unity·Steam 확인 전**
 
 사용자 요청: R311의 공간 이미지·3D 설계를 바탕으로 장애물 구간 프리팹처럼 실제 프로젝트의 미니게임 프리팹들을 제작한다. 초반3종·중반4종·후반3종의 공간과 기존10종 플레이 규칙을 연결한다. 근거는 [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md), [기획 원문](PAWN_RUSH_MINIGAME_ZONES_v0.1.md), [기존 미니게임 규칙](PAWN_RUSH_MINIGAMES_v1.md), [구간 연결](PAWN_RUSH_SECTIONS.md)이다.
@@ -82,6 +105,7 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 - **(R543) 개수가 달라지는 것에 붙는 모델은 '하나짜리'여야 한다.** E 종탑은 탑 6개를 한 덩어리로 구운 `E_StationEnv.fbx` 대신 **탑 1개** `E_Tower_9.fbx`를 게임의 탑마다 건다. D 캡스턴 막대도 4개짜리 `D_Capstan_Bars.fbx` 대신 **막대 1개** `D_Capstan_Bar.fbx`를 게임의 막대마다 건다(없으면 4개일 때만 예전 모델). 나머지 방은 이름으로 찾아 붙여서("Statue n" · "King n" · "Road xx" · "Plank (laid)" …) 개수가 달라져도 따라온다. J 통(2.2 m)은 칸 너비에 맞춰 가로로 늘거나 준다.
 - 뿌리는 `PawnRushSection` + `MiniGameSection`이다. 입구(0,0,0), 출구(0,0,36), 폭44m, 양팀 스테이션 중심 x±12·z4를 유지한다. 앞 구간의 출구 위치·회전에 따라 배치된다.
 - `MiniGameSectionBuilder`가 바닥·벽 충돌·두 팀 문·스테이션·체크포인트·낙하 복귀·진행 경로를 만든다. `MissionStation.Install`이 기존 `Mg*` 규칙을 설치한다. 게임 완료는 자기 문만 연다. `TeamBarrier`는 다른 팀의 출구 통과를 막는다.
+- **문 열림 연출(IGateFx)은 10종 모두 방마다 따로다(R643, 11-14).** A `PaintGateFx` · B `MiniGamePlankFx` · C `MiniGameDrawbridgeFx` · D `MiniGameCourtGateFx` · E `MiniGameShelfDoorFx` · J `MiniGameLaundryFx`에 이어, 공용(`ArenaDressing`: 팀색 빛기둥 · 조각 90개 · 바닥 고리, 사용자 "파란 폭죽")을 쓰던 F · G · H · I도 `MiniGameGateMoment` 하위 연출을 쓴다 — G `MiniGameProcessionGateFx`(문 양옆 상아 · 흑단 깃발 휘장), H `MiniGameChessHallGateFx`(문 앞 4 × 4 칸이 광장 쪽부터 문 쪽으로 뒤집혀 체스판 · 황동 테두리), F · I `MiniGameDoorGateFx`(그림 없음, 방의 문이 올라가는 것만 — 승규 님 11-14 확인 뒤 "톱니 바퀴 하지 말고 그냥 문이 여는걸로", "커튼 여는 거 말고 있는 문 여는 걸로"). G 게임(`MgKingEscort`)이 썰매가 틀에 닿을 때 내던 팀색 고리 · 조각도 지웠다("8번 아직 파란색 폭죽", 착지음 `sfx_castle_land`는 남김). 상아 · 흑단 · 황동, 먼지 없음, 새 소리 없음(`sfx_gate_open`은 그대로 부름), 3.2 ~ 3.4초 뒤 사라지는 그림(충돌체 없음). 붙이는 곳 `MiniGameModels.Apply` → `GateMoment`. 위치는 팀 문 상자(스테이션 x −2 ~ 2, 높이 4.6 m, z 23) 앞 바닥(레이로 찾음) 기준. 사용자 확인 전.
 - A는 공유18×18m판 하나·팀별32칸이다(5 대 5; R543: 6 × 6 ~ 10 × 8). 공유판 캐시는 같은 프리팹 인스턴스 안에서만 연결된다. C는 전체 폭 해자와 중앙 난간, 측면 권양기로4m 다리 접근을 유지한다. D는 기존8바퀴 규칙이었다(R543: 막대 = 인원수 · 3.5 ~ 7바퀴 · 회전 70%). B는 R528부터 판자를 잡기로 들어 나른다(상대 판자도, 벗어나면 원래 더미로, 팀별 나무색 · 띠, 놓거나 0.5초 들고 있으면 자동 설치 — [미니게임 규칙 B 판자](PAWN_RUSH_MINIGAMES_v1.md)).
 - 기존 Course01의 팔레트와 흐름은 그대로이고 새 `PalaceStyle` 스테이션만 파랑·주황 표시와 짙은 아레나 단을 쓴다. 빨강은 체크·위험 표시다. 기존 아레나 장식·솟아오름을 새 공간에 중복 생성하지 않는다. **승격 발판은 R516부터 다시 만든다**(사용자 11-09 "승격발판 다시 넣어야 함"): 코스 01과 같은 스테이션 자리(입구 쪽 바깥, 스테이션 기준 v ±4.5 · u 1 → 구간 기준 x ±16.5 · z 5, 무대 위 0.4 m)와 같은 규칙(자기 팀 폰이 2초 서 있으면 카드 4장에서 기물 선택, 판마다 한 번), 테두리만 방의 팀색(파랑 · 주황). Play 때 만들어져 프리팹에는 없다. 온라인 구간 라운드는 발판마다 "사용함"과 고르는 사람을 코스 상태로 보낸다(`MatchCourse` RoundMatch, 프로토콜 v29).
 - **Blender 모델(R501~):** C 도개교는 `Resources/PawnRushMiniGames/Early/C_Drawbridge_*.fbx`가 Play 때 구간과 다리 힌지·드럼에 붙고, 대신하는 코드 그림은 그리기만 꺼진다(`MiniGameModels`, [원본](../../ArtSource/PawnRush/MiniGames/README.md)). 판정·크기는 그대로다.

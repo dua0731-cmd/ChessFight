@@ -41,7 +41,7 @@ namespace ChessFight.Network
 
         public static readonly GameModeInfo SwordFight = new GameModeInfo(
             "swordfight", "소드 파이트", "대난투",   // 10-27 (승규 님): was "3 VS 3 · 떨어뜨리고 빼앗기"
-            "상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점. 폰으로 떨어뜨리면 그 기물을 빼앗아요", "SF", "SwordFight");
+            "상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점", "SF", "SwordFight");   // R640: the steal sentence gone
 
         public static readonly GameModeInfo[] All = { KingRush, SwordFight };
 

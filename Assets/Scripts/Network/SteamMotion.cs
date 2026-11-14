@@ -56,6 +56,8 @@ namespace ChessFight.Network
         bool jumpQueued, listed;
         // R525: whether a snapshot from this host ever came (for the log), and whether this silence is logged already.
         bool heardHost, lostNoted;
+        // R644: whether the match had started when this stream last looked.
+        bool wasStarted;
 
         // Development only: extra delay and loss on this machine's packets.
         public LinkProfile Simulation
@@ -107,9 +109,21 @@ namespace ChessFight.Network
             delayedIn.Release(now, handleLate);
             delayedOut.Release(now, transmitLate);
             if (session.Match == 0) return;
+            // R644 (user 11-14, the team's test of the R640 build: "게임 시작 시 잠깐 나가졌다가 접속되는 현상" - every PC
+            // but the host's, every time, and back in only through "진행 중인 경기로 돌아가기"): the silence is counted
+            // afresh from the start of the match. A waiting room this PC has not heard for LostAfter is no reason to
+            // leave (R525), but the frame the match started in found that old silence with `Started` already true
+            // and `Loading` not yet (the scene load begins later in the same frame), and left the match on the spot.
+            // (Why they had not heard it: see OnHostChanged, the host's snapshot numbers.)
+            bool started = session.Started;
+            if (started && !wasStarted) { listed = false; Health = LinkHealth.Ok; Silence = 0; lostNoted = false; }
+            wasStarted = started;
             UpdateHealth(now);
-            // The session replaces a host that stays silent (HOST.md).
-            session.ReportHostSilence(Silence);
+            // The session replaces a host that stays silent (HOST.md). R644: a waiting room's too, after
+            // SteamSession.WaitingSilence - but only a host this PC has heard at least once. A link that never
+            // came up says nothing about the host, and two PCs that cannot reach each other would otherwise take
+            // the waiting room from one another in turns.
+            session.ReportHostSilence(started || heardHost ? Silence : 0);
             // While the host is silent nothing the player does can be confirmed,
             // so the pawn holds still instead of running on unseen.
             if (Health >= LinkHealth.Frozen) { x = z = 0; jump = false; }
@@ -162,6 +176,13 @@ namespace ChessFight.Network
                     }
                 }
             }
+            // R644: a waiting room's host tells the session how long each seated player it has heard has been
+            // silent (clients send an input every step, moving or not): one silent for SteamSession.PeerLostAfter
+            // gives up its seat - a PC that lost power stays in Steam's room for a long while. Players this host has
+            // never heard are left alone (their link may still be coming up).
+            if (session.IsHost && !started)
+                foreach (var heard in lastInput)
+                    if (heard.Key != session.Self) session.ReportPeerSilence(heard.Key, now - heard.Value);
             if (session.IsHost && now >= nextSnapshot)
             {
                 // On a schedule, not "50 ms since the last send": that drifted to
@@ -341,7 +362,7 @@ namespace ChessFight.Network
             foreach (ulong id in connected.ToArray()) Close(id);
             States.Clear(); inputs.Clear(); lastInput.Clear(); consumedJumps.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
             delayedOut.Clear(); delayedIn.Clear(); response.Clear();
-            accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = heardHost = lostNoted = false;
+            accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = heardHost = lostNoted = wasStarted = false;
             lastReceive = Time.realtimeSinceStartup; ConnectionStatus = ""; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
         }
 
@@ -361,7 +382,12 @@ namespace ChessFight.Network
             {
                 // Continue from the newest state this PC was shown. The tick keeps
                 // counting from there, so clients still see newer snapshots.
-                tick = lastSnapshot;
+                // R644: and never back below this PC's own last number. A waiting room whose handover did not
+                // take (the room went to the next PC and came straight back: SteamSession.HandOffWaiting) made its
+                // host a host again with nothing received in between, so it numbered its snapshots from 0 - and
+                // every other PC, which had seen no change of host and still held the old high number, dropped them
+                // all as old ones. They sat in the waiting room without hearing its host, and left at the start.
+                tick = Math.Max(tick, lastSnapshot);
                 consumedJumps.Clear();
                 consumedJumps[session.Self] = jumps;
                 foreach (ulong id in session.Roster.Keys) if (id != session.Self && !BotIdentity.IsBot(id)) jumpBaseline.Add(id);

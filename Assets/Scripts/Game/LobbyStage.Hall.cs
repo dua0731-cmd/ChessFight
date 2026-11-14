@@ -86,6 +86,7 @@ namespace ChessFight.Game
             foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None))
                 if (light.type == LightType.Directional && light.transform.parent == null) light.enabled = false;
             HallSunset(root);
+            HallArmillary();       // R619: the turning gold armillary sphere and king before the round window
             HallWindowSun(root);   // R584: faint sunset through the +X side windows
 
             for (int s = -1; s <= 1; s += 2)

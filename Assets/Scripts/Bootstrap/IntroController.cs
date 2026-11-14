@@ -61,7 +61,7 @@ namespace ChessFight.Game
             shownAt = Time.unscaledTime;
             // The opening logo, once per run; the title counts its minimum time
             // from when the logo is gone.
-            LogoIntro.Play(() => { logoDone = true; shownAt = Time.unscaledTime; });
+            LogoIntro.Play(() => { logoDone = true; shownAt = Time.unscaledTime; LobbyMusic.Begin(); });   // R654: the music with the title
         }
 
         void Update()

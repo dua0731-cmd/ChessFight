@@ -27,7 +27,9 @@ def lin(h):
 
 # colour(s), metallic, smoothness (as the reference pictures: matte warm stone, polished floor, shiny gold)
 KINDS = {
-    "Stone":  dict(a=0xEADCC5, b=0xF4EBDC, dark=0xD9C7AA, metal=0, smooth=.25),
+    # R618 (승규 "D 모카 석회암"): was a=0xEADCC5, b=0xF4EBDC, dark=0xD9C7AA. Kit/stone_tint.py recoloured the
+    # existing bakes the same way; do not run stone_tint.py again on bakes made with these values.
+    "Stone":  dict(a=0xB29C89, b=0xB9AB9F, dark=0xA58971, metal=0, smooth=.25),
     "Marble": dict(a=0xEADBC4, b=0x7A4428, metal=0, smooth=.75),   # R578: the reference floor's cream and brown
     "Wood":   dict(a=0x7A4A2C, b=0x55301C, grain=0x3E2213, metal=0, smooth=.45),   # R577: the gate picture's diamonds
     "Red":    dict(a=0xA81E28, b=0x7E1219, metal=0, smooth=.15),

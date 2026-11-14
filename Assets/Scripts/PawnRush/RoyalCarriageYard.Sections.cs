@@ -73,26 +73,31 @@ namespace ChessFight.PawnRush
             startEast.Configure(3f, 5.4f, true, gates.startDelay, gates.startDuration);
             Sign(s, "왕실 마차뜰", new Vector3(0f, 8.2f, -.3f), 2.2f);
 
-            // The yard, right behind the gate: four carriages charge about it at random.
+            // The yard, right behind the gate: carriages drawn by horses charge about it at random between the storage
+            // sheds along both walls (R659).
             YardKit.Floor(s, "Yard", -YardHalf, YardHalf, YardZ0, YardZ1, 0f);
             YardKit.Wall(s, "Yard wall W", -YardHalf - 1f, -YardHalf, 0f, 5f, YardZ0, YardZ1, YardKit.WallStone);
             YardKit.Wall(s, "Yard wall E", YardHalf, YardHalf + 1f, 0f, 5f, YardZ0, YardZ1, YardKit.WallStone);
+            Granaries(s);
             RoamingCarriages(s);
             // In front of the closed gate, where the start court looks.
-            Sign(s, "1. 마차뜰: 돌진하는 마차 피하기", new Vector3(0f, 4.3f, -.7f), 1.1f);
+            Sign(s, "1. 짐마차 마당: 돌진하는 마차와 말 피하기", new Vector3(0f, 4.3f, -.7f), 1.1f);
         }
 
-        // The four carriages share the whole yard (CarriageFleet): each keeps charging to a random point anywhere in it,
-        // planned clear of the others', so they never meet and there are no lanes or seams to hide in. Their bodies
-        // stay 0.8 m inside the walls and the canal's parapet, wider than a pawn, so nobody is pinned against a wall
-        // (R287; 2.5 m more clear of the gate's open leaves): the strip along the walls is a safe line, but the long way
-        // round (~33 m more than straight across, 9-10 s). They start moving when the gate opens.
+        // The horse-drawn carriages share the whole yard between the sheds (CarriageFleet): each keeps charging to a
+        // random point anywhere in it, planned apart from the others in time (R659, RoamingFleet.Rules.Timed), so they
+        // never meet and there are no lanes or seams to hide in. Every body stays 0.8 m past its reach inside the sheds'
+        // fronts and the canal's parapet, wider than a pawn, so nobody is pinned (R287; 2.5 m more clear of the gate's
+        // open leaves): the area is for the biggest body, a loose horse comes as much nearer the walls as it reaches
+        // less. They start moving when the gate opens.
         void RoamingCarriages(Transform parent)
         {
-            float keep = RoamingCarriage.BodyRadius + .8f;
-            carriages = Place<CarriageFleet>(parent, "Roaming carriages", Vector3.zero);
-            carriages.Configure(-(YardHalf - keep), YardHalf - keep, YardZ0 + keep + 2.5f, YardZ1 - keep, 4, roaming.moveSpeed, roaming.turnSeconds,
+            float keep = RoamingCarriage.Reach(roaming.teams > 0 ? RoamingCarriage.Look.Team : RoamingCarriage.Look.Horse) + .8f;
+            carriages = Place<CarriageFleet>(parent, "Roaming teams and horses", Vector3.zero);
+            carriages.Configure(-(ShedFront - keep), ShedFront - keep, YardZ0 + keep + 2.5f, YardZ1 - keep, 0, roaming.moveSpeed, roaming.turnSeconds,
                                 roaming.minAim, roaming.maxAim, gates.startDelay, roaming.seed, roaming.knockbackForce, roaming.knockdownSeconds);
+            carriages.Compose(roaming.teams, roaming.teamTurnSeconds, roaming.horses, roaming.horseSpeed, roaming.horseTurnSeconds, roaming.timed, roaming.tries,
+                              .3f, .9f, 10f, 30f, roaming.shortCharge);
         }
 
         // ------------------------------------------------------------------ 2. the canal and the giant waterwheel
@@ -234,82 +239,36 @@ namespace ChessFight.PawnRush
                             new Vector3(Mathf.Max(fall * (radius - 1.6f), fall * (radius + .8f)), CanalWater + .06f, WheelZ + 1.4f), Arena.Glow(new Color(1f, 1f, 1f, .45f)));
         }
 
-        // ------------------------------------------------------------------ 3. the arena, the ramps, the waterfall (own frame)
+        // ------------------------------------------------------------------ 3. the loading and sorting yard, the lifts (own frame)
 
         void CarriageArena()
         {
-            var s = Group("3 Arena", later);
-            // Floors: the whole width up to the pool, then either side of it.
-            YardKit.Floor(s, "Arena", -26f, 26f, ArenaStart, PoolZ0, 0f);
-            YardKit.Floor(s, "Arena W of pool", -26f, -6f, PoolZ0, CliffZ, 0f);
-            YardKit.Floor(s, "Arena E of pool", 6f, 26f, PoolZ0, CliffZ, 0f);
+            var s = Group("3 Loading and sorting yard", later);
+            // The floor: the whole width up to the mill basin (R659: the basin runs wall to wall, no dead ends beside it).
+            YardKit.Floor(s, "Arena", -SortHalf, SortHalf, ArenaStart, PoolZ0, 0f);
             YardKit.Wall(s, "Arena wall SW", -27f, -22f, 0f, 6f, ArenaStart - 1f, ArenaStart, YardKit.WallStone);
             YardKit.Wall(s, "Arena wall SE", 22f, 27f, 0f, 6f, ArenaStart - 1f, ArenaStart, YardKit.WallStone);
             YardKit.Wall(s, "Side wall W", -27f, -26f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
             YardKit.Wall(s, "Side wall E", 26f, 27f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
 
-            LoadingYard(s);
-            CargoRamp(s, -1f);
-            CargoRamp(s, 1f);
-            Waterfall(s);
-            Sign(s, "3. 마차 하역장: 가운데 곧장 (빠르지만 위험) · 좌우 화물 경사로 (안전)", new Vector3(0f, 3.6f, ArenaStart + 3.5f), 1.2f);
+            SortingYard(s);
+            Lifts(s);
         }
 
-        // A ramp up to the platform at x side*22 (8 m wide), z 118..150, y 0..8, with cargo rolling down it out of a
-        // hatch in the gatehouse over its top, into a drain at its foot.
-        void CargoRamp(Transform parent, float side)
-        {
-            var s = Group(side < 0f ? "Left cargo ramp" : "Right cargo ramp", parent);
-            float x = side * 22f, x0 = x - 4f, x1 = x + 4f;
-            var ramp = YardKit.Slab(s, "Ramp", new Vector3(x, 0f, 118f), new Vector3(x, Top, CliffZ), 8f, 8.5f, YardKit.Stone);
-            ramp.AddComponent<CourseFloor>().sloped = true;
-            YardKit.Slab(s, "Ramp edge trim", new Vector3(x - side * 3.95f, .02f, 118f), new Vector3(x - side * 3.95f, Top + .02f, CliffZ), .1f, .05f, YardKit.Gold, Solid.None);
-            YardKit.Picture(s, "Drain grate", new Vector3(x0, 0f, 116f), new Vector3(x1, .03f, 118.2f), YardKit.Iron);
-            for (float gx = x0 + .4f; gx < x1; gx += .6f)
-                YardKit.Picture(s, "Grate slot", new Vector3(gx - .1f, .03f, 116.2f), new Vector3(gx + .1f, .035f, 118f), Arena.Lit("M_YardDrain", Arena.Hex("#0E0F12"), 0f, .9f));
-
-            // The gatehouse over the top of the ramp: two pillars, a lintel with the hatch the cargo falls out of.
-            YardKit.Span(s, "Gatehouse pillar", new Vector3(x0, 5f, 145.5f), new Vector3(x0 + .6f, 12.8f, 147f), YardKit.WallStone, Solid.NoClimb);
-            YardKit.Span(s, "Gatehouse pillar", new Vector3(x1 - .6f, 5f, 145.5f), new Vector3(x1, 12.8f, 147f), YardKit.WallStone, Solid.NoClimb);
-            YardKit.Span(s, "Gatehouse lintel", new Vector3(x0, 10.4f, 145f), new Vector3(x1, 13f, CliffZ), YardKit.WallStone, Solid.NoClimb);
-            YardKit.Picture(s, "Hatch", new Vector3(x0 + .8f, 10.37f, 145.6f), new Vector3(x1 - .8f, 10.4f, 149.6f), YardKit.Glass);
-            YardKit.Picture(s, "Gatehouse trim", new Vector3(x0 - .05f, 10.3f, 144.92f), new Vector3(x1 + .05f, 10.5f, 145f), YardKit.Gold);
-            YardKit.Cone(s, "Gatehouse roof", new Vector3(x, 13f, 147.5f), 7f, 3f, YardKit.Roof);
-
-            // The lane starts on the ramp's surface at z 148 and runs down it to the foot.
-            const float laneTop = 148f;
-            float yTop = Top * (laneTop - 118f) / (CliffZ - 118f);
-            var down = new Vector3(0f, -yTop, 118f - laneTop);
-            var chute = Place<CargoChute>(s, "Cargo chute", new Vector3(x, yTop, laneTop));
-            chute.transform.localRotation = Quaternion.LookRotation(down.normalized, Vector3.up);
-            // Facing down the lane its right is west: towards the left ramp's outer wall, the right ramp's inner edge.
-            chute.Configure(cargo.spawnInterval, cargo.rollingSpeed, cargo.cargoSizes, down.magnitude, 7f, 3.4f,
-                            side > 0f ? cargo.rightRampOffset : 0f, side > 0f ? 7 : 3, cargo.knockbackForce, side < 0f ? 1f : -1f);
-            // The ramp's inner edge beside the 2.2 m divider: a parapet, so nobody knocked aside drops off it into the
-            // middle way (R287), and so nobody hops from the ramp onto the divider's top and walks along it past the
-            // loading yard (R532: from z 120, where the ramp is 0.5 m up, 1.6 m over the ramp - a jump's feet reach
-            // 1.07 m with the ledge help, the pawn's F step and a jump 1.42 m).
-            // 1 cm proud of the ramp's own face, so the two faces never fight for the same pixels.
-            float inEdge = side * 18.14f, z0 = 120f, y0 = Top * (z0 - 118f) / (CliffZ - 118f);
-            YardKit.Slab(s, "Ramp inner parapet", new Vector3(inEdge, y0 + 1.6f, z0), new Vector3(inEdge, Top + 1.6f, CliffZ), .3f, 1.9f,
-                         YardKit.WallStone, Solid.NoClimb);
-            Sign(s, side < 0f ? "왼쪽: 화물 경사로" : "오른쪽: 화물 경사로", new Vector3(x, 3.2f, 115.5f), 1.2f);
-        }
-
-        // The pool, the lifting waterwheel, the falling water behind it and the landing at its top.
-        void Waterfall(Transform parent)
+        // The mill basin, the lifting waterwheel, the falling water behind it and the landing at its top: the wheel exactly as
+        // before (R287, the one way up since R659 took the ramps away: the user's "물레방아는 중간에 있는 하나만"), in one
+        // basin from wall to wall (a fall anywhere is back at CP3), its sides dressed as the yard's water stairs (BasinDock).
+        void Lifts(Transform parent)
         {
             var s = Group("Waterfall and lifting wheel", parent);
             const float water = -.5f;
-            YardKit.Floor(s, "Pool bed", -6f, 6f, PoolZ0, CliffZ, -3f, YardKit.WallStone);
-            YardKit.Span(s, "Pool side W", new Vector3(-7f, -3f, PoolZ0), new Vector3(-6f, -1f, CliffZ), YardKit.WallStone);
-            YardKit.Span(s, "Pool side E", new Vector3(6f, -3f, PoolZ0), new Vector3(7f, -1f, CliffZ), YardKit.WallStone);
-            YardKit.Span(s, "Pool side S", new Vector3(-6f, -3f, PoolZ0 - 1f), new Vector3(6f, -1f, PoolZ0), YardKit.WallStone);
-            YardKit.Picture(s, "Pool water", new Vector3(-6f, -3f, PoolZ0), new Vector3(6f, water, CliffZ), YardKit.Water);
-            Trigger<KillVolume>(s, "Pool (fall)", new Vector3(-6f, -3f, PoolZ0), new Vector3(6f, water - .3f, CliffZ));
-            YardKit.Picture(s, "Landing edge trim", new Vector3(-6f, -.01f, PoolZ0 - .25f), new Vector3(6f, .02f, PoolZ0), YardKit.Gold);
+            YardKit.Floor(s, "Pool bed", -SortHalf, SortHalf, PoolZ0, CliffZ, -3f, YardKit.WallStone);
+            YardKit.Span(s, "Pool side S", new Vector3(-SortHalf, -3f, PoolZ0 - 1f), new Vector3(SortHalf, -1f, PoolZ0), YardKit.WallStone);
+            YardKit.Picture(s, "Pool water", new Vector3(-SortHalf, -3f, PoolZ0), new Vector3(SortHalf, water, CliffZ), YardKit.Water);
+            Trigger<KillVolume>(s, "Pool (fall)", new Vector3(-SortHalf, -3f, PoolZ0), new Vector3(SortHalf, water - .3f, CliffZ));
+            YardKit.Picture(s, "Landing edge trim", new Vector3(-SortHalf, -.01f, PoolZ0 - .25f), new Vector3(SortHalf, .02f, PoolZ0), YardKit.Gold);
 
-            // The wheel on two piers in the pool. Its near side rises past the landing's edge.
+            // The wheel on two piers in the basin. Its near side rises past the basin's edge.
             Place<VerticalWaterwheel>(s, "Lifting waterwheel", new Vector3(0f, LiftY, LiftZ))
                 .Configure(lift.rotationSpeed, LiftRadius, lift.bladeCount, lift.releaseAngle, lift.releaseForward, lift.releaseUp);
             foreach (float x in new[] { -2.5f, 2.5f })
@@ -329,11 +288,85 @@ namespace ChessFight.PawnRush
             landing.AddComponent<CourseFloor>();
             YardKit.Picture(s, "Landing trim", new Vector3(-3.55f, Top - .32f, 148.35f), new Vector3(3.55f, Top - .2f, 148.45f), YardKit.Gold);
 
-            // The middle way's whole width (between the dividers), so nobody reaches the pool without it: on the apron
-            // past the loading yard's second crane (R532, was z 137), its respawn 3 m from the pool's edge.
-            Checkpoint(s, 3, new Vector3(0f, 0f, LoadApronZ), 26f);
+            foreach (float side in new[] { -1f, 1f })
+                BasinDock(s, side);
+
+            // The whole yard's width, so nobody reaches the basin without it: on the apron 0.7 m past the second giant
+            // chest's circle, its respawn spots in front of the wheel.
+            Checkpoint(s, 3, new Vector3(0f, 0f, ApronZ), SortHalf * 2f);
             // The handles pass just out of a standing pawn's reach: it jumps for one.
-            Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 136f), 1.1f);
+            Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 138.2f), 1.1f);
+        }
+
+        // One side of the basin beside the wheel (R659, in place of the side wheels the user took out: "다른 장식을 생각해봐"),
+        // the yard's water stairs: a sluice arch in the cliff with its gate raised and the water pouring out of it, a cargo
+        // barge moored in front of it loaded with crates, barrels and a load under royal cloth, a jib crane on the platform
+        // over it lowering a net of sacks, banners on the cliff. Pictures only, but the crane's post (on the platform, never
+        // climbed): the barge's near side is 5 m and more out from the basin's edge, out of any jump's or dive's reach, so
+        // nothing here is a way up or a place to be stuck.
+        void BasinDock(Transform parent, float side)
+        {
+            var s = Group(side < 0f ? "Basin dock W" : "Basin dock E", parent);
+            const float water = -.5f, x = 15.5f;
+            float cx = side * x;
+            // The sluice arch: two stone jambs, a lintel with a gold keystone, the dark tunnel, the gate raised in it.
+            foreach (float j in new[] { -2.6f, 2.6f })
+                YardKit.Picture(s, "Sluice jamb", new Vector3(cx + j - .45f, water, CliffZ - .45f), new Vector3(cx + j + .45f, 5.4f, CliffZ - .02f), YardKit.WallStone);
+            YardKit.Picture(s, "Sluice lintel", new Vector3(cx - 3.1f, 4.6f, CliffZ - .5f), new Vector3(cx + 3.1f, 5.6f, CliffZ - .02f), YardKit.WallStone);
+            YardKit.Picture(s, "Sluice keystone", new Vector3(cx - .35f, 4.7f, CliffZ - .55f), new Vector3(cx + .35f, 5.5f, CliffZ - .5f), YardKit.Gold);
+            YardKit.Picture(s, "Sluice tunnel", new Vector3(cx - 2.15f, water, CliffZ - .04f), new Vector3(cx + 2.15f, 4.6f, CliffZ - .02f), YardKit.Glass);
+            YardKit.Picture(s, "Sluice gate", new Vector3(cx - 2.1f, 3.4f, CliffZ - .3f), new Vector3(cx + 2.1f, 4.55f, CliffZ - .2f), YardKit.WoodDark);
+            for (float gx = -1.8f; gx <= 1.81f; gx += .6f)
+                YardKit.Picture(s, "Gate bar", new Vector3(cx + gx - .05f, 3.3f, CliffZ - .34f), new Vector3(cx + gx + .05f, 4.55f, CliffZ - .3f), YardKit.Iron);
+            // The gate's winch: a gear wheel on the jamb.
+            YardKit.Cylinder(s, "Sluice gear", new Vector3(cx + side * 3.4f, 3.2f, CliffZ - .3f), Vector3.forward, 1.6f, .14f, YardKit.WoodDark, Solid.None);
+            YardKit.Cylinder(s, "Sluice gear hub", new Vector3(cx + side * 3.4f, 3.2f, CliffZ - .4f), Vector3.forward, .45f, .08f, YardKit.Gold, Solid.None);
+            // The water out of the sluice, falling into the basin.
+            var pour = YardKit.Picture(s, "Sluice water", new Vector3(cx - 2f, water, CliffZ - .6f), new Vector3(cx + 2f, 3.3f, CliffZ - .56f), YardKit.Waterfall);
+            pour.AddComponent<WaterfallFlow>();
+            YardKit.Picture(s, "Sluice foam", new Vector3(cx - 2.4f, water, CliffZ - 2.2f), new Vector3(cx + 2.4f, water + .06f, CliffZ - .5f), Arena.Glow(new Color(1f, 1f, 1f, .45f)));
+
+            // The barge, its length along the cliff, moored 1.4 m off it.
+            const float z0 = 145.2f, z1 = 148.4f, deck = .15f;
+            float bx0 = cx - 4.6f, bx1 = cx + 4.6f, mid = (z0 + z1) * .5f;
+            YardKit.Picture(s, "Barge hull", new Vector3(bx0 + .4f, water - .5f, z0), new Vector3(bx1 - .4f, deck, z1), YardKit.WoodDark);
+            YardKit.Picture(s, "Barge bow", new Vector3(bx0, water - .2f, z0 + .4f), new Vector3(bx0 + .4f, deck, z1 - .4f), YardKit.WoodDark);
+            YardKit.Picture(s, "Barge stern", new Vector3(bx1 - .4f, water - .2f, z0 + .4f), new Vector3(bx1, deck, z1 - .4f), YardKit.WoodDark);
+            YardKit.Picture(s, "Barge rail", new Vector3(bx0 + .4f, deck, z0), new Vector3(bx1 - .4f, deck + .3f, z0 + .12f), YardKit.WoodLight);
+            YardKit.Picture(s, "Barge rail", new Vector3(bx0 + .4f, deck, z1 - .12f), new Vector3(bx1 - .4f, deck + .3f, z1), YardKit.WoodLight);
+            YardKit.Picture(s, "Barge trim", new Vector3(bx0 + .4f, deck + .3f, z0 - .02f), new Vector3(bx1 - .4f, deck + .36f, z0 + .02f), YardKit.Gold);
+            // Its load: crates, barrels, a load under royal cloth.
+            for (int i = 0; i < 3; i++)
+            {
+                float lx = cx - side * (2.6f - i * 1.5f);
+                YardKit.Picture(s, "Barge crate", new Vector3(lx - .6f, deck, mid - .6f), new Vector3(lx + .6f, deck + 1.2f, mid + .6f), i == 1 ? YardKit.WoodDark : YardKit.WoodLight);
+                YardKit.Picture(s, "Crate band", new Vector3(lx - .62f, deck + .5f, mid - .62f), new Vector3(lx + .62f, deck + .64f, mid + .62f), YardKit.Banner);
+            }
+            YardKit.Picture(s, "Barge crate", new Vector3(cx - side * 2.1f - .45f, deck + 1.2f, mid - .45f), new Vector3(cx - side * 2.1f + .45f, deck + 2.1f, mid + .45f), YardKit.WoodLight);
+            foreach (float dz in new[] { -.8f, .8f })
+                YardKit.Cylinder(s, "Barge barrel", new Vector3(cx + side * 1.9f, deck + .55f, mid + dz), Vector3.up, .8f, 1.1f, YardKit.WoodDark, Solid.None);
+            YardKit.Picture(s, "Barge cloth", new Vector3(cx + side * 3.1f - .7f, deck, mid - .9f), new Vector3(cx + side * 3.1f + .7f, deck + 1.3f, mid + .9f), YardKit.Banner);
+            YardKit.Picture(s, "Cloth stripe", new Vector3(cx + side * 3.1f - .12f, deck, mid - .92f), new Vector3(cx + side * 3.1f + .12f, deck + 1.32f, mid + .92f), YardKit.Gold);
+            // Mooring ropes to rings on the cliff.
+            foreach (float rx in new[] { bx0 + 1f, bx1 - 1f })
+            {
+                YardKit.Picture(s, "Mooring rope", new Vector3(rx - .04f, deck + .2f, z1), new Vector3(rx + .04f, deck + .28f, CliffZ - .05f), YardKit.WoodDark);
+                YardKit.Cylinder(s, "Mooring ring", new Vector3(rx, deck + .25f, CliffZ - .06f), Vector3.forward, .3f, .05f, YardKit.Iron, Solid.None);
+            }
+
+            // The jib crane on the platform over the barge, a net of sacks hanging from it.
+            float jx = cx + side * 2.2f;
+            YardKit.Box(s, "Jib post", new Vector3(jx, Top + 2.4f, CliffZ + 1.4f), new Vector3(.5f, 4.8f, .5f), YardKit.WoodDark, Solid.NoClimb);
+            YardKit.Box(s, "Jib arm", new Vector3(jx, Top + 4.6f, CliffZ - 1.6f), new Vector3(.36f, .36f, 6.4f), YardKit.WoodDark, Solid.None);
+            YardKit.Box(s, "Jib brace", new Vector3(jx, Top + 3.4f, CliffZ - .1f), new Vector3(.22f, .22f, 3.4f), YardKit.WoodDark, Solid.None,
+                        Quaternion.Euler(-40f, 0f, 0f));
+            YardKit.Box(s, "Jib band", new Vector3(jx, Top + 4.6f, CliffZ - 4.6f), new Vector3(.4f, .4f, .2f), YardKit.Gold, Solid.None);
+            YardKit.Picture(s, "Jib rope", new Vector3(jx - .04f, deck + 3.2f, CliffZ - 4.74f), new Vector3(jx + .04f, Top + 4.42f, CliffZ - 4.66f), YardKit.WoodDark);
+            var net = YardKit.Ball(s, "Sack net", new Vector3(jx, deck + 2.7f, CliffZ - 4.7f), 1f, Arena.Lit("M_YardSack", Arena.Hex("#CDB48A"), 0f, .95f), Solid.None);
+            net.transform.localScale = new Vector3(1.3f, 1.1f, 1.3f);
+            // Banners on the cliff over the sluice.
+            BannerOn(s, new Vector3(cx - 4.4f, 7.6f, CliffZ - .02f), 180f);
+            BannerOn(s, new Vector3(cx + 4.4f, 7.6f, CliffZ - .02f), 180f);
         }
 
         // ------------------------------------------------------------------ 4. the platform and the final gate (own frame)
@@ -341,15 +374,14 @@ namespace ChessFight.PawnRush
         void Platform()
         {
             var s = Group("4 Final gate", later);
-            // The platform: either side of the ramps' tops, and the middle behind the cliff's marble face, on to just
-            // past the final gate's wall.
-            Block(s, "Platform W", -26f, -18f, CliffZ, GateZ + 3f, -1f);
-            Block(s, "Platform E", 18f, 26f, CliffZ, GateZ + 3f, -1f);
-            Block(s, "Platform middle", -18f, 18f, CliffZ + .6f, GateZ + 3f, -3f);
-            var cliff = YardKit.Span(s, "Cliff (marble)", new Vector3(-18f, -3f, CliffZ), new Vector3(18f, Top, CliffZ + .6f), YardKit.Marble, Solid.NoClimb);
+            // The platform behind the cliff's marble face, on to just past the final gate's wall. Since R659 the marble runs
+            // the whole width (the ramps' tops are gone): nothing to climb, the lifting wheel is the way up.
+            Block(s, "Platform", -26f, 26f, CliffZ + .6f, GateZ + 3f, -3f);
+            var cliff = YardKit.Span(s, "Cliff (marble)", new Vector3(-26f, -3f, CliffZ), new Vector3(26f, Top, CliffZ + .6f), YardKit.Marble, Solid.NoClimb);
             cliff.AddComponent<CourseFloor>();
-            YardKit.Wall(s, "Edge railing W", -18f, -3.5f, Top, Top + 1f, CliffZ, CliffZ + .4f);
-            YardKit.Wall(s, "Edge railing E", 3.5f, 18f, Top, Top + 1f, CliffZ, CliffZ + .4f);
+            // The edge's railing but where the wheel's landing meets the platform.
+            YardKit.Wall(s, "Edge railing W", -26f, -3.5f, Top, Top + 1f, CliffZ, CliffZ + .4f);
+            YardKit.Wall(s, "Edge railing E", 3.5f, 26f, Top, Top + 1f, CliffZ, CliffZ + .4f);
             // Across the platform, and reached already on the lifting wheel's landing: a rider let off there and shoved
             // back into the pool comes back on the platform, not at the foot of the wheel (R287: 12-15 s, the map's
             // biggest loss, for nothing the shover paid).

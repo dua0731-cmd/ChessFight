@@ -23,6 +23,8 @@ namespace ChessFight.RagdollLab
         static GUIStyle lettering;
         RagdollPawn pawn;
         SwordFightPawn fighter;
+        /// <summary>R645: no names at all while set (Sword Fight's camera flight round the map at the start).</summary>
+        public static bool Hidden;
 
         public static void Attach(RagdollPawn target, SwordFightPawn sword = null)
         {
@@ -35,6 +37,9 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (Event.current.type != EventType.Repaint || pawn == null || (fighter != null && !fighter.Alive)) return;
+            // R624: not over the entrance screen (Sword Fight's clash showed "BOT 2", "BOT 3" over its VS once the match
+            // scene had switched on under it)
+            if (LoadingScreenView.Showing) return;
             int depth = GUI.depth;
             GUI.depth = 100;
             Draw(Camera.main, pawn, pawn.Piece, false, out _);
@@ -45,6 +50,7 @@ namespace ChessFight.RagdollLab
         {
             screen = default;
             if (target.IsSelf) { local = target; return false; }
+            if (Hidden) return false;
             if (Event.current.type != EventType.Repaint || !camera || string.IsNullOrEmpty(target.DisplayName)) return false;
             bool teammate = local != null && local.Team == target.Team;
             float fade = teammate ? 1f : Mathf.InverseLerp(FarMeters, NearMeters, Vector3.Distance(camera.transform.position, target.bodies[(int)BodyId.Head].transform.position));

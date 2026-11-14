@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-13",
+  "applied": [{"path": "Assets/Resources/PawnRushGrandStairHall/FallingKnight.fbx", "method": "protected collapse 0.3 + custom normals transferred from source", "perKnight": [373894, 112168], "placed": 4}],
+  "rejected": {"FloatingPad 0.6/0.45": "blotchy shading on flat sides", "StairStatuesV36 0.6/0.45": "shading change on bases, mean diff 4.8+", "Hall round/outer walls 0.7/0.5": "silhouette IoU 0.986, mean diff 5.7+", "GardenGate / GardenLockDyke": "protected edges leave only -6,584 / -2,058"},
+  "sections": [
+    {"prefab": "Early_1-1_RoyalWaterGarden.prefab", "triangles": 2621741, "renderers": 155, "colliders": 245, "colliderHashSameAsBefore": true},
+    {"prefab": "Mid_2-1_GrandStairHall.prefab", "trianglesBefore": 3944227, "triangles": 2897323, "renderers": 757, "colliders": 229, "colliderHashSameAsBefore": true, "meshCollidersUsingKnightMesh": 0}
+  ],
+  "tests": "Core 192, simulated sessions 81 passed"
+}

@@ -109,10 +109,15 @@ namespace ChessFight.RagdollLab
         {
             if (Found && platform != null) return true;
             Found = false;
-            foreach (var h in Physics.RaycastAll(new Vector3(0f, 20f, 0f), Vector3.down, 60f, ~0, QueryTriggerInteraction.Ignore))
+            // R655: the highest box first (RaycastAll's order is none), and never one of this floor's own boxes round a
+            // hole (they are destroyed at the frame's end, so one could be found as the floor and take the board with it).
+            var hits = Physics.RaycastAll(new Vector3(0f, 20f, 0f), Vector3.down, 60f, ~0, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));
+            foreach (var h in hits)
             {
                 if (RagdollPawn.ColliderOwner.ContainsKey(h.collider) || h.collider.attachedRigidbody != null) continue;
                 if (!(h.collider is BoxCollider) || h.normal.y < 0.9f) continue;
+                if (rest.Contains(h.collider.gameObject)) continue;
                 platformCollider = h.collider;
                 platform = h.collider.transform;
                 platformRenderer = platform.GetComponent<Renderer>();
@@ -521,10 +526,22 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>R655: the boxes round the holes go now, not at the frame's end (Destroy's time): a floor found again
+        /// in the same frame (SwordFightMatch.SizeBoard) must not stand on one of them.</summary>
+        void DropRest()
+        {
+            foreach (var go in rest)
+                if (go != null)
+                {
+                    go.SetActive(false);
+                    Destroy(go);
+                }
+        }
+
         /// <summary>Back to the one original floor once no collapse is left.</summary>
         void Restore()
         {
-            foreach (var go in rest) if (go != null) Destroy(go);
+            DropRest();
             rest.Clear();
             if (platformCollider != null) platformCollider.enabled = true;
             if (platformRenderer != null) platformRenderer.enabled = !Hidden;
@@ -534,7 +551,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The floor as boxes round every chunk still away (cracking, gone or coming back).</summary>
         void Rebuild()
         {
-            foreach (var go in rest) if (go != null) Destroy(go);
+            DropRest();
             rest.Clear();
             edgesDirty = true;
             if (Collapses.Count == 0 && Erased.Count == 0)

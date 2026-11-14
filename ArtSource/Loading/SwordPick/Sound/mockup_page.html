@@ -1,0 +1,167 @@
+<title>소드 파이트 매칭 소리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column; a timeline strip that plays like the entrance screen, then three set cards side by side (stack on phones). */
+:root{
+  --bg:#efe9dc; --panel:#f8f4ea; --ink:#1b1712; --muted:#6c6253; --line:#d6ccb8;
+  --brass:#9a7a2e; --us:#1e78be; --them:#c8283c; --ebony:#1d1915;
+  --display:"Exo 2","Noto Sans KR",system-ui,sans-serif; --body:"Noto Sans KR",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14110e; --panel:#1e1a16; --ink:#efe6d2; --muted:#a69b87; --line:#3a332b;
+  --brass:#c9a54e; --us:#4a9be0; --them:#e2505f; --ebony:#0c0a08; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14110e; --panel:#1e1a16; --ink:#efe6d2; --muted:#a69b87; --line:#3a332b;
+  --brass:#c9a54e; --us:#4a9be0; --them:#e2505f; --ebony:#0c0a08; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,38px);line-height:1.15;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:62ch;margin:6px 0 0}
+.tag{display:inline-block;font-size:12px;letter-spacing:.06em;color:var(--brass);font-weight:700;margin-bottom:6px}
+
+/* screen strip */
+.screen{background:var(--ebony);color:#efe6d2;border-radius:10px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px}
+.now{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.now b{font-family:var(--display);font-size:clamp(20px,3vw,28px);font-weight:800}
+.now span{font-family:var(--mono);font-size:13px;color:#b9ad95;font-variant-numeric:tabular-nums}
+.track{position:relative;height:64px;overflow:hidden;border-radius:6px;background:#26201a}
+.stage{position:absolute;top:0;bottom:0;border-right:1px solid #0c0a08;padding:6px 8px;font-size:12px;color:#b9ad95;white-space:nowrap;overflow:hidden}
+.stage.on{background:#3a2f22;color:#efe6d2}
+.ev{position:absolute;bottom:0;width:2px;height:22px;background:#c9a54e;opacity:.7}
+.ev.big{height:36px;width:3px;background:#efe6d2;opacity:.9}
+.ev.tick{background:#e2505f}
+.head{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px #0008;left:0;display:none}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#b9ad95}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+
+/* sets */
+.sets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:860px){.sets{grid-template-columns:1fr}}
+.set{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.set.playing{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass)}
+.set h2{font-family:var(--display);font-size:22px;margin:0;display:flex;gap:10px;align-items:baseline}
+.set h2 em{font-style:normal;color:var(--brass);font-size:28px}
+.set p{margin:0;color:var(--muted);font-size:14px}
+.play{appearance:none;border:0;border-radius:8px;background:var(--ink);color:var(--bg);font:700 15px var(--body);padding:12px 14px;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center}
+.play:focus-visible,.solo button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.play small{font-family:var(--mono);font-weight:500;opacity:.7}
+.solo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.solo button{appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;padding:8px 10px;font:500 13px var(--body);text-align:left;cursor:pointer;min-width:0}
+.solo button:hover{border-color:var(--brass)}
+.solo button.on{background:var(--brass);color:var(--panel);border-color:var(--brass)}
+.solo button span{display:block;font-size:11px;color:var(--muted)}
+.solo button.on span{color:var(--panel)}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;font-size:14px}
+@media (max-width:700px){.notes{grid-template-columns:1fr}}
+.notes div{min-width:0}
+.notes h3{font-size:14px;margin:0 0 4px}
+.notes ul{margin:0;padding-left:18px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.head{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="tag">소드 파이트 · 입장 화면 · 시안 (Unity에 안 넣음)</div>
+    <h1>소드 파이트 매칭 소리, A를 더 매칭답게</h1>
+    <p class="lede">고르신 A(칼날 결투)에 게임 매칭 화면 느낌을 얹었어요. 또렷한 휙-착 소리, 단단한 저음 쿵, 딸깍하는 초읽기, 1초마다 뛰는 맥박을 더했어요. A1은 조금만, A2는 더 많이 바꿨어요. 시간표는 그대로이고 세 벌 크기를 똑같이 맞췄어요.</p>
+  </header>
+
+  <section class="screen" aria-label="입장 화면 시간표">
+    <div class="now"><b id="now">재생을 누르면 화면 순서가 여기 나와요</b><span id="clock">0.0 초</span></div>
+    <div class="track" id="track"><div class="head" id="head"></div></div>
+    <div class="legend">
+      <span><i style="background:#efe6d2"></i>큰 타격 (매칭 완료 · VS · 마감 · 결투)</span>
+      <span><i style="background:#c9a54e"></i>패널 · 카드 · 선택</span>
+      <span><i style="background:#e2505f"></i>마지막 5초 초읽기</span>
+    </div>
+  </section>
+
+  <section class="sets" id="sets"></section>
+
+  <section class="notes">
+    <div>
+      <h3>들을 때 볼 곳</h3>
+      <ul>
+        <li>0초: 매칭 완료 첫 소리와 0.7초의 VS 쾅</li>
+        <li>15~19초: 초읽기 다섯 번, 20초 마감</li>
+        <li>23.5초: 양쪽이 부딪히는 결투 한 방</li>
+      </ul>
+    </div>
+    <div>
+      <h3>같이 들어간 폰 러쉬 소리</h3>
+      <ul>
+        <li>카드 고르기 틱 · 확정 철컥(R591 B) · 팀원 선택 틱 · 네모 칸 채움은 폰 러쉬 것을 그대로 썼어요. 세 벌의 차이는 나머지 소리와 깔린 소리예요.</li>
+        <li>A의 칼 소리에서 동전처럼 남는 쇳소리 울림은 깎아냈어요.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const TIMES = {lead:0.6, end:26.5};
+const STAGES = [
+  {name:'① 매칭 완료', a:0, b:5},
+  {name:'② 기물을 선택하십시오', a:5, b:20},
+  {name:'③ 우리 팀이 선택한 기물', a:20, b:23},
+  {name:'④ 결투', a:23, b:26.5},
+];
+const EVENTS = [
+  [0,'big'],[0.45,''],[0.53,''],[0.61,''],[0.73,'big'],[1.67,''],[3.33,''],[5,''],[5.3,''],
+  [8,''],[9,''],[11,''],[15,'tick'],[16,'tick'],[17,'tick'],[18,'tick'],[19,'tick'],[20,'big'],
+  [20.24,''],[20.3,''],[20.37,''],[20.44,''],[23.45,'big'],[23.7,''],[24,'']
+];
+const SETS = [
+  {k:'A', name:'칼날 결투 (처음 고른 그대로)', feel:'칼 뽑는 소리, 칼끼리 부딪히는 VS, 칼날 두드리는 초읽기. 아래에 느린 전쟁 북과 낮은 첼로.'},
+  {k:'A1', name:'조금 더 매칭답게', feel:'A 소리가 앞에 그대로 있고, 밑에 게임 화면 소리(휙-착, 저음 쿵, 딸깍 초읽기)를 절반 크기로 겹쳤어요. 깔린 소리에도 1초 맥박이 살짝 들어가요.'},
+  {k:'A2', name:'많이 매칭답게', feel:'게임 매칭 소리가 앞에 오고 A의 칼 소리는 밑에 깔려요. 깔린 소리가 1초마다 쿵쿵 뛰는 맥박으로 바뀌어서 기다리는 느낌이 더 커요.'},
+];
+const SOLO = [
+  ['open','매칭 완료','0초'],['plate','팀 패널','0.45초'],['vs','VS 쾅','0.73초'],['tick','초읽기','15~19초'],
+  ['close','선택 마감','20초'],['card','기물 카드','5.3 · 20.3초'],['clash','결투','23.45초'],['bed','깔린 소리','처음부터']
+];
+
+const track = document.getElementById('track'), head = document.getElementById('head');
+const nowEl = document.getElementById('now'), clockEl = document.getElementById('clock');
+const pct = t => (t / TIMES.end * 100) + '%';
+STAGES.forEach((s,i)=>{const d=document.createElement('div');d.className='stage';d.style.left=pct(s.a);d.style.width=`calc(${pct(s.b-s.a)})`;d.textContent=s.name;d.id='st'+i;track.appendChild(d)});
+EVENTS.forEach(([t,c])=>{const d=document.createElement('div');d.className='ev '+c;d.style.left=pct(t);track.appendChild(d)});
+track.appendChild(head);
+
+const setsEl = document.getElementById('sets');
+let cur = null, raf = 0;
+function stop(){ if(cur){cur.audio.pause();cur.audio.currentTime=0;cur.btn.classList.remove('on');cur.card&&cur.card.classList.remove('playing');if(cur.label)cur.btn.querySelector('b').textContent=cur.label;} cur=null; cancelAnimationFrame(raf); head.style.display='none'; document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on')); }
+function tick(){
+  if(!cur||!cur.full) return;
+  const t = cur.audio.currentTime - TIMES.lead;
+  head.style.display='block'; head.style.left = pct(Math.max(0,Math.min(TIMES.end,t)));
+  let st = STAGES.findIndex(s=>t>=s.a && t<s.b);
+  document.querySelectorAll('.stage').forEach((s,i)=>s.classList.toggle('on',i===st));
+  let label = t<0 ? '방장이 시작 누르기 직전' : st<0 ? '경기장으로 넘어감 → 경기 3·2·1' : STAGES[st].name;
+  if(st===1){const left=Math.ceil(20-t); label += ` · 남은 시간 ${left}초`;}
+  nowEl.textContent = `${cur.k} · ${label}`; clockEl.textContent = `${Math.max(0,t).toFixed(1)} 초`;
+  raf = requestAnimationFrame(tick);
+}
+function play(src, btn, opts){
+  const same = cur && cur.btn===btn; stop(); if(same) return;
+  const audio = new Audio(src);
+  cur = {audio, btn, ...opts}; btn.classList.add('on'); opts.card&&opts.card.classList.add('playing');
+  if(opts.label) btn.querySelector('b').textContent='■ 멈추기';
+  audio.addEventListener('ended', stop);
+  audio.play().then(()=>{ if(opts.full) tick(); }).catch(()=>{ nowEl.textContent='소리를 재생하지 못했어요. 다시 눌러 보세요.'; stop(); });
+}
+SETS.forEach(s=>{
+  const card=document.createElement('article'); card.className='set';
+  card.innerHTML=`<h2><em>${s.k}</em>${s.name}</h2><p>${s.feel}</p>
+    <button class="play" type="button" id="play${s.k}"><b>▶ 입장 화면 전체 듣기</b><small>27초</small></button>
+    <div class="solo"></div>`;
+  const full=card.querySelector('.play');
+  full.addEventListener('click',()=>play(`out/mix_${s.k}.wav`,full,{full:true,k:s.k,card,label:'▶ 입장 화면 전체 듣기'}));
+  const solo=card.querySelector('.solo');
+  SOLO.forEach(([r,n,w])=>{const b=document.createElement('button');b.type='button';b.id=`solo${s.k}_${r}`;b.innerHTML=`${n}<span>${w}</span>`;b.addEventListener('click',()=>play(`out/${s.k}_${r}.wav`,b,{full:false}));solo.appendChild(b)});
+  setsEl.appendChild(card);
+});
+</script>

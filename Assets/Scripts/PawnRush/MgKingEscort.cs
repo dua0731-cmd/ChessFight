@@ -441,14 +441,13 @@ namespace ChessFight.PawnRush
             float bump = (t - bumpAt) / .1f;
             sledLook.localPosition = bumpAt >= 0f && bump < 1f ? new Vector3(0f, .04f * Mathf.Sin(bump * Mathf.PI), 0f) : Vector3.zero;
 
-            // The sled on its frame: the team's ring and a burst round it (every PC plays it when it sees the game done).
+            // The sled on its frame: its landing sound (every PC plays it when it sees the game done). R643: the team's
+            // ring and burst round it went (승규 님 11-14, "8번 아직 파란색 폭죽 터지고"); the door's banners are the moment
+            // (MiniGameProcessionGateFx).
             if (Completed && !arrived)
             {
                 arrived = true;
-                var at = World(SledAt(road.Length, out _));
-                ArenaFx.Ring(at, 0f, 2.5f, .6f, station.Accent(station.Team));
-                ArenaFx.Burst(at + Vector3.up * .2f, new[] { station.Accent(station.Team), Arena.Gold, new Color(.85f, .8f, .7f) }, 24, 2.2f, 2.5f, .9f, .1f);
-                ArenaFx.Sfx("sfx_castle_land", at);
+                ArenaFx.Sfx("sfx_castle_land", World(SledAt(road.Length, out _)));
             }
             if (!Completed) arrived = false;
         }

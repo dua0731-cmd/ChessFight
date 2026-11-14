@@ -1,0 +1,26 @@
+[
+  {
+    "key": "hall",
+    "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+    "objects": 177,
+    "errors": []
+  },
+  {
+    "key": "towers",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+    "objects": 17,
+    "errors": []
+  },
+  {
+    "key": "boats",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+    "objects": 12,
+    "errors": []
+  },
+  {
+    "key": "plinths",
+    "path": "Assets/Resources/PawnRushGrandStairHall/StairStatuesV36.fbx",
+    "objects": 8,
+    "errors": []
+  }
+]

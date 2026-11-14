@@ -21,9 +21,15 @@ namespace ChessFight.PawnRush
     // Self-building: its own position is the stable (the body's centre on the floor), its nose local +z. Built from code
     // on an inactive object: call Configure (and SetPhase) before switching it on. The stable around it is the caller's:
     // leave at least a pawn's room (0.6 m) behind where it comes home, so nobody is ever pinned there.
+    //
+    // R659 (zone 2, the sorting yard's machines): a cart is a loaded cargo cart on a track - it runs out to the end, holds,
+    // and with returnBolts runs back as hard as it came without turning (a cart has two noses: its shell reaches ahead of
+    // whichever end leads), warned by its red beacon and the line both ways.
     public sealed class StableCharger : Obstacle, IHitTurns
     {
-        public enum Look { Carriage, Horse }
+        public enum Look { Carriage, Horse, Cart }
+
+        public const float CartLength = 2.6f, CartWidth = 1.7f, CartHeight = 1.9f;
         public enum Stage { Waiting, Bolting, Holding, Returning }
 
         // How far the hit shell reaches ahead of the nose while bolting (m): a 7 m/s push sideways clears the body in the
@@ -31,7 +37,7 @@ namespace ChessFight.PawnRush
         public const float Lead = 1.5f;
         // Time shares of the bolt spent speeding up and slowing down, and of the way home.
         const float SpeedUp = .25f, SlowDown = .15f, HomeEase = .3f;
-        public const float HorseLength = 2.6f, HorseWidth = .9f, HorseHeight = 1.95f;
+        public const float HorseLength = YardHorse.Length, HorseWidth = YardHorse.Width, HorseHeight = YardHorse.Height;
         static readonly Color LineColor = new Color(1f, .22f, .16f, 1f);
 
         [SerializeField] Look look;
@@ -63,8 +69,7 @@ namespace ChessFight.PawnRush
         Transform[] wheels;
         Renderer[] lamps;
         Material lampLit, lampWarn;
-        Transform horseBody, neck;
-        Transform[] legs;
+        YardHorse horse;
         YardImpact impact;
         BoxCollider shell;
         Vector3 shellSize, shellCentre;
@@ -81,8 +86,9 @@ namespace ChessFight.PawnRush
         public float Distance => endOffset.magnitude;
         public float BoltSeconds => Distance * PeakFactor(SpeedUp, SlowDown) / Mathf.Max(.1f, moveSpeed);
         float HomeSeconds => returnBolts ? BoltSeconds : Distance * PeakFactor(HomeEase, HomeEase) / Mathf.Max(.1f, returnSpeed);
-        float HalfLength => look == Look.Horse ? HorseLength * .5f : YardKit.CarriageLength * .5f;
-        float BodyWidth => look == Look.Horse ? HorseWidth : YardKit.CarriageWidth;
+        float HalfLength => look == Look.Horse ? HorseLength * .5f : look == Look.Cart ? CartLength * .5f : YardKit.CarriageLength * .5f;
+        float BodyWidth => look == Look.Horse ? HorseWidth : look == Look.Cart ? CartWidth : YardKit.CarriageWidth;
+        float BodyHeight => look == Look.Horse ? HorseHeight : look == Look.Cart ? CartHeight : YardKit.CarriageHeight;
         // Time it stands at home, and at the end, before it goes: a horse turns round first, then the warning.
         float Lull => warning + (look == Look.Horse ? turnSeconds : 0f);
 
@@ -111,8 +117,8 @@ namespace ChessFight.PawnRush
             this.knockdownSeconds = knockdownSeconds;
             this.paint = paint;
             this.turnSeconds = turnSeconds;
-            // Only a horse turns round to run home nose first; a carriage backs up.
-            this.returnBolts = returnBolts && look == Look.Horse;
+            // Only a horse turns round to run home nose first; a carriage backs up; a cart runs back either way (R659).
+            this.returnBolts = returnBolts && look != Look.Carriage;
             this.waitAtStart = Mathf.Max(Lull, waitAtStart);
             this.holdAtEnd = this.returnBolts ? Mathf.Max(Lull, holdAtEnd) : look == Look.Horse ? Mathf.Max(turnSeconds, holdAtEnd) : holdAtEnd;
         }
@@ -130,7 +136,7 @@ namespace ChessFight.PawnRush
             built = true;
             if (look == Look.Horse)
             {
-                BuildHorse();
+                horse = YardHorse.Build(transform, Vector3.zero);
                 var body = new GameObject("Horse (collider)");
                 body.transform.SetParent(transform, false);
                 var box = body.AddComponent<BoxCollider>();
@@ -141,6 +147,17 @@ namespace ChessFight.PawnRush
                 impact = YardKit.Shell(transform, "Horse (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockbackForce);
                 impact.solid = box;
                 impact.onFloor = true;
+            }
+            else if (look == Look.Cart)
+            {
+                wheels = BuildCart();
+                impact = YardKit.BodyCollider(transform, new Vector3(CartWidth, CartHeight, CartLength), knockbackForce, seeThrough: true);
+                var found = new System.Collections.Generic.List<Renderer>();
+                foreach (var r in GetComponentsInChildren<Renderer>())
+                    if (r.name == "Lamp") found.Add(r);
+                lamps = found.ToArray();
+                lampLit = YardKit.Lamp;
+                lampWarn = YardKit.Warning;
             }
             else
             {
@@ -207,6 +224,45 @@ namespace ChessFight.PawnRush
             line.localScale = new Vector3((BodyWidth + .5f) / Mathf.Max(1e-4f, scale.x), reach / Mathf.Max(1e-4f, scale.z), 1f);
         }
 
+        // A loaded cargo cart on a track, its length along local z, standing on y 0: a low bed on four iron wheels, crates
+        // and a sack under a strap, buffers at both ends and a red beacon on a post (its warning). Pictures only; the
+        // collider is one box over all of it. Returns the wheel pivots.
+        Transform[] BuildCart()
+        {
+            var c = new GameObject("Cart").transform;
+            c.SetParent(transform, false);
+            const YardKit.Solid none = YardKit.Solid.None;
+            YardKit.Box(c, "Cart bed", new Vector3(0f, .62f, 0f), new Vector3(CartWidth - .1f, .26f, CartLength), YardKit.WoodDark, none);
+            YardKit.Box(c, "Cart side", new Vector3(0f, .9f, 0f), new Vector3(CartWidth, .3f, CartLength - .2f), YardKit.WoodLight, none);
+            foreach (float z in new[] { -1f, 1f })
+            {
+                YardKit.Box(c, "Buffer", new Vector3(0f, .6f, z * (CartLength * .5f - .02f)), new Vector3(1.1f, .22f, .1f), YardKit.Iron, none);
+                YardKit.Box(c, "Buffer trim", new Vector3(0f, .74f, z * (CartLength * .5f - .02f)), new Vector3(1.12f, .05f, .11f), YardKit.Gold, none);
+            }
+            YardKit.Box(c, "Crate", new Vector3(-.3f, 1.42f, -.5f), new Vector3(.9f, .9f, .9f), YardKit.WoodLight, none);
+            YardKit.Box(c, "Crate band", new Vector3(-.3f, 1.42f, -.5f), new Vector3(.93f, .12f, .93f), YardKit.Banner, none);
+            YardKit.Box(c, "Crate", new Vector3(.35f, 1.3f, .55f), new Vector3(.8f, .66f, .8f), YardKit.WoodDark, none);
+            var sack = YardKit.Ball(c, "Sack", new Vector3(.4f, 1.22f, -.45f), .7f, Arena.Lit("M_YardSack", Arena.Hex("#CDB48A"), 0f, .95f), none);
+            sack.transform.localScale = new Vector3(.6f, .5f, .8f);
+            YardKit.Box(c, "Strap", new Vector3(0f, 1.45f, 0f), new Vector3(CartWidth + .02f, .05f, .12f), YardKit.WoodDark, none);
+            YardKit.Box(c, "Beacon post", new Vector3(-.7f, 1.4f, .95f), new Vector3(.1f, .9f, .1f), YardKit.Iron, none);
+            YardKit.Box(c, "Lamp", new Vector3(-.7f, 1.9f, .95f), new Vector3(.3f, .3f, .3f), YardKit.Lamp, none);
+            var wheels = new Transform[4];
+            int n = 0;
+            foreach (float z in new[] { -.8f, .8f })
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    var pivot = new GameObject("Wheel").transform;
+                    pivot.SetParent(c, false);
+                    pivot.localPosition = new Vector3(.62f * side, .32f, z);
+                    YardKit.Cylinder(pivot, "Tyre", Vector3.zero, Vector3.right, .64f, .12f, YardKit.Iron, none);
+                    YardKit.Box(pivot, "Spoke", Vector3.zero, new Vector3(.05f, .56f, .06f), YardKit.WoodDark, none);
+                    YardKit.Box(pivot, "Spoke", Vector3.zero, new Vector3(.05f, .06f, .56f), YardKit.WoodDark, none);
+                    wheels[n++] = pivot;
+                }
+            return wheels;
+        }
+
         AudioSource Voice(AudioClip clip, bool loop)
         {
             var a = gameObject.AddComponent<AudioSource>();
@@ -218,6 +274,7 @@ namespace ChessFight.PawnRush
             a.minDistance = 4f;
             a.maxDistance = 35f;
             a.dopplerLevel = 0f;
+            SectionSoundGate.Gate(a);   // R529 / R654: the effects volume is the gate's
             a.volume = 0f;
             return a;
         }
@@ -334,11 +391,14 @@ namespace ChessFight.PawnRush
             if (shell == null) return;
             float left = stage == Stage.Bolting ? 1f - Along(stage, into) : Along(stage, into);
             float ahead = running ? Mathf.Clamp(left * Distance, 0f, Lead - .25f) : 0f;
+            // A cart runs back without turning: its lead goes out of its back end then (R659).
+            float lead = look == Look.Cart && stage == Stage.Returning ? -1f : 1f;
             var size = new Vector3(shellSize.x, shellSize.y, shellSize.z + ahead);
-            if (shell.size != size)
+            var centre = shellCentre + Vector3.forward * (lead * ahead * .5f);
+            if (shell.size != size || shell.center != centre)
             {
                 shell.size = size;
-                shell.center = shellCentre + Vector3.forward * (ahead * .5f);
+                shell.center = centre;
             }
         }
 
@@ -359,7 +419,7 @@ namespace ChessFight.PawnRush
 
             if (wheels != null)
             {
-                float angle = travelled / (YardKit.CarriageWheel * .5f) * Mathf.Rad2Deg;
+                float angle = travelled / ((look == Look.Cart ? .64f : YardKit.CarriageWheel) * .5f) * Mathf.Rad2Deg;
                 foreach (var wheel in wheels)
                     if (wheel != null) wheel.localRotation = Quaternion.Euler(angle, 0f, 0f);
             }
@@ -369,7 +429,7 @@ namespace ChessFight.PawnRush
                 foreach (var lamp in lamps)
                     if (lamp != null && lamp.sharedMaterial != material) lamp.sharedMaterial = material;
             }
-            if (horseBody != null) PoseHorse(now, stage, into, warned, speed);
+            if (horse != null) horse.Pose(now, YardHorse.Rear(warned), speed, moveSpeed, travelled);
 
             if (lineRenderer != null)
             {
@@ -389,93 +449,17 @@ namespace ChessFight.PawnRush
                 if (share > .02f)
                 {
                     if (!rumble.isPlaying && rumble.isActiveAndEnabled) rumble.Play();
-                    rumble.volume = .5f * share * GameSettings.Effects;
-                    rumble.pitch = (look == Look.Horse ? 1.25f : .75f) + .45f * share;
+                    rumble.volume = .5f * share;
+                    rumble.pitch = (look == Look.Horse ? 1.25f : look == Look.Cart ? .95f : .75f) + .45f * share;
                 }
                 else if (rumble.isPlaying) rumble.Stop();
             }
             if (crack != null && running && stage != shown)
             {
-                crack.volume = GameSettings.Effects;
+                crack.volume = 1f;
                 crack.PlayOneShot(crack.clip, .8f);
             }
             shown = stage;
-        }
-
-        // ------------------------------------------------------------------ the horse
-
-        static Material HorseCoat => Arena.Lit("M_YardHorse", Arena.Hex("#7A4A2A"), 0f, .6f);
-        static Material HorseMane => Arena.Lit("M_YardHorseMane", Arena.Hex("#2B1B12"), 0f, .8f);
-        static Material Hoof => Arena.Lit("M_YardHoof", Arena.Hex("#1E1A17"), 0f, .5f);
-
-        // A royal horse, nose to local +z, standing on y 0: pictures only (the collider is one box over all of it). The
-        // body hangs from a pivot over the hind legs, so it can rear; each leg from a pivot at its top, so it can stride.
-        void BuildHorse()
-        {
-            var root = new GameObject("Horse").transform;
-            root.SetParent(transform, false);
-            const YardKit.Solid none = YardKit.Solid.None;
-            horseBody = new GameObject("Body").transform;
-            horseBody.SetParent(root, false);
-            horseBody.localPosition = new Vector3(0f, 1.05f, -.75f);
-            // Everything below is placed from the standing horse's points, less the pivot.
-            var at = new Vector3(0f, -1.05f, .75f);
-            YardKit.Box(horseBody, "Barrel", at + new Vector3(0f, 1.32f, 0f), new Vector3(.78f, .78f, 1.75f), HorseCoat, none);
-            YardKit.Box(horseBody, "Chest", at + new Vector3(0f, 1.36f, .9f), new Vector3(.74f, .72f, .4f), HorseCoat, none);
-            YardKit.Box(horseBody, "Rump", at + new Vector3(0f, 1.38f, -.85f), new Vector3(.8f, .72f, .45f), HorseCoat, none);
-            YardKit.Box(horseBody, "Saddle cloth", at + new Vector3(0f, 1.62f, -.05f), new Vector3(.86f, .3f, .8f), YardKit.Banner, none);
-            YardKit.Box(horseBody, "Cloth trim", at + new Vector3(0f, 1.47f, -.05f), new Vector3(.88f, .06f, .84f), YardKit.Gold, none);
-            YardKit.Box(horseBody, "Tail", at + new Vector3(0f, 1.25f, -1.2f), new Vector3(.16f, .6f, .16f), HorseMane, none, Quaternion.Euler(-25f, 0f, 0f));
-            neck = new GameObject("Neck").transform;
-            neck.SetParent(horseBody, false);
-            neck.localPosition = at + new Vector3(0f, 1.5f, .95f);
-            YardKit.Box(neck, "Neck", new Vector3(0f, .32f, .15f), new Vector3(.38f, .8f, .42f), HorseCoat, none, Quaternion.Euler(28f, 0f, 0f));
-            YardKit.Box(neck, "Mane", new Vector3(0f, .42f, -.02f), new Vector3(.12f, .78f, .14f), HorseMane, none, Quaternion.Euler(28f, 0f, 0f));
-            YardKit.Box(neck, "Head", new Vector3(0f, .72f, .52f), new Vector3(.32f, .34f, .68f), HorseCoat, none, Quaternion.Euler(18f, 0f, 0f));
-            YardKit.Box(neck, "Muzzle", new Vector3(0f, .6f, .84f), new Vector3(.28f, .24f, .2f), HorseMane, none, Quaternion.Euler(18f, 0f, 0f));
-            YardKit.Box(neck, "Bridle", new Vector3(0f, .72f, .62f), new Vector3(.36f, .06f, .06f), YardKit.Gold, none);
-            foreach (float side in new[] { -1f, 1f })
-                YardKit.Box(neck, "Ear", new Vector3(.09f * side, .94f, .32f), new Vector3(.07f, .16f, .07f), HorseCoat, none);
-            YardKit.Box(neck, "Plume", new Vector3(0f, 1.02f, .3f), new Vector3(.06f, .22f, .06f), YardKit.Banner, none);
-            legs = new Transform[4];
-            int n = 0;
-            foreach (float z in new[] { .72f, -.72f })
-                foreach (float side in new[] { -1f, 1f })
-                {
-                    var pivot = new GameObject("Leg").transform;
-                    pivot.SetParent(horseBody, false);
-                    pivot.localPosition = at + new Vector3(.24f * side, 1.0f, z);
-                    YardKit.Box(pivot, "Leg", new Vector3(0f, -.45f, 0f), new Vector3(.16f, .9f, .18f), HorseCoat, none);
-                    YardKit.Box(pivot, "Hoof", new Vector3(0f, -.94f, .02f), new Vector3(.2f, .12f, .22f), Hoof, none);
-                    legs[n++] = pivot;
-                }
-        }
-
-        // Rearing while it warns, a galloping stride with the distance run (the same on every PC), still when it stands.
-        void PoseHorse(double now, Stage stage, float into, float warned, float speed)
-        {
-            float rear = warned >= 0f ? Smooth(warned / .3f) * (1f - Smooth((warned - .75f) / .25f)) : 0f;
-            horseBody.localRotation = Quaternion.Euler(-32f * rear, 0f, 0f);
-            if (neck != null) neck.localRotation = Quaternion.Euler(-12f * rear + 8f * Mathf.Sin((float)(now * 9.0 % (2.0 * System.Math.PI))) * rear, 0f, 0f);
-            float share = Mathf.Clamp01(speed / Mathf.Max(.1f, moveSpeed));
-            // One stride every ~2.4 m at a gallop, ~1.3 m at a trot.
-            float stride = Mathf.Lerp(1.3f, 2.4f, share);
-            float travelled = Along(stage, into) * Distance;
-            float cycle = travelled / stride * Mathf.PI * 2f;
-            float swing = speed > .2f ? Mathf.Lerp(18f, 42f, share) : 0f;
-            for (int i = 0; i < legs.Length; i++)
-            {
-                if (legs[i] == null) continue;
-                // Front legs tuck up while it rears.
-                bool front = i < 2;
-                float offset = (i == 0 || i == 3) ? 0f : Mathf.PI * .65f;
-                float angle = swing * Mathf.Sin(cycle + offset);
-                if (front) angle -= 70f * rear;
-                legs[i].localRotation = Quaternion.Euler(angle, 0f, 0f);
-            }
-            var p = horseBody.localPosition;
-            p.y = 1.05f + (speed > .2f ? .07f * Mathf.Abs(Mathf.Sin(cycle)) * share : 0f);
-            horseBody.localPosition = p;
         }
 
         void OnDrawGizmos()
@@ -486,7 +470,7 @@ namespace ChessFight.PawnRush
             Gizmos.color = new Color(1f, .55f, .2f, .8f);
             Gizmos.DrawLine(from + Vector3.up, to + Vector3.up);
             Gizmos.matrix = Matrix4x4.TRS(to, turn, Vector3.one);
-            float h = look == Look.Horse ? HorseHeight : YardKit.CarriageHeight;
+            float h = BodyHeight;
             Gizmos.DrawWireCube(new Vector3(0f, h * .5f, 0f), new Vector3(BodyWidth, h, HalfLength * 2f));
         }
     }

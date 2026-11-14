@@ -1,0 +1,18 @@
+﻿<Solution>
+  <Project Path="ChessFight.RagdollLab.csproj" />
+  <Project Path="ChessFight.VFX.csproj" />
+  <Project Path="ChessFight.ChessBoxingPrototype.Editor.csproj" />
+  <Project Path="ChessFight.VFX.Editor.csproj" />
+  <Project Path="ChessFight.RagdollLab.Net.csproj" />
+  <Project Path="ChessFight.Game.csproj" />
+  <Project Path="ChessFight.PawnRush.csproj" />
+  <Project Path="ChessFight.Network.Core.csproj" />
+  <Project Path="ChessFight.Gameplay.csproj" />
+  <Project Path="ChessFight.ImportedMap.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="ChessFight.RagdollLab.Editor.csproj" />
+  <Project Path="ChessFight.Network.Steam.csproj" />
+  <Project Path="ChessFight.PawnRush.Editor.csproj" />
+  <Project Path="ChessFight.Game.Steam.csproj" />
+  <Project Path="ChessFight.ChessBoxingPrototype.csproj" />
+</Solution>

@@ -96,9 +96,12 @@ namespace ChessFight.Network
             return true;
         }
 
-        // Before start, a partial party failure releases the whole group atomically.
-        // A group whose people never all came also starts its sender's Cooldown; one
-        // that came and then lost a member does not (those people were real).
+        // Before the start: a group whose people never all came is released whole and starts its
+        // sender's Cooldown. R644 (user 11-14: "그 사람만 나가고, 나머지 파티원과 방은 그대로"): a group
+        // that came and then lost a member keeps the others - only the one who left (or whose PC
+        // died) gives up its seat. It used to be released whole, so one player's crash threw its
+        // party mates out of the waiting room. A group with no person left goes (its bots with it).
+        // Returns the groups removed whole.
         public List<Group> Reconcile(HashSet<ulong> present, double now)
         {
             var removed = new List<Group>();
@@ -107,13 +110,28 @@ namespace ChessFight.Network
                 // Bots never join the Steam lobby, so they always count as arrived.
                 bool all = g.Members.All(id => BotIdentity.IsBot(id) || present.Contains(id));
                 if (all) g.Committed = true;
-                if ((!g.Committed && now > g.Deadline) || (g.Committed && !all))
+                if (!g.Committed && now > g.Deadline)
                 {
                     groups.Remove(g); removed.Add(g);
-                    if (!g.Committed) StartCooldown(g.Leader, now);
+                    StartCooldown(g.Leader, now);
+                }
+                else if (g.Committed && !all)
+                {
+                    g.Members = g.Members.Where(id => BotIdentity.IsBot(id) || present.Contains(id)).ToArray();
+                    if (!g.Members.Any(id => !BotIdentity.IsBot(id))) { groups.Remove(g); removed.Add(g); }
                 }
             }
             return removed;
+        }
+        // R644: one player out of a group, the others keep their seats (a host that leaves the
+        // waiting room alone). False when the player had no seat.
+        public bool RemoveMember(ulong id)
+        {
+            var g = Find(id);
+            if (g == null) return false;
+            g.Members = g.Members.Where(m => m != id).ToArray();
+            if (!g.Members.Any(m => !BotIdentity.IsBot(m))) groups.Remove(g);
+            return true;
         }
         public bool Ready => Count == 12 && groups.All(g => g.Committed);
         // R148 (Pawn Rush): the host may start before twelve once each side has at least MinTeamToStart and the

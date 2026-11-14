@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R653 · 2026-11-14.** 네 번째 북 발판에서 로봇 둑으로 건너던 기둥 4개와 연잎 2개를 제거했다. 여덟 북 → 동쪽 수문 → 로봇 둑 → 승선장 → 네 보트 레인 순서로 간다. 저수지 양쪽은 승선장 끝부터 성벽까지 철제 울타리로 막고, 보트 터널 지붕에는 난간, 터널 뒤에는 벽을 뒀다. 기존에 구운 구간도 시작할 때 같은 변경을 적용한다. 체크포인트 0~7은 같은 자리에 있다. [구간과 시험 방법](PAWN_RUSH_SECTIONS.md)
+
 > **R530(11-09):** 효과음 시작 — 비트 1 분수 광장: 회전 막대 축 · 휙 · 쿵(`GardenSpinBarSound`), 분수 6개 · 해자 물결(`GardenPlazaSound`), ElevenLabs → `plaza_sounds.py` → `Resources/PawnRushGardenSfx`. 전체 목록과 진행은 [정원 효과음](PAWN_RUSH_GARDEN_SFX.md). v160.
 
 > **R491(11-06):** 나무 = `tree_asset.py`(source/tree_cone.glb · tree_round.glb → TreeAsset_v1.blend, 줄기 · 이끼 · 잎 2색 · 새로 만든 꽃) → `trees_sample.py`(테라스: 다트, 둑: 3~4개 숲, 성벽 · 탑 · 코스 피함) → export GardenTrees(손작업 후처리 없음). Unity `Concept` 조각 `GardenTrees`(덮기 · 충돌 없음). v159.
@@ -211,3 +213,10 @@ FBX는 Blender (x, y, z)를 Unity (−x, z, −y)로 들여온다([PITFALLS §24
 - 팀 전용 승선(보트의 `team_only`), 체크포인트, 결승 · 골 판정, 미션 광장, 난간, `NoClimbSurface`는 아직 없다. 떨어지면 구역 출발점으로 간다.
 - 장식에는 충돌체가 없다(꽃 · 나무 · 폭포 · 분수 · 갓돌 · 진자 받침 기둥 · 회전 고리 포함).
 - 맵을 Blender에서 다시 고치면 같은 이름으로 FBX를 바꿔 넣고 `SeoungTestCourse.Version`을 올린다. 피벗 · 물 이름이 바뀌면 `RoyalGarden`의 이름 목록도 고친다.
+
+
+> 2026-11-13 정원·대계단 경량화 1차: main 기준 시각용 FBX 10개 적용. 정원 2,662,945→2,628,003(−1.31%), 대계단 4,722,590→4,016,857(−14.94%). Unity 실제 재질 전후 모형 사진, 충돌체 245/229개 기록 해시 동일, Core 192·모의 세션 81 통과. 꽃·나무 원본 유지(나무 LOD는 사진 비교 후 제외). 사용자 실기·12인 FPS 확인 전. 사용자 지시: 커밋·푸시 안 함.
+[전후 사진·상세](COURSE_OPTIMIZATION_2026-11-13.md).
+
+
+> 2026-11-13 사용자 중단·Claude Code 인계: 정원·대계단 2차에서 GrandStairHallV15/ GardenBoats 두 FBX만 추가 적용 및 Unity import 완료. 탑·석상 받침대는 적용 제외. 2차 후 Unity 재집계·사진·충돌체 검사·자동 테스트는 미완료이며 자동 테스트는 중단 지시에 따른 자동 승인 검토로 실행 차단됨. 경량화 변경 미커밋, 커밋·푸시 금지 유지. [Claude 인계](../../CLAUDE_HANDOFF_MESH_OPTIMIZATION.md).

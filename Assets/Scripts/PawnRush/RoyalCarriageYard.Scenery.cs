@@ -21,7 +21,7 @@ namespace ChessFight.PawnRush
             // wall. None on the yard's side walls: a charging carriage would run through them.
             foreach (float x in new[] { -17f, -10f, 10f, 17f })
                 BannerOn(s, new Vector3(x, 5.6f, YardZ0 + .02f), 0f);
-            for (float z = ArenaStart + 6f; z < CliffZ - 3f; z += 12f)   // none over a ramp's top, where it would hang into it
+            for (float z = ArenaStart + 6f; z < CliffZ - 3f; z += 12f)   // between the cranes' and gantries' posts in the walls
             {
                 BannerOn(own, new Vector3(-25.9f, 9.5f, z), 90f);
                 BannerOn(own, new Vector3(25.9f, 9.5f, z), -90f);

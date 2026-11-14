@@ -1,0 +1,178 @@
+[
+ {
+  "tag": "source",
+  "before": 345322,
+  "items": [],
+  "after": 345322
+ },
+ {
+  "tag": "0.6",
+  "before": 345322,
+  "items": [
+   {
+    "name": "Castle tower E1",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E2",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E3",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E4",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E5",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E6",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W1",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W2",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W3",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W4",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W5",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W6",
+    "before": 18000,
+    "after": 10800,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle towers",
+    "before": 1680,
+    "after": 1008,
+    "lockedVerts": 0
+   }
+  ],
+  "after": 258250
+ },
+ {
+  "tag": "0.45",
+  "before": 345322,
+  "items": [
+   {
+    "name": "Castle tower E1",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E2",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E3",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E4",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E5",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower E6",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W1",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W2",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W3",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W4",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W5",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle tower W6",
+    "before": 18000,
+    "after": 8100,
+    "lockedVerts": 1276
+   },
+   {
+    "name": "Castle towers",
+    "before": 1680,
+    "after": 756,
+    "lockedVerts": 0
+   }
+  ],
+  "after": 225598
+ }
+]

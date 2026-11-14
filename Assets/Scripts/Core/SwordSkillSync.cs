@@ -317,7 +317,9 @@ namespace ChessFight.Network
                     ReadDir(r, out f.Outx, out f.Outy, out f.Outz);
                     ReadPoint(r, out f.Lx, out f.Ly, out f.Lz);
                     ReadPoint(r, out f.Sx, out f.Sy, out f.Sz);
-                    if (f.EdgeStage > 3 || f.EdgeFlags > 3) return false;
+                    // SfEdge runs None, Windup, Active, Recovery, Aim (4, the bishop's diagonal pick since R236): a 3 here
+                    // threw away every packet while a bishop aimed, so no client saw his squares.
+                    if (f.EdgeStage > 4 || f.EdgeFlags > 3) return false;
                 }
                 if (f.Glow)
                 {

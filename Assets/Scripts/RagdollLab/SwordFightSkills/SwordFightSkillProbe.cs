@@ -88,6 +88,7 @@ namespace ChessFight.RagdollLab
                 "edge-knight-back" => EdgeKnight(true),
                 "edge-knight-side" => EdgeKnight(false, 1),
                 "edge-knight-fall" => EdgeKnight(false, 2),
+                "edge-knight-run" => EdgeKnight(false, 3),
                 // R132 ("테스트 용이라 여기 브랜치에서만 죽었을 때 부활 시간 없게"): back at once in this test scene.
                 "respawn" => Respawn(),
                 _ => null,
@@ -542,6 +543,13 @@ namespace ChessFight.RagdollLab
             EdgeState(me.Skills, "E 직전");
             Show("E · 벼랑 끝 역전");
             me.Skills.PressEdge();
+            if (mode == 3)
+            {
+                // R649: the enemy runs off sideways as the knight springs (it used to land behind an empty spot).
+                yield return new WaitForSeconds(me.Skills.EdgeParams.knightCrouch + 0.02f);
+                Show("적이 옆으로 달아남");
+                bed.Walk(foe, Vector3.forward, 0.8f);
+            }
             if (back)
             {
                 yield return new WaitForSeconds(0.05f);
@@ -552,7 +560,7 @@ namespace ChessFight.RagdollLab
             EdgeState(me.Skills, "E 0.65초 뒤");
             yield return new WaitForSeconds(2.0f);
             Say($"  나이트: {(me.Alive ? "살아 있음" : "장외")} · 골반 ({me.Pawn.Hips.position.x:0.0}, {me.Pawn.Hips.position.y:0.00}, {me.Pawn.Hips.position.z:0.0}) · 적: {(foe.Alive ? "살아 있음" : "장외")}");
-            Moves(from, back ? "edge-knight-back" : mode == 1 ? "edge-knight-side" : mode == 2 ? "edge-knight-fall" : "edge-knight");
+            Moves(from, back ? "edge-knight-back" : mode == 1 ? "edge-knight-side" : mode == 2 ? "edge-knight-fall" : mode == 3 ? "edge-knight-run" : "edge-knight");
         }
 
         /// <summary>R129: the queen aimed past the east edge (from 4.4 m short of it): she runs off it and falls.</summary>

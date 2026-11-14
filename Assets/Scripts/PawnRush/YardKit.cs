@@ -325,13 +325,18 @@ namespace ChessFight.PawnRush
         // A moving carriage's one solid box, and the trigger shell round it that knocks characters away; the hits are
         // judged by the box's faces (YardImpact.solid). With `seeThrough` the follow camera can look through the box
         // (CameraSeeThrough, switched on by whoever owns it) instead of jumping in front of it as it sweeps past.
-        public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false)
+        public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false) =>
+            BodyCollider(parent, new Vector3(CarriageWidth, CarriageHeight, CarriageLength), knockback, seeThrough);
+
+        // The same for any body standing on y 0, `size` its width, height and length (R659: a team - a carriage and the
+        // pair of horses drawing it - or a loose horse as well as a carriage).
+        public static YardImpact BodyCollider(Transform parent, Vector3 size, float knockback, bool seeThrough = false)
         {
             var body = new GameObject("Carriage (collider)");
             body.transform.SetParent(parent, false);
             var box = body.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, (CarriageHeight + .05f) * .5f, 0f);
-            box.size = new Vector3(CarriageWidth, CarriageHeight - .05f, CarriageLength);
+            box.center = new Vector3(0f, (size.y + .05f) * .5f, 0f);
+            box.size = new Vector3(size.x, size.y - .05f, size.z);
             body.AddComponent<NoClimbSurface>();
             if (seeThrough) body.AddComponent<CameraSeeThrough>().enabled = false;
             var impact = Shell(parent, "Carriage (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockback);
@@ -457,6 +462,38 @@ namespace ChessFight.PawnRush
                 if (driver != null && !found.Contains(driver)) found.Add(driver);
             }
             return found;
+        }
+
+        // R660: every hit a yard hazard gives a character (on the PC that moves it): who, which hazard (the component that
+        // judged it - a YardImpact shell, or a SlamChest's wave), the push and the seconds it is knocked down (0: a
+        // stagger). For tests and logs (the carriage yard's bot test); nothing in the game listens.
+        public static event System.Action<ICharacterDriver, Component, Vector3, float> HitGiven;
+
+        public static void ReportHit(ICharacterDriver driver, Component source, Vector3 push, float knockdown)
+        {
+            if (driver != null) HitGiven?.Invoke(driver, source, push, knockdown);
+        }
+
+        // R659: when each character was last knocked down by one of the yard's hazards (on the PC that moves it). Another
+        // hazard within ChainGrace of it only pushes (YardImpact, SlamChest): a knockdown is a second or so lost, never a
+        // chain of them (a crate, then a horse; a slam's wave, then a crate).
+        public const float ChainGrace = 1.5f;
+        static readonly Dictionary<ICharacterDriver, float> downAt = new Dictionary<ICharacterDriver, float>();
+
+        public static bool RecentlyDown(ICharacterDriver driver) =>
+            driver != null && downAt.TryGetValue(driver, out float at) && Time.time - at < ChainGrace && Time.time >= at;
+
+        public static void MarkDown(ICharacterDriver driver)
+        {
+            if (driver == null) return;
+            if (downAt.Count > 64)
+            {
+                var old = new List<ICharacterDriver>();
+                foreach (var pair in downAt)
+                    if (Time.time - pair.Value > 10f || (pair.Key is Object gone && gone == null)) old.Add(pair.Key);
+                foreach (var key in old) downAt.Remove(key);
+            }
+            downAt[driver] = Time.time;
         }
 
         static readonly List<FixedJoint> grips = new List<FixedJoint>();

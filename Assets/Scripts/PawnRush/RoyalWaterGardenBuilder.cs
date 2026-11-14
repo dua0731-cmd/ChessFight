@@ -8,8 +8,7 @@ namespace ChessFight.PawnRush
     // Early obstacle section 1-1, the royal water garden v31 (Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md, the user's
     // 2026-11-02 review of the Blender garden). The garden's walled square (92 x 123 m inside the walls) is walked as
     // one folded way instead of straight up its middle: the fountain plaza and its five small spin bars, west along the
-    // geyser canal and up a ramp, east across the water on eight bobbing platforms (a very hard shortcut leaves the
-    // fourth one across the water), north through the east lock's sluice gates against the current, west along the
+    // geyser canal and up a ramp, east across the water on eight bobbing platforms, north through the east lock's sluice gates against the current, west along the
     // robot dyke, north across the reservoir on the boats crossing it sideways, through the gate and out.
     //
     // Section frame: the Blender garden's own numbers, x east, z north (Blender's y), y up = a floor's top. The section
@@ -20,9 +19,8 @@ namespace ChessFight.PawnRush
     //       B1_FountainPlaza   the start yard, the round plaza and its kerb, five spin bars (two kinds), CP0
     //       B2_GeyserCanal     the canal walk west, the ramp north, eight geysers (GardenGeyser), CP1
     //       B3_Platforms       the west landing (CP2), eight bobbing platforms
-    //       B3_Shortcut        three bobbing posts, a post with a small spin bar, two tilting lotus pads (TiltingPad)
     //       B4_EastLock        the east landing (CP3), the lock, three sluice gates, the current (WaterCurrent)
-    //       B5_RobotDyke       the dyke (CP4, CP5 where the shortcut lands), two robot arms (RobotSweep)
+    //       B5_RobotDyke       the dyke (CP4 and CP5), two robot arms (RobotSweep)
     //       B6_BoatCrossing    the boarding quay (CP6), the reservoir, the boat tunnels, eight boats (BoatLanes)
     //       B7_Gate            the gate yard and arch, the exit terrace (CP7), four steps down, the entrance band
     //       Garden             the castle ring (walls, towers, banks, the strip by the gate; R474), the terraces, the water
@@ -50,7 +48,6 @@ namespace ChessFight.PawnRush
             b.In("B1_FountainPlaza", () => FountainPlaza(b));
             b.In("B2_GeyserCanal", () => GeyserCanal(b));
             b.In("B3_Platforms", () => Platforms(b));
-            b.In("B3_Shortcut", () => Shortcut(b));
             b.In("B4_EastLock", () => EastLock(b));
             b.In("B5_RobotDyke", () => RobotDyke(b));
             b.In("B6_BoatCrossing", () => BoatCrossing(b));
@@ -63,6 +60,7 @@ namespace ChessFight.PawnRush
             if (reservoir != null && water != null && reservoir.TryGetComponent<Renderer>(out var surface)) surface.sharedMaterial = water;
             // R412: the concept-art dressing over the graybox (beat by beat; R440: the water's pools and falls too).
             ConceptDressing(root.transform);
+            CloseSideRoutes(root.transform, kit);
 
             var section = garden.GetComponent<PawnRushSection>();
             if (section != null)
@@ -270,6 +268,54 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ path and beats
 
+        // Also applied to previously baked gardens. Keep hand-authored scenery and the original checkpoints.
+        internal static void CloseSideRoutes(Transform content, CourseKit kit)
+        {
+            const string group = "Reservoir fences";
+            if (content.Find(group) != null) return;
+            var oldRoute = content.Find("B3_Shortcut");
+            if (oldRoute != null) Object.DestroyImmediate(oldRoute.gameObject);
+            var platforms = content.Find("Concept dressing/GardenPlatforms");
+            if (platforms != null)
+                foreach (var node in platforms.GetComponentsInChildren<Transform>(true))
+                    if (node != null && (node.name.StartsWith("Shortcut") || node.name == "Platform piers"))
+                        Object.DestroyImmediate(node.gameObject);
+
+            var b = new CourseBuilder(kit, content);
+            var iron = Resources.Load<Material>(ConceptMaterials + "GC_c_iron");
+            if (iron == null) iron = kit.trimBlack;
+            b.In(group, () =>
+            {
+                foreach (int side in new[] { -1, 1 })
+                {
+                    // Return the inner end to the front of the quay so the narrow reservoir lip cannot be walked.
+                    ReservoirFence(b, "Quay return", V(side * 10f, Upper, 32.85f), V(side * 10f, Upper, 33.55f), 5.4f, iron, Deep);
+                    ReservoirFence(b, "Terrace gate", V(side * 10f, Upper, 33.55f), V(side * 55f, Upper, 33.55f), 5.4f, iron, Deep);
+                    // Riders can enter a tunnel under its eave. The fence above keeps its roof off the route.
+                    ReservoirFence(b, "Tunnel roof rail", V(side * 18.15f, TunnelTopY, 32.85f), V(side * 18.15f, TunnelTopY, 48.6f), 3.2f, iron, TunnelEaveY);
+                    // The boats submerge inside the four tunnels, whose back opens onto the decorative terrace.
+                    b.Box("Tunnel back wall", V(side * 25.8f, Deep, 32.85f), V(side * 26.2f, TunnelTopY, 48.6f), iron, true);
+                }
+            });
+        }
+
+        static void ReservoirFence(CourseBuilder b, string name, Vector3 start, Vector3 end, float height, Material iron, float bottom)
+        {
+            float length = Vector3.Distance(start, end);
+            var frame = b.Group(name);
+            frame.localPosition = (start + end) * .5f;
+            frame.localRotation = Quaternion.LookRotation(end - start, Vector3.up);
+            float foot = bottom - start.y;
+            var stop = frame.gameObject.AddComponent<BoxCollider>();
+            stop.size = new Vector3(.24f, height - foot, length);
+            stop.center = Vector3.up * ((foot + height) * .5f);
+            frame.gameObject.AddComponent<NoClimbSurface>();
+
+            frame.gameObject.AddComponent<MeshFilter>();
+            frame.gameObject.AddComponent<MeshRenderer>().sharedMaterial = iron;
+            frame.gameObject.AddComponent<GardenFenceMesh>().Configure(length, height);
+        }
+
         // The one route, given as both teams' (no team lanes in this garden). Each point names the beat of the leg
         // that starts at it. Across the platforms it runs through their middles at their middle height; across the
         // reservoir straight north (the boats carry it sideways).
@@ -284,7 +330,7 @@ namespace ChessFight.PawnRush
             add(V(-28.5f, WestLandingY, 3.5f), "3");
             for (int i = 0; i < PlatformCount; i++) add(PlatformTop(i), "3");
             foreach (var p in new[] { V(28, Upper, 5.5f), V(31, Upper, 9), V(31, Upper, 24) }) add(p, "4");
-            foreach (var p in new[] { V(31, Upper, 27), V(ShortcutLanding.x, Upper, 27), V(8, Upper, 27) }) add(p, "5");
+            foreach (var p in new[] { V(31, Upper, 27), V(DykeCheckpointX, Upper, 27), V(8, Upper, 27) }) add(p, "5");
             add(V(2, Upper, 30.5f), "6");
             add(V(0, Upper, 33), "6");
             foreach (float z in LaneZ) add(V(0, Upper, z), "6");

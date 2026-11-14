@@ -354,6 +354,8 @@ namespace ChessFight.PawnRush.Editor
                 {
                     CheckRuntimeWiring();
                     CheckPads();   // R516: the promotion pads are back in the palace sections
+                    CheckDirections();
+                    if (current.GameIndex == PawnRushMissions.Checkmate) CheckHuntFeedback();
                     CapturePads(current);
                     if (current.GameIndex == PawnRushMissions.Paint) CheckDuplicatePaint();
                     if (current.GameIndex == PawnRushMissions.EnPassant) CheckDancers();
@@ -367,6 +369,9 @@ namespace ChessFight.PawnRush.Editor
                 {
                     Require(current.Stations.Single(s => s.Team == Teams.White).Gate.IsOpen, "White completion did not open white gate");
                     Require(!current.Stations.Single(s => s.Team == Teams.Black).Gate.IsOpen, "White completion opened black gate");
+                    var entry = current.transform.TransformPoint(Vector3.forward * 2f);
+                    Require(current.DirectionHint(Teams.White, entry).Contains("왼쪽 출구"), "Open gate guidance missed white's exit");
+                    Require(!current.DirectionHint(Teams.Black, entry).Contains("열렸"), "Black was directed to an open exit before completion");
                     current.Stations.Single(s => s.Team == Teams.Black).Game.ForceComplete();
                     Next(3); return;
                 }
@@ -446,6 +451,53 @@ namespace ChessFight.PawnRush.Editor
             var args = Environment.GetCommandLineArgs();
             int at = Array.IndexOf(args, "-miniGameTeamSize");
             return at >= 0 && at + 1 < args.Length && int.TryParse(args[at + 1], out int n) ? MiniGameScale.Clamp(n) : MiniGameScale.Baseline;
+        }
+
+        static void CheckDirections()
+        {
+            var entry = current.transform.TransformPoint(new Vector3(0f, 1f, -5f));
+            var beyond = current.transform.TransformPoint(Vector3.forward * 35f);
+            foreach (var station in current.Stations)
+            {
+                int team = station.Team;
+                bool white = team == Teams.White;
+                bool shared = current.GameIndex == PawnRushMissions.Paint;
+                string entrance = current.DirectionHint(team, entry);
+                Require(entrance != null && entrance.Contains(shared ? (white ? "밝은 칸" : "어두운 칸") : (white ? "왼쪽" : "오른쪽")), "Incorrect team direction at entrance");
+                Require(current.DirectionHint(team, beyond) == null, "Direction persisted beyond the exit");
+                var labels = station.GetComponentsInChildren<TextMesh>().Where(t => t.GetComponent<Renderer>().enabled).ToArray();
+                Require(labels.Any(t => t.name == "Team entrance label" && t.text.StartsWith(Teams.Name(team)))
+                        && labels.Any(t => t.name == "Team exit label" && t.text == Teams.Name(team) + "팀 출구"), "Missing team plaques");
+                var otherSide = current.transform.TransformPoint(new Vector3(white ? 12f : -12f, 1f, 12f));
+                Require(shared || current.DirectionHint(team, otherSide).Contains("상대 진영"), "No correction in the other team's lane");
+            }
+        }
+
+        static void CheckHuntFeedback()
+        {
+            var game = (MgCheckmate)current.Stations[0].Game;
+            var hunt = new CheckmateHunt(game.Total);
+            var data = new byte[PawnRushNetState.BlockBytes];
+            void Apply()
+            {
+                var block = new NetBlock(data, 0, data.Length);
+                foreach (var king in hunt.All) block.U16(CheckmateHunt.Pack(king));
+                block.U8(hunt.Captured);
+                block.At = 0;
+                game.ReadNet(ref block);
+            }
+            hunt.All[0].State = CheckmateHunt.KingState.Captured;
+            Apply();
+            Require(game.Done == 1 && !game.HuntHint.Contains("포획"), "First snapshot replayed an old capture");
+            hunt.All[1].State = CheckmateHunt.KingState.Frozen;
+            Apply();
+            Require(game.HuntHint.Contains("다이빙"), "Frozen king has no capture prompt");
+            hunt.All[1].State = CheckmateHunt.KingState.Captured;
+            Apply();
+            Apply();
+            Require(game.Done == 2 && game.HuntHint.Contains("2 / " + game.Total), "Capture feedback repeated or lost the tally");
+            game.ResetGame();
+            Require(game.Done == 0 && !game.HuntHint.Contains("포획"), "Capture feedback survived round reset");
         }
 
         // R520: in the ballroom (F) every statue shows its doll and nothing else - the team band ring, the capture halo and

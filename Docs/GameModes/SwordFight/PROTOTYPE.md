@@ -23,7 +23,7 @@
 
 | 명세 | 구현 |
 |---|---|
-| §4 상태 기계 | `Core/SwordMatch.cs` `SwordMatchRules`: Pick 15초 → Countdown 3초 → Playing 4:00 / 10점 → SuddenDeath(다음 1점, 60초 넘으면 무승부) → Result. 방장만 진행, 수치는 `SwordMatchSettings` 한 곳 |
+| §4 상태 기계 | (R624) **로비 경기는 입장 화면에서 기물을 고른다**(`Game/LoadingScreenView.SwordPick.cs`: ① 매칭 완료 3초 → ② 기물을 선택하십시오 15초 → ③ 우리 팀이 선택한 기물 3초 → ④ A 갈라지는 결투 3.5초, Core `SwordPickDraft`, [P50](../../Project/DECISIONS.md)) — 씬의 Pick은 공유 시작 시각까지 멈췄다가 그 기물로 바로 Countdown(`SwordFightMatch.PresetPicks`), 아래 카드는 오프라인 · 랩 · 스킬 시험 장면에서만. `Core/SwordMatch.cs` `SwordMatchRules`: Pick 15초 → Countdown 3초 → Playing 4:00 / 10점 → SuddenDeath(다음 1점, 60초 넘으면 무승부) → Result. 방장만 진행, 수치는 `SwordMatchSettings` 한 곳 |
 | §5 경기장 | 판 8×8, 칸 2 m(한 팀 4명 이상이면 2.5 m) — 씬의 바닥 상자를 Play 때 키우고 `ChessFight/Skill Ground` 체스판 셰이더를 입힘(`SwordFightMatch.Board.cs`). 출발 칸 = 1·2랭크(흑 7·8) 가운데부터 한 명씩(`SwordBoard.StartCell`). 부활 칸 = 2·3랭크, 1.2 m 비어 있고 가장 가까운 적이 가장 먼 칸(`ChooseSpawn`) |
 | §6 조작 | F 기물 스킬(조준형은 좌클릭 발동, 우클릭/F 취소), E 가장자리 스킬, 좌클릭 클릭 베기. 고르기 화면에서 1~5·클릭 |
 | §7.1 칼 | 기존 클릭 베기 그대로(README 값). 판정은 기존 칼 캡슐(명세의 "원뿔 ±45°·1.45 m"와 모양이 다름 → §5 미정) |
@@ -75,3 +75,27 @@
 - F12 스킬 범위 표시는 아직 없음.
 - 온라인 E 슬로 0.3초는 R121처럼 짧은 멈춤 + 화면 당김(스킬 시험 씬과 같음). 결과 1.5초 슬로는 방장 물리를 늦춰 모두에게 보임.
 - 소리: 마지막 10초 초읽기는 합성한 짧은 삐 소리.
+
+## 실제 경기 퇴장 시 옛 선택 화면 재등장 방지 (R629, 2026-11-13)
+
+`RagdollLab/Net/LabNetLink.Sword.cs`의 `SwordExit`는 랩 시험방을 나가면 원래 오프라인 연습을 다시 만든다. 이 처리가 로비 경기(`SteamMatchLabLink.RealMatch`)에도 적용돼, `PresetPicks`가 지워지고 새 15초 Pick과 오프라인 더미가 로비 복귀 직전에 표시됐다.
+
+실제 경기는 공통 네트워크/기물 정리 뒤 `SwordFightMatch`와 `SwordFightGame`을 비활성화하고, 로비가 열릴 때까지 HUD/시뮬레이션을 멈춘다. `ResetRound`·`SpawnOffline`과 입장 선택 설정 초기화는 시험방 복귀에만 실행한다. 실제 로비 복귀·세션 취소/탈주 기록은 기존 흐름을 사용한다. 입장 화면의 새 선택과 프로토콜은 바뀌지 않는다.
+
+Core 192·모의 세션 81·전체 Unity DLL 컴파일·Unity 오류 0. Unity에서 실제 오프라인 SwordFight 경기 객체에 비활성 운반자의 생산용 `SwordExit`를 호출해 4건 통과: 시험방 4명 복구, 실제 경기 HUD/더미 재생성 없음, 두 번 호출해도 없음, 후속 프레임에도 없음(`Temp/SwordExit/runtime-result.txt`). Steam 세션 가입·나가기 메뉴 클릭은 하지 않았다. 사용자 재확인 전, 커밋·푸시하지 않음.
+
+> R630(2026-11-13): 사용자 요청으로 이 채팅의 R626~R629 변경과 관련 문서를 main 커밋·푸시 대상으로 전환했다. 경량화 작업은 제외하며, 사용자 실기 확인은 여전히 대기다.
+
+## 처음 고른 기물로 부활 · 폰 빼앗기 삭제 (R640, 2026-11-14)
+
+승규 님 팀 시험 뒤: "떨어져도 처음 고른 기물 되살아나게 폰 뺴앗기 규칙은 빼줘"([SF6](../../Project/DECISIONS.md)). 명세 §3.3 · §8.3 · §8.4의 "폰으로 부활"과 "빼앗기"를 대신한다.
+
+| | 지금 |
+|---|---|
+| 부활 | 3초 뒤 처음 고른 기물로(`SwordMatchRules.TryRespawn` · `Adopt`은 기물을 안 바꿈, `SwordFightMatch.Respawn`은 규칙의 기물을 입힘). 부활 칸 · 1.25초 보호는 그대로 |
+| 빼앗기 | 없음(`RingOut`). `SwordRingOut.Stole` · 킬 피드 `Stolen`(255) · `Steals`는 늘 비어 있고 글자 형식은 그대로라 프로토콜 그대로 |
+| 쿨 | 떨어진 동안에도 F · E 쿨이 줄고(방장, `SwordFightSkills.StepSkills`), 부활 때 다시 채우지 않음(`Ready` 안 부름) |
+| 문구 | 결과 화면 '빼앗기' 줄 · 안내, 떨어진 동안 안내, 로비 모드 카드, 로딩 화면 부제 · 안내 · TIP, 매칭 완료 화면 부제에서 빼앗기를 지움. 부제 자리는 비움 |
+| 남은 것 | 폰 F(첫 두 걸음) 코드 · F8 개발 키(폰 포함 순환) · 금색 빛기둥 그림 코드는 남지만 경기에서는 안 나옴 |
+
+같은 R640: 결과 화면에서 나간 참가자가 탈주로 셀 수 있던 것(방장만 `SawResult`) → 참가자도 결과 상태 글자를 받으면 `ReportMatchOver`, 결과 뒤 나가기는 `LabNetLink.LeftAfterResult`(탈주 아님). 사용자 확인 전 → [VALIDATION](../../Network/VALIDATION.md) 맨 위.

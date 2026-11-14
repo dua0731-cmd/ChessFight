@@ -153,13 +153,17 @@ namespace ChessFight.PawnRush
             gain = settled ? Mathf.Lerp(gain, target, 1f - Mathf.Exp(-Follow * Time.deltaTime)) : target;
             settled = true;
 
+            // Leave space for nearby pawns and voice chat when several stair hazards overlap.
+            // R654: the settings' effects volume for every gated sound, here and only here (it was applied in the hall
+            // alone, so the garden, the library, the mini-games and the yard ignored the slider and sat 2 dB over the rest).
+            float level = ChessFight.Game.GameSettings.Effects * (room != null && room.Id == GrandStairHall.Id ? .55f : 1f);
             GetComponents(sources);
             while (written.Count < sources.Count) { written.Add(-1f); owned.Add(1f); }
             for (int i = 0; i < sources.Count; i++)
             {
                 var a = sources[i];
                 owned[i] = a.volume;
-                a.volume = owned[i] * gain;
+                a.volume = owned[i] * gain * level;
                 written[i] = a.volume;
             }
         }

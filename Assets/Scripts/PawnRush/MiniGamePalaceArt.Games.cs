@@ -48,10 +48,18 @@ namespace ChessFight.PawnRush
             Box(sign, "Sign top trim", Vector3.up * .44f, new Vector3(5.4f, .1f, .22f), Brass);
             var symbol = Arena.Text(sign, "Game symbol", new Vector3(-1.95f, 0f, -.13f), .58f, Arena.Gold);
             var title = Arena.Text(sign, "Game title", new Vector3(.35f, 0f, -.13f), .36f, Arena.Hex("#E5DECC"));
+            var team = TeamColor(station.Team);
+            var tag = Group(sign, "Team entrance plaque", new Vector3(0f, -.91f, 0f));
+            Box(tag, "Backplate", Vector3.zero, new Vector3(3.8f, .63f, .12f), Iron);
+            var lane = Arena.Text(tag, "Team entrance label", new Vector3(0f, 0f, -.09f), .36f, team);
+            lane.text = Teams.Name(station.Team) + (game == PawnRushMissions.Paint ? "팀 출구 방향" : "팀 진영");
             var bar = Group(parent, "DEC_GateProgress", new Vector3(0f, 5.8f, 19.4f));
             Box(bar, "Progress groove", Vector3.zero, new Vector3(4.2f, .34f, .15f), Iron);
             var fill = Box(bar, "Progress fill", new Vector3(-1.99f, 0f, -.08f), new Vector3(.02f, .22f, .04f), M("Progress" + station.Team, station.Team == Teams.Black ? "#F08A2C" : "#3FC1D9", .5f));
             var count = Arena.Text(bar, "Progress count", new Vector3(0f, .52f, -.06f), .35f, TeamColor(station.Team));
+            var exit = Group(bar, "Team exit plaque", new Vector3(0f, -.64f, 0f));
+            Box(exit, "Backplate", Vector3.zero, new Vector3(3.4f, .66f, .12f), Iron);
+            Arena.Text(exit, "Team exit label", new Vector3(0f, 0f, -.09f), .4f, team).text = Teams.Name(station.Team) + "팀 출구";
             var view = parent.gameObject.AddComponent<ArenaDressing>();
             view.Configure(station, symbol, title, fill.transform, count);
             view.Installed(game);

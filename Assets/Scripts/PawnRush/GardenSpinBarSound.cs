@@ -100,7 +100,7 @@ namespace ChessFight.PawnRush
             float speed = Speed;
             // The tall bar is heavier and slower: a little lower.
             // R541 (승규 11-10): 2x the first volume on the big bar, 3.5x on the small ones (the loop files were raised 1.7 / 5.7 dB in R540).
-            hub.Mix(tall ? .82f : .73f, Mathf.Lerp(.85f, 1.1f, Mathf.InverseLerp(40f, 90f, speed)) * (tall ? .9f : 1f));
+            hub.Mix(tall ? .45f : .27f,   /* R654: the hub loops at -30 dB RMS beside them (were -24 / -21) */ Mathf.Lerp(.85f, 1.1f, Mathf.InverseLerp(40f, 90f, speed)) * (tall ? .9f : 1f));
             Whoosh(speed);
             if (!ObstacleClock.Authority) Watch(speed);
         }
@@ -165,7 +165,7 @@ namespace ChessFight.PawnRush
             if (v < 1f) return;
             hitAtTime[driver] = Time.time;
             hitAt.position = at;
-            hit.Shot(hitNear, hitFar, Mathf.Lerp(.6f, 1f, Mathf.InverseLerp(1f, 7f, v)), Random.Range(.93f, 1.05f));
+            hit.Shot(hitNear, hitFar, Mathf.Lerp(.45f, .75f, Mathf.InverseLerp(1f, 7f, v)),   /* R654: at most -21 dB */ Random.Range(.93f, 1.05f));
         }
 
         // R545: a client's thud. Every pawn collider near the hub is tested against the bar's own colliders (as the

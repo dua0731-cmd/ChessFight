@@ -5,7 +5,7 @@ namespace ChessFight.PawnRush
     // The root of the early obstacle section 1-1, the royal water garden v31 (Assets/Prefabs/PawnRushSections/
     // Early_1-1_RoyalWaterGarden.prefab; Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md). The garden 승규 님 built in Blender
     // (seoungtest, v30) ran straight north in 112 m; the user asked for it longer and folded, the big spin bar cut into
-    // small ones, a very hard shortcut off the platforms and boats crossing sideways. This is that layout as a graybox.
+    // small ones and boats crossing sideways. The round now follows the east lock before the robot dyke.
     //
     // R400 (승규 11-04): the remodel's starting point is the v31 graybox with the Blender garden's water sheet
     // (RoyalWaterGardenBuilder). The menu ChessFight > Pawn Rush > Build Early 1-1 Royal Water Garden bakes it into the
@@ -25,7 +25,10 @@ namespace ChessFight.PawnRush
 
         void Awake()
         {
-            if (buildIfEmpty && !HasContent && kit != null) RoyalWaterGardenBuilder.Build(this);
+            if (kit == null) return;
+            var content = transform.Find(ContentName);
+            if (content != null) RoyalWaterGardenBuilder.CloseSideRoutes(content, kit);
+            else if (buildIfEmpty) RoyalWaterGardenBuilder.Build(this);
         }
     }
 }

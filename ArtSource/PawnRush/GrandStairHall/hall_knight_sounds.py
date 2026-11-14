@@ -32,6 +32,7 @@ R571 (승규 11-10 "내려오는 기사가 바닥을 칠 때 내는 소리 훨�
   (punch: tanh x7) with its overtones at 120-700 Hz brought up, and the whole clip soft-clipped again (tanh x2.4),
   peak -0.3 dB: loudness over the first 0.5 s -11.1 -> -5.5 dB, over 120 Hz -21.2 -> -14.3 dB. In Unity it plays on
   two voices in step at volume 1 (FallingPieceFx.Sound.cs), another +6.9 dB.
+R640: one dry A1 landing, 0.8 s with a soft ending, peak -3 dBFS. Unity supplies the short shared room reflection.
 """
 import os
 import sys
@@ -62,31 +63,6 @@ def lift(x, amount, most_db=20):
     e = np.sqrt(np.maximum(lowpass(x * x, 20), 1e-12))
     g = np.minimum((e / e.max()) ** -amount, 10 ** (most_db / 20))
     return x * g
-
-
-def punch(x, drive=7.0, body=1.1):
-    # R571 (승규 11-10 "내려오는 기사가 바닥을 칠 때 내는 소리 훨씬 크게"): A1 is nearly all under 200 Hz, which a
-    # speaker barely plays, and it was already at full scale. Driven into a soft clip it stays as loud for longer and
-    # grows the boom's own overtones; those overtones (120-700 Hz, where speakers do play) are brought up again on top.
-    sat = np.tanh(drive * peak_to(x, 0)) / np.tanh(drive)
-    return sat + body * highpass(lowpass(sat, 700), 120)
-
-
-def hall_tail(x, seconds=3.6, low_rt60=3.6, high_rt60=1.8, seed=570):
-    # A big stone hall's reverb, convolved: decaying noise (the lows ring longer than the highs, as stone does), a
-    # 22 ms gap and four early reflections off the walls and the stair before the tail builds up.
-    rng = np.random.default_rng(seed)
-    t = np.arange(int(seconds * SR)) / SR
-    noise = rng.standard_normal(len(t))
-    low = lowpass(noise, 600)
-    ir = low * 3 * np.exp(-6.91 * t / low_rt60) + (noise - low) * .5 * np.exp(-6.91 * t / high_rt60)
-    ir *= np.minimum(1, t / .05)
-    ir = np.concatenate([np.zeros(int(.022 * SR)), ir])
-    for d, g in ((.013, .5), (.029, .35), (.047, .27), (.071, .2)):
-        ir[int(d * SR)] += g * np.abs(ir).max()
-    m = len(x) + len(ir) - 1
-    size = 1 << (m - 1).bit_length()
-    return np.fft.irfft(np.fft.rfft(x, size) * np.fft.rfft(ir, size), size)[:m]
 
 
 def load(name):
@@ -173,15 +149,8 @@ def main():
     fall = fade_out(lowpass(fade_in(fall, .25), 5000), .008)
     write("HallKnightFall", peak_to(lift(fall, .5), -.5))   # R570: louder all the way down
 
-    # R570: take A1 from its impact, ringing in the stone hall.
     dry = highpass(load_file(os.path.join(TAKES, "stonedrop", "A1.mp3")), 25)[int(.03 * SR):]
-    n = int(2.45 * SR)
-    dry = punch(fade_in(peak_to(dry, 0), .003)[:n])   # R571: much louder
-    land = np.zeros(n)
-    land[:len(dry)] += dry
-    wet = hall_tail(dry)
-    land += peak_to(wet, -7)[:n]
-    write("HallKnightLand", peak_to(np.tanh(2.4 * peak_to(fade_out(lowpass(land, 6000), .6), 0)), -.3))
+    write("HallKnightLand", peak_to(fade_out(fade_in(dry[:int(.8 * SR)], .003), .2), -3))
 
 
 if __name__ == "__main__":

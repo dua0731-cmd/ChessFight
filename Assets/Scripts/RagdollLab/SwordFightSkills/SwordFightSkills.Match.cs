@@ -27,7 +27,7 @@ namespace ChessFight.RagdollLab
         Vector3 pawnDir;
 
         /// <summary>Every running skill called off, the F skill ready and the E skill <paramref name="edgeShare"/> of its
-        /// cooldown away (0 = ready): the start of the match (0), a stolen piece (0.5, spec §7.3), a respawn as a pawn.</summary>
+        /// cooldown away (0 = ready): the start of the match (0). R640: no more steals or pawn respawns (a respawn keeps its cooldowns).</summary>
         public void Ready(float edgeShare)
         {
             ResetSkill();

@@ -16,7 +16,7 @@ namespace ChessFight.PawnRush.Editor
     // 11-12 has it (Course01v4Builder.WarRoomEnding.cs):
     //   the turrets   four of them on their towers at the corners of the conveyor's well, the middle rook put away; over
     //                 the next volleys exactly one fires every TurretVolleys.Period seconds, never the one before, each
-    //                 shot from its own turret to a point on the conveyor's deck where the carriage will be, with nothing
+    //                 shot from its own turret through the rider band above the moving deck, with nothing
     //                 solid on the way; how much of the carriage's travel each turret can reach
     //   the way out   the great door's leaves hang on a PushGate and shut the opening; pushed open, the passage through
     //                 the rear wall is clear and its floor runs level on to the ending's floor; the round's finish and a
@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, Report),
-                "R616 war room check: a section round built in Play Mode, its last section's four turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
+                "War room check: a section round built in Play Mode, its last section's four turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
                 "Not a play test (no pawn rides, is hit or pushes the door) and not online.\n");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             SessionState.SetBool(ActiveKey, true);
@@ -160,6 +160,7 @@ namespace ChessFight.PawnRush.Editor
                         Physics.SyncTransforms();
                         if (!Find()) { Finish(); return; }
                         CheckTurrets();
+                        CheckBalconies();
                         CheckVolleys();
                         CheckReach();
                         CheckExitShut();
@@ -267,6 +268,23 @@ namespace ChessFight.PawnRush.Editor
             }
         }
 
+        static void CheckBalconies()
+        {
+            foreach (float side in new[] { -1f, 1f })
+            {
+                var screen = room.transform.Find("Content/" + (side < 0 ? "West" : "East") + " balcony enclosure");
+                var solid = screen != null ? screen.GetComponent<BoxCollider>() : null;
+                Check(solid != null && solid.enabled && !solid.isTrigger, "missing solid balcony enclosure on side " + side);
+                if (solid == null) continue;
+                foreach (float x in new[] { 7.95f, 11f, 14.9f })
+                    foreach (float height in new[] { .6f, 2.5f, 5f })
+                        Check(solid.Raycast(new Ray(World(new Vector3(side * x, height, -12f)), room.transform.forward), out _, 24f),
+                            "open balcony lane at x " + side * x + ", height " + height);
+            }
+            var rails = room.GetComponentsInChildren<Collider>(true).Where(c => c.name.StartsWith("Fixed_guide_")).ToArray();
+            Check(rails.Length > 0 && rails.All(c => !c.enabled), "the static guides under the carriage can be ridden");
+        }
+
         // How far down the first solid thing is under a point (section frame), triggers and what `count` leaves out aside.
         static float FloorUnder(Vector3 local, Func<Transform, bool> count, out Collider floor)
         {
@@ -319,7 +337,7 @@ namespace ChessFight.PawnRush.Editor
             var size = Vector3.Scale(deck.size, deck.transform.lossyScale);
             var count = new int[turrets.Length];
             int last = -1, offDeck = 0, blocked = 0, twice = 0, none = 0, repeats = 0;
-            float longest = 0f, lowest = float.MaxValue, across = 0f, ahead = float.MinValue, behind = float.MaxValue;
+            float longest = 0f, lowAngle = 180f, highAngle = -180f, ahead = float.MinValue, behind = float.MaxValue;
             string firstBlock = null;
             long first = TurretVolleys.Volley(ObstacleClock.Now) + 2;
             var order = new System.Text.StringBuilder();
@@ -341,38 +359,46 @@ namespace ChessFight.PawnRush.Editor
                 count[who]++;
                 if (n < first + 40) order.Append(Course01v4Builder.WarRoomTurretNames[who]).Append(' ');
                 Check(who == TurretVolleys.Turret(room.Seed, n, turrets.Length), "volley " + n + ": turret " + who + " fires, the rule says " + TurretVolleys.Turret(room.Seed, n, turrets.Length));
-                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its three seconds (0.55 wanted)");
+                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its two seconds (0.55 wanted)");
                 Check(Vector3.Distance(from, turrets[who].GapPoint) < .8f, "volley " + n + " leaves from " + V(Local(from)) + ", not from turret " + who);
                 longest = Mathf.Max(longest, (float)(impact - fire));
-                // on the deck, where the carriage is when it lands
-                if (!shuttle.CarriageAt(impact, out var carriage)) { offDeck++; continue; }
-                var local = Quaternion.Inverse(DeckFrame(deck)) * (to - (carriage + fromCarriage));
-                bool onDeck = Mathf.Abs(local.x) <= size.x * .5f && Mathf.Abs(local.z) <= size.z * .5f && Mathf.Abs(local.y - size.y * .5f) < .06f;
-                if (!onDeck)
-                {
-                    if (offDeck == 0) Log("first shot off the deck: volley " + n + " lands " + V(local) + " from the deck's middle (deck " + V(size) + ")");
-                    offDeck++;
-                }
-                across = Mathf.Max(across, Mathf.Abs(local.x));
+                // Intersect the actual flight segment with the deck's longitudinal centre plane and evaluate
+                // the carriage at that crossing time, independently of the aiming implementation.
+                var axes = DeckFrame(deck);
+                var across = axes * Vector3.right;
+                if (!shuttle.CarriageAt(fire, out var carriage)) { offDeck++; continue; }
+                float dx = Vector3.Dot(to - from, across);
+                if (Mathf.Abs(dx) < .01f) { offDeck++; continue; }
+                float fraction = Vector3.Dot(carriage + fromCarriage - from, across) / dx;
+                if (fraction <= 0f || fraction >= 1f || !shuttle.CarriageAt(fire + (impact - fire) * fraction, out carriage)) { offDeck++; continue; }
+                var crossing = Vector3.Lerp(from, to, fraction);
+                var middle = carriage + fromCarriage;
+                var local = Quaternion.Inverse(axes) * (crossing - middle);
+                float height = local.y - size.y * .5f;
+                if (height < LibraryRookTurret.VolleyMinHeight - .06f || height > LibraryRookTurret.VolleyMaxHeight + .06f
+                    || Mathf.Abs(local.z) > size.z * .5f || Vector3.Distance(to, crossing) < .5f) offDeck++;
+                var centreBearing = Vector3.ProjectOnPlane(middle - turrets[who].GapPoint, Vector3.up);
+                float angle = Vector3.SignedAngle(centreBearing, Vector3.ProjectOnPlane(to - from, Vector3.up), Vector3.up);
+                Check(Mathf.Abs(angle) <= 15.5f, "volley " + n + " spread outside its cone: " + angle);
+                lowAngle = Mathf.Min(lowAngle, angle);
+                highAngle = Mathf.Max(highAngle, angle);
                 ahead = Mathf.Max(ahead, local.z);
                 behind = Mathf.Min(behind, local.z);
-                if (Blocked(from, to, out string what)) { blocked++; if (firstBlock == null) firstBlock = "volley " + n + " from turret " + who + ": " + what; }
-                // how high over the deck the shot still is one metre out from its turret (the balustrades are 1.26 m)
-                lowest = Mathf.Min(lowest, Local(Vector3.Lerp(from, to, Mathf.Clamp01(1.2f / Vector3.Distance(from, to)))).y - Course01v4Builder.WarRoomTurretSpots[who].y);
+                if (Blocked(from, crossing, out string what)) { blocked++; if (firstBlock == null) firstBlock = "volley " + n + " from turret " + who + ": " + what; }
             }
+            Check(lowAngle < -5f && highAngle > 5f, "volleys do not cover both sides of the bearing to the rider");
+            Check(ahead > 1f && behind < -1f, "volleys do not reach both halves of the riding deck");
             Check(none == 0, none + " of " + Volleys + " volleys have no turret firing");
             Check(twice == 0, twice + " volleys have two turrets firing");
             Check(repeats == 0, repeats + " volleys are fired by the turret that fired the one before");
-            Check(offDeck == 0, offDeck + " of " + Volleys + " shots do not land on the conveyor's deck");
+            Check(offDeck == 0, offDeck + " of " + Volleys + " shots miss the rider-height band or end before passing through it");
             Check(blocked == 0, blocked + " of " + Volleys + " shots have something solid on the way (" + firstBlock + ")");
             for (int i = 0; i < count.Length; i++)
                 Check(count[i] > Volleys / count.Length * .7f && count[i] < Volleys / count.Length * 1.3f, "turret " + i + " fires " + count[i] + " of " + Volleys + " volleys");
             Log("volleys " + first + " .. " + (first + Volleys - 1) + " (" + TurretVolleys.Period + " s apart): one turret each, never the one before; shares " +
-                string.Join(" / ", count.Select((c, i) => Course01v4Builder.WarRoomTurretNames[i] + " " + c)) + "; all on the deck, nothing in the way; longest flight " +
-                longest.ToString("0.00") + " s; 1.2 m out from the turret a shot is at least " + lowest.ToString("0.00") + " m over the turret's floor");
-            Log("where the shots land on the deck (" + size.x.ToString("0.00") + " m wide, " + size.z.ToString("0.00") + " m long): up to " + across.ToString("0.00") +
-                " m off its middle line, from " + behind.ToString("0.00") + " to " + ahead.ToString("0.00") + " m along it; conveyor root turned " +
-                V(shuttle.transform.rotation.eulerAngles) + ", deck " + V(deck.transform.rotation.eulerAngles));
+                string.Join(" / ", count.Select((c, i) => Course01v4Builder.WarRoomTurretNames[i] + " " + c)) + "; longest flight " + longest.ToString("0.00") + " s");
+            Log("Rider-height crossings: bearing offset " + lowAngle.ToString("0.0") + " to " + highAngle.ToString("0.0") +
+                " degrees, from " + behind.ToString("0.00") + " to " + ahead.ToString("0.00") + " m along the deck");
             Log("the first forty: " + order.ToString().Trim());
         }
 
@@ -392,7 +418,7 @@ namespace ChessFight.PawnRush.Editor
                     foreach (float u in new[] { -1f, -.5f, 0f, .5f, 1f })
                         foreach (float v in new[] { -1f, 0f, 1f })
                         {
-                            var point = carriage + fromCarriage + DeckFrame(deck) * new Vector3(v * (size.x * .5f - .35f), size.y * .5f, u * (size.z * .5f - .6f));
+                            var point = carriage + fromCarriage + DeckFrame(deck) * new Vector3(v * (size.x * .5f - .35f), size.y * .5f + .95f, u * (size.z * .5f - .6f));
                             var flat = point - turret.GapPoint;
                             flat.y = 0f;
                             var from = turret.GapPoint + flat.normalized * .56f + Vector3.up * .06f;

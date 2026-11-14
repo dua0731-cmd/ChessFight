@@ -1,0 +1,328 @@
+{
+  "date": "2026-11-13",
+  "branch": "main",
+  "commit": "b1d19d83",
+  "method": "Generated section baseline; active renderer mesh triangle counts before camera culling",
+  "reports": [
+    {
+      "prefab": "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab",
+      "triangles": 2662945,
+      "allTriangles": 2692525,
+      "hiddenTriangles": 29580,
+      "renderers": 155,
+      "uniqueMeshes": 121,
+      "vertices": 3541609,
+      "lodGroups": 0,
+      "nonTriangleSubmeshes": 0,
+      "particleRenderers": 0,
+      "lineRenderers": 0,
+      "assets": [
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+          "triangles": 415540
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenTrees.fbx",
+          "triangles": 399638
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+          "triangles": 347730
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenPlaza.fbx",
+          "triangles": 306722
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenLockDyke.fbx",
+          "triangles": 280096
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenPlatforms.fbx",
+          "triangles": 240800
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenWatergate.fbx",
+          "triangles": 222112
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenGate.fbx",
+          "triangles": 208071
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenCanal.fbx",
+          "triangles": 181064
+        },
+        {
+          "path": "Assets/Resources/PawnRushGardenConcept/GardenWater.fbx",
+          "triangles": 59996
+        },
+        {
+          "path": "Assets/Art/PawnRushMap/Resources/PR_CylinderSmooth.asset",
+          "triangles": 768
+        },
+        {
+          "path": "Library/unity default resources",
+          "triangles": 408
+        }
+      ],
+      "topMeshes": [
+        {
+          "mesh": "Exit gate | Assets/Resources/PawnRushGardenConcept/GardenGate.fbx",
+          "triangles": 128181,
+          "instances": 1
+        },
+        {
+          "mesh": "Plaza planter flowers | Assets/Resources/PawnRushGardenConcept/GardenPlaza.fbx",
+          "triangles": 110960,
+          "instances": 1
+        },
+        {
+          "mesh": "Lock and dyke stonework | Assets/Resources/PawnRushGardenConcept/GardenLockDyke.fbx",
+          "triangles": 109498,
+          "instances": 1
+        },
+        {
+          "mesh": "Boat tunnels | Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+          "triangles": 102044,
+          "instances": 1
+        },
+        {
+          "mesh": "Plaza planters | Assets/Resources/PawnRushGardenConcept/GardenPlaza.fbx",
+          "triangles": 95840,
+          "instances": 1
+        },
+        {
+          "mesh": "Watergate | Assets/Resources/PawnRushGardenConcept/GardenWatergate.fbx",
+          "triangles": 90000,
+          "instances": 1
+        },
+        {
+          "mesh": "Gate stonework | Assets/Resources/PawnRushGardenConcept/GardenGate.fbx",
+          "triangles": 76062,
+          "instances": 1
+        },
+        {
+          "mesh": "Canal balustrade | Assets/Resources/PawnRushGardenConcept/GardenCanal.fbx",
+          "triangles": 72288,
+          "instances": 1
+        },
+        {
+          "mesh": "Castle walls | Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+          "triangles": 64564,
+          "instances": 1
+        },
+        {
+          "mesh": "Castle grounds | Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+          "triangles": 60430,
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "prefab": "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab",
+      "triangles": 4722590,
+      "allTriangles": 5617328,
+      "hiddenTriangles": 894738,
+      "renderers": 757,
+      "uniqueMeshes": 191,
+      "vertices": 3014649,
+      "lodGroups": 0,
+      "nonTriangleSubmeshes": 0,
+      "particleRenderers": 0,
+      "lineRenderers": 0,
+      "assets": [
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/FallingKnight.fbx",
+          "triangles": 2136544
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 1378907
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/StairStatuesV36.fbx",
+          "triangles": 332884
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/FloatingPad.fbx",
+          "triangles": 191648
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/RoyalStair.fbx",
+          "triangles": 187156
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/EntranceV46.fbx",
+          "triangles": 124644
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/RoyalFan.fbx",
+          "triangles": 117544
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/RoyalBalconyV34.fbx",
+          "triangles": 64616
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/FoyerSidesV47.fbx",
+          "triangles": 62532
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/QueenStatue.fbx",
+          "triangles": 47364
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/PendulumHammer.fbx",
+          "triangles": 40432
+        },
+        {
+          "path": "Assets/Resources/PawnRushGrandStairHall/JumpPadModel.fbx",
+          "triangles": 19631
+        }
+      ],
+      "topMeshes": [
+        {
+          "mesh": "Falling_knight | Assets/Resources/PawnRushGrandStairHall/FallingKnight.fbx",
+          "triangles": 2136544,
+          "instances": 4
+        },
+        {
+          "mesh": "Floating_pad | Assets/Resources/PawnRushGrandStairHall/FloatingPad.fbx",
+          "triangles": 191648,
+          "instances": 8
+        },
+        {
+          "mesh": "HallV15_Round_wall_0_1 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 143739,
+          "instances": 1
+        },
+        {
+          "mesh": "HallV15_Round_wall_1_0 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 143739,
+          "instances": 1
+        },
+        {
+          "mesh": "HallV15_Round_wall_0_0 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 143737,
+          "instances": 1
+        },
+        {
+          "mesh": "HallV15_Round_wall_1_1 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 143735,
+          "instances": 1
+        },
+        {
+          "mesh": "HallV15_Balustrades | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 133272,
+          "instances": 1
+        },
+        {
+          "mesh": "RoyalFan_Frame | Assets/Resources/PawnRushGrandStairHall/RoyalFan.fbx",
+          "triangles": 95176,
+          "instances": 2
+        },
+        {
+          "mesh": "HallV15_Outer_wall_E_0 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 82811,
+          "instances": 1
+        },
+        {
+          "mesh": "HallV15_Outer_wall_E_1 | Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+          "triangles": 82811,
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "prefab": "Assets/Prefabs/PawnRushSections/Final_WarRoom.prefab",
+      "triangles": 1735508,
+      "allTriangles": 1787724,
+      "hiddenTriangles": 52216,
+      "renderers": 2837,
+      "uniqueMeshes": 1570,
+      "vertices": 2165486,
+      "lodGroups": 0,
+      "nonTriangleSubmeshes": 0,
+      "particleRenderers": 0,
+      "lineRenderers": 0,
+      "assets": [
+        {
+          "path": "Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 1507616
+        },
+        {
+          "path": "Assets/Resources/PawnRushLibrary/PawnRushLibraryShuttle.fbx",
+          "triangles": 166320
+        },
+        {
+          "path": "(generated/built-in)",
+          "triangles": 60864
+        },
+        {
+          "path": "Assets/Art/PawnRushMap/Resources/PR_CylinderSmooth.asset",
+          "triangles": 384
+        },
+        {
+          "path": "Library/unity default resources",
+          "triangles": 324
+        }
+      ],
+      "topMeshes": [
+        {
+          "mesh": "BLOWER_A_left|Blower_GameReady_Arrowless|Dupli| | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 127416,
+          "instances": 2
+        },
+        {
+          "mesh": "Bookshelf_-1_B00_Z-8|GAME_Bookcase_and_bound_books|Dupli| | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 76392,
+          "instances": 18
+        },
+        {
+          "mesh": "Return_stair_north_L | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 67868,
+          "instances": 1
+        },
+        {
+          "mesh": "Return_stair_north_R | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 67868,
+          "instances": 1
+        },
+        {
+          "mesh": "War_map_frame | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 49752,
+          "instances": 1
+        },
+        {
+          "mesh": "Side_wall_staggered_limestone_-1 | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 40360,
+          "instances": 1
+        },
+        {
+          "mesh": "Side_wall_staggered_limestone_1 | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 40360,
+          "instances": 1
+        },
+        {
+          "mesh": "Rear_wall_staggered_limestone (opened) | (generated/built-in)",
+          "triangles": 36036,
+          "instances": 1
+        },
+        {
+          "mesh": "Array real chain links.005 | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 34176,
+          "instances": 1
+        },
+        {
+          "mesh": "Array real chain links.008 | Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx",
+          "triangles": 34176,
+          "instances": 1
+        }
+      ]
+    }
+  ],
+  "originalScene": "Assets/Scenes/Lobby.unity",
+  "originalSceneDirty": false,
+  "playMode": true
+}

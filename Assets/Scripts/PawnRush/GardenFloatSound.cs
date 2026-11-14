@@ -37,7 +37,7 @@ namespace ChessFight.PawnRush
                 string name = motion.name;
                 bool drum = name.StartsWith("Bobbing platform P"), post = name.StartsWith("Shortcut post K") && !name.Contains("spin");
                 if (!drum && !post) continue;
-                // R543: the drums also sink a little when a piece lands on them (GardenDrumDip).
+                // R543: the drums also answer a piece landing on them (GardenDrumDip; R635: they tip about its feet).
                 if (drum && motion.GetComponent<GardenDrumDip>() == null) motion.gameObject.AddComponent<GardenDrumDip>();
                 // top speed of a sine bob: 2 pi (amplitude) / period
                 float top = 2f * Mathf.PI * Mathf.Max(.05f, motion.distance) / Mathf.Max(.5f, motion.period);

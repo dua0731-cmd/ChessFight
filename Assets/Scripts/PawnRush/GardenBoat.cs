@@ -38,6 +38,12 @@ namespace ChessFight.PawnRush
 
         public float X => (float)RoyalWaterGardenRules.BoatX(Lane, boat, ObstacleClock.Now + phase);
 
+        // R633: how fast it runs along its lane (world, m/s), from the lane itself rather than from where it was drawn
+        // last frame. Online a client's obstacle clock holds and catches up between the host's snapshots, so the drawn
+        // boat's step from frame to frame swung between none and double; the water's wake (its wavelength goes with the
+        // speed squared) flickered with it.
+        public Vector3 LaneVelocity => StartRotation * new Vector3((float)(dir * speed), 0f, 0f);
+
         RoyalWaterGardenRules.BoatLane Lane => new RoyalWaterGardenRules.BoatLane { Dir = dir, Speed = speed, Offset = offset };
 
         // R531: the wrap under the water is a cut (RoyalWaterGardenRules.BoatWraps): put there, not swept 48 m in one step.

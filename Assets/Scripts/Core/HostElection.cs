@@ -95,6 +95,12 @@ namespace ChessFight.Network
         // running match is a hitch on every screen, and two PCs of one class measure a few percent apart from run to
         // run, so without a margin the role would move for nothing.
         public const double StartMargin = 1.0, StruggleMargin = 1.5, LiveMargin = 1.1;
+        // R644 (user 11-14: the waiting room's host role "깜빡이면서 … 완전히 이전되지 않음"): the first move in a waiting
+        // room still goes to the best PC by any lead (StartMargin, R159). Every move after it - in the waiting room
+        // and at the start - needs this much: one PC measures a few percent apart from one sitting to the next (and
+        // tens of percent from one run to the next), so with no margin the role went back and forth between PCs of
+        // one class whenever either was measured again.
+        public const double WaitingMargin = 1.1;
 
         public static double Rating(Candidate c)
         {
@@ -124,7 +130,7 @@ namespace ChessFight.Network
         // Unknown machines count as HostFitness.Unknown, as everywhere else.
         public static ulong StartHost(ulong self, IList<Candidate> candidates, double margin)
         {
-            var alone = candidates.Select(c => c.BaseFitness > 0 ? new Candidate { Id = c.Id, Fitness = c.BaseFitness, BaseFitness = c.BaseFitness, PingMs = c.PingMs } : c).ToList();
+            var alone = Alone(candidates);
             var ranked = Rank(alone);
             if (ranked.Count == 0) return self;
             var current = alone.FirstOrDefault(c => c.Id == self);
@@ -132,6 +138,17 @@ namespace ChessFight.Network
             var best = alone.First(c => c.Id == ranked[0]);
             return Worth(current, best, margin) ? best.Id : self;
         }
+
+        // The candidates as their machines alone (the measured score in place of the live one), as StartHost compares them.
+        static List<Candidate> Alone(IEnumerable<Candidate> candidates) =>
+            candidates.Select(c => c.BaseFitness > 0 ? new Candidate { Id = c.Id, Fitness = c.BaseFitness, BaseFitness = c.BaseFitness, PingMs = c.PingMs } : c).ToList();
+
+        // R644: the waiting room's order of succession: machines alone, best first (StartHost's order). Whoever is
+        // first takes the room when its host leaves or dies - with no test against the one who is going: a leaving
+        // host used to count as an unknown machine (HostFitness.Unknown, 300), and in a room of PCs that all measured
+        // below that (laptops with an integrated graphics chip) nobody was "better", so the room was closed instead
+        // of handed on and everyone in it was sent off to find another.
+        public static List<ulong> RankAlone(IEnumerable<Candidate> candidates) => Rank(Alone(candidates));
 
         // Who takes over from a host that has stayed slow: the best-rated player
         // whose machine alone is clearly stronger, 0 when there is none. Machines
@@ -216,6 +233,61 @@ namespace ChessFight.Network
                     { next = after; claim = afterClaim; skipped = Math.Max(skippedAfter, skipped + 1); }
                 }
                 if (claim <= epoch || claim > ClaimLimit(Math.Max(seen, epoch), skipped)) break;
+                host = next; epoch = claim;
+            }
+            return host;
+        }
+
+        // R644 (the waiting room): everyone who could take over from `leaving`, in order - Successor again and again,
+        // each time without those already in line. A PC finds its own place in it: the first steps in at once, each
+        // one after it waits its turn and passes over everyone before it that did not step in.
+        public static List<ulong> Line(IEnumerable<ulong> published, ICollection<ulong> present, ulong leaving, IEnumerable<Candidate> fallback)
+        {
+            var line = new List<ulong>();
+            var order = (published ?? Enumerable.Empty<ulong>()).ToList();
+            var pool = (fallback ?? Enumerable.Empty<Candidate>()).ToList();
+            var rest = present.Where(id => id != leaving).ToList();
+            while (line.Count < 12)
+            {
+                ulong next = Successor(order, rest, leaving, pool);
+                if (next == 0) break;
+                line.Add(next); rest.Remove(next); pool.RemoveAll(c => c.Id == next);
+            }
+            return line;
+        }
+
+        // R644 (the waiting room): as Follow, but a claim may pass over several in line at once. A waiting room's
+        // order of succession is written by its host, and a host that dies while Steam still lists it (a power cut)
+        // leaves an order that may name more dead PCs: with one level of passing over (R504) a room whose host and
+        // the next two in line were gone ended, with live players in it. Here each step goes down the line after the
+        // host reached so far to the first PC whose claim is above the number reached and that names (`passed`) every
+        // one before it in line that is still here and did not claim. The claim may be as far above as it names
+        // (ClaimLimit). A PC out of turn that names nobody is still ignored; whoever was passed over and claims after
+        // all is followed first, and the one that passed it over after it, as its claim is higher.
+        public static ulong FollowLine(ulong recordHost, int recordEpoch, int seen, IList<ulong> published,
+                                       IDictionary<ulong, int> claims, IEnumerable<Candidate> fallback, out int epoch,
+                                       IDictionary<ulong, ICollection<ulong>> passed)
+        {
+            ulong host = recordHost;
+            epoch = recordEpoch;
+            var pool = (fallback ?? Enumerable.Empty<Candidate>()).ToList();
+            for (int step = 0; step < claims.Count; step++)
+            {
+                var over = new List<ulong>();
+                ulong next = 0;
+                int claim = 0, skipped = 0;
+                for (int depth = 0; depth <= claims.Count; depth++)
+                {
+                    var rest = claims.Keys.Where(id => !over.Contains(id)).ToList();
+                    ulong candidate = Successor(published, rest, host, pool.Where(c => !over.Contains(c.Id)), out int gone);
+                    if (candidate == 0 || !claims.TryGetValue(candidate, out int said)) break;
+                    ICollection<ulong> names = null;
+                    if (passed != null) passed.TryGetValue(candidate, out names);
+                    if (said > epoch && over.All(id => names != null && names.Contains(id)))
+                    { next = candidate; claim = said; skipped = gone + (names != null ? names.Count : 0); break; }
+                    over.Add(candidate);
+                }
+                if (next == 0 || claim > ClaimLimit(Math.Max(seen, epoch), skipped)) break;
                 host = next; epoch = claim;
             }
             return host;

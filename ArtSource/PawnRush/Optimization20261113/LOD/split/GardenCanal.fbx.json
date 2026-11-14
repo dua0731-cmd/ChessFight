@@ -1,0 +1,38 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenCanal.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Canal balustrade",
+   "tris": 72184,
+   "chunks": 3,
+   "sum": 72184
+  },
+  {
+   "name": "Canal flowers",
+   "tris": 6864,
+   "chunks": 2,
+   "sum": 6864
+  },
+  {
+   "name": "Canal geysers",
+   "tris": 45800,
+   "chunks": 2,
+   "sum": 45800
+  },
+  {
+   "name": "Canal wall stones",
+   "tris": 26940,
+   "chunks": 3,
+   "sum": 26940
+  },
+  {
+   "name": "Canal west wall",
+   "tris": 29240,
+   "chunks": 2,
+   "sum": 29240
+  }
+ ],
+ "objects": 13,
+ "tris": 181430
+}
