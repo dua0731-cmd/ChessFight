@@ -157,7 +157,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.CourseJump: Play("CourseJump", e.at, Wobble() + (e.count == 1 ? 1f : 0f), e.count == 1 ? .8f : 1f, false); break;
                 case SkillFxKind.CourseLand:
                     if (e.count == 1)
-                        Play("CourseLandFlop", e.at, Wobble(), Mathf.Lerp(.8f, 1f, Mathf.InverseLerp(1.2f, 5f, e.size)), false);
+                        Play("CourseLandFlop", e.at, Wobble(), Mathf.Lerp(.8f, 1f, Mathf.InverseLerp(.7f, 5f, e.size)), false);
                     else
                         Play("CourseLandLight", e.at, Wobble(), Mathf.Lerp(.6f, 1f, Mathf.InverseLerp(2.2f, 6f, e.size)), false);
                     break;
