@@ -3277,6 +3277,7 @@ namespace ChessFight.RagdollLab
                 impact = s;
                 normal = contact.normal;
             }
+            if (other == null) NoteFlop(part, impact, normal);   // R656: the flop sound (RagdollPawn.CourseSounds.cs)
             impact = PawnRushLandingImpact(impact, normal, other);   // unchanged outside Pawn Rush
 
             // A Pawn Rush skill moving a pawn into others decides what that contact does (a push or a

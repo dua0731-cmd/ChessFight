@@ -9,27 +9,32 @@ namespace ChessFight.RagdollLab
     /// sends it on to the other PCs (a puppet raises nothing itself) - and PawnRushSkillSfx plays it there. Footsteps
     /// are not sent (three a second per pawn): every PC times them from what it sees (PawnRushStepSfx).
     ///
-    /// A landing is the body coming down after a fall of its own, on its feet (count 0, '톡') or on its body (count 1,
-    /// '털썩': limp - a dive, a knockdown, a tumble - or from very high). Not one: steps down a stair or off a low edge
-    /// (under MinFall, or in the air under MinAir), anything held (a wall, a ledge, a rope, the hook, water), and a fall
-    /// so long it ended in the respawn (MaxAir). Two in a row from one pawn are kept apart (Quiet), so a body that
-    /// bounces does not rattle.
+    /// A landing on the feet (count 0, '톡') is the pawn coming down standing after a fall of its own: Grounded again
+    /// after MinAir in the air at MinFall or faster. Not one: steps down a stair or off a low edge, anything held (a
+    /// wall, a ledge, a rope, the hook, water), a fall so long it ended in the respawn (MaxAir). Landing on the feet
+    /// from very high (FlopFall) is a flop all the same.
+    ///
+    /// R656 (사용자 11-15 "특히 털썩착지는 들리지도 않아"): a flop (count 1, '털썩') is the limp body - a dive, a
+    /// knockdown, a tumble - hitting a floor with its hips, chest or head at MinFlopImpact or faster, taken from the
+    /// physics contact itself (OnPartCollision notes it, the next step raises it). R652 waited instead for the hips to
+    /// come down under three quarters of the standing height, which a pawn lying on its front never reaches, so the
+    /// flop hardly ever sounded. Two landings in a row from one pawn are kept apart (Quiet), so a body that bounces or
+    /// rolls does not rattle.
     /// </summary>
     public partial class RagdollPawn
     {
         // A fall that ends standing: at least this fast (m/s; a 0.25 m drop is 2.2) after this long in the air (s).
         const float MinFall = 2.2f, MinAir = 0.18f;
-        // Limp, the body only has its own height to fall: from a dive's topple it comes down at about 1 m/s.
-        const float MinFallLimp = 0.9f, MinAirLimp = 0.12f;
         // Landing on the feet this fast is a flop all the same (a 2.5 m drop).
         const float FlopFall = 7f;
         // Longer in the air than this was a fall off the course; the respawn is not a landing.
         const float MaxAir = 2.5f;
-        // A limp body counts as down once its hips are this share of the standing height off the floor.
-        const float LimpRest = 0.75f;
+        // R656: a limp body's hips, chest or head meeting a floor (its face within about 53 degrees of level) at least
+        // this fast along the contact (m/s): a dive's chest comes down at 1.5 to 2.5.
+        const float MinFlopImpact = 1.2f, FloorFacing = .6f;
         const float QuietLight = 0.2f, QuietFlop = 0.4f;
 
-        float landAir, landFall, landQuiet;
+        float landAir, landFall, landQuiet, flopImpact;
 
         /// <summary>Once per physics step after the floor is sensed (FixedUpdate).</summary>
         void SenseLanding(float dt)
@@ -38,30 +43,48 @@ namespace ChessFight.RagdollLab
             landQuiet -= dt;
             bool held = Climbing || Floating || rope != null || hookPhase == HookPhase.Pulling
                         || handL.HoldingLedge || handR.HoldingLedge;
+            float flop = flopImpact;
+            flopImpact = 0f;
             if (held)
             {
                 landAir = landFall = 0f;
                 return;
             }
-            bool limp = State == PawnState.Ragdoll;
-            float height = groundFound ? bodies[0].position.y - groundY : float.MaxValue;
-            bool down = limp ? height < standHeight * LimpRest : Grounded;
-            if (!down)
+            Vector3 at = bodies[0].position;
+            if (groundFound) at.y = groundY;
+            if (State == PawnState.Ragdoll)
+            {
+                landAir = landFall = 0f;
+                if (flop >= MinFlopImpact && landQuiet <= 0f)
+                {
+                    Fx(SkillFxKind.CourseLand, null, at, facing, 1, flop);
+                    landQuiet = QuietFlop;
+                }
+                return;
+            }
+            if (!Grounded)
             {
                 landAir += dt;
                 landFall = Mathf.Max(landFall, -ComVelocity().y);
                 return;
             }
-            bool fell = limp ? landAir >= MinAirLimp && landFall >= MinFallLimp : landAir >= MinAir && landFall >= MinFall;
-            if (fell && landAir <= MaxAir && landQuiet <= 0f)
+            if (landAir >= MinAir && landFall >= MinFall && landAir <= MaxAir && landQuiet <= 0f)
             {
-                bool flop = limp || Diving || landFall >= FlopFall;
-                Vector3 at = bodies[0].position;
-                if (groundFound) at.y = groundY;
-                Fx(SkillFxKind.CourseLand, null, at, facing, flop ? 1 : 0, landFall);
-                landQuiet = flop ? QuietFlop : QuietLight;
+                bool hard = landFall >= FlopFall;
+                Fx(SkillFxKind.CourseLand, null, at, facing, hard ? 1 : 0, landFall);
+                landQuiet = hard ? QuietFlop : QuietLight;
             }
             landAir = landFall = 0f;
+        }
+
+        /// <summary>R656, from OnPartCollision (a physics callback: only noted here, raised by SenseLanding): the limp
+        /// body's hips, chest or head meeting a floor-like face at `impact` m/s along the contact.</summary>
+        void NoteFlop(RagdollBodyPart part, float impact, Vector3 normal)
+        {
+            if (PawnRushPhysics == null || State != PawnState.Ragdoll) return;
+            if (part.id != BodyId.Hips && part.id != BodyId.Chest && part.id != BodyId.Head) return;
+            if (Mathf.Abs(normal.y) < FloorFacing) return;
+            if (impact > flopImpact) flopImpact = impact;
         }
 
         /// <summary>A jump that left (Jump): off the floor, or (vault) off a ledge the hands held.</summary>

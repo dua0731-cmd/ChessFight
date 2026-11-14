@@ -25,7 +25,8 @@ namespace ChessFight.RagdollLab
     {
         public const string Folder = "PawnRushStepSfx";
         // bake_moves.py matches every step to one loudness (50 ms: walk -19 dB, sprint -14 dB); these set them under the rest.
-        const float WalkGain = .29f, RunGain = .21f;
+        // R656: 1.5x (사용자 "지금보다 1.5배는 음량을 키워도 돼"): the walk step at about -26 dB, the sprint's -24.
+        const float WalkGain = .44f, RunGain = .32f;
         const float MinSpeed = .7f, RunFrom = 3.05f;
         const float NearAll = 6f, FarNone = 26f;
         const int Voices = 8;

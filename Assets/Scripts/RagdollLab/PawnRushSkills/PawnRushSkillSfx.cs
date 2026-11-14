@@ -49,8 +49,10 @@ namespace ChessFight.RagdollLab
             // R652: the movement moments (ArtSource/PawnRush/Sfx/bake_moves.py), set under the skills: after Prepare the
             // pawn's dash plays at -22 dB and the hits at -15 to -17 (50 ms loudness); the dive at -21, the grab -23,
             // the jump -24, a landing on the feet -23 (quieter for a small drop), a flop -19.
-            { "CourseDive", 0.41f }, { "CourseGrab", 0.32f }, { "CourseJump", 0.41f },
-            { "CourseLandLight", 0.33f }, { "CourseLandFlop", 0.53f },
+            // R656 (사용자 "신규로 만든 사운드들이 대체적으로 음량이 작아. 지금보다 1.5배는 음량을 키워도 돼"): all 1.5x, the
+            // flop 1.9x (it was hardly heard), about 3.5 dB nearer the skills' hits.
+            { "CourseDive", 0.62f }, { "CourseGrab", 0.48f }, { "CourseJump", 0.62f },
+            { "CourseLandLight", 0.5f }, { "CourseLandFlop", 1f },
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
             { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
             { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
@@ -155,7 +157,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.CourseJump: Play("CourseJump", e.at, Wobble() + (e.count == 1 ? 1f : 0f), e.count == 1 ? .8f : 1f, false); break;
                 case SkillFxKind.CourseLand:
                     if (e.count == 1)
-                        Play("CourseLandFlop", e.at, Wobble(), Mathf.Lerp(.7f, 1f, Mathf.InverseLerp(1f, 7f, e.size)), false);
+                        Play("CourseLandFlop", e.at, Wobble(), Mathf.Lerp(.8f, 1f, Mathf.InverseLerp(1.2f, 5f, e.size)), false);
                     else
                         Play("CourseLandLight", e.at, Wobble(), Mathf.Lerp(.6f, 1f, Mathf.InverseLerp(2.2f, 6f, e.size)), false);
                     break;
