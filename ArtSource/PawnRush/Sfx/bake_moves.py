@@ -29,7 +29,8 @@ STEPS = os.path.join(ROOT, 'Assets/Resources/PawnRushStepSfx')
 MOMENTS = {'Dive': ('CourseDive', .25), 'Grab': ('CourseGrab', .12), 'Jump': ('CourseJump', .2),
            'LandLight': ('CourseLandLight', .2), 'LandFlop': ('CourseLandFlop', .42)}
 # take -> (clip prefix, longest step in seconds, most steps kept)
-STEP_TAKES = {'Walk': ('Walk', .16, 6), 'Run': ('Run', .11, 6)}
+# R657: shorter steps (were .16 / .11 s) now that they come 5.2 and 6.6 times a second ('탁탁탁탁', '타다다다닷')
+STEP_TAKES = {'Walk': ('Walk', .12, 6), 'Run': ('Run', .09, 6)}
 
 
 def load(name):

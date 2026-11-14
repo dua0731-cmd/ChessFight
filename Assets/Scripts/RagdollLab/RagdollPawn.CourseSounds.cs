@@ -36,6 +36,10 @@ namespace ChessFight.RagdollLab
 
         float landAir, landFall, landQuiet, flopImpact;
 
+        /// <summary>R657: the legs' phase, radians 0..2π (Pose: the left leg forward at π/2, the right at 3π/2), for the
+        /// footsteps (PawnRushStepSfx), which sound as each leg reaches the front.</summary>
+        public float GaitAngle => gait;
+
         /// <summary>Once per physics step after the floor is sensed (FixedUpdate).</summary>
         void SenseLanding(float dt)
         {
