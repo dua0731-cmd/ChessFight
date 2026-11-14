@@ -172,8 +172,13 @@ namespace ChessFight.RagdollLab
         public void Joined(SwordFightPawn f)
         {
             if (rules != null && (game == null || game.Authority)) rules.Add(f.Id, f.Pawn.Team);
+            // R655: only the host (or an offline round) chooses the board; a client builds the one the host's state says.
+            if (ClientBoard) return;
             if (Cell > 0f && TeamSize() >= 4 && !Mathf.Approximately(Cell, bigCellSize) && view.Phase == SwordPhase.Pick) SizeBoard(bigCellSize);
         }
+
+        /// <summary>R655: an online client: its board's size comes from the host (SwordMatchState.Cell).</summary>
+        bool ClientBoard => game != null && game.Networked && !game.Authority;
 
         public void Left(ulong id) => rules?.Remove(id);
 
@@ -248,6 +253,7 @@ namespace ChessFight.RagdollLab
         SwordMatchState HostView()
         {
             var s = rules.State();
+            s.Cell = Cell;   // R655: the clients build this board
             for (int i = 0; i < s.Fighters.Count; i++)
             {
                 var v = s.Fighters[i];
@@ -485,7 +491,9 @@ namespace ChessFight.RagdollLab
             // R640 (승규 님 팀 시험: "경기 끝나고 탈주됨"): a client sees the result too. Only the host's EnterPhase used to
             // say so, so a client leaving from the end card before the room's "ended" arrived was counted a deserter.
             if (state.Phase == SwordPhase.Result && !overReported) { overReported = true; link.ReportMatchOver(); }
-            if (TeamSize() >= 4 && !Mathf.Approximately(Cell, bigCellSize) && state.Phase == SwordPhase.Pick) SizeBoard(bigCellSize);
+            // R655: the host's board, in whatever phase this text found the client (it used to choose its own, during the
+            // pick only, and a client that heard of the fourth fighter a side after it kept the small board).
+            if (state.Cell >= SwordMatchState.MinCell && !Mathf.Approximately(Cell, state.Cell)) SizeBoard(state.Cell);
         }
 
         /// <summary>R504: another PC hosts now (LabNetLink.Sword.cs): its texts are compared from scratch. Its clock goes

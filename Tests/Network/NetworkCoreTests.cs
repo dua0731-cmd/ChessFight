@@ -2456,6 +2456,22 @@ public static class NetworkCoreTests
                 Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
                 Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
                 Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            // R655 (승규 님 온라인 시험: 바닥이 감지되지 않고 떨어짐): every PC chose its own board (2 or 2.5 m squares); now the
+            // host's square side rides in the state and a client builds that board.
+            Test("Sword Fight board size: the host's square side rides in the match state; an older text and a wild size are refused", () => {
+                var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(2, 1);
+                var s = r.State(); s.Cell = 2.5f;
+                string text = SwordMatchWire.Encode(s, id => (byte)id); SwordMatchState back = null;
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && Math.Abs(back.Cell - 2.5f) < 1e-4f, "2.5 m back: " + text);
+                s.Cell = 2f; text = SwordMatchWire.Encode(s, id => (byte)id);
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && Math.Abs(back.Cell - 2f) < 1e-4f, "2 m back");
+                s.Cell = 0f; text = SwordMatchWire.Encode(s, id => (byte)id);
+                Check(SwordMatchWire.Decode(text, b => (ulong)b, out back) && back.Cell == 0f, "not said: 0");
+                string head = text.Substring(0, text.IndexOf('|')), tail = text.Substring(text.IndexOf('|'));
+                string v40 = head.Substring(0, head.LastIndexOf(',')) + tail;
+                Check(!SwordMatchWire.Decode(v40, b => (ulong)b, out back), "an older text (12 header fields) refused");
+                Check(!SwordMatchWire.Decode(head.Substring(0, head.LastIndexOf(',')) + ",40" + tail, b => (ulong)b, out back)
+                    && !SwordMatchWire.Decode(head.Substring(0, head.LastIndexOf(',')) + ",NaN" + tail, b => (ulong)b, out back), "a wild size refused"); });
             // R502: the old host's last text can be a tenth of a second older than the bodies a new host takes over.
             Test("Sword Fight takeover: the new host's rules take who is out and each piece from the bodies, so no piece stays out or falls for ever", () => {
                 var r = new SwordMatchRules(4); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);

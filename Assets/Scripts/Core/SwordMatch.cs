@@ -401,6 +401,12 @@ namespace ChessFight.Network
         public double PhaseTime, Clock;
         public int Seed, White, Black, Winner = -1;
         public int OutsWhite, OutsBlack, StealsWhite, StealsBlack, FeedSeq;
+        /// <summary>R655 (승규 님 온라인 시험: "바닥이 충돌체가 감지가 안되고 플레이어들이 떨어지는 경우"): the side of the board's
+        /// squares on the host (m; 0 = not said). Every PC used to choose 2 or 2.5 m from the fighters it knew of, and only
+        /// during the pick, so a client could keep a 16 m board under the host's 20 m: pieces fell through squares its
+        /// screen still drew, and the ghosts' holes opened elsewhere. A client builds the board the host says.</summary>
+        public float Cell;
+        public const float MinCell = 1f, MaxCell = 4f;
         public readonly List<SwordMatchFighter> Fighters = new List<SwordMatchFighter>();
         public readonly List<SwordFeed> Feed = new List<SwordFeed>();
 
@@ -429,7 +435,8 @@ namespace ChessFight.Network
     /// <summary>
     /// The match state as text (RagdollNetProtocol.TypeMatch, as Queen of the Hill's), host to every client a few times
     /// a second. Pieces go by roster place (SkillWire.Ref), not by id, to stay well under the packet's 400 characters:
-    /// <c>phase,phaseTime,clock,seed,white,black,winner,outsW,outsB,stealsW,stealsB,feedSeq|ref:piece:flags:cell:respawn;…|seq:victim:credit:team:cause:piece:stolen;…</c>
+    /// <c>phase,phaseTime,clock,seed,white,black,winner,outsW,outsB,stealsW,stealsB,feedSeq,boardCell|ref:piece:flags:cell:respawn;…|seq:victim:credit:team:cause:piece:stolen;…</c>
+    /// (boardCell since R655, protocol v42).
     /// </summary>
     public static class SwordMatchWire
     {
@@ -441,7 +448,7 @@ namespace ChessFight.Network
             b.Append((int)s.Phase).Append(',').Append(s.PhaseTime.ToString("0.##", Inv)).Append(',').Append(s.Clock.ToString("0.##", Inv))
              .Append(',').Append(s.Seed).Append(',').Append(s.White).Append(',').Append(s.Black).Append(',').Append(s.Winner)
              .Append(',').Append(s.OutsWhite).Append(',').Append(s.OutsBlack).Append(',').Append(s.StealsWhite).Append(',').Append(s.StealsBlack)
-             .Append(',').Append(s.FeedSeq).Append('|');
+             .Append(',').Append(s.FeedSeq).Append(',').Append(s.Cell.ToString("0.###", Inv)).Append('|');
             bool first = true;
             foreach (var f in s.Fighters)
             {
@@ -472,7 +479,7 @@ namespace ChessFight.Network
             string[] parts = text.Split('|');
             if (parts.Length != 3) return false;
             string[] h = parts[0].Split(',');
-            if (h.Length != 12) return false;
+            if (h.Length != 13) return false;
             var s = new SwordMatchState();
             int phase;
             if (!int.TryParse(h[0], NumberStyles.Integer, Inv, out phase) || phase < 0 || phase > 4) return false;
@@ -482,6 +489,8 @@ namespace ChessFight.Network
                 !Int(h[7], out s.OutsWhite) || !Int(h[8], out s.OutsBlack) || !Int(h[9], out s.StealsWhite) || !Int(h[10], out s.StealsBlack) ||
                 !Int(h[11], out s.FeedSeq)) return false;
             if (double.IsNaN(s.PhaseTime) || double.IsNaN(s.Clock) || s.Clock < 0 || s.Clock > 3600) return false;
+            if (!float.TryParse(h[12], NumberStyles.Float, Inv, out s.Cell) || float.IsNaN(s.Cell)) return false;
+            if (s.Cell != 0f && (s.Cell < SwordMatchState.MinCell || s.Cell > SwordMatchState.MaxCell)) return false;
             if (parts[1].Length > 0)
                 foreach (string item in parts[1].Split(';'))
                 {

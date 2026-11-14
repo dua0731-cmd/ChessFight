@@ -36,6 +36,9 @@ namespace ChessFight.RagdollLab
         void SizeBoard(float cell)
         {
             Cell = cell;
+            // R655: the floor whole first (a client can be told the host's size with squares already gone): the platform
+            // found again must be the scene's box, not one of the boxes round a hole, and the plan below erases anew.
+            floor.ClearAll();
             var platform = floor.Platform;
             if (platform == null) { Debug.LogWarning("[SwordFightMatch] no platform found under the scene's centre"); return; }
             float size = SwordBoard.Size * cell;
