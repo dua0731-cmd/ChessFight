@@ -77,7 +77,8 @@ namespace ChessFight.Network
                 if (Math.Abs(mine[i] - theirs[i]) > tolerance) return false;
             for (int c = 0; c < Count; c++)
                 if (Math.Abs(speed[c] - other.speed[c]) > tolerance || Math.Abs(homeX[c] - other.homeX[c]) > tolerance
-                    || Math.Abs(homeZ[c] - other.homeZ[c]) > tolerance || Math.Abs(Delta(homeYaw[c], other.homeYaw[c])) > tolerance)
+                    || Math.Abs(homeZ[c] - other.homeZ[c]) > tolerance || Math.Abs(Delta(homeYaw[c], other.homeYaw[c])) > tolerance
+                    || Math.Abs(radius[c] - other.radius[c]) > tolerance || Math.Abs(turn[c] - other.turn[c]) > tolerance)
                     return false;
             return true;
         }
@@ -123,18 +124,25 @@ namespace ChessFight.Network
             // The leg it is on: its start (NaN before the first) - one per charge, what a hit counts by - and where
             // the leg's charge ends, for whoever draws the charge line ahead of it.
             public double LegStart, ToX, ToZ;
+            // When the stage it is in began and ends (R626: a loose horse rears through its aim); NaN when it waits.
+            public double StageStart, StageEnd;
         }
 
         readonly Rules rules;
         readonly uint seed;
-        readonly double[] speed, homeX, homeZ, homeYaw;
+        readonly double[] speed, homeX, homeZ, homeYaw, radius, turn;
         readonly List<Leg>[] legs;
         double start;
         SeededRandom rng;
 
-        // `speeds`: each carriage's top speed (m/s); `homeX`/`homeZ`/`homeYaw`: where each stands until its first leg,
-        // which must be inside the area and keep 2 BodyRadius + Clearance apart.
-        public RoamingFleet(uint seed, double start, double[] speeds, double[] homeX, double[] homeZ, double[] homeYaw, Rules rules = null)
+        // `speeds`: each body's top speed (m/s); `homeX`/`homeZ`/`homeYaw`: where each stands until its first leg,
+        // which must be inside its area and keep the two bodies' reaches + Clearance apart.
+        // `radii` and `turns` (R626, optional): each body's own reach from its centre and its own half turn (s), for a
+        // fleet of different bodies - horse-drawn carriages and loose horses in one yard. Without them every body is
+        // Rules.BodyRadius and Rules.Turn. The area (MinX..MaxZ) is where a body of Rules.BodyRadius may put its centre;
+        // a smaller body may come that much nearer the walls (its own reach still keeps the same margin off them).
+        public RoamingFleet(uint seed, double start, double[] speeds, double[] homeX, double[] homeZ, double[] homeYaw, Rules rules = null,
+                            double[] radii = null, double[] turns = null)
         {
             this.rules = rules ?? new Rules();
             this.seed = seed;
@@ -143,6 +151,13 @@ namespace ChessFight.Network
             this.homeX = (double[])homeX.Clone();
             this.homeZ = (double[])homeZ.Clone();
             this.homeYaw = (double[])homeYaw.Clone();
+            radius = new double[speed.Length];
+            turn = new double[speed.Length];
+            for (int i = 0; i < speed.Length; i++)
+            {
+                radius[i] = radii != null && i < radii.Length && radii[i] > 0 ? radii[i] : this.rules.BodyRadius;
+                turn[i] = turns != null && i < turns.Length && turns[i] > 0 ? turns[i] : this.rules.Turn;
+            }
             legs = new List<Leg>[speed.Length];
             for (int i = 0; i < legs.Length; i++) legs[i] = new List<Leg>();
             rng = new SeededRandom(seed);
@@ -156,9 +171,24 @@ namespace ChessFight.Network
         public bool Held => double.IsNaN(start);
         public int LegCount(int carriage) => legs[carriage].Count;
         public Leg LegAt(int carriage, int i) => legs[carriage][i];
+        public double TopSpeed(int body) => speed[body];
+        // A body's reach from its centre, whichever way it faces, and its half turn (s).
+        public double Radius(int body) => radius[body];
+        public double HalfTurn(int body) => turn[body];
 
-        // How close two carriages' centres may ever come.
+        // How close two bodies' centres may ever come: the uniform fleet's spacing, and any two bodies'.
         public double Spacing => 2 * rules.BodyRadius + rules.Clearance;
+        public double SpacingOf(int a, int b) => radius[a] + radius[b] + rules.Clearance;
+
+        // Where body c may put its centre: the area, wider by how much less it reaches than Rules.BodyRadius.
+        public void Area(int c, out double minX, out double maxX, out double minZ, out double maxZ)
+        {
+            double grow = rules.BodyRadius - radius[c];
+            minX = rules.MinX - grow;
+            maxX = rules.MaxX + grow;
+            minZ = rules.MinZ - grow;
+            maxZ = rules.MaxZ + grow;
+        }
 
         double NextStart(int c) => legs[c].Count == 0 ? start + c * rules.Stagger : legs[c][legs[c].Count - 1].End;
 
@@ -206,12 +236,13 @@ namespace ChessFight.Network
         {
             double px, pz, yaw;
             Current(c, out px, out pz, out yaw);
+            Area(c, out double minX, out double maxX, out double minZ, out double maxZ);
             for (int k = 0; k < Math.Max(1, rules.Tries); k++)
             {
-                double qx = rng.Range(rules.MinX, rules.MaxX), qz = rng.Range(rules.MinZ, rules.MaxZ);
+                double qx = rng.Range(minX, maxX), qz = rng.Range(minZ, maxZ);
                 double d = Math.Sqrt((qx - px) * (qx - px) + (qz - pz) * (qz - pz));
                 if (d < rules.MinCharge || d > rules.MaxCharge || Clashes(c, px, pz, qx, qz)) continue;
-                double heading = Math.Atan2(qx - px, qz - pz) * 180.0 / Math.PI, turn = TurnSeconds(yaw, heading);
+                double heading = Math.Atan2(qx - px, qz - pz) * 180.0 / Math.PI, turn = TurnSeconds(c, yaw, heading);
                 legs[c].Add(new Leg
                 {
                     Start = t0, FromX = px, FromZ = pz, ToX = qx, ToZ = qz, HeadingFrom = yaw, Heading = heading,
@@ -234,10 +265,10 @@ namespace ChessFight.Network
         // Would carriage c's sweep from p to q come too close to any other carriage's current leg?
         bool Clashes(int c, double px, double pz, double qx, double qz)
         {
-            double keep = Spacing;
             for (int j = 0; j < legs.Length; j++)
             {
                 if (j == c) continue;
+                double keep = SpacingOf(c, j);
                 var list = legs[j];
                 double ax, az, bx, bz;
                 if (list.Count == 0) { ax = bx = homeX[j]; az = bz = homeZ[j]; }
@@ -259,6 +290,10 @@ namespace ChessFight.Network
         public double TurnSeconds(double from, double to) =>
             Math.Max(Math.Min(rules.MinTurn, rules.Turn), rules.Turn * Math.Abs(Delta(from, to)) / 180.0);
 
+        // The same for body c, with its own half turn.
+        public double TurnSeconds(int c, double from, double to) =>
+            Math.Max(Math.Min(rules.MinTurn, turn[c]), turn[c] * Math.Abs(Delta(from, to)) / 180.0);
+
         // True when `time` is more than Leap past what is planned, or before it.
         bool Leapt(double time)
         {
@@ -275,7 +310,7 @@ namespace ChessFight.Network
         public Pose At(int c, double time)
         {
             if (Held)
-                return new Pose { X = homeX[c], Z = homeZ[c], Yaw = homeYaw[c], Stage = Stage.Waiting, LegStart = double.NaN, ToX = homeX[c], ToZ = homeZ[c] };
+                return new Pose { X = homeX[c], Z = homeZ[c], Yaw = homeYaw[c], Stage = Stage.Waiting, LegStart = double.NaN, ToX = homeX[c], ToZ = homeZ[c], StageStart = double.NaN, StageEnd = double.NaN };
             if (Leapt(time))
             {
                 start = time;
@@ -287,15 +322,16 @@ namespace ChessFight.Network
             if (list.Count == 0 || time < list[0].Start)
             {
                 if (list.Count == 0)
-                    return new Pose { X = homeX[c], Z = homeZ[c], Yaw = homeYaw[c], Stage = Stage.Waiting, LegStart = double.NaN, ToX = homeX[c], ToZ = homeZ[c] };
+                    return new Pose { X = homeX[c], Z = homeZ[c], Yaw = homeYaw[c], Stage = Stage.Waiting, LegStart = double.NaN, ToX = homeX[c], ToZ = homeZ[c], StageStart = double.NaN, StageEnd = double.NaN };
                 var first = list[0];
-                return new Pose { X = first.FromX, Z = first.FromZ, Yaw = first.HeadingFrom, Stage = Stage.Waiting, LegStart = double.NaN, ToX = first.FromX, ToZ = first.FromZ };
+                return new Pose { X = first.FromX, Z = first.FromZ, Yaw = first.HeadingFrom, Stage = Stage.Waiting, LegStart = double.NaN, ToX = first.FromX, ToZ = first.FromZ, StageStart = double.NaN, StageEnd = double.NaN };
             }
             int i = list.Count - 1;
             while (i > 0 && list[i].Start > time) i--;
             var leg = list[i];
             double u = time - leg.Start;
-            var pose = new Pose { X = leg.FromX, Z = leg.FromZ, Yaw = leg.Heading, LegStart = leg.Start, ToX = leg.ToX, ToZ = leg.ToZ };
+            var pose = new Pose { X = leg.FromX, Z = leg.FromZ, Yaw = leg.Heading, LegStart = leg.Start, ToX = leg.ToX, ToZ = leg.ToZ,
+                                  StageStart = leg.Start, StageEnd = leg.End };
             if (leg.Charge <= 0 && leg.Turn <= 0)
             {
                 pose.Yaw = leg.Heading;
@@ -305,6 +341,7 @@ namespace ChessFight.Network
             if (u < leg.Turn)
             {
                 pose.Stage = Stage.Turning;
+                pose.StageEnd = leg.Start + leg.Turn;
                 pose.Yaw = leg.HeadingFrom + Delta(leg.HeadingFrom, leg.Heading) * Smooth(u / leg.Turn);
                 return pose;
             }
@@ -312,6 +349,8 @@ namespace ChessFight.Network
             if (u < leg.Aim)
             {
                 pose.Stage = Stage.Aiming;
+                pose.StageStart = leg.Start + leg.Turn;
+                pose.StageEnd = leg.ChargeStart;
                 return pose;
             }
             u -= leg.Aim;
@@ -321,12 +360,15 @@ namespace ChessFight.Network
                 Profile(u / leg.Charge, out f, out v);
                 double dx = leg.ToX - leg.FromX, dz = leg.ToZ - leg.FromZ;
                 pose.Stage = Stage.Charging;
+                pose.StageStart = leg.ChargeStart;
+                pose.StageEnd = leg.ChargeEnd;
                 pose.X = leg.FromX + dx * f;
                 pose.Z = leg.FromZ + dz * f;
                 pose.Speed = v * Math.Sqrt(dx * dx + dz * dz) / leg.Charge;
                 return pose;
             }
             pose.Stage = Stage.Resting;
+            pose.StageStart = leg.ChargeEnd;
             pose.X = leg.ToX;
             pose.Z = leg.ToZ;
             return pose;

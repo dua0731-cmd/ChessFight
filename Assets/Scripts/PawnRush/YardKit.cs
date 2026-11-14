@@ -325,13 +325,18 @@ namespace ChessFight.PawnRush
         // A moving carriage's one solid box, and the trigger shell round it that knocks characters away; the hits are
         // judged by the box's faces (YardImpact.solid). With `seeThrough` the follow camera can look through the box
         // (CameraSeeThrough, switched on by whoever owns it) instead of jumping in front of it as it sweeps past.
-        public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false)
+        public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false) =>
+            BodyCollider(parent, new Vector3(CarriageWidth, CarriageHeight, CarriageLength), knockback, seeThrough);
+
+        // The same for any body standing on y 0, `size` its width, height and length (R626: a team - a carriage and the
+        // pair of horses drawing it - or a loose horse as well as a carriage).
+        public static YardImpact BodyCollider(Transform parent, Vector3 size, float knockback, bool seeThrough = false)
         {
             var body = new GameObject("Carriage (collider)");
             body.transform.SetParent(parent, false);
             var box = body.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, (CarriageHeight + .05f) * .5f, 0f);
-            box.size = new Vector3(CarriageWidth, CarriageHeight - .05f, CarriageLength);
+            box.center = new Vector3(0f, (size.y + .05f) * .5f, 0f);
+            box.size = new Vector3(size.x, size.y - .05f, size.z);
             body.AddComponent<NoClimbSurface>();
             if (seeThrough) body.AddComponent<CameraSeeThrough>().enabled = false;
             var impact = Shell(parent, "Carriage (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockback);

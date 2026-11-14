@@ -24,8 +24,26 @@ namespace ChessFight.PawnRush
     // the fleet's origin. On its own (this prefab dropped anywhere) it makes a fleet of one, starting when it is switched
     // on: its area is halfWidth either side along its own x and halfDepth along its z round where it stands. Keep the
     // area BodyRadius inside any wall.
+    //
+    // R626 (the user's zone 1: "말과 말이 이끄는 마차들이 돌아다니며"): it can also be a team - the carriage with a
+    // pair of harnessed horses in front, one long body - or a loose horse, smaller and faster, which rears through its
+    // aim instead of lighting lamps. The fleet gives each its own reach and turn (RoamingFleet radii / turns).
     public sealed class RoamingCarriage : Obstacle, IHitTurns
     {
+        public enum Look { Carriage, Team, Horse }
+
+        // A team's horses stand this far in front of the carriage's nose (m), the body's box over both.
+        public const float TeamGap = .15f;
+
+        public static float LengthOf(Look look) =>
+            look == Look.Horse ? YardHorse.Length : look == Look.Team ? YardKit.CarriageLength + TeamGap + YardHorse.Length : YardKit.CarriageLength;
+        public static float WidthOf(Look look) => look == Look.Horse ? YardHorse.Width : YardKit.CarriageWidth;
+        public static float HeightOf(Look look) => look == Look.Horse ? YardHorse.Height : YardKit.CarriageHeight;
+        // A body's reach from its centre whichever way it faces: half its diagonal.
+        public static float Reach(Look look) => .5f * Mathf.Sqrt(LengthOf(look) * LengthOf(look) + WidthOf(look) * WidthOf(look));
+
+        [Tooltip("A carriage on its own, a team (a carriage drawn by a pair of horses) or a loose horse")]
+        [SerializeField] Look look;
         [Header("On its own (no fleet): its centre's area, metres either side")]
         [SerializeField] float halfWidth = 15f;
         [SerializeField] float halfDepth = 3f;
@@ -48,11 +66,12 @@ namespace ChessFight.PawnRush
         [Tooltip("The wheels' rumble and a whip crack when a charge starts")]
         [SerializeField] bool sounds = true;
 
-        // The body's reach from its centre whichever way it faces: half its diagonal.
-        public static float BodyRadius => .5f * Mathf.Sqrt(YardKit.CarriageLength * YardKit.CarriageLength + YardKit.CarriageWidth * YardKit.CarriageWidth);
+        // A carriage's reach from its centre whichever way it faces: half its diagonal.
+        public static float BodyRadius => Reach(Look.Carriage);
 
         // Width of the charge line on the floor (m): the body and a little either side.
         public const float LineWidth = 2.8f;
+        float Line => look == Look.Horse ? WidthOf(look) + .5f : LineWidth;
         // How far the hit shell reaches ahead of the nose while charging (m): a 7 m/s push sideways clears the body in
         // the ~0.2 s the nose takes to get there.
         public const float Lead = 1.5f;
@@ -66,6 +85,8 @@ namespace ChessFight.PawnRush
         Vector3 shellSize, shellCentre;
         CameraSeeThrough see;
         Transform[] wheels;
+        YardHorse[] horses;
+        float travelled;
         Renderer[] lamps;
         Transform line;
         Renderer lineRenderer;
@@ -82,14 +103,18 @@ namespace ChessFight.PawnRush
                                               : new RoamingFleet.Pose { Stage = RoamingFleet.Stage.Waiting, LegStart = double.NaN };
 
         public RoamingFleet.Stage Stage => Now.Stage;
+        public Look Kind => look;
+        // Its top speed in the plan (for the rumble and the stride).
+        float TopSpeed => Plan != null ? (float)Plan.TopSpeed(index) : moveSpeed;
 
         // One hit a charge: the leg's start.
         public double HitTurn => Now.LegStart;
 
         // On its own: the area, speeds and waits (before it is switched on).
         public void Configure(float halfWidth, float halfDepth, float moveSpeed, float turnSeconds, float minAim, float maxAim, int seed,
-                              float knockbackForce, float knockdownSeconds, int paint = 0)
+                              float knockbackForce, float knockdownSeconds, int paint = 0, Look look = Look.Carriage)
         {
+            this.look = look;
             this.halfWidth = halfWidth;
             this.halfDepth = halfDepth;
             this.moveSpeed = moveSpeed;
@@ -102,9 +127,10 @@ namespace ChessFight.PawnRush
             this.paint = paint;
         }
 
-        // One of a fleet's carriages (the fleet calls it, before switching it on).
-        public void Join(CarriageFleet fleet, int index, float knockbackForce, float knockdownSeconds, int paint)
+        // One of a fleet's bodies (the fleet calls it, before switching it on).
+        public void Join(CarriageFleet fleet, int index, Look look, float knockbackForce, float knockdownSeconds, int paint)
         {
+            this.look = look;
             this.fleet = fleet;
             this.index = index;
             this.knockbackForce = knockbackForce;
@@ -147,7 +173,7 @@ namespace ChessFight.PawnRush
             float w = Mathf.Abs(halfWidth), d = Mathf.Abs(halfDepth);
             var rules = new RoamingFleet.Rules
             {
-                MinX = -w, MaxX = w, MinZ = -d, MaxZ = d, BodyRadius = BodyRadius, Turn = Mathf.Max(.05f, turnSeconds),
+                MinX = -w, MaxX = w, MinZ = -d, MaxZ = d, BodyRadius = Reach(look), Turn = Mathf.Max(.05f, turnSeconds),
                 MinAim = Mathf.Max(0f, minAim), MaxAim = Mathf.Max(Mathf.Max(0f, minAim), maxAim),
                 // A charge crosses most of the area's length.
                 MinCharge = Mathf.Max(1f, .4f * 2f * Mathf.Max(w, d)), MaxCharge = Mathf.Max(2f, 2.5f * Mathf.Max(w, d)),
@@ -160,8 +186,14 @@ namespace ChessFight.PawnRush
         {
             if (built) return;
             built = true;
-            wheels = YardKit.Carriage(transform, paint == 1 ? YardKit.CarriageRed : paint == 2 ? YardKit.CarriageBlue : YardKit.CarriageGreen);
-            impact = YardKit.CarriageCollider(transform, knockbackForce, seeThrough: true);
+            var body = paint == 1 ? YardKit.CarriageRed : paint == 2 ? YardKit.CarriageBlue : YardKit.CarriageGreen;
+            if (look == Look.Horse)
+                horses = new[] { YardHorse.Build(transform, Vector3.zero, Coat(index), true) };
+            else if (look == Look.Team)
+                BuildTeam(body);
+            else
+                wheels = YardKit.Carriage(transform, body);
+            impact = YardKit.BodyCollider(transform, new Vector3(WidthOf(look), HeightOf(look), LengthOf(look)), knockbackForce, seeThrough: true);
             impact.knockdownSeconds = knockdownSeconds;
             shell = impact.GetComponent<BoxCollider>();
             shellSize = shell.size;
@@ -205,6 +237,35 @@ namespace ChessFight.PawnRush
                 rumble = Voice(YardKit.RumbleSound, true);
                 crack = Voice(YardKit.CrackSound, false);
             }
+        }
+
+        // Loose horses and team pairs take turns of coat, so the yard is not all one horse.
+        static YardHorse.Coat Coat(int i) => (YardHorse.Coat)(((i % 3) + 3) % 3);
+
+        // A team: the carriage at the back of the body's length, a pair of harnessed horses in front of it, the pole
+        // and traces between them (pictures; the body's one box is over all of it).
+        void BuildTeam(Material body)
+        {
+            float length = LengthOf(Look.Team), back = -length * .5f + YardKit.CarriageLength * .5f;
+            var cab = new GameObject("Team carriage").transform;
+            cab.SetParent(transform, false);
+            cab.localPosition = new Vector3(0f, 0f, back);
+            wheels = YardKit.Carriage(cab, body);
+            float front = length * .5f - YardHorse.Length * .5f;
+            var coat = Coat(index);
+            horses = new[]
+            {
+                YardHorse.Build(transform, new Vector3(-.55f, 0f, front), coat, false, "Horse W"),
+                YardHorse.Build(transform, new Vector3(.55f, 0f, front), coat, false, "Horse E"),
+            };
+            const YardKit.Solid none = YardKit.Solid.None;
+            float nose = back + YardKit.CarriageLength * .5f, chest = front + 1.1f;
+            // The pole between the pair from the carriage's nose to their chests, a swingle-tree, the traces.
+            YardKit.Box(transform, "Pole", new Vector3(0f, .95f, (nose + chest) * .5f), new Vector3(.12f, .12f, chest - nose), YardKit.WoodDark, none);
+            YardKit.Box(transform, "Swingle tree", new Vector3(0f, .95f, nose + .1f), new Vector3(1.7f, .1f, .1f), YardKit.WoodDark, none);
+            YardKit.Box(transform, "Pole tip", new Vector3(0f, .95f, chest), new Vector3(.16f, .16f, .16f), YardKit.Gold, none);
+            foreach (float x in new[] { -.85f, -.25f, .25f, .85f })
+                YardKit.Box(transform, "Trace", new Vector3(x, 1.05f, (nose + front + .5f) * .5f), new Vector3(.05f, .05f, front + .5f - nose), YardKit.WoodDark, none);
         }
 
         AudioSource Voice(AudioClip clip, bool loop)
@@ -272,11 +333,23 @@ namespace ChessFight.PawnRush
         {
             var moved = transform.position - lastPosition;
             lastPosition = transform.position;
-            wheelAngle = (wheelAngle + Vector3.Dot(moved, transform.forward) / (YardKit.CarriageWheel * .5f) * Mathf.Rad2Deg) % 360f;
+            float step = Vector3.Dot(moved, transform.forward);
+            wheelAngle = (wheelAngle + step / (YardKit.CarriageWheel * .5f) * Mathf.Rad2Deg) % 360f;
             if (wheels != null)
                 foreach (var wheel in wheels)
                     if (wheel != null) wheel.localRotation = Quaternion.Euler(wheelAngle, 0f, 0f);
             var pose = Now;
+            if (horses != null)
+            {
+                // A stride with the way it has gone; through its aim a loose horse rears (a team's pair toss their
+                // heads), read from the plan, so every PC draws the same.
+                travelled = (travelled + Mathf.Abs(step)) % 1000f;
+                float warned = pose.Stage == RoamingFleet.Stage.Aiming && pose.StageEnd > pose.StageStart
+                    ? (float)((ObstacleClock.Now + phase - pose.StageStart) / (pose.StageEnd - pose.StageStart)) : -1f;
+                float rear = YardHorse.Rear(warned) * (look == Look.Horse ? 1f : .3f);
+                foreach (var horse in horses)
+                    horse?.Pose(ObstacleClock.Now, rear, (float)pose.Speed, Mathf.Max(1f, TopSpeed), travelled);
+            }
             bool warning = pose.Stage == RoamingFleet.Stage.Turning || pose.Stage == RoamingFleet.Stage.Aiming || pose.Stage == RoamingFleet.Stage.Charging;
             if (lamps != null)
             {
@@ -289,9 +362,9 @@ namespace ChessFight.PawnRush
             {
                 // Kept going from here: switched off and on again, or after an audio reset, it starts once more.
                 if (!rumble.isPlaying && rumble.isActiveAndEnabled) rumble.Play();
-                float share = Mathf.Clamp01((float)pose.Speed / 9.5f);
+                float share = Mathf.Clamp01((float)pose.Speed / Mathf.Max(1f, TopSpeed));
                 rumble.volume = .5f * share * GameSettings.Effects;
-                rumble.pitch = .75f + .45f * share;
+                rumble.pitch = (look == Look.Horse ? 1.25f : .75f) + .45f * share;
             }
             if (crack != null && pose.Stage == RoamingFleet.Stage.Charging && shown != RoamingFleet.Stage.Charging)
             {
@@ -314,12 +387,12 @@ namespace ChessFight.PawnRush
                 return;
             }
             var way = ahead / length;
-            float reach = length + YardKit.CarriageLength * .5f;
+            float reach = length + LengthOf(look) * .5f;
             // The quad lies in its x-y plane: turned to lie flat with its y along the charge.
             line.SetPositionAndRotation(StartPosition + StartRotation * (from + way * (reach * .5f)) + Vector3.up * .03f,
                                         StartRotation * Quaternion.LookRotation(way) * Quaternion.Euler(90f, 0f, 0f));
             var scale = line.parent != null ? line.parent.lossyScale : Vector3.one;
-            line.localScale = new Vector3(LineWidth / Mathf.Max(1e-4f, scale.x), reach / Mathf.Max(1e-4f, scale.z), 1f);
+            line.localScale = new Vector3(Line / Mathf.Max(1e-4f, scale.x), reach / Mathf.Max(1e-4f, scale.z), 1f);
             // A pulse while it aims, on the shared clock like the rest.
             float pulse = (float)System.Math.Sin(ObstacleClock.Now * 14.0 % (2.0 * System.Math.PI));
             float alpha = pose.Stage == RoamingFleet.Stage.Turning ? .3f
@@ -340,8 +413,8 @@ namespace ChessFight.PawnRush
             Gizmos.color = new Color(1f, .55f, .2f, .8f);
             Gizmos.DrawWireCube(new Vector3(0f, .05f, 0f), new Vector3(halfWidth * 2f, .1f, halfDepth * 2f));
             Gizmos.color = new Color(1f, .55f, .2f, .3f);
-            float r = BodyRadius;
-            Gizmos.DrawWireCube(new Vector3(0f, YardKit.CarriageHeight * .5f, 0f), new Vector3((halfWidth + r) * 2f, YardKit.CarriageHeight, (halfDepth + r) * 2f));
+            float r = Reach(look);
+            Gizmos.DrawWireCube(new Vector3(0f, HeightOf(look) * .5f, 0f), new Vector3((halfWidth + r) * 2f, HeightOf(look), (halfDepth + r) * 2f));
         }
     }
 }

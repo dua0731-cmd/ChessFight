@@ -99,7 +99,7 @@ namespace ChessFight.PawnRush
                 go.SetActive(false);
                 go.transform.SetParent(transform, false);
                 // Green and blue: red is the carriages' warning (their lamps), never a body.
-                go.AddComponent<RoamingCarriage>().Join(this, i, knockbackForce, knockdownSeconds, i % 2 == 0 ? 0 : 2);
+                go.AddComponent<RoamingCarriage>().Join(this, i, RoamingCarriage.Look.Carriage, knockbackForce, knockdownSeconds, i % 2 == 0 ? 0 : 2);
                 go.SetActive(true);
             }
         }

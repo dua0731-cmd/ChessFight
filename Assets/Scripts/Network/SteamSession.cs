@@ -118,7 +118,11 @@ namespace ChessFight.Network
         // v39 (R624): Sword Fight's pieces are picked on the entrance screen before the scene (member data "pick",
         //      SwordPickDraft) and the scene's host starts with them, holding the pick until the shared start. A v38 host
         //      would open its own 15 s pick in the scene over picks already made.
-        public const string Protocol = "chessfight.dua0731.network.v39";
+        // v40 (R626): the Royal Carriage Yard's two zones built anew - the yard's roaming fleet is horse-drawn teams and
+        //      loose horses between storage sheds (another RoamingFleet.Yard and seed list), and the arena is the loading
+        //      and sorting yard (its side ramps gone, cranes and the giant chest's shockwave, more lifting wheels). The
+        //      wire is the same, but a v39 PC would draw the old yard where a v40 host knocks pawns with other bodies.
+        public const string Protocol = "chessfight.dua0731.network.v40";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
