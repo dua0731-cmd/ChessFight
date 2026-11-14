@@ -1834,6 +1834,11 @@ public static class NetworkCoreTests
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(twice)),twice.Length,q),"a place twice");
                 var stage=(byte[])b.Clone(); stage[SwordWire.HeaderBytes+SwordWire.BaseBytes*2]=7;   // the second fighter's F stage
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(stage)),stage.Length,q),"stage out of range");
+                // The bishop's diagonal pick (SfEdge.Aim = 4) goes through; past it does not.
+                var aim=(byte[])b.Clone(); aim[SwordWire.HeaderBytes+SwordWire.BaseBytes*2+SwordWire.SkillBytes]=4;   // the second fighter's E stage
+                Check(SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(aim)),aim.Length,q)&&q.Fighters[1].EdgeStage==4,"E stage Aim read");
+                aim[SwordWire.HeaderBytes+SwordWire.BaseBytes*2+SwordWire.SkillBytes]=5;
+                Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(aim)),aim.Length,q),"E stage out of range");
                 // Twelve busy fighters and six collapses fit 1024 bytes once what does not fit is left off; lives and swords always go.
                 var big=new SwordWirePacket(); for(int i=0;i<12;i++) big.Fighters.Add(new SwordWireFighter{Ref=(byte)i,Alive=true,Skill=true,Edge=true,Glow=true});
                 for(int i=0;i<6;i++) big.Collapses.Add(new SwordWireCollapse{Id=(byte)(i+1),X1=1,Z1=1});

@@ -603,7 +603,7 @@ namespace ChessFight.RagdollLab
         static string EdgeHowTo(PieceKind kind, SwordFightEdgeParams e) => kind switch
         {
             PieceKind.King => $"밀려 떨어지는 {e.fallWindow:0.#}초 안에 E → 칼을 가장자리에 박고 {e.kingHang:0.#}초 매달림 → 힘차게 뛰어올라 쿵 착지, 반경 {e.kingLandRadius:0.#} m 적 {e.kingLandPush:0.#} m 밀림\n박힌 칼을 베면(F8) 떨어짐",
-            PieceKind.Queen => $"가장자리 구역({e.edgeZone:0.#} m) 적이 {e.queenRange:0.#} m 안: E → 금색 선 {e.queenLine:0.#}초 → 순식간에 다가가 바깥 위로 {e.queenFling:0.#} m\n그 사이 적이 구역 밖으로 들어오면 취소(쿨 반) · 점프로 피함 · 킹 받아내기로 막힘",
+            PieceKind.Queen => $"가장자리 구역({e.edgeZone:0.#} m) 적이 {e.queenRange:0.#} m 안: E → 금색 선 {e.queenLine:0.#}초 → 순식간에 다가가 바깥 위로 {e.queenFling:0.#} m\n그 사이 적이 구역 밖으로 들어오면 취소(쿨 반) · 점프해도 맞음 · 킹 받아내기로 막힘",
             PieceKind.Rook => $"가장자리 구역에서 E → 보는 쪽 가장자리 {e.rookChunkWidth:0.#} × {e.rookChunkDepth:0.#} m에 {e.rookCrack:0.#}초 금 → 무너져 위의 기물이 모두 떨어짐(룩·아군도)\n{e.rookRestore:0.#}초 뒤 바닥이 다시 솟음",
             PieceKind.Bishop => $"가장자리 구역({e.edgeZone:0.#} m)에서 E → 비숍 칸부터 안쪽 대각선 {e.bishopSquares}칸이 은색 (마우스 쪽에 가까운 것이 진하게)\n좌클릭 = 그 대각선 끝 칸까지 미끄러짐 · E 한 번 더 또는 우클릭 = 취소(쿨 안 돎) · 길 위 적은 옆으로 {e.bishopPush:0.#} m 밀림 · 미끄러지다 맞으면 멈춤",
             PieceKind.Knight => $"가장자리를 등지고({e.knightBackEdge:0.#} m) 앞 {e.knightFront:0.#} m 안 적: E → {e.knightCrouch:0.##}초 웅크림 → 벼랑 밖으로 뛰어 공중제비로 적을 넘어 착지 → 뒷발차기 {e.knightKick:0.#} m\n웅크린 동안 적이 3 m 밖으로 물러나면 취소(쿨 반)",

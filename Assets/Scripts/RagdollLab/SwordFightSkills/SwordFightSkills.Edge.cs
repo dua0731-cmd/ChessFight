@@ -175,7 +175,7 @@ namespace ChessFight.RagdollLab
                 case PieceKind.Queen: StepQueenEdge(); break;
                 case PieceKind.Rook: StepRookEdge(); break;
                 case PieceKind.Bishop: StepBishopEdge(press, cancel); break;
-                case PieceKind.Knight: StepKnightEdge(); break;
+                case PieceKind.Knight: StepKnightEdge(dt); break;
                 default: ClearEdge(); break;
             }
             return EdgeStage != SfEdge.None;
@@ -599,10 +599,14 @@ namespace ChessFight.RagdollLab
             if (clearanceLeft <= 0f && (apart || clearanceLeft < -2f)) Clearance(null, false);
         }
 
-        Vector3 KnightLanding(SwordFightEdgeFloor floor, RagdollPawn target)
+        Vector3 KnightLanding(SwordFightEdgeFloor floor, RagdollPawn target) => KnightLanding(floor, target, Pawn.Hips.position);
+
+        /// <summary>Behind <paramref name="target"/> as seen from <paramref name="from"/> (R649: in the flight, from where it
+        /// sprang, so the landing stays on the far side of the enemy while it follows it).</summary>
+        Vector3 KnightLanding(SwordFightEdgeFloor floor, RagdollPawn target, Vector3 from)
         {
             var X = EdgeParams;
-            Vector3 t = Flat(target.Hips.position), d = t - Flat(Pawn.Hips.position);
+            Vector3 t = Flat(target.Hips.position), d = t - Flat(from);
             d = d.sqrMagnitude > 1e-4f ? d.normalized : -EdgeOut;
             for (float b = X.knightLandBehind; b >= 0.3f; b -= 0.15f)
             {
@@ -796,7 +800,7 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>She is beside it in an instant, on its inner side, and cuts it out and up off the platform - unless it
-        /// is in the air (a jump: the cut goes under it) or a king in his guard takes it.</summary>
+        /// is a king in his guard who takes it (R650: a jump no longer gets under it).</summary>
         void QueenStrikes(SwordFightEdgeFloor floor)
         {
             var X = EdgeParams;
@@ -804,11 +808,20 @@ namespace ChessFight.RagdollLab
             var ts = target.GetComponent<SwordFightSkills>();
             if (!floor.Nearest(target.Hips.position, out var e)) e = new EdgeHit { outward = EdgeOut };
             Vector3 tf = Flat(target.Hips.position), from = Flat(Pawn.Hips.position);
-            Vector3 spot = tf - e.outward * 0.8f;
+            // R650 (승규 님: "일직선 상이 아닌 옆에서 스킬을 쓰면 그 방향으로 날아가야 하는데 꺾여서 날아가"): the cut goes
+            // along her own line (from where she stood through the enemy, the gold line's way). She used to arrive on its
+            // inner side whatever way she came and throw it 85% straight out of the nearest edge, so a cut from the side
+            // bent. Now she arrives on her line, just short of it, and it flies on along that line.
+            Vector3 line = tf - from;
+            line = line.sqrMagnitude > 1e-4f ? line.normalized : Flat(e.outward).normalized;
+            Vector3 spot = tf - line * 0.8f;
+            // (3차: from the lip side there may be less room behind it: closer before the other side.)
+            for (float back = 0.6f; back >= 0.39f && !floor.OnFloor(spot + Vector3.up * floor.Top); back -= 0.2f) spot = tf - line * back;
+            if (!floor.OnFloor(spot + Vector3.up * floor.Top)) spot = tf - e.outward * 0.8f;
             if (!floor.OnFloor(spot + Vector3.up * floor.Top)) spot = tf + (from - tf).normalized * 0.8f;
             Vector3 ground = Floor(spot + Vector3.up * floor.Top);
             Vector3 face = Flat(tf - spot);
-            face = face.sqrMagnitude > 1e-4f ? face.normalized : e.outward;
+            face = face.sqrMagnitude > 1e-4f ? face.normalized : line;
             EdgeStart = Pawn.Hips.position;
             EdgeAt = target.Hips.position;
             EdgeOut = e.outward;
@@ -823,20 +836,21 @@ namespace ChessFight.RagdollLab
                 SetEdge(SfEdge.Recovery, "막힘");
                 return;
             }
-            float air = target.Hips.position.y - (floor.Top + target.standHeight);
-            if (!target.Grounded && air > 0.2f)
-            {
-                Raise(SfFxKind.QueenMiss, target, target.Hips.position, face, 0f);
-                Say($"{Pawn.DisplayName}: 체크메이트 일섬 — 점프로 피함 ({target.DisplayName})");
-                SetEdge(SfEdge.Recovery, "헛벰");
-                return;
-            }
-            Vector3 dir = Flat(e.outward * 0.85f + face * 0.15f).normalized;
+            // R650 4차 (승규 님: "상대가 점프 했을 때도 적용 시켜야지"): a jump no longer takes it under the cut (it used to
+            // go under an enemy whose hips were 0.2 m up off the ground); in the air it is thrown the same way.
+            // R650 5차 (승규 님: "뒤에서 배기를 했는데 그쪽 방향으로 안가 이렇게 되면 너무 사기가 돼 … 방향에 따라서 떨어지게
+            // 할지 떨어지지 말지 정하는 거야"): always straight along her line, never turned toward an edge (2차·3차 turned
+            // it up to 60°, so a cut from behind still threw it off). The line decides: if the platform ends that way within
+            // reach (QueenExit, 8 m) it is thrown past the lip and goes off; if not (a cut into the board) it is thrown the
+            // plain queenFling along the line and stays on.
+            Vector3 dir = line;
+            float exit = QueenExit(floor, tf, dir);
+            float fling = exit < 0f ? X.queenFling : Mathf.Clamp(exit + QueenFlingPast, X.queenFling, QueenFlingMost);
             // 10-25 (승규 님: "베인 뒤 한 박자 늦게 반응 … 멀티 플레이 고려해서"): she has gone through it; it stands where it
             // is, held (the pin everyone's copy already carries) and out of the fight, and is thrown a beat later
             // (StepQueenEdge) - on the host, so every screen sees the same beat.
             queenCut = ts;
-            queenPush = dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp;
+            queenPush = dir * (fling / 0.9f) + Vector3.up * X.queenFlingUp;
             ts.pinLeft = Mathf.Max(ts.pinLeft, X.queenDelay + 0.05f);
             ts.Fighter.StopCombat();
             // 10-26: and held as it stood - it does not know yet.
@@ -845,6 +859,20 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>A hit that throws a piece at a set speed (not a slide: it goes off the platform).</summary>
+        /// <summary>R650: past the lip, how much further the cut enemy is thrown (m).</summary>
+        const float QueenFlingPast = 2f;
+        /// <summary>R650: the furthest the cut throws (m); a line leaving the platform only further than this does not go off.</summary>
+        const float QueenFlingMost = 10f;
+
+        /// <summary>R650: how far from <paramref name="from"/> along <paramref name="dir"/> the platform ends (a lip or a
+        /// hole); -1 if not within <see cref="QueenFlingMost"/> less <see cref="QueenFlingPast"/>.</summary>
+        static float QueenExit(SwordFightEdgeFloor floor, Vector3 from, Vector3 dir)
+        {
+            for (float d = 0.25f; d <= QueenFlingMost - QueenFlingPast; d += 0.25f)
+                if (!floor.OnFloor(Flat(from + dir * d) + Vector3.up * floor.Top)) return d;
+            return -1f;
+        }
+
         void Fling(SwordFightSkills other, Vector3 push, string cause, SfFxKind kind, float size)
         {
             var target = other.Pawn;
@@ -1013,7 +1041,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- knight
 
-        void StepKnightEdge()
+        void StepKnightEdge(float dt)
         {
             var X = EdgeParams;
             var floor = SwordFightEdgeFloor.Current;
@@ -1052,6 +1080,10 @@ namespace ChessFight.RagdollLab
                 {
                     if (Pawn.Hits != edgeHits) { InterruptEdge("공중에서 맞음"); return; }
                     float k = Mathf.Clamp01(EdgeTime / X.knightFlip);
+                    // R649 (승규 님: "상대가 빠르게 움직이거나 각도 애매 할 때 미스"): the way over and the landing were fixed at
+                    // the spring, so an enemy that ran or stepped aside in the 0.8 s flight was no longer behind the
+                    // landing and the kick found no one. Now they follow it through most of the flight.
+                    if (k < KnightTrackUntil) KnightTracks(floor, dt);
                     Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
                     if (k < 1f)
                     {
@@ -1128,14 +1160,47 @@ namespace ChessFight.RagdollLab
             var target = EdgeTarget;
             var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
             Raise(SfFxKind.KnightKick, target, EdgeLand, -dir, X.knightKick);
-            if (ts != null && IsEnemy(ts) && Flat(target.Hips.position - EdgeLand).magnitude <= 1.9f)
+            // R649: near the landing or near the knight itself (it can come down a little off the mark).
+            float near = target != null
+                ? Mathf.Min(Flat(target.Hips.position - EdgeLand).magnitude, Flat(target.Hips.position - Pawn.Hips.position).magnitude) : 99f;
+            if (ts != null && IsEnemy(ts) && ts.Fighter.Alive && near <= KnightKickReach)
             {
-                // Back toward the cliff where the knight stood.
-                Vector3 back = Flat(flipFrom - target.Hips.position);
-                back = back.sqrMagnitude > 1e-4f ? back.normalized : -dir;
-                Hit(ts, back, X.knightKick, "벼랑 끝 역전 뒷발차기", SfFxKind.KnightKickHit, 0, 1.6f);
+                // Straight out over the lip the knight sprang from (R649: it was toward the spot it sprang from, which an
+                // enemy that had moved sideways took at a slant, along the edge, and stayed on), and far enough to clear it:
+                // the kick that lands puts the enemy out.
+                Vector3 outward = Flat(EdgeOut);
+                outward = outward.sqrMagnitude > 1e-4f ? outward.normalized : -dir;
+                float toLip = Mathf.Max(0f, Vector3.Dot(Flat(EdgeAt - target.Hips.position), outward));
+                float metres = Mathf.Clamp(toLip + KnightKickPast, X.knightKick, KnightKickMost);
+                Hit(ts, outward, metres, "벼랑 끝 역전 뒷발차기", SfFxKind.KnightKickHit, 0, 1.6f);
             }
-            else Say($"{Pawn.DisplayName}: 뒷발차기 — 적이 없음");
+            else Say($"{Pawn.DisplayName}: 뒷발차기 — 적이 없음 ({near:0.0} m)");
+        }
+
+        /// <summary>R649: the share of the flight in which the way and the landing follow the enemy.</summary>
+        const float KnightTrackUntil = 0.85f;
+        /// <summary>R649: how fast they follow it (m/s; a sprint is about 9.6).</summary>
+        const float KnightTrackSpeed = 11f;
+        /// <summary>R649: how far from the landing (or the knight) the kick still finds the enemy (was 1.9 m from the
+        /// landing only).</summary>
+        const float KnightKickReach = 2.3f;
+        /// <summary>R649: the kick sends the enemy this far past the lip (m), at least <see cref="SwordFightEdgeParams.knightKick"/>,
+        /// at most <see cref="KnightKickMost"/>.</summary>
+        const float KnightKickPast = 2f;
+        const float KnightKickMost = 8f;
+
+        /// <summary>R649: in the flight, the way over (its top over the enemy) and the landing behind it move toward where
+        /// the enemy is now, at most <see cref="KnightTrackSpeed"/>.</summary>
+        void KnightTracks(SwordFightEdgeFloor floor, float dt)
+        {
+            var target = EdgeTarget;
+            var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
+            if (floor == null || ts == null || !ts.Fighter.Alive || !floor.OnFloor(target.Hips.position)) return;
+            float step = KnightTrackSpeed * dt;
+            Vector3 over = target.Hips.position;
+            over.y = flipOver.y;
+            flipOver = Vector3.MoveTowards(flipOver, over, step);
+            EdgeLand = Vector3.MoveTowards(EdgeLand, KnightLanding(floor, target, flipFrom), step);
         }
 
         // ---------------------------------------------------------------- the sword while it runs
