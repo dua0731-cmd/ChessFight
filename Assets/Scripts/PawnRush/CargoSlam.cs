@@ -35,6 +35,9 @@ namespace ChessFight.PawnRush
         [SerializeField] bool shuffled = true;
         [Tooltip("Hashed, the next place is at most this far from the last (m; 0: any place)")]
         [SerializeField] float maxStep;
+        [Tooltip("Lowered on its chains and set down (R661, the heavy berth), not let go to drop: the chains stay on, the "
+                 + "descent eases in and lands at 1.5 times its mean speed")]
+        [SerializeField] bool lowered;
         [SerializeField] int seed = 626;
         [Header("Timing (s)")]
         [SerializeField] float carrySeconds = 1.8f;
@@ -81,6 +84,7 @@ namespace ChessFight.PawnRush
         public float ShockLift => shockLift;
         public float ShockKnockdown => shockKnockdown;
         public float GroundTolerance => groundTolerance;
+        public bool Lowered => lowered;
         public float CrushPush => crushPush;
         public Transform Course => course;
         public SlamChest Chest => chest;
@@ -116,6 +120,9 @@ namespace ChessFight.PawnRush
 
         // Hashed places at most `metres` apart from one trip to the next (before it is switched on).
         public void LimitStep(float metres) => maxStep = Mathf.Max(0f, metres);
+
+        // R661: the chest is lowered on its chains and set down with a thud instead of dropped (before it is switched on).
+        public void LowerOnChains() => lowered = true;
 
         void Build()
         {

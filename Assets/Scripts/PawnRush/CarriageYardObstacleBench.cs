@@ -18,6 +18,7 @@ namespace ChessFight.PawnRush
     //   z 122..160   cargo ramp up to y 5, down again beyond
     //   z 168..179   lifting waterwheel up to the y 8 platform
     //   z 179..210   the push gate on the platform, the finish behind it
+    // and two more rows of bays beside them: R659's west of these (x -52), R661's east of them (x 52).
     public sealed class CarriageYardObstacleBench : MonoBehaviour
     {
         Transform root;
@@ -149,6 +150,7 @@ namespace ChessFight.PawnRush
             cb.Trigger<FinishZone>("Finish", new Vector3(-10f, 8f, 204f), new Vector3(10f, 11f, 210f)).Configure(true);
 
             R659Bays(s);
+            R661Bays(s);
         }
 
         // R659's new obstacles, one bay each in a second row west of the first (T drops the pawn where the camera looks):
@@ -173,6 +175,27 @@ namespace ChessFight.PawnRush
                            6.5f, .35f, 4f, 2f, 1.3f, 6f, s);
             // A crate to stand on inside the circles: up on it, the wave passes under.
             YardKit.Box(s, "Perch crate", new Vector3(x - 4.5f, .35f, 70f), new Vector3(1.4f, .7f, 1.4f), YardKit.WoodLight, Solid.Solid);
+        }
+
+        // R661's sorting yard obstacles, one bay each in a third row east of the first:
+        //   z 2..12    the conveyor: loads out of one end and into the other, hop over it through a gap between them
+        //   z 16..28   a storage row whose crane moves its gap (through the green gap; red: a stack is swinging in)
+        //   z 38..62   the heavy berth: the chest lowered on its chains and set down, its wave as it lands (jump it)
+        void R661Bays(Transform s)
+        {
+            const float x = 52f;
+            YardKit.Floor(s, "Floor R661", x - 20f, x + 20f, -6f, 80f, 0f);
+            Sign(s, "컨베이어 (짐 사이로 건너기)", new Vector3(x, 3.6f, 3f));
+            Place<CargoConveyor>(s, "Conveyor", new Vector3(x, 0f, 8f)).Configure(20f, 1.6f, .45f, 3.6f, 5, 6f, 2.6f, 661, 4.5f, s);
+            Sign(s, "짐더미 줄 (초록 빈칸으로, 빨강은 짐이 들어옴)", new Vector3(x, 4.2f, 15.5f));
+            Place<StackRow>(s, "Storage row", new Vector3(x, 0f, 22f))
+                .Configure(4, 2.2f, new Vector3(2f, 2.4f, 1.8f), 10.5f, 11f, 6.5f, 1.1f, .3f, .7f, .3f, .25f, .8f, 4.5f, 0f, s);
+            Sign(s, "하역장 궤짝 (내려놓을 때 충격파: 점프)", new Vector3(x, 4.6f, 37f));
+            var berth = Place<CargoSlam>(s, "Heavy berth gantry", new Vector3(x, 0f, 50f));
+            berth.LimitStep(12.01f);
+            berth.LowerOnChains();
+            berth.Configure(18.5f, 0f, 9f, new Vector3(3.2f, 2.4f, 2.4f), 3.6f, new[] { -6f, 0f, 6f }, true, 6612, 2.4f, 1f, 1.1f, 4.5f, 1.4f,
+                            5.5f, .35f, 4f, 2f, 1.3f, 6f, s);
         }
     }
 }

@@ -16,9 +16,10 @@ namespace ChessFight.PawnRush
     //                                                 through one giant waterwheel (a round frame and six spokes) -
     //                                                 jump and dive through a hole between two spokes
     //   3  Loading and sorting yard       z 82..126   (R659, the whole 52 m: the cargo ramps and the R532 loading yard
-    //                                                 between them are gone) four crane lines dropping crates
-    //                                                 anywhere, two giant chests slammed down whose shockwave
-    //                                                 knocks down whoever is on the floor in its circle, sorting stalls
+    //                                                 between them are gone; R661 a flow of cargo) a conveyor across
+    //                                                 the yard to hop over between its loads, three storage rows whose
+    //                                                 cranes keep moving the one gap in each half, the heavy berth
+    //                                                 where a giant chest is set down with a shockwave, sorting stalls
     //                                                 along the walls; then the lifting waterwheel up the waterfall, as
     //                                                 it always was (hold right click), barges and sluices beside it
     //   4  The final gate                 z 126..162  the wheel's landing on the platform (y 8); the gate is pushed
@@ -29,9 +30,10 @@ namespace ChessFight.PawnRush
     //
     // Built from code when the prefab is placed (Awake), like the map test's calibration yard, so the prefab itself is
     // this one component and the numbers below are its Inspector. Every obstacle is its own reusable component
-    // (CarriageFleet/RoamingCarriage, HorizontalWaterwheel, StableCharger, CraneDrop/CraneCrate, CargoSlam/SlamChest,
-    // VerticalWaterwheel, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre way's carousel until
-    // R532 - CargoChute/RollingCargo - the ramps' cargo until R659 - and TiltingWoodenBridge are not on this map's route)
+    // (CarriageFleet/RoamingCarriage, HorizontalWaterwheel, StableCharger, CargoConveyor/ConveyorCrate, StackRow/StackCrate,
+    // CargoSlam/SlamChest, VerticalWaterwheel, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre
+    // way's carousel until R532 - CargoChute/RollingCargo - the ramps' cargo until R659 - CraneDrop/CraneCrate - the crane
+    // lines until R661 - and TiltingWoodenBridge are not on this map's route)
     // with its own Inspector
     // during Play. Moving parts run on ObstacleClock (absolute rule 7); a match hands the map its start and seed with
     // StartAt. The final gate is state-driven and judged by the host. Layout and the reasons for the numbers:
@@ -120,27 +122,32 @@ namespace ChessFight.PawnRush
             public float knockdownSeconds = 1f;
         }
 
-        // Zone 2, the royal loading and sorting yard (R659, the user's "짐을 옮기고 정리하며 크레인으로 해당 작업들을 진행하는
-        // 듯한 공간", the cargo ramps gone and the yard the whole 52 m; was R532's loading yard between the ramps): four crane
-        // lines dropping crates anywhere across it in a ripple, two gantries slamming giant chests in turn whose shockwave
-        // knocks down whoever is on the floor inside their red circles, sorting docks to stand on as it passes.
+        // Zone 2, the royal loading and sorting yard (R661, rebuilt as a flow of cargo; the user: "플레이어들을 확실히 방해할
+        // 수 있을만한 동선과 장애물 형태"): a conveyor across the yard, three storage rows whose cranes keep moving their gaps,
+        // the heavy berth where a giant chest is set down with a shockwave (RoyalCarriageYard.SortingYard.cs).
         [Serializable]
         public sealed class SortingYardSettings
         {
-            [Tooltip("Seconds of one crane hook's trip: carry, hold still, drop, sit on the floor")]
-            public float cranePeriod = 3f;
-            [Tooltip("Height of a hanging crate's underside (m): how far it drops")]
-            public float dropHeight = 5f;
-            [Tooltip("Edge of a crate (m)")]
-            public float crateSize = 1.4f;
-            [Tooltip("Push of a falling crate's hit (m/s), straight out from under it")]
-            public float crateKnockback = 5f;
-            [Tooltip("How far a giant chest's shockwave runs from its centre (m): its red circle")]
-            public float slamRadius = 7f;
-            [Tooltip("Seconds a giant chest is carried to its place (circle dim), held over it and falls (circle bright), sits and "
-                     + "is hoisted: a trip of 5.2 s, the two gantries half a trip apart, so a chest comes down every 2.6 s")]
-            public float slamCarry = 1.3f, slamHold = 1.3f, slamFall = .55f, slamSit = .9f, slamHoist = 1.15f;
-            [Tooltip("Push straight out from the chest (m/s) and how long the shockwave keeps them down (s)")]
+            [Tooltip("Speed of the conveyor's belt and its loads (m/s): whoever stands on the belt is carried along at it")]
+            public float conveyorSpeed = 3.6f;
+            [Tooltip("Loads round the conveyor's loop (single crates and two-high stacks, 45 % stacks; 2.6 m apart or more)")]
+            public int conveyorLoads = 11;
+            [Tooltip("Push of a load running into a pawn on the belt (m/s), off the belt")]
+            public float conveyorKnockback = 4.5f;
+            [Tooltip("Seconds each storage row's gap stands open before the next stack is lifted, row by row (each crane its "
+                     + "own pace, so the rows' gaps never stay lined up)")]
+            public float[] rowOpen = { 1.1f, 1.4f, .9f };
+            [Tooltip("Seconds a stack is carried one slot over into the gap (0.7: it swings in at up to 4.7 m/s, after the gap "
+                     + "has flashed red for 0.8 s and the stack has been lifted)")]
+            public float rowCarry = .7f;
+            [Tooltip("Push of a stack swinging into a pawn in the gap (m/s), out of the row")]
+            public float rowKnockback = 4.5f;
+            [Tooltip("How far the heavy chest's wave runs from its centre (m): its red circle (CP3 stays outside it)")]
+            public float slamRadius = 5.5f;
+            [Tooltip("Seconds the heavy chest is carried to its berth (circle dim), held over it and lowered on its chains "
+                     + "(circle bright), sits there and is hoisted: a trip of 10.4 s")]
+            public float slamCarry = 2.4f, slamHold = 1f, slamFall = 1.1f, slamSit = 4.5f, slamHoist = 1.4f;
+            [Tooltip("Push straight out from the chest (m/s) and how long the wave keeps them down (s)")]
             public float shockPush = 4f, shockKnockdown = 1.3f;
         }
 
@@ -164,7 +171,7 @@ namespace ChessFight.PawnRush
         [SerializeField] RoamingSettings roaming = new RoamingSettings();
         [Header("2. Canal: the giant waterwheel")]
         [SerializeField] CrossingSettings crossing = new CrossingSettings();
-        [Header("3. Loading and sorting yard: cranes, giant chests, carts")]
+        [Header("3. Loading and sorting yard: the conveyor, the storage rows, the heavy berth")]
         [SerializeField] SortingYardSettings sorting = new SortingYardSettings();
         [Header("3. The lifting waterwheel")]
         [SerializeField] LiftSettings lift = new LiftSettings();
@@ -236,8 +243,9 @@ namespace ChessFight.PawnRush
             if (asSection) StartAt(section.StartClock + gates.startDelay, section.Seed);
         }
 
-        // As a section (R508), in the map's frame: the one way for the HUD and the validator (the left walkway, straight up
-        // the sorting yard's boardwalk and the middle lifting wheel - R659, the cargo ramps gone - the gate, the boundary),
+        // As a section (R508), in the map's frame: the one way for the HUD and the validator (the left walkway, up the
+        // middle of the sorting yard - R661, the real way zigzags through the rows' moving gaps - and the middle lifting
+        // wheel - R659, the cargo ramps gone - the gate, the boundary),
         // the walkways' break at the wheel (a sprint jump and a dive: meant), the lifting wheel's ride over its pool (meant),
         // and the section's own description.
         void SectionParts()

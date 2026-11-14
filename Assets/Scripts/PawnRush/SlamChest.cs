@@ -22,7 +22,8 @@ namespace ChessFight.PawnRush
     // the host: YardKit.Movable), once per character per slam, in FixedUpdate (not a physics callback: a hit lets go of
     // what the hands hold, HANDOFF absolute rule 14). Under the chest itself only its falling underside hits, as a
     // crane's crate does (YardImpact, judged by the part it touches), and the knocked-down are let through the chest
-    // until it is hoisted, so nobody is left under it.
+    // until it is hoisted, so nobody is left under it. On the heavy berth (R661, CargoSlam.Lowered) the chest is never let
+    // go: the chains stay on it as the winch lowers it, and it is set down hard, sits a long while and is taken on.
     public sealed class SlamChest : Obstacle
     {
         public enum Stage { Carried, Held, Falling, Down, Hoisted }
@@ -230,9 +231,10 @@ namespace ChessFight.PawnRush
             into -= hold;
             if (into < fall)
             {
-                // Falling from rest at a steady pull that lands it at the end of the fall.
+                // Falling from rest at a steady pull that lands it at the end of the fall; lowered on its chains (R661), the
+                // winch lets it run out easing in and it lands at 1.5 times its mean speed - set down hard, not dropped.
                 float u = into / fall;
-                y = hang - (hang - rest) * u * u;
+                y = hang - (hang - rest) * (slam.Lowered ? (3f - u) * u * u * .5f : u * u);
                 return Stage.Falling;
             }
             into -= fall;
@@ -364,7 +366,8 @@ namespace ChessFight.PawnRush
             Trip(now, out double trip, out float into);
             var size = slam.ChestSize;
             // While it hangs, from where the chest is drawn (its body is interpolated a physics step behind the clock).
-            if (stage != Stage.Falling)
+            bool hooked = stage != Stage.Falling || slam.Lowered;
+            if (hooked)
             {
                 var drawn = slam.transform.InverseTransformPoint(transform.position);
                 x = drawn.x;
@@ -374,7 +377,6 @@ namespace ChessFight.PawnRush
             trolley.localPosition = new Vector3(x, beam - .35f, 0f);
             // Chains from the trolley's drum to the lid's corners while it hangs or is hooked; let go, they hang short.
             float top = y + size.y * .5f, from = beam - .8f;
-            bool hooked = stage != Stage.Falling;
             for (int i = 0; i < chains.Length; i++)
             {
                 float cx = (i % 2 == 0 ? -1f : 1f) * size.x * .35f, cz = (i < 2 ? -1f : 1f) * size.z * .35f;

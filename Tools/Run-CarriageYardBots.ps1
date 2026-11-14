@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Copy = 'C:\유니티\ChessFight_TestCopy',
     [string]$UnityEditor = 'C:/Program Files/Unity/Hub/Editor/6000.3.11f1/Editor',
     [int]$Runs = 4,

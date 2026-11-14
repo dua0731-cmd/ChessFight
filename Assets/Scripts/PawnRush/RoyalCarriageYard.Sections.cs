@@ -291,8 +291,8 @@ namespace ChessFight.PawnRush
             foreach (float side in new[] { -1f, 1f })
                 BasinDock(s, side);
 
-            // The whole yard's width, so nobody reaches the basin without it: on the apron 0.7 m past the second giant
-            // chest's circle, its respawn spots in front of the wheel.
+            // The whole yard's width, so nobody reaches the basin without it: on the apron 0.6 m past the heavy chest's
+            // circle (R661), its respawn spots in front of the wheel.
             Checkpoint(s, 3, new Vector3(0f, 0f, ApronZ), SortHalf * 2f);
             // The handles pass just out of a standing pawn's reach: it jumps for one.
             Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 138.2f), 1.1f);
