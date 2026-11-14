@@ -60,6 +60,8 @@ namespace ChessFight.Game
             hud = gameObject.AddComponent<NetworkHudView>();
             hud.Build(config.HudLayout, config.HudTheme, config.HudPanelSettings, config.HudReferenceResolution);
             WireHud();
+            // R651: the lobby's music (LobbyMusic), ended with this scene.
+            gameObject.AddComponent<LobbyMusic>();
 
             gate = () => false;
             runtime.MovementGate = gate;

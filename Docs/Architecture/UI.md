@@ -727,3 +727,15 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 확정 가능할 때만 표시, 클릭·Space/Enter·더블클릭의 `ConfirmPiece` 경로는 그대로다. Core 192·모의 세션 81·전체 Unity DLL 외부 컴파일 통과. 사용자가 SwordFight를 Play 중이므로 재생·씬을 바꾸지 않았다. 다음 기물 선택 화면에서 사용자 시각·입력 확인이 필요하다. 커밋·푸시하지 않는다.
 
 > R630(2026-11-13): 사용자 요청으로 이 채팅의 R626~R629 변경과 관련 문서를 main 커밋·푸시 대상으로 전환했다. 경량화 작업은 제외하며, 사용자 실기 확인은 여전히 대기다.
+
+## 로비 음악 (R651, 2026-11-14)
+
+| 항목 | 내용 |
+|---|---|
+| 곡 | 사용자가 ElevenLabs Music v2.5로 만든 폰러시 메인 BGM용 테이크(120 BPM · G단조 · 48 kHz 스테레오 · 164초). 사용자 "폰러시보단 로비 BGM으로 쓰면 딱일 것 같아". 원본 `ArtSource/Lobby/Music/raw/LobbyBGM_2026-11-14.wav`(R652에 사용자가 준 `로비BGM.wav`, 처음 받은 `Castle_Pawns_Dash`와 같은 곡이 약 1 ms 앞) |
+| 자르기 | `ArtSource/Lobby/Music/bake.py`(numpy만, Blender 파이썬으로 실행). `Resources/Lobby/Music/LobbyMusic.wav` = 0 ~ 28.018초(한 번), `LobbyMusicLoop.wav` = 그 뒤 96초(48마디, 124.018초까지, 반복). 116 ~ 124초가 20 ~ 28초와 같은 음악이라(앞 네 마디 유사도 0.92 ~ 0.95) 끝이 시작으로 이어진다. 드럼 타격을 맞춰 끝을 6.02 ms 당기고, 다운비트 타격 3 ms 앞에서 자르고, 루프 끝 15 ms를 시작 바로 앞 15 ms로 페이드한다. 두 클립을 함께 −1 dBFS로 맞춤 |
+| 재생 | `Game/LobbyMusic.cs`, `LobbyBootstrap`이 로비 씬에 붙여 씬과 함께 끝난다. 처음 클립을 오디오 시계 0.1초 뒤에 걸고 루프 클립을 그 끝(샘플 수 기준)에 건다(입장 화면 음악과 같은 방식). 1.5초 페이드 인 |
+| 줄어드는 때 | 입장 화면의 자체 음악(폰 러시 대결 장면 · 코스 공개 `RevealMusic`, 소드 파이트 `SwordMusic`)이 시작되면 `LoadingScreenView.MusicPlaying`이 켜지고 0.6초에 0, 그 화면이 사라지면 꺼진다(로비가 남아 있으면 다시 커짐). 성문 입장 · 매칭 대기 화면에서는 계속 나온다 |
+| 크기 | `GameSettings.Music` × 0.5014(bake.py가 출력하는 `LOBBY_GAIN`): 기본 음악 크기 0.7에서 RMS −26 dBFS, 소드 파이트 입장 음악(−26.8) 근처 |
+| 가져오기 | 압축해 메모리에 둠(Vorbis 0.8), 48 kHz 그대로, 2D |
+| 다른 곡으로 | 새 테이크를 `raw/`에 넣고 bake.py의 `RAW`·`START`·`END`를 고쳐 다시 굽고, 출력된 `LOBBY_GAIN`을 `LobbyMusic.Gain`에 넣는다. 이음새는 마디 경계 둘을 골라 앞뒤 두 마디가 얼마나 닮았는지로 정했다(경기 음악의 `ArtSource/PawnRush/Music/bake.py --try`가 같은 측정) |

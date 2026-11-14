@@ -309,3 +309,7 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 ## 43. MonoBehaviour 필드 초기화에서 `new MaterialPropertyBlock()` 금지 (R506)
 
 `readonly MaterialPropertyBlock b = new MaterialPropertyBlock();`처럼 필드에서 만들면 Unity가 "CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer)"를 내고 b가 null로 남는다. 그 뒤 필드 초기화(배열 등)도 함께 실패해 Update가 매 프레임 예외로 멈추고, 화면에는 "아무 일도 안 일어남"으로만 보인다. Awake/Update에서 처음 쓸 때 만든다. 증상이 안 보이면 먼저 Editor.log를 본다.
+
+## R652 세션이 갑자기 끝난 뒤 직전에 쓴 파일이 0으로 채워져 있다
+
+11-14 22:50에 `git checkout`으로 되살린 `Tests/Network/FakeSteam.cs`는 시험을 통과했는데, 앱 세션이 다시 시작된 뒤 같은 크기(19,362바이트)에 내용이 전부 0x00이 되어 있었다(수정 시각은 그대로). 디스크에 다 쓰기 전에 꺼진 것으로 보인다. git에는 "수정됨"으로만 보이고 컴파일러는 `CS1056 Unexpected character`를 낸다. 세션이 끊긴 뒤에는 그 전후로 쓴 파일을 `tr -d '\000' < 파일 | wc -c`(0이 아닌 바이트 수)로 훑어 0으로 찬 파일을 찾고, 커밋이나 원본에서 다시 꺼낸다. `git fsck`는 저장소 쪽만 본다.

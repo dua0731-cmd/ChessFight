@@ -46,7 +46,11 @@ namespace ChessFight.RagdollLab
         /// <summary>How loud each sound is next to the others (1 = the matched level). Times the settings' effects volume.</summary>
         static readonly Dictionary<string, float> Level = new Dictionary<string, float>
         {
-            { "CourseDive", .41f }, { "CourseGrab", .32f },
+            // R652: the movement moments (ArtSource/PawnRush/Sfx/bake_moves.py), set under the skills: after Prepare the
+            // pawn's dash plays at -22 dB and the hits at -15 to -17 (50 ms loudness); the dive at -21, the grab -23,
+            // the jump -24, a landing on the feet -23 (quieter for a small drop), a flop -19.
+            { "CourseDive", 0.41f }, { "CourseGrab", 0.32f }, { "CourseJump", 0.41f },
+            { "CourseLandLight", 0.33f }, { "CourseLandFlop", 0.53f },
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
             { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
             { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
@@ -144,8 +148,17 @@ namespace ChessFight.RagdollLab
         {
             switch (e.kind)
             {
+                // R652: movement, one per pawn even when two pawns do the same thing in one frame (each keeps its own
+                // place on screen), a little off pitch each time so twelve pawns' jumps are not one machine.
                 case SkillFxKind.CourseDive: Play("CourseDive", e.at, Wobble(), groupHits: false); break;
                 case SkillFxKind.CourseGrab: Play("CourseGrab", e.at, Wobble(), groupHits: false); break;
+                case SkillFxKind.CourseJump: Play("CourseJump", e.at, Wobble() + (e.count == 1 ? 1f : 0f), e.count == 1 ? .8f : 1f, false); break;
+                case SkillFxKind.CourseLand:
+                    if (e.count == 1)
+                        Play("CourseLandFlop", e.at, Wobble(), Mathf.Lerp(.7f, 1f, Mathf.InverseLerp(1f, 7f, e.size)), false);
+                    else
+                        Play("CourseLandLight", e.at, Wobble(), Mathf.Lerp(.6f, 1f, Mathf.InverseLerp(2.2f, 6f, e.size)), false);
+                    break;
                 case SkillFxKind.PawnStep: Play("PawnDash", e.at, e.count >= 2 ? 3f : 0f); break;
                 // Straight shove and diagonal knock-over: the same bump, the knock-over lower and heavier.
                 case SkillFxKind.PawnHit: Play("PawnBump", e.at, e.count == 1 ? -3f : 0f, e.count == 1 ? 1.1f : 1f); break;
@@ -341,12 +354,14 @@ namespace ChessFight.RagdollLab
         void PlayLater(float delay, string name, Vector3 at, float semitones = 0f, float level = 1f)
             => later.Add(new Later { at = Time.unscaledTime + delay, name = name, where = at, semitones = semitones, level = level });
 
+        /// <summary>R652: up to a third of a semitone either way, for the movement sounds.</summary>
         static float Wobble() => UnityEngine.Random.Range(-.35f, .35f);
 
         AudioSource Play(string name, Vector3 at, float semitones = 0f, float level = 1f, bool groupHits = true)
         {
             if (!sound || !sounds.TryGetValue(name, out var s)) return null;
-            // Group simultaneous skill hits. Separate movement cues keep each pawn's distance and pan.
+            // The same sound twice in one frame (two pieces hit at once) plays once. Not the movement sounds (R652):
+            // each pawn's keeps its own distance and pan.
             if (groupHits)
             {
                 string key = name + semitones;

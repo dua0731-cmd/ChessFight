@@ -229,6 +229,7 @@ namespace ChessFight.Game
             if (!swordBedOn)
             {
                 swordBedOn = true;
+                MusicStarts();
                 if (swordMusicHolder == null)
                 {
                     swordMusicHolder = new GameObject("Sword Fight music");

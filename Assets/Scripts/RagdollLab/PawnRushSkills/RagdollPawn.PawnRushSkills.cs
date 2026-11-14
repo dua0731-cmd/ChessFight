@@ -34,8 +34,11 @@ namespace ChessFight.RagdollLab
         // 10-26: the bishop's X rope (RagdollPawn.BishopLasso.cs): thrown; round a piece's waist (size: its length); let go
         // (count 1: a taut rope threw the piece; size: how far it was stretched); snapped; come back empty.
         BishopRopeThrow, BishopRopeHook, BishopRopeRelease, BishopRopeSnap, BishopRopeMiss,
-        // Course movement cues share the host's timed effect stream.
-        CourseDive, CourseGrab,
+        // R652: Pawn Rush movement moments, sent on the host's timed effect stream like the skills' so every PC hears
+        // them where it sees them (RagdollPawn.CourseSounds.cs): the dive; a hand taking hold (a pawn, a thing, a wall,
+        // a rope); a jump off the floor (count 1: a vault off a ledge); a landing (count 0 on the feet, 1 a flop on
+        // the body; size: how fast it came down, m/s). A PC that does not know a kind skips it.
+        CourseDive, CourseGrab, CourseJump, CourseLand,
     }
 
     public struct SkillFxEvent

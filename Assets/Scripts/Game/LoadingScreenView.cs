@@ -101,9 +101,26 @@ namespace ChessFight.Game
         // sits on the match underneath (the skill card) waits until it is gone.
         public static bool Showing => open > 0;
         static int open;
+        // R651: true from the moment an entrance screen's own music starts (the course reveal's, Sword Fight's) until
+        // that screen is gone: the lobby music (LobbyMusic) gives way to it.
+        public static bool MusicPlaying => musicScreens > 0;
+        static int musicScreens;
+        bool musicCounted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetOpen() => open = 0;
+        static void ResetOpen()
+        {
+            open = 0;
+            musicScreens = 0;
+        }
+
+        // Where this screen's music starts (SyncRevealMusic, SyncSwordBed): counted once per screen.
+        void MusicStarts()
+        {
+            if (musicCounted) return;
+            musicCounted = true;
+            musicScreens++;
+        }
 
         void Awake() => open++;
         // "매칭 취소" clicked while matching (R64: not Esc, which is the settings window).
@@ -638,6 +655,7 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             open = Mathf.Max(0, open - 1);
+            if (musicCounted) musicScreens = Mathf.Max(0, musicScreens - 1);
             studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);

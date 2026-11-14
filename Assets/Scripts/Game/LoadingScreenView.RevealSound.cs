@@ -201,6 +201,7 @@ namespace ChessFight.Game
             if (!musicStarted)
             {
                 musicStarted = true;
+                MusicStarts();
                 if (musicIntro == null) musicIntro = MusicSource(false);
                 if (musicLoop == null) musicLoop = MusicSource(true);
                 double at = now + MusicLead;

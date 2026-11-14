@@ -742,6 +742,7 @@ namespace ChessFight.RagdollLab
             SenseWater(p);
             coyote = Grounded ? 0.12f : coyote - dt;
             GuardJumpRise(dt);
+            SenseLanding(dt);   // R652: Pawn Rush only, the landing sound's moment (RagdollPawn.CourseSounds.cs)
 
             UpdateState(p, dt);
             UpdateStiffness(p, dt);
@@ -770,8 +771,7 @@ namespace ChessFight.RagdollLab
                             && hookPhase != HookPhase.Pulling && rope == null && !handsFull;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
-            if (PawnRushPhysics != null && !heldOn && (Grabbing || Climbing || OnRope))
-                Fx(SkillFxKind.CourseGrab, null, Hips.position, facing);
+            SoundGrab(heldOn);   // R652: once when a hand takes hold, both hands at once included
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
             if (Climbing) ApplyClimbPose(p);
@@ -1050,7 +1050,7 @@ namespace ChessFight.RagdollLab
             diveDirection = dir;
             UseStamina(p, p.diveStamina);
             GoLimp(true);
-            if (q != null) Fx(SkillFxKind.CourseDive, null, Hips.position, dir);
+            if (q != null) Fx(SkillFxKind.CourseDive, null, bodies[0].position, dir);   // R652: the dive's sound
         }
 
         /// <summary>
@@ -1483,6 +1483,7 @@ namespace ChessFight.RagdollLab
             // A jump off the ground climbs the same however fast the pawn was going (GuardJumpRise).
             riseVel = ComVelocity().y;
             riseBudget = fromGround ? (exact ? RiseBudget * 2f : RiseBudget) : 0f;
+            SoundJump(pullUp);   // R652: the jump's sound (RagdollPawn.CourseSounds.cs)
         }
 
         const float RiseTolerance = 0.05f;   // m/s a step: the guard ignores model error below this
