@@ -488,6 +488,34 @@ namespace ChessFight.Game
             return filter;
         }
 
+        static VisualElement BuildMatchAnnouncement(VisualElement parent, string mode, float top, float size, bool compact = false,
+                                                    string headlineText = "상대를 찾았습니다", string subtitleText = "곧 대결이 시작됩니다")
+        {
+            var header = RBox(parent, 0f, top, StageWide, compact ? 88f : 104f);
+            header.name = "match-announcement";
+            var modeLabel = RLabel(header, mode, 15f, Brass, false);
+            RPlace(modeLabel, StageWide / 2f - 120f, 0f, 240f, 20f);
+
+            var headline = RLabel(header, headlineText, size, Ivory, true);
+            headline.name = "match-announcement-title";
+            RPlace(headline, 40f, compact ? 20f : 24f, StageWide - 80f, compact ? 44f : 52f);
+            headline.style.textShadow = new TextShadow { offset = new Vector2(0f, 2f), blurRadius = 8f, color = new Color(0f, 0f, 0f, .6f) };
+            if (!string.IsNullOrEmpty(subtitleText))
+            {
+                var subtitle = RLabel(header, subtitleText, compact ? 16f : 18f, Ivory, false);
+                subtitle.name = "match-announcement-subtitle";
+                RPlace(subtitle, 40f, compact ? 64f : 78f, StageWide - 80f, compact ? 22f : 26f);
+                subtitle.style.opacity = .8f;
+            }
+            return header;
+        }
+
+        static void SyncMatchAnnouncement(VisualElement header, float age)
+        {
+            header.style.opacity = Ph(age, 0f, .28f);
+            header.style.translate = new Translate(0f, 14f * (1f - Eo3(Ph(age, 0f, .32f))));
+        }
+
         // ---- building blocks (sample pixels) ----
 
         static VisualElement RBox(VisualElement parent, float x, float y, float w, float h)

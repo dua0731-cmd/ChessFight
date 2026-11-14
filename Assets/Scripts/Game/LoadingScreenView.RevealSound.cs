@@ -111,8 +111,15 @@ namespace ChessFight.Game
             float backLands = 1f - BackPull / (BackPull + 1f);
             Add("RevealOpen", 0f, LeadSharp, .8f);
             Add("RevealTitle", VTitleAt + VPlateSlide * backLands, LeadTitle, .55f, StagePan(200f));
+            // R632: one slam per pair of panels landing together (white's k-th and black's k-th), from between them
+            var pairs = new Dictionary<int, (float at, float x, int n)>();
             foreach (var s in versusStrips)
-                Add("RevealSlam", s.At + StripDrop, LeadSlam, .32f, StagePan(s.X + s.W / 2f));
+            {
+                pairs.TryGetValue(s.Order, out var pr);
+                pairs[s.Order] = (s.At, pr.x + s.X + s.W / 2f, pr.n + 1);
+            }
+            foreach (var pr in pairs.Values)
+                Add("RevealSlam", pr.at + StripDrop, LeadSlam, pr.n > 1 ? .4f : .32f, StagePan(pr.x / pr.n));
             foreach (var s in versusStrips)
                 if (s.Me) Add("RevealDot", MeAt, LeadSharp, .5f, StagePan(s.X + s.W / 2f), 1f, true);
             // the VS panel lands: the bolt and the steel clunk together (VsAt = BladeAt + BladeDrop)
@@ -217,9 +224,9 @@ namespace ChessFight.Game
             musicIntro.volume = musicLoop.volume = GameSettings.Music * MusicGain * fade;
         }
 
-        AudioSource MusicSource(bool loop)
+        AudioSource MusicSource(bool loop, GameObject on = null)
         {
-            var a = gameObject.AddComponent<AudioSource>();
+            var a = (on != null ? on : gameObject).AddComponent<AudioSource>();
             a.playOnAwake = false;
             a.loop = loop;
             a.spatialBlend = 0f;
@@ -250,12 +257,16 @@ namespace ChessFight.Game
         }
 
         // Starts `cue` at DSP time `at` (0: now, `from` seconds into it).
-        void Voice(RevealCue cue, float from, double at)
+        void Voice(RevealCue cue, float from, double at) => VoiceOn(ref revealVoices, ref revealVoiceFree, cue, from, at);
+
+        // R631: the same on a set of voices of its own (Sword Fight's entrance screen keeps its own, so stopping one
+        // screen's sound never cuts the other's).
+        void VoiceOn(ref AudioSource[] voices, ref double[] free, RevealCue cue, float from, double at)
         {
-            if (revealVoices == null)
+            if (voices == null)
             {
-                revealVoices = new AudioSource[RevealVoices];
-                revealVoiceFree = new double[RevealVoices];
+                voices = new AudioSource[RevealVoices];
+                free = new double[RevealVoices];
                 for (int i = 0; i < RevealVoices; i++)
                 {
                     var a = gameObject.AddComponent<AudioSource>();
@@ -263,17 +274,17 @@ namespace ChessFight.Game
                     a.spatialBlend = 0f;
                     a.priority = 0;
                     a.dopplerLevel = 0f;
-                    revealVoices[i] = a;
+                    voices[i] = a;
                 }
             }
             double now = AudioSettings.dspTime;
             int pick = 0;
-            for (int i = 0; i < revealVoices.Length; i++)
+            for (int i = 0; i < voices.Length; i++)
             {
-                if (revealVoiceFree[i] <= now) { pick = i; break; }
-                if (revealVoiceFree[i] < revealVoiceFree[pick]) pick = i;
+                if (free[i] <= now) { pick = i; break; }
+                if (free[i] < free[pick]) pick = i;
             }
-            var voice = revealVoices[pick];
+            var voice = voices[pick];
             float into = from * cue.Pitch;
             if (into >= cue.Clip.length) return;
             voice.Stop();
@@ -284,7 +295,7 @@ namespace ChessFight.Game
             voice.time = into;
             if (at > 0d) voice.PlayScheduled(at);
             else voice.Play();
-            revealVoiceFree[pick] = (at > 0d ? at : now) + (cue.Clip.length - into) / cue.Pitch + .02;
+            free[pick] = (at > 0d ? at : now) + (cue.Clip.length - into) / cue.Pitch + .02;
         }
 
         // The audio clock now: AudioSettings.dspTime only moves once per mix buffer, so between moves it is carried on

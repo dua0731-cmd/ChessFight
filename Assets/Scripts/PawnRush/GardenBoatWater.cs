@@ -31,10 +31,7 @@ namespace ChessFight.PawnRush
         [SerializeField] float waterY = 3f;
 
         readonly Vector4[] hull = new Vector4[Max], axis = new Vector4[Max], info = new Vector4[Max];
-        Vector3[] last;
-        float[] lastDrop;
         GardenBoatRock[] rock;
-        bool primed;
 
         // For the builder: the boats (their roots, GardenBoat), the water's height (section frame).
         public void Configure(GardenBoat[] boats, float waterY)
@@ -46,18 +43,14 @@ namespace ChessFight.PawnRush
         void OnEnable()
         {
             int n = Mathf.Min(Reservoir, boats.Length);
-            last = new Vector3[n];
-            lastDrop = new float[n];
             rock = new GardenBoatRock[n];
             for (int i = 0; i < n; i++)
                 if (boats[i] != null) rock[i] = boats[i].GetComponent<GardenBoatRock>();
-            primed = false;
         }
 
         void LateUpdate()
         {
             int n = Mathf.Min(Reservoir, boats.Length);
-            float dt = Mathf.Max(Time.deltaTime, 1e-4f);
             float surface = transform.parent != null ? transform.parent.TransformPoint(0f, waterY, 0f).y : waterY;
             for (int i = 0; i < Max; i++)
                 hull[i] = axis[i] = info[i] = Vector4.zero;
@@ -67,15 +60,12 @@ namespace ChessFight.PawnRush
                 var t = boats[i].transform;
                 var p = t.position;
                 float drop = (float)RoyalWaterGardenRules.BoatDrop(boats[i].X);
-                var v = primed ? (p - last[i]) / dt : Vector3.zero;
+                // R633: the lane's own speed, steady on every PC (the step drawn from frame to frame was not, online)
+                var v = boats[i].LaneVelocity;
                 var flat = new Vector3(v.x, 0f, v.z);
                 float speed = flat.magnitude;
-                bool wrapped = speed > 30f;                   // it came round under the water to the other end
-                if (wrapped) { v = Vector3.zero; flat = Vector3.zero; speed = 0f; }
                 var along = t.rotation * Vector3.right;
                 var forward = speed > .05f ? flat / speed : new Vector3(along.x, 0f, along.z).normalized;
-                last[i] = p;
-                lastDrop[i] = drop;
                 // R482b (승규 "보트가 내려 갈 때는 상호 작용 안해도 돼"): a boat going down under its tunnel (or coming up) makes
                 // no waves, rings or splashes; only one riding the surface does.
                 if (drop > Hidden) continue;
@@ -95,7 +85,6 @@ namespace ChessFight.PawnRush
                 info[count] = new Vector4(0f, lake.RockRate, 0f, 0f);
                 count++;
             }
-            primed = true;
             Shader.SetGlobalVectorArray(HullId, hull);
             Shader.SetGlobalVectorArray(AxisId, axis);
             Shader.SetGlobalVectorArray(InfoId, info);

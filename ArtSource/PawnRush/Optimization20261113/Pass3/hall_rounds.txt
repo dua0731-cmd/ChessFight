@@ -1,0 +1,16 @@
+start/base min 26.0 med 28.3
+start/ssaoHalf min 24.5 med 25.5
+start/shadow2048 min 25.7 med 27.3
+start/dist30 min 26.3 med 26.6
+start/smallNoShadow min 26.0 med 26.2
+start/ssaoOff min 21.4 med 21.7
+start/pointsOff min 24.9 med 26.1
+start/noShadow min 23.3 med 24.6
+mid/base min 22.8 med 25.7
+mid/ssaoHalf min 20.8 med 21.9
+mid/shadow2048 min 22.4 med 23.9
+mid/dist30 min 22.7 med 26.6
+mid/smallNoShadow min 23.5 med 25.1
+mid/ssaoOff min 18.8 med 19.5
+mid/pointsOff min 21.5 med 23.1
+mid/noShadow min 20.7 med 21.1

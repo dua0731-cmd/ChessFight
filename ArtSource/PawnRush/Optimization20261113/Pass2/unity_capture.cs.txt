@@ -1,0 +1,36 @@
+
+var dir="C:/Users/kerri/.codex/visualizations/2026/11/13/01a1d3d3-711a-7b73-a105-b8cb92b698cf/course_mesh_pass2";
+var phase="before";
+var output=new System.Collections.Generic.List<object>();
+var prefabs=new[]{"Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab","Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab"};
+foreach(var prefab in prefabs){
+var p=new UnityEditor.PreviewRenderUtility();
+try{
+var root=p.InstantiatePrefabInScene(AssetDatabase.LoadAssetAtPath<GameObject>(prefab));
+var behavior=(Component)root.GetComponent<ChessFight.PawnRush.RoyalWaterGarden>()??(Component)root.GetComponent<ChessFight.PawnRush.GrandStairHall>();
+behavior.SendMessage("Awake");
+var renderers=root.GetComponentsInChildren<MeshRenderer>(true).Where(r=>r.enabled&&r.gameObject.activeInHierarchy&&!r.forceRenderingOff&&r.GetComponent<MeshFilter>()!=null).ToArray();
+var signatures=root.GetComponentsInChildren<Collider>(true).Select(c=>{var t=c.transform;string path=t.name;while(t.parent!=null&&t.parent!=root.transform){t=t.parent;path=t.name+"/"+path;}var b=c.bounds;return path+"|"+c.GetType().Name+"|"+c.enabled+"|"+c.isTrigger+"|"+b.center.ToString("F5")+"|"+b.size.ToString("F5");}).OrderBy(x=>x).ToArray();
+var bytes=System.Text.Encoding.UTF8.GetBytes(string.Join("\n",signatures));
+var hash=System.BitConverter.ToString(System.Security.Cryptography.SHA256.Create().ComputeHash(bytes));
+long tris=renderers.Sum(r=>{var m=r.GetComponent<MeshFilter>().sharedMesh;long n=0;for(int i=0;i<m.subMeshCount;i++)n+=m.GetIndexCount(i)/3;return n;});
+var snapshots=new System.Collections.Generic.List<string>();
+var targets=prefab.Contains("RoyalWaterGarden")?new[]{"Castle tower E1","Castle walls","Boat tunnels","Boat 1-1"}:new[]{"HallV15_Round_wall_0_1","HallV15_Balustrades","StairStatue_Knight_plinth","StairStatue_Knight"};
+foreach(var target in targets){
+var selected=renderers.FirstOrDefault(r=>r.name==target||r.GetComponent<MeshFilter>().sharedMesh.name==target);
+if(selected==null){snapshots.Add("missing:"+target);continue;}
+foreach(var r in renderers)r.enabled=r==selected;
+var b=selected.bounds;var key=target.Replace(" ","_").Replace("/","_");
+p.BeginStaticPreview(new Rect(0,0,1400,1100));
+p.camera.orthographic=true;p.camera.orthographicSize=b.size.magnitude*.57f;p.camera.nearClipPlane=.01f;p.camera.farClipPlane=10000f;
+p.camera.clearFlags=CameraClearFlags.SolidColor;p.camera.backgroundColor=new Color(.12f,.14f,.18f);
+p.camera.transform.position=b.center+new Vector3(4f,2.5f,6f).normalized*b.size.magnitude*2f;p.camera.transform.LookAt(b.center);
+p.lights[0].intensity=1.3f;p.lights[0].transform.rotation=Quaternion.Euler(35,30,0);p.lights[1].intensity=.7f;p.lights[1].transform.rotation=Quaternion.Euler(340,220,0);
+p.ambientColor=new Color(.3f,.3f,.3f);p.Render(true,false);
+var tex=p.EndStaticPreview();var file=dir+"/unity_"+key+"_"+phase+".png";System.IO.File.WriteAllBytes(file,tex.EncodeToPNG());UnityEngine.Object.DestroyImmediate(tex);snapshots.Add(file);
+foreach(var r in renderers)r.enabled=true;
+}
+output.Add(new{prefab=prefab,triangles=tris,renderers=renderers.Length,colliders=signatures.Length,colliderHash=hash,snapshots=snapshots});
+}finally{p.Cleanup();}
+}
+return output;

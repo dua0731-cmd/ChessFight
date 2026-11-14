@@ -1,0 +1,32 @@
+// In-memory Unity MCP code body (not installed as a script). Set PHASE and TARGETS before running.
+var dir="C:/Work/ChessFight/Temp/ModelOptimization20261113Pass3/unity";
+var phase="PHASE";
+var prefab="Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab";
+var targets=new[]{TARGETS};
+var dirs=new System.Collections.Generic.Dictionary<string,Vector3>{{"front",new Vector3(0,.25f,-1)},{"side",new Vector3(1,.25f,0)},{"back",new Vector3(-.5f,.35f,1)},{"under",new Vector3(.3f,-.8f,-.5f)},{"close",new Vector3(.6f,.3f,-1)}};
+var shots=new System.Collections.Generic.List<string>();
+var p=new UnityEditor.PreviewRenderUtility();
+try{
+var root=p.InstantiatePrefabInScene(AssetDatabase.LoadAssetAtPath<GameObject>(prefab));
+root.GetComponent<ChessFight.PawnRush.GrandStairHall>().SendMessage("Awake");
+var rs=root.GetComponentsInChildren<MeshRenderer>(true).Where(r=>r.enabled&&r.gameObject.activeInHierarchy&&r.GetComponent<MeshFilter>()!=null&&r.GetComponent<MeshFilter>().sharedMesh!=null).ToArray();
+foreach(var target in targets){
+var sel=rs.FirstOrDefault(r=>r.GetComponent<MeshFilter>().sharedMesh.name==target||r.name==target);
+if(sel==null){shots.Add("missing:"+target);continue;}
+foreach(var r in rs)r.enabled=r==sel;
+var b=sel.bounds;
+foreach(var kv in dirs){
+p.BeginStaticPreview(new Rect(0,0,1200,1200));
+var size=kv.Key=="close"?b.size.magnitude*.18f:b.size.magnitude*.55f;
+var center=kv.Key=="close"?b.center+new Vector3(0,b.extents.y*.55f,0):b.center;
+p.camera.orthographic=true;p.camera.orthographicSize=size;p.camera.nearClipPlane=.01f;p.camera.farClipPlane=10000f;
+p.camera.clearFlags=CameraClearFlags.SolidColor;p.camera.backgroundColor=new Color(.12f,.14f,.18f);
+p.camera.transform.position=center+kv.Value.normalized*b.size.magnitude*2f;p.camera.transform.LookAt(center);
+p.lights[0].intensity=1.3f;p.lights[0].transform.rotation=Quaternion.Euler(35,30,0);p.lights[1].intensity=.7f;p.lights[1].transform.rotation=Quaternion.Euler(340,220,0);
+p.ambientColor=new Color(.3f,.3f,.3f);p.Render(true,false);
+var tex=p.EndStaticPreview();var file=dir+"/"+target.Replace(" ","_")+"_"+kv.Key+"_"+phase+".png";System.IO.File.WriteAllBytes(file,tex.EncodeToPNG());UnityEngine.Object.DestroyImmediate(tex);shots.Add(file);
+}
+foreach(var r in rs)r.enabled=true;
+}
+}finally{p.Cleanup();}
+return shots;

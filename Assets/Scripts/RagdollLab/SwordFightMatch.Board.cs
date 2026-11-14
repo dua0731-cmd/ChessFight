@@ -168,6 +168,7 @@ namespace ChessFight.RagdollLab
             figures.Clear();
             foreach (var b in bubbles.Values) if (b != null) Destroy(b);
             bubbles.Clear();
+            bubbleFrom.Clear();
             if (hand != null) Destroy(hand);
             foreach (var p in handPawns) if (p != null) Destroy(p);
             foreach (var f in fxPool) if (f.go != null) Destroy(f.go);
@@ -210,7 +211,16 @@ namespace ChessFight.RagdollLab
             if (whiteMat != null) return;
             whiteMat = Made(SwordFightShapes.Lit("#f3ecdd", 0.48f));
             blackMat = Made(SwordFightShapes.Lit("#2b2522", 0.32f));
-            bubbleMat = Made(SwordFightShapes.Glow("#cfe8ff", 0.18f));
+            // R645: the shield shader (Resources/SwordFightFx/SwordShield); the old flat glow if it is missing
+            var shield = Resources.Load<Shader>("SwordFightFx/SwordShield");
+            bubbleMat = Made(shield != null ? new Material(shield) { name = "Sword shield" } : SwordFightShapes.Glow("#cfe8ff", 0.18f));
+            if (shield != null)
+            {
+                // R645 (사용자 "보호막은 파란색으로 하고 … 살짝만"): the old bubble's blue, the lattice kept faint
+                bubbleMat.SetColor("_Color", new Color(.45f, .72f, 1f, 1f));
+                bubbleMat.SetFloat("_Lattice", .35f);
+            }
+            bubbleShader = shield != null;
             pillarMat = Made(SwordFightShapes.Glow("#ffe39a", 0f));
         }
 
@@ -361,22 +371,51 @@ namespace ChessFight.RagdollLab
             return g;
         }
 
+        // R645 (11-14, 사용자 "보호막 그래픽 좀 더 좋게 해"): a clear shell with an ivory rim and a faint chessboard
+        // lattice (SwordShield) instead of the flat blinking sphere. It snaps out from the piece with a short bright pop
+        // (a little past its size, then settles), breathes slightly, and in its last moments thins out and grows a
+        // touch as it lets go - or at once when the piece attacks.
+        bool bubbleShader;
+        readonly Dictionary<SwordFightPawn, float> bubbleFrom = new Dictionary<SwordFightPawn, float>();
+        MaterialPropertyBlock bubbleBlock;
+        static readonly int FadeId = Shader.PropertyToID("_Fade"), PopId = Shader.PropertyToID("_Pop");
+        const float BubbleSize = 1.7f, BubbleIn = .22f, BubbleOut = .3f;
+
         void Bubble(SwordFightPawn f, bool on)
         {
             bubbles.TryGetValue(f, out var b);
-            if (!on) { if (b != null) b.SetActive(false); return; }
+            if (!on) { if (b != null) b.SetActive(false); bubbleFrom.Remove(f); return; }
             if (b == null)
             {
-                b = SwordFightShapes.Part(PrimitiveType.Sphere, bubbleMat, null, Vector3.zero, Vector3.one * 1.5f);
+                b = SwordFightShapes.Part(PrimitiveType.Sphere, bubbleMat, null, Vector3.zero, Vector3.one * BubbleSize);
                 b.name = "Protection bubble";
-                b.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var r0 = b.GetComponent<Renderer>();
+                r0.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r0.receiveShadows = false;
+                foreach (var col in b.GetComponents<Collider>()) Destroy(col);
                 bubbles[f] = b;
             }
+            if (!bubbleFrom.TryGetValue(f, out float from)) bubbleFrom[f] = from = Time.time;
             b.SetActive(true);
             b.transform.position = f.Pawn.Hips.position + Vector3.up * 0.15f;
-            var c = bubbleMat.color;
-            c.a = 0.18f + 0.08f * Mathf.Sin(Time.time * 12f);
-            bubbleMat.color = c;
+            if (!bubbleShader)
+            {
+                var c = bubbleMat.color;
+                c.a = 0.18f + 0.08f * Mathf.Sin(Time.time * 12f);
+                bubbleMat.color = c;
+                return;
+            }
+            float age = Time.time - from, left = f.Protection;
+            float grow = Mathf.Clamp01(age / BubbleIn);
+            // out a little past its size and back (easeOutBack), then a slow breath
+            float back = 1f + 2.2f * Mathf.Pow(grow - 1f, 3f) + 1.2f * Mathf.Pow(grow - 1f, 2f);
+            float leaving = 1f - Mathf.Clamp01(left / BubbleOut);
+            float size = BubbleSize * (.35f + .65f * back) * (1f + .015f * Mathf.Sin(Time.time * 5f)) * (1f + .12f * leaving);
+            b.transform.localScale = Vector3.one * size;
+            bubbleBlock ??= new MaterialPropertyBlock();
+            bubbleBlock.SetFloat(FadeId, Mathf.Clamp01(age / .08f) * (1f - leaving * leaving));
+            bubbleBlock.SetFloat(PopId, 1f - Mathf.Clamp01(age / .3f));
+            b.GetComponent<Renderer>().SetPropertyBlock(bubbleBlock);
         }
 
         void StealPillar(SwordFightPawn at)
@@ -486,6 +525,12 @@ namespace ChessFight.RagdollLab
             if (rig == null) return;
             var cam = rig.transform;
             float k = K;
+            if (Flying)
+            {
+                Fly(cam, k, FlyTime);
+                camHeld = false;
+                return;
+            }
             bool orbit = view.Phase == SwordPhase.Pick || (view.Phase == SwordPhase.Result && PhaseTime > 1.5);
             if (orbit)
             {
@@ -508,6 +553,34 @@ namespace ChessFight.RagdollLab
                 cam.position += new Vector3(Mathf.Sin(q * 1.3f), Mathf.Sin(q * 1.7f + 1f), Mathf.Sin(q * 2.1f + 2f)) * shake;
                 shake = Mathf.Max(0f, shake - Time.unscaledDeltaTime * 0.2f / 0.35f);
             }
+        }
+
+        /// <summary>R645 (11-14, 사용자 "카메라로 맵을 돌아가는 연출을 한 후 인 게임 시작"): the flight round the map at
+        /// the start of a lobby match (FlySeconds): from low over the desk on the far side, looking up at the floating board
+        /// from beside the book stacks and the lamp, it rises as it circles to high over the board, then swoops down behind
+        /// this player's team and settles into the player's own camera (blended over the last part, so 3·2·1 starts from
+        /// the view the match is played in). Every PC flies the same path round from its own team's side.</summary>
+        void Fly(Transform cam, float k, float t)
+        {
+            // the player's camera as LabCamera put it this frame (it runs before this)
+            Vector3 playerPos = cam.position;
+            Quaternion playerRot = cam.rotation;
+            float u = Mathf.Clamp01(t / FlySeconds);
+            int team = game.Local != null ? game.Local.Pawn.Team : 0;
+            // behind team 0 (it faces +z) is -z: angle pi; team 1 the other way round
+            float behind = team == 0 ? Mathf.PI : 0f;
+            float turn = Mathf.Lerp(-2.6f, -.15f, Ease(u));
+            float an = behind + turn;
+            float dist = Mathf.Lerp(23f, 15f, u) * k;
+            float h = u < .55f ? Mathf.Lerp(-3.8f, 14f, Mathf.SmoothStep(0f, 1f, u / .55f))
+                               : Mathf.Lerp(14f, 7f, Mathf.SmoothStep(0f, 1f, (u - .55f) / .45f));
+            var look = new Vector3(0f, Mathf.Lerp(-3.2f, -.5f, Mathf.SmoothStep(0f, 1f, u)), 0f);
+            var pos = new Vector3(Mathf.Sin(an) * dist, h, Mathf.Cos(an) * dist);
+            var rot = Quaternion.LookRotation(look - pos, Vector3.up);
+            // into the player's view over the last fifth
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.8f, 1f, u));
+            cam.position = Vector3.Lerp(pos, playerPos, blend);
+            cam.rotation = Quaternion.Slerp(rot, playerRot, blend);
         }
 
         /// <summary>The demo's heavy hits (its hit stop list): a short shake on this screen.</summary>

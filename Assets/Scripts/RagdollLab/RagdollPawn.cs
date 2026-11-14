@@ -3589,6 +3589,7 @@ namespace ChessFight.RagdollLab
             Sprinting = pose.sprinting;
             Exhausted = pose.exhausted;
             heldTimer = pose.held ? 0.2f : 0f;
+            netGrabbing = pose.grabbing;   // R642: the grab HUD pairs a puppet's hand with the pawn it holds
             netStamina = pose.stamina;
             netEscape = pose.escape;
             ApplyHook(pose);

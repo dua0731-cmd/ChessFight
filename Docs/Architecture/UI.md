@@ -118,6 +118,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - (R59) 상태 줄: 빈자리가 있으면 "경기 중 · 빈자리 n개 · 매칭 중인 플레이어가 들어올 수 있습니다", 누가 빈자리에 앉으면 6초 동안 "○○ 님이 빈자리를 채웠습니다"(`SteamSession.Note`). → (R538) "경기 중 · n명이 자리를 비움 · 경기가 끝나기 전에 돌아올 수 있습니다", 누가 돌아오면 6초 "○○ 님이 경기에 돌아왔습니다".
 - 오프라인 플레이테스트 도움말은 IMGUI(`PlaytestSpawner.OnGUI`)로 그린다.
 - (R514) **스테미나 바**: 화면 아래 가운데, 240 × 12 px, 초록 → 빨강, 위에 "스테미나"(`Gameplay/Playtest/StaminaBarGui`, IMGUI). 오프라인은 `PlaytestSpawner`, 폰 러쉬 경기는 `MatchStaminaBar`(`SteamPawnRushLink`가 붙여 이 PC의 폰을 따라감, 시작 신호 뒤부터 승패가 날 때까지). 소드 파이트 경기에는 아직 없다(기획 미정).
+- (R642, 11-14) **잡힘 표시 — 폰 러쉬만**: `Gameplay/Playtest/GripHudGui`(IMGUI)를 스테미나 바를 그리는 두 곳(`MatchStaminaBar`, `PlaytestSpawner` — 도움말을 꺼 둔 미니게임 · 맵 시험에서도)이 그린다. 잡힌 사람: 바 위 흑단 판(황동 테두리 · 모서리) "잡혔다! 좌클릭 연타" + 황동 탈출 막대, 1.4배에서 0.09초에 박힘, 잡힌 순간 화면 가장자리가 흑단 띠 + 황동 선으로 0.05초에 조였다가 약 0.35초에 풀림. 잡은 사람: 작은 판 "잡는 중". 둘 다: 손이 닿은 자리에 황동 고리 · 상아 점(`Camera.main` 기준). 소리 없음. 값은 `IGripReadout`(`RagdollDriver` → `RagdollPawn.GripRead.cs`): 시뮬레이션하는 PC는 손 관절로, 참가자 PC는 스냅숏의 grabbing · held 깃발 + 손바닥 ↔ 몸 거리 0.55 m로 짝을 찾는다(패킷 그대로). 래그돌 시험 씬의 옛 표시(`StaminaHud` "잡힘! 좌클릭 연타")는 그대로.
 
 ## 8. 로딩 화면 (R58, 2026-09-30)
 
@@ -707,3 +708,22 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 게임 시작 | 공개 매칭의 기존 걸어 들어가기(`EnterGate`, 최대 3초, 매칭은 늦추지 않음). 홀에서는 길이 반대: 무대 앞 왕관 계단 → 카펫 → 대문 → 통로, 초속 10 m(`HallRunSpeed`). 카메라(`HallCamera`, R599): 파티(머리 높이)를 중심으로 진행 0 ~ 0.75에 로비 시점에서 오른쪽으로 고르게 돌아 파티 뒤로(반지름 → 5.5 m, 높이 1.9 m, 가운데서 1.1 m 솟음), 처음 0.2 동안 시선이 계단에서 파티로 옮겨 가고 0.55부터 대문 쪽으로 60%. 카메라는 대문 10 m 앞(`HallCameraStop`)에서 3 m에 걸쳐 부드럽게 멈춘다. 취소하면 거꾸로 돌아온다 |
 | 빛 (R552 노을) | 사용자 "원형 창문에서 회전을 하며 빛이 수학적으로 계산이 되며 빛은 인트로 씬에 있는 이런 노을 빛이 실시간으로": `LobbyStage.Hall.Sunset.cs`. 계단 끝 뒤 낮은 해(방위 6° · 높이 22°, 인트로 Sunset Light 색 0xFF9C58 · 3.6, 부드러운 실시간 그림자)라 뒷벽이 홀을 가리고 **둥근 창으로만 들어와 무대 왼쪽에 살 그림자**. 앞 빛 0xFFF4E6 · 0.4, 위 노을 하늘빛 0xC9B8FF · 0.25, 인트로 주변광. 하늘 = 인트로 `SunsetSky.png`를 각도로 둘러 깐 스카이박스(`Resources/Lobby/KingdomHall/HallSunsetSky.shader`, 그림 속 해가 해 방향에, 폭 110°, 위는 저녁 하늘색으로). **창 살 돌기**: `Rose_Tracery`(안쪽 · 가운데 고리 + 살 8개, 원점 = 창 가운데)를 창 축으로 초당 8°(`TickHall`). **공기 속 빛줄기** `RoseShafts.shader`: 창에서 빛 방향으로 놓인 4.8 × 4.8 × 20 m 상자의 뒷면만 그려, 화면 점마다 시선을 상자 · 장면 깊이까지 48걸음 걷고, 각 점을 해 쪽으로 창 평면까지 거슬러 창 모양(열린 원 r 1.92 − 고리 0.55~0.72 · 1.24~1.31 − 살 8개 반폭 0.045, 매 프레임 같은 돌기 각, 해 원반 0.00465 rad × 거리만큼 흐림)과 해 그림자 맵을 곱해 더하고 Henyey-Greenstein(g 0.55) 앞쪽 산란, 밀도 0.03, 더하기 섞기. 벽감 · 대문 등불, 샹들리에, 문이 열리면 통로 빛은 그대로. (R544~R549는 유리 천장 낮빛) |
 | 파일 | `Game/LobbyStage.Hall.cs`(홀 불러오기 · 빛 · 길 · 문 · 카메라), `LobbyStage.cs`(`Hall(root) \|\| Castle(root)`), `LobbyStage.Castle.cs`(홀이면 길 · 속도 · 문 · 카메라를 Hall 쪽으로). 모델 `Resources/Lobby/KingdomHall/Hall.fbx` ← `ArtSource/Lobby/KingdomInterior/blockout_hall.py`(+ `kit.py`) → `export_hall.py`(무대 · 폰 대역은 빼고 묶음마다 한 메시, 성 FBX와 같은 축 · 단위 100). 홀 FBX가 없으면 예전 성 마당 |
+
+<a id="match-announcement-a"></a>
+## 매칭 문구 A안 (R626, 2026-11-13)
+
+사용자가 고른 A안 문구를 폰 러쉬·소드 파이트에 적용했다. 제목의 왕관·상아색 사각/기울인 판은 없고, 배경 위에 **상대를 찾았습니다**와 **곧 대결이 시작됩니다**가 직접 나온다. R627 사용자 정정으로 모든 A안 제목의 금색 장식선을 제거했다. 작은 모드 이름과 상아색 제목만 표시한다. 0.28초에 나타나며 14px 아래에서 짧게 올라온다.
+
+- 공용 생성·등장: `Game/LoadingScreenView.Reveal.cs`의 `BuildMatchAnnouncement`·`SyncMatchAnnouncement`(기존 partial 생성 방식, 추가 이미지/스크립트 자산 없음).
+- 폰 러쉬: `LoadingScreenView.Versus.cs`의 기존 "이번 판 대결" 제목판 자리. 12인 패널·확대 동작에 맞춘 짧은 제목(높이 88, 위 16)이라 모드 이름이 화면 위로 잘리지 않는다. 팀 인원판·플레이어 패널·3D 무대·VS·코스 공개 시각은 그대로다.
+- 소드 파이트: `LoadingScreenView.SwordPick.cs`의 처음 "매칭 완료!"와 마지막 "결투 준비 완료!" 판을 교체. 처음은 상단 중앙, 마지막은 기존 VS 아래. R627에서 기물 선택 제목도 상자 없이 같은 공용 스타일로 바꿨다(문구 "기물을 선택하십시오" 유지, 설명·타이머·카드 그대로). 우리 팀 기물 화면 제목은 이번 요청 범위 밖이라 그대로다.
+- 확인: Core 192·모의 세션 81·전체 Unity DLL 컴파일 통과(최초 적용본), 여백 보정 후 Unity 재컴파일 오류 0. AI 임시 Play에서 1920×1080 렌더 3장(`Temp/MatchAnnouncementA/sword-found.png`, `sword-clash.png`, `pawn-versus.png`), 사용자 직접 확인·온라인 확인 전. 임시 화면을 닫고 원래 Lobby 씬으로 복귀했다.
+- 적용 위치: 실제 Unity 프로젝트 `C:/Work/ChessFight` main. 이전 파일은 `Temp/MatchAnnouncementA-Before/`에 보존. 사용자 요청으로 커밋·푸시하지 않는다.
+
+## 기물 확정 버튼 (R628, 2026-11-13)
+
+`LoadingScreenView.SwordPick.cs`의 `pickConfirm`: 황동색 기울인 판과 한 줄 "확정 Space" 대신, 짙은 흑단색 210×52 버튼(모서리 8), 상아색 "확정" 22px, 작은 반투명 "SPACE" 키캡(64×28, 모서리 5)으로 나눈다. 은은한 그림자와 중성 상아색 18% 테두리만 있고 금색 장식선은 없다. 마우스가 올라오면 배경이 조금 밝아지고 본체가 1px 올라왔다가 떠나면 돌아간다. 장식 자식은 PickingMode.Ignore여서 루트의 기존 클릭 처리가 그대로 작동한다.
+
+확정 가능할 때만 표시, 클릭·Space/Enter·더블클릭의 `ConfirmPiece` 경로는 그대로다. Core 192·모의 세션 81·전체 Unity DLL 외부 컴파일 통과. 사용자가 SwordFight를 Play 중이므로 재생·씬을 바꾸지 않았다. 다음 기물 선택 화면에서 사용자 시각·입력 확인이 필요하다. 커밋·푸시하지 않는다.
+
+> R630(2026-11-13): 사용자 요청으로 이 채팅의 R626~R629 변경과 관련 문서를 main 커밋·푸시 대상으로 전환했다. 경량화 작업은 제외하며, 사용자 실기 확인은 여전히 대기다.

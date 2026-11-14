@@ -93,6 +93,9 @@ namespace ChessFight.RagdollLab
         // R533: the player's own "경기 나가기" (the in-game menu), as against a leave the link itself decides on (a
         // silent host): in a public match the first is a desertion (SteamMatchLabLink).
         public const string LeftByChoice = "경기 나가기";
+        // R640: leaving once the match has its result (the Sword Fight end card's "로비로 돌아가기", or the menu then):
+        // nobody's desertion, so the carrier leaves as Pawn Rush's result does (SteamSession.Cancel).
+        public const string LeftAfterResult = "결과 뒤 로비로";
         /// <summary>The panel's part for when no match is on (making and joining a room).</summary>
         protected abstract void DrawLobby();
         /// <summary>What carries the packets, for the panel.</summary>

@@ -1,0 +1,222 @@
+[
+  {
+    "key": "hall",
+    "path": "Assets/Resources/PawnRushGrandStairHall/GrandStairHallV15.fbx",
+    "angle": 0.25,
+    "tag": "0p25",
+    "before": 2233315,
+    "after": 2160695,
+    "items": [
+      {
+        "name": "HallV15_Balustrades",
+        "before": 133272,
+        "after": 119412,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "HallV15_Round_wall_0_0",
+        "before": 139825,
+        "after": 125171,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "HallV15_Round_wall_0_1",
+        "before": 139851,
+        "after": 125158,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "HallV15_Round_wall_1_0",
+        "before": 139751,
+        "after": 125113,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "HallV15_Round_wall_1_1",
+        "before": 139897,
+        "after": 125122,
+        "normalTransferMisses": 0
+      }
+    ]
+  },
+  {
+    "key": "towers",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenWalls.fbx",
+    "angle": 0.25,
+    "tag": "0p25",
+    "before": 345322,
+    "after": 345298,
+    "items": [
+      {
+        "name": "Castle tower E1",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower E2",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower E3",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower E4",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower E5",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower E6",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W1",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W2",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W3",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W4",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W5",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Castle tower W6",
+        "before": 18000,
+        "after": 17998,
+        "normalTransferMisses": 0
+      }
+    ]
+  },
+  {
+    "key": "boats",
+    "path": "Assets/Resources/PawnRushGardenConcept/GardenBoats.fbx",
+    "angle": 0.5,
+    "tag": "0p5",
+    "before": 394652,
+    "after": 388390,
+    "items": [
+      {
+        "name": "Boat 1-1",
+        "before": 30226,
+        "after": 29448,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 1-2",
+        "before": 30238,
+        "after": 29440,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 2-1",
+        "before": 30226,
+        "after": 29452,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 2-2",
+        "before": 30226,
+        "after": 29446,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 3-1",
+        "before": 30224,
+        "after": 29450,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 3-2",
+        "before": 30224,
+        "after": 29446,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 4-1",
+        "before": 30224,
+        "after": 29444,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat 4-2",
+        "before": 30236,
+        "after": 29436,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "Boat tunnels",
+        "before": 101996,
+        "after": 101996,
+        "normalTransferMisses": 0
+      }
+    ]
+  },
+  {
+    "key": "plinths",
+    "path": "Assets/Resources/PawnRushGrandStairHall/StairStatuesV36.fbx",
+    "angle": 0.25,
+    "tag": "0p25",
+    "before": 332884,
+    "after": 332820,
+    "items": [
+      {
+        "name": "StairStatue_Bishop_plinth",
+        "before": 3296,
+        "after": 3280,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "StairStatue_King_plinth",
+        "before": 3296,
+        "after": 3280,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "StairStatue_Knight_plinth",
+        "before": 3296,
+        "after": 3280,
+        "normalTransferMisses": 0
+      },
+      {
+        "name": "StairStatue_Queen_plinth",
+        "before": 3296,
+        "after": 3280,
+        "normalTransferMisses": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,20 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenGate.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Exit gate",
+   "tris": 124243,
+   "chunks": 3,
+   "sum": 124243
+  },
+  {
+   "name": "Gate stonework",
+   "tris": 75982,
+   "chunks": 6,
+   "sum": 75982
+  }
+ ],
+ "objects": 10,
+ "tris": 203969
+}

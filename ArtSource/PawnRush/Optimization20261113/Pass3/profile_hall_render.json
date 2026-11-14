@@ -1,0 +1,16 @@
+{ view = start, mode = normal, ms = 40.89, visibleRenderers = 1034, visibleSubmeshes = 1290, visibleTris = 2870965, visibleKnights = 3 }
+{ view = start, mode = noKnights, ms = 37.39, visibleRenderers = 1031, visibleSubmeshes = 1278, visibleTris = 2534461, visibleKnights = 0 }
+{ view = start, mode = noShadow, ms = 34.06, visibleRenderers = 1034, visibleSubmeshes = 1290, visibleTris = 2870965, visibleKnights = 3 }
+{ view = start, mode = noPointLights, ms = 33.21, visibleRenderers = 1034, visibleSubmeshes = 1290, visibleTris = 2870965, visibleKnights = 3 }
+{ view = mid, mode = normal, ms = 30.66, visibleRenderers = 444, visibleSubmeshes = 521, visibleTris = 1745068, visibleKnights = 3 }
+{ view = mid, mode = noKnights, ms = 28.21, visibleRenderers = 441, visibleSubmeshes = 509, visibleTris = 1408564, visibleKnights = 0 }
+{ view = mid, mode = noShadow, ms = 26.23, visibleRenderers = 444, visibleSubmeshes = 521, visibleTris = 1745068, visibleKnights = 3 }
+{ view = mid, mode = noPointLights, ms = 27.73, visibleRenderers = 444, visibleSubmeshes = 521, visibleTris = 1745068, visibleKnights = 3 }
+{ view = overview, mode = normal, ms = 33.35, visibleRenderers = 990, visibleSubmeshes = 1208, visibleTris = 2431518, visibleKnights = 3 }
+{ view = overview, mode = noKnights, ms = 33.02, visibleRenderers = 987, visibleSubmeshes = 1196, visibleTris = 2095014, visibleKnights = 0 }
+{ view = overview, mode = noShadow, ms = 29.26, visibleRenderers = 990, visibleSubmeshes = 1208, visibleTris = 2431518, visibleKnights = 3 }
+{ view = overview, mode = noPointLights, ms = 31.2, visibleRenderers = 990, visibleSubmeshes = 1208, visibleTris = 2431518, visibleKnights = 3 }
+{ view = end_back, mode = normal, ms = 33.94, visibleRenderers = 979, visibleSubmeshes = 1235, visibleTris = 2873797, visibleKnights = 3 }
+{ view = end_back, mode = noKnights, ms = 32.22, visibleRenderers = 976, visibleSubmeshes = 1223, visibleTris = 2537293, visibleKnights = 0 }
+{ view = end_back, mode = noShadow, ms = 29.57, visibleRenderers = 979, visibleSubmeshes = 1235, visibleTris = 2873797, visibleKnights = 3 }
+{ view = end_back, mode = noPointLights, ms = 32.92, visibleRenderers = 979, visibleSubmeshes = 1235, visibleTris = 2873797, visibleKnights = 3 }

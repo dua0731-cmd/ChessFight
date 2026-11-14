@@ -25,6 +25,8 @@ namespace ChessFight.Gameplay
             if (source == null || !(source is IStaminaReadout readout)) return;
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
             StaminaBarGui.Draw(readout.Stamina01, style, Piece != null ? Piece() : PieceKind.Pawn);
+            // R642: held / holding another piece. Only Pawn Rush adds this bar (SteamPawnRushLink).
+            if (source is IGripReadout grip) GripHudGui.Draw(grip, style);
         }
     }
 }

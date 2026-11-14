@@ -214,6 +214,8 @@ namespace ChessFight.Game
             bool ready = white >= min && white == black && session.SeatingJoiners == 0;
             // R538: nor for a player on its way back into a running match (the room's numbers there are who is away).
             state.StartNote = !session.EarlyStartMode || session.Started || session.Match == 0 || session.JoiningLive ? ""
+                // R644: the room's owner is a PC that has gone silent; nothing starts until Steam takes it out of the room.
+                : session.RoomHeld ? SteamSession.RoomHeldMessage
                 : state.CanStart ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)"
                 : !session.IsManager && ready ? $"{white} 대 {black} · 방장이 시작할 수 있어요"
                 // R525: the start waits (up to SteamSession.JoinGrace) for players already in the room to get their seats.
@@ -225,6 +227,7 @@ namespace ChessFight.Game
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
             // R294: a new host in the waiting room says so for a few seconds (who, and why: the best PC).
             state.Step = session.NoteShowing ? session.Note
+                       : session.RoomHeld ? "끊긴 PC를 정리하는 중"
                        : session.JoiningLive ? "나갔던 경기로 돌아가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
             state.Clear();
             if (session.Match != 0 && session.Roster.Count > 0)
@@ -245,7 +248,7 @@ namespace ChessFight.Game
                 for (int i = 1; i <= session.PartyBots; i++)
                 {
                     state.Teams.Add(0); state.Joined.Add(true); state.Ready.Add(false);
-                    state.Names.Add("BOT " + i); state.Bots.Add(true);
+                    state.Names.Add("BOT " + i); state.Bots.Add(true); state.Faces.Add(null);
                 }
                 if (session.Party == 0) Add(state, session, session.Self, 0, false);
             }
@@ -262,6 +265,7 @@ namespace ChessFight.Game
             state.Ready.Add(ready);
             state.Names.Add(session.Name(id));
             state.Bots.Add(BotIdentity.IsBot(id));
+            state.Faces.Add(session.Avatar(id));
         }
 
         // From NetworkRuntime.OnSceneLoaded, for every scene.

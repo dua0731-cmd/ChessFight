@@ -46,8 +46,12 @@ namespace ChessFight.Game
         // The stage fades up; the title plate and the counts plate slide in; the panels drop from StripAt, one team's next
         // player StripStep after the last, black's StripBlackLag after white's, each for StripDrop, bounce for StripBounce;
         // the glint crosses SliceDelay after the drop starts, for StripSlice.
+        // R632 (11-13, 사용자 "매칭 완료 됐을 때 너무 빠르게 후다닥 해버려서 소리가 뭉개져"): the panels came in .09 s apart
+        // (white, black, white...), twelve slams in about a second piled on each other (a slam rings ~.17 s). Now both
+        // teams' k-th players drop together, mirrored, one slam per pair, .3 s apart: six clear hits, the last landing
+        // ~.2 s before this PC's frame (MeAt), the rest of the scene where it was.
         const float StageIn = .3f * Pace, VTitleAt = .1f * Pace, VTeamsAt = .2f * Pace, VPlateSlide = .26f;
-        const float StripAt = .42f * Pace, StripStep = .15f * Pace, StripBlackLag = .075f * Pace, StripDrop = .2f, StripBounce = .18f, SliceDelay = .17f, StripSlice = .3f;
+        const float StripAt = .42f * Pace, StripStep = .25f * Pace, StripBlackLag = 0f, StripDrop = .2f, StripBounce = .18f, SliceDelay = .17f, StripSlice = .3f;
         // This PC's panel: its frame shows, its bar fills, its pawn cheers.
         const float MeAt = 2f * Pace;
         // The VS panel (still called the blade: the sound's cues name it so) drops from BladeAt and lands at VsAt; the
@@ -87,7 +91,8 @@ namespace ChessFight.Game
         }
 
         VisualElement versus, versusBox, versusBackdrop;
-        RSlant versusTitle, versusTeams, versusBlade;
+        VisualElement versusTitle;
+        RSlant versusTeams, versusBlade;
         VisualElement versusBladeBox, versusBladeShadow;
         Label versusTeamsText;
         readonly List<Label> versusLetters = new List<Label>();
@@ -130,17 +135,7 @@ namespace ChessFight.Game
             else versusBackdrop.style.backgroundColor = StripBase;
             RStretch(RLayer(versusBackdrop), revealVignette);
 
-            versusTitle = new RSlant(14f, Ivory);
-            versusTitle.style.position = Position.Absolute;
-            versusTitle.style.left = 56f;
-            versusTitle.style.top = 26f;
-            var title = RLabel(versusTitle, "이번 판 대결", 40f, Ebony, true);
-            title.style.position = Position.Relative;
-            title.style.paddingLeft = 30f;
-            title.style.paddingRight = 34f;
-            title.style.paddingTop = 12f;
-            title.style.paddingBottom = 10f;
-            versusBox.Add(versusTitle);
+            versusTitle = BuildMatchAnnouncement(versusBox, "폰 러쉬", 16f, 36f, true);
 
             versusTeams = new RSlant(14f, Ebony);
             versusTeams.style.position = Position.Absolute;
@@ -370,9 +365,9 @@ namespace ChessFight.Game
 
             // the plates: in from the sides, the counts out at the end, the title out and the reveal's in its place
             float swapHalf = TitleSwap / 2f;
-            float titleX = t < TitleSwapAt ? -560f * (1f - EoBack(Ph(t, VTitleAt, VPlateSlide))) : -560f * Io3(Ph(t, TitleSwapAt, swapHalf));
-            versusTitle.style.translate = new Translate(titleX, 0f);
-            versusTitle.style.opacity = t < VTitleAt ? 0f : 1f;
+            SyncMatchAnnouncement(versusTitle, t - VTitleAt);
+            float titleOut = Ph(t, TitleSwapAt, swapHalf);
+            versusTitle.style.opacity = Ph(t, VTitleAt, .28f) * (1f - titleOut);
             versusTeams.style.translate = new Translate(560f * (1f - EoBack(Ph(t, VTeamsAt, VPlateSlide))) + 600f * Io3(Ph(t, TeamsOut, .25f)), 0f);
             versusTeams.style.opacity = t < VTeamsAt ? 0f : 1f;
             float titleIn = TitleSwapAt + swapHalf;

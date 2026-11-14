@@ -1,0 +1,74 @@
+[
+  {
+    "key": "knight",
+    "silhouetteIoU": 0.9999822768358244,
+    "meanForegroundRGBDifference": 0.00216498295776546,
+    "changedPixelsOver5pct": 0.00020972410941100017
+  },
+  {
+    "key": "knight_side",
+    "silhouetteIoU": 0.999981546654013,
+    "meanForegroundRGBDifference": 0.0021004595328122377,
+    "changedPixelsOver5pct": 0.00017398869073510223
+  },
+  {
+    "key": "pad",
+    "silhouetteIoU": 0.9999933651804671,
+    "meanForegroundRGBDifference": 0.002400781027972698,
+    "changedPixelsOver5pct": 7.298301486199575e-05
+  },
+  {
+    "key": "plaza",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 3.0919149139663205e-05,
+    "changedPixelsOver5pct": 0.00016861984655593964
+  },
+  {
+    "key": "trees",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.00010290153295500204,
+    "changedPixelsOver5pct": 6.346654255431679e-05
+  },
+  {
+    "key": "gate",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.0033374857157468796,
+    "changedPixelsOver5pct": 0.021424249598821457
+  },
+  {
+    "key": "stonework",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 1.608253296581097e-05,
+    "changedPixelsOver5pct": 2.729986168070082e-05
+  },
+  {
+    "key": "hall",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.00311905425041914,
+    "changedPixelsOver5pct": 0.016092235907596297
+  },
+  {
+    "key": "boats",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 0.0004783779149875045,
+    "changedPixelsOver5pct": 0.0038307080033789737
+  },
+  {
+    "key": "walls",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 9.758866508491337e-05,
+    "changedPixelsOver5pct": 0.00011271110790510626
+  },
+  {
+    "key": "platforms",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 5.356001202017069e-05,
+    "changedPixelsOver5pct": 0.00037423257037089483
+  },
+  {
+    "key": "canal",
+    "silhouetteIoU": 1.0,
+    "meanForegroundRGBDifference": 6.042807217454538e-05,
+    "changedPixelsOver5pct": 1.7112836338537536e-05
+  }
+]

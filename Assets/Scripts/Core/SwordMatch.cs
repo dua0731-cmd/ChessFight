@@ -22,6 +22,9 @@ namespace ChessFight.Network
         public double Duration = 240;
         public double PickSeconds = 15;
         public double CountdownSeconds = 3;
+        /// <summary>R645 (11-14, 사용자 "경기가 바로 시작 하지 말고 카메라로 맵을 돌아가는 연출을 한 후"): seconds at the start of
+        /// the countdown phase the camera flies round the map before 3·2·1 (0: none). Input stays locked all along.</summary>
+        public double IntroSeconds = 0;
         public double RespawnDelay = 3;
         public double CreditWindow = 3;
         public double SuddenDeathLimit = 60;
@@ -192,7 +195,7 @@ namespace ChessFight.Network
                     if (AllPicked || PhaseTime >= Settings.PickSeconds) { PickRest(); Enter(SwordPhase.Countdown); return true; }
                     return false;
                 case SwordPhase.Countdown:
-                    if (PhaseTime >= Settings.CountdownSeconds) { Enter(SwordPhase.Playing); return true; }
+                    if (PhaseTime >= Settings.IntroSeconds + Settings.CountdownSeconds) { Enter(SwordPhase.Playing); return true; }
                     return false;
                 case SwordPhase.Playing:
                     Clock = Math.Min(Settings.Duration, Clock + dt);
@@ -235,8 +238,8 @@ namespace ChessFight.Network
             v.HitPiece = piece;
         }
 
-        /// <summary>The fall is final (the hips 3 m under the board, spec §8.1): the point, the credit, the steal, the
-        /// respawn queue and the feed, once per life.</summary>
+        /// <summary>The fall is final (the hips 3 m under the board, spec §8.1): the point, the credit, the respawn
+        /// queue and the feed, once per life (R640: no steal).</summary>
         public SwordRingOut RingOut(ulong id)
         {
             var result = new SwordRingOut();
@@ -258,14 +261,8 @@ namespace ChessFight.Network
             {
                 line.Credit = credit.Id;
                 result.Credit = credit.Id;
-                if (credit.Piece == PieceKind.Pawn && v.Piece != PieceKind.Pawn)
-                {
-                    credit.Piece = v.Piece;
-                    result.Stole = true;
-                    result.NewPiece = v.Piece;
-                    line.Stolen = (byte)v.Piece;
-                    Steals[credit.Team]++;
-                }
+                // R640 (승규 님: "떨어져도 처음 고른 기물 되살아나게 폰 빼앗기 규칙은 빼줘"): no steal any more. Every
+                // piece keeps the piece it picked all match; Stole, Stolen (255) and Steals stay empty (the wire keeps them).
             }
             v.HitBy = 0;
             v.HitAt = double.NegativeInfinity;
@@ -292,13 +289,13 @@ namespace ChessFight.Network
             return f != null && !f.Alive && f.SpawnCell < 0 && Phase != SwordPhase.Result && f.RespawnAt - Time <= Settings.RingLead;
         }
 
-        /// <summary>Back now: alive again, always a pawn (spec §3.3), its out flag cleared (§8.1).</summary>
+        /// <summary>Back now: alive again as the piece it picked (R640; spec §3.3 made it a pawn), its out flag cleared
+        /// (§8.1).</summary>
         public bool TryRespawn(ulong id)
         {
             Fighter f = Get(id);
             if (f == null || f.Alive || Phase == SwordPhase.Result || Time < f.RespawnAt) return false;
             f.Alive = true;
-            f.Piece = PieceKind.Pawn;
             f.RespawnAt = -1;
             f.HitBy = 0;
             f.HitAt = double.NegativeInfinity;
@@ -315,8 +312,8 @@ namespace ChessFight.Network
         /// the end at ten). The text does not carry who hit it, so there is no credit and no steal. Out of play the
         /// piece just waits. Either way it comes back after <paramref name="respawnLeft"/>, the body's own count
         /// (the full delay when it has none).</item>
-        /// <item>Back on the body, out in the rules: the comeback the old host made (a pawn, its out flag cleared).</item>
-        /// <item>In play, a living body's piece is the rules' piece (a steal in the gap).</item>
+        /// <item>Back on the body, out in the rules: the comeback the old host made (its own piece since R640, its out flag cleared).</item>
+        /// <item>In play, a living body's piece is the rules' piece.</item>
         /// </list>
         /// True when anything changed.
         /// </summary>
@@ -337,7 +334,6 @@ namespace ChessFight.Network
             else if (!f.Alive && alive)
             {
                 f.Alive = true;
-                f.Piece = PieceKind.Pawn;
                 f.RespawnAt = -1;
                 f.SpawnCell = -1;
                 f.HitBy = 0;

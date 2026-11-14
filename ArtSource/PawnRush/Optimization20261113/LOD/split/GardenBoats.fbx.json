@@ -1,0 +1,14 @@
+{
+ "src": "C:/Work/ChessFight/ArtSource/PawnRush/Optimization20261113/LOD/before_split/GardenBoats.fbx",
+ "cell": 20.0,
+ "split": [
+  {
+   "name": "Quay flowers",
+   "tris": 5616,
+   "chunks": 4,
+   "sum": 5616
+  }
+ ],
+ "objects": 15,
+ "tris": 388390
+}

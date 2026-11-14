@@ -170,7 +170,8 @@ namespace ChessFight.RagdollLab
             sword.Networked = true;
             sword.Authority = NetIsHost;
             sword.LocalId = NetSelf;
-            sword.LeaveMatch = () => NetLeave(LeftByChoice);
+            // R640 (승규 님 팀 시험: "경기 끝나고 탈주됨"): after the result the leave is no desertion.
+            sword.LeaveMatch = () => NetLeave(sword.Match != null && sword.Match.Finished ? LeftAfterResult : LeftByChoice);
             // R624: a lobby match's pieces were picked on the entrance screen: the scene's pick waits for the shared start
             // and then takes them (SwordFightMatch.PresetPicks), and its cards never show.
             if (sword.Match != null)
@@ -213,6 +214,18 @@ namespace ChessFight.RagdollLab
             sword.Authority = true;
             sword.LocalId = 1;
             sword.LeaveMatch = null;
+            if (RealMatch)
+            {
+                // A lobby match is leaving this scene, not returning to an offline test round.
+                // Keep its old pick HUD and simulation off until NetworkRuntime loads the lobby.
+                sword.UiWantsCursor = false;
+                sword.PieceRequest = null;
+                if (sword.Match != null) sword.Match.enabled = false;
+                sword.enabled = false;
+                ResetStream();
+                if (Trace) Log("sword match off; returning to lobby");
+                return;
+            }
             if (sword.Match != null) { sword.Match.PresetPicks = null; sword.Match.StartHeld = null; }
             sword.ResetRound();
             sword.SpawnOffline();

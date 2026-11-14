@@ -22,6 +22,7 @@ namespace ChessFight.PawnRush
         sealed class Track { public Vector3 last, velocity; public float seen; public bool on, fresh; }
 
         readonly List<Rider> riders = new List<Rider>();
+        int riderKey;                           // R635: which pieces are on it (changes when one steps on or off)
         readonly Dictionary<ImportedObstacleActor, Track> tracks = new Dictionary<ImportedObstacleActor, Track>();
         readonly HashSet<ImportedObstacleActor> seen = new HashSet<ImportedObstacleActor>();
         readonly Collider[] hits = new Collider[128];
@@ -29,6 +30,7 @@ namespace ChessFight.PawnRush
         void Gather(float t, float dt)
         {
             riders.Clear();
+            riderKey = 0;
             seen.Clear();
             var box = deck.bounds;
             float top = box.max.y, radius = Mathf.Max(.1f, box.extents.x);
@@ -59,12 +61,15 @@ namespace ChessFight.PawnRush
                 var off = new Vector2(p.x - box.center.x, p.z - box.center.z);
                 bool over = off.magnitude < radius + .2f && p.y > top - .3f;
                 bool on = over && p.y < top + (k.on ? OffTop : OnTop);
+                var offset = Vector2.ClampMagnitude(off / radius, 1f);
+                var walk = Vector2.ClampMagnitude(new Vector2(k.velocity.x, k.velocity.z) / LeanSpeed, 1f);
                 // A puppet first seen already on it came on from the side, its fall unknown: a light landing.
-                if (on && !k.on) Land(Vector2.ClampMagnitude(off / radius, 1f), k.fresh && !simulated ? 3f : -k.velocity.y);
+                if (on && !k.on) Land(offset, walk, k.fresh && !simulated ? 3f : -k.velocity.y);
                 k.on = on;
                 if (!on) continue;
-                var walk = new Vector2(k.velocity.x, k.velocity.z) / LeanSpeed;
-                riders.Add(new Rider { offset = Vector2.ClampMagnitude(off / radius, 1f), walk = Vector2.ClampMagnitude(walk, 1f) });
+                riders.Add(new Rider { offset = offset, walk = walk });
+                // the same whatever order the overlap lists them in (the actor is a plain class: its identity hash)
+                riderKey ^= System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(actor) * 16777619;
             }
             // A piece gone from over the drum is off it, even if it comes back before it is followed afresh.
             foreach (var pair in tracks)

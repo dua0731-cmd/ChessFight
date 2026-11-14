@@ -9,12 +9,13 @@ namespace ChessFight.Game
     // Sword Fight's entrance screen from the host's start (R624, 11-13). The piece pick moved here from the match scene
     // (사용자: "플레이어 찾기 후 매칭 스러운 걸 뭔가 추가 후 지금 소드파이트 기물 선택을 매칭으로 가지고 오고 싶어"), in the
     // order the user set on the canvas https://claude.ai/artifact/P4pMoyFbZdQrjixsfSfbNe ("전체 흐름을 1>2>3>A로 하자"):
-    //   ① "매칭 완료!" - the two teams' name plates slide in from the sides, a big VS slams down (SwordPickDraft.FoundSeconds);
+    //   ① "매칭 완료!" - the two teams' player cards drop in facing each other (a ranked lineup, R637), a big VS slams down
+    //      (SwordPickDraft.FoundSeconds);
     //   ② "기물을 선택하십시오" - five piece cards (1~5 or a click marks one, Space / Enter / a double click confirms it,
     //      SwordPickRequested), a teammate's piece greyed out with their name, the seconds left (PickSeconds);
     //   ③ "우리 팀이 선택한 기물" - our side's pieces, "자동 배정" on any drawn at the close (TeamSeconds);
     //   ④ A "갈라지는 결투" - the screen splits on a diagonal, our side's pieces from the left and theirs from the right
-    //      (their picks shown for the first time), a gold cut and a flash where they meet, a VS slam and a shake
+    //      (their picks shown for the first time), a sword that cuts the seam gold (R636) and a flash where they meet, a VS slam and a shake
     //      (ClashSeconds), then it holds while the scene finishes loading, and the match's own 3·2·1 follows.
     // Every frame comes from LoadingState.Reveal (seconds since the host started, on the shared clock) and the picks the
     // session reads (MatchLoader fills State.Picks), so every PC is at the same beat; only the close of the picks is this
@@ -30,11 +31,14 @@ namespace ChessFight.Game
         // ---- timing (seconds) ----
 
         // After the picks close: our team's pieces, then the clash; the scene may switch on once both have played.
-        const float TeamSeconds = 3f, ClashSeconds = 3.5f;
+        // R645 (11-14, 사용자 "칼을 베서 자르는 게 너무 빨라서 안보이고"): the clash runs .4 s longer for the slower cut.
+        const float TeamSeconds = 3f, ClashSeconds = 3.9f;
         // ① the plates come in one after another from FoundPlateAt, the VS slams at FoundVsAt
         const float FoundPlateAt = .15f, FoundPlateStep = .08f, FoundVsAt = .55f;
         // ④ the halves meet at ClashHit (the cut, the flash, the shake), the VS slams at ClashVsAt, the plate drops at ClashTitleAt
-        const float ClashHit = .45f, ClashVsAt = .5f, ClashTitleAt = 1.0f;
+        // R645: the halves now meet first (ClashMeet), then the sword comes into sight and its tip crosses the middle at
+        // ClashHit; the VS waits until the cut is open, so nothing covers the blade.
+        const float ClashMeet = .45f, ClashHit = .85f, ClashVsAt = 1.15f, ClashTitleAt = 1.6f;
 
         // ---- colours ----
 
@@ -45,10 +49,21 @@ namespace ChessFight.Game
                               Flash = MenuArt.Hex(0xfff6e2), AutoTag = MenuArt.Hex(0x5a4630);
         static readonly Color InkSoft = new Color(239 / 255f, 230 / 255f, 210 / 255f, .72f);
 
-        sealed class NamePlate
+        // R637 (11-13, 사용자 "여기 좀 더 경쟁 매칭 스럽게 바꿔줘"): ① as a ranked lineup - one tall card per player, the two
+        // teams facing each other across the VS, this PC's player nearest the VS; on each card the team's pawn, dimmed,
+        // waiting for the piece picked next, the name and what the player is (나 / 봇 / 플레이어, 방장). Each card drops in
+        // and lands with a faint flash and a light sweeping over it. R638 (사용자 "살짝 좀 오바한 느낌이야 … 전체적인 컬러랑
+        // 잘 안어울려"): in the pick's colours - ebony cards with a brass foot and brass tags, this PC's card lit ivory
+        // round its edge as on the pick and team screens; the blue and red only in the team names (no washes, no team
+        // banners or frames), the match a plain line, the cards and the VS a little smaller.
+        sealed class FoundCard
         {
-            public VisualElement Root;
-            public Label Name;
+            public VisualElement Root, Emblem;
+            public SoftEdge Edge;
+            public RSlant Face, Flash;
+            public Label Name, Tag;
+            public string Icon = "";
+            public float Wide;
         }
 
         sealed class PickCard
@@ -126,13 +141,21 @@ namespace ChessFight.Game
 
         // ① found
         VisualElement foundGroup;
-        RSlant foundTitle;
-        Label foundSub, foundVs;
+        VisualElement foundTitle, foundInfo;
+        Label foundVs, foundSize;
+        readonly VisualElement[] foundHeads = new VisualElement[2];
+        readonly Label[] foundCounts = new Label[2];
         readonly List<RSlant> foundSquares = new List<RSlant>();
-        readonly List<NamePlate>[] foundPlates = { new List<NamePlate>(), new List<NamePlate>() };
+        readonly List<FoundCard>[] foundCards = { new List<FoundCard>(), new List<FoundCard>() };
+        int foundLaid = -1;
+        // the lineup (R637): the cards stand from LineupTop, LineupTall high, each side's within LineupWide of the
+        // LineupMiddle-wide gap in the middle where the VS stands, at most CardWideMax across and LineupGap apart
+        const float LineupTop = 222f, LineupTall = 300f, LineupWide = 500f, LineupMiddle = 170f, LineupGap = 14f,
+                     CardWideMax = 140f, CardLean = 14f, FoundVsScale = .66f;
+        static readonly Color NameZone = MenuArt.Hex(0x231a12);
         // ② pick
-        VisualElement pickGroup, pickConfirm;
-        RSlant pickTitle, pickTimer;
+        VisualElement pickGroup, pickConfirm, pickTitle;
+        RSlant pickTimer;
         Label pickClock, pickHint;
         readonly List<PickCard> pickCards = new List<PickCard>();
         readonly List<Chip> pickChips = new List<Chip>();
@@ -143,13 +166,29 @@ namespace ChessFight.Game
         readonly List<TeamCard> teamCards = new List<TeamCard>();
         // ④ clash
         VisualElement clashGroup, clashShake, clashFlash;
-        SwordPoly clashLeft, clashRight, clashSlash;
-        RSlant clashTitle;
+        SwordPoly clashLeft, clashRight;
+        SwordCut clashCut;
+        VisualElement clashTitle, clashSword;
         Label clashVs, clashSub;
         readonly List<VisualElement>[] clashFigures = { new List<VisualElement>(), new List<VisualElement>() };
-        readonly List<VisualElement> clashShards = new List<VisualElement>();
-        static readonly Vector2[] ShardFly = { new Vector2(-260f, -190f), new Vector2(300f, 160f), new Vector2(180f, -240f), new Vector2(-220f, 230f) };
-        static readonly Vector2[] ShardSize = { new Vector2(26f, 10f), new Vector2(18f, 18f), new Vector2(30f, 8f), new Vector2(14f, 22f) };
+        readonly List<VisualElement> clashGhosts = new List<VisualElement>(), clashSparks = new List<VisualElement>();
+
+        // R636 (11-13, 사용자 "여기 노란색 대각선으로 슬라이스 된 부분 실제 칼로 자르는 연출을 넣어줘"): a longsword
+        // (Resources/Loading/SwordPick/ClashSword, drawn by ArtSource/Loading/SwordPick/Blade/clash_sword.py) flies down the
+        // seam tip first, so fast it leaves a few fading after-images; the gold cut opens behind its tip, white-hot where the
+        // tip is, and cools; steel sparks fly from the tip forward and to both sides; once the tip is out at the bottom the
+        // two halves slip along the cut (ours down, theirs up) and part a little, the gold showing between them. The tip
+        // crosses the middle of the screen at ClashHit, where the flash, the shake and the clash sound already were.
+        const string ClashSwordPath = "Loading/SwordPick/ClashSword";
+        static readonly Vector2 CutTop = new Vector2(781f, 0f), CutBottom = new Vector2(499f, 720f);
+        // the sword on the stage (its picture is 2048 x 256), how far above the top its tip starts, how fast it goes, and how
+        // far it leans off the seam about its tip (degrees), so the cut glowing behind the tip shows beside the blade
+        const float BladeLong = 720f, BladeTall = 90f, SwingFrom = -140f, SwingSpeed = 2600f, BladeTilt = 6f;
+        // R645: 7800 px/s crossed the screen in a tenth of a second and could not be seen; 2600 takes about .3 s.
+        // the cut's width (across, as before), its white-hot stretch behind the tip, how far the halves slip and part
+        const float CutWide = 8f, CutHot = 130f, CutSlip = 9f, CutPart = 3f;
+        static readonly float[] GhostBack = { 50f, 105f, 165f }, GhostAlpha = { .34f, .18f, .08f };
+        const int SparkCount = 12;
 
         readonly List<int> sideUs = new List<int>(), sideThem = new List<int>();
         // R624 11-13 (사용자 "vs 문구에 코팅처럼"): the lacquer coat on ①'s and ④'s VS (TextCoat)
@@ -196,6 +235,7 @@ namespace ChessFight.Game
             BuildPick(swordBox);
             BuildTeam(swordBox);
             BuildClash(swordBox);
+            WarmSwordClips();
         }
 
         RSlant TitlePlate(VisualElement parent, string text, float width)
@@ -240,39 +280,56 @@ namespace ChessFight.Game
         void BuildFound(VisualElement box)
         {
             foundGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            foundTitle = TitlePlate(foundGroup, "매칭 완료!", 330f);
-            foundSub = Left(RLabel(foundGroup, "", 16f, InkSoft, false));
-            RPlace(foundSub, 66f, 104f, 900f, 24f);
-            var ours = Bold(Left(RLabel(foundGroup, "우리 팀", 14f, UsLight, false)));
-            RPlace(ours, 90f, 196f, 300f, 22f);
-            var theirs = Bold(Right(RLabel(foundGroup, "상대 팀", 14f, ThemLight, false)));
-            RPlace(theirs, 890f, 196f, 300f, 22f);
+            // R645: game lines, not sentences ("상대를 찾았습니다 / 곧 대결이 시작됩니다" read like an editor's notice)
+            foundTitle = BuildMatchAnnouncement(foundGroup, "소드 파이트", 22f, 46f, false, "매칭 완료", "");
+            // the match under the title, one quiet line: the sides' size and the rule
+            foundInfo = RBox(foundGroup, 0f, 134f, StageWide, 24f);
+            foundSize = RLabel(foundInfo, "", 15f, InkSoft, false);
+            RPlace(foundSize, 0f, 0f, StageWide, 24f);
             for (int side = 0; side < 2; side++)
+            {
+                // R638 the team's name over its lineup in its light colour (as before R637), the head count beside it;
+                // the team colours stay in these words only, the cards are ebony and brass like the pick's
+                float near = side == 0 ? StageWide / 2f - LineupMiddle / 2f : StageWide / 2f + LineupMiddle / 2f;
+                var head = RBox(foundGroup, side == 0 ? near - LineupWide : near, LineupTop - 34f, LineupWide, 22f);
+                foundHeads[side] = head;
+                var name = Bold(side == 0 ? Left(RLabel(head, "우리 팀", 14f, UsLight, false)) : Right(RLabel(head, "상대 팀", 14f, ThemLight, false)));
+                RPlace(name, 4f, 0f, LineupWide - 8f, 22f);
+                name.style.letterSpacing = 6f;
+                var count = side == 0 ? Right(RLabel(head, "", 13f, InkSoft, false)) : Left(RLabel(head, "", 13f, InkSoft, false));
+                RPlace(count, 4f, 0f, LineupWide - 8f, 22f);
+                foundCounts[side] = count;
                 for (int i = 0; i < LoadingStudio.PerTeam; i++)
                 {
-                    float x = side == 0 ? 90f - 18f * i : 790f + 18f * i, y = 228f + 64f * i;
-                    var plate = new NamePlate { Root = RBox(foundGroup, x, y, 400f, 54f) };
-                    var face = new RSlant(12f, CardFace);
-                    RPlace(face, 0f, 0f, 400f, 54f);
-                    plate.Root.Add(face);
-                    var stripe = new RSlant(12f, side == 0 ? SideUs : SideThem);
-                    RPlace(stripe, side == 0 ? 0f : 386f, 0f, 14f, 54f);
-                    plate.Root.Add(stripe);
-                    plate.Name = Bold(side == 0 ? Left(RLabel(plate.Root, "", 26f, Ivory, true)) : Right(RLabel(plate.Root, "", 26f, Ivory, true)));
-                    RPlace(plate.Name, 34f, 0f, 332f, 54f);
-                    foundPlates[side].Add(plate);
+                    var card = new FoundCard { Root = RBox(foundGroup, 0f, 0f, 10f, 10f) };
+                    card.Edge = new SoftEdge(card.Root, CardLean);
+                    card.Face = new RSlant(CardLean, CardFace);
+                    card.Root.Add(card.Face);
+                    card.Emblem = RBox(card.Root, 0f, 0f, 10f, 10f);
+                    card.Emblem.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+                    card.Emblem.style.opacity = .45f;
+                    card.Name = Bold(RLabel(card.Root, "", 22f, Ivory, true));
+                    card.Name.style.overflow = Overflow.Hidden;
+                    card.Name.style.textOverflow = TextOverflow.Ellipsis;
+                    card.Name.style.whiteSpace = WhiteSpace.NoWrap;
+                    card.Tag = Bold(RLabel(card.Root, "", 13f, Brass, false));
+                    card.Flash = new RSlant(CardLean, Flash);
+                    card.Flash.style.opacity = 0f;
+                    card.Root.Add(card.Flash);
+                    foundCards[side].Add(card);
                 }
-            foundVs = BigVs(foundGroup, 236f);
+            }
+            foundVs = BigVs(foundGroup, LineupTop + LineupTall / 2f - 100f);
             foundCoat = TextCoat.Apply(foundVs, StageWide, 200f, VsGloss, VsGlint, VsFrom, VsTo);
             var soon = RLabel(foundGroup, "곧 기물을 선택합니다", 18f, InkSoft, false);
-            RPlace(soon, 0f, 604f, StageWide, 26f);
-            const float w = 72f, gap = 12f;
+            RPlace(soon, 0f, 572f, StageWide, 26f);
+            const float w = 120f, gap = 12f;
             float left = (StageWide - (3f * w + 2f * gap)) / 2f;
             for (int k = 0; k < 3; k++)
             {
                 var square = new RSlant(8f, DotOff);
-                RPlace(square, left + k * (w + gap), 640f, w, 14f);
-                square.Bar(0f, 14f, Brass);
+                RPlace(square, left + k * (w + gap), 606f, w, 12f);
+                square.Bar(0f, 12f, Brass);
                 foundGroup.Add(square);
                 foundSquares.Add(square);
             }
@@ -281,9 +338,7 @@ namespace ChessFight.Game
         void BuildPick(VisualElement box)
         {
             pickGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            pickTitle = TitlePlate(pickGroup, "기물을 선택하십시오", 430f);
-            var sub = Left(RLabel(pickGroup, "팀원끼리 같은 기물은 못 골라요 · 상대 팀 기물은 경기 시작 직전에 공개", 16f, InkSoft, false));
-            RPlace(sub, 66f, 104f, 900f, 24f);
+            pickTitle = BuildMatchAnnouncement(pickGroup, "소드 파이트", 16f, 40f, true, "기물 선택", "");
             pickClock = Right(RLabel(pickGroup, "15", 56f, Ivory, false));
             RPlace(pickClock, 960f, 28f, 210f, 62f);
             pickClock.style.textShadow = new TextShadow { offset = new Vector2(4f, 4f), blurRadius = 0f, color = Brass };
@@ -347,11 +402,37 @@ namespace ChessFight.Game
 
             pickConfirm = RBox(pickGroup, StageWide - RowMargin - 210f, 574f, 210f, 52f);
             pickConfirm.pickingMode = PickingMode.Position;
-            var button = new RSlant(12f, Brass);
-            RPlace(button, 0f, 0f, 210f, 52f);
-            pickConfirm.Add(button);
-            var press = Bold(RLabel(pickConfirm, "확정  Space", 18f, Ebony, false));
-            RPlace(press, 0f, 0f, 210f, 52f);
+            var shadow = RBox(pickConfirm, 2f, 4f, 206f, 50f);
+            shadow.style.backgroundColor = new Color(0f, 0f, 0f, .35f);
+            shadow.style.borderTopLeftRadius = shadow.style.borderTopRightRadius =
+                shadow.style.borderBottomLeftRadius = shadow.style.borderBottomRightRadius = 8f;
+            var button = RBox(pickConfirm, 0f, 0f, 210f, 52f);
+            button.name = "pick-confirm-face";
+            button.style.backgroundColor = MenuArt.Hex(0x25221e);
+            button.style.borderTopLeftRadius = button.style.borderTopRightRadius =
+                button.style.borderBottomLeftRadius = button.style.borderBottomRightRadius = 8f;
+            button.style.borderTopWidth = button.style.borderRightWidth = button.style.borderBottomWidth = button.style.borderLeftWidth = 1f;
+            var rim = new Color(Ivory.r, Ivory.g, Ivory.b, .18f);
+            button.style.borderTopColor = button.style.borderRightColor = button.style.borderBottomColor = button.style.borderLeftColor = rim;
+            var press = Left(RLabel(button, "확정", 22f, Ivory, true));
+            RPlace(press, 22f, 0f, 84f, 52f);
+            var key = RBox(button, 126f, 12f, 64f, 28f);
+            key.style.backgroundColor = new Color(Ivory.r, Ivory.g, Ivory.b, .07f);
+            key.style.borderTopLeftRadius = key.style.borderTopRightRadius =
+                key.style.borderBottomLeftRadius = key.style.borderBottomRightRadius = 5f;
+            var shortcut = RLabel(key, "SPACE", 12f, InkSoft, false);
+            shortcut.style.letterSpacing = 1.2f;
+            RPlace(shortcut, 0f, 0f, 64f, 28f);
+            pickConfirm.RegisterCallback<PointerEnterEvent>(e =>
+            {
+                button.style.backgroundColor = MenuArt.Hex(0x34302a);
+                button.style.translate = new Translate(0f, -1f);
+            });
+            pickConfirm.RegisterCallback<PointerLeaveEvent>(e =>
+            {
+                button.style.backgroundColor = MenuArt.Hex(0x25221e);
+                button.style.translate = new Translate(0f, 0f);
+            });
             pickConfirm.RegisterCallback<PointerDownEvent>(e =>
             {
                 if (e.button == 0 && swordMarked.HasValue) ConfirmPiece(swordMarked.Value);
@@ -396,10 +477,11 @@ namespace ChessFight.Game
             clashGroup = RBox(box, 0f, 0f, StageWide, StageTall);
             clashGroup.style.overflow = Overflow.Hidden;
             clashShake = RBox(clashGroup, 0f, 0f, StageWide, StageTall);
-            clashLeft = new SwordPoly(UsDeep, new Vector2(0f, 0f), new Vector2(781f, 0f), new Vector2(499f, 720f), new Vector2(0f, 720f));
+            // the halves reach 40 px past the stage on every side, so their slip along the cut never shows an edge
+            clashLeft = new SwordPoly(UsDeep, new Vector2(-40f, -40f), new Vector2(SeamX(-40f), -40f), new Vector2(SeamX(760f), 760f), new Vector2(-40f, 760f));
             RPlace(clashLeft, 0f, 0f, StageWide, StageTall);
             clashShake.Add(clashLeft);
-            clashRight = new SwordPoly(ThemDeep, new Vector2(781f, 0f), new Vector2(1280f, 0f), new Vector2(1280f, 720f), new Vector2(499f, 720f));
+            clashRight = new SwordPoly(ThemDeep, new Vector2(SeamX(-40f), -40f), new Vector2(StageWide + 40f, -40f), new Vector2(StageWide + 40f, 760f), new Vector2(SeamX(760f), 760f));
             RPlace(clashRight, 0f, 0f, StageWide, StageTall);
             clashShake.Add(clashRight);
             var ours = Bold(Left(RLabel(clashLeft, "우리 팀", 16f, UsLight, false)));
@@ -415,24 +497,38 @@ namespace ChessFight.Game
                     // R624 11-13 (사용자 "마지막 경기 시작 부분 밑에 이거 지워주고"): no name chips under the pieces any more
                     clashFigures[side].Add(RBox(parent, 0f, 0f, 10f, 10f));
                 }
-            clashSlash = new SwordPoly(Gold, new Vector2(777f, -10f), new Vector2(785f, -10f), new Vector2(503f, 730f), new Vector2(495f, 730f));
-            RPlace(clashSlash, 0f, 0f, StageWide, StageTall);
-            clashShake.Add(clashSlash);
+            clashCut = new SwordCut(new Vector2(SeamX(-12f), -12f), new Vector2(SeamX(732f), 732f), CutWide);
+            RPlace(clashCut, 0f, 0f, StageWide, StageTall);
+            clashShake.Add(clashCut);
             clashFlash = RLayer(clashShake);
             clashFlash.style.backgroundColor = Flash;
-            for (int k = 0; k < ShardFly.Length; k++)
+            // the after-images first, so the sword itself is drawn over them; each sits with its tip on CutTop, turned
+            // about its tip to point down the seam, and is moved along the seam
+            var blade = Resources.Load<Texture2D>(ClashSwordPath);
+            if (blade == null) Debug.LogWarning("[Loading] 결투 칼 그림이 없습니다: Resources/" + ClashSwordPath);
+            var down = CutDir;
+            for (int k = 0; k <= GhostBack.Length; k++)
             {
-                var shard = RBox(clashShake, 636f, 356f, ShardSize[k].x, ShardSize[k].y);
-                shard.style.backgroundColor = k % 2 == 0 ? Gold : Brass;
-                clashShards.Add(shard);
+                var e = RBox(clashShake, CutTop.x - BladeLong, CutTop.y - BladeTall / 2f, BladeLong, BladeTall);
+                RStretch(e, blade);
+                e.style.transformOrigin = new TransformOrigin(Length.Percent(100f), Length.Percent(50f), 0f);
+                e.style.rotate = new Rotate(new Angle(Mathf.Atan2(down.y, down.x) * Mathf.Rad2Deg + BladeTilt, AngleUnit.Degree));
+                e.style.opacity = 0f;
+                if (k < GhostBack.Length) clashGhosts.Add(e);
+                else clashSword = e;
+            }
+            for (int k = 0; k < SparkCount; k++)
+            {
+                var spark = RBox(clashShake, 0f, 0f, SparkLong(k), 3f);
+                spark.style.backgroundColor = k % 3 == 0 ? Flash : Gold;
+                spark.style.borderTopLeftRadius = spark.style.borderTopRightRadius = spark.style.borderBottomLeftRadius = spark.style.borderBottomRightRadius = 1.5f;
+                spark.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(50f), 0f);
+                spark.style.opacity = 0f;
+                clashSparks.Add(spark);
             }
             clashVs = BigVs(clashShake, 250f);
             clashCoat = TextCoat.Apply(clashVs, StageWide, 200f, VsGloss, VsGlint, VsFrom, VsTo);
-            clashTitle = new RSlant(14f, Ivory);
-            RPlace(clashTitle, 450f, 520f, 380f, 70f);
-            var title = RLabel(clashTitle, "결투 준비 완료!", 42f, Ebony, true);
-            RPlace(title, 0f, 0f, 380f, 70f);
-            clashShake.Add(clashTitle);
+            clashTitle = BuildMatchAnnouncement(clashShake, "소드 파이트", 508f, 40f, false, "결투 개시", "");
             clashSub = RLabel(clashGroup, "", 15f, InkSoft, false);
             RPlace(clashSub, 0f, 684f, StageWide, 24f);
         }
@@ -457,7 +553,7 @@ namespace ChessFight.Game
                     swordStage.style.scale = on ? new Scale(new Vector2(1.05f, 1.05f)) : new StyleScale(StyleKeyword.Null);
                 }
             }
-            if (!on) { swordClosedAt = -1f; swordScreen = -1; return; }
+            if (!on) { swordClosedAt = -1f; swordScreen = -1; SyncSwordSound(-1f); return; }
             FitBox(swordBox);
             swordDim.style.opacity = Eo3(Ph(t, 0f, .2f));
             Sides(sideUs, sideThem);
@@ -481,6 +577,8 @@ namespace ChessFight.Game
                 case 2: SyncTeam(u); break;
                 default: SyncClash(u - TeamSeconds); break;
             }
+            // R631: the screen's sound (LoadingScreenView.SwordPickSound.cs)
+            SyncSwordSound(t);
         }
 
         void FitBox(VisualElement box)
@@ -509,12 +607,6 @@ namespace ChessFight.Game
 
         int MyTeam() => State.Me >= 0 && State.Me < State.Teams.Count ? State.Teams[State.Me] : 0;
 
-        string EntryName(int i)
-        {
-            string name = i < State.Names.Count ? State.Names[i] : "";
-            return i == State.Me ? "나 · " + name : name;
-        }
-
         PieceKind PickOf(int i) => i >= 0 && i < State.Picks.Count ? State.Picks[i] : PieceKind.Pawn;
 
         static void Text(Label label, string text)
@@ -524,27 +616,74 @@ namespace ChessFight.Game
 
         void SyncFound(float t)
         {
-            foundTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(t, .1f, .24f))), 0f);
-            Text(foundSub, "소드 파이트 · " + Mathf.Max(1, sideUs.Count) + " VS " + Mathf.Max(1, sideThem.Count) + " · 떨어뜨리고 빼앗기");
+            SyncMatchAnnouncement(foundTitle, t - .1f);
+            foundInfo.style.opacity = Ph(t, .2f, .25f);
+            // R640: the "떨어뜨리고 빼앗기" subtitle is gone (no steal any more), nothing in its place.
+            Text(foundSize, Mathf.Max(1, sideUs.Count) + " VS " + Mathf.Max(1, sideThem.Count));
+            int laid = sideUs.Count * 32 + sideThem.Count;
+            if (laid != foundLaid)
+            {
+                foundLaid = laid;
+                LayFound(0, sideUs.Count);
+                LayFound(1, sideThem.Count);
+            }
+            int myTeam = MyTeam();
+            float banner = Eo3(Ph(t, .1f, .3f));
             for (int side = 0; side < 2; side++)
             {
                 var list = side == 0 ? sideUs : sideThem;
-                var plates = foundPlates[side];
-                for (int k = 0; k < plates.Count; k++)
+                foundHeads[side].style.translate = new Translate((side == 0 ? -1f : 1f) * 30f * (1f - banner), 0f);
+                foundHeads[side].style.opacity = banner;
+                Text(foundCounts[side], list.Count + "명");
+                string icon = (side == 0 ? myTeam : 1 - myTeam) == 0 ? "Pawn_White" : "Pawn_Black";
+                var cards = foundCards[side];
+                for (int k = 0; k < cards.Count; k++)
                 {
-                    var plate = plates[k];
+                    var card = cards[k];
                     bool shown = k < list.Count;
-                    plate.Root.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+                    card.Root.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
                     if (!shown) continue;
-                    Text(plate.Name, EntryName(list[k]));
-                    float a = FoundPlateAt + FoundPlateStep * k;
-                    plate.Root.style.translate = new Translate((side == 0 ? -1f : 1f) * 560f * (1f - Eo3(Ph(t, a, .3f))), 0f);
-                    plate.Root.style.opacity = Ph(t, a, .1f);
+                    int i = list[k];
+                    bool me = i == State.Me;
+                    Text(card.Name, i < State.Names.Count ? State.Names[i] : "");
+                    string tag = me ? "나" : i < State.Bots.Count && State.Bots[i] ? "봇" : "플레이어";
+                    if (i == State.Manager) tag += " · 방장";
+                    Text(card.Tag, tag);
+                    card.Tag.style.color = me ? Ivory : Brass;
+                    card.Edge.Set(me ? Ivory : Color.black);
+                    // R645 (사용자 "실제 스팀 아이콘으로"): a player's Steam picture in the pawn's place, full strength and
+                    // filling the square, in a thin brass frame; a bot (or a picture Steam has not sent yet) keeps the pawn.
+                    var face = i < State.Faces.Count ? State.Faces[i] : null;
+                    string look = face != null ? "face:" + face.GetInstanceID() : icon;
+                    if (card.Icon != look)
+                    {
+                        card.Icon = look;
+                        var texture = face != null ? face : Icon(icon);
+                        card.Emblem.style.backgroundImage = texture != null ? new StyleBackground(texture) : new StyleBackground(StyleKeyword.None);
+                        card.Emblem.style.backgroundSize = new BackgroundSize(face != null ? BackgroundSizeType.Cover : BackgroundSizeType.Contain);
+                        card.Emblem.style.opacity = face != null ? 1f : .45f;
+                        float frame = face != null ? 2f : 0f;
+                        card.Emblem.style.borderTopWidth = frame; card.Emblem.style.borderBottomWidth = frame;
+                        card.Emblem.style.borderLeftWidth = frame; card.Emblem.style.borderRightWidth = frame;
+                        var rim = me ? Ivory : Brass;
+                        card.Emblem.style.borderTopColor = rim; card.Emblem.style.borderBottomColor = rim;
+                        card.Emblem.style.borderLeftColor = rim; card.Emblem.style.borderRightColor = rim;
+                        float round = face != null ? 6f : 0f;
+                        card.Emblem.style.borderTopLeftRadius = round; card.Emblem.style.borderTopRightRadius = round;
+                        card.Emblem.style.borderBottomLeftRadius = round; card.Emblem.style.borderBottomRightRadius = round;
+                    }
+                    // drops in, lands (with the plate sound) with a flash, then a light sweeps across it
+                    float a = FoundPlateAt + FoundPlateStep * k, land = a + PlateSlide;
+                    card.Root.style.translate = new Translate(0f, -50f * (1f - Eo3(Ph(t, a, PlateSlide))));
+                    card.Root.style.opacity = Ph(t, a, .1f);
+                    card.Flash.style.opacity = t < land ? 0f : .08f * (1f - Ph(t, land, .16f));
+                    float sweep = Ph(t, land + .05f, .4f);
+                    card.Face.SliceAt(-80f + (card.Wide + 160f) * sweep, sweep > 0f && sweep < 1f ? 1f : 0f);
                 }
             }
             float vs = Ph(t, FoundVsAt, .18f);
             foundVs.style.opacity = Ph(t, FoundVsAt, .06f);
-            float scale = 1f + 1.4f * (1f - Eo3(vs));
+            float scale = FoundVsScale * (1f + 1.4f * (1f - Eo3(vs)));
             foundVs.style.scale = new Scale(new Vector2(scale, scale));
             foundCoat.Sync(t - (FoundVsAt + .3f));
             var shake = Shake(t - (FoundVsAt + .18f), 10f, .2f, 2);
@@ -554,9 +693,45 @@ namespace ChessFight.Game
             for (int k = 0; k < foundSquares.Count; k++) foundSquares[k].BarFill(Ph(t, k * step, step));
         }
 
+        // R637 one side's cards for `n` players: as wide as fit (at most CardWideMax), the first nearest the VS; inside, the
+        // pawn above and the name and tag in the darker band at the foot, each nudged along the card's slant.
+        void LayFound(int side, int n)
+        {
+            n = Mathf.Clamp(n, 1, LoadingStudio.PerTeam);
+            float w = Mathf.Min(CardWideMax, (LineupWide - (n - 1) * LineupGap) / n), h = LineupTall;
+            float near = side == 0 ? StageWide / 2f - LineupMiddle / 2f : StageWide / 2f + LineupMiddle / 2f;
+            bool small = n > 3;
+            float zone = small ? 62f : 76f, emblemTop = 30f, emblem = Mathf.Min(w - 22f, h - zone - emblemTop - 18f);
+            for (int k = 0; k < foundCards[side].Count; k++)
+            {
+                var card = foundCards[side][k];
+                card.Wide = w;
+                float x = side == 0 ? near - (k + 1) * w - k * LineupGap : near + k * (w + LineupGap);
+                RPlace(card.Root, x, LineupTop, w, h);
+                card.Edge.Place(w, h);
+                RPlace(card.Face, 0f, 0f, w, h);
+                RPlace(card.Flash, 0f, 0f, w, h);
+                card.Face.Band(h - zone, NameZone);
+                card.Face.Bar(h - 6f, 6f, Brass);
+                card.Face.BarFill(1f);
+                card.Face.SliceLook(Mathf.Max(22f, w * .2f), 30f, -18f, new Color(1f, 1f, 1f, .08f));
+                float emblemY = emblemTop + (h - zone - emblemTop - emblem) / 2f;
+                RPlace(card.Emblem, (w - emblem) / 2f + Slant(emblemY + emblem / 2f, h), emblemY, emblem, emblem);
+                float nameY = h - zone + (small ? 8f : 10f), nameTall = small ? 24f : 30f;
+                RPlace(card.Name, 8f + Slant(nameY + nameTall / 2f, h), nameY, w - 16f, nameTall);
+                card.Name.style.fontSize = small ? 15f : 20f;
+                float tagY = h - (small ? 26f : 32f);
+                RPlace(card.Tag, 8f + Slant(tagY + 9f, h), tagY, w - 16f, 18f);
+                card.Tag.style.fontSize = small ? 11f : 13f;
+            }
+        }
+
+        // how far the middle of a CardLean card sits from the box's middle at height y
+        static float Slant(float y, float h) => CardLean * (.5f - y / h);
+
         void SyncPick(float t, float since)
         {
-            pickTitle.style.translate = new Translate(-700f * (1f - EoBack(Ph(t, 0f, .24f))), 0f);
+            SyncMatchAnnouncement(pickTitle, t);
             double left = SwordPickDraft.Left(since);
             Text(pickClock, Mathf.CeilToInt((float)left).ToString());
             pickTimer.BarFill((float)(left / SwordPickDraft.PickSeconds));
@@ -607,10 +782,12 @@ namespace ChessFight.Game
 
             bool canConfirm = mine == PieceKind.Pawn && !swordAsked.HasValue && swordMarked.HasValue;
             pickConfirm.style.display = canConfirm ? DisplayStyle.Flex : DisplayStyle.None;
-            Text(pickHint, mine != PieceKind.Pawn ? "골랐어요. 다른 팀원을 기다리는 중 · 모두 고르면 바로 넘어가요"
-                         : swordAsked.HasValue ? ChessPieces.Name(swordAsked.Value) + " 보내는 중"
-                         : swordMarked.HasValue ? ChessPieces.Name(swordMarked.Value) + " 선택 · Space나 더블클릭으로 확정"
-                         : "클릭 · 1~5로 선택, Space나 더블클릭으로 확정 · 시간이 끝나면 남은 기물로 자동 배정");
+            // R645 (11-14, 사용자 "너무 에디터 느낌 … 실제 게임에서 문구를 넣어줘, 필요 없으면 삭제"): short game lines, no
+            // instructions - the cards and the confirm button already show how to pick.
+            Text(pickHint, mine != PieceKind.Pawn ? "팀원 대기 중"
+                         : swordAsked.HasValue ? "확정 중"
+                         : swordMarked.HasValue ? "SPACE  확정"
+                         : "");
             if (!Hiding) SwordKeys();
         }
 
@@ -646,6 +823,7 @@ namespace ChessFight.Game
         void MarkPiece(PieceKind piece)
         {
             if (!PickOpen || Holder(piece) != null) return;
+            if (swordMarked != piece) SwordMark(false);
             swordMarked = piece;
         }
 
@@ -654,6 +832,7 @@ namespace ChessFight.Game
             if (!PickOpen || Holder(piece) != null) return;
             swordMarked = piece;
             swordAsked = piece;
+            SwordMark(true);
             SwordPickRequested?.Invoke(piece);
         }
 
@@ -709,9 +888,14 @@ namespace ChessFight.Game
 
         void SyncClash(float c)
         {
-            float meet = EoBack(Ph(c, 0f, ClashHit));
-            clashLeft.style.translate = new Translate(-StageWide * (1f - meet), 0f);
-            clashRight.style.translate = new Translate(StageWide * (1f - meet), 0f);
+            var down = CutDir;
+            var across = new Vector2(down.y, -down.x);   // from our half into theirs
+            float tip = SwingTip(c), cutEnd = ClashHit + CutLength * .5f / SwingSpeed;
+            float meet = EoBack(Ph(c, 0f, ClashMeet));
+            float slip = Eo3(Ph(c, cutEnd, .3f));
+            var part = down * (CutSlip * slip) - across * (CutPart * slip);
+            clashLeft.style.translate = new Translate(-StageWide * (1f - meet) + part.x, part.y);
+            clashRight.style.translate = new Translate(StageWide * (1f - meet) - part.x, -part.y);
             int myTeam = MyTeam();
             for (int side = 0; side < 2; side++)
             {
@@ -737,23 +921,45 @@ namespace ChessFight.Game
                 }
             }
 
-            float hit = c - ClashHit;
-            clashSlash.style.opacity = hit < 0f ? 0f : hit < .1f ? 1f : Mathf.Lerp(1f, .55f, Ph(hit, .1f, .5f));
-            clashFlash.style.opacity = hit < 0f ? 0f : .9f * (1f - Ph(hit, 0f, .3f));
-            for (int k = 0; k < clashShards.Count; k++)
+            float hit = c - ClashHit, cooled = c - cutEnd;
+            // the cut, measured from its own start 12 px above the stage
+            clashCut.Set(tip + 12f / down.y, 1f - Ph(cooled, 0f, .35f));
+            clashCut.style.opacity = cooled < .1f ? 1f : Mathf.Lerp(1f, .55f, Ph(cooled, .1f, .5f));
+            // R636: the project blends in linear light, where .1 already reads as a light flash (.55 washed the cut out)
+            clashFlash.style.opacity = hit < 0f ? 0f : .1f * (1f - Ph(hit, 0f, .12f));
+            bool flying = tip > SwingFrom && tip - BladeLong < CutLength + 20f;
+            clashSword.style.opacity = flying ? 1f : 0f;
+            clashSword.style.translate = new Translate(down.x * tip, down.y * tip);
+            for (int k = 0; k < clashGhosts.Count; k++)
             {
-                float fly = Eo3(Ph(hit, 0f, .8f + .1f * k));
-                clashShards[k].style.translate = new Translate(ShardFly[k].x * fly, ShardFly[k].y * fly);
-                clashShards[k].style.rotate = new Rotate(new Angle(220f * fly * (k % 2 == 0 ? 1f : -1f), AngleUnit.Degree));
-                clashShards[k].style.opacity = hit < 0f ? 0f : 1f - fly;
+                float back = tip - GhostBack[k];
+                clashGhosts[k].style.opacity = flying && back > SwingFrom ? GhostAlpha[k] : 0f;
+                clashGhosts[k].style.translate = new Translate(down.x * back, down.y * back);
+            }
+            for (int k = 0; k < clashSparks.Count; k++)
+            {
+                // spark k leaves the tip as it passes its own point on the seam, flies on with the blade and out to one
+                // side, slows in the air and drops, and goes out
+                float along = (.12f + .76f * ((k * 7) % SparkCount) / (SparkCount - 1f)) * CutLength;
+                float age = c - (ClashHit + (along - CutLength * .5f) / SwingSpeed), life = .28f + .04f * (k % 4);
+                var spark = clashSparks[k];
+                if (age < 0f || age > life) { spark.style.opacity = 0f; continue; }
+                var push = down * (260f + 90f * ((k * 5) % 4)) + across * ((k % 2 == 0 ? 1f : -1f) * (160f + 70f * ((k * 3) % 5)));
+                float drag = Mathf.Exp(-6f * age);
+                var at = CutTop + down * along + push * ((1f - drag) / 6f) + new Vector2(0f, 700f * age * age);
+                var heading = push * drag + new Vector2(0f, 1400f * age);
+                float len = SparkLong(k);
+                spark.style.translate = new Translate(at.x - len / 2f, at.y - 1.5f);
+                spark.style.rotate = new Rotate(new Angle(Mathf.Atan2(heading.y, heading.x) * Mathf.Rad2Deg, AngleUnit.Degree));
+                spark.style.scale = new Scale(new Vector2(.35f + .65f * drag, 1f));
+                spark.style.opacity = 1f - Mathf.Pow(age / life, 2f);
             }
             float vs = Ph(c, ClashVsAt, .2f);
             clashVs.style.opacity = Ph(c, ClashVsAt, .06f);
             float scale = 1f + 2.2f * (1f - Eo3(vs));
             clashVs.style.scale = new Scale(new Vector2(scale, scale));
             clashCoat.Sync(c - (ClashVsAt + .35f));
-            clashTitle.style.opacity = Ph(c, ClashTitleAt, .1f);
-            clashTitle.style.translate = new Translate(0f, -120f * (1f - EoBack(Ph(c, ClashTitleAt, .25f))));
+            SyncMatchAnnouncement(clashTitle, c - ClashTitleAt);
             var shake = Shake(hit, 14f, .25f, 3);
             clashShake.style.translate = new Translate(shake.x, shake.y);
             Text(clashSub, c >= ClashSeconds && !string.IsNullOrEmpty(State.Step) ? State.Step + "  ·  " + State.Percent + "%" : "");
@@ -789,7 +995,74 @@ namespace ChessFight.Game
             if (swordVignette != null) Destroy(swordVignette);
         }
 
-        // A filled convex polygon (the clash's two halves and the cut between them), in the element's own pixels.
+        // ---- the cut (R636)
+
+        static Vector2 CutDir => (CutBottom - CutTop).normalized;
+        static float CutLength => (CutBottom - CutTop).magnitude;
+        // where the seam crosses height y
+        static float SeamX(float y) => CutTop.x + (CutBottom.x - CutTop.x) * (y - CutTop.y) / (CutBottom.y - CutTop.y);
+        // how far down the seam the sword's tip is (stage pixels from CutTop): the middle of the screen at ClashHit
+        static float SwingTip(float c) => CutLength * .5f + SwingSpeed * (c - ClashHit);
+        static float SparkLong(int k) => 12f + 3f * (k % 4);
+
+        // The gold cut, drawn from its start down to `reach` along the seam: gold, then over its last CutHot pixels
+        // warming to white-hot at the tip by `heat`. Repainted only when either changes.
+        sealed class SwordCut : VisualElement
+        {
+            readonly Vector2 from, along;
+            readonly float length, half;
+            float reach = -1f, heat = -1f;
+
+            public SwordCut(Vector2 from, Vector2 to, float wide)
+            {
+                this.from = from;
+                length = (to - from).magnitude;
+                along = (to - from) / length;
+                half = wide / 2f;
+                pickingMode = PickingMode.Ignore;
+                generateVisualContent += Draw;
+            }
+
+            public void Set(float reachTo, float heatNow)
+            {
+                reachTo = Mathf.Clamp(reachTo, 0f, length);
+                heatNow = Mathf.Clamp01(heatNow);
+                if (Mathf.Abs(reachTo - reach) < .01f && Mathf.Abs(heatNow - heat) < .002f) return;
+                reach = reachTo;
+                heat = heatNow;
+                MarkDirtyRepaint();
+            }
+
+            void Draw(MeshGenerationContext context)
+            {
+                if (reach <= 0f) return;
+                var mesh = context.Allocate(6, 12);
+                Station(mesh, 0f, Gold);
+                Station(mesh, Mathf.Max(0f, reach - CutHot), Gold);
+                Station(mesh, reach, Color.Lerp(Gold, Color.white, heat));
+                // each stretch between two stations as two clockwise triangles
+                for (int i = 0; i < 2; i++)
+                {
+                    int l = i * 2;
+                    mesh.SetNextIndex((ushort)l);
+                    mesh.SetNextIndex((ushort)(l + 1));
+                    mesh.SetNextIndex((ushort)(l + 2));
+                    mesh.SetNextIndex((ushort)(l + 1));
+                    mesh.SetNextIndex((ushort)(l + 3));
+                    mesh.SetNextIndex((ushort)(l + 2));
+                }
+            }
+
+            void Station(MeshWriteData mesh, float at, Color color)
+            {
+                var p = from + along * at;
+                Color32 tint = color;
+                mesh.SetNextVertex(new Vertex { position = new Vector3(p.x - half, p.y, Vertex.nearZ), tint = tint });
+                mesh.SetNextVertex(new Vertex { position = new Vector3(p.x + half, p.y, Vertex.nearZ), tint = tint });
+            }
+        }
+
+        // A filled convex polygon (the clash's two halves), in the element's own pixels.
         sealed class SwordPoly : VisualElement
         {
             readonly Vector2[] points;

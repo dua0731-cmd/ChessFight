@@ -1,0 +1,20 @@
+[
+  {
+    "prefab": "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab",
+    "before": 2662945,
+    "after": 2628003,
+    "saved": 34942,
+    "reductionPercent": 1.312156278105631,
+    "colliders": 245,
+    "colliderHashSame": true
+  },
+  {
+    "prefab": "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab",
+    "before": 4722590,
+    "after": 4016857,
+    "saved": 705733,
+    "reductionPercent": 14.943770261657269,
+    "colliders": 229,
+    "colliderHashSame": true
+  }
+]

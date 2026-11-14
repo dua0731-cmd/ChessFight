@@ -1,0 +1,12 @@
+garden/start/auto min 35.2 med 36.0
+garden/start/lod0 min 30.9 med 35.9
+garden/start/lod2 min 25.2 med 27.8
+garden/overview/auto min 31.4 med 34.6
+garden/overview/lod0 min 31.8 med 36.4
+garden/overview/lod2 min 26.2 med 28.8
+garden/end_back/auto min 36.7 med 38.6
+garden/end_back/lod0 min 38.2 med 38.5
+garden/end_back/lod2 min 28.0 med 28.1
+garden/side/auto min 37.6 med 41.9
+garden/side/lod0 min 37.6 med 38.5
+garden/side/lod2 min 28.5 med 28.7
