@@ -25,7 +25,7 @@ namespace ChessFight.PawnRush
     // on: its area is halfWidth either side along its own x and halfDepth along its z round where it stands. Keep the
     // area BodyRadius inside any wall.
     //
-    // R626 (the user's zone 1: "말과 말이 이끄는 마차들이 돌아다니며"): it can also be a team - the carriage with a
+    // R659 (the user's zone 1: "말과 말이 이끄는 마차들이 돌아다니며"): it can also be a team - the carriage with a
     // pair of harnessed horses in front, one long body - or a loose horse, smaller and faster, which rears through its
     // aim instead of lighting lamps. The fleet gives each its own reach and turn (RoamingFleet radii / turns).
     public sealed class RoamingCarriage : Obstacle, IHitTurns

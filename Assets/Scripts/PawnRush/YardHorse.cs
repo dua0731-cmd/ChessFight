@@ -3,7 +3,7 @@ using Solid = ChessFight.PawnRush.YardKit.Solid;
 
 namespace ChessFight.PawnRush
 {
-    // A royal horse for the Royal Carriage Yard's moving things (R626, out of R532's StableCharger): the stable horse,
+    // A royal horse for the Royal Carriage Yard's moving things (R659, out of R532's StableCharger): the stable horse,
     // the horses that pull the roaming carriages and the loose horses roaming the yard. Pictures only - whoever owns it
     // gives it one collider over all of it - nose to local +z, standing on y 0, Length x Width x Height. The body hangs
     // from a pivot over the hind legs, so it can rear; each leg from a pivot at its top, so it can stride; Pose moves

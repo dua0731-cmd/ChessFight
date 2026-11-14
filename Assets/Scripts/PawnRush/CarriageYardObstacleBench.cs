@@ -147,6 +147,32 @@ namespace ChessFight.PawnRush
             YardKit.Wall(s, "Gate lintel", -4f, 4f, 15.3f, 17f, 197f, 199f, YardKit.WallStone);
             Place<PushGate>(s, "Push gate", new Vector3(0f, 8f, 198f)).Configure(8f, 7.2f, 10.5f, .6f, 1f);
             cb.Trigger<FinishZone>("Finish", new Vector3(-10f, 8f, 204f), new Vector3(10f, 11f, 210f)).Configure(true);
+
+            R659Bays(s);
+        }
+
+        // R659's new obstacles, one bay each in a second row west of the first (T drops the pawn where the camera looks):
+        //   z 4..20    a roaming team (a carriage drawn by a pair of horses), as the yard's
+        //   z 40..50   a cargo cart on its track, running both ways (not on the map: StableCharger's cart look)
+        //   z 54..78   a giant chest's gantry: three places, the red circle, the shockwave (jump it, or stand on the crate)
+        void R659Bays(Transform s)
+        {
+            const float x = -52f;
+            YardKit.Floor(s, "Floor R659", x - 20f, x + 20f, -6f, 80f, 0f);
+            Sign(s, "말이 끄는 마차 (무작위 돌진)", new Vector3(x, 4.4f, 2.5f));
+            Place<RoamingCarriage>(s, "Roaming team", new Vector3(x, 0f, 12f))
+                .Configure(12f, 3f, 9f, 3.4f, .6f, 1.2f, 7, 4f, 1f, 0, RoamingCarriage.Look.Team);
+            Sign(s, "화물 수레 (레일 위 왕복)", new Vector3(x, 3.6f, 39f));
+            var cart = Place<StableCharger>(s, "Cargo cart", new Vector3(x - 12f, 0f, 45f), 90f);
+            cart.Configure(StableCharger.Look.Cart, new Vector3(0f, 0f, 24f), 8f, 8f, 1.2f, 1.2f, 1f, 4f, 1f, 2, 1.6f, true);
+            foreach (float off in new[] { -.62f, .62f })
+                YardKit.Picture(s, "Rail", new Vector3(x - 14f, .05f, 45f + off - .05f), new Vector3(x + 14f, .11f, 45f + off + .05f), YardKit.Iron);
+            Sign(s, "거대 짐 충격파 (원 밖으로 / 점프 / 상자 위)", new Vector3(x, 4.6f, 53f));
+            Place<CargoSlam>(s, "Giant chest gantry", new Vector3(x, 0f, 66f))
+                .Configure(18.5f, 0f, 11f, new Vector3(3.2f, 2.4f, 2.4f), 6f, new[] { -9f, 0f, 9f }, true, 659, 1.8f, 1.6f, .55f, 1.6f, 1.8f,
+                           6.5f, .35f, 4f, 2f, 1.3f, 6f, s);
+            // A crate to stand on inside the circles: up on it, the wave passes under.
+            YardKit.Box(s, "Perch crate", new Vector3(x - 4.5f, .35f, 70f), new Vector3(1.4f, .7f, 1.4f), YardKit.WoodLight, Solid.Solid);
         }
     }
 }

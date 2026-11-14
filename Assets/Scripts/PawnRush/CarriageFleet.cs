@@ -14,6 +14,11 @@ namespace ChessFight.PawnRush
     // opens); a match hands every PC the same start and seed (StartAt; until then the carriages wait at home) and then
     // every PC sees the same carriages, as with the grand stair hall's random rolls. Self-building; built from code
     // on an inactive object, call Configure first.
+    //
+    // R659 (the user's zone 1: "말과 말이 이끄는 마차들이 돌아다니며"): the fleet can mix bodies - carriages on their own,
+    // teams (a carriage drawn by a pair of horses, one long body) and loose horses (small, fast, rearing through their
+    // aim) - each with its own reach and half turn (Compose), and plan them apart in time instead of over whole legs
+    // (RoamingFleet.Rules.Timed), so a yard of long teams and darting horses keeps moving instead of waiting.
     public sealed class CarriageFleet : MonoBehaviour
     {
         [Header("Area (the carriages' centres, this object's frame)")]
@@ -41,6 +46,23 @@ namespace ChessFight.PawnRush
         [Tooltip("The plan's own random points (a match draws one of RoamingFleet.YardSeeds, StartAt)")]
         [SerializeField] int seed = 38;
 
+        [Header("Teams and loose horses (R659): after the carriages, in that order")]
+        [Tooltip("Carriages drawn by a pair of horses")]
+        [SerializeField] int teams;
+        [Tooltip("Seconds a team's half turn on the spot takes (longer than a carriage's: its ends are further out)")]
+        [SerializeField] float teamTurnSeconds = 3.4f;
+        [Tooltip("Loose horses")]
+        [SerializeField] int horses;
+        [Tooltip("Top speed of the first loose horse's charges (m/s), each further one speedStep faster")]
+        [SerializeField] float horseSpeed = 11f;
+        [SerializeField] float horseTurnSeconds = 1.6f;
+        [Tooltip("Keep the bodies apart in time rather than over whole legs (RoamingFleet.Rules.Timed)")]
+        [SerializeField] bool timed;
+        [Tooltip("Random points a body tries before it waits a moment")]
+        [SerializeField] int tries = 32;
+        [Tooltip("Nowhere free for a full charge, a shorter one down to this (m) before it waits (0: never; timed only)")]
+        [SerializeField] float shortCharge;
+
         [Header("Hit")]
         [Tooltip("Push of a hit (m/s) before the carriage's speed adds 0.25 per m/s (at most 7 in all), see RoamingCarriage")]
         [SerializeField] float knockbackForce = 4f;
@@ -50,7 +72,11 @@ namespace ChessFight.PawnRush
         bool built;
 
         public RoamingFleet Fleet => fleet;
-        public int Count => count;
+        public int Count => Mathf.Max(0, count) + Mathf.Max(0, teams) + Mathf.Max(0, horses);
+
+        // Body i's look: the carriages first, then the teams, then the loose horses.
+        public RoamingCarriage.Look LookOf(int i) =>
+            i < count ? RoamingCarriage.Look.Carriage : i < count + teams ? RoamingCarriage.Look.Team : RoamingCarriage.Look.Horse;
 
         public void Configure(float minX, float maxX, float minZ, float maxZ, int count, float moveSpeed, float turnSeconds,
                               float minAim, float maxAim, float startDelay, int seed, float knockbackForce, float knockdownSeconds)
@@ -68,6 +94,25 @@ namespace ChessFight.PawnRush
             this.seed = seed;
             this.knockbackForce = knockbackForce;
             this.knockdownSeconds = knockdownSeconds;
+        }
+
+        // R659: teams and loose horses after the `count` carriages, the planner's timing and tries, and how long a body
+        // rests and how far it charges (before it is switched on).
+        public void Compose(int teams, float teamTurnSeconds, int horses, float horseSpeed, float horseTurnSeconds, bool timed, int tries,
+                            float minRest, float maxRest, float minCharge, float maxCharge, float shortCharge = 0f)
+        {
+            this.shortCharge = Mathf.Max(0f, shortCharge);
+            this.teams = Mathf.Max(0, teams);
+            this.teamTurnSeconds = teamTurnSeconds;
+            this.horses = Mathf.Max(0, horses);
+            this.horseSpeed = horseSpeed;
+            this.horseTurnSeconds = horseTurnSeconds;
+            this.timed = timed;
+            this.tries = Mathf.Max(1, tries);
+            this.minRest = minRest;
+            this.maxRest = maxRest;
+            this.minCharge = minCharge;
+            this.maxCharge = maxCharge;
         }
 
         // A match's shared start (a clock time on ObstacleClock), after Configure, before or after the fleet is switched
@@ -92,45 +137,57 @@ namespace ChessFight.PawnRush
             // Offline the carriages set off startDelay after the yard is built. On a shared match clock they stand at
             // home until the match hands every PC the same start (StartAt): a start of its own would differ per PC.
             if (fleet == null) fleet = Plan(ObstacleClock.Shared ? double.NaN : ObstacleClock.Now + startDelay);
-            int n = Mathf.Max(1, count);
+            int n = Mathf.Max(1, Count);
             for (int i = 0; i < n; i++)
             {
-                var go = new GameObject("Roaming carriage " + (i + 1));
+                var look = LookOf(i);
+                var go = new GameObject((look == RoamingCarriage.Look.Horse ? "Loose horse " : look == RoamingCarriage.Look.Team ? "Roaming team " : "Roaming carriage ") + (i + 1));
                 go.SetActive(false);
                 go.transform.SetParent(transform, false);
                 // Green and blue: red is the carriages' warning (their lamps), never a body.
-                go.AddComponent<RoamingCarriage>().Join(this, i, RoamingCarriage.Look.Carriage, knockbackForce, knockdownSeconds, i % 2 == 0 ? 0 : 2);
+                go.AddComponent<RoamingCarriage>().Join(this, i, look, knockbackForce, knockdownSeconds, i % 2 == 0 ? 0 : 2);
                 go.SetActive(true);
             }
         }
 
         RoamingFleet Plan(double start)
         {
-            int n = Mathf.Max(1, count);
+            int n = Mathf.Max(1, Count);
+            // The area is for the biggest body; a smaller one may come nearer the walls by as much as it reaches less
+            // (RoamingFleet.Area), so every body keeps the same margin off them.
+            float biggest = 0f;
+            for (int i = 0; i < n; i++) biggest = Mathf.Max(biggest, RoamingCarriage.Reach(LookOf(i)));
             var rules = new RoamingFleet.Rules
             {
                 MinX = Mathf.Min(minX, maxX), MaxX = Mathf.Max(minX, maxX), MinZ = Mathf.Min(minZ, maxZ), MaxZ = Mathf.Max(minZ, maxZ),
-                BodyRadius = RoamingCarriage.BodyRadius, Turn = Mathf.Max(.05f, turnSeconds),
+                BodyRadius = biggest, Turn = Mathf.Max(.05f, turnSeconds),
                 MinAim = Mathf.Max(0f, minAim), MaxAim = Mathf.Max(Mathf.Max(0f, minAim), maxAim),
                 MinRest = Mathf.Max(0f, minRest), MaxRest = Mathf.Max(Mathf.Max(0f, minRest), maxRest),
                 MinCharge = Mathf.Max(1f, minCharge), MaxCharge = Mathf.Max(Mathf.Max(1f, minCharge), maxCharge),
+                Timed = timed, Tries = Mathf.Max(1, tries), ShortCharge = shortCharge,
             };
             // Homes: two to a row, rows spread along the area's depth, facing the middle.
             var speeds = new double[n];
             var hx = new double[n];
             var hz = new double[n];
             var yaw = new double[n];
+            var radii = new double[n];
+            var turns = new double[n];
             int rows = (n + 1) / 2;
             for (int i = 0; i < n; i++)
             {
-                speeds[i] = Mathf.Max(.5f, moveSpeed + speedStep * i);
+                var look = LookOf(i);
+                int k = look == RoamingCarriage.Look.Horse ? i - count - teams : i;
+                speeds[i] = Mathf.Max(.5f, (look == RoamingCarriage.Look.Horse ? horseSpeed : moveSpeed) + speedStep * k);
+                radii[i] = RoamingCarriage.Reach(look);
+                turns[i] = Mathf.Max(.05f, look == RoamingCarriage.Look.Horse ? horseTurnSeconds : look == RoamingCarriage.Look.Team ? teamTurnSeconds : turnSeconds);
                 bool alone = n % 2 == 1 && i == n - 1;
                 double side = alone ? 0 : (i % 2 == 0 ? -1 : 1);
                 hx[i] = (rules.MinX + rules.MaxX) * .5 + side * (rules.MaxX - rules.MinX) * .25;
                 hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / rows;
                 yaw[i] = side < 0 ? 90 : side > 0 ? -90 : 0;
             }
-            return new RoamingFleet(unchecked((uint)seed), start, speeds, hx, hz, yaw, rules);
+            return new RoamingFleet(unchecked((uint)seed), start, speeds, hx, hz, yaw, rules, radii, turns);
         }
 
         void FixedUpdate()
@@ -144,7 +201,8 @@ namespace ChessFight.PawnRush
             Gizmos.color = new Color(1f, .55f, .2f, .8f);
             Gizmos.DrawWireCube(new Vector3((minX + maxX) * .5f, .05f, (minZ + maxZ) * .5f), new Vector3(Mathf.Abs(maxX - minX), .1f, Mathf.Abs(maxZ - minZ)));
             Gizmos.color = new Color(1f, .55f, .2f, .3f);
-            float r = RoamingCarriage.BodyRadius;
+            float r = 0f;
+            for (int i = 0; i < Count; i++) r = Mathf.Max(r, RoamingCarriage.Reach(LookOf(i)));
             Gizmos.DrawWireCube(new Vector3((minX + maxX) * .5f, YardKit.CarriageHeight * .5f, (minZ + maxZ) * .5f),
                                 new Vector3(Mathf.Abs(maxX - minX) + 2f * r, YardKit.CarriageHeight, Mathf.Abs(maxZ - minZ) + 2f * r));
         }

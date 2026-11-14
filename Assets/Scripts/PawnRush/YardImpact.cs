@@ -234,7 +234,11 @@ namespace ChessFight.PawnRush
                 if (ahead > 0f) change -= on * (ahead * (1f - forwardShare));
             }
             bool down = coming >= knockdownSpeed;
-            due.Add(new Due { Driver = driver, Receiver = hits, Push = change, Down = down ? knockdownSeconds : 0f });
+            // R659: knocked down a moment ago by another of the yard's hazards (a crate, then a passing horse; a slam's
+            // wave, then a crate) it is only pushed and let through, not knocked down again: no chain of knockdowns.
+            bool fresh = down && !YardKit.RecentlyDown(driver);
+            due.Add(new Due { Driver = driver, Receiver = hits, Push = change, Down = fresh ? knockdownSeconds : 0f });
+            if (fresh) YardKit.MarkDown(driver);
             // Letting the knocked-down body through the box only changes which pairs collide: fine in a callback.
             if (down) LetThrough(driver);
             // A stagger leaves the turn for the knockdown that may follow (a pawn caught as the charge sets off).

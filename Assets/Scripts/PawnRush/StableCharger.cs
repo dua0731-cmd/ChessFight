@@ -21,9 +21,15 @@ namespace ChessFight.PawnRush
     // Self-building: its own position is the stable (the body's centre on the floor), its nose local +z. Built from code
     // on an inactive object: call Configure (and SetPhase) before switching it on. The stable around it is the caller's:
     // leave at least a pawn's room (0.6 m) behind where it comes home, so nobody is ever pinned there.
+    //
+    // R659 (zone 2, the sorting yard's machines): a cart is a loaded cargo cart on a track - it runs out to the end, holds,
+    // and with returnBolts runs back as hard as it came without turning (a cart has two noses: its shell reaches ahead of
+    // whichever end leads), warned by its red beacon and the line both ways.
     public sealed class StableCharger : Obstacle, IHitTurns
     {
-        public enum Look { Carriage, Horse }
+        public enum Look { Carriage, Horse, Cart }
+
+        public const float CartLength = 2.6f, CartWidth = 1.7f, CartHeight = 1.9f;
         public enum Stage { Waiting, Bolting, Holding, Returning }
 
         // How far the hit shell reaches ahead of the nose while bolting (m): a 7 m/s push sideways clears the body in the
@@ -80,8 +86,9 @@ namespace ChessFight.PawnRush
         public float Distance => endOffset.magnitude;
         public float BoltSeconds => Distance * PeakFactor(SpeedUp, SlowDown) / Mathf.Max(.1f, moveSpeed);
         float HomeSeconds => returnBolts ? BoltSeconds : Distance * PeakFactor(HomeEase, HomeEase) / Mathf.Max(.1f, returnSpeed);
-        float HalfLength => look == Look.Horse ? HorseLength * .5f : YardKit.CarriageLength * .5f;
-        float BodyWidth => look == Look.Horse ? HorseWidth : YardKit.CarriageWidth;
+        float HalfLength => look == Look.Horse ? HorseLength * .5f : look == Look.Cart ? CartLength * .5f : YardKit.CarriageLength * .5f;
+        float BodyWidth => look == Look.Horse ? HorseWidth : look == Look.Cart ? CartWidth : YardKit.CarriageWidth;
+        float BodyHeight => look == Look.Horse ? HorseHeight : look == Look.Cart ? CartHeight : YardKit.CarriageHeight;
         // Time it stands at home, and at the end, before it goes: a horse turns round first, then the warning.
         float Lull => warning + (look == Look.Horse ? turnSeconds : 0f);
 
@@ -110,8 +117,8 @@ namespace ChessFight.PawnRush
             this.knockdownSeconds = knockdownSeconds;
             this.paint = paint;
             this.turnSeconds = turnSeconds;
-            // Only a horse turns round to run home nose first; a carriage backs up.
-            this.returnBolts = returnBolts && look == Look.Horse;
+            // Only a horse turns round to run home nose first; a carriage backs up; a cart runs back either way (R659).
+            this.returnBolts = returnBolts && look != Look.Carriage;
             this.waitAtStart = Mathf.Max(Lull, waitAtStart);
             this.holdAtEnd = this.returnBolts ? Mathf.Max(Lull, holdAtEnd) : look == Look.Horse ? Mathf.Max(turnSeconds, holdAtEnd) : holdAtEnd;
         }
@@ -140,6 +147,17 @@ namespace ChessFight.PawnRush
                 impact = YardKit.Shell(transform, "Horse (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockbackForce);
                 impact.solid = box;
                 impact.onFloor = true;
+            }
+            else if (look == Look.Cart)
+            {
+                wheels = BuildCart();
+                impact = YardKit.BodyCollider(transform, new Vector3(CartWidth, CartHeight, CartLength), knockbackForce, seeThrough: true);
+                var found = new System.Collections.Generic.List<Renderer>();
+                foreach (var r in GetComponentsInChildren<Renderer>())
+                    if (r.name == "Lamp") found.Add(r);
+                lamps = found.ToArray();
+                lampLit = YardKit.Lamp;
+                lampWarn = YardKit.Warning;
             }
             else
             {
@@ -206,6 +224,45 @@ namespace ChessFight.PawnRush
             line.localScale = new Vector3((BodyWidth + .5f) / Mathf.Max(1e-4f, scale.x), reach / Mathf.Max(1e-4f, scale.z), 1f);
         }
 
+        // A loaded cargo cart on a track, its length along local z, standing on y 0: a low bed on four iron wheels, crates
+        // and a sack under a strap, buffers at both ends and a red beacon on a post (its warning). Pictures only; the
+        // collider is one box over all of it. Returns the wheel pivots.
+        Transform[] BuildCart()
+        {
+            var c = new GameObject("Cart").transform;
+            c.SetParent(transform, false);
+            const YardKit.Solid none = YardKit.Solid.None;
+            YardKit.Box(c, "Cart bed", new Vector3(0f, .62f, 0f), new Vector3(CartWidth - .1f, .26f, CartLength), YardKit.WoodDark, none);
+            YardKit.Box(c, "Cart side", new Vector3(0f, .9f, 0f), new Vector3(CartWidth, .3f, CartLength - .2f), YardKit.WoodLight, none);
+            foreach (float z in new[] { -1f, 1f })
+            {
+                YardKit.Box(c, "Buffer", new Vector3(0f, .6f, z * (CartLength * .5f - .02f)), new Vector3(1.1f, .22f, .1f), YardKit.Iron, none);
+                YardKit.Box(c, "Buffer trim", new Vector3(0f, .74f, z * (CartLength * .5f - .02f)), new Vector3(1.12f, .05f, .11f), YardKit.Gold, none);
+            }
+            YardKit.Box(c, "Crate", new Vector3(-.3f, 1.42f, -.5f), new Vector3(.9f, .9f, .9f), YardKit.WoodLight, none);
+            YardKit.Box(c, "Crate band", new Vector3(-.3f, 1.42f, -.5f), new Vector3(.93f, .12f, .93f), YardKit.Banner, none);
+            YardKit.Box(c, "Crate", new Vector3(.35f, 1.3f, .55f), new Vector3(.8f, .66f, .8f), YardKit.WoodDark, none);
+            var sack = YardKit.Ball(c, "Sack", new Vector3(.4f, 1.22f, -.45f), .7f, Arena.Lit("M_YardSack", Arena.Hex("#CDB48A"), 0f, .95f), none);
+            sack.transform.localScale = new Vector3(.6f, .5f, .8f);
+            YardKit.Box(c, "Strap", new Vector3(0f, 1.45f, 0f), new Vector3(CartWidth + .02f, .05f, .12f), YardKit.WoodDark, none);
+            YardKit.Box(c, "Beacon post", new Vector3(-.7f, 1.4f, .95f), new Vector3(.1f, .9f, .1f), YardKit.Iron, none);
+            YardKit.Box(c, "Lamp", new Vector3(-.7f, 1.9f, .95f), new Vector3(.3f, .3f, .3f), YardKit.Lamp, none);
+            var wheels = new Transform[4];
+            int n = 0;
+            foreach (float z in new[] { -.8f, .8f })
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    var pivot = new GameObject("Wheel").transform;
+                    pivot.SetParent(c, false);
+                    pivot.localPosition = new Vector3(.62f * side, .32f, z);
+                    YardKit.Cylinder(pivot, "Tyre", Vector3.zero, Vector3.right, .64f, .12f, YardKit.Iron, none);
+                    YardKit.Box(pivot, "Spoke", Vector3.zero, new Vector3(.05f, .56f, .06f), YardKit.WoodDark, none);
+                    YardKit.Box(pivot, "Spoke", Vector3.zero, new Vector3(.05f, .06f, .56f), YardKit.WoodDark, none);
+                    wheels[n++] = pivot;
+                }
+            return wheels;
+        }
+
         AudioSource Voice(AudioClip clip, bool loop)
         {
             var a = gameObject.AddComponent<AudioSource>();
@@ -217,6 +274,7 @@ namespace ChessFight.PawnRush
             a.minDistance = 4f;
             a.maxDistance = 35f;
             a.dopplerLevel = 0f;
+            SectionSoundGate.Gate(a);   // R529 / R654: the effects volume is the gate's
             a.volume = 0f;
             return a;
         }
@@ -333,11 +391,14 @@ namespace ChessFight.PawnRush
             if (shell == null) return;
             float left = stage == Stage.Bolting ? 1f - Along(stage, into) : Along(stage, into);
             float ahead = running ? Mathf.Clamp(left * Distance, 0f, Lead - .25f) : 0f;
+            // A cart runs back without turning: its lead goes out of its back end then (R659).
+            float lead = look == Look.Cart && stage == Stage.Returning ? -1f : 1f;
             var size = new Vector3(shellSize.x, shellSize.y, shellSize.z + ahead);
-            if (shell.size != size)
+            var centre = shellCentre + Vector3.forward * (lead * ahead * .5f);
+            if (shell.size != size || shell.center != centre)
             {
                 shell.size = size;
-                shell.center = shellCentre + Vector3.forward * (ahead * .5f);
+                shell.center = centre;
             }
         }
 
@@ -358,7 +419,7 @@ namespace ChessFight.PawnRush
 
             if (wheels != null)
             {
-                float angle = travelled / (YardKit.CarriageWheel * .5f) * Mathf.Rad2Deg;
+                float angle = travelled / ((look == Look.Cart ? .64f : YardKit.CarriageWheel) * .5f) * Mathf.Rad2Deg;
                 foreach (var wheel in wheels)
                     if (wheel != null) wheel.localRotation = Quaternion.Euler(angle, 0f, 0f);
             }
@@ -388,14 +449,14 @@ namespace ChessFight.PawnRush
                 if (share > .02f)
                 {
                     if (!rumble.isPlaying && rumble.isActiveAndEnabled) rumble.Play();
-                    rumble.volume = .5f * share * GameSettings.Effects;
-                    rumble.pitch = (look == Look.Horse ? 1.25f : .75f) + .45f * share;
+                    rumble.volume = .5f * share;
+                    rumble.pitch = (look == Look.Horse ? 1.25f : look == Look.Cart ? .95f : .75f) + .45f * share;
                 }
                 else if (rumble.isPlaying) rumble.Stop();
             }
             if (crack != null && running && stage != shown)
             {
-                crack.volume = GameSettings.Effects;
+                crack.volume = 1f;
                 crack.PlayOneShot(crack.clip, .8f);
             }
             shown = stage;
@@ -409,7 +470,7 @@ namespace ChessFight.PawnRush
             Gizmos.color = new Color(1f, .55f, .2f, .8f);
             Gizmos.DrawLine(from + Vector3.up, to + Vector3.up);
             Gizmos.matrix = Matrix4x4.TRS(to, turn, Vector3.one);
-            float h = look == Look.Horse ? HorseHeight : YardKit.CarriageHeight;
+            float h = BodyHeight;
             Gizmos.DrawWireCube(new Vector3(0f, h * .5f, 0f), new Vector3(BodyWidth, h, HalfLength * 2f));
         }
     }

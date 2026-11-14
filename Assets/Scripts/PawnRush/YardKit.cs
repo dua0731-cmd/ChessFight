@@ -328,7 +328,7 @@ namespace ChessFight.PawnRush
         public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false) =>
             BodyCollider(parent, new Vector3(CarriageWidth, CarriageHeight, CarriageLength), knockback, seeThrough);
 
-        // The same for any body standing on y 0, `size` its width, height and length (R626: a team - a carriage and the
+        // The same for any body standing on y 0, `size` its width, height and length (R659: a team - a carriage and the
         // pair of horses drawing it - or a loose horse as well as a carriage).
         public static YardImpact BodyCollider(Transform parent, Vector3 size, float knockback, bool seeThrough = false)
         {
@@ -462,6 +462,28 @@ namespace ChessFight.PawnRush
                 if (driver != null && !found.Contains(driver)) found.Add(driver);
             }
             return found;
+        }
+
+        // R659: when each character was last knocked down by one of the yard's hazards (on the PC that moves it). Another
+        // hazard within ChainGrace of it only pushes (YardImpact, SlamChest): a knockdown is a second or so lost, never a
+        // chain of them (a crate, then a horse; a slam's wave, then a crate).
+        public const float ChainGrace = 1.5f;
+        static readonly Dictionary<ICharacterDriver, float> downAt = new Dictionary<ICharacterDriver, float>();
+
+        public static bool RecentlyDown(ICharacterDriver driver) =>
+            driver != null && downAt.TryGetValue(driver, out float at) && Time.time - at < ChainGrace && Time.time >= at;
+
+        public static void MarkDown(ICharacterDriver driver)
+        {
+            if (driver == null) return;
+            if (downAt.Count > 64)
+            {
+                var old = new List<ICharacterDriver>();
+                foreach (var pair in downAt)
+                    if (Time.time - pair.Value > 10f || (pair.Key is Object gone && gone == null)) old.Add(pair.Key);
+                foreach (var key in old) downAt.Remove(key);
+            }
+            downAt[driver] = Time.time;
         }
 
         static readonly List<FixedJoint> grips = new List<FixedJoint>();

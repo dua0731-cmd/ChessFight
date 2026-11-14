@@ -10,15 +10,18 @@ namespace ChessFight.PawnRush
     // sections, going north (+z) and up:
     //
     //   1  Outer gate and the yard        z -16..50   start court, a gate that opens at the start, right behind it a
-    //                                                 44 x 48 m yard where four carriages charge about at random
+    //                                                 44 x 48 m yard where (R659) five carriages drawn by horses
+    //                                                 charge about at random between storage sheds along both walls
     //   2  Canal and the giant wheel      z 50..82    stone landings either side; two wooden walkways between them go
     //                                                 through one giant waterwheel (a round frame and six spokes) -
     //                                                 jump and dive through a hole between two spokes
-    //   3  Arena and waterfall            z 82..126   three ways: centre - the loading yard (R532: carriages bolting out
-    //                                                 of stables, a bolting horse, crates dropped by cranes), then the
-    //                                                 lifting waterwheel up the waterfall (hold right click); left and
-    //                                                 right - ramps up to the platform with cargo rolling down them
-    //   4  The final gate                 z 126..162  the three ways meet on the platform (y 8); the gate is pushed
+    //   3  Loading and sorting yard       z 82..126   (R659, the whole 52 m: the cargo ramps and the R532 loading yard
+    //                                                 between them are gone) four crane lines dropping crates
+    //                                                 anywhere, two giant chests slammed down whose shockwave
+    //                                                 knocks down whoever is on the floor in its circle, sorting stalls
+    //                                                 along the walls; then the lifting waterwheel up the waterfall, as
+    //                                                 it always was (hold right click), barges and sluices beside it
+    //   4  The final gate                 z 126..162  the wheel's landing on the platform (y 8); the gate is pushed
     //                                                 open (hold right click on it), the finish is behind it
     //
     // Sections 3 and 4 are written in their own frame (the 11-02 numbers, the arena starting at z 106) and built under
@@ -26,9 +29,10 @@ namespace ChessFight.PawnRush
     //
     // Built from code when the prefab is placed (Awake), like the map test's calibration yard, so the prefab itself is
     // this one component and the numbers below are its Inspector. Every obstacle is its own reusable component
-    // (RoamingCarriage, HorizontalWaterwheel, StableCharger, CraneDrop/CraneCrate, VerticalWaterwheel,
-    // CargoChute/RollingCargo, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre way's carousel
-    // until R532 - and TiltingWoodenBridge are not on this map's route) with its own Inspector
+    // (CarriageFleet/RoamingCarriage, HorizontalWaterwheel, StableCharger, CraneDrop/CraneCrate, CargoSlam/SlamChest,
+    // VerticalWaterwheel, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre way's carousel until
+    // R532 - CargoChute/RollingCargo - the ramps' cargo until R659 - and TiltingWoodenBridge are not on this map's route)
+    // with its own Inspector
     // during Play. Moving parts run on ObstacleClock (absolute rule 7); a match hands the map its start and seed with
     // StartAt. The final gate is state-driven and judged by the host. Layout and the reasons for the numbers:
     // Docs/PawnRush/ROYAL_CARRIAGE_YARD.md.
@@ -82,10 +86,29 @@ namespace ChessFight.PawnRush
         [Serializable]
         public sealed class RoamingSettings
         {
-            [Tooltip("Top speed of a charge (m/s); each carriage after the first is 0.3 m/s faster")]
-            public float moveSpeed = 9f;
-            [Tooltip("Seconds a half turn on the spot takes; a smaller turn takes its share (the ends swing at most ~5 m/s)")]
+            // R659 (the user's zone 1: "말과 말이 이끄는 마차들이 돌아다니며" - "'말+마차'를 말하는 거지 말이나 마차가 따로
+            // 떨어져서 돌아다니고 있는 장애물을 만들어 달라는 이야기가 아니었어"): carriages drawn by horses share the yard
+            // between the storage sheds, kept apart in time (RoamingFleet.Rules.Timed).
+            [Tooltip("Carriages drawn by a pair of horses (one long body: 6.95 x 2.3 m)")]
+            public int teams = 5;
+            [Tooltip("Loose horses (2.6 x 0.9 m, they rear through their aim): none in the yard, the user wants horse and carriage together")]
+            public int horses = 0;
+            [Tooltip("Top speed of a team's charge (m/s); each team after the first is 0.3 m/s faster")]
+            public float moveSpeed = 9.3f;
+            [Tooltip("Top speed of a loose horse's charge (m/s); each horse after the first is 0.3 m/s faster")]
+            public float horseSpeed = 11f;
+            [Tooltip("Seconds a team's half turn on the spot takes; a smaller turn takes its share (its ends swing at most ~5 m/s)")]
+            public float teamTurnSeconds = 3.4f;
+            [Tooltip("Seconds a loose horse's half turn on the spot takes")]
+            public float horseTurnSeconds = 1.6f;
+            [Tooltip("Seconds a lone carriage's half turn takes (none roam the yard since R659; kept for the fleet's rules)")]
             public float turnSeconds = 2.2f;
+            [Tooltip("Keep the bodies apart in time rather than over whole legs, so a yard of long teams keeps moving")]
+            public bool timed = true;
+            [Tooltip("Random points a body tries before it waits a moment")]
+            public int tries = 128;
+            [Tooltip("Nowhere free for a charge of 10 m or more, a shorter dart down to this (m) before it waits")]
+            public float shortCharge = 4f;
             [Tooltip("The carriages' random points offline: another seed, another dance (a match draws one of "
                      + "RoamingFleet.YardSeeds by its round seed, StartAt)")]
             public int seed = 38;
@@ -97,29 +120,13 @@ namespace ChessFight.PawnRush
             public float knockdownSeconds = 1f;
         }
 
-        // The centre way's loading yard (R532, was the carousel): two carriages bolting out of stables across the way, a
-        // horse bolting diagonally across it and back, and two cranes dropping crates anywhere on it.
+        // Zone 2, the royal loading and sorting yard (R659, the user's "짐을 옮기고 정리하며 크레인으로 해당 작업들을 진행하는
+        // 듯한 공간", the cargo ramps gone and the yard the whole 52 m; was R532's loading yard between the ramps): four crane
+        // lines dropping crates anywhere across it in a ripple, two gantries slamming giant chests in turn whose shockwave
+        // knocks down whoever is on the floor inside their red circles, sorting docks to stand on as it passes.
         [Serializable]
-        public sealed class LoadingYardSettings
+        public sealed class SortingYardSettings
         {
-            [Tooltip("Top speed of a stable carriage's bolt across the way (m/s)")]
-            public float carriageSpeed = 10f;
-            [Tooltip("Top speed of a carriage backing into its stable (m/s): about 5 at most, it shoves whoever is in the way")]
-            public float carriageReturnSpeed = 5f;
-            [Tooltip("Seconds a carriage stands in its stable between bolts (its warning is the last of them)")]
-            public float carriageWait = 1.4f;
-            [Tooltip("Top speed of the bolting horse (m/s)")]
-            public float horseSpeed = 11f;
-            [Tooltip("The horse gallops back as hard as it came, warned the same way; off, it trots back at horseReturnSpeed")]
-            public bool horseBothWays = true;
-            [Tooltip("Speed of the horse trotting back to its stall when it does not gallop both ways (m/s)")]
-            public float horseReturnSpeed = 5f;
-            [Tooltip("Seconds the horse stands at either end before it runs (it turns round in 1.6 s, then rears for the warning)")]
-            public float horseWait = 2.8f;
-            [Tooltip("Seconds of red floor line, red lamps or rearing before a carriage or the horse runs")]
-            public float warning = 1f;
-            [Tooltip("Push of a carriage's or the horse's hit (m/s) before the speed adds 0.25 per m/s, at most 7")]
-            public float knockbackForce = 4f;
             [Tooltip("Seconds of one crane hook's trip: carry, hold still, drop, sit on the floor")]
             public float cranePeriod = 3f;
             [Tooltip("Height of a hanging crate's underside (m): how far it drops")]
@@ -128,22 +135,13 @@ namespace ChessFight.PawnRush
             public float crateSize = 1.4f;
             [Tooltip("Push of a falling crate's hit (m/s), straight out from under it")]
             public float crateKnockback = 5f;
-        }
-
-        [Serializable]
-        public sealed class CargoSettings
-        {
-            [Tooltip("Seconds between pieces on each ramp")]
-            public float spawnInterval = 1.7f;
-            [Tooltip("Speed down the ramp (m/s)")]
-            public float rollingSpeed = 5f;
-            [Tooltip("Piece diameters (m), taken in turn")]
-            public float[] cargoSizes = { 1f, 1.4f, 1.8f };
-            [Tooltip("Seconds the right ramp runs ahead of the left, so the two are not in step")]
-            public float rightRampOffset = .85f;
-            [Tooltip("Push of a hit (m/s) before the piece's speed adds 0.6 per m/s, at most 6: down the ramp and aside, "
-                     + "a stagger (R287, was 6 + speed straight down)")]
-            public float knockbackForce = 3f;
+            [Tooltip("How far a giant chest's shockwave runs from its centre (m): its red circle")]
+            public float slamRadius = 7f;
+            [Tooltip("Seconds a giant chest is carried to its place (circle dim), held over it and falls (circle bright), sits and "
+                     + "is hoisted: a trip of 5.2 s, the two gantries half a trip apart, so a chest comes down every 2.6 s")]
+            public float slamCarry = 1.3f, slamHold = 1.3f, slamFall = .55f, slamSit = .9f, slamHoist = 1.15f;
+            [Tooltip("Push straight out from the chest (m/s) and how long the shockwave keeps them down (s)")]
+            public float shockPush = 4f, shockKnockdown = 1.3f;
         }
 
         [Serializable]
@@ -162,15 +160,13 @@ namespace ChessFight.PawnRush
 
         [Header("1. Gates")]
         [SerializeField] GateSettings gates = new GateSettings();
-        [Header("1. Yard: the four roaming carriages")]
+        [Header("1. Yard: horse-drawn carriages between the sheds")]
         [SerializeField] RoamingSettings roaming = new RoamingSettings();
         [Header("2. Canal: the giant waterwheel")]
         [SerializeField] CrossingSettings crossing = new CrossingSettings();
-        [Header("3. Arena: the loading yard (centre)")]
-        [SerializeField] LoadingYardSettings loadingYard = new LoadingYardSettings();
-        [Header("3. Arena: cargo ramps")]
-        [SerializeField] CargoSettings cargo = new CargoSettings();
-        [Header("3. Arena: the lifting waterwheel")]
+        [Header("3. Loading and sorting yard: cranes, giant chests, carts")]
+        [SerializeField] SortingYardSettings sorting = new SortingYardSettings();
+        [Header("3. The lifting waterwheel")]
         [SerializeField] LiftSettings lift = new LiftSettings();
         [Header("Look")]
         [Tooltip("Towers, battlements, banners and the palace behind the walls (pictures only)")]
@@ -240,22 +236,27 @@ namespace ChessFight.PawnRush
             if (asSection) StartAt(section.StartClock + gates.startDelay, section.Seed);
         }
 
-        // As a section (R508), in the map's frame: the one way for the HUD and the validator (the left walkway, the west
-        // cargo ramp, the gate, the boundary), the walkways' break at the wheel (a sprint jump and a dive: meant), and the
-        // section's own description.
+        // As a section (R508), in the map's frame: the one way for the HUD and the validator (the left walkway, straight up
+        // the sorting yard's boardwalk and the middle lifting wheel - R659, the cargo ramps gone - the gate, the boundary),
+        // the walkways' break at the wheel (a sprint jump and a dive: meant), the lifting wheel's ride over its pool (meant),
+        // and the section's own description.
         void SectionParts()
         {
             var parts = Group("Section");
             Place<IntendedGap>(parts, "Wheel gap (meant)", new Vector3(-4.6f, .5f, WheelZ))
                 .Configure(new Vector3(4f, 3f, crossing.gapLength + 1f), "물레방아 사이 틈: 질주 점프 + 다이빙");
+            // The lifting wheel carries its rider up over the pool to the landing (own z 139.85 .. 148.4).
+            float pool = PoolZ0 + LaterShift, landing = 148.4f + LaterShift;
+            Place<IntendedGap>(parts, "Lifting wheel ride (meant)", new Vector3(0f, Top + .5f, (pool + landing) * .5f))
+                .Configure(new Vector3(4f, 3f, landing - pool + .4f), "세로 물레방아를 타고 올라감");
             var route = new[]
             {
                 SectionEntry, new Vector3(0f, 0f, -6f), new Vector3(0f, 0f, 1f), new Vector3(0f, 0f, 40f),
                 new Vector3(-4.6f, 0f, CanalZ0 + 4f), new Vector3(-4.6f, 0f, WalkZ1), new Vector3(0f, 0f, CanalZ1 + 2f),
-                new Vector3(-22f, 0f, 94f), new Vector3(-22f, Top, 126f), new Vector3(0f, Top, 130f), new Vector3(0f, Top, 152f),
-                new Vector3(0f, Top, 158f), new Vector3(0f, Top - 1f, 160f), SectionExit,
+                new Vector3(0f, 0f, pool - .25f), new Vector3(0f, Top, pool - .25f), new Vector3(0f, Top, landing + .2f),
+                new Vector3(0f, Top, 130f), new Vector3(0f, Top, 152f), new Vector3(0f, Top, 158f), new Vector3(0f, Top - 1f, 160f), SectionExit,
             };
-            var beats = new[] { "1", "1", "1", "1", "2", "2", "3", "3", "4", "4", "4", "4", "4", "4" };
+            var beats = new[] { "1", "1", "1", "1", "2", "2", "3", "3", "3", "4", "4", "4", "4", "4", "4" };
             var path = new GameObject("ProgressPath");
             path.transform.SetParent(parts, false);
             path.AddComponent<ProgressPath>().Configure(route, (Vector3[])route.Clone(), beats);
@@ -269,7 +270,7 @@ namespace ChessFight.PawnRush
         {
             new SectionBeat("1 바깥 성문 · 마당", new Vector3(-23f, -2f, -17f), new Vector3(23f, 9f, 50f)),
             new SectionBeat("2 운하 · 대형 물레방아", new Vector3(-23f, -5f, 50f), new Vector3(23f, 12f, 82f)),
-            new SectionBeat("3 마차 하역장 · 폭포", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
+            new SectionBeat("3 왕실 하역 창고 · 물레방아", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
             new SectionBeat("4 최종 성문", new Vector3(-27f, 5f, 126f), new Vector3(27f, 16f, 165f)),
         };
 

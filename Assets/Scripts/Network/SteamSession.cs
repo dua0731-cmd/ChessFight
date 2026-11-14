@@ -127,7 +127,12 @@ namespace ChessFight.Network
         // v42 (R655): the Sword Fight match state carries the host's board square side (13th header field, 2 or 2.5 m);
         //      clients build that board instead of choosing one from the fighters they knew of during the pick. A v41
         //      client would refuse every v42 match text, and a v41 host's board could still differ from a client's.
-        public const string Protocol = "chessfight.dua0731.network.v42";
+        // v43 (R659): the Royal Carriage Yard's two zones built anew - the yard's roaming fleet is five horse-drawn
+        //      carriages between storage sheds, kept apart in time (another RoamingFleet.Yard and seed list), and the
+        //      arena is the loading and sorting yard (the cargo ramps gone; four crane lines, two giant chests'
+        //      shockwaves, sorting docks; the one lifting wheel as before). The wire is the same, but a v42 PC would draw the old yard where a v43
+        //      host knocks pawns with other bodies, and its carriages would dance another dance.
+        public const string Protocol = "chessfight.dua0731.network.v43";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

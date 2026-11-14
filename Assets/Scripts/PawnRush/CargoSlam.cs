@@ -4,7 +4,7 @@ using Solid = ChessFight.PawnRush.YardKit.Solid;
 
 namespace ChessFight.PawnRush
 {
-    // The Royal Carriage Yard's giant cargo (R626, zone 2 "왕실 하역 창고"; the user's "거대한 짐을 옮기는 구간의 특정
+    // The Royal Carriage Yard's giant cargo (R659, zone 2 "왕실 하역 창고"; the user's "거대한 짐을 옮기는 구간의 특정
     // 범위내에 있던 플레이어들은 충격파로 넘어지게"): a great gantry over the yard whose trolley carries a royal chest the size
     // of a cart. Each trip it carries the chest to one of its places, holds it high there while a red circle on the floor
     // shows how far the shockwave will run, lets it drop, and the floor shakes: whoever stands or lies inside the circle
@@ -33,6 +33,8 @@ namespace ChessFight.PawnRush
         [SerializeField] float[] places = { -12f, 0f, 12f };
         [Tooltip("Places in a hashed order (never the same twice running); off, in turn")]
         [SerializeField] bool shuffled = true;
+        [Tooltip("Hashed, the next place is at most this far from the last (m; 0: any place)")]
+        [SerializeField] float maxStep;
         [SerializeField] int seed = 626;
         [Header("Timing (s)")]
         [SerializeField] float carrySeconds = 1.8f;
@@ -112,6 +114,9 @@ namespace ChessFight.PawnRush
             Build();
         }
 
+        // Hashed places at most `metres` apart from one trip to the next (before it is switched on).
+        public void LimitStep(float metres) => maxStep = Mathf.Max(0f, metres);
+
         void Build()
         {
             if (built) return;
@@ -148,14 +153,51 @@ namespace ChessFight.PawnRush
         }
 
         // Where trip `trip` brings the chest down: its place's index, the same on every PC.
+        //
+        // With maxStep (m, 0: any place) the next place is never further than that from the last, so the chest is never
+        // flung across the yard in one carry: the trips go in runs of StepRun, each run starting at the place nearest the
+        // middle (keep every place within maxStep of it, so that step keeps the rule too; it may be where the last run
+        // ended) and each next place hashed among those within maxStep of the last, never the same twice running - a
+        // pure function of the trip all the same, at most StepRun steps worked out.
+        public const int StepRun = 8;
+
         public int PlaceOf(double trip)
         {
             int n = PlaceCount;
             if (n <= 1) return 0;
             if (!shuffled) return (int)(((long)trip % n + n) % n);
-            int here = (int)(Hash(seed, trip) % (uint)n);
-            int before = (int)(Hash(seed, trip - 1) % (uint)n);
-            return here == before ? (here + 1) % n : here;
+            if (maxStep <= 0f)
+            {
+                int here = (int)(Hash(seed, trip) % (uint)n);
+                int before = (int)(Hash(seed, trip - 1) % (uint)n);
+                return here == before ? (here + 1) % n : here;
+            }
+            double first = Math.Floor(trip / StepRun) * StepRun;
+            int at = Middle();
+            for (double t = first + 1; t <= trip; t++)
+            {
+                int near = 0;
+                for (int i = 0; i < n; i++)
+                    if (i != at && Mathf.Abs(places[i] - places[at]) <= maxStep + 1e-3f) near++;
+                if (near == 0) continue;
+                int pick = (int)(Hash(seed, t) % (uint)near);
+                for (int i = 0; i < n; i++)
+                    if (i != at && Mathf.Abs(places[i] - places[at]) <= maxStep + 1e-3f && pick-- == 0)
+                    {
+                        at = i;
+                        break;
+                    }
+            }
+            return at;
+        }
+
+        // The place nearest the middle of the beam (the first if two are as near).
+        int Middle()
+        {
+            int best = 0;
+            for (int i = 1; i < places.Length; i++)
+                if (Mathf.Abs(places[i]) < Mathf.Abs(places[best]) - 1e-3f) best = i;
+            return best;
         }
 
         static uint Hash(int seed, double trip)

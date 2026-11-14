@@ -27,39 +27,59 @@ namespace ChessFight.Network
 
         public enum Stage { Waiting, Turning, Aiming, Charging, Resting }
 
-        // The Royal Carriage Yard's seeds (R287): a match draws one by its round seed (YardSeed), so each round has its
-        // own dance but never a poor one. The Core tests check each on the yard's own settings over ten minutes:
-        // someone charging at least 85 % of the time, a charging body over the straight way up the middle (|x| <= 3)
-        // at least 30 % of it, waits under 4 % of the legs, after its first charge no carriage standing more than 5.5 s
-        // at a time, every carriage reaching every edge of the yard, never two closer than Spacing, the same dance on
-        // scene time and on the match clock, and in the first 20 s the charges near the gate split at least 40 / 60
-        // between its west and east halves (neither team's side of the start is favoured). The tests also pin each
-        // seed's first legs: a change to the yard's numbers fails them until the list is vetted again.
-        public static readonly uint[] YardSeeds = { 38, 41, 160, 44, 18, 252, 20, 113 };
+        // The Royal Carriage Yard's seeds (R287, vetted again for R659's horse-drawn carriages): a match draws one by
+        // its round seed (YardSeed), so each round has its own dance but never a poor one. The Core tests check each on
+        // the yard's own settings over ten minutes: someone charging at least 85 % of the time, a charging body over the
+        // straight way up the middle (|x| <= 3) at least 50 % of it, waits under 4 % of the legs, after its first charge
+        // no body standing more than 6 s at a time (a team's rest, half turn and aim), every body reaching every edge of
+        // its area, never two inside their spacing, the same dance on scene time and on the match clock, and in the first
+        // 20 s the charges near the gate split at least 40 / 60 between its west and east halves (neither team's side of
+        // the start is favoured). The tests also pin each seed's first legs: a change to the yard's numbers fails them
+        // until the list is vetted again (R287's list: 38, 41, 160, 44, 18, 252, 20, 113).
+        public static readonly uint[] YardSeeds = { 217, 18, 3, 64, 76, 153, 181, 226 };
 
         public static uint YardSeed(int roundSeed) => YardSeeds[SeededSchedule.Hash(roundSeed, 0xCA27) % (uint)YardSeeds.Length];
 
-        // The yard the seeds were vetted on, as RoyalCarriageYard and CarriageFleet build it (R287): the centres 0.8 m
-        // past the body's reach inside its walls (x +-22, z 2..50) and 2.5 m more off the gate, four carriages at
-        // 9 + 0.3 i m/s, homes two to a row facing the middle. The tests vet the seeds on it; the map warns when its own
-        // fleet does not match it (Matches), as the seeds may then dance worse.
+        // The yard the seeds were vetted on, as RoyalCarriageYard and CarriageFleet build it (R659): between the storage
+        // sheds (their fronts at x +-YardShedFront) from z 2 to 50, YardTeams teams - a carriage drawn by a pair of
+        // horses, 6.95 x 2.3 m (the user: "말+마차", never a horse or a carriage on its own) - at 9.3 + 0.3 i m/s turning
+        // a half turn in 3.4 s (YardHorses loose horses after them, 2.6 x 0.9 m at 11 + 0.3 i m/s, none in the yard); the
+        // centres 0.8 m past the biggest body's reach inside the sheds and the parapet and 2.5 m more off the gate, homes
+        // two to a row facing the middle (an odd one out in the middle), kept apart in time (Rules.Timed), 128 tries, a
+        // 4 m dart when no full charge is free, charges of 10 to 30 m and rests of 0.3 to 0.9 s. The tests vet the seeds on it; the map warns when its
+        // own fleet does not match it (Matches), as the seeds may then dance worse. (R287-R532: four carriages between
+        // the walls at +-22, apart over whole legs.)
+        public const int YardTeams = 5, YardHorses = 0;
+        public const double YardShedFront = 19;
+
         public static RoamingFleet Yard(uint seed, double start)
         {
-            double reach = .5 * Math.Sqrt(4.2 * 4.2 + 2.3 * 2.3), keep = reach + .8;
-            var rules = new Rules { MinX = -(22 - keep), MaxX = 22 - keep, MinZ = 2 + keep + 2.5, MaxZ = 50 - keep, BodyRadius = reach };
-            var speeds = new double[4];
-            var hx = new double[4];
-            var hz = new double[4];
-            var yaw = new double[4];
-            for (int i = 0; i < 4; i++)
+            double team = .5 * Math.Sqrt(6.95 * 6.95 + 2.3 * 2.3), horse = .5 * Math.Sqrt(2.6 * 2.6 + .9 * .9), keep = team + .8;
+            var rules = new Rules
             {
-                speeds[i] = 9 + .3 * i;
-                double side = i % 2 == 0 ? -1 : 1;
+                MinX = -(YardShedFront - keep), MaxX = YardShedFront - keep, MinZ = 2 + keep + 2.5, MaxZ = 50 - keep, BodyRadius = team,
+                Timed = true, Tries = 128, ShortCharge = 4, MinRest = .3, MaxRest = .9, MaxCharge = 30,
+            };
+            int n = YardTeams + YardHorses, rows = (n + 1) / 2;
+            var speeds = new double[n];
+            var hx = new double[n];
+            var hz = new double[n];
+            var yaw = new double[n];
+            var radii = new double[n];
+            var turns = new double[n];
+            for (int i = 0; i < n; i++)
+            {
+                bool loose = i >= YardTeams;
+                speeds[i] = loose ? 11 + .3 * (i - YardTeams) : 9.3 + .3 * i;
+                radii[i] = loose ? horse : team;
+                turns[i] = loose ? 1.6 : 3.4;
+                bool alone = n % 2 == 1 && i == n - 1;
+                double side = alone ? 0 : (i % 2 == 0 ? -1 : 1);
                 hx[i] = (rules.MinX + rules.MaxX) * .5 + side * (rules.MaxX - rules.MinX) * .25;
-                hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / 2;
-                yaw[i] = side < 0 ? 90 : -90;
+                hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / rows;
+                yaw[i] = side < 0 ? 90 : side > 0 ? -90 : 0;
             }
-            return new RoamingFleet(seed, start, speeds, hx, hz, yaw, rules);
+            return new RoamingFleet(seed, start, speeds, hx, hz, yaw, rules, radii, turns);
         }
 
         // The same carriages under the same rules (within `tolerance`, the Unity side works in floats): everything a
@@ -70,9 +90,11 @@ namespace ChessFight.Network
             var a = rules;
             var b = other.rules;
             double[] mine = { a.MinX, a.MaxX, a.MinZ, a.MaxZ, a.BodyRadius, a.Clearance, a.Turn, a.MinTurn, a.MinAim, a.MaxAim, a.MinLead,
-                              a.MinRest, a.MaxRest, a.Wait, a.SpeedUp, a.SlowDown, a.MinCharge, a.MaxCharge, a.Stagger, a.Tries };
+                              a.MinRest, a.MaxRest, a.Wait, a.SpeedUp, a.SlowDown, a.MinCharge, a.MaxCharge, a.Stagger, a.Tries,
+                              a.Timed ? 1 : 0, a.TimedStep, a.ShortCharge };
             double[] theirs = { b.MinX, b.MaxX, b.MinZ, b.MaxZ, b.BodyRadius, b.Clearance, b.Turn, b.MinTurn, b.MinAim, b.MaxAim, b.MinLead,
-                                b.MinRest, b.MaxRest, b.Wait, b.SpeedUp, b.SlowDown, b.MinCharge, b.MaxCharge, b.Stagger, b.Tries };
+                                b.MinRest, b.MaxRest, b.Wait, b.SpeedUp, b.SlowDown, b.MinCharge, b.MaxCharge, b.Stagger, b.Tries,
+                                b.Timed ? 1 : 0, b.TimedStep, b.ShortCharge };
             for (int i = 0; i < mine.Length; i++)
                 if (Math.Abs(mine[i] - theirs[i]) > tolerance) return false;
             for (int c = 0; c < Count; c++)
@@ -103,6 +125,19 @@ namespace ChessFight.Network
             public double MinCharge = 10, MaxCharge = 32; // how far a charge goes
             public int Tries = 32;               // random points tried before waiting
             public double Stagger = 1.1;         // carriage i starts its first leg i * Stagger after the start
+            // R659: keep bodies apart in time, not over whole legs. Off (the R287 yard), a new charge's whole sweep keeps
+            // off every other body's whole current leg, whenever either happens - safe but, with long teams and more
+            // bodies, mostly waiting. On, two bodies only clash where they would be too close AT THE SAME TIME: each
+            // body is at its leg's start until its charge starts, moves along its line while it charges, and stays at
+            // its end until its next leg (planned later, against everyone's latest legs in turn). Never closer than
+            // the two reaches + Clearance at any moment either way.
+            public bool Timed;
+            // The time steps a timed check walks two moving bodies in (s): each step judged by the short stretches both
+            // can be on during it, so it errs only on the safe side.
+            public double TimedStep = .2;
+            // R659: nowhere free for a charge of MinCharge or more, a shorter one down to this (m) is tried before
+            // standing to wait (0: never) - in a crowded yard a body darts a few metres instead of standing idle.
+            public double ShortCharge;
         }
 
         public struct Leg
@@ -124,7 +159,7 @@ namespace ChessFight.Network
             // The leg it is on: its start (NaN before the first) - one per charge, what a hit counts by - and where
             // the leg's charge ends, for whoever draws the charge line ahead of it.
             public double LegStart, ToX, ToZ;
-            // When the stage it is in began and ends (R626: a loose horse rears through its aim); NaN when it waits.
+            // When the stage it is in began and ends (R659: a loose horse rears through its aim); NaN when it waits.
             public double StageStart, StageEnd;
         }
 
@@ -137,7 +172,7 @@ namespace ChessFight.Network
 
         // `speeds`: each body's top speed (m/s); `homeX`/`homeZ`/`homeYaw`: where each stands until its first leg,
         // which must be inside its area and keep the two bodies' reaches + Clearance apart.
-        // `radii` and `turns` (R626, optional): each body's own reach from its centre and its own half turn (s), for a
+        // `radii` and `turns` (R659, optional): each body's own reach from its centre and its own half turn (s), for a
         // fleet of different bodies - horse-drawn carriages and loose horses in one yard. Without them every body is
         // Rules.BodyRadius and Rules.Turn. The area (MinX..MaxZ) is where a body of Rules.BodyRadius may put its centre;
         // a smaller body may come that much nearer the walls (its own reach still keeps the same margin off them).
@@ -241,24 +276,67 @@ namespace ChessFight.Network
             {
                 double qx = rng.Range(minX, maxX), qz = rng.Range(minZ, maxZ);
                 double d = Math.Sqrt((qx - px) * (qx - px) + (qz - pz) * (qz - pz));
+                if (rules.Timed)
+                {
+                    // Timed (R659): the leg's own times first - its aim drawn per try - then the check in time.
+                    if (d < rules.MinCharge || d > rules.MaxCharge) continue;
+                    double head = Math.Atan2(qx - px, qz - pz) * 180.0 / Math.PI, spin = TurnSeconds(c, yaw, head);
+                    double aim = Math.Max(rng.Range(Math.Min(rules.MinAim, rules.MaxAim), Math.Max(rules.MinAim, rules.MaxAim)), rules.MinLead - spin);
+                    double charge = ChargeSeconds(d, speed[c]), from = t0 + spin + aim;
+                    if (ClashesTimed(c, t0, px, pz, qx, qz, from, from + charge)) continue;
+                    legs[c].Add(new Leg
+                    {
+                        Start = t0, FromX = px, FromZ = pz, ToX = qx, ToZ = qz, HeadingFrom = yaw, Heading = head,
+                        Turn = spin, Aim = aim, Charge = charge,
+                        Rest = rng.Range(Math.Min(rules.MinRest, rules.MaxRest), Math.Max(rules.MinRest, rules.MaxRest)),
+                        Speed = speed[c],
+                    });
+                    return;
+                }
                 if (d < rules.MinCharge || d > rules.MaxCharge || Clashes(c, px, pz, qx, qz)) continue;
                 double heading = Math.Atan2(qx - px, qz - pz) * 180.0 / Math.PI, turn = TurnSeconds(c, yaw, heading);
-                legs[c].Add(new Leg
-                {
-                    Start = t0, FromX = px, FromZ = pz, ToX = qx, ToZ = qz, HeadingFrom = yaw, Heading = heading,
-                    // A small turn aims longer, so every charge is shown (its line on the floor) MinLead ahead.
-                    Turn = turn, Aim = Math.Max(rng.Range(Math.Min(rules.MinAim, rules.MaxAim), Math.Max(rules.MinAim, rules.MaxAim)), rules.MinLead - turn),
-                    Charge = ChargeSeconds(d, speed[c]),
-                    Rest = rng.Range(Math.Min(rules.MinRest, rules.MaxRest), Math.Max(rules.MinRest, rules.MaxRest)),
-                    Speed = speed[c],
-                });
+                AddLeg(c, t0, px, pz, qx, qz, yaw, heading, turn, d);
                 return;
             }
+            // R659 (timed): nowhere free for a full charge - a short dart, ShortCharge up to MinCharge long, if one is free.
+            if (rules.Timed && rules.ShortCharge > 0 && rules.ShortCharge < rules.MinCharge)
+                for (int k = 0; k < Math.Max(1, rules.Tries); k++)
+                {
+                    double angle = rng.Range(0, 2 * Math.PI), d = rng.Range(rules.ShortCharge, rules.MinCharge);
+                    double qx = px + Math.Sin(angle) * d, qz = pz + Math.Cos(angle) * d;
+                    if (qx < minX || qx > maxX || qz < minZ || qz > maxZ) continue;
+                    double head = Math.Atan2(qx - px, qz - pz) * 180.0 / Math.PI, spin = TurnSeconds(c, yaw, head);
+                    double aim = Math.Max(rng.Range(Math.Min(rules.MinAim, rules.MaxAim), Math.Max(rules.MinAim, rules.MaxAim)), rules.MinLead - spin);
+                    double charge = ChargeSeconds(d, speed[c]), from = t0 + spin + aim;
+                    if (ClashesTimed(c, t0, px, pz, qx, qz, from, from + charge)) continue;
+                    legs[c].Add(new Leg
+                    {
+                        Start = t0, FromX = px, FromZ = pz, ToX = qx, ToZ = qz, HeadingFrom = yaw, Heading = head,
+                        Turn = spin, Aim = aim, Charge = charge,
+                        Rest = rng.Range(Math.Min(rules.MinRest, rules.MaxRest), Math.Max(rules.MinRest, rules.MaxRest)),
+                        Speed = speed[c],
+                    });
+                    return;
+                }
             // Nowhere free: stand where it is and try again in a moment.
             legs[c].Add(new Leg
             {
                 Start = t0, FromX = px, FromZ = pz, ToX = px, ToZ = pz, HeadingFrom = yaw, Heading = yaw,
                 Rest = Math.Max(.05, rules.Wait), Speed = speed[c],
+            });
+        }
+
+        // The R287 planner's leg (aim and rest drawn after the point, as it always did: the vetted dances stay the same).
+        void AddLeg(int c, double t0, double px, double pz, double qx, double qz, double yaw, double heading, double turn, double d)
+        {
+            legs[c].Add(new Leg
+            {
+                Start = t0, FromX = px, FromZ = pz, ToX = qx, ToZ = qz, HeadingFrom = yaw, Heading = heading,
+                // A small turn aims longer, so every charge is shown (its line on the floor) MinLead ahead.
+                Turn = turn, Aim = Math.Max(rng.Range(Math.Min(rules.MinAim, rules.MaxAim), Math.Max(rules.MinAim, rules.MaxAim)), rules.MinLead - turn),
+                Charge = ChargeSeconds(d, speed[c]),
+                Rest = rng.Range(Math.Min(rules.MinRest, rules.MaxRest), Math.Max(rules.MinRest, rules.MaxRest)),
+                Speed = speed[c],
             });
         }
 
@@ -280,6 +358,69 @@ namespace ChessFight.Network
                 if (SegmentDistance(px, pz, qx, qz, ax, az, bx, bz) < keep) return true;
             }
             return false;
+        }
+
+        // Timed (R659): would body c - at p until `from`, charging to q until `to`, at q after - come within the two
+        // reaches + Clearance of any other body AT THE SAME TIME, from t0 on? Each other body follows its latest leg the
+        // same way and stays at its end after it (its next leg, planned later, is checked against this one). Time is cut
+        // where either body starts or stops moving; while both move it is walked in steps of TimedStep, each step
+        // judged by the two stretches the bodies can be on during it (so a miss is never wrongly allowed).
+        readonly double[] cuts = new double[8];
+
+        bool ClashesTimed(int c, double t0, double px, double pz, double qx, double qz, double from, double to)
+        {
+            for (int j = 0; j < legs.Length; j++)
+            {
+                if (j == c) continue;
+                double keep = SpacingOf(c, j);
+                var list = legs[j];
+                Leg m;
+                if (list.Count == 0) m = new Leg { Start = t0, FromX = homeX[j], FromZ = homeZ[j], ToX = homeX[j], ToZ = homeZ[j] };
+                else m = list[list.Count - 1];
+                int n = 0;
+                cuts[n++] = t0;
+                if (from > t0) cuts[n++] = from;
+                if (to > t0) cuts[n++] = to;
+                if (m.ChargeStart > t0) cuts[n++] = m.ChargeStart;
+                if (m.ChargeEnd > t0) cuts[n++] = m.ChargeEnd;
+                Array.Sort(cuts, 0, n);
+                for (int i = 0; i < n; i++)
+                {
+                    double a = cuts[i], b = i + 1 < n ? cuts[i + 1] : double.PositiveInfinity;
+                    if (b - a < 1e-9) continue;
+                    bool mine = a < to && b > from, theirs = m.Charge > 0 && a < m.ChargeEnd && b > m.ChargeStart;
+                    if (double.IsPositiveInfinity(b))
+                    {
+                        // Both at rest for good: c at q, the other at its leg's end.
+                        At(px, pz, qx, qz, from, to, a, out double cx, out double cz);
+                        At(m.FromX, m.FromZ, m.ToX, m.ToZ, m.ChargeStart, m.ChargeEnd, a, out double ox, out double oz);
+                        if (Math.Sqrt((cx - ox) * (cx - ox) + (cz - oz) * (cz - oz)) < keep) return true;
+                        continue;
+                    }
+                    double step = mine && theirs ? Math.Max(.02, rules.TimedStep) : b - a;
+                    for (double s = a; s < b - 1e-9; s += step)
+                    {
+                        double e = Math.Min(b, s + step);
+                        At(px, pz, qx, qz, from, to, s, out double c0x, out double c0z);
+                        At(px, pz, qx, qz, from, to, e, out double c1x, out double c1z);
+                        At(m.FromX, m.FromZ, m.ToX, m.ToZ, m.ChargeStart, m.ChargeEnd, s, out double o0x, out double o0z);
+                        At(m.FromX, m.FromZ, m.ToX, m.ToZ, m.ChargeStart, m.ChargeEnd, e, out double o1x, out double o1z);
+                        if (SegmentDistance(c0x, c0z, c1x, c1z, o0x, o0z, o1x, o1z) < keep) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Where a body is at `time` on a leg from a to b charging between `from` and `to` (before: at a; after: at b).
+        void At(double ax, double az, double bx, double bz, double from, double to, double time, out double x, out double z)
+        {
+            double f;
+            if (to <= from || time <= from) f = 0;   // no charge (a wait or home: a and b are the same point) or not yet
+            else if (time >= to) f = 1;
+            else Profile((time - from) / (to - from), out f, out _);
+            x = ax + (bx - ax) * f;
+            z = az + (bz - az) * f;
         }
 
         double Peak => 1.0 / (1.0 - (Clamp01(rules.SpeedUp) + Clamp01(rules.SlowDown)) * .5);

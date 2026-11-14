@@ -8,7 +8,7 @@ using Solid = ChessFight.PawnRush.YardKit.Solid;
 
 namespace ChessFight.PawnRush
 {
-    // The giant chest on a CargoSlam's gantry (R626). Its whole trip is a pure function of ObstacleClock (HANDOFF absolute
+    // The giant chest on a CargoSlam's gantry (R659). Its whole trip is a pure function of ObstacleClock (HANDOFF absolute
     // rule 7): carried along the beam high over everyone to the trip's place (smoothly from the last one), held still
     // there, dropped, sitting on the floor, hoisted back up slowly - and the next trip carries it on from there. The
     // place is the trip hashed with the gantry's seed (CargoSlam.PlaceOf), the same on every PC.
@@ -321,7 +321,10 @@ namespace ChessFight.PawnRush
                 var piece = owner.GetComponentInParent<IPromotable>();
                 float weight = ChessPieces.Stats(piece != null ? piece.Piece : PieceKind.Pawn).Weight;
                 if (body != null) push -= new Vector3(body.linearVelocity.x, 0f, body.linearVelocity.z) * weight;
-                hits.ApplyHit(push + Vector3.up * slam.ShockLift, slam.ShockKnockdown, 0f, true);
+                // Knocked down a moment ago by another hazard (a crate in the circle): pushed, not knocked down again.
+                bool fresh = !YardKit.RecentlyDown(driver);
+                hits.ApplyHit(push + Vector3.up * slam.ShockLift, fresh ? slam.ShockKnockdown : 0f, 0f, true);
+                if (fresh) YardKit.MarkDown(driver);
                 Knocked++;
             }
         }
