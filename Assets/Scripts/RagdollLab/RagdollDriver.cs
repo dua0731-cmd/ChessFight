@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver, ICheatFlight
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, IGripReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver, ICheatFlight
     {
         RagdollPawn pawn;
 
@@ -41,6 +41,12 @@ namespace ChessFight.RagdollLab
         }
 
         public float Stamina01 => Pawn.Stamina;
+
+        // R642: the Pawn Rush grab HUD (GripHudGui).
+        public bool GripHeld => Pawn.BeingHeld;
+        public float GripEscape01 => Pawn.EscapeProgress;
+        public bool HeldAt(out Vector3 grip) => Pawn.HeldGrip(out grip);
+        public bool HoldingPiece(out Vector3 grip) => Pawn.HoldingPawn(out grip);
 
         // `position` is the ground point; the hips go standHeight above it, as LabGame.Respawn does.
         // RagdollPawn.Teleport lets go of everything first (wall, hands, anyone holding it).

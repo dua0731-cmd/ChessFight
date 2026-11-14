@@ -65,6 +65,8 @@ Play 중 코드에서 `PawnRushSkillProbe.Run("이름")` → 몇 초 뒤 `PawnRu
 
 AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 부르고 `manage_camera` 스크린샷으로 본다 → [AI_WORKFLOW §3](../Environment/AI_WORKFLOW.md#3-테스트).
 
+> **R641 (11-14, 승규 님 "거리는 유지하고 … 상대가 지금 보다 살짝 더 넘어지는 효과", "14도로"):** 폰 판정 각도 `pawnFrontAngle` 20° → **14°**(상대 몸 앞뒤 선에서 14° 넘고 80° 이하면 넘어짐), 넘어뜨릴 때만 쓰는 새 값 `pawnKnockPush` **4.5**(전에는 정면 밀침과 같은 3.5) · `pawnKnockLift` **2.2**(전 1.5, 코드에 박혀 있던 값). 정면 밀침 `pawnFrontPush` 3.5 · 걸음 1.5 m · 쿨은 그대로. 아래 10-07 측정은 바꾸기 전 값이고, `pawn-angles` 다시 재기는 아직 안 함(0° · 45° · 90° · 180° 시험이라 14°/20° 차이는 이 시험에 안 드러남).
+
 **10-07 측정 (AI, 자동 시험, 사람 확인 아님)**
 
 | 시험 | 결과 | 기획 |

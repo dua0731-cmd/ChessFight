@@ -42,6 +42,23 @@ namespace ChessFight.PawnRush
             else if (owner.GameIndex == PawnRushMissions.KnightPads) PalaceLaundry(owner);   // MiniGameModels.Laundry.cs (R509)
             else if (owner.GameIndex == PawnRushMissions.EnPassant) ClockworkBallroom(owner);   // MiniGameModels.Ballroom.cs (R508)
             else if (owner.GameIndex == PawnRushMissions.CheckBlock) KingsBedchamber(owner);   // MiniGameModels.Bedchamber.cs (R511)
+            GateMoment(owner);
+        }
+
+        // R643 (승규 님 11-14, "미니게임 클리어 시 파란 폭죽 없애고 새로 넣기" - only the rooms without a moment of their
+        // own): F, G, H and I no longer open with the shared team-colour column and burst (MiniGameGateMoment). G and H
+        // add their own furniture; F and I just open the door (승규 님 11-14, after seeing the gears and the curtains).
+        // Added with or without the room's models.
+        static void GateMoment(MiniGameSection owner)
+        {
+            System.Type moment =
+                owner.GameIndex == PawnRushMissions.EnPassant ? typeof(MiniGameDoorGateFx) :
+                owner.GameIndex == PawnRushMissions.KingEscort ? typeof(MiniGameProcessionGateFx) :
+                owner.GameIndex == PawnRushMissions.Checkmate ? typeof(MiniGameChessHallGateFx) :
+                owner.GameIndex == PawnRushMissions.CheckBlock ? typeof(MiniGameDoorGateFx) : null;
+            if (moment == null) return;
+            foreach (var station in owner.Stations)
+                if (station != null && station.GetComponent<IGateFx>() == null) station.gameObject.AddComponent(moment);
         }
 
         // A section's stations stay when another game is put in (the test scene's number keys), and every game adds its

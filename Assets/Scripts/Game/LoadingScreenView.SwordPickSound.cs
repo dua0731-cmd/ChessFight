@@ -61,7 +61,9 @@ namespace ChessFight.Game
         // the close the cues after it are timed from, -1 while not known yet
         float swordSoundClose = -1f;
         AudioSource swordMusic, swordMusicLoop;
-        bool swordBedOn;
+        // R645: the music's own object, handed to SwordMusicCarry when the screen goes at the match's start
+        GameObject swordMusicHolder;
+        bool swordBedOn, swordCarried;
         readonly List<PieceKind> swordHeard = new List<PieceKind>();
         int swordHeardMine = -1;
 
@@ -222,11 +224,18 @@ namespace ChessFight.Game
             var intro = SwordClip("SwordMusic");
             var loop = SwordClip("SwordMusicLoop");
             if (intro == null || loop == null) return;
+            // R645: carried on over the camera's flight (SwordMusicCarry): this screen leaves it alone from then
+            if (swordCarried || (Hiding && SwordMusicCarry.Active)) return;
             if (!swordBedOn)
             {
                 swordBedOn = true;
-                if (swordMusic == null) swordMusic = MusicSource(false);
-                if (swordMusicLoop == null) swordMusicLoop = MusicSource(true);
+                if (swordMusicHolder == null)
+                {
+                    swordMusicHolder = new GameObject("Sword Fight music");
+                    swordMusicHolder.transform.SetParent(transform, false);
+                }
+                if (swordMusic == null) swordMusic = MusicSource(false, swordMusicHolder);
+                if (swordMusicLoop == null) swordMusicLoop = MusicSource(true, swordMusicHolder);
                 double at = now + MusicLead;
                 float from = t + MusicLead;
                 swordMusic.clip = intro;
@@ -253,6 +262,15 @@ namespace ChessFight.Game
                 float since = t - (swordSoundClose + TeamSeconds + ClashHit);
                 if (since >= -.05f) duck = Mathf.Clamp(DuckLow + (DuckBack - DuckLow) * (since - DuckHold) / DuckRise, DuckLow, DuckBack);
             }
+            // R645: the screen going as the match starts: the music goes on, carried, until the flight round the map is over
+            if (Hiding && swordSoundClose >= 0f)
+            {
+                SwordMusicCarry.Carry(swordMusicHolder, SwordMusicGain * swell * after * duck);
+                swordMusicHolder = null;
+                swordMusic = swordMusicLoop = null;
+                swordCarried = true;
+                return;
+            }
             float fade = Hiding ? Mathf.Clamp01(1f - (Time.unscaledTime - hideAt) / FadeSeconds) : 1f;
             swordMusic.volume = swordMusicLoop.volume = GameSettings.Music * SwordMusicGain * swell * after * duck * fade;
         }
@@ -266,6 +284,7 @@ namespace ChessFight.Game
             swordHeardMine = -1;
             swordLockHeard = false;
             swordBedOn = false;
+            swordCarried = false;
             if (swordMusic != null) swordMusic.Stop();
             if (swordMusicLoop != null) swordMusicLoop.Stop();
             if (swordVoices == null) return;

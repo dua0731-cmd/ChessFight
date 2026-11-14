@@ -329,6 +329,9 @@ namespace ChessFight.RagdollLab
                 pressEdge = confirmEdge = cancelEdge = edgeKey = false;
                 FallTime = -1f;
                 EdgeCondition = false;
+                // R640: a piece out of the match comes back as itself (SwordFightMatch.Respawn), so its cooldowns run
+                // on while it is out, as they would have (the host's copy; a client's comes with the host's text).
+                if (!Fighter.Alive && Fighter.Authority) { cooldownLeft -= dt; edgeCooldownLeft -= dt; }
                 return;
             }
             cooldownLeft -= dt;

@@ -873,9 +873,52 @@ public static class NetworkCoreTests
             Test("Partial join timeout releases whole party", () => {
                 var r = new TeamReservations(); Reserve(r,1,4); var removed=r.Reconcile(new HashSet<ulong> {1,2,3},26);
                 Check(removed.Count == 1 && r.Count == 0 && Reserve(r,8,6,27), "partial group retained"); });
-            Test("Disconnect after admission removes the whole waiting party", () => {
+            // R644 (user 11-14: "그 사람만 나가고, 나머지 파티원과 방은 그대로"): it used to release the whole party.
+            Test("A member gone after its party was seated gives up only its own seat; a party with nobody left goes, bots and all", () => {
                 var r=new TeamReservations(); Reserve(r,1,3); r.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
-                r.Reconcile(new HashSet<ulong> {1,2},2); Check(r.Count == 0,"disconnected slot retained"); });
+                var removed=r.Reconcile(new HashSet<ulong> {1,2},2);
+                Check(removed.Count==0&&r.Count==2&&r.Find(3)==null&&r.Find(1)!=null&&r.Find(2)!=null,"the mates lost their seats, or the one gone kept its own");
+                // The leader gone: the others keep their seats under the same reservation.
+                removed=r.Reconcile(new HashSet<ulong> {2},3);
+                Check(removed.Count==0&&r.Count==1&&r.Find(2)!=null&&r.Groups[0].Leader==1,"the party did not outlast its leader");
+                removed=r.Reconcile(new HashSet<ulong>(),4);
+                Check(removed.Count==1&&r.Count==0,"an empty party kept a seat");
+                var bots=new TeamReservations(); ulong lead=500;
+                Check(bots.Reserve(lead,77,"t",new[] {lead,BotIdentity.Id(lead,0)},0,out _),"setup: a leader and its bot");
+                bots.Reconcile(new HashSet<ulong> {lead},1); bots.Reconcile(new HashSet<ulong>(),2);
+                Check(bots.Count==0,"a party's bot stayed without its people");
+                var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
+                Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
+            Test("R644: the waiting room's line of succession, a claim that passes over several in it, and the order by machines alone", () => {
+                Func<ulong,int,HostElection.Candidate> Heir=(id,fit)=>new HostElection.Candidate{Id=id,Fitness=fit,PingMs=-1};
+                var heirs=new[]{Heir(2,900),Heir(3,800),Heir(4,700),Heir(5,600)};
+                var published=new List<ulong>{3,2};
+                Check(HostElection.Line(published,new List<ulong>{2,3,4,5},1,heirs).SequenceEqual(new ulong[]{3,2,4,5}),"the line: the published order, then the rest by score");
+                Check(HostElection.Line(published,new List<ulong>{2,4,5},3,heirs).SequenceEqual(new ulong[]{2,4,5})&&HostElection.Line(null,new List<ulong>(),1,heirs).Count==0,"the line without the one leaving");
+                // Host 1 (number 1) is gone; 3 and 2 before 4 in line are dead as well. 4 claims three up and names both.
+                var claims=new Dictionary<ulong,int>{{2,0},{3,0},{4,4},{5,0}};
+                var passed=new Dictionary<ulong,ICollection<ulong>>{{4,new List<ulong>{3,2}}};
+                int e;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"a claim that names everyone before it in line: "+e);
+                passed[4]=new List<ulong>{3};
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1&&e==1,"a claim that names only one of the two before it was followed");
+                passed.Clear();
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1&&HostElection.FollowLine(1,1,1,published,claims,heirs,out e,null)==1,"a claim out of turn that names nobody was followed");
+                passed[4]=new List<ulong>{3,2};claims[4]=9;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==1,"a claim far above what it names was followed");
+                // The first in line claims plainly; one passed over that claims after all is followed first, then the one that passed it over.
+                claims[4]=0;claims[3]=2;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==3&&e==2,"the first in line: "+e);
+                claims[4]=4;
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"the one passed over came first, then the one that passed it over: "+e);
+                // Those it named that Steam has dropped since are no obstacle.
+                claims=new Dictionary<ulong,int>{{4,4},{5,0}};
+                Check(HostElection.FollowLine(1,1,1,published,claims,heirs,out e,passed)==4&&e==4,"a claim whose passed-over PCs have left the room");
+                // Machines alone, best first, whatever they measure against an unknown one's 300 (a room of weak laptops).
+                Func<ulong,int,int,HostElection.Candidate> Machine=(id,fit,machine)=>new HostElection.Candidate{Id=id,Fitness=fit,BaseFitness=machine,PingMs=-1};
+                Check(HostElection.RankAlone(new[]{Machine(1,120,250),Machine(2,400,200),Machine(3,90,280)}).SequenceEqual(new ulong[]{3,1,2}),"RankAlone");
+                Check(HostElection.WaitingMargin>HostElection.StartMargin&&HostElection.StartHost(1,new[]{Machine(1,500,500),Machine(2,540,540)},HostElection.WaitingMargin)==1&&
+                      HostElection.StartHost(1,new[]{Machine(1,500,500),Machine(2,560,560)},HostElection.WaitingMargin)==2,"a room that has moved its host moves it again only for 10% more"); });
             Test("Reject spoofed leader, zero IDs, repeated IDs and overlaps", () => {
                 var r=new TeamReservations(); Check(!r.Reserve(9,99,"x",new ulong[]{1,2},0,out _),"spoof");
                 Check(!r.Reserve(1,99,"x",new ulong[]{1,1},0,out _),"duplicate");
@@ -890,7 +933,9 @@ public static class NetworkCoreTests
                 Check(r.Count==0&&r.CoolingDown(1,26)&&!Reserve(r,1,1,27)&&!Reserve(r,1,6,26+TeamReservations.Cooldown-.5),"asked again during the cooldown");
                 Check(Reserve(r,7,6,27)&&Reserve(r,1,1,26+TeamReservations.Cooldown+.5),"the cooldown held up others or never ended");
                 var came=new TeamReservations(); Reserve(came,1,2); came.Reconcile(new HashSet<ulong>(Ids(1,2)),1); came.Reconcile(new HashSet<ulong> {1},2);
-                Check(came.Count==0&&!came.CoolingDown(1,2)&&Reserve(came,1,1,3),"people who came were made to wait");
+                Check(came.Count==1&&!came.CoolingDown(1,2),"people who came were made to wait");
+                came.Reconcile(new HashSet<ulong>(),3);
+                Check(came.Count==0&&!came.CoolingDown(1,3)&&Reserve(came,1,1,4),"people who came and left were made to wait");
                 var bots=new TeamReservations(); ulong host=900;
                 Check(bots.Reserve(host,77,"t",new[] {host,BotIdentity.Id(host,0)},0,out _)&&bots.ReserveBots(host,BotIdentity.Fill(host,2,6),0,out _),"setup: bots");
                 bots.Reconcile(new HashSet<ulong> {host},26);
@@ -2363,7 +2408,7 @@ public static class NetworkCoreTests
                 Check(SkillGrades.Raises(SkillGrade.Mistake,SkillGrade.Brilliant)&&SkillGrades.Raises(SkillGrade.None,SkillGrade.Brilliant),"a late ring-out raises");
                 Check(!SkillGrades.Raises(SkillGrade.Brilliant,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.Interesting,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.None,SkillGrade.Great),"only to !!, once");
                 Check(SkillGrades.Symbol(SkillGrade.Interesting)=="!?"&&SkillGrades.Symbol(SkillGrade.Blunder)=="??","symbols"); });
-            Test("Sword Fight prototype: pick, countdown, every fall a point, ten wins, and the respawn is always a pawn", () => {
+            Test("Sword Fight prototype: pick, countdown, every fall a point, ten wins, and the respawn is the piece it picked (R640)", () => {
                 var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(2, 0); r.Add(3, 1);
                 Check(r.Pick(1, PieceKind.Knight) && !r.Pick(2, PieceKind.Knight) && r.Pick(3, PieceKind.Knight), "no doubles in a team, across teams fine");
                 Check(!r.Pick(1, PieceKind.Queen) && !r.Pick(2, PieceKind.Pawn), "one pick, never a pawn");
@@ -2374,18 +2419,20 @@ public static class NetworkCoreTests
                 {
                     var o = r.RingOut(3); Check(o.Valid && !o.Stole && o.Feed.Cause == SwordCause.Self, "self fall " + i);
                     Check(!r.RingOut(3).Valid, "once per life " + i);
-                    Check(!r.TryRespawn(3), "not before 3 s"); r.Advance(3.01); Check(r.TryRespawn(3) && r.Get(3).Piece == PieceKind.Pawn && r.Get(3).Alive, "back as a pawn, flag cleared " + i);
+                    Check(!r.TryRespawn(3), "not before 3 s"); r.Advance(3.01); Check(r.TryRespawn(3) && r.Get(3).Piece == PieceKind.Knight && r.Get(3).Alive, "back as its own knight, flag cleared " + i);
                 }
                 Check(r.White == 9 && r.Phase == SwordPhase.Playing, "nine");
                 r.RingOut(3); Check(r.Phase == SwordPhase.Result && r.Winner == 0 && r.Outs[0] == 10, "ten wins"); });
-            Test("Sword Fight prototype: the last enemy within 3 s takes the credit, a pawn steals the piece, an ally or a stale hit does not", () => {
+            Test("Sword Fight prototype: the last enemy within 3 s takes the credit, nobody steals a piece (R640), an ally or a stale hit is no credit", () => {
                 var r = new SwordMatchRules(1); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);
                 r.Advance(1); r.Advance(15); r.Advance(3.01);
                 r.Get(1).Piece = PieceKind.Pawn;
                 r.Hit(1, 2, SwordCause.PawnStep, 0); r.Advance(2.5);
-                var o = r.RingOut(2); Check(o.Credit == 1 && o.Stole && o.NewPiece == PieceKind.Queen && r.Get(1).Piece == PieceKind.Queen && r.Steals[0] == 1, "steal");
-                Check(o.Feed.Stolen == (byte)PieceKind.Queen && o.Feed.Cause == SwordCause.PawnStep, "feed");
-                r.Hit(1, 3, SwordCause.Sword, 5); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Queen, "not a pawn: no steal");
+                var o = r.RingOut(2); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Pawn && r.Steals[0] == 0, "a pawn's credit takes no piece");
+                Check(o.Feed.Stolen == 255 && o.Feed.Cause == SwordCause.PawnStep, "feed");
+                r.Get(1).Piece = PieceKind.Rook;
+                r.Hit(1, 3, SwordCause.Sword, 5); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Rook, "a piece's credit: no steal");
+                r.Advance(3.1); r.TryRespawn(2); Check(r.Get(2).Piece == PieceKind.Queen, "the fallen queen is back a queen");
                 r.Advance(3.1); r.TryRespawn(2); r.TryRespawn(3);
                 r.Hit(3, 2, SwordCause.Sword, 0); o = r.RingOut(2); Check(o.Credit == 0 && o.Feed.Cause == SwordCause.Self, "an ally's hit is no credit");
                 r.Advance(3.1); r.TryRespawn(2);
@@ -2410,9 +2457,9 @@ public static class NetworkCoreTests
                 r.Advance(15.1); r.Advance(3.1);
                 Check(!r.Adopt(1, true, PieceKind.Rook, 0) && !r.Adopt(2, true, PieceKind.Queen, 0) && r.White == 0 && r.Black == 0, "bodies that agree change nothing");
                 Check(r.Adopt(2, false, PieceKind.Queen, 2.8) && !r.Get(2).Alive && r.White == 1 && r.Feed.Count == 1 && r.Feed[0].Credit == 0 && r.Feed[0].Cause == SwordCause.Self, "a fall in the gap: the point, no credit");
-                Check(!r.TryRespawn(2), "back before the body's own count"); r.Advance(2.85); Check(r.TryRespawn(2) && r.Get(2).Piece == PieceKind.Pawn, "not back after the body's count, as a pawn");
+                Check(!r.TryRespawn(2), "back before the body's own count"); r.Advance(2.85); Check(r.TryRespawn(2) && r.Get(2).Piece == PieceKind.Queen, "back after the body's count, as its own queen (R640)");
                 r.RingOut(3); Check(!r.Get(3).Alive && r.White == 2, "setup: out in the rules");
-                Check(r.Adopt(3, true, PieceKind.Pawn, 0) && r.Get(3).Alive && r.Get(3).Piece == PieceKind.Pawn && r.RespawnLeft(3) == 0, "a comeback in the gap is not taken");
+                Check(r.Adopt(3, true, PieceKind.King, 0) && r.Get(3).Alive && r.Get(3).Piece == PieceKind.King && r.RespawnLeft(3) == 0, "a comeback in the gap is not taken (its own king, R640)");
                 Check(r.RingOut(3).Valid && r.White == 3, "a piece taken back does not fall again");
                 r.Get(1).Piece = PieceKind.Pawn; Check(r.Adopt(1, true, PieceKind.Queen, 0) && r.Get(1).Piece == PieceKind.Queen, "a steal in the gap: the body's piece");
                 Check(r.Adopt(2, false, PieceKind.Pawn, double.NaN) && Math.Abs(r.RespawnLeft(2) - r.Settings.RespawnDelay) < 1e-9, "no count on the body: the full delay");

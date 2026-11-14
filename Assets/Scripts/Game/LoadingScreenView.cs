@@ -35,6 +35,8 @@ namespace ChessFight.Game
         public readonly List<bool> Ready = new List<bool>();
         public readonly List<string> Names = new List<string>();
         public readonly List<bool> Bots = new List<bool>();
+        // R645: each player's Steam profile picture (null: a bot, offline, or not fetched yet - the card shows the pawn).
+        public readonly List<Texture2D> Faces = new List<Texture2D>();
         public int Me = -1;
         // R294: which entry is the room's host (-1: none), the PC that simulates the match: the best PC in the room.
         // R533: its card says "물리 담당" under the name while matching, and the manager's (Manager) "방장" - the one
@@ -63,7 +65,7 @@ namespace ChessFight.Game
 
         public void Clear()
         {
-            Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear();
+            Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear(); Faces.Clear();
             CanGive.Clear(); CanKick.Clear(); Scores.Clear(); Keys.Clear();
             Picks.Clear(); PickAuto.Clear();
             Me = -1; Host = -1; Manager = -1;

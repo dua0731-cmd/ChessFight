@@ -224,9 +224,9 @@ namespace ChessFight.Game
             musicIntro.volume = musicLoop.volume = GameSettings.Music * MusicGain * fade;
         }
 
-        AudioSource MusicSource(bool loop)
+        AudioSource MusicSource(bool loop, GameObject on = null)
         {
-            var a = gameObject.AddComponent<AudioSource>();
+            var a = (on != null ? on : gameObject).AddComponent<AudioSource>();
             a.playOnAwake = false;
             a.loop = loop;
             a.spatialBlend = 0f;

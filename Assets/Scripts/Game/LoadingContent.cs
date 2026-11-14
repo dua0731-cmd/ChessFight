@@ -61,12 +61,12 @@ namespace ChessFight.Game
                     {
                         Title = title,
                         SwordPick = true,
-                        Kicker = versus + " · 떨어뜨리고 빼앗기",
+                        // R640 (승규 님): no steal any more and no subtitle in its place; a fall brings the same piece back.
+                        Kicker = versus,
                         Rule = "상대를 판 밖으로 떨어뜨리면 1점 · 먼저 10점 또는 4분",
-                        Note = "시작할 때 기물을 고르고, 떨어지면 폰으로 돌아와요",
+                        Note = "시작할 때 기물을 고르고, 떨어져도 그 기물로 돌아와요",
                         Tips = new[]
                         {
-                            new LoadingTip("TIP · 빼앗기", "폰일 때 친 상대가 떨어지면 그 기물을 빼앗아요.", PieceKind.Pawn),
                             new LoadingTip("TIP · 스킬", "F는 기물 스킬(조준은 좌클릭으로 발동), E는 떨어질 때 쓰는 가장자리 스킬이에요.", PieceKind.Knight),
                             new LoadingTip("TIP · 판 축소", "2분부터 30초마다 유령 기물이 칸을 지워요. 빛나는 칸에서 피하세요.", PieceKind.Rook)
                         }

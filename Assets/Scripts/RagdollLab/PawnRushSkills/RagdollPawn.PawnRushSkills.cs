@@ -713,7 +713,7 @@ namespace ChessFight.RagdollLab
                 float angle = AxisAngle(other, skillDir);
                 bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
                 string result = diagonal
-                    ? SkillHit(other, skillDir * s.pawnFrontPush + Vector3.up * 1.5f, true, "폰 대각")
+                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각")
                     : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);

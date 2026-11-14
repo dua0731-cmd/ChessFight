@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace ChessFight.Gameplay
 {
     // A character's side in a team mode: white or black, the colours of the chess
@@ -20,6 +22,16 @@ namespace ChessFight.Gameplay
     public interface IStaminaReadout
     {
         float Stamina01 { get; }
+    }
+
+    // R642 (Pawn Rush grab HUD, GripHudGui): another piece's hand on this one, or this one's hand on another piece,
+    // and where that hand is (world). Read only, the same on every PC.
+    public interface IGripReadout
+    {
+        bool GripHeld { get; }
+        float GripEscape01 { get; }
+        bool HeldAt(out Vector3 grip);
+        bool HoldingPiece(out Vector3 grip);
     }
 
     public static class Teams

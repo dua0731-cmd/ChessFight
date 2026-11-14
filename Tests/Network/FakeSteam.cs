@@ -63,6 +63,8 @@ namespace Steamworks
             public List<ulong> Members=new List<ulong>(); public Dictionary<string,string> Data=new Dictionary<string,string>();
             public Dictionary<(ulong,string),string> MemberData=new Dictionary<(ulong,string),string>();
             public List<(ulong,byte[])> Chat=new List<(ulong,byte[])>();
+            // R644: room data on its way to Steam's servers (DataDelay): who wrote it, the key, the value, when it lands.
+            public List<(ulong by,string key,string value,float at)> Writes=new List<(ulong,string,string,float)>();
         }
         public static ulong User;
         public static Dictionary<ulong,Lobby> Lobbies=new Dictionary<ulong,Lobby>();
@@ -82,10 +84,15 @@ namespace Steamworks
         // owns it. Seconds of that delay (0 = at once), and the changes still on their way.
         public static float OwnerDelay;
         public static Dictionary<ulong,(ulong to,float at)> OwnerChanges=new Dictionary<ulong,(ulong,float)>();
+        // R644: real Steam batches SetLobbyData ("there is a slight delay before sending the data") while SetLobbyOwner
+        // and LeaveLobby go out at once. Seconds a room-data write takes to reach the servers (0 = at once). A write
+        // whose writer no longer owns the room when it lands is dropped, as the servers take room data from the
+        // owner only; until then its writer reads its own value back (the Steam client's local copy).
+        public static float DataDelay;
         // Users whose connection to Steam is down (SteamUser.BLoggedOn false). Their lobby calls still go through here.
         public static HashSet<ulong> LoggedOff=new HashSet<ulong>();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();OwnerDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();OwnerDelay=0;DataDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -101,6 +108,9 @@ namespace Steamworks
             if(!Lobbies.TryGetValue(id.m_SteamID,out var l))return null;
             if(OwnerChanges.TryGetValue(l.Id,out var change)&&UnityEngine.Time.realtimeSinceStartup>=change.at)
             {OwnerChanges.Remove(l.Id);if(l.Members.Contains(change.to))l.Owner=change.to;}
+            // Room data that has reached the servers by now, in the order written: kept only from the room's owner.
+            while(l.Writes.Count>0&&UnityEngine.Time.realtimeSinceStartup>=l.Writes[0].at)
+            {var w=l.Writes[0];l.Writes.RemoveAt(0);if(w.by==l.Owner)l.Data[w.key]=w.value;}
             return l;
         }
         public static SteamAPICall_t Create(ELobbyType type,int limit)
@@ -144,8 +154,21 @@ namespace Steamworks
     public static class SteamMatchmaking
     {
         public static CSteamID GetLobbyOwner(CSteamID id)=>new CSteamID(FakeSteam.Get(id)?.Owner??0);
-        public static string GetLobbyData(CSteamID id,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&lobby.Data.TryGetValue(key,out var value)?value:"";}
-        public static bool SetLobbyData(CSteamID id,string key,string value) {var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User)return false;l.Data[key]=value;return true;}
+        public static string GetLobbyData(CSteamID id,string key)
+        {
+            var lobby=FakeSteam.Get(id);if(lobby==null)return "";
+            // A writer reads its own value back before it has reached the servers.
+            for(int i=lobby.Writes.Count-1;i>=0;i--)if(lobby.Writes[i].by==FakeSteam.User&&lobby.Writes[i].key==key)return lobby.Writes[i].value;
+            return lobby.Data.TryGetValue(key,out var value)?value:"";
+        }
+        public static bool SetLobbyData(CSteamID id,string key,string value)
+        {
+            var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User)return false;
+            if(FakeSteam.DataDelay<=0){l.Data[key]=value;return true;}
+            // "This will only send the data if it has changed."
+            if((l.Data.ContainsKey(key)||l.Writes.Exists(w=>w.by==FakeSteam.User&&w.key==key))&&GetLobbyData(id,key)==value)return true;
+            l.Writes.Add((FakeSteam.User,key,value,UnityEngine.Time.realtimeSinceStartup+FakeSteam.DataDelay));return true;
+        }
         public static int GetNumLobbyMembers(CSteamID id)=>FakeSteam.Get(id)?.Members.Count??0;
         public static CSteamID GetLobbyMemberByIndex(CSteamID id,int i)=>new CSteamID(FakeSteam.Get(id).Members[i]);
         public static string GetLobbyMemberData(CSteamID id,CSteamID user,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&lobby.MemberData.TryGetValue((user.m_SteamID,key),out var value)?value:"";}

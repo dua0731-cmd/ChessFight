@@ -197,6 +197,11 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (game == null) return;
+            // R645 (11-14, 사용자 "상대를 찾았습니다에서 먼저 플레이어 이름이 보여"): nothing of the match's HUD - the name
+            // tags (drawn here, not by MatchNameplate's own guard) and the score panel - over the entrance screen's clash.
+            if (ChessFight.Game.LoadingScreenView.Showing) return;
+            // R645: nor over the camera's flight round the map
+            if (Flying) return;
             Styles();
             float w = Screen.width, h = Screen.height, ui = Mathf.Clamp(h / 900f, 0.8f, 1.6f);
             var me = game.Local;
@@ -209,7 +214,10 @@ namespace ChessFight.RagdollLab
             {
                 // R624: a lobby match picked on the entrance screen; the scene's cards are for offline and the lab rooms.
                 case SwordPhase.Pick: if (!PicksBefore) DrawPick(w, h, ui, myTeam); break;
-                case SwordPhase.Countdown: BigStamp(w, h, Mathf.Clamp(3 - (int)PhaseTime, 1, 3).ToString(), null, (float)(PhaseTime % 1.0), 1f); break;
+                case SwordPhase.Countdown:
+                    double count = CountTime;
+                    if (count >= 0) BigStamp(w, h, Mathf.Clamp(3 - (int)count, 1, 3).ToString(), null, (float)(count % 1.0), 1f);
+                    break;
                 case SwordPhase.Playing:
                     if (view.Clock < 1.0 && PhaseTime < 1.0) BigStamp(w, h, "시작!", null, (float)PhaseTime, 1f);
                     break;
@@ -323,8 +331,9 @@ namespace ChessFight.RagdollLab
             if (!me.Alive)
             {
                 float left = info.HasValue ? Mathf.Max(0f, LeftFor(info.Value)) : me.RespawnSeconds;
-                main = $"{left:0.0}초 뒤 폰으로 돌아온다";
-                sub = "들고 있던 기물은 잃는다. 폰으로 상대를 떨어뜨리면 그 기물을 빼앗는다";
+                // R640: back as the piece it picked (no pawn, no steal), its cooldowns going on.
+                main = $"{left:0.0}초 뒤 돌아온다";
+                sub = $"{ChessPieces.Name(me.Pawn.Piece)} 그대로 돌아온다. 스킬 쿨타임도 이어진다";
             }
             else
             {
@@ -463,10 +472,11 @@ namespace ChessFight.RagdollLab
             Text(new Rect(x, y, iw, 38f * ui), title, displayStyle, Mathf.RoundToInt(28 * ui), Ink, TextAnchor.MiddleLeft);
             y += 42f * ui;
             string mine = view.Winner < 0 ? "비겼다." : view.Winner == myTeam ? "우리 팀이 이겼다." : "우리 팀이 졌다.";
-            Text(new Rect(x, y, iw, 22f * ui), mine + " 떨어뜨린 수가 점수, 폰으로 떨어뜨리면 그 기물을 빼앗는다.", bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft, TextAnchor.MiddleLeft);
+            // R640: no steals any more (the line and the rows say only the falls).
+            Text(new Rect(x, y, iw, 22f * ui), mine + " 떨어뜨린 수가 점수.", bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft, TextAnchor.MiddleLeft);
             y += 34f * ui;
-            Row(x, ref y, iw, ui, "흰 팀", $"장외로 얻은 점수 {view.OutsWhite} · 빼앗기 {view.StealsWhite}");
-            Row(x, ref y, iw, ui, "검은 팀", $"장외로 얻은 점수 {view.OutsBlack} · 빼앗기 {view.StealsBlack}");
+            Row(x, ref y, iw, ui, "흰 팀", $"장외로 얻은 점수 {view.OutsWhite}");
+            Row(x, ref y, iw, ui, "검은 팀", $"장외로 얻은 점수 {view.OutsBlack}");
             var br = new Rect(x, r.yMax - 64f * ui, 200f * ui, 42f * ui);
             Panel(br, brassTex, 7);
             Text(br, "로비로 돌아가기", bodyStyle, Mathf.RoundToInt(14 * ui), Ink);

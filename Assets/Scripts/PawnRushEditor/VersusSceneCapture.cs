@@ -172,6 +172,7 @@ namespace ChessFight.PawnRush.Editor
             s.Ready.Add(false);
             s.Names.Add(name);
             s.Bots.Add(bot);
+            s.Faces.Add(null);
             s.CanGive.Add(false);
             s.CanKick.Add(false);
             s.Scores.Add(0);

@@ -37,10 +37,14 @@ namespace ChessFight.RagdollLab
         public float pawnSeekRange = 3f;
         [Tooltip("두 번째 걸음: 대상 쪽으로 최대 이만큼 (m), 닿으면 멈춤")]
         public float pawnSeekStep = 1.5f;
-        [Tooltip("이 각도까지는 곧게 = 밀치기, 대각 각도까지는 넘어뜨리기 (상대 몸의 앞뒤 선 기준, 도)")]
-        public float pawnFrontAngle = 20f;
+        [Tooltip("이 각도까지는 곧게 = 밀치기, 대각 각도까지는 넘어뜨리기 (상대 몸의 앞뒤 선 기준, 도). R641 승규 님 11-14 \"상대가 살짝 더 넘어지게\": 20 → 14")]
+        public float pawnFrontAngle = 14f;
         public float pawnDiagonalAngle = 80f;
+        [Tooltip("곧게 맞은 상대를 미는 속도 (m/s, 약 0.6 m 밀림). R641에도 그대로")]
         public float pawnFrontPush = 3.5f;
+        [Tooltip("대각으로 넘어뜨릴 때 미는 속도 · 위로 띄우는 속도 (m/s). R641: 3.5 · 1.5 → 4.5 · 2.2 (더 크게 쓰러짐)")]
+        public float pawnKnockPush = 4.5f;
+        public float pawnKnockLift = 2.2f;
         public float pawnHitRadius = 0.5f;
         [Tooltip("부축: 일어난 팀원의 기상 보호 (R153: 1.6 → 1.5, 속도 버프는 지움), 폰 쿨 감소")]
         public float helpGuard = 1.5f;
