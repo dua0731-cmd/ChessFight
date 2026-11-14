@@ -81,7 +81,16 @@ namespace ChessFight.RagdollLab
 
         // ------------------------------------------------------------------ helpers
 
-        RagdollPawn Spawn(Vector3 ground, Vector3 forward, string name) => game.Spawn(ground, forward, null, name);
+        /// <summary>-ragdollFeelPawnRush: the control-feel recordings' pawns move with the Pawn Rush values
+        /// (PawnRushPhysicsParams), as on the course. Only RunFeel sets it; the suite's pawns keep the shared values.</summary>
+        bool feelPawnRush;
+
+        RagdollPawn Spawn(Vector3 ground, Vector3 forward, string name)
+        {
+            var pawn = game.Spawn(ground, forward, null, name);
+            if (feelPawnRush) pawn.PawnRushPhysics = new PawnRushPhysicsParams();
+            return pawn;
+        }
 
         static float Dt => Time.fixedDeltaTime;
 

@@ -14,9 +14,13 @@ namespace ChessFight.RagdollLab
     /// frame and measured, and compared before and after a change.
     ///
     ///   RagdollLab.exe -batchmode -ragdollFeel &lt;folder&gt; [-ragdollFeelOnly run,tackle_run] [-ragdollTuning x.json]
+    ///                  [-ragdollFeelPawnRush 1]
+    ///
+    /// -ragdollFeelPawnRush records with the Pawn Rush movement (jump, gravity, dive, gait, arms, get-up: PawnRushPhysicsParams)
+    /// instead of the lab's shared values - what a player on the course feels. Same scripts, on the lab floor.
     ///
     /// Needs graphics (no -nographics). Each scenario writes &lt;folder&gt;/&lt;name&gt;/f_0000.png... and
-    /// &lt;folder&gt;/&lt;name&gt;.csv (one row per recorded frame: input, hips, speeds, state, stamina...).
+    /// &lt;folder&gt;/&lt;name&gt;.csv (one row per recorded frame: input, hips, speeds, state, stamina, both feet, the gait angle...).
     /// Tools/RagdollPreview/feel_sheets.py turns them into contact sheets and GIFs.
     /// </summary>
     public partial class LabAutoTest
@@ -53,6 +57,7 @@ namespace ChessFight.RagdollLab
             sideCamera.enabled = false;
             string only = Arg("-ragdollFeelOnly");
             bool Want(string name) => string.IsNullOrEmpty(only) || Array.IndexOf(only.Split(','), name) >= 0;
+            feelPawnRush = Arg("-ragdollFeelPawnRush") != null;
 
             if (Want("run")) yield return FeelScenario(folder, "run", FeelRun());
             if (Want("turn")) yield return FeelScenario(folder, "turn", FeelTurn());
@@ -74,7 +79,17 @@ namespace ChessFight.RagdollLab
             if (Want("rope_climb")) yield return FeelScenario(folder, "rope_climb", FeelRopeClimb());
             if (Want("swing")) yield return FeelScenario(folder, "swing", FeelSwing());
             if (Want("knight")) yield return FeelScenario(folder, "knight", FeelKnight());
+            // The v4 control-feel work (11-15): steering, short taps, stops from the sprint, and bodies meeting bodies.
+            if (Want("steer")) yield return FeelScenario(folder, "steer", FeelSteer());
+            if (Want("zigzag")) yield return FeelScenario(folder, "zigzag", FeelZigzag());
+            if (Want("taps")) yield return FeelScenario(folder, "taps", FeelTaps());
+            if (Want("sprint_stop")) yield return FeelScenario(folder, "sprint_stop", FeelSprintStop());
+            if (Want("tackle_hit")) yield return FeelScenario(folder, "tackle_hit", FeelTackleHit("tackle_hit", -8.2f));
+            if (Want("tackle_hit_far")) yield return FeelScenario(folder, "tackle_hit_far", FeelTackleHit("tackle_hit_far", -7.6f));
+            if (Want("bar_hit")) yield return FeelScenario(folder, "bar_hit", FeelBarHit());
+            if (Want("sprint_bump")) yield return FeelScenario(folder, "sprint_bump", FeelSprintBump());
 
+            feelPawnRush = false;
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
             Destroy(side);
@@ -108,7 +123,8 @@ namespace ChessFight.RagdollLab
             clipFrame = 0;
             feelCsv = new StringBuilder();
             feelCsv.AppendLine("t,mark,in_x,in_y,jump,shove,grab,sprint,hx,hy,hz,vx,vy,vz,speed,ground_speed,state,grounded,"
-                               + "tilt,facing,stamina,climbing,grabbing,held,diving,sprinting,knockdowns,anchor_lead,other_state,other_grabbing,other_held");
+                               + "tilt,facing,stamina,climbing,grabbing,held,diving,sprinting,knockdowns,anchor_lead,other_state,other_grabbing,other_held,"
+                               + "fl_x,fl_y,fl_z,fr_x,fr_y,fr_z,gait");
             feelClock = 0f;
             // The body sets feelPawn, pre-rolls (not recorded) and then records by calling FeelRecord.
             yield return body;
@@ -179,12 +195,16 @@ namespace ChessFight.RagdollLab
             var cam = game.labCamera;
             float inX = Vector3.Dot(feelInput.move, cam.FlatRight), inY = Vector3.Dot(feelInput.move, cam.FlatForward);
             string other = feelOther == null ? ",," : $"{(int)feelOther.State},{(feelOther.Grabbing ? 1 : 0)},{(feelOther.BeingHeld ? 1 : 0)}";
+            // Both feet and where the legs are in their cycle (degrees): how far a foot on the floor slides is the gait's honesty.
+            Vector3 fl = p.bodies[(int)BodyId.FootL].position, fr = p.bodies[(int)BodyId.FootR].position;
             feelCsv.AppendLine(string.Format(c,
-                "{0:F3},{1},{2:F2},{3:F2},{4},{5},{6},{7},{8:F3},{9:F3},{10:F3},{11:F2},{12:F2},{13:F2},{14:F2},{15:F2},{16},{17},{18:F1},{19:F1},{20:F2},{21},{22},{23},{24},{25},{26},{27:F2},{28}",
+                "{0:F3},{1},{2:F2},{3:F2},{4},{5},{6},{7},{8:F3},{9:F3},{10:F3},{11:F2},{12:F2},{13:F2},{14:F2},{15:F2},{16},{17},{18:F1},{19:F1},{20:F2},{21},{22},{23},{24},{25},{26},{27:F2},{28},"
+                + "{29:F3},{30:F3},{31:F3},{32:F3},{33:F3},{34:F3},{35:F0}",
                 feelClock, feelMark, inX, inY, feelInput.jump ? 1 : 0, feelInput.shove ? 1 : 0, feelInput.grab ? 1 : 0, feelInput.sprint ? 1 : 0,
                 h.x, h.y, h.z, v.x, v.y, v.z, p.HorizontalSpeed, p.GroundSpeed, (int)p.State, p.Grounded ? 1 : 0,
                 p.HipsTilt, Mathf.Atan2(p.Facing.x, p.Facing.z) * Mathf.Rad2Deg, p.Stamina, p.Climbing ? 1 : 0, p.Grabbing ? 1 : 0,
-                p.BeingHeld ? 1 : 0, p.Diving ? 1 : 0, p.Sprinting ? 1 : 0, p.Knockdowns, lead.magnitude, other));
+                p.BeingHeld ? 1 : 0, p.Diving ? 1 : 0, p.Sprinting ? 1 : 0, p.Knockdowns, lead.magnitude, other,
+                fl.x, fl.y, fl.z, fr.x, fr.y, fr.z, p.GaitAngle * Mathf.Rad2Deg));
         }
 
         // ------------------------------------------------------------------ scenarios
@@ -462,6 +482,115 @@ namespace ChessFight.RagdollLab
                 }
             });
             yield return FeelRecord(2.6f, "L-jump", _ => Feel(0f, 0f));
+        }
+
+        // ------------------------------------------------------------------ v4 control-feel scenes (11-15)
+
+        /// <summary>Steering with the mouse while holding W, as on a course: a wide curve and a tight one the other way,
+        /// at the run and again at the sprint.</summary>
+        IEnumerator FeelSteer()
+        {
+            var pawn = Spawn(new Vector3(-7f, 0f, -10f), Vector3.forward, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 0f);
+            clipFolder = FeelFolder("steer");
+            var cam = game.labCamera;
+            yield return FeelRecord(1.0f, "W", _ => Feel(0f, 1f));
+            yield return FeelRecord(2.0f, "W+mouse90", _ => { cam.AddYaw(90f * Time.deltaTime); Feel(0f, 1f); });
+            yield return FeelRecord(1.5f, "W+mouse-180", _ => { cam.AddYaw(-180f * Time.deltaTime); Feel(0f, 1f); });
+            yield return FeelRecord(1.0f, "shift+W", _ => Feel(0f, 1f, sprint: true));
+            yield return FeelRecord(2.0f, "shift+mouse90", _ => { cam.AddYaw(90f * Time.deltaTime); Feel(0f, 1f, sprint: true); });
+            yield return FeelRecord(1.5f, "shift+mouse-180", _ => { cam.AddYaw(-180f * Time.deltaTime); Feel(0f, 1f, sprint: true); });
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>Dodging: W held with A and D in turn (the heading swings 90 degrees), then A and D alone (it reverses).</summary>
+        IEnumerator FeelZigzag()
+        {
+            var pawn = Spawn(new Vector3(-7f, 0f, -13f), Vector3.forward, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 0f);
+            clipFolder = FeelFolder("zigzag");
+            yield return FeelRecord(0.8f, "W", _ => Feel(0f, 1f));
+            for (int i = 0; i < 6; i++)
+            {
+                float side = i % 2 == 0 ? -1f : 1f;
+                yield return FeelRecord(0.5f, side < 0f ? "W+A" : "W+D", _ => Feel(side, 1f));
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                float side = i % 2 == 0 ? -1f : 1f;
+                yield return FeelRecord(0.4f, side < 0f ? "A" : "D", _ => Feel(side, 0f));
+            }
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>Short taps of a key, as when lining up on a narrow beam: how far each carries the pawn, and how it settles.</summary>
+        IEnumerator FeelTaps()
+        {
+            var pawn = Spawn(new Vector3(-9f, 0f, -6f), Vector3.forward, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 0f);
+            clipFolder = FeelFolder("taps");
+            yield return FeelRecord(0.3f, "idle", _ => Feel(0f, 0f));
+            foreach (float held in new[] { 0.066f, 0.15f, 0.3f })
+            {
+                yield return FeelRecord(held, $"tapW{Mathf.RoundToInt(held * 1000f)}", _ => Feel(0f, 1f));
+                yield return FeelRecord(0.9f, "wait", _ => Feel(0f, 0f));
+            }
+            yield return FeelRecord(0.15f, "tapD150", _ => Feel(1f, 0f));
+            yield return FeelRecord(0.9f, "wait", _ => Feel(0f, 0f));
+            yield return FeelRecord(0.15f, "tapS150", _ => Feel(0f, -1f));
+            yield return FeelRecord(0.9f, "wait", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>Letting go at a full sprint, and reversing out of one.</summary>
+        IEnumerator FeelSprintStop()
+        {
+            var pawn = Spawn(new Vector3(-13f, 0f, -13f), Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("sprint_stop");
+            yield return FeelRecord(0.3f, "idle", _ => Feel(0f, 0f));
+            yield return FeelRecord(2.0f, "shift+W", _ => Feel(0f, 1f, sprint: true));
+            yield return FeelRecord(1.0f, "stop", _ => Feel(0f, 0f));
+            yield return FeelRecord(1.5f, "shift+W", _ => Feel(0f, 1f, sprint: true));
+            yield return FeelRecord(1.5f, "shift+S", _ => Feel(0f, -1f, sprint: true));
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>FeelTackleRun with the target inside the dive's reach: the click comes about 2.3 m into the
+        /// run (z = -9.7), so targetZ -8.2 is 1.5 m ahead of the click and -7.6 is 2.1 m ahead.</summary>
+        IEnumerator FeelTackleHit(string name, float targetZ)
+        {
+            var pawn = Spawn(new Vector3(0f, 0f, -12f), Vector3.forward, "feel");
+            feelOther = Spawn(new Vector3(0f, 0f, targetZ), Vector3.back, "target");
+            yield return FeelPreroll(pawn, 0.8f, 0f);
+            clipFolder = FeelFolder(name);
+            yield return FeelRecord(0.3f, "idle", _ => Feel(0f, 0f));
+            yield return FeelRecord(0.95f, "W", _ => Feel(0f, 1f));
+            yield return FeelRecord(3.2f, "click+W", t => Feel(0f, 1f, shove: t == 0f));
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>Standing in the path of the rotating bar at 120 deg/s, as the autotest's Bar() does.</summary>
+        IEnumerator FeelBarHit()
+        {
+            float saved = game.bar.degreesPerSecond;
+            game.bar.degreesPerSecond = 120f;
+            var pawn = Spawn(LabLayout.BarCenter + new Vector3(3.5f, 0f, 0f), Vector3.forward, "feel");
+            yield return FeelPreroll(pawn, 0.3f, 0f);
+            clipFolder = FeelFolder("bar_hit");
+            yield return FeelRecord(4.5f, "stand", _ => Feel(0f, 0f));
+            game.bar.degreesPerSecond = saved;
+        }
+
+        /// <summary>A full sprint into a standing pawn 8 m ahead, and pushing on for a second.</summary>
+        IEnumerator FeelSprintBump()
+        {
+            var pawn = Spawn(new Vector3(-13f, 0f, -14f), Vector3.right, "feel");
+            feelOther = Spawn(new Vector3(-5f, 0f, -14f), Vector3.left, "target");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("sprint_bump");
+            yield return FeelRecord(0.3f, "idle", _ => Feel(0f, 0f));
+            yield return FeelRecord(3.2f, "shift+W", _ => Feel(0f, 1f, sprint: true));
+            yield return FeelRecord(1.0f, "stop", _ => Feel(0f, 0f));
         }
 
         string FeelFolder(string name) => Path.Combine(Arg("-ragdollFeel") ?? "feel", name);
