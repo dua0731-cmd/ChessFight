@@ -415,6 +415,7 @@ namespace ChessFight.RagdollLab
         Vector3 headCenter;   // the head ball's centre in the head body's frame
         Vector3 leanAccel, leanLastVel;
         float leanAlign = 1f;
+        float chestBank;   // v4: the tangent of the bank into a curve the chest takes, + to the pawn's right (zero unless Locomotion ran its lean this step)
         bool launchCut;
         bool wantsMove, wasGrounded;
 
@@ -1163,11 +1164,48 @@ namespace ChessFight.RagdollLab
             foreach (var rb in bodies) rb.linearVelocity -= excess;
         }
 
+        /// <summary>
+        /// v4 (11-15): how far back the anchor comes this step because the body has caught it up. Starting off, the
+        /// anchor runs ahead and the hips spring stretches (0.1 m at the run); that pull is what gets the body going.
+        /// But the body reached the anchor's speed with the spring still stretched, so it was pulled on past it -
+        /// averaged over a stride 2.71 m/s on the 2.5 m/s run 0.3 s after W, 4.02 on the 3.6 m/s sprint, 2.80 out of
+        /// a reversal - and took half a second to come back: a lurch after every start and turn-round. Once the body
+        /// is faster than the anchor the stretch eases off at anchorCatchUp / anchorDamperRatio per second. At 1 that
+        /// is the rate at which the damper takes exactly what the spring gives, so the stretch goes without pulling
+        /// the body on or braking it (2.62 m/s); at the default 2 the anchor comes back twice as fast, a brake no
+        /// stronger than the pull it replaces, which ends as the body is back at the anchor's speed (2.55 m/s, 3.77
+        /// at the sprint). A body slower than the anchor - starting off, against a wall, up a slope - keeps the whole
+        /// pull. It is for a free run on level ground only: a shove's lunge is that lead on purpose; on a slope the
+        /// speed the hill gives is the game's (ClampOverspeed leaves slopes alone too); holding, touching or hit by
+        /// someone, the pull and the push stay what they were (dragging a pawn went 6 % less far with it). The
+        /// stretch a steady run holds against its own drag (CatchUpKeep) is left alone: the run and the sprint
+        /// cover the same ground as before.
+        /// </summary>
+        Vector3 CatchUpEase(RagdollParams p, float dt, Vector3 lead, Vector3 ownAnchor, Vector3 ownVel, float top, bool running)
+        {
+            if (p.anchorCatchUp <= 0.001f || !running || shoveTimer > 0f) return Vector3.zero;
+            if (SlopeAngle >= 5f || Grabbing || contactTimer > 0f || hitTimer > 0f) return Vector3.zero;
+            float anchorSpeed = ownAnchor.magnitude;
+            if (anchorSpeed < 0.5f) return Vector3.zero;
+            Vector3 dir = ownAnchor / anchorSpeed;
+            float ahead = Vector3.Dot(Flat(lead), dir) - CatchUpKeep;
+            float over = Vector3.Dot(ownVel, dir) - anchorSpeed;
+            if (ahead <= 0f || over <= 0f) return Vector3.zero;
+            float ratio = p.anchorDamperRatio > 0.0001f ? p.anchorDamperRatio : p.damperRatio;
+            // Eased in over the first hundredths of the top speed, so it never switches on and off in a step.
+            float share = Mathf.Clamp01(over / (CatchUpBand * Mathf.Max(0.1f, top)));
+            return dir * (ahead * share * (1f - Mathf.Exp(-p.anchorCatchUp / Mathf.Max(0.05f, ratio) * dt)));
+        }
+
+        const float CatchUpBand = 0.02f;   // of the top speed: the body this much faster than the anchor has the whole lead eased
+        const float CatchUpKeep = 0.035f;  // m: just over the lead a steady run holds against its drag (0.027 +- 0.004 at the run, 0.01 at the sprint)
+
         void Locomotion(RagdollParams p, float dt)
         {
             Rigidbody hips = bodies[0];
             Vector3 hp = hips.position;
             UpdateWind(dt);
+            chestBank = 0f;   // only the running lean below sets it (limp, climbing, on a rope, floating: none)
             if (State == PawnState.Ragdoll)
             {
                 anchorPos = hp;
@@ -1320,6 +1358,8 @@ namespace ChessFight.RagdollLab
             }
             // Pawn Rush: leaving the ground, the anchor comes in to the air leash at a rate its damper takes (R398).
             leash = PawnRushAirLeash(leash, planted, hp, move, p, dt);
+            // The stretch the spring will have at the end of this step: the anchor's next place against where the hips will be.
+            next -= CatchUpEase(p, dt, next - hp - Flat(hips.linearVelocity) * dt, ownAnchor, ownVel, top, moving && planted);
 
             Vector3 offset = Flat(next - hp);
             // Reversing direction leaves the anchor behind the still-moving body, and the anchor
@@ -1628,7 +1668,23 @@ namespace ChessFight.RagdollLab
             leanAccel = Vector3.Lerp(leanAccel, Flat(accel), 1f - Mathf.Exp(-10f * dt));
             float cap = Mathf.Tan(Mathf.Clamp(Posture(p.turnLean, p.sprintTurnLean), 0f, 45f) * Mathf.Deg2Rad);
             Vector3 tilt = Vector3.ClampMagnitude(leanAccel * (p.accelLean / 9.81f), cap);
-            return Quaternion.FromToRotation(Vector3.up, (Vector3.up + tilt).normalized);
+            // v4 (11-15): the lean ACROSS the facing - banking into a curve - goes mostly to the chest (Pose). The legs
+            // have no knees and stand 0.3 m apart, so the hips banked 10 degrees put one foot 5 cm under the other:
+            // steering with the mouse the pawn vaulted over one leg and flew over the other's step, 10 cm up and
+            // 2.3 to 3.0 m/s a stride at the run (3.2 to 4.4 at the sprint). The lean along the facing stays here.
+            Vector3 right = new Vector3(facing.z, 0f, -facing.x);
+            float toChest = Vector3.Dot(tilt, right) * (1f - Mathf.Clamp01(p.turnLeanHips));
+            chestBank = toChest;
+            return Quaternion.FromToRotation(Vector3.up, (Vector3.up + tilt - right * toChest).normalized);
+        }
+
+        /// <summary>The bank the hips left to the chest (LeanIntoAcceleration), as a turn in the hips' own frame.</summary>
+        Quaternion ChestBank()
+        {
+            if (Mathf.Abs(chestBank) < 1e-4f) return Quaternion.identity;
+            // The hips face BodyTurn + SkillTurn off the facing; the bank is across the facing itself.
+            Vector3 across = Quaternion.AngleAxis(-(BodyTurn + SkillTurn), Vector3.up) * (Vector3.right * chestBank);
+            return Quaternion.FromToRotation(Vector3.up, (Vector3.up + across).normalized);
         }
 
         /// <summary>A gait number between its run value and its sprint value, by how far into the sprint.</summary>
@@ -2744,7 +2800,8 @@ namespace ChessFight.RagdollLab
             float twist = p.runTwist * (1f - sprintBlend) * speedN * s;
             // Like the hips' lean, the chest only bends forward while going the way it faces.
             float chestLean = Posture(p.chestLean, p.sprintChestLean) * speedN * leanAlign;
-            Quaternion chest = Quaternion.Euler(chestLean, -twist, 0f);
+            // v4: the chest banks into a curve for the hips (LeanIntoAcceleration); the head and the arms go with it.
+            Quaternion chest = ChestBank() * Quaternion.Euler(chestLean, -twist, 0f);
             Quaternion head = Quaternion.Euler(-0.5f * chestLean, 0.8f * twist, 0f);
             // boundGait 0 = legs alternate (a walk), 1 = legs move together (a hop). A hop has a
             // flight phase, so "the foot cannot keep up with the ground" simply stops applying - which

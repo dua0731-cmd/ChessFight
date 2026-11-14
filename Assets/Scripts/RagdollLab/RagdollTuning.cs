@@ -162,6 +162,16 @@ namespace ChessFight.RagdollLab
         // Not a feel knob: without it a hard direction change lets the anchor spring launch the pawn
         // at 143% of its run speed. On by default because that is a bug, not a mechanic.
         [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
+        // v4 (11-15). The anchor runs ahead of the body to pull it up to speed; once the body had caught up, the
+        // stretch still in the spring pulled it on past the anchor's speed (a stride's average 8 % over the run 0.3 s
+        // after W, 12 % over the sprint, and half a second to come back). 1 lets that lead go at the rate the damper
+        // takes what the spring gives - no pull, no brake (5 % over); 2 comes back twice as fast, a light brake that
+        // ends once the body is back at the anchor's speed (2 %); 0 is the old behaviour (RagdollPawn.CatchUpEase).
+        [Tunable(GroupWeight, "따라잡은 뒤 앵커 당김 풀기 (0=끔, 1=감쇠와 균형, 2=기본)")] [Range(0f, 4f)] public float anchorCatchUp = 2f;
+        // v4 (11-15). How much of the lean ACROSS the facing (banking into a curve) the hips take; the chest takes
+        // the rest. The legs have no knees and stand 0.3 m apart, so every degree the hips bank is 0.5 cm between
+        // the feet: banked 10 degrees the pawn ran a curve on one leg, hopping 10 cm a stride (RagdollPawn.LeanIntoAcceleration).
+        [Tunable(GroupWeight, "회전 쏠림 중 골반 몫 (1=전부 골반, 0=전부 가슴)")] [Range(0f, 1f)] public float turnLeanHips = 0.25f;
 
         // Escaping a grab is a meter, not a physics accident: every left click fills it by
         // 1 / struggleTaps (times the bonuses), it drains when the clicks stop, and full = free. The

@@ -95,6 +95,8 @@ MonoBehaviour:
     anchorBrakeLeash: 0.3
     anchorDamperRatio: 0.21
     overspeedClamp: 1.1
+    anchorCatchUp: 2
+    turnLeanHips: 0.25
     struggleTaps: 9
     struggleDecay: 0.6
     struggleGrace: 0.25
