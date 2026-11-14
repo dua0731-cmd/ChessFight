@@ -7,6 +7,17 @@ using System.Web.Script.Serialization;
 
 namespace UnityEngine
 {
+    // The simulated Steam users have no profile pictures.
+    public enum TextureFormat { RGBA32 }
+    public enum TextureWrapMode { Clamp }
+    public sealed class Texture2D
+    {
+        public string name;
+        public TextureWrapMode wrapMode;
+        public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
+        public void LoadRawTextureData(byte[] data) { }
+        public void Apply(bool updateMipmaps, bool makeNoLongerReadable) { }
+    }
     public static class Time { public static float realtimeSinceStartup; }
     public static class Debug { public static readonly List<string> Lines = new List<string>(); public static void Log(object message) => Lines.Add(message?.ToString() ?? ""); public static void LogWarning(object message) => Log(message); }
     public static class Application { public static string dataPath = ""; }
@@ -134,12 +145,16 @@ namespace Steamworks
     }
     public static class SteamUtils
     {
+        public static bool GetImageSize(int image, out uint width, out uint height) { width = height = 0; return false; }
+        public static bool GetImageRGBA(int image, byte[] dest, int size) => false;
         public static AppId_t GetAppID()=>new AppId_t(480);
         // Steam's server clock (whole seconds), the same for every simulated user.
         public static uint GetServerRealTime()=>1000000u+(uint)UnityEngine.Time.realtimeSinceStartup;
     }
     public static class SteamFriends
     {
+        public static int GetLargeFriendAvatar(CSteamID id) => 0;
+        public static bool RequestUserInformation(CSteamID id, bool nameOnly) => false;
         public static string GetFriendPersonaName(CSteamID id)=>"Player "+id.m_SteamID;
         public static void ActivateGameOverlayInviteDialog(CSteamID id){}
         // The session tests never exercise the friend list; these keep it compiling.

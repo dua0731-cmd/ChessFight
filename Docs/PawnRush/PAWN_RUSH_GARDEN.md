@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R653 · 2026-11-14.** 네 번째 북 발판에서 로봇 둑으로 건너던 기둥 4개와 연잎 2개를 제거했다. 여덟 북 → 동쪽 수문 → 로봇 둑 → 승선장 → 네 보트 레인 순서로 간다. 저수지 양쪽은 승선장 끝부터 성벽까지 철제 울타리로 막고, 보트 터널 지붕에는 난간, 터널 뒤에는 벽을 뒀다. 기존에 구운 구간도 시작할 때 같은 변경을 적용한다. 체크포인트 0~7은 같은 자리에 있다. [구간과 시험 방법](PAWN_RUSH_SECTIONS.md)
+
 > **R530(11-09):** 효과음 시작 — 비트 1 분수 광장: 회전 막대 축 · 휙 · 쿵(`GardenSpinBarSound`), 분수 6개 · 해자 물결(`GardenPlazaSound`), ElevenLabs → `plaza_sounds.py` → `Resources/PawnRushGardenSfx`. 전체 목록과 진행은 [정원 효과음](PAWN_RUSH_GARDEN_SFX.md). v160.
 
 > **R491(11-06):** 나무 = `tree_asset.py`(source/tree_cone.glb · tree_round.glb → TreeAsset_v1.blend, 줄기 · 이끼 · 잎 2색 · 새로 만든 꽃) → `trees_sample.py`(테라스: 다트, 둑: 3~4개 숲, 성벽 · 탑 · 코스 피함) → export GardenTrees(손작업 후처리 없음). Unity `Concept` 조각 `GardenTrees`(덮기 · 충돌 없음). v159.

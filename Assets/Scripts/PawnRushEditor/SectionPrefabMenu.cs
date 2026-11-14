@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -120,6 +121,38 @@ namespace ChessFight.PawnRush.Editor
                 return;
             }
             Report(prefabs, true);
+        }
+
+        // Check the route across the reservoir in a built section.
+        public static void CheckGardenRouteBatch()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(GardenPrefab);
+            var garden = ((GameObject)PrefabUtility.InstantiatePrefab(prefab, scene)).GetComponent<RoyalWaterGarden>();
+            var content = RoyalWaterGardenBuilder.Build(garden).transform;
+            Physics.SyncTransforms();
+            int blocked = 0, open = 0;
+            foreach (int side in new[] { -1, 1 })
+            {
+                foreach (float x in new[] { 10.5f, 17.5f, 19f, 28f, 38f, 47f })
+                    foreach (float y in new[] { 4.3f, 5.9f, 8.2f })
+                        if (Physics.Raycast(new Vector3(side * x, y, 33.1f), Vector3.forward, out var hit, .65f)
+                            && hit.collider.name == "Terrace gate") blocked++;
+                if (Physics.Raycast(new Vector3(side * 17.6f, 8.5f, 41f), Vector3.right * side, out var roof, 1f)
+                    && roof.collider.name == "Tunnel roof rail") blocked++;
+                if (Physics.Raycast(new Vector3(side * 25f, 4.6f, 39f), Vector3.right * side, out var back, 1.4f)
+                    && back.collider.name == "Tunnel back wall") blocked++;
+            }
+            foreach (float x in new[] { -8f, 0f, 8f })
+                if (!Physics.Raycast(new Vector3(x, 4.6f, 32f), Vector3.forward, 2f, ~0, QueryTriggerInteraction.Ignore)) open++;
+            bool shortcut = System.Array.Exists(content.GetComponentsInChildren<Transform>(true),
+                t => t.name.StartsWith("Shortcut") || t.name == "B3_Shortcut" || t.name == "Platform piers");
+            var platforms = content.Find("B3_Platforms");
+            int drums = platforms.Cast<Transform>().Count(t => t.name.StartsWith("Bobbing platform P"));
+            int boats = content.GetComponentsInChildren<GardenBoat>(true).Length;
+            bool pass = !shortcut && blocked == 40 && open == 3 && drums == 8 && boats == 8;
+            Debug.Log($"Garden route check: blocked {blocked}/40, boarding {open}/3, shortcut {shortcut}, drums {drums}, boats {boats}, PASS={pass}");
+            if (Application.isBatchMode) EditorApplication.Exit(pass ? 0 : 1);
         }
 
         // Each prefab in a scratch scene far from anything else, built if it is not baked yet, checked, gone.

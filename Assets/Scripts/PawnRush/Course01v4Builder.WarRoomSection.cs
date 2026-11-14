@@ -50,6 +50,7 @@ namespace ChessFight.PawnRush
             // forth. The reverse run pushed a rider back about 2.6 m/s along the deck (R425). Zone E of 승규 님's test scene,
             // built by the same LibraryReplacement, keeps it.
             foreach (var shuttle in root.GetComponentsInChildren<LibraryShuttleDriver>(true)) shuttle.BeltRuns = false;
+            WarRoomBalconyScreens(root.transform);
             // R616: the goal's three rooks become four turrets round the conveyor's well, and the great door the way out.
             WarRoomTurrets(root.transform);
             bool opened = WarRoomExitDoor(root.transform) != null;

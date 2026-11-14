@@ -968,7 +968,10 @@ namespace ChessFight.PawnRush
                     else if (r.name == "Sign top trim") r.enabled = false;           // replaced by the brass frame below
                 }
                 foreach (var text in sign.GetComponentsInChildren<TextMesh>(true))
-                    text.color = text.name == "Game symbol" ? new Color(.78f, .62f, .32f) : new Color(.93f, .89f, .8f);
+                {
+                    if (text.name == "Game symbol") text.color = new Color(.78f, .62f, .32f);
+                    else if (text.name == "Game title") text.color = new Color(.93f, .89f, .8f);
+                }
                 var frame = new GameObject("MODEL_SignFrame").transform;
                 frame.SetParent(sign, false);
                 foreach (float y in new[] { .5f, -.5f })

@@ -180,6 +180,8 @@ namespace ChessFight.PawnRush
             if (startSpots && sections.Count > 0) StartSpots(holder.transform, sections[0]);
             holder.SetActive(true);
             if (finishRace) BindFinish();
+            // R652: the race music (PawnRushRoundMusic), once per round object
+            if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();
             Debug.Log(log.ToString());
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();

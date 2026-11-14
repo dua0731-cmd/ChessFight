@@ -14,8 +14,8 @@ namespace ChessFight.PawnRush
     //   GardenPlaza     beat 1 (R412-R420): the plaza, the start yard, the five spin bars (riding their movers)
     //   GardenCanal     beat 2 (R424, R426): the canal walk, the plaza's north apron, the ramp, the west wall, the
     //                   geysers as floor fountains (their water computed: GardenJet)
-    //   GardenPlatforms beat 3 (R431): the west landing; P1..P8 as floating tubs, K1..K3, K4's spin bar and L1, L2
-    //                   riding their movers; the platforms' piers gone (R430: the graybox stems too)
+    //   GardenPlatforms beat 3: the west landing and eight floating drums. CloseSideRoutes strips the old
+    //                   shortcut meshes still included in the source FBX and in baked gardens.
     //   GardenLockDyke  beats 4, 5 (R433): the east landing, the lock (bed, walls, gate frames; Sluice gate 1..3 riding
     //                   their movers), the dyke, the two robots (Robot pillar 1, 2 still; Robot arm 1, 2 on the arms)
     //   GardenBoats     beat 6 (R437): the boarding quay, the reservoir's south wall, the two boathouse tunnels, the
@@ -85,15 +85,12 @@ namespace ChessFight.PawnRush
                 covered = new[]
                 {
                     ("B3_Platforms", "West landing"), ("B3_Platforms", "West landing rail N"), ("B3_Platforms", "West landing rail S"),
-                    ("B3_Shortcut", "Shortcut post K*"), ("B3_Shortcut", "Shortcut lotus L* stem"),
                 },
                 hung = new[]
                 {
                     ("B3_Platforms", "Bobbing platform P1"), ("B3_Platforms", "Bobbing platform P2"), ("B3_Platforms", "Bobbing platform P3"),
                     ("B3_Platforms", "Bobbing platform P4"), ("B3_Platforms", "Bobbing platform P5"), ("B3_Platforms", "Bobbing platform P6"),
                     ("B3_Platforms", "Bobbing platform P7"), ("B3_Platforms", "Bobbing platform P8"),
-                    ("B3_Shortcut", "Shortcut post K1"), ("B3_Shortcut", "Shortcut post K2"), ("B3_Shortcut", "Shortcut post K3"),
-                    ("B3_Shortcut", "Shortcut post K4 spin bar"), ("B3_Shortcut", "Shortcut lotus L1"), ("B3_Shortcut", "Shortcut lotus L2"),
                 },
                 // R430 (승규 "기둥 없애주고"): the tubs float; their piers would only be unseen posts under them.
                 removed = new[] { ("B3_Platforms", "Bobbing platform P* stem") },

@@ -39,8 +39,8 @@ namespace ChessFight.PawnRush
     // 공격한 포탑은 연속으로 공격하지 않게 해줘"): in the round's war room the rooks are four turrets on towers at the corners of
     // the conveyor's well (Course01v4Builder.WarRoomTurrets) and fire as one battery (ConfigureVolley). Every
     // TurretVolleys.Period seconds of the shared clock one of them - drawn from the section's seed, never the one that
-    // fired last (Core TurretVolleys) - charges and shoots at the conveyor's carriage: a point on its deck where the
-    // carriage will be when the shot lands, reached with nothing in the way. All four are the light kind (the side
+    // fired last (Core TurretVolleys) - charges and shoots across the predicted carriage at rider height, then continues
+    // to the first static surface in the hall. All four are the light kind (the side
     // rooks' shot). The others stand still, their windows on the well. Zone E of 승규 님's test scene keeps the three
     // goal rooks and the rounds above.
     public sealed class LibraryRookTurret : MonoBehaviour, ISectionPart
@@ -65,7 +65,8 @@ namespace ChessFight.PawnRush
         [SerializeField] Vector3 windowFacing = Vector3.back, restAim;
         int volleySeed = 1;
         float heldYaw;
-        const float DeckEdge = .35f, DeckEnd = .6f;     // a volley lands this far inside the deck's sides and ends
+        const float VolleyYawLimit = 15f, VolleyRange = 58f;
+        public const float VolleyMinHeight = .80f, VolleyMaxHeight = 1.1f;
 
         // the round
         // R450 (승규 11-05 "바닥에 맞았을 때 원도 하지마 그리고 공격 텀이 좀 빨라 지금 보다 조금 천천히 공격 해주는 대신 날아오는
@@ -104,7 +105,7 @@ namespace ChessFight.PawnRush
         Quaternion pieceRestRot;
         bool ready;
 
-        struct Shot { public int k; public double fire, impact; public Vector3 from, to, normal, dir; public float yaw; }
+        struct Shot { public int k; public double fire, impact; public Vector3 from, to, normal, dir; public float yaw; public bool expiresInAir; }
         readonly Dictionary<int, Shot> shots = new Dictionary<int, Shot>();
         readonly HashSet<ImportedObstacleActor> struck = new HashSet<ImportedObstacleActor>();
         readonly Dictionary<int, HashSet<ImportedObstacleActor>> shown = new Dictionary<int, HashSet<ImportedObstacleActor>>();
@@ -319,54 +320,50 @@ namespace ChessFight.PawnRush
             return Keep(k, s);
         }
 
-        // R616: a volley's shot goes for the conveyor's carriage - a point on its deck, picked by the volley's number,
-        // where the carriage will be when the shot lands. The first point reached with nothing in the way is the shot
-        // (a pier, a balustrade or the cannon between this turret and that part of the deck: the next point).
+        // Cross the centre line of the moving deck at rider height. Draw an angle between its two ends,
+        // bounded about the bearing to its centre. The shot then flies on until it meets the hall.
         Shot VolleyShot(int k)
         {
-            Shot s = default;
-            for (int a = 0; a < Tries; a++)
+            uint roll = SeededSchedule.Hash(SeededSchedule.Hash(volleySeed, turretIndex + 1), unchecked((uint)k));
+            float spread = (roll & 0xffff) / 65535f;
+            float height = Mathf.Lerp(VolleyMinHeight, VolleyMaxHeight, (roll >> 16) / 65535f);
+            double fire = RoundStart(k) + ChargeTime, crossing = fire;
+            Shot shot = default;
+            Line(restAim + Vector3.up * height, ref shot);
+            if (shuttle != null && deck != null)
             {
-                uint roll = SeededSchedule.Hash(SeededSchedule.Hash(volleySeed, turretIndex + 1), unchecked((uint)(k * Tries + a)));
-                float u = (roll & 0xFFFF) / 65536f, v = (roll >> 16) / 65536f;
-                if (!DeckLanding(k, u, v, out var target)) break;      // no conveyor: the fallback below
-                Line(target, ref s);
-                float length = Vector3.Distance(s.from, target);
-                if (FirstHit(s.from, target, length + .4f, out var hit) && hit.distance < length - .4f) continue;
-                s.normal = Vector3.up;
-                return s;
+                var size = Vector3.Scale(deck.size, deck.transform.lossyScale);
+                var along = deckFrame * Vector3.forward;
+                float halfLength = Mathf.Max(0f, size.z * .5f - .65f);
+                for (int pass = 0; pass < 3 && shuttle.CarriageAt(crossing, out var carriage); pass++)
+                {
+                    var middle = carriage + deckFromCarriage + Vector3.up * (size.y * .5f + height);
+                    var bearing = Vector3.ProjectOnPlane(middle - gapRest, Vector3.up);
+                    float nearAngle = Vector3.SignedAngle(bearing, bearing - along * halfLength, Vector3.up);
+                    float farAngle = Vector3.SignedAngle(bearing, bearing + along * halfLength, Vector3.up);
+                    float angle = Mathf.Lerp(Mathf.Clamp(nearAngle, -VolleyYawLimit, VolleyYawLimit),
+                                             Mathf.Clamp(farAngle, -VolleyYawLimit, VolleyYawLimit), spread);
+                    var direction = Quaternion.AngleAxis(angle, Vector3.up) * bearing.normalized;
+                    var across = deckFrame * Vector3.right;
+                    float toCentreLine = Vector3.Dot(bearing, across) / Vector3.Dot(direction, across);
+                    var aim = gapRest + direction * toCentreLine;
+                    aim.y = middle.y;
+                    Line(aim, ref shot);
+                    crossing = fire + Vector3.Distance(shot.from, aim) / Speed;
+                }
             }
-            // Nothing clear (or no conveyor): at the deck's middle, or straight at the well's middle, and the shot
-            // ends on whatever it meets first.
-            if (!DeckLanding(k, .5f, .5f, out var middle)) middle = restAim;
-            Line(middle, ref s);
-            s.normal = Vector3.up;
-            if (FirstHit(s.from, middle, Vector3.Distance(s.from, middle), out var stop))
+            var flight = (shot.to - shot.from).normalized;
+            if (FirstHit(shot.from, shot.to, VolleyRange, out var hit))
             {
-                s.to = stop.point;
-                s.normal = stop.normal;
+                shot.to = hit.point;
+                shot.normal = hit.normal;
             }
-            return s;
-        }
-
-        // Where a volley's shot lands on the conveyor's deck: u along it, v across it (0 .. 1), on its top, with the
-        // carriage where it will be at that moment (the shot's flight is a fraction of a second; three passes settle
-        // the carriage's place and the flight's length together).
-        bool DeckLanding(int k, float u, float v, out Vector3 top)
-        {
-            top = default;
-            if (shuttle == null || deck == null) return false;
-            double fire = RoundStart(k) + ChargeTime, land = fire;
-            var size = Vector3.Scale(deck.size, deck.transform.lossyScale);
-            var offset = deckFrame * new Vector3(Mathf.Lerp(-1f, 1f, v) * Mathf.Max(0f, size.x * .5f - DeckEdge), 0f,
-                                                                  Mathf.Lerp(-1f, 1f, u) * Mathf.Max(0f, size.z * .5f - DeckEnd));
-            for (int pass = 0; pass < 3; pass++)
+            else
             {
-                if (!shuttle.CarriageAt(land, out var carriage)) return false;
-                top = carriage + deckFromCarriage + offset + Vector3.up * (size.y * .5f);
-                land = fire + Vector3.Distance(gapRest, top) / Speed;
+                shot.to = shot.from + flight * VolleyRange;
+                shot.expiresInAir = true;
             }
-            return true;
+            return shot;
         }
 
         Shot Keep(int k, Shot s)
@@ -396,10 +393,17 @@ namespace ChessFight.PawnRush
             first = default;
             var line = toward - from;
             if (line.sqrMagnitude < .01f) return false;
-            int n = Physics.RaycastNonAlloc(from, line.normalized, rays, length, ~0, QueryTriggerInteraction.Ignore);
+            var hits = rays;
+            int n = Physics.RaycastNonAlloc(from, line.normalized, hits, length, ~0, QueryTriggerInteraction.Ignore);
+            if (n == hits.Length)
+            {
+                // A crowd's ragdoll parts may fill the buffer before the static wall is reported.
+                hits = Physics.RaycastAll(from, line.normalized, length, ~0, QueryTriggerInteraction.Ignore);
+                n = hits.Length;
+            }
             float best = float.MaxValue;
             for (int h = 0; h < n; h++)
-                if (rays[h].distance < best && Solid(rays[h].collider)) { best = rays[h].distance; first = rays[h]; }
+                if (hits[h].distance < best && Solid(hits[h].collider)) { best = hits[h].distance; first = hits[h]; }
             return best < float.MaxValue;
         }
 
@@ -545,7 +549,7 @@ namespace ChessFight.PawnRush
                         if (actor == null || !actor.CanReceiveObstacle || !struck.Add(actor)) continue;
                         actor.AddObstacleHit(push * InnerPush + Vector3.up * InnerUp, InnerKnockdown);
                     }
-                    if (s.impact > lastFixed && s.impact <= now) Blast(s);
+                    if (!s.expiresInAir && s.impact > lastFixed && s.impact <= now) Blast(s);
                 }
             }
             lastFixed = now;
@@ -649,14 +653,14 @@ namespace ChessFight.PawnRush
                     streak.r.enabled = false;
                     streak.trail.emitting = false;
                 }
-                if (fresh && x.impact > lastFrame && x.impact <= now) Land(x);
+                if (fresh && !x.expiresInAir && x.impact > lastFrame && x.impact <= now) Land(x);
                 // R463: the round's sounds on their edges (a clock that jumped - a resync - plays nothing)
                 if (fresh)
                 {
                     double start = RoundStart(j);
                     if (start > lastFrame && start <= now) chargeSound.Shot(chargeNear, chargeFar, heavy ? 1f : .8f, Random.Range(.97f, 1.03f));
                     if (x.fire > lastFrame && x.fire <= now) fireSound.Shot(fireNear, fireFar, 1f, Random.Range(.95f, 1.05f));
-                    if (x.impact > lastFrame && x.impact <= now)
+                    if (!x.expiresInAir && x.impact > lastFrame && x.impact <= now)
                     {
                         impactPoint.position = x.to;
                         // R471 ("가운데 사운드 폭발음 더 크게"): the middle's burst played 1.6 times as loud (a one-shot's
@@ -779,7 +783,8 @@ namespace ChessFight.PawnRush
         void Laser(in Shot s, float charge)
         {
             bool on = charge >= 0f;
-            laser.enabled = laserDotR.enabled = on;
+            laser.enabled = on;
+            laserDotR.enabled = on && !s.expiresInAir;
             if (!on) return;
             float flicker = .85f + .15f * Mathf.Sin(Time.time * 50f);
             float c = Mathf.Lerp(.35f, 1f, charge) * flicker;

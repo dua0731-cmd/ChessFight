@@ -747,6 +747,7 @@ namespace ChessFight.RagdollLab
             UpdateStiffness(p, dt);
 
             PreSkills();   // Pawn Rush skills only (off unless PawnRushSkills is set)
+            bool heldOn = Grabbing || Climbing || OnRope;
             handsFull = HandsFullNow();
             Jump(p, dt);
             PawnRushStepOver(dt);   // Pawn Rush only (off unless PawnRushPhysics is set)
@@ -769,6 +770,8 @@ namespace ChessFight.RagdollLab
                             && hookPhase != HookPhase.Pulling && rope == null && !handsFull;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
+            if (PawnRushPhysics != null && !heldOn && (Grabbing || Climbing || OnRope))
+                Fx(SkillFxKind.CourseGrab, null, Hips.position, facing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
             if (Climbing) ApplyClimbPose(p);
@@ -1047,6 +1050,7 @@ namespace ChessFight.RagdollLab
             diveDirection = dir;
             UseStamina(p, p.diveStamina);
             GoLimp(true);
+            if (q != null) Fx(SkillFxKind.CourseDive, null, Hips.position, dir);
         }
 
         /// <summary>

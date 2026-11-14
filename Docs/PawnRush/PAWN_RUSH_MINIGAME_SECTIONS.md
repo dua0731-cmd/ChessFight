@@ -1,5 +1,28 @@
 # 폰 러시 미니게임 구간 프리팹
 
+## R653 · 미니게임 진영과 킹 잡기 (2026-11-14)
+
+미니게임에 들어가기 8 m 전부터 자기 팀과 갈 곳을 스태미나 바 위에 표시한다. 입구에서 방을 바라볼 때 백팀은 왼쪽(청록), 흑팀은 오른쪽(주황)이다. 각 진영 간판과 출구에도 팀 이름을 쓴다. 상대편 진영으로 들어가면 자기 진영의 위치를 다시 보여준다. A 의장 광장은 두 팀이 중앙 판을 같이 쓰므로 백팀은 밝은 칸, 흑팀은 어두운 칸을 칠하라고 안내한다. 우리 팀 문이 열리면 해당 출구 방향을 표시한다. 경기에서는 이 PC의 자리, 프리팹 시험에서는 F5로 고른 팀을 따른다.
+
+H 국왕 체스 홀에서 킹이 굳으면 머리 위 금빛 고리가 맥동하고, 자기 진영 화면에 다이빙·질주 안내가 뜬다. 포획하면 잡은 수를 표시하고 킹이 쟁반까지 팀색과 금빛 꼬리를 남긴다. 쟁반에 닿으면 짧은 빛과 착지음이 나온다. 체크음은 체크 횟수에 따라 높아지고 마지막 킹에는 별도 마무리음이 난다. 짧은 시간에 여러 킹이 함께 움직이면 체크·깡충 착지음을 각각 제한한다. 재접속 시 이미 잡힌 킹은 쟁반에서 시작한다.
+
+### H 효과음 교체
+
+아래 이름으로 만든 음원을 `Assets/Resources/PawnRushMiniGameSfx/`에 저장한다. WAV · 모노 · 드라이한 단발로 준비한다. 전용 파일이 들어오기 전에는 프로젝트의 체스판·매칭 효과음을 재사용한다. 방장과 참가자 모두 기존 킹 상태 변화에서 소리를 한 번 재생한다.
+
+| 사건 | 파일 이름 | ElevenLabs 프롬프트 |
+|---|---|---|
+| 체크 | `sfx_check.wav` | Single crisp ivory chess clock tick with a tiny pitched metal accent, dry and close, 0.18 seconds. |
+| 포획 가능 | `sfx_mate.wav` | Two short muted brass mallet notes, rising into a firm stop as a marble chess king locks in place, 0.45 seconds. |
+| 킹 한 개 포획 | `sfx_king_capture.wav` | Weighty polished chess piece lifted with a wooden snap and one bright brass accent, short dry tail, 0.4 seconds. |
+| 마지막 킹 포획 | `sfx_king_sweep.wav` | Three-note miniature royal cadence on warm brass and wooden mallets, decisive and playful, 0.75 seconds. |
+| 상대 팀이 킹 구출 | `sfx_rescue.wav` | Small stone shell loosening in two dry clicks, descending pitch, 0.35 seconds. |
+| 스테일메이트 이동 | `sfx_stalemate.wav` | Soft silk flick with a quick airy disappear-and-return gesture, 0.32 seconds. |
+| 한 칸 이동 후 착지 | `sfx_king_hop.wav` | One tiny boxwood king touching a wooden chessboard, muted tap, 0.10 seconds. |
+| 쟁반 착지 | `sfx_ep_tray.wav` | Single light ivory piece landing in a shallow wooden tray, short close clack, 0.16 seconds. |
+
+`sfx_ep_tray`는 F 대무도회장 쟁반에서도 사용하는 소리다. 팀 안내는 `MiniGameSection.Guidance.cs`와 `MiniGamePalaceArt.GoalSign`, 킹 연출은 `MgCheckmate`와 `CheckmateFx`에서 조정한다. 시험 씬에서 3은 A, 9는 H, F5는 팀 전환이다. 사용자 Unity·Steam 확인 전.
+
 2026-11-06 · R312 · **프로젝트 구현 작업 / 사용자 Unity·Steam 확인 전**
 
 사용자 요청: R311의 공간 이미지·3D 설계를 바탕으로 장애물 구간 프리팹처럼 실제 프로젝트의 미니게임 프리팹들을 제작한다. 초반3종·중반4종·후반3종의 공간과 기존10종 플레이 규칙을 연결한다. 근거는 [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md), [기획 원문](PAWN_RUSH_MINIGAME_ZONES_v0.1.md), [기존 미니게임 규칙](PAWN_RUSH_MINIGAMES_v1.md), [구간 연결](PAWN_RUSH_SECTIONS.md)이다.

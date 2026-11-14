@@ -205,11 +205,11 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ SfxBank
 
         // A sound by its spec name: 3D at `at` (3 m to 30 m), or 2D; pitch varies ±5 %.
-        public static void Sfx(string name, Vector3 at, bool twoD = false, float volume = 1f, float pitch = 1f)
+        public static void Sfx(string name, Vector3 at, bool twoD = false, float volume = 1f, float pitch = 1f, string fallbackPath = null)
         {
             var fx = Get();
             if (fx == null || string.IsNullOrEmpty(name)) return;
-            var clip = fx.Clip(name);
+            var clip = fx.Clip(name, fallbackPath);
             if (clip == null) return;
             // a team gate opening: flat for a listener inside that mini-game (MiniGameEar, user 11-08)
             if (!twoD && MiniGameEar.Current != null && MiniGameEar.Inside(MiniGameEar.Current)) twoD = true;
@@ -253,11 +253,13 @@ namespace ChessFight.PawnRush
 
         readonly List<AudioSource> held = new List<AudioSource>();
 
-        AudioClip Clip(string name)
+        AudioClip Clip(string name, string fallbackPath = null)
         {
-            if (clips.TryGetValue(name, out var clip)) return clip;
-            clip = Resources.Load<AudioClip>(SfxFolder + "/" + name);
-            clips[name] = clip;
+            string path = SfxFolder + "/" + name;
+            if (!clips.TryGetValue(path, out var clip))
+                clips[path] = clip = Resources.Load<AudioClip>(path);
+            if (clip == null && fallbackPath != null && !clips.TryGetValue(fallbackPath, out clip))
+                clips[fallbackPath] = clip = Resources.Load<AudioClip>(fallbackPath);
             if (clip == null && missing.Add(name))
                 Debug.LogWarning($"[PawnRush] 효과음 파일이 없어 재생하지 않습니다: Resources/{SfxFolder}/{name}");
             return clip;

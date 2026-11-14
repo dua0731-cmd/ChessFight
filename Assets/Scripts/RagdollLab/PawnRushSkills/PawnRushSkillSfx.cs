@@ -46,6 +46,7 @@ namespace ChessFight.RagdollLab
         /// <summary>How loud each sound is next to the others (1 = the matched level). Times the settings' effects volume.</summary>
         static readonly Dictionary<string, float> Level = new Dictionary<string, float>
         {
+            { "CourseDive", .41f }, { "CourseGrab", .32f },
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
             { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
             { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
@@ -143,6 +144,8 @@ namespace ChessFight.RagdollLab
         {
             switch (e.kind)
             {
+                case SkillFxKind.CourseDive: Play("CourseDive", e.at, Wobble(), groupHits: false); break;
+                case SkillFxKind.CourseGrab: Play("CourseGrab", e.at, Wobble(), groupHits: false); break;
                 case SkillFxKind.PawnStep: Play("PawnDash", e.at, e.count >= 2 ? 3f : 0f); break;
                 // Straight shove and diagonal knock-over: the same bump, the knock-over lower and heavier.
                 case SkillFxKind.PawnHit: Play("PawnBump", e.at, e.count == 1 ? -3f : 0f, e.count == 1 ? 1.1f : 1f); break;
@@ -338,13 +341,18 @@ namespace ChessFight.RagdollLab
         void PlayLater(float delay, string name, Vector3 at, float semitones = 0f, float level = 1f)
             => later.Add(new Later { at = Time.unscaledTime + delay, name = name, where = at, semitones = semitones, level = level });
 
-        AudioSource Play(string name, Vector3 at, float semitones = 0f, float level = 1f)
+        static float Wobble() => UnityEngine.Random.Range(-.35f, .35f);
+
+        AudioSource Play(string name, Vector3 at, float semitones = 0f, float level = 1f, bool groupHits = true)
         {
             if (!sound || !sounds.TryGetValue(name, out var s)) return null;
-            // The same sound twice in one frame (two pieces hit at once) plays once.
-            string key = name + semitones;
-            if (lastFrame.TryGetValue(key, out int f) && f == Time.frameCount) return null;
-            lastFrame[key] = Time.frameCount;
+            // Group simultaneous skill hits. Separate movement cues keep each pawn's distance and pan.
+            if (groupHits)
+            {
+                string key = name + semitones;
+                if (lastFrame.TryGetValue(key, out int f) && f == Time.frameCount) return null;
+                lastFrame[key] = Time.frameCount;
+            }
             Count[name] = Count.TryGetValue(name, out int n) ? n + 1 : 1;
             float gain = Mathf.Clamp01(volume * level * (Level.TryGetValue(name, out float l) ? l : 1f) * ChessFight.Game.GameSettings.Effects);
             // R529: in a course section, heard only inside it and quieter with distance (1 anywhere else)

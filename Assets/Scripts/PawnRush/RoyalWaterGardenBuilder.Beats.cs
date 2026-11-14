@@ -7,8 +7,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The royal water garden's beats in the order a pawn runs them (section frame: x east, z north, y = a floor's top).
-    // Numbers are the v31 layout the user approved as a picture on 11-02 (plaza option A, the shortcut off the fourth
-    // platform, four boat lanes with two boats each, both teams riding them); where the graybox differs, the reason is
+    // Numbers are the v31 layout the user approved as a picture on 11-02 (plaza option A, four boat lanes with two boats each, both teams riding them); where the graybox differs, the reason is
     // next to it and in Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md.
     public static partial class RoyalWaterGardenBuilder
     {
@@ -167,8 +166,7 @@ namespace ChessFight.PawnRush
         static void Platforms(CourseBuilder b)
         {
             var k = b.kit;
-            // The west landing (x -35..-25.2, z -1..8, y 1.8): the top of the ramp, CP2. Falling off any platform or the
-            // shortcut comes back here.
+            // The west landing (x -35..-25.2, z -1..8, y 1.8): the top of the ramp, CP2. Falling off any platform comes back here.
             Mass(b, "West landing", -35f, -25.2f, -1f, 8f, WestLandingY);
             Rail(b, "West landing rail N", -35f, -25.2f, 8f, 8.3f, WestLandingY);
             Rail(b, "West landing rail S", -27f, -25.2f, -1.3f, -1f, WestLandingY);
@@ -186,68 +184,7 @@ namespace ChessFight.PawnRush
             }
         }
 
-        // ------------------------------------------------------------------ the shortcut (P4 -> the dyke, y 3.25 -> 3.8)
-
-        // Where the shortcut comes onto the dyke: between the two robot arms, CP5.
-        public static readonly Vector3 ShortcutLanding = new Vector3(19.4f, Upper, 24f);
-
-        // `s` metres from P4's middle towards the landing, on the water.
-        static Vector3 ShortcutAt(float s)
-        {
-            var from = PlatformTop(3);
-            var along = new Vector3(ShortcutLanding.x - from.x, 0f, ShortcutLanding.z - from.z).normalized;
-            return V(from.x, 0f, from.z) + along * s;
-        }
-
-        // A very hard way straight across the water (the user: "중간에 발판 부분에서 엄청 어려운 난이도의 지름길"): every
-        // gap is 2.2 ~ 2.5 m - more than a running jump carries (about 1.9 m), less than a sprinting one (about 2.8 m) -
-        // and the posts rise and sink on their own, so each jump wants a sprint and the right moment. K1 wears a gold
-        // rim so the way is seen from the platforms. A fall goes back to CP2 (the west landing).
-        static void Shortcut(CourseBuilder b)
-        {
-            var k = b.kit;
-            var from = PlatformTop(3);
-            var along = new Vector3(ShortcutLanding.x - from.x, 0f, ShortcutLanding.z - from.z).normalized;
-            // K1 ~ K3: posts 1.2 m across, rising and sinking 0.4 m either way every 3 s, a third of a cycle apart.
-            float[] postS = { 5.8f, 9.3f, 12.8f }, postBase = { 3.25f, 3.35f, 3.45f };
-            for (int i = 0; i < postS.Length; i++)
-            {
-                var at = ShortcutAt(postS[i]);
-                at.y = postBase[i] + .4f;
-                var root = Bobbing(b, "Shortcut post K" + (i + 1), at, .4f, 3f, i / 3f);
-                var rim = i == 0 ? k.rankGold : k.hazard;
-                Under(b, root, () =>
-                {
-                    b.Cylinder("Post", V(0f, -.6f, 0f), 1.2f, .6f, k.floorChecker, true, true).AddComponent<CourseFloor>();
-                    b.Cylinder("Post rim", V(0f, -.05f, 0f), 1.3f, .07f, rim, false);
-                });
-                b.Cylinder("Shortcut post K" + (i + 1) + " stem", V(at.x, Deep, at.z), .5f, postBase[i] - .7f - Deep, k.wallNoClimb, true, true);
-            }
-            // K4: a wider post that stays put, with a small low spin bar on it (1.25 m each way, a turn every 1.6 s) -
-            // the one place to get the stamina back.
-            var k4 = ShortcutAt(16.9f);
-            b.Cylinder("Shortcut post K4", V(k4.x, Deep, k4.z), 2.6f, 3.4f - Deep, k.floorChecker, true, true).AddComponent<CourseFloor>();
-            SpinBar(b, "Shortcut post K4 spin bar", V(k4.x, 3.4f, k4.z), 1.25f, false, -225f, 0f);
-            // L1, L2: lotus pads 1.6 m across that tip 40° to the side half a second after a pawn lands (TiltingPad).
-            float[] padS = { 21.2f, 25.1f };
-            for (int i = 0; i < padS.Length; i++)
-            {
-                var at = ShortcutAt(padS[i]);
-                at.y = 3.3f;
-                var pad = b.Group("Shortcut lotus L" + (i + 1));
-                pad.localPosition = at;
-                var body = pad.gameObject.AddComponent<Rigidbody>();
-                body.isKinematic = true;
-                body.useGravity = false;
-                Under(b, pad, () =>
-                {
-                    b.Cylinder("Pad", V(0f, -.4f, 0f), 1.6f, .4f, k.floorChecker, true, true).AddComponent<CourseFloor>();
-                    b.Cylinder("Pad rim", V(0f, -.05f, 0f), 1.7f, .07f, k.hazard, false);
-                });
-                pad.gameObject.AddComponent<TiltingPad>().Configure(along, .8f);
-                b.Cylinder("Shortcut lotus L" + (i + 1) + " stem", V(at.x, Deep, at.z), .5f, 3.3f - .6f - Deep, k.wallNoClimb, true, true);
-            }
-        }
+        const float DykeCheckpointX = 19.4f;
 
         // ------------------------------------------------------------------ beat 4: the east lock (y 3.8)
 
@@ -294,12 +231,11 @@ namespace ChessFight.PawnRush
         static void RobotDyke(CourseBuilder b)
         {
             // The dyke (x 8..35, z 24..30 to walk, a wall at z 30, the gantries behind it), west from the lock to the
-            // boarding quay. Its south edge is open over the water. CP4 at its start, CP5 between the robots where the
-            // shortcut lands.
+            // boarding quay. Its south edge is open over the water. CP4 at its start, CP5 between the robots.
             Mass(b, "Robot dyke", 8f, 35f, 24f, 32.6f, Upper);
             Rail(b, "Dyke wall N", 10f, 35f, 30f, 30.5f, Upper);
             b.Checkpoint(4, V(31f, Upper, 27f), -90f, 5f);
-            b.Checkpoint(5, V(ShortcutLanding.x, Upper, 27f), -90f, 6f);
+            b.Checkpoint(5, V(DykeCheckpointX, Upper, 27f), -90f, 6f);
             Robot(b, "1", 26f, 0f);
             Robot(b, "2", 13f, 3f);
         }

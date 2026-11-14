@@ -34,6 +34,8 @@ namespace ChessFight.RagdollLab
         // 10-26: the bishop's X rope (RagdollPawn.BishopLasso.cs): thrown; round a piece's waist (size: its length); let go
         // (count 1: a taut rope threw the piece; size: how far it was stretched); snapped; come back empty.
         BishopRopeThrow, BishopRopeHook, BishopRopeRelease, BishopRopeSnap, BishopRopeMiss,
+        // Course movement cues share the host's timed effect stream.
+        CourseDive, CourseGrab,
     }
 
     public struct SkillFxEvent

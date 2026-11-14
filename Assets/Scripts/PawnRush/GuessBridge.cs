@@ -30,6 +30,8 @@ namespace ChessFight.PawnRush
         bool[] leftHolds;
         float[] standing, brokenAt;          // per square: left rows first, then right rows
         Transform[][] shards;
+        AudioClip breakClip;
+        bool receivedState;
         readonly Collider[] overlaps = new Collider[32];
 
         public int Rows => Mathf.Min(left.Length, right.Length);
@@ -50,7 +52,9 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < rows; i++) leftHolds[i] = (rng.NextUInt() & 1u) == 0u;
             standing = new float[rows * 2];
             brokenAt = new float[rows * 2];
-            for (int i = 0; i < rows * 2; i++) { brokenAt[i] = -1f; Show(Square(i), true); }
+            receivedState = false;
+            if (breakClip == null) breakClip = Resources.Load<AudioClip>("PawnRushHallSfx/BridgeGlassBreak");
+            for (int i = 0; i < rows * 2; i++) Mend(i);
         }
 
         GameObject Square(int i) => i < Rows ? left[i] : right[i - Rows];
@@ -63,7 +67,7 @@ namespace ChessFight.PawnRush
         {
             for (int i = 0; i < Rows * 2; i++)
             {
-                float open = brokenAt != null && brokenAt[i] >= 0f ? Time.time - brokenAt[i] : -1f;
+                float open = brokenAt != null && !float.IsNegativeInfinity(brokenAt[i]) ? Time.time - brokenAt[i] : -1f;
                 block.U8(open < 0f ? 0 : Mathf.Clamp(1 + Mathf.FloorToInt(open * 10f), 1, 254));
             }
         }
@@ -78,18 +82,42 @@ namespace ChessFight.PawnRush
                 if (brokenAt == null || Square(i) == null) continue;
                 if (v == 0)
                 {
-                    if (brokenAt[i] >= 0f) Mend(i);
+                    if (!float.IsNegativeInfinity(brokenAt[i])) Mend(i);
                     continue;
                 }
                 float open = (v - 1) / 10f, at = Time.time - open;
-                if (brokenAt[i] < 0f) Show(Square(i), false);
-                if (brokenAt[i] < 0f || Mathf.Abs(brokenAt[i] - at) > .5f) brokenAt[i] = at;
+                if (float.IsNegativeInfinity(brokenAt[i]))
+                    Break(i, at, receivedState && open <= .4f);
+                else if (Mathf.Abs(brokenAt[i] - at) > .5f) brokenAt[i] = at;
             }
+            receivedState = true;
+        }
+
+        void Break(int i, float at, bool sound)
+        {
+            var square = Square(i);
+            brokenAt[i] = at;
+            Show(square, false);
+            if (!sound || breakClip == null) return;
+            var voice = square.GetComponent<AudioSource>();
+            if (voice == null)
+            {
+                voice = square.AddComponent<AudioSource>();
+                voice.playOnAwake = false;
+                voice.spatialBlend = 1f;
+                voice.rolloffMode = AudioRolloffMode.Linear;
+                voice.minDistance = 4f;
+                voice.maxDistance = 24f;
+                voice.dopplerLevel = 0f;
+                SectionSoundGate.Gate(voice);
+            }
+            voice.PlayOneShot(breakClip, .75f);
         }
 
         void Mend(int i)
         {
-            brokenAt[i] = -1f;
+            // A late join can place a real break before this client's scene time zero.
+            brokenAt[i] = float.NegativeInfinity;
             Show(Square(i), true);
             if (shards != null && shards[i] != null)
                 foreach (var piece in shards[i]) if (piece != null) piece.gameObject.SetActive(false);
@@ -104,18 +132,17 @@ namespace ChessFight.PawnRush
             {
                 var square = Square(i);
                 if (square == null) continue;
-                if (brokenAt[i] >= 0f)
+                if (!float.IsNegativeInfinity(brokenAt[i]))
                 {
                     Fall(i, now - brokenAt[i]);
-                    if (now - brokenAt[i] >= reform) { brokenAt[i] = -1f; Show(square, true); }
+                    if (ObstacleClock.Authority && now - brokenAt[i] >= reform) Mend(i);
                     continue;
                 }
                 if (Holds(i) || !ObstacleClock.Authority) continue;
                 standing[i] = SomeoneOn(square) ? standing[i] + dt : 0f;
                 if (standing[i] < giveWay) continue;
                 standing[i] = 0f;
-                brokenAt[i] = now;
-                Show(square, false);
+                Break(i, now, true);
             }
         }
 

@@ -16,21 +16,13 @@ namespace ChessFight.PawnRush
     public sealed partial class FallingPieceFx
     {
         const string HallSfx = "PawnRushHallSfx/";
-        // R570 (승규 11-10 "A1로 해주고 범위는 그대로 하돼 울림을 크게 하고 바닥 떨어지는 바람 크게 해"): the fall's
-        // rush is louder (0.7 -> 1, and lifted in its file); the landing (take A1) rings in a bigger hall, baked into
-        // its file and on its own GameObject with a longer, louder ring. The distances stay as they were.
-        // R571 (승규 11-10 "내려오는 기사가 바닥을 칠 때 내는 소리 훨씬 크게"): the landing's file is driven hotter
-        // (about +6 dB, hall_knight_sounds.py punch) and it plays on two voices started on the same sample - a source
-        // cannot go over volume 1, two in step are twice as loud (+6 dB) - at full volume: about +13 dB in all.
-        // R572 (승규 11-10 "쿵 소리 좀 줄여"): landing 1 -> 0.7 (about -3 dB), still on two voices.
         const float WarnVolume = .5f, FallVolume = 1f, LandVolume = .7f;
-        const float LandRingDecay = 3.8f, LandRingLouder = 600f;
         const float Late = .3f;   // a cue first seen later than this past its start is skipped
 
         static AudioClip warnClip, fallClip, landClip;
         static bool clipsLooked;
 
-        AudioSource warnVoice, fallVoice, landVoice, landDouble;
+        AudioSource warnVoice, fallVoice, landVoice;
         float lastT = -1f;
         bool warned, fell, landed, soundReady;
 
@@ -69,9 +61,8 @@ namespace ChessFight.PawnRush
                 var slam = new GameObject("Knight land sound");
                 slam.transform.SetParent(transform, false);
                 landVoice = Voice(slam, 6f, 40f, LandVolume);
-                landDouble = Voice(slam, 6f, 40f, LandVolume);
-                RollingSpawner.Ring(slam, LandRingDecay, LandRingLouder);
-                SectionSoundGate.Gate(landVoice);   // gates both: every source on the object
+                RollingSpawner.Ring(slam);
+                SectionSoundGate.Gate(landVoice);
 
                 var air = new GameObject("Knight fall sound");
                 air.transform.SetParent(piece.piece != null ? piece.piece : transform, false);
@@ -99,27 +90,19 @@ namespace ChessFight.PawnRush
             {
                 landed = true;
                 float since = t - lead;
-                if (since < Late)
-                {
-                    // both on one DSP time: a buffer apart, the low boom would cancel itself instead of adding up
-                    double at = AudioSettings.dspTime + .02;
-                    Cue(landVoice, landClip, since, landClip.length - since, at);
-                    Cue(landDouble, landClip, since, landClip.length - since, at);
-                }
+                if (since < Late) Cue(landVoice, landClip, since, landClip.length - since);
             }
         }
 
         // Plays `clip` from `from` s, unless that is past the clip's end or (for a cue not yet at the impact) the cue
         // began more than Late ago and only a stub of it is left.
-        // `at` (a DSP time) starts it exactly then instead of at the next mix.
-        static void Cue(AudioSource voice, AudioClip clip, float from, float left, double at = 0d)
+        static void Cue(AudioSource voice, AudioClip clip, float from, float left)
         {
             if (from < 0f || from >= clip.length || left <= 0f) return;
             if (from > Late && left < .5f) return;
             voice.clip = clip;
             voice.time = from;
-            if (at > 0d) voice.PlayScheduled(at);
-            else voice.Play();
+            voice.Play();
         }
 
         static AudioSource Voice(GameObject at, float near, float far, float volume)

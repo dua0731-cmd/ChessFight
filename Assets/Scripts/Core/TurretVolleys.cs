@@ -17,7 +17,7 @@ namespace ChessFight.Network
     // (Two turrets can only take turns, one turret always fires.)
     public static class TurretVolleys
     {
-        public const double Period = 3.0;
+        public const double Period = 2.0;
         const int Block = 16;
 
         // The volley a time on the shared clock is in, and when a volley begins.

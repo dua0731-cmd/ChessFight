@@ -153,13 +153,15 @@ namespace ChessFight.PawnRush
             gain = settled ? Mathf.Lerp(gain, target, 1f - Mathf.Exp(-Follow * Time.deltaTime)) : target;
             settled = true;
 
+            // Leave space for nearby pawns and voice chat when several stair hazards overlap.
+            float level = room != null && room.Id == GrandStairHall.Id ? .55f * ChessFight.Game.GameSettings.Effects : 1f;
             GetComponents(sources);
             while (written.Count < sources.Count) { written.Add(-1f); owned.Add(1f); }
             for (int i = 0; i < sources.Count; i++)
             {
                 var a = sources[i];
                 owned[i] = a.volume;
-                a.volume = owned[i] * gain;
+                a.volume = owned[i] * gain * level;
                 written[i] = a.volume;
             }
         }

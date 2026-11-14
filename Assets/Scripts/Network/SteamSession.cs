@@ -122,7 +122,9 @@ namespace ChessFight.Network
         //      order of succession ("successors" before the start too), members' "wclaim" / "wquiet" - and a room's
         //      ownership moves only once the new host has answered (its claim at the record's number). A v39 PC would
         //      close a waiting room a v40 PC keeps, and never answer a v40 handover.
-        public const string Protocol = "chessfight.dua0731.network.v40";
+        // v41 (R653): the garden no longer serializes its two shortcut lotus pads. The ending's
+        // barriers and seeded airborne volleys require the same geometry and timing on every peer.
+        public const string Protocol = "chessfight.dua0731.network.v41";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

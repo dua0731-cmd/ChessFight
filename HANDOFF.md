@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+> **R653 · 2026-11-14 · 폰러시 플레이테스트 후속.** 대계단 잔향·음량, 사용자 제작 경기 BGM·다이빙·잡기 및 유리 파손음, 정원·엔딩 우회 차단, 킹 포획·진영 안내와 엔딩 포탑 2초 공중 탄도를 적용했다. 왕실 마차뜰은 사용자가 의도한 경로를 유지한다. [경기 오디오](Docs/PawnRush/PAWN_RUSH_AUDIO.md) · [확인표](Docs/Network/VALIDATION.md).
+
 > **R648 · 2026-11-14 · 소드 파이트 비숍 E 미리보기가 온라인에서 안 보임 (upstream main 푸시):** 승규 님 "온라인으로 비숍이 e 스킬을 쓰면 미리보기가 안나와". 원인 = `Core/SwordSkillSync.cs` 읽기 검사가 E 단계 값 3(Recovery)까지만 받았는데, R236에 비숍 대각선 고르기 `SfEdge.Aim`(4)이 붙어서 비숍이 고르는 동안 **소드 파이트 상태 패킷 전체**가 참가자 쪽에서 버려졌음(그동안 다른 기물 스킬 상태도 멈춤). 방장 화면은 패킷을 안 읽으니 멀쩡했음. `> 3` → `> 4`로 고치고 `NetworkCoreTests`에 Aim(4)은 읽히고 5는 막히는 시험 추가, 코어 시험 193개 통과(세션 시험은 이 수정과 상관없는 `SteamSession.cs` Texture2D 컴파일 오류로 못 돌림). 패킷 모양은 그대로라 버전 번호 안 올림, 방장 · 참가자 둘 다 새 빌드여야 고쳐짐. **두 PC 확인 전.** 다음 빈 요청 번호는 **R649**.
 
 > **R649 · 2026-11-14 · 소드 파이트 나이트 E 뒷발차기가 빗나감 (upstream main 푸시):** 승규 님 "상대가 빠르게 움직이거나 각도 애매 할 때 미스 … 완전히 떨어지거나 뒷발차기 맞아야 하는데". 원인 셋(`SwordFightSkills.Edge.cs`): ① 공중제비 길과 착지 칸이 뛰는 순간 정해져서, 0.8초 비행 중 적이 달리거나 옆으로 비키면 빈 자리 뒤에 착지 ② 차기 판정이 착지 칸에서 1.9 m 안만 봄 ③ 차는 방향이 "나이트가 뛴 자리 쪽"이라 옆으로 비킨 적은 벼랑을 따라 비스듬히 밀려 안 떨어짐. 고침: 비행의 85%까지 꼭대기 · 착지 칸이 적의 지금 자리를 초속 11 m로 따라감(`KnightTracks`, 전력질주 9.6) · 착지 칸 또는 나이트 몸에서 2.3 m 안이면 맞음 · 나이트가 뛴 벼랑에 수직으로, 벼랑까지 거리 + 2 m(최소 `knightKick` 3.5, 최대 8 m) 밀어 맞으면 떨어지게. 웅크리는 동안 3 m 밖으로 물러나면 취소되는 것("완전히 떨어짐")은 그대로, 킹의 막기도 그대로. 시험 씬 실행 `edge-knight-run`(뛸 때 적이 옆으로 달아남) 추가. Unity 컴파일 오류 없음, **승규 님이 Play 중이라 시험 씬 실행은 못 함, 사람 확인 · 온라인 확인 전.** 다음 빈 요청 번호는 **R650**.
@@ -132,6 +134,8 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 
 ## 1. 현재 상태 스냅샷
 
+R653에서 폰러시 온라인 버전을 v41로 올렸다. 정원 연잎 2개를 제거했고 엔딩 포탑 탄도와 막힌 발코니를 모든 PC에서 같은 규칙으로 구성한다.
+
 > 정원·대계단: 3차(낙하 나이트)까지 적용·검사(Claude Code). 대계단 2,897,323·정원 2,621,741. 나무 · 성탑 줄이기(4차) 뒤 정원 2,477,731. 사용자 실기 확인 전, R639로 main 커밋 · 푸시. [상세 §6·§7](Docs/PawnRush/COURSE_OPTIMIZATION_2026-11-13.md)
 
 | 항목 | 현재 상태 |
@@ -181,6 +185,8 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 
 ## 2. 무엇이 되고 무엇이 안 되는가
 
+R653의 다이빙·잡기·유리와 경기 BGM은 재생할 수 있는 파일에 연결했다. 킹 몰이도 기존 음원을 대체 재생하며 ElevenLabs 테이크를 같은 이름으로 추가할 수 있다.
+
 > 1차 검사 결과와 2차 미확인 상태를 구분한다. 2차 후 사진·Unity 집계·테스트는 아직 없다.
 
 - R644: 대기실은 물리 담당이 나가거나 꺼져도 같은 방에서 성능 1등이 이어받는다(방 주인은 새 물리 담당이 답한 뒤에 옮김, 꺼진 방 주인은 Steam이 뺄 때까지 명단에서 숨김, 그동안 시작 · 새 자리는 대기). 꺼진 사람은 3초 뒤 자리에서 빠지고 파티원은 남는다. 프로토콜 v40 — R640 빌드와 못 만난다. 세션을 고칠 때 `Tests/Network/FakeSteam.cs`의 `DataDelay`(방 기록 지연)를 켠 시험도 같이 돌린다.
@@ -224,6 +230,8 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 정원·대계단 경량화는 외형 우선 1차 적용이며 목표 예산 90만·120만에는 미달한다. 나무·꽃 원본 유지, 작전 회의실 보류. 사용자 전후 사진·Play 비교와 12인 성능 측정이 다음 단계다.
 
 ## 3. 진행 중인 일과 다음 할 일
+
+[R653 확인표](Docs/Network/VALIDATION.md)에서 정원·엔딩 우회, 캐리지 위 회피·피격, 소리 크기, 팀 안내를 본다. 아래 R616의 우회·3초 간격 질문은 R653에서 결정했다.
 
 > 2026-11-13 Claude Code 이어받음: 경량화 2차(홀 원형 벽·난간, 정원 보트) Unity 실측 정원 2,621,741·대계단 3,944,227, 충돌체 해시 동일, 전후 사진 차이 미미해 유지, Core 192·모의 81 통과. 사용자 실기 확인 전, 커밋·푸시 안 함. [상세 §6](Docs/PawnRush/COURSE_OPTIMIZATION_2026-11-13.md).
 
@@ -275,7 +283,7 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 13-4. **R616(11-12) 엔딩 구간 포탑 4대 · 출구 문(`main`에 올림)**: 사용자는 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 R616 표를 확인한다 — `Open Section Test`에서 `[` 한 번으로 작전 회의실: 포탑 4대 자리, 3초마다 한 대가 캐리지를 쏘는지 · 같은 포탑이 연달아 안 쏘는지, 레이저 예고를 보고 피할 만한지, 문을 우클릭으로 잡고 밀어 여는 손맛(8초), 문 뒤 임시 바닥의 결승, v38 빌드 두 PC에서 포탑 · 문이 같게 보이는지. 그리고 **두 가지를 정해 준다**: (가) 양옆 발코니 우회 길을 막을지, (나) 탄 세기(지금 네 대 모두 가벼운 탄) · 3초 간격이 맞는지. 엔딩 공간을 만들 때는 `WarRoomEnding`의 임시 바닥을 바꾼다.
 13-5. **R624(11-13) 소드 파이트 입장 화면 기물 선택(`main`에 올림)**: 사용자는 [VALIDATION](Docs/Network/VALIDATION.md#sword-pick-check) 최상단 R624 표를 v39 빌드로 확인한다 — ① 매칭 완료 · ② 카드 고르기(클릭/1~5 표시, Space/Enter/더블클릭 확정, 팀원 카드 막힘) · ③ 우리 팀 · ④ A 결투(상대 기물 첫 공개) · 경기가 고른 기물로 바로 3 2 1, 두 PC에서 같은 기물. 시안은 https://claude.ai/artifact/P4pMoyFbZdQrjixsfSfbNe (B 결투장 대문 · C 체스 시계는 참고로 남김).
 13-5. **R625(11-13) 폰 러쉬 대결 장면 D "슬랜트 로스터"(`main`에 올림)**: 방장 시작 → 플레이어별 기울어진 패널 · VS(약 5초) → 패널이 모여 "이번 판 미니게임" 공개로 이어짐. 코드 `Game/LoadingScreenView.Versus.cs`, 공개 · 소리는 `RevealOffset`(3차 박자 1.2배 뒤 6.1초)만큼 늦어짐(`RevealLocal`, `RevealShownSeconds` 18.8초). **2차**(사용자 "사진으로 그냥 가져다 붙여 놓은 거 같은 느낌 … 퀄리티가 부족해"): 패널이 3D 무대(`Game/VersusStage.cs`: 실제 경기 폰 12명 · 체스판 · 그림자 · 빛 웅덩이 · 팀색 테두리 조명, 카메라 하나로 매 프레임 렌더)를 들여다보는 창, 가운데 황동 VS 패널. AI가 새 도구 `PawnRushEditor/VersusSceneCapture`(Unity 배치, 에디터가 열려 있으면 사본에서)로 4차례 찍어 보며 고쳤다 — [UI §대결 장면](Docs/Architecture/UI.md#versus-scene). 사용자는 [VALIDATION](Docs/Network/VALIDATION.md#versus-check) R625 표(특히 9번 프레임)를 Unity에서 확인한다. 소리는 기존 공개 클립을 재사용한 임시라 승규 님이 들어 보고 정한다. 시안 페이지 https://claude.ai/artifact/749X7nB5FUHKMR6MYhhQxn (E 3D 시네마틱은 남겨 둠).
-14. 다음 새 요청은 **R648**부터 기록한다(R647 = 폰 러쉬 퀸 스킬 소리 세 개 다시(실사 연출에 맞춘 공기 · 충격파 · 나무 쾅), R646 = 폰 러쉬 퀸 미는 힘 · 룩 사슬 10.5 m · 나이트 1.5 ~ 9 m와 따라가기, 둘 다 upstream main 9144761b 게시, R645 = 소드 파이트 입장 화면 · 경기 시작 카메라 비행 · 보호막, upstream main 게시, R644 = 팀 시험 목록 A 대기실 물리 담당 이어받기 · 깜빡임 · 시작 때 튕김 · 강제 종료, R641 · R642 · R643 = 팀 시험 목록 B 폰 스킬 넘어짐 · 폰 러쉬 잡힘 표시 · F · G · H · I 클리어 연출, R640 = 소드 파이트 처음 기물로 부활 · 폰 빼앗기 삭제 · 결과 화면 탈주, R639 = 지금까지 작업 전부 main 게시, R638 = R637 라인업 색 맞춤, R637 = 소드 파이트 매칭 완료 라인업, R636 = 소드 파이트 맞부딪힘 칼 베기, R635 = 정원 북 발판 기물 뜸, R617~R623은 위 기록, **R624는 같은 시각 다른 세션 "소드 파이트 매칭 구조 개선"이 소드 파이트 고르기 카드에 씀**, R625 = 폰 러쉬 대결 장면).
+14. 다음 새 요청은 **R654**부터 기록한다(R653 = 폰러시 플레이테스트 후속, 648~652 = 동시 채팅 작업, R647 = 폰 러쉬 퀸 스킬 소리 세 개 다시(실사 연출에 맞춘 공기 · 충격파 · 나무 쾅), R646 = 폰 러쉬 퀸 미는 힘 · 룩 사슬 10.5 m · 나이트 1.5 ~ 9 m와 따라가기, 둘 다 upstream main 9144761b 게시, R645 = 소드 파이트 입장 화면 · 경기 시작 카메라 비행 · 보호막, upstream main 게시, R644 = 팀 시험 목록 A 대기실 물리 담당 이어받기 · 깜빡임 · 시작 때 튕김 · 강제 종료, R641 · R642 · R643 = 팀 시험 목록 B 폰 스킬 넘어짐 · 폰 러쉬 잡힘 표시 · F · G · H · I 클리어 연출, R640 = 소드 파이트 처음 기물로 부활 · 폰 빼앗기 삭제 · 결과 화면 탈주, R639 = 지금까지 작업 전부 main 게시, R638 = R637 라인업 색 맞춤, R637 = 소드 파이트 매칭 완료 라인업, R636 = 소드 파이트 맞부딪힘 칼 베기, R635 = 정원 북 발판 기물 뜸, R617~R623은 위 기록, **R624는 같은 시각 다른 세션 "소드 파이트 매칭 구조 개선"이 소드 파이트 고르기 카드에 씀**, R625 = 폰 러쉬 대결 장면).
 
 다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
 현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
@@ -342,6 +350,7 @@ Prototype의41개 C# 파일은7개 asmref로 기존 어셈블리에 속한다.
 |---|---|---|
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)·[DECISIONS](Docs/Project/DECISIONS.md)·[PITFALLS](Docs/Environment/PITFALLS.md) | 현재 main의 관련 파일만 |
 | 파일·메뉴·Prototype·브랜치 정리 | [R497 정리 안내](Docs/Architecture/PROJECT_CLEANUP_R497.md) → [STRUCTURE](Docs/Architecture/STRUCTURE.md) | 경로 문자열·asmref·메타·생성기·검사 스크립트 |
+| 경기 BGM·동작 효과음 | [경기 오디오](Docs/PawnRush/PAWN_RUSH_AUDIO.md) | PawnRushRoundMusic · SectionSoundGate · PawnRushSkillSfx · GuessBridge |
 | 현재 폰 러시 맵 | [PawnRush README](Docs/PawnRush/README.md) → [구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | PawnRushRound·PawnRushSection·SectionCorridor(R517 복도)·SectionPrefabMenu·구간 프리팹 |
 | 코스·미니게임 모델링·텍스처 | [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) → [모델링 지침](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGamePalaceArt*·RoyalWaterGardenBuilder.Concept·ArtSource/PawnRush |
 | 미니게임10종 | [실제 프리팹](Docs/PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [기존 규칙](Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md)(§14 인원수별 규모, R543)·[모델링](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGameSection*·MiniGamePalaceArt*·MissionStation·Mg*·PaintBoard·Core PlankBridge(B 판자 규칙 · 블록, R528)·Core MiniGameScale(R543 인원수별 규모 표 · `BoardGrid` · `BellTowers`)·PlankLayout·EnPassantField·KnightRoad·KingRoad(G 씨앗 길)·MiniGameModels*(낱개 모델) |

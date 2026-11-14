@@ -2814,9 +2814,9 @@ public static class NetworkCoreTests
                 Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
                 Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
                       "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
-            Test("R616 turret volleys: a turret every three seconds, never the one before, every turret as often, the same on every PC", () => {
-                Check(TurretVolleys.Period == 3.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(2.999) == 0 && TurretVolleys.Volley(3) == 1
-                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 21.0, "a volley every three seconds of the clock");
+            Test("War room turret volleys: a turret every two seconds, never the one before, every turret as often, the same on every PC", () => {
+                Check(TurretVolleys.Period == 2.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.999) == 0 && TurretVolleys.Volley(2) == 1
+                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 14.0, "a volley every two seconds of the clock");
                 foreach (int turrets in new[] { 3, 4, 5, 8 })
                     foreach (int seed in new[] { 1, 2, 77, -5, 20261112, int.MaxValue })
                     {

@@ -194,19 +194,18 @@ namespace ChessFight.PawnRush
             return false;
         }
 
-        // The stone hall's ring (every AudioSource on the GameObject goes through it). A bigger sound may ring longer
-        // (decay, s) and louder (millibels over the usual reflections and tail): R570 the falling knight's landing.
-        internal static void Ring(GameObject at, float decay = 2.2f, float louder = 0f)
+        // A short stone reflection on each obstacle. The dry signal carries its gameplay timing.
+        internal static void Ring(GameObject at)
         {
             var ring = at.AddComponent<AudioReverbFilter>();
             ring.reverbPreset = AudioReverbPreset.User;
             ring.dryLevel = 0f;
-            ring.room = -200f;
-            ring.roomHF = -400f;          // stone keeps the lows longer than the highs
-            ring.decayTime = decay;
+            ring.room = -600f;
+            ring.roomHF = -800f;
+            ring.decayTime = .4f;
             ring.decayHFRatio = .6f;
-            ring.reflectionsLevel = -500f + louder;
-            ring.reverbLevel = -300f + louder;
+            ring.reflectionsLevel = -1600f;
+            ring.reverbLevel = -2000f;
         }
 
         static AudioSource Voice(GameObject at, float near, float far)

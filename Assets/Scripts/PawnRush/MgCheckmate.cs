@@ -38,8 +38,12 @@ namespace ChessFight.PawnRush
         readonly CheckmateHunt.King[] view = new CheckmateHunt.King[CheckmateHunt.MaxKings];
         readonly CheckmateHunt.King[] remote = new CheckmateHunt.King[CheckmateHunt.MaxKings];
         readonly List<StationPoint> ours = new List<StationPoint>(), theirs = new List<StationPoint>();
-        bool started;
+        bool started, receivedState;
         int captured;
+        float nextHopSound, nextCheckSound;
+        string captureNotice;
+        float noticeUntil;
+        const string RevealSfx = "Loading/CourseReveal/Sound/", BoardSfx = "PawnRushMiniGameSfx/";
 
         Transform[] kings, looks;
         Rigidbody[] bodies;
@@ -57,9 +61,20 @@ namespace ChessFight.PawnRush
         readonly float[] movedAt = new float[CheckmateHunt.MaxKings], flinchAt = new float[CheckmateHunt.MaxKings], takenAt = new float[CheckmateHunt.MaxKings];
         readonly bool[] jumped = new bool[CheckmateHunt.MaxKings], landed = new bool[CheckmateHunt.MaxKings];
         readonly int[] slot = new int[CheckmateHunt.MaxKings];
+        readonly float[] nextTrailAt = new float[CheckmateHunt.MaxKings];
 
         public int Done => captured;
         public int Total => hunt.Count;
+        public string HuntHint
+        {
+            get
+            {
+                if (Time.time < noticeUntil) return captureNotice;
+                for (int k = 0; k < hunt.Count; k++)
+                    if (view[k].State == CheckmateHunt.KingState.Frozen) return "금빛 킹에게 다이빙하거나 질주하세요";
+                return "킹의 퇴로를 막아 체크하세요";
+            }
+        }
 
         public static MgCheckmate Build(CourseBuilder b, MissionStation station)
         {
@@ -157,7 +172,9 @@ namespace ChessFight.PawnRush
         {
             hunt.Reset(0);
             started = false;
+            receivedState = false;
             captured = 0;
+            noticeUntil = nextHopSound = nextCheckSound = 0f;
             for (int k = 0; k < hunt.Count; k++)
             {
                 Copy(hunt.All[k], view[k]);
@@ -251,7 +268,7 @@ namespace ChessFight.PawnRush
                 {
                     Fx.Vanish(at);
                     Fx.Vanish(World(to[k]));
-                    ArenaFx.Sfx("sfx_stalemate", at);
+                    Sound("sfx_stalemate", RevealSfx + "RevealOpen", at, .31f, 1.12f);
                 }
                 landed[k] = false;
             }
@@ -259,19 +276,23 @@ namespace ChessFight.PawnRush
             {
                 flinchAt[k] = Time.time;
                 Fx.Check(at, PawnRushBoard.Cell, transform.eulerAngles.y);
-                ArenaFx.Sfx("sfx_check", at);
+                if (Time.time >= nextCheckSound)
+                {
+                    Sound("sfx_check", RevealSfx + "RevealTick2", at, .48f, .90f + .14f * now.Checks);
+                    nextCheckSound = Time.time + .07f;
+                }
                 KingChecked?.Invoke(false);
             }
             if (now.State == CheckmateHunt.KingState.Frozen && was.State == CheckmateHunt.KingState.Free)
             {
                 Fx.Freeze(at, PawnRushBoard.Cell, transform.eulerAngles.y);
-                ArenaFx.Sfx("sfx_mate", at);
+                Sound("sfx_mate", RevealSfx + "RevealLock", at, .65f, .85f);
                 KingChecked?.Invoke(true);
             }
             if (now.State == CheckmateHunt.KingState.Free && was.State == CheckmateHunt.KingState.Frozen)
             {
                 Fx.Rescue(at, station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White));
-                ArenaFx.Sfx("sfx_rescue", at);
+                Sound("sfx_rescue", BoardSfx + "sfx_paint_blocked", at, .38f, 1.18f);
             }
             Copy(now, was);
             Paint(k);
@@ -291,18 +312,27 @@ namespace ChessFight.PawnRush
             halos[k].enabled = frozen;
         }
 
-        void Take(int k)
+        static void Sound(string name, string fallback, Vector3 at, float gain, float pitch = 1f) =>
+            ArenaFx.Sfx(name, at, volume: gain * ChessFight.Game.GameSettings.Effects, pitch: pitch, fallbackPath: fallback);
+
+        void Take(int k, bool instant = false)
         {
             slot[k] = captured++;
-            takenAt[k] = Time.time;
+            takenAt[k] = instant ? Time.time - FlySeconds - .1f : Time.time;
+            nextTrailAt[k] = Time.time;
             from[k] = kings[k].localPosition;
-            landed[k] = false;
+            landed[k] = instant;
             if (colliders[k] != null) colliders[k].enabled = false;
             if (bodies[k] != null) bodies[k].interpolation = RigidbodyInterpolation.None;
             halos[k].enabled = false;
+            if (instant) { Fly(k); return; }
             var at = World(from[k] + Vector3.up * .5f);
             Fx.Capture(World(from[k]), PawnRushBoard.Cell, transform.eulerAngles.y, station.Accent(station.Team));
-            ArenaFx.Sfx("sfx_king_capture", at);
+            bool final = captured == hunt.Count;
+            if (final) Sound("sfx_king_sweep", BoardSfx + "sfx_paint_team_complete", at, .82f);
+            else Sound("sfx_king_capture", RevealSfx + "RevealSlam", at, .68f, .92f + .04f * captured);
+            captureNotice = $"킹 포획   {captured} / {hunt.Count}";
+            noticeUntil = Time.time + 1.2f;
         }
 
         void Untake(int k)
@@ -354,7 +384,11 @@ namespace ChessFight.PawnRush
                     {
                         var at = World(to[k]);
                         Fx.Land(at);
-                        ArenaFx.Sfx("sfx_king_hop", at, volume: .7f);
+                        if (Time.time >= nextHopSound)
+                        {
+                            Sound("sfx_king_hop", RevealSfx + "RevealDot", at, .24f, .82f);
+                            nextHopSound = Time.time + .12f;
+                        }
                     }
                 }
                 look.localPosition = new Vector3(0f, y, 0f);
@@ -366,7 +400,13 @@ namespace ChessFight.PawnRush
                 bool frozen = view[k].State == CheckmateHunt.KingState.Frozen;
                 if (frozen) shiver = 2f * Mathf.Sin(t * 12f * Mathf.PI * 2f);
                 look.localRotation = Quaternion.Euler(tilt, 0f, shiver);
-                if (frozen) halos[k].transform.localRotation = Quaternion.Euler(14f, t * 1440f % 360f, 0f);
+                if (frozen)
+                {
+                    float pulse = .5f + .5f * Mathf.Sin(t * 5f);
+                    var halo = halos[k].transform;
+                    halo.localScale = Vector3.one * (1.08f + .28f * pulse);
+                    halo.localRotation = Quaternion.Euler(25f, t * 130f % 360f, 0f);
+                }
             }
             Attacks();
         }
@@ -409,10 +449,16 @@ namespace ChessFight.PawnRush
             p.y = Mathf.Lerp(from[k].y, spot.y, f) + FlyApex * 4f * f * (1f - f);
             s.localPosition = p;
             s.localRotation = Quaternion.Slerp(Quaternion.identity, Quaternion.AngleAxis(90f, Vector3.forward), f);
+            if (f < 1f && Time.time >= nextTrailAt[k])
+            {
+                nextTrailAt[k] = Time.time + .05f;
+                Fx.CaptureTrail(World(p + Vector3.up * .35f), station.Accent(station.Team));
+            }
             if (f >= 1f && !landed[k])
             {
                 landed[k] = true;
-                ArenaFx.Sfx("sfx_ep_tray", World(spot));
+                Fx.TrayLand(World(spot), station.Accent(station.Team));
+                Sound("sfx_ep_tray", BoardSfx + "sfx_ratchet_click", World(spot), .34f, .9f);
             }
         }
 
@@ -426,9 +472,23 @@ namespace ChessFight.PawnRush
 
         public override void ReadNet(ref NetBlock block)
         {
-            if (kings == null) return;
+            if (kings == null || !block.Left(hunt.Count * 2 + 1)) return;
             for (int k = 0; k < hunt.Count; k++) CheckmateHunt.Unpack((ushort)block.ReadU16(), remote[k]);
             block.ReadU8();
+            // A reconnect first sees a whole board, possibly already cleared. Establish that picture silently.
+            if (!receivedState)
+            {
+                receivedState = true;
+                for (int k = 0; k < hunt.Count; k++)
+                {
+                    Copy(remote[k], view[k]);
+                    to[k] = from[k] = Square(view[k].File, view[k].Rank);
+                    kings[k].localPosition = to[k];
+                    Paint(k);
+                    if (view[k].State == CheckmateHunt.KingState.Captured) Take(k, true);
+                }
+                return;
+            }
             for (int k = 0; k < hunt.Count; k++) Present(k, remote[k]);
         }
 
