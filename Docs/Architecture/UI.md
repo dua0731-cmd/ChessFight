@@ -735,7 +735,8 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 곡 | 사용자가 ElevenLabs Music v2.5로 만든 폰러시 메인 BGM용 테이크(120 BPM · G단조 · 48 kHz 스테레오 · 164초). 사용자 "폰러시보단 로비 BGM으로 쓰면 딱일 것 같아". 원본 `ArtSource/Lobby/Music/raw/LobbyBGM_2026-11-14.wav`(R652에 사용자가 준 `로비BGM.wav`, 처음 받은 `Castle_Pawns_Dash`와 같은 곡이 약 1 ms 앞) |
 | 자르기 | `ArtSource/Lobby/Music/bake.py`(numpy만, Blender 파이썬으로 실행). `Resources/Lobby/Music/LobbyMusic.wav` = 0 ~ 28.018초(한 번), `LobbyMusicLoop.wav` = 그 뒤 96초(48마디, 124.018초까지, 반복). 116 ~ 124초가 20 ~ 28초와 같은 음악이라(앞 네 마디 유사도 0.92 ~ 0.95) 끝이 시작으로 이어진다. 드럼 타격을 맞춰 끝을 6.02 ms 당기고, 다운비트 타격 3 ms 앞에서 자르고, 루프 끝 15 ms를 시작 바로 앞 15 ms로 페이드한다. 두 클립을 함께 −1 dBFS로 맞춤 |
 | 재생 | `Game/LobbyMusic.cs`, `LobbyBootstrap`이 로비 씬에 붙여 씬과 함께 끝난다. 처음 클립을 오디오 시계 0.1초 뒤에 걸고 루프 클립을 그 끝(샘플 수 기준)에 건다(입장 화면 음악과 같은 방식). 1.5초 페이드 인 |
-| 줄어드는 때 | 입장 화면의 자체 음악(폰 러시 대결 장면 · 코스 공개 `RevealMusic`, 소드 파이트 `SwordMusic`)이 시작되면 `LoadingScreenView.MusicPlaying`이 켜지고 0.6초에 0, 그 화면이 사라지면 꺼진다(로비가 남아 있으면 다시 커짐). 성문 입장 · 매칭 대기 화면에서는 계속 나온다 |
-| 크기 | `GameSettings.Music` × 0.5014(bake.py가 출력하는 `LOBBY_GAIN`): 기본 음악 크기 0.7에서 RMS −26 dBFS, 소드 파이트 입장 음악(−26.8) 근처 |
+| 재생 범위 (R654) | 사용자 "인트로씬의 체스파이트 제목 연출 이후 … 화면이 나왔을 때부터 게임 매칭 전까지". 시작 로고가 끝나 제목 화면이 나오면 `IntroController`가 `LobbyMusic.Begin()`, 장면을 넘어 사는 하나라 로비로 넘어가도 이어진다. 로비에서 매칭(검색 · 파티장 따라가기 · 매칭 방, `LobbyBootstrap.Matching` → `LobbyMusic.Hold`)이면 0.8초에 0, 취소하면 다시 1.5초에. 제목 · 로비 밖의 장면(경기)이면 끝, 경기 뒤 로비가 처음부터 다시 튼다. 크기는 R654부터 −28 dB RMS(`Gain` .3983) |
+| 줄어드는 때 | 입장 화면의 자체 음악(폰 러시 대결 장면 · 코스 공개 `RevealMusic`, 소드 파이트 `SwordMusic`)이 시작되면 `LoadingScreenView.MusicPlaying`이 켜지고 0.6초에 0, 그 화면이 사라지면 꺼진다(로비가 남아 있으면 다시 커짐). R654부터는 매칭이 시작될 때 먼저 줄어든다(위 재생 범위) |
+| 크기 | `GameSettings.Music` × 0.3983(bake.py가 출력하는 `LOBBY_GAIN`): 기본 음악 크기 0.7에서 RMS −28 dBFS, 경기 음악과 같게(R654, 전 0.5014 · −26) |
 | 가져오기 | 압축해 메모리에 둠(Vorbis 0.8), 48 kHz 그대로, 2D |
 | 다른 곡으로 | 새 테이크를 `raw/`에 넣고 bake.py의 `RAW`·`START`·`END`를 고쳐 다시 굽고, 출력된 `LOBBY_GAIN`을 `LobbyMusic.Gain`에 넣는다. 이음새는 마디 경계 둘을 골라 앞뒤 두 마디가 얼마나 닮았는지로 정했다(경기 음악의 `ArtSource/PawnRush/Music/bake.py --try`가 같은 측정) |

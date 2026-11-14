@@ -658,14 +658,14 @@ namespace ChessFight.PawnRush
                 if (fresh)
                 {
                     double start = RoundStart(j);
-                    if (start > lastFrame && start <= now) chargeSound.Shot(chargeNear, chargeFar, heavy ? 1f : .8f, Random.Range(.97f, 1.03f));
-                    if (x.fire > lastFrame && x.fire <= now) fireSound.Shot(fireNear, fireFar, 1f, Random.Range(.95f, 1.05f));
+                    if (start > lastFrame && start <= now) chargeSound.Shot(chargeNear, chargeFar, heavy ? .41f : .46f, Random.Range(.97f, 1.03f));   // R654: -21 dB (was -13 / -16)
+                    if (x.fire > lastFrame && x.fire <= now) fireSound.Shot(fireNear, fireFar, heavy ? .39f : .55f, Random.Range(.95f, 1.05f));   // R654: -19 dB (was -11 / -14)
                     if (!x.expiresInAir && x.impact > lastFrame && x.impact <= now)
                     {
                         impactPoint.position = x.to;
                         // R471 ("가운데 사운드 폭발음 더 크게"): the middle's burst played 1.6 times as loud (a one-shot's
                         // volume scale is not held to 1; about +4 dB over its file, already at full scale)
-                        impactSound.Shot(impactNear, impactFar, heavy ? 1.6f : 1f, Random.Range(.93f, 1.05f));
+                        impactSound.Shot(impactNear, impactFar, heavy ? .26f : .31f, Random.Range(.93f, 1.05f));   // R654: -18 dB (was -2 / -8, clipping)
                     }
                 }
             }

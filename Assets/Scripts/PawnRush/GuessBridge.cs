@@ -111,7 +111,7 @@ namespace ChessFight.PawnRush
                 voice.dopplerLevel = 0f;
                 SectionSoundGate.Gate(voice);
             }
-            voice.PlayOneShot(breakClip, .75f);
+            voice.PlayOneShot(breakClip, 1.4f);   // R654: -24 dB after the hall's 0.55 (was -29, under the music)
         }
 
         void Mend(int i)

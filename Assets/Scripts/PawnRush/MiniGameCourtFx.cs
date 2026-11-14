@@ -53,9 +53,10 @@ namespace ChessFight.PawnRush
             lastYaw = yaw;
             speed = Mathf.Lerp(speed, now, 1f - Mathf.Exp(-6f * Time.deltaTime));   // smooth the network's steps
             float k = Mathf.Clamp01(speed / FullSpeed);
-            Drive(creak, k, .9f);
-            Drive(chain, k, .75f);
-            Drive(wind, k, .7f);
+            // R654: the gate opening at -21 dB (was -16)
+            Drive(creak, k, .5f);
+            Drive(chain, k, .41f);
+            Drive(wind, k, .39f);
         }
 
         static void Drive(AudioSource a, float k, float gain)
@@ -179,7 +180,7 @@ namespace ChessFight.PawnRush
                     SectionSoundGate.Gate(voice);   // R529
                 }
                 voice.pitch = open ? 1f : R(.95f, 1.05f);
-                voice.PlayOneShot(clip, open ? 1f : .85f);
+                voice.PlayOneShot(clip, open ? .5f : .43f);   // R654: -21 dB (was -15)
             }
             if (blended == null) return;
             if (block == null) block = new MaterialPropertyBlock();

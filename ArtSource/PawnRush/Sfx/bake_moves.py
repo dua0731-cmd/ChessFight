@@ -9,9 +9,9 @@ walk '총총', sprint '다다다').
       single footsteps cut from the takes, taken in turn by PawnRushStepSfx so no two steps in a row are the same
 
 Every clip: mono (the mid of the two channels, or the louder channel where the two are not alike - the dive's are
-nearly opposite, and their sum would thin it), the quiet lead-in cut to 3 ms before the first sample over 1/16 of
-the peak, the tail cut where it falls 50 dB under the peak (and at most MAX seconds), a 10 ms fade out, peak at -1
-dBFS. The one-shots are matched again at load (PawnRushSkillSfx.Prepare: the loudest 0.3 s to -21 dB, at most x8),
+nearly opposite, and their sum would thin it), started on its hit (R654, `opening`: 2 ms before it is within 12 dB
+of its loudest, a slow rise lifted), the tail cut where it falls 50 dB under the peak (and at most MAX seconds), a
+10 ms fade out, peak at -1 dBFS. The one-shots are matched again at load (PawnRushSkillSfx.Prepare: the loudest 0.3 s to -21 dB, at most x8),
 so their Level numbers set how loud each is; the footsteps are matched here, every step to the same short loudness,
 and PawnRushStepSfx sets their level.
 
@@ -46,18 +46,42 @@ def mono(x):
     return x[:, louder], f'{"LR"[louder]} channel (L/R likeness {corr:.2f})'
 
 
+def opening(y, sr):
+    """R654 (사용자 "앞 쪽에 빈소리가 있어서 그런지 바로 출력되지 않는 것처럼 보여"): the clip starts 2 ms before it first
+    comes within 12 dB of its loudest 2 ms (was: the first sample over 1/16 of the peak, which kept a quiet lead-in), and a
+    body that only comes more than 20 ms in (the jump's rising 'fwup') has its opening lifted to the body's level (at
+    most +12 dB, smoothed over 2 ms), so the sound is there the moment it starts. Returns the clip and the cut, s."""
+    k = int(.002 * sr)
+    e = np.array([np.mean(y[i:i + k] ** 2) for i in range(0, len(y) - k, k)])
+    db = 10 * np.log10(e + 1e-12)
+    db -= db.max()
+    i12 = int(np.argmax(db >= -12))
+    first = max(0, (i12 - 1) * k)
+    y = y[first:].copy()
+    db = db[max(0, i12 - 1):]
+    i3 = int(np.argmax(db >= -3))
+    if i3 * 2 > 20:
+        body = np.median(db[i3:i3 + 25])
+        lift = np.clip(body - 1 - db[:i3], 0, 12)
+        centres = (np.arange(i3) + .5) * k
+        g_db = np.interp(np.arange(len(y)), np.concatenate([centres, [i3 * k + k]]), np.concatenate([lift, [0]]), right=0)
+        g_db = np.convolve(g_db, np.ones(k) / k, 'same')
+        y *= 10 ** (g_db / 20)
+    return y, first / sr
+
+
 def trim(m, sr, longest):
-    a = np.abs(m)
+    y, start = opening(m, sr)
+    a = np.abs(y)
     top = a.max()
-    first = max(0, int(np.argmax(a > top / 16)) - int(.003 * sr))
     over = np.where(a > top * 10 ** (-50 / 20))[0]
-    last = min(over[-1] + 1, first + int(longest * sr))
-    y = m[first:last].copy()
+    last = min(over[-1] + 1, int(longest * sr))
+    y = y[:last].copy()
     f = min(len(y) // 3, int(.010 * sr))
     y[-f:] *= np.linspace(1, 0, f) ** 2
     k = int(.001 * sr)
     y[:k] *= np.linspace(0, 1, k)
-    return y, first / sr
+    return y, start
 
 
 def write(path, y, sr):
@@ -122,7 +146,8 @@ for take, (prefix, longest, most) in STEP_TAKES.items():
         nxt = onsets[n_ + 1] if n_ + 1 < len(onsets) else len(m)
         a = max(0, on - int(.003 * sr))
         b = min(nxt - int(.015 * sr), on + int(longest * sr))
-        y = m[a:b].copy()
+        y, cut = opening(m[a:b], sr)   # R654: from the step's hit (the sprint's came 10 ms in)
+        a += int(round(cut * sr))
         f = min(len(y) // 3, int(.015 * sr))
         y[-f:] *= np.linspace(1, 0, f) ** 2
         y[:int(.001 * sr)] *= np.linspace(0, 1, int(.001 * sr))

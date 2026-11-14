@@ -13,8 +13,8 @@ does in the take. The join was picked from every pair of downbeats by how alike 
 (numpy-only analysis in the 2026-11-14 session); here the end is put on the start to the sample by lining up the
 drum hits, the cut is made 3 ms ahead of the downbeat's hit, and the last 15 ms of the loop fade into the 15 ms that
 come before its start, so the wrap is continuous. Both clips share one peak normalisation to -1 dBFS; LOBBY_GAIN
-(printed) is the code gain that plays them at an RMS of -26 dBFS at the default music volume (0.7), about where the
-Sword Fight entrance music sits.
+(printed) is the code gain that plays them at an RMS of -28 dBFS at the default music volume (0.7), the race music's
+level (R654; it was -26).
 
 With a path as its argument it also writes there the loop's last 8 s and first 8 s back to back, for listening to
 the join (kept out of the repository). Needs only numpy: run with Blender's Python, from the repository root:
@@ -28,7 +28,7 @@ RAW = os.path.join(HERE, 'raw', 'LobbyBGM_2026-11-14.wav')
 DEST = os.path.join(HERE, '../../../Assets/Resources/Lobby/Music')
 START, END = 27.995, 124.001        # the two downbeats on the take's beat grid (119.992 BPM, a downbeat at 0 s)
 LEAD, FADE, IN_FADE = .003, .015, .002
-TARGET_RMS, DEFAULT_MUSIC = -26.0, .7
+TARGET_RMS, DEFAULT_MUSIC = -28.0, .7
 
 w = wave.open(RAW)
 SR, CH = w.getframerate(), w.getnchannels()

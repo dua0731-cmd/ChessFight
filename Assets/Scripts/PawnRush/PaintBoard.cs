@@ -780,7 +780,7 @@ namespace ChessFight.PawnRush
             }
             lastStroke = strokeBag[strokeBag.Count - 1];
             strokeBag.RemoveAt(strokeBag.Count - 1);
-            ArenaFx.Sfx("sfx_paint_stroke_" + lastStroke, at, false, .8f);
+            ArenaFx.Sfx("sfx_paint_stroke_" + lastStroke, at, false, .6f);   // R654: a stroke at most -20 dB, most -24
         }
 
         void Cut(int s)

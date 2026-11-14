@@ -175,10 +175,10 @@ namespace ChessFight.PawnRush
             // Edges of the round; a clock that jumped back (a new round, a resync) does not double-fire.
             if (lastClock >= 0f && t > lastClock)
             {
-                if (lastClock < ChargeAt && t >= ChargeAt) chargeSound.Shot(chargeNear, chargeFar, .8f, 1f);
+                if (lastClock < ChargeAt && t >= ChargeAt) chargeSound.Shot(chargeNear, chargeFar, .45f, 1f);   // R654: -21 dB (was -16)
                 if (lastClock < FireAt && t >= FireAt)
                 {
-                    fireSound.Shot(fireNear, fireFar, 1f, Random.Range(.95f, 1.04f));
+                    fireSound.Shot(fireNear, fireFar, .41f, Random.Range(.95f, 1.04f));   // R654: -19 dB (was -11)
                     if (fx != null) fx.Fire();
                 }
             }

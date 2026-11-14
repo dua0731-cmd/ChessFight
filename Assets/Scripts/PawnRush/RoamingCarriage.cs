@@ -363,12 +363,12 @@ namespace ChessFight.PawnRush
                 // Kept going from here: switched off and on again, or after an audio reset, it starts once more.
                 if (!rumble.isPlaying && rumble.isActiveAndEnabled) rumble.Play();
                 float share = Mathf.Clamp01((float)pose.Speed / Mathf.Max(1f, TopSpeed));
-                rumble.volume = .5f * share * GameSettings.Effects;
+                rumble.volume = .5f * share;   // R654: the effects volume is the gate's (SectionSoundGate)
                 rumble.pitch = (look == Look.Horse ? 1.25f : .75f) + .45f * share;
             }
             if (crack != null && pose.Stage == RoamingFleet.Stage.Charging && shown != RoamingFleet.Stage.Charging)
             {
-                crack.volume = GameSettings.Effects;
+                crack.volume = 1f;
                 crack.PlayOneShot(crack.clip, .8f);
             }
             shown = pose.Stage;

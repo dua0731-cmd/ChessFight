@@ -313,7 +313,7 @@ namespace ChessFight.PawnRush
         }
 
         static void Sound(string name, string fallback, Vector3 at, float gain, float pitch = 1f) =>
-            ArenaFx.Sfx(name, at, volume: gain * ChessFight.Game.GameSettings.Effects, pitch: pitch, fallbackPath: fallback);
+            ArenaFx.Sfx(name, at, volume: gain, pitch: pitch, fallbackPath: fallback);   // R654: the effects volume is the gate's
 
         void Take(int k, bool instant = false)
         {

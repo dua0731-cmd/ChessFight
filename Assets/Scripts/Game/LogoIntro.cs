@@ -20,6 +20,8 @@ namespace ChessFight.Game
         const float SortingOrder = 300f;
         // The motion settles by 4.5 s; the logo holds, then fades into the title.
         const float FadeAt = 5.5f, FadeSeconds = .6f, SkipFadeSeconds = .3f;
+        // R654: the logo's jingle 2 dB down, -27 dB RMS at the default effects volume, next to the music's -28.
+        const float LogoLevel = .8f;
         // A video that has not started by then is given up on; input in the
         // first moment is not taken as a skip. Both count shown frames, each at
         // most MaxStep: the first frame after loading can take seconds (3.7 s in
@@ -74,7 +76,7 @@ namespace ChessFight.Game
             sound = gameObject.AddComponent<AudioSource>();
             sound.playOnAwake = false;
             sound.spatialBlend = 0f;
-            sound.volume = GameSettings.Effects;
+            sound.volume = GameSettings.Effects * LogoLevel;
             // The title scene's camera normally hears it; without one nothing would.
             if (FindAnyObjectByType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
 
@@ -119,7 +121,7 @@ namespace ChessFight.Game
             }
             float k = fadeFrom < 0 ? 0f : Mathf.Clamp01((now - fadeFrom) / fadeLength);
             if (screen != null) screen.style.opacity = 1f - k;
-            if (sound != null) sound.volume = GameSettings.Effects * (1f - k);
+            if (sound != null) sound.volume = GameSettings.Effects * LogoLevel * (1f - k);
             if (k >= 1f) Finish();
         }
 

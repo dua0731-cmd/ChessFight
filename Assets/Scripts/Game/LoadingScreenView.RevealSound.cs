@@ -45,7 +45,8 @@ namespace ChessFight.Game
         // The music clip is peak normalised; this puts it back at the page's level under the cues (RMS -25 dBFS there,
         // bake.py's MUSIC_GAIN, 0.2525 for K, here scaled by the default effects / music volumes .8 / .7 so the defaults
         // sound like the page). Bake another take and this changes with it.
-        const float MusicGain = .289f;
+        // R654: .319 puts the loop at the race music's -28 dB RMS at the default music volume (was .289, -28.9).
+        const float MusicGain = .319f;
         // How far ahead the music's first start is put on the audio clock.
         const float MusicLead = .05f;
         // A reveal time this far on is a skipped reveal, not a slow one.

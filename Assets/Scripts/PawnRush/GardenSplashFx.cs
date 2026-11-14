@@ -216,7 +216,7 @@ namespace ChessFight.PawnRush
                 voice.transform.position = at;
                 float hard = Mathf.InverseLerp(4f, 12f, v);
                 voice.pitch = Mathf.Lerp(1.12f, .9f, hard) * LogNormal(0f, .04f);
-                voice.PlayOneShot(clips[Random.Range(0, clips.Count)], Mathf.Lerp(.45f, 1f, Mathf.InverseLerp(2f, 9f, v)));
+                voice.PlayOneShot(clips[Random.Range(0, clips.Count)], Mathf.Lerp(.25f, .56f, Mathf.InverseLerp(2f, 9f, v))   /* R654: at most -21 dB (was -16) */);
             }
         }
 

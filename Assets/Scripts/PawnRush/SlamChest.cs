@@ -420,7 +420,7 @@ namespace ChessFight.PawnRush
             if (since >= 0f && since < .2f && trip != thudTrip)
             {
                 thudTrip = trip;
-                thud.volume = GameSettings.Effects;
+                thud.volume = 1f;   // R654: the effects volume is the gate's (SectionSoundGate)
                 thud.PlayOneShot(thud.clip, 1f);
             }
         }

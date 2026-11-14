@@ -29,7 +29,7 @@ namespace ChessFight.Game
         GameSceneConfig config;
         LobbyStage stage;
         NetworkHudView hud;
-        Func<bool> gate;
+        Func<bool> gate, hold;
         float refreshAt, refreshFriendsAt, countFriendsAt, busySince = -1;
         int friendsOnline;
         readonly List<LineupEntry> lineup = new List<LineupEntry>();
@@ -60,8 +60,11 @@ namespace ChessFight.Game
             hud = gameObject.AddComponent<NetworkHudView>();
             hud.Build(config.HudLayout, config.HudTheme, config.HudPanelSettings, config.HudReferenceResolution);
             WireHud();
-            // R651: the lobby's music (LobbyMusic), ended with this scene.
-            gameObject.AddComponent<LobbyMusic>();
+            // R651/R654: the lobby's music (LobbyMusic), on from the title screen; quiet while this PC is matching or
+            // in a match room, and on from the start again when the lobby comes back after a match.
+            hold = () => Matching;
+            LobbyMusic.Hold = hold;
+            LobbyMusic.Begin();
 
             gate = () => false;
             runtime.MovementGate = gate;
@@ -381,6 +384,7 @@ namespace ChessFight.Game
         {
             // The session outlives this scene; only the scene's own objects go.
             if (runtime != null && runtime.MovementGate == gate) runtime.MovementGate = null;
+            if (LobbyMusic.Hold == hold) LobbyMusic.Hold = null;
             if (stage != null) Destroy(stage.gameObject);
         }
     }

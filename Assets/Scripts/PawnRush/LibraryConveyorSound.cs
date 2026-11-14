@@ -74,7 +74,7 @@ namespace ChessFight.PawnRush
                 if (driver.Jolts != heardJolts)
                 {
                     heardJolts = driver.Jolts;
-                    clunk.Shot(joltNear, joltFar, 1f, Random.Range(.95f, 1.04f));
+                    clunk.Shot(joltNear, joltFar, .62f, Random.Range(.95f, 1.04f));   // R654: -21 dB (was -17)
                 }
                 return;
             }

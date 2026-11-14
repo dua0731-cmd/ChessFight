@@ -313,3 +313,7 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 ## R652 세션이 갑자기 끝난 뒤 직전에 쓴 파일이 0으로 채워져 있다
 
 11-14 22:50에 `git checkout`으로 되살린 `Tests/Network/FakeSteam.cs`는 시험을 통과했는데, 앱 세션이 다시 시작된 뒤 같은 크기(19,362바이트)에 내용이 전부 0x00이 되어 있었다(수정 시각은 그대로). 디스크에 다 쓰기 전에 꺼진 것으로 보인다. git에는 "수정됨"으로만 보이고 컴파일러는 `CS1056 Unexpected character`를 낸다. 세션이 끊긴 뒤에는 그 전후로 쓴 파일을 `tr -d '\000' < 파일 | wc -c`(0이 아닌 바이트 수)로 훑어 0으로 찬 파일을 찾고, 커밋이나 원본에서 다시 꺼낸다. `git fsck`는 저장소 쪽만 본다.
+
+## R654 Unity 오디오 버퍼 1024에서는 소리가 누른 뒤 약 85 ms 늦게 난다
+
+`ProjectSettings/AudioManager.asset`의 DSP 버퍼가 1024(Best performance)이면 Windows에서 AudioSource.Play부터 소리까지 버퍼 넷, 48 kHz에서 약 85 ms가 걸린다. 사용자에게는 "앞에 빈소리가 있는 것처럼" 들렸다. R654에서 512(Good latency, 약 43 ms)로 낮추고 소리 파일의 앞부분도 타격 2 ms 앞에서 자르게 했다. 256(Best latency)은 사양 낮은 PC에서 끊길 수 있어 쓰지 않았다.

@@ -44,7 +44,8 @@ namespace ChessFight.Game
                     GainCard = .501f, GainClash = 1f, GainMark = .282f, GainLock = .631f, GainMate = .2f, GainDot = .178f;
         // the music (RMS -24 dB under the clash's peak on the page, at the default volumes: bake.py's gain); on the clash it
         // drops to DuckLow, then comes back to DuckBack over DuckRise from DuckHold after the hit
-        const float SwordMusicGain = .1861f, BedSwellFrom = 14.5f, BedSwell = .4f, BedAfterClose = .85f;
+        // R654: SwordMusicGain .1621 (was .1861) puts the loop at the race music's -28 dB RMS before its swell.
+        const float SwordMusicGain = .1621f, BedSwellFrom = 14.5f, BedSwell = .4f, BedAfterClose = .85f;
         const float DuckLow = .3f, DuckBack = .75f, DuckHold = .3f, DuckRise = 1.2f;
         // The five last seconds of the pick tick, quieter first.
         const int SwordTicks = 5;

@@ -66,6 +66,8 @@ namespace ChessFight.Game
         {
             foreach (var fire in fires)
             {
+                // R654: the crackle follows the effects volume (it was a fixed 0.2)
+                if (fire.Crackle != null) fire.Crackle.volume = .2f * GameSettings.Effects;
                 if (fire.Crackle != null && crackleTimes != null && crackleTimes.Length > 0)
                 {
                     // a burst of sparks on every pop of the sound
