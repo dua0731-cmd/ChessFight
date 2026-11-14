@@ -464,6 +464,16 @@ namespace ChessFight.PawnRush
             return found;
         }
 
+        // R660: every hit a yard hazard gives a character (on the PC that moves it): who, which hazard (the component that
+        // judged it - a YardImpact shell, or a SlamChest's wave), the push and the seconds it is knocked down (0: a
+        // stagger). For tests and logs (the carriage yard's bot test); nothing in the game listens.
+        public static event System.Action<ICharacterDriver, Component, Vector3, float> HitGiven;
+
+        public static void ReportHit(ICharacterDriver driver, Component source, Vector3 push, float knockdown)
+        {
+            if (driver != null) HitGiven?.Invoke(driver, source, push, knockdown);
+        }
+
         // R659: when each character was last knocked down by one of the yard's hazards (on the PC that moves it). Another
         // hazard within ChainGrace of it only pushes (YardImpact, SlamChest): a knockdown is a second or so lost, never a
         // chain of them (a crate, then a horse; a slam's wave, then a crate).

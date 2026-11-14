@@ -247,6 +247,19 @@ namespace ChessFight.PawnRush
             return Stage.Hoisted;
         }
 
+        // Where (world, on the floor) and in how many seconds this trip's chest lands; false once it has landed this trip.
+        // For tests (the bot test's jumpers time their jumps by it): the same clock the chest and its circle run on.
+        public bool NextLanding(out Vector3 at, out float inSeconds)
+        {
+            at = transform.position;
+            inSeconds = 0f;
+            if (slam == null) return false;
+            Trip(ObstacleClock.Now + phase, out double trip, out float into);
+            inSeconds = slam.LandsAt - into;
+            at = slam.transform.TransformPoint(new Vector3(slam.PlaceAt(slam.PlaceOf(trip)), 0f, 0f));
+            return inSeconds >= 0f;
+        }
+
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
             rotation = StartRotation;
@@ -324,6 +337,7 @@ namespace ChessFight.PawnRush
                 // Knocked down a moment ago by another hazard (a crate in the circle): pushed, not knocked down again.
                 bool fresh = !YardKit.RecentlyDown(driver);
                 hits.ApplyHit(push + Vector3.up * slam.ShockLift, fresh ? slam.ShockKnockdown : 0f, 0f, true);
+                YardKit.ReportHit(driver, this, push, fresh ? slam.ShockKnockdown : 0f);
                 if (fresh) YardKit.MarkDown(driver);
                 Knocked++;
             }

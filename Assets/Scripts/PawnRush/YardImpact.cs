@@ -144,6 +144,7 @@ namespace ChessFight.PawnRush
                     if (hips != null) push -= Flat(hips.linearVelocity) * weight;
                 }
                 d.Receiver.ApplyHit(push + Vector3.up * lift, d.Down, 0f, true);
+                YardKit.ReportHit(d.Driver, this, push, d.Down);
             }
             due.Clear();
             // The box takes a knocked-down character back once they no longer overlap (after 0.35 s), or after
