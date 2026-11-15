@@ -1,0 +1,99 @@
+{
+  "blend": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/pieces/final_rigged/Queen_Rigged.blend",
+  "piece": "Queen",
+  "style": "oval",
+  "shape_team": "queen",
+  "out": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/mesh_final",
+  "eye": {
+    "az": 25.8,
+    "z": 1.1662,
+    "w": 0.078,
+    "roll": 0,
+    "front": 0.9
+  },
+  "style_over": {
+    "aspect": 1.5,
+    "glint": [
+      0.0,
+      0.0,
+      0.94
+    ],
+    "glint_inner": 0.0,
+    "glint_aspect": 1.0
+  },
+  "glint_star": {
+    "ro": 0.42,
+    "ro_v": 0.53,
+    "ro_h": 0.43,
+    "ri": 0.15
+  },
+  "lashes": [
+    {
+      "pts": [
+        [
+          -0.22,
+          0.8
+        ],
+        [
+          0.48,
+          0.66
+        ],
+        [
+          0.44,
+          0.52
+        ],
+        [
+          -0.22,
+          0.68
+        ]
+      ],
+      "rad": 0.02
+    },
+    {
+      "pts": [
+        [
+          0.36,
+          0.7
+        ],
+        [
+          0.9,
+          1.02
+        ],
+        [
+          0.88,
+          0.97
+        ],
+        [
+          0.42,
+          0.58
+        ]
+      ],
+      "rad": 0.012
+    },
+    {
+      "pts": [
+        [
+          0.42,
+          0.6
+        ],
+        [
+          0.97,
+          0.81
+        ],
+        [
+          0.95,
+          0.76
+        ],
+        [
+          0.46,
+          0.47
+        ]
+      ],
+      "rad": 0.012
+    }
+  ],
+  "teams": [
+    "white",
+    "black"
+  ]
+}

@@ -281,6 +281,24 @@ R653의 다이빙·잡기·유리와 경기 BGM은 재생할 수 있는 파일�
 
 - R626 사용자 확인: 로비에서 폰 러쉬·소드 파이트를 각각 시작해 A안 문구·왕관 없음·글자 잘림/겹침·다음 단계 연결을 확인한다. 커밋·푸시는 사용자가 다시 요청하기 전까지 하지 않는다.
 
+- **새 기물 리깅(2026-11-10, 브랜치 `JY-piece-rig`, 게임 미반영·미검증)**: `RigWork/` 참고(`RigWork/README.md`).
+  - 사용자의 Tripo 룩·나이트·비숍(Tripo가 조각한 얼굴은 제거)과 로우폴리 폰을 폰의 Mixamo 뼈대에 리깅했다. 규칙은 `Tools/PieceRig/rig_piece.py`와 같다. FBX/blend와 Blender 스크립트가 들어 있다.
+  - 눈은 메쉬로 붙인다. 룩·나이트·비숍은 눈 메쉬까지 합쳐 `Art/Pieces/<P>/<P>_Rigged.fbx`에 넣었고, Pawn Rush 리그도 다시 만들었다. 텍스처는 쓰지 않기로 했다(사용자 11-12). 단색 줄무늬 아틀라스가 실제 색이고 질감은 셰이더가 맡는다.
+  - 베이크 결과(Bake Piece Models, Bake Pawn Rush Piece Models, Bake Menu Pieces)도 커밋했다(2026-11-12, 브랜치 복사본에서 배치로 실행). 이 브랜치를 받으면 바로 새 모델이 보인다. 모델을 다시 내보내면 베이크도 다시 돌려야 한다. 폰도 새 로우폴리 폰으로 바꿨다(`Art/Pawn/Pawn.fbx`). 눈 메쉬가 들어 있고, 단색 줄무늬 `PawnAlbedo.jpg`를 쓴다. `RagdollLabBuilder`와 `rig_pawnrush.py`는 새 폰의 구조를 받도록 고쳤다: 몸통보다 정점이 많은 눈, 따로 떨어진 신발, 팔 뿌리+커프. 몸통은 크기로 고른다. 물리 자동 테스트 결과는 바꾸기 전과 같다(통과 88, 실패 8, 같은 8개).
+  - **11-12 추가(Unity 확인 전)**:
+    - **폰이 깨져 그려지던 문제를 고쳤다.** 새 폰을 넣은 커밋(`4f0a064d`)의 `PawnSkinned.asset`에는 정점 수가 두 가지로 섞여 있었다(새 데이터 10,630개, 옛 개수 6,960개). 그래서 웨이트가 엉뚱한 뼈를 가리켜 모든 모드에서 폰이 조각나 보였다. 원인은 `RagdollLabBuilder.SaveAsset`이 메쉬를 `CopySerialized`로 덮은 것이다. 이제 `PieceModelBaker`처럼 제자리에서 채운다([PITFALLS §44](Docs/Environment/PITFALLS.md)).
+    - **팔 위치를 사용자의 라인업 시트대로 고쳤다.** 룩은 팔을 몸 밖으로 6.4 cm 옮겼다. 비숍은 자기 팔(`bishop arm.fbx`)을 목 기둥(z 0.665)에 단다. 게임은 이미 기물 모델의 어깨 표시를 기준으로 팔을 돌리고(`RagdollVisualSync.PoseAsPiece`), 물리는 그대로다.
+    - **캐릭터 셰이더 `ChessFight/Character`를 넣었다**(`Assets/Shaders/Characters/CFCharacter.shader`). 부드러운 셀 음영과 따뜻한 그늘을 쓰고, 색 띠 아틀라스로 눈 광택과 반쯤 스스로 빛나는 눈·하이라이트·볼을 표현한다. 폰과 모든 기물 재질을 `CharacterLook`(메뉴 Apply Character Look, 빌더도 사용)으로 옮겼다.
+    - **팀은 체스처럼 흑/백이다.**
+      - 백팀: 크림 몸통에 검은 눈. 흑팀: 연한 차콜 몸통(89, 89, 97)에 백팀과 같은 검은 눈·흰 하이라이트(11-12 사용자 선택; 아이보리 눈·하이라이트 없음은 "무섭고 귀여움이 없다"). 색은 `RigWork/scripts/pieces/atlas_fix.py`의 `BLACK_BODY`와 `CharacterLook`에서 바꾼다.
+      - `Resources/PieceModels/Black/<기물>`과 새 `Black/Pawn.mat`을 쓴다.
+      - 흑팀 승격 기물은 이제 모든 모드에서 흑 세트를 입는다(전에는 Pawn Rush만). 소드 파이트 흑팀 폰, 엔딩 흑 피규어, 랩 P2도 흑 세트를 입는다(전에는 남색 틴트와 빨간 칼라).
+      - 흑팀 눈 색이 카키로 잘못 들어가 있던 것과 폰 흰 아틀라스가 회색으로 저장돼 있던 것도 고쳤다.
+    - Unity 배치(복사본)에서 셰이더 컴파일 오류 없음, 백·흑 렌더 확인. 물리 코드·충돌체는 바뀌지 않았다.
+    - **겉모습 A안(사용자 선택 11-12)**: 예전 텍스처 기물과 비교해 "너무 새 것 같다"는 의견에 시안 A~C(`RigWork/pieces/look_variants_*.png`, 원본 RigWork는 git 밖) 중 A. 크림을 예전 베이지 쪽으로 한 톤 낮춤(`_BodyTint`), 그늘 더 진하고 부드럽게, 손발은 순검정 대신 반사가 보이는 짙은 색(백 따뜻한 회색, 흑 거의 검정, `_LimbColor`·`_LimbGloss`). `CharacterLook`이 팀별로 넣는다. Pawn Rush 온라인 경기(`SteamPawnRushLink`)와 엔딩의 Pawn Rush 폰(`LastSceneFigure.WearPawnRushLook`, main R543)도 틴트 대신 흑/백 세트를 입는다(11-12, main 합친 뒤). 흑팀은 검은 눈·흰 하이라이트, 몸은 회색 두 단계(78·100)의 사이로 정했다(`RigWork/pieces/black_eyes_*.png`, `black_body_*.png`). 사용자: 나중에 바뀔 수 있다.
+  - **11-15 추가(Unity 확인 전)**: 비숍을 최종 디자인대로 새로 모델링해 Tripo 비숍과 바꿨고, 킹·퀸도 새 디자인으로 만들어 넣었다(둘레 16면 로우폴리, 눈 메쉬 포함, 백·흑 색 띠). `Art/Pieces/{Bishop,King,Queen}`, `Art/PawnRushRig`, 프리팹(PieceModels, PawnRush, MenuPieces)까지 다시 구워 커밋했다. 킹 1.764 m, 퀸 1.608 m(라인업 간격을 이은 값, 사용자 확인 필요). 팔뚝은 기물마다 따로 만들어 뿌리를 몸 깊이 묻고 웨이트를 몸과 섞었다(팔이 돌거나 윗몸이 기울어도 빠져 보이지 않게). 수치·결정·남은 일은 `RigWork/README.md` 3-1절 끝.
+  - 다음 할 일: 사용자 Unity 확인([VALIDATION](Docs/Network/VALIDATION.md) 맨 위). 손은 물리 손보다 위에 그려지므로(비숍 13 cm, 킹 22 cm, 퀸 30 cm) 벽 오르기·잡기에서 손이 떠 보이면 `PoseAsPiece`가 손을 뻗을 때 차이를 줄이게 한다. 팔이 벽을 오를 때 몸통 속 뿌리가 보이는 문제의 수정(`RigWork/scripts/unity_test_copy/RagdollVisualSync.cs`)도 `main`에 옮겨야 한다.
+
 - R542 두 PC로 벽 양쪽과 모서리를 왕복하고, 승격 뒤 이름과 아이콘을 확인한다. [확인 목록](Docs/Network/VALIDATION.md#nameplate-check).
 
 0. **R525 빌드 시험 문제(11-09) 중 남은 것**: 1 참가자 PC 달리기 점프 안 됨 — 사용자: 서서 · 걸으며는 되고 질주(Shift)하며만 안 됨 → R530에 게임 중 입력기 끔(Shift+Space 한/영 전환 의심, 참가자 PC 입력기 설정 · 새 빌드로 확인 전) / 2 참가자 화면이 방장과 다름(진자에 튐) — R531에 원인 찾아 고침: 진자가 아니라 정원 저수지 보트가 고리를 도는 순간 주변 폰을 하늘로 쳐 냄(Unity 사본에서 재현 · 고친 뒤 0번, 실제 경기 확인 전). "투명벽처럼" 보인 다른 장면이 또 나오면 F3 수치와 장소를 받을 것 / 4 흑팀 승격 기물 — R527에 흑단색 · 금색 세트로(Unity · 실제 경기 확인 전; 승규 님이 새로 모델링하면 `Resources/PieceModels/Black`만 바꾸면 됨) / 6 매칭 튕김 — R525 고침 확인, 다시 튕기면 그 PC의 Player.log `[ChessFight] 세션:` 줄. **같은 저녁 목록**: 파티 초대 인게임 · 현재 모드 표시 · F1 비행 — R529에 넣음(Unity · Steam 확인 전). **네트워크 문제 1("성능 좋은 PC가 방장이 안 됨, 먼저 매칭한 사람이 방장")** — 조사만, 코드 그대로: 11-09 방장 Player.log에서 먼저 매칭한 성한 님 PC가 점수 1등(845, 24스레드 · 32 GB; 737 · 701 · 697 · 635 · 529)이라 넘길 일이 없었고, seoung2006710 님은 방에 1초쯤만 있어 늘 "측정 전". 6명 시뮬레이션(약한 PC 먼저)은 대기실 방장이 1등에게 넘어가고 튕김 없음, 시작 때 점수를 5초 안에 못 받은 PC는 빠짐. **대기실 방장 넘김은 실제 Steam에서 한 번도 확인 안 됨**(VALIDATION R294 표). 점수는 CPU 시험 · 코어 · 메모리만(그래픽카드 없음) — 사용자에게 대기실 카드 점수 표시 / GPU 반영 중 고르기를 물어 둠. (덤: 채팅 한글 입력 때 Unity UI 예외 180번, 미니게임 효과음 `sfx_mg_quarter` · `sfx_mg_complete` 파일 없음. 빌드에 빠진 효과 셰이더는 R526에 고침.)

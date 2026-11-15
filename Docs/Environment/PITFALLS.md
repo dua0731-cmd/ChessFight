@@ -319,3 +319,15 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 ## R654 Unity 오디오 버퍼 1024에서는 소리가 누른 뒤 약 85 ms 늦게 난다
 
 `ProjectSettings/AudioManager.asset`의 DSP 버퍼가 1024(Best performance)이면 Windows에서 AudioSource.Play부터 소리까지 버퍼 넷, 48 kHz에서 약 85 ms가 걸린다. 사용자에게는 "앞에 빈소리가 있는 것처럼" 들렸다. R654에서 512(Good latency, 약 43 ms)로 낮추고 소리 파일의 앞부분도 타격 2 ms 앞에서 자르게 했다. 256(Best latency)은 사양 낮은 PC에서 끊길 수 있어 쓰지 않았다.
+
+## 44. 메쉬 에셋을 `EditorUtility.CopySerialized`로 덮으면 정점 수가 섞임 (JY-piece-rig 11-12)
+
+- **증상:** 새 로우폴리 폰(10,630정점)으로 다시 구운 뒤, 폰이 모든 모드에서 늘어난 조각으로 그려졌다. 물리 자동 테스트는 통과했다. 충돌체는 메쉬 에셋이 아니라 계산한 위치로 만들기 때문이다.
+- **원인:**
+  - `RagdollLabBuilder.SaveAsset`이 새 메쉬를 기존 `PawnSkinned.asset`(옛 폰 6,960정점)에 `CopySerialized`로 복사했다.
+  - 저장된 YAML에 `vertexCount: 10630`과 `m_VertexCount: 6960`이 함께 남았다.
+  - Unity는 6,960개로 읽었고, 웨이트 번호가 엉뚱한 뼈(오른팔·손가락)를 가리켰다.
+- **해결:** 메쉬는 `Clear()` 뒤 제자리에서 채운다(`RagdollLabBuilder.FillMesh`, `PieceModelBaker`가 이미 쓰던 방식).
+- **확인 방법:**
+  - 에셋 파일에서 `vertexCount`와 `m_VertexCount`가 같은지 본다.
+  - 배치에서 프리팹을 장면에 꺼내 그려 본다. 자동 물리 테스트만으로는 겉모습이 깨진 것을 못 잡는다.

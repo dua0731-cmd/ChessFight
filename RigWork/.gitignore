@@ -1,0 +1,3 @@
+# RigWork is a work folder: Blender scenes, renders and scratch stay here untracked. Only files added on purpose
+# (git add -f) are shared - the scripts, the models the game takes and the README. Tracked files stay tracked.
+*

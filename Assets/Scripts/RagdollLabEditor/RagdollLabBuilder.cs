@@ -147,13 +147,13 @@ namespace ChessFight.RagdollLab.Editor
         static Materials BuildMaterials()
         {
             var albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
-            var redCollar = RecolorCollar(0f, GeneratedDir + "/PawnAlbedo_RedCollar.png");
+            var blackAlbedo = AssetDatabase.LoadAssetAtPath<Texture2D>(CharacterLook.PawnBlackAlbedo);
             var grid = GridTexture(GeneratedDir + "/Grid.png");
             return new Materials
             {
-                pawnP1 = Mat("Pawn_P1", Color.white, albedo, 0.25f),
-                pawnP2 = Mat("Pawn_P2", Color.white, redCollar, 0.25f),
-                pawnDummy = Mat("Pawn_Dummy", new Color(0.6f, 0.6f, 0.62f), albedo, 0.15f),
+                pawnP1 = PawnMat("Pawn_P1", albedo, false, Color.white),
+                pawnP2 = PawnMat("Pawn_P2", blackAlbedo, true, Color.white),
+                pawnDummy = PawnMat("Pawn_Dummy", albedo, false, new Color(0.6f, 0.6f, 0.62f)),
                 floor = Mat("Lab_Floor", new Color(0.88f, 0.88f, 0.86f), grid, 0.05f),
                 wall = Mat("Lab_Wall", new Color(0.64f, 0.74f, 0.9f), grid, 0.05f),
                 slope = Mat("Lab_Slope", new Color(0.66f, 0.84f, 0.62f), grid, 0.05f),
@@ -183,29 +183,13 @@ namespace ChessFight.RagdollLab.Editor
             return mat;
         }
 
-        static Texture2D RecolorCollar(float hue, string path)
+        // The pawn's team materials on the character shader (CharacterLook): P1 the white team, P2 the black - chess's
+        // white and black (JY 11-12); P2 used to be the white pawn with its collar recoloured red.
+        static Material PawnMat(string name, Texture texture, bool blackTeam, Color tint)
         {
-            var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            source.LoadImage(File.ReadAllBytes(TexturePath));
-            var pixels = source.GetPixels32();
-            int changed = 0;
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                Color c = pixels[i];
-                Color.RGBToHSV(c, out float h, out float s, out float v);
-                if (s < 0.3f || h < 0.52f || h > 0.75f) continue;
-                Color n = Color.HSVToRGB(hue, Mathf.Min(1f, s * 1.1f), v);
-                n.a = 1f;
-                pixels[i] = n;
-                changed++;
-            }
-            source.SetPixels32(pixels);
-            source.Apply();
-            File.WriteAllBytes(path, source.EncodeToPNG());
-            Object.DestroyImmediate(source);
-            AssetDatabase.ImportAsset(path);
-            Debug.Log($"[RagdollLab] Recolored {changed} collar pixels -> {path}");
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            var mat = CharacterLook.MaterialAt($"{MaterialDir}/{name}.mat");
+            CharacterLook.Apply(mat, texture, blackTeam, true, tint);
+            return mat;
         }
 
         static Texture2D GridTexture(string path)
@@ -322,20 +306,45 @@ namespace ChessFight.RagdollLab.Editor
                     list.Add(i);
                 }
                 var comps = groups.Values.OrderByDescending(l => l.Count).ToList();
+                // The body is the biggest part by size, not by vertex count: the low-poly pawn's body has fewer
+                // vertices than one of its smooth eyes.
+                int bodyComp = 0;
+                float bodyVolume = -1f;
+                for (int c = 0; c < comps.Count; c++)
+                {
+                    Vector3 size = BoundsOf(comps[c].Select(i => world[i])).size;
+                    if (size.x * size.y * size.z > bodyVolume)
+                    {
+                        bodyVolume = size.x * size.y * size.z;
+                        bodyComp = c;
+                    }
+                }
+                if (bodyComp != 0)
+                {
+                    var bodyVerts = comps[bodyComp];
+                    comps.RemoveAt(bodyComp);
+                    comps.Insert(0, bodyVerts);
+                }
                 var compOf = new int[n];
                 for (int c = 0; c < comps.Count; c++)
                     foreach (int v in comps[c]) compOf[v] = c;
                 var compBounds = comps.Select(l => BoundsOf(l.Select(i => world[i]))).ToList();
 
                 float leftSign = Mathf.Sign(Bone("LeftHand").position.x);
-                // 0 = main body, 1 = hand, 2 = arm stub, 3 = face detail
+                float footTop = 0.12f * height;
+                // 0 = main body, 1 = hand, 2 = arm stub, 3 = face detail, 4 = a shoe of its own (the low-poly pawn's
+                // shoes are separate parts; the first pawn's were welded into its body)
                 var kind = new int[comps.Count];
                 for (int c = 1; c < comps.Count; c++)
                 {
                     Vector3 center = compBounds[c].center;
                     float ax = Mathf.Abs(center.x);
-                    kind[c] = ax > 0.27f * height ? 1 : ax > 0.13f * height && center.y > 0.4f * height && center.y < 0.65f * height ? 2 : 3;
+                    kind[c] = ax > 0.27f * height ? 1
+                        : ax > 0.13f * height && center.y > 0.4f * height && center.y < 0.65f * height ? 2
+                        : center.y < footTop && ax > 0.035f * height ? 4
+                        : 3;
                 }
+                bool ownShoes = kind.Contains(4);
                 for (int c = 0; c < comps.Count; c++)
                     Debug.Log($"[RagdollLab] component {c}: {comps[c].Count} verts, kind {kind[c]}, center {compBounds[c].center:F3}, size {compBounds[c].size:F3}");
                 int CompOfKind(int k, bool left)
@@ -344,7 +353,18 @@ namespace ChessFight.RagdollLab.Editor
                         if (kind[c] == k && (Mathf.Sign(compBounds[c].center.x) == leftSign) == left) return c;
                     throw new Exception($"Pawn part kind {k} ({(left ? "left" : "right")}) not found");
                 }
-                int stubL = CompOfKind(2, true), stubR = CompOfKind(2, false);
+                // Each side's stub is its innermost stub-height part; another one there (the low-poly pawn's cuff)
+                // goes with the hand.
+                int StubOf(bool left)
+                {
+                    int best = -1;
+                    for (int c = 1; c < comps.Count; c++)
+                        if (kind[c] == 2 && (Mathf.Sign(compBounds[c].center.x) == leftSign) == left &&
+                            (best < 0 || Mathf.Abs(compBounds[c].center.x) < Mathf.Abs(compBounds[best].center.x))) best = c;
+                    if (best < 0) throw new Exception($"Pawn arm stub ({(left ? "left" : "right")}) not found");
+                    return best;
+                }
+                int stubL = StubOf(true), stubR = StubOf(false);
                 int handCompL = CompOfKind(1, true), handCompR = CompOfKind(1, false);
 
                 // ---- skin weights by region
@@ -360,7 +380,6 @@ namespace ChessFight.RagdollLab.Editor
                 float yHips = Bone("Hips").position.y, ySpine = Bone("Spine").position.y;
                 float ySpine1 = Bone("Spine1").position.y, ySpine2 = Bone("Spine2").position.y;
                 float yNeck = Bone("Neck").position.y, yHead = Bone("Head").position.y;
-                float footTop = 0.12f * height;
                 float[] chainY = { yHips + 0.03f, ySpine + 0.03f, ySpine1 + 0.03f, ySpine2 + 0.03f };
                 int[] chainBone = { iHips, iSpine, iSpine1, iSpine2 };
 
@@ -373,12 +392,13 @@ namespace ChessFight.RagdollLab.Editor
                     if (c == 0)
                     {
                         float radius = new Vector2(p.x, p.z).magnitude;
-                        if (p.y < footTop && Mathf.Abs(p.x) > 0.035f * height) weights[i] = One(left ? iFootL : iFootR);
+                        if (!ownShoes && p.y < footTop && Mathf.Abs(p.x) > 0.035f * height) weights[i] = One(left ? iFootL : iFootR);
                         else if (p.y >= yHead || (p.y > yNeck - 0.025f * height && radius < 0.13f * height)) weights[i] = One(iHead);
                         else weights[i] = Chain(p.y, chainY, chainBone);
                     }
-                    else if (kind[c] == 1) weights[i] = One(c == handCompL ? iHandL : iHandR);
-                    else if (kind[c] == 2) weights[i] = One(c == stubL ? iArmL : iArmR);
+                    else if (kind[c] == 1) weights[i] = One(left ? iHandL : iHandR);
+                    else if (kind[c] == 2) weights[i] = c == stubL ? One(iArmL) : c == stubR ? One(iArmR) : One(left ? iHandL : iHandR);
+                    else if (kind[c] == 4) weights[i] = One(left ? iFootL : iFootR);
                     else weights[i] = One(iHead);
                 }
                 var skinned = Object.Instantiate(source);
@@ -445,8 +465,10 @@ namespace ChessFight.RagdollLab.Editor
                 var palmR = AddPalm(bodies[(int)BodyId.HandR], compBounds[handCompR]);
                 AddThigh(bodies[(int)BodyId.ThighL], pivots[(int)BodyId.FootL]);
                 AddThigh(bodies[(int)BodyId.ThighR], pivots[(int)BodyId.FootR]);
-                var footBoxL = AddFoot(bodies[(int)BodyId.FootL], BoundsOf(main.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) == leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
-                var footBoxR = AddFoot(bodies[(int)BodyId.FootR], BoundsOf(main.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) != leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
+                // The shoes: the body's own below the hem, or the separate shoe parts.
+                var shoes = main.Concat(Enumerable.Range(1, comps.Count - 1).Where(c => kind[c] == 4).SelectMany(c => comps[c])).ToList();
+                var footBoxL = AddFoot(bodies[(int)BodyId.FootL], BoundsOf(shoes.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) == leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
+                var footBoxR = AddFoot(bodies[(int)BodyId.FootR], BoundsOf(shoes.Where(i => world[i].y < footTop && Mathf.Sign(world[i].x) != leftSign && Mathf.Abs(world[i].x) > 0.035f * height).Select(i => world[i])));
 
                 // ---- joints (child -> parent)
                 var joints = new ConfigurableJoint[RagdollPawn.Count];
@@ -737,10 +759,33 @@ namespace ChessFight.RagdollLab.Editor
                 AssetDatabase.CreateAsset(asset, path);
                 return asset;
             }
-            EditorUtility.CopySerialized(asset, existing);
+            if (asset is Mesh from && existing is Mesh to) FillMesh(from, to);
+            else EditorUtility.CopySerialized(asset, existing);
             Object.DestroyImmediate(asset);
             EditorUtility.SetDirty(existing);
             return existing;
+        }
+
+        // A mesh asset is filled in place, as PieceModelBaker fills its own: copied over (CopySerialized), a mesh with a
+        // new vertex count kept the old count beside the new data. The new low-poly pawn (11-11, 10,630 vertices) saved
+        // into the old PawnSkinned (6,960) that way, its weights read against the wrong vertices, and the pawn drew as
+        // stretched shards in every mode (found 11-12 rendering it in a batch run).
+        static void FillMesh(Mesh from, Mesh to)
+        {
+            int n = from.vertexCount;
+            to.Clear();
+            to.indexFormat = from.indexFormat;
+            to.vertices = from.vertices;
+            if (from.normals.Length == n) to.normals = from.normals;
+            if (from.tangents.Length == n) to.tangents = from.tangents;
+            if (from.colors32.Length == n) to.colors32 = from.colors32;
+            if (from.uv.Length == n) to.uv = from.uv;
+            if (from.uv2.Length == n) to.uv2 = from.uv2;
+            to.subMeshCount = from.subMeshCount;
+            for (int s = 0; s < from.subMeshCount; s++) to.SetTriangles(from.GetTriangles(s), s);
+            to.bindposes = from.bindposes;
+            if (from.boneWeights.Length == n) to.boneWeights = from.boneWeights;
+            to.RecalculateBounds();
         }
 
         // ------------------------------------------------------------------ scene

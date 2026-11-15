@@ -1061,3 +1061,13 @@ R159(2026-10-25, 사용자): `JY-chessboxing_testgame`의 미추적 체스복싱
 > 2026-11-13 보트 되돌림(Claude Code): 사용자 "보트랑 물 상호작용이 약간 이상해졌어" → 물이 깊이로 보트 둘레를 그리므로 저수지 보트 8척을 원본(32,812)으로, GardenBoats·GardenWatergate LOD 끔. 정원 2,648,675. 커밋·푸시 안 함, 사용자 확인 전. [상세 §11-1](../PawnRush/COURSE_OPTIMIZATION_2026-11-13.md).
 
 > 2026-11-13 정원 나무·성탑 줄이기(Claude Code): 사용자 "나무랑 성탑 해주고 기존 모양이 크게 바뀌지 않는 선에서 진행해" → 나무 26그루 399,638 → 279,718(줄기 그대로, 잎 70%; 0.6은 잎이 접혀 회색 얼룩이 생겨 제외), 성탑 13개 217,680 → 166,656(잎 반, 돌 85%; 한 비율은 돌 줄눈이 흐려져 제외). 정원 2,648,675 → 2,477,731(−6.5%). Unity 미리보기 전후 사진으로만 확인, Play 속도 측정 안 함. 커밋·푸시 안 함, 사용자 확인 전. [상세 §12](../PawnRush/COURSE_OPTIMIZATION_2026-11-13.md).
+
+## JY-piece-rig · 2026-11-12 · 기물 팔 위치 · 캐릭터 셰이더 · 흑/백 팀
+- **요청(JY):** "비숍 팔이 많이 낮게 나왔고 룩은 팔이 안 보인다, 일부러 그런 거야?" "쉐이더 만들고 있었는데 왜 안 넣어? 팀 구분은 체스처럼 흑/백." 비숍 팔다리는 라인업 시트(11-09 첨부)와 비숍 시트(11-12)대로.
+- **결과:**
+  - 팔: 룩은 Pawn 팔을 바깥으로 6.4 cm 옮겼고, 비숍은 자기 팔(`bishop arm.fbx`)을 목 기둥에 단다(`RigWork/scripts/pieces/rig_tripo.py`). 발은 시트와 같아 그대로다.
+  - 셰이더 `ChessFight/Character`를 넣고 폰과 모든 기물을 옮겼다(`CharacterLook`).
+  - 흑/백 팀을 모든 모드에 적용했다(`RagdollPawn.PieceMaterial`, `SwordFightGame`, `LastSceneFigure`, 빌더의 P2).
+  - 흑팀 아이보리 눈과 폰 흰 아틀라스 색을 바로잡았다.
+  - 새 폰 메쉬 에셋이 깨져 있던 문제(`RagdollLabBuilder.SaveAsset`)를 고쳤다.
+- **커밋:** `JY-piece-rig` 11-12 커밋. **상태:** Unity 확인 전([VALIDATION](../Network/VALIDATION.md) 맨 위).

@@ -1,0 +1,28 @@
+{
+  "blend": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/pieces/final_rigged/King_Rigged.blend",
+  "piece": "King",
+  "style": "oval",
+  "shape_team": "white",
+  "out": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/mesh_final",
+  "eye": {
+    "az": 20.6,
+    "z": 1.1072,
+    "w": 0.064,
+    "roll": 0,
+    "front": 0.9
+  },
+  "style_over": {
+    "aspect": 1.75,
+    "glint": [
+      0.0,
+      0.43,
+      0.3
+    ],
+    "glint_inner": 0.12,
+    "glint_aspect": 1.5
+  },
+  "teams": [
+    "white",
+    "black"
+  ]
+}

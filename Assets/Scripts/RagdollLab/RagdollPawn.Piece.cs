@@ -137,14 +137,15 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// R527 (user 11-09 build test, 4: "흑팀 승격 기물들 모델링 넣어야 함" → "흑팀 기물 어둡게 칠하기"): on Pawn Rush a black
-        /// team pawn's piece wears the dark set, Resources/PieceModels/Black/&lt;piece&gt; (Tools/PieceRig/black_set.py: the
-        /// same atlas with an ebony body and gold hands, shoes and eyes); every other piece, and a piece without a dark
-        /// material, the model's own. Both teams' promoted pieces used to wear the one cream set.
+        /// R527 (user 11-09 build test, 4: "흑팀 승격 기물들 모델링 넣어야 함" → "흑팀 기물 어둡게 칠하기"): a black team pawn's
+        /// piece wears the dark set, Resources/PieceModels/Black/&lt;piece&gt; (the rook, knight and bishop: charcoal body
+        /// and ivory eyes on their stripe atlases; the king and queen: Tools/PieceRig/black_set.py's ebony and gold); a
+        /// white one, and a piece without a dark material, the model's own. Pawn Rush only at first; every mode since
+        /// JY 11-12 ("팀 구분은 체스처럼 흑/백으로"), where Sword Fight's black pieces still wore the cream set.
         /// </summary>
         Material PieceMaterial(Material own)
         {
-            if (PawnRushPhysics == null || team != Teams.Black) return own;
+            if (team != Teams.Black) return own;
             var dark = Resources.Load<Material>("PieceModels/Black/" + piece);
             return dark != null ? dark : own;
         }

@@ -1,0 +1,73 @@
+{
+ "bishop": {
+  "vertices": 4538,
+  "body_vertices": 784,
+  "faces": 5210,
+  "stub_root_moved": 0,
+  "body_radius_at_arm": {
+   "Left": 0.091,
+   "Right": 0.091
+  },
+  "top": 1.447,
+  "chain": [
+   0.256,
+   0.327,
+   0.409,
+   0.503,
+   0.643
+  ],
+  "arms": {
+   "model": "bishop arm.fbx",
+   "z": 0.6346,
+   "ball_x": 0.335,
+   "thin": 0.61
+  },
+  "unweighted": 0
+ },
+ "king": {
+  "vertices": 3458,
+  "body_vertices": 896,
+  "faces": 3626,
+  "stub_root_moved": 0,
+  "body_radius_at_arm": {
+   "Left": 0.1321,
+   "Right": 0.1321
+  },
+  "top": 1.764,
+  "chain": [
+   0.256,
+   0.327,
+   0.409,
+   0.503,
+   0.643
+  ],
+  "arms": {
+   "z": 0.7283,
+   "ball_x": 0.339
+  },
+  "unweighted": 0
+ },
+ "queen": {
+  "vertices": 4092,
+  "body_vertices": 1530,
+  "faces": 4348,
+  "stub_root_moved": 0,
+  "body_radius_at_arm": {
+   "Left": 0.1076,
+   "Right": 0.1076
+  },
+  "top": 1.6079,
+  "chain": [
+   0.256,
+   0.327,
+   0.409,
+   0.503,
+   0.643
+  ],
+  "arms": {
+   "z": 0.8031,
+   "ball_x": 0.273
+  },
+  "unweighted": 0
+ }
+}
