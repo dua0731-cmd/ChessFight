@@ -1,0 +1,31 @@
+Attached references, in order: 1-3, asset sheets - take only their render style; 4-5, two courts of the same castle - their title format, sunny sky, crenellated cream walls, rook-topped towers, grey slate roofs and the far palace facade, never their layouts, machines, team banners or bright gold; 6, an in-game capture - only its stone block shapes and turquoise water, never its honey tint; 7-8, the player pawns; 9, the top-down layout map of this part, far end at the top and left = west (cream floor, darker stone walls and round towers, turquoise water, light oak decks, brown goods, dark grey roofs, white marble, translucent red hazard areas, bright green open gaps, gold jump and step edges, stone-square rank bands, green lawn outside): copy its counts and positions exactly; it shows places, not this image's moment.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large rounded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream limestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, light oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every crown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in profile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - low-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jumps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting coach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, orange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or walnut brown, roofs grey slate.
+
+Portrait 2:3 (1024x1536). Title at the top in a serif face, "Royal Carriage Yard - Overview", with the small ribbon "Stage 1 - Outer Castle" under it, as in reference 4. Bright clear midday, blue sky, short soft shadows, turquoise water.
+- Camera: very high behind the start, on the course's centre line, about 300 m up over a point 55 m behind the start court (x 0, z -70), looking straight along the course and down about 60 deg, normal lens.
+- Framing, by height from the bottom edge:
+  - start court and outer gatehouse in the bottom tenth;
+  - the wagon yard up to about 30%;
+  - the canal and giant wheel at about 30-43%;
+  - the warehouse at about 43-60%;
+  - the mill pond, white cliff and platform at about 60-68%;
+  - the final gatehouse at about 70%, with the section's end just above it;
+  - the top quarter shows what lies beyond: a short walled passage, the next court and the palace, its crowned skyline under the title.
+
+  The course is one straight walled strip of even width filling the middle third of the frame's width; castle roofs, rook towers, lawns, cypresses and green hills fill both sides.
+- Moment: mid-race; about twelve pawns, tiny specks, spread from the outer gate to the cliff. Do not enlarge them.
+- Must show (keep these if anything has to go):
+  1. Flat rook-crowned towers and rook merlons along both sides of the whole strip.
+  2. Wagon yard: slate-roofed granary sheds along both side walls; five closed coaches, each drawn by a side-by-side pair of horses, scattered in the open yard, two of them with long translucent red stripes on the floor ahead.
+  3. Canal: turquoise water across the full width; two plank walkways; the giant waterwheel standing upright in the canal like a huge clock face turned toward the viewer, the walkways running into its lower half; a flume on tall stilts above it.
+  4. Warehouse, wider and with taller walls: a long cargo line across its whole width; two walls of crate stacks across the yard; two timber cranes over red floor fans; a timber loft with two hoist frames; a high gantry with a chest hanging on chains over a red floor circle.
+  5. The mill pond with one upright paddle wheel in front of a smooth white marble cliff with a waterfall; sluice portals, moored barges and dock cranes on either side.
+  6. The platform and the final gatehouse, its two leaves part open; behind it the terrace, the open stone portal and the steps.
+  7. The palace far beyond.
+  8. Four small cream pills overlaid along the right edge, each with a thin leader line to its zone: "1 Wagon Yard", "2 Giant Waterwheel", "3 Royal Warehouse", "4 Final Gate".
+- If there is room: the open outer-gate leaves, rank bands, cream banners, iron lamp posts, and the parked coach and crates in the start court.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs, crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses; any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern objects, photorealism.
