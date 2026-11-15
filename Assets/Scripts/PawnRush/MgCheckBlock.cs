@@ -451,7 +451,7 @@ namespace ChessFight.PawnRush
             lastSolved = solvedBits;
             if (rolling)
             {
-                if (roll == null || !roll.isPlaying) roll = ArenaFx.Hold("sfx_cart_roll", World(king), 1f, .6f);
+                if (roll == null || !roll.isPlaying) roll = ArenaFx.Hold("sfx_cart_roll", World(king), 1f, .6f, loop: true);
             }
             else { ArenaFx.Cut(roll); roll = null; }
 
@@ -467,11 +467,18 @@ namespace ChessFight.PawnRush
             Double(t, king);
         }
 
+        // R675: the cart and beam loops run until cut, so a game taken away while one plays stops them here.
+        void OnDisable()
+        {
+            ArenaFx.Cut(roll); roll = null;
+            for (int i = 0; i < hums.Length; i++) { ArenaFx.Cut(hums[i]); hums[i] = null; }
+        }
+
         void Hum(int i, bool on, Vector3 at)
         {
             if (on)
             {
-                if (hums[i] == null || !hums[i].isPlaying) hums[i] = ArenaFx.Hold("sfx_beam_hum", World(at), 1f, .35f);
+                if (hums[i] == null || !hums[i].isPlaying) hums[i] = ArenaFx.Hold("sfx_beam_hum", World(at), 1f, .35f, loop: true);
             }
             else if (hums[i] != null) { ArenaFx.Cut(hums[i]); hums[i] = null; }
         }

@@ -384,9 +384,10 @@ namespace ChessFight.PawnRush
             }
             if (moving)
             {
-                if (drag == null || !drag.isPlaying) drag = ArenaFx.Hold("sfx_sled_drag", sledAt, 1f, .6f);
+                if (drag == null || !drag.isPlaying) drag = ArenaFx.Hold("sfx_sled_drag", sledAt, 1f, .6f, loop: true);
                 if (drag != null) { drag.transform.position = sledAt; drag.pitch = Mathf.Lerp(.8f, 1.2f, Mathf.Clamp01(speed / 1.1f)); }
-                if (onSand && (sand == null || !sand.isPlaying)) sand = ArenaFx.Hold("sfx_sand_crunch", sledAt, 1f, .6f);
+                if (onSand && (sand == null || !sand.isPlaying)) sand = ArenaFx.Hold("sfx_sand_crunch", sledAt, 1f, .6f, loop: true);
+                if (sand != null) sand.transform.position = sledAt;
             }
             if (!moving) { ArenaFx.Cut(drag); drag = null; }
             if (!moving || !onSand) { ArenaFx.Cut(sand); sand = null; }
@@ -433,7 +434,8 @@ namespace ChessFight.PawnRush
             }
             if (rookMoving)
             {
-                if (stone == null || !stone.isPlaying) stone = ArenaFx.Hold("sfx_stone_drag", movingAt, 1f, .6f);
+                if (stone == null || !stone.isPlaying) stone = ArenaFx.Hold("sfx_stone_drag", movingAt, 1f, .6f, loop: true);
+                if (stone != null) stone.transform.position = movingAt;
             }
             else { ArenaFx.Cut(stone); stone = null; }
 
@@ -451,6 +453,9 @@ namespace ChessFight.PawnRush
             }
             if (!Completed) arrived = false;
         }
+
+        // R675: the drag loops run until cut, so a game taken away while one plays stops it here.
+        void OnDisable() => CutSounds();
 
         void CutSounds()
         {

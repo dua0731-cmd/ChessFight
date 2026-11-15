@@ -222,8 +222,9 @@ namespace ChessFight.PawnRush
         }
 
         // A sound the caller may cut short (A's charge stops when the pawn steps off): its own voice, or null when
-        // the file is missing. Stop it with Cut.
-        public static AudioSource Hold(string name, Vector3 at, float pitch = 1f, float volume = 1f)
+        // the file is missing. Stop it with Cut. R675: `loop` repeats the clip without a gap until it is cut (the
+        // escort's drag loops are made to join end to start); without it the clip ends and the caller starts it again.
+        public static AudioSource Hold(string name, Vector3 at, float pitch = 1f, float volume = 1f, bool loop = false)
         {
             var fx = Get();
             if (fx == null || string.IsNullOrEmpty(name)) return null;
@@ -240,6 +241,7 @@ namespace ChessFight.PawnRush
             voice.transform.position = at;
             voice.spatialBlend = 1f;
             voice.clip = clip;
+            voice.loop = loop;
             voice.volume = volume;
             voice.pitch = pitch * Random.Range(.95f, 1.05f);
             voice.Play();
