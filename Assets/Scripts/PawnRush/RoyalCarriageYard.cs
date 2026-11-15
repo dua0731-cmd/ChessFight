@@ -15,14 +15,16 @@ namespace ChessFight.PawnRush
     //   2  Canal and the giant wheel      z 50..82    stone landings either side; two wooden walkways between them go
     //                                                 through one giant waterwheel (a round frame and six spokes) -
     //                                                 jump and dive through a hole between two spokes
-    //   3  Loading and sorting yard       z 82..126   (R659, the whole 52 m: the cargo ramps and the R532 loading yard
-    //                                                 between them are gone; R661 a flow of cargo) a conveyor across
-    //                                                 the yard to hop over between its loads, three storage rows whose
-    //                                                 cranes keep moving the one gap in each half, the heavy berth
-    //                                                 where a giant chest is set down with a shockwave, sorting stalls
-    //                                                 along the walls; then the lifting waterwheel up the waterfall, as
-    //                                                 it always was (hold right click), barges and sluices beside it
-    //   4  The final gate                 z 126..162  the wheel's landing on the platform (y 8); the gate is pushed
+    //   3  Loading and sorting yard       z 82..143   (R659, the whole 52 m: the cargo ramps and the R532 loading yard
+    //                                                 between them are gone; R661 a flow of cargo; R662 17 m longer) a
+    //                                                 conveyor across the yard to hop over between its loads, a storage
+    //                                                 row whose cranes keep moving the one gap in each half, a field two
+    //                                                 slewing timber cranes sweep with their low loads (hop them), a loft
+    //                                                 whose two hoist pairs lift pallets to its deck, a second row, the
+    //                                                 heavy berth where a giant chest is set down with a shockwave,
+    //                                                 sorting stalls along the walls; then the lifting waterwheel up the
+    //                                                 waterfall, as it always was (hold right click), barges and sluices
+    //   4  The final gate                 z 143..179  the wheel's landing on the platform (y 8); the gate is pushed
     //                                                 open (hold right click on it), the finish is behind it
     //
     // Sections 3 and 4 are written in their own frame (the 11-02 numbers, the arena starting at z 106) and built under
@@ -31,7 +33,8 @@ namespace ChessFight.PawnRush
     // Built from code when the prefab is placed (Awake), like the map test's calibration yard, so the prefab itself is
     // this one component and the numbers below are its Inspector. Every obstacle is its own reusable component
     // (CarriageFleet/RoamingCarriage, HorizontalWaterwheel, StableCharger, CargoConveyor/ConveyorCrate, StackRow/StackCrate,
-    // CargoSlam/SlamChest, VerticalWaterwheel, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre
+    // CargoSlam/SlamChest, SlewCrane/SlewJib, PalletHoist/HoistPallet, VerticalWaterwheel, TimedGate, PushGate;
+    // ChargingCarriage, RotatingCarriageGroup - the centre
     // way's carousel until R532 - CargoChute/RollingCargo - the ramps' cargo until R659 - CraneDrop/CraneCrate - the crane
     // lines until R661 - and TiltingWoodenBridge are not on this map's route)
     // with its own Inspector
@@ -45,12 +48,14 @@ namespace ChessFight.PawnRush
     // the boundary every early section ends with - 12 m of runout after the final gate, a terrace 1 m over the next
     // mini-game (CP5), an open arch, four 0.25 m steps down and the 12 x 4 m entrance band - and the final gate's
     // progress goes to the other PCs in the course state (PushGate is an ISectionNetPart). Entry (0, 0, -16): the start
-    // court's south wall; exit (0, 7, 164): the band's end. The map test scene keeps the map as it was.
+    // court's south wall; exit (0, 7, 181): the band's end (164 until R662 made the sorting yard 17 m longer; the section
+    // prefab's PawnRushSection carries the same exit, which the round reads before this is built). The map test scene
+    // keeps the map as it was.
     public sealed partial class RoyalCarriageYard : MonoBehaviour, ISectionPart
     {
         public const string SectionId = "Early_1-2_RoyalCarriageYard";
         public const string SectionName = "왕실 마차뜰";
-        public static readonly Vector3 SectionEntry = new Vector3(0f, 0f, -16f), SectionExit = new Vector3(0f, 7f, 164f);
+        public static readonly Vector3 SectionEntry = new Vector3(0f, 0f, -16f), SectionExit = new Vector3(0f, 7f, 164f + SortGrow);
 
         [Serializable]
         public sealed class GateSettings
@@ -123,8 +128,9 @@ namespace ChessFight.PawnRush
         }
 
         // Zone 2, the royal loading and sorting yard (R661, rebuilt as a flow of cargo; the user: "플레이어들을 확실히 방해할
-        // 수 있을만한 동선과 장애물 형태"): a conveyor across the yard, three storage rows whose cranes keep moving their gaps,
-        // the heavy berth where a giant chest is set down with a shockwave (RoyalCarriageYard.SortingYard.cs).
+        // 수 있을만한 동선과 장애물 형태"; R662 half again as long, with two new machines): a conveyor across the yard, two
+        // storage rows whose cranes keep moving their gaps, the timber crane field, the loft hoists, the heavy berth where a
+        // giant chest is set down with a shockwave (RoyalCarriageYard.SortingYard.cs).
         [Serializable]
         public sealed class SortingYardSettings
         {
@@ -136,14 +142,25 @@ namespace ChessFight.PawnRush
             public float conveyorKnockback = 4.5f;
             [Tooltip("Seconds each storage row's gap stands open before the next stack is lifted, row by row (each crane its "
                      + "own pace, so the rows' gaps never stay lined up)")]
-            public float[] rowOpen = { 1.1f, 1.4f, .9f };
+            public float[] rowOpen = { 1.1f, 1.4f };
             [Tooltip("Seconds a stack is carried one slot over into the gap (0.7: it swings in at up to 4.7 m/s, after the gap "
                      + "has flashed red for 0.8 s and the stack has been lifted)")]
             public float rowCarry = .7f;
             [Tooltip("Push of a stack swinging into a pawn in the gap (m/s), out of the row")]
             public float rowKnockback = 4.5f;
+            [Tooltip("Seconds a timber crane's load rests on its chocks, slews half a turn, and takes to reach full turning "
+                     + "speed (a slew of 6 s with 1 s ramps turns at 36 deg/s, its far end at 6.3 m/s)")]
+            public float craneRest = 1.4f, craneSlew = 6f, craneRamp = 1f;
+            [Tooltip("Push of a timber load (m/s) barely moving, at most (it grows 0.5 per m/s of the load's speed), and the "
+                     + "load's speed (m/s) from which it knocks down")]
+            public float craneKnockback = 2.5f, cranePush = 5.5f, craneKnockdownSpeed = 2f;
+            [Tooltip("Seconds a loft hoist's pallet sits at each end, and takes to move between them (a pair: one down while "
+                     + "the other is up)")]
+            public float hoistDown = 2.2f, hoistMove = 1.5f;
+            [Tooltip("Push of a pallet coming down onto someone (m/s), out of its well")]
+            public float hoistPush = 4.5f;
             [Tooltip("How far the heavy chest's wave runs from its centre (m): its red circle (CP3 stays outside it)")]
-            public float slamRadius = 5.5f;
+            public float slamRadius = 6f;
             [Tooltip("Seconds the heavy chest is carried to its berth (circle dim), held over it and lowered on its chains "
                      + "(circle bright), sits there and is hoisted: a trip of 10.4 s")]
             public float slamCarry = 2.4f, slamHold = 1f, slamFall = 1.1f, slamSit = 4.5f, slamHoist = 1.4f;
@@ -254,17 +271,25 @@ namespace ChessFight.PawnRush
             Place<IntendedGap>(parts, "Wheel gap (meant)", new Vector3(-4.6f, .5f, WheelZ))
                 .Configure(new Vector3(4f, 3f, crossing.gapLength + 1f), "물레방아 사이 틈: 질주 점프 + 다이빙");
             // The lifting wheel carries its rider up over the pool to the landing (own z 139.85 .. 148.4).
-            float pool = PoolZ0 + LaterShift, landing = 148.4f + LaterShift;
+            float pool = PoolZ0 + LaterShift, landing = LiftLandingZ + LaterShift;
             Place<IntendedGap>(parts, "Lifting wheel ride (meant)", new Vector3(0f, Top + .5f, (pool + landing) * .5f))
                 .Configure(new Vector3(4f, 3f, landing - pool + .4f), "세로 물레방아를 타고 올라감");
+            // R662: the sorting yard's loft is reached on a hoist pallet and left by dropping off its deck (own z 134.6 .. 141.2).
+            Place<IntendedGap>(parts, "Loft hoist ride (meant)", new Vector3(2.1f, 1.4f, 136.2f + LaterShift))
+                .Configure(new Vector3(3f, 3.2f, 3.4f), "승강대를 타고 다락으로 올라감");
+            Place<IntendedGap>(parts, "Loft drop (meant)", new Vector3(2.1f, 1.4f, 140.9f + LaterShift))
+                .Configure(new Vector3(3f, 3.2f, 1.4f), "다락에서 뛰어내림");
             var route = new[]
             {
                 SectionEntry, new Vector3(0f, 0f, -6f), new Vector3(0f, 0f, 1f), new Vector3(0f, 0f, 40f),
                 new Vector3(-4.6f, 0f, CanalZ0 + 4f), new Vector3(-4.6f, 0f, WalkZ1), new Vector3(0f, 0f, CanalZ1 + 2f),
-                new Vector3(0f, 0f, pool - .25f), new Vector3(0f, Top, pool - .25f), new Vector3(0f, Top, landing + .2f),
-                new Vector3(0f, Top, 130f), new Vector3(0f, Top, 152f), new Vector3(0f, Top, 158f), new Vector3(0f, Top - 1f, 160f), SectionExit,
+                // R662: through the crane field to the east inner hoist, up it, along the loft's deck, off its edge.
+                new Vector3(2.1f, 0f, 134.6f + LaterShift), new Vector3(2.1f, 2.4f, 136.2f + LaterShift), new Vector3(2.1f, 2.4f, 140.4f + LaterShift),
+                new Vector3(2.1f, 0f, 141.2f + LaterShift), new Vector3(0f, 0f, pool - .25f), new Vector3(0f, Top, pool - .25f), new Vector3(0f, Top, landing + .2f),
+                new Vector3(0f, Top, 130f + SortGrow), new Vector3(0f, Top, 152f + SortGrow), new Vector3(0f, Top, 158f + SortGrow),
+                new Vector3(0f, Top - 1f, 160f + SortGrow), SectionExit,
             };
-            var beats = new[] { "1", "1", "1", "1", "2", "2", "3", "3", "3", "4", "4", "4", "4", "4", "4" };
+            var beats = new[] { "1", "1", "1", "1", "2", "2", "3", "3", "3", "3", "3", "3", "3", "4", "4", "4", "4", "4", "4" };
             var path = new GameObject("ProgressPath");
             path.transform.SetParent(parts, false);
             path.AddComponent<ProgressPath>().Configure(route, (Vector3[])route.Clone(), beats);
@@ -278,8 +303,8 @@ namespace ChessFight.PawnRush
         {
             new SectionBeat("1 바깥 성문 · 마당", new Vector3(-23f, -2f, -17f), new Vector3(23f, 9f, 50f)),
             new SectionBeat("2 운하 · 대형 물레방아", new Vector3(-23f, -5f, 50f), new Vector3(23f, 12f, 82f)),
-            new SectionBeat("3 왕실 하역 창고 · 물레방아", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
-            new SectionBeat("4 최종 성문", new Vector3(-27f, 5f, 126f), new Vector3(27f, 16f, 165f)),
+            new SectionBeat("3 왕실 하역 창고 · 물레방아", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f + SortGrow)),
+            new SectionBeat("4 최종 성문", new Vector3(-27f, 5f, 126f + SortGrow), new Vector3(27f, 16f, 165f + SortGrow)),
         };
 
         // ------------------------------------------------------------------ helpers

@@ -28,12 +28,18 @@ namespace ChessFight.PawnRush
         const float ParapetTop = 2f, NorthParapetTop = 1.5f;
         // 3 and 4, their own frame: the arena starts at z 106 there, and is moved to start where the canal ends.
         const float ArenaStart = 106f, LaterShift = CanalZ1 - ArenaStart;
+        // R662 (the user: "2구역의 세로길이를 현재의 1.5배 정도 늘려주고"): the loading and sorting yard is SortGrow longer
+        // (33.85 -> 50.85 m from the arena's start to the basin), and everything from the basin on - the lifting wheel,
+        // the cliff, the platform, the final gate, the boundary, the section's exit - stands that much further north.
+        const float SortGrow = 17f;
         // The lifting waterwheel and its pool, where several parts are fitted round each other.
         // The pool's near edge (R287, 0.55 m nearer the wheel than R284's 139.3): the paddle tips pass 0.7 m out at hip
         // height and the handles 0.3-0.6 m out at a jump's reach, while a pawn standing at the edge stays clear of them.
-        const float PoolZ0 = 139.85f, LiftZ = 144f, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f, Top = 8f;
+        const float PoolZ0 = 139.85f + SortGrow, LiftZ = 144f + SortGrow, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f + SortGrow, Top = 8f;
+        // Where the wheel lets its riders off: the landing in front of the platform's edge, from here to the cliff.
+        const float LiftLandingZ = 148.4f + SortGrow;
         // The final gate's wall, 13 m past the cliff (R287: it was 23, an empty run once the gate was reached).
-        const float GateZ = 163f;
+        const float GateZ = 163f + SortGrow;
 
         // ------------------------------------------------------------------ 1. the outer gate and the yard
 
@@ -284,9 +290,9 @@ namespace ChessFight.PawnRush
             YardKit.Picture(s, "Foam", new Vector3(-5.2f, water, CliffZ - 1.4f), new Vector3(5.2f, water + .06f, CliffZ - .1f), Arena.Glow(new Color(1f, 1f, 1f, .45f)));
 
             // The landing the wheel lets its riders off onto, in front of the platform's edge.
-            var landing = YardKit.Span(s, "Landing", new Vector3(-3.5f, Top - .3f, 148.4f), new Vector3(3.5f, Top, CliffZ), YardKit.WoodLight);
+            var landing = YardKit.Span(s, "Landing", new Vector3(-3.5f, Top - .3f, LiftLandingZ), new Vector3(3.5f, Top, CliffZ), YardKit.WoodLight);
             landing.AddComponent<CourseFloor>();
-            YardKit.Picture(s, "Landing trim", new Vector3(-3.55f, Top - .32f, 148.35f), new Vector3(3.55f, Top - .2f, 148.45f), YardKit.Gold);
+            YardKit.Picture(s, "Landing trim", new Vector3(-3.55f, Top - .32f, LiftLandingZ - .05f), new Vector3(3.55f, Top - .2f, LiftLandingZ + .05f), YardKit.Gold);
 
             foreach (float side in new[] { -1f, 1f })
                 BasinDock(s, side);
@@ -295,7 +301,7 @@ namespace ChessFight.PawnRush
             // circle (R661), its respawn spots in front of the wheel.
             Checkpoint(s, 3, new Vector3(0f, 0f, ApronZ), SortHalf * 2f);
             // The handles pass just out of a standing pawn's reach: it jumps for one.
-            Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 138.2f), 1.1f);
+            Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, PoolZ0 - 1.65f), 1.1f);
         }
 
         // One side of the basin beside the wheel (R659, in place of the side wheels the user took out: "다른 장식을 생각해봐"),
@@ -327,7 +333,7 @@ namespace ChessFight.PawnRush
             YardKit.Picture(s, "Sluice foam", new Vector3(cx - 2.4f, water, CliffZ - 2.2f), new Vector3(cx + 2.4f, water + .06f, CliffZ - .5f), Arena.Glow(new Color(1f, 1f, 1f, .45f)));
 
             // The barge, its length along the cliff, moored 1.4 m off it.
-            const float z0 = 145.2f, z1 = 148.4f, deck = .15f;
+            const float z0 = LiftLandingZ - 3.2f, z1 = LiftLandingZ, deck = .15f;
             float bx0 = cx - 4.6f, bx1 = cx + 4.6f, mid = (z0 + z1) * .5f;
             YardKit.Picture(s, "Barge hull", new Vector3(bx0 + .4f, water - .5f, z0), new Vector3(bx1 - .4f, deck, z1), YardKit.WoodDark);
             YardKit.Picture(s, "Barge bow", new Vector3(bx0, water - .2f, z0 + .4f), new Vector3(bx0 + .4f, deck, z1 - .4f), YardKit.WoodDark);
@@ -385,8 +391,8 @@ namespace ChessFight.PawnRush
             // Across the platform, and reached already on the lifting wheel's landing: a rider let off there and shoved
             // back into the pool comes back on the platform, not at the foot of the wheel (R287: 12-15 s, the map's
             // biggest loss, for nothing the shover paid).
-            var top = Checkpoint(s, 4, new Vector3(0f, Top, 153f), 52f);
-            Reach(top, new Vector3(-3.5f, Top + .3f, 148.4f), new Vector3(3.5f, Top + 3f, CliffZ));
+            var top = Checkpoint(s, 4, new Vector3(0f, Top, CliffZ + 3f), 52f);
+            Reach(top, new Vector3(-3.5f, Top + .3f, LiftLandingZ), new Vector3(3.5f, Top + 3f, CliffZ));
 
             // The final gate in its wall, towers either side; the leaves open away from the platform.
             const float z = GateZ, h = 7.2f;

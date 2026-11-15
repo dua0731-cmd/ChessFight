@@ -136,7 +136,11 @@ namespace ChessFight.Network
         //      rows whose cranes keep moving their gaps, the heavy berth's chest set down on its chains (the crane lines,
         //      the two slamming chests and the sorting docks gone). The wire is the same, but a v43 PC would draw the old
         //      yard where a v44 host knocks pawns with other obstacles.
-        public const string Protocol = "chessfight.dua0731.network.v44";
+        // v45 (R662): the sorting yard 17 m longer (the section's exit at z 181, not 164) and recomposed - the conveyor,
+        //      a storage row, two slewing timber cranes, a loft whose two hoist pairs lift pallets to its deck, a second
+        //      row, the heavy berth. The wire is the same, but a v44 PC would build a shorter section (the next one placed
+        //      17 m south of the host's) and draw a yard whose cranes and pallets are not there.
+        public const string Protocol = "chessfight.dua0731.network.v45";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

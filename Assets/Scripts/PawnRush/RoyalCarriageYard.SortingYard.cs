@@ -1,56 +1,68 @@
+using ChessFight.Network;
 using UnityEngine;
 using Solid = ChessFight.PawnRush.YardKit.Solid;
 
 namespace ChessFight.PawnRush
 {
-    // Zone 2, the royal loading and sorting yard, rebuilt as a flow of cargo (R661). The user on R659's yard: "위에서 짐들을
-    // 그냥 바닥에 떨궈버리고 있고, 심지어 거대한 짐덩이는 마치 망치처럼 바닥에 연속해서 쿵쿵 내려찍기만 하고, 바닥에 내려놓거나
-    // 하질 않아"; on the cargo flow proposed instead, "컨셉 자체는 좋은데 플레이어들을 확실히 방해할 수 있을만한 동선과 장애물
-    // 형태로 구성해서 레벨디자인". So the cargo comes in, is carried, stored and set down - nothing is dropped - and every
-    // step of it stands across the way: the whole yard is crossed through gaps that move. In its own frame (sections 3-4),
-    // going north from the canal's far landing:
+    // Zone 2, the royal loading and sorting yard, a flow of cargo that blocks the way (R661), half again as long and
+    // recomposed round two new machines (R662). The user on R659's yard: "위에서 짐들을 그냥 바닥에 떨궈버리고 … 바닥에
+    // 내려놓거나 하질 않아"; on R661: "플레이어들을 확실히 방해할 수 있을만한 동선과 장애물 형태로 구성해서 레벨디자인"; on R662:
+    // "2구역의 세로길이를 현재의 1.5배 정도 늘려주고 조금 더 재구성해줘, 지금 너무 짧은 느낌이야. 그리고 지금처럼 좌우로 한칸씩
+    // 이동하며 플레이어를 방해하는 장애물과 말고도 다른 매커니즘의 장애물이 한두개 정도는 더". Nothing is dropped and nothing
+    // hammers: cargo is carried, swung, hoisted and set down, and every step of it stands across the way. A design panel
+    // (three designs, three judges, Docs/PawnRush/ROYAL_CARRIAGE_YARD.md §18) and the bot test chose and tuned it. In its
+    // own frame (sections 3-4), going north from the canal's far landing:
     //
-    //   z 106 .. 110.3     the mouth: the canal's landing opens 20 m wide, lamps either side
-    //   z 111.2 .. 112.8   the conveyor (CargoConveyor): a 0.45 m belt from stall to stall carrying crates and two-high
-    //                      stacks out of the west stall's hatch (입고) into the east one's (분류); hop over it through a
-    //                      gap in the loads - a load knocks whoever is on the belt in its way off it, and down
-    //   z 116.6 .. 130.4   three storage rows (StackRow, z 117.5 / 123.5 / 129.5): walls of two-high stacks from stall to
-    //                      stall with one empty slot in each half; each row's crane fills the gap with the stack beside
-    //                      it, so the gap walks out along its half and back (both halves mirrored, meeting in the middle);
-    //                      each row's crane keeps its own pace, so the three rows' gaps never stay lined up and the way
-    //                      zigzags; the gap shows green, flashes red before a stack swings in, and whoever is still in
-    //                      it is shoved out of the row and knocked down. Aisles 4.2 m between the rows
-    //   z 131.7 .. 134.1   the heavy berth (CargoSlam lowered on chains): a royal chest the size of a cart carried
-    //                      overhead to one of four berths, lowered and set down hard - the floor shakes, a wave knocks
-    //                      down whoever is on the floor inside its red circle (jump it) - and left there 4.5 seconds
-    //                      as a wall before it is hoisted and taken to the next berth
-    //   z 138.8            CP3 on the apron, then the mill basin and the lifting wheel, as it always was
+    //   z 106 .. 111.2     the mouth: the canal's landing opens 20 m wide, lamps either side
+    //   z 111.2 .. 112.8   the conveyor (CargoConveyor, R661): a 0.45 m belt from stall to stall, loads out of the west
+    //                      stall's hatch (입고) into the east one's (분류); hop on through a gap in the loads
+    //   z 116.6 .. 118.4   storage row 1 (StackRow, R661): a wall of two-high stacks with one gap in each half, walked along
+    //                      by its crane (green, red 0.8 s before a stack swings in)
+    //   z 122.6 .. 133     NEW: the timber crane field - two slewing jib cranes (SlewCrane) on drums at x +-9.5, z 123,
+    //                      swinging 8 m timber loads a hand over the cobbles through the north half round their drums; both
+    //                      jibs always point the same way, their sweeps overlap in the middle, so there is no lane they never
+    //                      sweep: jump the load as it comes, follow it out, or keep to the ring by a drum. Timber stores
+    //                      along the walls (|x| 20.11 .. 23.5) leave only a single-file pinch beside the sweeps, a long way
+    //                      round
+    //   z 133 .. 137.4     NEW: the loft hoists - a loft (137.4 .. 140.6) too high to climb closes the yard; two mirrored
+    //                      counterweighted hoists (PalletHoist) either side of the middle lift pallets to its deck, one of
+    //                      each pair always down to board while the other is up; never wait under a raised one
+    //   z 137.4 .. 140.6   the loft: a deck 2.4 m up over |x| <= 12 (high ends beyond it), open to the north - drop down
+    //   z 145.1 .. 146.9   storage row 2 (StackRow): the re-merge, twelve pawns and two gaps, inside the berth's circle
+    //   z 148.2 .. 150.6   the heavy berth (CargoSlam lowered on chains, R661): the royal chest set down with a shockwave
+    //                      (6 m circle, jump it) at one of four berths and left 4.5 s as a wall
+    //   z 155.8            CP3 on the apron, then the mill basin and the one lifting wheel, as it always was
     //
     // Along both walls, sorting stalls under blue awnings (solid, never climbed) narrow the yard to +-StallFront, from the
-    // mouth to the apron (no corner to be pinned in). Every danger warns ahead (a load is seen coming along the belt, a
-    // gap flashes red 0.8 s before a stack swings in, the chest's circle is dim through its carry and bright for 2.1 s
-    // before it lands) and runs on ObstacleClock, so every PC sees the same without a packet. Nothing throws anyone
-    // forward (every knock's part along the way cut to 60 %), nobody is knocked down twice in a row (YardKit.ChainGrace),
-    // the knocked-down are let through what knocked them until clear. The numbers and the reasons:
-    // Docs/PawnRush/ROYAL_CARRIAGE_YARD.md §17.
+    // mouth to the apron. Every danger warns ahead and runs on ObstacleClock, so every PC sees the same without a packet;
+    // the cranes' and hoists' motion is SortingYardRules, checked by the Core tests. Nothing throws anyone forward (every
+    // knock's part along the way cut to 60 %), nobody is knocked down twice in a row (YardKit.ChainGrace), the
+    // knocked-down are let through what knocked them until clear.
     public sealed partial class RoyalCarriageYard
     {
         const float SortHalf = 26f;
         // The sorting stalls along the walls, from the mouth to the apron.
-        const float StallFront = 23.5f, StallZ0 = ArenaStart, StallZ1 = 136.5f;
+        const float StallFront = 23.5f, StallZ0 = ArenaStart, StallZ1 = PoolZ0 - 3.35f;
         // The conveyor's middle line and its belt; the hatch it runs through in each stall.
         const float ConveyorZ = 112f, BeltWidth = 1.6f, BeltTop = .45f, HatchHalf = 1.15f, HatchTop = 3.2f;
-        // The storage rows' middle lines, and the clock seconds each row's crane is ahead (with its own pace, sorting.rowOpen).
-        static readonly float[] RowZs = { 117.5f, 123.5f, 129.5f };
-        static readonly float[] RowPhases = { 0f, 13.7f, 29.3f };
+        // The storage rows' middle lines - one before the crane field, one after the loft (R662: a third in a row was the
+        // repetition the user named) - and the clock seconds each row's crane is ahead (its own pace, sorting.rowOpen).
+        static readonly float[] RowZs = { 117.5f, 146f };
+        static readonly float[] RowPhases = { 0f, 13.7f };
         const int RowSlots = 9;
         const float RowPitch = 2.2f, RowBeam = 6.5f;
         static readonly Vector3 StackSize = new Vector3(2f, 2.4f, 1.8f);
+        // The crane field and the stores beside it (SortingYardRules: the masts, radii and stores the Core tests check).
+        const float CraneX = (float)SortingYardRules.CraneX, CraneZ = (float)SortingYardRules.CraneZ;
+        const float StoreFront = (float)SortingYardRules.StoreFront, StoreZ0 = (float)SortingYardRules.StoreZ0, StoreZ1 = (float)SortingYardRules.StoreZ1;
+        // The loft and its hoists: the posts at x +-HoistPostX, the plates' middle at HoistZ.
+        const float LoftZ0 = (float)SortingYardRules.LoftZ0, LoftZ1 = (float)SortingYardRules.LoftZ1, LoftDeckHalf = 12f, LoftTop = 2.4f, LoftEndTop = 4.4f;
+        const float HoistPostX = 3.5f, HoistZ = (float)((SortingYardRules.HoistZ0 + SortingYardRules.HoistZ1) * .5);
         // The heavy berth: its line, the four berths (the chest carried at most BerthStep from one to the next), the gantry.
-        const float BerthZ = 132.9f, BerthStep = 18.01f, BerthBeam = 9f, BerthHang = 3.6f;
+        const float BerthZ = 149.4f, BerthStep = 18.01f, BerthBeam = 9f, BerthHang = 3.6f;
         static readonly float[] BerthPlaces = { -13.5f, -4.5f, 4.5f, 13.5f };
-        // CP3, on the apron: 0.4 m past the heavy chest's circle (BerthZ + slamRadius 5.5 = 138.4), 1 m short of the basin.
-        const float ApronZ = 138.8f;
+        // CP3, on the apron: 0.4 m past the heavy chest's circle (BerthZ + slamRadius 6 = 155.4), 1.05 m short of the basin.
+        const float ApronZ = PoolZ0 - 1.05f;
 
         void SortingYard(Transform parent)
         {
@@ -73,7 +85,24 @@ namespace ChessFight.PawnRush
                                y.rowKnockback, RowPhases[i], later);
             }
 
-            // 3. The heavy berth: the chest lowered on its chains at one of four berths, never more than two berths on.
+            // 3. The timber crane field: two cranes, both jibs always pointing the same way (rest west, slew through the
+            // north, rest east, back), and the timber stores along the walls beside it.
+            foreach (float side in new[] { -1f, 1f })
+                Place<SlewCrane>(s, side < 0f ? "Timber crane W" : "Timber crane E", new Vector3(side * CraneX, 0f, CraneZ))
+                    .Configure((float)SortingYardRules.CraneDrum, 2.4f, 7.6f, (float)SortingYardRules.CraneInner, (float)SortingYardRules.CraneOuter,
+                               new Vector2(.42f, .42f), .13f, -180f, 0f, false, y.craneRest, y.craneSlew, y.craneRamp, 1f, 0f,
+                               y.craneKnockback, .5f, y.cranePush, y.craneKnockdownSpeed, 1f, later);
+            foreach (float side in new[] { -1f, 1f })
+                TimberStore(s, side);
+
+            // 4. The loft and its two counterweighted hoists, mirrored either side of the middle.
+            Loft(s);
+            foreach (float side in new[] { -1f, 1f })
+                Place<PalletHoist>(s, side < 0f ? "Loft hoist W" : "Loft hoist E", new Vector3(side * HoistPostX, 0f, HoistZ))
+                    .Configure(side, new Vector3(2.37f, .22f, 2.4f), .4f, .03f, 6f, y.hoistDown, y.hoistMove, (float)SortingYardRules.HoistLow,
+                               (float)SortingYardRules.HoistHigh, y.hoistPush, later);
+
+            // 5. The heavy berth: the chest lowered on its chains at one of four berths, never more than two berths on.
             var berth = Place<CargoSlam>(s, "Heavy berth gantry", new Vector3(0f, 0f, BerthZ));
             berth.LimitStep(BerthStep);
             berth.LowerOnChains();
@@ -82,15 +111,67 @@ namespace ChessFight.PawnRush
             foreach (float x in BerthPlaces)
                 BerthMark(s, new Vector3(x, 0f, BerthZ));
 
-            // Lamps either side of the mouth and along the apron.
+            // Lamps either side of the mouth and along the apron; the signs.
             foreach (float side in new[] { -1f, 1f })
             {
                 LampPost(s, new Vector3(side * 11.2f, 0f, ArenaStart + .8f));
                 LampPost(s, new Vector3(side * 8.5f, 0f, PoolZ0 - .9f));
                 LampPost(s, new Vector3(side * 21.5f, 0f, PoolZ0 - .9f));
             }
-            Sign(s, "3. 왕실 하역 창고: 컨베이어는 짐 사이로 · 짐더미 줄은 초록 빈칸으로 · 궤짝 내려놓을 땐 점프",
-                 new Vector3(0f, 3.6f, ArenaStart + 1.8f), 1.05f);
+            Sign(s, "3. 왕실 하역 창고: 컨베이어는 짐 사이로 · 짐더미 줄은 초록 빈칸으로", new Vector3(0f, 3.9f, ArenaStart + 1.8f), 1.05f);
+            Sign(s, "들보 크레인은 넘거나 뒤따라 · 승강대는 초록 불에 · 궤짝엔 점프", new Vector3(0f, 3.25f, ArenaStart + 1.8f), 1.05f);
+            Sign(s, "목재 크레인: 낮은 들보는 점프 · 지나간 뒤를 따라가기", new Vector3(0f, 3.2f, 119.6f), 1.05f);
+            // On the loft's edge between the two hoists' posts (|x| < 3.3): two short lines, so no post hides a letter.
+            Sign(s, "도르래 승강대: 초록 불에 타기", new Vector3(0f, 4.25f, LoftZ0 - .05f), 1f);
+            Sign(s, "매달린 짐 아래 서지 말 것", new Vector3(0f, 3.7f, LoftZ0 - .05f), 1f);
+        }
+
+        // The timber stores along one wall beside the crane field: one solid block nobody climbs (2.4 m), stacked squared
+        // beams with their ends to the yard and iron bands, where the cranes' outer rests lay their loads.
+        static void TimberStore(Transform s, float side)
+        {
+            float front = side * StoreFront, back = side * StallFront;
+            float x0 = Mathf.Min(front, back), x1 = Mathf.Max(front, back);
+            var block = YardKit.Span(s, "Timber store (collider)", new Vector3(x0, 0f, StoreZ0), new Vector3(x1, 2.4f, StoreZ1), null, Solid.NoClimb);
+            block.GetComponent<MeshRenderer>().enabled = false;
+            float mid = (x0 + x1) * .5f, depth = x1 - x0, length = StoreZ1 - StoreZ0, centre = (StoreZ0 + StoreZ1) * .5f;
+            // Layers of beams lying along the wall (alternate shades), their joints every 0.88 m.
+            int layer = 0;
+            for (float y = .2f; y < 2.3f; y += .42f, layer++)
+                YardKit.Box(s, "Stored beams", new Vector3(mid, y, centre), new Vector3(depth - .02f, .4f, length - .04f), layer % 2 == 0 ? YardKit.WoodLight : YardKit.WoodDark, Solid.None);
+            for (float z = StoreZ0 + .44f; z < StoreZ1 - .2f; z += .88f)
+                YardKit.Box(s, "Beam joint", new Vector3(front - side * .01f, 1.2f, z), new Vector3(.02f, 2.36f, .03f), YardKit.Iron, Solid.None);
+            for (float z = StoreZ0 + 1.5f; z < StoreZ1; z += 3.5f)
+                YardKit.Box(s, "Store band", new Vector3(front, 1.2f, z), new Vector3(.08f, 2.42f, .1f), YardKit.Iron, Solid.None);
+            YardKit.Box(s, "Store trim", new Vector3(front, 2.4f, (StoreZ0 + StoreZ1) * .5f), new Vector3(.1f, .06f, StoreZ1 - StoreZ0), YardKit.Gold, Solid.None);
+        }
+
+        // The storage loft (다락) across the yard: a block too high to climb from the floor, its middle a plank deck 2.4 m up
+        // (|x| <= LoftDeckHalf, open to the north: drop down) and its ends 4.4 m up - two metres over the deck, out of any
+        // jump's or the pawn's F step's reach - so the hoists are the only way up and the deck the only way on. The follow
+        // camera looks through it.
+        void Loft(Transform s)
+        {
+            var deck = YardKit.Span(s, "Loft deck", new Vector3(-LoftDeckHalf, 0f, LoftZ0), new Vector3(LoftDeckHalf, LoftTop, LoftZ1), YardKit.WoodDark, Solid.NoClimb);
+            deck.AddComponent<CourseFloor>();
+            deck.AddComponent<ChessFight.Game.CameraSeeThrough>();
+            for (float z = LoftZ0 + .2f; z < LoftZ1; z += .4f)
+                YardKit.Picture(s, "Loft plank", new Vector3(-LoftDeckHalf + .03f, LoftTop, z - .17f), new Vector3(LoftDeckHalf - .03f, LoftTop + .012f, z + .17f), YardKit.WoodLight);
+            YardKit.Picture(s, "Loft edge", new Vector3(-LoftDeckHalf, LoftTop, LoftZ1 - .12f), new Vector3(LoftDeckHalf, LoftTop + .016f, LoftZ1), YardKit.Gold);
+            YardKit.Picture(s, "Loft lip", new Vector3(-LoftDeckHalf, LoftTop, LoftZ0), new Vector3(LoftDeckHalf, LoftTop + .016f, LoftZ0 + .1f), YardKit.Gold);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                float a = side * LoftDeckHalf, b = side * StallFront;
+                var end = YardKit.Span(s, "Loft end", new Vector3(Mathf.Min(a, b), 0f, LoftZ0), new Vector3(Mathf.Max(a, b), LoftEndTop, LoftZ1), YardKit.WoodDark, Solid.NoClimb);
+                end.AddComponent<ChessFight.Game.CameraSeeThrough>();
+                // Crates stacked on the ends, sacks along the deck's sides: the loft's stores.
+                for (float x = Mathf.Min(a, b) + 1.1f; x < Mathf.Max(a, b) - 1f; x += 2.3f)
+                    StackRow.StackPicture(s, new Vector3(x, LoftEndTop, (LoftZ0 + LoftZ1) * .5f), new Vector3(2f, 1.6f, 2.6f), (int)(x * 3f));
+                YardKit.Box(s, "Loft end trim", new Vector3((a + b) * .5f, LoftEndTop, LoftZ0 - .02f), new Vector3(Mathf.Abs(b - a), .1f, .06f), YardKit.Gold, Solid.None);
+            }
+            // The face boards under the deck, between the hoists' wells (pictures on the solid block).
+            for (float x = -LoftDeckHalf + .6f; x < LoftDeckHalf; x += 1.2f)
+                YardKit.Picture(s, "Loft face board", new Vector3(x - .55f, .1f, LoftZ0 - .02f), new Vector3(x + .55f, LoftTop - .1f, LoftZ0), YardKit.WoodLight);
         }
 
         // A berth's place on the floor, where the heavy chest is set down: worn boards a little bigger than the chest, iron

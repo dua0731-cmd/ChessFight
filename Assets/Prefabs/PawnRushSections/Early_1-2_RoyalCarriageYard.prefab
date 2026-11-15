@@ -49,7 +49,7 @@ MonoBehaviour:
   displayName: "\uC655\uC2E4 \uB9C8\uCC28\uB730"
   kind: 0
   entry: {x: 0, y: 0, z: -16}
-  exit: {x: 0, y: 7, z: 164}
+  exit: {x: 0, y: 7, z: 181}
   exitYaw: 0
   beats: []
   slot: 0

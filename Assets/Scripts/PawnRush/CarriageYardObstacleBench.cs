@@ -18,7 +18,8 @@ namespace ChessFight.PawnRush
     //   z 122..160   cargo ramp up to y 5, down again beyond
     //   z 168..179   lifting waterwheel up to the y 8 platform
     //   z 179..210   the push gate on the platform, the finish behind it
-    // and two more rows of bays beside them: R659's west of these (x -52), R661's east of them (x 52).
+    // and three more rows of bays beside them: R659's west of these (x -52), R661's east of them (x 52), R662's east of
+    // those (x 104).
     public sealed class CarriageYardObstacleBench : MonoBehaviour
     {
         Transform root;
@@ -151,6 +152,7 @@ namespace ChessFight.PawnRush
 
             R659Bays(s);
             R661Bays(s);
+            R662Bays(s);
         }
 
         // R659's new obstacles, one bay each in a second row west of the first (T drops the pawn where the camera looks):
@@ -196,6 +198,36 @@ namespace ChessFight.PawnRush
             berth.LowerOnChains();
             berth.Configure(18.5f, 0f, 9f, new Vector3(3.2f, 2.4f, 2.4f), 3.6f, new[] { -6f, 0f, 6f }, true, 6612, 2.4f, 1f, 1.1f, 4.5f, 1.4f,
                             5.5f, .35f, 4f, 2f, 1.3f, 6f, s);
+        }
+
+        // R662's sorting yard obstacles, a fourth row of bays east of the third (x 104), at the map's numbers:
+        //   z 0..24    the timber crane pair (both jibs always pointing the same way) with the timber stores beside them:
+        //              jump a low load, follow it out, or keep to the ring by a drum
+        //   z 30..50   a loft hoist pair in front of a 24 m piece of the loft: ride a pallet up, never wait under one
+        void R662Bays(Transform s)
+        {
+            const float x = 104f, craneZ = 10f, hoistZ = 40f;
+            YardKit.Floor(s, "Floor R662", x - 24f, x + 24f, -6f, 56f, 0f);
+            Sign(s, "목재 크레인 (낮은 들보: 점프로 넘기 · 뒤따라가기 · 발치에서 기다리기)", new Vector3(x, 4.6f, -2f));
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Place<SlewCrane>(s, "Timber crane", new Vector3(x + side * 9.5f, 0f, craneZ))
+                    .Configure(1.2f, 2.4f, 7.6f, 2f, 10f, new Vector2(.42f, .42f), .13f, -180f, 0f, false, 1.4f, 6f, 1f, 1f, 0f, 2.5f, .5f, 5.5f, 2f, 1f, s);
+                float a = x + side * 20.11f, b = x + side * 23.5f;
+                YardKit.Span(s, "Timber store", new Vector3(Mathf.Min(a, b), 0f, craneZ - 1.2f), new Vector3(Mathf.Max(a, b), 2.4f, craneZ + 14.4f),
+                             YardKit.WoodLight, Solid.NoClimb);
+            }
+            Sign(s, "도르래 승강대 (초록 불에 타기 · 매달린 짐 아래 서지 말 것)", new Vector3(x, 4.6f, hoistZ - 6f));
+            // A piece of the loft: the deck 2.4 m up (12 m across), its ends 4.4 m up, open to the north.
+            const float loft0 = hoistZ + 1.23f, loft1 = loft0 + 3.2f;
+            var deck = YardKit.Span(s, "Loft deck", new Vector3(x - 12f, 0f, loft0), new Vector3(x + 12f, 2.4f, loft1), YardKit.WoodDark, Solid.NoClimb);
+            deck.AddComponent<CourseFloor>();
+            foreach (float side in new[] { -1f, 1f })
+                YardKit.Span(s, "Loft end", new Vector3(side < 0f ? x - 24f : x + 12f, 0f, loft0), new Vector3(side < 0f ? x - 12f : x + 24f, 4.4f, loft1),
+                             YardKit.WoodDark, Solid.NoClimb);
+            foreach (float side in new[] { -1f, 1f })
+                Place<PalletHoist>(s, "Loft hoist", new Vector3(x + side * 3.5f, 0f, hoistZ))
+                    .Configure(side, new Vector3(2.37f, .22f, 2.4f), .4f, .03f, 6f, 2.2f, 1.5f, .22f, 2.4f, 4.5f, s);
         }
     }
 }

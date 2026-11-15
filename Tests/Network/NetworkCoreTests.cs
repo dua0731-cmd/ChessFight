@@ -732,6 +732,152 @@ public static class NetworkCoreTests
                 Check(aim.LegStart == leg.Start && aim.X == leg.FromX && aim.Z == leg.FromZ && aim.Stage == RoamingFleet.Stage.Aiming
                       && aim.StageStart == leg.Start + leg.Turn && aim.StageEnd == leg.ChargeStart, "aiming, it is on the same leg, where it starts");
                 Check(double.IsNaN(YardFleet(3.0, 12).At(3, 2.0).LegStart), "no leg before the start"); });
+            Test("Royal Carriage Yard sorting yard cranes (R662): the slew eases in and out, the parallel beams never meet, keep off the stores, drums, hoist wells and row 1, and leave no never-swept way through", () => {
+                var c = SortingYardRules.YardCrane();
+                // The profile: 0 to 1, never back, no jump in position or speed.
+                double last = 0.0, lastSpeed = 0.0;
+                for (double t = 0.0; t <= c.Seconds + 1e-9; t += .001)
+                {
+                    double p = SortingYardRules.Profile(t, c.Seconds, c.Ramp);
+                    Check(p >= last - 1e-12 && p >= 0.0 && p <= 1.0, "monotonic within 0..1 at " + t);
+                    double speed = (p - last) / .001;
+                    if (t > .002) Check(Math.Abs(speed - lastSpeed) < .01, "smooth speed at " + t);
+                    last = p;
+                    lastSpeed = speed;
+                }
+                Check(Math.Abs(SortingYardRules.Profile(c.Seconds, c.Seconds, c.Ramp) - 1.0) < 1e-12, "ends at 1");
+                double cruise = 180.0 / (c.Seconds - c.Ramp);
+                Check(Math.Abs(cruise - 36.0) < 1e-9, "36 deg/s cruise: " + cruise);
+                // The two beams (parallel, masts +-CraneX), sampled over two cycles also at Unix-time clocks.
+                double period = 2.0 * (c.Rest + c.Seconds), nearest = double.MaxValue;
+                double store = double.MaxValue, drum = double.MaxValue, well = double.MaxValue, row1 = double.MaxValue, south = double.MaxValue;
+                foreach (double origin in new[] { 0.0, 1762000003.25 })
+                    for (double t = 0.0; t < 2.0 * period; t += .005)
+                    {
+                        double h = SortingYardRules.Heading(c, origin + t);
+                        SortingYardRules.Along(h, out double dx, out double dz);
+                        // Corners of each beam's footprint (+- half width across it).
+                        double nx = -dz, nz = dx;
+                        for (int side = -1; side <= 1; side += 2)
+                        {
+                            double mx = side * SortingYardRules.CraneX, mz = SortingYardRules.CraneZ;
+                            for (double r = SortingYardRules.CraneInner; r <= SortingYardRules.CraneOuter + 1e-9; r += .25)
+                                for (int w = -1; w <= 1; w += 2)
+                                {
+                                    double x = mx + dx * r + nx * w * SortingYardRules.CraneHalfWidth, z = mz + dz * r + nz * w * SortingYardRules.CraneHalfWidth;
+                                    // the other crane's beam at the same instant (parallel): the same offsets from the other mast
+                                    double ox = -mx + dx * r, oz = mz + dz * r;
+                                    for (double r2 = SortingYardRules.CraneInner; r2 <= SortingYardRules.CraneOuter + 1e-9; r2 += .5)
+                                    {
+                                        double qx = -mx + dx * r2, qz = mz + dz * r2;
+                                        nearest = Math.Min(nearest, Math.Sqrt((x - qx) * (x - qx) + (z - qz) * (z - qz)));
+                                    }
+                                    store = Math.Min(store, SortingYardRules.StoreFront - Math.Abs(x));
+                                    drum = Math.Min(drum, Math.Sqrt(r * r) - SortingYardRules.CraneDrum);
+                                    // the hoist wells: x .9 .. 6.13 either side, z from HoistZ0
+                                    double wx = Math.Max(0.0, Math.Max(.9 - Math.Abs(x), Math.Abs(x) - 6.13)), wz = Math.Max(0.0, SortingYardRules.HoistZ0 - z);
+                                    well = Math.Min(well, Math.Sqrt(wx * wx + wz * wz));
+                                    row1 = Math.Min(row1, z - 118.4);
+                                    south = Math.Min(south, z);
+                                }
+                        }
+                    }
+                Check(nearest >= 10.0, "the two beams stay 10 m apart: " + nearest);
+                Check(store >= .6 - 1e-6, "0.6 m off the timber stores: " + store);
+                Check(drum >= .8 - 1e-6, "a 0.8 m ring round each drum: " + drum);
+                Check(well >= 2.0, "2 m off the hoist wells: " + well);
+                Check(row1 >= 4.0, "4 m north of row 1: " + row1);
+                Check(south >= SortingYardRules.CraneZ - SortingYardRules.CraneHalfWidth - 1e-6, "never south of the masts' line: " + south);
+                // No never-swept way from row 1's side to the hoists across the field, between the stores' pinches (|x| <= 19):
+                // a 0.1 m grid, a pawn 0.3 m round, flood filled through cells no beam ever comes within 0.3 m of.
+                const double cell = .1, pawn = .3, x0 = -19.0, x1 = 19.0, z0 = 118.6, z1 = 134.9;
+                int nxCells = (int)Math.Round((x1 - x0) / cell) + 1, nzCells = (int)Math.Round((z1 - z0) / cell) + 1;
+                var swept = new bool[nxCells, nzCells];
+                for (double h = -180.0; h <= 0.0 + 1e-9; h += .1)
+                {
+                    SortingYardRules.Along(h, out double dx, out double dz);
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        double mx = side * SortingYardRules.CraneX, mz = SortingYardRules.CraneZ;
+                        for (double r = SortingYardRules.CraneInner - pawn; r <= SortingYardRules.CraneOuter + pawn + 1e-9; r += cell * .5)
+                        {
+                            double cx = mx + dx * r, cz = mz + dz * r, reach = SortingYardRules.CraneHalfWidth + pawn;
+                            int i0 = Math.Max(0, (int)Math.Floor((cx - reach - x0) / cell)), i1 = Math.Min(nxCells - 1, (int)Math.Ceiling((cx + reach - x0) / cell));
+                            int j0 = Math.Max(0, (int)Math.Floor((cz - reach - z0) / cell)), j1 = Math.Min(nzCells - 1, (int)Math.Ceiling((cz + reach - z0) / cell));
+                            for (int i = i0; i <= i1; i++)
+                                for (int j = j0; j <= j1; j++)
+                                {
+                                    double px = x0 + i * cell, pz = z0 + j * cell;
+                                    if ((px - cx) * (px - cx) + (pz - cz) * (pz - cz) <= reach * reach) swept[i, j] = true;
+                                }
+                        }
+                    }
+                }
+                // The drums are solid: a pawn cannot stand in them either.
+                for (int i = 0; i < nxCells; i++)
+                    for (int j = 0; j < nzCells; j++)
+                        foreach (double mx in new[] { -SortingYardRules.CraneX, SortingYardRules.CraneX })
+                        {
+                            double px = x0 + i * cell, pz = z0 + j * cell;
+                            if ((px - mx) * (px - mx) + (pz - SortingYardRules.CraneZ) * (pz - SortingYardRules.CraneZ) <= (SortingYardRules.CraneDrum + pawn) * (SortingYardRules.CraneDrum + pawn))
+                                swept[i, j] = true;
+                        }
+                var seen = new bool[nxCells, nzCells];
+                var open = new System.Collections.Generic.Queue<(int, int)>();
+                for (int i = 0; i < nxCells; i++)
+                    if (!swept[i, 0]) { seen[i, 0] = true; open.Enqueue((i, 0)); }
+                bool through = false;
+                while (open.Count > 0 && !through)
+                {
+                    var (i, j) = open.Dequeue();
+                    if (j == nzCells - 1) { through = true; break; }
+                    foreach (var (di, dj) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+                    {
+                        int a = i + di, b = j + dj;
+                        if (a < 0 || b < 0 || a >= nxCells || b >= nzCells || seen[a, b] || swept[a, b]) continue;
+                        seen[a, b] = true;
+                        open.Enqueue((a, b));
+                    }
+                }
+                Check(!through, "no never-swept way through the crane field"); });
+            Test("Royal Carriage Yard sorting yard hoists (R662): counterweighted pairs - one of each pair always at an end and down when the other is up, eased under Pawn Rush gravity, long enough to board and to walk off", () => {
+                var a = SortingYardRules.YardHoist(false);
+                var b = SortingYardRules.YardHoist(true);
+                double period = SortingYardRules.Period(a), lastTop = a.Low, lastSpeed = 0.0, peakSpeed = 0.0, peakAccel = 0.0;
+                Check(Math.Abs(period - 7.4) < 1e-9, "7.4 s cycle: " + period);
+                foreach (double origin in new[] { 0.0, 1762000003.25 })
+                {
+                    lastTop = SortingYardRules.Top(a, origin);
+                    lastSpeed = 0.0;
+                    for (double t = .001; t < 2.0 * period; t += .001)
+                    {
+                        double ta = SortingYardRules.Top(a, origin + t), tb = SortingYardRules.Top(b, origin + t);
+                        double speed = (ta - lastTop) / .001;
+                        // Speeds and accelerations from differences only near clock 0: at Unix time a double's step (2e-7 s)
+                        // is noise in a second difference over 1 ms.
+                        if (origin == 0.0 && t > .002) peakAccel = Math.Max(peakAccel, Math.Abs(speed - lastSpeed) / .001);
+                        if (origin == 0.0) peakSpeed = Math.Max(peakSpeed, Math.Abs(speed));
+                        lastTop = ta;
+                        lastSpeed = speed;
+                        Check(ta >= a.Low - 1e-9 && ta <= a.High + 1e-9, "between the floor and the deck");
+                        bool aDown = SortingYardRules.IsDown(a, origin + t), bDown = SortingYardRules.IsDown(b, origin + t);
+                        bool aUp = SortingYardRules.IsUp(a, origin + t), bUp = SortingYardRules.IsUp(b, origin + t);
+                        // Away from the swaps (0.01 s round them), exactly one of the pair is down and the other up.
+                        double u = (origin + t) - Math.Floor((origin + t) / period) * period;
+                        bool nearSwap = Math.Abs(u % (a.Down + a.Move)) < .01 || Math.Abs(u % (a.Down + a.Move) - a.Down) < .01
+                                        || Math.Abs(u % (a.Down + a.Move) - (a.Down + a.Move)) < .01;
+                        if (!nearSwap && (aDown || bDown)) Check(aDown != bDown && (aDown ? bUp : aUp), "one down while the other is up at " + t);
+                        if (!nearSwap && !aDown && !bDown) Check(!aUp && !bUp, "both moving together (the swap) at " + t);
+                    }
+                }
+                Check(peakSpeed < 2.3, "peak speed " + peakSpeed);
+                Check(peakAccel < 6.0, "peak acceleration under 6 m/s2 (Pawn Rush gravity 13.7): " + peakAccel);
+                Check(a.Down >= 2.0, "2 s and more to board and to walk off");
+                Check(Math.Abs(SortingYardRules.BoardingFor(a, 0.0) - a.Down) < 1e-9 && SortingYardRules.BoardingFor(a, a.Down + .1) == 0.0, "boarding time");
+                Check(Math.Abs(SortingYardRules.NextBoarding(a, a.Down + .5) - (period - a.Down - .5)) < 1e-9, "next boarding");
+                Check(Math.Abs(SortingYardRules.ComesDownIn(a, 0.0) - (2.0 * a.Down + a.Move)) < 1e-9 && SortingYardRules.ComesDownIn(a, 2.0 * a.Down + a.Move + .1) == 0.0, "comes down in");
+                // The pairs' plates fit their wells beside the post, 0.03 m off it.
+                Check(SortingYardRules.HoistInner[1] < 3.3 && SortingYardRules.HoistOuter[0] > 3.7 && SortingYardRules.HoistInner[0] >= .87, "plates beside the post"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

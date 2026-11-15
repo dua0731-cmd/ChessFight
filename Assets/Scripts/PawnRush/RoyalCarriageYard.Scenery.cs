@@ -23,6 +23,8 @@ namespace ChessFight.PawnRush
                 BannerOn(s, new Vector3(x, 5.6f, YardZ0 + .02f), 0f);
             for (float z = ArenaStart + 6f; z < CliffZ - 3f; z += 12f)   // between the cranes' and gantries' posts in the walls
             {
+                // R662: none where the heavy berth's gantry beam and rail run along the walls (the yard grew past it).
+                if (Mathf.Abs(z - BerthZ) < 3f) continue;
                 BannerOn(own, new Vector3(-25.9f, 9.5f, z), 90f);
                 BannerOn(own, new Vector3(25.9f, 9.5f, z), -90f);
             }
@@ -32,8 +34,9 @@ namespace ChessFight.PawnRush
             foreach (var at in new[] { new Vector3(-9f, 0f, CanalZ0 + 1f), new Vector3(9f, 0f, CanalZ0 + 1f),
                                        new Vector3(-9f, 0f, CanalZ1 - 1f), new Vector3(9f, 0f, CanalZ1 - 1f) })
                 LampPost(s, at);
-            foreach (var at in new[] { new Vector3(-24.5f, 0f, ArenaStart + 2f), new Vector3(24.5f, 0f, ArenaStart + 2f),
-                                       new Vector3(-8f, Top, 151.5f), new Vector3(8f, Top, 151.5f) })
+            // (The arena mouth's two lamps stood at x +-24.5 until R662: the sorting stalls have filled that corner since
+            // R661 and the sorting yard lights its own mouth.)
+            foreach (var at in new[] { new Vector3(-8f, Top, CliffZ + 1.5f), new Vector3(8f, Top, CliffZ + 1.5f) })
                 LampPost(own, at);
             // Corner towers outside the walls (pictures only) and the palace behind the finish.
             foreach (var at in new[] { new Vector3(-24f, 0f, 0f), new Vector3(24f, 0f, 0f), new Vector3(-28f, 0f, CanalZ1), new Vector3(28f, 0f, CanalZ1) })

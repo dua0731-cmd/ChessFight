@@ -64,6 +64,9 @@ namespace ChessFight.PawnRush
         public Body body;
         [Tooltip("Box: the part's own box the faces are judged by, when the shell reaches further than the part")]
         public BoxCollider solid;
+        [Tooltip("More of the part's own colliders let through with `solid` when it knocks someone down (R662: a timber load's "
+                 + "roof over its box)")]
+        public Collider[] alsoSolid;
         [Tooltip("The part stands on the floor: its underside never faces anyone (a pawn lying at its nose is in front)")]
         public bool onFloor;
         [Tooltip("The race's way on (this object's +z, flat): a push towards it is cut to forwardShare")]
@@ -77,6 +80,13 @@ namespace ChessFight.PawnRush
         [Tooltip("Longest a knocked-down character is let through the box while still overlapping it (s): longer for a crate "
                  + "that sits where it fell (R532)")]
         public float ghostSeconds = .6f;
+        [Tooltip("R662: a character let through the part and still under it once the part has come to rest (a hoist pallet "
+                 + "set down on someone it could not shove clear) is lifted out on top of it at this speed (m/s); 0 never")]
+        public float liftOut;
+        [Tooltip("R662: the push (m/s) of a hit that knocks down, if not negative - kept under the part's own speed, a low load "
+                 + "sweeping into the legs tips the character over itself and passes on, instead of driving it ahead to hit it "
+                 + "again; staggers keep the usual push")]
+        public float downPush = -1f;
 
         IMovingSurface surface;
         IHitTurns turns;
@@ -101,12 +111,14 @@ namespace ChessFight.PawnRush
             public float Down;
         }
 
-        // A character the solid box lets through for now, and since when.
+        // A character the solid box lets through for now, and since when (and when liftOut last lifted it).
         struct Ghost
         {
             public ICharacterDriver Who;
+            public IHitReceiver Receiver;
             public Collider[] Parts;
             public float Since;
+            public float LiftedAt;
         }
 
         public int Hits { get; private set; }
@@ -139,9 +151,7 @@ namespace ChessFight.PawnRush
                 if (replaceSpeed)
                 {
                     var hips = d.Driver.FollowTarget != null ? d.Driver.FollowTarget.GetComponent<Rigidbody>() : null;
-                    var piece = d.Driver is Component owner ? owner.GetComponentInParent<IPromotable>() : null;
-                    float weight = ChessPieces.Stats(piece != null ? piece.Piece : PieceKind.Pawn).Weight;
-                    if (hips != null) push -= Flat(hips.linearVelocity) * weight;
+                    if (hips != null) push -= Flat(hips.linearVelocity) * Weight(d.Driver);
                 }
                 d.Receiver.ApplyHit(push + Vector3.up * lift, d.Down, 0f, true);
                 YardKit.ReportHit(d.Driver, this, push, d.Down);
@@ -151,15 +161,71 @@ namespace ChessFight.PawnRush
             // ghostSeconds (0.6 s).
             for (int i = ghosts.Count - 1; i >= 0; i--)
             {
-                float age = Time.time - ghosts[i].Since;
-                if (age < .35f || (age < ghostSeconds && Overlaps(ghosts[i].Parts))) continue;
-                Collide(ghosts[i], true);
+                var ghost = ghosts[i];
+                float age = Time.time - ghost.Since;
+                if (ghost.Who is Object gone && gone == null)
+                {
+                    Collide(ghost, true);
+                    ghosts.RemoveAt(i);
+                    continue;
+                }
+                bool keep;
+                if (liftOut > 0f && Settled())
+                {
+                    // R662 liftOut: the part has come to rest on the floor. Whoever it still holds inside itself (it could
+                    // not shove them clear - deep in a well, or a leg under its edge) is lifted out on top of it, the same
+                    // speed for every piece, again every half second until clear; whoever is clear of it is taken back at
+                    // once, so they step onto it rather than into it. Never squeezed out sideways by the physics.
+                    bool inside = Inside(ghost.Parts);
+                    if (inside && age >= .2f && Time.time - ghost.LiftedAt >= .5f)
+                    {
+                        ghost.Receiver?.ApplyHit(Vector3.up * (liftOut * Weight(ghost.Who)), 0f, 0f, true);
+                        ghost.LiftedAt = Time.time;
+                        ghosts[i] = ghost;
+                    }
+                    keep = inside ? age < ghostSeconds + 2f : age < .35f;
+                }
+                else keep = age < .35f || (age < ghostSeconds && Overlaps(ghost.Parts));
+                if (keep) continue;
+                Collide(ghost, true);
                 ghosts.RemoveAt(i);
             }
         }
 
+        // How far a hit moves this character's piece is 1 / weight (TakeHit): times the weight, every piece the same.
+        static float Weight(ICharacterDriver driver)
+        {
+            var piece = driver is Component owner ? owner.GetComponentInParent<IPromotable>() : null;
+            return ChessPieces.Stats(piece != null ? piece.Piece : PieceKind.Pawn).Weight;
+        }
+
+        // The part not moving (a hoist pallet sitting on the floor).
+        bool Settled() => surface != null && solid != null && surface.PointVelocity(solid.bounds.center).sqrMagnitude < .0025f;
+
+        // Some part of the character really inside the part's own colliders (more than 2 cm in), not just near them.
+        bool Inside(Collider[] parts)
+        {
+            foreach (var part in parts)
+            {
+                if (part == null || part.isTrigger || !part.enabled || !part.gameObject.activeInHierarchy) continue;
+                if (Into(part, solid)) return true;
+                if (alsoSolid != null)
+                    foreach (var body in alsoSolid)
+                        if (Into(part, body)) return true;
+            }
+            return false;
+        }
+
+        static bool Into(Collider part, Collider body)
+        {
+            if (body == null || !body.enabled || !part.bounds.Intersects(body.bounds)) return false;
+            var a = part.transform;
+            var b = body.transform;
+            return Physics.ComputePenetration(part, a.position, a.rotation, body, b.position, b.rotation, out _, out float depth) && depth > .02f;
+        }
+
         // Knocked down again while still let through: the time starts again.
-        void LetThrough(ICharacterDriver driver)
+        void LetThrough(ICharacterDriver driver, IHitReceiver receiver)
         {
             if (solid == null || !(driver is Component owner)) return;
             for (int i = 0; i < ghosts.Count; i++)
@@ -170,7 +236,7 @@ namespace ChessFight.PawnRush
                     ghosts[i] = again;
                     return;
                 }
-            var ghost = new Ghost { Who = driver, Parts = owner.GetComponentsInChildren<Collider>(), Since = Time.time };
+            var ghost = new Ghost { Who = driver, Receiver = receiver, Parts = owner.GetComponentsInChildren<Collider>(), Since = Time.time, LiftedAt = -99f };
             Collide(ghost, false);
             ghosts.Add(ghost);
         }
@@ -179,16 +245,27 @@ namespace ChessFight.PawnRush
         // complains about asking).
         void Collide(Ghost ghost, bool on)
         {
-            if (solid == null || ghost.Parts == null || !solid.enabled || !solid.gameObject.activeInHierarchy) return;
+            if (ghost.Parts == null) return;
+            CollideWith(solid, ghost, on);
+            if (alsoSolid != null)
+                foreach (var body in alsoSolid) CollideWith(body, ghost, on);
+        }
+
+        static void CollideWith(Collider body, Ghost ghost, bool on)
+        {
+            if (body == null || !body.enabled || !body.gameObject.activeInHierarchy) return;
             foreach (var part in ghost.Parts)
                 if (part != null && !part.isTrigger && part.enabled && part.gameObject.activeInHierarchy)
-                    Physics.IgnoreCollision(solid, part, !on);
+                    Physics.IgnoreCollision(body, part, !on);
         }
 
         bool Overlaps(Collider[] parts)
         {
             if (solid == null) return false;
             var room = solid.bounds;
+            if (alsoSolid != null)
+                foreach (var body in alsoSolid)
+                    if (body != null && body.enabled) room.Encapsulate(body.bounds);
             room.Expand(.1f);
             foreach (var part in parts)
                 if (part != null && !part.isTrigger && room.Intersects(part.bounds)) return true;
@@ -226,7 +303,8 @@ namespace ChessFight.PawnRush
             else direction = off.sqrMagnitude > 1e-4f ? off : Flat(transform.forward);
             direction = Flat(direction).normalized;
 
-            float push = Mathf.Min(maxPush, knockbackForce + speed * speedScale);
+            bool down = coming >= knockdownSpeed;
+            float push = down && downPush >= 0f ? downPush : Mathf.Min(maxPush, knockbackForce + speed * speedScale);
             var change = direction * push;
             if (course != null)
             {
@@ -234,14 +312,13 @@ namespace ChessFight.PawnRush
                 float ahead = Vector3.Dot(change, on);
                 if (ahead > 0f) change -= on * (ahead * (1f - forwardShare));
             }
-            bool down = coming >= knockdownSpeed;
             // R659: knocked down a moment ago by another of the yard's hazards (a crate, then a passing horse; a slam's
             // wave, then a crate) it is only pushed and let through, not knocked down again: no chain of knockdowns.
             bool fresh = down && !YardKit.RecentlyDown(driver);
             due.Add(new Due { Driver = driver, Receiver = hits, Push = change, Down = fresh ? knockdownSeconds : 0f });
             if (fresh) YardKit.MarkDown(driver);
             // Letting the knocked-down body through the box only changes which pairs collide: fine in a callback.
-            if (down) LetThrough(driver);
+            if (down) LetThrough(driver, hits);
             // A stagger leaves the turn for the knockdown that may follow (a pawn caught as the charge sets off).
             lastHit[driver] = new Hit { Time = now, Turn = down ? turn : double.NaN };
             Hits++;

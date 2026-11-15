@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -48,13 +49,14 @@ namespace ChessFight.PawnRush.Editor
         const string Report = "report.txt", HitsFile = "hits.csv", RunsFile = "crossings.csv", TraceFile = "trace.csv";
         // Every bot's state every TraceStep for the first TraceSeconds of each zone's first run (R661: why a bot does what
         // it does at the conveyor and the rows).
-        const float TraceSeconds = 20f, TraceStep = .2f;
+        const float TraceSeconds = 80f, TraceStep = .2f;
         const string MapPath = "Assets/Prefabs/PawnRushMaps/RoyalCarriageYard.prefab";
         const string PawnPath = "Assets/Prefabs/RagdollPawn.prefab";
         const int BotCount = 12;
         const float RuntimeLimit = 1800f;
         // Map frame (the map at the origin): zone 1's finish line on the entry landing, zone 2's at the basin's edge.
-        const float Zone1Finish = 52f, Zone2Finish = 115.2f, Zone1Limit = 55f, Zone2Limit = 45f;
+        // Zone 2's finish is the basin's edge less 0.65 m (map z 115.2 until R662 made the sorting yard 17 m longer).
+        const float Zone1Finish = 52f, Zone2Finish = 132.2f, Zone1Limit = 55f, Zone2Limit = 80f;
         // The canal's far landing ends here (map z): railed either side (x +-10), so out of it first, then along.
         const float Zone2Mouth = 82.8f;
 
@@ -72,6 +74,11 @@ namespace ChessFight.PawnRush.Editor
             public bool Running, Done, Fell, Stuck, Flung, Pinned, Waiting;
             public float Started, Finished, LastHit = -99f, CheckTime, MaxSpeed, MaxRise, Lane;
             public float LastJump = -99f, PressSince = -1f, InsideSince = -1f, BackOffUntil = -1f;
+            // R662: the stage of zone 2 the bot is in, its picked hoist pallet, seconds it waited at the cranes and the
+            // hoists, rides back down on a pallet.
+            public string Stage = "";
+            public int Pick = -1, RidesDown;
+            public float CraneWait, HoistWait, PlateWait, RideDownAt = -99f;
             public Vector3 CheckAt;
             public double JumpedFor = double.NaN;
             public readonly Dictionary<string, int> DownsBy = new Dictionary<string, int>();
@@ -90,6 +97,10 @@ namespace ChessFight.PawnRush.Editor
         static SlamChest[] chests = new SlamChest[0];
         static CargoConveyor conveyor;
         static StackRow[] rows = new StackRow[0];
+        static SlewCrane[] cranes = new SlewCrane[0];
+        static PalletHoist[] hoists = new PalletHoist[0];
+        // The sorting yard's own frame to the map's (RoyalCarriageYard.LaterShift).
+        const float Own = -24f;
         static int phase, zone, run, runs, seed, onlyZone;
         static float runBegan;
         static double beganAt, playRequestedAt, editorIdleAt;
@@ -110,11 +121,12 @@ namespace ChessFight.PawnRush.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, Report),
-                "Carriage yard bot test (R660, zone 2 R661): twelve ragdoll pawns run zone 1 and zone 2 of the Royal Carriage Yard in Play Mode.\n" +
-                "Zone 1 blind runners; zone 2 bots that hop the conveyor and head for the rows' gaps, the jumpers with care.\n" +
+                "Carriage yard bot test (R660, zone 2 R661 / R662): twelve ragdoll pawns run zone 1 and zone 2 of the Royal Carriage Yard in Play Mode.\n" +
+                "Zone 1 blind runners; zone 2 bots that hop the conveyor, head for the rows' gaps, cross the crane field (the runners blind, the " +
+                "sprinters jumping the timber as it comes, the jumpers waiting at its edge) and board a hoist pallet up to the loft.\n" +
                 "Not people, not online.\n");
             File.WriteAllText(Path.Combine(Folder, HitsFile), "zone,run,bot,policy,t,kind,knockdown_s,push,x,y,z\n");
-            File.WriteAllText(Path.Combine(Folder, RunsFile), "zone,run,bot,policy,lane,finished,seconds,downs,staggers,fell,stuck,flung,max_speed,max_rise\n");
+            File.WriteAllText(Path.Combine(Folder, RunsFile), "zone,run,bot,policy,lane,finished,seconds,downs,staggers,fell,stuck,flung,max_speed,max_rise,crane_wait,hoist_wait,plate_wait,rides_down\n");
             File.WriteAllText(Path.Combine(Folder, TraceFile), "zone,bot,policy,t,x,y,z,vx,vy,vz,tilt,ground,on_feet,move_x,move_z,jump,waiting\n");
             // The map's settings are code defaults (the prefab serializes none of them), but Unity bakes a prefab's fields into
             // its imported artifact and does not import it again when only a default changes (R661: the copy kept the first
@@ -272,11 +284,14 @@ namespace ChessFight.PawnRush.Editor
             chests = map.GetComponentsInChildren<SlamChest>(true);
             conveyor = map.GetComponentInChildren<CargoConveyor>(true);
             rows = map.GetComponentsInChildren<StackRow>(true).OrderBy(r => r.transform.position.z).ToArray();
+            cranes = map.GetComponentsInChildren<SlewCrane>(true);
+            hoists = map.GetComponentsInChildren<PalletHoist>(true).OrderBy(h => h.transform.position.x).ToArray();
             Log("Pawn Rush movement and skills: " + skills.Name + " added (every pawn gets PawnRushPhysicsParams on its first frame)");
             Log("Map built: " + chests.Length + " giant chest(s), " + map.GetComponentsInChildren<RoamingCarriage>(true).Length + " roaming bodies, "
                 + (conveyor != null ? conveyor.Crates.Length + " conveyor loads at " + conveyor.Speed.ToString("0.0") + " m/s (belt " + conveyor.Height.ToString("0.00") + " m), " : "no conveyor, ")
                 + rows.Length + " storage rows (" + map.GetComponentsInChildren<StackCrate>(true).Length + " moving stacks, trips "
                 + string.Join(" / ", rows.Select(r => r.Trip.ToString("0.0"))) + " s), "
+                + cranes.Length + " slewing crane(s), " + hoists.Length + " loft hoist pair(s), "
                 + map.GetComponentsInChildren<VerticalWaterwheel>(true).Length + " lifting wheel(s)");
 
             var pawn = AssetDatabase.LoadAssetAtPath<GameObject>(PawnPath);
@@ -315,6 +330,7 @@ namespace ChessFight.PawnRush.Editor
                 bot.Driver.SetCommand(default);
                 bot.Running = bot.Done = bot.Fell = bot.Stuck = bot.Flung = bot.Pinned = bot.Waiting = false;
                 bot.LastJump = -99f; bot.PressSince = bot.InsideSince = bot.BackOffUntil = -1f;
+                bot.Stage = ""; bot.Pick = -1; bot.RidesDown = 0; bot.CraneWait = bot.HoistWait = bot.PlateWait = 0f; bot.RideDownAt = -99f;
                 bot.Next = bot.Downs = bot.Staggers = 0;
                 bot.MaxSpeed = bot.MaxRise = 0f;
                 bot.JumpedFor = double.NaN;
@@ -406,6 +422,63 @@ namespace ChessFight.PawnRush.Editor
         // chest and jump its wave; the others go at the belt whatever is on it and into the nearer gap whatever its colour.
         static void Steer2(Bot bot, Vector3 p, float now, out Vector3 dir, out bool jump)
         {
+            Steer2Way(bot, p, now, out dir, out jump);
+            Cranes(bot, p, now, ref dir, ref jump);
+        }
+
+        // R662, the slewing cranes on whatever way the bot is taking: the careful wait outside a load's reach until their
+        // way through it stays clear while they cross, and jump a load that comes at them anyway; the sprinters go on and
+        // jump a load that comes at them (a player who sees it coming); the runners go on blind (only the jump against
+        // something they press into).
+        static void Cranes(Bot bot, Vector3 p, float now, ref Vector3 dir, ref bool jump)
+        {
+            if (cranes.Length == 0 || bot.Policy == Policy.Run) return;
+            bool careful = bot.Policy == Policy.Jumper;
+            foreach (var crane in cranes)
+            {
+                if (crane == null) continue;
+                float t = crane.ArrivesIn(p, .45f, out float speed);
+                if (t >= .14f && t <= .3f && OnFeet(bot) && now - bot.LastJump > .6f)
+                {
+                    jump = true;
+                    return;
+                }
+            }
+            if (!careful || dir.sqrMagnitude < .01f) return;
+            // Already within some load's reach: on through it (jumping as above), never standing in a sweep - not even to
+            // wait for the other crane, whose sweep meets this one's in the middle.
+            foreach (var crane in cranes)
+                if (crane != null && crane.InSweep(p, .3f)) return;
+            foreach (var crane in cranes)
+            {
+                if (crane == null) continue;
+                // Only the stretch of the way inside this load's reach: from where it enters to where it leaves - and only
+                // at the reach's edge (it enters within 1.5 m): a player waits where the sweep starts, not at the belt.
+                const float pace = 3.2f;
+                bool entered = false;
+                for (float d = .5f; d <= 2f * crane.OuterRadius + 1f; d += .5f)
+                {
+                    var at = p + dir * d;
+                    if (!crane.InSweep(at, .5f))
+                    {
+                        if (entered || d >= 1.5f) break;
+                        continue;
+                    }
+                    entered = true;
+                    float eta = d / pace;
+                    if (crane.Sweeps(at, Mathf.Max(0f, eta - .4f), eta + .6f, .45f))
+                    {
+                        bot.Waiting = true;
+                        bot.Stage = "cranes";
+                        dir = Vector3.zero;
+                        return;
+                    }
+                }
+            }
+        }
+
+        static void Steer2Way(Bot bot, Vector3 p, float now, out Vector3 dir, out bool jump)
+        {
             jump = false;
             bool careful = bot.Policy == Policy.Jumper;
             float pace = bot.Policy == Policy.Run ? 4.5f : 6.5f;
@@ -455,6 +528,11 @@ namespace ChessFight.PawnRush.Editor
                     return;
                 }
             }
+            // R662: past the first row, the crane field and the loft hoists, riding, the loft's deck - then the rows north of
+            // the loft and the berth.
+            var first = rows.Length > 0 ? rows[0] : null;
+            bool pastFirst = first == null || p.z > first.transform.position.z + first.StackSize.z * .5f + .5f;
+            if (pastFirst && hoists.Length > 0 && HoistStage(bot, p, now, careful, pace, out dir, out jump)) return;
             foreach (var row in rows)
             {
                 float rz = row.transform.position.z, half = row.StackSize.z * .5f, face = rz - half;
@@ -500,6 +578,169 @@ namespace ChessFight.PawnRush.Editor
             jump = careful && JumpForSlam(bot, p);
         }
 
+        // R662, from the first row to the loft's north edge: through the crane field to a picked hoist pallet's mouth (round the
+        // drums), on board by policy - the careful when it is down with 0.7 s and more left, the sprinters when it is down
+        // or else onto its partner if that is down, the runners whatever it does (under a raised one too: the hazard's worst
+        // case) - standing still on it until it is up at the deck, along the deck toward the next row's gap, off its edge.
+        static bool HoistStage(Bot bot, Vector3 p, float now, bool careful, float pace, out Vector3 dir, out bool jump)
+        {
+            dir = Vector3.zero;
+            jump = false;
+            float loft0 = (float)SortingYardRules.LoftZ0 + Own, loft1 = (float)SortingYardRules.LoftZ1 + Own;
+            if (p.z > loft1 + .3f) return false;
+            float deck = hoists[0].DeckY;
+            // Dropped off the deck's north edge (north of the loft, below its deck): on to the rows, never back south.
+            if (p.z > loft1 && p.y < deck - .1f) return false;
+            // On the deck: toward the next row's nearer gap (within the deck), and off its north edge.
+            if (p.y > deck - .1f && p.z > loft0 - .2f)
+            {
+                float gx = p.x;
+                if (rows.Length > 1)
+                {
+                    var g0 = rows[1].GapWorld(0, 1f, out _);
+                    var g1 = rows[1].GapWorld(1, 1f, out _);
+                    gx = Mathf.Abs(g0.x - p.x) < Mathf.Abs(g1.x - p.x) ? g0.x : g1.x;
+                }
+                dir = Toward(p, new Vector3(Mathf.Clamp(gx, -11f, 11f), 0f, loft1 + 1f));
+                bot.Stage = "deck";
+                return true;
+            }
+            // On a pallet: still until it is up at the deck, then off north onto the deck.
+            if (OnPallet(p, out var on, out int onK))
+            {
+                float top = on.Top(onK, ObstacleClock.Now) + on.transform.position.y;
+                bot.Stage = "riding";
+                if (on.Top(onK, ObstacleClock.Now) < on.Top(onK, ObstacleClock.Now - .1) - .005f && now - bot.RideDownAt > 3f)
+                {
+                    bot.RidesDown++;
+                    bot.RideDownAt = now;
+                }
+                if (top < deck - .15f)
+                {
+                    // Still on it; the wait counts only while it sits down (plan: until standing on a rising plate).
+                    bot.Waiting = true;
+                    bot.Stage = on.BoardingFor(onK, 0f) > 0f ? "riding" : "riding up";
+                    return true;
+                }
+                dir = Vector3.forward;
+                return true;
+            }
+            // The pallet to make for: the careful the one they can board soonest, the others the nearest; kept once close.
+            float apron = (float)SortingYardRules.HoistZ0 + Own;
+            if (bot.Pick < 0 || p.z < apron - 3f)
+            {
+                float best = float.MaxValue;
+                for (int i = 0; i < hoists.Length * 2; i++)
+                {
+                    var h = hoists[i / 2];
+                    int k = i % 2;
+                    var mouth = h.Mouth(k);
+                    float eta = Flat(mouth - p).magnitude / pace;
+                    float cost = careful ? ReadyIn(h, k, eta, .8f) : Mathf.Abs(mouth.x - p.x);
+                    if (cost < best) { best = cost; bot.Pick = i; }
+                }
+            }
+            var hoist = hoists[bot.Pick / 2];
+            int pick = bot.Pick % 2;
+            var at = hoist.Mouth(pick);
+            var well = hoist.Well(pick);
+            bool lined = Mathf.Abs(at.x - p.x) < .5f;
+            if (p.z < at.z - .3f && Flat(at - p).magnitude > .6f)
+            {
+                dir = AroundDrums(p, Toward(p, at));
+                bot.Stage = "cranes";
+                return true;
+            }
+            // Level with the wells' fronts but not lined up with this mouth: along the front to it - and from inside a well
+            // (missed its pallet, knocked back in, the partner picked) straight back out first, never across the post.
+            if (!lined)
+            {
+                bool inWells = p.z > well.min.z - .45f;
+                dir = Toward(p, inWells ? new Vector3(p.x, 0f, at.z) : at);
+                bot.Stage = "hoist";
+                return true;
+            }
+            // At the mouth: on board by policy. The runners: half step in as soon as it starts down (impatient - under it
+            // as it lands) until a pallet has knocked them down once (a player learns), half wait for it to sit down; none
+            // walks in under a pallet up at the deck or rising.
+            float boarding = hoist.BoardingFor(pick, 0f);
+            bool impatient = bot.Index % 2 == 0 && !bot.DownsBy.ContainsKey("hoist pallet");
+            bool go = bot.Policy == Policy.Run
+                ? boarding > .2f || (hoist.ComesDownIn(pick, 0f) <= 0f && (impatient || hoist.Top(pick, ObstacleClock.Now) < .32f))
+                : careful ? boarding >= .7f : boarding > .2f;
+            // The sprinters and the careful: onto the partner instead when it will sit down for them sooner, the walk along
+            // the front counted (2.85 m at 3 m/s).
+            if (!go && bot.Policy != Policy.Run)
+            {
+                int other = 1 - pick;
+                float walk = Flat(hoist.Mouth(other) - p).magnitude / 3f;
+                float own = ReadyIn(hoist, pick, 0f, careful ? .7f : .2f);
+                float there = ReadyIn(hoist, other, walk, careful ? .8f : .3f);
+                if (there + .4f < own)
+                {
+                    bot.Pick = bot.Pick / 2 * 2 + other;
+                    return HoistStage(bot, p, now, careful, pace, out dir, out jump);
+                }
+            }
+            if (!go)
+            {
+                bot.Waiting = true;
+                bot.Stage = "hoist wait";
+                dir = Flat(at - p).magnitude > .3f ? Toward(p, at) : Vector3.zero;
+                return true;
+            }
+            // In: to the well's middle, and still there (a runner under a raised pallet waits for it there).
+            var middle = new Vector3(well.center.x, 0f, well.center.z);
+            dir = Flat(middle - p).magnitude > .35f ? Toward(p, middle) : Vector3.zero;
+            bot.Stage = "boarding";
+            return true;
+        }
+
+        // Seconds from now until pallet k sits down with `need` seconds or more still to go, looking from `at` seconds ahead
+        // (a pallet about to leave counts from its next sitting, not as ready).
+        static float ReadyIn(PalletHoist h, int k, float at, float need)
+        {
+            float left = h.BoardingFor(k, at);
+            if (left >= need) return at;
+            float next = left > 0f ? at + left + .05f : at;
+            return next + h.NextBoarding(k, next);
+        }
+
+        // Is the bot standing on a hoist pallet (its hips over a plate's footprint and over its top)?
+        static bool OnPallet(Vector3 p, out PalletHoist hoist, out int k)
+        {
+            foreach (var h in hoists)
+                for (int i = 0; i < 2; i++)
+                {
+                    var well = h.Well(i);
+                    if (Mathf.Abs(p.x - well.center.x) > well.extents.x - .1f || Mathf.Abs(p.z - well.center.z) > well.extents.z - .1f) continue;
+                    float top = h.Top(i, ObstacleClock.Now) + h.transform.position.y;
+                    if (p.y < top - .05f || p.y > top + .9f) continue;
+                    hoist = h;
+                    k = i;
+                    return true;
+                }
+            hoist = null;
+            k = -1;
+            return false;
+        }
+
+        // Round the cranes' drums: within 1.1 m of one ahead, turned along it, to the side the way goes.
+        static Vector3 AroundDrums(Vector3 p, Vector3 dir)
+        {
+            foreach (var crane in cranes)
+            {
+                if (crane == null) continue;
+                var off = Flat(p - crane.transform.position);
+                float clear = crane.DrumRadius + 1.1f;
+                if (off.magnitude > clear || Vector3.Dot(-off, dir) <= 0f) continue;
+                var along = Vector3.Cross(Vector3.up, off).normalized;
+                if (Vector3.Dot(along, dir) < 0f) along = -along;
+                dir = (along + off.normalized * .3f).normalized;
+            }
+            return dir;
+        }
+
         // Under the heavy chest's footprint (and a metre round it) while it is carried there, held or lowered: the way
         // out, sideways along the berth line.
         static bool UnderChest(Vector3 p, out Vector3 away)
@@ -514,6 +755,16 @@ namespace ChessFight.PawnRush.Editor
                 return true;
             }
             return false;
+        }
+
+        // How high the hips are over the first solid thing below them that is not a pawn (8 m and more: nothing).
+        static float AboveGround(Vector3 p)
+        {
+            int n = Physics.RaycastNonAlloc(p + Vector3.up * .05f, Vector3.down, under, 8f, ~0, QueryTriggerInteraction.Ignore);
+            float best = 8f;
+            for (int i = 0; i < n; i++)
+                if (under[i].collider.GetComponentInParent<ICharacterDriver>() == null) best = Mathf.Min(best, under[i].distance - .05f);
+            return best;
         }
 
         // On its feet on something: not in the air (the hips over 0.8 m above whatever is under them, or rising or falling
@@ -576,10 +827,13 @@ namespace ChessFight.PawnRush.Editor
                 var v = bot.Hips.linearVelocity;
                 bot.MaxSpeed = Mathf.Max(bot.MaxSpeed, v.magnitude);
                 bot.MaxRise = Mathf.Max(bot.MaxRise, p.y);
-                if (!bot.Flung && (v.magnitude > 14f || p.y > 3.2f))
+                // Flung: over 14 m/s, or the hips 3 m and more above whatever is under them (R662: the loft's deck and the
+                // pallets are 2.4 m up, so not the height over the yard).
+                float aboveGround = AboveGround(p);
+                if (!bot.Flung && (v.magnitude > 14f || aboveGround > 3f))
                 {
                     bot.Flung = true;
-                    Anomaly(bot, "flung: " + v.magnitude.ToString("0.0") + " m/s, hips " + p.y.ToString("0.00") + " m up");
+                    Anomaly(bot, "flung: " + v.magnitude.ToString("0.0") + " m/s, hips " + aboveGround.ToString("0.00") + " m over the ground");
                 }
                 // Inside something solid for 1.5 s (a stack set down on it, the chest, the belt, a stall): pinned.
                 var inside = Physics.OverlapSphere(p, .12f, ~0, QueryTriggerInteraction.Ignore).FirstOrDefault(c => c.GetComponentInParent<ICharacterDriver>() == null);
@@ -590,6 +844,11 @@ namespace ChessFight.PawnRush.Editor
                     bot.Pinned = true;
                     Anomaly(bot, "inside " + inside.name + " for 1.5 s");
                 }
+                // Seconds waited at the cranes, at a hoist's mouth, and on a pallet until it starts up (riding it up is
+                // not waiting).
+                if (bot.Waiting && bot.Stage == "cranes") bot.CraneWait += Time.deltaTime;
+                if (bot.Waiting && bot.Stage == "hoist wait") bot.HoistWait += Time.deltaTime;
+                if (bot.Waiting && bot.Stage == "riding") bot.PlateWait += Time.deltaTime;
                 // Waiting for a gap on purpose is not stuck.
                 if (bot.Waiting)
                 {
@@ -618,7 +877,8 @@ namespace ChessFight.PawnRush.Editor
                 if (!results.TryGetValue(zone, out var list)) results[zone] = list = new List<float[]>();
                 list.Add(new[] { finished ? 1f : 0f, seconds, bot.Downs, bot.Staggers, bot.Fell ? 1f : 0f, bot.Stuck ? 1f : 0f, bot.Flung ? 1f : 0f, (float)bot.Policy });
                 crossings.Append(string.Join(",", zone, run + 1, bot.Index + 1, bot.Policy, F(bot.Lane), finished ? 1 : 0, finished ? F(seconds) : "",
-                                             bot.Downs, bot.Staggers, bot.Fell ? 1 : 0, bot.Stuck ? 1 : 0, bot.Flung ? 1 : 0, F(bot.MaxSpeed), F(bot.MaxRise))).Append('\n');
+                                             bot.Downs, bot.Staggers, bot.Fell ? 1 : 0, bot.Stuck ? 1 : 0, bot.Flung ? 1 : 0, F(bot.MaxSpeed), F(bot.MaxRise),
+                                             F(bot.CraneWait), F(bot.HoistWait), F(bot.PlateWait), bot.RidesDown)).Append('\n');
                 bot.Running = false;
                 bot.Driver.SetCommand(default);
             }
@@ -674,6 +934,8 @@ namespace ChessFight.PawnRush.Editor
                 case CraneCrate _: return "crane crate";
                 case ConveyorCrate _: return "conveyor load";
                 case StackCrate _: return "storage stack";
+                case SlewJib _: return "slewing crane";
+                case HoistPallet _: return "hoist pallet";
                 case RoamingCarriage rc: return rc.Kind == RoamingCarriage.Look.Team ? "horse-drawn carriage" : "roaming " + rc.Kind;
                 case StableCharger _: return "stable charger";
                 case HorizontalWaterwheel _: return "giant waterwheel";
@@ -712,12 +974,22 @@ namespace ChessFight.PawnRush.Editor
             }
             else
             {
-                // R661's yard in the map's frame: the conveyor at z 88, the rows at 93.5 / 99.5 / 105.5, the berth at 109.2.
-                Later(3.5f, () => Picture("zone2_overview", new Vector3(0f, 30f, 70f), new Vector3(0f, 0f, 104f), 64f));
-                Later(5.5f, () => Picture("zone2_top", new Vector3(0f, 64f, 100f), new Vector3(0f, 0f, 100.01f), 54f));
-                Later(8f, () => Picture("zone2_low", new Vector3(-21f, 5f, 83.5f), new Vector3(2f, 1f, 97f), 62f));
-                Later(10f, () => Picture("zone2_rows", new Vector3(0f, 10f, 89.5f), new Vector3(0f, 0f, 106f), 64f));
-                Later(12.5f, () => Picture("zone2_berth", new Vector3(-19f, 7f, 103.5f), new Vector3(0f, 1.5f, 110.5f), 64f));
+                // Placed from where the yard's parts are (R662: the yard is 17 m longer and recomposed), in the map's frame:
+                // the whole yard from the canal, from straight above, low across the conveyor, down the first storage row's
+                // aisle, beside the heavy berth.
+                float mouth = Zone2Mouth, end = Zone2Finish, middle = (mouth + end) * .5f;
+                float belt = conveyor != null ? conveyor.transform.position.z : mouth + 5f;
+                float row = rows.Length > 0 ? rows[0].transform.position.z : belt + 6f;
+                float berth = chests.Length > 0 && chests[0] != null ? chests[0].transform.parent.position.z : end - 6f;
+                Later(3.5f, () => Picture("zone2_overview", new Vector3(0f, 36f, mouth - 14f), new Vector3(0f, 0f, mouth + 26f), 66f));
+                Later(5.5f, () => Picture("zone2_top", new Vector3(0f, 78f, middle), new Vector3(0f, 0f, middle + .01f), 50f));
+                Later(8f, () => Picture("zone2_low", new Vector3(-21f, 5f, belt - 4.5f), new Vector3(2f, 1f, belt + 9f), 62f));
+                Later(10f, () => Picture("zone2_rows", new Vector3(0f, 10f, row - 4f), new Vector3(0f, 0f, row + 12.5f), 64f));
+                Later(12.5f, () => Picture("zone2_berth", new Vector3(-19f, 7f, berth - 5.7f), new Vector3(0f, 1.5f, berth + 1.3f), 64f));
+                // R662: the crane field from its south-west corner, the loft hoists from in front of them.
+                float craneZ = (float)SortingYardRules.CraneZ + Own, loftZ = (float)SortingYardRules.LoftZ0 + Own;
+                Later(15f, () => Picture("zone2_cranes", new Vector3(-17f, 9f, craneZ - 9f), new Vector3(2f, 0f, craneZ + 5f), 64f));
+                Later(17.5f, () => Picture("zone2_hoist", new Vector3(-8f, 5.5f, loftZ - 9.5f), new Vector3(1f, 1.6f, loftZ - .5f), 62f));
             }
         }
 
