@@ -87,3 +87,73 @@ Unity에서 대계단 낙하 기사와 예고음을 들은 뒤, 유리판이 깨
 ## 6. 이전 기록
 
 R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코드로 만든 경기 음악을 넣었다. 하지만 커밋 전에 작업 폴더가 되돌려져서 main에 들어가지 않았고, 30e235f7 "제발 돼라" 커밋에만 남아 있다. 같은 날 밤 그 작업은 R653으로 다시 커밋됐고, 그 커밋이 같은 폴더에서 동시에 진행되던 R652의 경기 음악 · 다이빙 · 잡기 파일과 `PawnRushRoundMusic`을 먼저 담았다. 점프 · 착지 · 발소리, 움직임 소리의 크기와 음높이 흔들기, 로비 음악은 R652 커밋에 있다.
+
+## 7. 파일이 없는 소리와 ElevenLabs 프롬프트 (R673)
+
+사용자 "미니게임들의 효과음이 비어있는 부분이 많아 … 자리는 있는데 파일이 없어서 효과음이 없는 것들의 리스트" → "프롬프트 만들어줘". 코드가 부르는 소리 262곳을 파일과 대조한 결과(2026-11-15 main `aac81ee6`) 없는 것들이다. 아래 파일 이름 그대로 넣으면 코드 수정 없이 재생된다(`.meta`는 새로 만든다). 생성 설정: Prompt influence 0.6 ~ 0.7, 반복음(🔁)은 **Loop 켜기 · 3초**, 나머지는 적힌 길이(0.5초 미만이면 0.5초로 만들고 잘라 씀), 프롬프트마다 3 ~ 4개 생성해서 고른다.
+
+### 7.1 모든 미니게임 공통 — `Resources/PawnRushMiniGameSfx/`
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `sfx_mg_complete` | 미니게임 완료(우리 팀 크게, 상대 작게, 2D) | A short bright royal success flourish: a quick rising three-note brass and glockenspiel sting ending on a warm major chord, cheerful and playful, about 1.2 seconds, clean and close, no voice. |
+| `sfx_gate_open` | 완료 뒤 팀 문이 열림 | A heavy ornate palace door unlocking and swinging open: one solid iron latch clunk, then a deep wooden door groan and a soft stone rumble, about 1.5 seconds, a little hall reverb, no voice, no music. |
+| `sfx_mg_quarter` | 승격 발판(기물 고르기)이 열림(코드가 1.5배 높게 재생) | A soft magical pedestal waking up: a gentle rising shimmer with one soft chime, about 0.5 seconds, clean, no voice, no music. |
+
+### 7.2 F 대무도회장 — 태엽 인형 무용수 석상 · 쪽마루 레인 (`MgEnPassant`)
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `sfx_ep_ready` | 석상이 전진하기 직전 0.5초 들썩임 | A tiny wind-up clockwork toy about to move: a quick rattling whir of a small key and spring, light and mechanical, about 0.5 seconds, close and dry, no voice, no music. |
+| `sfx_ep_step` | 석상이 한 칸 내딛음(두 칸 전진이라 두 번) | One quick step of a small wooden clockwork dancer doll sliding forward on a polished parquet floor: a soft wooden clack with a short gear click, about 0.2 seconds, close and dry, no voice, no music. |
+| `sfx_ep_window` | 잡을 수 있는 1.2초가 열림 | A bright short music-box cue meaning "now": one clear high bell note with a tiny sparkle, about 0.4 seconds, clean, no voice, no long tail. |
+| `sfx_ep_clank` | 창이 아닐 때 부딪혀 튕겨 나옴 | A small clockwork doll bumped too early: a dull hollow metal-and-wood clank with a short rattle of loose gears, about 0.3 seconds, close and dry, no voice, no music. |
+| `sfx_ep_capture` | 석상을 잡아 쓰러뜨림(I 침실에서도 씀) | A wooden chess pawn knocked over and captured: a crisp wooden topple clack and a quick tumble onto a wooden floor, satisfying and playful, about 0.5 seconds, close and dry, no voice, no music. |
+
+### 7.3 G 왕의 행차 회랑 — 킹 썰매 호송 · 모래 칸 · 룩 탑 캐슬링 (`MgKingEscort`)
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `sfx_sled_drag` 🔁 | 썰매를 끄는 동안(속도에 따라 음높이 0.8 ~ 1.2) | Seamless loop of a heavy walnut sled with wooden runners dragged slowly over a polished wooden floor: a steady low scraping rumble with soft rope creaks, even and continuous, close and dry, no voice, no music. |
+| `sfx_sand_crunch` 🔁 | 모래 칸 위를 끄는 동안 | Seamless loop of sled runners crunching slowly through coarse sand: a steady granular crunch and hiss, even and continuous, close and dry, no voice, no music. |
+| `sfx_stone_drag` 🔁 | 룩 석상이 움직이는 동안 | Seamless loop of a large stone chess rook tower sliding slowly across a stone floor: a deep steady grinding scrape, even and continuous, close, no voice, no music. |
+| `sfx_sled_blocked` | 썰매가 막혀 멈춤 | A wooden sled jolting to a stop against a block: one dull wooden thunk with a short rattle of the statue on top, about 0.35 seconds, close and dry, no voice, no music. |
+| `sfx_latch` | 정지 칸에서 걸쇠가 걸림 | A brass latch snapping shut as a sled locks into place: one crisp metallic click-clack, about 0.25 seconds, close and dry, no voice, no music. |
+| `sfx_castle_land` | 도착 — 룩 탑이 킹을 뛰어넘어 착지(캐슬링) | A big stone chess rook tower hopping over and landing: a heavy satisfying stone thud with a little dust crumble, about 0.8 seconds, close, no voice, no music. |
+
+### 7.4 H 국왕 체스 홀 — 킹 잡기 (`MgCheckmate`)
+
+지금은 다른 소리를 대신 튼다. 프롬프트는 R653이 쓴 것을 그대로 둔다([미니게임 구간](PAWN_RUSH_MINIGAME_SECTIONS.md) 맨 위 표): `sfx_check` · `sfx_mate` · `sfx_king_capture` · `sfx_king_sweep` · `sfx_rescue` · `sfx_stalemate` · `sfx_king_hop` · `sfx_ep_tray`(F 쟁반에서도 씀).
+
+### 7.5 I 국왕 침실 — 체크 막기 (`MgCheckBlock`)
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `sfx_cart_roll` 🔁 | 킹 카트를 옮기는 동안 | Seamless loop of a small wooden cart with brass wheels rolling slowly across a marble floor: a soft steady wheel rumble with faint creaks, even and continuous, close, no voice, no music. |
+| `sfx_beam_hum` 🔁 | 체크 빛줄기가 켜져 있는 동안(작게 재생) | Seamless loop of a soft magical energy beam humming: a warm low hum with a faint shimmering overtone, steady and continuous, never harsh, no voice, no music. |
+| `sfx_shield_lock` | 방패를 끼워 공격선을 막음 | A brass shield sliding into a rail and locking: a quick metal slide followed by a firm click-clunk, about 0.5 seconds, close and dry, no voice, no music. |
+| `sfx_piece_fall` | 공격하던 나이트를 쓰러뜨림 | A tall wooden chess knight toppling onto a wooden board: a short wobble and a hollow wooden clatter as it falls, about 0.6 seconds, close and dry, no voice, no music. |
+| `sfx_double_check` | 이중 체크 경고 | A short urgent double warning chime: two quick sharp bell strikes, slightly dissonant, alarming but not harsh, about 0.6 seconds, clean, no voice, no music. |
+| `sfx_resolve` | 체크 하나를 풂 | A relieved resolving chime: a soft rising two-note glockenspiel phrase, about 0.5 seconds, clean, no voice. |
+| `sfx_ep_capture` | 그 밖의 공격 기물을 잡음 | (F와 같은 파일) |
+
+### 7.6 J 왕궁 세탁장 — 물 위 섬 · 나이트 도약대 · 비눗물 (`MgKnightPads` · `MgWaterReturn`)
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `sfx_pad_launch` | 도약대가 폰을 ㄱ자로 튕겨 올림 | A springy wooden launch pad flinging a small toy figure into the air: a quick taut spring twang with a soft wooden thump and a short whoosh, about 0.4 seconds, playful, close and dry, no voice, no music. |
+| `sfx_splash` | 물에 빠짐 | A small toy figure falling into a tub of soapy laundry water: a medium splash with bubbly foam fizz, about 0.8 seconds, close, no voice, no music. |
+
+### 7.7 소드 파이트 스킬 — `Resources/SwordFightSkillSfx/`
+
+| 파일 | 나는 때 | 프롬프트 |
+|---|---|---|
+| `EdgeCast` | E 스킬 시전(킹 · 퀸 · 룩) | A sword ability powering up: a quick metallic blade ring with a short rising whoosh of energy, about 0.4 seconds, crisp, no voice, no music. |
+| `RookBreak` | 룩 E로 바닥이 부서짐 | A heavy stone floor cracking under a mighty blow: a deep crunching crack with small debris, about 0.7 seconds, punchy, no voice, no music. |
+| `KingRepel` | 킹이 막기로 공격자를 튕겨냄 | A blocked attacker thrown back: a solid metallic deflect clang followed by a short whoosh, about 0.4 seconds, crisp, no voice, no music. |
+| `CastPawn` | 폰이 스킬을 시전 | A small piece readying a quick move: a short light sword shing with a soft whoosh, about 0.3 seconds, crisp, no voice, no music. |
+| `PawnStep` | 폰 스킬 스텝 | A quick light dash step: a short sharp whoosh with a soft foot scuff, about 0.25 seconds, close and dry, no voice, no music. |
+| `PawnHit` | 폰이 대각선으로 들이받아 맞힘 | A small body checking another: a punchy soft thump with a cloth rustle, about 0.3 seconds, close and dry, no voice, no music. |
+| `PawnBounce` | 정면으로 부딪혀 튕김 | A head-on bump that bounces back: a soft rubbery bonk with a tiny rebound, about 0.3 seconds, playful, close and dry, no voice, no music. |
+
+빠진 게 아닌 것: `KingLandHit` · `KingDrop`은 다른 소리를 빌려 쓰고(별칭), `EdgeCancel` · `BishopDrop`은 일부러 소리를 끊는다. `BishopFire` · `BishopSlow` · `BishopPin`은 10-27부터 쓰지 않는 옛 비숍 기술이라, `sfx_mg_install`은 궁전 미니게임에서 재생되지 않는 옛 자리라 프롬프트를 쓰지 않았다.
