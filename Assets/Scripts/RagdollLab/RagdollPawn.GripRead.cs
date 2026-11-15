@@ -16,6 +16,16 @@ namespace ChessFight.RagdollLab
 
         bool netGrabbing;   // a puppet's "a hand holds something" off the wire (pose.grabbing)
 
+        /// <summary>
+        /// R664 (승규 님 11-15, two pawns of one team stuck together with the grip ring on one): in Pawn Rush a hand never
+        /// takes hold of a teammate. PawnHand skips them where the hand picks what to grab, on the PC that simulates the
+        /// pawn (the host online), so there is no grip, no "held" on the wire and no HUD; the HUD's own pairing below skips
+        /// them too. A pawn with no side (a lab dummy) stays everyone's enemy (Teams.AreEnemies); other modes are untouched.
+        /// </summary>
+        public bool PawnRushTeammate(RagdollPawn other) =>
+            other != null && other != this && (PawnRushPhysics != null || ChessFight.Gameplay.CourseSkills.PawnRush)
+            && !ChessFight.Gameplay.Teams.AreEnemies(team, other.team);
+
         Vector3 Palm(int slot) =>
             bodies[(int)(slot == 0 ? BodyId.HandL : BodyId.HandR)].transform.TransformPoint(palmLocal[slot]);
 
@@ -62,7 +72,7 @@ namespace ChessFight.RagdollLab
             bool found = false;
             foreach (var other in All)
             {
-                if (other == null || other == this || !other.GrabbingAnything) continue;
+                if (other == null || other == this || !other.GrabbingAnything || PawnRushTeammate(other)) continue;
                 for (int slot = 0; slot < 2; slot++)
                 {
                     Vector3 palm = other.Palm(slot);
@@ -83,7 +93,7 @@ namespace ChessFight.RagdollLab
             float best = GripMatch;
             foreach (var other in All)
             {
-                if (other == null || other == captor || !other.BeingHeld) continue;
+                if (other == null || other == captor || !other.BeingHeld || captor.PawnRushTeammate(other)) continue;
                 for (int slot = 0; slot < 2; slot++)
                 {
                     Vector3 palm = captor.Palm(slot);

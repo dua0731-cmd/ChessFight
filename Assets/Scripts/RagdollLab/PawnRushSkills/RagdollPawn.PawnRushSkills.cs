@@ -172,8 +172,8 @@ namespace ChessFight.RagdollLab
         public static string SkillName(PieceKind kind) => kind switch
         {
             PieceKind.Pawn => "첫 두 걸음",
-            PieceKind.Knight => "포크 도약",
-            PieceKind.Bishop => "지키는 X자 덫",
+            PieceKind.Knight => "꺾어 도약",   // R666: the promotion card's name (was "포크 도약")
+            PieceKind.Bishop => "교차 밧줄",   // R666: the promotion card's name (was "지키는 X자 덫")
             PieceKind.Rook => "직선 사슬 견인",
             PieceKind.Queen => "팔방 밀치기",
             PieceKind.King => "왕의 부름",

@@ -51,12 +51,14 @@ namespace ChessFight.Game
 
         // Cloth in `cloth` with soft folds, a gold line inside each long edge and
         // along the swallowtail, a dark hem at the top, and the glyph in gold.
-        internal static Texture2D PennantTexture(string glyph, int cloth)
+        // R663: the lobby hall's banners pass their own trim and glyph colours (gold leaf, ivory).
+        internal static Texture2D PennantTexture(string glyph, int cloth, int trim = 0xF2C14E, int glyphColor = -1)
         {
             const int w = 128, h = 256;
             const float notch = .2f;
             var px = new Color[w * h];
-            Color baseColor = MenuArt.Hex(cloth), gold = MenuArt.Hex(0xF2C14E), hem = Color.Lerp(baseColor, Color.black, .45f);
+            Color baseColor = MenuArt.Hex(cloth), gold = MenuArt.Hex(trim), hem = Color.Lerp(baseColor, Color.black, .45f);
+            Color ink = glyphColor < 0 ? gold : MenuArt.Hex(glyphColor);
             var mask = GlyphMask(glyph, 96, 96);
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
@@ -79,7 +81,7 @@ namespace ChessFight.Game
                     if (mask != null && gx >= 0 && gx < 96 && gy >= 0 && gy < 96)
                     {
                         float m = mask[gy * 96 + gx];
-                        c = Color.Lerp(c, gold, m);
+                        c = Color.Lerp(c, ink, m);
                     }
                     c.a = 1f;
                     px[y * w + x] = c;

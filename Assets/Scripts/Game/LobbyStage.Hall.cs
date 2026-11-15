@@ -71,6 +71,7 @@ namespace ChessFight.Game
                 lanternGlassMaterial.SetColor("_EmissionColor", MenuArt.Hex(0xFFB45E) * 1.5f);   // AI Play capture: 2.4 went white
                 glassRenderer.shadowCastingMode = ShadowCastingMode.Off;
             }
+            HallBanners(root);   // R663: wine banners either side of the rose window (LobbyStage.Hall.Banners.cs)
             HallLight(root);
             HallReflection();   // R580: after the lights, so the probe sees the lit hall
             return true;

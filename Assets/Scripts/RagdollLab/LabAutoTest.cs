@@ -178,6 +178,7 @@ namespace ChessFight.RagdollLab
             ("Launch", LaunchChecks), ("Rope", RopeChecks), ("Status", StatusChecks),
             ("Piece", PieceChecks), ("Knight", KnightChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
             ("PawnRushMove", PawnRushMove),   // R513: the Pawn Rush jump's and dive's repeatability (LabAutoTest.PawnRushMove.cs)
+            ("TeamGrab", TeamGrab),   // R664: no grip on a Pawn Rush teammate (LabAutoTest.TeamGrab.cs)
         };
 
         string JointErrors(RagdollPawn pawn)

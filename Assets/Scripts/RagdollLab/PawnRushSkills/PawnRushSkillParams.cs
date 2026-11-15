@@ -50,7 +50,7 @@ namespace ChessFight.RagdollLab
         public float helpGuard = 1.5f;
         public float helpCooldownCut = 1.5f;
 
-        [Header("나이트 — 포크 도약 (R153)")]
+        [Header("나이트 — 꺾어 도약 (R153, R666 전 이름 포크 도약)")]
         public float knightWindup = 0.15f;
         [Tooltip("최고 높이 (m). R646: 1.6 → 2.1 (먼 도약 1.3초가 이 높이 아래로 들어가게: g·t²/8 ≈ 2.07 m)")]
         public float knightHeight = 2.1f;
@@ -84,7 +84,7 @@ namespace ChessFight.RagdollLab
         public float knightLandRecovery = 0.35f;
         public float knightCooldown = 7f;
 
-        [Header("비숍 — 지키는 X자 덫 (R153)")]
+        [Header("비숍 — 예전 X자 덫 (bishopRope를 끌 때, R153)")]
         [Tooltip("최대 거리 (m). v0.1은 9 m(6칸), R74 근거리로 4.5 m(3칸)")]
         public float bishopRange = 4.5f;
         public float bishopLineLength = 4.2f;
@@ -103,7 +103,7 @@ namespace ChessFight.RagdollLab
         public float bishopLeash = 6f;
         public float bishopLeashWarn = 5f;
 
-        [Header("비숍 — X자 밧줄 걸기 (10-26)")]
+        [Header("비숍 — 교차 밧줄 = X자 밧줄 걸기 (10-26, R666 이름)")]
         [Tooltip("10-26 승규 님: \"소드파이트에서 비숍이 구원의 손 할 때 밧줄 그걸로 비숍 손에서 x 자로 상대 배에다가 걸고 wasd나 마우스 휠로 밧줄 탄력을 늘렸다 줄였다\". 켜면 X자 밧줄 걸기, 끄면 예전 X자 덫")]
         public bool bishopRope = true;
         [Tooltip("밧줄이 닿는 거리 (m), 날아가는 빠르기 (m/s), 조준 도움: 조준 방향 좌우 이 각도 안 (도)의 적에게")]

@@ -60,6 +60,12 @@ namespace ChessFight.RagdollLab
                     return;
                 }
                 bool onPawn = RagdollPawn.ColliderOwner.TryGetValue(HeldCollider, out var victim) && victim != owner;
+                // R664: a grip on a Pawn Rush teammate (one taken before the sides were set) lets go at once.
+                if (onPawn && owner.PawnRushTeammate(victim))
+                {
+                    Release();
+                    return;
+                }
                 float limit = onPawn ? p.pawnGrabBreakForce : p.grabBreakForce;
                 if (!Mathf.Approximately(joint.breakForce, limit))
                 {
@@ -86,7 +92,9 @@ namespace ChessFight.RagdollLab
                 var col = buffer[i];
                 if (owner.Owns(col) || owner.PassesThrough(col)) continue;
                 // A pawn that has just thrashed free cannot be grabbed straight back.
-                if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other) && other.GrabImmune) continue;
+                // R664: and a Pawn Rush teammate is never taken hold of (nor reached for).
+                if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other)
+                    && (other.GrabImmune || owner.PawnRushTeammate(other))) continue;
                 if (col is MeshCollider mesh && !mesh.convex) continue;
                 // An unclimbable wall or railing cannot be gripped either, or a hang-and-vault would climb it.
                 if (IsEnvironment(col) && NoClimbSurface.Blocks(col)) continue;

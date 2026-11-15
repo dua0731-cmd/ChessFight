@@ -28,7 +28,7 @@ namespace ChessFight.Network
             switch (piece)
             {
                 case PieceKind.Queen: return "팔방 밀치기";
-                case PieceKind.Rook: return "직선 돌파";
+                case PieceKind.Rook: return "직선 사슬 견인";   // R665: the chain pull since R153 (was the old charge's name)
                 case PieceKind.Bishop: return "교차 밧줄";
                 case PieceKind.Knight: return "꺾어 도약";
                 default: return "첫 두 걸음";
@@ -40,7 +40,7 @@ namespace ChessFight.Network
             switch (piece)
             {
                 case PieceKind.Queen: return "둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다";
-                case PieceKind.Rook: return "곧게 돌진해 앞을 뚫는다. 무겁고 잘 안 밀린다";
+                case PieceKind.Rook: return "사슬을 던져 적은 끌어오고 팀원은 옆으로 데려온다";
                 case PieceKind.Bishop: return "대각선 밧줄을 깔아 길을 막는다. 상대 견제용";
                 case PieceKind.Knight: return "높이 뛰어 꺾어 착지한다. 틈과 턱을 넘기 좋다";
                 default: return "두 칸을 빠르게 내딛는다";
