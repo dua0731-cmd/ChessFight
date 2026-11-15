@@ -52,11 +52,12 @@ namespace ChessFight.PawnRush
                 foreach (float b in new[] { -1f, 1f })
                     YardKit.Box(transform, "Pallet corner", new Vector3(a * (size.x * .5f - .08f), -size.y * .5f, b * (size.z * .5f - .08f)),
                                 new Vector3(.18f, size.y + .02f, .18f), YardKit.Iron, Solid.None);
-            // Two sacks lashed at the outer corners (solid, never climbed): the goods going up.
+            // Two sacks lashed at the outer corners: the goods going up. Pictures only - a solid sack would come down on
+            // whoever the plate lets through under it and press them into the floor (R662 review).
             float outer = hoist.OuterSide(index) * (size.x * .5f - .3f);
             foreach (float z in new[] { -size.z * .5f + .35f, size.z * .5f - .35f })
             {
-                var sack = YardKit.Box(transform, "Pallet sack", new Vector3(outer, .3f, z), new Vector3(.45f, .6f, .45f), Sack, Solid.NoClimb);
+                var sack = YardKit.Box(transform, "Pallet sack", new Vector3(outer, .3f, z), new Vector3(.45f, .6f, .45f), Sack, Solid.None);
                 YardKit.Box(sack.transform, "Sack cord", Vector3.zero, new Vector3(1.04f, .12f, 1.04f), YardKit.WoodDark, Solid.None);
             }
 
@@ -76,8 +77,10 @@ namespace ChessFight.PawnRush
             impact.maxPush = hoist.Push;
             impact.lift = 1f;
             impact.minSpeed = .1f;
-            // Any contact coming down knocks down, and so lets the pawn through the plate until it is clear.
-            impact.knockdownSpeed = .5f;
+            // Coming down at 1.2 m/s or more (until its underside is about 0.17 m up) it knocks down and lets the pawn
+            // through the plate until it is clear; in the slow last few centimetres a foot stepped under its rim is only
+            // shoved out (a pallet all but landed does not floor whoever steps onto it - R662 bots).
+            impact.knockdownSpeed = 1.2f;
             impact.knockdownSeconds = 1f;
             impact.cooldown = .7f;
             impact.ghostSeconds = 3f;

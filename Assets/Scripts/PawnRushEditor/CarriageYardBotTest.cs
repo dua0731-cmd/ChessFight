@@ -684,9 +684,13 @@ namespace ChessFight.PawnRush.Editor
             }
             if (!go)
             {
+                // Held at the mouth and never nearer the well than it: a body over the well's edge is under the pallet's
+                // rim when it comes down (a player waiting steps back).
+                // Side by side, not all on one spot (bots on the same spot shoved each other over the edge).
                 bot.Waiting = true;
                 bot.Stage = "hoist wait";
-                dir = Flat(at - p).magnitude > .3f ? Toward(p, at) : Vector3.zero;
+                var spot = at + new Vector3((bot.Index % 3 - 1) * .4f, 0f, -.1f);
+                dir = Flat(spot - p).magnitude > .3f || p.z > spot.z + .05f ? Toward(p, spot) : Vector3.zero;
                 return true;
             }
             // In: to the well's middle, and still there (a runner under a raised pallet waits for it there).

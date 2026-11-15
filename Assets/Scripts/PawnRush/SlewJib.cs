@@ -109,7 +109,9 @@ namespace ChessFight.PawnRush
             impact.downPush = crane.DownPush;
             impact.knockdownSeconds = 1f;
             impact.cooldown = .7f;
-            impact.ghostSeconds = 1.5f;
+            // Long enough to cover a load that comes to rest over whoever it has just knocked down (the last second of a
+            // slew, a 1.4 s rest, the slow start back): let through until the load has gone on, never pressed under it.
+            impact.ghostSeconds = 4f;
             impact.course = crane.Course;
             impact.forwardShare = .6f;
         }
