@@ -1,0 +1,33 @@
+{
+  "blend": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/pieces/final_rigged/Bishop_Rigged.blend",
+  "piece": "Bishop",
+  "style": "diamond",
+  "out": "C:/Users/trews/OneDrive/Desktop/chess3333/ChessFight/RigWork/eyes/mesh_final",
+  "eye": {
+    "az": 25.0,
+    "z": 0.8846,
+    "w": 0.057,
+    "roll": 0,
+    "front": 0.9
+  },
+  "style_over": {
+    "aspect": 2.04,
+    "kite": -0.25,
+    "glint": [
+      0.0,
+      0.05,
+      0.25
+    ],
+    "glint_inner": 0.0
+  },
+  "blush": {
+    "az": 39.5,
+    "z": 0.8287,
+    "d": 0.0432,
+    "aspect": 1.05
+  },
+  "teams": [
+    "white",
+    "black"
+  ]
+}

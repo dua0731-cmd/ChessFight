@@ -1,0 +1,133 @@
+{
+ "sides": 16,
+ "vertices": 784,
+ "faces": 836,
+ "triangles": 1552,
+ "faces_by_part": {
+  "body": 384,
+  "head": 192,
+  "petal": 132,
+  "ball": 128
+ },
+ "bounds": [
+  [
+   -0.2694,
+   -0.2694,
+   0.12
+  ],
+  [
+   0.2694,
+   0.2694,
+   1.447
+  ]
+ ],
+ "metres_per_pixel": 0.0011816562778272483,
+ "neck_column": {
+  "z_bottom": 0.5998,
+  "z_top": 0.6695,
+  "z_middle": 0.6346,
+  "radius": 0.091
+ },
+ "ring_band": [
+  0.5596,
+  0.5998
+ ],
+ "disc_rim": [
+  0.699,
+  0.7144
+ ],
+ "head": {
+  "z_bottom": 0.762,
+  "z_widest": 0.9448,
+  "radius": 0.2015,
+  "v_apex_z": 0.9826,
+  "tip_z": 1.3383
+ },
+ "petal": {
+  "tip_z": 1.2278,
+  "tip_y": 0.1099
+ },
+ "ball": {
+  "z": 1.3897,
+  "radius": 0.0573
+ },
+ "head_rings": [
+  {
+   "row": 128.0,
+   "shift": -10.39,
+   "corner": -0.18,
+   "centre": 0.5,
+   "xc": 14.01
+  },
+  {
+   "row": 220.0,
+   "shift": -7.41,
+   "corner": 16.29,
+   "centre": 19.19,
+   "xc": 70.02
+  },
+  {
+   "row": 300.0,
+   "shift": -4.83,
+   "corner": 29.69,
+   "centre": 34.25,
+   "xc": 110.99
+  },
+  {
+   "row": 391.0,
+   "shift": -1.89,
+   "corner": 42.95,
+   "centre": 49.09,
+   "xc": 149.95
+  },
+  {
+   "row": 428.0,
+   "shift": -0.69,
+   "corner": 48.29,
+   "centre": 54.89,
+   "xc": 160.95
+  },
+  {
+   "row": 469.0,
+   "shift": 0.64,
+   "corner": 59.0,
+   "centre": 65.82,
+   "xc": 163.75
+  },
+  {
+   "row": 512.0,
+   "shift": 2.03,
+   "corner": 57.5,
+   "centre": 64.12,
+   "xc": 159.36
+  },
+  {
+   "row": 550.0,
+   "shift": 3.0,
+   "corner": 48.5,
+   "centre": 54.58,
+   "xc": 148.15
+  },
+  {
+   "row": 592.0,
+   "shift": 3.0,
+   "corner": 28.0,
+   "centre": 33.06,
+   "xc": 126.53
+  },
+  {
+   "row": 623.7,
+   "shift": 3.0,
+   "corner": 9.0,
+   "centre": 12.8,
+   "xc": 96.57
+  },
+  {
+   "row": 634.0,
+   "shift": 3.0,
+   "corner": 7.08,
+   "centre": 10.28,
+   "xc": 81.47
+  }
+ ]
+}
