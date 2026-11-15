@@ -185,7 +185,10 @@ namespace ChessFight.PawnRush
                     }
                     keep = inside ? age < ghostSeconds + 2f : age < .35f;
                 }
-                else keep = age < .35f || (age < ghostSeconds && Overlaps(ghost.Parts));
+                // Still coming down (liftOut parts): kept while any of it is under the part's footprint too, not only
+                // touching it - a knocked-down pawn topples flat faster than the pallet comes down, and must not have
+                // the pallet solid again above it before it is clear.
+                else keep = age < .35f || (age < ghostSeconds && (Overlaps(ghost.Parts) || (liftOut > 0f && Beneath(ghost.Parts))));
                 if (keep) continue;
                 Collide(ghost, true);
                 ghosts.RemoveAt(i);
@@ -201,6 +204,22 @@ namespace ChessFight.PawnRush
 
         // The part not moving (a hoist pallet sitting on the floor).
         bool Settled() => surface != null && solid != null && surface.PointVelocity(solid.bounds.center).sqrMagnitude < .0025f;
+
+        // Some part of the character under the part's own box: within its footprint and below its top (a pallet still
+        // coming down on it).
+        bool Beneath(Collider[] parts)
+        {
+            if (solid == null) return false;
+            var room = solid.bounds;
+            foreach (var part in parts)
+            {
+                if (part == null || part.isTrigger || !part.enabled) continue;
+                var b = part.bounds;
+                if (b.max.x > room.min.x && b.min.x < room.max.x && b.max.z > room.min.z && b.min.z < room.max.z && b.min.y < room.max.y)
+                    return true;
+            }
+            return false;
+        }
 
         // Some part of the character really inside the part's own colliders (more than 2 cm in), not just near them.
         bool Inside(Collider[] parts)
