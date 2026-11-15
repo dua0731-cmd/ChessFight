@@ -321,6 +321,11 @@ namespace ChessFight.RagdollLab
         /// <summary>Degrees the drawn body is turned about up from its facing (a sword sweep's turn, SwordFightPawn); the way
         /// it walks is unchanged.</summary>
         public float BodyTurn;
+        /// <summary>R670: a mode's hold on the way the pawn faces (Sword Fight: a click cut turns the body to where it cuts,
+        /// SwordFightPawn). While <see cref="FaceHoldRate"/> is above zero the facing turns to <see cref="FaceHold"/> at that
+        /// many degrees a second instead of to the way it walks; the walk itself is unchanged. Zero: none (every other mode).</summary>
+        public Vector3 FaceHold;
+        public float FaceHoldRate;
         /// <summary>A piece model's right arm is drawn wherever its arm body goes, not calmed (RagdollVisualSync.PoseAsPiece):
         /// it holds a sword (SwordFightPawn).</summary>
         public bool RightArmFree;
@@ -1240,7 +1245,18 @@ namespace ChessFight.RagdollLab
             float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
             ownFootMaterial.dynamicFriction = footFriction;
             ownFootMaterial.staticFriction = footFriction * 1.15f;
-            if (moving && !Grabbing && hookPhase != HookPhase.Charging && !LassoFacesTarget)   // swinging the hook, it faces the aim; holding the bishop's rope, the piece on it
+            if (FaceHoldRate > 0f)
+            {
+                // R670: a mode holds the facing (a Sword Fight cut): turned about up only, the short way round.
+                Vector3 want = Flat(FaceHold);
+                if (want.sqrMagnitude > 1e-4f)
+                {
+                    float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
+                    float yaw = Mathf.MoveTowardsAngle(current, Mathf.Atan2(want.x, want.z) * Mathf.Rad2Deg, FaceHoldRate * dt) * Mathf.Deg2Rad;
+                    facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
+                }
+            }
+            else if (moving && !Grabbing && hookPhase != HookPhase.Charging && !LassoFacesTarget)   // swinging the hook, it faces the aim; holding the bishop's rope, the piece on it
             {
                 float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
                 float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;

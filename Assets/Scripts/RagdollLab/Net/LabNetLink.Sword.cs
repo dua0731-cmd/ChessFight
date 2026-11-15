@@ -480,6 +480,9 @@ namespace ChessFight.RagdollLab
                 Played(r, now);
                 var held = r.input;
                 var s = f.Skills;
+                // R670: how old the picture that player aims by is (its own report: the round trip and its playback delay);
+                // its click cut leans to a foe over a wider cone for it (SwordFightPawn.AimPull).
+                f.ViewLag = (r.reportRtt + r.reportDelay) / 1000f;
                 // One skill key a step, and a click not in the same step as one: F then a quick click in one packet is
                 // the aim and then its use, not the click spent on the sword before the aim exists.
                 bool key = false;

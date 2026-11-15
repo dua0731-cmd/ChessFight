@@ -134,6 +134,14 @@ namespace ChessFight.RagdollLab
         public float knightPush = 2.4f;
         [Tooltip("착지점의 적이 밀리는 거리 (m)")]
         public float knightStompPush = 1.6f;
+        // R671 (승규 님 11-15: "나이트 포크 강하를 좀 더 강하게 상대가 넘어지게"): new fields, so the scenes that keep
+        // their own copy of these numbers take them too.
+        [Tooltip("포크 강하 세기: 위 두 밀림 거리에 곱함 (1 = 예전 세기)")]
+        public float knightForce = 1.6f;
+        [Tooltip("포크 강하에 맞은 적이 위로 뜨는 속도 (m/s, 다른 스킬은 pushLift 1.0)")]
+        public float knightLift = 2.2f;
+        [Tooltip("포크 강하에 맞아 넘어진 채로 있는 시간 (s, 다른 스킬은 knockdownSeconds 0.65)")]
+        public float knightKnockdown = 1.1f;
         public float knightRecovery = 0.35f;
 
         [Header("폰 · 첫 두 걸음 (R149 프로토타입 경기, 명세 §7.2)")]

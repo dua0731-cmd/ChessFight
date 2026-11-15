@@ -44,6 +44,12 @@ namespace ChessFight.RagdollLab
         public SwordFightSkills Skills { get; set; }
         /// <summary>A test dummy the skill test drives itself for a moment (a scripted cut): the match leaves its input alone.</summary>
         public bool Scripted { get; set; }
+        /// <summary>R670: how old the picture this fighter's player aims by is, in seconds: a client's round trip plus its
+        /// playback delay, written by the host's link from that client's own report; 0 for the host's own fighter and
+        /// offline. The click cut's pull toward a foe in reach is wider by what a foe can run in that time (AimPull).</summary>
+        public float ViewLag { get; set; }
+        /// <summary>Every fighter in the scene (a click cut looks for the foe it is aimed at, AimPull).</summary>
+        static readonly List<SwordFightPawn> everyone = new List<SwordFightPawn>();
         readonly Dictionary<SwordFightPawn, HitRecord> hits = new Dictionary<SwordFightPawn, HitRecord>();
         readonly Collider[] overlaps = new Collider[128];
         readonly Contact[] contacts = new Contact[24];
@@ -79,6 +85,7 @@ namespace ChessFight.RagdollLab
         public void Initialize(ulong id, int slot, bool bot)
         {
             Pawn = GetComponent<RagdollPawn>(); Id = id; Slot = slot; Bot = bot;
+            if (!everyone.Contains(this)) everyone.Add(this);
             ownerColliders = Pawn.GetComponentsInChildren<Collider>();
             Pawn.PoseOverride = SwordPose;
             var root = new GameObject("Physical sword");
@@ -333,7 +340,7 @@ namespace ChessFight.RagdollLab
             float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit((direction.normalized * strength + Vector3.up * .7f) * SameFall(target), .65f, 0, true);
-            victim.StopCombat(); victim.FlashHit(.16f); HitFlash = .1f; HitsLanded++;
+            victim.StopCombat(); victim.FlashHit(CutFlash); HitFlash = .1f; HitsLanded++;
             RaiseStruck(this, victim);
         }
 
@@ -398,7 +405,12 @@ namespace ChessFight.RagdollLab
             float offShare = StepOffArmShare();
             Pawn.LeftArmShare = Mathf.MoveTowards(Pawn.LeftArmShare, Skills != null && Skills.LeftArmPosed ? 1f : offShare, Time.deltaTime / 0.12f);
             if (!Authority)
-                sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            {
+                // R670: a picture held still for a moment (a hit's stop on this screen, RagdollPawn.HoldVisual) keeps its
+                // sword where it is drawn, in the held hand, instead of going on with the body underneath.
+                if (!Pawn.VisualHeld)
+                    sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            }
             else if (Skills != null && Skills.Blade is Vector3 skillBlade)
             {
                 // A sword stuck in the stone stays where it went in (the king's edge skill, R103).
@@ -501,9 +513,18 @@ namespace ChessFight.RagdollLab
             if (ClassicControls) PoseClickSword(); else PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
+        /// <summary>R670: a cut's hit flash, seconds. It was .14 (a click cut) and .16 (a drag cut), counted down by the
+        /// physics step (120 a second): the machines that only see the fight take a hit from a flash of .13 or more in a
+        /// state packet, and that flash was at .13 or more for two physics steps at most (17 ms) - one when the cut piece's
+        /// step came after its cutter's in the same step - against a packet every 17 to 33 ms. So a client got the hit's
+        /// sound and effect for some hits and not for others (승규 님: "온라인에서 피격 할 때 잘 안맞는 경우가 있는 것
+        /// 같고"; worked out from the code, not yet seen on two PCs). At .3 it is above .13 for 170 ms: five packets at the
+        /// slowest rate, so one or two lost still leave it seen.</summary>
+        public const float CutFlash = .3f;
+
         /// <summary>10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): this piece's hit flash set, by the sword that cut it
-        /// here or by the wire. A jump up to a hit's flash (a click cut's .14, a drag cut's .16; the board's ring reads it
-        /// the same way) is a new hit, so every machine plays the one sword-hit sound for every piece at its chest.</summary>
+        /// here or by the wire. A jump up to a hit's flash (CutFlash; the board's ring reads it the same way) is a new hit,
+        /// so every machine plays the one sword-hit sound for every piece at its chest.</summary>
         void FlashHit(float flash)
         {
             if (Alive && flash >= .13f && flash > HitFlash + .02f)
@@ -552,8 +573,9 @@ namespace ChessFight.RagdollLab
         {
             if (visualSync != null) { visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed -= PoseOffHand; }
             DestroyOffSword();
+            everyone.Remove(this);
             if (bladeCollider != null) RagdollPawn.ColliderOwner.Remove(bladeCollider);
-            if (Pawn != null) Pawn.PoseOverride = null;
+            if (Pawn != null) { Pawn.PoseOverride = null; Pawn.FaceHoldRate = 0f; }
             if (bladeMaterial != null) Destroy(bladeMaterial);
             if (hiltMaterial != null) Destroy(hiltMaterial);
             if (modelMaterial != null) Destroy(modelMaterial);

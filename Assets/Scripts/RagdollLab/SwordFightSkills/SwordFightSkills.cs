@@ -1141,7 +1141,7 @@ namespace ChessFight.RagdollLab
                 if (!IsEnemy(other)) continue;
                 Vector3 d = Flat(other.Pawn.Hips.position - land);
                 if (d.magnitude > S.knightStomp || Mathf.Abs(other.Pawn.Hips.position.y - Pawn.Hips.position.y) > 1.2f) continue;
-                Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightStompPush, "포크 강하 · 내리찍기", SfFxKind.KnightHit, n++);
+                Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightStompPush * S.knightForce, "포크 강하 · 내리찍기", SfFxKind.KnightHit, n++, S.knightLift, 1f, S.knightKnockdown);
                 stamped++;
             }
             int forked = 0;
@@ -1154,7 +1154,7 @@ namespace ChessFight.RagdollLab
                     if (!KnightSquareOn[i] || Flat(o - KnightSquares[i]).magnitude > S.knightSquare + 0.15f) continue;
                     if (Mathf.Abs(other.Pawn.Hips.position.y - Pawn.standHeight - KnightSquares[i].y) > 1.4f) continue;
                     Vector3 d = o - Flat(land);
-                    Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightPush, "포크 강하 · 포크", SfFxKind.KnightHit, n++);
+                    Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightPush * S.knightForce, "포크 강하 · 포크", SfFxKind.KnightHit, n++, S.knightLift, 1f, S.knightKnockdown);
                     forked++;
                     break;
                 }
@@ -1170,7 +1170,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A skill's hit on <paramref name="other"/>. False if a king's guard blocked it (R130: nothing happens to
         /// him, the attacker may be thrown off; the king counters).</summary>
-        bool Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f, float carry = 1f)
+        bool Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f, float carry = 1f, float down = -1f)
         {
             var target = other.Pawn;
             hitSet.Add(target);
@@ -1179,7 +1179,8 @@ namespace ChessFight.RagdollLab
                 return false;
             dir = Flat(dir).normalized;
             Vector3 push = dir * (metres * S.pushPerMetre * carry) + Vector3.up * (lift >= 0f ? lift : S.pushLift);
-            target.TakeHit(push, S.knockdownSeconds, 0f, true);
+            // R671: a skill may keep its piece down for its own time (the knight's dive).
+            target.TakeHit(push, down >= 0f ? down : S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
             other.struckLeft = 0f;

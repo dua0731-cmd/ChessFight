@@ -69,9 +69,18 @@ namespace ChessFight.RagdollLab
             WallChips(at, swing * 0.6f + away * 0.4f + Vector3.up * 0.35f, 5, 2.6f, 0.5f, 0.006f, 0.018f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             var attacker = by != null ? by.Pawn : null;
-            Shake(attacker, victim.Pawn, 0.02f, 5);
-            Punch(attacker, victim.Pawn, 1.2f, 8);
+            // R670 (승규 님: "어떻게 피격 할 때 쫀뜩하게"): the cut piece's picture holds still for a few frames with the blade
+            // in it - the cutter's own swing is caught for as long where it is run (SwordFightPawn.BiteTime), so the blade
+            // stays in the held piece on every screen - and then it is thrown. Only its picture (RagdollPawn.HoldVisual):
+            // the game does not stop, offline or online. And the two pieces' own views are kicked harder than they were
+            // (0.02 m and 1.2 degrees).
+            if (hitStop) victim.Pawn.HoldVisual(CutHoldFrames * F);
+            Shake(attacker, victim.Pawn, 0.035f, 6);
+            Punch(attacker, victim.Pawn, 2f, 9);
         }
+
+        /// <summary>R670: how many frames (of 60 a second) a cut piece's picture is held as the blade bites.</summary>
+        public const int CutHoldFrames = 4;
 
         /// <summary>The slash a cut leaves for a moment: two thin bright lines across <paramref name="at"/> along
         /// <paramref name="swing"/> as the eye sees it (a long soft one and a sharp core), opening along the cut in two

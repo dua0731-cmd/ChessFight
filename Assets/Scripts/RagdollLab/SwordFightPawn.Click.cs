@@ -17,8 +17,32 @@ namespace ChessFight.RagdollLab
         public float SwingAge { get; private set; } = 99f;
         /// <summary>Which cut of its piece's combo the click cut is (0 = the piece's own first cut).</summary>
         public int ComboStep { get; private set; }
-        Vector3 swingDirection = Vector3.forward, bufferedAim, previousGrip, previousClickTip;
+        Vector3 swingDirection = Vector3.forward, bufferedAim, previousGrip, previousBlade = Vector3.forward;
         readonly HashSet<SwordFightPawn> hitThisSwing = new HashSet<SwordFightPawn>();
+        // R670 (승규 님 11-15, a clip of the queen spun with the mouse while cutting: "마우스를 빠르게 움직이면서 칼을 휘두르면
+        // 몸에 관통", "온라인에서 피격 할 때 잘 안맞는 경우", "어떻게 피격 할 때 쫀뜩하게"). A cut used to keep the way the
+        // camera looked at the click while the body kept facing the way it walked, so a cut aimed round the body's side or
+        // back was drawn through the body. Now the body turns to its cut, the cut's lines are drawn against the body, the
+        // cut follows the aim until its blade starts, it leans to the foe it is aimed at, and a hit catches the blade.
+        /// <summary>Degrees a second the body turns to face its cut (RagdollPawn.FaceHold), from the click until the blade
+        /// has gone through.</summary>
+        public const float FaceTurnRate = 900f;
+        /// <summary>How far off the way the body faces a cut's lines may be drawn (the chest and the arm take that much
+        /// up); a cut aimed further round is drawn at this limit until the body has turned to it.</summary>
+        public const float FrameReach = 55f;
+        /// <summary>Degrees a second a cut's way follows the aim through its windup; it is fixed as the blade starts.</summary>
+        public const float AimFollowRate = 720f;
+        /// <summary>A cut leans to the foe it is aimed at (AimPull): one within PullReach metres and within PullCone degrees
+        /// of the aim, wider by PullConePerLagSecond for each second of the player's picture's age (ViewLag: a client aims
+        /// at where a foe was) up to PullConeMost; the lean eases in at PullRate degrees a second.</summary>
+        public const float PullCone = 35f, PullReach = 1.9f, PullRate = 420f, PullConePerLagSecond = 100f, PullConeMost = 60f;
+        /// <summary>A hit catches the blade: for BiteTime seconds the cut goes on at BitePace of its speed (on the machine
+        /// that runs it, so every screen sees the blade held in the piece it cut), then swings on through.</summary>
+        public const float BiteTime = .07f, BitePace = .12f;
+        const float BladeLength = .88f;
+        float pull, biteLeft;
+        /// <summary>How many hits have caught this fighter's blade (the checks).</summary>
+        public int Bites { get; private set; }
         float inputBuffer, sinceSwing = 99f;
         int comboPiece = -1;
         bool wasActive;
@@ -42,7 +66,10 @@ namespace ChessFight.RagdollLab
         float Settle => Mathf.Clamp01((windup - style.Windup) / .3f);
 
         void CancelClickSwing()
-        { inputBuffer = 0; SwingAge = 99f; sinceSwing = 99f; wasActive = false; hitThisSwing.Clear(); Pawn.BodyTurn = 0f; }
+        {
+            inputBuffer = 0; SwingAge = 99f; sinceSwing = 99f; wasActive = false; hitThisSwing.Clear();
+            Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; biteLeft = 0f;
+        }
 
         /// <summary>A click while a cut runs waits for its blade to go through (the next cut of the combo) instead of being
         /// dropped.</summary>
@@ -59,8 +86,11 @@ namespace ChessFight.RagdollLab
             bool through = Attacking && SwingAge >= windup + style.Active;
             if (inputBuffer > 0 && (!Attacking || through))
             {
-                fromLine = Attacking ? SwingLine(SwingAge) : IdleLine();
-                fromArm = ArmLine(ClickBladeDirection());
+                // R670: kept against the way the body faces, not the world: the body turns to the new cut through its
+                // windup, and a line left where the world had it would be passed through by the turning body.
+                Vector3 lineNow = Attacking ? SwingLine(SwingAge) : IdleLine(), armNow = ArmLine(ClickBladeDirection());
+                fromLine = BodyLocal(lineNow);
+                fromArm = BodyLocal(armNow);
                 ChestChannels(out fromLean, out fromTwist, out fromRoll);
                 fromBody = Attacking ? Pawn.BodyTurn : 0f;
                 float carried = through ? CutLength - SwingAge : 0f;
@@ -72,23 +102,154 @@ namespace ChessFight.RagdollLab
                 style = combo[ComboStep];
                 windup = style.Windup + carried;
                 SwingAge = 0; Swings++; inputBuffer = 0; Protection = 0;
-                hitThisSwing.Clear(); wasActive = false;
+                hitThisSwing.Clear(); wasActive = false; pull = 0f; biteLeft = 0f;
             }
             inputBuffer = Mathf.Max(0, inputBuffer - dt);
-            if (!Attacking) { Pawn.BodyTurn = 0f; sinceSwing += dt; StepOffArm(dt); return; }
+            if (!Attacking) { Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; sinceSwing += dt; StepOffArm(dt); return; }
             sinceSwing = 0f;
-            SwingAge += dt;
+            // R670: a hit catches the blade for a moment (the cut all but stops in the piece, then goes on through).
+            float pace = 1f;
+            if (biteLeft > 0f) { biteLeft -= dt; pace = BitePace; }
+            SwingAge += dt * pace;
+            // R670: until the blade starts, the cut goes where the player looks now, not where they looked at the click
+            // (a chained cut's windup is up to half a second: a foe has moved on by then), leaning to the foe that way.
+            if (SwingAge < windup) FollowAim(dt);
+            // The body turns to its cut until the blade has gone through; after that it is the walk's again.
+            Pawn.FaceHold = swingDirection;
+            Pawn.FaceHoldRate = SwingAge < windup + style.Active ? FaceTurnRate : 0f;
             Pawn.BodyTurn = SwingPhase(fromBody, style.BodyUp, style.BodyThrough);
             bool active = SwingAge >= windup && SwingAge <= windup + style.Active;
-            Vector3 grip = ClickGrip(), tip = grip + ClickBladeDirection() * .88f;
+            Vector3 grip = ClickGrip(), blade = ClickBladeDirection();
             if (active)
             {
-                if (!wasActive) { previousGrip = grip; previousClickTip = tip; SwingSound(); }
-                for (int s = 0; s <= 3; s++)
-                    DetectClickHit(Vector3.Lerp(previousGrip, grip, s / 3f), Vector3.Lerp(previousClickTip, tip, s / 3f));
+                if (!wasActive) { previousGrip = grip; previousBlade = blade; SwingSound(); }
+                // R670: one sample for every 6 degrees the blade turned this step, turned (not slid) from where it was to
+                // where it is: four straight-line samples left gaps at the tip when a fast cut met a turning body, and
+                // their chords fell short of the blade's reach.
+                int samples = Mathf.Clamp(Mathf.CeilToInt(Vector3.Angle(previousBlade, blade) / 6f), 3, 12);
+                for (int s = 0; s <= samples; s++)
+                {
+                    float k = s / (float)samples;
+                    Vector3 at = Vector3.Lerp(previousGrip, grip, k);
+                    DetectClickHit(at, at + Vector3.Slerp(previousBlade, blade, k) * BladeLength);
+                }
             }
-            previousGrip = grip; previousClickTip = tip; wasActive = active;
+            previousGrip = grip; previousBlade = blade; wasActive = active;
             StepOffArm(dt);
+        }
+
+        /// <summary>R670: through the windup the cut's way turns after the aim (AimFollowRate), and leans from it to the foe
+        /// it is aimed at (AimPull, eased in at PullRate). The way is left as it is once the blade starts.</summary>
+        void FollowAim(float dt)
+        {
+            // The way aimed, without the lean it has now.
+            Vector3 aimed = Quaternion.AngleAxis(-pull, Vector3.up) * swingDirection;
+            Vector3 want = requestedAim; want.y = 0f;
+            if (want.sqrMagnitude > .01f) aimed = TurnFlat(aimed, want.normalized, AimFollowRate * dt);
+            pull = Mathf.MoveTowards(pull, AimPull(aimed), PullRate * dt);
+            swingDirection = Quaternion.AngleAxis(pull, Vector3.up) * aimed;
+        }
+
+        /// <summary>R670: the turn (degrees about up) from the way aimed to the foe this cut is aimed at, 0 with none: the
+        /// living foe without protection nearest that way, within PullReach of the hips and within the cone (PullCone,
+        /// wider for a player who sees an older picture: ViewLag). A cut aimed a little off a foe in reach still goes to
+        /// it - which is most of all what a client needs, aiming at where the foe was a moment ago.</summary>
+        float AimPull(Vector3 aimed)
+        {
+            float cone = Mathf.Min(PullConeMost, PullCone + PullConePerLagSecond * Mathf.Clamp(ViewLag, 0f, .4f));
+            Vector3 from = Pawn.Hips.position;
+            float best = float.MaxValue, turn = 0f;
+            for (int i = 0; i < everyone.Count; i++)
+            {
+                var f = everyone[i];
+                if (f == null || f == this || f.Pawn == null || !f.Alive || f.Protection > 0f || f.Pawn.Team == Pawn.Team) continue;
+                Vector3 to = f.Pawn.Hips.position - from;
+                if (Mathf.Abs(to.y) > 1.2f) continue;
+                to.y = 0f;
+                float distance = to.magnitude;
+                if (distance < .05f || distance > PullReach) continue;
+                float off = Vector3.SignedAngle(aimed, to, Vector3.up);
+                if (Mathf.Abs(off) > cone) continue;
+                // The one nearest the aim; of two as near it, the closer.
+                float score = Mathf.Abs(off) + distance * 8f;
+                if (score < best) { best = score; turn = off; }
+            }
+            return turn;
+        }
+
+        /// <summary><paramref name="from"/> turned about up toward <paramref name="to"/> (both flat) by at most
+        /// <paramref name="degrees"/>, the short way round.</summary>
+        static Vector3 TurnFlat(Vector3 from, Vector3 to, float degrees)
+        {
+            float off = Vector3.SignedAngle(from, to, Vector3.up);
+            return Mathf.Abs(off) <= degrees ? to : Quaternion.AngleAxis(Mathf.Sign(off) * degrees, Vector3.up) * from;
+        }
+
+        /// <summary>R670: the frame a cut's lines are drawn in (SwingWorld): its way, kept within reach of how the hips are
+        /// turned now (HipsAhead) - FrameReach toward the sword hand, FrameReachAcross the other way. The body turns to the
+        /// cut (FaceHold), so this is the cut's own way within a moment; until then, and whenever the body is turned away
+        /// (the walk takes it back after the cut; a body turning fast is behind what it is asked), the lines stay in front
+        /// of the body as it is drawn instead of passing through it.</summary>
+        Vector3 SwingFrame
+        {
+            get
+            {
+                Vector3 face = HipsAhead;
+                // + toward the sword hand: lines turned that way move away from the body, lines turned the other way
+                // (across it) take the blade's far end round behind the hand's own body.
+                float off = Vector3.SignedAngle(face, swingDirection, Vector3.up);
+                float kept = Mathf.Clamp(off, -FrameReachAcross, FrameReach);
+                return Mathf.Abs(off - kept) < .01f ? swingDirection : Quaternion.AngleAxis(kept, Vector3.up) * face;
+            }
+        }
+
+        /// <summary>How far across the body (away from the sword hand) a cut's frame may be (FrameReach is the other way),
+        /// and how far ahead of the hips' own turn the body counts as facing (BodyAhead). Tried in the editor (11-15, a
+        /// queen, the camera spun and still): with the frame kept against the way asked and 55 degrees both ways the
+        /// blade no longer went deep into the body either, but cuts made standing still brushed it in 3 to 4 of about 110
+        /// frames; against the hips with this much across, in none (three runs).</summary>
+        public const float FrameReachAcross = 25f, BodyLead = 15f;
+
+        /// <summary>The way the hips are turned now: their own forward, flat, without the turn a cut or a skill gives the
+        /// whole body (the way asked, Pawn.Facing, if they lie flat).</summary>
+        Vector3 HipsAhead
+        {
+            get
+            {
+                Vector3 hips = Pawn.Hips.transform.forward;
+                hips.y = 0f;
+                if (hips.sqrMagnitude < .01f) return Pawn.Facing;
+                return Quaternion.AngleAxis(-(Pawn.BodyTurn + Pawn.SkillTurn), Vector3.up) * hips.normalized;
+            }
+        }
+
+        /// <summary>R670: the way the body faces, for the sword's lines at rest and between cuts (the guard, the arm's own
+        /// line, where a cut starts from): the way it is asked to face (Pawn.Facing), but no more than BodyLead degrees ahead
+        /// of how its hips are turned now (HipsAhead). A body turning fast is well behind what it is asked - with the camera
+        /// spun, 18 to 22 degrees on average and up to 76 - and lines drawn against the asking were that far round the
+        /// drawn body. Standing, walking or turning gently the hips are within the lead, and this is Pawn.Facing as it
+        /// always was.</summary>
+        Vector3 BodyAhead
+        {
+            get
+            {
+                Vector3 asked = Pawn.Facing, hips = HipsAhead;
+                float off = Vector3.SignedAngle(hips, asked, Vector3.up);
+                return Mathf.Abs(off) <= BodyLead ? asked : Quaternion.AngleAxis(Mathf.Sign(off) * BodyLead, Vector3.up) * hips;
+            }
+        }
+
+        /// <summary>A world direction against the way the body faces (BodyAhead: x to its right, y up, z ahead), and back.</summary>
+        Vector3 BodyLocal(Vector3 world)
+        {
+            Vector3 ahead = BodyAhead, right = Vector3.Cross(Vector3.up, ahead);
+            return new Vector3(Vector3.Dot(world, right), world.y, Vector3.Dot(world, ahead));
+        }
+
+        Vector3 BodyWorld(Vector3 local)
+        {
+            Vector3 ahead = BodyAhead, right = Vector3.Cross(Vector3.up, ahead);
+            return right * local.x + Vector3.up * local.y + ahead * local.z;
         }
 
         /// <summary>The free arm through the cuts: taken over from the walk as a cut starts and handed back once the last
@@ -174,7 +335,9 @@ namespace ChessFight.RagdollLab
                 // The upper body goes on a little faster the way the blade went than the hips, so it falls that way.
                 if (!target.NetworkPuppet)
                     for (int b = (int)BodyId.Chest; b <= (int)BodyId.HandR; b++) target.bodies[b].linearVelocity += topple * target.PushScale * SameFall(target);
-                victim.StopCombat(); victim.FlashHit(.14f); HitFlash = .1f; HitsLanded++;
+                victim.StopCombat(); victim.FlashHit(CutFlash); HitFlash = .1f; HitsLanded++;
+                // R670: the blade is caught in the piece it cut (StepClickSwing).
+                biteLeft = BiteTime; Bites++;
                 RaiseStruck(this, victim);
             }
         }
@@ -194,7 +357,7 @@ namespace ChessFight.RagdollLab
             Vector3 way = thrust ? blade : move.normalized;
             Vector3 flat = way; flat.y = 0f;
             // Too steep to say which side (a chop straight down): the way the cut faces, then away from the cutter.
-            if (flat.sqrMagnitude < .04f) flat = swingDirection * .7f + away * .3f;
+            if (flat.sqrMagnitude < .04f) flat = SwingFrame * .7f + away * .3f;
             flat.Normalize();
             // Never back into the cutter: a cut's far end can curl toward it.
             if (Vector3.Dot(flat, away) < -.2f) flat = (flat + away * 1.2f).normalized;
@@ -213,7 +376,7 @@ namespace ChessFight.RagdollLab
             return AboveFloor(grip, ClearOfBody(grip, dir));
         }
 
-        Vector3 IdleLine() => (Quaternion.AngleAxis(-25f, Vector3.up) * Pawn.Facing + Vector3.up * .35f).normalized;
+        Vector3 IdleLine() => (Quaternion.AngleAxis(-25f, Vector3.up) * BodyAhead + Vector3.up * .35f).normalized;
 
         /// <summary>The piece's own cut (SwingStyle) at <paramref name="age"/>: the blade brought from where it was (the guard,
         /// or where the last cut ended) to the cut's first line through the windup, along its lines through the cut, then
@@ -223,7 +386,7 @@ namespace ChessFight.RagdollLab
         {
             var keys = style.Keys;
             if (age < windup)
-                return Via(fromLine, IdleLine(), SwingWorld(keys[0]), Settle, Smooth(Mathf.Max(0f, age) / windup),
+                return Via(BodyWorld(fromLine), IdleLine(), SwingWorld(keys[0]), Settle, Smooth(Mathf.Max(0f, age) / windup),
                     SwingWorld(keys[0] + (keys[0] - keys[1]).normalized * .5f));
             if (age < windup + style.Active)
             {
@@ -618,7 +781,8 @@ namespace ChessFight.RagdollLab
 
         Vector3 SwingWorld(Vector3 local)
         {
-            Vector3 fwd = swingDirection, right = Vector3.Cross(Vector3.up, fwd);
+            // R670: the cut's way kept in front of the body (SwingFrame), not the way aimed whatever the body faces.
+            Vector3 fwd = SwingFrame, right = Vector3.Cross(Vector3.up, fwd);
             return (right * local.x + Vector3.up * local.y + fwd * local.z).normalized;
         }
 
@@ -894,7 +1058,7 @@ namespace ChessFight.RagdollLab
             if (!Alive || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.Chest && Attacking)
             {
-                float turn = Mathf.Clamp(Vector3.SignedAngle(Pawn.Facing, swingDirection, Vector3.up), -65, 65);
+                float turn = Mathf.Clamp(Vector3.SignedAngle(BodyAhead, SwingFrame, Vector3.up), -65, 65);
                 ChestChannels(out float lean, out float twist, out float roll);
                 return Quaternion.Euler(lean, turn * .65f + twist, roll);
             }
@@ -920,7 +1084,8 @@ namespace ChessFight.RagdollLab
             // 10-25 (승규 님: "이 모션이랑 팔 각도를 자연스럽게"): since a piece's sword arm is drawn all the way with its body
             // (RagdollPawn.RightArmFree), at rest it hangs forward and a little out, the sword held up from the wrist, not
             // the stub aimed along the blade; a cut takes it from there and gives it back.
-            Vector3 guard = Pawn.Facing * .75f + Vector3.Cross(Vector3.up, Pawn.Facing) * .3f - Vector3.up * .55f;
+            Vector3 ahead = BodyAhead;
+            Vector3 guard = ahead * .75f + Vector3.Cross(Vector3.up, ahead) * .3f - Vector3.up * .55f;
             if (!Attacking) return guard;
             float end = windup + style.Active;
             if (SwingAge >= end)
@@ -934,7 +1099,7 @@ namespace ChessFight.RagdollLab
             }
             Vector3 drawn = style.ArmDrawn == Vector3.zero ? blade : SwingWorld(style.ArmDrawn);
             // From where it was (the guard, or where the last cut left it).
-            if (SwingAge < windup) return Via(fromArm, guard, drawn, Settle, Smooth(SwingAge / windup), drawn);
+            if (SwingAge < windup) return Via(BodyWorld(fromArm), guard, drawn, Settle, Smooth(SwingAge / windup), drawn);
             if (style.ArmDrawn == Vector3.zero) return blade;
             // Out to full reach in the first 60% of the cut, the blade's line from then on - or, for a draw cut, pulled
             // back toward the body after it.
@@ -948,7 +1113,7 @@ namespace ChessFight.RagdollLab
         /// past straight ahead, measured on the body as it is turned (BodyTurn).</summary>
         Vector3 KeepArmOut(Vector3 dir)
         {
-            Vector3 side = Quaternion.AngleAxis(Pawn.BodyTurn, Vector3.up) * Vector3.Cross(Vector3.up, Pawn.Facing);
+            Vector3 side = Quaternion.AngleAxis(Pawn.BodyTurn, Vector3.up) * Vector3.Cross(Vector3.up, BodyAhead);
             float across = Vector3.Dot(dir.normalized, side);
             // 10-28: eased onto that limit (a smooth max) instead of stopped at it, which put a corner in the arm's way.
             float kept = .5f * (across - .3f + Mathf.Sqrt((across + .3f) * (across + .3f) + .15f * .15f));
