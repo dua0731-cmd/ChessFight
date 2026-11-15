@@ -331,3 +331,9 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 - **확인 방법:**
   - 에셋 파일에서 `vertexCount`와 `m_VertexCount`가 같은지 본다.
   - 배치에서 프리팹을 장면에 꺼내 그려 본다. 자동 물리 테스트만으로는 겉모습이 깨진 것을 못 잡는다.
+
+## 45. 팔 뼈를 다른 물체 밑으로 옮기면 뼈대의 100배를 잃어 팔뚝이 한 점으로 그려짐 (R669, 11-15)
+- **증상:** 폰과 모든 기물이 손 공만 보이고 팔뚝이 없음(승규 님: "손은 있는데 팔이 없어"). 편집 모드 미리보기는 정상.
+- **원인:** JY-piece-rig 뼈대는 Armature 크기가 100이고 메쉬는 1/100 단위다. `RagdollVisualSync.Setup`이 팔 뼈를 늘이기 보조 물체(크기 1) 밑으로 `SetParent(helper, false)`로 옮겨, 팔 뼈의 세계 크기가 1이 되었다. 스키닝 행렬이 1/100이 되어 팔뚝 정점이 뼈 자리 한 점에 모였다.
+- **해결:** 옮기기 전 `lossyScale`을 기억했다가 새 부모 밑에서 같게 맞춘다. 뼈를 옮기는 코드는 늘 세계 크기를 지킨다(`SetParent(…, true)` 또는 크기 다시 맞춤).
+- **확인 방법:** Play 중 `SkinnedMeshRenderer.BakeMesh`로 그린 정점을 뼈별로 모아 폭을 잰다(0이면 이 문제). `bone.localToWorldMatrix * bindposes[i]`의 열 길이가 뼈마다 같은지 본다.

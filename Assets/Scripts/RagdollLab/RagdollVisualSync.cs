@@ -114,12 +114,18 @@ namespace ChessFight.RagdollLab
                 foreach (Entry other in entries)
                     if (other.bone != null && other.bone != e.bone && other.bone.IsChildOf(e.bone))
                         other.bone.SetParent(transform, true);
+                // R669 (승규 님 11-15: "손은 있는데 팔이 없어"): the bone keeps its own world scale under the helper. The
+                // JY-piece-rig skeletons sit under an Armature scaled 100 (their meshes are in 1/100 units), so a bone
+                // moved over with its local scale of 1 skinned the whole arm stub to a point and only the mittens showed.
+                Vector3 boneScale = e.bone.lossyScale;
                 var helper = new GameObject(e.bone.name + " Stretch").transform;
                 helper.SetParent(transform, false);
                 helper.SetPositionAndRotation(body.position, body.rotation);
                 e.bone.SetParent(helper, false);
                 e.bone.localPosition = e.positionOffset;
                 e.bone.localRotation = e.rotationOffset;
+                Vector3 helperScale = helper.lossyScale;
+                e.bone.localScale = new Vector3(boneScale.x / helperScale.x, boneScale.y / helperScale.y, boneScale.z / helperScale.z);
                 stretch[i] = helper;
             }
         }
@@ -133,8 +139,10 @@ namespace ChessFight.RagdollLab
         /// RightShoulder), where its mitten begins (LeftWrist, RightWrist) and the middle of each foot
         /// (LeftFoot, RightFoot). Without all six the pawn's own pose stays.
         /// </summary>
-        public void SetPieceLook(Transform look)
+        public void SetPieceLook(Transform look, float scale = 1f)
         {
+            // R668: the model is drawn scaled about the ground under the pawn (RagdollPawn.PieceScale.cs); its marks with it.
+            Vector3 Mark(string name) => look.Find(name).localPosition * scale;
             Setup();
             ClearPieceLook();
             if (look == null) return;
@@ -146,12 +154,12 @@ namespace ChessFight.RagdollLab
                 Entry e = entries[i];
                 if (IsFoot(e))
                 {
-                    pieceShift[i] = look.Find((e.driverA == (int)BodyId.FootL ? "Left" : "Right") + "Foot").localPosition - restAt[i];
+                    pieceShift[i] = Mark((e.driverA == (int)BodyId.FootL ? "Left" : "Right") + "Foot") - restAt[i];
                     continue;
                 }
                 if (stretch[i] == null) continue;
                 string side = e.driverA == (int)BodyId.ArmL ? "Left" : "Right";
-                Vector3 shoulder = look.Find(side + "Shoulder").localPosition, wrist = look.Find(side + "Wrist").localPosition;
+                Vector3 shoulder = Mark(side + "Shoulder"), wrist = Mark(side + "Wrist");
                 pieceShift[i] = shoulder - restAt[i];
                 pieceReach[i] = restLength[i] / Mathf.Max(0.02f, Mathf.Abs(wrist.x - shoulder.x));
                 for (int j = 0; j < entries.Length; j++)

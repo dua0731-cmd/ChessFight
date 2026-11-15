@@ -119,6 +119,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - 오프라인 플레이테스트 도움말은 IMGUI(`PlaytestSpawner.OnGUI`)로 그린다.
 - (R514) **스테미나 바**: 화면 아래 가운데, 240 × 12 px, 초록 → 빨강, 위에 "스테미나"(`Gameplay/Playtest/StaminaBarGui`, IMGUI). 오프라인은 `PlaytestSpawner`, 폰 러쉬 경기는 `MatchStaminaBar`(`SteamPawnRushLink`가 붙여 이 PC의 폰을 따라감, 시작 신호 뒤부터 승패가 날 때까지). 소드 파이트 경기에는 아직 없다(기획 미정).
 - (R642, 11-14) **잡힘 표시 — 폰 러쉬만**: `Gameplay/Playtest/GripHudGui`(IMGUI)를 스테미나 바를 그리는 두 곳(`MatchStaminaBar`, `PlaytestSpawner` — 도움말을 꺼 둔 미니게임 · 맵 시험에서도)이 그린다. 잡힌 사람: 바 위 흑단 판(황동 테두리 · 모서리) "잡혔다! 좌클릭 연타" + 황동 탈출 막대, 1.4배에서 0.09초에 박힘, 잡힌 순간 화면 가장자리가 흑단 띠 + 황동 선으로 0.05초에 조였다가 약 0.35초에 풀림. 잡은 사람: 작은 판 "잡는 중". 둘 다: 손이 닿은 자리에 황동 고리 · 상아 점(`Camera.main` 기준). 소리 없음. 값은 `IGripReadout`(`RagdollDriver` → `RagdollPawn.GripRead.cs`): 시뮬레이션하는 PC는 손 관절로, 참가자 PC는 스냅숏의 grabbing · held 깃발 + 손바닥 ↔ 몸 거리 0.55 m로 짝을 찾는다(패킷 그대로). 래그돌 시험 씬의 옛 표시(`StaminaHud` "잡힘! 좌클릭 연타")는 그대로.
+- (R668, 11-15) 경기 이름표(`MatchNameplate`, 폰 러쉬 · 소드 파이트)는 머리 몸 위 `RagdollPawn.NameplateRise`(폰 0.5 m, 기물은 폰보다 크게 그린 만큼 더: 킹 0.7 m)에 뜬다.
 - (R664, 11-15) 폰 러쉬에서는 같은 팀을 잡을 수 없다(`PawnHand`가 팀원을 고르지 않음, `RagdollPawn.PawnRushTeammate`). 잡힘 표시의 거리 짝 찾기도 팀원을 건너뛴다.
 
 ## 8. 로딩 화면 (R58, 2026-09-30)

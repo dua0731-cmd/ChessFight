@@ -55,7 +55,8 @@ namespace ChessFight.RagdollLab
             bool teammate = local != null && local.Team == target.Team;
             float fade = teammate ? 1f : Mathf.InverseLerp(FarMeters, NearMeters, Vector3.Distance(camera.transform.position, target.bodies[(int)BodyId.Head].transform.position));
             if (fade <= 0f) return false;
-            if (!TryProject(camera, target.bodies[(int)BodyId.Head].transform.position, out screen)) return false;
+            // R668: over the drawn top of the piece (a taller piece floats it higher), as over the pawn's head before.
+            if (!TryProject(camera, target.bodies[(int)BodyId.Head].transform.position, out screen, target.NameplateRise)) return false;
 
             if (lettering == null)
                 lettering = new GUIStyle { font = RuntimePanels.KoreanFont, fontStyle = FontStyle.Bold,
@@ -92,9 +93,9 @@ namespace ChessFight.RagdollLab
         static void Pill(Rect rect, Color color) =>
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, color, 0, rect.height * .5f);
 
-        internal static bool TryProject(Camera camera, Vector3 head, out Vector3 screen)
+        internal static bool TryProject(Camera camera, Vector3 head, out Vector3 screen, float rise = .5f)
         {
-            Vector3 anchor = head + Vector3.up * .5f;
+            Vector3 anchor = head + Vector3.up * rise;
             screen = camera.WorldToScreenPoint(anchor);
             if (screen.z <= camera.nearClipPlane || screen.z > camera.farClipPlane || !camera.pixelRect.Contains(screen)) return false;
             Vector3 headScreen = camera.WorldToScreenPoint(head);

@@ -130,9 +130,10 @@ namespace ChessFight.RagdollLab
                 pawnMesh = skin.sharedMesh;
                 pawnSkinMaterial = skin.sharedMaterial;
             }
-            SwapSkinMesh(look.sharedMesh);
+            // R668: drawn to its height over the pawn (RagdollPawn.PieceScale.cs), marks and all.
+            SwapSkinMesh(PieceMeshAtHeight(look.sharedMesh, pawnMesh, out float scale));
             skin.sharedMaterial = PieceMaterial(look.sharedMaterial);
-            if (VisualSync != null) VisualSync.SetPieceLook(look.transform);
+            if (VisualSync != null) VisualSync.SetPieceLook(look.transform, scale);
             return true;
         }
 
@@ -171,6 +172,7 @@ namespace ChessFight.RagdollLab
 
         void ShowPawnMesh()
         {
+            drawnRise = 0f;   // R668: the nameplate back over the pawn's head
             if (skin == null || pawnMesh == null) return;
             SwapSkinMesh(pawnMesh);
             skin.sharedMaterial = pawnSkinMaterial;
