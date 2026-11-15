@@ -71,7 +71,7 @@ namespace ChessFight.Game
                 lanternGlassMaterial.SetColor("_EmissionColor", MenuArt.Hex(0xFFB45E) * 1.5f);   // AI Play capture: 2.4 went white
                 glassRenderer.shadowCastingMode = ShadowCastingMode.Off;
             }
-            HallBanners(root);   // R663: wine banners either side of the rose window (LobbyStage.Hall.Banners.cs)
+            // R672 (승규 "로비에 있는 깃발은 지워줘"): the R663 wine banners either side of the rose window are gone.
             HallLight(root);
             HallReflection();   // R580: after the lights, so the probe sees the lit hall
             return true;
