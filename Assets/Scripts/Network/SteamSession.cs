@@ -469,6 +469,16 @@ namespace ChessFight.Network
         public const int InvitesKept = 3;
         readonly List<PartyInvite> invites = new List<PartyInvite>();
         public IReadOnlyList<PartyInvite> Invites => invites;
+        // R674: whose invites this PC takes (the settings window's 파티 초대 받기, set by the runtime); null takes all.
+        // Only what this PC shows: Steam's own overlay notice still comes, and nothing is sent back.
+        public Func<ulong, bool> TakesInviteFrom;
+
+        // A Steam friend of this player's (the immediate friends list, as the friends panel shows it).
+        public bool IsFriend(ulong id)
+        {
+            foreach (var friend in Friends()) if (friend.Id == id) return true;
+            return false;
+        }
         public bool CanChat(ChatChannel channel) =>
             Online && (channel == ChatChannel.Party ? Party != 0 :
                        channel == ChatChannel.All ? Match != 0 : Match != 0 && Roster.ContainsKey(Self));
@@ -1164,6 +1174,11 @@ namespace ChessFight.Network
         void ReceiveInvite(ulong from, ulong lobby)
         {
             if (lobby == 0 || lobby == Party || from == Self) return;
+            if (TakesInviteFrom != null && !TakesInviteFrom(from))
+            {
+                Debug.Log($"[ChessFight] 파티 초대 무시(설정): {Name(from)} ({from})");
+                return;
+            }
             float now = Time.realtimeSinceStartup;
             invites.RemoveAll(i => i.Lobby == lobby || i.From == from);
             invites.Add(new PartyInvite { From = from, Lobby = lobby, At = now });

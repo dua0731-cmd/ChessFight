@@ -234,7 +234,8 @@ namespace ChessFight.RagdollLab
                 // off, E is the edge skill. A client's presses go to the host (LabNetLink.Sword.cs reads them).
                 if (!LabNetLink.SwordClient && game.KeysFree && !SwordFightGame.InputLocked)
                 {
-                    if (Input.GetKeyDown(KeyCode.F)) me.Skills.PressKey();
+                    // R674: F is the settings' 기물 스킬 key (GameKey.Use), as in Pawn Rush.
+                    if (GameSettings.Pressed(GameKey.Use)) me.Skills.PressKey();
                     if (GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
                     if (GameSettings.Pressed(GameKey.Skill)) me.Skills.PressEdge();
                 }

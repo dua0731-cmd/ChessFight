@@ -50,6 +50,10 @@ namespace ChessFight.RagdollLab
                 GUI.DrawTexture(new Rect(sq.x, sq.y, sq.width, sq.height * Mathf.Clamp01(cooldown01)), white);
             }
             GUI.color = board && lit ? BoardInk : Color.white;
+            // R674: a key rebound in the settings window can have a longer name ("Shift", "좌클릭"): smaller, to fit the square.
+            keyStyle.fontSize = 22;
+            float wide = keyStyle.CalcSize(new GUIContent(key)).x, room = sq.width - 6f;
+            if (wide > room) keyStyle.fontSize = Mathf.Max(10, Mathf.FloorToInt(22f * room / wide));
             GUI.Label(sq, key, keyStyle);
             float tx = sq.xMax + 10f, tw = r.width - sq.width - 22f;
             GUI.color = board ? BoardText : Color.white;

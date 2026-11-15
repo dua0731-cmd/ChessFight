@@ -414,7 +414,8 @@ namespace ChessFight.RagdollLab
         {
             var input = sword.ReadLocalInput();
             bool free = keys && (swordBed != null ? swordBed.KeysFree : sword.KeysFree && !KeysTaken);
-            skill = (free && Input.GetKeyDown(swordBed != null ? swordBed.skillKey : KeyCode.F)) || devSkill;
+            // R674: the match's F is the settings' 기물 스킬 key (GameKey.Use, F unless rebound); the test bed keeps its own.
+            skill = (free && (swordBed != null ? Input.GetKeyDown(swordBed.skillKey) : GameSettings.Pressed(GameKey.Use))) || devSkill;
             edge = (free && GameSettings.Pressed(GameKey.Skill)) || devEdge;
             edgeHeld = free && GameSettings.Held(GameKey.Skill);
             cancel = (free && GameSettings.Pressed(GameKey.Grab)) || devCancel;

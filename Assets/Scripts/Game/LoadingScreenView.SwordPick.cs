@@ -543,6 +543,8 @@ namespace ChessFight.Game
             if (on != swordShown)
             {
                 swordShown = on;
+                // R674: heard even with the window behind another (settings → 경기 잡힘 알림음).
+                if (on) ScreenOverlay.MatchFound();
                 sword.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 var hidden = on ? new StyleEnum<Visibility>(Visibility.Hidden) : new StyleEnum<Visibility>(StyleKeyword.Null);
                 foreach (var e in swordHides) e.style.visibility = hidden;

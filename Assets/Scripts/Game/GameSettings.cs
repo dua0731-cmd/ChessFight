@@ -16,8 +16,8 @@ namespace ChessFight.Game
     //
     // Every value lives under an id ("master", "fov", ...); the typed properties
     // below are the ones the game reads. Values the game cannot use yet
-    // (controller, name tags...) are saved all the same, under their ids,
-    // so the window keeps them and the feature can read them when it comes.
+    // (controller, colour-blind modes...) keep their ids, so the feature can read
+    // them when it comes; the window shows those lines dim and locked (R674).
     //
     // The display settings are applied at start only once the player has changed
     // them, so a PC that never opens the window keeps the project's defaults.
@@ -120,6 +120,22 @@ namespace ChessFight.Game
 
         // Menus drawn by RuntimePanels (the settings window keeps 1).
         public static float UiScale => Mathf.Clamp(Float("uiscale", 1f), .9f, 1.15f);
+
+        // R674 (the settings window wired to what the game has now):
+        // the match name tags (MatchNameplate): 0 always, 1 only near, 2 off; the own one off by default.
+        public static int TeamNames => Mathf.Clamp(Int("names", 0), 0, 2);
+        public static int EnemyNames => Mathf.Clamp(Int("enemy", 1), 0, 2);
+        public static bool ShowMyName => Bool("myname", false);
+        // The URP profile's bloom (GameLook).
+        public static bool Bloom => Bool("bloom", true);
+        // The match chat's backing, 0..1 (0: clear, as it was drawn before R674).
+        public static float ChatBacking => Mathf.Clamp01(Float("chatalpha", 0f) / 100f);
+        // Lines from others the chat shows: 0 every channel, 1 party and team, 2 party only.
+        public static int ChatFrom => Mathf.Clamp(Int("chatfrom", 0), 0, 2);
+        // Party invites: 0 anyone, 1 Steam friends only, 2 none (SteamSession.TakesInviteFrom).
+        public static int InvitesFrom => Mathf.Clamp(Int("invites", 1), 0, 2);
+        // The match-found moment is heard even with the window behind another (ScreenOverlay.MatchFound).
+        public static bool ReadyDing => Bool("readyding", true);
 
         // Loaded before the first scene, so the title screen already has them.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -280,6 +296,25 @@ namespace ChessFight.Game
             if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9) return ((int)(key - KeyCode.Alpha0)).ToString();
             if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return "숫자판 " + (int)(key - KeyCode.Keypad0);
             return key.ToString();
+        }
+
+        // R674: the bound key as the HUD's small key squares write it ("F", "Shift", "좌클릭"): the first slot,
+        // else the second, "—" when both are empty.
+        public static string KeyCap(GameKey action)
+        {
+            var key = Key(action, 0);
+            if (key == KeyCode.None) key = Key(action, 1);
+            switch (key)
+            {
+                case KeyCode.LeftShift: case KeyCode.RightShift: return "Shift";
+                case KeyCode.LeftControl: case KeyCode.RightControl: return "Ctrl";
+                case KeyCode.LeftAlt: case KeyCode.RightAlt: return "Alt";
+                case KeyCode.Mouse2: return "휠";
+                case KeyCode.Mouse3: return "M4";
+                case KeyCode.Mouse4: return "M5";
+            }
+            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return "N" + (int)(key - KeyCode.Keypad0);
+            return KeyName(key);
         }
 
         // ---------- chat filter ----------

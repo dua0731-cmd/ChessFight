@@ -76,7 +76,7 @@ namespace ChessFight.Game
         bool open, picked, noteError, drawnOpen;
         int panelVersion = -1, recentVersion = -1, settingsVersion = -1, drawnScroll, scroll, submitFrame = -1, releasedFrame = -10;
         ChatChannel drawnChannel;
-        float noteUntil;
+        float noteUntil, drawnBacking;
         string noteText = "";
 
         bool HoldsKeys => open || submitFrame >= 0 || Time.frameCount - releasedFrame <= 1;
@@ -289,6 +289,15 @@ namespace ChessFight.Game
                 for (int i = 0; i < 3; i++) box.EnableInClassList("chat-size-" + i, GameSettings.ChatSize == i);
                 if (closedKey != null) closedKey.text = GameSettings.KeyName(GameSettings.Key(GameKey.Chat));
             }
+            // R674, settings → 채팅 배경 진하기: a dark backing behind the match chat (clear at 0, as before).
+            float backing = Where == Layout.Match ? GameSettings.ChatBacking : 0f;
+            if (!Mathf.Approximately(backing, drawnBacking))
+            {
+                drawnBacking = backing;
+                recentVersion = -1;
+                if (panel != null)
+                    panel.style.backgroundColor = backing > 0f ? new StyleColor(Backing(backing)) : new StyleColor(StyleKeyword.Null);
+            }
             if (open && !Usable(channel)) channel = ChatText.Next(channel, Usable);
             Show(panel, open);
             Show(recent, !open);
@@ -298,7 +307,7 @@ namespace ChessFight.Game
             foreach (var c in Channels)
             {
                 if (open && c == channel) log.MarkRead(c);
-                int count = Usable(c) ? log.Unread(c) : 0;
+                int count = Usable(c) && Hears(c) ? log.Unread(c) : 0;
                 waiting += count;
                 if (tabs.TryGetValue(c, out var tab))
                 {
@@ -350,7 +359,7 @@ namespace ChessFight.Game
         void DrawPanel()
         {
             lines.Clear();
-            var all = log.In(channel).ToList();
+            var all = log.In(channel).Where(Shown).ToList();
             int end = Mathf.Max(0, all.Count - scroll), start = Mathf.Max(0, end - PanelLines);
             for (int i = start; i < end; i++) lines.Add(Row(all[i]));
         }
@@ -364,9 +373,10 @@ namespace ChessFight.Game
             for (int i = Mathf.Max(0, all.Count - RecentLines); i < all.Count; i++)
             {
                 var e = all[i];
-                if (!Usable(e.Channel)) continue;
+                if (!Usable(e.Channel) || !Shown(e)) continue;
                 var row = Row(e);
                 row.AddToClassList("chat-recent-line");
+                if (drawnBacking > 0f) row.style.backgroundColor = Backing(drawnBacking);
                 recent.Add(row);
                 recentRows.Add(new KeyValuePair<ChatEntry, VisualElement>(e, row));
             }
@@ -416,6 +426,14 @@ namespace ChessFight.Game
         }
 
         static string Key(ChatChannel c) => c == ChatChannel.Party ? "party" : c == ChatChannel.Team ? "team" : "all";
+
+        // R674, settings → 채팅 받기: the channels whose lines from others are shown (my own lines and notices always are).
+        static bool Hears(ChatChannel c) =>
+            GameSettings.ChatFrom == 0 || c == ChatChannel.Party || (GameSettings.ChatFrom == 1 && c == ChatChannel.Team);
+
+        static bool Shown(ChatEntry e) => e.Mine || e.Notice || Hears(e.Channel);
+
+        static Color Backing(float amount) => new Color(0f, 0f, 0f, .75f * amount);
 
         static void Show(VisualElement element, bool show)
         {

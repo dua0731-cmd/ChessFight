@@ -114,9 +114,12 @@ namespace ChessFight.RagdollLab
             var me = Viewer;
             if (me == null || me.PawnRushSkills == null || me.Piece == PieceKind.King) return;
             bool running = me.SkillStage != SkillStage.None, ready = !running && me.SkillCooldown <= 0f;
-            string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? "F 조준 → 좌클릭" : "F 사용";
+            // R674: the keys as the settings window has them bound (F and the left click unless rebound).
+            string key = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Use);
+            string click = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Shove);
+            string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? $"{key} 조준 → {click}" : $"{key} 사용";
             if (me.Piece == PieceKind.Pawn) how += " · 승격 발판에 서서 승격";
-            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), "F", $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), key, $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
                 SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), me.Piece,
                 ready || running, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
         }

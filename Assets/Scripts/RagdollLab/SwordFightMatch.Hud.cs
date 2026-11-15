@@ -407,8 +407,9 @@ namespace ChessFight.RagdollLab
                 float ih = 78f * ui, icw = ih * icon.width / icon.height;
                 GUI.DrawTexture(new Rect(cr.center.x - icw / 2f, cr.y + 22f * ui, icw, ih), icon);
                 Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), ChessPieces.Name(p), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);
-                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), "F", SwordFightSkills.Name(p), chosen, ui);
-                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), "E", SwordFightSkills.EdgeName(p), chosen, ui);
+                // R674: the keys as bound in the settings window (F and E unless rebound).
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Use), SwordFightSkills.Name(p), chosen, ui);
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Skill), SwordFightSkills.EdgeName(p), chosen, ui);
                 string foot = takenBy != 0 ? NameOf(takenBy) + " 고름" : mineNow ? "골랐어요" : chosen ? "Space · 더블클릭으로 확정" : hot ? "클릭해서 선택" : "";
                 if (foot != "") Text(new Rect(cr.x, cr.yMax - 34f * ui, cw, 22f * ui), foot, bodyStyle, Mathf.RoundToInt(12 * ui), takenBy != 0 ? Muted : Amber);
                 GUI.color = old;
@@ -443,7 +444,10 @@ namespace ChessFight.RagdollLab
         // "F 꼬치 베기": the key as a small cap, then the skill's name.
         void SkillLine(Rect r, string key, string name, bool hot, float ui)
         {
-            var cap = new Rect(r.x, r.y + (r.height - 22f * ui) / 2f, 22f * ui, 22f * ui);
+            // A rebound key with a longer name ("Shift", "좌클릭") widens the cap instead of spilling out of it.
+            bodyStyle.fontSize = Mathf.RoundToInt(12 * ui);
+            float capWidth = Mathf.Max(22f * ui, bodyStyle.CalcSize(new GUIContent(key)).x + 10f * ui);
+            var cap = new Rect(r.x, r.y + (r.height - 22f * ui) / 2f, capWidth, 22f * ui);
             Panel(cap, hot ? capTex : capDimTex, 4);
             Text(cap, key, bodyStyle, Mathf.RoundToInt(12 * ui), hot ? Ink : Amber);
             Text(new Rect(cap.xMax + 8f * ui, r.y, r.width - cap.width - 8f * ui, r.height), name, bodyStyle, Mathf.RoundToInt(13 * ui), hot ? ParchBright : Parch, TextAnchor.MiddleLeft);

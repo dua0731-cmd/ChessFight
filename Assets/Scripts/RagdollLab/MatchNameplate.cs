@@ -49,11 +49,16 @@ namespace ChessFight.RagdollLab
         internal static bool Draw(Camera camera, RagdollPawn target, PieceKind piece, bool skillReady, out Vector3 screen)
         {
             screen = default;
-            if (target.IsSelf) { local = target; return false; }
+            // R674, settings → 게임플레이 → 화면 표시: my own name only while 내 이름 is on.
+            if (target.IsSelf) { local = target; if (!GameSettings.ShowMyName) return false; }
             if (Hidden) return false;
             if (Event.current.type != EventType.Repaint || !camera || string.IsNullOrEmpty(target.DisplayName)) return false;
-            bool teammate = local != null && local.Team == target.Team;
-            float fade = teammate ? 1f : Mathf.InverseLerp(FarMeters, NearMeters, Vector3.Distance(camera.transform.position, target.bodies[(int)BodyId.Head].transform.position));
+            bool teammate = target.IsSelf || (local != null && local.Team == target.Team);
+            // 팀원 이름 / 상대 이름: 0 always, 1 only near (full to NearMeters, gone at FarMeters), 2 off. The defaults
+            // are what it drew before R674: teammates always, the other team only near.
+            int mode = target.IsSelf ? 0 : teammate ? GameSettings.TeamNames : GameSettings.EnemyNames;
+            if (mode == 2) return false;
+            float fade = mode == 0 ? 1f : Mathf.InverseLerp(FarMeters, NearMeters, Vector3.Distance(camera.transform.position, target.bodies[(int)BodyId.Head].transform.position));
             if (fade <= 0f) return false;
             // R668: over the drawn top of the piece (a taller piece floats it higher), as over the pawn's head before.
             if (!TryProject(camera, target.bodies[(int)BodyId.Head].transform.position, out screen, target.NameplateRise)) return false;

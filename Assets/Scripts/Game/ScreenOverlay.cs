@@ -18,6 +18,18 @@ namespace ChessFight.Game
         Label fps;
         float frames, elapsed;
         bool focused = true;
+        // R674, settings → 경기 잡힘 알림음: the match-found screen (its sounds) is heard this long even while the window
+        // is behind another and 창이 뒤에 있으면 소리 끄기 is on.
+        const float DingSeconds = 6f;
+        float dingUntil = -1f;
+
+        /// <summary>The entrance screen has found a match (LoadingScreenView: the course reveal, Sword Fight's pick).</summary>
+        public static void MatchFound()
+        {
+            if (instance == null || instance.focused || !GameSettings.ReadyDing) return;
+            instance.dingUntil = Time.realtimeSinceStartup + DingSeconds;
+            instance.Apply();
+        }
 
         public static void Ensure()
         {
@@ -61,11 +73,13 @@ namespace ChessFight.Game
                                                 : new Color(1f, .96f, .88f, Mathf.Clamp01((b - 1f) * .18f));
             veil.style.display = Mathf.Abs(b - 1f) < .01f ? DisplayStyle.None : DisplayStyle.Flex;
             fps.style.display = GameSettings.ShowFps ? DisplayStyle.Flex : DisplayStyle.None;
-            AudioListener.volume = focused || !GameSettings.MuteInBackground ? GameSettings.Master : 0f;
+            bool heard = focused || !GameSettings.MuteInBackground || Time.realtimeSinceStartup < dingUntil;
+            AudioListener.volume = heard ? GameSettings.Master : 0f;
         }
 
         void Update()
         {
+            if (dingUntil >= 0f && (focused || Time.realtimeSinceStartup >= dingUntil)) { dingUntil = -1f; Apply(); }
             if (!GameSettings.ShowFps) return;
             frames++;
             elapsed += Time.unscaledDeltaTime;

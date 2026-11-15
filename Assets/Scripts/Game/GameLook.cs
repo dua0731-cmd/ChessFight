@@ -26,6 +26,32 @@ namespace ChessFight.Game
             RenderPipelineManager.beginCameraRendering += Prepare;
             SceneManager.sceneLoaded -= Loaded;
             SceneManager.sceneLoaded += Loaded;
+            GameSettings.Changed -= BloomSetting;
+            GameSettings.Changed += BloomSetting;
+        }
+
+        // R674, settings → 화면 → 그래픽 품질 → 빛 번짐: off puts one global volume over every other one (the profile's,
+        // the skills' flash at 100, the loading studio's at 50) that takes the bloom down to nothing. Made the first time
+        // it is turned off, kept across scenes.
+        static Volume noBloom;
+
+        static void BloomSetting()
+        {
+            bool off = !GameSettings.Bloom;
+            if (noBloom == null)
+            {
+                if (!off) return;
+                var go = new GameObject("Game Look (no bloom)") { hideFlags = HideFlags.HideInHierarchy };
+                Object.DontDestroyOnLoad(go);
+                noBloom = go.AddComponent<Volume>();
+                noBloom.isGlobal = true;
+                noBloom.priority = 1000f;
+                var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                profile.name = "Game Look (no bloom)";
+                profile.Add<Bloom>(false).intensity.Override(0f);
+                noBloom.sharedProfile = profile;
+            }
+            noBloom.enabled = off;
         }
 
         static void Prepare(ScriptableRenderContext context, Camera camera)
@@ -65,6 +91,7 @@ namespace ChessFight.Game
         {
             if (mode != LoadSceneMode.Single) return;
             Soften(scene);
+            BloomSetting();
             if (runner == null)
             {
                 var go = new GameObject("Game Look") { hideFlags = HideFlags.HideInHierarchy };

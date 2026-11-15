@@ -121,6 +121,8 @@ namespace ChessFight.Game
             GameMenu.OnlineCost = () => Session != null ? Session.LeaveWarning : "";
             Session.LoadLeaves = () => PlayerPrefs.GetString(LeavesKey, "");
             Session.SaveLeaves = text => { PlayerPrefs.SetString(LeavesKey, text); PlayerPrefs.Save(); };
+            // R674, settings → 소셜 → 파티 초대 받기: 모두 / Steam 친구만 / 받지 않기.
+            Session.TakesInviteFrom = from => GameSettings.InvitesFrom == 0 || (GameSettings.InvitesFrom == 1 && Session.IsFriend(from));
             PlayerProfile.Changed += OnNameChanged;
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);

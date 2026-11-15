@@ -294,6 +294,8 @@ namespace ChessFight.Game
             if (on != revealShown)
             {
                 revealShown = on;
+                // R674: heard even with the window behind another (settings → 경기 잡힘 알림음).
+                if (on) ScreenOverlay.MatchFound();
                 reveal.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 // hidden by visibility, since the view itself turns some of them on and off by display every frame
                 var hidden = on ? new StyleEnum<Visibility>(Visibility.Hidden) : new StyleEnum<Visibility>(StyleKeyword.Null);

@@ -14,9 +14,11 @@ namespace ChessFight.Game
     // key hints along the bottom. Every change is saved at once (GameSettings).
     // Design sample: https://claude.ai/artifact/C7WFSCyXfVj6wLX4zDRw4g (Settings2).
     //
-    // Lines marked "준비 중" are saved but nothing in the game reads them yet
-    // (controller, name tags...). The 음성 채팅 page (R131) uses the same lines, plus
-    // GateLine (the voice-activated threshold over the live level) and MicLine.
+    // Lines marked "준비 중" are features the game does not have yet (controller,
+    // colour-blind modes...): since R674 they are drawn dim and cannot be changed, the
+    // description still says what they will do. Every other line acts on the game (R674
+    // went through them against main). The 음성 채팅 page (R131) uses the same lines,
+    // plus GateLine (the voice-activated threshold over the live level) and MicLine.
     //
     // The screens own the Esc key: IntroController and NetworkHudView call
     // Toggle/Back. Back closes an open list, then calls off a key being bound,
@@ -128,7 +130,7 @@ namespace ChessFight.Game
         sealed class Tab { public string Name; public Page[] Pages; }
 
         static readonly string[] OffOn = { "끔", "켬" };
-        const string Soon = "아직 게임에 이 기능이 없어 값만 저장돼요.";
+        const string Soon = "아직 게임에 이 기능이 없어요. 생기면 여기서 바꿀 수 있어요.";
 
         // A value saved under an id; the game may not read it yet.
         static Choice Pick(string id, string label, string[] options, int fallback, string desc, bool drop = false,
@@ -270,7 +272,7 @@ namespace ChessFight.Game
                 },
                 Pick("water", "물 표현", new[] { "낮음", "높음" }, 1, "해자와 물웅덩이의 반사와 물결.", soon: true, indent: true),
                 Pick("particle", "효과 양", new[] { "적게", "보통", "많이" }, 1, "폭죽, 불꽃, 먼지 같은 효과의 양.", soon: true, indent: true),
-                Switch("bloom", "빛 번짐", true, "금색 장식과 조명 주위가 은은하게 번져요.", soon: true, indent: true),
+                Switch("bloom", "빛 번짐", true, "금색 장식과 조명 주위가 은은하게 번져요. 끄면 스킬 번쩍임의 번짐도 함께 꺼져요.", indent: true),
             };
 
             return new List<Tab>
@@ -293,15 +295,16 @@ namespace ChessFight.Game
                         new Section { Title = "볼륨", Items = new Item[]
                         {
                             Volume("master", "전체 소리", 1f, "모든 소리의 크기."),
-                            Volume("music", "배경 음악", .7f, "로비와 경기 음악.", soon: true, indent: true),
-                            Volume("sfx", "효과음", .8f, "부딪힘, 점프, 대포 같은 경기 소리.", soon: true, indent: true),
-                            Volume("ui", "버튼 소리", .6f, "메뉴 버튼과 알림 소리.", soon: true, indent: true),
+                            Volume("music", "배경 음악", .7f, "로비, 매칭 화면(코스 공개 · 소드 파이트 입장), 경기 음악.", indent: true),
+                            Volume("sfx", "효과음", .8f, "점프 · 다이빙 · 발소리, 스킬, 장애물과 구간 소리, 매칭 화면 소리, 시작 로고 소리.", indent: true),
+                            Volume("ui", "버튼 소리", .6f, "메뉴 버튼 소리. 아직 버튼 소리가 없어요(매칭 화면 소리는 효과음 크기를 따라요).", soon: true, indent: true),
                             Volume("vc", "음성 채팅", .8f, "다른 사람 목소리 크기. 모두 같은 크기로 들려요.", indent: true),
                         } },
                         new Section { Title = "기타", Items = new Item[]
                         {
                             Switch("bgmute", "창이 뒤에 있으면 소리 끄기", true, "다른 창을 보고 있을 때 게임 소리를 꺼요."),
-                            Switch("readyding", "경기 잡힘 알림음", true, "매칭이 잡히면 다른 창에 있어도 들리게 울려요.", soon: true),
+                            Switch("readyding", "경기 잡힘 알림음", true,
+                                   "매칭이 잡혀 입장 화면이 열리면, 다른 창을 보고 있어도 6초 동안 그 소리가 들려요(위 항목이 켜져 있어도)."),
                         } },
                     } },
                     new Page { Name = VoicePage, Sections = new[]
@@ -334,12 +337,14 @@ namespace ChessFight.Game
                         } },
                         new Section { Title = "행동", Items = new Item[]
                         {
-                            Bind(GameKey.Shove, "밀치기", "앞 상대를 밀어요. 누르고 있으면 갈고리를 휘둘러요."),
-                            Bind(GameKey.Grab, "잡기", "누르는 동안 잡아요."),
-                            Bind(GameKey.Skill, "스킬", "말마다 다른 주 스킬. (스킬 시험 씬은 아직 따로 F를 써요.)"),
-                            Bind(GameKey.Skill2, "보조 스킬", "퀸과 킹의 두 번째 스킬."),
-                            Bind(GameKey.Use, "상호작용", "종, 레버, 앙파상(0.4초 누르기)."),
-                            Bind(GameKey.Respawn, "구간 처음으로", "현재 구간 입구에서 다시 시작."),
+                            // R674: named after what each key does in the two modes now (Queen of the Hill's bells,
+                            // levers and second abilities are gone); the skill test scenes keep their own keys.
+                            Bind(GameKey.Shove, "다이빙 · 칼 베기", "폰 러쉬: 앞으로 몸을 날려요(갈고리를 꺼냈으면 누르고 있다가 떼서 던져요). 소드 파이트: 칼을 휘둘러요."),
+                            Bind(GameKey.Grab, "잡기 · 조준 취소", "폰 러쉬: 누르는 동안 잡아요. 소드 파이트: 스킬 조준을 취소해요."),
+                            Bind(GameKey.Use, "기물 스킬", "폰 러쉬: 내 기물의 스킬. 소드 파이트: F 스킬. 화면의 스킬 칸에도 이 키가 나와요."),
+                            Bind(GameKey.Skill, "두 번째 스킬", "소드 파이트: E 스킬. 폰 러쉬: 폰일 때 갈고리를 꺼내고 넣어요."),
+                            Bind(GameKey.Skill2, "보조 스킬", "지금 두 모드에는 쓰는 곳이 없어요.", soon: true),
+                            Bind(GameKey.Respawn, "구간 처음으로", "현재 구간 입구에서 다시 시작. 지금 경기에는 이 기능이 없어요.", soon: true),
                         } },
                         new Section { Title = "기타", Items = new Item[]
                         {
@@ -361,17 +366,19 @@ namespace ChessFight.Game
                     new Page { Name = "카메라", Sections = new[] { new Section { Title = "카메라", Items = new Item[]
                     {
                         Number("camdist", "카메라 거리", 2f, 8f, .2f, 3.6f, v => v.ToString("0.0") + "m",
-                               "경기를 시작할 때 말과 카메라 사이 거리. 경기 중에는 휠로 바꿔요."),
-                        Switch("sprintfov", "질주할 때 시야 넓어짐", true, "달릴 때 화면이 살짝 넓어져 빨라 보여요."),
+                               "경기를 시작할 때 말과 카메라 사이 거리. 경기 중에는 휠로 바꿔요. 한 번도 안 바꿨으면 폰 러쉬는 원래 거리(6 m)로 시작해요."),
+                        Switch("sprintfov", "질주할 때 시야 넓어짐", true, "소드 파이트에서 달릴 때 화면이 살짝 넓어져 빨라 보여요. 폰 러쉬 카메라에는 이 효과가 없어요."),
                         Number("shake", "카메라 흔들림", 0f, 100f, 10f, 100f, Percent, "부딪힘, 스킬, 결과 화면의 흔들림 세기."),
                     } } } },
                     new Page { Name = "화면 표시", Sections = new[]
                     {
                         new Section { Title = "이름과 표시", Items = new Item[]
                         {
-                            Pick("names", "팀원 이름", new[] { "항상", "가까울 때만", "끔" }, 0, "팀원 머리 위 이름.", drop: true, soon: true),
-                            Pick("enemy", "상대 이름", new[] { "항상", "가까울 때만", "끔" }, 1, "상대 머리 위 이름.", drop: true, soon: true),
-                            Switch("myname", "내 이름", false, "내 머리 위에도 이름 표시.", soon: true),
+                            Pick("names", "팀원 이름", new[] { "항상", "가까울 때만", "끔" }, 0,
+                                 "팀원 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요. 벽에 가리면 보이지 않아요.", drop: true),
+                            Pick("enemy", "상대 이름", new[] { "항상", "가까울 때만", "끔" }, 1,
+                                 "상대 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요.", drop: true),
+                            Switch("myname", "내 이름", false, "내 머리 위에도 이름표를 띄워요."),
                             Switch("hints", "조작 도움말", true, "처음 보는 장애물 옆에 짧은 설명.", soon: true),
                             Number("hud", "HUD 크기", 80f, 130f, 5f, 100f, Percent, "점수, 시간, 스태미나 같은 경기 화면 크기.", soon: true),
                         } },
@@ -389,14 +396,17 @@ namespace ChessFight.Game
                         Switch("chat", "채팅", true, "끄면 채팅이 숨고 열리지 않아요."),
                         Switch("filter", "욕설 가리기", true, "흔한 욕을 ** 로 가려요. 내 화면에서만."),
                         Pick("chatsize", "글자 크기", new[] { "작게", "보통", "크게" }, 1, "채팅 글자 크기.", drop: true),
-                        Number("chatalpha", "채팅 배경 진하기", 0f, 100f, 10f, 60f, Percent, "경기 중 채팅 뒤 배경.", soon: true),
-                        Pick("chatfrom", "채팅 받기", new[] { "모두", "파티와 팀만", "파티만" }, 0, "전체 채널을 끄고 싶을 때.", drop: true, soon: true),
+                        Number("chatalpha", "채팅 배경 진하기", 0f, 100f, 10f, 0f, Percent,
+                               "경기 중 채팅 뒤에 까만 바탕을 깔아 글자를 읽기 쉽게 해요. 0이면 지금처럼 바탕 없이 글자만."),
+                        Pick("chatfrom", "채팅 받기", new[] { "모두", "파티와 팀만", "파티만" }, 0,
+                             "다른 사람이 보낸 줄 중 어느 채널을 보여 줄지(전체 채널을 끄고 싶을 때). 내가 보낸 줄과 알림은 늘 보이고, 보내기는 그대로 돼요.", drop: true),
                     } } } },
                     new Page { Name = "초대와 개인정보", Sections = new[]
                     {
                         new Section { Title = "초대", Items = new Item[]
                         {
-                            Pick("invites", "파티 초대 받기", new[] { "모두", "Steam 친구만", "받지 않기" }, 1, "누가 나를 파티에 부를 수 있는지.", drop: true, soon: true),
+                            Pick("invites", "파티 초대 받기", new[] { "모두", "Steam 친구만", "받지 않기" }, 1,
+                                 "누가 보낸 파티 초대를 게임 안(로비 수락 칸 · 채팅 알림)에 띄울지. Steam 자체 알림은 이 설정과 상관없이 와요.", drop: true),
                             Switch("invitesound", "초대 알림음", true, "초대가 오면 소리로 알려요.", soon: true),
                         } },
                         new Section { Title = "방송할 때", Items = new Item[]
@@ -585,7 +595,7 @@ namespace ChessFight.Game
             descNote.style.display = string.IsNullOrEmpty(note) ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
-        // One line: the name (with "준비 중" when nothing reads it yet), then the value.
+        // One line: the name (with "준비 중" when the game has no such feature yet), then the value.
         void Line(VisualElement parent, Item item)
         {
             var row = Add(parent, "s2-row");
@@ -606,6 +616,13 @@ namespace ChessFight.Game
                 case Keys k: KeysLine(val, k); break;
                 case MicTest _: MicLine(val); break;
                 case Gate _: GateLine(val); break;
+            }
+            // R674: a feature the game does not have yet is shown, dim, but cannot be changed (it only saved a value
+            // nothing read). The line still describes it when the mouse is over it.
+            if (item.Soon)
+            {
+                val.SetEnabled(false);
+                val.style.opacity = .38f;
             }
             if (item.When != null)
                 refreshers.Add(() => row.style.display = item.When() ? DisplayStyle.Flex : DisplayStyle.None);

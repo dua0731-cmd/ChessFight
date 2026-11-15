@@ -37,6 +37,12 @@ namespace ChessFight.Game
         Vector3 focus, focusVelocity;
         float heightVelocity;
         bool initialized;
+        // R674, settings → 시야 범위 and 카메라 거리 (they reached only the ragdoll lab's camera, LabCamera, before):
+        // the camera's own field of view is the 60° one, and the distance is taken once, on the first Follow, only
+        // after the player has moved that slider (else the scene's own distance, 6 m in Pawn Rush, stays).
+        Camera view;
+        float baseFov = -1f;
+        bool distanceTaken;
         readonly RaycastHit[] hits = new RaycastHit[16];
 
         public bool FreeFly { get; private set; }
@@ -82,6 +88,17 @@ namespace ChessFight.Game
             facing.y = 0f;
             if (facing.sqrMagnitude > 1e-4f) yaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
             initialized = false;
+            if (!distanceTaken && GameSettings.Has("camdist"))
+                distance = Mathf.Clamp(GameSettings.CameraDistance, minDistance, maxDistance);
+            distanceTaken = true;
+        }
+
+        // Settings → 화면 → 시야 범위, relative to the default 60° so a camera set up otherwise keeps its offset.
+        void ApplyFov()
+        {
+            if (view == null && !TryGetComponent(out view)) return;
+            if (baseFov < 0f) baseFov = view.fieldOfView;
+            view.fieldOfView = Mathf.Clamp(baseFov + GameSettings.Fov - 60f, 20f, 120f);
         }
 
         // A teleport: cut to the new place instead of swooping there.
@@ -117,6 +134,7 @@ namespace ChessFight.Game
         void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
+            ApplyFov();
             bool look = Cursor.lockState == CursorLockMode.Locked;
             if (look)
             {
