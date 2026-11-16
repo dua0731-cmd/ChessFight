@@ -611,7 +611,8 @@ MonoBehaviour:
   orbit: {fileID: 3005}
   startPoint: {fileID: 3034}
   maps: []
-  includeCalibrationYard: 1
+  includeCalibrationYard: 0
+  onlyMap: RoyalCarriageYard
 --- !u!1 &3033
 GameObject:
   m_ObjectHideFlags: 0

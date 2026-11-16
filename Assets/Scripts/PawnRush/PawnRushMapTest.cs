@@ -43,6 +43,8 @@ namespace ChessFight.PawnRush
         [SerializeField] List<GameObject> maps = new List<GameObject>();
         [Tooltip("The code-built yard of steps, gaps, slopes and walls for measuring the pawn, first in the list.")]
         [SerializeField] bool includeCalibrationYard = true;
+        [Tooltip("Only this map (its prefab name, or its path under the map folder without .prefab); empty: every map.")]
+        [SerializeField] string onlyMap = "";
 
         struct Entry
         {
@@ -106,14 +108,19 @@ namespace ChessFight.PawnRush
                 foreach (var path in paths)
                 {
                     var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    if (prefab == null || !seen.Add(prefab)) continue;
+                    if (prefab == null || !Wanted(Label(path), prefab) || !seen.Add(prefab)) continue;
                     entries.Add(new Entry { name = Label(path), id = path, prefab = prefab });
                 }
             }
 #endif
             foreach (var prefab in maps)
-                if (prefab != null && seen.Add(prefab)) entries.Add(new Entry { name = prefab.name, id = prefab.name, prefab = prefab });
+                if (prefab != null && Wanted(prefab.name, prefab) && seen.Add(prefab))
+                    entries.Add(new Entry { name = prefab.name, id = prefab.name, prefab = prefab });
         }
+
+        // seoungtest's carriage yard bench sets onlyMap so the scene plays that map alone.
+        bool Wanted(string label, GameObject prefab) =>
+            string.IsNullOrEmpty(onlyMap) || label == onlyMap || prefab.name == onlyMap;
 
         // "Assets/Prefabs/PawnRushMaps/Sub/Name.prefab" -> "Sub/Name".
         static string Label(string path)

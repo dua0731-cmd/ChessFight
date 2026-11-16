@@ -15,6 +15,11 @@
 - 규칙(승규): 상자 콜라이더만, 폰이 닿는 면은 모델을 콜라이더에 맞춤(~10 cm 넘게 어긋나면 고치거나 보고), 게임 폭 · 틈 안 바꿈, 신호(물 · 폭포 · 거품 ·
   금 테두리 · 표지 · 등불 · 빨강/초록 표시 · 결승선 · 진행 막대)는 절대 안 가림, 성 키트 말고는 회색 클레이(텍스처 없음), 맵 밖은 모델링 안 함, 정지 화면으로 보고.
 - Unity 확인은 이 폴더에 열린 에디터 `ChessFight-SeoungTest@5654cdc8`만 쓴다(main 에디터 C:/Work/ChessFight 금지). 장면 `Assets/Scenes/PawnRush_MapTest.unity`.
+- **seoungtest에서 Unity를 열면 마차뜰만(11-16, 승규 "유니티에 안 보여 마차뜰만 띄우게"):** 맵 시험 장면이 기본 시험장(코드)부터 열어서 이 PC처럼 지난 맵
+  기록이 없으면 마차뜰이 안 보였다 → 장면의 `PawnRushMapTest`를 `includeCalibrationYard 0` · `onlyMap RoyalCarriageYard`(새 필드, 비우면 예전처럼 전부)로,
+  편집기 도구 `PawnRushEditor/SeoungTestYardOnly.cs`가 편집기를 켤 때(세션당 한 번, 저장 안 한 장면이 있으면 안 바꿈) 이 장면을 열고 어느 장면에서 Play해도
+  이 장면으로 시작(`playModeStartScene`). 끄기: `ChessFight > Pawn Rush > Carriage Yard Only (seoungtest)`. 마차뜰은 Play 때 지어지므로 편집 모드에서는 빈 장면이다.
+  main으로 옮길 때는 이 파일과 장면의 두 값을 빼야 한다.
 - **다른 PC에서 이어 하기(11-16, HOSEO PC `C:\Users\HOSEO\Documents\GitHub\ChessFight`에서 처음 세팅):** 스크립트의 프로젝트 경로는
   `RCY_ROOT` 하나(exec 네임스페이스 또는 환경 변수, 없으면 처음 PC의 `C:/Work/ChessFight-SeoungTest`) — 예: `g = {"__name__": "rcy", "RCY_ROOT": r"C:/Users/HOSEO/Documents/GitHub/ChessFight", ...}`.
   이 PC 세팅: Blender 5.2.3 LTS(winget, 같은 5.2 줄), BlenderMCP 애드온 2.0(`addon.py`, github.com/ahujasid/blender-mcp, 켜 두면 Blender를 열 때 localhost:9876 자동 시작, 사용 데이터 전송 꺼짐),
