@@ -943,8 +943,35 @@ def skin(col, body, extras, tack_pieces, armature):
         names = [m.name for m in t.data.materials]
         if PLUME in names:
             rigid_slot(t, names.index(PLUME), "Head")
+        if t.name in ("Harness", "Saddle"):
+            # R680 QA (rigging): the skin's bone heat let the tail bones carry the breeching (it swung 20-23 cm with
+            # the tail) and the neck the harness pad and saddle (6-10 cm); these ride the trunk and the legs only.
+            only_groups(t, [g.name for g in t.vertex_groups if g.name != "Neck" and not g.name.startswith("Tail")],
+                        fallback="Root")
         bind(t, armature)
+    for o in [body] + list(tack_pieces):
+        limit_weights(o, 4)
     return body
+
+
+def limit_weights(ob, most=4):
+    """R680 QA (rigging / unity-export): Unity skins with at most 4 bones a vertex and renormalises, so keep each
+    vertex's 4 largest weights summing to 1 here too (the bone heat gave up to 7, summing to 0.89-1.0) and Blender and
+    Unity bend the same."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    for v in ob.data.vertices:
+        ws = sorted(((x.weight, names[x.group]) for x in v.groups if x.weight > 0), reverse=True)
+        keep = ws[:most]
+        total = sum(w for w, _ in keep)
+        if total <= 0:
+            continue
+        for w, n in ws[most:]:
+            ob.vertex_groups[n].remove([v.index])
+        for w, n in keep:
+            ob.vertex_groups[n].add([v.index], w / total, "REPLACE")
+        for x in list(v.groups):
+            if x.weight <= 0:
+                ob.vertex_groups[names[x.group]].remove([v.index])
 
 
 def build_horse():

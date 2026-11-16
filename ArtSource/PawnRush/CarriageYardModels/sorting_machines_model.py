@@ -56,7 +56,7 @@ def urange(a, b, step):
 def bolt(col, at, normal, r=.025, mat=IRON):
     """A bolt head on a face: `at` and `normal` Blender."""
     n = Vector(normal).normalized()
-    return cylinder(col, "Bolt", Vector(at) + n * .006, n, r, .012, mat, segments=6)
+    return cylinder(col, "Bolt", Vector(at) + n * .006, n, r, .012, mat, segments=6, smooth=False)
 
 
 def rope(col, name, a, b, r=.035):
@@ -299,7 +299,7 @@ def drum_profile():
 
 
 def slew_crane(col):
-    parts = [lathe(col, "Crane drum", drum_profile(), (0, 0, 0), seg=32, mat=STONE, smooth=True)]
+    parts = [lathe(col, "Crane drum", drum_profile(), (0, 0, 0), seg=32, mat=STONE, smooth=True, sharp=True)]
     parts.append(arc_ring(col, "Drum band", 0, 0, 1.17, 1.23, 2.215, 2.285, IRON, seg=40, bevel=.005))
     parts.append(arc_ring(col, "Turntable", 0, 0, .3, 1.15, 2.4, 2.43, WALNUT, seg=32, bevel=.005))
     parts.append(cylinder(col, "Crane mast", (0, 0, 4.9), (0, 0, 1), .2, 5.0, WALNUT, segments=12))

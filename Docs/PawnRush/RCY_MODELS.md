@@ -44,8 +44,36 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
      전체를 한 번에 다시 지으면 몇 분 걸려 MCP 응답이 끊긴 것처럼 보이지만 빌드는 끝난다.
    - **(11-16 HOSEO PC) 기계 · 마차 9개도 다시 냄:** 33개 전부를 읽기 전용으로 잰 결과 넓이 0 면이 남은 것은 Coach 91 · ConveyorCrate 32 · ConveyorStack 38 · StackRow 156 · StackCrate 54 · RowTrolley 128 · SlamTrolley 112 · SlewJib 80 · HoistFrame 56 → 소스에서 다시 지어(정리 단계 포함) 이 9개만 다시 냄. 이전 커밋 FBX와 비교: 표면 넓이 · 크기 · 점 위치 차이 0(양방향 최근접 거리 0), 재질 칸 그대로, 삼각형 2,306개 줄어듦. **지금 33개 합계 1,049,494 삼각형, 넓이 0 면 · 떨어진 점 · 선 · 3면 모서리 0.** 성 · 말 · 바퀴 · 문짝 · 고리는 원래 넓이 0 면 없음. Unity에서 다시 불러 본 것 없음(이 PC는 Unity MCP 연결 전).
    - **남은 열린 모서리:** `RcyCastleSectionEnd` 1,626개 = 14고리. 마지막 계단 디딤판 4개(높이 7.0 ~ 8.0 m, 고리마다 31 m)와 양쪽 난간 토막 10개(x ±5.94 ~ 6.50, 아랫단 z 7.0 / 8.0). 1 cm까지 붙여도 1,501개라 이음새가 아니라 잘린 아래쪽이 열린 것. 폰 눈높이 다섯 각도(계단 위 · 아래 · 낮게 뒤 · 난간 동 · 서) 마젠타 배경 · 뒷면 숨김 렌더에서 비쳐 보이는 틈 없음(`scratchpad` 렌더, 커밋 안 함). 막으려면 `castle_model.py` `part()`의 자른 면 마감(cap)을 계단 · 난간에도 — 성 내보내기는 `RoyalCarriageYard.Castle.cs`의 상자 표도 다시 쓰므로 그때 같이.
-   - 남은 판정 후보: Entrance · Sorting 삼각형 예산(바닥 밑 안 보이는 판석 밑면 지우기 검토), 구역별 3/4 각도 정지 화면, qa-review 판정표(SHIP/…).
-   - 다시 낸 뒤: 바닥 윗면이 콜라이더 위 ~3 cm 안인지, 구멍 렌더(마젠타 배경), Unity Play에서 콘솔 오류 없는지.
+   - **(11-16 HOSEO PC) 스킬 QA 2차 — 네 갈래로 나눠 잼(읽기 전용 측정 → 고침 → 다시 냄):** 고정물 8개(asset-optimization · lod-pipeline ·
+     environment-artist · set-dressing · collision-proxy · scene-assembly), 성 3개 + 텍스처(hard-surface · retopology · uv-workflow · texture-workflow ·
+     materials · lookdev · collision-proxy), 움직이는 모델 22개 + FBX 가져오기 설정 33개(vehicle-artist · prop-artist · hard-surface · collision-proxy ·
+     unity-export · export-pipeline), 말(creature-artist · rigging · animation · unity-export · stylized-style · cartoon-style), 공통 qa-review ·
+     validation-checklist · polycount-budgets · naming-conventions, 순서는 blender-director. 측정 자료 · 렌더는 그 세션 scratchpad(커밋 안 함).
+     - **고친 것(소스 → 클레이 FBX 30개 다시 냄, 성 3개는 그대로):**
+       1. `rcy_kit._box_bm`: 최소 > 최대로 들어온 상자가 거울상이 돼 면이 안을 봄 → 크기 절댓값(거대 물레방아 −y 쪽 쇠판 · 테 12조각 528삼각형).
+          `rcy_kit.turn_outward`: 닫힌 조각의 부피가 음수면 뒤집음(합치기 전 · 넓이 0 정리 뒤 두 번) — Entrance 1 · SceneryOwn 5 · Sorting 48조각도 바로잡음. **33개 모두 뒤집힌 조각 0.**
+       2. `rcy_kit.flagstones`: 판석 밑면 · 판석끼리 맞닿는 옆면 · 그 사이 아래 모따기를 지움(`hide_sides` → `join()`의 `cull_hidden_sides`), 포장 가장자리 · 윗면 · 윗 모따기는 그대로.
+          `rcy_kit.ashlar`: 같은 단 블록 사이의 평평한 이음면만 지움(모따기 · 윗면 · 아랫면까지 지웠더니 이음 모서리마다 하늘이 비쳐 되돌림).
+          난수 순서는 그대로라 판석 · 블록 배치는 이전과 같다.
+       3. 셰이딩: `cylinder` · `arc_ring`(→ `ring_x`) · `ellipse_ring`은 둘레를 매끈하게, 마구리 90° 모서리는 각지게(`sharp_creases`, 65°), 크레인 드럼(`lathe(sharp=True)`)의 홈도 각지게.
+          육각 볼트는 각진 채(`smooth=False`). 처음에 이 규칙을 모든 모델에 걸었더니 곳간의 둥근 짐 꾸러미가 각진 판처럼 망가져 해당 도구에만 걸도록 좁힘.
+       4. 짐마차 마당 양 끝(x ±19 ~ 22, z 2.0 ~ 2.6 · 47.6 ~ 50)에 판석 띠 4개(`build_entrance`, 따로 난수) — 콜라이더 위가 6 cm 낮던 곳.
+       5. 말(`horse_model.skin`): 마구(Harness) · 안장(Saddle)에서 꼬리 · 목 뼈 가중치를 뺌(엉덩이끈이 꼬리 따라 20 ~ 23 cm 흔들렸음),
+          모든 메쉬를 한 점에 뼈 4개 · 합 1로(`limit_weights`; 전에는 최대 7개 · 합 0.89 ~ 1.0, Unity가 4개로 자르면 배가 4.7 cm까지 어긋났음).
+     - **결과:** 33개 합계 1,049,494 → **947,911 삼각형(−9.7%)**: Entrance 217,296 → 183,066, Sorting 274,160 → 242,125, Canal 126,244 → 109,490,
+       Platform 50,744 → 43,339, FinishCourt 28,068 → 21,386, SectionFloors 15,312 → 10,835(나머지 수는 그대로, 셰이딩만). 넓이 0 면 · 떨어진 점 · 선 · 3면 모서리 0.
+       같은 카메라 16곳(폰 눈높이 14 + 조감 2)에서 이전 커밋과 비교 렌더(회색 · 뒷면 숨김 · 마젠타 배경): 새로 비쳐 보이는 화소 0, 바뀐 화소 0 ~ 0.16%
+       (차양 마룻대 · 통 테두리의 매끈해진 셰이딩, 새 판석 띠).
+     - **판정표(qa-review):**
+
+       | 묶음 | 판정 | 남은 것(심각도) |
+       |---|---|---|
+       | 고정물 8개 | SHIP WITH NOTES | (Major) 모델 하나가 한 덩어리(최대 18만 삼각형)라 Unity에서 화면 밖 잘라내기 · LOD가 안 됨 → 10 m 안팎 조각으로 나누기 검토. 벽 뒷면 · 맵 밖 면(카메라에 안 보임 추정 수만)은 카메라가 벽을 뚫을 때를 몰라 안 지움. (Minor) 운하 · 승강대 난간 기둥 8각 13단(약 4.5만) 줄일 여지 |
+       | 성 3개 | SHIP WITH NOTES | (Major) SectionEnd 난간 3.56만(모델의 65%) — `build_castle` 난간 `part(ratio=.5)` → ~.2로 2.1만 줄일 수 있음; 계단 텍스처가 가로로 8:1 늘어짐(12 m에 한 장) → 4 m씩 3장. (Minor) 열린 고리 14개 중 동쪽 띠 난간 끝(x 6.0 ~ 6.5, 높이 7.0 ~ 8.05, z 181)만 구간 출구 쪽에서 보임 → `part()` 자른 면 마감. 텍스처 PNG 알파 → BC3(알파 끄면 메모리 절반), Towers 텍스처는 8.5%만 씀. **성은 다시 내면 `RoyalCarriageYard.Castle.cs` 상자 표 440개도 다시 써서 이번에 안 건드림** |
+       | 움직이는 모델 22개 | SHIP WITH NOTES (물레방아 NO-SHIP → 고쳐서 SHIP) | 회전축 · 경첩 위치 모두 맞음(바퀴 무게중심 2 mm 안). 맵 위 합계 32만 삼각형 · 그리기 382번(재질 칸 수 × 개수; 칸을 하나로 하면 102번이지만 나중 색 작업에 칸 이름이 필요). (Major, 결정 필요) 세워 둔 마차 콜라이더 상자 안이 옆 15 ~ 21 cm · 뒤 35 cm · 바퀴 사이 비어 있음(블록아웃 때부터, 마차 밑에 끼지 말라고 상자를 꽉 채운 것) |
+       | 말 | SHIP WITH NOTES | (Major) 33.2k 삼각형 × 10마리, LOD 없음 → 7 ~ 8k LOD1 제안. 다리 뼈 가중치가 배까지 번져 질주 때 배 아래가 21 cm 움직임(가중치 영역 나누기 필요, 미처리). (Minor) 서 있는 발이 미끄러짐(최대 28 cm, `YardHorse.Pose`), 앞무릎 접힘 때 단면 64%, 재갈 고리가 주둥이에 반쯤 묻힘, 피부 메쉬 경계가 자세에 따라 0.55 m 넘침(`DressHorse`의 `localBounds`) |
+       | FBX 가져오기 설정 33개 | 제안만 | `isReadable 1`(메쉬 CPU 사본 약 44 MB, 코드에서 읽는 곳 없음 → 0 제안), 클레이는 노멀 맵이 없어 탄젠트(Mikk) 불필요. **Unity에서 확인할 수 없어(이 PC는 Unity MCP 없음) .meta는 안 바꿈** |
+   - 다시 낸 뒤 Unity에서: 콘솔 오류 없는지, 바닥 · 짐 · 말이 전과 같아 보이는지(특히 판석 이음 · 돌벽 이음 · 둥근 부품 셰이딩 · 말 엉덩이끈).
 2. 남은 보이는 것: 깃발은 코드의 파란 천(파란색 없애는 색 작업은 나중), 최종 성벽 가운데 기둥 음영 이음, 표지 글씨가 돌 위에서 어두움,
    "1. 짐마차 마당" 표지가 닫힌 문과 겹침, 최종 문짝 뒷면의 글씨 같은 무늬.
 3. 승규가 Unity에서 보고 확인하면 VALIDATION 표에 올리고 main으로 옮길지 정한다.

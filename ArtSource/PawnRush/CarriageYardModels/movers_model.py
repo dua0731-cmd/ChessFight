@@ -89,6 +89,7 @@ def ellipse_ring(col, name, centre, axis, rw, rh, band, depth, mat, seg=28, side
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     for f in bm.faces:
         f.smooth = True
+    sharp_creases(bm)   # R680 QA: round along the band, its 90-degree rims kept sharp (as arc_ring)
     return mesh_object(name, bm, col, (mat,))
 
 

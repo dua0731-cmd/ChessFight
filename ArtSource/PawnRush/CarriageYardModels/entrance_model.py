@@ -17,7 +17,7 @@ GOLD, TILE, CLOTH, STRAW, SACK, LEATHER = "RCY | gold", "RCY | tile", "RCY | clo
 # ------------------------------------------------------------------ shapes (shared with movers_model.py)
 
 
-def lathe(col, name, prof, centre=(0, 0, 0), axis="z", seg=16, mat=STONE, smooth=False):
+def lathe(col, name, prof, centre=(0, 0, 0), axis="z", seg=16, mat=STONE, smooth=False, sharp=False):
     """A solid of revolution: prof is [(radius, height)] from one end to the other (start and end at radius 0)."""
     bm = bmesh.new()
     rings = []
@@ -43,6 +43,8 @@ def lathe(col, name, prof, centre=(0, 0, 0), axis="z", seg=16, mat=STONE, smooth
     bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector(centre)) @ rot, verts=bm.verts)
     for f in bm.faces:
         f.smooth = smooth
+    if sharp:
+        sharp_creases(bm)   # R680 QA: keep a profile's hard steps (a drum's grooves) sharp in smooth shading
     return mesh_object(name, bm, col, (mat,))
 
 
@@ -118,6 +120,9 @@ def arc_ring(col, name, cx, cy, r0, r1, z0, z1, mat, seg=40, bevel=.02):
         for k in range(seg):
             bm.faces.new((a[k], a[(k + 1) % seg], b[(k + 1) % seg], b[k]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    for f in bm.faces:
+        f.smooth = True   # R680 QA: round about the axis, its 90-degree rims kept sharp
+    sharp_creases(bm)
     ob = mesh_object(name, bm, col, (mat,))
     if bevel > 0:
         bevel_mod(ob, bevel, 1)
@@ -484,6 +489,15 @@ def build_entrance():
     pieces = court_and_yard(col)
     for side in (-1, 1):
         pieces += shed(col, side)
+    # R680 QA (collision-proxy): the yard collider runs to x +-22 but the paving to +-19 and the sheds only from
+    # SHED_Z0 to SHED_Z1, so two strips each side showed the base 6 cm under the floor; paved here (own random so
+    # nothing above changes).
+    strip_rng = random.Random(680)
+    lo, hi = col_box("1 Entrance/Yard")
+    for s in (-1, 1):
+        xa, xb = sorted((s * 19.0, s * YARD_HALF))
+        for ya, yb in ((lo.y, SHED_Z0), (SHED_Z1, hi.y)):
+            pieces.append(flagstones(col, "Yard paving", xa, xb, ya, yb, hi.z, size=2.0, rng=strip_rng))
     return join(col, "Entrance", pieces)
 
 

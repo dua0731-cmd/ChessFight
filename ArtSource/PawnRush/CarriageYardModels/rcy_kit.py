@@ -111,7 +111,9 @@ def mesh_object(name, bm, col, mat_names=("RCY | clay",)):
 def _box_bm(center, size, rot=None):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
-    m = Matrix.Diagonal(Vector((size[0], size[1], size[2], 1.0)))
+    # R680 QA (hard-surface): a box given lo > hi on an axis had a negative size and came out mirrored, its faces
+    # pointing inward (12 shells on the giant waterwheel). A centred box is the same with the size's magnitude.
+    m = Matrix.Diagonal(Vector((abs(size[0]), abs(size[1]), abs(size[2]), 1.0)))
     if rot is not None:
         m = rot.to_matrix().to_4x4() @ m
     m = Matrix.Translation(center) @ m
@@ -195,11 +197,16 @@ def bevel_mod(ob, width, segments=2):
     return mod
 
 
-def cylinder(col, name, centre, axis, radius, length, mat="RCY | clay", segments=24, bevel=0.0):
+def cylinder(col, name, centre, axis, radius, length, mat="RCY | clay", segments=24, bevel=0.0, smooth=True):
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, segments=segments, radius1=radius, radius2=radius, depth=length)
     q = Vector((0, 0, 1)).rotation_difference(Vector(axis).normalized())
     bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector(centre)) @ q.to_matrix().to_4x4(), verts=bm.verts)
+    # R680 QA (hard-surface): round sides shade smooth (they were faceted: tyres strobed as the wheels rolled); join()
+    # sharp_creases keeps the caps' rims sharp. smooth=False for shapes meant to read faceted (hex bolt heads).
+    for f in bm.faces:
+        f.smooth = smooth
+    sharp_creases(bm)
     ob = mesh_object(name, bm, col, (mat,))
     if bevel > 0:
         bevel_mod(ob, bevel)
@@ -229,12 +236,17 @@ def join(col, name, objs):
         tmp.from_mesh(me)
         for f in tmp.faces:
             f.material_index = index.get(f.material_index, 0)
+        turn_outward(tmp)
+        hide = o.get("rcy_hide")
+        if hide:
+            cull_hidden_sides(tmp, set(hide.lstrip("=").split(",")), flat_only=hide.startswith("="))
         tmp.to_mesh(me)
         tmp.free()
         bm.from_mesh(me)
         bpy.data.meshes.remove(me)
     # Cleanup (R680 QA): bevels on boxes thinner than twice their width left zero-area faces; dissolve them (1e-5 m).
     bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
+    turn_outward(bm)   # shells the cleanup closed (thin bevelled boards) are checked too
     for o in objs:
         bpy.data.objects.remove(o, do_unlink=True)
     me = bpy.data.meshes.new(name)
@@ -245,6 +257,93 @@ def join(col, name, objs):
     ob = bpy.data.objects.new(name, me)
     col.objects.link(ob)
     return ob
+
+
+SHARP_ANGLE = math.radians(65)
+
+
+def sharp_creases(bm, angle=SHARP_ANGLE):
+    """R680 QA (hard-surface): on a smooth-shaded round part, the creases sharper than `angle` (a cylinder's caps, a
+    drum's 90-degree grooves) stay sharp while its segments shade round. Only for parts that ask: soft shapes (bales,
+    sacks, hides) are smoothed across their corners on purpose."""
+    for e in bm.edges:
+        if len(e.link_faces) == 2 and e.calc_face_angle(0.0) > angle:
+            e.smooth = False
+
+
+def hide_sides(ob, sides, flat_only=False):
+    """Marks sides of a box part ('+x', '-x', '+y', '-y', '+z', '-z') that touch a neighbour or the ground, so join()
+    drops the faces that only look that way (R680 QA, asset-optimization: unseen faces of paving slabs and wall blocks).
+    flat_only: only the flat faces, never a chamfer or corner between two sides."""
+    if sides:
+        ob["rcy_hide"] = ("=" if flat_only else "") + ",".join(sorted(sides))
+    return ob
+
+
+def cull_hidden_sides(bm, hidden, flat_only=False):
+    """Deletes the faces whose every outward direction (a normal component over .3) is a hidden side: a slab's bottom,
+    the joint faces between slabs and the chamfers between two hidden sides. A face that also looks up or out to a free
+    side stays (the top, its chamfers, the edge of the paving)."""
+    dead = []
+    for f in bm.faces:
+        n = f.normal
+        dirs = {("+" if n[i] > 0 else "-") + "xyz"[i] for i in range(3) if abs(n[i]) > .3}
+        if dirs and dirs <= hidden and (len(dirs) == 1 or not flat_only):
+            dead.append(f)
+    if dead:
+        bmesh.ops.delete(bm, geom=dead, context="FACES")
+
+
+def turn_outward(bm):
+    """R680 QA (hard-surface / validation): every closed shell of a part whose faces point inward (negative signed
+    volume: a mirrored placement, an outline drawn the other way round) is turned outward. Open sheets are left alone."""
+    bm.faces.index_update()
+    seen = set()
+    for f0 in bm.faces:
+        if f0.index in seen:
+            continue
+        stack, shell = [f0], []
+        seen.add(f0.index)
+        while stack:
+            f = stack.pop()
+            shell.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if g.index not in seen:
+                        seen.add(g.index)
+                        stack.append(g)
+        if any(len(e.link_faces) != 2 for f in shell for e in f.edges):
+            continue
+        vol = 0.0
+        for f in shell:
+            vs = [v.co for v in f.verts]
+            for i in range(1, len(vs) - 1):
+                vol += vs[0].dot(vs[i].cross(vs[i + 1]))
+        if vol < 0:
+            bmesh.ops.reverse_faces(bm, faces=shell)
+
+
+def _covers(spans, a, b, eps=1e-4):
+    """True if the touching intervals `spans` cover a..b."""
+    at = a
+    for s0, s1 in sorted(spans):
+        if s0 > at + eps:
+            break
+        at = max(at, s1)
+        if at >= b - eps:
+            return True
+    return at >= b - eps
+
+
+def _joint_sides(spans, k, axis):
+    """Which ends of span k (along `axis`) butt on a neighbour span in the same row."""
+    a, b = spans[k]
+    out = set()
+    if any(abs(s1 - a) < 1e-6 for j, (s0, s1) in enumerate(spans) if j != k):
+        out.add("-" + axis)
+    if any(abs(s0 - b) < 1e-6 for j, (s0, s1) in enumerate(spans) if j != k):
+        out.add("+" + axis)
+    return out
 
 
 def tris(col):
@@ -285,41 +384,64 @@ def ashlar(col, name, lo, hi, face, course=.55, length=1.15, mat=STONE, below=No
         z0 = below
     along = "y" if face in ("+x", "-x") else "x"
     a0, a1 = getattr(lo, along), getattr(hi, along)
+    rows = []   # (z, h, [(b0, b1) ...]); the random lengths are drawn in the same order as before R680 QA
     row = 0
     z = z0
     while z < hi.z - 1e-3:
         h = min(course, hi.z - z)
         a = a0 - (length * .5 if row % 2 else 0)
+        spans = []
         while a < a1 - 1e-3:
             l = length * rnd.uniform(.8, 1.2)
             b0, b1 = max(a, a0), min(a + l, a1)
             if b1 - b0 > .05:
-                if along == "y":
-                    blo, bhi = Vector((lo.x, b0, z)), Vector((hi.x, b1, z + h))
-                else:
-                    blo, bhi = Vector((b0, lo.y, z)), Vector((b1, hi.y, z + h))
-                parts.append(box(col, name, blo, bhi, mat, bevel=.035, segments=1))
+                spans.append((b0, b1))
             a += l
+        rows.append((z, h, spans))
         z += h
         row += 1
+    for r, (z, h, spans) in enumerate(rows):
+        for k, (b0, b1) in enumerate(spans):
+            if along == "y":
+                blo, bhi = Vector((lo.x, b0, z)), Vector((hi.x, b1, z + h))
+            else:
+                blo, bhi = Vector((b0, lo.y, z)), Vector((b1, hi.y, z + h))
+            # Unseen: the flat joint faces between blocks of a course. Not the chamfers, tops or bottoms: a joint
+            # over a block runs through the wall in a channel those close (dropping them let the sky through at
+            # every joint corner).
+            sides = _joint_sides(spans, k, along)
+            parts.append(hide_sides(box(col, name, blo, bhi, mat, bevel=.035, segments=1), sides, flat_only=True))
     return join(col, name, parts)
 
 
-def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=STONE):
-    """A paved top: beveled slabs in running bond, their tops at `top`, on a base slab 6 cm down."""
+def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=STONE, rng=None):
+    """A paved top: beveled slabs in running bond, their tops at `top`, on a base slab 6 cm down. Only what can be
+    seen is kept: a slab's bottom and the joints between slabs are dropped, the edge of the paving stays."""
+    rng = rng or rnd
     parts = [box(col, name + " base", (x0, y0, top - 1.0), (x1, y1, top - .06), mat)]
+    rows = []   # (y, d, [(a, b) ...]); the random widths are drawn in the same order as before R680 QA
     row, y = 0, y0
     while y < y1 - 1e-3:
         d = min(size * .8, y1 - y)
         x = x0 - (size * .5 if row % 2 else 0)
+        spans = []
         while x < x1 - 1e-3:
-            w = size * rnd.uniform(.85, 1.15)
+            w = size * rng.uniform(.85, 1.15)
             a, b = max(x, x0), min(x + w, x1)
             if b - a > .1:
-                parts.append(box(col, name, (a, y, top - .06), (b, y + d, top), mat, bevel=.025, segments=1))
+                spans.append((a, b))
             x += w
+        rows.append((y, d, spans))
         y += d
         row += 1
+    for r, (y, d, spans) in enumerate(rows):
+        for k, (a, b) in enumerate(spans):
+            sides = _joint_sides(spans, k, "x") | {"-z"}
+            if r > 0 and _covers(rows[r - 1][2], a, b):
+                sides.add("-y")
+            if r + 1 < len(rows) and _covers(rows[r + 1][2], a, b):
+                sides.add("+y")
+            parts.append(hide_sides(box(col, name, (a, y, top - .06), (b, y + d, top), mat, bevel=.025, segments=1), sides))
     return join(col, name, parts)
 
 
