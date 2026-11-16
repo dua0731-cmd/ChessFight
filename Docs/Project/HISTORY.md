@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-16 R684 · 미니게임 클리어 개편 설계안(`Docs/PawnRush/Mockups/R684_MiniGameClear.svg`): A 시차 개방(먼저 깬 뒤 5 ~ 30초 카운트다운으로 상대 문도 열림, 추천) / B 같이 통과 + 보상. 그림과 문서만, 사용자 선택 대기.
 - 2026-11-16 R683 · 빌드 시험 11-15의 확실한 문제 다섯 가지 고침(11-15 작업, 승규 님 "커밋 푸시 해"로 main 커밋 · upstream 푸시): 소드 파이트가 득점으로 끝나면 물리 담당이 끝을 알리지 않던 순서(Core `SwordMatchRules.TakeEntered`), 결과를 본 PC가 물리 담당이 되면 끝을 이어받고 그 방으로는 돌아가지 않음(`SteamSession`), 입장 화면 흐림 · 회색 셰이더를 빌드에 포함(Always Included 20300 · 20301, `SoftenStage`), `SetNetworkPuppet`의 kinematic 순서, 끊긴 Steam P2P 세션 자동 재시작(`SteamSend`). 프로토콜 번호 그대로(v47). Core 199 · 모의 세션 95 · 전체 컴파일 통과, Unity · 빌드 · Steam 확인 전.
 - 2026-11-16 R682 · 폰 러쉬 순위 · 코스 진행도 HUD(시안 B안): 위쪽 가운데 띠(내 순위 · 구간 진행도 · 왕관 발판 인원) + 오른쪽 위 순위 목록, `PawnRushStandingsHud` · Core `PawnRushStandings`. 보내는 것 없음. 사용자 플레이 확인 전.
 - 2026-11-16 R681 · 순위 · 진행도 HUD 예상 화면 시안(`Docs/PawnRush/Mockups/R681_RankProgressHud.svg`, A안 띠만 · B안 순위 목록 추가). 그림만, 코드 변경 없음, 사용자 선택 대기.
