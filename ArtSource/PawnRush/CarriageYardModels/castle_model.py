@@ -66,7 +66,10 @@ PIER_COURSE = .12
 STEP = dict(keep=lambda c: abs(c.x) < .265 and ((-.25 < c.y < -.07 and c.z > .085)
                                                  or (-.08 < c.y < -.06 and .09 < c.z < .142)),
             origin=(0.0, -.068, .0985), width=.53, depth=.177, rise=.0405)
-STEPS = dict(edge=175.0, depth=.5, rise=.25, top=8.0, count=4, half=6.0)
+STEPS = dict(edge=175.0, depth=.5, rise=.25, top=8.0, count=4, half=6.0, across=1)
+# The balustrade at half the asset (R680 QA tried a quarter for 3.56k -> 1.8k a copy: the balusters went lumpy and the
+# handrail thin at pawn height, so it stays a half).
+RAIL_RATIO = .5
 # The gatehouses' towers (R679), measured on the fitted models: a bronze band round the foot (studs on it), then stone
 # that narrows as it rises, the outer towers' some 12 cm a metre, the final's after a ledge and a steep batter. Their
 # boxes come in tiers above the floor, (from, to, leaning): the leaning ones along the stone's line between the heights.
@@ -114,9 +117,11 @@ def castle_materials():
         castle_source(name).data.materials[0].name = slot
 
 
-def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=()):
+def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), close=False):
     """A copy of the faces of `src` whose centre passes `keep`, sheared, moved by -origin and decimated to `ratio`,
-    then cut straight by `cuts` ((point, normal) planes, after the move: what lies on the normal's side goes)."""
+    then cut straight by `cuts` ((point, normal) planes, after the move: what lies on the normal's side goes).
+    close: every opening left after the cuts is capped (R680 QA: where two cuts meet at a corner the per-plane caps
+    failed and the piece stayed open; the balustrade's far end showed it toward the section exit)."""
     bm = bmesh.new()
     bm.from_mesh(src.data)
     # The sources come split along their UV seams (every one closes at 1e-5 welded, R680): decimated split, each side of
@@ -168,6 +173,13 @@ def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=()):
                 f.normal_update()
                 if f.normal.dot(Vector(no)) < 0:
                     f.normal_flip()
+        if close:
+            rim = [e for e in bm.edges if e.is_boundary]
+            bmesh.ops.remove_doubles(bm, verts=list({v for e in rim for v in e.verts}), dist=5e-4)
+            caps = bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)["faces"]
+            # Concave caps (22-82 sides) ear-clipped here rather than left to Unity's importer.
+            bmesh.ops.triangulate(bm, faces=caps, quad_method="BEAUTY", ngon_method="EAR_CLIP")
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
         bm.to_mesh(ob.data)
         bm.free()
     return ob
@@ -605,8 +617,8 @@ def build_castle():
     # front end (y -.5) and foot at the origin: a straight run with its newel at the start. Its foot (torn up to .04
     # where the stair's stringer was picked off) and its far end (torn at .69, where it met the pier) cut straight.
     rail = part(arch, "Balustrade part", keep=balustrade_face, shear=lambda v: Vector((v.x, v.y, v.z - .06 * (v.y + .5))),
-                origin=lambda bm: Vector((.265, -.5, min(v.co.z for v in bm.verts) + .04)), ratio=.5,
-                cuts=(((0, 0, 0), (0, 0, -1)), ((0, .68, 0), (0, 1, 0))))
+                origin=lambda bm: Vector((.265, -.5, min(v.co.z for v in bm.verts) + .04)), ratio=RAIL_RATIO,
+                cuts=(((0, 0, 0), (0, 0, -1)), ((0, .68, 0), (0, 1, 0))), close=True)
     rail_len = max(v.co.y for v in rail.data.vertices)
     rail_high = max(v.co.z for v in rail.data.vertices)
     stair = part(arch, "Step part", keep=STEP["keep"], origin=STEP["origin"], ratio=.5)
@@ -717,10 +729,15 @@ def build_castle():
             spieces.append(place(scol, rail, "Balustrade", (6.0, a, foot), (kx, step / rail_len, k)))
             spieces.append(place(scol, rail, "Balustrade", (-6.0, a + step, foot), (kx, step / rail_len, k), turn=180.0))
     st = STEPS
-    fit = (2 * st["half"] / STEP["width"], st["depth"] / STEP["depth"], st["rise"] / STEP["rise"])
+    # Each step in `across` copies side by side. One copy stretched over the 12 m smears its texture 8:1 across the
+    # treads (R680 QA, uv-workflow), but three side by side showed dark cracks at their joints (the asset's step ends are
+    # not straight), so it stays one.
+    span = 2 * st["half"] / st["across"]
+    fit = (span / STEP["width"], st["depth"] / STEP["depth"], st["rise"] / STEP["rise"])
     for i in range(st["count"]):
-        at = (0.0, st["edge"] + i * st["depth"] + .01, st["top"] - (i + 1) * st["rise"])
-        spieces.append(place(scol, stair, "Step", at, fit, turn=180.0))
+        for j in range(st["across"]):
+            at = (-st["half"] + span * (j + .5), st["edge"] + i * st["depth"] + .01, st["top"] - (i + 1) * st["rise"])
+            spieces.append(place(scol, stair, "Step", at, fit, turn=180.0))
     for s in (-1, 1):   # the piers above the railings (a pawn jumping there would go into them)
         boxes.append(box_rec("Section end pier", (s * 6.0, GATEWAY["at"][1] - .459 * sy, 7.0),
                              (s * .41 * sx, GATEWAY["at"][1] - .254 * sy, 20.0)))
@@ -758,6 +775,10 @@ def _castle_png(image, size, rel, normal):
     lines[1] = "guid: " + hashlib.md5(("chessfight:" + rel).encode()).hexdigest()
     # Compressed (the template's are not): ten 2048/1024 textures would hold some 100 MB uncompressed.
     text = "\n".join(lines).replace("    textureCompression: 0\n", "    textureCompression: 1\n")
+    if not normal:
+        # R680 QA (texture-workflow): the base colours are opaque (alpha 1 everywhere), so no alpha in the compressed
+        # format: BC1 instead of BC3, half the memory.
+        text = text.replace("  alphaUsage: 1\n", "  alphaUsage: 0\n")
     if normal:
         text = text.replace("sRGBTexture: 1", "sRGBTexture: 0").replace("  textureType: 0", "  textureType: 1")
     with open(os.path.join(CASTLE_ROOT, rel + ".meta"), "w", encoding="utf-8", newline="\n") as f:
