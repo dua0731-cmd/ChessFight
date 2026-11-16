@@ -36,7 +36,8 @@ namespace ChessFight.PawnRush
         };
         [Tooltip("Stretches (z low, z high) of steps 1 m deep where the picture bumps down a step at a time.")]
         [SerializeField] Vector2[] stairs = { new Vector2(13.5f, 29.5f), new Vector2(35.5f, 51.5f) };
-        [SerializeField] float speed = 4f;
+        // R680 (the user after the 6 vs 6 test: obstacles too easy, their rounds too far apart; the approved number table): 5 m/s (was 4), a roll every 1.2 to 2 s (was 1.6 to 2.6)
+        [SerializeField] float speed = 5f;
         [Tooltip("The hole glows this long before the roll comes out.")]
         [SerializeField] float warning = .8f;
         [Tooltip("The roll rises out of its hole over the last part of the warning.")]
@@ -50,8 +51,8 @@ namespace ChessFight.PawnRush
         [SerializeField] float statueSway = 4f, carpetSway = 10f;
 
         [Header("Schedule")]
-        [SerializeField] float minGap = 1.6f;
-        [SerializeField] float maxGap = 2.6f;
+        [SerializeField] float minGap = 1.2f;
+        [SerializeField] float maxGap = 2f;
         [Tooltip("Mixed into the section's seed: this spawner's own stream.")]
         [SerializeField] int salt = 1;
 

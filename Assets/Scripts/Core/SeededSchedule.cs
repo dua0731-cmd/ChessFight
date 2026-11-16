@@ -77,7 +77,8 @@ namespace ChessFight.Network
         public sealed class Rules
         {
             public int Lanes = 4;
-            public double MinGap = 1.6, MaxGap = 2.6;
+            // R680 (the user after the 6 vs 6 test: obstacles too easy, their rounds too far apart; the approved number table): a roll every 1.2 to 2 s (was 1.6 to 2.6)
+            public double MinGap = 1.2, MaxGap = 2.0;
             public int BagStatues = 2, BagCarpets = 3;
             public double SameLane = 3.0, NeighbourStatue = 1.5, StatueWindow = 4.0;
             public int StatuesPerWindow = 2;
@@ -233,12 +234,13 @@ namespace ChessFight.Network
 
         public sealed class Rules
         {
-            public double MinGap = .7, MaxGap = 1.4;
+            // R680 (the user after the 6 vs 6 test: obstacles too easy, their rounds too far apart; the approved number table): a drop every 0.5 to 1 s (was 0.7 to 1.4)
+            public double MinGap = .5, MaxGap = 1.0;
             public double XMin = -13, XMax = 13, ZMin = 54, ZMax = 65;
             public double KeepOutX0 = -2, KeepOutX1 = 2, KeepOutZ0 = 61, KeepOutZ1 = 65;
             public double MinDistance = 6;
-            // How long a drop keeps others away from its warning start: warning 1.2 + fall 0.4 + 0.6 "just fallen".
-            public double Busy = 2.2;
+            // How long a drop keeps others away from its warning start: warning 1 (R680: was 1.2) + fall 0.4 + 0.6 "just fallen".
+            public double Busy = 2.0;
             public int Tries = 40;
         }
 

@@ -143,7 +143,11 @@ namespace ChessFight.Network
         // v46 (R679): the war room's battery is six turrets (two more half way along the well) firing a volley every
         //      1.5 s (was four, every 2 s) with a wider shot. Nothing new is sent, but a v45 PC would draw four turrets'
         //      other shots where a v46 host knocks pawns down.
-        public const string Protocol = "chessfight.dua0731.network.v46";
+        // v47 (R680): the garden's and the grand stair hall's obstacles run faster and more often (the spin bars, the
+        //      geysers' and sluice gates' and robot arms' cycles, the boats; the rolls, the chandeliers, the hammers, the
+        //      falling pieces, the guard knights, the wind vents). Nothing new is sent, but every PC works these out of
+        //      the shared clock: a v46 PC would draw them elsewhere than a v47 host knocks pawns with them.
+        public const string Protocol = "chessfight.dua0731.network.v47";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

@@ -12897,7 +12897,7 @@ MonoBehaviour:
   stairs:
   - {x: 13.5, y: 29.5}
   - {x: 35.5, y: 51.5}
-  speed: 4
+  speed: 5
   warning: 0.8
   emerge: 0.35
   rollGravity: 14
@@ -12905,8 +12905,8 @@ MonoBehaviour:
   carpetRestitution: 0.45
   statueSway: 4
   carpetSway: 10
-  minGap: 1.6
-  maxGap: 2.6
+  minGap: 1.2
+  maxGap: 2
   salt: 1
   statueDiameter: 1.6
   statueLength: 2.6
@@ -30122,10 +30122,10 @@ MonoBehaviour:
   keepOutMin: {x: -2, y: 61}
   keepOutMax: {x: 2, y: 65}
   floorY: 8
-  minGap: 0.7
-  maxGap: 1.4
+  minGap: 0.5
+  maxGap: 1
   minDistance: 6
-  warning: 1.2
+  warning: 1
   fall: 0.4
   debris: 1.5
   dropFrom: 16
@@ -35406,7 +35406,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: SwingDuration
-      value: 1.4
+      value: 1.15
       objectReference: {fileID: 0}
     - target: {fileID: 1221733643433733635, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: m_Name
@@ -35583,6 +35583,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2685570958905433049}
     m_Modifications:
+    - target: {fileID: 8964836643203375785, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
+      propertyPath: warningSeconds
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8964836643203375785, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
+      propertyPath: restSeconds
+      value: 1.05
+      objectReference: {fileID: 0}
     - target: {fileID: 1840763753080931895, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
       propertyPath: m_LocalPosition.x
       value: 9.910809
@@ -35629,7 +35637,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8964836643203375785, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
       propertyPath: phaseOffset
-      value: 2.27
+      value: 1.8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -35676,6 +35684,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2685570958905433049}
     m_Modifications:
+    - target: {fileID: 7022095229182985596, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
+      propertyPath: IdleDuration
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 242891983947942587, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
       propertyPath: m_LocalScale.z
       value: 5.6
@@ -35750,7 +35762,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022095229182985596, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
       propertyPath: phaseOffset
-      value: 3.4
+      value: 2.9
       objectReference: {fileID: 0}
     - target: {fileID: 7377035673465491457, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
       propertyPath: m_LocalPosition.z
@@ -35794,6 +35806,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2685570958905433049}
     m_Modifications:
+    - target: {fileID: 7022095229182985596, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
+      propertyPath: IdleDuration
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 242891983947942587, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
       propertyPath: m_LocalScale.z
       value: 5.6
@@ -35908,6 +35924,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3293186523044834638}
     m_Modifications:
+    - target: {fileID: 3449699774472483175, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
+      propertyPath: IdleDuration
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3449699774472483175, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
+      propertyPath: CooldownDuration
+      value: 1.08
+      objectReference: {fileID: 0}
     - target: {fileID: 3110060801226036972, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
       propertyPath: m_LocalPosition.x
       value: -4.6
@@ -35918,7 +35942,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3449699774472483175, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
       propertyPath: phaseOffset
-      value: 3.81
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6123130305516103183, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -36017,6 +36041,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2685570958905433049}
     m_Modifications:
+    - target: {fileID: 8964836643203375785, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
+      propertyPath: warningSeconds
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8964836643203375785, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
+      propertyPath: restSeconds
+      value: 1.05
+      objectReference: {fileID: 0}
     - target: {fileID: 1840763753080931895, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.600337
@@ -36106,6 +36138,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3293186523044834638}
     m_Modifications:
+    - target: {fileID: 3449699774472483175, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
+      propertyPath: IdleDuration
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3449699774472483175, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
+      propertyPath: CooldownDuration
+      value: 1.08
+      objectReference: {fileID: 0}
     - target: {fileID: 3110060801226036972, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
       propertyPath: m_LocalPosition.x
       value: -4.6
@@ -36306,11 +36346,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: SwingDuration
-      value: 1.4
+      value: 1.15
       objectReference: {fileID: 0}
     - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: phaseOffset
-      value: 1.16
+      value: 0.98
       objectReference: {fileID: 0}
     - target: {fileID: 1221733643433733635, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: m_Name

@@ -268,7 +268,8 @@ public static class NetworkCoreTests
                 {
                     var s = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
                     s.Advance(1600.0);
-                    Check(s.Count > 230 && s.Count < 380, "about one every 2.1 s: " + s.Count);
+                    // R680: a roll every 1.2 to 2 s (was 1.6 to 2.6)
+                    Check(s.Count > 300 && s.Count < 500, "about one every 1.6 s: " + s.Count);
                     var lanes = new int[4];
                     int statues = 0;
                     for (int i = 0; i < s.Count; i++)
@@ -277,7 +278,7 @@ public static class NetworkCoreTests
                         lanes[e.Lane]++;
                         if (e.Statue) statues++;
                         Check(e.Serial == i, "serials in order");
-                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.6 - 1e-9 && e.Time - s[i - 1].Time <= 2.6 + 1e-9, "gap 1.6 ~ 2.6 s");
+                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.2 - 1e-9 && e.Time - s[i - 1].Time <= 2.0 + 1e-9, "gap 1.2 ~ 2 s");
                         int inWindow = e.Statue ? 1 : 0;
                         for (int j = i - 1; j >= 0 && e.Time - s[j].Time < 4.0; j--)
                         {
@@ -309,14 +310,15 @@ public static class NetworkCoreTests
                 {
                     var c = new ChandelierSchedule(SeededSchedule.Hash(seed, 2), 50.0);
                     c.Advance(650.0);
-                    Check(c.Count > 380 && c.Count < 900, "about one a second: " + c.Count);
+                    // R680: a drop every 0.5 to 1 s (was 0.7 to 1.4), busy for 2 s (was 2.2)
+                    Check(c.Count > 500 && c.Count < 1250, "about four in three seconds: " + c.Count);
                     for (int i = 0; i < c.Count; i++)
                     {
                         var d = c[i];
                         Check(d.X >= -13 && d.X <= 13 && d.Z >= 54 && d.Z <= 65, "in the area");
                         Check(!(d.X > -2 && d.X < 2 && d.Z > 61 && d.Z < 65), "not on the king's base");
-                        if (i > 0) Check(d.Time - c[i - 1].Time >= .7 - 1e-9, "at least 0.7 s apart");
-                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.2; j--)
+                        if (i > 0) Check(d.Time - c[i - 1].Time >= .5 - 1e-9, "at least 0.5 s apart");
+                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.0; j--)
                         {
                             double dx = d.X - c[j].X, dz = d.Z - c[j].Z;
                             Check(dx * dx + dz * dz >= 36 - 1e-9, "6 m from a drop still warning or just fallen, seed " + seed);
@@ -397,26 +399,30 @@ public static class NetworkCoreTests
                 var one = RoyalWaterGardenRules.RollBoatLanes(1); var two = RoyalWaterGardenRules.RollBoatLanes(2);
                 for (int i = 0; i < one.Length; i++) differs |= one[i].Dir != two[i].Dir || one[i].Speed != two[i].Speed;
                 Check(differs, "another seed, other lanes"); });
-            Test("Royal water garden geysers: one after another, 0.8 s bubbling then 1 s jet every 5 s", () => {
+            Test("Royal water garden geysers: one after another, 0.6 s bubbling then 1 s jet every 4 s (R680)", () => {
                 double into;
                 for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++)
-                    foreach (double cycle in new[] { 0.0, 5.0, 1.7e9 })
+                    foreach (double cycle in new[] { 0.0, 4.0, 1.7e9 })
                     {
                         double t0 = cycle + k * RoyalWaterGardenRules.GeyserStep;
                         Check(RoyalWaterGardenRules.GeyserState(k, t0 + .01, out into) == RoyalWaterGardenRules.Jet.Warn && Math.Abs(into - .01) < 1e-4, "bubbling first, geyser " + k);
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .79, out into) == RoyalWaterGardenRules.Jet.Warn, "0.8 s of bubbling");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .81, out into) == RoyalWaterGardenRules.Jet.Jet, "then the jet");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.79, out into) == RoyalWaterGardenRules.Jet.Jet, "1 s of jet");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.81, out into) == RoyalWaterGardenRules.Jet.Rest, "then rest");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .59, out into) == RoyalWaterGardenRules.Jet.Warn, "0.6 s of bubbling");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .61, out into) == RoyalWaterGardenRules.Jet.Jet, "then the jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.59, out into) == RoyalWaterGardenRules.Jet.Jet, "1 s of jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.61, out into) == RoyalWaterGardenRules.Jet.Rest, "then rest");
                         Check(RoyalWaterGardenRules.GeyserState(k, t0 - .01, out into) == RoyalWaterGardenRules.Jet.Rest, "rest before");
-                        Check(RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + 5.01) == RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + .01) + 1, "next eruption");
+                        Check(RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + 4.01) == RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + .01) + 1, "next eruption");
                     }
-                // At any moment at most two jets are up, so there is always room between them.
+                // At any moment at most two neighbours are up, so there is always room beside them. R680: with a 4 s
+                // cycle the far end fires again while the near end's last two are up - three at most, never three in a row.
                 for (double t = 0; t < 20; t += .01)
                 {
                     int up = 0;
-                    for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++) if (RoyalWaterGardenRules.GeyserState(k, t, out into) == RoyalWaterGardenRules.Jet.Jet) up++;
-                    Check(up <= 2, "at most two jets at once: " + up);
+                    var jets = new bool[RoyalWaterGardenRules.Geysers];
+                    for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++)
+                        if (jets[k] = RoyalWaterGardenRules.GeyserState(k, t, out into) == RoyalWaterGardenRules.Jet.Jet) up++;
+                    Check(up <= 3, "at most three jets at once: " + up);
+                    for (int k = 0; k + 2 < jets.Length; k++) Check(!(jets[k] && jets[k + 1] && jets[k + 2]), "never three neighbours at once, at " + t);
                 } });
             Test("Royal water garden robots: rest, wind up, sweep, hold over the water, back; low only while crossing", () => {
                 double into, last = RoyalWaterGardenRules.RobotAngle(0);
@@ -430,8 +436,10 @@ public static class NetworkCoreTests
                     last = a;
                 }
                 Check(RoyalWaterGardenRules.RobotAngle(2.2) == RoyalWaterGardenRules.RobotDown, "holds over the water");
-                Check(RoyalWaterGardenRules.RobotAngle(5.0) == RoyalWaterGardenRules.RobotRest, "rests raised");
-                Check(RoyalWaterGardenRules.RobotPhase(6.0 * 283333333 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
+                // R680: a swing every 4.5 s (was 6): the wind-up and the sweep as long as before, the rest 0.65 s
+                Check(RoyalWaterGardenRules.RobotCycle == 4.5 && RoyalWaterGardenRules.WindUntil == 1.0 && RoyalWaterGardenRules.SweepUntil == 1.85, "4.5 s, the same warning and sweep");
+                Check(RoyalWaterGardenRules.RobotAngle(4.2) == RoyalWaterGardenRules.RobotRest, "rests raised");
+                Check(RoyalWaterGardenRules.RobotPhase(4.5 * 377777777 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
             Test("Royal Carriage Yard roaming fleet: horse-drawn carriages share the yard between the sheds, never meet, stay in it, never jump, roam all of it, one plan however it is advanced", () => {
                 foreach (double origin in new[] { 3.0, 1762000003.25 })
                 {

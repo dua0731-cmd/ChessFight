@@ -19,13 +19,15 @@ namespace ChessFight.PawnRush
         // The five spin bars (option A): x, z, reach, degrees a second (the sign is the way round), phase in turns,
         // tall (1) or low (0). Four low bars 0.25..0.55 m up to jump; the middle one tall (0.1..1.2 m, three arms) to
         // wait out. The two south bars turn opposite ways, so they close the gap between them together.
+        // R680 (the user after the 6 vs 6 test, 11-16: "전체적으로 장애물의 난이도 증가 필요 (피하기 너무 쉽고 발동 주기도 아쉬움)", the number table approved "숫자표대로 적용"): about a third faster - the low
+        // bars 105 and 95 degrees a second (were 80 and 72), the tall one 67.5 (was 360 / 7, a turn in 7 s).
         static readonly float[,] Bars =
         {
-            { -6.5f, -43.5f, 4.5f, 80f, 0f, 0f },
-            { 6.5f, -43.5f, 4.5f, -80f, 0f, 0f },
-            { 0f, -35f, 5f, 360f / 7f, 0f, 1f },
-            { -8f, -27.5f, 4.5f, -72f, .25f, 0f },
-            { 8f, -27.5f, 4.5f, 72f, .25f, 0f },
+            { -6.5f, -43.5f, 4.5f, 105f, 0f, 0f },
+            { 6.5f, -43.5f, 4.5f, -105f, 0f, 0f },
+            { 0f, -35f, 5f, 67.5f, 0f, 1f },
+            { -8f, -27.5f, 4.5f, -95f, .25f, 0f },
+            { 8f, -27.5f, 4.5f, 95f, .25f, 0f },
         };
 
         static Vector3 PlazaPoint(float phi, float r, float y = 0f)
@@ -197,7 +199,8 @@ namespace ChessFight.PawnRush
             Rail(b, "East landing rail N", 25.2f, 26.4f, 9.7f, 10f, Upper);
             b.Checkpoint(3, V(30.1f, Upper, 4.5f), 0f, 7f);
             // The lock (x 27..35, z 10..24), walled both sides: water runs south over its floor at 1.5 m/s, and three
-            // sluice gates rise for about 3 s and drop for about 3 s every 6 s, each a second after the one before.
+            // sluice gates rise and drop every 4.5 s (R680: was 6 s), each three quarters of a second after the one
+            // before (was a second: the same sixth of the cycle).
             Mass(b, "Lock floor", 27f, 35f, 10f, 24f, Upper);
             Solid(b, "Lock wall W", V(26.4f, Deep, 10f), V(27f, Upper + 1.8f, 24f));
             Solid(b, "Lock wall E", V(35f, Deep, -.3f), V(35.6f, Upper + 1.8f, 32.6f));
@@ -210,10 +213,10 @@ namespace ChessFight.PawnRush
                 Solid(b, "Lock gate beam " + (i + 1), V(27f, 9.6f, z - .45f), V(35f, 10.2f, z + .45f));
                 var gate = Mover(b, "Sluice gate " + (i + 1), V(31f, Upper, z), MotionKind.Gate, Vector3.up, 0f);
                 gate.distance = 3f;
-                gate.period = 6f;
+                gate.period = 4.5f;
                 gate.shove = true;
                 Under(b, gate.transform, () => b.Box("Gate panel", V(-4f, 0f, -.3f), V(4f, 2.6f, .3f), k.hazard));
-                ObstaclePhase.Shift(gate.gameObject, i * 1f);
+                ObstaclePhase.Shift(gate.gameObject, i * .75f);
                 Span(gate.gameObject, Vector3.right, -4f, 4f, Upper);
             }
             b.Trigger<WaterCurrent>("Lock current", V(27f, Upper, 10f), V(35f, Upper + 1f, 24f)).Configure(V(0f, 0f, -1.5f));
@@ -237,11 +240,11 @@ namespace ChessFight.PawnRush
             b.Checkpoint(4, V(31f, Upper, 27f), -90f, 5f);
             b.Checkpoint(5, V(DykeCheckpointX, Upper, 27f), -90f, 6f);
             Robot(b, "1", 26f, 0f);
-            Robot(b, "2", 13f, 3f);
+            Robot(b, "2", 13f, (float)(ChessFight.Network.RoyalWaterGardenRules.RobotCycle * .5));
         }
 
         // A robot arm hung from a gantry at x: pivot 5.8 m over the dyke's middle line, a hand 1.8 m across 4.7 m down (R434)
-        // that passes 0.2 m over the floor (RobotSweep). The second robot runs half a cycle (3 s) behind the first.
+        // that passes 0.2 m over the floor (RobotSweep). The second robot runs half a cycle behind the first.
         static void Robot(CourseBuilder b, string n, float x, float phaseSeconds)
         {
             var k = b.kit;
