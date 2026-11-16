@@ -317,13 +317,13 @@ namespace ChessFight.PawnRush
             return name.Length > 10 ? name.Substring(0, 9) + "…" : name;
         }
 
-        // A section's name under its segment: whole if it fits, else its last word ("왕실 수로 정원" -> "정원"). A name
-        // with a bracketed part goes by that part ("후반 장애물 (임시 바닥)" -> "임시 바닥").
+        // A section's name under its segment: whole if it fits, else its last word ("왕실 수로 정원" -> "정원"). A
+        // bracketed part is left off ("국왕 알현실 (임시)" -> "국왕 알현실"; R688).
         static string Short(string label, float room)
         {
             if (string.IsNullOrEmpty(label)) return "";
-            int open = label.IndexOf('('), close = label.LastIndexOf(')');
-            if (open >= 0 && close > open + 1) label = label.Substring(open + 1, close - open - 1).Trim();
+            int open = label.IndexOf('(');
+            if (open > 0) label = label.Substring(0, open).Trim();
             if (label.Length * 8f <= room + 24f) return label;
             int space = label.LastIndexOf(' ');
             return space >= 0 && space + 1 < label.Length ? label.Substring(space + 1) : label;

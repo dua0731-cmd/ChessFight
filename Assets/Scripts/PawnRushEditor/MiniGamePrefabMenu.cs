@@ -73,7 +73,7 @@ namespace ChessFight.PawnRush.Editor
             RegisterPools(choices);
             BuildTestScene(choices);
             AssetDatabase.SaveAssets();
-            Debug.Log("[PawnRush] 미니게임 프리팹 10개 저장: 초반 3 · 중반 4 · 후반 3. 시험 장면: " + TestScene);
+            Debug.Log("[PawnRush] 미니게임 프리팹 10개 저장: 초반 3 · 중반 4 · 후반 3(R688부터 판에는 초반 · 중반만 나옴). 시험 장면: " + TestScene);
         }
 
         // Entry point for an isolated Editor import/build. A failure never reports a successful bake.
@@ -107,8 +107,9 @@ namespace ChessFight.PawnRush.Editor
             if (set == null) throw new InvalidOperationException("Missing section set: " + SectionPrefabMenu.SectionSet);
             var serialized = new SerializedObject(set);
             var slots = serialized.FindProperty("slots");
-            if (slots.arraySize < 7) throw new InvalidOperationException("The section set must contain seven slots.");
-            for (int zone = 0; zone < 3; zone++)
+            // R688: a round has two mini-game slots (2 and 4); the late games keep their prefabs but are in no slot
+            if (slots.arraySize < 4) throw new InvalidOperationException("The section set must contain the two mini-game slots.");
+            for (int zone = 0; zone < 2; zone++)
             {
                 var slot = slots.GetArrayElementAtIndex(zone * 2 + 1);
                 slot.FindPropertyRelative("kind").intValue = (int)PawnRushSection.SlotKind.MiniGame;

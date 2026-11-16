@@ -150,7 +150,10 @@ namespace ChessFight.Network
         // v48 (R686): J, the knight's road, is two to four roads side by side with a king's tub that two gold tubs raise
         //      (KnightRoad), larger tubs, and a game block of five bytes (was three: the gold tubs pressed and how far up
         //      the king's tub is). A v47 PC would build the one old chain and read the block two short.
-        public const string Protocol = "chessfight.dua0731.network.v48";
+        // v49 (R688): a round is six sections - obstacle, mini-game, obstacle, mini-game, the war room as the late
+        //      obstacle section, an ending (a stand-in with the finish) - instead of seven with a third mini-game and the
+        //      finish inside the war room. A v48 PC would build another round from the same seed.
+        public const string Protocol = "chessfight.dua0731.network.v49";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

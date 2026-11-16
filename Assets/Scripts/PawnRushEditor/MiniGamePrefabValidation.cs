@@ -125,9 +125,10 @@ namespace ChessFight.PawnRush.Editor
                 finally { if (root != null) PrefabUtility.UnloadPrefabContents(root); }
             }
             var set = AssetDatabase.LoadAssetAtPath<PawnRushSectionSet>(SectionPrefabMenu.SectionSet);
-            Need(set != null && set.SlotCount == 7, "Missing seven-slot section set", issues);
-            if (set != null && set.SlotCount >= 6)
-                foreach (var entry in new[] { (slot: 1, count: 3), (slot: 3, count: 4), (slot: 5, count: 3) })
+            // R688: six slots, two of them mini-games (the late games G, H and I are saved but in no slot)
+            Need(set != null && set.SlotCount == 6, "Missing six-slot section set", issues);
+            if (set != null && set.SlotCount >= 4)
+                foreach (var entry in new[] { (slot: 1, count: 3), (slot: 3, count: 4) })
                 {
                     var list = set[entry.slot]?.prefabs;
                     int zone = entry.slot / 2;

@@ -252,7 +252,7 @@ namespace ChessFight.Game
             var s = new VersusStrip
             {
                 X = x, W = w, Pos = pos, Me = me, Team = black ? 1 : 0, Order = order,
-                Panel = total > 0 ? Mathf.Min(2, pos * 3 / total) : 0,
+                Panel = total > 0 ? Mathf.Min(PanelCount - 1, pos * PanelCount / total) : 0,
                 At = StripAt + order * StripStep + (black ? StripBlackLag : 0f),
                 Dir = pos % 2 == 1 ? 1f : -1f,
             };
@@ -388,7 +388,7 @@ namespace ChessFight.Game
                 float stretch = k > 0f && k < 1f ? 1f + .12f * Mathf.Sin(Mathf.PI * k) : 1f;
                 bool shown = t >= s.At;
                 float side = (s.Team == 0 ? -1f : 1f) * jolt * (1f - merge);
-                float panelX = PanelLeft + s.Panel * PanelStep;
+                float panelX = PanelX(s.Panel);
                 float x = Mathf.Lerp(s.X, panelX, merge), w = Mathf.Lerp(s.W, PanelWide, merge);
                 s.Root.style.left = x;
                 s.Root.style.width = w;

@@ -46,10 +46,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   id: Final_WarRoom
-  displayName: "\uC791\uC804 \uD68C\uC758\uC2E4"
-  kind: 2
+  displayName: "\uAD6D\uC655 \uC791\uC804\uC2E4"
+  kind: 0
   entry: {x: 0, y: 0, z: -22.5}
-  exit: {x: 0, y: 1.49, z: 18}
+  exit: {x: 0, y: 1.2, z: 31.07}
   exitYaw: 0
   beats: []
   slot: 0

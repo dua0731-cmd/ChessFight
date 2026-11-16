@@ -50,7 +50,9 @@ namespace ChessFight.PawnRush
             float height = Height(style), lid = Lid(style);
             float from = before.Kind == PawnRushSection.SlotKind.MiniGame ? FromMiniGame : 0f;
             float to = Length - (after.Kind == PawnRushSection.SlotKind.MiniGame ? IntoMiniGame : 0f);
-            float endHalf = after.Kind == PawnRushSection.SlotKind.Final ? FinalHalf : 0f;
+            // R688: by the room, not by its kind - the war room is a late obstacle section now, and the ending is no wider
+            // than a corridor
+            float endHalf = after.GetComponent<WarRoomSection>() != null ? FinalHalf : 0f;
             // The walls' bodies as tall as their pictures (the early wall to its battlements' tops); over an open-air
             // wall an unseen fence up to the lid, which the follow camera looks through as it does the unseen lid.
             float wallTop = style == Style.Early ? height + .7f : lid;

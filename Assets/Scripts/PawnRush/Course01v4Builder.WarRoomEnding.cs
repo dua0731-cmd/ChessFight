@@ -465,30 +465,24 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ beyond the door
 
-        // The ending's place, for now: the user will build the ending's own space later ("엔딩 구간에 대한 공간은 나중에 따로
-        // 만들거야"). Until then a plain floor at the goal floor's height behind the rear wall, railed on three sides, a
-        // checkpoint just past the door (through the door is through: a pawn that falls is not sent back to the room's
-        // start) and the round's finish on it - a 4.8 m circle, as the star platform's was (R508). When the ending's
-        // space is made, it takes this function's place; the door, the checkpoint's number and the finish's kind stay.
-        public const float WarRoomEndingHalf = 6f, WarRoomEndingLength = 14f, WarRoomFinishAt = 33f, WarRoomFinishRadius = 2.4f;
+        // Beyond the door (R688): a short landing at the goal floor's height behind the rear wall, railed either side and
+        // open at its far end, where the corridor to the ending section joins (as wide as a corridor), with a checkpoint
+        // just past the door (through the door is through: a pawn that falls is not sent back to the room's start).
+        // R616 had the round's finish here on a 14 m floor ("엔딩 구간에 대한 공간은 나중에 따로 만들거야"); the ending is a
+        // section of its own now and holds the finish.
+        public const float WarRoomEndingHalf = 6f, WarRoomEndingLength = 6f;
 
-        static void WarRoomEnding(CourseBuilder b)
+        static void WarRoomLanding(CourseBuilder b)
         {
             var parent = b.parent;
-            var ending = new GameObject("Ending (temporary floor)").transform;
+            var ending = new GameObject("Landing (beyond the door)").transform;
             ending.SetParent(parent, false);
             b.parent = ending;
             float z0 = WarRoomWallBack, z1 = WarRoomWallBack + WarRoomEndingLength, y = WarRoomGoalFloor;
             b.Floor("Floor", -WarRoomEndingHalf, WarRoomEndingHalf, z0, z1, y);
             b.Rail("Railing W", -WarRoomEndingHalf - .3f, -WarRoomEndingHalf, z0, z1, y, 1.1f);
             b.Rail("Railing E", WarRoomEndingHalf, WarRoomEndingHalf + .3f, z0, z1, y, 1.1f);
-            b.Rail("Railing N", -WarRoomEndingHalf - .3f, WarRoomEndingHalf + .3f, z1, z1 + .3f, y, 1.1f);
-            // The finish's circle, drawn (the trigger itself is a box round it; CrownFinish takes its narrower half).
-            var gold = YardKit.Gold;
-            YardKit.Cylinder(ending, "Finish circle", new Vector3(0f, y + .015f, WarRoomFinishAt), Vector3.up, WarRoomFinishRadius * 2f, .03f, gold, YardKit.Solid.None);
             b.Checkpoint(1, new Vector3(0f, y, WarRoomWallBack + 2.6f), 0f, 10f);
-            b.Trigger<FinishZone>("Finish (goal)", new Vector3(-WarRoomFinishRadius, y, WarRoomFinishAt - WarRoomFinishRadius),
-                                  new Vector3(WarRoomFinishRadius, y + 3.4f, WarRoomFinishAt + WarRoomFinishRadius)).Configure(true);
             b.parent = parent;
         }
     }

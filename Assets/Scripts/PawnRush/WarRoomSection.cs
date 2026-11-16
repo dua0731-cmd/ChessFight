@@ -2,7 +2,9 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The root of the final section, the war room (작전 회의실, Assets/Prefabs/PawnRushSections/Final_WarRoom.prefab).
+    // The root of the king's war room (국왕 작전실, Assets/Prefabs/PawnRushSections/Final_WarRoom.prefab). R688: a late
+    // obstacle section (slot 5), not the round's last - what follows below was written when it was; the prefab keeps its
+    // old file name.
     //
     // R493 (승규 11-06, "맵은 open section test에 넣어주면 되고 작전 회의실은 어디 갔어"): 승규 님's library conveyor course
     // was only zone E of the SeoungTest scene (Course01v4Builder.LibraryReplacement); it is now a section of the round

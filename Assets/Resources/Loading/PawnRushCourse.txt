@@ -11,8 +11,5 @@
 3	Mid_MG_E_RoyalLibrary	왕궁 서고
 3	Mid_MG_F_ClockworkBallroom	대무도회장
 3	Mid_MG_J_PalaceLaundry	왕궁 세탁장
-4	Late_3-0_TempFloor	후반 장애물 (임시 바닥)
-5	Late_MG_G_RoyalProcession	왕의 행차 회랑
-5	Late_MG_H_KingsChessHall	국왕 체스 홀
-5	Late_MG_I_KingsBedchamber	국왕 침실
-6	Final_WarRoom	작전 회의실
+4	Final_WarRoom	국왕 작전실
+5	Final_AudienceHall_Temp	국왕 알현실 (임시)

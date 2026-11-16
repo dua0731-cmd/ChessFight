@@ -59,7 +59,9 @@ namespace ChessFight.Game
         // R597: moved with the stops (were 1.3 / 2.0 / 2.7 / 3.4 / 4.1 / 4.8 / 5.2). R611: with them again (were 1.5 / 2.4
         // / 3.3 / 4.2 / 5.1 / 6.0 / 6.4): an obstacle's about halfway through the next roll, the final's 0.4 s after the
         // last stop. R613: with the slower rolls (were 1.5 / 2.4 / 3.7 / 4.65 / 5.95 / 6.9 / 7.3), the final's 0.5 s after.
-        static readonly float[] DotAt = { 1.8f, 2.9f, 4.5f, 5.6f, 7.2f, 8.3f, 8.8f };
+        // R688: six sections, two mini-games - the late obstacle's square 0.7 s after the second stop, the ending's 0.7 s
+        // after that (the third roll, 6.1 to 8.3, is gone).
+        static readonly float[] DotAt = { 1.8f, 2.9f, 4.5f, 5.6f, 6.3f, 7f };
         const float DotFill = .1f;
         // 3, 2, 1; the countdown shows CountIn before the 3 and the pictures dim with it. R592: a full second after the
         // last square (5.2 s) to take the whole course in before the countdown (the 3 came 0.4 s after it before).
@@ -67,7 +69,8 @@ namespace ChessFight.Game
         // R597: 1.2 s later with the slower stops (were 6.6 / 7.6 / 8.6), still 1.4 s after the last square. R611: 0.9 s
         // later with the last square (were 7.8 / 8.8 / 9.8), still 1.4 s after it. R613: the countdown itself unchanged
         // ("카운트 다운 빼고"), 1.5 s later with the slower picking (were 8.7 / 9.7 / 10.7).
-        static readonly float[] CountAt = { 10.2f, 11.2f, 12.2f };
+        // R688: 1.8 s earlier with the last square (were 10.2 / 11.2 / 12.2), still 1.4 s after it.
+        static readonly float[] CountAt = { 8.4f, 9.4f, 10.4f };
         const float CountIn = .25f;
         // Everything has been shown (the 1 has stood CountGo): the match scene may switch on (MatchLoader waits for it).
         // R596 tried switching it on under the reveal at 5.4 s, but in the editor switching on plus the warm-up froze
@@ -76,7 +79,7 @@ namespace ChessFight.Game
         const float CountGo = .5f;
         // In the screen's time: R625's versus scene (LoadingScreenView.Versus.cs) plays first, so every time above is
         // RevealOffset later on screen.
-        public const float RevealShownSeconds = RevealOffset + 12.2f + CountGo;
+        public const float RevealShownSeconds = RevealOffset + 10.4f + CountGo;
 
         // ---- the stage (the sample's pixels) ----
 
@@ -91,6 +94,17 @@ namespace ChessFight.Game
         const float CountSquareTop = 176f, CountSquareWide = 72f, CountSquareTall = 18f, CountSquareGap = 14f;
         const string RevealArt = "Loading/CourseReveal/";
         static readonly string[] PanelLabels = { "미니게임 1", "미니게임 2", "미니게임 3" };
+        // R688: a round has two mini-games now. Their panels stand in the middle of the stage (three filled it).
+        static readonly int PanelCount = CountPanels();
+
+        static int CountPanels()
+        {
+            int n = 0;
+            foreach (int kind in PawnRushSections.Kind) if (kind == PawnRushSections.KindMiniGame) n++;
+            return Mathf.Clamp(n, 1, PanelLabels.Length);
+        }
+
+        static float PanelX(int index) => PanelLeft + (PanelLabels.Length - PanelCount) * PanelStep * .5f + index * PanelStep;
 
         // C1: ebony, ivory and brass.
         static readonly Color RevealDim = MenuArt.Hex(0x0a0806), Brass = MenuArt.Hex(0xb88a3e), Ebony = MenuArt.Hex(0x15110d), Ivory = MenuArt.Hex(0xefe6d2),
@@ -183,12 +197,12 @@ namespace ChessFight.Game
             for (int slot = 0; slot < PawnRushSections.SlotCount && index < PanelLabels.Length; slot++)
                 if (PawnRushSections.Kind[slot] == PawnRushSections.KindMiniGame) revealPanels.Add(BuildPanel(s, index++, slot));
 
-            // the seven section squares
+            // the section squares (a mini-game's in brass)
             for (int k = 0; k < DotAt.Length; k++)
             {
                 var dot = new RSlant(6f, DotOff);
                 RPlace(dot, DotLeft + k * DotStep, DotTop, DotWide, DotTall);
-                dot.Bar(0f, DotTall, k == DotAt.Length - 1 ? Ivory : k % 2 == 1 ? Brass : Ivory);
+                dot.Bar(0f, DotTall, k < PawnRushSections.SlotCount && PawnRushSections.Kind[k] == PawnRushSections.KindMiniGame ? Brass : Ivory);
                 s.Add(dot);
                 revealDots.Add(dot);
             }
@@ -230,7 +244,7 @@ namespace ChessFight.Game
         RevealPanel BuildPanel(VisualElement parent, int index, int slot)
         {
             var p = new RevealPanel { Index = index, Slot = slot, Hops = HopTimes(RollStart[index], RollLand[index]) };
-            p.Root = RBox(parent, PanelLeft + index * PanelStep, PanelTop, PanelWide, PanelTall);
+            p.Root = RBox(parent, PanelX(index), PanelTop, PanelWide, PanelTall);
             p.Root.style.opacity = 0f;
             // the picture, the name band across its foot and the brass bar on the band's top edge, one slanted shape
             p.Face = new RSlant(PanelLean, PanelBase);

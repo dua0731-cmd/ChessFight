@@ -29,11 +29,15 @@ namespace ChessFight.PawnRush
     //       ProgressPath               start -> conveyor -> goal steps -> the door -> the finish, the same for both teams
     public static partial class Course01v4Builder
     {
-        public const string WarRoomName = "작전 회의실";
-        // The exit is the finish beyond the great door (R616); WarRoomStarExit is the star platform's capture zone, where
-        // the round ended before and still does if the door cannot be opened (a model this was not measured on).
-        public static readonly Vector3 WarRoomEntry = new Vector3(0f, 0f, -22.5f), WarRoomExit = new Vector3(0f, WarRoomGoalFloor, WarRoomFinishAt),
-            WarRoomStarExit = new Vector3(0f, 1.49f, 18f);
+        // R688 (the user, 11-16): this room is the king's war room, one of the late obstacle sections - it was taken for
+        // the round's ending, which is a section of its own now (the king's audience hall; TempEndingSection until it is
+        // built). So the round's finish is no longer here: the great door leads to a short landing and the way on.
+        public const string WarRoomName = "국왕 작전실";
+        // The exit is the far end of the landing beyond the great door (R616's door; R688: the next section joins there).
+        // WarRoomStarExit is the star platform, where the room ends if the door cannot be opened (a model this was not
+        // measured on) - a round cannot be finished then, and an error says so.
+        public static readonly Vector3 WarRoomEntry = new Vector3(0f, 0f, -22.5f),
+            WarRoomExit = new Vector3(0f, WarRoomGoalFloor, WarRoomWallBack + WarRoomEndingLength), WarRoomStarExit = new Vector3(0f, 1.49f, 18f);
 
         public static GameObject BuildWarRoomSection(WarRoomSection room)
         {
@@ -62,16 +66,15 @@ namespace ChessFight.PawnRush
             ride.transform.SetParent(root.transform, false);
             ride.transform.localPosition = new Vector3(0f, .5f, 0f);
             ride.AddComponent<IntendedGap>().Configure(new Vector3(4f, 3f, 25.2f), "컨베이어가 아래층 위로 실어 나름 (16초 왕복)");
-            // R508: the round's finish (a match's CrownFinish binds it; offline the playtest shows "골인"): a 4.8 m circle,
-            // room for a team's majority at once (CrownFinish takes the box's narrower half as its radius). R616: beyond
-            // the great door (WarRoomEnding); only if the door could not be opened, on the star platform as before.
-            if (opened) WarRoomEnding(b);
-            else b.Trigger<FinishZone>("Finish (goal)", new Vector3(-2.4f, 1.2f, 15.6f), new Vector3(2.4f, 4.6f, 20.4f)).Configure(true);
+            // R688: no finish here any more (it is the ending section's). Beyond the great door a short landing with the
+            // second checkpoint, where the corridor to the ending joins.
+            if (opened) WarRoomLanding(b);
+            else Debug.LogError("[국왕 작전실] 출구 문을 열 수 없어 다음 구간으로 가는 길이 없습니다. 이 방에서 판이 끝나지 않습니다.");
             WarRoomPath(root.transform, opened);
 
             var section = room.GetComponent<PawnRushSection>();
             if (section != null)
-                section.Describe(WarRoomSection.Id, WarRoomName, PawnRushSection.SlotKind.Final, WarRoomEntry, opened ? WarRoomExit : WarRoomStarExit, 0f,
+                section.Describe(WarRoomSection.Id, WarRoomName, PawnRushSection.SlotKind.Obstacle, WarRoomEntry, opened ? WarRoomExit : WarRoomStarExit, 0f,
                                  WarRoomBeats());
             root.SetActive(true);
             return root;
@@ -109,7 +112,7 @@ namespace ChessFight.PawnRush
             new SectionBeat("1 출발 (작전 지도)", new Vector3(-15f, -1f, -23f), new Vector3(15f, 8f, -12.5f)),
             new SectionBeat("2 컨베이어 · 공기 대포 · 포탑", new Vector3(-15f, -1f, -12.5f), new Vector3(15f, 8f, 12.5f)),
             new SectionBeat("3 골 계단 · 출구 문", new Vector3(-15f, -1f, 12.5f), new Vector3(15f, 8f, WarRoomWallBack)),
-            new SectionBeat("4 엔딩 (임시 바닥)", new Vector3(-WarRoomEndingHalf - 1f, -1f, WarRoomWallBack),
+            new SectionBeat("4 문 뒤 통로", new Vector3(-WarRoomEndingHalf - 1f, -1f, WarRoomWallBack),
                             new Vector3(WarRoomEndingHalf + 1f, 8f, WarRoomWallBack + WarRoomEndingLength + 1f)),
             new SectionBeat("아래층 · 돌아가는 계단", new Vector3(-23.5f, -9.5f, -23f), new Vector3(23.5f, 1.5f, 25.5f)),
         };

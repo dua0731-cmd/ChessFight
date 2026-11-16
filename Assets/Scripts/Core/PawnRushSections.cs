@@ -3,30 +3,37 @@ using System.Collections.Generic;
 
 namespace ChessFight.Network
 {
-    // A Pawn Rush round is seven sections in a fixed order (2026-11-02 user: "장애물 구간 3개와 미니게임
+    // A Pawn Rush round was seven sections in a fixed order (2026-11-02 user: "장애물 구간 3개와 미니게임
     // 구간 3개, 마지막 구간 1개 총 7개의 구간이 한 판을 이룰거야 ... 해당 구간에서 나올 수 있는 프리팹 목록
     // 중 랜덤으로 한 가지 프리팹을 뽑아"): obstacle, mini-game, obstacle, mini-game, obstacle, mini-game,
     // final. Each slot draws one prefab from its own list. The draw is a seeded pure function so the host
     // draws once and every PC can check it. No Unity: tested by the Core tests.
+    //
+    // R688 (the user, 2026-11-16, after the 6 vs 6 tests): six sections now. The room with the conveyor and the
+    // cannons was taken for the ending, but it is one of the late obstacle sections (the king's war room, "후반
+    // 구간의 프리팹 중 하나로 국왕 작전실"), and the third mini-game goes ("마지막 미니게임 구간을 없애고 후반 장애물구간
+    // 후에 엔딩구간이 등장하는게 훨씬 나을 것 같아 ... 초반 장애물구간 - 미니게임 구간 - 중반 장애물구간 - 미니게임 -
+    // 후반 장애물구간 - 엔딩구간"): obstacle, mini-game, obstacle, mini-game, obstacle, ending. The ending is the
+    // king's audience hall, still being designed - a plain stand-in holds the finish until it is built.
     public static class PawnRushSections
     {
-        public const int SlotCount = 7;
+        public const int SlotCount = 6;
         public const int KindObstacle = 0, KindMiniGame = 1, KindFinal = 2;
 
         public static readonly int[] Kind =
         {
-            KindObstacle, KindMiniGame, KindObstacle, KindMiniGame, KindObstacle, KindMiniGame, KindFinal,
+            KindObstacle, KindMiniGame, KindObstacle, KindMiniGame, KindObstacle, KindFinal,
         };
 
         // The obstacle slots follow the palace's three phases (concept art v2: 바깥뜰 1-x, 아랫궁 2-x, 윗궁 3-x).
         public static readonly string[] SlotNames =
         {
             "장애물 1 (초반 · 바깥뜰)", "미니게임 1", "장애물 2 (중반 · 아랫궁)", "미니게임 2",
-            "장애물 3 (후반 · 윗궁)", "미니게임 3", "마지막 구간",
+            "장애물 3 (후반 · 윗궁)", "엔딩 구간",
         };
 
         // One pick per slot. options[slot] lists the ids the slot may take (one id per prefab; the caller
-        // numbers them). An id offered to several slots (the three mini-game slots share their games) comes
+        // numbers them). An id offered to several slots (the mini-game slots may share their games) comes
         // up at most once a round while the slot has another; the slot's pick of the previous round
         // (last[slot]) is left out while it has another too. A slot with no options gets -1.
         public static int[] Choose(int seed, int[][] options, int[] last = null)

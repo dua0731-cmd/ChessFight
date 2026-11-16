@@ -211,24 +211,26 @@ public static class NetworkCoreTests
                 Check(PawnRushSections.SectionSeed(5, 2) != PawnRushSections.SectionSeed(5, 4), "slots differ"); });
             Test("Pawn Rush round: one prefab per section, shared games once a round, the previous pick left out", () => {
                 Check(PawnRushSections.Kind.Length == PawnRushSections.SlotCount && PawnRushSections.SlotNames.Length == PawnRushSections.SlotCount, "tables");
-                // Obstacle slots 1-x / 2-x / 3-x, the three mini-game slots share ten games, one final.
+                // R688: six sections - obstacle, mini-game, obstacle, mini-game, obstacle, the ending.
+                Check(PawnRushSections.SlotCount == 6 && string.Join("", PawnRushSections.Kind) == "010102", "obstacle, game, obstacle, game, obstacle, ending");
+                // Obstacle slots 1-x / 2-x / 3-x, the two mini-game slots share ten games, one ending.
                 var games = new[] { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
-                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, games, new[] { 40 } };
+                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, new[] { 40 } };
                 int[] last = null;
                 var seenGames = new HashSet<int>();
                 for (int seed = 0; seed < 500; seed++)
                 {
                     var p = PawnRushSections.Choose(seed, options, last);
-                    Check(p.Length == 7 && p[4] == 30 && p[6] == 40, "single options");
-                    Check(p[1] != p[3] && p[1] != p[5] && p[3] != p[5], "three different games, seed " + seed);
-                    for (int s = 0; s < 7; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
+                    Check(p.Length == 6 && p[4] == 30 && p[5] == 40, "single options");
+                    Check(p[1] != p[3], "two different games, seed " + seed);
+                    for (int s = 0; s < 6; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
                     if (last != null) Check(p[0] != last[0] && p[2] != last[2] && p[1] != last[1], "previous round left out, seed " + seed);
-                    seenGames.Add(p[1]); seenGames.Add(p[3]); seenGames.Add(p[5]);
+                    seenGames.Add(p[1]); seenGames.Add(p[3]);
                     last = p;
                 }
                 Check(seenGames.Count == 10, "every game comes up");
                 var x = PawnRushSections.Choose(9, options); var y = PawnRushSections.Choose(9, options);
-                for (int s = 0; s < 7; s++) Check(x[s] == y[s], "same seed, same round");
+                for (int s = 0; s < 6; s++) Check(x[s] == y[s], "same seed, same round");
                 var holes = PawnRushSections.Choose(3, new[] { new int[0], null, new[] { 5 }, new[] { 5 } });
                 Check(holes[0] == -1 && holes[1] == -1 && holes[2] == 5 && holes[3] == 5, "empty slots and a one-prefab list"); });
             Test("Pawn Rush course table (R548): read as written, the round's own draw by name", () => {
@@ -238,8 +240,7 @@ public static class NetworkCoreTests
                     new PawnRushCourseTable.Row(1, "G1", "해자 도개교"), new PawnRushCourseTable.Row(1, "G2", "정문 쇠살문 누각"),
                     new PawnRushCourseTable.Row(1, "G3", "정문 의장 광장"), new PawnRushCourseTable.Row(2, "B1", "대계단 현관홀"),
                     new PawnRushCourseTable.Row(3, "G2", "정문 쇠살문 누각"), new PawnRushCourseTable.Row(3, "G4", "왕궁 서고"),
-                    new PawnRushCourseTable.Row(4, "C1", "후반 장애물"), new PawnRushCourseTable.Row(5, "G1", "해자 도개교"),
-                    new PawnRushCourseTable.Row(5, "G5", "국왕 침실"), new PawnRushCourseTable.Row(6, "F", "작전 회의실"),
+                    new PawnRushCourseTable.Row(4, "C1", "국왕 작전실"), new PawnRushCourseTable.Row(5, "F", "국왕 알현실"),
                 };
                 // A byte order mark, Windows line ends, comments, a line that is not one, a slot out of range and a key
                 // listed twice in its slot: none of them changes the table.
@@ -249,7 +250,7 @@ public static class NetworkCoreTests
                 Check(table.Count == rows.Count, "every row once: " + table.Count);
                 Check(table.Names(0)[0] == "왕실 수로 정원" && table.Names(1).Count == 3 && table.Names(1)[1] == "정문 쇠살문 누각", "names in order");
                 // PawnRushSectionSet.Options numbers the prefabs as they first appear, slot after slot: the same by hand.
-                var options = new[] { new[] { 0, 1 }, new[] { 2, 3, 4 }, new[] { 5 }, new[] { 3, 6 }, new[] { 7 }, new[] { 2, 8 }, new[] { 9 } };
+                var options = new[] { new[] { 0, 1 }, new[] { 2, 3, 4 }, new[] { 5 }, new[] { 3, 6 }, new[] { 7 }, new[] { 8 } };
                 for (int seed = -50; seed < 400; seed++)
                 {
                     var ids = PawnRushSections.Choose(seed, options);
