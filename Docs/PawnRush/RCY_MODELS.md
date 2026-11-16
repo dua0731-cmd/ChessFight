@@ -34,8 +34,8 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
    qa-review · blender-modeler 정리 목록 · asset-optimization · lod-pipeline · environment-artist · set-dressing · hard-surface 등을 차례로 적용.
    - 측정 결과(현재 FBX): Entrance 218k 삼각형(넓이 0 면 396), Canal 126k(8), Sorting 278k(1,327), Platform 51k, Finish court 28k, Section floors 15k,
      Scenery 26k / own 35k, 성 OuterGate 43k · FinalGate 38k · SectionEnd 55k(AI 키트 잘린 면 비다양체 모서리 1,626). 떨어진 점 · 선 없음.
-   - **이미 한 것:** `rcy_kit.join()`에 `bmesh.ops.dissolve_degenerate(dist=1e-5)` 정리 단계 추가(커밋됨). **아직 FBX는 다시 안 냄** —
-     다시 낼 때 Blender 빌드가 오래 걸려 MCP 연결이 끊겼다(Blender가 바빴음). 다음에 구역 하나씩 나눠서 다시 지어 내보낼 것.
+   - **이미 한 것:** `rcy_kit.join()`에 `bmesh.ops.dissolve_degenerate(dist=1e-5)` 정리 단계 추가, 8개 고정물 FBX(Entrance · Canal · Sorting · Platform · FinishCourt · SectionFloors · Scenery · SceneryOwn)를 다시 내서 넓이 0 면 0개(Sorting 277.5k → 274.2k). Unity Play에서 오류 없이 불러옴(AI 확인만). 참고:
+     전체를 한 번에 다시 지으면 몇 분 걸려 MCP 응답이 끊긴 것처럼 보이지만 빌드는 끝난다. 성 · 기계 · 말 · 마차 FBX는 아직 다시 안 냄.
    - 남은 판정 후보: Entrance · Sorting 삼각형 예산(바닥 밑 안 보이는 판석 밑면 지우기 검토), 구역별 3/4 각도 정지 화면, qa-review 판정표(SHIP/…).
    - 다시 낸 뒤: 바닥 윗면이 콜라이더 위 ~3 cm 안인지, 구멍 렌더(마젠타 배경), Unity Play에서 콘솔 오류 없는지.
 2. 남은 보이는 것: 깃발은 코드의 파란 천(파란색 없애는 색 작업은 나중), 최종 성벽 가운데 기둥 음영 이음, 표지 글씨가 돌 위에서 어두움,
