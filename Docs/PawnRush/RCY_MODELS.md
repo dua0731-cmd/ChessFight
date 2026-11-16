@@ -39,6 +39,36 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
 - 내보내기 전에 모든 컬렉션이 보이게 할 것(숨기면 빈 FBX가 나갔음 → 이제 `export()`가 오류를 냄).
 - Blender (x, y, z) = Unity (x, z, y). 3–4구역은 코드가 자기 좌표(LaterShift -24)로 짓지만 모델은 맵 좌표로 낸다.
 
+## 다음 작업 메모 (2026-11-16 HOSEO PC에서 끝냄 → 다른 PC에서 이어 가기)
+
+**시작:** `git pull`(seoungtest, 이 메모가 든 커밋). 처음 PC(`C:/Work/ChessFight-SeoungTest`)는 스크립트의 기본 경로 그대로라 `RCY_ROOT` 없이 돈다.
+QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, 경로는 파일 위치에서 찾음). 스킬 94개 · Blender MCP는 PC마다 세팅(위 "다른 PC에서 이어 하기").
+**Unity가 Play 중일 때 스크립트 · FBX를 쓰지 말 것:** Play 도중 재컴파일돼 래그돌 static 마찰 재질이 비고 넘어질 때 NullReferenceException이 났다
+(11-16, 래그돌 버그 아님 · 빌드 무관 · main 코드도 같음). Play를 껐다 켜면 사라진다. 막으려면 Unity Preferences > General > Script Changes While Playing을
+"Recompile After Finished Playing"으로(PC마다 설정).
+
+1. **먼저 Unity에서 볼 것(사람 확인 전 — 11-16 커밋 전부):** `PawnRush_MapTest` Play(seoungtest는 켜면 이 장면, Play하면 마차뜰만).
+   - 판석 이음 · 돌벽 이음이 전과 같은지(안 보이는 면을 지움), 둥근 기둥 · 통 테두리 · 마차 바퀴 셰이딩, 마당 양 끝(x ±19 ~ 22) 새 판석 띠.
+   - 말: 질주 때 배 · 엉덩이 · 엉덩이끈이 자연스러운지, 약 14 m에서 LOD1로 바뀌는 순간이 눈에 띄지 않는지, 화면 가장자리에서 말이 깜빡이지 않는지.
+   - 성: 텍스처가 BC1로 들어왔는지(Inspector 형식), 구간 끝 난간 끝(구간 모드 `Early_1-2` 프리팹에서만 지어짐 — 맵 모드에는 구간 끝 없음).
+   - 콘솔 빨간 오류 0인지. 보고 나면 VALIDATION 표에 올리고 main으로 옮길지 정한다.
+2. **큰 모델 나누기(Major, lod-pipeline · scene-assembly):** Entrance 18.3만 · Sorting 24.2만 · Canal 11만 삼각형이 각각 한 덩어리라 Unity가 화면 밖을
+   잘라내지 못하고 LOD도 못 쓴다(정원 경량화 때 확인한 문제). 각 `build_*`의 마지막 `join`을 z 10 m 안팎 칸마다 따로 해 한 FBX 안에 여러 메쉬로 내고
+   (`ZoneModel`이 FBX를 통째로 걸므로 코드 변경은 거의 없음 — 확인 필요), 칸마다 베벨을 끈 LOD1(`bevel_mod` 없이 다시 짓기)을 검토. 나눈 뒤 `render_diff.py`로 전후 비교.
+3. **FBX 가져오기 설정(.meta, 33개 — Unity에서 확인하며):** `isReadable 1 → 0`(메쉬 CPU 사본 약 44 MB, 코드에서 읽는 곳 없음 — grep 확인됨),
+   클레이 모델은 노멀 맵이 없으니 탄젠트 계산 끄기(성 3개는 노멀 맵이 있어 그대로). `materialImportMode`는 그대로(슬롯 이름을 `DressHitch` · `HorsePaint` ·
+   나중 색 작업이 씀). `export_rcy.py`의 .meta 템플릿도 같이 바꿔야 다음 내보내기에서 안 돌아간다.
+4. **세워 둔 마차 콜라이더(승규 결정):** 상자 2.3 × 2.75 × 4.2 m 안에서 모델이 옆 15 ~ 21 cm · 뒤 35 cm 떨어져 있고 바퀴 사이(높이 0.3 ~ 0.9 m)가 빔
+   (블록아웃 때부터, 마차 밑에 끼지 말라고 상자를 꽉 채운 것). 그대로 / 모델에 옆 판 · 뒤 짐칸을 붙여 상자를 채우기(`movers_model.coach`, 모양만 바뀜) 중 고르기.
+5. **말 남은 것:** 서 있는 발이 미끄러짐(최대 28 cm, `YardHorse.Pose`에 디딘 발 고정 — 애니메이션이 바뀜), 앞무릎 105° 접힘 때 단면 64% · 겹침 87삼각형
+   (Forearm / Cannon 가중치 경사 넓히기), 재갈 고리가 주둥이에 반쯤 묻힘(`tack()` 붙임 거리), 깃털 장식 꼭대기 2.38 m가 `YardHorse.Height` 1.95보다 높음.
+6. **성 남은 것:** 계단 텍스처가 12 m에 한 장이라 가로로 8:1 늘어짐(세 장으로 나누면 이음에 검은 틈 → UV만 다시 펴거나 계단만 반복 텍스처로),
+   탑 텍스처는 8.5% · 벽 텍스처는 39%만 씀(UV 다시 짜고 굽기), 성 텍스처 밀도 30 ~ 100 px/m(스킬 기준 256 ~ 512의 아래 — 승규가 키트 텍스처 유지로 정함).
+7. **원래 남은 보이는 것:** 깃발은 코드의 파란 천(파란색 없애는 색 작업), 최종 성벽 가운데 기둥 음영 이음, 표지 글씨가 돌 위에서 어두움,
+   "1. 짐마차 마당" 표지가 닫힌 문과 겹침, 최종 문짝 뒷면의 글씨 같은 무늬.
+8. **main으로 옮길 때:** `PawnRushEditor/SeoungTestYardOnly.cs`와 `PawnRush_MapTest.unity`의 `includeCalibrationYard 0` · `onlyMap`은 빼고(seoungtest 전용),
+   [PITFALLS R507](../Environment/PITFALLS.md) 순서(seoungtest 계열 병합)를 따른다.
+
 ## 이어서 할 일 (진행 중이던 것)
 
 1. **스킬 기반 QA (승규 "텍스쳐는 입히지 말고 스킬 써서 기존에 있는 거 해봐", "블렌더 94개 스킬 극한으로 사용해").** `.claude/skills`의
