@@ -178,31 +178,20 @@ namespace ChessFight.Network
     }
 
     // J, the knight's road (R129, replacing the spec's 25 islands and aimed launches): floor only on board squares
-    // that follow one another by a knight's move, from d1 at the entrance to f8 by the gate; water everywhere
-    // else. A pad in the middle of every square only jumps higher (no direction): the pawn runs the way it wants,
-    // jumps on the pad and dives to reach the next square. Enemy pieces stand on six of the squares; a dive (or a
-    // pad jump) onto one takes it. All six: the gate opens.
+    // that follow one another by a knight's move, water everywhere else. A pad in the middle of every square only
+    // jumps higher (no direction): the pawn runs the way it wants, jumps on the pad and dives to reach the next
+    // square. Enemy pieces stand on some of the squares; a dive (or a pad jump) onto one takes it. All taken: the
+    // gate opens. The road itself is KnightRoad (R686: several roads side by side and a king's tub).
     public static class KnightRoute
     {
+        // The one chain the road was until R686: only the saved mini-game prefabs' progress path still runs along it
+        // (MiniGameSectionBuilder.Paths; a team's place in a mini-game is its progress, not this line).
         public static readonly string[] Squares = { "d1", "b2", "a4", "c5", "e4", "g5", "h7", "f8" };
-        // The pieces to take: on the squares between the first and the last, and what they are.
-        public static readonly string[] PieceSquares = { "b2", "a4", "c5", "e4", "g5", "h7" };
-        public static readonly PieceKind[] PieceKinds = { PieceKind.Pawn, PieceKind.Bishop, PieceKind.Knight, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
         // The pad's jump: straight up this fast, the pawn's own run carried along (about 1.4 s in the air).
-        public const float PadRadius = .8f, PadUp = 7f, Reach = .9f, Speed = 4.5f, JumpCatch = 2f, SquareSize = 2.05f;
-
-        // Every square a knight's move from the one before.
-        public static bool Joined()
-        {
-            for (int i = 1; i < Squares.Length; i++)
-            {
-                PawnRushBoard.Parse(Squares[i - 1], out int f0, out int r0);
-                PawnRushBoard.Parse(Squares[i], out int f1, out int r1);
-                int df = Math.Abs(f1 - f0), dr = Math.Abs(r1 - r0);
-                if (!(df == 1 && dr == 2 || df == 2 && dr == 1)) return false;
-            }
-            return true;
-        }
+        // R686 (the user: "난이도도 어려워"): the pad hears a jump 1.1 m from its middle (was 0.8) and a piece is taken
+        // from 1.2 m (was 0.9). SquareSize is the square the tub model was made for (MiniGameModels.Laundry scales
+        // the model by a road's own width over it).
+        public const float PadRadius = 1.1f, PadUp = 7f, Reach = 1.2f, Speed = 4.5f, JumpCatch = 2f, SquareSize = 2.05f;
 
         public static StationPoint Center(string square)
         {
@@ -210,101 +199,135 @@ namespace ChessFight.Network
             return PawnRushBoard.Center(f, r);
         }
 
-        // The route square a point stands on (within its floor), or -1.
-        public static int SquareAt(StationPoint p)
-        {
-            for (int i = 0; i < Squares.Length; i++)
-            {
-                var c = Center(Squares[i]);
-                if (Math.Abs(p.V - c.V) <= SquareSize * .5f && Math.Abs(p.U - c.U) <= SquareSize * .5f) return i;
-            }
-            return -1;
-        }
-
         // A take: our pawn's hips within reach of the piece, diving, fast, or still in the air from a pad jump.
         public static bool Takes(float flatDistance, bool diving, float flatSpeed, bool padJump) =>
             flatDistance <= Reach && (diving || flatSpeed >= Speed || padJump);
     }
 
-    // J's road for a team size (R543, user 11-11: "나이트의 길은 돌 수반의 개수와 사이즈를 조절해줘"): six, seven, eight or
-    // nine squares, a piece to take on every one but the first and the last, and a square 1.9 to 2.2 m wide (a bigger
-    // team needs the room to stand). Every road starts on d1 at the entrance and ends by the gate - on f8, or on e8
-    // where the count is odd (a knight changes its square's colour with every move). No two squares of a road touch,
-    // not even at a corner (Spread): the only way from one to the next is the jump.
+    // J's road for a team size. R686 (the user after the 6 vs 6 test, 11-16: "현재 나이트의 길 문제는 길이 하나로 이어져
+    // 있어서 팀원과의 협동은 없고 난이도도 어려워"; the proposal's version B chosen, "B안으로 진행해줘"): no longer one
+    // chain a team queued along, but two to four short roads side by side - each four tubs a knight's move apart, from
+    // rank 1 at the entrance floor's edge to rank 7 - with the pieces spread over them, as many pieces as the team has
+    // players, so that a team that splits up is done sooner. The last piece, the king, stands on a tub of its own in
+    // front of the gate (d8) that lies under the water: it rises only while both gold tubs beside it (c7 and e7, the
+    // two middle roads' ends) are pressed - a teammate standing on each, or having stood there within PressHold
+    // seconds, so that one player left alone can still do it - and sinks again when they are not.
+    //
+    // The tubs are larger than the board's squares now (2.4 to 2.6 m; the water between two of them 1.9 to 2.1 m).
+    // No two tubs of the roads touch (Spread): the only way from one to the next is a jump, to the next of its road
+    // or across to a neighbouring road's. The king's tub touches both gold tubs: once up it is a step away, and it
+    // is the way on to the gate.
     public sealed class KnightRoad
     {
-        public static readonly KnightRoad Baseline = new KnightRoad(KnightRoute.Squares, KnightRoute.PieceKinds, KnightRoute.SquareSize);
+        public const string KingSquare = "d8";
+        public static readonly string[] PressSquares = { "c7", "e7" };
+        // A gold tub stays pressed this long after the last pawn left it; the king's tub takes RaiseSeconds to come
+        // up and SinkSeconds to go under, SunkDepth below the others; from RaisedEnough of the way up the king can
+        // be taken.
+        public const float PressHold = 8f, RaiseSeconds = 1.2f, SinkSeconds = 2f, SunkDepth = 1f, RaisedEnough = .9f;
 
-        static readonly string[] Six = { "d1", "b2", "a4", "b6", "d7", "f8" };
-        static readonly string[] Seven = { "d1", "b2", "a4", "c5", "e4", "f6", "e8" };
-        static readonly string[] Nine = { "d1", "b2", "a4", "c5", "e4", "g3", "h5", "g7", "e8" };
-        static readonly PieceKind[] FourKinds = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Rook, PieceKind.King };
-        static readonly PieceKind[] FiveKinds = { PieceKind.Pawn, PieceKind.Bishop, PieceKind.Knight, PieceKind.Rook, PieceKind.King };
-        static readonly PieceKind[] SevenKinds = { PieceKind.Pawn, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
+        // West to east. A smaller team has the middle roads (their ends are the gold tubs).
+        static readonly string[] LaneA = { "b1", "a3", "b5", "a7" }, LaneC = { "d1", "c3", "d5", "c7" },
+                                 LaneE = { "f1", "e3", "f5", "e7" }, LaneG = { "h1", "g3", "h5", "g7" };
+
+        public static readonly KnightRoad Baseline = For(MiniGameScale.Baseline);
 
         public static KnightRoad For(int teamSize)
         {
             float size = MiniGameScale.KnightSquareSize(teamSize);
-            switch (MiniGameScale.KnightSquares(teamSize))
+            int pieces = MiniGameScale.KnightPieces(teamSize);
+            switch (MiniGameScale.KnightLanes(teamSize))
             {
-                case 6: return new KnightRoad(Six, FourKinds, size);
-                case 7: return new KnightRoad(Seven, FiveKinds, size);
-                case 9: return new KnightRoad(Nine, SevenKinds, size);
-                default: return Baseline;
+                case 2:
+                    return new KnightRoad(new[] { LaneC, LaneE }, new[] { "d5", "f5", KingSquare },
+                                          new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.King }, size);
+                case 3:
+                    return pieces <= 4
+                        ? new KnightRoad(new[] { LaneA, LaneC, LaneE }, new[] { "b5", "d5", "f5", KingSquare },
+                                         new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.King }, size)
+                        : new KnightRoad(new[] { LaneA, LaneC, LaneE }, new[] { "b5", "d5", "f5", "a7", KingSquare },
+                                         new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Queen, PieceKind.King }, size);
+                default:
+                    return new KnightRoad(new[] { LaneA, LaneC, LaneE, LaneG }, new[] { "b5", "d5", "f5", "h5", "g7", KingSquare },
+                                          new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen, PieceKind.King }, size);
             }
         }
 
+        // Lanes: the roads. Squares: every tub of the roads, road after road (the pads' and the wire's order) - the
+        // king's tub is not one of them. PieceSquares: where the pieces stand, the king's (on KingSquare) last.
+        public readonly string[][] Lanes;
         public readonly string[] Squares, PieceSquares;
         public readonly PieceKind[] PieceKinds;
         public readonly float SquareSize;
 
-        public KnightRoad(string[] squares, PieceKind[] kinds, float squareSize)
+        public KnightRoad(string[][] lanes, string[] pieceSquares, PieceKind[] kinds, float squareSize)
         {
-            if (squares == null || squares.Length < 3 || kinds == null || kinds.Length != squares.Length - 2 || kinds.Length > 8)
-                throw new ArgumentException("A knight's road has a piece on every square but its first and its last (eight at most).");
-            Squares = squares;
+            if (lanes == null || lanes.Length < 1 || pieceSquares == null || kinds == null || kinds.Length != pieceSquares.Length
+                || kinds.Length < 1 || kinds.Length > 8 || pieceSquares[pieceSquares.Length - 1] != KingSquare)
+                throw new ArgumentException("A knight's road has its roads, a kind for every piece (eight at most) and the king's piece last, on the king's tub.");
+            Lanes = lanes;
+            int n = 0;
+            foreach (var lane in lanes) n += lane.Length;
+            Squares = new string[n];
+            n = 0;
+            foreach (var lane in lanes)
+                foreach (var square in lane) Squares[n++] = square;
+            for (int i = 0; i < pieceSquares.Length - 1; i++)
+                if (Array.IndexOf(Squares, pieceSquares[i]) < 0) throw new ArgumentException("A piece stands on a tub of a road: " + pieceSquares[i]);
+            PieceSquares = pieceSquares;
             PieceKinds = kinds;
             SquareSize = squareSize;
-            PieceSquares = new string[squares.Length - 2];
-            Array.Copy(squares, 1, PieceSquares, 0, PieceSquares.Length);
         }
 
         public int Pieces => PieceSquares.Length;
+        public int KingPiece => PieceSquares.Length - 1;
 
-        // Every square a knight's move from the one before.
+        // Every road: from rank 1, each tub a knight's move from the one before.
         public bool Joined()
         {
-            for (int i = 1; i < Squares.Length; i++)
+            foreach (var lane in Lanes)
             {
-                PawnRushBoard.Parse(Squares[i - 1], out int f0, out int r0);
-                PawnRushBoard.Parse(Squares[i], out int f1, out int r1);
-                int df = Math.Abs(f1 - f0), dr = Math.Abs(r1 - r0);
-                if (!(df == 1 && dr == 2 || df == 2 && dr == 1)) return false;
+                if (lane.Length < 2 || !PawnRushBoard.Parse(lane[0], out _, out int first) || first != 1) return false;
+                for (int i = 1; i < lane.Length; i++)
+                {
+                    PawnRushBoard.Parse(lane[i - 1], out int f0, out int r0);
+                    PawnRushBoard.Parse(lane[i], out int f1, out int r1);
+                    int df = Math.Abs(f1 - f0), dr = Math.Abs(r1 - r0);
+                    if (!(df == 1 && dr == 2 || df == 2 && dr == 1)) return false;
+                }
             }
             return true;
         }
 
-        // No two squares side by side or corner to corner, only the first on rank 1 (the entrance floor's edge) and only
-        // the last on rank 8 in front of the gate strip (files c..f): nothing to walk across.
+        // No two tubs of the roads side by side or corner to corner (two squares apart at least: with tubs wider than a
+        // square that leaves SquareSize short of two squares of water); both gold tubs are tubs of the roads, and the
+        // king's tub is beside both and on no road.
         public bool Spread()
         {
             for (int i = 0; i < Squares.Length; i++)
             {
                 if (!PawnRushBoard.Parse(Squares[i], out int f0, out int r0)) return false;
-                if (i > 0 && r0 == 1) return false;
-                if (i < Squares.Length - 1 && r0 == 8 && f0 >= 2 && f0 <= 5) return false;
                 for (int k = i + 1; k < Squares.Length; k++)
                 {
                     PawnRushBoard.Parse(Squares[k], out int f1, out int r1);
                     if (Math.Max(Math.Abs(f1 - f0), Math.Abs(r1 - r0)) < 2) return false;
                 }
             }
+            if (Array.IndexOf(Squares, KingSquare) >= 0 || SquareSize >= 2f * PawnRushBoard.Cell - 1f) return false;
+            PawnRushBoard.Parse(KingSquare, out int kf, out int kr);
+            foreach (var press in PressSquares)
+            {
+                if (Array.IndexOf(Squares, press) < 0) return false;
+                PawnRushBoard.Parse(press, out int f, out int r);
+                if (Math.Max(Math.Abs(f - kf), Math.Abs(r - kr)) != 1) return false;
+            }
             return true;
         }
 
         public StationPoint Center(int i) => KnightRoute.Center(Squares[i]);
+        public StationPoint KingCenter => KnightRoute.Center(KingSquare);
 
-        // The road square a point stands on (within its floor), or -1.
+        // The tub of the roads a point stands on (within its floor), or -1.
         public int SquareAt(StationPoint p)
         {
             for (int i = 0; i < Squares.Length; i++)
@@ -313,6 +336,26 @@ namespace ChessFight.Network
                 if (Math.Abs(p.V - c.V) <= SquareSize * .5f && Math.Abs(p.U - c.U) <= SquareSize * .5f) return i;
             }
             return -1;
+        }
+
+        public bool OnKing(StationPoint p)
+        {
+            var c = KingCenter;
+            return Math.Abs(p.V - c.V) <= SquareSize * .5f && Math.Abs(p.U - c.U) <= SquareSize * .5f;
+        }
+
+        // Which gold tub a tub of the roads is (0 or 1), or -1.
+        public int PressOf(int square) => square >= 0 && square < Squares.Length ? Array.IndexOf(PressSquares, Squares[square]) : -1;
+
+        // A gold tub is pressed while a pawn stands on it and for PressHold seconds after the last one left.
+        public static bool Pressed(float sinceStood) => sinceStood >= 0f && sinceStood <= PressHold;
+
+        // The king's tub, 0 under the water .. 1 level with the others, a step of `dt` seconds on: up while both gold
+        // tubs are pressed (or for good once the game is done - it is the way to the gate), down while they are not.
+        public static float Raise(float raise, bool up, float dt)
+        {
+            float next = up ? raise + dt / RaiseSeconds : raise - dt / SinkSeconds;
+            return next < 0f ? 0f : next > 1f ? 1f : next;
         }
     }
 

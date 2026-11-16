@@ -147,7 +147,10 @@ namespace ChessFight.Network
         //      geysers' and sluice gates' and robot arms' cycles, the boats; the rolls, the chandeliers, the hammers, the
         //      falling pieces, the guard knights, the wind vents). Nothing new is sent, but every PC works these out of
         //      the shared clock: a v46 PC would draw them elsewhere than a v47 host knocks pawns with them.
-        public const string Protocol = "chessfight.dua0731.network.v47";
+        // v48 (R686): J, the knight's road, is two to four roads side by side with a king's tub that two gold tubs raise
+        //      (KnightRoad), larger tubs, and a game block of five bytes (was three: the gold tubs pressed and how far up
+        //      the king's tub is). A v47 PC would build the one old chain and read the block two short.
+        public const string Protocol = "chessfight.dua0731.network.v48";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

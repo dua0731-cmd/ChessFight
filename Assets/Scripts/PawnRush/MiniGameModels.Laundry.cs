@@ -280,13 +280,16 @@ namespace ChessFight.PawnRush
                 {
                     Hide(road);                                     // the square box and the R312 barrel under it
                     string name = TubName + road.name.Substring(5);
-                    if (game.Find(name) != null) continue;
+                    // R686: beside the square's box, under the same parent - the king's tub is a body that sinks and
+                    // rises, and its model goes with it (the roads' own squares hang under the game as before)
+                    var holder = road.parent != null ? road.parent : game;
+                    if (holder.Find(name) != null) continue;
                     // the square's top middle (a unit cube scaled to the square), in the game's frame; the box's scale is
                     // not inherited, the tub is modelled at its size - 2.2 m across for the 2.05 m square. R543: a square
                     // of another width (1.9 to 2.2 m, by the team's size) has its tub as much wider or narrower.
                     var at = new GameObject(name).transform;
-                    at.SetParent(game, false);
-                    at.localPosition = game.InverseTransformPoint(road.TransformPoint(new Vector3(0f, .5f, 0f)));
+                    at.SetParent(holder, false);
+                    at.localPosition = holder.InverseTransformPoint(road.TransformPoint(new Vector3(0f, .5f, 0f)));
                     float wide = Mathf.Abs(road.localScale.x) / KnightRoute.SquareSize;
                     at.localScale = new Vector3(wide, 1f, wide);
                     Hang(at, RideName, tub, cache);

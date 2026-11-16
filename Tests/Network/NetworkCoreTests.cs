@@ -1415,13 +1415,10 @@ public static class NetworkCoreTests
                       && Math.Abs(DrawbridgeRope.Speed(3, 0) - .199f) < .002f && Math.Abs(DrawbridgeRope.Speed(4, 0) - .292f) < .003f, "table");
                 Check(Math.Abs(DrawbridgeRope.Speed(1, .5f) - .04f) < 1e-4f && DrawbridgeRope.Speed(0, .5f) == 0f && DrawbridgeRope.Speed(7.2f, 0) <= .35f, "minimum and cap");
                 Check(DrawbridgeRope.Speed(1.8f, 0) > DrawbridgeRope.Speed(1, 0) * 1.8f, "sprinting pulls harder than it costs"); });
-            Test("J knight's road: every square a knight's move from the last, d1 to f8, pieces on the road", () => {
-                Check(KnightRoute.Joined(), "joined by knight moves");
-                Check(KnightRoute.Squares[0] == "d1" && KnightRoute.Squares[KnightRoute.Squares.Length - 1] == "f8", "entrance to gate");
-                Check(KnightRoute.PieceSquares.Length == KnightRoute.PieceKinds.Length, "a kind per piece");
-                foreach (var q in KnightRoute.PieceSquares) Check(Array.IndexOf(KnightRoute.Squares, q) > 0, "piece on the road: " + q);
-                Check(KnightRoute.SquareAt(KnightRoute.Center("c5")) == 3 && KnightRoute.SquareAt(new StationPoint(0f, 10f)) < 0, "squares and water");
-                Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.2f, true, 9f, true), "takes"); });
+            Test("J knight's road: the pad's jump and a take (R686: a wider pad, a longer reach)", () => {
+                Check(KnightRoute.PadRadius == 1.1f && KnightRoute.Reach == 1.2f && KnightRoute.PadUp == 7f, "the pad and the reach");
+                Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && KnightRoute.Takes(1.1f, false, 5f, false)
+                      && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.5f, true, 9f, true), "takes"); });
             Test("G king escort: a road of fifteen joined squares, 31.5 m, five turntables, ends on e8 on the board, the speed table", () => {
                 Check(KingEscortPath.Connected() && KingEscortPath.Cells.Length == 15, "joined");
                 Check(Math.Abs(KingEscortPath.Length - 31.5f) < .01f, "length " + KingEscortPath.Length);
@@ -1620,11 +1617,10 @@ public static class NetworkCoreTests
                 even(n => MiniGameScale.EnPassantStatues(n), "F statues");
                 even(n => MiniGameScale.KingRoadCells(n) - 1, "G steps");
                 even(n => MiniGameScale.CheckmateKings(n), "H kings");
-                even(n => MiniGameScale.KnightSquares(n) - 2, "J pieces");
+                even(n => MiniGameScale.KnightPieces(n), "J pieces");
                 Check(MiniGameScale.PaintBoard(5).Count == 64 && MiniGameScale.Planks(5) == PlankLayout.Baseline && MiniGameScale.RopeForce(5) == 1f
                       && MiniGameScale.EnPassantStatues(5) == EnPassantRules.Statues && MiniGameScale.KingRoadCells(5) == KingEscortPath.Cells.Length
-                      && MiniGameScale.CheckmateKings(5) == CheckmateHunt.Kings && MiniGameScale.KnightSquares(5) == KnightRoute.Squares.Length
-                      && MiniGameScale.KnightSquareSize(5) == KnightRoute.SquareSize && MiniGameScale.KingSledCrew(5) == PawnRushMissions.WorkerCap, "five a side is what there was"); });
+                      && MiniGameScale.CheckmateKings(5) == CheckmateHunt.Kings && MiniGameScale.KingSledCrew(5) == PawnRushMissions.WorkerCap, "five a side is what there was (J was rebuilt in R686)"); });
             Test("R543 A paint board: as many light squares as dark, the 8 x 8 where it was, bigger boards centred on it", () => {
                 for (int n = 3; n <= 6; n++)
                 {
@@ -1743,20 +1739,52 @@ public static class NetworkCoreTests
                 }
                 Check(Math.Abs(EnPassantField.For(3).Home(8).V + 2.25f) < 1e-4f && Math.Abs(EnPassantField.For(4).Home(12).V) < 1e-4f && Math.Abs(EnPassantField.For(6).Home(17).V) < 1e-4f
                       && Math.Abs(EnPassantField.For(6).HomeU(1) - 9.3f) < 1e-4f, "a short last row in the middle, five rows 3.3 m apart"); });
-            Test("R543 J knight's road: six to nine squares, a knight's move apart, none touching another", () => {
-                int[] squares = { 6, 7, 8, 9 };
+            Test("R686 J knight's road: two to four roads side by side, a piece a player, none of the tubs touching, the king's tub beside both gold tubs", () => {
+                int[] lanes = { 2, 3, 3, 4 };
                 for (int n = 3; n <= 6; n++)
                 {
                     var road = KnightRoad.For(n);
-                    Check(road.Squares.Length == squares[n - 3] && road.Pieces == squares[n - 3] - 2 && road.PieceKinds.Length == road.Pieces, "squares at " + n);
+                    Check(road.Lanes.Length == lanes[n - 3] && road.Squares.Length == lanes[n - 3] * 4, "roads of four tubs at " + n);
+                    Check(road.Pieces == n && road.PieceKinds.Length == n && MiniGameScale.KnightPieces(n) == n, "a piece a player at " + n);
                     Check(road.Joined() && road.Spread(), "joined and apart at " + n);
-                    Check(road.Squares[0] == "d1" && (road.Squares[road.Squares.Length - 1] == "f8" || road.Squares[road.Squares.Length - 1] == "e8"), "entrance to gate at " + n);
-                    Check(road.SquareSize <= PawnRushBoard.Cell - .04f && road.SquareSize >= 1.8f, "a square's width at " + n);
-                    Check(road.SquareAt(road.Center(2)) == 2 && road.SquareAt(new StationPoint(9.9f, 10f)) < 0, "squares and water at " + n);
-                    Check(road.PieceKinds[road.Pieces - 1] == PieceKind.King && road.PieceKinds[0] == PieceKind.Pawn, "a pawn first, the king last, at " + n);
+                    foreach (var lane in road.Lanes) Check(lane[0][1] == '1' && lane[lane.Length - 1][1] == '7', "from rank 1 to rank 7 at " + n);
+                    Check(road.SquareSize >= 2.3f && road.SquareSize <= 2.7f && 2 * PawnRushBoard.Cell - road.SquareSize >= 1.8f, "a tub's width and the water between two at " + n);
+                    Check(road.SquareAt(road.Center(2)) == 2 && road.SquareAt(new StationPoint(9.9f, 10f)) < 0 && road.SquareAt(road.KingCenter) < 0 && road.OnKing(road.KingCenter), "tubs, water and the king's tub at " + n);
+                    Check(road.PieceKinds[road.KingPiece] == PieceKind.King && road.PieceSquares[road.KingPiece] == KnightRoad.KingSquare && road.PieceKinds[0] == PieceKind.Pawn, "a pawn first, the king last on its own tub, at " + n);
+                    for (int i = 0; i < road.KingPiece; i++) Check(Array.IndexOf(road.Squares, road.PieceSquares[i]) >= 0, "a piece on a tub of a road at " + n);
+                    // every size has both gold tubs, and only they press
+                    int gold = 0;
+                    for (int i = 0; i < road.Squares.Length; i++) if (road.PressOf(i) >= 0) gold++;
+                    Check(gold == 2 && road.PressOf(Array.IndexOf(road.Squares, "c7")) == 0 && road.PressOf(Array.IndexOf(road.Squares, "e7")) == 1 && road.PressOf(-1) < 0, "the two gold tubs at " + n);
+                    // the pieces are spread: no road holds more than two, and at least two roads hold one
+                    int busy = 0;
+                    foreach (var lane in road.Lanes)
+                    {
+                        int on = 0;
+                        for (int i = 0; i < road.KingPiece; i++) if (Array.IndexOf(lane, road.PieceSquares[i]) >= 0) on++;
+                        Check(on <= 2, "at most two pieces on a road at " + n);
+                        if (on > 0) busy++;
+                    }
+                    Check(busy >= 2, "pieces on two roads at least at " + n);
                 }
-                Check(KnightRoad.Baseline.Squares == KnightRoute.Squares && KnightRoad.Baseline.PieceSquares.SequenceEqual(KnightRoute.PieceSquares) && KnightRoad.For(5) == KnightRoad.Baseline, "eight as they were");
-                Check(!new KnightRoad(new[] { "d1", "e3", "d5", "f4", "e6", "f8" }, new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.Rook, PieceKind.King }, 2f).Spread(), "corner to corner is touching"); });
+                Check(KnightRoad.Baseline.Squares.SequenceEqual(KnightRoad.For(5).Squares) && KnightRoad.Baseline.Pieces == 5, "five a side is the baseline");
+                // A gold tub holds for eight seconds after the last pawn left it; the king's tub comes up in 1.2 s, goes under in 2 s.
+                Check(KnightRoad.Pressed(0f) && KnightRoad.Pressed(8f) && !KnightRoad.Pressed(8.1f) && !KnightRoad.Pressed(-1f), "pressed for eight seconds on");
+                float raise = 0f;
+                for (int i = 0; i < 60; i++) raise = KnightRoad.Raise(raise, true, .02f);
+                Check(Math.Abs(raise - 1f) < 1e-4f && KnightRoad.Raise(1f, true, 5f) == 1f, "up in 1.2 s: " + raise);
+                for (int i = 0; i < 50; i++) raise = KnightRoad.Raise(raise, false, .02f);
+                Check(Math.Abs(raise - .5f) < 1e-3f, "half way under after a second: " + raise);
+                for (int i = 0; i < 60; i++) raise = KnightRoad.Raise(raise, false, .02f);
+                Check(raise == 0f && KnightRoad.RaisedEnough > .5f && KnightRoad.RaisedEnough < 1f, "under, and no further");
+                // A road whose tubs touch, a king's piece not last, a piece off the roads: refused.
+                Check(!new KnightRoad(new[] { new[] { "b1", "a3", "b5", "a7" }, new[] { "c1", "d3", "c5", "d7" } }, new[] { "b5", KnightRoad.KingSquare }, new[] { PieceKind.Pawn, PieceKind.King }, 2.4f).Spread(), "side by side is touching");
+                bool threw = false;
+                try { new KnightRoad(new[] { new[] { "d1", "c3", "d5", "c7" } }, new[] { KnightRoad.KingSquare, "d5" }, new[] { PieceKind.King, PieceKind.Pawn }, 2.4f); } catch (ArgumentException) { threw = true; }
+                Check(threw, "the king's piece is the last");
+                threw = false;
+                try { new KnightRoad(new[] { new[] { "d1", "c3", "d5", "c7" } }, new[] { "h8", KnightRoad.KingSquare }, new[] { PieceKind.Pawn, PieceKind.King }, 2.4f); } catch (ArgumentException) { threw = true; }
+                Check(threw, "a piece stands on a tub"); });
             Test("R543 G king's road: 2,000 seeds a team size - joined, never along itself, rooks and garages fit, a different road nearly every time", () => {
                 Check(KingRoad.Baseline.Connected() && KingRoad.Baseline.Apart() && KingRoad.Baseline.RooksFit() && KingRoad.Baseline.TurnCount == 5, "the old road keeps the rules");
                 int[] cells = { 11, 13, 15, 17 }, sand = { 2, 3, 4, 5 }, rooks = { 1, 2, 2, 3 };
