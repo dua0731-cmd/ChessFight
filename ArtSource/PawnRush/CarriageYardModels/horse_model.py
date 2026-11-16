@@ -915,6 +915,7 @@ def skin(col, body, extras, tack_pieces, armature):
     armature.select_set(True)
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    mask_skin(body)
     for o in extras:
         o.parent = None
         n = o.name
@@ -954,6 +955,60 @@ def skin(col, body, extras, tack_pieces, armature):
     return body
 
 
+LEG_NAMES = ("UpperArm", "Forearm", "Cannon", "Pastern", "Thigh", "Gaskin", "HindCannon", "HindPastern")
+
+
+def _ramp(a, b, t):
+    """0 at a, 1 at b, straight between."""
+    return min(1.0, max(0.0, (t - a) / (b - a)))
+
+
+def _skin_reach(name, p):
+    """How much of its bone-heat weight a bone keeps at skin point p (1 = all)."""
+    base = name.split(".")[0]
+    if base in LEG_NAMES:
+        s = -1.0 if name.endswith(".L") else 1.0
+        fore = not (base in ("Thigh", "Gaskin") or base.startswith("Hind"))
+        k = _ramp(-.04, .02, s * p.x)                          # its own side of the body only
+        k *= _ramp(.2, .38, p.y) if fore else _ramp(.25, .45, -p.y)   # not the middle of the barrel
+        if base in ("UpperArm", "Thigh"):                        # nor the back above the shoulder / hip joint
+            top = 1.2 if fore else 1.3
+            k *= 1.0 - _ramp(top - .05, top + .2, p.z)
+        return k
+    if base.startswith("Tail"):                                 # the dock, not the buttocks
+        a, b = TAIL_DOCK[0], TAIL_DOCK[-1]
+        t = max(0.0, min(1.0, (p - a).dot(b - a) / (b - a).length_squared))
+        return 1.0 - _ramp(.1, .2, (p - (a + (b - a) * t)).length)
+    if base == "Neck":                                          # in front of the withers
+        return _ramp(.45, .6, p.y)
+    return 1.0
+
+
+def mask_skin(ob):
+    """R680 QA (rigging): bone heat let the leg bones bend the middle of the barrel and the other side (the belly's
+    underside moved 21 cm at the gallop), the tail bones the buttocks (15 cm) and the neck the withers under the harness
+    pad and saddle. Each bone keeps its weight only in its own region (fading over 15-20 cm); what it gives up goes to
+    Root, the trunk."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    root = ob.vertex_groups.get("Root") or ob.vertex_groups.new(name="Root")
+    for v in ob.data.vertices:
+        p = ob.matrix_world @ v.co
+        moved = 0.0
+        for gi, w in [(x.group, x.weight) for x in v.groups]:
+            n = names[gi]
+            k = _skin_reach(n, p)
+            if k >= 1.0:
+                continue
+            moved += w * (1.0 - k)
+            if w * k > 1e-4:
+                ob.vertex_groups[n].add([v.index], w * k, "REPLACE")
+            else:
+                ob.vertex_groups[n].remove([v.index])
+        if moved > 0:
+            had = next((x.weight for x in v.groups if x.group == root.index), 0.0)
+            root.add([v.index], had + moved, "REPLACE")
+
+
 def limit_weights(ob, most=4):
     """R680 QA (rigging / unity-export): Unity skins with at most 4 bones a vertex and renormalises, so keep each
     vertex's 4 largest weights summing to 1 here too (the bone heat gave up to 7, summing to 0.89-1.0) and Blender and
@@ -983,10 +1038,51 @@ def build_horse():
     return horse, pieces, armature
 
 
+# R680 QA (lod-pipeline / creature-artist): a team horse was 33k triangles with no LOD and ten of them run at once. LOD1
+# is each mesh decimated (weights kept, 4 a vertex): Horse 23k -> ~5.8k, Tack 7.1k -> ~2.1k, Harness / Saddle -> ~1.2k.
+HORSE_LOD1 = {"Horse": .25, "Tack": .3, "Harness": .35, "Saddle": .35}
+
+
+def horse_lods(col):
+    """Each skinned mesh M becomes M_LOD0 and gets a decimated M_LOD1 on the same bones (Unity's importer makes the
+    LOD Group from the names). Returns the LOD1 objects; restore_lods() undoes it after the export."""
+    made = []
+    for o in [o for o in col.objects if o.type == "MESH" and o.name in HORSE_LOD1]:
+        lod = o.copy()
+        lod.data = o.data.copy()
+        col.objects.link(lod)
+        dec = lod.modifiers.new("LOD1", "DECIMATE")
+        dec.ratio = HORSE_LOD1[o.name]
+        with bpy.context.temp_override(object=lod, active_object=lod, selected_objects=[lod]):
+            bpy.ops.object.modifier_move_to_index(modifier="LOD1", index=0)
+            bpy.ops.object.modifier_apply(modifier="LOD1")
+        limit_weights(lod, 4)
+        lod.name = lod.data.name = o.name + "_LOD1"
+        o.name = o.name + "_LOD0"
+        made.append(lod)
+    return made
+
+
+def restore_lods(col, made):
+    for lod in made:
+        bpy.data.objects.remove(lod, do_unlink=True)
+    for o in col.objects:
+        if o.name.endswith("_LOD0"):
+            o.name = o.name[:-5]
+
+
 def export_horse(name="RcyHorse"):
     """Writes the skinned horse, its tack and the armature as one FBX (the zone models' import settings but a
-    Generic rig, so the skin weights come in; no animation, the bones kept as transforms)."""
+    Generic rig, so the skin weights come in; no animation, the bones kept as transforms), with an LOD1 of each mesh."""
     col = bpy.data.collections["RCY Horse"]
+    lods = horse_lods(col)
+    try:
+        return _export_horse(col, name)
+    finally:
+        restore_lods(col, lods)
+
+
+def _export_horse(col, name):
     objs = [o for o in col.all_objects if o.type in ("MESH", "ARMATURE")]
     for o in bpy.context.selected_objects:
         o.select_set(False)
@@ -1007,8 +1103,8 @@ def export_horse(name="RcyHorse"):
         lines[1] = "guid: " + _guid(rel)
         # A Generic rig: with none, Unity drops the skin weights and the meshes come in rigid.
         _write(rel + ".meta", "\n".join(lines).replace("  animationType: 0", "  animationType: 2"))
-    tris = sum(len(p.vertices) - 2 for o in objs if o.type == "MESH" for p in o.data.polygons)
-    print("exported", rel, tris, "tris")
+    each = {o.name: sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs if o.type == "MESH"}
+    print("exported", rel, sum(each.values()), "tris", each)
     return rel
 
 

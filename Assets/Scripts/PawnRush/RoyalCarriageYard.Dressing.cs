@@ -290,12 +290,34 @@ namespace ChessFight.PawnRush
             view.name = "RcyHorse";
             foreach (var r in view.GetComponentsInChildren<Renderer>(true))
             {
-                if (r.name == "Harness") r.gameObject.SetActive(!saddle);
-                else if (r.name == "Saddle") r.gameObject.SetActive(saddle);
+                // Each mesh comes as M_LOD0 and M_LOD1 (R680 QA: the FBX's LOD names make Unity's LOD Group).
+                if (r.name.StartsWith("Harness")) r.gameObject.SetActive(!saddle);
+                else if (r.name.StartsWith("Saddle")) r.gameObject.SetActive(saddle);
                 var slots = r.sharedMaterials;
                 for (int i = 0; i < slots.Length; i++) slots[i] = HorsePaint(slots[i] != null ? slots[i].name : "", coat);
                 r.sharedMaterials = slots;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                // The legs and tail at full stride reach 0.55 m past the rest pose's bounds: grown so the horse is
+                // not culled at the screen's edges.
+                if (r is SkinnedMeshRenderer skin)
+                {
+                    var b = skin.localBounds;
+                    b.Expand(1.2f);
+                    skin.localBounds = b;
+                }
+            }
+            // LOD1 (the *_LOD1 meshes) from about 14 m (the horse under 12% of the screen's height, the camera 6 m
+            // behind the pawn) and never culled (the importer's default would drop a far horse). Set here whether or not
+            // the importer made the group, so the two levels never draw at once.
+            var near = new List<Renderer>();
+            var far = new List<Renderer>();
+            foreach (var r in view.GetComponentsInChildren<Renderer>(true)) (r.name.EndsWith("_LOD1") ? far : near).Add(r);
+            if (far.Count > 0)
+            {
+                var lodGroup = view.GetComponentInChildren<LODGroup>(true);
+                if (lodGroup == null) lodGroup = view.AddComponent<LODGroup>();
+                lodGroup.SetLODs(new[] { new LOD(.12f, near.ToArray()), new LOD(0f, far.ToArray()) });
+                lodGroup.RecalculateBounds();
             }
             view.AddComponent<YardHorseRig>().Bind(body, view.transform, pivots);
             return hidden;
