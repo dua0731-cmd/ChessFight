@@ -182,6 +182,8 @@ namespace ChessFight.PawnRush
             if (finishRace) BindFinish();
             // R652: the race music (PawnRushRoundMusic), once per round object
             if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();
+            // R679: what the player is shown when its own pawn falls and comes back (PawnRushFallNotice)
+            if (Application.isPlaying && GetComponent<PawnRushFallNotice>() == null) gameObject.AddComponent<PawnRushFallNotice>();
             Debug.Log(log.ToString());
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();

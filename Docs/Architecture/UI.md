@@ -745,3 +745,15 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 크기 | `GameSettings.Music` × 0.3983(bake.py가 출력하는 `LOBBY_GAIN`): 기본 음악 크기 0.7에서 RMS −28 dBFS, 경기 음악과 같게(R654, 전 0.5014 · −26) |
 | 가져오기 | 압축해 메모리에 둠(Vorbis 0.8), 48 kHz 그대로, 2D |
 | 다른 곡으로 | 새 테이크를 `raw/`에 넣고 bake.py의 `RAW`·`START`·`END`를 고쳐 다시 굽고, 출력된 `LOBBY_GAIN`을 `LobbyMusic.Gain`에 넣는다. 이음새는 마디 경계 둘을 골라 앞뒤 두 마디가 얼마나 닮았는지로 정했다(경기 음악의 `ArtSource/PawnRush/Music/bake.py --try`가 같은 측정) |
+
+## 경기 중 안내 세 가지 (R679, 2026-11-16)
+
+6 대 6 시험 뒤 사용자 목록 4 · 12 · 13번. 셋 다 폰 러쉬 경기의 OnGUI(다른 경기 HUD와 같은 방식)이고 아무것도 보내지 않는다.
+
+| 화면 | 코드 | 언제 · 무엇 |
+|---|---|---|
+| 승격 카드(마우스) | `PawnRush/PromotionChooser.cs` | 카드가 떠 있는 동안 매 프레임 커서를 풀고 `GameSettings.PointerTaken`을 세운다: 카메라가 클릭에 커서를 다시 잠그지 않고, 그 클릭이 다이빙으로 가지 않는다. 고르거나 10초가 지나면 커서 · 시점 조작을 돌려준다(메뉴 · 경기 표가 열려 있으면 그쪽이 계속 가짐) |
+| 낙하 · 복귀 안내 | `PawnRush/PawnRushFallNotice.cs`(`PawnRushRound`가 라운드마다 하나 붙임) | `KillVolume` · `WaterZone` · `FallDistanceRespawn` · `TeamZone` 이벤트를 모든 PC가 듣는다. 내 폰이면 가장자리 어둡게 + "떨어졌습니다!"/"물에 빠졌습니다!"/"상대 진영입니다!" + 남은 시간 황동 줄, 한 프레임에 4 m 넘게 움직이면(순간이동) 번쩍 + "체크포인트에서 다시 출발!". 모든 폰의 복귀 자리에 황동 고리 |
+| 미니게임 설명 카드 | `PawnRush/MiniGameSection.Guidance.cs` `Briefing` | 방에 들어서면 9초 카드(방 · 게임 · 하는 법 · 팀 칩), 그 뒤 한 줄. 문구는 Core `PawnRushMissions.HowTo`. [미니게임 구간 문서](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) |
+
+경기 중에 **마우스로 누르는** 화면을 더 만들 때는 반드시 `PointerTaken`을 세운다([PITFALLS R679](../Environment/PITFALLS.md)). 사용자 확인 전.

@@ -176,6 +176,10 @@ public static class NetworkCoreTests
             Test("Pawn Rush draw (v1.0 §2.5): never two games of the same group in a round, 1,000 seeds", () => {
                 Check(PawnRushMissions.Group.Length == PawnRushMissions.Count && PawnRushMissions.Ids.Length == PawnRushMissions.Count
                       && PawnRushMissions.Names.Length == PawnRushMissions.Count && PawnRushMissions.Hints.Length == PawnRushMissions.Count, "tables");
+                // R679: a section round's briefing line for every game, two clauses, and no count in it (R543 sizes the games)
+                Check(PawnRushMissions.HowTo.Length == PawnRushMissions.Count, "a briefing line for every game");
+                foreach (var how in PawnRushMissions.HowTo)
+                    Check(how.Split(new[] { " · " }, StringSplitOptions.None).Length == 2 && !System.Text.RegularExpressions.Regex.IsMatch(how, "(?<!×)[0-9]+(칸|개|장|바퀴|번| m)"), "two clauses and no count (H's 3×3 is a shape): " + how);
                 int last1 = -1, last2 = -1;
                 for (int seed = 0; seed < 1000; seed++)
                 {
@@ -3024,10 +3028,11 @@ public static class NetworkCoreTests
                 Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
                 Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
                       "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
-            Test("War room turret volleys: a turret every two seconds, never the one before, every turret as often, the same on every PC", () => {
-                Check(TurretVolleys.Period == 2.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.999) == 0 && TurretVolleys.Volley(2) == 1
-                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 14.0, "a volley every two seconds of the clock");
-                foreach (int turrets in new[] { 3, 4, 5, 8 })
+            Test("War room turret volleys: a turret every 1.5 seconds (R679), never the one before, every turret as often, the same on every PC", () => {
+                Check(TurretVolleys.Period == 1.5 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.499) == 0 && TurretVolleys.Volley(1.5) == 1
+                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 10.5, "a volley every 1.5 seconds of the clock");
+                // six: the war room's battery since R679
+                foreach (int turrets in new[] { 3, 4, 5, 6, 8 })
                     foreach (int seed in new[] { 1, 2, 77, -5, 20261112, int.MaxValue })
                     {
                         var count = new int[turrets];

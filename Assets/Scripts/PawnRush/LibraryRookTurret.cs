@@ -77,9 +77,13 @@ namespace ChessFight.PawnRush
         float Lift => (heavy ? .32f : .12f) * size;
         float Settle => heavy ? .35f : .2f;
         // the hit
-        float DirectRadius => heavy ? .8f : .45f;
-        float InnerRadius => heavy ? 1.6f : .9f;
-        float OuterRadius => heavy ? 3f : .9f;
+        // R679 (the user after the 6 vs 6 test: "엔딩구간 난이도 증가 ... 사격 범위를 늘려야 할 듯"): a battery's shot is a
+        // wider one - whoever is within 0.7 m of its line takes it (was 0.45: a pawn beside the one aimed at stood
+        // clear), and where it lands it knocks down within 1.2 m and pushes out to 1.8 m (was 0.9 m, no outer ring).
+        // The streak and the red line that warns of it are drawn as much wider (Fire, Laser).
+        float DirectRadius => heavy ? .8f : volley ? .7f : .45f;
+        float InnerRadius => heavy ? 1.6f : volley ? 1.2f : .9f;
+        float OuterRadius => heavy ? 3f : volley ? 1.8f : .9f;
         // R473 (승규 11-05 "양 옆 쏠 때 넘어지게 해 날아갈 정도로는 하지 말고"): a side rook's hit knocks a pawn down for
         // 1.3 s (it only staggered), pushed less (4.5 -> 3.5 m/s) and barely lifted (1.5 -> .8) so it falls where it
         // stands instead of being thrown
@@ -756,7 +760,7 @@ namespace ChessFight.PawnRush
             streak.trail.Clear();
             streak.trail.emitting = true;
             streak.r.enabled = true;
-            streak.t.localScale = Vector3.one * (heavy ? .75f : .32f);
+            streak.t.localScale = Vector3.one * (heavy ? .75f : volley ? .5f : .32f);
         }
 
         // On every PC, a burst on each pawn the streak passes through (the hit itself is FixedUpdate's).
@@ -790,12 +794,12 @@ namespace ChessFight.PawnRush
             float c = Mathf.Lerp(.35f, 1f, charge) * flicker;
             laser.SetPosition(0, s.from);
             laser.SetPosition(1, s.to + s.normal * .03f);
-            float width = (heavy ? .05f : .03f) * Mathf.Lerp(.6f, 1.6f, charge * charge);
+            float width = (heavy ? .05f : volley ? .047f : .03f) * Mathf.Lerp(.6f, 1.6f, charge * charge);
             laser.startWidth = laser.endWidth = width;
             var red = new Color(3.2f, .25f, .18f) * c;
             laser.startColor = laser.endColor = red;
             laserDotT.position = s.to + s.normal * .06f;
-            laserDotT.localScale = Vector3.one * (heavy ? .7f : .45f) * Mathf.Lerp(.7f, 1.3f, charge);
+            laserDotT.localScale = Vector3.one * (heavy || volley ? .7f : .45f) * Mathf.Lerp(.7f, 1.3f, charge);
             Tint(laserDotR, red * 1.4f);
         }
 

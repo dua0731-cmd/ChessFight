@@ -186,3 +186,25 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **반복음이 끊김 없이 돎 (코드):** `ArenaFx.Hold`에 `loop`를 더함 — 전에는 클립이 끝나면 다음 프레임에 처음부터 다시 틀어 이음새마다 한 프레임 비었다. 행차 회랑 세 반복음과, 파일은 아직 없는 I 침실의 `sfx_cart_roll` · `sfx_beam_hum`이 `loop: true`. 반복음은 잘라야 멈추므로 두 게임이 꺼질 때(`OnDisable`) 자른다. 모래 · 룩 반복음도 썰매 · 움직이는 룩을 따라간다(전엔 처음 튼 자리에 남았다). 굽고 나서 잰 이음새의 샘플 튐은 평소 파형 변화보다 작다(썰매 0.0009 / 0.012, 모래 0.008 / 0.033, 룩 0.005 / 0.005).
 - **같은 파일이 나는 다른 곳:** `sfx_ep_capture`는 I 침실(공격 기물 잡기)과 J 세탁장(나이트 도약대 발판, 진행에 따라 높아짐)에서도 난다 — 이번에 처음 소리가 난다. `sfx_mg_complete`는 승격 발판을 고를 때도 0.6으로 난다.
 - **아직 없음:** `sfx_gate_open`(팀 문 열림), §7.4 ~ 7.7.
+
+## 9. 낙하 · 복귀 소리와 승리 · 패배 음악 (R679)
+
+사용자(6 대 6 시험 뒤) "낙하 시 유저피드백 확실히" · "승리,패배 BGM 추가". 코드 자리는 들어갔고 **파일은 아직 없다.**
+
+| 자리 | 파일 | 지금 | 부르는 곳 |
+|---|---|---|---|
+| 내 폰이 떨어짐 · 물에 빠짐 | `Assets/Resources/PawnRushMiniGameSfx/sfx_fall.wav` | 없음 → `PawnRushSkillSfx/SkillFail`이 대신 | `PawnRushFallNotice.Begin`(2D, 내 폰만) |
+| 체크포인트로 돌아옴 | `Assets/Resources/PawnRushMiniGameSfx/sfx_respawn.wav` | 없음 → `sfx_mg_quarter`(승격 발판 차임)가 대신 | `PawnRushFallNotice.Back`(2D, 내 폰만) |
+| 이긴 팀 결과 음악 | `Assets/Resources/ResultMusic/Victory.wav` | 없음 → 무음 | `ResultMusic.Play`(폰 러쉬 승리 장면 · 소드 파이트 결과) |
+| 진 팀 결과 음악 | `Assets/Resources/ResultMusic/Defeat.wav` | 없음 → 무음 | `ResultMusic.Play`(폰 러쉬 패배 장면 · 소드 파이트 결과) |
+
+결과 음악은 굽는 단계가 필요 없다: 불러올 때 앞 30초의 RMS를 재서 다른 음악과 같은 크기(기본 음악 음량에서 −28 dBFS)로 맞추고 한 번만 재생한다(반복 없음). 폰 러쉬 결과 장면은 12초 뒤 로비로 가므로 **10 ~ 14초** 길이가 맞다. 효과음 둘은 받으면 `ArtSource/PawnRush/Sfx/bake_minigame.py` 방식으로 앞 빈소리를 자르고 크기를 맞춰 넣는다.
+
+ElevenLabs 프롬프트:
+
+- **sfx_fall** (Sound Effects, 0.7초): `Short cartoon falling whistle: a quick descending slide-whistle "pew-oo" ending in a soft muffled thud, light and comedic, a small wooden chess piece tumbling off a ledge, dry, close, no reverb tail, no music, no voice`
+- **sfx_respawn** (Sound Effects, 0.5초): `Short bright magical pop with a tiny rising two-note chime, a wooden chess piece popping back onto a board, playful, clean attack, dry, no reverb tail, no music, no voice`
+- **Victory** (Music v2.5, 12초): `Triumphant comedic brass band victory fanfare, 150 BPM, F major, the same marching band as a playful chase theme: bright trumpets and trombones, tuba, snare roll into a big held final chord with a cymbal crash, joyful and a little silly, about 12 seconds, a clear ending, instrumental only`
+- **Defeat** (Music v2.5, 10초): `Gentle comedic "better luck next time" brass band sting, slow, F minor resolving to a warm major chord, a muted trumpet wah-wah falling phrase answered by tuba, soft brushed snare, light-hearted and not sad, about 10 seconds, a clear ending, instrumental only`
+
+귀로 들은 것 없음 — 임시 대체음(스킬 실패음 · 승격 차임)이 어울리는지도 사용자 확인 전.

@@ -79,6 +79,10 @@ namespace ChessFight.RagdollLab
                 endStamped = true;
                 string how = view.Phase == SwordPhase.Result && view.Clock < settings.Duration - 0.01 ? $"먼저 {settings.Target}점" : view.Clock > settings.Duration + 0.01 ? "서든데스" : "4:00 종료";
                 Stamp(view.Winner < 0 ? "무승부" : $"{Team(view.Winner)} 팀 승리", $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
+                // R679: the winners' or the losers' music from the result on (a draw has none; nothing until its file exists)
+                var self = game.Local;
+                if (view.Winner >= 0 && self != null && self.Pawn != null)
+                    ChessFight.Game.ResultMusic.Play(gameObject, view.Winner == self.Pawn.Team);
             }
             if (view.Phase != SwordPhase.Result) endStamped = false;
             for (int i = stampQueue.Count - 1; i >= 0; i--)

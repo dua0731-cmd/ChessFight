@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, Report),
-                "War room check: a section round built in Play Mode, its last section's four turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
+                "War room check: a section round built in Play Mode, its last section's turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
                 "Not a play test (no pawn rides, is hit or pushes the door) and not online.\n");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             SessionState.SetBool(ActiveKey, true);
@@ -242,7 +242,7 @@ namespace ChessFight.PawnRush.Editor
 
         static void CheckTurrets()
         {
-            Check(turrets.Length == Course01v4Builder.WarRoomTurretCount, "turrets firing as a battery: " + turrets.Length + " (4 wanted)");
+            Check(turrets.Length == Course01v4Builder.WarRoomTurretCount, "turrets firing as a battery: " + turrets.Length + " (" + Course01v4Builder.WarRoomTurretCount + " wanted)");
             var loose = room.GetComponentsInChildren<LibraryRookTurret>(false).Count(t => !t.Volley);
             Check(loose == 0, loose + " rook(s) still fire on their own rounds");
             foreach (var t in room.GetComponentsInChildren<Transform>(false))
@@ -359,7 +359,7 @@ namespace ChessFight.PawnRush.Editor
                 count[who]++;
                 if (n < first + 40) order.Append(Course01v4Builder.WarRoomTurretNames[who]).Append(' ');
                 Check(who == TurretVolleys.Turret(room.Seed, n, turrets.Length), "volley " + n + ": turret " + who + " fires, the rule says " + TurretVolleys.Turret(room.Seed, n, turrets.Length));
-                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its two seconds (0.55 wanted)");
+                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its " + TurretVolleys.Period + " seconds (0.55 wanted)");
                 Check(Vector3.Distance(from, turrets[who].GapPoint) < .8f, "volley " + n + " leaves from " + V(Local(from)) + ", not from turret " + who);
                 longest = Mathf.Max(longest, (float)(impact - fire));
                 // Intersect the actual flight segment with the deck's longitudinal centre plane and evaluate
