@@ -35,6 +35,9 @@ MonoBehaviour:
     - {fileID: 20688990030008111, guid: 4d5e4f3e33b958c4ca89f3c7669c1df7, type: 3}
     - {fileID: 4733812153994822467, guid: 88d911636d315304c8b2f383a337df59, type: 3}
     - {fileID: 3916480530429441579, guid: 0a9181e8643e0ec47973004fd211639e, type: 3}
+    - {fileID: 5858197817157441221, guid: 31b3db13fbf3dd94382b6867b2944a72, type: 3}
+    - {fileID: 6385314910667157141, guid: 8b0e7479e5ff9184e9ea50494dd8454c, type: 3}
+    - {fileID: 8712495754233133013, guid: 6a3bbe9aa1842674da53e95d8f49dbed, type: 3}
   - name: "\uC7A5\uC560\uBB3C 3 (\uD6C4\uBC18 \xB7 \uC717\uAD81)"
     kind: 0
     prefabs:

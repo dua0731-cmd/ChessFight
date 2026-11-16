@@ -39,6 +39,10 @@ namespace ChessFight.PawnRush.Editor
 
         public static string PrefabPath(int game) => PrefabFolder + "/" + FileNames[game] + ".prefab";
         public static int Zone(int game) => MiniGamePalaceArt.Early(game) ? 0 : MiniGamePalaceArt.Late(game) ? 2 : 1;
+        // R691 (the concept "three areas, two gates", the user 2026-11-16: "게임에 반영"): which of a round's two
+        // mini-game slots draws the game - the first gate (the three outdoor games) or the second (the lower palace's
+        // four and the king's three, G, H and I). Zone stays the room's art set.
+        public static int Pool(int game) => Zone(game) == 0 ? 0 : 1;
 
         [MenuItem("ChessFight/Pawn Rush/Build/All Mini-game Prefabs", false, 102)]
         public static void BuildAll()
@@ -73,7 +77,7 @@ namespace ChessFight.PawnRush.Editor
             RegisterPools(choices);
             BuildTestScene(choices);
             AssetDatabase.SaveAssets();
-            Debug.Log("[PawnRush] 미니게임 프리팹 10개 저장: 초반 3 · 중반 4 · 후반 3(R688부터 판에는 초반 · 중반만 나옴). 시험 장면: " + TestScene);
+            Debug.Log("[PawnRush] 미니게임 프리팹 10개 저장: 판의 첫째 미니게임 자리 3(초반) · 둘째 자리 7(중반 4 + 후반 3, R691). 시험 장면: " + TestScene);
         }
 
         // Entry point for an isolated Editor import/build. A failure never reports a successful bake.
@@ -107,11 +111,11 @@ namespace ChessFight.PawnRush.Editor
             if (set == null) throw new InvalidOperationException("Missing section set: " + SectionPrefabMenu.SectionSet);
             var serialized = new SerializedObject(set);
             var slots = serialized.FindProperty("slots");
-            // R688: a round has two mini-game slots (2 and 4); the late games keep their prefabs but are in no slot
+            // R688: a round has two mini-game slots (2 and 4). R691: the second one draws the late games as well (Pool)
             if (slots.arraySize < 4) throw new InvalidOperationException("The section set must contain the two mini-game slots.");
-            for (int zone = 0; zone < 2; zone++)
+            for (int pool = 0; pool < 2; pool++)
             {
-                var slot = slots.GetArrayElementAtIndex(zone * 2 + 1);
+                var slot = slots.GetArrayElementAtIndex(pool * 2 + 1);
                 slot.FindPropertyRelative("kind").intValue = (int)PawnRushSection.SlotKind.MiniGame;
                 var list = slot.FindPropertyRelative("prefabs");
                 var desired = new List<GameObject>();
@@ -121,7 +125,7 @@ namespace ChessFight.PawnRush.Editor
                     var previous = list.GetArrayElementAtIndex(i).objectReferenceValue as GameObject;
                     if (previous != null && Array.IndexOf(choices, previous) < 0) desired.Add(previous);
                 }
-                for (int i = 0; i < choices.Length; i++) if (Zone(Games[i]) == zone) desired.Add(choices[i]);
+                for (int i = 0; i < choices.Length; i++) if (Pool(Games[i]) == pool) desired.Add(choices[i]);
                 list.arraySize = desired.Count;
                 for (int i = 0; i < desired.Count; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = desired[i];
             }

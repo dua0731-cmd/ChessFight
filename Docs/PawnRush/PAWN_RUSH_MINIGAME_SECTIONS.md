@@ -1,12 +1,16 @@
 # 폰 러시 미니게임 구간 프리팹
 
+## R691 · 둘째 미니게임 자리에 G · H · I (2026-11-16)
+
+사용자 "게임에 반영"(R690). 슬롯 4의 후보가 **B · E · F · J · G · H · I** 일곱이 되었다(슬롯 2는 C · D · A 그대로). 게임이 어느 자리에서 나오는지는 `MiniGamePrefabMenu.Pool`(초반 = 첫째 자리, 중반 · 후반 = 둘째 자리)이 정하고, `Zone`(초반 · 중반 · 후반)은 방의 아트 세트로만 쓴다. 광장 번호 · 승격 발판은 슬롯에서 오므로 G · H · I도 둘째 광장이다. 프로토콜 v50. Unity 사본 배치(그래픽 켬): ① `MiniGamePrefabValidation.RunBatch` — 저장된 프리팹 10개 · 슬롯 목록(3 · 7개) · 시험 장면 PASS. 판 뽑기를 씨앗 1 ~ 700으로 돌리면 넷째 슬롯에 일곱 방이 85 ~ 109번씩 고르게 나온다(G 101 · H 109 · I 104). ② `SectionCorridorValidation.RunPlayBatch`로 G · H · I가 뽑히는 판을 하나씩 지음(씨앗 23 = 왕의 행차 회랑, 2 = 국왕 체스 홀, 1 = 국왕 침실): 대계단 현관홀 → 방 → 국왕 작전실로 이어지는 복도의 이음 · 바닥 · 벽 · 뚜껑 · 지나갈 틈이 모두 PASS이고 작전실 컨베이어도 그대로다(사진 `Docs/PawnRush/Checks/R691_SecondGate/`). 폰이 걸어 지나가거나 미니게임을 실제로 깬 검사는 아니고 온라인도 아니다. 사용자 플레이 확인 전.
+
 ## R690 · 두 미니게임 자리의 컨셉 — 성문과 윗궁 문 (2026-11-16)
 
-컨셉 정리만이고 게임은 그대로다([한 장 그림](Mockups/R690_TwoGates.svg) · [아트 기준 0절](PAWN_RUSH_ART_PHASES.md)). 슬롯 2 = **첫째 관문 · 성문**(C · D · A), 슬롯 4 = **둘째 관문 · 윗궁 문**(B · E · F · J, 그리고 G · H · I를 다시 넣기로 정함). **G · H · I는 아직 넷째 슬롯 목록에 없다 — 사용자가 확인한 뒤 넣는다**(넣을 때 볼 곳은 `HANDOFF.md` 2절의 R690 줄).
+컨셉 정리만이고 게임은 그대로다([한 장 그림](Mockups/R690_TwoGates.svg) · [아트 기준 0절](PAWN_RUSH_ART_PHASES.md)). 슬롯 2 = **첫째 관문 · 성문**(C · D · A), 슬롯 4 = **둘째 관문 · 윗궁 문**(B · E · F · J, 그리고 G · H · I를 다시 넣기로 정함). **R691에서 G · H · I를 넷째 슬롯 목록에 넣었다**(사용자 "게임에 반영").
 
 ## R688 · 판에는 미니게임 두 번 (2026-11-16)
 
-한 판이 6구간이 되면서([구간 문서 §3](PAWN_RUSH_SECTIONS.md)) 미니게임 슬롯은 둘이다: 슬롯 2(초반 C · D · A)와 슬롯 4(중반 B · E · F · J). **후반 3종(G · H · I)은 어느 슬롯에도 없어 판에 나오지 않는다** — 프리팹 · 모델 · 미니게임 시험 장면(8 · 9 · 0번)은 그대로다. 다시 넣으려면 `Assets/Settings/PawnRushSections.asset`의 미니게임 슬롯 목록에 프리팹을 끌어 넣으면 된다(`Build → All Mini-game Prefabs`는 초반 · 중반 후보만 등록한다). 사용자 결정 대기.
+한 판이 6구간이 되면서([구간 문서 §3](PAWN_RUSH_SECTIONS.md)) 미니게임 슬롯은 둘이다: 슬롯 2(초반 C · D · A)와 슬롯 4(중반 B · E · F · J). **후반 3종(G · H · I)은 어느 슬롯에도 없어 판에 나오지 않는다** — 프리팹 · 모델 · 미니게임 시험 장면(8 · 9 · 0번)은 그대로다. 다시 넣으려면 `Assets/Settings/PawnRushSections.asset`의 미니게임 슬롯 목록에 프리팹을 끌어 넣으면 된다(`Build → All Mini-game Prefabs`는 초반 · 중반 후보만 등록한다). → **R691: 후반 3종을 둘째 슬롯에 다시 넣었고, 메뉴도 열 개를 다 등록한다.**
 
 ## R686 · 나이트의 길 — 갈래길과 킹 통 (2026-11-16)
 
@@ -109,7 +113,7 @@ R313에서 `-projectPath`를 위 main 폴더로 지정하고 `ChessFight.PawnRus
 | 후반 | H 국왕 체스 홀 | `Late_MG_H_KingsChessHall.prefab` |
 | 후반 | I 국왕 침실 | `Late_MG_I_KingsBedchamber.prefab` |
 
-Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는 코드에서10개를 다시 만들어 저장하고, 구간 목록의 미니게임 슬롯2·4·6에3·4·3개를 등록한다. 기존 장애물 슬롯과 사용자가 추가한 다른 후보는 보존한다. 재생성은 새10개 파일의 코드 생성 영역을 덮어쓰므로 해당 영역의 변경은 빌더에 반영한다.
+Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는 코드에서10개를 다시 만들어 저장하고, 구간 목록의 미니게임 슬롯 2 · 4에 3 · 7개를 등록한다(R691: 초반 3종 / 중반 4종 + 후반 3종 — `MiniGamePrefabMenu.Pool`. R688 전에는 슬롯 2 · 4 · 6에 3 · 4 · 3개). 기존 장애물 슬롯과 사용자가 추가한 다른 후보는 보존한다. 재생성은 새10개 파일의 코드 생성 영역을 덮어쓰므로 해당 영역의 변경은 빌더에 반영한다.
 
 **ChessFight → Pawn Rush → Open Mini-game Prefab Test**로 `Assets/Scenes/PawnRush_MiniGames.unity`를 열고 Play한다. 원래 구간 시험 씬의 캐릭터·카메라·물리 설정을 복제한 별도 오프라인 장면이다. 기존 시험 씬과 Build Settings는 바꾸지 않는다.
 

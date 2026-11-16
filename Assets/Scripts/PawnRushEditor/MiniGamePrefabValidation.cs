@@ -125,14 +125,14 @@ namespace ChessFight.PawnRush.Editor
                 finally { if (root != null) PrefabUtility.UnloadPrefabContents(root); }
             }
             var set = AssetDatabase.LoadAssetAtPath<PawnRushSectionSet>(SectionPrefabMenu.SectionSet);
-            // R688: six slots, two of them mini-games (the late games G, H and I are saved but in no slot)
+            // R688: six slots, two of them mini-games. R691: the second one holds the late games G, H and I as well
             Need(set != null && set.SlotCount == 6, "Missing six-slot section set", issues);
             if (set != null && set.SlotCount >= 4)
-                foreach (var entry in new[] { (slot: 1, count: 3), (slot: 3, count: 4) })
+                foreach (var entry in new[] { (slot: 1, count: 3), (slot: 3, count: 7) })
                 {
                     var list = set[entry.slot]?.prefabs;
-                    int zone = entry.slot / 2;
-                    var owned = MiniGamePrefabMenu.Games.Where(g => MiniGamePrefabMenu.Zone(g) == zone)
+                    int pool = entry.slot / 2;
+                    var owned = MiniGamePrefabMenu.Games.Where(g => MiniGamePrefabMenu.Pool(g) == pool)
                         .Select(g => AssetDatabase.LoadAssetAtPath<GameObject>(MiniGamePrefabMenu.PrefabPath(g))).ToArray();
                     Need(owned.Length == entry.count && list != null && owned.All(p => p != null && list.Contains(p)),
                         "Missing generated mini-game choices at slot " + (entry.slot + 1), issues);
