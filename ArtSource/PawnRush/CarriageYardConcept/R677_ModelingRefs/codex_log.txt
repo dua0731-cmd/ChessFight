@@ -1,0 +1,1071 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:11 char:56
++ ... ROMPT.md" -Raw -Encoding UTF8 | & $codex @args2 *> "$o\codex_log.txt"
++                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.167.0-alpha.3.2
+--------
+workdir: C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: high
+reasoning summaries: none
+session id: 01a1de4b-bbba-70b2-a3b0-327ed011aa2b
+--------
+user
+You are making concept art for a 3D modeller who will now model the "Royal Carriage Yard" course of ChessFight (a cute 
+6 vs 6 chess-pawn party race). Use your image generation tool; do NOT write code and do not change any file except the 
+PNGs you save here. Generate exactly SIX images, one at a time and in this order, and save each as PNG in the current w
+orking directory with these exact names:
+
+- RCY_01_overview.png - 1024x1536 portrait (2:3)
+- RCY_05_hoist_loft_and_berth.png - 1536x1024 landscape (3:2)
+- RCY_06_pond_cliff_and_gate.png - 1536x1024 landscape (3:2)
+- RCY_07_architecture_modules.png - 1536x1024 landscape (3:2)
+- RCY_08_props_materials.png - 1536x1024 landscape (3:2)
+- RCY_09_machines_orthographic.png - 1536x1024 landscape (3:2)
+
+If the tool saves somewhere else (for example ~/.codex/generated_images), copy each file here under its name. Never res
+ize, crop or convert a result.
+
+## The prompt of each image
+
+Images 1, 5, 6, 7 and 8 already have finished prompts. Read the file and use its whole text, word for word, as the imag
+e prompt, then add the STYLE LOCK paragraph below at its end:
+
+- image 1: C:/Work/ChessFight-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_01_overview_prompt.txt
+- image 5: C:/Work/ChessFight-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_05_hoist_loft_and_berth_pr
+ompt.txt
+- image 6: C:/Work/ChessFight-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_06_pond_cliff_and_gate_pro
+mpt.txt
+- image 7: C:/Work/ChessFight-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_07_architecture_modules_pr
+ompt.txt
+- image 8: C:/Work/ChessFight-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_08_props_materials_prompt.
+txt
+
+Image 9 has no file: build its prompt from the REFS, STYLE, CUES and AVOID blocks of the image 7 file (copy those four 
+blocks word for word) with the IMAGE 9 entry below in place of image 7's own entry, then add the STYLE LOCK paragraph.
+
+Use these CHECK lines (never send them to the tool) to check each result:
+- image 1: five coaches; the giant wheel face-on with both walkways entering it; one paddle wheel at a white cliff; eve
+ry yard tower a flat rook crown; no text but the title, ribbon and four pills.
+- image 5: four pallets, the two outer down with green lamps and the two inner up with red, mirrored; row 2's two gaps 
+in the same state; the coffer hangs on four chains; no railings on the loft deck.
+- image 6: one paddle wheel, its axle across the course; a smooth cliff with no holds; the gate wall clearly taller tha
+n its leaves; no finish line, crown pedestal or walled finish court.
+- image 7: ten modules, each numbered once; no numbers but the item numbers; no cones; no arch over either gate opening
+.
+- image 8: eleven props and twelve labelled swatches; the horses are plain horses, not chess pieces; no glass lamps; no
+ numbers but the item numbers.
+- image 9: the CHECK line at the end of its entry below. Call the tool at most twice per image: if a check fails, gener
+ate once more with the failed checks named first and keep the better one.
+
+You may read these prompt files and look at the attached images. Do not read any other file in the repository (the yard
+'s other documents describe older versions of this place).
+
+## Attached images (in this order)
+
+1. R502 mechanical assets sheet - render style (and the sheet format for image 9)
+2. R502 architecture modules sheet - render style, sheet format of image 7
+3. R502 props and materials sheet - render style, sheet format of image 8
+4. R506 ceremonial court overview - title format, sky, far palace facade
+5. R505 portcullis court overview - walls, rook towers, slate roofs
+6. in-game capture (moat drawbridge) - stone block shapes and water colour only
+7. the pawns as they look in the game
+8. the pawn's proportions from the front
+9. layout map of the whole course (the "reference 9" of image 1)
+10. layout map of the wagon yard
+11. layout map of the canal and giant waterwheel
+12. layout map of the warehouse (the "reference 9" of image 5)
+13. layout map of the pond, cliff and final gate (the "reference 9" of image 6)
+14. the user's own painting: wagon yard
+15. the user's own painting: giant waterwheel crossing
+16. the user's own painting: sorting yard and timber cranes
+
+When a prompt says "reference 9", use the layout map named above for that image (attachment 9, 12 or 13). Images 7, 8 a
+nd 9 have no layout map. Attachments 10 and 11 are context for image 1's wagon yard and canal.
+
+## STYLE LOCK (add at the end of every image prompt)
+
+STYLE LOCK: Attachments 14-16 are the user's own approved paintings of this same yard (wagon yard, giant waterwheel cro
+ssing, sorting yard with timber cranes). The new image must look like it belongs to that same set: the same render styl
+e, lighting, sunny sky, cream stone, slate roofs, walnut and oak wood, dark iron, matte brass crests, the same pawn cha
+racters, the same title banner and ribbon style. Where these paintings and the text disagree on layout, counts or colou
+rs, the text wins.
+
+## IMAGE 9 entry (RCY_09_machines_orthographic.png)
+
+Landscape 3:2 (1536x1024). Title "Royal Carriage Yard - Asset Breakdown / Machines for Modelling" with the small ribbon
+ "Stage 1 - Outer Castle".
+- Sheet layout like reference 1: cream parchment background and the serif title at the top. Each machine stands on its 
+own with a numbered rounded caption label under it: "1. Name" plus one short line of words, with no sizes, units or oth
+er numbers.
+- Every machine is drawn as a modelling turnaround: a large three-quarter view plus small flat orthographic views besid
+e it (front and side; top where it says so), all in the same scale for that machine, lined up, no perspective in the sm
+all views.
+- Soft warm studio light and soft contact shadows; no sky, scenery or dimension lines. Small pale arrows may show how m
+oving parts move.
+- One small cream pawn beside machine 1 for scale only; no other characters.
+
+Machines:
+1. Royal coach rig: a closed boxy royal coach (walnut chassis, bottle-green lacquered cabin with wooden shutters and th
+e crest on the door, roof slab with a matte brass crown finial, empty coachman's bench, four spoked wheels with iron ty
+res, two amber lanterns at the front corners) drawn by a pair of plain horses side by side on a pole and traces. Three-
+quarter view plus side, front and top views.
+2. Giant upright waterwheel of the canal crossing: two thick wooden rims, light and dark bucket boards between them, si
+x pairs of spokes on each face, an iron-banded hub with a matte brass crown boss, a timber flume above pouring water on
+to it. Three-quarter view plus front (facing the axle) and side views; show the open gaps between the spokes clearly.
+3. Upright paddle wheel of the mill pond: a smaller wooden wheel with flat paddles, each paddle with a bright gold hand
+le bar to grab, on a stone axle pier. Three-quarter view plus front and side views.
+4. Timber jib crane: a round stone drum with a carved rook band, a walnut mast, a small treadwheel house with a slate r
+oof, a diagonal brace up to the long jib, a carved knight-head tip with its lamp, a crenellated iron counterweight unde
+r the short tail, and two slings holding a long bundle of squared beams low. Three-quarter view plus side and top views
+ (the top view shows the swing).
+5. Row crane gantry: a long timber beam on carved knight-head stone corbels at both ends, an iron rail with a trolley, 
+two ropes lifting a stack of two crates. Three-quarter view plus front and side views.
+6. Cargo roller line: one straight segment of a timber roller conveyor, low, on walnut legs, with wooden rollers and si
+de boards, and crates riding on it; the intake doorway end and the sorting doorway end beside it. Three-quarter view pl
+us side and top views.
+7. Loft rope hoist: a timber hoist frame (post, arm with carved knight-head ends, slate hood, two pulleys) with one oak
+ pallet down on the floor and one raised, its arm lamp. Three-quarter view plus front and side views.
+8. Heavy berth gantry: a timber gantry spanning the berth, a trolley with a winch drum, and the king's coffer (oak ches
+t, walnut lid, iron corners, matte brass straps, lock and crown) hanging on four chains over a berth mark of dark board
+s. Three-quarter view plus front and side views.
+- CHECK: eight machines, each numbered once, each with its small orthographic views; the horses are plain horses, not c
+hess pieces; no numbers but the item numbers; no glass lamps; no blue.
+
+## When done
+
+Reply with the six file paths, each file's size, and one short line describing each image. If a generation fails (for e
+xample a usage limit), say which images are missing and why.
+
+
+2026-11-15T08:21:10.375971Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthR
+equired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorizat
+ion provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+2026-11-15T08:21:10.972871Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthR
+equired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access t
+oken was provided in this request\", resource_metadata=\"https://api.githubcopilot.com/.well-known/oauth-protected-reso
+urce/mcp/\"" })
+2026-11-15T08:21:11.071756Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthR
+equired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorizat
+ion provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+codex
+이미지 생성 스킬을 확인한 뒤, 지정된 프롬프트만 읽어 순서대로 여섯 장을 생성하겠습니다. 저장 파일은 요청하신 PNG 여섯 개로 제한하겠습니다.
+
+2026-11-15T08:21:23.976774Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthR
+equired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_token\", error_description=\"No authorizat
+ion provided\", resource_metadata=\"https://mcp.vercel.com/.well-known/oauth-protected-resource\"" })
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Users/kerri/.co
+dex/skills/.system/imagegen/SKILL.md' -Raw" in C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R67
+7_ModelingRefs
+2026-11-15T08:21:24.732927Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthR
+equired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access t
+oken was provided in this request\", resource_metadata=\"https://api.githubcopilot.com/.well-known/oauth-protected-reso
+urce/mcp/\"" })
+ succeeded in 899ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illu
+strations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new imag
+e, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rath
+er than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-nati
+ve assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups
+, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and transparent-
+image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the CLI/API/mode
+l path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first unles
+s they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate ass
+ets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per req
+uested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_
+KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific locat
+ion is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before fin
+ishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default
+ `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versi
+oned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, comp
+ositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request a
+s **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images gener
+ated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so
+ the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and ne
+eds many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; dis
+tinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if explicit
+ly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_i
+mage` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requ
+irements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated a
+lpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generate
+d_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or refe
+rences. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user exp
+licitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, si
+ze, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whe
+ther the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, bu
+t do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled
+ line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ??candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ??product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ??app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ??diagrams/infographics with structured layout and text.
+- scientific-educational ??classroom explainers, scientific diagrams, and learning visuals with required labels and acc
+uracy constraints.
+- ads-marketing ??campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual ??slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ??logo/mark exploration, vector-friendly.
+- illustration-story ??comics, children?셲 book art, narrative scenes.
+- stylized-concept ??style-driven concept art, 3D/stylized renders.
+- historical-scene ??period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ??translate/replace in-image text, preserve layout.
+- identity-preserve ??try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ??remove/replace a specific element (including interior swaps).
+- lighting-weather ??time-of-day/season/atmosphere changes only.
+- background-extraction ??transparent background / clean cutout. Ask built-in `image_gen` for actual transparency.
+- style-transfer ??apply reference style while changing subject/scene.
+- compositing ??multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ??drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which c
+ontrols output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in
+ the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in `references/sample-prompts.md`
+.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user explici
+tly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final assets
+, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges multiple
+s of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package m
+anager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it in
+to their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI m
+ode.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Work/ChessFight
+-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_06_pond_cliff_and_gate_prompt.txt' -Raw" in C:\Work\Che
+ssFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Work/ChessFight
+-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_01_overview_prompt.txt' -Raw" in C:\Work\ChessFight-Seo
+ungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Work/ChessFight
+-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_05_hoist_loft_and_berth_prompt.txt' -Raw" in C:\Work\Ch
+essFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Work/ChessFight
+-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_07_architecture_modules_prompt.txt' -Raw" in C:\Work\Ch
+essFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 0ms:
+Attached references, in order: 1-3, asset sheets - take only their render style; 4-5, two courts of the same castle - t
+heir title format, sunny sky, crenellated cream walls, rook-topped towers, grey slate roofs and the far palace facade, 
+never their layouts, machines, team banners or bright gold; 6, an in-game capture - only its stone block shapes and tur
+quoise water, never its honey tint; 7-8, the player pawns; 9, the top-down layout map of this part, far end at the top 
+and left = west (cream floor, darker stone walls and round towers, turquoise water, light oak decks, brown goods, dark 
+grey roofs, white marble, translucent red hazard areas, bright green open gaps, gold jump and step edges, stone-square 
+rank bands, green lawn outside): copy its counts and positions exactly; it shows places, not this image's moment.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large roun
+ded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream l
+imestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, li
+ght oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every c
+rown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring 
+of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in pr
+ofile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, 
+sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and 
+hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - lo
+w-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white
+ glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded 
+feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jum
+ps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting co
+ach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, or
+ange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or wa
+lnut brown, roofs grey slate.
+
+Landscape 3:2 (1536x1024). Title at the top in a serif face, "Royal Carriage Yard - Mill Pond and Final Gate", with the
+ small ribbon "Stage 1 - Outer Castle" under it, as in reference 4. Bright clear midday, light haze far away.
+- Camera: about 55 m up over the north end of the warehouse, a third of the way toward the right wall (x 12, z 108), lo
+oking forward and a little left, down about 42 deg.
+- Framing:
+  - the gold pond edge along the bottom;
+  - the paddle wheel in the lower fifth;
+  - the cliff top at about 30%;
+  - the platform and the pushers at about 40%;
+  - the final gatehouse from about 45% to 60%;
+  - just over its wall, the terrace's far end, the portal, the steps and the entrance band;
+  - beyond, in light haze toward the top, a short walled passage and the palace.
+- Moment: three pawns push the gate. The progress bar is a third gold, and the leaves stand about a quarter open, just 
+wide enough for a pawn to squeeze through the middle.
+- Must show (keep these if anything has to go):
+  1. The paddle wheel in the pond, turned a quarter turn from the giant wheel: its axle runs left-right across the cour
+se, so the camera sees its rising paddles and, a little from the right, its round side. It has eight oak paddles with b
+right gold handle bars, matte brass hub caps and two stone piers. Its near side rises: a pawn hangs from a gold handle 
+being carried up, and another has just been let off onto the small oak landing at the cliff top with its bright gold fr
+ont edge.
+  2. The smooth white marble cliff across the full width, a waterfall behind the wheel, its top railing broken only at 
+the landing.
+  3. Both side docks: a sluice portal in the cliff (rook-gate jambs, a raised solid oak sluice board, a gear wheel) pou
+ring water into foam; a moored cargo barge with a curled bow post and cargo; a timber jib crane on the platform lowerin
+g a net of sacks; cream banners on the cliff.
+  4. The platform with two lamp posts and a rank band. Three pawns of both teams push: two grip the bright gold ring ha
+ndles and one presses against a leaf. The two walnut leaves are swung away from them, and a fourth pawn squeezes throug
+h.
+  5. The final gatehouse: a tall flat-topped wall with rook merlons, a rectangular opening under a flat lintel, two fla
+t rook-crowned towers, cream banners, an iron progress bar a third filled with bright gold, and a push pictogram with t
+he crest above it.
+  6. Over the wall: the terrace's far end, the open stone portal with rook-crowned piers and a crown keystone, four sha
+llow steps, and the entrance band with white marble railings. The causeway right behind the wall stays hidden, glimpsed
+ only through the gate.
+  7. Far behind in light haze: a short walled passage with plain walls, then the palace - its cream facade with grey sl
+ate roofs and turrets and a matte brass crown over the arched gate, with the keep's chess skyline behind it.
+- If there is room: the apron's lamp posts and rank band at the bottom edge.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs,
+ crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses;
+ any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs 
+on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors
+; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern ob
+jects, photorealism.
+
+
+ succeeded in 0ms:
+Attached references, in order: 1-3, asset sheets - take only their render style; 4-5, two courts of the same castle - t
+heir title format, sunny sky, crenellated cream walls, rook-topped towers, grey slate roofs and the far palace facade, 
+never their layouts, machines, team banners or bright gold; 6, an in-game capture - only its stone block shapes and tur
+quoise water, never its honey tint; 7-8, the player pawns; 9, the top-down layout map of this part, far end at the top 
+and left = west (cream floor, darker stone walls and round towers, turquoise water, light oak decks, brown goods, dark 
+grey roofs, white marble, translucent red hazard areas, bright green open gaps, gold jump and step edges, stone-square 
+rank bands, green lawn outside): copy its counts and positions exactly; it shows places, not this image's moment.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large roun
+ded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream l
+imestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, li
+ght oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every c
+rown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring 
+of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in pr
+ofile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, 
+sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and 
+hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - lo
+w-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white
+ glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded 
+feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jum
+ps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting co
+ach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, or
+ange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or wa
+lnut brown, roofs grey slate.
+
+Portrait 2:3 (1024x1536). Title at the top in a serif face, "Royal Carriage Yard - Overview", with the small ribbon "St
+age 1 - Outer Castle" under it, as in reference 4. Bright clear midday, blue sky, short soft shadows, turquoise water.
+- Camera: very high behind the start, on the course's centre line, about 300 m up over a point 55 m behind the start co
+urt (x 0, z -70), looking straight along the course and down about 60 deg, normal lens.
+- Framing, by height from the bottom edge:
+  - start court and outer gatehouse in the bottom tenth;
+  - the wagon yard up to about 30%;
+  - the canal and giant wheel at about 30-43%;
+  - the warehouse at about 43-60%;
+  - the mill pond, white cliff and platform at about 60-68%;
+  - the final gatehouse at about 70%, with the section's end just above it;
+  - the top quarter shows what lies beyond: a short walled passage, the next court and the palace, its crowned skyline 
+under the title.
+
+  The course is one straight walled strip of even width filling the middle third of the frame's width; castle roofs, ro
+ok towers, lawns, cypresses and green hills fill both sides.
+- Moment: mid-race; about twelve pawns, tiny specks, spread from the outer gate to the cliff. Do not enlarge them.
+- Must show (keep these if anything has to go):
+  1. Flat rook-crowned towers and rook merlons along both sides of the whole strip.
+  2. Wagon yard: slate-roofed granary sheds along both side walls; five closed coaches, each drawn by a side-by-side pa
+ir of horses, scattered in the open yard, two of them with long translucent red stripes on the floor ahead.
+  3. Canal: turquoise water across the full width; two plank walkways; the giant waterwheel standing upright in the can
+al like a huge clock face turned toward the viewer, the walkways running into its lower half; a flume on tall stilts ab
+ove it.
+  4. Warehouse, wider and with taller walls: a long cargo line across its whole width; two walls of crate stacks across
+ the yard; two timber cranes over red floor fans; a timber loft with two hoist frames; a high gantry with a chest hangi
+ng on chains over a red floor circle.
+  5. The mill pond with one upright paddle wheel in front of a smooth white marble cliff with a waterfall; sluice porta
+ls, moored barges and dock cranes on either side.
+  6. The platform and the final gatehouse, its two leaves part open; behind it the terrace, the open stone portal and t
+he steps.
+  7. The palace far beyond.
+  8. Four small cream pills overlaid along the right edge, each with a thin leader line to its zone: "1 Wagon Yard", "2
+ Giant Waterwheel", "3 Royal Warehouse", "4 Final Gate".
+- If there is room: the open outer-gate leaves, rank bands, cream banners, iron lamp posts, and the parked coach and cr
+ates in the start court.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs,
+ crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses;
+ any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs 
+on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors
+; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern ob
+jects, photorealism.
+
+
+ succeeded in 0ms:
+Attached references, in order: 1-3, asset sheets - their render style, sheet format and soft studio light; 4-6, courts 
+of the same castle - materials only; 7-8, the player pawns, for the one scale pawn.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large roun
+ded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream l
+imestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, li
+ght oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every c
+rown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring 
+of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in pr
+ofile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, 
+sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and 
+hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - lo
+w-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white
+ glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded 
+feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jum
+ps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting co
+ach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, or
+ange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or wa
+lnut brown, roofs grey slate.
+
+Landscape 3:2 (1536x1024). Title "Royal Carriage Yard - Asset Breakdown / Architecture Modules" with the small ribbon "
+Stage 1 - Outer Castle".
+- Sheet layout like reference 2: cream parchment background and the serif title at the top. Each module stands on its o
+wn with a numbered rounded caption label under it: "1. Name" plus one short line of words, with no sizes, units or othe
+r numbers.
+- Soft warm studio light and soft contact shadows; no sky, scenery or dimension lines.
+- One small cream pawn beside module 1 for scale only; no other characters.
+
+Modules:
+1. Outer gatehouse, court side: a flat-topped wall with rook merlons and a plain rectangular opening under a flat linte
+l (no arch; the lintel's face plain). The walnut leaves are closed, with three iron straps and matte brass crown plates
+. Two slender flat rook-crowned towers stand beside it, with the crest shield on top and a rank band at the threshold.
+2. Rook tower family: a slender gate tower, a taller final-gate tower and a thicker corner tower, each three to four ti
+mes as tall as wide, with a flared corbelled collar and a crenellated rook crown; no cones.
+3. Curtain wall kit: a low wall and a tall wall with rook merlons, and a corner piece. The inner face is plain and flat
+; the outer face has a plinth, pilasters and arrow slits.
+4. Granary shed bay: a slate lean-to on walnut posts with a crenel-cut oak fascia and a matte brass edge, an unlit lant
+ern, and goods packed solid to the flat front. Beside it, the bay with the raised royal canopy and crest.
+5. Sorting stall bay with its matte brass piece-icon plaque, and the cargo-line doorway bay: a dark doorway, iron jambs
+, a lintel and a pictogram board with a crate and an arrow.
+6. Canal crossing piece: the stone landing edge with a low white marble railing and one walkway opening; a stone pier; 
+a railing-less plank walkway on walnut posts ending in a bright gold jump line; a canal wall with its stone parapet and
+ the water line.
+7. Loft and hoist: the solid loft front of vertical oak boards, the plank deck's edge with its bright gold lip, and a h
+igh loft end with crate stacks; a timber hoist frame (post, arm with carved knight-head ends, slate hood, two pulleys) 
+with one pallet down and one up.
+8. Marble cliff section: a smooth white marble face with one sluice portal (rook-gate jambs, crown keystone, raised sol
+id oak sluice board, gear wheel), the top railing ending at the landing gap, and the small oak landing with its bright 
+gold edge.
+9. Final gatehouse, platform side: a tall flat-topped wall with rook merlons, a rectangular opening under a flat lintel
+, and two flat rook-crowned towers. The walnut push leaves are closed, with four iron straps, matte brass crown plates 
+and bright gold ring handles at a pawn's chest height. The iron progress-bar frame and a push pictogram sit over the op
+ening, with the crest above.
+10. Section end: a causeway piece with white marble railings, the open stone portal (rook-crowned piers, crown keystone
+), four shallow steps and the entrance band.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs,
+ crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses;
+ any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs 
+on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors
+; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern ob
+jects, photorealism.
+
+
+ succeeded in 0ms:
+Attached references, in order: 1-3, asset sheets - take only their render style; 4-5, two courts of the same castle - t
+heir title format, sunny sky, crenellated cream walls, rook-topped towers, grey slate roofs and the far palace facade, 
+never their layouts, machines, team banners or bright gold; 6, an in-game capture - only its stone block shapes and tur
+quoise water, never its honey tint; 7-8, the player pawns; 9, the top-down layout map of this part, far end at the top 
+and left = west (cream floor, darker stone walls and round towers, turquoise water, light oak decks, brown goods, dark 
+grey roofs, white marble, translucent red hazard areas, bright green open gaps, gold jump and step edges, stone-square 
+rank bands, green lawn outside): copy its counts and positions exactly; it shows places, not this image's moment.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large roun
+ded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream l
+imestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, li
+ght oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every c
+rown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring 
+of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in pr
+ofile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, 
+sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and 
+hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - lo
+w-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white
+ glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded 
+feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jum
+ps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting co
+ach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, or
+ange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or wa
+lnut brown, roofs grey slate.
+
+Landscape 3:2 (1536x1024). Title at the top in a serif face, "Royal Carriage Yard - Hoist Loft and Heavy Berth", with t
+he small ribbon "Stage 1 - Outer Castle" under it, as in reference 4. Bright clear midday, short soft shadows.
+- Camera: about 26 m up over the north end of the crane yard, a little right of the middle (x 4, z 100), looking straig
+ht along the course and down about 42 deg, wide lens.
+- Framing:
+  - the hoists and the loft's face across the bottom fifth;
+  - stack row 2 at about 40%;
+  - the hanging coffer around the middle, with the gantry beams high above it at about two-thirds;
+  - the apron, its lamp posts and the gold pond edge just above the middle;
+  - the paddle wheel and the white cliff at the top, under the title.
+- Moment: in each hoist the outer pallet is down and the inner one up; both gaps of row 2 are closing; the coffer is be
+ing lowered over the second berth mark from the left.
+- Must show (keep these if anything has to go):
+  1. Two mirrored timber hoist frames either side of the middle, each a post with an arm on top (carved knight-head end
+s, a small slate hood), two pulleys and four-rope bridles.
+     - The outer pallets (nearer the walls) are down under green lamps, with two pawns boarding them over bright gold b
+oarding edges.
+     - The inner pallets are up, flush with the deck, under red lamps, with a pawn stepping off one onto the deck.
+     - Dim red stripes lie on the floors of the two empty inner wells.
+  2. The loft: a solid timber block faced with vertical oak boards, its plank deck with a bright gold front lip and far
+ edge and no railings, its high ends topped with crate stacks. A pawn crosses the deck; another drops off its far edge.
+  3. Two small pictogram boards hung one above the other between the two hoist frames' posts, over the deck's front lip
+. Icons only: a pawn stepping onto a pallet under a green lamp; a crate hanging over a crossed-out pawn.
+  4. Stack row 2: a wall of two-crate stacks under its beam crane. In both gaps a trolley swings a stack in on its rope
+s over a bright red floor pad; a pawn hops back out of the left gap.
+  5. The heavy berth: twin gantry beams high above with a rail and an iron trolley. The king's coffer (an oak chest wit
+h a walnut lid, matte brass straps and a brass crown) hangs on four chains halfway down over the second berth mark from
+ the left, with a bright translucent red circle round it on the floor and two pawns running out of it. The other three 
+berth marks (dark boards with iron corners) are empty.
+  6. Winch wheels and knee braces on the side walls above the stall roofs; the sorting stalls along both walls.
+  7. The apron with its four lamp posts and a rank band, and the gold pond edge; the paddle wheel and the white cliff b
+eyond.
+- If there is room: cream banners on the walls; the ends of the timber stores in the bottom corners.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs,
+ crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses;
+ any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs 
+on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors
+; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern ob
+jects, photorealism.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 'C:/Work/ChessFight
+-SeoungTest/Docs/PawnRush/ConceptArt/R676_RoyalCarriageYard/RCY_08_props_materials_prompt.txt' -Raw" in C:\Work\ChessFi
+ght-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 355ms:
+Attached references, in order: 1-3, asset sheets - their render style, sheet format and soft studio light; 4-6, courts 
+of the same castle - materials only; 7-8, the player pawns, for the one scale pawn.
+
+STYLE: Stylized 3D game concept art in the clean toy-like render style of references 1-3: big chunky shapes, large roun
+ded bevels, worn edges, silhouette first. The castle of a cute chess kingdom, stage 1, outside the palace: pale cream l
+imestone in big soft-edged blocks (never orange, honey or sandy), plain pale sandstone flagstones, grey slate roofs, li
+ght oak and dark walnut with visible grain, dark riveted iron, and dull brownish matte brass like old bronze on every c
+rown, crest and trim. Chess identity: every round tower ends in a flat chess-rook crown (flared corbelled collar, ring 
+of chunky merlons), never a cone; every wall top has chunky rook merlons; the yard's crest, a chess knight's head in pr
+ofile under a small crown, flat matte brass on a cream shield, sits on plaques, cream banners and coach doors; crates, 
+sacks and barrels carry small dark stencilled chess-piece icons; carved knight heads appear only high up, on crane and 
+hoist arm ends. The only characters are the players: small chess pawns about 1 m tall exactly as in references 7-8 - lo
+w-poly and faceted, pale peach-cream or soft charcoal bodies, a round head with two glossy black oval eyes with a white
+ glint and pink blush, a thin neck ring in the body's own colour, short stub arms with black ball hands, black rounded 
+feet, no scarves or team colours. Everything else is big next to them.
+
+CUES: The game's colour code, only where this entry names it: bright glowing gold only where a pawn grabs, steps or jum
+ps; translucent glowing red only on hazard warnings; glowing green only on go signals; glowing amber only on resting co
+ach lanterns, a hoist lamp's last moment and thin crane reach lines. Every other lamp and lantern is unlit. No blue, or
+ange or red decoration anywhere: cloth is cream or sand, banners cream with the brass crest, coaches bottle green or wa
+lnut brown, roofs grey slate.
+
+Landscape 3:2 (1536x1024). Title "Royal Carriage Yard - Asset Breakdown / Props & Materials" with the small ribbon "Sta
+ge 1 - Outer Castle".
+- Sheet layout like references 1 and 3: cream parchment background and the serif title at the top. Each prop stands on 
+its own with a numbered rounded caption label under it: "1. Name" plus one short line of words, with no sizes, units or
+ other numbers.
+- Small pale arrows may show how moving parts move.
+- Soft warm studio light and soft contact shadows; no sky or scenery.
+- One small cream pawn beside prop 1 for scale only.
+
+Props:
+1. Royal coach rig at rest, side view: a closed boxy coach drawn by a pair of horses side by side. The coach has a waln
+ut chassis, a bottle-green lacquered cabin with wooden shutters and the crest on the door, a roof slab with a matte bra
+ss crown finial, an empty coachman's bench, four spoked wheels with iron tyres, and two lanterns glowing amber at the f
+ront corners. Beside it, the same coach exploded: chassis, cabin, roof and finial, bench and footboard, wheels, pole an
+d traces, lanterns.
+2. Carriage horses in bay, grey and black: chunky toy horses with arched necks, short upright manes and plain small dar
+k eyes (no glint, blush or brows), walnut harness with a small matte brass knight badge on the brow band, and cream plu
+mes. One standing, one tossing its head.
+3. Goods: a single crate and a two-crate stack from the cargo line, granary crates, barrels with iron hoops, sacks on a
+ pallet, straw bales and a load under tied sand canvas, all with small dark chess-piece stencils.
+4. Timber: a long bundle of squared beams (two under one, iron straps, branded ends) on a dark rest board with iron cho
+cks.
+5. Timber crane parts, assembled: a stone drum with a carved rook band, a walnut mast, a small treadwheel house with a 
+slate roof, a diagonal brace from the house roof up to the jib, the jib with a carved knight-head tip and its lamp, a c
+renellated iron counterweight under the short tail, and two slings holding the bundle low.
+6. Row crane: a beam end on a carved knight-head stone corbel, the iron rail and trolley, and two ropes lifting a two-c
+rate stack.
+7. Hoist pallet: an oak plate with iron corner shoes and two sacks on a four-rope bridle under a pulley; the arm lamp s
+hown three times - green, amber, red.
+8. The king's coffer: an oak chest with a walnut lid, iron corners and matte brass straps, lock and crown, hanging on f
+our chains from a trolley with a winch drum; a berth mark of dark boards with iron corner plates.
+9. Waterwheel parts: a giant-wheel rim segment with light and dark bucket boards, a spoke pair with walnut ties and an 
+iron band, and the hub with its matte brass crown boss; a paddle-wheel paddle with its bright gold handle bar.
+10. Water pieces: the flume trough and the small rook-shaped cistern on a trestle; a cargo barge with a curled bow post
+ carrying a small matte brass crest shield, loaded with crates, barrels and a covered load; the dock jib crane with a p
+roper knee brace and a net of sacks.
+11. Lamps, signs and heraldry: an iron lamp post with a bishop-mitre cap (unlit, open iron frame, no glass), a shed lan
+tern, a cream banner with the crowned-knight crest, and a stone crest plaque. Also the pictogram boards, icons only: a 
+crate with an outward arrow, a crate with an inward arrow, a pawn stepping onto a pallet under a green lamp, a crate ha
+nging over a crossed-out pawn, and a pawn pushing a door.
+
+Bottom row, labelled material swatches: cream limestone, flagstone, shade stone, white marble (no climb), roof slate, l
+ight oak, walnut, dark iron, matte brass, functional gold, sand canvas, canal water.
+
+AVOID: any text except the title, ribbon and labels this entry asks for - no numbers, sizes, letters or words on signs,
+ crates, boards or floors (signs are pictograms only); faces, eyes or blush on buildings, carvings, machines or horses;
+ any chess piece other than the pawn players, and no statues of pieces; people or extra figures; cone or pyramid roofs 
+on the yard's towers; shiny gold trim; glass and flames; a chessboard or checker over a floor; painted arrows on floors
+; posts, props or railings added on the paths; portcullises, drawbridges, capstans or overhead chains; ruins, modern ob
+jects, photorealism.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Item -LiteralPath 'C:/Work/ChessFight-Se
+oungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_01_overview.png','C:/Work/ChessFight-SeoungTest/A
+rtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_05_hoist_loft_and_berth.png','C:/Work/ChessFight-SeoungTest
+/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_06_pond_cliff_and_gate.png','C:/Work/ChessFight-SeoungTes
+t/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_07_architecture_modules.png','C:/Work/ChessFight-SeoungT
+est/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_08_props_materials.png','C:/Work/ChessFight-SeoungTest
+/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_09_machines_orthographic.png' -ErrorAction SilentlyContin
+ue | Select-Object Name,Length" in C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRe
+fs
+ exited 1 in 454ms:
+codex
+첫 전체 조감도에서 마차 다섯 대와 정면 수차는 보이지만, 흰 절벽이 거칠게 표현됐습니다. 매끈한 절벽 조건을 앞에 명시해 한 번 더 생성하겠습니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-a12093e0-70c9-47a6-b22f-3e58bffb34c7.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_01_overview.png'" in C:\Work\C
+hessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 396ms:
+codex
+두 번째 조감도를 저장했습니다. 이어서 호이스트 네 팔레트의 좌우 상태와 네 체인에 매달린 보관함을 중심으로 창고 장면을 생성하겠습니다.
+
+codex
+창고 장면은 바깥 팔레트가 초록등 아래 내려오고 안쪽 팔레트가 빨간등 아래 올라간 대칭 구도로 나왔습니다. 난간 없는 데크와 보관함 체인도 확인했으며, 다음은 연못·절벽·최종 관문입니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-3156abc4-fa2d-4303-96d5-2ca214c78ca1.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_05_hoist_loft_and_berth.png'" 
+in C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 342ms:
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-f1b516a4-c618-4c11-acd8-ffdc9151f76a.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_06_pond_cliff_and_gate.png'" i
+n C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 330ms:
+codex
+연못 장면을 저장했습니다. 다음은 열 개 건축 모듈 시트이며, 항목 번호 중복과 두 관문의 평평한 상인방을 살펴보겠습니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-de52ce2a-121b-4617-90bc-6f2e78b6605e.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_07_architecture_modules.png'" 
+in C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 294ms:
+codex
+건축 시트는 열 항목이 한 번씩 표시되고 두 관문 모두 평평한 상인방으로 나왔습니다. 이어서 소품 열한 항목과 재질 견본 열두 개를 생성하겠습니다.
+
+codex
+소품과 재질 견본 수는 맞지만, 일부 마차등과 신호등이 유리로 막힌 형태입니다. 유리 없는 열린 철제 프레임을 강조해 한 번 더 생성하겠습니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-6a935e61-951e-4ff1-bf15-7eb523794f1f.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_08_props_materials.png'" in C:
+\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 320ms:
+codex
+수정된 소품 시트를 저장했습니다. 마지막은 기계 여덟 종의 3/4 뷰와 작은 정투상 뷰를 함께 담는 모델링 시트입니다.
+
+codex
+기계 시트에는 여덟 항목과 작은 투상도가 들어갔지만 일부 램프에 유리 표현이 남았습니다. 마지막 재생성에서는 열린 철제 램프를 우선 명시하겠습니다.
+
+codex
+여섯 장을 모두 선택했습니다. 이제 PNG 원본을 변형하지 않고, 저장된 파일의 해상도와 용량만 확인하겠습니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/kerri/.code
+x/generated_images/01a1de4b-bbba-70b2-a3b0-327ed011aa2b/exec-10273500-915b-48d7-a5b1-45cf031c17d3.png' -Destination 'C:
+/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_09_machines_orthographic.png'"
+ in C:\Work\ChessFight-SeoungTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 467ms:
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Add-Type -AssemblyName System.Drawing
+Get-Item -LiteralPath '.\\RCY_01_overview.png','.\\RCY_05_hoist_loft_and_berth.png','.\\RCY_06_pond_cliff_and_gate.png'
+,'.\\RCY_07_architecture_modules.png','.\\RCY_08_props_materials.png','.\\RCY_09_machines_orthographic.png' | ForEach-O
+bject { "'$rcyImage = [System.Drawing.Image]::FromFile($_.FullName); [PSCustomObject]@{Path=$_.FullName; Bytes=$_.Lengt
+h; Width=$rcyImage.Width; Height=$rcyImage.Height}; $rcyImage.Dispose() } | ConvertTo-Json' in C:\Work\ChessFight-Seoun
+gTest\ArtSource\PawnRush\CarriageYardConcept\R677_ModelingRefs
+ succeeded in 805ms:
+[
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_01_
+overview.png",
+        "Bytes":  2872123,
+        "Width":  1024,
+        "Height":  1536
+    },
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_05_
+hoist_loft_and_berth.png",
+        "Bytes":  2803050,
+        "Width":  1536,
+        "Height":  1024
+    },
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_06_
+pond_cliff_and_gate.png",
+        "Bytes":  2652291,
+        "Width":  1536,
+        "Height":  1024
+    },
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_07_
+architecture_modules.png",
+        "Bytes":  2414058,
+        "Width":  1536,
+        "Height":  1024
+    },
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_08_
+props_materials.png",
+        "Bytes":  2714841,
+        "Width":  1536,
+        "Height":  1024
+    },
+    {
+        "Path":  "C:\\Work\\ChessFight-SeoungTest\\ArtSource\\PawnRush\\CarriageYardConcept\\R677_ModelingRefs\\RCY_09_
+machines_orthographic.png",
+        "Bytes":  2591912,
+        "Width":  1536,
+        "Height":  1024
+    }
+]
+
+codex
+PNG 여섯 장을 요청한 해상도로 저장했습니다. 리사이즈·크롭·변환은 하지 않았습니다.
+
+| 파일 경로 | 해상도 | 용량 | 설명 |
+|---|---|---:|---|
+| [RCY_01_overview.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_01_o
+verview.png) | 1024×1536 | 2,872,123 B | 마차장부터 최종 관문까지의 전체 조감도 |
+| [RCY_05_hoist_loft_and_berth.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingR
+efs/RCY_05_hoist_loft_and_berth.png) | 1536×1024 | 2,803,050 B | 대칭 호이스트와 중량 보관함 하역 구역 |
+| [RCY_06_pond_cliff_and_gate.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRe
+fs/RCY_06_pond_cliff_and_gate.png) | 1536×1024 | 2,652,291 B | 패들 수차·대리석 절벽·최종 관문 |
+| [RCY_07_architecture_modules.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingR
+efs/RCY_07_architecture_modules.png) | 1536×1024 | 2,414,058 B | 건축 모듈 열 종 분해 시트 |
+| [RCY_08_props_materials.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/R
+CY_08_props_materials.png) | 1536×1024 | 2,714,841 B | 소품 열한 항목과 재질 견본 열두 개 |
+| [RCY_09_machines_orthographic.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_Modeling
+Refs/RCY_09_machines_orthographic.png) | 1536×1024 | 2,591,912 B | 기계 여덟 종의 입체·정투상 참고 시트 |
+tokens used
+68,736
+PNG 여섯 장을 요청한 해상도로 저장했습니다. 리사이즈·크롭·변환은 하지 않았습니다.
+
+| 파일 경로 | 해상도 | 용량 | 설명 |
+|---|---|---:|---|
+| [RCY_01_overview.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_01_overview.png) | 1024×1536 | 2,872,123 B | 마차장부터 최종 관문까지의 전체 조감도 |
+| [RCY_05_hoist_loft_and_berth.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_05_hoist_loft_and_berth.png) | 1536×1024 | 2,803,050 B | 대칭 호이스트와 중량 보관함 하역 구역 |
+| [RCY_06_pond_cliff_and_gate.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_06_pond_cliff_and_gate.png) | 1536×1024 | 2,652,291 B | 패들 수차·대리석 절벽·최종 관문 |
+| [RCY_07_architecture_modules.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_07_architecture_modules.png) | 1536×1024 | 2,414,058 B | 건축 모듈 열 종 분해 시트 |
+| [RCY_08_props_materials.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_08_props_materials.png) | 1536×1024 | 2,714,841 B | 소품 열한 항목과 재질 견본 열두 개 |
+| [RCY_09_machines_orthographic.png](C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardConcept/R677_ModelingRefs/RCY_09_machines_orthographic.png) | 1536×1024 | 2,591,912 B | 기계 여덟 종의 입체·정투상 참고 시트 |

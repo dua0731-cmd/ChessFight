@@ -1020,3 +1020,7 @@ R662 커밋을 Revert하면 R661의 2구역(짐더미 줄 셋, 44 m)으로 돌�
 - 그림은 아직 뽑지 않았다.
 - 배치 숫자는 코드에서 읽고 반박 검토로 다시 맞췄다. 배치도 · 폰 그림은 AI가 눈으로 확인했다.
 - 이미지 생성기가 이 배치를 얼마나 따르는지는 뽑아 봐야 안다. R509 · R511에서는 배치도를 붙였을 때 개수가 맞았다.
+
+## 20. 블록아웃을 Blender 모델로 (seoungtest R677–R680, 2026-11-16, seoungtest 브랜치 — AI 확인만, 사용자 Unity 확인 전)
+
+구역별 모델 · 붙이는 코드(`RoyalCarriageYard.Dressing.cs`, `RoyalCarriageYard.Castle.cs`, `YardHorse.cs`, `YardHorseRig.cs`) · 내보내기 순서 · 남은 일은 [RCY_MODELS](RCY_MODELS.md)에 있다. 콜라이더 · 게임 폭 · 신호는 바꾸지 않았고, 성 키트만 AI 텍스처, 나머지는 회색 클레이다.

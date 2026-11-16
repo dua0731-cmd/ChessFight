@@ -197,6 +197,9 @@ namespace ChessFight.PawnRush
         [SerializeField] bool scenery = true;
         [Tooltip("Signs over each section (Korean)")]
         [SerializeField] bool signs = true;
+        [Tooltip("The Blender models over the blockout (R678, RoyalCarriageYard.Dressing.cs): the blockout they cover stops "
+                 + "drawing and keeps colliding. Off: the blockout as before")]
+        [SerializeField] bool models = true;
         [Header("Round")]
         [Tooltip("A section of the round (R508): no start places of its own, the round starts it, and it ends in the boundary "
                  + "to the next mini-game instead of the finish court")]
@@ -247,11 +250,16 @@ namespace ChessFight.PawnRush
                 Platform();
                 if (scenery) Scenery();
                 if (asSection) SectionParts();
+                if (models) Dress();
             }
             finally
             {
                 go.SetActive(true);
             }
+            // The moving obstacles build their parts in their own Awake (just now): their models go on after, and the
+            // castle's labels (the push gate's own among them) take their material then.
+            if (models) DressMovers();
+            CastleLabels();
         }
 
         // The round placed this section and gave it its start and seed (R508; again when a match learns its go).

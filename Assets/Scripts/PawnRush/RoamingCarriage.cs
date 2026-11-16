@@ -94,6 +94,7 @@ namespace ChessFight.PawnRush
         AudioSource rumble, crack;
         RoamingFleet.Stage shown;
         Vector3 lastPosition;
+        Quaternion lastRotation = Quaternion.identity;
         float wheelAngle;
         bool built;
 
@@ -341,14 +342,20 @@ namespace ChessFight.PawnRush
             var pose = Now;
             if (horses != null)
             {
-                // A stride with the way it has gone; through its aim a loose horse rears (a team's pair toss their
-                // heads), read from the plan, so every PC draws the same.
-                travelled = (travelled + Mathf.Abs(step)) % 1000f;
+                // A stride with the way it has gone, and turning on the spot the horses walk round it (R678: a team's
+                // pair 2.2 m ahead of its middle, a loose horse's legs ~0.8 m from its own; a cut to a new plan is no
+                // stride). Through its aim a loose horse rears (a team's pair toss their heads), read from the plan, so
+                // every PC draws the same.
+                float turned = Quaternion.Angle(lastRotation, transform.rotation) * Mathf.Deg2Rad;
+                lastRotation = transform.rotation;
+                float swing = turned < .5f ? turned * (look == Look.Team ? 2.2f : .8f) : 0f;
+                float pace = Time.deltaTime > 0f ? swing / Time.deltaTime : 0f;
+                travelled = (travelled + Mathf.Abs(step) + swing) % 1000f;
                 float warned = pose.Stage == RoamingFleet.Stage.Aiming && pose.StageEnd > pose.StageStart
                     ? (float)((ObstacleClock.Now + phase - pose.StageStart) / (pose.StageEnd - pose.StageStart)) : -1f;
                 float rear = YardHorse.Rear(warned) * (look == Look.Horse ? 1f : .3f);
                 foreach (var horse in horses)
-                    horse?.Pose(ObstacleClock.Now, rear, (float)pose.Speed, Mathf.Max(1f, TopSpeed), travelled);
+                    horse?.Pose(ObstacleClock.Now, rear, Mathf.Max((float)pose.Speed, pace), Mathf.Max(1f, TopSpeed), travelled);
             }
             bool warning = pose.Stage == RoamingFleet.Stage.Turning || pose.Stage == RoamingFleet.Stage.Aiming || pose.Stage == RoamingFleet.Stage.Charging;
             if (lamps != null)
