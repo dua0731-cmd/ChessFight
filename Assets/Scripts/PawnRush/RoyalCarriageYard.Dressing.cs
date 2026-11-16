@@ -14,8 +14,11 @@ namespace ChessFight.PawnRush
     //
     //   RcyEntrance         zone 1: the start court, the tablet, the yard's paving and walls, the storage sheds and their
     //                       loads, the court's crates (the gate wall and its towers are the castle kit's, below)
+    //                       (RcyEntrance, RcyCanal and RcySorting are each cut into ~10 m cells along z since R681, one
+    //                       child renderer per cell, so what is off screen is culled; Hang dresses every child alike)
     //   RcyCoach            the closed coach (승규 11-15 "닫힌 마차") on every YardKit.Carriage - the parked one and the
-    //   RcyCoachWheel       roaming teams' - and a wheel on each of its Wheel pivots
+    //   RcyCoachWheel       roaming teams' - and a wheel on each of its Wheel pivots (R681: a locker between the wheels
+    //                       and a boot and trunk behind fill the carriage's collider box to a pawn's height)
     //   RcyHorse            every YardHorse (승규 11-15, a picture of chunky royal horses): one skinned horse in its
     //                       coat (bay, grey, black) with its bridle, plume, girth and breast collar, and the harness or
     //                       the saddle; YardHorseRig turns its bones with YardHorse's pivots (horse_model.py)

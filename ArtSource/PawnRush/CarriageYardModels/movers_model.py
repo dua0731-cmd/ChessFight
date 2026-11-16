@@ -189,6 +189,77 @@ def shutter(col, s, y0, y1, z0, z1):
     return parts
 
 
+# R681 (승규 11-16 "모델로 상자 채우기"): the coach's collider (the parked one's 2.3 x 2.75 x 4.2 m box, a roaming team's
+# as wide and as far back) runs 15 cm past the body's sides, 35 cm past its back and down to the ground, and between the
+# wheels (0.3 .. 0.9 m up) the box was empty air. A locker slung between the wheels (up to the door's sill, where the
+# tub's round side is still 50 cm in) and a boot and a trunk behind fill it to a pawn's height and over, their outsides
+# 1.5 - 2 cm inside the box (x +-1.15, y -2.1).
+BOOT_X, BOOT_Y, BOOT_Z0, BOOT_Z1 = 1.13, .7, .32, 1.0
+
+
+def coach_locker(col):
+    """The locker between the wheels: painted panels set back in walnut rails, gilt beads round two panels a side and
+    one at each end, a gilt pull on each side panel, iron angles on its corners."""
+    parts = []
+    x, y, z0, z1 = BOOT_X, BOOT_Y, BOOT_Z0, BOOT_Z1
+    parts.append(box(col, "Locker", (-x + .02, -y + .02, z0 + .05), (x - .02, y - .02, z1 - .05), PAINT))
+    for za, zb in ((z0, z0 + .06), (z1 - .06, z1)):
+        parts.append(box(col, "Locker rail", (-x, -y, za), (x, y, zb), WALNUT, bevel=.015))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            xa, xb = sorted((sx * (x - .07), sx * (x + .005)))
+            ya, yb = sorted((sy * (y - .07), sy * (y + .005)))
+            parts.append(box(col, "Locker corner", (xa, ya, z0 + .06), (xb, yb, z1 - .06), IRON, bevel=.004, segments=1))
+    face, proud = x - .02, .012
+    za, zb = z0 + .12, z1 - .12
+    for s in (-1, 1):
+        fa, fb = sorted((s * face, s * (face + proud)))
+        for ya, yb in ((-.6, -.04), (.04, .6)):
+            for blo, bhi in (((fa, ya, za), (fb, yb, za + .025)), ((fa, ya, zb - .025), (fb, yb, zb)),
+                             ((fa, ya, za), (fb, ya + .025, zb)), ((fa, yb - .025, za), (fb, yb, zb))):
+                parts.append(box(col, "Locker bead", blo, bhi, GOLD))
+            parts.append(cylinder(col, "Locker pull", (s * (face + proud + .01), (ya + yb) / 2, (za + zb) / 2), (0, 1, 0), .012, .12, GOLD, segments=8))
+    for s in (-1, 1):
+        ea, eb = sorted((s * (y - .02), s * (y - .02 + proud)))
+        for blo, bhi in (((-.95, ea, za), (.95, eb, za + .025)), ((-.95, ea, zb - .025), (.95, eb, zb)),
+                         ((-.95, ea, za), (-.925, eb, zb)), ((.925, ea, za), (.95, eb, zb))):
+            parts.append(box(col, "Locker bead", blo, bhi, GOLD))
+    return parts
+
+
+def coach_trunk(col):
+    """Behind the body: a boot hung on the perch's end where the footman's board was, the luggage rack on it, and a
+    trunk on the rack: leather over walnut, a lid with rounded edges, two iron bands, brass corners and two straps over
+    the lid."""
+    parts = []
+    y0, y1 = -2.08, CAB_Y0 - .025          # the backs (2 cm inside the box) and the fronts, clear of the waist rail
+    parts.append(box(col, "Rear boot", (-.9, y0 + .01, .44), (.9, y1, .8), PAINT))
+    for za, zb in ((.4, .46), (.78, .84)):
+        parts.append(box(col, "Boot rail", (-.92, y0, za), (.92, y1, zb), WALNUT, bevel=.012))
+    for blo, bhi in (((-.7, y0 - .002, .52), (.7, y0 + .01, .545)), ((-.7, y0 - .002, .695), (.7, y0 + .01, .72)),
+                     ((-.7, y0 - .002, .52), (-.675, y0 + .01, .72)), ((.675, y0 - .002, .52), (.7, y0 + .01, .72))):
+        parts.append(box(col, "Boot bead", blo, bhi, GOLD))
+    parts.append(box(col, "Luggage rack", (-.96, y0, .84), (.96, y1 + .015, .9), WALNUT, bevel=.015))
+    for s in (-1, 1):
+        parts.append(box(col, "Rack rail", (min(s * .96, s * .92), y0, .9), (max(s * .96, s * .92), y1, .98), WALNUT, bevel=.01, segments=1))
+    tz0, tz1 = .9, 1.62
+    parts.append(box(col, "Trunk", (-.9, y0 + .01, tz0), (.9, y1, tz1 - .09), LEATHER, bevel=.02))
+    lid = box(col, "Trunk lid", (-.91, y0, tz1 - .1), (.91, y1, tz1), LEATHER)
+    bevel_mod(lid, .035, 3)
+    parts.append(lid)
+    for z in (tz0 + .14, tz1 - .24):
+        parts.append(box(col, "Trunk band", (-.905, y0 + .004, z), (.905, y1 - .004, z + .04), IRON, bevel=.004, segments=1))
+    for sx in (-1, 1):
+        for z in (tz0, tz1 - .1):
+            xa, xb = sorted((sx * .84, sx * .915))
+            parts.append(box(col, "Trunk corner", (xa, y0 - .006, z), (xb, y0 + .07, z + .1), BRASS, bevel=.008, segments=1))
+    for x in (-.45, .45):
+        parts.append(strap(col, "Trunk strap", (x, y0 + .004, tz0 + .06), (x, y0 + .004, tz1), w=.07, t=.012, up=Vector((0, 1, 0))))
+        parts.append(strap(col, "Trunk strap", (x, y0, tz1 + .006), (x, y1, tz1 + .006), w=.07, t=.012))
+        parts.append(box(col, "Trunk buckle", (x - .05, y0 - .008, tz1 - .3), (x + .05, y0 + .002, tz1 - .22), BRASS))
+    return parts
+
+
 def coach(col):
     parts = []
     # --- undercarriage: perch, axle beds, the fore carriage's turntable, four elliptic springs
@@ -279,15 +350,14 @@ def coach(col):
     for s in (-1, 1):
         parts.append(beam(col, "Box iron", (s * .6, 1.6, .66), (s * .62, 2.04, .9), w=.04, h=.04, mat=IRON, segments=1))
         parts.append(beam(col, "Seat rail", (s * .66, 1.24, 1.45), (s * .66, 1.76, 1.45), w=.03, h=.03, mat=GOLD, segments=1))
-    # --- the footman's board behind, its two hand straps
-    parts.append(box(col, "Footman's board", (-.55, -2.08, .84), (.55, -1.8, .9), WALNUT, bevel=.015))
+    # --- behind: the luggage rack (was the footman's board) and its trunk, the footman's hand straps over it
+    parts += coach_trunk(col)
     for s in (-1, 1):
-        parts.append(beam(col, "Board iron", (s * .45, -1.75, .66), (s * .48, -2.05, .84), w=.04, h=.04, mat=IRON, segments=1))
         parts.append(strap(col, "Hand strap", (s * .5, -1.78, 2.3), (s * .5, -1.78, 1.75), w=.06, t=.02, up=Vector((0, 1, 0))))
-    # --- the steps under the doors
+    # --- the locker slung between the wheels, the steps under the doors on its top edge
+    parts += coach_locker(col)
     for s in (-1, 1):
-        parts.append(beam(col, "Step iron", (s * .82, -.3, .9), (s * .98, -.3, .58), w=.03, h=.03, mat=IRON, segments=1))
-        parts.append(box(col, "Step", (s * .98 - .09, -.48, .55), (s * .98 + .07, -.12, .58), IRON))
+        parts.append(box(col, "Step", (min(s * .98, s * 1.135), -.48, BOOT_Z1), (max(s * .98, s * 1.135), -.12, BOOT_Z1 + .03), IRON, bevel=.005, segments=1))
     # --- lamp housings round the code's lamps (x 1.08, y 1.2, z 2.02; the code scales them to 0.32 x 0.54)
     for s in (-1, 1):
         cx, cy = s * 1.08, 1.2

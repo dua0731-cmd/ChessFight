@@ -203,7 +203,11 @@ def tile_course(col, p0, p1, y0, y1, up, pitch=.3, amp=.03, mat=TILE):
         for f in (0, .25, .5, .75):
             top.append((y0 + (k + f) * pitch, amp * math.sin(2 * math.pi * f) + amp))
     top.append((y1, amp))
-    outline = top + [(y1, -.02), (y0, -.02)]
+    # R681: the flat underside gets a point every metre, so the course's two side faces triangulate into short pieces
+    # rather than slivers fanned the whole 45 m from two corners (split_cells cuts the course at each cell line, and a
+    # cut through a fan made 9k triangles).
+    nb = max(1, int(round(y1 - y0)))
+    outline = top + [(y1 - (y1 - y0) * i / nb, -.02) for i in range(nb + 1)]
     bm = bmesh.new()
     r0 = [bm.verts.new(Vector((p0.x, y, p0.z)) + up * h) for y, h in outline]
     r1 = [bm.verts.new(Vector((p1.x, y, p1.z)) + up * h) for y, h in outline]
@@ -498,7 +502,8 @@ def build_entrance():
         xa, xb = sorted((s * 19.0, s * YARD_HALF))
         for ya, yb in ((lo.y, SHED_Z0), (SHED_Z1, hi.y)):
             pieces.append(flagstones(col, "Yard paving", xa, xb, ya, yb, hi.z, size=2.0, rng=strip_rng))
-    return join(col, "Entrance", pieces)
+    # R681: one object per ~10 m along the yard (rcy_kit.split_cells), so Unity can cull what is off screen.
+    return split_cells(join(col, "Entrance", pieces))
 
 
 if globals().get("RCY_BUILD", True):

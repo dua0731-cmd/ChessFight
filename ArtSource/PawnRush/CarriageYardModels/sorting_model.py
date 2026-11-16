@@ -492,7 +492,8 @@ def build_sorting():
     for x, y in ((-11.2, 82.8), (11.2, 82.8), (-8.5, 131.95), (8.5, 131.95), (-21.5, 131.95), (21.5, 131.95)):
         pieces += lamp_post(col, x, y)
     pieces += basin(col)
-    return join(col, "Sorting", pieces)
+    # R681: one object per ~10 m along the yard (rcy_kit.split_cells), so Unity can cull what is off screen.
+    return split_cells(join(col, "Sorting", pieces))
 
 
 if globals().get("RCY_BUILD", True):

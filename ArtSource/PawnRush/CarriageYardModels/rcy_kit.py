@@ -259,6 +259,101 @@ def join(col, name, objs):
     return ob
 
 
+CELL = 10.0   # R681: the length of a zone model's cells along Blender y (Unity z), split_cells
+
+
+def split_cells(ob, size=CELL):
+    """R681 (seoungtest, lod-pipeline / scene-assembly): cuts a joined zone model into one object per `size` m cell
+    along Blender y (= Unity z, the way north), so Unity can cull the cells off screen (and out of the shadows' reach)
+    instead of drawing a whole zone's 100-200k triangles whenever any of it shows.
+
+    The model's length is shared into equal cells as near `size` as fit (no sliver at either end). A part (a connected
+    piece) no longer than a cell goes whole to the cell its middle is in; a longer one (a shed roof's tile course, a
+    wall's coping, a base slab) is cut at the cell lines. Positions are the joined model's, and so are the normals: the
+    corner normals are carried through the cut as custom normals, so no seam shades where a smooth part is cut. Each
+    cell keeps only the material slots it uses. Returns the cell objects, south to north, named
+    '<name> z<cell start in whole m, three digits>' (Unity sorts the FBX's children by name)."""
+    me, name = ob.data, ob.name
+    col = ob.users_collection[0]
+    mats = list(me.materials)
+    ys = [v.co.y for v in me.vertices]
+    lo_y = min(ys)
+    count = max(1, round((max(ys) - lo_y) / size))
+    size = (max(ys) - lo_y) / count
+
+    def at(y):
+        return min(count - 1, max(0, math.floor((y - lo_y) / size)))
+
+    normals = [0.0] * (len(me.loops) * 3)
+    me.corner_normals.foreach_get("vector", normals)
+    att = me.attributes.new("rcy_n", "FLOAT_VECTOR", "CORNER")
+    att.data.foreach_set("vector", normals)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    me.attributes.remove(me.attributes["rcy_n"])
+    cell = bm.faces.layers.int.new("rcy_cell")
+    bm.faces.index_update()
+    seen = set()
+    islands = []
+    for f0 in bm.faces:
+        if f0.index in seen:
+            continue
+        stack, faces = [f0], []
+        seen.add(f0.index)
+        while stack:
+            f = stack.pop()
+            faces.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if g.index not in seen:
+                        seen.add(g.index)
+                        stack.append(g)
+        islands.append(faces)
+    for faces in islands:
+        verts = {v for f in faces for v in f.verts}
+        y0, y1 = min(v.co.y for v in verts), max(v.co.y for v in verts)
+        if y1 - y0 <= size:
+            k = at((y0 + y1) / 2)
+            for f in faces:
+                f[cell] = k
+            continue
+        geom = list(verts) + list({e for f in faces for e in f.edges}) + faces
+        for k in range(1, count):
+            line = lo_y + k * size
+            if y0 + 1e-4 < line < y1 - 1e-4:
+                geom = bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-5, plane_co=(0, line, 0), plane_no=(0, 1, 0))["geom"]
+        for f in geom:
+            if isinstance(f, bmesh.types.BMFace):
+                f[cell] = at(f.calc_center_median().y)
+    keys = sorted({f[cell] for f in bm.faces})
+    out = []
+    for k in keys:
+        part = bm.copy()
+        layer = part.faces.layers.int["rcy_cell"]
+        bmesh.ops.delete(part, geom=[f for f in part.faces if f[layer] != k], context="FACES")
+        used = sorted({f.material_index for f in part.faces})
+        remap = {m: i for i, m in enumerate(used)}
+        for f in part.faces:
+            f.material_index = remap[f.material_index]
+        part.faces.layers.int.remove(layer)
+        cme = bpy.data.meshes.new("%s z%03d" % (name, math.floor(lo_y + k * size + 1e-6)))
+        part.to_mesh(cme)
+        part.free()
+        for m in used:
+            cme.materials.append(mats[m])
+        vals = [0.0] * (len(cme.loops) * 3)
+        cme.attributes["rcy_n"].data.foreach_get("vector", vals)
+        cme.attributes.remove(cme.attributes["rcy_n"])
+        cme.normals_split_custom_set([Vector(vals[i:i + 3]).normalized() for i in range(0, len(vals), 3)])
+        cob = bpy.data.objects.new(cme.name, cme)
+        col.objects.link(cob)
+        out.append(cob)
+    bm.free()
+    bpy.data.objects.remove(ob, do_unlink=True)
+    bpy.data.meshes.remove(me)
+    return out
+
+
 SHARP_ANGLE = math.radians(65)
 
 

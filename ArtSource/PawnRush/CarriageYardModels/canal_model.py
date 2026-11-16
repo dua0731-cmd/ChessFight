@@ -161,7 +161,8 @@ def build_canal():
             z += 3.0
     # Fold everything into one object per material family's worth of pieces (few draw calls).
     rest = [o for o in col.objects]
-    return join(col, "Canal", rest)
+    # R681: then one object per ~10 m along the canal (rcy_kit.split_cells), so Unity can cull what is off screen.
+    return split_cells(join(col, "Canal", rest))
 
 
 # ------------------------------------------------------------------ the wheel (its own frame)
