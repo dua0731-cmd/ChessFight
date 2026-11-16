@@ -699,6 +699,54 @@ public static class SessionFlowTests
                 Check(blind.CanRejoin&&blind.RejoinMatch==room,"setup: a player who left a match under way is offered the way back: "+blind.Error);
                 Check(!seen.CanRejoin&&seen.RejoinMatch==0,"a player who saw the result is offered the way back into the match");
                 As(seen,seen.Rejoin);Step(10);Check(seen.Match==0,"a player who saw the result went back into the match");});
+            // R689 (the 11-15 build test, the third waiting room): the PC a waiting room had just been handed to read the
+            // seats once the room was its own and gave up the maker's seat, its Steam not listing the maker right then; the
+            // maker, finding itself off the roster, left ("예약이 해제되었거나 파티원 연결이 끊겼습니다"). The seats as the
+            // last host left them stand for SteamSession.AdoptedSeatHold now - a hold, not a pass: a player the new host's
+            // Steam still does not list after that gives up its seat as before.
+            Action<float> handedOverBlind=blind=>{
+                Setup(2);var maker=clients[0];var best=clients[1];maker.LocalFitness=852;best.LocalFitness=914;FakeSteam.OwnerDelay=2;
+                As(maker,()=>maker.FindMatch());Step(20);ulong room=maker.Match;
+                Check(maker.IsHost&&room!=0,"setup: the maker hosts its waiting room");
+                As(best,()=>best.FindMatch());
+                for(int t=0;t<120&&!(best.Match==room&&best.IsHost);t++)Step(1);
+                Check(best.IsHost&&Owner(best)==maker.Self&&best.Roster.ContainsKey(maker.Self),"setup: the room handed to the better PC, its ownership on the way");
+                // The new host's Steam stops listing the maker; then the room becomes the new host's.
+                FakeSteam.Unseen.Add((best.Self,maker.Self));int lines=UnityEngine.Debug.Lines.Count;
+                for(int t=0;t<40&&Owner(best)!=best.Self;t++)Step(1);
+                // (The room became the new host's up to a step and a poll before this.)
+                Step(1);float adopted=UnityEngine.Time.realtimeSinceStartup;
+                Check(Owner(best)==best.Self&&UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("넘겨받은 대기실")),"setup: the room is the new host's and says it holds the maker's seat");
+                while(UnityEngine.Time.realtimeSinceStartup<adopted+Math.Min(blind,SteamSession.AdoptedSeatHold-1.2f))Step(1);
+                Check(maker.Match==room&&maker.Error==""&&maker.Roster.ContainsKey(maker.Self)&&best.Roster.ContainsKey(maker.Self)&&clients.All(c=>c.Manager==maker.Self),
+                      "the maker lost its seat or the room's management as the room was handed on: "+maker.Error+" | host sees the maker "+best.Roster.ContainsKey(maker.Self)+
+                      ", managers "+string.Join(",",clients.Select(c=>c.Manager)));
+                while(UnityEngine.Time.realtimeSinceStartup<adopted+blind)Step(1);
+                FakeSteam.Unseen.Remove((best.Self,maker.Self));Step(10);
+                bool kept=maker.Match==room&&maker.Error==""&&best.Roster.ContainsKey(maker.Self);
+                Check(kept==(blind<SteamSession.AdoptedSeatHold),"after "+blind+" s unlisted the maker's seat was "+(kept?"still held":"given up")+": "+maker.Error);};
+            Test("R689: a waiting room handed on keeps the seats its last host gave while the new host's Steam does not list a player for a moment",()=>handedOverBlind(1));
+            Test("R689: the seat is held for a moment only: a player the new host's Steam still does not list after that gives it up",()=>handedOverBlind(5));
+            // R689 (the 11-15 build test, the fourth match): a host that leaves a match leaves its last roster in the room,
+            // itself on it. Coming back at once, the PC found itself there and stopped asking for its seat; once the room
+            // was the next host's, that host's first roster - without it, as it had been away - threw it out. A player
+            // coming back is seated by the host's answer to its own request now.
+            Test("R689: a host that leaves a match and comes straight back is seated by the next host, not thrown out by the roster it left behind",()=>{
+                Room(new[]{500,900,700,600});var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];
+                As(a,a.StartGame);Step(20);
+                Check(b.IsHost&&Owner(b)==b.Self&&clients.All(x=>x.Started)&&RoomData(b,"successors").StartsWith(c.Self+","),"setup: the best PC hosts and owns the match: "+RoomData(b,"successors"));
+                // Someone is away already (on 11-15 others had left that room before), so the room's door stands open.
+                ulong room=b.Match;As(d,d.Cancel);Step(2);
+                Check(FakeSteam.Lobbies[room].Joinable&&b.Away==1,"setup: one player away, the door open");
+                FakeSteam.OwnerDelay=8;int lines=UnityEngine.Debug.Lines.Count;
+                As(b,b.Cancel);Step(1);
+                Check(c.IsHost&&Owner(c)!=c.Self&&b.CanRejoin&&b.RejoinMatch==room,"setup: the next PC hosts before the room is its own, the leaver may go back: owner "+Owner(c));
+                As(b,b.Rejoin);
+                for(int t=0;t<15&&!(b.Match==room&&b.Roster.ContainsKey(b.Self));t++)Step(1);
+                Check(b.Match==room&&b.Roster.ContainsKey(b.Self)&&Owner(c)!=c.Self,"setup: back in the room, the leaver reads the roster it left behind before the room is the next host's: match "+b.Match+" on it "+b.Roster.ContainsKey(b.Self)+" owner "+Owner(c));
+                Step(40);
+                Check(b.Match==room&&b.Started&&b.Error==""&&new[]{a,b,c}.All(x=>x.Roster.ContainsKey(b.Self)),"the leaver did not get back into its match: "+b.Error);
+                Check(!UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("예약이 해제되었거나")),"the roster the leaver left behind threw it out");});
             // R504: accepting an old invite to one's own party left it and joined it again, and a leader lost the lead.
             Test("An invite to the party one is already in changes nothing, and the leader keeps the lead",()=>{
                 Setup(2);JoinParty(1,0);var leader=clients[0];var member=clients[1];ulong party=leader.Party;

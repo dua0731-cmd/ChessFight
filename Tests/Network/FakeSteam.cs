@@ -102,8 +102,13 @@ namespace Steamworks
         public static float DataDelay;
         // Users whose connection to Steam is down (SteamUser.BLoggedOn false). Their lobby calls still go through here.
         public static HashSet<ulong> LoggedOff=new HashSet<ulong>();
+        // R689 (the 11-15 build test): members one user's Steam does not list for a while although they are in the room
+        // (viewer, member) - the PC a waiting room had just come to did not list the room's maker. Only that user's
+        // member list and member data leave them out; the room itself, its chat and everyone else are as they were.
+        public static HashSet<(ulong viewer,ulong member)> Unseen=new HashSet<(ulong,ulong)>();
+        public static List<ulong> Listed(Lobby l)=>Unseen.Count==0?l.Members:l.Members.Where(m=>!Unseen.Contains((User,m))).ToList();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();OwnerDelay=0;DataDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();Unseen.Clear();OwnerDelay=0;DataDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -184,9 +189,9 @@ namespace Steamworks
             if((l.Data.ContainsKey(key)||l.Writes.Exists(w=>w.by==FakeSteam.User&&w.key==key))&&GetLobbyData(id,key)==value)return true;
             l.Writes.Add((FakeSteam.User,key,value,UnityEngine.Time.realtimeSinceStartup+FakeSteam.DataDelay));return true;
         }
-        public static int GetNumLobbyMembers(CSteamID id)=>FakeSteam.Get(id)?.Members.Count??0;
-        public static CSteamID GetLobbyMemberByIndex(CSteamID id,int i)=>new CSteamID(FakeSteam.Get(id).Members[i]);
-        public static string GetLobbyMemberData(CSteamID id,CSteamID user,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&lobby.MemberData.TryGetValue((user.m_SteamID,key),out var value)?value:"";}
+        public static int GetNumLobbyMembers(CSteamID id) {var lobby=FakeSteam.Get(id);return lobby==null?0:FakeSteam.Listed(lobby).Count;}
+        public static CSteamID GetLobbyMemberByIndex(CSteamID id,int i)=>new CSteamID(FakeSteam.Listed(FakeSteam.Get(id))[i]);
+        public static string GetLobbyMemberData(CSteamID id,CSteamID user,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&!FakeSteam.Unseen.Contains((FakeSteam.User,user.m_SteamID))&&lobby.MemberData.TryGetValue((user.m_SteamID,key),out var value)?value:"";}
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
         public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)
         {ulong from=FakeSteam.User;FakeSteam.Enqueue(invitee.m_SteamID,()=>FakeSteam.Raise(invitee.m_SteamID,new LobbyInvite_t{m_ulSteamIDUser=from,m_ulSteamIDLobby=lobby.m_SteamID}));return true;}
