@@ -112,6 +112,9 @@ namespace ChessFight.PawnRush
         // to do (PawnRushMissions.HowTo) and which side is whose - white's lane and colour, black's lane and colour,
         // this player's own marked "우리 팀". After that the rule stays as one small line under the top edge until
         // the team's gate opens.
+        // R682: under the standings strip when it is on screen (it takes the top middle).
+        static float BriefTop(float scale) => Mathf.Max(64f * scale, PawnRushStandingsHud.Showing ? PawnRushStandingsHud.Bottom + 8f : 0f);
+
         void Briefing(float scale)
         {
             if (game < 0 || game >= PawnRushMissions.Count) return;
@@ -124,7 +127,7 @@ namespace ChessFight.PawnRush
             {
                 // the rule in one line, kept in sight
                 float w = Mathf.Min(760f * scale, Screen.width - 16f), h = 30f * scale;
-                var strip = new Rect((Screen.width - w) * .5f, 64f * scale, w, h);
+                var strip = new Rect((Screen.width - w) * .5f, BriefTop(scale), w, h);
                 GUI.color = new Color(.07f, .09f, .13f, .78f * alpha);
                 GUI.DrawTexture(strip, Texture2D.whiteTexture);
                 GUI.color = ink;
@@ -134,7 +137,7 @@ namespace ChessFight.PawnRush
                 return;
             }
             float cw = Mathf.Min(640f * scale, Screen.width - 16f), ch = 196f * scale;
-            var card = new Rect((Screen.width - cw) * .5f, 64f * scale, cw, ch);
+            var card = new Rect((Screen.width - cw) * .5f, BriefTop(scale), cw, ch);
             GUI.color = new Color(brass.r, brass.g, brass.b, .9f * alpha);
             GUI.DrawTexture(new Rect(card.x - 2f, card.y - 2f, card.width + 4f, card.height + 4f), Texture2D.whiteTexture);
             GUI.color = new Color(.07f, .09f, .13f, .95f * alpha);

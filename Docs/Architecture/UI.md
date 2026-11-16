@@ -757,3 +757,20 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 미니게임 설명 카드 | `PawnRush/MiniGameSection.Guidance.cs` `Briefing` | 방에 들어서면 9초 카드(방 · 게임 · 하는 법 · 팀 칩), 그 뒤 한 줄. 문구는 Core `PawnRushMissions.HowTo`. [미니게임 구간 문서](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) |
 
 경기 중에 **마우스로 누르는** 화면을 더 만들 때는 반드시 `PointerTaken`을 세운다([PITFALLS R679](../Environment/PITFALLS.md)). 사용자 확인 전.
+
+## 순위 · 코스 진행도 HUD (R682, 2026-11-16)
+
+6 대 6 시험 뒤 사용자 목록 6 · 7번, 시안 [R681](../PawnRush/Mockups/R681_RankProgressHud.svg)의 B안. 폰 러쉬 경기의 OnGUI이고 아무것도 보내지 않는다.
+
+| 부분 | 무엇 | 값이 오는 곳 |
+|---|---|---|
+| 내 순위 | 띠 왼쪽 "6위 / 12", 바탕은 내 팀 색(관전이면 "관전") | Core `PawnRushStandings.Ranks` — 나보다 확실히 앞선 사람 수 + 1, 같은 값은 같은 순위 |
+| 진행도 트랙 | 구간마다 한 칸(너비: 미니게임 1.1, 그 밖은 길이의 제곱근 · 0.7 ~ 2), 윗줄 백팀 · 아랫줄 흑팀, 점 하나가 한 명 | 폰 위치 → `PawnRushRound.SectionAt` → 그 구간 `ProgressPath`를 따라 간 거리 ÷ 길이. 구간 밖(복도 · 추락 중)이면 마지막 구간 유지 |
+| 미니게임 칸 | 금색 테두리, 팀 색으로 채움 | `MissionStation.Game.Progress01`, 팀 문이 열렸으면 1 |
+| 왕관 발판 인원 | 띠 오른쪽 "백 n / N · 흑 n / N" | `CrownFinish.OnPlatform` · `PawnRushFinish.Needed` |
+| 순위 목록 | 오른쪽 위, 상위 5명 + 나(6줄) — 팀 색 점 · 닉네임(10자 넘으면 …), 내 줄 금색 | Core `PawnRushStandings.Order` · `ListRows`, 이름은 `CrownFinish.Runner.Name` |
+
+- 배치는 시안의 1280 × 720 좌표 그대로를 화면 높이 ÷ 720배(0.75 ~ 2.4)로 그린다. 띠는 화면 가운데, 목록은 오른쪽 끝에 붙고, 화면이 좁아 띠와 겹치면 목록이 띠 아래로 내려간다.
+- 0.1초마다 다시 계산하고 점은 그 사이를 미끄러지듯 움직인다(부활은 빠르게 뒤로 미끄러짐).
+- 위쪽 가운데에 그리는 다른 것은 `PawnRushStandingsHud.Showing` · `Bottom`을 보고 띠 아래로 내려간다: R679 미니게임 설명 카드, `CrownFinish`의 '승리 인원이 바뀌었어요' 줄. `CrownFinish`의 긴 인원 글상자는 띠가 없을 때만 그린다.
+- 사용자 플레이 확인 전([확인표](../Network/VALIDATION.md)).

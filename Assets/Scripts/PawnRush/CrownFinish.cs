@@ -325,13 +325,19 @@ namespace ChessFight.PawnRush
             }
             int w = Players(Teams.White), b = Players(Teams.Black);
             string count = $"왕관 발판  백 {OnPlatform(Teams.White)}/{PawnRushFinish.Needed(w)}  ·  흑 {OnPlatform(Teams.Black)}/{PawnRushFinish.Needed(b)}  (팀 과반이 동시에 올라가면 승리)";
-            var box = new Rect((Screen.width - 520) * .5f, 10, 520, 26);
-            GUI.Box(box, GUIContent.none);
-            GUI.Label(box, count, line);
+            // R682: the standings strip (PawnRushStandingsHud) stands in this place and carries the count; this box is
+            // drawn only where there is no strip, and the note goes under whichever is there.
+            bool strip = PawnRushStandingsHud.Showing;
+            if (!strip)
+            {
+                var box = new Rect((Screen.width - 520) * .5f, 10, 520, 26);
+                GUI.Box(box, GUIContent.none);
+                GUI.Label(box, count, line);
+            }
             NoteNeeded(w, b);
             if (Winner == PawnRushFinish.None && Time.time < needNoteUntil)
             {
-                var under = new Rect((Screen.width - 520) * .5f, 38, 520, 24);
+                var under = new Rect((Screen.width - 520) * .5f, strip ? PawnRushStandingsHud.Bottom + 4f : 38, 520, 24);
                 GUI.Box(under, GUIContent.none);
                 GUI.Label(under, needNote, line);
             }

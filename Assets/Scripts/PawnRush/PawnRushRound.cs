@@ -184,6 +184,8 @@ namespace ChessFight.PawnRush
             if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();
             // R679: what the player is shown when its own pawn falls and comes back (PawnRushFallNotice)
             if (Application.isPlaying && GetComponent<PawnRushFallNotice>() == null) gameObject.AddComponent<PawnRushFallNotice>();
+            // R682: the standings - this PC's rank, the course's progress strip, the ranking list (PawnRushStandingsHud)
+            if (Application.isPlaying && GetComponent<PawnRushStandingsHud>() == null) gameObject.AddComponent<PawnRushStandingsHud>();
             Debug.Log(log.ToString());
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();

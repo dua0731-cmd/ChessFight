@@ -3075,6 +3075,42 @@ public static class NetworkCoreTests
                 // Two turrets take turns, one fires every time.
                 for (long n = -20; n < 20; n++)
                     Check(TurretVolleys.Turret(3, n, 2) != TurretVolleys.Turret(3, n + 1, 2) && TurretVolleys.Turret(3, n, 1) == 0, "two take turns"); });
+            Test("R682 Pawn Rush standings: a rank from the section and how far through it, level racers share it, the list keeps this PC's own racer, the track's segments", () => {
+                // Six racers: two in the fourth section's mini-game (their team's progress 0.45), one there for the other
+                // team (0.2), three in the third section by distance.
+                var progress = new[] { PawnRushStandings.Progress(3, .45), PawnRushStandings.Progress(3, .45), PawnRushStandings.Progress(3, .2),
+                                       PawnRushStandings.Progress(2, .78), PawnRushStandings.Progress(2, .62), PawnRushStandings.Progress(2, .3) };
+                var ranks = new int[6]; var order = new int[6];
+                PawnRushStandings.Ranks(progress, 6, ranks);
+                Check(ranks[0] == 1 && ranks[1] == 1 && ranks[2] == 3 && ranks[3] == 4 && ranks[4] == 5 && ranks[5] == 6, "ranks: " + string.Join(" ", ranks));
+                PawnRushStandings.Order(ranks, 6, order);
+                Check(string.Join(" ", order) == "0 1 2 3 4 5", "level racers keep the roster's order: " + string.Join(" ", order));
+                // Given in another order, the same ranks; a later section beats any place in an earlier one.
+                var mixed = new[] { progress[5], progress[2], progress[0], progress[4], progress[1], progress[3] };
+                PawnRushStandings.Ranks(mixed, 6, ranks);
+                PawnRushStandings.Order(ranks, 6, order);
+                Check(string.Join(" ", ranks) == "6 3 1 5 1 4" && string.Join(" ", order) == "2 4 1 5 3 0", "mixed: " + string.Join(" ", ranks) + " / " + string.Join(" ", order));
+                Check(PawnRushStandings.Progress(3, 0) > PawnRushStandings.Progress(2, 1) - 1e-9 && PawnRushStandings.Progress(3, .01) > PawnRushStandings.Progress(2, 5), "a later section is ahead");
+                Check(PawnRushStandings.Progress(-1, .5) == .5 && PawnRushStandings.Progress(2, double.NaN) == 2 && PawnRushStandings.Progress(2, -3) == 2, "clamped");
+                // The list: its first rows; this PC's own racer takes the last line when it is further down.
+                var twelve = new int[12]; var shown = new int[6];
+                for (int i = 0; i < 12; i++) twelve[i] = i;
+                Check(PawnRushStandings.ListRows(twelve, 12, 3, 6, shown) == 6 && string.Join(" ", shown) == "0 1 2 3 4 5", "own racer in the first six");
+                Check(PawnRushStandings.ListRows(twelve, 12, 9, 6, shown) == 6 && string.Join(" ", shown) == "0 1 2 3 4 9", "own racer further down: " + string.Join(" ", shown));
+                Check(PawnRushStandings.ListRows(twelve, 4, 3, 6, shown) == 4 && shown[3] == 3, "fewer racers than lines");
+                Check(PawnRushStandings.ListRows(twelve, 12, -1, 6, shown) == 6 && shown[5] == 5, "no own racer (a watcher)");
+                // The track: a mini-game a fixed share, another section by the root of its length, with gaps, filling 0..1.
+                Check(PawnRushStandings.Weight(true, 36) == 1.1 && PawnRushStandings.Weight(true, 900) == 1.1, "a mini-game's share is fixed");
+                Check(Math.Abs(PawnRushStandings.Weight(false, 60) - 1) < 1e-9 && PawnRushStandings.Weight(false, 259) == 2 && PawnRushStandings.Weight(false, 20) == .7
+                      && PawnRushStandings.Weight(false, 0) == 1, "by the root of the length, 0.7 to 2");
+                var weights = new[] { 2, 1.1, 2, 1.1, .7, 1.1, .96 };
+                var start = new double[7]; var width = new double[7];
+                PawnRushStandings.Layout(weights, 7, .007, start, width);
+                Check(start[0] == 0 && Math.Abs(start[6] + width[6] - 1) < 1e-9, "from 0 to 1");
+                for (int i = 1; i < 7; i++) Check(Math.Abs(start[i] - (start[i - 1] + width[i - 1] + .007)) < 1e-9, "a gap between neighbours");
+                Check(Math.Abs(width[0] / width[1] - 2 / 1.1) < 1e-9 && Math.Abs(width[0] - width[2]) < 1e-12, "shared by weight");
+                Check(Math.Abs(PawnRushStandings.OnTrack(start, width, 7, 2, .5) - (start[2] + width[2] * .5)) < 1e-12
+                      && PawnRushStandings.OnTrack(start, width, 7, 9, 2) == start[6] + width[6] && PawnRushStandings.OnTrack(start, width, 7, -1, -1) == 0, "a dot's place, clamped"); });
             Test("R624 sword pick on the entrance screen: the earlier pick keeps a piece, the close draws the rest, the same on every PC", () => {
                 // The member data's text, both ways; a broken or unpickable one is no pick.
                 PieceKind kind; double at;
