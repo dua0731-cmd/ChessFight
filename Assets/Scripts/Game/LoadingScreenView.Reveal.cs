@@ -301,12 +301,7 @@ namespace ChessFight.Game
                 var hidden = on ? new StyleEnum<Visibility>(Visibility.Hidden) : new StyleEnum<Visibility>(StyleKeyword.Null);
                 foreach (var e in revealHides) e.style.visibility = hidden;
                 // the study behind goes soft and a little grey, a little larger so its blurred edge stays off screen
-                if (revealStage != null)
-                {
-                    revealStage.style.filter = on ? new StyleList<FilterFunction>(new List<FilterFunction> { BlurFilter(10f), GreyFilter(.35f) })
-                                                  : new StyleList<FilterFunction>(StyleKeyword.Null);
-                    revealStage.style.scale = on ? new Scale(new Vector2(1.05f, 1.05f)) : new StyleScale(StyleKeyword.Null);
-                }
+                SoftenStage(revealStage, on);
             }
             if (!on) { StopRevealSound(); ResetVersus(); return; }
             if (!revealSeedKnown || revealSeed != State.CourseSeed) FillReveal(State.CourseSeed);
@@ -488,6 +483,55 @@ namespace ChessFight.Game
             var filter = new FilterFunction(FilterFunctionType.Grayscale);
             filter.AddParameter(new FilterParameter(amount));
             return filter;
+        }
+
+        // R683 (the 11-15 build test: "ArgumentNullException: shader" every time the course reveal or the sword pick
+        // opened, in every player's log). UI Toolkit draws these two filters with built-in shaders (StageFilterShaders)
+        // that a build takes in only when a PanelSettings asset references them, and this game makes its panel settings
+        // in code (RuntimePanels): no build had them, so setting the filter threw in the middle of the frame - the
+        // study behind stayed sharp and the rest of that frame's Update never ran. Both are in Always Included Shaders
+        // now (ProjectSettings/GraphicsSettings.asset, built-in 20300 and 20301). This still asks first and catches,
+        // so a build without them only goes without the blur.
+        static readonly string[] StageFilterShaders = { "Hidden/UIR/GaussianBlur", "Hidden/UIR/ColorEffect" };
+        static bool? stageFilters;
+        static bool StageFilters
+        {
+            get
+            {
+                if (!stageFilters.HasValue)
+                {
+                    stageFilters = true;
+                    foreach (string name in StageFilterShaders)
+                        if (Shader.Find(name) == null)
+                        {
+                            stageFilters = false;
+                            Debug.LogWarning("[ChessFight] 입장 화면: 흐림 셰이더 " + name + "이(가) 이 빌드에 없어 뒤 배경을 흐리지 않습니다 (Graphics 설정의 Always Included Shaders).");
+                        }
+                }
+                return stageFilters.Value;
+            }
+        }
+
+        /// <summary>The study behind an overlay (the course reveal, the sword pick) goes soft and a little grey, and a
+        /// little larger so its blurred edge stays off screen; <paramref name="on"/> false puts it back.</summary>
+        static void SoftenStage(VisualElement stage, bool on)
+        {
+            if (stage == null) return;
+            stage.style.scale = on ? new Scale(new Vector2(1.05f, 1.05f)) : new StyleScale(StyleKeyword.Null);
+            if (on && StageFilters)
+            {
+                try
+                {
+                    stage.style.filter = new StyleList<FilterFunction>(new List<FilterFunction> { BlurFilter(10f), GreyFilter(.35f) });
+                    return;
+                }
+                catch (System.Exception e)
+                {
+                    stageFilters = false;
+                    Debug.LogWarning("[ChessFight] 입장 화면: 흐림 필터를 걸지 못해 뒤 배경을 흐리지 않습니다 (" + e.GetType().Name + ": " + e.Message + ")");
+                }
+            }
+            stage.style.filter = new StyleList<FilterFunction>(StyleKeyword.Null);
         }
 
         static VisualElement BuildMatchAnnouncement(VisualElement parent, string mode, float top, float size, bool compact = false,

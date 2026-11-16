@@ -218,6 +218,24 @@ namespace ChessFight.Network
         {
             Phase = phase;
             PhaseTime = 0;
+            entered.Enqueue(phase);
+        }
+
+        // R683 (the 11-15 build test: a Sword Fight room stayed "playing" after its result and took everyone back in):
+        // every phase entered since the host last asked, oldest first. The host used to compare the phase before and
+        // after Advance only, but a fall that decides the match - the tenth point, a point in sudden death - is scored
+        // by RingOut later in the same step. By the next step the phase had been the result all along, so the host
+        // never entered it: the room was never told the match was over, and no screen saw the last point's slow
+        // motion. Only a match that ran out of time (Advance) ended properly.
+        readonly Queue<SwordPhase> entered = new Queue<SwordPhase>();
+
+        /// <summary>R683: the next phase the rules entered that the caller has not been given yet, wherever in the step
+        /// it was entered (Advance, RingOut, Adopt). False when there is none. A state copied in (Restore) is not one.</summary>
+        public bool TakeEntered(out SwordPhase phase)
+        {
+            if (entered.Count > 0) { phase = entered.Dequeue(); return true; }
+            phase = Phase;
+            return false;
         }
 
         void Finish(int winner)
@@ -351,6 +369,8 @@ namespace ChessFight.Network
         /// erased by the clock came back.</summary>
         public void Restore(SwordMatchState s, double aged = 0)
         {
+            // R683: the phase copied in is the old host's, not one these rules entered.
+            entered.Clear();
             Phase = s.Phase;
             PhaseTime = s.PhaseTimeAfter(aged);
             Clock = s.ClockAfter(aged);

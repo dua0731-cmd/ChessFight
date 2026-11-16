@@ -161,11 +161,12 @@ namespace ChessFight.RagdollLab
             // R502: then who is out, and each piece, as the bodies show them (LabNetLink has put the newest sword frame
             // and pose on them): the text can be up to a tenth of a second older, and a fall in that gap left a piece
             // the rules took for alive out for good (FixedUpdate respawns only bodies that are out and rules that agree).
-            var phase = rules.Phase;
             foreach (var f in game.Fighters.Values)
                 if (f != null) rules.Adopt(f.Id, f.Alive, f.Pawn.Piece, f.RespawnSeconds);
-            // The tenth point may have been one of them: the result as the old host would have shown it.
-            if (rules.Phase != phase) EnterPhase(rules.Phase);
+            // The tenth point may have been one of them: the result as the old host would have shown it. (R683: asked
+            // of the rules, like every other step. A result the old host had already shown is not entered again here:
+            // this PC saw it as a client, and the room hears of it from the session - SteamSession.ChangeHost.)
+            EnterNewPhases();
         }
 
         /// <summary>A fighter came into the match (SwordFightGame.Add).</summary>
@@ -286,9 +287,8 @@ namespace ChessFight.RagdollLab
                     if (r == null || r.Picked) continue;
                     foreach (var p in SwordMatchRules.Pickable) if (rules.Pick(f.Id, p)) break;
                 }
-            var before = rules.Phase;
             if (!hold) rules.Advance(dt);
-            if (rules.Phase != before) EnterPhase(rules.Phase);
+            EnterNewPhases();
             foreach (var f in game.Fighters.Values)
             {
                 if (f == null) continue;
@@ -307,6 +307,19 @@ namespace ChessFight.RagdollLab
                     if (rules.TryRespawn(f.Id)) Respawn(f, r);
                 }
             }
+            // R683 (the 11-15 build test): the fall that decides the match - the tenth point, or a point in sudden
+            // death - is scored in the loop above, after the phases Advance entered were looked at. The host compared
+            // the phase before and after Advance only, so a match won on points never entered its result here: the
+            // room was not told it was over (everyone who left was offered the way back into it, and could not start
+            // a new match), and nobody saw the last point's slow motion. Only a match that ran out of time did.
+            EnterNewPhases();
+        }
+
+        // R683: every phase the rules entered since the last look, in the order they were entered, wherever in the step
+        // that happened (SwordMatchRules.TakeEntered).
+        void EnterNewPhases()
+        {
+            while (rules.TakeEntered(out var phase)) EnterPhase(phase);
         }
 
         void EnterPhase(SwordPhase phase)

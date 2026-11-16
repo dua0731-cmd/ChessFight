@@ -71,7 +71,7 @@ namespace ChessFight.RagdollLab.Net
                 if (session.IsPeer(id)) SteamNetworkingMessages.AcceptSessionWithUser(ref c.m_identityRemote);
             });
             sessionFailures = Callback<SteamNetworkingMessagesSessionFailed_t>.Create(c =>
-                message = "스팀 연결 실패. 방을 나갔다가 다시 시도해 주세요.");
+                message = "스팀 연결이 끊겨 다시 연결하는 중이에요.");   // R683: the next send starts a new session (SteamSend)
             session.SessionChanged += ResetStream;
         }
 
@@ -163,7 +163,7 @@ namespace ChessFight.RagdollLab.Net
             try
             {
                 var result = SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                    Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
+                    SteamSend.Unreliable, Channel);
                 if (result != EResult.k_EResultOK) message = "스팀 전송 오류: " + result;
                 connected.Add(id);
             }

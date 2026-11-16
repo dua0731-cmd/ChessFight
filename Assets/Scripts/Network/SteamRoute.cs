@@ -63,4 +63,22 @@ namespace ChessFight.Network
             return route.Known ? $"직접 {route.Direct}명 · 릴레이 {route.Relayed}명 · Steam 핑 최대 {route.PingMs} ms" : "참가자와 연결 정보 없음";
         }
     }
+
+    /// <summary>
+    /// R683 (the 11-15 build test): the send flags of every stream this game puts on Steam's P2P messages. A session
+    /// that fails - the other PC was not taking it yet, a relay hiccup ("Timed out attempting to negotiate rendezvous")
+    /// - stays failed: without AutoRestartBrokenSession every later send to that player returns NoConnection until the
+    /// session is closed by hand, and nothing closed it. Two players' sessions with the host failed once while the
+    /// match was loading and stayed dead, so the match threw them out after twelve silent seconds; going back in (a
+    /// new session) connected at once. With the flag the next send starts a new session, and these streams send many
+    /// times a second. Reliable messages a broken session had not delivered are lost, as they were before.
+    /// </summary>
+    public static class SteamSend
+    {
+        public const int Unreliable = Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle
+                                      | Constants.k_nSteamNetworkingSend_AutoRestartBrokenSession;
+        public const int Reliable = Constants.k_nSteamNetworkingSend_Reliable | Constants.k_nSteamNetworkingSend_NoNagle
+                                    | Constants.k_nSteamNetworkingSend_AutoRestartBrokenSession;
+        public static int Flags(bool reliable) => reliable ? Reliable : Unreliable;
+    }
 }

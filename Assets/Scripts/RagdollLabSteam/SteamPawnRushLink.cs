@@ -1042,8 +1042,7 @@ namespace ChessFight.RagdollLab.Net
             try
             {
                 SteamNetworkingMessages.SendMessageToUser(ref identity, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                    (reliable ? Constants.k_nSteamNetworkingSend_Reliable : Constants.k_nSteamNetworkingSend_Unreliable)
-                    | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
+                    SteamSend.Flags(reliable), Channel);
             }
             finally { handle.Free(); }
             return true;

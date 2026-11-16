@@ -2662,6 +2662,41 @@ public static class NetworkCoreTests
                 Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
                 Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
                 Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            // R683 (the 11-15 build test: a Sword Fight room stayed "playing" after its result and everyone who left was taken
+            // back into it): the host looked for a new phase before and after Advance only, and the point that wins a match
+            // is scored by RingOut, later in the same step - the result was never entered on the host. The rules now hand
+            // every phase they enter to the host themselves (TakeEntered).
+            Test("R683 Sword Fight: every phase the rules enter is handed to the host once - also the result a fall decides, which Advance never reports", () => {
+                var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(3, 1); SwordPhase p;
+                Check(!r.TakeEntered(out p) && p == SwordPhase.Pick, "nothing is entered at the start");
+                r.Advance(15.01); Check(r.TakeEntered(out p) && p == SwordPhase.Countdown && !r.TakeEntered(out p), "the countdown, once");
+                r.Advance(3.01); Check(r.TakeEntered(out p) && p == SwordPhase.Playing && !r.TakeEntered(out p), "play, once");
+                for (int i = 0; i < 9; i++) { r.RingOut(3); r.Advance(3.01); r.TryRespawn(3); }
+                Check(r.White == 9 && r.Phase == SwordPhase.Playing && !r.TakeEntered(out p), "nine points enter nothing");
+                // The host's step: Advance, a look at the phase, then the falls. The tenth point ends the match after the look.
+                var before = r.Phase; bool seen = r.Advance(1 / 120.0) || r.Phase != before;
+                r.RingOut(3);
+                before = r.Phase; seen |= r.Advance(1 / 120.0) || r.Phase != before;
+                Check(r.Phase == SwordPhase.Result && r.Winner == 0 && !seen, "setup: a look before and after Advance never sees the tenth point's result");
+                Check(r.TakeEntered(out p) && p == SwordPhase.Result && !r.TakeEntered(out p), "the result of the tenth point was not handed to the host");
+                // Sudden death: the tie is entered by Advance, the point that ends it by the fall; in the order entered.
+                var s = new SwordMatchRules(3); s.Add(1, 0); s.Add(2, 1); s.Advance(15.1); s.Advance(3.1); s.Advance(240);
+                Check(s.TakeEntered(out p) && p == SwordPhase.Countdown && s.TakeEntered(out p) && p == SwordPhase.Playing
+                      && s.TakeEntered(out p) && p == SwordPhase.SuddenDeath && !s.TakeEntered(out p), "the phases in the order they were entered");
+                s.RingOut(1); Check(s.Winner == 1 && s.TakeEntered(out p) && p == SwordPhase.Result && !s.TakeEntered(out p), "the sudden-death point's result");
+                // Time up with a lead: Advance enters the result itself, as before.
+                var t = new SwordMatchRules(5); t.Add(1, 0); t.Add(2, 1); t.Advance(15.1); t.Advance(3.1); t.RingOut(2); while (t.TakeEntered(out p)) { }
+                t.Advance(240); Check(t.Phase == SwordPhase.Result && t.TakeEntered(out p) && p == SwordPhase.Result && !t.TakeEntered(out p), "time up");
+                // A new host (SwordFightMatch.TakeOver): the state copied in is no phase entered, the fall it then adopts
+                // from the bodies is; a result the old host had already shown is not entered again.
+                var q = new SwordMatchRules(7); q.Add(1, 0); q.Add(3, 1); q.Advance(15.01); q.Advance(3.01);
+                for (int i = 0; i < 9; i++) { q.RingOut(3); q.Advance(3.01); q.TryRespawn(3); }
+                var h = new SwordMatchRules(7); h.Add(1, 0); h.Add(3, 1); h.Restore(q.State(), .05);
+                Check(h.Phase == SwordPhase.Playing && h.White == 9 && !h.TakeEntered(out p), "a restored phase was handed over as one entered");
+                h.Adopt(3, false, PieceKind.Knight, 3);
+                Check(h.Phase == SwordPhase.Result && h.TakeEntered(out p) && p == SwordPhase.Result && !h.TakeEntered(out p), "the point a new host adopts from the bodies");
+                var e = new SwordMatchRules(7); e.Add(1, 0); e.Add(3, 1); e.Restore(h.State());
+                Check(e.Phase == SwordPhase.Result && !e.TakeEntered(out p), "a result taken over was entered again"); });
             // R655 (승규 님 온라인 시험: 바닥이 감지되지 않고 떨어짐): every PC chose its own board (2 or 2.5 m squares); now the
             // host's square side rides in the state and a client builds that board.
             Test("Sword Fight board size: the host's square side rides in the match state; an older text and a wild size are refused", () => {

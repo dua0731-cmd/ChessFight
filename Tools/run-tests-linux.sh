@@ -265,9 +265,29 @@ check_build_shaders() {
   return $bad
 }
 
+# R683: UI Toolkit draws its blur and grayscale filters with two built-in shaders that a build takes in only through a
+# PanelSettings asset, and this game makes its panel settings in code (RuntimePanels): every build threw
+# "ArgumentNullException: shader" when the entrance screen's course reveal or sword pick opened (the 11-15 build test).
+# Code that sets such a filter needs both in Always Included Shaders: built-in extra 20300 Hidden/UIR/GaussianBlur and
+# 20301 Hidden/UIR/ColorEffect (Unity 6000.3).
+check_ui_filter_shaders() {
+  local bad=0 id
+  if grep -rqE 'FilterFunctionType\.' --include='*.cs' Assets/Scripts Assets/Prototype 2>/dev/null; then
+    for id in 20300 20301; do
+      if ! grep -q "fileID: $id, guid: 0000000000000000f000000000000000" ProjectSettings/GraphicsSettings.asset; then
+        echo "built-in shader $id is not in Always Included Shaders (ProjectSettings/GraphicsSettings.asset)"; bad=1
+      fi
+    done
+  fi
+  if [ $bad -eq 0 ]; then echo "PASS: the UI Toolkit filter shaders are kept in player builds"
+  else echo "FAIL: add Hidden/UIR/GaussianBlur (20300) and Hidden/UIR/ColorEffect (20301) to Always Included Shaders"; fi
+  return $bad
+}
+
 check_boundaries
 check_obstacle_clock
 check_build_shaders
+check_ui_filter_shaders
 if [ "${1:-}" = "--checks-only" ]; then exit 0; fi
 ensure_mono
 run_tests

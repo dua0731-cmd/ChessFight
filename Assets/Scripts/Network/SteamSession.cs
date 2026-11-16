@@ -1767,6 +1767,11 @@ namespace ChessFight.Network
             // R644: and it says which host number it holds, which is what moves the room to it (FollowHost step 3).
             if (next == Self && Match != 0 && ownClaim != newEpoch)
             { ownClaim = newEpoch; SteamMatchmaking.SetLobbyMemberData(Id(Match), "claim", ownClaim.ToString()); }
+            // R683 (the 11-15 build test): a PC that saw the match's result while another PC hosted it (SawResult, on
+            // every PC) takes the end with the role. Only the host writes "ended", once the room is its own (R504),
+            // and a host that left with the end unwritten took it along: the next host had seen the result, but as a
+            // player it had nothing to write, and the room stayed "playing" for everyone who had left it.
+            if (next == Self && Match != 0 && resultSeen == Match) endWanted = true;
             lastHandoff = now;
             // R536: whoever hosts now weighs the room afresh from the players it finds (ElectLive).
             liveElectorate = null; liveSeen = "";
@@ -2637,7 +2642,10 @@ namespace ChessFight.Network
             if (Match != 0)
             {
                 if (!Started || !Roster.ContainsKey(Self)) return;
-                if (MatchEnded) { ForgetRejoin(); return; }
+                // R683: nor a match whose result this PC has seen. The room's own mark may still be on its way (only
+                // the room's owner writes it), and a player who left in that moment was offered the way back into a
+                // match that was over (the 11-15 build test, where the mark was never written at all).
+                if (MatchEnded || resultSeen == Match) { ForgetRejoin(); return; }
                 if (RejoinTarget == Match) return;
                 rejoinMatch = Match; rejoinLoaded = true; rejoinGone = false;
                 SaveRejoin?.Invoke(Match.ToString(CultureInfo.InvariantCulture));

@@ -351,3 +351,22 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 - 경기 중에 마우스로 누르는 화면(메뉴 `GameMenu`, 경기 표 `VoiceHud`, 승격 카드)은 떠 있는 동안 `GameSettings.PointerTaken = true`.
 - 커서는 한 번이 아니라 **떠 있는 동안 매 프레임** 풀어 둔다(다른 화면이 닫히며 잠그거나 창이 뒤로 갔다 오면 다시 잠긴다).
 - 돌려줄 때 다른 화면(메뉴 · 경기 표)이 아직 열려 있으면 `PointerTaken`을 끄지 않는다.
+
+## 47. 스텝 뒤쪽에서 바뀌는 단계는 '앞뒤 비교'로 못 본다 (R683, 11-15)
+- **증상:** 소드 파이트가 끝난 방이 계속 '경기 중'으로 남아, 나간 사람 모두에게 '경기로 돌아가기'가 뜨고 새 매칭이 막힘(11-15 빌드 시험, 다섯 PC). 마지막 점수의 슬로 모션도 없었음.
+- **원인:** 물리 담당(`SwordFightMatch.FixedUpdate`)이 `rules.Advance` 앞뒤로만 단계를 비교했는데, 경기를 끝내는 득점(10점 · 서든데스)은 같은 스텝 뒤쪽의 낙하 처리(`RingOut`)에서 난다. 다음 스텝에는 처음부터 결과 단계라 '바뀜'이 한 번도 참이 아니었고, 결과 진입에 달린 것(방에 끝 알리기 · 슬로 모션 · 싸움 멈춤)이 R149부터 득점 종료에서는 한 번도 안 돌았다. 시간 종료(`Advance`가 끝냄)만 정상이라 시험에서 안 드러났다.
+- **규칙:** 상태가 한 스텝 안 여러 곳에서 바뀔 수 있으면, 읽는 쪽이 비교하지 말고 **바꾸는 쪽이 알리게** 한다(Core `SwordMatchRules.TakeEntered`: 들어간 단계를 순서대로 한 번씩 건넴, Core 시험 "R683 Sword Fight …").
+
+## 48. 코드로 건 UI Toolkit 필터(blur · grayscale)는 빌드에 셰이더가 없다 (R683, 11-15)
+- **증상:** 빌드에서만 `ArgumentNullException: shader`(`FilterFunctionDefinitionUtils.CreateBlurFilterFunctionDefinition`) — 입장 화면의 코스 공개 · 기물 선택이 열릴 때마다. 뒤 배경이 안 흐려지고 그 프레임의 `Update` 나머지가 건너뛰어짐. 편집기에서는 멀쩡함.
+- **원인:** Unity는 `style.filter`의 재질을 `new Material(Shader.Find("Hidden/UIR/GaussianBlur"))`(회색 등은 `"Hidden/UIR/ColorEffect"`)로 만든다(6000.3.11f1의 `UnityEngine.UIElementsModule.dll`을 풀어 확인). 이 두 내장 셰이더는 PanelSettings **에셋**(`m_RuntimeGaussianBlurShader` · `m_RuntimeColorEffectShader`)이 참조해야 빌드에 들어가는데, 이 게임은 PanelSettings를 코드로 만든다(`RuntimePanels` · `ScreenOverlay`의 `CreateInstance`) → 어느 빌드에도 없어 `Shader.Find`가 null.
+- **고침 · 규칙:** `ProjectSettings/GraphicsSettings.asset`의 Always Included Shaders에 내장 20300 · 20301을 넣었다(`Tools/run-tests-linux.sh --checks-only`가 본다). 필터를 거는 코드는 셰이더가 있는지 먼저 묻고 실패해도 화면이 이어지게 한다(`LoadingScreenView.SoftenStage`). 다른 필터 종류를 새로 쓰면 그 셰이더 번호를 편집기에서 확인한다(`AssetDatabase.TryGetGUIDAndLocalFileIdentifier(Shader.Find(이름), …)`). 빌드로는 아직 확인 못 함.
+
+## 49. 실패한 Steam P2P 세션은 저절로 다시 열리지 않는다 (R683, 11-15)
+- **증상:** 경기 시작 약 12 ~ 20초 뒤 "물리 계산을 맡은 PC와 연결이 끊어졌습니다"로 나가짐 — 로딩 중 Player.log에 `Steam P2P 연결 실패 … 5008`(또는 시간 초과)이 한 줄 있고, '경기로 돌아가기'로 돌아가면 바로 연결됨(11-15, 두 PC).
+- **원인:** `SteamNetworkingMessages.SendMessageToUser`는 세션이 한 번 실패하면 `CloseSessionWithUser`를 부르거나 `k_nSteamNetworkingSend_AutoRestartBrokenSession`을 줄 때까지 계속 `k_EResultNoConnection`을 돌려준다(SDK 설명). 실패 콜백은 로그만 남겼고 전송에는 그 깃발이 없어, 한 번 실패한 연결이 방을 나갈 때까지 죽어 있었다. (상대 PC가 아직 이 PC를 명단에 안 올려 세션 요청을 안 받는 순간에도 실패할 수 있다.)
+- **규칙:** Steam P2P 전송은 `SteamSend.Unreliable` · `Reliable` · `Flags`로만 한다(새 전송 줄을 만들 때도). 실제 Steam에서는 확인 전.
+
+## 50. kinematic 몸에는 속도를 넣을 수 없다 — 먼저 풀고 넣는다 (R683, 11-15)
+- **증상:** 물리 담당을 이어받는 순간 Player.log에 "Setting linear velocity of a kinematic body is not supported" · "angular"가 기물마다 22줄(몸 11조각 × 2). 11-15 한 PC에서 770줄.
+- **원인 · 고침:** `RagdollPawn.SetNetworkPuppet(false)`가 `isKinematic = false`보다 먼저 속도를 0으로 넣었다(Unity는 무시하고 경고). 순서를 바꿨다. 꼭두각시(kinematic) 몸을 물리로 되돌릴 때는 늘 푼 다음에 속도를 정한다.

@@ -666,6 +666,39 @@ public static class SessionFlowTests
                 Step(30);
                 Check(Owner(c)==c.Self&&RoomData(c,"ended")=="1"&&RoomData(c,"open")=="0"&&!FakeSteam.Lobbies[c.Match].Joinable,
                       "the end was lost with the room's move: ended="+RoomData(c,"ended")+" door "+FakeSteam.Lobbies[c.Match].Joinable);});
+            // R683 (the 11-15 build test: Sword Fight rooms stayed "playing" after their result and took everyone back in):
+            // only the host writes the room's end, once the room is its own (R504, above). A host that left before that
+            // took the end along, and the next host - which had seen the result as a player - had nothing to write. A PC
+            // that saw the result takes the end with the host role now.
+            Action<float> endLeftBehind=delay=>{
+                Room(new[]{900,500,700,600},()=>FakeSteam.DataDelay=delay);var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];As(a,a.StartGame);Step(20);
+                Check(a.IsHost&&clients.All(x=>x.Started)&&RoomData(a,"successors").StartsWith(c.Self+","+d.Self),"setup: "+RoomData(a,"successors"));
+                FakeSteam.OwnerDelay=5;FakeSteam.Crash(a.Self);clients.Remove(a);Step(2);
+                Check(c.IsHost&&Owner(c)==b.Self,"setup: the new host before the room is its own");
+                // The match is decided: every PC sees the result and the host asks for the end - then leaves at once.
+                foreach(var x in clients.ToArray())As(x,x.SawResult);
+                As(c,c.EndMatch);Step(1);ulong room=c.Match;
+                Check(RoomData(b,"ended")!="1","setup: the end was written before the room was the host's");
+                As(c,c.Cancel);Step(40);
+                Check(d.IsHost&&Owner(d)==d.Self&&RoomData(d,"ended")=="1"&&RoomData(d,"open")=="0"&&!FakeSteam.Lobbies[room].Joinable,
+                      "the end went away with the host that left: host "+d.Host+" owner "+Owner(d)+" ended="+RoomData(d,"ended")+" door "+FakeSteam.Lobbies[room].Joinable);
+                Check(b.MatchEnded&&d.MatchEnded&&!c.CanRejoin&&c.RejoinMatch==0,"the host that left is offered the way back into a decided match");};
+            Test("R683: a host that leaves before the room's end is written leaves it to the next host, which saw the result as a player",()=>endLeftBehind(0));
+            // R644's rule for session changes: the same with room data that reaches Steam a moment late (FakeSteam.DataDelay).
+            Test("R683: the same while Steam sends the room's data a moment late",()=>endLeftBehind(.5f));
+            // R683: the same from the lobby's side. A player who saw the result is not offered the way back, even while the
+            // room still reads "playing" (its end unwritten, as on 11-15, or written a moment after the player left).
+            Test("R683: a player who saw the match's result is not offered the way back into it, whatever the room still says",()=>{
+                Setup(3);var host=clients[0];var seen=clients[1];var blind=clients[2];
+                As(host,()=>host.FindMatch());Step(20);As(seen,()=>seen.FindMatch());Step(20);As(blind,()=>blind.FindMatch());Step(20);
+                As(host,host.FillRoomWithBots);Step(10);
+                Check(host.Started&&seen.Started&&blind.Started,"setup: a started match");
+                ulong room=host.Match;
+                As(seen,seen.SawResult);Step(1);As(seen,seen.Cancel);As(blind,blind.Cancel);Step(5);
+                Check(RoomData(host,"ended")!="1"&&RoomData(host,"phase")=="playing"&&host.Started,"setup: the room still reads playing");
+                Check(blind.CanRejoin&&blind.RejoinMatch==room,"setup: a player who left a match under way is offered the way back: "+blind.Error);
+                Check(!seen.CanRejoin&&seen.RejoinMatch==0,"a player who saw the result is offered the way back into the match");
+                As(seen,seen.Rejoin);Step(10);Check(seen.Match==0,"a player who saw the result went back into the match");});
             // R504: accepting an old invite to one's own party left it and joined it again, and a leader lost the lead.
             Test("An invite to the party one is already in changes nothing, and the leader keeps the lead",()=>{
                 Setup(2);JoinParty(1,0);var leader=clients[0];var member=clients[1];ulong party=leader.Party;
