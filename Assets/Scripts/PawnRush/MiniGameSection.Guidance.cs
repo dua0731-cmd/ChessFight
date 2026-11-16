@@ -133,7 +133,13 @@ namespace ChessFight.PawnRush
                 GUI.color = ink;
                 briefBody.fontSize = Mathf.RoundToInt(14f * scale);
                 briefBody.wordWrap = false;
-                GUI.Label(strip, PawnRushMissions.Names[game].Substring(2) + "  ·  " + how[0], briefBody);
+                // R687: with the count where the game has one (pieces taken, towers rung ...): "3 / 6"
+                string count = "";
+                if (stations != null)
+                    foreach (var station in stations)
+                        if (station != null && station.Team == hintTeam && station.Game is IProgressCount counted && counted.Total > 0)
+                            count = "  ·  " + counted.Done + " / " + counted.Total;
+                GUI.Label(strip, PawnRushMissions.Names[game].Substring(2) + "  ·  " + how[0] + count, briefBody);
                 return;
             }
             float cw = Mathf.Min(640f * scale, Screen.width - 16f), ch = 196f * scale;

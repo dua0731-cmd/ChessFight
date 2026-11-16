@@ -11,8 +11,9 @@ namespace ChessFight.PawnRush
     //
     // Floor only on tubs a knight's move apart; water everywhere else. In the middle of every tub a gold pad: Space on
     // it is a much higher jump that keeps the pawn's own run (no aiming - run the way you want and jump), and a dive
-    // in the air carries it the rest of the way to the next tub. On some tubs stand the other side's pieces; a dive
-    // onto one (or landing on it from a pad jump) takes it. All taken: the gate opens.
+    // in the air carries it the rest of the way to the next tub. On some tubs stand the other side's pieces; a pawn
+    // that comes to stand on a piece's tub takes it (R687, as a chess piece is taken by moving onto its square: no
+    // dive needed any more), and a gold mark turns over every piece still to take. All taken: the gate opens.
     //
     // R686 (the user after the 6 vs 6 test, 11-16: "현재 나이트의 길 문제는 길이 하나로 이어져 있어서 팀원과의 협동은 없고
     // 난이도도 어려워"; the proposal's version B, "B안으로 진행해줘"; Core KnightRoad):
@@ -49,7 +50,6 @@ namespace ChessFight.PawnRush
         // the host's, and what a client last heard.
         int pressed;
         float raise;
-        readonly Dictionary<ICharacterDriver, float> jumpedAt = new Dictionary<ICharacterDriver, float>();
         // the host's: the tub of the roads each of this team's pawns stood on last, and when each gold tub was stood on
         readonly Dictionary<ICharacterDriver, int> lastTub = new Dictionary<ICharacterDriver, int>();
         readonly float[] stoodAt = { -100f, -100f };
@@ -58,6 +58,8 @@ namespace ChessFight.PawnRush
         Transform[] pads;
         Transform[] pieces;
         Collider[] pieceColliders;
+        Transform[] marks;                      // R687: the gold mark over each piece still to take
+        Vector3[] pieceTub;                     // the middle of the tub each piece stands on (the king's: its own tub, up)
         Transform kingTub;
         Rigidbody kingBody;
         Vector3 kingRest;                       // the king's tub's place when it is up, in this game's frame
@@ -172,6 +174,9 @@ namespace ChessFight.PawnRush
             var them = Opponent;
             pieces = new Transform[road.Pieces];
             pieceColliders = new Collider[pieces.Length];
+            marks = new Transform[pieces.Length];
+            pieceTub = new Vector3[pieces.Length];
+            var gem = Arena.Emissive(Arena.Gold, 1.4f);
             for (int i = 0; i < pieces.Length; i++)
             {
                 var go = MiniGameParts.Piece(b.parent, "Piece " + road.PieceSquares[i], road.PieceKinds[i], PieceHeight, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .3f);
@@ -179,6 +184,12 @@ namespace ChessFight.PawnRush
                 pieces[i] = go.transform;
                 pieceColliders[i] = go.GetComponent<Collider>();
                 takenAt[i] = -10f;
+                pieceTub[i] = i == road.KingPiece ? kingRest : Square(road.PieceSquares[i]);
+                // R687: a gold gem turning over the piece says "this one" (Update moves it; gone once the piece is taken)
+                var mark = new GameObject("Target mark " + road.PieceSquares[i]).transform;
+                mark.SetParent(b.parent, false);
+                MiniGameParts.Part(mark, PrimitiveType.Cube, Vector3.zero, new Vector3(.3f, .3f, .3f), gem).transform.localRotation = Quaternion.Euler(45f, 0f, 35.26f);
+                marks[i] = mark;
             }
         }
 
@@ -220,7 +231,6 @@ namespace ChessFight.PawnRush
                 var run = driver is IMiniGamePawn p ? p.HipsVelocity : Vector3.zero;
                 run.y = 0f;
                 launchable.Launch(run + transform.up * KnightRoute.PadUp);
-                jumpedAt[driver] = Time.time;
                 launches = (launches + 1) & 255;
                 launchSquare = i;
                 return true;
@@ -252,9 +262,9 @@ namespace ChessFight.PawnRush
             foreach (var p in station.Pawns())
             {
                 if (!p.Own) continue;
-                // standing on a tub of the roads (hips about a metre over its top, not flying past): it is where a fall
-                // starts again, and a gold tub is pressed
-                if (p.Local.y > .2f && p.Local.y < 1.7f && Mathf.Abs(p.Velocity.y) < 2.5f)
+                // standing on a tub of the roads (hips over its top - a pawn's hips stand only 0.26 m up, and a pawn lying
+                // on the tub counts - and not flying past): it is where a fall starts again, and a gold tub is pressed
+                if (p.Local.y > -.2f && p.Local.y < 1.7f && Mathf.Abs(p.Velocity.y) < 2.5f)
                     for (int i = 0; i < pads.Length; i++)
                     {
                         var c = pads[i].localPosition;
@@ -264,18 +274,16 @@ namespace ChessFight.PawnRush
                         if (press >= 0) stoodAt[press] = t;
                         break;
                     }
-                if (Completed) continue;
-                var mg = p.Driver as IMiniGamePawn;
-                bool padJump = jumpedAt.TryGetValue(p.Driver, out float at) && t - at < KnightRoute.JumpCatch;
-                bool diving = mg != null && mg.Diving;
-                float speed = MiniGameParts.FlatSpeed(mg != null ? mg.HipsVelocity : p.Velocity);
+                // R687: a piece is taken by a pawn on its tub (over the tub's top, not in the water beside it, not passing
+                // high over it), or with its hips within reach of the piece
+                if (Completed || p.Local.y > PieceHeight + 1f || p.Local.y < -.3f) continue;
                 for (int i = 0; i < pieces.Length; i++)
                 {
                     if ((taken >> i & 1) != 0) continue;
                     // the king only once its tub is up
                     if (i == road.KingPiece && raise < KnightRoad.RaisedEnough) continue;
-                    if (p.Local.y > PieceHeight + 1f || p.Local.y < -.5f) continue;
-                    if (!KnightRoute.Takes(MiniGameParts.Flat(p.Local, pieces[i].localPosition), diving, speed, padJump)) continue;
+                    bool onTub = Mathf.Abs(p.Local.x - pieceTub[i].x) <= half && Mathf.Abs(p.Local.z - pieceTub[i].z) <= half;
+                    if (!KnightRoute.Takes(MiniGameParts.Flat(p.Local, pieces[i].localPosition), onTub)) continue;
                     taken |= 1 << i;
                 }
             }
@@ -302,6 +310,12 @@ namespace ChessFight.PawnRush
                 if (!now && was) Restore(i);
                 if (now) Fly(i, t);
                 else if (i == road.KingPiece) pieces[i].localPosition = PieceRest(i);     // rides its tub
+                // R687: the mark over a piece still to take turns and bobs (the king's goes down and up with its tub)
+                if (marks[i] == null) continue;
+                if (marks[i].gameObject.activeSelf == now) marks[i].gameObject.SetActive(!now);
+                if (now) continue;
+                marks[i].localPosition = pieces[i].localPosition + Vector3.up * (PieceHeight + .55f + .08f * Mathf.Sin(t * 3f + i));
+                marks[i].localRotation = Quaternion.Euler(0f, t * 120f + i * 40f, 0f);
             }
             shownTaken = taken;
             if (launches != shownLaunches)
@@ -452,7 +466,6 @@ namespace ChessFight.PawnRush
             pressed = 0;
             raise = 0f;
             stoodAt[0] = stoodAt[1] = -100f;
-            jumpedAt.Clear();
             lastTub.Clear();
         }
     }

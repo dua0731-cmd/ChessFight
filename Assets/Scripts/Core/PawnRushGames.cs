@@ -180,8 +180,9 @@ namespace ChessFight.Network
     // J, the knight's road (R129, replacing the spec's 25 islands and aimed launches): floor only on board squares
     // that follow one another by a knight's move, water everywhere else. A pad in the middle of every square only
     // jumps higher (no direction): the pawn runs the way it wants, jumps on the pad and dives to reach the next
-    // square. Enemy pieces stand on some of the squares; a dive (or a pad jump) onto one takes it. All taken: the
-    // gate opens. The road itself is KnightRoad (R686: several roads side by side and a king's tub).
+    // square. Enemy pieces stand on some of the squares; a pawn that comes to stand on a piece's square takes it
+    // (R687; a dive or a pad jump onto it was needed before). All taken: the gate opens. The road itself is KnightRoad
+    // (R686: several roads side by side and a king's tub).
     public static class KnightRoute
     {
         // The one chain the road was until R686: only the saved mini-game prefabs' progress path still runs along it
@@ -191,7 +192,7 @@ namespace ChessFight.Network
         // R686 (the user: "난이도도 어려워"): the pad hears a jump 1.1 m from its middle (was 0.8) and a piece is taken
         // from 1.2 m (was 0.9). SquareSize is the square the tub model was made for (MiniGameModels.Laundry scales
         // the model by a road's own width over it).
-        public const float PadRadius = 1.1f, PadUp = 7f, Reach = 1.2f, Speed = 4.5f, JumpCatch = 2f, SquareSize = 2.05f;
+        public const float PadRadius = 1.1f, PadUp = 7f, Reach = 1.2f, SquareSize = 2.05f;
 
         public static StationPoint Center(string square)
         {
@@ -199,9 +200,12 @@ namespace ChessFight.Network
             return PawnRushBoard.Center(f, r);
         }
 
-        // A take: our pawn's hips within reach of the piece, diving, fast, or still in the air from a pad jump.
-        public static bool Takes(float flatDistance, bool diving, float flatSpeed, bool padJump) =>
-            flatDistance <= Reach && (diving || flatSpeed >= Speed || padJump);
+        // A take. R687 (the user, 11-16: "통 위에 구조물을 쓰러뜨리는 시스템 자체도 왜 이렇게 만든건지 의문이고 유저
+        // 입장에서 직관적이지도 않아" -> of two proposals "올라서면 잡힘으로"): as in chess, a piece is taken by moving
+        // onto its square - one of our pawns on the piece's tub, however it came there, or its hips within reach of the
+        // piece itself (flying across the tub's corner). Until now a pawn had to be diving, running at 4.5 m/s or
+        // within two seconds of a pad jump, and one that walked into the piece took nothing.
+        public static bool Takes(float flatDistance, bool onTub) => onTub || flatDistance <= Reach;
     }
 
     // J's road for a team size. R686 (the user after the 6 vs 6 test, 11-16: "현재 나이트의 길 문제는 길이 하나로 이어져

@@ -1415,10 +1415,10 @@ public static class NetworkCoreTests
                       && Math.Abs(DrawbridgeRope.Speed(3, 0) - .199f) < .002f && Math.Abs(DrawbridgeRope.Speed(4, 0) - .292f) < .003f, "table");
                 Check(Math.Abs(DrawbridgeRope.Speed(1, .5f) - .04f) < 1e-4f && DrawbridgeRope.Speed(0, .5f) == 0f && DrawbridgeRope.Speed(7.2f, 0) <= .35f, "minimum and cap");
                 Check(DrawbridgeRope.Speed(1.8f, 0) > DrawbridgeRope.Speed(1, 0) * 1.8f, "sprinting pulls harder than it costs"); });
-            Test("J knight's road: the pad's jump and a take (R686: a wider pad, a longer reach)", () => {
+            Test("J knight's road: the pad's jump, and a piece taken by standing on its tub (R687: no dive needed)", () => {
                 Check(KnightRoute.PadRadius == 1.1f && KnightRoute.Reach == 1.2f && KnightRoute.PadUp == 7f, "the pad and the reach");
-                Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && KnightRoute.Takes(1.1f, false, 5f, false)
-                      && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.5f, true, 9f, true), "takes"); });
+                // on the piece's tub, however far from the piece itself; or within reach of the piece; else not
+                Check(KnightRoute.Takes(1.8f, true) && KnightRoute.Takes(.5f, true) && KnightRoute.Takes(1.1f, false) && !KnightRoute.Takes(1.3f, false) && !KnightRoute.Takes(4f, false), "takes"); });
             Test("G king escort: a road of fifteen joined squares, 31.5 m, five turntables, ends on e8 on the board, the speed table", () => {
                 Check(KingEscortPath.Connected() && KingEscortPath.Cells.Length == 15, "joined");
                 Check(Math.Abs(KingEscortPath.Length - 31.5f) < .01f, "length " + KingEscortPath.Length);
