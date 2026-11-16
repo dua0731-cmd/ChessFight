@@ -24,7 +24,7 @@
   `RCY_ROOT` 하나(exec 네임스페이스 또는 환경 변수, 없으면 처음 PC의 `C:/Work/ChessFight-SeoungTest`) — 예: `g = {"__name__": "rcy", "RCY_ROOT": r"C:/Users/HOSEO/Documents/GitHub/ChessFight", ...}`.
   이 PC 세팅: Blender 5.2.3 LTS(winget, 같은 5.2 줄), BlenderMCP 애드온 2.0(`addon.py`, github.com/ahujasid/blender-mcp, 켜 두면 Blender를 열 때 localhost:9876 자동 시작, 사용 데이터 전송 꺼짐),
   uv(winget) + Claude Code 로컬 MCP 서버 `blender`(`uvx --from blender-mcp==2.0.0 blender-mcp`), 스킬 94개(github.com/arjun988/blender-skills의 `.claude/skills`를
-  프로젝트 `.claude/skills`에 복사, git에 안 올림 — `.git/info/exclude`). 새 세션부터 `mcp__blender__*` 도구와 스킬이 잡힌다. Blender 없이 일괄 작업은
+  프로젝트 `.claude/skills`에 복사, 11-16부터 seoungtest에 커밋). 새 세션부터 `mcp__blender__*` 도구와 스킬이 잡힌다. Blender 없이 일괄 작업은
   `blender -b --factory-startup --python <스크립트>`로 해도 된다(이번 재출력 · 측정이 그렇게 함).
 
 ## 내보내기 순서 (새 Blender 네임스페이스로)
@@ -42,7 +42,8 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
 ## 다음 작업 메모 (2026-11-16 HOSEO PC에서 끝냄 → 다른 PC에서 이어 가기)
 
 **시작:** `git pull`(seoungtest, 이 메모가 든 커밋). 처음 PC(`C:/Work/ChessFight-SeoungTest`)는 스크립트의 기본 경로 그대로라 `RCY_ROOT` 없이 돈다.
-QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, 경로는 파일 위치에서 찾음). 스킬 94개 · Blender MCP는 PC마다 세팅(위 "다른 PC에서 이어 하기").
+QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, 경로는 파일 위치에서 찾음). **스킬 94개(`.claude/skills`, MIT)는 이제 저장소에 있다**
+— PC마다 할 것(Blender 5.2 · uv · BlenderMCP 애드온 설치 · `claude mcp add`로 blender 서버 등록)은 [Tools/BlenderMCP/README](../../Tools/BlenderMCP/README.md).
 **Unity가 Play 중일 때 스크립트 · FBX를 쓰지 말 것:** Play 도중 재컴파일돼 래그돌 static 마찰 재질이 비고 넘어질 때 NullReferenceException이 났다
 (11-16, 래그돌 버그 아님 · 빌드 무관 · main 코드도 같음). Play를 껐다 켜면 사라진다. 막으려면 Unity Preferences > General > Script Changes While Playing을
 "Recompile After Finished Playing"으로(PC마다 설정).
