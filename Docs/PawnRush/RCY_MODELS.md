@@ -15,6 +15,12 @@
 - 규칙(승규): 상자 콜라이더만, 폰이 닿는 면은 모델을 콜라이더에 맞춤(~10 cm 넘게 어긋나면 고치거나 보고), 게임 폭 · 틈 안 바꿈, 신호(물 · 폭포 · 거품 ·
   금 테두리 · 표지 · 등불 · 빨강/초록 표시 · 결승선 · 진행 막대)는 절대 안 가림, 성 키트 말고는 회색 클레이(텍스처 없음), 맵 밖은 모델링 안 함, 정지 화면으로 보고.
 - Unity 확인은 이 폴더에 열린 에디터 `ChessFight-SeoungTest@5654cdc8`만 쓴다(main 에디터 C:/Work/ChessFight 금지). 장면 `Assets/Scenes/PawnRush_MapTest.unity`.
+- **다른 PC에서 이어 하기(11-16, HOSEO PC `C:\Users\HOSEO\Documents\GitHub\ChessFight`에서 처음 세팅):** 스크립트의 프로젝트 경로는
+  `RCY_ROOT` 하나(exec 네임스페이스 또는 환경 변수, 없으면 처음 PC의 `C:/Work/ChessFight-SeoungTest`) — 예: `g = {"__name__": "rcy", "RCY_ROOT": r"C:/Users/HOSEO/Documents/GitHub/ChessFight", ...}`.
+  이 PC 세팅: Blender 5.2.3 LTS(winget, 같은 5.2 줄), BlenderMCP 애드온 2.0(`addon.py`, github.com/ahujasid/blender-mcp, 켜 두면 Blender를 열 때 localhost:9876 자동 시작, 사용 데이터 전송 꺼짐),
+  uv(winget) + Claude Code 로컬 MCP 서버 `blender`(`uvx --from blender-mcp==2.0.0 blender-mcp`), 스킬 94개(github.com/arjun988/blender-skills의 `.claude/skills`를
+  프로젝트 `.claude/skills`에 복사, git에 안 올림 — `.git/info/exclude`). 새 세션부터 `mcp__blender__*` 도구와 스킬이 잡힌다. Blender 없이 일괄 작업은
+  `blender -b --factory-startup --python <스크립트>`로 해도 된다(이번 재출력 · 측정이 그렇게 함).
 
 ## 내보내기 순서 (새 Blender 네임스페이스로)
 
@@ -35,7 +41,9 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
    - 측정 결과(현재 FBX): Entrance 218k 삼각형(넓이 0 면 396), Canal 126k(8), Sorting 278k(1,327), Platform 51k, Finish court 28k, Section floors 15k,
      Scenery 26k / own 35k, 성 OuterGate 43k · FinalGate 38k · SectionEnd 55k(AI 키트 잘린 면 비다양체 모서리 1,626). 떨어진 점 · 선 없음.
    - **이미 한 것:** `rcy_kit.join()`에 `bmesh.ops.dissolve_degenerate(dist=1e-5)` 정리 단계 추가, 8개 고정물 FBX(Entrance · Canal · Sorting · Platform · FinishCourt · SectionFloors · Scenery · SceneryOwn)를 다시 내서 넓이 0 면 0개(Sorting 277.5k → 274.2k). Unity Play에서 오류 없이 불러옴(AI 확인만). 참고:
-     전체를 한 번에 다시 지으면 몇 분 걸려 MCP 응답이 끊긴 것처럼 보이지만 빌드는 끝난다. 성 · 기계 · 말 · 마차 FBX는 아직 다시 안 냄.
+     전체를 한 번에 다시 지으면 몇 분 걸려 MCP 응답이 끊긴 것처럼 보이지만 빌드는 끝난다.
+   - **(11-16 HOSEO PC) 기계 · 마차 9개도 다시 냄:** 33개 전부를 읽기 전용으로 잰 결과 넓이 0 면이 남은 것은 Coach 91 · ConveyorCrate 32 · ConveyorStack 38 · StackRow 156 · StackCrate 54 · RowTrolley 128 · SlamTrolley 112 · SlewJib 80 · HoistFrame 56 → 소스에서 다시 지어(정리 단계 포함) 이 9개만 다시 냄. 이전 커밋 FBX와 비교: 표면 넓이 · 크기 · 점 위치 차이 0(양방향 최근접 거리 0), 재질 칸 그대로, 삼각형 2,306개 줄어듦. **지금 33개 합계 1,049,494 삼각형, 넓이 0 면 · 떨어진 점 · 선 · 3면 모서리 0.** 성 · 말 · 바퀴 · 문짝 · 고리는 원래 넓이 0 면 없음. Unity에서 다시 불러 본 것 없음(이 PC는 Unity MCP 연결 전).
+   - **남은 열린 모서리:** `RcyCastleSectionEnd` 1,626개 = 14고리. 마지막 계단 디딤판 4개(높이 7.0 ~ 8.0 m, 고리마다 31 m)와 양쪽 난간 토막 10개(x ±5.94 ~ 6.50, 아랫단 z 7.0 / 8.0). 1 cm까지 붙여도 1,501개라 이음새가 아니라 잘린 아래쪽이 열린 것. 폰 눈높이 다섯 각도(계단 위 · 아래 · 낮게 뒤 · 난간 동 · 서) 마젠타 배경 · 뒷면 숨김 렌더에서 비쳐 보이는 틈 없음(`scratchpad` 렌더, 커밋 안 함). 막으려면 `castle_model.py` `part()`의 자른 면 마감(cap)을 계단 · 난간에도 — 성 내보내기는 `RoyalCarriageYard.Castle.cs`의 상자 표도 다시 쓰므로 그때 같이.
    - 남은 판정 후보: Entrance · Sorting 삼각형 예산(바닥 밑 안 보이는 판석 밑면 지우기 검토), 구역별 3/4 각도 정지 화면, qa-review 판정표(SHIP/…).
    - 다시 낸 뒤: 바닥 윗면이 콜라이더 위 ~3 cm 안인지, 구멍 렌더(마젠타 배경), Unity Play에서 콘솔 오류 없는지.
 2. 남은 보이는 것: 깃발은 코드의 파란 천(파란색 없애는 색 작업은 나중), 최종 성벽 가운데 기둥 음영 이음, 표지 글씨가 돌 위에서 어두움,

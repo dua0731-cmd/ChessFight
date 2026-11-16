@@ -10,7 +10,7 @@
 
 import bpy, hashlib, os
 
-RCY_ROOT = r"C:/Work/ChessFight-SeoungTest"
+RCY_ROOT = globals().get("RCY_ROOT") or os.environ.get("RCY_ROOT") or r"C:/Work/ChessFight-SeoungTest"   # as rcy_kit.py
 RCY_OUT_REL = "Assets/Resources/PawnRushCarriageYard"
 RCY_FBX_TEMPLATE = os.path.join(RCY_ROOT, "Assets/Resources/PawnRushGarden/RoyalWaterGarden.fbx.meta")
 RCY_FOLDER_META = ("folderAsset: yes\nDefaultImporter:\n  externalObjects: {}\n  userData: \n  assetBundleName: \n"

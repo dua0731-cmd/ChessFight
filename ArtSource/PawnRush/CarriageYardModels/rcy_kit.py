@@ -19,7 +19,10 @@
 import bpy, bmesh, json, math, os
 from mathutils import Vector, Quaternion, Matrix
 
-RCY_HERE = r"C:/Work/ChessFight-SeoungTest/ArtSource/PawnRush/CarriageYardModels"
+# The project root: set RCY_ROOT in the exec namespace or the environment on another PC (the default is the PC the
+# yard was first modelled on).
+RCY_ROOT = globals().get("RCY_ROOT") or os.environ.get("RCY_ROOT") or r"C:/Work/ChessFight-SeoungTest"
+RCY_HERE = os.path.join(RCY_ROOT, "ArtSource/PawnRush/CarriageYardModels")
 RCY_DUMP = os.path.join(RCY_HERE, "guides", "rcy_built_play.json")
 CLAY = (0.62, 0.62, 0.62, 1.0)
 

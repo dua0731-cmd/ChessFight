@@ -32,7 +32,7 @@ import bpy, bmesh, hashlib, json, math, os
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
-CASTLE_ROOT = r"C:/Work/ChessFight-SeoungTest"
+CASTLE_ROOT = globals().get("RCY_ROOT") or os.environ.get("RCY_ROOT") or r"C:/Work/ChessFight-SeoungTest"   # as rcy_kit.py
 CASTLE_SRC = os.path.join(RCY_HERE, "source_ai3d")
 CASTLE_SOURCES = {   # object in "RCY Castle source": (FBX in source_ai3d, the slot and texture name in Unity)
     "AI outer gatehouse": ("stone_castle_gate.fbx", "RcyCastle_OuterGate"),
