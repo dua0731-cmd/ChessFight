@@ -178,13 +178,34 @@ def guide(prefix, name=None, ghosts=True, colliders=True, skip=()):
 # ------------------------------------------------------------------ modelling helpers (Blender frame, metres)
 
 
-def box(col, name, lo, hi, mat="RCY | clay", bevel=0.0, segments=2):
+def box(col, name, lo, hi, mat="RCY | clay", bevel=0.0, segments=2, bevel_face=None):
     lo, hi = Vector(lo), Vector(hi)
     bm = _box_bm((lo + hi) / 2, hi - lo)
     ob = mesh_object(name, bm, col, (mat,))
     if bevel > 0:
-        bevel_mod(ob, bevel, segments)
+        mod = bevel_mod(ob, bevel, segments)
+        if bevel_face and mod is not None:
+            face_edges(ob, bevel_face)
+            mod.limit_method = "WEIGHT"
     return ob
+
+
+def face_edges(ob, face):
+    """R682 (asset-optimization): marks for the bevel only the four edges round one face of a box part ('+x' ... '-z': a
+    wall block's coursed face, a slab's top), so its hidden sides and back stay plain - the same look from the front at
+    about a third of the triangles of a bevel on all twelve edges."""
+    me = ob.data
+    i = "xyz".index(face[1])
+    cos = [v.co[i] for v in me.vertices]
+    plane = max(cos) if face[0] == "+" else min(cos)
+    on = [abs(c - plane) < 1e-6 for c in cos]
+    # FACE_BEVEL_CORNERS: the four edges running back from the face too, so its corners round off instead of mitring.
+    pick = (lambda a, b: a or b) if FACE_BEVEL_CORNERS else (lambda a, b: a and b)
+    att = me.attributes.get("bevel_weight_edge") or me.attributes.new("bevel_weight_edge", "FLOAT", "EDGE")
+    att.data.foreach_set("value", [1.0 if pick(on[e.vertices[0]], on[e.vertices[1]]) else 0.0 for e in me.edges])
+
+
+FACE_BEVEL_CORNERS = True
 
 
 def bevel_mod(ob, width, segments=2):
@@ -468,6 +489,16 @@ def by_path(path):
 # ------------------------------------------------------------------ stone
 
 
+# Stone edges (graphics pass R682, 11-16, lookdev): the concept's "big soft-edged blocks" - a wall block's bevel (width m,
+# segments), a paving slab's and the slab's depth. Round 7 cm in two steps on wall blocks, a 4.5 cm chamfer on a 10 cm
+# slab (were 3.5 cm and 2.5 cm in one step on a 6 cm slab; a side-by-side render chose these). Only the edges round the
+# seen face are bevelled (box bevel_face): the old values keep the old all-edge bevel, so a build that sets them back
+# comes out as before.
+STONE_BEVEL = (.07, 2)
+FLAG_BEVEL = (.045, 1)
+FLAG_DEPTH = .1
+
+
 def ashlar(col, name, lo, hi, face, course=.55, length=1.15, mat=STONE, below=None):
     """A wall of beveled stone blocks filling lo..hi, coursed on its `face` ('+x', '-x', '+y', '-y'): the blocks are as
     deep as the wall; below `below` (Blender z, e.g. the water) one plain core instead."""
@@ -505,7 +536,9 @@ def ashlar(col, name, lo, hi, face, course=.55, length=1.15, mat=STONE, below=No
             # over a block runs through the wall in a channel those close (dropping them let the sky through at
             # every joint corner).
             sides = _joint_sides(spans, k, along)
-            parts.append(hide_sides(box(col, name, blo, bhi, mat, bevel=.035, segments=1), sides, flat_only=True))
+            parts.append(hide_sides(box(col, name, blo, bhi, mat, bevel=min(STONE_BEVEL[0], max(.035, h / 3)), segments=STONE_BEVEL[1],
+                                        bevel_face=face if STONE_BEVEL[1] > 1 else None),
+                                    sides, flat_only=True))
     return join(col, name, parts)
 
 
@@ -513,7 +546,7 @@ def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=STONE, rng=None
     """A paved top: beveled slabs in running bond, their tops at `top`, on a base slab 6 cm down. Only what can be
     seen is kept: a slab's bottom and the joints between slabs are dropped, the edge of the paving stays."""
     rng = rng or rnd
-    parts = [box(col, name + " base", (x0, y0, top - 1.0), (x1, y1, top - .06), mat)]
+    parts = [box(col, name + " base", (x0, y0, top - 1.0), (x1, y1, top - FLAG_DEPTH), mat)]
     rows = []   # (y, d, [(a, b) ...]); the random widths are drawn in the same order as before R680 QA
     row, y = 0, y0
     while y < y1 - 1e-3:
@@ -536,8 +569,137 @@ def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=STONE, rng=None
                 sides.add("-y")
             if r + 1 < len(rows) and _covers(rows[r + 1][2], a, b):
                 sides.add("+y")
-            parts.append(hide_sides(box(col, name, (a, y, top - .06), (b, y + d, top), mat, bevel=.025, segments=1), sides))
+            parts.append(hide_sides(box(col, name, (a, y, top - FLAG_DEPTH), (b, y + d, top), mat, bevel=FLAG_BEVEL[0],
+                                        segments=FLAG_BEVEL[1], bevel_face="+z" if FLAG_DEPTH > .06 else None), sides))
     return join(col, name, parts)
+
+
+def burn_flagstones(x0, x1, y0, y1, size=1.0, rng=None):
+    """R682: draws the numbers flagstones() would for this patch and lays nothing. A floor re-cut into a field and kerb
+    bands with their own numbers spends the shared sequence as the one patch did, so every later layout (wall blocks,
+    goods) stays as it was."""
+    rng = rng or rnd
+    y = y0
+    row = 0
+    while y < y1 - 1e-3:
+        d = min(size * .8, y1 - y)
+        x = x0 - (size * .5 if row % 2 else 0)
+        while x < x1 - 1e-3:
+            x += size * rng.uniform(.85, 1.15)
+        y += d
+        row += 1
+
+
+def setts_line(col, name, a, b, y0, y1, top, rng):
+    """One line of small square setts a..b wide along y (a flagstones() band this narrow would leave its running bond's
+    slivers out), on a base like the flags', with the same edges and hidden faces."""
+    w = b - a
+    parts = [box(col, name + " base", (a, y0, top - 1.0), (b, y1, top - FLAG_DEPTH), STONE)]
+    y = y0
+    while y < y1 - 1e-3:
+        d = min(w * rng.uniform(.9, 1.15), y1 - y)
+        sides = {"-z"} | ({"-y"} if y > y0 + 1e-6 else set()) | ({"+y"} if y + d < y1 - 1e-3 else set())
+        parts.append(hide_sides(box(col, name, (a, y, top - FLAG_DEPTH), (b, y + d, top), STONE, bevel=min(FLAG_BEVEL[0], w / 5),
+                                    segments=FLAG_BEVEL[1], bevel_face="+z" if FLAG_DEPTH > .06 else None), sides))
+        y += d
+    return join(col, name, parts)
+
+
+def kerbed_floor(col, name, x0, x1, y0, y1, top, kerb_x, size=2.0, kerb=.8, setts=.24, seed=682):
+    """R682 (environment-artist, graphics pass): a floor x0..x1 whose long sides get a border that frames the field
+    between them (the yards' wide flag fields read as one flat sheet): at +-kerb_x a kerb band of long slabs (`kerb`
+    wide, 2.4 m long so their joints never line up with the field's rows) and inside it one line of small square setts.
+    Beyond the bands (x0..-kerb_x, kerb_x..x1) plain flags again. Tops all at `top`."""
+    burn_flagstones(x0, x1, y0, y1, size)
+    inner = kerb_x - kerb - setts
+    parts = [flagstones(col, name, -inner, inner, y0, y1, top, size=size, rng=random.Random(seed))]
+    for s in (-1, 1):
+        a, b = sorted((s * inner, s * (inner + setts)))
+        parts.append(setts_line(col, name + " setts", a, b, y0, y1, top, random.Random(seed + 8 + s)))
+        a, b = sorted((s * (kerb_x - kerb), s * kerb_x))
+        parts.append(flagstones(col, name + " kerb", a, b, y0, y1, top, size=3.0, rng=random.Random(seed + 2 + s)))
+        out = sorted((s * kerb_x, x1 if s > 0 else x0))
+        if out[1] - out[0] > .05:
+            parts.append(flagstones(col, name, out[0], out[1], y0, y1, top, size=size, rng=random.Random(seed + 5 + s)))
+    return parts
+
+
+# ------------------------------------------------------------------ chess pieces as icons (R682)
+
+
+def _pawn_icon():
+    pts = [(.2, 0), (.8, 0), (.8, .1), (.68, .15), (.6, .5), (.66, .56), (.57, .6)]
+    for k in range(1, 18):     # the head, round from the right side of the neck over the top to the left
+        a = math.radians(-60 + 300 * k / 18)
+        pts.append((.5 + .17 * math.cos(a), .77 + .17 * math.sin(a)))
+    return pts + [(.43, .6), (.34, .56), (.4, .5), (.32, .15), (.2, .1)]
+
+
+# Six outlines in a unit box (u right, v up, foot on v 0), for the sorting stalls' plaques (the concept: "a matte brass
+# piece-icon plaque" on each stall bay; pictograms, never numbers or letters).
+PIECE_ICONS = {
+    "pawn": _pawn_icon(),
+    "rook": [(.2, 0), (.8, 0), (.8, .1), (.7, .14), (.66, .62), (.76, .68), (.76, .95), (.66, .95), (.66, .85), (.56, .85),
+             (.56, .95), (.44, .95), (.44, .85), (.34, .85), (.34, .95), (.24, .95), (.24, .68), (.34, .62), (.3, .14), (.2, .1)],
+    "knight": None,   # KNIGHT_HEAD (carving, below)
+    "bishop": [(.22, 0), (.78, 0), (.78, .1), (.64, .16), (.58, .42), (.66, .48), (.6, .52), (.66, .62), (.66, .72),
+               (.6, .82), (.52, .9), (.5, .92), (.48, .9), (.4, .82), (.34, .72), (.34, .62), (.4, .52), (.34, .48),
+               (.42, .42), (.36, .16), (.22, .1)],
+    "queen": [(.2, 0), (.8, 0), (.8, .1), (.68, .14), (.62, .55), (.72, .6), (.8, .9), (.68, .72), (.6, .95), (.54, .74),
+              (.5, 1.0), (.46, .74), (.4, .95), (.32, .72), (.2, .9), (.28, .6), (.38, .55), (.32, .14), (.2, .1)],
+    "king": [(.2, 0), (.8, 0), (.8, .1), (.68, .14), (.62, .55), (.7, .6), (.66, .72), (.54, .72), (.54, .8), (.62, .8),
+             (.62, .88), (.54, .88), (.54, .98), (.46, .98), (.46, .88), (.38, .88), (.38, .8), (.46, .8), (.46, .72),
+             (.34, .72), (.3, .6), (.38, .55), (.32, .14), (.2, .1)],
+}
+PIECE_ORDER = ("pawn", "rook", "knight", "bishop", "queen", "king")
+
+
+def piece_icon(col, name, kind, at, facing, height, depth=.02, mat=WALNUT):
+    """A piece's outline raised `depth` off a plaque whose face is the plane x = at.x, looking along Blender x `facing`
+    (+1 / -1); `at` is the icon's foot centre, `height` tall. Eased edges so it reads in clay."""
+    at = Vector(at)
+    out = PIECE_ICONS[kind] or KNIGHT_HEAD
+    bm = bmesh.new()
+    lo, hi = [], []
+    for u, v in out:
+        y = at.y + (u - .5) * height * facing     # seen from the front, u runs to the viewer's right
+        lo.append(bm.verts.new((at.x, y, at.z + v * height)))
+        hi.append(bm.verts.new((at.x + facing * depth, y, at.z + v * height)))
+    n = len(out)
+    caps = [bm.faces.new(lo), bm.faces.new(list(reversed(hi)))]
+    for k in range(n):
+        bm.faces.new((lo[k], hi[k], hi[(k + 1) % n], lo[(k + 1) % n]))
+    bmesh.ops.triangulate(bm, faces=caps, quad_method="BEAUTY", ngon_method="EAR_CLIP")
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = mesh_object(name, bm, col, (mat,))
+    bevel_mod(ob, min(.006, depth / 3), 1)
+    return ob
+
+
+def crenel_fascia(col, name, x, y0, y1, top, high=.34, low=.18, merlon=.5, gap=.32, thick=.05, mat=OAK):
+    """R682 (the concept's granary bay: "a crenel-cut oak fascia and a matte brass edge"): an eave board along y at x,
+    its foot cut like a battlement - tabs `high` deep, `merlon` long, between notches `low` deep, `gap` long."""
+    n = max(1, int((y1 - y0 + gap) / (merlon + gap)))
+    pad = (y1 - y0 - (n * merlon + (n - 1) * gap)) / 2
+    pts = [(y0, top), (y1, top), (y1, top - low)]
+    ends = []
+    for k in reversed(range(n)):
+        a = y0 + pad + k * (merlon + gap)
+        ends += [(a + merlon, top - low), (a + merlon, top - high), (a, top - high), (a, top - low)]
+    pts += ends + [(y0, top - low)]
+    bm = bmesh.new()
+    lo = [bm.verts.new((x - thick / 2, a, b)) for a, b in pts]
+    hi = [bm.verts.new((x + thick / 2, a, b)) for a, b in pts]
+    m = len(pts)
+    caps = [bm.faces.new(lo), bm.faces.new(list(reversed(hi)))]
+    for k in range(m):
+        bm.faces.new((lo[k], hi[k], hi[(k + 1) % m], lo[(k + 1) % m]))
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4], quad_method="BEAUTY", ngon_method="EAR_CLIP")
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = mesh_object(name, bm, col, (mat,))
+    bevel_mod(ob, .012, 2)
+    return ob
 
 
 # ------------------------------------------------------------------ marble
@@ -639,5 +801,36 @@ def beam(col, name, a, b, w=.2, h=.2, mat=WALNUT, segments=2):
     bmesh.ops.transform(bm, matrix=Matrix.Translation((a + b) / 2) @ q.to_matrix().to_4x4(), verts=bm.verts)
     ob = mesh_object(name, bm, col, (mat,))
     bevel_mod(ob, .02, segments)
+    return ob
+
+
+# ------------------------------------------------------------------ carving (R682)
+
+# A chess knight's head in profile facing -u, its neck's foot on v 0 (unit box; canal_model.py's medallion outline).
+KNIGHT_HEAD = [(.18, 0), (.86, 0), (.86, .07), (.78, .1), (.8, .3), (.84, .48), (.82, .64), (.76, .78), (.66, .9),
+               (.6, .97), (.55, 1.04), (.5, .94), (.42, .92), (.32, .86), (.22, .76), (.12, .64), (.06, .56), (.04, .5),
+               (.07, .44), (.16, .43), (.2, .47), (.26, .44), (.36, .46), (.42, .42), (.4, .32), (.33, .22), (.28, .12),
+               (.2, .1)]
+
+
+def knight_finial(col, name, at, facing, height, thick, mat=WALNUT):
+    """R682 (the concept: "carved knight heads appear only high up, on crane and hoist arm ends"): a knight's head carved
+    from a beam's end. `at` is the end face's foot (Blender), the head looks along Blender x `facing` (+1 / -1), its
+    back of the neck 2 cm into the beam; `height` tall, `thick` across (Blender y). Eased edges so it reads in clay."""
+    at = Vector(at)
+    bm = bmesh.new()
+    lo, hi = [], []
+    for u, v in KNIGHT_HEAD:
+        x = at.x + facing * ((.86 - u) * height - .02)
+        lo.append(bm.verts.new((x, at.y - thick / 2, at.z + v * height)))
+        hi.append(bm.verts.new((x, at.y + thick / 2, at.z + v * height)))
+    n = len(KNIGHT_HEAD)
+    caps = [bm.faces.new(lo), bm.faces.new(list(reversed(hi)))]
+    for k in range(n):
+        bm.faces.new((lo[k], hi[k], hi[(k + 1) % n], lo[(k + 1) % n]))
+    bmesh.ops.triangulate(bm, faces=caps, quad_method="BEAUTY", ngon_method="EAR_CLIP")
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = mesh_object(name, bm, col, (mat,))
+    bevel_mod(ob, min(.025, thick / 6), 2)
     return ob
 

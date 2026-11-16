@@ -51,6 +51,9 @@ namespace ChessFight.PawnRush
         Transform[] tail;
         Transform[][] legs;
         float phase, lastTravelled = -1f, stir;
+        // R683 (승규 11-16 "말이 뛰는 느낌 ... 엄청 자연스럽게"): a team's two horses a little out of step (the off horse
+        // a tenth of a stride behind), not one horse drawn twice.
+        float gaitOffset;
         double lastNow = double.NaN;
 
         // Built under `parent` at `at` (local), nose to the parent's +z. `saddle`: a royal cloth on its back (a ridden
@@ -62,6 +65,7 @@ namespace ChessFight.PawnRush
             root.SetParent(parent, false);
             root.localPosition = at;
             horse.Root = root;
+            horse.gaitOffset = name == "Horse E" ? .1f : 0f;
             var hide = CoatMaterial(coat);
             var mane = Mane(coat);
             var b = Pivot(root, "Body", BodyAt, Vector3.zero);
@@ -159,7 +163,8 @@ namespace ChessFight.PawnRush
         // `topSpeed` m/s, still when it stands; `now` (the shared clock) tosses the head while it rears and swishes the
         // tail. Every angle below turns about x: a positive one swings the lower end of a leg's part backward, tips
         // the neck and the head down, lifts the tail.
-        public void Pose(double now, float rear, float speed, float topSpeed, float travelled)
+        // R683: `turn` (degrees a second, + to the right) - turning, the horse leans into the turn and looks where it goes.
+        public void Pose(double now, float rear, float speed, float topSpeed, float travelled, float turn = 0f)
         {
             if (body == null) return;
             float dt = double.IsNaN(lastNow) ? 0f : Mathf.Clamp((float)(now - lastNow), 0f, .1f);
@@ -186,7 +191,7 @@ namespace ChessFight.PawnRush
                 var leg = legs[i];
                 if (leg == null || leg[0] == null) continue;
                 bool fore = i < 2;
-                float u = Mathf.Repeat(phase + Mathf.Lerp(TrotAt[i], GallopAt[i], gallop), 1f);
+                float u = Mathf.Repeat(phase + gaitOffset + Mathf.Lerp(TrotAt[i], GallopAt[i], gallop), 1f);
                 float top, mid, low, fetlock;
                 if (u < duty)
                 {
@@ -234,25 +239,31 @@ namespace ChessFight.PawnRush
             }
             // The body rises over the legs between footfalls (twice a stride at a trot, once at a gallop) and at a
             // gallop rocks, up in front as the hind legs push, down as the fore legs land.
-            float bob = Mathf.Lerp(.5f - .5f * Mathf.Cos(4f * Mathf.PI * phase), .5f - .5f * Mathf.Cos(2f * Mathf.PI * (phase - .15f)), gallop);
-            float rock = Mathf.Sin(2f * Mathf.PI * (phase - .3f)) * gallop * stir;
-            body.localPosition = BodyAt + new Vector3(0f, (.02f + .05f * gallop) * bob * stir, 0f);
-            body.localRotation = Quaternion.Euler(-32f * rear + 4f * rock, 0f, 0f);
+            // R683: more of it at a gallop (the body rose 5 cm and rocked 4 degrees: it read as gliding), and a lean
+            // into a turn.
+            float ph = phase + gaitOffset;
+            float bob = Mathf.Lerp(.5f - .5f * Mathf.Cos(4f * Mathf.PI * ph), .5f - .5f * Mathf.Cos(2f * Mathf.PI * (ph - .15f)), gallop);
+            float rock = Mathf.Sin(2f * Mathf.PI * (ph - .3f)) * gallop * stir;
+            float lean = Mathf.Clamp(-turn * .035f, -5f, 5f);
+            body.localPosition = BodyAt + new Vector3(0f, (.025f + .075f * gallop) * bob * stir, 0f);
+            body.localRotation = Quaternion.Euler(-32f * rear + 6.5f * rock, 0f, lean);
             float clock = (float)(now % 1000.0);
             if (neck != null)
             {
                 // The neck stretches out and nods with the stride at a gallop; standing, it breathes.
-                float nod = Mathf.Sin(2f * Mathf.PI * (phase - .1f)) * (2f + 6f * gallop) * stir;
+                float nod = Mathf.Sin(2f * Mathf.PI * (ph - .1f)) * (2.5f + 8.5f * gallop) * stir;
                 float toss = 8f * Mathf.Sin(clock * 9f) * rear;
                 float idle = 2f * Mathf.Sin(clock * .7f) * (1f - stir);
-                neck.localRotation = Quaternion.Euler(-12f * rear + toss + 6f * gallop * stir + nod - 4f * rock + idle, 0f, 0f);
-                if (head != null) head.localRotation = Quaternion.Euler(-.5f * nod - 6f * rear, 0f, 0f);
+                float look = Mathf.Clamp(turn * .09f, -14f, 14f);
+                neck.localRotation = Quaternion.Euler(-12f * rear + toss + 6f * gallop * stir + nod - 5f * rock + idle, look, 0f);
+                if (head != null) head.localRotation = Quaternion.Euler(-.5f * nod - 6f * rear, .6f * look, 0f);
             }
             if (tail != null && tail[0] != null)
             {
                 float swish = Mathf.Sin(clock * 1.9f) * (6f - 3f * stir);
                 float lift = (12f + 10f * gallop) * stir;
-                float wave = 6f * Mathf.Sin(2f * Mathf.PI * (phase - .2f)) * stir;
+                float wave = 6f * Mathf.Sin(2f * Mathf.PI * (ph - .2f)) * stir;
+                swish -= Mathf.Clamp(turn * .06f, -10f, 10f);    // the tail swings out of a turn
                 tail[0].localRotation = Quaternion.Euler(.6f * lift + 32f * rear, swish, 0f);
                 tail[1].localRotation = Quaternion.Euler(.3f * lift + .5f * wave, .8f * swish, 0f);
                 tail[2].localRotation = Quaternion.Euler(.2f * lift + wave, .6f * swish, 0f);

@@ -28,7 +28,8 @@ LIFT_Y, LIFT_AXLE, LANDING_Y = 137.0, 4.6, 141.4
 
 
 def yard_and_walls(col):
-    parts = [flagstones(col, "Sorting paving", -SORT_HALF, SORT_HALF, STALL_Y0, POOL_Y0, 0.0, size=2.0)]
+    # R682: a kerb band along the stalls' counters (x +-23.5) frames the yard's field; plain flags under the stalls.
+    parts = kerbed_floor(col, "Sorting paving", -SORT_HALF, SORT_HALF, STALL_Y0, POOL_Y0, 0.0, STALL_FRONT, size=2.0, seed=6831)
     for s in (-1, 1):
         x0, x1 = sorted((s * SORT_HALF, s * (SORT_HALF + 1)))
         face = "-x" if s > 0 else "+x"
@@ -41,6 +42,7 @@ def yard_and_walls(col):
         g = -s * .05
         parts.append(box(col, "Side wall coping", (min(x0, x0 + g), 81.0, 10.75), (max(x1, x1 + g), 159.0, 11.0), STONE, bevel=.04))
         parts.append(box(col, "Side wall plinth", (min(x0, x0 + g * 1.2), 81.0, 0), (max(x1, x1 + g * 1.2), POOL_Y0, .35), STONE, bevel=.03))
+        parts += wall_rhythm(col, s)
         # The yard's south corners where the canal's landing opens 20 m wide.
         a0, a1 = sorted((s * 22.0, s * 27.0))
         parts.append(ashlar(col, "Arena wall", (a0, 81.0, 0), (a1, 82.0, 5.8), "+y"))
@@ -51,6 +53,34 @@ def yard_and_walls(col):
         parts.append(box(col, "Arena wall pier", (p0, 80.95, 0), (p1, 82.05, 6.3), STONE, bevel=.04))
         parts.append(lathe(col, "Pier finial", [(0, 6.3), (.3, 6.3), (.3, 6.42), (.18, 6.5), (.24, 6.75), (.1, 6.95), (0, 7.0)],
                            (end + s * .3, 81.5, 0), seg=12, mat=STONE))
+    return parts
+
+
+PILASTER_YS = (91.5, 101.0, 110.5, 120.0, 129.5, 139.0)   # every second stall post; clear of the heavy berth's posts (123.8 - 127)
+STRING_Z0, STRING_Z1, PILASTER_TOP, PROUD = 4.75, 5.0, 10.15, .09
+
+
+def wall_rhythm(col, s):
+    """R682 (environment-artist, graphics pass): the tall side wall was one face of identical courses from the awnings to
+    the coping. A string course over the awnings and a pilaster every two stall bays up to the corbel table (scenery's,
+    10.15 m) give it a rhythm. Both stand 9 cm proud of the wall's collider face (within the 10 cm a pawn may meet), from
+    the canal end to the cliff (the platform's floor is over the wall beyond)."""
+    parts = []
+    w = s * SORT_HALF                        # the wall's inner face
+
+    def proud(depth, back=.05):
+        return sorted((w - s * depth, w + s * back))
+
+    a, b = proud(.05)
+    parts.append(box(col, "String fillet", (a, 81.0, STRING_Z0), (b, CLIFF_Y, STRING_Z0 + .07), STONE, bevel=.02, segments=1))
+    a, b = proud(PROUD)
+    parts.append(box(col, "String course", (a, 81.0, STRING_Z0 + .07), (b, CLIFF_Y, STRING_Z1), STONE, bevel=.05, segments=2))
+    for y in PILASTER_YS:
+        a, b = proud(PROUD - .02)
+        parts.append(box(col, "Pilaster", (a, y - .45, STRING_Z1), (b, y + .45, PILASTER_TOP - .14), STONE, bevel=.05, segments=2))
+        a, b = proud(PROUD)
+        parts.append(box(col, "Pilaster base", (a, y - .52, STRING_Z1), (b, y + .52, STRING_Z1 + .22), STONE, bevel=.04, segments=2))
+        parts.append(box(col, "Pilaster cap", (a, y - .55, PILASTER_TOP - .14), (b, y + .55, PILASTER_TOP), STONE, bevel=.04, segments=2))
     return parts
 
 
@@ -93,17 +123,11 @@ def cloth_awning(col, back, eave, y0, y1, high=4.6, low=3.4):
 
 
 def bay_number(col, x, y, side, n):
-    """The gold board on a bay's post with its number cut in it (pips, one to five, then a bar for five)."""
+    """The gold plaque on a bay's post. R682 (the concept: "a matte brass piece-icon plaque", pictograms only): a chess
+    piece raised on it, pawn, rook, knight, bishop, queen, king bay by bay (were pips and bars counting the bay)."""
     parts = [box(col, "Bay number", (x - .03, y - .25, 2.73), (x + .03, y + .25, 3.07), GOLD, bevel=.012, segments=1)]
-    fx = x - side * .035
-    bars, pips = divmod(n, 5)
-    k = 0
-    for _ in range(bars):
-        parts.append(box(col, "Bay number mark", (fx - .01, y - .18, 2.83 + k * .1), (fx + .01, y + .18, 2.88 + k * .1), WALNUT))
-        k += 1
-    for p in range(pips):
-        cy = y - .16 + p * .08
-        parts.append(box(col, "Bay number mark", (fx - .01, cy - .025, 2.95), (fx + .01, cy + .025, 3.0), WALNUT))
+    face = x - side * .03
+    parts.append(piece_icon(col, "Bay icon", PIECE_ORDER[(n - 1) % 6], (face + side * .002, y, 2.76), -side, .28, .03))
     return parts
 
 
@@ -203,8 +227,9 @@ def timber_store(col, side):
     staggered) between layers laid across it (their ends to the yard), iron straps, a gold trim on the front edge."""
     front, back = side * STORE_FRONT, side * STALL_FRONT
     x0, x1 = min(front, back), max(front, back)
-    lo_x, hi_x = sorted((front + side * .06, back))
+    lo_x, hi_x = sorted((front + side * .12, back))   # R682: 12 cm back (was 6), behind the deepest-set beam end
     parts = [box(col, "Timber core", (lo_x, STORE_Y0 + .06, 0), (hi_x, STORE_Y1 - .06, 2.3), WALNUT)]
+    jitter = random.Random(682 + (side > 0))   # its own numbers: the shared rnd's sequence (everything after) is unchanged
     h = .4
     for k in range(6):
         z = k * h
@@ -215,15 +240,29 @@ def timber_store(col, side):
                 while y < STORE_Y1 - 1e-3:
                     a, b = max(y, STORE_Y0), min(y + 2.64, STORE_Y1)
                     if b - a > .2:
-                        lo_x, hi_x = sorted((fx, fx + side * .42))
-                        parts.append(box(col, "Stored beam", (lo_x, a + .01, z + .01), (hi_x, b - .01, z + h - .01), OAK if k % 4 == 0 else WALNUT, bevel=.035, segments=1))
+                        mat = OAK if k % 4 == 0 else WALNUT
+                        if fx == front:
+                            # R682: the front row's lengths set back 0 - 5 cm, a little squatter, eased round edges.
+                            r, dz = jitter.choice((0.0, .015, .03, .05)), jitter.uniform(0, .025)
+                            lo_x, hi_x = sorted((fx + side * r, fx + side * .42))
+                            parts.append(box(col, "Stored beam", (lo_x, a + .01, z + .01 + dz), (hi_x, b - .01, z + h - .01), mat,
+                                             bevel=.045, segments=2))
+                        else:
+                            lo_x, hi_x = sorted((fx, fx + side * .42))
+                            parts.append(box(col, "Stored beam", (lo_x, a + .01, z + .01), (hi_x, b - .01, z + h - .01), mat, bevel=.035, segments=1))
                     y += 2.64
             parts.append(box(col, "Stored beam", (x0 + .42, STORE_Y0 + .02, z + .02), (x1 - .42, STORE_Y1 - .02, z + h - .02), OAK))
         else:
-            # Across: their ends to the yard.
+            # Across: their ends to the yard. R682 (prop-artist, graphics pass): in clay a row of identical square ends
+            # read as brickwork; each end now sits back 0 - 10 cm from the stack's face (never past it: the collider), is
+            # a little slimmer or squatter, and has eased round edges, so the face reads as stacked sawn timber.
             y = STORE_Y0
             while y < STORE_Y1 - .3:
-                parts.append(box(col, "Stored beam end", (x0 + .01, y + .01, z + .01), (x1 - .01, y + .41, z + h - .01), OAK if (int(y * 3) + k) % 3 else WALNUT, bevel=.04, segments=1))
+                back_off = jitter.choice((0.0, .02, .04, .06, .1))
+                dy0, dy1, dz = jitter.uniform(0, .025), jitter.uniform(0, .025), jitter.uniform(0, .03)
+                fa, fb = sorted((front + side * (.01 + back_off), back - side * .01))
+                parts.append(box(col, "Stored beam end", (fa, y + .01 + dy0, z + .01 + dz), (fb, y + .41 - dy1, z + h - .01),
+                                 OAK if (int(y * 3) + k) % 3 else WALNUT, bevel=.05, segments=2))
                 y += .42
     y = STORE_Y0 + 1.5
     while y < STORE_Y1:

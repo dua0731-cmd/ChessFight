@@ -75,7 +75,9 @@ namespace ChessFight.PawnRush
         // How far the hit shell reaches ahead of the nose while charging (m): a 7 m/s push sideways clears the body in
         // the ~0.2 s the nose takes to get there.
         public const float Lead = 1.5f;
-        static readonly Color LineColor = new Color(1f, .22f, .16f, 1f);
+        // R685 (승규 "말 예고는 지워주고 나머지 예고도 실사로"): the charge line is the dark track of the way it will run (a
+        // shadow on the paving that deepens through the aim), not a red neon strip; a loose horse shows none.
+        static readonly Color LineColor = YardWarn.Stop;   // R685: the signal lamps' red (승규 11-17: not black)
 
         CarriageFleet fleet;
         RoamingFleet own, evaluated, previous;   // previous/evaluated: the plans of the last two poses
@@ -95,8 +97,25 @@ namespace ChessFight.PawnRush
         RoamingFleet.Stage shown;
         Vector3 lastPosition;
         Quaternion lastRotation = Quaternion.identity;
-        float wheelAngle;
         bool built;
+        // R683 (승규 11-16 "말이 뛰는 느낌 돌아가는 거 그에따라 마차가 회전 하는 것 등 부자연스러워서 엄청 자연스럽게"): pictures
+        // only, the body's box and its path untouched. A team bends at its front axle as it turns on the spot - the
+        // forecarriage (the pair, the pole and the front wheels) leads into the turn, the carriage stays square in the
+        // box (R684, the collider audit: trailing, it swung up to 0.6-1.1 m out of the box and pawns walked through it) - the
+        // carriage rides on its springs (back as it sets off, forward as it pulls up, out of a turn, a shake at speed)
+        // and each wheel rolls by how far its own rim goes along the ground (turning on the spot they used to slide).
+        // Everything is read off the plan at the shared clock, so every PC draws the same.
+        // Degrees, and degrees per degree a second of turn: at 4 degrees about the king pin the pair's outer sides and
+        // noses stay within ~10 cm of the body's box (they stand 15 cm inside it).
+        const float BendMost = 4f, BendPerTurn = .04f;
+        static readonly Vector3 SpringAt = new Vector3(0f, .7f, 0f);
+        Transform fore, cab, frame, hitchModel;
+        Vector3 kingpin, cabAt, frameAt;
+        Quaternion frameTurn = Quaternion.identity;
+        Vector3[] wheelAt, wheelWas;
+        float[] wheelSpin;
+        bool[] wheelFront;
+        bool wheelsPlaced;
 
         RoamingFleet Plan => fleet != null ? fleet.Fleet : own;
 
@@ -194,6 +213,21 @@ namespace ChessFight.PawnRush
                 BuildTeam(body);
             else
                 wheels = YardKit.Carriage(transform, body);
+            if (wheels != null && wheels.Length > 0 && wheels[0] != null)
+            {
+                frame = wheels[0].parent;
+                frameAt = frame.localPosition;
+                frameTurn = frame.localRotation;
+                wheelAt = new Vector3[wheels.Length];
+                wheelWas = new Vector3[wheels.Length];
+                wheelSpin = new float[wheels.Length];
+                wheelFront = new bool[wheels.Length];
+                for (int i = 0; i < wheels.Length; i++)
+                {
+                    wheelAt[i] = wheels[i].localPosition;
+                    wheelFront[i] = wheels[i].localPosition.z > 0f;
+                }
+            }
             impact = YardKit.BodyCollider(transform, new Vector3(WidthOf(look), HeightOf(look), LengthOf(look)), knockbackForce, seeThrough: true);
             impact.knockdownSeconds = knockdownSeconds;
             shell = impact.GetComponent<BoxCollider>();
@@ -248,25 +282,31 @@ namespace ChessFight.PawnRush
         void BuildTeam(Material body)
         {
             float length = LengthOf(Look.Team), back = -length * .5f + YardKit.CarriageLength * .5f;
-            var cab = new GameObject("Team carriage").transform;
+            cab = new GameObject("Team carriage").transform;
             cab.SetParent(transform, false);
             cab.localPosition = new Vector3(0f, 0f, back);
+            cabAt = cab.localPosition;
             wheels = YardKit.Carriage(cab, body);
+            // R683: the forecarriage turns about the front axle's king pin; the pair and the pole ride it.
+            kingpin = new Vector3(0f, 0f, back + 1.3f);
+            fore = new GameObject("Forecarriage").transform;
+            fore.SetParent(transform, false);
+            fore.localPosition = kingpin;
             float front = length * .5f - YardHorse.Length * .5f;
             var coat = Coat(index);
             horses = new[]
             {
-                YardHorse.Build(transform, new Vector3(-.55f, 0f, front), coat, false, "Horse W"),
-                YardHorse.Build(transform, new Vector3(.55f, 0f, front), coat, false, "Horse E"),
+                YardHorse.Build(fore, new Vector3(-.55f, 0f, front) - kingpin, coat, false, "Horse W"),
+                YardHorse.Build(fore, new Vector3(.55f, 0f, front) - kingpin, coat, false, "Horse E"),
             };
             const YardKit.Solid none = YardKit.Solid.None;
             float nose = back + YardKit.CarriageLength * .5f, chest = front + 1.1f;
             // The pole between the pair from the carriage's nose to their chests, a swingle-tree, the traces.
-            YardKit.Box(transform, "Pole", new Vector3(0f, .95f, (nose + chest) * .5f), new Vector3(.12f, .12f, chest - nose), YardKit.WoodDark, none);
-            YardKit.Box(transform, "Swingle tree", new Vector3(0f, .95f, nose + .1f), new Vector3(1.7f, .1f, .1f), YardKit.WoodDark, none);
-            YardKit.Box(transform, "Pole tip", new Vector3(0f, .95f, chest), new Vector3(.16f, .16f, .16f), YardKit.Gold, none);
+            YardKit.Box(fore, "Pole", new Vector3(0f, .95f, (nose + chest) * .5f) - kingpin, new Vector3(.12f, .12f, chest - nose), YardKit.WoodDark, none);
+            YardKit.Box(fore, "Swingle tree", new Vector3(0f, .95f, nose + .1f) - kingpin, new Vector3(1.7f, .1f, .1f), YardKit.WoodDark, none);
+            YardKit.Box(fore, "Pole tip", new Vector3(0f, .95f, chest) - kingpin, new Vector3(.16f, .16f, .16f), YardKit.Gold, none);
             foreach (float x in new[] { -.85f, -.25f, .25f, .85f })
-                YardKit.Box(transform, "Trace", new Vector3(x, 1.05f, (nose + front + .5f) * .5f), new Vector3(.05f, .05f, front + .5f - nose), YardKit.WoodDark, none);
+                YardKit.Box(fore, "Trace", new Vector3(x, 1.05f, (nose + front + .5f) * .5f) - kingpin, new Vector3(.05f, .05f, front + .5f - nose), YardKit.WoodDark, none);
         }
 
         AudioSource Voice(AudioClip clip, bool loop)
@@ -335,17 +375,18 @@ namespace ChessFight.PawnRush
             var moved = transform.position - lastPosition;
             lastPosition = transform.position;
             float step = Vector3.Dot(moved, transform.forward);
-            wheelAngle = (wheelAngle + step / (YardKit.CarriageWheel * .5f) * Mathf.Rad2Deg) % 360f;
-            if (wheels != null)
-                foreach (var wheel in wheels)
-                    if (wheel != null) wheel.localRotation = Quaternion.Euler(wheelAngle, 0f, 0f);
             var pose = Now;
+            double clock = ObstacleClock.Now + phase;
+            Motion(clock, out float turn, out float accel);
+            float steer = Bend(turn);
+            Quaternion sway = Sway(clock, turn, accel, Mathf.Clamp01((float)pose.Speed / Mathf.Max(1f, TopSpeed)));
+            Roll(sway, steer);
             if (horses != null)
             {
                 // A stride with the way it has gone, and turning on the spot the horses walk round it (R678: a team's
                 // pair 2.2 m ahead of its middle, a loose horse's legs ~0.8 m from its own; a cut to a new plan is no
                 // stride). Through its aim a loose horse rears (a team's pair toss their heads), read from the plan, so
-                // every PC draws the same.
+                // every PC draws the same (kept: 승규 11-17 "말 빨간 램프랑 말 동작은 유지 해야지").
                 float turned = Quaternion.Angle(lastRotation, transform.rotation) * Mathf.Deg2Rad;
                 lastRotation = transform.rotation;
                 float swing = turned < .5f ? turned * (look == Look.Team ? 2.2f : .8f) : 0f;
@@ -355,12 +396,12 @@ namespace ChessFight.PawnRush
                     ? (float)((ObstacleClock.Now + phase - pose.StageStart) / (pose.StageEnd - pose.StageStart)) : -1f;
                 float rear = YardHorse.Rear(warned) * (look == Look.Horse ? 1f : .3f);
                 foreach (var horse in horses)
-                    horse?.Pose(ObstacleClock.Now, rear, Mathf.Max((float)pose.Speed, pace), Mathf.Max(1f, TopSpeed), travelled);
+                    horse?.Pose(ObstacleClock.Now, rear, Mathf.Max((float)pose.Speed, pace), Mathf.Max(1f, TopSpeed), travelled, turn);
             }
             bool warning = pose.Stage == RoamingFleet.Stage.Turning || pose.Stage == RoamingFleet.Stage.Aiming || pose.Stage == RoamingFleet.Stage.Charging;
             if (lamps != null)
             {
-                var material = warning ? YardKit.Warning : YardKit.Lamp;
+                var material = warning ? YardKit.Warning : YardKit.Lamp;   // red from the turn to the end of a charge (kept)
                 foreach (var lamp in lamps)
                     if (lamp != null && lamp.sharedMaterial != material) lamp.sharedMaterial = material;
             }
@@ -381,6 +422,90 @@ namespace ChessFight.PawnRush
             shown = pose.Stage;
         }
 
+        // R683: how fast it turns (degrees a second, + to the right) and speeds up (m/s a second), off the plan either
+        // side of `time` (smooth: the plan eases every turn and every charge in and out).
+        void Motion(double time, out float turn, out float accel)
+        {
+            turn = accel = 0f;
+            var plan = Plan;
+            if (plan == null) return;
+            const double h = .06;
+            var a = plan.At(index, time - h);
+            var b = plan.At(index, time + h);
+            turn = Mathf.DeltaAngle((float)a.Yaw, (float)b.Yaw) / (float)(2.0 * h);
+            accel = (float)((b.Speed - a.Speed) / (2.0 * h));
+            if (float.IsNaN(turn) || float.IsInfinity(turn)) turn = 0f;
+            if (float.IsNaN(accel) || float.IsInfinity(accel)) accel = 0f;
+        }
+
+        // R683: a team bends at its king pin, the forecarriage leading into the turn (R684: the carriage no longer
+        // trails, at most 4 degrees: see BendMost). The dressed pole and traces
+        // (RcyHitch, hung on the team by the dressing) move onto the forecarriage the first time they are seen. Returns
+        // the front wheels' steer against the carriage.
+        float Bend(float turn)
+        {
+            if (fore == null || cab == null) return 0f;
+            if (hitchModel == null)
+            {
+                fore.localRotation = Quaternion.identity;
+                var hung = transform.Find("RcyHitch (model)");
+                if (hung != null)
+                {
+                    hung.SetParent(fore, true);
+                    hitchModel = hung;
+                }
+            }
+            float bend = Mathf.Clamp(turn * BendPerTurn, -BendMost, BendMost);
+            fore.localRotation = Quaternion.Euler(0f, bend, 0f);
+            cab.localRotation = Quaternion.identity;
+            cab.localPosition = cabAt;
+            return bend;
+        }
+
+        // R683: the carriage (its frame, body and lamps - not its wheels) on its springs, tipped about a point at spring
+        // height: back as it speeds up and forward as it slows, out of a turn, and a little shake that grows with
+        // speed. Returns the tip, which the wheels take back out.
+        Quaternion Sway(double clock, float turn, float accel, float share)
+        {
+            if (frame == null) return Quaternion.identity;
+            float t = (float)(clock % 1000.0);
+            // R684: at most ~2.5 degrees of pitch and 1.5 of roll, so the roof's ends and edges move under 10 cm
+            float pitch = Mathf.Clamp(-accel * .4f, -2.2f, 2.2f) + .3f * share * Mathf.Sin(t * 17f);
+            float roll = Mathf.Clamp(turn * .012f, -1.2f, 1.2f) + .25f * share * Mathf.Sin(t * 13f + 1.3f);
+            var tip = Quaternion.Euler(pitch, 0f, roll);
+            frame.localRotation = frameTurn * tip;
+            frame.localPosition = frameAt + frameTurn * (SpringAt - tip * SpringAt) + Vector3.up * (.012f * share * Mathf.Sin(t * 23f));
+            return tip;
+        }
+
+        // R683: each wheel back where it stands unsprung, the front pair steered with the forecarriage, and turned by
+        // how far its own hub went along its own forward since the last frame (a jump to a new plan turns nothing).
+        void Roll(Quaternion tip, float steer)
+        {
+            if (wheels == null || frame == null || wheelAt == null) return;
+            var untip = Quaternion.Inverse(tip);
+            var frameRot = frameTurn * tip;
+            float radius = YardKit.CarriageWheel * .5f;
+            for (int i = 0; i < wheels.Length; i++)
+            {
+                var wheel = wheels[i];
+                if (wheel == null) continue;
+                var turnTo = Quaternion.Euler(0f, wheelFront[i] ? steer : 0f, 0f);
+                wheel.localPosition = Quaternion.Inverse(frameRot) * (frameAt + frameTurn * wheelAt[i] - frame.localPosition);
+                var now = wheel.position;
+                if (wheelsPlaced)
+                {
+                    var forward = frame.rotation * untip * turnTo * Vector3.forward;
+                    var d = now - wheelWas[i];
+                    if (d.sqrMagnitude < 4f)
+                        wheelSpin[i] = (wheelSpin[i] + Vector3.Dot(d, forward) / radius * Mathf.Rad2Deg) % 360f;
+                }
+                wheelWas[i] = now;
+                wheel.localRotation = untip * turnTo * Quaternion.Euler(wheelSpin[i], 0f, 0f);
+            }
+            wheelsPlaced = true;
+        }
+
         // From the carriage's centre to where its nose stops, flat on the floor; brighter and pulsing while it aims.
         void DrawLine(RoamingFleet.Pose pose, bool warning)
         {
@@ -388,7 +513,7 @@ namespace ChessFight.PawnRush
             var from = new Vector3((float)pose.X, 0f, (float)pose.Z);
             var ahead = new Vector3((float)pose.ToX, 0f, (float)pose.ToZ) - from;
             float length = ahead.magnitude;
-            if (!warning || length < .1f)
+            if (!warning || length < .1f || look != Look.Carriage)   // R685: no line under a team or a loose horse
             {
                 if (lineRenderer.enabled) lineRenderer.enabled = false;
                 return;
@@ -400,11 +525,12 @@ namespace ChessFight.PawnRush
                                         StartRotation * Quaternion.LookRotation(way) * Quaternion.Euler(90f, 0f, 0f));
             var scale = line.parent != null ? line.parent.lossyScale : Vector3.one;
             line.localScale = new Vector3(Line / Mathf.Max(1e-4f, scale.x), reach / Mathf.Max(1e-4f, scale.z), 1f);
-            // A pulse while it aims, on the shared clock like the rest.
-            float pulse = (float)System.Math.Sin(ObstacleClock.Now * 14.0 % (2.0 * System.Math.PI));
-            float alpha = pose.Stage == RoamingFleet.Stage.Turning ? .3f
-                        : pose.Stage == RoamingFleet.Stage.Aiming ? .45f + .2f * pulse
-                        : .4f;
+            // Faint through the turn, deepening through the aim (no flashing), on the shared clock like the rest.
+            float aimed = pose.Stage == RoamingFleet.Stage.Aiming && pose.StageEnd > pose.StageStart
+                ? (float)((ObstacleClock.Now + phase - pose.StageStart) / (pose.StageEnd - pose.StageStart)) : 0f;
+            float alpha = pose.Stage == RoamingFleet.Stage.Turning ? .12f
+                        : pose.Stage == RoamingFleet.Stage.Aiming ? .16f + .2f * YardWarn.Deepen(aimed)
+                        : .3f;
             var color = LineColor;
             color.a = alpha;
             lineMaterial.color = color;

@@ -117,7 +117,7 @@ def castle_materials():
         castle_source(name).data.materials[0].name = slot
 
 
-def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), close=False):
+def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), close=False, crumbs=0.0):
     """A copy of the faces of `src` whose centre passes `keep`, sheared, moved by -origin and decimated to `ratio`,
     then cut straight by `cuts` ((point, normal) planes, after the move: what lies on the normal's side goes).
     close: every opening left after the cuts is capped (R680 QA: where two cuts meet at a corner the per-plane caps
@@ -156,7 +156,7 @@ def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), clos
         ob.data = low
         bpy.data.meshes.remove(me)
         low.name = name
-    if cuts:
+    if cuts or close:   # R682: close works without cuts too
         bm = bmesh.new()
         bm.from_mesh(ob.data)
         for co, no in cuts:
@@ -170,6 +170,7 @@ def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), clos
             bmesh.ops.remove_doubles(bm, verts=list({v for e in bm.edges if on_plane(e) for v in e.verts}), dist=5e-4)
             rim = [e for e in bm.edges if on_plane(e)]
             for f in bmesh.ops.holes_fill(bm, edges=rim, sides=0)["faces"]:
+                f.smooth = False    # R682: shaded flat, so the smooth faces round the rim keep their own normals
                 f.normal_update()
                 if f.normal.dot(Vector(no)) < 0:
                     f.normal_flip()
@@ -178,11 +179,47 @@ def part(src, name, keep=None, shear=None, origin=None, ratio=1.0, cuts=(), clos
             bmesh.ops.remove_doubles(bm, verts=list({v for e in rim for v in e.verts}), dist=5e-4)
             caps = bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)["faces"]
             # Concave caps (22-82 sides) ear-clipped here rather than left to Unity's importer.
-            bmesh.ops.triangulate(bm, faces=caps, quad_method="BEAUTY", ngon_method="EAR_CLIP")
+            tri = bmesh.ops.triangulate(bm, faces=caps, quad_method="BEAUTY", ngon_method="EAR_CLIP")["faces"]
+            # R682: flat, as the cuts' caps: shaded smooth they pulled the step's nosing normals down (dark streaks)
+            for f in tri:
+                f.smooth = False
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
         bm.to_mesh(ob.data)
         bm.free()
+    if crumbs > 0:
+        drop_crumbs(ob, crumbs)
     return ob
+
+
+def drop_crumbs(ob, size):
+    """R682: every loose island of `ob` smaller than `size` across (its box's diagonal) deleted - the balustrade part
+    kept a 40-face chip of the stair's stringer by its foot (picked by its centre, 20 cm a copy once scaled, lying on
+    the floor beside the first baluster on all ten railings)."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    seen, drop = set(), []
+    for f0 in bm.faces:
+        if f0 in seen:
+            continue
+        comp, stack = [], [f0]
+        seen.add(f0)
+        while stack:
+            f = stack.pop()
+            comp.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if g not in seen:
+                        seen.add(g)
+                        stack.append(g)
+        vs = {v for f in comp for v in f.verts}
+        lo = Vector([min(v.co[k] for v in vs) for k in range(3)])
+        hi = Vector([max(v.co[k] for v in vs) for k in range(3)])
+        if (hi - lo).length < size:
+            drop += comp
+    bmesh.ops.delete(bm, geom=drop, context="FACES")
+    bm.to_mesh(ob.data)
+    bm.free()
+    return len(drop)
 
 
 def base_centre(bm):
@@ -618,9 +655,12 @@ def build_castle():
     # where the stair's stringer was picked off) and its far end (torn at .69, where it met the pier) cut straight.
     rail = part(arch, "Balustrade part", keep=balustrade_face, shear=lambda v: Vector((v.x, v.y, v.z - .06 * (v.y + .5))),
                 origin=lambda bm: Vector((.265, -.5, min(v.co.z for v in bm.verts) + .04)), ratio=RAIL_RATIO,
-                cuts=(((0, 0, 0), (0, 0, -1)), ((0, .68, 0), (0, 1, 0))), close=True)
+                cuts=(((0, 0, 0), (0, 0, -1)), ((0, .68, 0), (0, 1, 0))), close=True, crumbs=.08)
     rail_len = max(v.co.y for v in rail.data.vertices)
     rail_high = max(v.co.z for v in rail.data.vertices)
+    # Left open (R682 tried cutting and closing it: the cap of its one open rim - the tread's nose and the riser's top
+    # in a single loop - lay over the tread as a lid 13 - 18 cm above the code's steps, where a pawn's feet sank into
+    # it; the open plates' ends are inside the balustrades and seen from nowhere).
     stair = part(arch, "Step part", keep=STEP["keep"], origin=STEP["origin"], ratio=.5)
     boxes = []
 
@@ -659,7 +699,7 @@ def build_castle():
         # mirrored): x 14.68 .. 17.32 out to 2.40, on plinths to .95 m (below their tops' bevel), 14.47 .. 17.53 out
         # to 2.57.
         boxes += wing_boxes("Outer gate wall", s, 10.4, 23.0, .4, (2.0, 2.40), ((14.68, 17.32), (21.70, 23.0)), 0.0, 7.0,
-                            plinth=(.95, .21, 2.57))
+                            plinth=(1.02, .21, 2.57))
     # --- the final gate
     fcol = collection("RCY Castle final gate")
     clear(fcol)

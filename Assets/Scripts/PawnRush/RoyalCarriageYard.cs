@@ -260,6 +260,10 @@ namespace ChessFight.PawnRush
             // castle's labels (the push gate's own among them) take their material then.
             if (models) DressMovers();
             CastleLabels();
+            // R683: the yard's own light and air, last, over what is built (RoyalCarriageYard.Lighting.cs).
+            Lighting();
+            Water();   // R684: the worked-out water, over the pictures it replaces (RoyalCarriageYard.Water.cs)
+            Fx();      // R685: the obstacles' dust, chips, sparks and glints (RoyalCarriageYard.Fx.cs)
         }
 
         // The round placed this section and gave it its start and seed (R508; again when a match learns its go).

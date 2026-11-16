@@ -75,13 +75,13 @@ namespace ChessFight.PawnRush
             // climbed, carrying whoever stands on it (ConveyorBeltSurface).
             var belt = YardKit.Box(transform, "Conveyor belt", new Vector3(0f, height * .5f, 0f), new Vector3(length, height, width), YardKit.Iron, Solid.NoClimb);
             belt.AddComponent<ConveyorBeltSurface>().Configure(speed);
-            // Pictures on it: the slats of its top, wooden side rails with gold along their tops, legs.
+            // Pictures on it: the slats of its top, wooden side rails, legs.
             for (float x = -half + .25f; x < half; x += .45f)
                 YardKit.Box(transform, "Slat", new Vector3(x, height - .055f, 0f), new Vector3(.2f, .1f, width - .1f), YardKit.WoodLight, Solid.None);
             foreach (float side in new[] { -1f, 1f })
             {
                 YardKit.Box(transform, "Conveyor rail", new Vector3(0f, height - .2f, side * (w + .04f)), new Vector3(length, .4f, .08f), YardKit.WoodDark, Solid.None);
-                YardKit.Box(transform, "Conveyor trim", new Vector3(0f, height + .005f, side * (w + .04f)), new Vector3(length, .03f, .1f), YardKit.Gold, Solid.None);
+                // R685: no gold trim along the rails' tops any more (승규 11-17 "컨베이어 벨트에 노란색 테두리 부분 지워줘").
                 for (float x = -half + .8f; x < half; x += 2.4f)
                     YardKit.Box(transform, "Conveyor leg", new Vector3(x, (height - .4f) * .5f, side * (w + .05f)), new Vector3(.16f, height - .4f, .1f), YardKit.WoodDark, Solid.None);
             }

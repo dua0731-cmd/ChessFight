@@ -14,8 +14,8 @@ namespace ChessFight.PawnRush
     // or back, never into the next stack (StackCrate) - and knocked down. The two halves mirror each other (neither team's
     // side is luckier); the rows of a yard run at other phases, so their gaps never line up and the way zigzags.
     //
-    // Warned: the gap's floor shows green while it is open and flashes red for its last WarnSeconds before a stack swings
-    // in; the trolley comes over the stack it is about to move. Every pose is a pure function of ObstacleClock (the gap's
+    // Warned: the gap's floor is a patch of swept sand while it is open, and the shadow of the coming stack falls over it
+    // in its last WarnSeconds before a stack swings in (R685, was green and flashing red); the trolley comes over the stack it is about to move. Every pose is a pure function of ObstacleClock (the gap's
     // slot from the trip number), the same on every PC without a packet.
     //
     // This object is the row's middle on the floor, its local x along the row, local z across it. Built from code on an
@@ -47,13 +47,21 @@ namespace ChessFight.PawnRush
 
         Transform course;
         StackCrate[] crates = new StackCrate[0];
-        Transform[] trolleys = new Transform[0], ropes = new Transform[0];
+        Transform[] trolleys = new Transform[0], ropes = new Transform[0], hooks = new Transform[0];
+        Renderer[] ropeRenderers = new Renderer[4];
+        MaterialPropertyBlock ropeBlock;
+        // Where the ropes run (R685): off the drum DrumPay either side of the trolley's middle, DrumUnder under its rail
+        // line; to the stack's lifting eyes EyeX either side, EyeOver over its top; a RopeHook long iron hook in each eye;
+        // RopeThick across, its twist RopeTwist long.
+        const float DrumPay = .3f, DrumUnder = .34f, EyeX = .55f, EyeOver = .07f, RopeHook = .14f, RopeThick = .045f, RopeTwist = .07f;
+        static Material ropeMaterial;
         Renderer[] marks = new Renderer[0];
         Material[] markMaterials = new Material[0];
         bool built;
         float phase;
 
-        static readonly Color Open = new Color(.35f, 1f, .45f, 1f), Closing = new Color(1f, .22f, .14f, 1f);
+        // R685 (실사 예고): the open gap is a patch of swept sand; as the next stack swings in, its shadow falls over it.
+        static readonly Color Open = YardWarn.With(YardWarn.Go, .32f), Closing = YardWarn.With(YardWarn.Stop, .5f);   // the lamps' green / red
 
         public int SlotsPerHalf => slotsPerHalf;
         public float Pitch => pitch;
@@ -168,6 +176,7 @@ namespace ChessFight.PawnRush
             // Per half: the trolley, its two ropes, the gap's floor mark.
             trolleys = new Transform[2];
             ropes = new Transform[4];
+            hooks = new Transform[4];
             marks = new Renderer[2];
             markMaterials = new Material[2];
             for (int h = 0; h < 2; h++)
@@ -175,7 +184,10 @@ namespace ChessFight.PawnRush
                 trolleys[h] = YardKit.Box(transform, "Row trolley", Vector3.zero, new Vector3(1.1f, .45f, .9f), YardKit.Iron, Solid.None).transform;
                 YardKit.Box(trolleys[h], "Trolley lamp", new Vector3(0f, -.3f, -.5f), new Vector3(.25f, .25f, .1f), YardKit.Lamp, Solid.None);
                 for (int r = 0; r < 2; r++)
-                    ropes[h * 2 + r] = YardKit.Box(transform, "Row rope", Vector3.zero, new Vector3(.06f, 1f, .06f), YardKit.WoodDark, Solid.None).transform;
+                {
+                    ropes[h * 2 + r] = Rope("Row rope");
+                    hooks[h * 2 + r] = YardKit.Box(transform, "Row rope hook", Vector3.zero, new Vector3(.05f, RopeHook, .09f), YardKit.Iron, Solid.None).transform;
+                }
                 markMaterials[h] = new Material(Arena.Glow(Open)) { name = "M_YardRowGap" };
                 var mark = YardKit.Box(transform, "Gap mark", Vector3.zero, new Vector3(stackSize.x - .1f, .02f, stackSize.z + .6f), markMaterials[h], Solid.None);
                 marks[h] = mark.GetComponent<Renderer>();
@@ -217,6 +229,66 @@ namespace ChessFight.PawnRush
             return new Vector3(to, lift * (1f - Smooth(t / lowerSeconds)), 0f);
         }
 
+        // A hemp rope: a cylinder in the rope material, its twist tiled along its length (PlaceRope).
+        Transform Rope(string name)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.name = name;
+            Destroy(go.GetComponent<Collider>());
+            go.transform.SetParent(transform, false);
+            var r = go.GetComponent<Renderer>();
+            r.sharedMaterial = RopeMaterial;
+            for (int i = 0; i < ropeRenderers.Length; i++)
+                if (ropeRenderers[i] == null) { ropeRenderers[i] = r; break; }
+            return go.transform;
+        }
+
+        // Rope i from `from` to `to` (this row's frame): the cylinder (2 m tall, 1 m across) turned and stretched between
+        // them, its twist repeated every RopeTwist so the strands keep their size whatever its length.
+        void PlaceRope(int i, Vector3 from, Vector3 to)
+        {
+            var along = to - from;
+            float length = Mathf.Max(.02f, along.magnitude);
+            var t = ropes[i];
+            t.localPosition = (from + to) * .5f;
+            t.localRotation = Quaternion.FromToRotation(Vector3.up, along / length);
+            t.localScale = new Vector3(RopeThick, length * .5f, RopeThick);
+            var r = i < ropeRenderers.Length ? ropeRenderers[i] : null;
+            if (r == null) return;
+            if (ropeBlock == null) ropeBlock = new MaterialPropertyBlock();
+            r.GetPropertyBlock(ropeBlock);
+            ropeBlock.SetVector("_BaseMap_ST", new Vector4(1f, length / RopeTwist, 0f, 0f));
+            r.SetPropertyBlock(ropeBlock);
+        }
+
+        // Three hemp strands twisted round each other (bright crowns, dark grooves between, a little fibre), tan.
+        static Material RopeMaterial
+        {
+            get
+            {
+                if (ropeMaterial != null) return ropeMaterial;
+                const int w = 32, h = 32;
+                var texture = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat, name = "Hemp rope" };
+                var pixels = new Color32[w * h];
+                var fibre = new System.Random(685);
+                for (int j = 0; j < h; j++)
+                    for (int i = 0; i < w; i++)
+                    {
+                        float u = (float)i / w, v = (float)j / h;
+                        // Three strands round the rope (u) leaning one way down it (v): a crown every third of a turn.
+                        float strand = .5f + .5f * Mathf.Sin(2f * Mathf.PI * (3f * u + v));
+                        float lit = .45f + .55f * Mathf.Pow(strand, .6f) + (float)(fibre.NextDouble() - .5) * .12f;
+                        byte g = (byte)(Mathf.Clamp01(lit) * 255f);
+                        pixels[j * w + i] = new Color32(g, g, g, 255);
+                    }
+                texture.SetPixels32(pixels);
+                texture.Apply(true, true);
+                ropeMaterial = new Material(ChessFight.Game.LitMaterials.Lit) { name = "M_YardHempRope", color = new Color(.62f, .5f, .33f), mainTexture = texture };
+                if (ropeMaterial.HasProperty("_Smoothness")) ropeMaterial.SetFloat("_Smoothness", .08f);
+                return ropeMaterial;
+            }
+        }
+
         static float Smooth(float u)
         {
             u = Mathf.Clamp01(u);
@@ -231,7 +303,6 @@ namespace ChessFight.PawnRush
             double now = ObstacleClock.Now;
             TripAt(now, out long k, out float into);
             int a = GapAt(k), b = GapAt(k + 1), before = GapAt(k - 1);
-            float pulse = .5f + .5f * (float)Math.Sin(now * 14.0 % (2.0 * Math.PI));
             for (int h = 0; h < 2; h++)
             {
                 // The trolley: while the gap stands open it rolls from where it set the last stack down to the next one it
@@ -253,21 +324,36 @@ namespace ChessFight.PawnRush
                     stackTop = drawn.y + stackSize.y;
                 }
                 trolleys[h].localPosition = new Vector3(x, beamHeight - .25f, 0f);
+                // The ropes' ends: on the stack's top while it is held. While the gap stands open they reel up off the stack
+                // just set down and pay out again onto the next one, so they never jump between the two lengths (R682, 승규
+                // 11-16 "이 줄이 내려올 때 끊겨서 와서 부자연스러워"). Both ends of the open phase meet the held length: a set-down
+                // stack's top is stackSize.y, and the next stack is still on the floor when it is taken up.
+                float bottom = stackTop;
+                if (!holding)
+                {
+                    float reel = Mathf.Min(.6f, openSeconds * .3f);
+                    float hung = Mathf.Min(Smooth(into / reel), Smooth((openSeconds - into) / reel));
+                    bottom = Mathf.Lerp(stackSize.y, beamHeight - 1.2f, hung);
+                }
+                // R685 (승규 11-17 "여기 줄이 위치가 맞지않고 실제 줄 같이 보이게 바꿔"): each rope pays off the trolley's drum
+                // (RcyRowTrolley: along x under the body, its underside 0.59 m under the trolley's rail line) near its ends and
+                // runs down, splaying a little, to the stack's lifting eye (RcyStackCrate: x +-0.55 over the middle, 0.07 m over
+                // its top), its iron hook in the eye - not off to the sides at z +-0.54 as before.
                 for (int r = 0; r < 2; r++)
                 {
-                    float dz = (r == 0 ? -1f : 1f) * stackSize.z * .3f;
-                    float bottom = holding ? stackTop : beamHeight - 1.2f;
-                    float length = Mathf.Max(.05f, beamHeight - .5f - bottom);
-                    ropes[h * 2 + r].localPosition = new Vector3(x, bottom + length * .5f, dz);
-                    ropes[h * 2 + r].localScale = new Vector3(.06f, length, .06f);
+                    float s = r == 0 ? -1f : 1f;
+                    var top = new Vector3(x + s * DrumPay, beamHeight - .25f - DrumUnder, 0f);
+                    var eye = new Vector3(x + s * EyeX, bottom + EyeOver, 0f);
+                    var hookTop = eye + Vector3.up * RopeHook;
+                    PlaceRope(h * 2 + r, top, hookTop);
+                    hooks[h * 2 + r].localPosition = eye + Vector3.up * (RopeHook * .5f);
+                    hooks[h * 2 + r].localRotation = Quaternion.FromToRotation(Vector3.up, top - hookTop);
                 }
-                // The gap's floor: green while it stands open, flashing red from WarnSeconds before the next stack swings
-                // in until it is set down there; then the mark moves on to the new gap.
-                bool closing = into > openSeconds - warnSeconds;
+                // The gap's floor: swept sand while it stands open, the coming stack's shadow deepening over it from
+                // WarnSeconds before it swings in until it is set down there; then the mark moves on to the new gap.
+                float closing = YardWarn.Deepen((into - (openSeconds - warnSeconds)) / Mathf.Max(.05f, warnSeconds));
                 marks[h].transform.localPosition = new Vector3(SlotX(h, a), .02f, 0f);
-                var c = closing ? Closing : Open;
-                c.a = closing ? .55f + .4f * pulse : .45f;
-                markMaterials[h].color = c;
+                markMaterials[h].color = Color.Lerp(Open, Closing, closing);
             }
         }
 

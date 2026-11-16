@@ -613,3 +613,4 @@
 
 
 > 2026-11-13 사용자 중단·Claude Code 인계: 정원·대계단 2차에서 GrandStairHallV15/ GardenBoats 두 FBX만 추가 적용 및 Unity import 완료. 탑·석상 받침대는 적용 제외. 2차 후 Unity 재집계·사진·충돌체 검사·자동 테스트는 미완료이며 자동 테스트는 중단 지시에 따른 자동 승인 검토로 실행 차단됨. 경량화 변경 미커밋, 커밋·푸시 금지 유지. [Claude 인계](../../CLAUDE_HANDOFF_MESH_OPTIMIZATION.md).
+- 2026-11-17 seoungtest R677–R685: 마차뜰 모델 · 조명 · 물 · 콜라이더 · VFX · 실사 예고 · 버그 수정 (여러 세션), seoungtest에 커밋 · 푸시, 사용자 Unity 확인 전.

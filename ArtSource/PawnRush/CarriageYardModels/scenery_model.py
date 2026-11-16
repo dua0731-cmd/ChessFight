@@ -71,14 +71,32 @@ def corbel_table(col, face, s, y0, y1):
     parts.append(box(col, "Corbel fillet", (a, y0, 10.5), (b, y1, 10.56), STONE, bevel=.015, segments=1))
     a, b = out(.16)
     parts.append(box(col, "Corbel band", (a, y0, 10.56), (b, y1, 10.75), STONE, bevel=.03, segments=2))
-    y = y0 + CORBEL_EVERY / 2
-    while y < y1 - .2:
-        a, b = out(.08)
-        parts.append(box(col, "Corbel", (a, y - .11, 10.15), (b, y + .11, 10.33), STONE, bevel=.02, segments=1))
-        a, b = out(.14)
-        parts.append(box(col, "Corbel", (a, y - .13, 10.33), (b, y + .13, 10.5), STONE, bevel=.025, segments=1))
-        y += CORBEL_EVERY
+    # R682: the sorting yard's wall has pilasters now (sorting_model.wall_rhythm, their caps up to 10.15, 9 cm proud, 1.1
+    # wide): over each a console as wide as the cap carries the band, and the small corbels are spaced evenly in the
+    # bays between (they had run on at 1 m regardless, one straddling every second pilaster's cap off centre).
+    pil = [y for y in globals().get("PILASTER_YS", PILASTER_YS) if y0 < y < y1]
+    for y in pil:
+        a, b = out(.1)
+        parts.append(box(col, "Corbel console", (a, y - .5, 10.15), (b, y + .5, 10.27), STONE, bevel=.03, segments=2))
+        a, b = out(.13)
+        parts.append(box(col, "Corbel console", (a, y - .42, 10.27), (b, y + .42, 10.4), STONE, bevel=.03, segments=2))
+        a, b = out(.155)
+        parts.append(box(col, "Corbel console", (a, y - .34, 10.4), (b, y + .34, 10.5), STONE, bevel=.025, segments=2))
+    edges = [y0] + [e for y in pil for e in (y - PILASTER_HALF, y + PILASTER_HALF)] + [y1]
+    for g0, g1 in zip(edges[0::2], edges[1::2]):
+        n = max(1, int(round((g1 - g0) / CORBEL_EVERY)))
+        step = (g1 - g0) / n
+        for k in range(n):
+            y = g0 + step * (k + .5)
+            a, b = out(.08)
+            parts.append(box(col, "Corbel", (a, y - .11, 10.15), (b, y + .11, 10.33), STONE, bevel=.02, segments=1))
+            a, b = out(.14)
+            parts.append(box(col, "Corbel", (a, y - .13, 10.33), (b, y + .13, 10.5), STONE, bevel=.025, segments=1))
     return parts
+
+
+PILASTER_YS = (91.5, 101.0, 110.5, 120.0, 129.5, 139.0)   # sorting_model.py's (used when it was not run first)
+PILASTER_HALF = .55                                       # its pilaster cap's half width
 
 
 def scenery(col):

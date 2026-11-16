@@ -78,6 +78,14 @@ HEAD_LINES = [
     (0, .078, .1, .14), (.1, .105, .157, .159), (.2, .116, .213, .168), (.32, .112, .24, .159), (.45, .104, .185, .137),
     (.6, .1, .137, .121), (.74, .1, .125, .119), (.86, .107, .128, .123), (.94, .096, .112, .114), (1.0, .056, .063, .074)]
 
+# R683 (승규 11-16, a picture of two chunky toy horses: "말은 이런식으로 다듬고"): a bigger, rounder head, a thicker neck
+# and barrel round the same bones (the joints stay where YardHorse's pivots are). The head grows across (HEAD_W) more
+# than along its axis, the muzzle most; the eyes, nostrils and the bone over the eye move out with it.
+HEAD_W, HEAD_D, NECK_W, TRUNK_W = 1.2, 1.07, 1.12, 1.05
+TRUNK_LINES = [(y, t, u, w * TRUNK_W) for y, t, u, w in TRUNK_LINES]
+NECK_LINES = [(c, th, w * NECK_W) for c, th, w in NECK_LINES]
+HEAD_LINES = [(s, f * HEAD_D, j * HEAD_D, w * HEAD_W * (1 + .08 * max(0.0, s - .6) / .4)) for s, f, j, w in HEAD_LINES]
+
 
 def resample(rows, steps=4):
     """Catmull-Rom through rows of numbers or Vectors (each row a tuple), `steps` rows per span: smooth profiles."""
@@ -155,8 +163,10 @@ def muscle_masses(mb):
         mb_ell(mb, (s * .21, -.78, .9), (.08, .11, .14), (-10, 0, 0))
         mb_ell(mb, (s * .27, -.47, .99), (.055, .055, .06))        # the stifle
         # the head: the round of the jowl, the bone over the eye
-        mb_ell(mb, (s * .1, 1.08, 1.69), (.075, .12, .12), (-35, 0, 0))
-        mb_ball(mb, (s * .125, 1.08, 1.81), .034)
+        mb_ell(mb, (s * .1 * HEAD_W, 1.08, 1.69), (.085, .125, .125), (-35, 0, 0))
+        mb_ball(mb, (s * .125 * HEAD_W, 1.08, 1.81), .036)
+        # R683: the toy horse's chest and forearm muscle, round under the breast collar
+        mb_ell(mb, (s * .14, .7, 1.12), (.1, .09, .12), (15, 0, 0))
     mb_ell(mb, (0, -.93, 1.4), (.07, .07, .06))                   # the dock
 
 
@@ -192,6 +202,21 @@ HIND_SECTIONS = [
     (.84, .08, .12, .12, .15), (.74, .03, .105, .1, .135), (.66, -.01, .094, .09, .115), (.6, -.02, .094, .095, .12),
     (.55, -.022, .094, .096, .114), (.5, -.02, .086, .088, .096), (.43, -.015, .082, .082, .094), (.35, -.01, .082, .082, .094),
     (.28, 0, .086, .086, .098), (.23, .01, .09, .09, .094), (.19, .025, .086, .086, .086), (.145, .045, .084, .084, .084)]
+# R683 (승규's toy horses): thick, sturdy legs - 30% wider and deeper all the way down, a little more at the knee /
+# hock and the fetlock knobs so they keep their volume when the joint folds (the knee at 105 degrees lost a third).
+LEG_THICK = 1.3
+
+
+def _thicken(sections, knobs):
+    out = []
+    for z, dy, hw, f, b in sections:
+        k = LEG_THICK * (1 + .06 * max(0.0, 1 - min(abs(z - kz) for kz in knobs) / .07))
+        out.append((z, dy, hw * k, f * k, b * k))
+    return out
+
+
+FORE_SECTIONS = _thicken(FORE_SECTIONS, (.5, .22))
+HIND_SECTIONS = _thicken(HIND_SECTIONS, (.57, .22))
 
 
 def leg_loft(col, name, x, y0, sections, seg=24):
@@ -221,7 +246,7 @@ def hock_point(col, x):
     """The point of the hock, standing out behind the joint."""
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=1)
-    bmesh.ops.transform(bm, matrix=Matrix.Translation((x, HIND_Y - .11, .6)) @ Matrix.Diagonal((.04, .045, .055, 1)), verts=bm.verts)
+    bmesh.ops.transform(bm, matrix=Matrix.Translation((x, HIND_Y - .135, .6)) @ Matrix.Diagonal((.048, .05, .062, 1)), verts=bm.verts)
     return mesh_object("Hock point", bm, col, (COAT,))
 
 
@@ -230,13 +255,14 @@ def hoof(col, x, y0):
     bm = bmesh.new()
     seg = 28
     rows = []
-    for z, grow, toe in ((.158, 0, 0), (.138, .006, .008), (.1, .012, .02), (.06, .018, .03), (.022, .022, .036),
-                         (.006, .02, .036), (0, .015, .033)):
+    # R683: the toy horses' big bell hooves - wider (r .082 -> .112), taller, with a rolled rim at the coronet.
+    for z, grow, toe in ((.182, -.006, 0), (.176, .004, .003), (.162, .008, .008), (.12, .016, .018), (.072, .026, .028),
+                         (.03, .036, .038), (.008, .035, .038), (0, .027, .035)):
         ring = []
         for k in range(seg):
             th = 2 * math.pi * k / seg
             c, s = math.cos(th), math.sin(th)
-            r = .082 + grow
+            r = .112 + grow
             front = s > 0
             px = c * (r + (.004 if front else 0))
             py = s * (r + (toe * s if front else -.004))
@@ -266,7 +292,7 @@ def ellipsoid(col, name, centre, semi, rot=(0, 0, 0), mat=COAT, seg=20):
 
 HEAD_TILT = math.degrees(math.atan2((HEAD_P1 - HEAD_P0).z, (HEAD_P1 - HEAD_P0).y))   # about -53: the face's slope
 EAR_BASE = (.08, .995, 1.93)
-EYE_AT, EYE_R = (.15, 1.07, 1.79), .037
+EYE_AT, EYE_R = (.15 * HEAD_W, 1.07, 1.79), .039
 
 
 def ear(col, s):
@@ -297,7 +323,7 @@ def head_carvers(col):
     """What is cut out of the head: the nostrils, the mouth's line, the eyes' sockets."""
     cuts = []
     for s in (-1, 1):
-        cuts.append(ellipsoid(col, "Nostril", (s * .068, 1.395, 1.46), (.019, .022, .03), (HEAD_TILT + 90, 0, s * 12)))
+        cuts.append(ellipsoid(col, "Nostril", (s * .068 * HEAD_W, 1.4, 1.462), (.022, .025, .034), (HEAD_TILT + 90, 0, s * 12)))
         cuts.append(ellipsoid(col, "Eye socket", (s * EYE_AT[0], EYE_AT[1], EYE_AT[2]), (.033, .041, .036)))
     cuts.append(ellipsoid(col, "Mouth", (0, 1.315, 1.362), (.11, .07, .008), (HEAD_TILT, 0, 0)))
     return cuts
@@ -306,15 +332,27 @@ def head_carvers(col):
 def eyes(col):
     out = []
     for s in (-1, 1):
-        out.append(ellipsoid(col, "Eye", (s * (EYE_AT[0] - .006), EYE_AT[1], EYE_AT[2]), (EYE_R * .8, EYE_R * 1.15, EYE_R), mat=EYE, seg=16))
+        e = ellipsoid(col, "Eye", (s * (EYE_AT[0] - .006), EYE_AT[1], EYE_AT[2]), (EYE_R * .8, EYE_R * 1.15, EYE_R), mat=EYE, seg=24)
+        for f in e.data.polygons:      # R683: smooth (it read as a faceted bead up close)
+            f.use_smooth = True
+        out.append(e)
     return out
 
 
 # ------------------------------------------------------------------ hair: the mane, the forelock, the tail
 
-def strand(bm, pts, width, thick, along_hint, sides=6, tip=.3):
+def strand(bm, pts, width, thick, along_hint, sides=8, tip=.3):
     """A lock of hair through `pts`: a flat ribbon with some body tapering to `tip` of its size, `width` and `thick`
-    its half sizes, the width across the lock roughly along `along_hint`."""
+    its half sizes, the width across the lock roughly along `along_hint`. R683: eight sides and smooth shading (the
+    six-sided locks read as faceted sticks up close)."""
+    first = len(bm.faces)
+    _strand(bm, pts, width, thick, along_hint, sides, tip)
+    bm.faces.ensure_lookup_table()
+    for f in bm.faces[first:]:
+        f.smooth = True
+
+
+def _strand(bm, pts, width, thick, along_hint, sides, tip):
     rings = []
     n = len(pts)
     for i, p in enumerate(pts):
@@ -337,69 +375,94 @@ def strand(bm, pts, width, thick, along_hint, sides=6, tip=.3):
 
 
 def mane(col):
-    """The mane along the crest from the poll to the withers in big locks falling to the horse's right (+x), two
-    layers, each lock lying on the neck and curling out at its tip; the forelock over the forehead."""
+    """R683 (승규 11-16 "머리 꼬리 흩날리게", with his picture of two toy horses): a thick mane blowing back in the wind.
+    Along the crest from the poll to the withers: a row of short locks standing up and sweeping back over the crest
+    (the mane's volume on top), and two layers of long chunky locks falling to the horse's right (+x), lying on the
+    neck at their roots, then streaming back toward the withers with an S-wave and their tips flicking out and up.
+    The forelock blows back from between the ears and flips to the side over the forehead."""
     rng = random.Random(7)
     bm = bmesh.new()
     rows = resample([(tuple(t), tuple(u), w) for t, u, w in
                      [((0, ty, tz), (0, by, bz), w) for (ty, tz), (by, bz), w in NECK_LINES]], 2)
-    for layer in range(2):
-        for k in range(len(rows) - 1, 1, -1):
+    up = Vector((0, 0, 1))
+    for k in range(len(rows) - 1, 1, -1):
+        r = rows[k]
+        top = Vector(r[0:3])
+        along = (Vector(rows[k - 1][0:3]) - top).normalized()      # down the crest toward the withers
+        share = k / (len(rows) - 1)
+        # the crest: short locks rising off the top and sweeping back, leaning a little to the right
+        length = (.19 + .07 * (1 - abs(share - .5) * 2)) * (1 + rng.uniform(-.15, .15))
+        lean = (.07, -.035)[k % 2]                                 # alternate locks fall right and left
+        pts = [top + up * (.015 + .1 * math.sin(t * math.pi * .6) * length / .22) + along * (length * t * .95)
+               + Vector((.008 * (1 if lean > 0 else -1) + lean * t * t, 0, 0)) for t in (j / 9 for j in range(10))]
+        strand(bm, pts, .085, .04, along, tip=.3)
+        for layer in range(2):
             r = rows[k]
             top, under, w = Vector(r[0:3]), Vector(r[3:6]), r[6]
             depth = (under - top).length
             down = (under - top).normalized()
-            along = (Vector(rows[k - 1][0:3]) - top).normalized()
-            share = k / (len(rows) - 1)
-            length = (.24 + .1 * (1 - abs(share - .55) * 1.6)) * (1 + rng.uniform(-.15, .15)) * (1.0, .72)[layer]
-            shift = along * (.035 * layer)          # the outer layer between the inner one's locks
+            length = (.36 + .14 * (1 - abs(share - .55) * 1.6)) * (1 + rng.uniform(-.15, .15)) * (1.0, .72)[layer]
+            shift = along * (.04 * layer)           # the outer layer between the inner one's locks
+            wave = rng.uniform(0, 2 * math.pi)
             pts = []
-            for j in range(12):
-                t = j / 11
+            for j in range(14):
+                t = j / 13
                 d = length * t
                 # lying on the neck's side (the section is a squared ellipse), standing off it by the lock's body,
-                # the tip curling out and back
+                # then streaming back down the neck, waving, the tip blown out and up
                 v = max(-1.0, 1 - 2 * d / depth)
                 x = w * max(0.0, 1 - abs(v) ** 2.2) ** (1 / 2.2)
-                x = max(x, .015) + .018 + .016 * layer + .012 * t ** 2.5
-                p = top + shift + Vector((x, 0, 0)) + down * d - along * (.03 * t ** 2) + down * .006
+                x = max(x, .015) + .026 + .028 * layer + .15 * t ** 2.2 + .018 * math.sin(wave + t * 2 * math.pi) * t
+                p = (top + shift + Vector((x, 0, 0)) + down * (d * (1 - .35 * t * t)) + along * (.2 * t ** 1.6)
+                     + up * (.07 * t ** 3) + down * .006)
                 pts.append(p)
-            strand(bm, pts, .065, .02, along, tip=.4)
-    # The forelock: from between the ears, forward and down over the forehead, the tips curling up a little.
+            strand(bm, pts, .1, .034, along, tip=.3)
+    # The forelock: from between the ears, forward and down over the forehead, blown to the right and flipping up.
     axis = (HEAD_P1 - HEAD_P0).normalized()
     n = Vector((0, -axis.z, axis.y)).normalized()
-    for k in range(5):
-        x = (k - 2) * .02
-        start = HEAD_P0 + n * .08 + Vector((x, -.01, .03))
-        pts = [start + axis * (.18 * j / 9) + n * (.025 * math.sin(j / 9 * math.pi) + .01 * (j / 9) ** 3)
-               + Vector((x * .7 * j / 9, 0, 0)) for j in range(10)]
-        strand(bm, pts, .024, .011, Vector((1, 0, 0)))
+    for k in range(6):
+        x = (k - 2.5) * .022
+        start = HEAD_P0 + n * .085 + Vector((x, -.01, .035))
+        pts = [start + axis * (.2 * t) + n * (.03 * math.sin(t * math.pi) + .025 * t ** 3)
+               + Vector((x * .5 * t + .06 * t * t, 0, 0)) for t in (j / 10 for j in range(11))]
+        strand(bm, pts, .032, .014, Vector((1, 0, 0)))
     return mesh_object("Mane", bm, col, (HAIR,))
 
 
 TAIL_DOCK = [Vector((0, -.915, 1.42)), Vector((0, -.97, 1.35)), Vector((0, -1.0, 1.24)), Vector((0, -1.01, 1.12))]
+# A team's swingle-tree crosses behind each horse at its y -1.335, z .95 (movers_model.hitch): the tail stays 9 cm in
+# front of it there, and in front of the coach's footboard below.
+TAIL_CLEAR = ((.8, 1.12, -1.24), (-1.0, 9.0, -1.37))
 
 
 def tail(col):
-    """The dock, and a full tail of big wavy locks from it falling to below the hocks, spreading toward the ends."""
+    """R683 (승규 "꼬리 흩날리게"): the dock, and a big full tail of chunky wavy locks blowing out behind: from the dock
+    they arc back, fall to below the hocks, drift to the horse's right with the mane and fan out, and their ends
+    sweep back and curl up."""
     rng = random.Random(11)
     bm = bmesh.new()
-    strand(bm, [p.copy() for p in TAIL_DOCK], .05, .045, Vector((1, 0, 0)))
+    strand(bm, [p.copy() for p in TAIL_DOCK], .07, .065, Vector((1, 0, 0)))
     count = 30
     for k in range(count):
         u = min(1.0, max(0.0, k / (count - 1) + rng.uniform(-.04, .04)))
         root = TAIL_DOCK[0].lerp(TAIL_DOCK[-1], u * .85) + Vector((rng.uniform(-.04, .04), rng.uniform(-.03, .012), 0))
-        bottom_z = .4 + rng.uniform(-.06, .06)
-        spread = Vector((rng.uniform(-.13, .13), rng.uniform(-.1, .02), 0))
-        arc = .04 + .07 * (1 - u)              # the hair from the top of the dock arcs out behind before it falls
+        bottom_z = .46 + rng.uniform(-.07, .07)
+        spread = Vector((rng.uniform(-.17, .17), rng.uniform(-.1, .02), 0))
+        arc = .1 + .1 * (1 - u)              # the hair from the top of the dock arcs out behind before it falls
+        wave = rng.uniform(0, 2 * math.pi)
         pts = []
-        for j in range(12):
-            t = j / 11
-            z = root.z + (bottom_z - root.z) * t
-            p = Vector((root.x, root.y - arc * math.sin(t * math.pi * .8) - .02 * t, z)) + spread * (t ** 1.4)
-            p.x += .025 * math.sin(t * 4 + k * 1.3) * t
+        for j in range(14):
+            t = j / 13
+            flick = max(0.0, (t - .55) / .45) ** 2  # the end blown back and curling up
+            z = root.z + (bottom_z - root.z) * t + .13 * flick
+            p = Vector((root.x, root.y - arc * math.sin(t * math.pi * .8) - .02 * t - .14 * flick, z)) + spread * (t ** 1.4)
+            p.x += .04 * math.sin(t * 4.5 + wave) * t + .09 * t * t
+            for z0, z1, ymin in TAIL_CLEAR:
+                if z0 <= p.z <= z1:
+                    p.y = max(p.y, ymin)
+                    break
             pts.append(p)
-        strand(bm, pts, .05, .022, Vector((1, 0, 0)) if k % 2 else Vector((0, 1, 0)))
+        strand(bm, pts, .085, .036, Vector((1, 0, 0)) if k % 2 else Vector((0, 1, 0)), tip=.25)
     return mesh_object("Tail", bm, col, (HAIR,))
 
 
@@ -671,9 +734,10 @@ def tack(col, body):
         buckle(gold, p, o, al, .1, .075)
     # the breast collar round the chest, and the strap over the withers holding it up
     breast = strap(lea, body, ring_rays((0, .32, 1.1), X, (0, 1, 0), 6, 174, 48), .075, .018)
-    for u in (.18, .27, .36, .64, .73, .82):
+    # R683 (승규's picture): studs all along the breast collar
+    for u in (.12, .18, .24, .3, .36, .42, .58, .64, .7, .76, .82, .88):
         p, o, al = breast.at(u)
-        stud(gold, p, o, .02)
+        stud(gold, p, o, .019)
     p, o, al = breast.at(.5)
     rosette(gold, p, o, .055)
     withers = strap(lea, body, ring_rays((0, .56, 1.3), X, (0, -.38, .92), -25, 205, 40), .06, .016)
@@ -697,7 +761,15 @@ def tack(col, body):
         p, o, al = cheek.at(.62)
         stud(gold, p, o, .02)
         p, o, al = cheek.at(1)
-        torus(gold, p + o * .012 + al * .02, X, .036, .009)
+        # R683 (R680 QA: the bit's ring sat half in the muzzle): the ring stands off the cheek by its own thickness
+        # and hangs a little forward and down of the strap's end, a gold boss where the strap holds it
+        torus(gold, p + o * .03 + al * .03, X, .04, .01)
+        stud(gold, p, o, .018)
+    # R683 (승규's picture): a drop from the browband down the forehead to a big gold face badge
+    drop = strap(lea, body, [(head_at(sh, 0), face) for sh in (.06, .12, .18, .24, .3)], .035, .012)
+    p, o, al = drop.at(1)
+    rosette(gold, p, o, .052)
+    stud(gold, p + o * .024, o, .024, .014)
     # the plume: a gold holder on the crownpiece between the ears and a spray of cream feathers curving back
     p, o, al = crown.at(.5)
     up = Vector((0, -.3, 1)).normalized()
@@ -706,13 +778,14 @@ def tack(col, body):
     bmesh.ops.create_uvsphere(gold, u_segments=16, v_segments=8, radius=.03, matrix=Matrix.Translation(p + up * .085))
     rng = random.Random(5)
     base = p + up * .09
-    for k in range(16):
-        side = (k % 4 - 1.5) / 1.5
-        back = .25 + .16 * (k // 4) + rng.uniform(-.04, .04)
-        length = .3 + .12 * (1 - abs(side)) + rng.uniform(-.03, .03)
-        pts = [base + up * (length * t) + Vector((side * .06 * t, -(back * length) * t * t, -.05 * t ** 3))
+    # R683 ("흩날리게"): fuller, the feathers blown back and their tips curling down and out
+    for k in range(20):
+        side = (k % 5 - 2) / 2
+        back = .3 + .15 * (k // 5) + rng.uniform(-.04, .04)
+        length = .28 + .1 * (1 - abs(side)) + rng.uniform(-.03, .03)
+        pts = [base + up * (length * t) + Vector((side * .075 * t + .03 * t ** 3, -(back * length) * t * t, -.08 * t ** 3))
                for t in (j / 11 for j in range(12))]
-        strand(plume, pts, .065, .024, Vector((0, .6, .8)), tip=.25)
+        strand(plume, pts, .07, .026, Vector((0, .6, .8)), tip=.25)
     return assemble(col, "Tack", [(lea, LEATHER), (gold, GOLD), (plume, PLUME)])
 
 
@@ -729,7 +802,10 @@ def harness(col, body):
         p, o = mid[i]
         torus(gold, p + o * .035, (0, 1, 0), .034, .009)
     for s in (-1, 1):
-        strap(lea, body, line_rays((0, .26, 1.06), (0, -.52, 1.06), (s, 0, 0), 24), .055, .016)
+        side = strap(lea, body, line_rays((0, .26, 1.06), (0, -.52, 1.06), (s, 0, 0), 24), .055, .016)
+        for u in (.12, .3, .48, .66):                      # R683: studs along the side straps
+            p, o, al = side.at(u)
+            stud(gold, p, o, .016)
     breech = strap(lea, body, ring_rays((0, -.52, 1.06), X, (0, 1, 0), 0, -180, 48), .07, .018)
     for u in (.3, .4, .5, .6, .7):
         p, o, al = breech.at(u)
@@ -737,10 +813,16 @@ def harness(col, body):
     for u in (0, 1):
         p, o, al = breech.at(u)
         buckle(gold, p, o, al, .085, .07)
-    strap(lea, body, ring_rays((0, -.62, 1.2), X, (0, 0, 1), -18, 198, 36), .05, .016)
+    hip = strap(lea, body, ring_rays((0, -.62, 1.2), X, (0, 0, 1), -18, 198, 36), .05, .016)
+    for u in (.2, .35, .65, .8):                           # R683: studs on the hip strap and the crupper
+        p, o, al = hip.at(u)
+        stud(gold, p, o, .016)
     crupper = strap(lea, body, line_rays((0, .4, 1.25), (0, -.88, 1.25), (0, 0, 1), 40), .045, .016)
     p, o, al = crupper.at((.4 + .62) / 1.28)
     rosette(gold, p, o, .035)
+    for u in (.12, .32, .62):
+        p, o, al = crupper.at(u)
+        stud(gold, p, o, .015)
     return assemble(col, "Harness", [(lea, LEATHER), (gold, GOLD)])
 
 
@@ -916,6 +998,7 @@ def skin(col, body, extras, tack_pieces, armature):
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")
     mask_skin(body)
+    joint_blend(body)
     for o in extras:
         o.parent = None
         n = o.name
@@ -1007,6 +1090,34 @@ def mask_skin(ob):
         if moved > 0:
             had = next((x.weight for x in v.groups if x.group == root.index), 0.0)
             root.add([v.index], had + moved, "REPLACE")
+
+
+# R683 (R680 QA: the fore knee folded to 105 degrees kept 64% of its section, 87 triangles through each other): bone heat
+# handed a joint from one bone to the next over 2-3 cm, so the skin creased at a line. Across each lower joint the two
+# bones' share is now eased over `half` above and below the joint: (upper bone, lower bone, joint height, half).
+LEG_JOINTS = (("Forearm", "Cannon", .5, .085), ("Cannon", "Pastern", .245, .05),
+              ("Gaskin", "HindCannon", .57, .085), ("HindCannon", "HindPastern", .245, .05))
+
+
+def joint_blend(ob):
+    names = {g.index: g.name for g in ob.vertex_groups}
+    for v in ob.data.vertices:
+        p = ob.matrix_world @ v.co
+        ws = {names[x.group]: x.weight for x in v.groups}
+        for a, b, zj, half in LEG_JOINTS:
+            for side in ("L", "R"):
+                ga, gb = a + "." + side, b + "." + side
+                tot = ws.get(ga, 0.0) + ws.get(gb, 0.0)
+                if tot < 1e-4 or abs(p.z - zj) > half * 1.5:
+                    continue
+                t = max(0.0, min(1.0, (zj + half - p.z) / (2 * half)))
+                t = t * t * (3 - 2 * t)
+                for g, w in ((ga, tot * (1 - t)), (gb, tot * t)):
+                    if w > 1e-4:
+                        ob.vertex_groups[g].add([v.index], w, "REPLACE")
+                    elif g in ws:
+                        ob.vertex_groups[g].remove([v.index])
+                    ws[g] = w
 
 
 def limit_weights(ob, most=4):

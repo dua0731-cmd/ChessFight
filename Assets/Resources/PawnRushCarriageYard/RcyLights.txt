@@ -1,0 +1,6 @@
+lantern -8 11.35 144.5
+lantern 8 11.35 144.5
+lantern -9 3.35 51
+lantern 9 3.35 51
+lantern -9 3.35 81
+lantern 9 3.35 81

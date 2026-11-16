@@ -244,9 +244,21 @@ def coach_trunk(col):
         parts.append(box(col, "Rack rail", (min(s * .96, s * .92), y0, .9), (max(s * .96, s * .92), y1, .98), WALNUT, bevel=.01, segments=1))
     tz0, tz1 = .9, 1.62
     parts.append(box(col, "Trunk", (-.9, y0 + .01, tz0), (.9, y1, tz1 - .09), LEATHER, bevel=.02))
-    lid = box(col, "Trunk lid", (-.91, y0, tz1 - .1), (.91, y1, tz1), LEATHER)
-    bevel_mod(lid, .035, 3)
-    parts.append(lid)
+    # R683 (the concept's king's coffer): a barrel-topped lid arching across the coach, iron arches over it at its
+    # back and front edges; the back face stays 2 cm inside the collider box.
+    lid_z, rise, half = tz1 - .1, .16, .91
+
+    def arch(r, z0, n=14):
+        return [(r * math.cos(math.pi * k / n), z0 + rise * (r / half) * math.sin(math.pi * k / n)) for k in range(n + 1)]
+    parts.append(prism(col, "Trunk lid", [(half, lid_z)] + arch(half, lid_z + .04) + [(-half, lid_z)], y0, y1, LEATHER, bevel=.012))
+    for ya, yb in ((y0 - .006, y0 + .04), (y1 - .04, y1 + .004)):
+        outer, inner = arch(half + .012, lid_z + .04), arch(half - .002, lid_z + .028)
+        parts.append(prism(col, "Lid band", outer + list(reversed(inner)), ya, yb, IRON))
+    parts.append(lathe(col, "Lid boss", [(0, 0), (.05, 0), (.045, -.016), (.025, -.028), (0, -.032)],
+                       (0, y0 + .01, lid_z + .1), axis="y", seg=16, mat=BRASS, smooth=True))
+
+    def lid_top(x):
+        return lid_z + .04 + rise * math.sqrt(max(0.0, 1 - (x / half) ** 2))
     for z in (tz0 + .14, tz1 - .24):
         parts.append(box(col, "Trunk band", (-.905, y0 + .004, z), (.905, y1 - .004, z + .04), IRON, bevel=.004, segments=1))
     for sx in (-1, 1):
@@ -254,8 +266,9 @@ def coach_trunk(col):
             xa, xb = sorted((sx * .84, sx * .915))
             parts.append(box(col, "Trunk corner", (xa, y0 - .006, z), (xb, y0 + .07, z + .1), BRASS, bevel=.008, segments=1))
     for x in (-.45, .45):
-        parts.append(strap(col, "Trunk strap", (x, y0 + .004, tz0 + .06), (x, y0 + .004, tz1), w=.07, t=.012, up=Vector((0, 1, 0))))
-        parts.append(strap(col, "Trunk strap", (x, y0, tz1 + .006), (x, y1, tz1 + .006), w=.07, t=.012))
+        zt = lid_top(x)
+        parts.append(strap(col, "Trunk strap", (x, y0 + .004, tz0 + .06), (x, y0 + .004, zt), w=.07, t=.012, up=Vector((0, 1, 0))))
+        parts.append(strap(col, "Trunk strap", (x, y0, zt + .006), (x, y1, zt + .006), w=.07, t=.012))
         parts.append(box(col, "Trunk buckle", (x - .05, y0 - .008, tz1 - .3), (x + .05, y0 + .002, tz1 - .22), BRASS))
     return parts
 
@@ -315,6 +328,10 @@ def coach(col):
             parts.append(cylinder(col, "Corner post", (s * (HALF - .07), y, (WAIST + CAB_TOP) / 2), (0, 0, 1), .07, CAB_TOP - WAIST, PAINT, segments=12))
     # --- roof: a moulded eave, a domed top, a gilt rail round it, the crown in the middle
     parts.append(box(col, "Roof eave", (-HALF - .08, CAB_Y0 - .08, CAB_TOP), (HALF + .08, CAB_Y1 + .08, CAB_TOP + .08), WALNUT, bevel=.035))
+    # R683 (stylized-style: a stepped cornice reads at a distance): a moulding stepping the eave out from the body and
+    # a gilt bead under it
+    parts.append(box(col, "Cornice", (-HALF - .035, CAB_Y0 - .035, CAB_TOP - .07), (HALF + .035, CAB_Y1 + .035, CAB_TOP), WALNUT, bevel=.025))
+    parts.append(box(col, "Cornice bead", (-HALF - .015, CAB_Y0 - .015, CAB_TOP - .1), (HALF + .015, CAB_Y1 + .015, CAB_TOP - .07), GOLD, bevel=.01, segments=1))
     parts.append(loft(col, "Roof dome", [((0, CAB_Y0 + .02, CAB_TOP + .08), .3, .02), ((0, CAB_Y0 + .1, CAB_TOP + .08), HALF + .02, .08),
                                           ((0, -.3, CAB_TOP + .08), HALF + .02, .14), ((0, CAB_Y1 - .1, CAB_TOP + .08), HALF + .02, .08),
                                           ((0, CAB_Y1 - .02, CAB_TOP + .08), .3, .02)], seg=24, mat=WALNUT, subsurf=1))
@@ -369,20 +386,27 @@ def coach(col):
 
 
 def coach_wheel(col):
-    """One wheel round the x axis, 1.1 m across, 0.14 m wide, in its pivot's frame."""
-    parts = [ring_x(col, "Tyre", 0, .515, .55, -.07, .07, IRON, seg=32, bevel=.006)]
-    parts.append(ring_x(col, "Felloe", 0, .44, .52, -.05, .05, WALNUT, seg=32, bevel=.01))
-    parts.append(lathe(col, "Nave", [(0, -.14), (.06, -.14), (.08, -.12), (.1, -.11), (.12, -.07), (.13, -.03), (.13, .03), (.12, .07),
-                                     (.1, .11), (.08, .12), (.06, .14), (0, .14)], (0, 0, 0), axis="x", seg=12, mat=WALNUT, smooth=True))
-    for x in (-.11, .11):
-        parts.append(ring_x(col, "Nave band", x, .085, .105, -.012, .012, GOLD, seg=16, bevel=0))
+    """One wheel round the x axis, 1.1 m across, 0.14 m wide, in its pivot's frame. R683 (the concept's chunky toy
+    wheels, vehicle-artist): a deeper felloe, thicker spokes swelling at the nave, a bigger nave with a gilt band each
+    side, and a rivet on the tyre between each pair of spokes (the felloe's joints)."""
+    parts = [ring_x(col, "Tyre", 0, .515, .55, -.07, .07, IRON, seg=36, bevel=.006)]
+    parts.append(ring_x(col, "Felloe", 0, .425, .52, -.055, .055, WALNUT, seg=36, bevel=.012))
+    parts.append(lathe(col, "Nave", [(0, -.15), (.065, -.15), (.09, -.135), (.115, -.12), (.14, -.075), (.152, -.03), (.152, .03),
+                                     (.14, .075), (.115, .12), (.09, .135), (.065, .15), (0, .15)], (0, 0, 0), axis="x", seg=16,
+                       mat=WALNUT, smooth=True))
+    for x in (-.115, .115):
+        parts.append(ring_x(col, "Nave band", x, .1, .123, -.014, .014, GOLD, seg=20, bevel=0))
     for sgn in (-1, 1):
-        parts.append(lathe(col, "Hub cap", [(0, .14 * sgn), (.055, .14 * sgn), (.05, .17 * sgn), (.03, .19 * sgn), (0, .195 * sgn)],
-                           (0, 0, 0), axis="x", seg=12, mat=GOLD, smooth=True))
+        parts.append(lathe(col, "Hub cap", [(0, .15 * sgn), (.06, .15 * sgn), (.055, .175 * sgn), (.035, .19 * sgn), (0, .195 * sgn)],
+                           (0, 0, 0), axis="x", seg=16, mat=GOLD, smooth=True))
     for k in range(12):
-        sp = lathe(col, "Spoke", [(0, .1), (.028, .1), (.026, .2), (.021, .35), (.018, .46), (0, .46)], (0, 0, 0), axis="z", seg=6, mat=OAK, smooth=True)
+        sp = lathe(col, "Spoke", [(0, .12), (.04, .12), (.036, .2), (.03, .32), (.027, .43), (0, .43)], (0, 0, 0), axis="z", seg=8,
+                   mat=OAK, smooth=True)
         sp.rotation_euler = (2 * math.pi * k / 12, 0, 0)
         parts.append(sp)
+        a = 2 * math.pi * (k + .5) / 12
+        for x in (-.07, .07):       # rivet heads on the tyre's faces, between the spokes
+            parts.append(dome(col, "Tyre rivet", (x, .532 * math.sin(-a), .532 * math.cos(a)), "x", .011, 1 if x > 0 else -1, IRON, seg=6))
     return parts
 
 
@@ -398,12 +422,12 @@ def hitch(col):
         parts.append(lathe(col, "Swingle ferrule", [(0, -.03), (.05, -.03), (.05, .03), (0, .03)], (x, .84, .95), axis="x", seg=10, mat=IRON))
     # Traces from the swingle-tree's hooks forward to where the horse's own traces (RcyHorse's harness, horse_model.py:
     # side straps at its height 1.06 back to y -.52 of its frame, here 2.175 - .52) end, overlapping them by 10 cm so
-    # the horse's bob opens no gap, .385 out from its middle (its skin there is .35-.365, its strap .37-.39). Pole
+    # the horse's bob opens no gap, .398 out from its middle (R683: its barrel 5% wider, its strap .38-.4). Pole
     # straps from the pole's tip to the breast collar's inner front (the chest at 105 degrees, y .84 of its frame).
     for hx in (-.55, .55):
         for s in (-1, 1):
             a = Vector((max(-.86, min(.86, hx + s * .36)), .86, .96))
-            b = Vector((hx + s * .385, 2.175 - .42, 1.06))
+            b = Vector((hx + s * .398, 2.175 - .42, 1.06))
             parts.append(strap(col, "Trace", a, b, w=.055, t=.018, up=Vector((1, 0, 0))))
         parts.append(strap(col, "Pole strap", (math.copysign(.04, hx), 3.12, .97), (hx - math.copysign(.15, hx), 2.175 + .86, 1.1), w=.05, t=.018))
     return parts
@@ -444,11 +468,8 @@ def gate_leaf(col, side):
             parts.append(dome(col, "Stud", (side * (.2 + (W - .4) * k / 9), -T / 2 - .06, zc), "y", .03, -1, IRON))
         parts.append(prism(col, "Band fleur", [(side * (W - .26 + a), zc + b) for a, b in FLEUR], -T / 2 - .06, -T / 2, IRON))
         parts.append(cylinder(col, "Knuckle", (side * .02, 0, zc), (0, 0, 1), .06, .2, IRON, segments=10))
-    # The crown plate (the code's, 0.9 m at x 1.65, z 3.35): a round gold boss with a crown in relief.
-    cx = side * 1.65
-    parts.append(lathe(col, "Crown plate", [(0, 0), (.46, 0), (.48, -.02), (.46, -.04), (.4, -.05), (0, -.05)], (cx, -T / 2, 3.35),
-                       axis="y", seg=32, mat=GOLD, smooth=True))
-    parts.append(prism(col, "Plate crown", [(cx + a, 3.35 + b) for a, b in CROWN_OUTLINE], -T / 2 - .09, -T / 2 - .04, GOLD, bevel=.008))
+    # R685: no crown plate (승규 11-16 "문쪽에 원형 왕관으로 된거 지워"; it was a round gold boss with a crown in relief at
+    # x 1.65, z 3.35). The boards and bands run on behind where it was.
     # The yard's face: ledges behind the bands and a brace across each half.
     x0, x1 = X(.26, W - .26)
     for za, zb in ((.3, 2.58), (2.86, H - .3)):

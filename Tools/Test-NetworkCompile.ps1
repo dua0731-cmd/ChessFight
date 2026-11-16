@@ -65,7 +65,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }
 # Pawn Rush course 01 (its Steam bridge, SteamPawnRushLink, sits in RagdollLabSteam and needs it).
 $pawnRush = Get-AssemblySources 'PawnRush'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.VFX.dll", "-out:$output/ChessFight.PawnRush.dll") + @($pawnRush)
-& $compilerHost $compiler @compileArgs
+# Pawn Rush's sources outgrew Windows' 32767-character command line (R685): its arguments go through a response file.
+$pawnRushResponse = Join-Path $output 'PawnRush.rsp'
+[System.IO.File]::WriteAllLines($pawnRushResponse, [string[]]($compileArgs | ForEach-Object { '"' + $_ + '"' }), (New-Object System.Text.UTF8Encoding $false))
+& $compilerHost $compiler "@$pawnRushResponse"
 if ($LASTEXITCODE -ne 0) { throw 'Pawn Rush course compilation failed.' }
 # Compile the section authoring tools with the references declared by their own asmdef.
 $pawnRushEditor = Get-AssemblySources 'PawnRushEditor'

@@ -106,10 +106,6 @@ namespace ChessFight.PawnRush
                 uncollide = new[] { C("1 Entrance", "Tower"), C("1 Entrance", "Gate wall W"), C("1 Entrance", "Gate wall E") },
                 moves = new[]
                 {
-                    // The banners on the gate wall's yard face hung inside the towers (x +-10) and the piers (+-17): to
-                    // the face between them (1.96 .. 1.99 there), under its cornice (from y 5.45).
-                    new Move { what = new Cover { group = "Scenery", name = "Banner", absX = new Vector2(8f, 12f), z = new Vector2(0f, 4f) }, absX = 13.2f, y = 4.9f },
-                    new Move { what = new Cover { group = "Scenery", name = "Banner", absX = new Vector2(16f, 18f), z = new Vector2(0f, 4f) }, absX = 19.5f, y = 4.9f },
                     // The title lay on the crest's shield: to the lintel under it (y 5.6 .. 6.55, its face at z .33; the
                     // shield's point, z .15, falls between the words), and the start countdown that was there to the
                     // closed gate's leaves, under the zone's sign (4.3).
@@ -127,13 +123,7 @@ namespace ChessFight.PawnRush
                               Towers(FinalGroup), Towers(OwnScenery)),
                 // The gate walls' faces stood in front of the model's, the blockout's towers out of its corners.
                 uncollide = new[] { C(FinalGroup, "Gate wall W"), C(FinalGroup, "Gate wall E"), C(FinalGroup, "Tower") },
-                moves = new[]
-                {
-                    // The banners on the wall's platform face hung inside the towers (x +-12) and the piers (+-18): to
-                    // the face between them (z 155.4 there), under its cornice (from y 16.65).
-                    new Move { what = new Cover { group = OwnScenery, name = "Banner", absX = new Vector2(10f, 14f), z = new Vector2(GateZ - 3f, GateZ) }, absX = 14.7f, y = 16.4f, z = 155.38f },
-                    new Move { what = new Cover { group = OwnScenery, name = "Banner", absX = new Vector2(16f, 20f), z = new Vector2(GateZ - 3f, GateZ) }, absX = 22f, y = 16.4f, z = 155.38f },
-                },
+                // (R682: the code's blue banners are gone, so the moves that set them between the piers went too.)
                 labels = new[] { FinalGroup },
                 boxes = CastleBoxData.Final,
             },
@@ -252,13 +242,13 @@ namespace ChessFight.PawnRush
                 // Outer gate wall
                 -16.7f, 3.5f, 1.2f, 12.6f, 7f, 1.6f, 0f, 0f,
                 // Outer gate wall pier plinth
-                -16f, 0.475f, 2.285f, 3.06f, 0.95f, 0.57f, 0f, 0f,
+                -16f, 0.51f, 2.285f, 3.06f, 1.02f, 0.57f, 0f, 0f,
                 // Outer gate wall pier
-                -16f, 3.975f, 2.2f, 2.64f, 6.05f, 0.4f, 0f, 0f,
+                -16f, 4.01f, 2.2f, 2.64f, 5.98f, 0.4f, 0f, 0f,
                 // Outer gate wall pier plinth
-                -22.245f, 0.475f, 2.285f, 1.51f, 0.95f, 0.57f, 0f, 0f,
+                -22.245f, 0.51f, 2.285f, 1.51f, 1.02f, 0.57f, 0f, 0f,
                 // Outer gate wall pier
-                -22.35f, 3.975f, 2.2f, 1.3f, 6.05f, 0.4f, 0f, 0f,
+                -22.35f, 4.01f, 2.2f, 1.3f, 5.98f, 0.4f, 0f, 0f,
                 // Outer gate tower
                 11.094f, 0.725f, 2.099f, 0.727f, 1.45f, 1f, -94.16f, 0f,
                 10.829f, 2.14f, 2.044f, 0.699f, 1.573f, 1f, -96.95f, 9.74f,
@@ -355,13 +345,13 @@ namespace ChessFight.PawnRush
                 // Outer gate wall
                 16.7f, 3.5f, 1.2f, 12.6f, 7f, 1.6f, 0f, 0f,
                 // Outer gate wall pier plinth
-                16f, 0.475f, 2.285f, 3.06f, 0.95f, 0.57f, 0f, 0f,
+                16f, 0.51f, 2.285f, 3.06f, 1.02f, 0.57f, 0f, 0f,
                 // Outer gate wall pier
-                16f, 3.975f, 2.2f, 2.64f, 6.05f, 0.4f, 0f, 0f,
+                16f, 4.01f, 2.2f, 2.64f, 5.98f, 0.4f, 0f, 0f,
                 // Outer gate wall pier plinth
-                22.245f, 0.475f, 2.285f, 1.51f, 0.95f, 0.57f, 0f, 0f,
+                22.245f, 0.51f, 2.285f, 1.51f, 1.02f, 0.57f, 0f, 0f,
                 // Outer gate wall pier
-                22.35f, 3.975f, 2.2f, 1.3f, 6.05f, 0.4f, 0f, 0f,
+                22.35f, 4.01f, 2.2f, 1.3f, 5.98f, 0.4f, 0f, 0f,
             };
 
             public static readonly float[] Final =

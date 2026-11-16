@@ -21,6 +21,8 @@ SLUICE_X, SLUICE_HALF = 15.5, 3.1       # the basin docks' sluice arches in the 
 COURT_HALF, COURT_Y0, COURT_Y1, COURT_WALL = 10.0, 159.0, 178.0, 5.0
 PEDESTAL = ((-1.2, 174.0), (1.2, 176.4), 1.4)
 RUNOUT_Y1, TERRACE_Y1, BAND_Y0, BAND_Y1 = 169.0, 175.0, 177.0, 181.0
+# The cliff's pilasters on the +x side (mirrored for -x); R682: the railing's posts stand over them.
+CLIFF_PIERS = [(3.5, 4.4), (7.75, 8.65), (11.55, 12.4), (18.6, 19.4), (22.15, 23.05), (25.4, 26.0)]
 
 
 # ------------------------------------------------------------------ the cliff
@@ -35,8 +37,7 @@ def cliff(col):
     parts.append(ashlar(col, "Cliff base", (x0, f, -.4), (x1, b, 1.3), "-y", course=.85, length=2.4, mat=MARBLE))
     parts.append(box(col, "Cliff plinth", (x0, f, 1.3), (x1, b, 1.52), MARBLE, bevel=.06))
     # The panelled storey: pilasters flush with the face, sunk panels between them (5 cm), a raised field in each.
-    piers = [(-26.0, -25.4), (-23.05, -22.15), (-19.4, -18.6), (-12.4, -11.55), (-8.65, -7.75), (-4.4, -3.5),
-             (3.5, 4.4), (7.75, 8.65), (11.55, 12.4), (18.6, 19.4), (22.15, 23.05), (25.4, 26.0)]
+    piers = [(-c, -a) for a, c in reversed(CLIFF_PIERS)] + CLIFF_PIERS
     z0, z1 = 1.52, 6.6
     parts.append(box(col, "Cliff panel back", (x0, f + .05, z0), (x1, b, z1), MARBLE))
     for a, c in piers:
@@ -72,9 +73,61 @@ def platform(col):
     parts.append(flagstones(col, "Platform paving", -PLATFORM_HALF, PLATFORM_HALF, 143.9, PLATFORM_Y1, TOP, size=2.0))
     # A marble kerb along the coping.
     parts.append(box(col, "Platform kerb", (-PLATFORM_HALF, 143.9, TOP - .3), (PLATFORM_HALF, 144.35, TOP), MARBLE, bevel=.03))
+    parts += edge_railings(col)
+    return parts
+
+
+RAIL_Y0, RAIL_Y1, RAIL_HIGH = CLIFF_Y, 143.4, 1.0   # the railings' colliders: y 143 .. 143.4, 1 m over the platform
+
+
+def edge_railings(col):
+    """R682 (environment-artist, prop-artist): the cliff-top balustrade in bays between pedestal posts set over the
+    cliff's pilasters (the landing's gap edge at x +-3.5 is one of them), instead of one run with a newel at each end.
+    Each post: a moulded base, a shaft with a sunk panel on both faces, a cap 3 cm over (the rail's collider is the
+    1 m box; nothing past it into the landing's gap). Each bay: plinth, turned balusters, a handrail."""
+    parts = []
+    piers = [p for p in CLIFF_PIERS if p[0] >= LANDING_HALF - 1e-6]
     for s in (-1, 1):
-        lo, hi = sorted((s * LANDING_HALF, s * PLATFORM_HALF))
-        parts.append(balustrade(col, "Edge railing", (lo, CLIFF_Y, TOP), (hi, 143.4, TOP + 1.0)))
+        for a, b in piers:
+            lo, hi = sorted((s * a, s * b))
+            parts += rail_post(col, lo, hi)
+        for (_, a), (b, _) in zip(piers[:-1], piers[1:]):
+            lo, hi = sorted((s * a, s * b))
+            parts += rail_bay(col, lo, hi)
+    return parts
+
+
+def rail_post(col, x0, x1):
+    y0, y1, z0, z1 = RAIL_Y0, RAIL_Y1, TOP, TOP + RAIL_HIGH
+    # the cap's overhang stops at the landing's gap edge (x +-3.5): nothing out into the gap
+    o0 = 0.0 if abs(abs(x0) - LANDING_HALF) < 1e-6 else .03
+    o1 = 0.0 if abs(abs(x1) - LANDING_HALF) < 1e-6 else .03
+    parts = [box(col, "Rail post base", (x0, y0 - .03, z0), (x1, y1 + .03, z0 + .14), MARBLE, bevel=.03, segments=2),
+             box(col, "Rail post torus", (x0 + .02, y0 - .015, z0 + .14), (x1 - .02, y1 + .015, z0 + .22), MARBLE, bevel=.035, segments=3),
+             box(col, "Rail post shaft", (x0 + .04, y0 + .02, z0 + .22), (x1 - .04, y1 - .02, z1 - .16), MARBLE)]
+    # the shaft's faces: a frame flush with them round a panel 2 cm in, on the basin's and the platform's side
+    for ya, yb in ((y0, y0 + .02), (y1 - .02, y1)):
+        for xa, xb in ((x0 + .04, x0 + .14), (x1 - .14, x1 - .04)):
+            parts.append(box(col, "Rail post frame", (xa, ya, z0 + .22), (xb, yb, z1 - .16), MARBLE, bevel=.012, segments=1))
+        for za, zb in ((z0 + .22, z0 + .32), (z1 - .26, z1 - .16)):
+            parts.append(box(col, "Rail post frame", (x0 + .04, ya, za), (x1 - .04, yb, zb), MARBLE, bevel=.012, segments=1))
+    parts.append(box(col, "Rail post cap bed", (x0 + .01, y0 - .01, z1 - .16), (x1 - .01, y1 + .01, z1 - .08), MARBLE, bevel=.025, segments=2))
+    parts.append(box(col, "Rail post cap", (x0 - o0, y0 - .03, z1 - .08), (x1 + o1, y1 + .03, z1), MARBLE, bevel=.035, segments=3))
+    return parts
+
+
+def rail_bay(col, x0, x1):
+    """A bay between two posts: a plinth and a handrail running into them, balusters about every 0.3 m."""
+    y0, y1, z0, z1 = RAIL_Y0, RAIL_Y1, TOP, TOP + RAIL_HIGH
+    plinth, rail = .2, .14
+    parts = [box(col, "Rail plinth", (x0 - .01, y0 + .03, z0), (x1 + .01, y1 - .03, z0 + plinth), MARBLE, bevel=.03, segments=2),
+             box(col, "Rail handrail bed", (x0 - .01, y0 + .04, z1 - rail - .03), (x1 + .01, y1 - .04, z1 - rail), MARBLE, bevel=.012, segments=1),
+             box(col, "Rail handrail", (x0 - .01, y0 - .01, z1 - rail), (x1 + .01, y1 + .01, z1 - .01), MARBLE, bevel=.045, segments=3)]
+    span = x1 - x0 - .2
+    count = max(1, int(round(span / .3)))
+    step = span / count
+    for k in range(count):
+        parts.append(baluster(col, (x0 + .1 + step * (k + .5), (y0 + y1) / 2, z0 + plinth), z1 - rail - .03 - z0 - plinth))
     return parts
 
 
@@ -94,14 +147,101 @@ def finish_court(col):
                                ("Court wall E", (h, 157.0), (h + 1, 179.0), "-x"),
                                ("Court wall N", (-h - 1, COURT_Y1), (h + 1, 179.0), "-y")):
         parts.append(ashlar(col, name, (lo[0], lo[1], TOP + .4), (hi[0], hi[1], top - .3), face, course=.6, length=1.3))
-        parts.append(box(col, name + " base", (lo[0], lo[1], TOP), (hi[0], hi[1], TOP + .4), MARBLE, bevel=.04))
+        # R682: the base goes down into the court's core: its bevel and the border's met in a groove with nothing under
+        # the wall, and the sky showed through it along every wall's foot.
+        parts.append(box(col, name + " base", (lo[0], lo[1], TOP - 1.0), (hi[0], hi[1], TOP + .4), MARBLE, bevel=.04))
         parts.append(box(col, name + " coping", (lo[0], lo[1], top - .3), (hi[0], hi[1], top), MARBLE, bevel=.05))
-    # The crown's pedestal: base, a die set 7 cm in, its cap, a cushion under the crown.
+    parts += court_crown(col, top)
+    parts += pedestal(col)
+    return parts
+
+
+def court_crown(col, top):
+    """R682 (environment-artist, fantasy-worlds: "every wall top has chunky rook merlons"): the court's three walls,
+    flat-topped to now, get a corbel table under their coping on the court's side (out .16 at most, 3.6 m and more
+    over the floor, out of any jump's reach) and a ring of rook merlons on it, a tooth every 2 m with a slit to the
+    court, whose corners carry a wider tooth each."""
+    h = COURT_HALF
+    parts = []
+    walls = (  # (face x/y, along axis, from, to, side the court is on, wall's outer bound)
+        ("x", -h, COURT_Y0 - 2.0, COURT_Y1 + 1.0, 1),
+        ("x", h, COURT_Y0 - 2.0, COURT_Y1 + 1.0, -1),
+        ("y", COURT_Y1, -h, h, -1),   # between the side walls' teeth
+    )
+    for axis, face, a0, a1, s in walls:
+        def rect(d0, d1, b0, b1):
+            """across the wall from depth d0 to d1 off its court face (+ = out into the court), along b0 .. b1."""
+            p, q = sorted((face + s * d0, face + s * d1))
+            return ((p, b0), (q, b1)) if axis == "x" else ((b0, p), (b1, q))
+
+        def put(name, d0, d1, b0, b1, z0, z1, bevel, seg=1):
+            (x0, y0), (x1, y1) = rect(d0, d1, b0, b1)
+            parts.append(box(col, name, (x0, y0, z0), (x1, y1, z1), STONE, bevel=bevel, segments=seg))
+        # the corbel table under the coping (over the court's own floor only)
+        f0, f1 = (COURT_Y0, COURT_Y1) if axis == "x" else (-h, h)
+        put("Court corbel band", -.01, .16, f0, f1, top - .5, top - .3, .03, 2)
+        # R682 (environment-artist: break a long wall with piers): pilasters split each wall into bays, 5 cm proud of
+        # the stone (the wall's box stands 3 cm behind it: 8 cm, inside the 10 cm a pawn may meet; 9 cm was 13), from the wall's base to the corbel table, where a
+        # stepped console as wide as the cap carries the band; the small corbels spaced evenly in the bays between.
+        pil = COURT_PILASTERS[axis]
+        for p in pil:
+            put("Court pilaster base", -.01, .05, p - .5, p + .5, TOP, TOP + .4, .03, 2)
+            put("Court pilaster", -.01, .04, p - .42, p + .42, TOP + .4, top - 1.05, .04, 2)
+            put("Court pilaster cap", -.01, .06, p - .5, p + .5, top - 1.05, top - .9, .03, 2)
+            put("Court console", -.01, .11, p - .46, p + .46, top - .9, top - .76, .03, 2)
+            put("Court console", -.01, .135, p - .38, p + .38, top - .76, top - .62, .03, 2)
+            put("Court console", -.01, .155, p - .3, p + .3, top - .62, top - .5, .025, 2)
+        edges = [f0] + [e for p in pil for e in (p - .5, p + .5)] + [f1]
+        for g0, g1 in zip(edges[0::2], edges[1::2]):
+            n = max(1, int(round((g1 - g0) / 1.0)))
+            step = (g1 - g0) / n
+            for k in range(n):
+                b = g0 + step * (k + .5)
+                put("Court corbel", -.01, .09, b - .11, b + .11, top - .9, top - .7, .02)
+                put("Court corbel", -.01, .14, b - .13, b + .13, top - .7, top - .5, .025)
+        # the merlons, standing on the coping's back two thirds (the wall is 1 m thick): a slit faces the court
+        b = a0 + .5
+        while b + 1.0 <= a1 + 1e-6:
+            put("Court merlon plinth", .02, -.98, b - .03, b + 1.03, top, top + .1, .02)
+            put("Court merlon", -.02, -.96, b + .02, b + .45, top + .1, top + .78, .03)
+            put("Court merlon", -.02, -.96, b + .55, b + .98, top + .1, top + .78, .03)
+            put("Court merlon", -.18, -.96, b + .45, b + .55, top + .1, top + .78, 0.0)
+            put("Court merlon sill", -.02, -.18, b + .45, b + .55, top + .1, top + .3, 0.0)
+            put("Court merlon head", -.02, -.18, b + .45, b + .55, top + .62, top + .78, 0.0)
+            put("Court merlon cap", .02, -.98, b - .05, b + 1.05, top + .78, top + .9, .035, 2)
+            b += MERLON_STEP
+    return parts
+
+
+MERLON_STEP = 2.0
+# R682: the court walls' pilasters (along the side walls' y, along the far wall's x: one behind the crown).
+COURT_PILASTERS = {"x": (163.75, 168.5, 173.25), "y": (-5.0, 0.0, 5.0)}
+
+
+def pedestal(col):
+    """The crown's pedestal (R682, prop-artist / lookdev): within the same footprint and height as before (the
+    collider's), a stepped base with a rounded torus, a die with a sunk panel on each face (2.5 cm, inside the box) and
+    corner fillets, a moulded cap, and the velvet cushion plumped with a deeper bevel and four buttons."""
     (a, b), (c, d), ph = PEDESTAL
-    parts.append(box(col, "Pedestal base", (a, b, TOP), (c, d, TOP + .24), MARBLE, bevel=.05))
-    parts.append(box(col, "Pedestal die", (a + .07, b + .07, TOP + .24), (c - .07, d - .07, TOP + ph - .26), MARBLE, bevel=.03))
-    parts.append(box(col, "Pedestal cap", (a, b, TOP + ph - .26), (c, d, TOP + ph), MARBLE, bevel=.06))
-    parts.append(box(col, "Pedestal cushion", (-.75, 174.45, TOP + ph), (.75, 175.95, TOP + ph + .1), "RCY | velvet", bevel=.045, segments=3))
+    z = TOP
+    parts = [box(col, "Pedestal base", (a, b, z), (c, d, z + .14), MARBLE, bevel=.04, segments=2),
+             box(col, "Pedestal torus", (a + .04, b + .04, z + .14), (c - .04, d - .04, z + .24), MARBLE, bevel=.045, segments=4)]
+    d0, d1 = z + .24, z + ph - .3
+    i = .08
+    parts.append(box(col, "Pedestal die", (a + i + .025, b + i + .025, d0), (c - i - .025, d - i - .025, d1), MARBLE))
+    # each face: two side fillets and a top and bottom rail flush with the die's face, the panel sunk between them
+    for lo, hi in (((a + i, b + i), (a + i + .16, d - i)), ((c - i - .16, b + i), (c - i, d - i)),
+                   ((a + i, b + i), (c - i, b + i + .16)), ((a + i, d - i - .16), (c - i, d - i))):
+        parts.append(box(col, "Pedestal fillet", (lo[0], lo[1], d0), (hi[0], hi[1], d1), MARBLE, bevel=.02, segments=2))
+    for z0, z1 in ((d0, d0 + .12), (d1 - .12, d1)):
+        parts.append(box(col, "Pedestal rail", (a + i, b + i, z0), (c - i, d - i, z1), MARBLE, bevel=.02, segments=2))
+    parts.append(box(col, "Pedestal cap bed", (a + .05, b + .05, d1), (c - .05, d - .05, d1 + .1), MARBLE, bevel=.035, segments=3))
+    parts.append(box(col, "Pedestal cap", (a, b, d1 + .1), (c, d, z + ph), MARBLE, bevel=.06, segments=3))
+    top = z + ph
+    parts.append(box(col, "Pedestal cushion", (-.75, 174.45, top), (.75, 175.95, top + .1), "RCY | velvet", bevel=.048, segments=4))
+    for x in (-.35, .35):
+        for y in (174.85, 175.55):
+            parts.append(cylinder(col, "Cushion button", (x, y, top + .1), (0, 0, 1), .035, .016, "RCY | velvet", segments=10, bevel=.006))
     return parts
 
 

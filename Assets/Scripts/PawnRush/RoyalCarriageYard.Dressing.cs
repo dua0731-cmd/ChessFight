@@ -209,7 +209,7 @@ namespace ChessFight.PawnRush
             }
             foreach (var row in root.GetComponentsInChildren<StackRow>(true))
             {
-                hidden += Unpaint(row, "Beam trim", "Trolley lamp", "Row rope", "Gap mark");
+                hidden += Unpaint(row, "Beam trim", "Trolley lamp", "Row rope*", "Gap mark");
                 Ride(row.transform, "RcyStackRow");
                 foreach (var stack in row.GetComponentsInChildren<StackCrate>(true)) Ride(stack.transform, "RcyStackCrate");
                 foreach (Transform t in row.transform)
@@ -225,13 +225,13 @@ namespace ChessFight.PawnRush
             }
             foreach (var crane in root.GetComponentsInChildren<SlewCrane>(true))
             {
-                hidden += Unpaint(crane, "Jib trim", "Jib lamp", "Slew reach", "Slew sector");
+                hidden += Unpaint(crane, "Jib trim", "Jib lamp", "Lantern*", "Slew reach", "Slew sector");
                 Ride(crane.transform, "RcySlewCrane");
                 foreach (var jib in crane.GetComponentsInChildren<SlewJib>(true)) Ride(jib.transform, "RcySlewJib");
             }
             foreach (var hoist in root.GetComponentsInChildren<PalletHoist>(true))
             {
-                hidden += Unpaint(hoist, "Arm trim", "Hoist lamp", "Hoist rope", "Well board", "Well edge");
+                hidden += Unpaint(hoist, "Arm trim", "Hoist lamp", "Lantern*", "Hoist rope", "Well board", "Well edge");
                 Ride(hoist.transform, "RcyHoistFrame");
                 // The pallet's sacks are at its outer side: the model with them on that side.
                 foreach (var pallet in hoist.GetComponentsInChildren<HoistPallet>(true))

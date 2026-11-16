@@ -109,8 +109,8 @@ def slatted_crate(col, foot, size, dark=False):
 def conveyor(col):
     half, w = 23.5, .8
     parts = [ubox(col, "Belt bed", (0, .215, 0), (2 * half - .02, .43, 2 * w - .02), LEATHER)]
-    for x in urange(-half + .25, half, .45):
-        parts.append(ubox(col, "Belt slat", (x, .44, 0), (.2, .02, 2 * w - .1), OAK, bevel=.005))
+    # R685 (승규 11-16: the loads moved over a belt standing still): the oak slats (0.2 x 0.02 x 1.5 m, 0.45 m apart, top at
+    # 0.45) are no longer in the model; ConveyorSlats draws them and runs them along with the loads at the belt's speed.
     for s in (-1, 1):
         z = s * (w + .04)
         parts.append(ubox(col, "Belt rail", (0, .245, z), (2 * half, .39, .08), WALNUT, bevel=.012))
@@ -356,6 +356,8 @@ def slew_jib(col):
     for sz in (-1, 1):
         parts.append(ubox(col, "Jib cheek", (10.15, 7.5, sz * .22), (.6, .5, .03), IRON, bevel=.005))
     parts += wheel(col, "Jib sheave", U(10.15, 7.45, 0), U(0, 0, 1), .2, .06, spokes=4)
+    # R682 (the concept): a carved knight's head on the jib's end, over its lamp (7.07 - 7.43 up) and clear of the trim.
+    parts.append(knight_finial(col, "Jib knight", U(10.4, 7.5, 0), 1, 1.0, .36))   # 1 m: it reads from the floor 7 m below
     parts.append(ubox(col, "Counterweight", (-2.4, 6.95, 0), (1.0, .9, 1.0), STONE, bevel=.05, seg=2))
     for x in (-2.75, -2.05):
         parts.append(ubox(col, "Weight strap", (x, 7.0, 0), (.08, 1.0, 1.04), IRON))
@@ -402,6 +404,9 @@ def hoist_frame(col):
     # The lucam: its post, the arm (gold trim the code's), the arm's tie back to the post, braces, the pulleys.
     parts.append(ubox(col, "Lucam post", (0, 5.0, 1.0), (.4, 2.8, .4), WALNUT, bevel=.02))
     parts.append(ubox(col, "Lucam arm", (0, 6.0, 0), (5.5, .3, .3), WALNUT, bevel=.015))
+    # R682 (the concept): a carved knight's head on each end of the arm, under the roof's edge (its lamps are inboard).
+    for sx in (-1, 1):
+        parts.append(knight_finial(col, "Arm knight", U(sx * 2.75, 5.66, 0), sx, .8, .28))   # its ears just past the roof
     parts.append(ubox(col, "Lucam tie", (0, 6.0, .475), (.28, .28, .65), WALNUT, bevel=.015))
     parts.append(beam(col, "Lucam brace", U(0, 4.4, .82), U(0, 5.86, .12), w=.16, h=.16, mat=WALNUT))
     for sx in (-1, 1):

@@ -15,9 +15,9 @@ namespace ChessFight.PawnRush
     // yard's oldest rule, never stand under a suspended load - a pallet coming down shoves whoever is under it out of its
     // well and knocks them down (HoistPallet).
     //
-    // Warned: a lamp on the arm over each pallet shows green while it is down with BoardWarn seconds and more left, amber
-    // flashing in its last BoardWarn seconds, red while it moves or is up; each well's floor boards flash red from
-    // WellWarn seconds before its pallet starts down until it lands. A ratchet clacks as each pair swaps. Mirrored pairs,
+    // Warned: a lantern on the arm over each pallet shows green glass while it is down with BoardWarn seconds and more
+    // left, amber in its last BoardWarn seconds, red while it moves or is up (a flame's flicker, R685); the pallet's shadow
+    // deepens over its well's floor boards from WellWarn seconds before it starts down until it lands. A ratchet clacks as each pair swaps. Mirrored pairs,
     // the same timing, so neither team's side is luckier.
     //
     // This object is the post's foot, on the floor in the middle of the plates' depth; `outward` is +1 when its outer
@@ -41,8 +41,10 @@ namespace ChessFight.PawnRush
         [SerializeField] float push = 4.5f;
 
         const float BoardWarn = .8f, WellWarn = 1f;
-        static readonly Color Green = new Color(.35f, 1f, .45f, 1f), Amber = new Color(1f, .72f, .2f, 1f), Red = new Color(1f, .22f, .14f, 1f);
-        static readonly Color Stripe = new Color(1f, .3f, .15f, .35f);
+        // R685 (실사 예고): the lamps are coloured-glass lanterns with a flame's flicker, the well's boards plain weathered
+        // ochre paint, and the pallet's shadow deepens over them as it is about to come down (was neon and flashing).
+        static readonly Color Green = YardWarn.Go, Amber = YardWarn.Wait, Red = YardWarn.Stop;
+        static readonly Color Stripe = new Color(.6f, .47f, .27f, .42f), WellShadow = YardWarn.With(YardWarn.Stop, .55f);   // the lamps' red
 
         Transform course;
         HoistPallet[] pallets = new HoistPallet[0];
@@ -139,13 +141,13 @@ namespace ChessFight.PawnRush
 
                 // The pulley over the pallet, its lamp, its four ropes (drawn from the plate's height each frame).
                 YardKit.Cylinder(transform, "Pulley", new Vector3(x, armHeight - .35f, 0f), Vector3.forward, .5f, .12f, YardKit.Iron, Solid.None);
-                lampMaterials[k] = new Material(Arena.Glow(Red)) { name = "M_YardHoistLamp" };
-                var lamp = YardKit.Box(transform, "Hoist lamp", new Vector3(x, armHeight - .1f, -.3f), new Vector3(.3f, .3f, .2f), lampMaterials[k], Solid.None);
-                lamp.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // R685 (승규 "신호등도 그래픽 더 좋게"): a lantern on the arm's front, its glass the colour set below.
+                lampMaterials[k] = YardLantern.GlassMaterial("M_YardHoistLamp", Red);
+                YardLantern.Build(transform, "Hoist lamp", new Vector3(x, armHeight - .12f, -.36f), .3f, lampMaterials[k]);
                 for (int r = 0; r < 4; r++)
                     ropes[k * 4 + r] = YardKit.Box(transform, "Hoist rope", Vector3.zero, new Vector3(.05f, 1f, .05f), YardKit.WoodDark, Solid.None).transform;
 
-                // The well's floor: hazard boards (red flashing when the pallet will come down on them).
+                // The well's floor: painted boards (the pallet's shadow deepens over them when it will come down on them).
                 wellMaterials[k] = new Material(Arena.Glow(Stripe)) { name = "M_YardHoistWell" };
                 for (float z = -plateSize.z * .5f + .2f; z < plateSize.z * .5f; z += .5f)
                 {
@@ -170,7 +172,6 @@ namespace ChessFight.PawnRush
         {
             if (pallets.Length == 0) return;
             double now = ObstacleClock.Now;
-            float pulse = .5f + .5f * (float)Math.Sin(now * 14.0 % (2.0 * Math.PI));
             for (int k = 0; k < pallets.Length; k++)
             {
                 var h = Schedule(k);
@@ -189,14 +190,12 @@ namespace ChessFight.PawnRush
                 // The lamp: green to board, amber in its last BoardWarn seconds, red moving or up.
                 float boarding = (float)SortingYardRules.BoardingFor(h, now);
                 var lamp = boarding > BoardWarn ? Green : boarding > 0f ? Amber : Red;
-                lamp.a = boarding > 0f && boarding <= BoardWarn ? .55f + .45f * pulse : .9f;
-                lampMaterials[k].color = lamp;
-                // The well: flashing red from WellWarn before the pallet starts down until it is down.
+                float flame = YardWarn.Flicker(now, k * 1.7f + outward * 3.1f);
+                lampMaterials[k].color = new Color(lamp.r * flame, lamp.g * flame, lamp.b * flame, .92f);
+                // The well: the pallet's shadow deepening over it from WellWarn before it starts down until it is down.
                 float downIn = (float)SortingYardRules.ComesDownIn(h, now);
                 bool coming = !SortingYardRules.IsDown(h, now) && (downIn <= WellWarn);
-                var well = coming ? Red : Stripe;
-                well.a = coming ? .45f + .45f * pulse : Stripe.a;
-                wellMaterials[k].color = well;
+                wellMaterials[k].color = coming ? Color.Lerp(Stripe, WellShadow, YardWarn.Deepen(1f - downIn / WellWarn)) : Stripe;
             }
             // A ratchet clack as each swap starts (once per swap).
             var first = Schedule(0);

@@ -140,7 +140,7 @@ def crenels(col, name, x0, x1, y0, y1, z, height=.85, merlon=1.0, gap=.7, mat=ST
         b0 = a0 + pad + k * (merlon + gap)
         lo = (b0, y0, z) if along == "x" else (x0, b0, z)
         hi = (b0 + merlon, y1, z + height) if along == "x" else (x1, b0 + merlon, z + height)
-        parts.append(box(col, name, lo, hi, mat, bevel=.04, segments=1))
+        parts.append(box(col, name, lo, hi, mat, bevel=.08, segments=2))   # R682: chunky rook merlons (were 4 cm, one step)
     return parts
 
 
@@ -238,7 +238,8 @@ def court_and_yard(col):
     # The yard: big flags where the carriages run, from shed front to shed front.
     lo, hi = col_box("1 Entrance/Yard")
     parts.append(box(col, "Yard base", (lo.x, lo.y, lo.z), (hi.x, hi.y, hi.z - .06), STONE))
-    parts.append(flagstones(col, "Yard paving", -19.0, 19.0, lo.y, hi.y, hi.z, size=2.0))
+    # R682: a kerb band of long slabs along each shed front frames the carriages' field (rcy_kit.kerbed_floor).
+    parts += kerbed_floor(col, "Yard paving", -19.0, 19.0, lo.y, hi.y, hi.z, 19.0, size=2.0, seed=6821)
     for name, face in (("Yard wall W", "+x"), ("Yard wall E", "-x")):
         lo, hi = col_box("1 Entrance/" + name)
         parts.append(ashlar(col, name, Vector((lo.x, lo.y, lo.z)), Vector((hi.x, hi.y, hi.z - .2)), face))
@@ -463,7 +464,9 @@ def shed(col, side):
         p1 = Vector((back + dx * t1, 0, high + dz * t1)) + lift
         parts.append(tile_course(col, p0, p1, SHED_Z0 - .2, SHED_Z1 + .2, up))
     parts.append(box(col, "Fascia", (eave_x - .05, SHED_Z0 - .2, low - .14), (eave_x + .05, SHED_Z1 + .2, low + .04), GOLD, bevel=.015))
-    parts += valance(col, eave_x - side * .03, SHED_Z0 - .2, SHED_Z1 + .2, low - .12, .32)
+    # R682 (the concept's granary bay: "a crenel-cut oak fascia and a matte brass edge"): a battlement-cut oak board under
+    # the brass-edged fascia (was a scalloped cloth valance; the royal canopy keeps its cloth).
+    parts.append(crenel_fascia(col, "Crenel fascia", eave_x - side * .03, SHED_Z0 - .2, SHED_Z1 + .2, low - .1))
     # Lanterns round the code's glowing lamps (on the odd posts), hung from the eave plate.
     for i in range(1, bays + 1, 2):
         py = SHED_Z0 + i * bay

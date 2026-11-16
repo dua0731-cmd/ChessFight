@@ -62,6 +62,72 @@ export("RCY Entrance", "RcyEntrance")  # 또는 platform_export() / scenery_expo
      구역 삼각형 예산(R681 기준 마당 18.8만 · 운하 11만 · 하역 창고 24.3만)을 넘으면 LOD로 갚음.
 - **지킬 것:** 콜라이더 · 게임 폭 · 틈 그대로(폰이 닿는 면은 모델을 콜라이더에 ±10 cm), 신호(물 · 폭포 · 금 테두리 · 표지 · 등불 · 빨강/초록 표시 ·
   결승선 · 진행 막대)는 안 가림, 맵 밖은 모델링 안 함, Unity Play 중 FBX · 스크립트 쓰지 않음, 단계마다 승규가 Unity에서 볼 것을 VALIDATION에.
+- **분담(11-16):** 성 · 승강장 · 결승 마당 · 배경(`castle_model` · `platform_model` · `scenery_model`, RcyCastle* · RcyPlatform · RcyFinishCourt ·
+  RcySectionFloors · RcyScenery*, `RoyalCarriageYard.Castle.cs`)은 세션 "마차뜰 성·승강장·결승마당·배경 그래픽 다듬기", 마당 · 운하 · 하역 창고 ·
+  기계 · 말 · `rcy_kit` · `export_rcy` · `RoyalCarriageYard.Dressing.cs`는 이 계획을 시작한 세션. 같은 폴더 · 같은 브랜치라 커밋은 자기 파일만.
+
+### 11-16 R682 1단계 — 기준 화면 채점과 돌 모서리 (커밋 안 함 · 사용자 확인 전)
+
+기준 렌더(Eevee, 따뜻한 해 + 하늘, 모두 클레이, 1 m 폰 대역 — 폰 눈높이 · 조감 15곳, 움직이는 기계 · 마차 · 말은 빠짐)로 qa-review 채점:
+
+| 구역 | 판정 | 큰 문제 |
+|---|---|---|
+| 공통 | SHIP WITH NOTES | (Major) 클레이 돌이 얇은 베벨에 반듯해 도면처럼 보이고, 둥글고 두툼한 성 키트 · 컨셉("big soft-edged blocks")과 따로 논다 → 이번에 고침 |
+| 짐마차 마당 | SHIP WITH NOTES | (Minor) 긴 담이 같은 블록의 반복, 넓은 바닥이 단조(벽 따라 테두리 판석 없음) |
+| 운하 | SHIP | 난간 · 판자길은 읽힘. (Note) 수로 받침탑이 단조 |
+| 하역 창고 | SHIP WITH NOTES | (Major) 10.75 m 벽이 띠돌 · 기둥 없이 한 면 반복, (Major) 판매대 짐 더미가 벽돌무늬처럼 보임, (Note) 크레인 · 승강대 팔 끝 나이트 머리(컨셉) 없음 |
+
+**돌 모서리(lookdev):** 같은 벽 · 바닥 · 흉벽을 다섯 설정(A 지금 · B 둥근 2단 · C 둥근 3단 · D 큰 모따기 1단 · E 벽 둥근 2단 + 바닥 모따기)으로 나란히
+렌더해 E를 고름 → `rcy_kit` `STONE_BEVEL` (.035, 1) → (.07, 2), `FLAG_BEVEL` (.025, 1) → (.045, 1), `FLAG_DEPTH` .06 → .1, `crenels` 흉벽 .04 → .08 · 2단.
+12모서리 모두 둥글리면 돌 삼각형이 2.6배라 **보이는 면 쪽 모서리만**(`box(bevel_face=)` · `face_edges`: 그 면의 테두리 4개 + 거기서 뒤로 가는 4개,
+뒷면 · 숨은 면은 그대로) — 같은 모양에 35% 적게(시험 장면 6,320 → 4,088, 원래 2,428). 옛 값으로 덮으면 예전 출력 그대로.
+- 결과: 마당 187,742 → 227,468(+21%), 운하 109,634 → 156,566(+43%), 하역 창고 243,277 → 282,458(+16%). 뒤집힌 조각 · 넓이 0 면 · 떨어진 점 0,
+  R681과 같은 카메라 16곳 비교에서 새로 비쳐 보이는 화소 0 ~ 3(가장자리 계단 현상). 판석 윗면 높이 그대로(콜라이더와 맞음).
+- 승강장 · 결승 마당(성 · 배경 세션 파일)도 같은 `ashlar` · `flagstones`를 써서, 그쪽이 다시 내면 같은 돌이 된다(그 세션에 알림).
+- 승강장 · 결승 마당 · 구간 바닥은 성 · 배경 세션이 이 돌 값으로 다시 냄(아래 '11-16 R682 성 · 승강장 · 결승 마당').
+
+### 11-16 R682 2묶음 — 하역 창고 벽 리듬 · 목재 더미 (승규 "하역 창고 벽·짐 더미", 커밋 안 함 · 사용자 확인 전)
+
+- **벽(`sorting_model.wall_rhythm`, environment-artist):** 차양 바로 위 4.75 ~ 5.0 m에 띠돌(작은 띠 + 둥근 띠, y 81 ~ 143 — 그 너머는 승강장
+  바닥이 벽 위), 판매대 칸 두 개마다 벽기둥 6개씩(y 91.5 · 101 · 110.5 · 120 · 129.5 · 139, 받침 · 머리 포함, 5.0 ~ 10.15 m — 배경의 까치발 띠 아래까지).
+  무거운 짐 기중기 기둥(y 123.8 ~ 127, 벽 속)을 피함. 모두 벽 콜라이더 면에서 9 cm만 나옴(폰이 닿을 수 있는 10 cm 안).
+- **짐 더미:** 기준 채점의 '판매대 짐이 벽돌무늬'는 사실 목재 더미(`timber_store`)의 가로 놓인 각재 끝면이었다 — 끝면마다 0 ~ 10 cm 들어가고
+  (더미 면, 곧 콜라이더 밖으로는 안 나옴) 폭 · 높이가 2 ~ 3 cm씩 다르고 모서리가 둥글게(.05 · 2단, 전 .04 · 1단). 들어간 끝면 뒤가 비치지 않게
+  속심을 6 → 12 cm 뒤로. 난수는 따로(`random.Random(682 + 쪽)`)라 다른 모든 배치는 그대로.
+- 하역 창고 282,458 → 301,338 삼각형. 뒤집힌 조각 · 넓이 0 면 0, 같은 카메라 비교에서 새로 비쳐 보이는 화소 0 ~ 3. Eevee 렌더(판매대 앞 폰 눈높이 ·
+  높은 3/4)로 봄 — 벽은 기둥 리듬이 생겼고 목재 끝면은 들쭉날쭉해 쌓은 나무로 읽힘(멀리서는 아직 줄무늬 느낌이 조금 남음).
+- **다음 묶음 후보:** 마당 · 하역 창고 바닥에 벽 따라 테두리 판석 띠, 크레인 · 승강대 팔 끝 나이트 머리(컨셉), 목재 더미 긴 각재도 같은 식으로,
+  칸별 LOD1(1 · 2묶음으로 세 모델 540,653 → 685,372, +27% 늘어난 삼각형 갚기).
+
+### 11-16 R682 3묶음 — 바닥 테두리 · 나이트 머리 (승규 "바닥 테두리·나이트 머리", 커밋 안 함 · 사용자 확인 전)
+
+- **LOD는 미룸(승규에게 설명):** 세 모델 합계가 이미 돌아가는 정원(263만) · 대계단(402만, 11-13 Unity 측정)보다 훨씬 작고, R681 칸 나누기로
+  화면 밖 칸은 안 그린다. Unity에서 12명 봇(`Tools/Run-CarriageYardBots.ps1`)으로 프레임을 재 보고 느릴 때 그림자 설정 → LOD1 순서로.
+- **바닥 테두리(`rcy_kit.kerbed_floor` · `setts_line` · `burn_flagstones`, environment-artist):** 마당은 곳간 앞(x ±19), 하역 창고는 판매대 앞
+  (x ±23.5)을 따라 긴 테두리 판석 띠(0.8 m 폭, 2.4 m 길이 — 바닥 줄 1.6 m와 이음이 안 맞아 따로 읽힘)와 그 안쪽에 24 cm 사각 돌 한 줄. 처음에는 좁은
+  판석만 넣었더니 바닥 줄과 같은 간격이라 안 보여서 바꿈. 바닥 판석은 자기 난수로 다시 깔되, 공용 난수는 예전 한 판을 깔 때만큼 소모해
+  (`burn_flagstones`) 벽 블록 · 짐 배치는 그대로. 윗면 높이 그대로(콜라이더와 맞음).
+- **나이트 머리(`rcy_kit.knight_finial`, 컨셉 "carved knight heads ... on crane and hoist arm ends"):** 목재 크레인 팔 끝 1.0 m(`slew_jib`, 팔 끝 램프
+  7.07 ~ 7.43 m 위 · 금 테두리 끝 비킴), 승강대 팔 양끝 0.8 m(`hoist_frame`, 귀가 지붕 끝 밖). 처음 0.6 · 0.5 m는 바닥에서 안 읽혀 키움 — 옆에서
+  귀 · 주둥이가 있는 말머리로 읽힘(Eevee 렌더). 운하 메달의 나이트 외곽선을 공용으로(`KNIGHT_HEAD`).
+- 결과: 마당 227,468 → 238,392, 하역 창고 301,338 → 314,540, RcySlewJib 4,256 → 4,912, RcyHoistFrame 1,968 → 3,248(세 큰 모델 709,498, R681 대비
+  +31%). 기계 FBX를 함께 다시 냈다가 모양이 같은 13개는 커밋본으로 되돌림. 뒤집힌 조각 · 넓이 0 면 0, 새로 비쳐 보이는 화소 0 ~ 3(sorting_loft의 17화소는
+  성 · 배경 세션의 승강장 난간 변경).
+- 작업 도중 21:15에 폴더가 다시 main으로 바뀌어(GitHub Desktop, 같은 폴더의 main 세션) 두 세션 변경이 stash로 들어갔고, seoungtest로 돌아온 뒤
+  이 세션이 한 번 되돌림(6733a3b3). 같은 폴더를 여러 세션이 쓰는 한 다시 생길 수 있다 — seoungtest용 폴더를 따로 두는 것(git worktree)을 승규에게 제안함.
+- 되돌린 뒤 '아직 FBX로 안 낸 것' 확인(다른 세션 질문): 파일 시각(21:21 ~ 21:22)은 브랜치 복귀 · stash pop 시각일 뿐. 지금 소스를 임시 폴더에서 다시 지어
+  이 세션 FBX 10개(Canal · Entrance · Sorting · SlewJib · HoistFrame · 기계 5)와 비교 — 모두 차이 0, 안 낸 것 없음.
+
+### 11-16 R682 4묶음 — 곳간 처마 · 판매대 그림 판 · 목재 앞줄 (승규 "시작", 커밋 안 함 · 사용자 확인 전)
+
+컨셉 모듈 4 · 5(R676 `RCY_07`)에 맞춤.
+- **곳간 처마(`rcy_kit.crenel_fascia`):** 처마 아래 천 물결 장식(valance)을 성가퀴 모양으로 깎은 참나무 판(톱니 50 cm · 홈 32 cm, 깊이 34 / 18 cm)으로 —
+  컨셉 "a crenel-cut oak fascia and a matte brass edge"(위 금빛 처마 띠가 놋쇠 테). 아래 끝 높이는 천 장식과 같아 등불을 더 가리지 않음. 왕실 차양은 천 그대로.
+- **판매대 그림 판(`rcy_kit.piece_icon` · `PIECE_ICONS`):** 칸 번호를 세던 점 · 막대 대신 칸마다 폰 · 룩 · 나이트 · 비숍 · 퀸 · 킹 실루엣을 3 cm 돋을새김 —
+  컨셉 "a matte brass piece-icon plaque", 글자 · 숫자 없이 그림만. 바로 정면 렌더로 여섯 모양 확인(나이트는 공용 `KNIGHT_HEAD`).
+- **목재 더미 앞줄:** 긴 각재도 0 ~ 5 cm 들어가고 높이가 조금씩 다르고 둥근 모서리(뒷줄은 그대로).
+- 결과: 마당 238,392 → 248,912(처마 판), 하역 창고 314,540 → 322,308(그림 판 · 앞줄) — 세 큰 모델 727,786. 뒤집힌 조각 · 넓이 0 면 0, 이 세션 모델에서
+  새로 비쳐 보이는 화소 0 ~ 3. 판매대 그림 판은 차양 그늘 속이라 Blender 해 렌더로는 흐림(Unity 조명에서 볼 것).
 
 ## 다음 작업 메모 (2026-11-16 HOSEO PC에서 끝냄 → 다른 PC에서 이어 가기)
 
@@ -94,6 +160,225 @@ QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, �
    "1. 짐마차 마당" 표지가 닫힌 문과 겹침, 최종 문짝 뒷면의 글씨 같은 무늬.
 8. **main으로 옮길 때:** `PawnRushEditor/SeoungTestYardOnly.cs`와 `PawnRush_MapTest.unity`의 `includeCalibrationYard 0` · `onlyMap`은 빼고(seoungtest 전용),
    [PITFALLS R507](../Environment/PITFALLS.md) 순서(seoungtest 계열 병합)를 따른다.
+
+## 11-16 R682 성 · 승강장 · 결승 마당 (세션 "성·승강장·결승마당·배경", 커밋 안 함 · 사용자 확인 전)
+
+`blender -b` 일괄 작업만(Blender MCP는 다른 세션 몫이라 안 씀). 기준은 R676 프롬프트 06 · 07(완성 그림 없음)과 배치도 `RCY_map_pond_gate.png`.
+같은 카메라 23곳(폰 눈높이 21 + 조감 2, 성은 키트 텍스처 · 나머지 클레이, 뒷면 숨김 · 마젠타 하늘)으로 전 / 후를 찍어 비교.
+
+**형태 차이(컨셉 대비) → 한 것:**
+
+| 구역 | 차이 | 한 것 |
+|---|---|---|
+| 결승 마당(맵 모드) | 담 세 면이 평평한 꼭대기로 끝남(컨셉 "every wall top has chunky rook merlons"), 담 밑줄을 따라 하늘이 비침(담 받침 아래가 비어 테두리 베벨과 홈), 받침대가 맨 상자 | `platform_model.court_crown`: 마당 쪽 까치발 띠(13 m 담 위에서 0.5 ~ 0.9 m 아래, 16 cm 이내로 나옴 — 점프 높이 밖) + 2 m마다 화살 구멍 난 룩 흉벽(갓돌 뒤 2/3 위, 모서리 겹침 없음). 담 받침을 바닥 속(TOP − 1)까지 내림 → 담 밑 비침 4만 화소 → 0. `pedestal`: 같은 바닥 넓이 · 높이 안에서 두 단 받침 + 둥근 띠, 네 면 2.5 cm 들어간 판, 모서리 기둥 · 위아래 띠, 두 단 갓, 쿠션 베벨 두툼 + 단추 4개 |
+| 승강장 · 구간 바닥 · 결승 마당 돌 | 다른 세션이 `rcy_kit` 돌 모서리를 바꿈(R682 1단계, 둥근 7 cm · 판석 4.5 cm · 두께 10 cm) | 같은 돌로 다시 냄(소스 변경 없음) |
+| 구간 끝(구간 모드) | R680에 남은 열린 모서리 536(계단 디딤판 4장이 열린 판 + 난간 6 cm 틈) | **되돌림(콜라이더 점검 세션 R684 #3):** 계단 조각을 평면으로 자르고 막았더니 디딤판 코와 챌판 위가 한 고리라 그 덮개가 디딤판 위 13 ~ 18 cm에 뚜껑처럼 덮여 내려가는 폰 발이 묻혔다(뒷면 숨김 렌더에서는 안 보였음). 계단은 R680 그대로 열린 판(디딤판 7.74 / 7.49 / 7.24 / 6.99, 상자와 1 cm 안 — 광선으로 다시 잼). 남은 것: `part()`의 `close`가 `cuts` 없이도 돌고 덮개는 평평 셰이딩(난간에 씀). 성 상자 표는 바깥 성문 받침 높이만 바뀜(아래) |
+| 승강장 난간(승규 "승강장 난간·절벽") | 절벽 위 난간이 한 줄로 길게 이어지고 양 끝에만 기둥(컨셉 시트 8 "the top railing ending at the landing gap") — 아래 절벽 벽기둥과 리듬이 따로 놂 | `platform_model.edge_railings`: 절벽 벽기둥(`CLIFF_PIERS`, 승강대 틈 가장자리 x ±3.5 포함) 위마다 받침 기둥(둥근 받침 띠, 양면 2 cm 들어간 판, 두 단 갓 3 cm 내밂 — 승강대 틈 쪽은 안 내밂), 그 사이 칸마다 판석 받침 · 난간동자 약 0.3 m마다 · 둥근 손잡이(콜라이더 y 143 ~ 143.4, 높이 1 m 안, 앞뒤 3 cm 이내). 절벽 면은 컨셉 "smooth white marble"에 이미 가까워 그대로, 수문 아치(룩 문설주 · 머릿돌)는 `sorting_model.py`(다른 세션) 몫이라 안 건드림 |
+| 결승 마당 벽기둥 · 구간 끝 조각(승규 "다음") | 담 세 면이 블록 반복 한 면, 난간마다 발치에 떨어진 20 cm 조각(키트 계단 옆판을 가운데 기준으로 고른 잔재) | `platform_model.court_crown`: `COURT_PILASTERS`(옆 담 y 163.75 · 168.5 · 173.25, 안쪽 담 x −5 · 0 · 5 — 가운데는 왕관 뒤) 받침 · 몸 · 머리(9 cm 이내로 나옴), 머리 위 세 단 받침이 까치발 띠를 받치고 작은 까치발은 칸마다 같은 간격. `castle_model.drop_crumbs`: 난간 조각에서 대각선 0.08(조각 단위) 미만 섬을 뺌 |
+| 콜라이더 점검(세션 "마차뜰 빠진 콜라이더 찾아 채우기" R684) | #3 계단(위), #31 바깥 성문 마당 쪽 벽기둥 받침 모서리 41 cm(-14.6, 1.0, 2.4: 받침 상자 꼭대기 .95가 모델 받침 윗 베벨 아래), 결승 마당 벽기둥 받침이 담 상자 앞 13 cm(돌이 상자 3 cm 앞 + 9 cm 나옴) | 바깥 성문 `wing_boxes` 받침 높이 .95 → 1.02(상자 표에서 받침 4개 · 기둥 4개 숫자만 바뀜, 440개 그대로), 벽기둥 나옴 9 → 5 cm(받침 5 · 몸 4 · 머리 6 cm). #33 구간 모드 최종 성문 뒤 띠(|x| 6.3 ~ 26, z 157 ~ 159)의 성 북쪽 면 상자: **안 함**(승규 11-17 "여기는 아마 메인이랑 합치면 성벽 뒷구간이없을걸") 다시 잰 결과(점검 세션 23시): 계단 디딤 높이 · 앞면 어긋남 0, 바깥 성문 41 cm → 최대 22 cm 한 곳(광선 4개, x −11 ~ −4.5, 마당 쪽 면 z −0.3 ~ 0.4 — 남김), 결승 마당 벽기둥 기준 안 |
+| 바깥 · 최종 성문 | 키트 텍스처 그대로(텍스처 · 모양 변경은 승규에게 묻기 전이라 안 함) | 다시 지어도 같아 커밋된 FBX로 되돌림 |
+| 배경(흉벽 · 가로등 · 까치발 띠) | 담이 코드 블록아웃이라 흉벽만 떠 보이는 것은 맵 밖 규칙 그대로. 이어서(승규 "1 시작"): 다른 세션이 하역 창고 벽에 넣은 벽기둥(`sorting_model.wall_rhythm`, 머리 10.15 m · 9 cm 나옴 · 폭 1.1 m)과 까치발 띠가 따로 놀았음 — 1 m마다 까치발이 기둥과 상관없이 이어져 기둥 셋 위에서는 까치발이 기둥 머리 한쪽에 걸침 | `scenery_model.corbel_table`: 기둥마다 머리만큼 넓은 세 단 받침(10.15 ~ 10.5, 10 ~ 15.5 cm 나옴)이 띠를 받치고, 작은 까치발은 기둥 사이 칸마다 같은 간격으로(`PILASTER_YS`는 `sorting_model`이 먼저 돌면 그 값, 아니면 같은 값 사본). RcyScenery는 그대로(다시 내도 같아 커밋본으로 되돌림) |
+
+**잰 것(FBX를 다시 읽어서):**
+
+| FBX | 삼각형 전 → 후 | 넓이 0 면 | 열린 모서리 | 3면 모서리 | 뒤집힌 조각 |
+|---|---|---|---|---|---|
+| RcyCastleSectionEnd | 55,664 → 54,966 (계단 되돌림 · 떨어진 조각 뺌) | 0 | 536 → 556 | 10 → 20 (새 10개: 난간 발치 안쪽 x ±6.02, 바닥 높이 — 조각을 뺀 뒤 생김, 렌더에서 안 보임) | 0 |
+| RcyPlatform | 43,339 → 44,552 → 50,688 (난간 기둥 · 칸) | 0 | 2,613 → 2,618 (숨은 판석 옆면을 지운 경계, 전과 같은 종류) | 0 | 0 |
+| RcyFinishCourt | 21,386 → 50,564 (흉벽 · 까치발 · 둥근 돌) → 55,084 (벽기둥, 5 cm 나옴) | 0 | 4,766 → 4,772 (같은 종류) | 0 | 0 |
+| RcySectionFloors | 10,835 → 16,164 | 0 | 2,639 → 2,652 (같은 종류) | 0 | 0 |
+| RcySceneryOwn | 35,168 → 37,472 (기둥 받침) | 0 | 0 | 0 | 0 |
+| OuterGate / FinalGate / Scenery | 그대로(42,592 / 38,380 / 26,080) | 0 | 0 | 0 | 0 |
+
+- 전 / 후 비교에서 새로 비쳐 보이는 화소: 폰 눈높이 0(결승 마당 모서리 6화소 · 바깥 성문 2화소는 가장자리 계단 현상), 구간 끝 띠 동쪽 난간 끝 1,674화소는
+  구간 바닥 끝(y 181, 다음 구간과 맞닿는 곳) 판석 윗모서리가 둥글어진 실루엣. 결승 마당 담 밑 비침 4만 화소가 막힘.
+- 남은 것: 구간 끝 열린 모서리 556(계단 디딤판 4장 열린 판 · 난간 6 cm 틈, 렌더에서 비쳐 보이지 않음), 결승 마당 55k는 맵 모드에서만 지어짐(LOD 없음). 다시 내는 법: `qa/rebuild_castle.py`, `qa/rebuild_models.py -- platform`.
+  결승 마당 50k는 맵 모드에서만 지어짐(LOD 없음). 다시 내는 법: `qa/rebuild_castle.py`, `qa/rebuild_models.py -- platform`.
+- **Unity에서 볼 것:** 맵 모드 결승 마당 담 위 흉벽 · 까치발 띠가 최종 성벽 · 성탑과 부딪히지 않는지(y 157 ~ 159), 담 밑줄 틈이 없는지, 받침대 모양 · 왕관이
+  쿠션 위에 그대로 앉는지. 구간 모드(`Early_1-2`) 구간 끝 계단 앞모서리에 줄 · 틈이 없는지, 난간 끝. 승강장 · 구간 바닥 판석이 마당 쪽 돌과 같은 모양인지, 콘솔 오류 0.
+
+## 11-16 R683 말 · 마차 (세션 "말·마차", 커밋 안 함 · 사용자 확인 전)
+
+승규 "말은 이런식으로 다듬고 색 장식 머리 꼬리 흩날리게 해"(장난감 같은 통통한 말 두 마리 그림, 갈색 · 흰색). 고친 파일은 `horse_model.py` ·
+`movers_model.py`뿐(다른 두 세션의 파일 안 건드림). **뼈 이름 · 관절 위치 · 바퀴 반지름과 회전축 · 재질 칸 이름은 그대로**(`YardHorse` · `YardHorseRig` ·
+`DressHorse` · `HorsePaint` 코드 변경 없음).
+
+- **말 비율(그림처럼):** 머리 가로 ×1.2 · 깊이 ×1.07, 주둥이는 더 크게(끝 ×1.3), 목 ×1.12, 몸통 ×1.05, 가슴 근육 덩어리 하나 더. 다리 단면 ×1.3(무릎 · 비절 ·
+  발목 혹은 6% 더), 발굽 반지름 .082 → .112 · 높이 .158 → .182, 바닥으로 벌어지는 종 모양 + 위 테두리. 눈 · 콧구멍 · 눈 위 뼈는 넓어진 머리에 맞춰 바깥으로,
+  눈은 매끈하게. 관절 높이(뼈)는 그대로라 다리 길이는 못 줄임(그림보다 다리가 김 — 줄이려면 `YardHorse` 관절 높이를 바꿔야 함, 승규 결정).
+- **흩날리는 갈기 · 앞머리 · 꼬리:** 갈기 = 목덜미 위로 솟아 뒤로 넘어가는 짧은 털 줄 + 오른쪽(+x)으로 떨어져 기갑 쪽으로 흐르는 긴 털 두 겹(S자 물결, 끝이
+  바깥 · 위로 날림). 앞머리 6가닥이 이마로 내려와 옆으로 젖혀짐. 꼬리 30가닥이 뒤로 활처럼 나가 오른쪽으로 쏠리며 퍼지고 끝이 뒤 · 위로 말림.
+  털은 8각 · 매끈 셰이딩(전에는 6각이라 막대처럼 각져 보였음). **팀 마차 연결대 피함:** 꼬리는 높이 .8 ~ 1.12 m에서 말 기준 y −1.24 앞(스윙글트리 −1.335),
+  그 아래는 −1.37 앞(`TAIL_CLEAR`). 움직임은 지금 뼈 그대로(꼬리 3뼈 흔들림 · 갈기는 목 · 머리 따라감) — 갈기가 따로 나부끼려면 뼈 · `YardHorse` 코드가 필요.
+- **장식:** 가슴띠 징 6 → 12개, 굴레에서 이마로 내려오는 띠와 큰 금 이마 장식, 옆띠 · 엉덩이띠 · 꼬리띠에 징, 깃털 16 → 20가닥(뒤로 날리고 끝이 말림).
+- **R680 남은 것:** 재갈 고리를 볼에서 띄움(뺨 끈 끝에서 바깥 3 cm · 앞 3 cm, 고리 .04 m, 끈 끝에 금 징) — 주둥이에 묻히지 않음.
+  앞무릎 · 비절 · 발목에서 두 뼈 가중치를 관절 위아래 8.5 cm(발목 5 cm)에 걸쳐 부드럽게 넘김(`joint_blend` · `LEG_JOINTS`) — 질주 렌더에서 접힌 무릎이 꺾인
+  줄 없이 둥글게 접힘(단면 % · 겹침 삼각형은 다시 재지 않음).
+- **색:** 칠은 Unity `HorsePaint`(`RoyalCarriageYard.Dressing.cs`, 다른 세션 파일)가 칸 이름으로 함 — 칸 이름 그대로라 갈색 · 흰색 · 검정이 같은 색으로 들어감.
+  그림의 더 밝은 갈색 · 회색 갈기로 바꾸려면 그 파일의 색 값만 바꾸면 된다(안 바꿈).
+- **마차:** 바퀴(`coach_wheel`) — 바퀴테 .44 → .425 m 안쪽까지 깊게 · 폭 .1 → .11, 바퀴살 굵게(뿌리 반지름 .028 → .04, 8각), 바퀴통 크게(.13 → .152)와
+  금 띠, 바퀴살 사이 타이어 양면에 리벳 24개. 반지름 .55 · 폭 · 회전축 그대로. 뒤 트렁크 뚜껑을 둥근 궤짝 뚜껑으로(컨셉 '왕의 금고'처럼, 높이 +16 cm,
+  뒷면은 그대로 콜라이더 안 2 cm) + 철 테 두 줄 · 황동 장식, 끈을 뚜껑 곡면에 맞춤. 지붕 처마 밑에 계단식 몰딩 + 금 띠. 연결대 끈 끝을 .385 → .398(넓어진 몸통의 옆띠).
+  문짝(GateLeaf W/E)은 다시 냈더니 같아서 커밋된 파일 그대로.
+- **잰 것(`qa/audit_fbx.py`, 전 → 후):** RcyHorse 46,752 → 59,880(팀 말 LOD0 = Horse + Tack + Harness 33,236 → 43,576, LOD1 8,960 → 11,748),
+  RcyCoach 12,790 → 13,222, RcyCoachWheel 2,240 → 3,616(마차 한 대 바퀴 넷 +5,504), RcyHitch 428 → 428. 넓이 0 면 0 · 3면 모서리 0(전후 같음),
+  열린 모서리 마차 · 바퀴 · 연결대 0, 말 24(전과 같음). 말 크기 0.92 × 2.55 × 2.39 → 0.98 × 2.76 × 2.36 m(꼬리가 뒤로 나감 — `YardHorse.Length` 2.6보다
+  16 cm 김, 피부 경계는 R680에서 1.2 m 넓혀 둠). 말 10마리 LOD0 합 약 +10만 삼각형 — 무거우면 털 가닥 수 · `sdf_fuse(keep)`를 줄일 수 있음.
+- 렌더(Eevee, 폰 눈높이, 전 · 후 같은 카메라): 이 세션 scratchpad `compare/*.png`(왼쪽 전 · 오른쪽 후), 전 `r_before/`, 후 `r_after/post_*`.
+  만드는 스크립트 `build.py`(저장소 소스로 지어 저장소 밖으로 내보냄) · `render.py`(질주 자세는 `YardHorse.Pose`를 gallop 1 · phase .192로 옮겨 씀) · `pair.py`.
+- **움직임(같은 날, 승규 "말이 뛰는 느낌 돌아가는 거 그에따라 마차가 회전 하는 것 등 부자연스러워서 엄청 자연스럽게 연출해", 녹화 영상):** 녹화에서 팀 전체가 한 판처럼 가운데를 축으로 돌고, 말은 옆으로 미끄러지고, 바퀴는 회전 때 안 구르고, 마차 몸통은 출발 · 정지에 꼼짝 않고, 두 말이 똑같이 디딤. 고친 것(그림만 — 위치 · 회전 · 상자 콜라이더 · 계획은 그대로, 모두 공유 시계의 계획에서 읽어 PC마다 같음): `RoamingCarriage` — 팀은 앞축 킹핀(마차 앞바퀴 축)에서 꺾임: 앞수레(`Forecarriage` 새 피벗: 말 둘 · 끌채 · `RcyHitch` 모델)가 회전 쪽으로 0.6, 마차(`Team carriage`)가 반대로 0.4, 합 최대 10°(회전 속도 × 0.1), 앞바퀴도 그만큼 조향 — 이때 말 코끝이 상자 밖으로 최대 약 0.4 m. 마차 틀(`Carriage`)이 스프링 높이 0.7 m에서 기울기: 출발 때 뒤로 · 설 때 앞으로(가속 × 0.45°, ±3.5°), 회전 바깥으로(±2.5°), 속도에 따라 작은 덜컹임 — 바퀴는 땅 그대로. 바퀴마다 제 바퀴통이 앞으로 간 거리만큼 굴러감(제자리 회전 때 좌우 반대로). `YardHorse.Pose(..., turn)` — 오른쪽 말(`Horse E`)이 걸음 10% 늦게, 질주 때 몸 오르내림 5 → 7.5 cm · 흔들림 4 → 6.5° · 목 끄덕임 크게, 회전 때 몸이 안쪽으로 기울고(±5°) 목 · 머리가 가는 쪽을 봄(±14°) · 꼬리는 바깥으로. `StableCharger`는 그대로(turn 기본 0). Unity 컴파일 오류 없음(로그).
+  **R684 콜라이더 점검(세션 '빠진 콜라이더') 뒤 줄임:** 도는 동안 마차가 팀 상자 밖으로 0.6 ~ 1.1 m 나가 폰이 마차 그림을 지나감 → 콜라이더는 그대로 두고 마차는 꺾지 않음(상자와 나란히), 앞수레만 최대 4°(회전 속도 × 0.04: 말 옆면 약 6 cm · 앞바퀴 테 약 4 cm 밖), 스프링 흔들림 앞뒤 ±2.2° · 옆 ±1.2°. 더 크게 꺾으려면 콜라이더를 말 상자 + 마차 상자로 나눠 각 피벗을 따라가게 해야 함(맞는 영역 · 함대 간격 `Reach`가 바뀌는 게임 변경 — 승규 결정). 서 있는 마차 폭 2.56 m(바퀴통 · 등불, 코드 위치 x 1.08)는 상자 2.30보다 한쪽 13 cm — 경계값이라 그대로.
+  (23시 다시 잼, 점검 도구를 게임과 같은 물리 120 Hz로: 처음 1.1 m는 모서리를 스친 광선과 50 Hz 한 스텝 뒤처짐이 섞인 값. 고친 뒤 도는 · 달리는 팀 마차 모델과 상자 경계 차이 12 ~ 17 cm — 서 있는 마차의 13 cm와 같은 '경계'로 정리, 더 할 것 없음.)
+- **Unity에서 볼 것(아무도 아직 안 봄):** 팀 마차 제자리 회전(꺾임 · 앞바퀴 조향 · 바퀴 구름) · 출발 · 정지 흔들림, 두 말 발걸음 엇갈림, 꺾일 때 말이 상자 밖으로 나간 데 폰이 닿는 느낌, 팀 말 다섯 쌍 · 세워 둔 마차 — 말 머리 · 다리 굵기 · 발굽, 갈기 · 꼬리가 흩날려 보이는지, 질주 때 무릎 접힘 · 꼬리가
+  연결대 · 마차 앞에 박히지 않는지, 재갈 고리, 14 m에서 LOD1 바뀜, 바퀴 굴러갈 때 리벳 · 바퀴살 깜빡임, 뒤 궤짝 뚜껑, 폰이 마차 뒤에 붙을 때 뜨지 않는지.
+
+## 11-16 R683 조명 · 분위기 (세션 "마차뜰 Unity 조명", 커밋 안 함 · 사용자 확인 전)
+
+승규 "마차뜰 그래픽 최대치" 중 Unity 쪽(조명 · 그림자 · 하늘 · 안개 · 색 보정 · 코드로 넣는 불빛). 모델 · 재질은 손대지 않음. 기준은 컨셉 프롬프트(R676 PROMPT.md 1 ~ 6번): **맑은 한낮, 파란 하늘에 구름 조금, 짧고 부드러운 그림자, 따뜻한 흰빛, 하늘이 비친 청록 물, 빛나는 신호에만 약한 번짐, 낮에는 마차 · 승강대 등불 말고는 불이 꺼져 있음.** 그래서 가로등 · 곳간 등불의 빛은 유리 둘레만 따뜻하게 밝히는 정도로 약하게 두었다.
+
+**파일:** `RoyalCarriageYard.Lighting.cs`(새 partial: Inspector 'Look: light and air' 설정 · 조립), `YardAtmosphere.cs`(새: 카메라 위치로 섞고 되돌리기 · 등불 관리), `Game/ZoneGrade.cs`(새: URP 지역 색 보정 볼륨, URP 없으면 아무것도 안 함). `RoyalCarriageYard.cs`에는 Awake 끝의 `Lighting();` 한 줄만. 전역 설정(`Assets/Settings/*.asset`, Quality · Graphics)은 안 바꿈.
+
+| 넣은 것 | 내용 |
+|---|---|
+| 해 | 장면의 해(방향광 하나, 그림자 그대로)를 따뜻한 흰색 (1, .955, .88) · 세기 1.85 · 그림자 진하기 .82로. **맵 시험 장면(맵 전체)만** 방향도 높이 58° · 남동쪽(뒤 오른쪽)에서 오게 돌림. 구간(라운드)에서는 라운드의 해가 모든 방 것이라 방향은 그대로(`turnSunAsSection`으로 켤 수 있음) |
+| 보조광 2개 | 해 반대편 하늘의 차가운 빛 (.62, .74, 1) × .22, 햇빛 받은 바닥에서 올라오는 따뜻한 반사광 (1, .86, .68) × .12 — 방향광, 그림자 없음. 그늘 면이 검지 않고 푸른 회색, 처마 밑 · 마차 배 · 크레인 팔 밑이 따뜻하게 |
+| 주변광 | 3색(하늘 (.5, .6, .78) · 옆 (.6, .58, .54) 크림 돌빛 · 바닥 (.4, .36, .31)) |
+| 안개 | 선형 80 ~ 520 m, 하늘 지평선색 (.74, .84, .94): 먼 궁전 · 탑이 뒤로 물러남 |
+| 하늘 | 장면 하늘의 사본만 바꿈(원본 재질은 안 건드림): Pawn Rush 하늘이면 구름 덮개 .36 · 해 번짐을 해 방향에, Unity 기본 하늘이면 조금 더 맑고 파랗게 |
+| 색 보정 | 우선순위 20 전역 볼륨(GameLook 부드러운 보정 10 위, 빛 번짐 끔 1000 · 스킬 번쩍임 100 아래): 노출 .6, 대비 9, 채도 10, 색온도 +5, 그늘 살짝 차갑게 · 밝은 곳 살짝 따뜻하게, 번짐 문턱 1.05 · 세기 .8 · 퍼짐 .55 · 따뜻한 색, 비네트 .14. 설정의 '빛 번짐 끔'은 그대로 이김 |
+| 반사 프로브 | 구역마다 상자 투영 프로브 1개(마당 · 운하 · 하역 창고 · 성문) — 빌드 2.5초 뒤 한 번, 한 프레임에 한 면씩. 물과 금 테두리에 하늘 · 벽이 비침 |
+| 등불 빛 | 가로등 12개(운하 4 · 하역 창고 6 · 승강장 2) · 곳간 등불 약 10개에 점광(기름불처럼 ±10% 깜빡임), 마차마다 등불 사이에 점광 1개(마차 6대) — **등불 색을 따라감: 쉴 때 호박색, 돌기 시작 ~ 돌진 끝까지 빨강(2.4배 밝게)**, 그래서 곧 달려올 마차 둘레 바닥이 빨갛게 물듦. 다락 승강대 등불 4개(초록 · 호박 · 빨강을 따라감) |
+| 표시한 불빛 | `Resources/PawnRushCarriageYard/RcyLights.txt`(한 줄에 `torch` / `lantern` / `window` x y z, 맵 좌표 — Unity x 가로 · y 위 · z 북쪽, m, `#` 주석)가 있으면 그 자리에 횃불(불꽃 + 깜빡이는 빛, `MiniGameFlame`) · 등불 · 창 불빛. 11-16 성 · 배경 세션이 lantern 6줄(운하 가로등 4 · 승강장 가로등 2)을 적었는데, 모두 코드가 이미 빛을 넣는 가로등 자리라 **1.2 m 안에 코드 등불이 있으면 건너뜀**(빛이 두 번 켜지지 않게, 콘솔에 "6곳은 … 한 번만 켭니다"). 그래서 새로 켜지는 표시 불빛은 지금 0개. `.meta`는 이 세션이 만듦. 성문 · 성벽 횃불은 컨셉의 'unlit' 지시 때문에 승규 결정 대기 |
+| 라이트 프로브 | 넣지 않음: 마차뜰은 실행 중에 지어지고 라이트 프로브는 에디터에서만 굽는다. 주변광 3색과 보조광 2개가 그 몫 |
+
+**섞기:** 마차뜰 상자(맵 좌표 x ±30, y -12 ~ 40, z -20 ~ 출구 + 2 m; 맵 전체는 결승 마당까지)에서 카메라가 14 m 멀어지는 동안 0으로 줄고(시간으로도 0.5초에 걸쳐), 0이 되면 장면의 해 · 주변광 · 안개 · 하늘을 처음 본 값 그대로 되돌림. 그래서 라운드의 다른 방은 마차뜰 빛을 보지 않는다. 트리거 콜라이더 없음(폰이 닿지 않게), 동기화 없음(PC마다 자기 카메라로).
+
+**켜고 끄기:** 마차뜰 프리팹(맵 `RoyalCarriageYard.prefab` · 구간 `Early_1-2_RoyalCarriageYard.prefab`)의 RoyalCarriageYard Inspector → 'Look: light and air' → `on` 끄면 장면 빛 그대로. `probes` · `lamps` 따로 끔, `maxTier` 0 ~ 2로 상한. Play 중에는 Hierarchy `Built` 옆 'Light and air' 오브젝트를 끄면 바로 원래 빛으로 돌아감(값은 Awake 때 읽음).
+
+**품질 단계**(설정 창 그래픽 품질: 낮음 / 중간 / 높음, 사용자 지정은 그림자 단계로; 'Mobile' 품질 단계는 늘 낮음):
+
+| 항목 | 낮음 (0) | 중간 (1) | 높음 (2) | 비용 메모 |
+|---|---|---|---|---|
+| 실시간 그림자 빛 | 해 1 (전과 같음) | 해 1 | 해 1 | 늘어난 그림자 빛 없음. 그림자 거리 · 해상도는 설정 창 그대로 |
+| 보조 방향광(그림자 없음) | 0 | 1 (하늘) | 2 (하늘 + 반사) | 화소마다 빛 계산 1 ~ 2개 더 |
+| 점광(그림자 없음) | 0 | 가로등 12 + 마차 6 = 18개 중 카메라 32 m 안 | + 곳간 10 + 승강대 4 = 32개 중 48 m 안 | PC는 Forward+(빛 수 제한 없음), 한 화면에 보통 6 ~ 20개. Mobile 렌더러(Forward, 물체당 4)는 낮음이라 0 |
+| 반사 프로브 | 0 | 4개 × 64² | 4개 × 128² | 빌드 2.5초 뒤 한 번만 그림(면 24개를 프레임마다 하나씩), 그 뒤 비용 없음. 메모리 128²×6 HDR ≈ 0.8 MB/개 |
+| 색 보정 볼륨 | 켬 | 켬 | 켬 | 색 보정은 LUT 한 번(32³), 번짐 · 비네트는 GameLook 것과 같은 패스라 늘어나는 패스 없음 |
+| 안개 · 주변광 · 하늘 | 켬 | 켬 | 켬 | 셰이더 값만, 비용 거의 0 |
+| 등불 깜빡임 · 색 따라가기 | — | 매 프레임 32개 이하 반복 하나 | 같음 | MonoBehaviour 하나(YardAtmosphere) |
+
+**확인:** Unity 밖 컴파일 — `Tools/Test-NetworkCompile.ps1` 전체 PASS(이 경로는 `CF_URP` 없이 컴파일), 따로 Game · PawnRush를 `Library/ScriptAssemblies`의 URP DLL로 `CF_URP` 켜고 컴파일해 오류 0 · 새 파일 경고 0. `Tools/Test-NetworkCore.ps1` Core 197 · 모의 세션 92 통과. Unity 에디터 재컴파일(21:49) 오류 0, 새 파일 경고 0. **Unity에서 Play로 본 것 없음 — 사용자 확인 전.**
+
+**Unity에서 볼 것:**
+1. 맵 시험 장면 `PawnRush_MapTest`(맵 RoyalCarriageYard) Play — 콘솔에 `[마차뜰 조명] 해 · 하늘빛 · 안개 · 색 보정 · 반사 프로브, 등불 빛 N개 · 신호 빛 M개`와 `품질 단계 2`. 시작 마당(z -7)에서 북쪽: 성문 · 곳간이 뒤 오른쪽 해로 밝고 그림자가 북서쪽으로 짧게, 그늘이 검지 않고 푸른 회색인지. 클레이가 너무 하얗거나(노출) 칙칙하지 않은지.
+2. 짐마차 마당(z 10 ~ 45): 쉬는 마차 둘레 호박색, **도는 · 겨누는 · 달리는 마차 둘레 바닥이 빨갛게** 물드는지, 빨간 돌진선과 헷갈리지 않는지.
+3. 운하(z 50 ~ 82): 물에 하늘 · 벽이 비치는지(반사 프로브), 운하 가로등 4개 둘레가 은은한지.
+4. 하역 창고(z 82 ~ 143): 판매대 차양 밑 · 크레인 팔 밑이 너무 어둡지 않은지, 다락 승강대 등불(초록 → 호박 → 빨강) 빛이 바닥에 보이는지.
+5. 승강장 · 최종 성문(z 143 ~ 160, 높이 8): 먼 궁전 · 탑이 안개로 살짝 물러나는지, 하늘 구름이 적당한지.
+6. 라운드(`PawnRush_Round`, 슬롯 1에 마차뜰)에서 정원 → 마차뜰 → 다음 미니게임으로 갈 때 빛이 14 m에 걸쳐 부드럽게 바뀌고, **다음 방에 들어서면 원래 빛으로 돌아오는지**(마차뜰 색 · 안개가 남지 않는지).
+7. 설정 창 그래픽 품질 낮음 / 중간 / 높음을 바꿔 콘솔의 `품질 단계` 줄과 등불 수, 프레임.
+8. 빛 번짐 끔이 마차뜰 안에서도 번짐을 끄는지.
+
+**전역 설정(승규 "진행", 11-16 — 게임 전체에 적용):** PC URP 자산 `PC_RPAsset` 그림자 거리 40 → 70 m · 2단 경계 .25 → .15(가까운 단 10.5 m, 전과 비슷한 선명도; 마당 44 m라 40이면 조감에서 먼 그림자가 끊겼음), PC 렌더러 `PC_Renderer` SSAO 반경 .25 → .5(굵은 베벨 · 판석 홈이 더 읽힘, 비용 조금 늘어남 — 표본 수 · 세기는 그대로). Mobile 자산은 그대로. 설정 창에서 그림자 단계를 한 번이라도 고르면 그 값(25 · 50 · 90 m)이 우선(`PipelineSettings.SetShadows`). 클레이 값(회색 .62 → .66, 부드러움 .15 → .22)은 `Dressing.cs`를 맡은 세션에 제안함(대계단 홀과 같이 쓰는 재질이라 마차뜰 전용으로).
+
+## 11-16 R684 물 (세션 "마차뜰 물 그래픽", 커밋 안 함 · 사용자 확인 전)
+
+승규 "물 그래픽도 수학적으로 계산해서 물래방아에서 떨어지는 물 등등 해서 그래픽 좋게 넣어". 모델 · FBX · 조명 · `Dressing.cs`는 손대지 않고 Unity 코드만. 기준은 컨셉(R676 PROMPT.md): **하늘이 비친 청록 물(얕은 곳 #3D9EBD · 깊은 곳 #0A3861), 흰 거품은 가장자리와 낙수 밑에만, 떨어지는 물은 흰 · 파란 줄무늬 #DBF0FF**, 홈통이 거대 물레방아 꼭대기에 물을 붓고 동쪽(떨어지는 쪽)으로 흘러내림, 연못 절벽 폭포 10 m, 수문 둘이 4 m 폭으로 쏟아짐.
+
+**파일:** `RoyalCarriageYard.Water.cs`(새 partial: Inspector 'Look: water' 설정 · 조립), `YardWater.cs`(표면 · 품질 단계 · 셰이더 전역값 · 켜고 끄기), `YardWaterfall.cs`(떨어지는 물 메쉬를 매 프레임 계산), `YardWaterSplash.cs`(폰이 빠진 자리를 셰이더에 알림), 셰이더 `Assets/Art/PawnRushMap/Shaders/PR_YardWater.shader` + 재질 `Assets/Art/PawnRushMap/Resources/PR_YardWater.mat`(빌드에 셰이더가 들어가게). 떨어지는 물은 정원 낙수 셰이더 재질 `PR_GardenFallSheet`의 **사본**을 쓴다(원본 · 정원 코드는 그대로, 정원의 `_Garden*` 전역값도 안 건드림). `RoyalCarriageYard.cs`에는 Awake 끝 `Lighting();` 다음 `Water();` 한 줄.
+
+**바뀌는 것:** 코드가 그리던 물 상자(운하 `Water` · 홈통 `Flume water` · 연못 `Pool water`), 평평한 `Pour` · `Spill` 판, 줄무늬가 흐르는 `Waterfall` · `Sluice water` 판, 흰 `Foam` · `Sluice foam` 판은 그리기만 끄고(계층에 남음) 그 자리에:
+
+| 넣은 것 | 내용 · 수식 |
+|---|---|
+| 운하 · 연못 · 홈통 물 표면 | 물 상자 윗면에 격자(0.5 / 0.8 / 1.6 m)를 깔고 `PR_YardWater`. **Gerstner 파 4개**(낮음 2개): 점 p가 p + ΣQ·A·d·cos f, 높이 ΣA·sin f, f = k·d·p − (ω + k·d·U)t + 위상, **유한 수심 분산 관계 ω² = g·k·tanh(k·h)**(운하 3.3 m · 연못 2.5 m), 물살 U로 **도플러 이동**, 가파름 Q = c/(k·A·N). 법선은 정확한 해석식. 잔물결 법선 맵 · 거품은 **물살을 따라 흐름**(p − U·t에서 읽음). 색은 **비어-람베르트** T = exp(−σ·d)(σ = 빨 .55 · 초 .14 · 파 .10 /m, 빨강이 먼저 빠져 청록) + 물 자체 산란색(#3D9EBD → #0A3861)이 (1 − T)만큼, 바닥은 불투명 텍스처를 물결로 굴절시켜 봄. 반사는 **슐릭 프레넬 F = 0.02 + 0.98(1 − n·v)⁵**(물 n = 1.33 → F0 = 0.02)로 조명 세션의 상자 반사 프로브(PC Forward+ 클러스터 경로 포함). 해 반짝임 + 가파른 잔물결의 반짝 점 |
+| 흰 거품 | 깊이 텍스처로 **물속에 선 것 둘레 0.32 m보다 얕은 곳**(벽 · 말뚝 · 교각 · 물에 잠기는 거대 물레방아 테)과 **낙수 밑 휘저음**에만. 값 잡음 두 겹을 물살에 실어 조각조각 흘러감, 휘저음은 하류로 1/(1 + 2|U|)만큼 늘어남 |
+| 물결 고리 | 낙수가 떨어지는 선에서 계속: 파장 0.7 · 1.9 m 고리가 위상 속도 c = ω/k로 퍼지고 **물살에 U·r/c만큼 떠내려감**. 폰이 빠지면 파속(군속도 c_g = ω/2k)으로 퍼지는 고리 묶음 + 1초쯤 흰 물(`YardWaterSplash`), 물보라 · 소리는 정원 것(`GardenSplashPool` → `GardenSplashFx`) |
+| 거대 물레방아 (버킷 28개) | 홈통 끝에서 1.2 m 폭 물판이 0.25 m/s로 떠나 0.75 m 아래 꼭대기 버킷에 떨어짐(√(2h/g) = 0.39초, 0.1 m 앞, 바퀴 두께 안). **버킷은 꼭대기에서 65°까지 물을 담고, 65° ~ 130.6°(물에 닿기 6° 전)에 V(φ) = V0(1 + cos πx)/2로 쏟음 → 유량 Q ∝ sin πx(옆으로 누웠을 때 가장 많이)**. 물은 버킷 테두리(반지름 8.9 m)에서 **접선 속도 ω×r = 15°/s × 8.9 m = 2.33 m/s + 바깥으로 0.35 m/s**로 떠나 **포물선 P(τ) = c + r_e(τ) + v_e(τ)·τ − ½gτ²**: 지금 보이는 줄기는 τ초 전에 바퀴가 ωτ만큼 덜 돈 자리에서 떠난 물(유선 streakline)이라 바퀴와 함께 휘며 돈다. 물에 닿는 τ는 0.04초 걸음 + 이분법. **연속 방정식 A·v = 일정 → 굵기 r = r0·√(Q/Qmax)·√(v_e/v)**, 떨어질수록 가늘어짐. **레일리-플라토 분열: t_b = 4.5√(ρr³/σ)**(ρ 1000, σ 0.072) 뒤 λ = 9.02r 간격, 반지름 1.89r 물방울 — 가득 찬 줄기(7 cm)는 2.2 × 4.5초라 1.4초 낙하 동안 안 끊기고(실제처럼 기둥째 떨어짐), 쏟기 시작 · 끝의 가는 줄기만 물방울로. 끊기지 않은 줄기는 표면에서 물보라가 (τ/τ_land)² 비율로 떨어져 나감. 떨어진 자리마다 흰 물 돔 · 튀어 오르는 물방울(0.55초 주기) · 셰이더 휘저음 선. 올라오는 쪽(서쪽) 버킷은 물 밖으로 나오며 물막이 쏟아지다(e^(−s/0.3)) 물방울로 똑똑(e^(−s/1.6)), 테가 물에 들어가는 자리는 물보라 왕관 · 돔 |
+| 35°가 아니라 65°인 까닭 | 궤적을 0.005초 걸음으로 계산해 보니(바깥 속도 0.35 m/s) 40°에서 떠난 물은 위쪽 4분면에서 중력의 바퀴 안쪽 성분이 접선 속도를 이겨 **테 안으로 1.3 m 들어감**(아래 버킷을 뚫고 지나가는 그림), 60°에서 0.27 m, 65°부터 테 밖. 그래서 시작 65°(Inspector `spillFrom`), 떨어지는 자리는 축에서 동쪽 6.5 ~ 9.7 m(동쪽 판자길 너머 · 바퀴 틈 물 위) |
+| 세로 물레방아 (날개 8개) | 물에 잠기는 각도 φ_sub = acos((−0.5 − 4.6)/5.15) ≈ 172°. 앞쪽(남쪽)으로 올라오는 날개마다 날개 끝 폭 2.9 m를 따라 물막이 쏟아지다가 물방울(시간 상수 1.1초, 초당 18방울/자리) — 날개 속도(28°/s × 5.15 m = 2.5 m/s, 위로)로 떠나 조금 솟았다 떨어짐. 절벽 쪽으로 내려가 물에 들어가는 날개는 물보라 왕관 · 돔, 두 자리 모두 셰이더 휘저음 · 고리 |
+| 절벽 폭포 (10 m) | 승강장 밑 7.7 m에서 0.55 m/s로 떠나는 물판(nappe) **P = 입술 + n·u·τ − ½gτ², 1.29초 뒤 0.71 m 앞에 떨어짐**. 바퀴 축 높이에서 대리석에서 0.56 m(날개는 0.8 m) — 바퀴를 안 뚫음. 줄무늬 UV.y = 물 덩어리의 나이 × 3이라 **줄무늬가 물과 함께 내려가며 가속하는 만큼 늘어남**. 둥근 물줄기 3개(u + 0.15 m/s, 0.66 m)가 판에서 갈라져 나옴, 아래 줄은 흰 물 돔 · 물방울 |
+| 수문 둘 (4 m) | 문턱 3.35 m에서 0.9 m/s → 0.89초 뒤 0.8 m 앞(배 옆구리는 절벽에서 1.6 m, 물줄기 2개 0.93 m) |
+
+**11-16 승규 확인 뒤 고침:**
+- "물에 빠지면 아예 이렇게 내려가게 되 있어"(폰이 운하 바닥 3.3 m 아래까지 가라앉고 카메라가 물 밑으로 감): 정원 `Pool()`처럼 운하 · 연못에 보고 안 하는 `WaterZone`(수면 ~ 2.2 m 아래)을 넣어 **폰이 수면에 뜨고(엉덩이 0.2 m 아래) 카메라는 수면 0.3 m 위에 머묾**. 마차뜰의 kill volume은 수면 0.3 m 아래부터라 뜬 폰(엉덩이가 발에서 0.256 m)에 안 닿을 수 있어, 정원처럼 수면 0.1 ~ 0.4 m 아래 kill volume을 하나 더 — 되돌리기는 전과 같이 1.5초 · 마지막 체크포인트. 'Look: water' `floatOnFall`(물 모양 `on`과 따로).
+- "이쪽 구간 폭포수랑 물이랑 상호작용이 잘 되지 않아 그리고 폭포수가 좀 더 강하게": 절벽 폭포 0.55 → 0.7 m/s(0.91 m 앞에 떨어짐, 축 높이에서 대리석에서 0.68 m · 물줄기 0.74 m, 날개 0.8 m), 수문 0.9 → 1.0 m/s(0.89 m, 물줄기 0.96 m, 배 1.6 m). 물판을 앞면 · 뒷면 두 겹(7 cm, 반은 물줄기처럼 덜 비침)으로, 둥근 물줄기 3 → 6개(수문 2 → 3) · 굵기 6 → 8.5 cm, 공기 .78 → .92, 줄무늬 속도 3 → 4. 떨어지는 자리: 각진 돔 몇 개 대신 낮고 매끈한 돔(16각 · 4단)을 겹쳐 줄 전체에, **0.9 m 솟는 물안개 막**(위로 갈수록 가닥으로 흩어지며 흔들림), 튀는 물방울 세게, 셰이더 휘저음 · 고리 세기 1.2 → 1.6. 높음에서 연못 가운데 떨어지는 물 정점 약 4.6천 → 약 6천(추정).
+- 11-17 "폭포수 두께를 좀 더 두껍게 해서 입체감을 살려": 물판을 두 겹 대신 **앞면 · 뒷면 · 양옆이 닫힌 덩어리**로. 두께 = 0.1 m(문턱 위 물 깊이 h = q/u) + 0.45 m × (떨어진 시간 비율)(떨어지며 공기를 머금어 부풂), **뒤쪽(벽 쪽)으로만 두꺼워짐**: 앞면은 포물선 그대로라 세로 물레방아 날개(축 높이에서 대리석 0.8 m)와 앞면 0.68 m 사이가 그대로, 뒷면은 벽 4 cm 앞에서 멈춤(벽과의 틈 = 입술 틈 + u·τ: 절벽 0.12 m, 수문은 쇠창살까지 0.24 m). 앞면에 물과 함께 내려가는 혹(0 ~ 6 cm, 떨어질수록 큼), 법선은 앞면 모양에서 계산해 혹이 빛을 받음. 정점 a 앞 .62 · 뒤 .5 · 옆 .75(덜 비치고 하얗게). 높음에서 절벽 폭포 판 약 1.6천 → 1.7천 정점.
+- 11-17 "하얀색 물 방울 더미 같은게 있는데 별로 자연스럽지 않아": 떨어지는 자리의 흰 물 돔(낙수 셰이더는 둔덕의 가장자리를 물에 녹일 수 없어 구겨진 비닐처럼 보임)을 **모두 뺌**(물레방아 버킷 줄기 · 날개 들어가는 자리 · 절벽 폭포 · 수문). 흰 물은 이제 물 표면 셰이더의 휘저음 거품만: 거품 무늬 시계가 휘저음 세기만큼 빨라져(0.6 + 1.4 × 휘저음) 끓듯 바뀌고, 가장자리가 넓게(±0.14) 흐려지고, 고운 거품 구멍이 뚫림. 튀는 물방울 · 물안개 막은 그대로.
+
+**물살(그림만):** 마차뜰에는 `WaterCurrent`가 없다(빠지면 kill volume). 그래서 운하는 서쪽 0.3 m/s(거대 물레방아가 시계 방향, 아래쪽이 서쪽으로 쓸어 감), 연못은 남쪽 0.35 m/s(폭포 반대쪽으로), 홈통은 입구 쪽 1.1 m/s. 나중에 물 상자 위에 `WaterCurrent`를 놓으면 그 물은 그 값을 따른다(`YardWater.AddSurface`).
+
+**켜고 끄기:** 마차뜰 프리팹(맵 `RoyalCarriageYard.prefab` · 구간 `Early_1-2_RoyalCarriageYard.prefab`)의 RoyalCarriageYard Inspector → 'Look: water' → `on` 끄면 예전 물 그대로. `maxTier` 0 ~ 2, 물살 3개, 물결 높이 · 파장, `spillFrom` · `spillOut`, `cliffLip` · `sluiceLip`, `splashes`. **Play 중에는 Hierarchy `Built` 옆 'Water look' 오브젝트를 끄면 바로 예전 물로, 켜면 다시 새 물로.**
+
+**성능(모바일 렌더러 기준 · 수는 코드로 셈한 추정, 실측 아님):** 파티클 시스템은 하나도 안 씀(물방울도 메쉬). 떨어지는 물 메쉬는 **화면에 보였고 카메라 110 m 안일 때만** 매 프레임 다시 만듦(바퀴 각속도는 늘 따라감).
+
+| 항목 | 낮음 (0) | 중간 (1) | 높음 (2) | 비용 메모 |
+|---|---|---|---|---|
+| 그리기 호출 | 표면 3 + 떨어지는 물 4 = 7 | 7 | 7 | 예전 물 그림 판 약 10장 대신. 곳마다 따로 잘려 보통 2 ~ 4개만 |
+| 셰이더 패스 | 투명 1패스 | 1 | 1 | 깊이 · 불투명 텍스처는 PC · Mobile 자산 둘 다 이미 켜져 있어 늘어나는 패스 없음 |
+| 표면 격자 정점(정적) | 1.6 m: 약 0.9천 | 0.8 m: 약 3.3천 | 0.5 m: 약 8.2천(운하 5,785 · 연못 2,310 · 홈통 64) | 품질이 바뀔 때만 다시 만듦. 정점 셰이더에서 Gerstner |
+| 표면 화소 셰이더 | Gerstner 2개, 법선 맵 3번, 휘저음만(고리 · 물보라 묶음 없음) | Gerstner 4, 법선 맵 4, 고리 · 물보라 | 같음 | 깊이 2번 · 불투명 1번 · 반사 프로브 1번, 낙수 선 ≤ 8개 반복(자기 연못 높이만) |
+| 떨어지는 물 정점 / 프레임(보일 때) | 거대 물레방아 약 0.9천 · 연못 가운데 약 0.65천 · 수문 0.13천씩 | 약 2.5천 · 2천 · 0.6천씩 | 약 4.5천 · 4.6천 · 1.2천씩 | 매 프레임 메쉬 갱신(정점 48바이트: 높음에서 다 보이면 약 0.55 MB/프레임). 높음 = 물줄기 둘레 7각 · 22마디, 물방울 14/줄기, 왕관 6, 판 0.3 m 칸; 낮음 = 4각 · 10마디, 물방울 5, 왕관 0, 판 0.8 m |
+| 물방울 · 줄기 수(높음, 대략) | 버킷 줄기 6 × 1 | 6 × 2 | 6 × 2 = 12 · 날개 물방울 5자리 | 해시로 정한 방출 시각 격자라 매 프레임 할당 없음(목록 재사용) |
+| 폰이 빠질 때 | 정원 물보라(최대 640조각, 정원과 같음) | 같음 | 같음 | `splashes` 끄면 없음 |
+
+**확인:** Unity 밖 컴파일 — `Tools/Test-NetworkCompile.ps1` 전체 PASS(새 파일 경고 0), `Tools/Test-NetworkCore.ps1` Core 197 · 모의 세션 92 통과. 셰이더는 Unity 밖에서 컴파일할 수 없음 — Unity 에디터 재컴파일(22:25) · `PR_YardWater` 셰이더 · 재질 가져오기에서 오류 0, 22:26 다른 세션이 연 맵 시험 Play에서 콘솔에 `[마차뜰 물] 품질 단계 2 …` · `물 표면 3개 … 떨어지는 물 4곳 …`이 찍히고 예외 없음. 셰이더 변형은 처음 그릴 때 컴파일되므로 분홍 물 · 셰이더 오류는 화면을 봐야 확실함. **화면으로 본 사람 없음 — 사용자 확인 전.**
+
+**Unity에서 볼 것:**
+1. 맵 시험 장면 `PawnRush_MapTest`(맵 RoyalCarriageYard) Play — 콘솔에 `[마차뜰 물] 물 표면 3개(운하 · 수로 · 연못), 떨어지는 물 4곳 …`과 `[마차뜰 물] 품질 단계 2 …`, 셰이더 오류(분홍 물)가 없는지.
+2. 운하(z 50 ~ 82) 들어가는 승강장(z 52 쯤)에서 북쪽: 물이 청록 · 깊을수록 진하고 하늘 · 벽이 비치는지, 벽 · 말뚝 · 교각 · 물레방아 테 둘레에만 흰 거품이 있는지, 거품 · 잔물결이 서쪽으로 천천히 흐르는지.
+3. 거대 물레방아(축 z 66): 꼭대기에 홈통 물이 떨어지고, **동쪽(오른쪽) 버킷이 옆으로 누울 때 물줄기가 포물선으로 쏟아져 바퀴와 함께 도는지**, 줄기가 아래로 갈수록 가늘어지는지, 바퀴 버킷 · 테를 뚫지 않는지, 떨어진 자리(축에서 동쪽 6.5 ~ 9.7 m)에 흰 물 · 물방울 · 퍼지는 고리. 서쪽에서 올라오는 버킷이 물을 흘리고 똑똑 떨어지는지.
+4. 연못(z 132.85 ~ 143, 세로 물레방아 축 (0, 4.6, 137)): 앞으로 올라오는 날개마다 물이 쏟아지다 똑똑 떨어지는지, 절벽 폭포가 대리석에서 살짝 떨어져 휘어 내려오고 줄무늬가 내려가며 늘어나는지, 바퀴 날개를 안 뚫는지, 양쪽 수문(x ±15.5) 물이 배 옆구리 앞에 떨어지는지.
+5. 운하나 연못에 일부러 빠져 물보라 · 고리가 생기는지.
+6. 설정 창 그래픽 품질 낮음 / 중간 / 높음: 콘솔 `[마차뜰 물] 품질 단계` 줄, 물줄기 굵기 · 물방울 수, 프레임. Play 중 'Water look'을 끄고 켜서 예전 물 ↔ 새 물.
+7. 라운드(`PawnRush_Round`, 슬롯 1 마차뜰)에서도 같은지, 정원 물(`PR_GardenClearWater`)이 그대로인지.
+
+## 11-16 R684 콜라이더 — 콜라이더 빠진 곳 점검 · 채우기 (세션 "콜라이더 점검", 커밋 안 함 · 사용자 확인 전)
+
+승규 "이제 콜라이더 적용 안된 곳 있으면 해"(그래픽 최대치 세션들이 모양을 많이 바꾼 뒤). Blender MCP · 다른 세션 파일은 안 건드림.
+
+**방법(새 도구, 다시 돌릴 수 있음):** 저장소 사본(`C:\Temp\CF_ColliderCopy`)의 Unity 배치 Play에서 맵(원점)과 구간 프리팹(x +200)을 짓고, 그려지는
+메쉬 460개(FBX 칸 · 코드 소품 · 그 순간 자세로 구운 말, LOD0만)를 숨은 MeshCollider(층 31, 아무것과도 안 부딪힘)로 복사해 실제 콜라이더와 광선으로
+비교 — 위에서 10 cm 격자(폰이 설 곳과 그 위아래 그림 면, 다른 콜라이더 안은 뺌), 옆으로 30 cm마다 높이 0.35 · 1.0 · 1.6 m에서 8방향 2.5 m. 1.5 · 9 · 15초에
+세 번(움직이는 장애물). 그다음 `Tools/ColliderAudit/reach.py`가 출발 마당에서 갈 수 있는 곳만(0.9 m 이웃, 오르기 1.15 m = 점프 0.87 + 모서리 도움 0.2,
+물속 제외) 남겨 물체별로 묶음. 기준 10 cm. 돌리기: `Tools/ColliderAudit/Run-CarriageYardColliderAudit.ps1`(사본 갱신 · 배치 Play · 요약,
+결과 `<사본>/Logs/YardColliderAudit/*.txt`), 편집기 코드 `PawnRushEditor/CarriageYardColliderAudit.cs`(열려 있는 에디터에서는 아무것도 안 함).
+주의: 사본의 `Library/ilpp.pid`가 원래 에디터의 IL 후처리 프로세스를 가리켜, 처음 돌릴 때 사본 Unity가 그 프로세스를 끈 일이 있음(원래 에디터는 다음
+컴파일 때 새로 띄움, 22:55 재컴파일 오류 0) — 실행 스크립트가 이제 그 파일과 잠금 파일을 지우고 시작함.
+
+**결과(점검 35곳, 22:13 작업 트리):** 없음 3 · 어긋남 5 · 10 cm를 조금 넘는 경계 9 · 맞음 9 · 일부러 없음/큼 11. 전체 표는 아래.
+
+| 판정 | 구역 · 물체 | 차이 | 처리 |
+|---|---|---|---|
+| ~~없음~~ → 경계 | 1 마당: 팀 마차가 **도는 동안** 마차 모델이 곧은 팀 상자(2.3 × 2.7 × 6.95) 밖으로 나감(R683 앞축 꺾기) | 처음 보고한 '최대 110 cm'는 모서리를 스친 광선 깊이였고, 점검 빈 장면의 물리 50 Hz 때문에 달리는 마차 그림이 상자보다 한 스텝(9.3 m/s × .02 s ≈ 19 cm) 뒤처진 것이 섞임. 도구를 게임과 같은 120 Hz로 바꾸고 말·마차 세션이 꺾기를 앞수레만 최대 4°로 줄인 뒤(23시) 상자 경계 비교: 12 ~ 17 cm — 서 있을 때의 등불 · 바퀴통 13 cm와 같은 수준 | 말·마차 세션 고침, 경계 값(13 cm)은 코드 위치라 그대로 |
+| **없음** | 가로등 12개 등불 머리(0.5 m 각, 3.05 ~ 3.6 m, 지붕 Ø .68 ~ 4.0 m) | 콜라이더 없음 — 운하 2 m 난간 · 승강장 난간 위 폰 머리가 지나감 | **직접 고침**: `RoyalCarriageYard.Scenery.cs` `LampPost`에 숨은 상자 .5 × .9 × .5(3.05 ~ 3.95, NoClimb). 지붕 처마 9 cm만 밖, 윗면은 난간 위에서도 점프로 안 닿음 |
+| **없음** | 구간 모드: 최종 성문 벽 뒤 띠(\|x\| 6.3 ~ 26, z 157 ~ 159, y 8) | 1.1 m `Runout railing`을 넘으면 들어가고, 성 모델 북쪽 면에 상자 없음(964 광선, 최대 2.4 m), z 159는 낭떠러지 | 승규 결정 "안 함"(11-17, 메인과 합치면 성벽 뒤 구간이 없음) — 성 뒷면 상자 안 넣음 |
+| ~~어긋남~~ → 맞음 | 구간 끝 계단 4단 | 모델 디딤 18 cm 높고, 앞면이 상자보다 39 ~ 40 cm 앞(x −1.5 ~ −0.95, z 175.3 ~ 176.3) — 원인은 R682 계단 끝 덮개 | 성·배경 세션이 되돌려 다시 냄, 23시 다시 점검에서 계단 어긋남 0 |
+| 어긋남 | 세로 물레방아 날개 · 바퀴살 | 13 ~ 25 cm, 바퀴살 상자 몇 개(Paddle 2 · 3 · 6 · 7) 밑에 그린 살 없음 — 타는 폰이 안 보이는 살에 걸릴 수 있음 | seoungtest(모델) 확인 |
+| ~~어긋남~~ → 맞음 | 바깥 성문 마당 쪽 받침 | 대부분 10 cm 안, 모서리 한 곳 41 cm (−14.6, 1.0, 2.4) | 성·배경 세션이 받침 상자 높이 .95 → 1.02, 다시 점검 최대 22 cm 한 곳(광선 4개) |
+| 어긋남(콜라이더 큼) | 운하 승강장 옆 난간 2.0 m 상자 vs 난간 모델 | 모델이 평균 30 · 최대 111 cm 낮게 보임 | 상자 높이는 R287 설계(넘어진 폰 엉덩이) — 모델 높이를 맞출지 seoungtest · 승규 |
+| 어긋남(콜라이더 큼) | 세로 물레방아 착지 판 남쪽 면 | 1.5 m 안에 그림 없음(작은 면) | seoungtest(모델) |
+| 경계 | 컨베이어 틀 · 레일(모델 + 코드 금 테두리) vs 벨트 1.6 m | 양쪽 9 ~ 13 cm, 46 m 내내 | 벨트를 넓히면 넘는 폭이 바뀌어 안 고침 — seoungtest · 승규 |
+| 경계 | 컨베이어 짐 뒤쪽 면 · 곳간 양 끝 기둥(z 2.5 · 47.7) · 판매대 북쪽 끝 기둥(z 129.6) · 서 있는 마차 등불(폭 2.56 vs 2.30) · 결승 마당 담 받침 · 구간 끝 난간 모델 바깥 · 나무 길 모서리 · 지브 크레인 버팀대 | 11 ~ 20 cm | 각 모델 세션에 알림(안 고침) |
+| 맞음 | 짐더미 줄 짐(움직임 따라감) · 목재 크레인 짐(7 cm) · 출발 문짝 · 거대 물레방아 · 거대 궤짝(옆 9 cm, 위 고리 80 cm는 안 닿음) · 크레인 받침 판(11 cm 턱) · 가로등 받침(7 cm) · 승강대 틀 · 최종 성문(맵) | ≤ 10 cm | — |
+| 일부러 | 물 · 폭포 · 거품 · 물 세션의 물(트리거만), 궤짝 먼지, 걸이줄 · 밧줄, 승강대 판 자루(R662: 내려올 때 누르지 않게), 왕관, 담 · 벽 위 흉벽 · 까치발(안 닿음), 바퀴 받침 베어링 | 콜라이더 없음 | 그대로 |
+| 일부러(큼) | 곳간 · 판매대 · 목재 더미 한 상자(짐 사이 틈 앞 보이지 않는 벽, 끼임 방지), 팀 상자 안 말 사이 · 다리 사이, 승강장 · 구간 끝 난간 상자(난간동자 사이) | 콜라이더가 보이는 것보다 큼 | 그대로 |
+
+**23시 다시 점검(다른 세션 고친 뒤, 도구 120 Hz):** 계단 · 바깥 성문 받침 · 결승 마당 담 받침(13 cm → 기준 안)은 맞음, 팀 마차는 경계(12 ~ 17 cm). 남은 '없음'은 구간 모드 최종 성문 뒤 띠뿐 — 승규 결정 "안 함"(11-17, 메인과 합치면 성벽 뒤 구간이 없음) — 성 뒷면 상자 안 넣음. 결승 마당 담 받침 위 담 면이 담 상자보다 19 ~ 28 cm 들어가 있는 것(콜라이더 큼, 결승 뒤)은 전부터 있던 것. 도구 고침: `CarriageYardColliderAudit`가 Play 동안 물리를 120 Hz(`PhysicsProfile`과 같음)로 돌리고 끝날 때 되돌림 — 전에는 빈 장면의 50 Hz라 움직이는 장애물 그림이 한 스텝 뒤처져 보였음.
+
+**11-17 목재 크레인 짐이 폰을 통과하던 것 (승규 "여기 장애물 지나갈 때 폰이 뭔가 통과되는 느낌이야 수정 해"):** 사본 Play 실험(폰 6명을 두 크레인 쓸기 길 안 · 가운데 · 바깥에 세우고 4번 지나가게, 폰 콜라이더가 짐 콜라이더 안에 들어간 깊이 · 시간, 물리 120 Hz). 원인: 짐이 넘어뜨린 폰을 **바로 통과**시키고(`YardImpact` 고스트 4초) 쓸기 방향으로 1 m/s만 밀어서, 폰은 0.3 m 밀린 자리에 있고 짐이 엉덩이를 17 ~ 25 cm 깊이로 0.2 ~ 0.3초 지나감. 모델 · 콜라이더 차이(7 cm)는 원인 아님. 고침: `YardImpact`에 `downBack`(넘어뜨리는 밀기를 움직임 반대로) · `ghostDelay`(그 시간 동안은 짐 몸이 실제로 걸어 넘어뜨리고, 그 뒤에도 닿아 있을 때만 통과) — 기본 꺼짐이라 다른 장애물은 그대로. `SlewJib`만 켬: 반대로 1.5 m/s 이상, 위 3.5 m/s, 0.3초. 결과(가운데 · 바깥): 들어간 깊이 최대 25 → 7 cm, 8 cm 넘게 들어간 시간 0.24 → 0초, 폰은 짐에 걸려 약 2.5 m 휩쓸린 뒤 넘어짐, 한 번 지날 때 맞는 횟수 1 그대로. 남은 것: 드럼 가까이(느린 쪽, 넘어지기 전 두 번 밀림)는 겹침 0.57 → 0.42초. 실험 코드는 사본에만(`CraneHitTest`). 자동: 컴파일 PASS · Core 197 · 모의 세션 92, Unity 재컴파일 오류 0. **Play로 본 것 없음.**
+
+끼일 틈 후보(보고만): 곳간 남쪽 끝과 바깥 성벽 사이 0.6 × 3 m 홈(\|x\| 19 ~ 22, z 2.0 ~ 2.6) — 바닥이 그려져 보이는 그대로, 마차는 2.5 m 더 떨어져 다님.
+측정 한계: 사본은 22:13 상태(그 뒤 물 · 배너 지움 · 성 상자 · 마차 코드 변경은 안 들어감), 도달은 점프만 셈(다른 폰 위 · 날려짐 제외),
+9초 거대 궤짝 75 광선은 상자 크기가 같아 측정 잡음으로 봄. 표 원본 · 좌표: 공유 노트 `rcy-collider-audit-R684.md`, CSV는 사본 `Logs/YardColliderAudit`.
+
+**확인:** Unity 밖 컴파일 `Test-NetworkCompile.ps1` PASS(새 파일 경고 0), Core 197 · 모의 세션 92 통과, 열린 Unity 재컴파일(22:55) 오류 0. 등불 상자를 넣고
+새 실행 스크립트로 사본을 갱신해 다시 점검(23시, 배너가 빠져 그린 메쉬 391개): 운하 가로등 쪽 '그림만 있고 콜라이더 없음' 광선 106 → 86, 남은 것은 받침(7 cm)을
+스치는 광선과 3.6 m의 지붕 처마 끝(9 cm, 기준 안)뿐, 사본 Unity가 원래 에디터 프로세스를 끈 일 0회. **Play로 본 것 없음 — 사용자 확인 전.**
+
+**Unity에서 볼 것:** 맵 시험 `PawnRush_MapTest` Play — (1) 운하 들어가는 승강장 가로등(x ±9, z 51) 옆 2 m 난간에 올라 등불 쪽으로 점프: 머리가 등불에
+막히는지(전에는 지나감), 승강장(y 8) 가로등(x ±8, z 144.5)도. (2) 짐마차 마당 팀 마차가 돌 때 마차 옆에 서 보기: 마차 그림이 폰을 지나가는지(말·마차 세션
+고침 전이면 지나감). (3) 구간 모드(`Early_1-2`) 끝 계단을 걸어 내려가며 발이 계단 모델에 묻히는지, 최종 성문 뒤 난간을 넘을 수 있는지.
 
 ## 11-16 R681 — 큰 모델 칸 나누기 · 마차 상자 채우기 (세 번째 PC, 커밋 안 함 · 사용자 확인 전)
 
@@ -400,3 +685,103 @@ Inspected in Blender (temporary scene, removed afterwards). Stills: stills/rcy_a
   rods 9.6); none over the platform. RcySceneryOwn 35168 tris.
 - Hole render after: 0 on the piers; 73 px in the outer front view are far sky through the passage, 2 px final back.
 - Stills: Temp/RcyStills/seam_final_pier_after, seam_outer_pier_after, corbels_sorting_wall.
+
+## R685 VFX and the stack row's ropes (2026-11-16, this coordinating session; uncommitted, compiled only - nobody has seen it in Play)
+
+승규 "이 줄이 내려올 때 끊겨서 와서 부자연스러워", "지금 필요한 장애물에 맞는 효과", "걍 이 채팅에서 vfx 넣어"; "파란색 깃발 다 지워".
+
+- **Blue banners gone:** every `BannerOn` call in `RoyalCarriageYard.Scenery.cs` (gate wall, arena walls, final gate wall) and
+  `RoyalCarriageYard.Sections.cs` (two on the cliff over the sluice) removed; `BannerOn` kept for a later colour. The four empty
+  Banner `Move`s in `RoyalCarriageYard.Castle.cs` removed by rcy-castle-scenery. The castle textures have no blue (0 %). The red
+  cliff banners in RcySorting and the blue `YardKit.Banner` cloths that are not flags (saddle cloth, valances, covered loads) stay.
+- **Stack row ropes (`StackRow.cs`):** the ropes jumped in one frame between the hanging length and the stack's top when a
+  stack was taken up and set down. While the gap stands open they now reel up off the stack just set down and pay out onto the
+  next one (smoothstep over min(0.6, 0.3 x openSeconds) s at each end), meeting the held length at both ends.
+- **Obstacle effects (`YardFx.cs`, hooked by `RoyalCarriageYard.Fx.cs` after `Water()`, Inspector "Look: obstacle effects"):**
+  reads only where the obstacles' parts are drawn frame to frame (no change in their scripts; same on every PC through
+  ObstacleClock). Carriages and horses: dust behind the feet by speed, a spray of earth when a charge starts. Stacks and hoist
+  pallets: a dust ring and chips when set down. Pallets: sparks and chips at the rope corners when they start off. Slewing
+  crane loads: a dust streak under a load sweeping low. Outer gate leaves: dust under the free edge while they swing. Final push
+  gate: scrape dust while it is pushed, gold glints when it is fully open. The giant chest keeps its own dust and shockwave;
+  the water's spray is YardWater's. Emits only near the floor (ray down) and within 70 m of the camera; quality tier 0/1/2 =
+  0.35/0.65/1 of the particles. Particle budget: dust 900, haze 300, chips · clods · grit 300 each, sparks 200, glints 200.
+- **Made realistic (승규 "아니 실사로 바꿔줘야지" → "효과만 실사로"; the clay stays):** dust is a 4 x 4 sheet of puffs from
+  domain-warped fBm (ragged edges, denser knots, lit top and shaded underside), a random still frame per puff, slow spin,
+  ease-out growth, turbulence (noise module) and air drag, tinted by the yard's dry earth tones times the scene's light
+  (ambient + sun colour x its height, read each second; the unlit particle shader is in every build). Chips, clods and grit
+  are 3D chunks (one jittered-box mesh, URP Lit) tumbling on three axes and bouncing on the floor (collision module, world,
+  static colliders; off at tier 0), shrinking away at the end. Sparks are HDR, stretched by speed, white -> orange -> dull
+  red, and skip on the floor. Glints are four-pointed stars whose size flickers. A slow wide haze follows charges and
+  set-downs.
+- **Not done:** the conveyor's loads (they ride the belt and never fall), a pawn's knock-down dust (gameplay code), the giant
+  wheel's spray (water session).
+- **Checked:** `Tools/Test-NetworkCompile.ps1` PASS (no warnings from the new files), simulated sessions 92 passed. To see in
+  Play (`PawnRush_MapTest`): the yard's carriages, the stack rows' ropes and set-downs, the hoist pallets, the crane loads,
+  the outer gate at the start, the final gate when pushed open; the console line `[마차뜰 효과] ...` lists what it watches.
+- **Warnings (승규 "말 예고는 지워주고 나머지 예고도 실사로 바꿔"), `YardWarn.cs` (colours, a flame flicker on ObstacleClock, an
+  eased deepening); the timing of every warning is unchanged:**
+  - loose horses (`RoamingCarriage`, Look.Horse): no charge line any more (their rearing through the aim stays: an
+    animation, not a mark - remove it too if wanted). Carriages and teams: the red neon strip is a dark track on the
+    paving, faint through the turn, deepening through the aim, no flashing; their warning lamps are a lantern behind red
+    glass (`YardKit.Warning` #F0602C x1.25, was #FF4A3A x1.6).
+  - stack rows (`StackRow`): the open gap is a patch of swept sand; the coming stack's shadow deepens over it (was green,
+    then flashing red).
+  - hoists (`PalletHoist`): coloured-glass lanterns (go / wait / stop) with a flame's flicker instead of blinking; the
+    well's boards are weathered ochre paint and the pallet's shadow deepens over them before it comes down.
+  - slewing cranes (`SlewCrane`): lantern as the hoists'; the floor sector is the load's shadow (deepening before a lift);
+    the reach arc a worn sand line (was amber glow).
+  - the giant chest (`SlamChest`): the circle and rim are its shadow (faint carried, darker held, darkest falling; no
+    pulse); the wave ring is a faint dust line, and YardFx throws a real dust wall out to `ShockRadius` in `WaveSeconds`
+    with a haze, clods and grit; the ten round glow puffs are gone.
+  - checked: `Test-NetworkCompile.ps1` PASS (no warnings from the touched files), Core 197 and simulated sessions 92 passed.
+    Nobody has seen it in Play.
+- **Start gate crown plate gone (승규 "문쪽에 원형 왕관으로 된거 지워"):** `movers_model.py` `gate_leaf()` no longer adds the
+  round gold boss with the crown in relief (x 1.65, z 3.35); RcyGateLeafW/E re-exported alone (3700 tris each, 72 -> 65 KB).
+- **Conveyor slats move (승규 "컨테이너가 가만히 있는 데 박스만 움직이는 것 같아서 이상해 실제로 저 컨테이너가 움직이게 해"):**
+  the oak slats are out of RcyConveyor (`sorting_machines_model.py` `conveyor()`, 87 -> 51 KB, 1978 faces); `ConveyorSlats.cs`
+  (hooked by `RoyalCarriageYard.Fx.cs` `BeltSlats()`, only where the model hangs) draws them as the model did (0.2 x 0.02 x
+  1.5 m, 0.45 m apart, top at the belt's top, the model's clay) and runs them along local +x at `CargoConveyor.Speed` on
+  ObstacleClock, as the loads and the belt's carry go. `Tools/Test-NetworkCompile.ps1` now hands Pawn Rush's compile its
+  arguments in a response file (the sources outgrew the 32767-character command line).
+- **Signal lanterns (승규 "여기 신호등도 그래픽 더 좋게 해"):** the loft hoists' and the slewing cranes' signal lamps are
+  `YardLantern`s instead of flat glowing boxes: an iron frame (base plate, four corner posts, a stepped cap, a ring), a pane
+  of coloured glass in URP Lit with HDR emission (2.6 x its colour, so the bloom takes it) and a soft additive halo facing
+  the camera. The glass keeps its name ("Hoist lamp" / "Jib lamp") and the material its obstacle colours every frame, so
+  the hoist's and crane's timing and the lighting rig's point light following "Hoist lamp" are unchanged. `PalletHoist`
+  and `SlewJib` build them; `RoyalCarriageYard.Dressing.cs` keeps "Lantern*" visible in their Unpaint lists.
+- **Signal colours deeper (승규 11-17 "색이 희미해서 좀 더 색을 구분할 수 있게 진하게"):** `YardWarn` Go (.08, 1, .18), Wait
+  (1, .55, 0), Stop (1, .05, .03), fully saturated; the lantern glass glows 1.7 x (was 2.6, which the tonemapper bleached
+  towards white) and its halo is thicker (alpha .5, was .3). The lighting rig's pools follow the same colours.
+- **11-17 (승규 "컨베이어 벨트에 노란색 테두리 부분 지워주고 기물이 여기에 닿으면 뭔가 날아가는 버그가 있어 또한 장애물 예고가
+  그림자 처럼 검은색으로 되어 있는데 신호등 색이랑 맞춰"):**
+  - the conveyor's gold trim along its rails' tops is gone (`CargoConveyor`).
+  - the fling: `ConveyorBeltSurface.PointVelocity` said the belt's 3.2 m/s for any point, so a pawn touching the belt's
+    side (its hands on the side as a climb face - RagdollPawn rides a climb face's IMovingSurface - or the ground ray
+    catching the edge) was dragged along x and flung. It now carries only over the top: within the width less 6 cm a side
+    and no lower than 12 cm under the top; elsewhere zero. Not checked in Play.
+  - the floor warnings are in the signal lamps' colours instead of black: the carriages' line, the hoist wells, the crane
+    sector and the giant chest's circle in the lamps' red (`YardWarn.Stop`), a stack row's open gap green (`YardWarn.Go`)
+    turning red as the next stack swings in; the same timing and the same deepening as before.
+  - checked: `Test-NetworkCompile.ps1` PASS, Core 197 and simulated sessions 92 passed.
+- **Gold edges gone (승규 11-17 "북쪽 구간 물레방아 구간 노란색 손잡기 제외하고 노란색 테두리 칠해져 있는 부분 지워"):**
+  `RoyalCarriageYard.Fx.cs` `NoGoldEdges()` switches off every code renderer in `YardKit.Gold` whose name has trim / edge /
+  lip / band / lintel / door line (the jump lines at the gaps, landings and the loft, the machines' trims and bands, gate
+  and awning trims, tower bands), keeping only the lifting waterwheel's "Handle" and "Handle post". Colliders stay. The
+  console line `[마차뜰] 금색 테두리 N개를 숨겼습니다` counts them. The models' own gold details (crowns, beads) are untouched.
+- **Basin barges solid (승규 11-17 "여기 충돌 오브젝트가 없어서 그냥 통과돼 수정해"):** the two barges by the sluices
+  (`RoyalCarriageYard.Sections.cs` `BasinDock`) were pictures only on the claim that no jump reaches them; pawns do get on
+  them. `DockBlock` adds invisible solid boxes over the hull (water - 0.5 .. deck), both rails, the three crates and the
+  one on top, the two barrels (boxes round them) and the load under cloth. Compiled only; not checked in Play.
+- **No horse warnings at all (승규 11-17 "말을 예고 아예 지워 작은 그림자도 안남게"):** the yard's fleet is 5 teams and 0
+  loose horses, so the earlier horse-only cut changed nothing on screen. `RoamingCarriage` now draws no charge line under a
+  team or a loose horse (only a plain carriage, of which the yard has none), keeps a team's coach lamps lit amber through the
+  charge (red `YardKit.Warning` only for a plain carriage; the lighting rig's pool follows the lamps, so it stays amber),
+  and passes 0 rear to the horses (no rearing, no head toss through the aim). The charge's whip crack and rumble stay.
+  - **Then (승규 11-17 "말 빨간 램프랑 말 동작은 유지 해야지"):** the coach lamps go red through the turn and the charge again,
+    and the horses rear / toss their heads through the aim again; only the floor line under teams and loose horses stays gone.
+- **Stack row ropes placed and real (승규 11-17 "여기 줄이 위치가 맞지않고 실제 줄 같이 보이게 바꿔"):** the code hung its two
+  square ropes at z +-0.54 off the trolley's sides, nowhere near RcyRowTrolley's drum (along x under the body) or
+  RcyStackCrate's lifting eyes (x +-0.55, 0.07 over the top). `StackRow` now runs each rope off the drum's underside (0.3 m
+  either side of the middle, 0.34 under the trolley's centre) down to its eye, splaying a little, with an iron hook in the
+  eye; the ropes are hemp cylinders (0.045 m, a three-strand twist texture tiled every 0.07 m along whatever length, tan,
+  matte). The reeling of R682 is unchanged. Dressing keeps "Row rope*" (rope and hook). Compiled only.
