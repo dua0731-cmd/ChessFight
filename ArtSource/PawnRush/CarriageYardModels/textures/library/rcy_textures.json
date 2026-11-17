@@ -1,0 +1,186 @@
+{
+ "RCY_Stone": {
+  "slot": "RCY | stone",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.2199999988079071,
+  "mean": "#DCBC90",
+  "source": "textures/codex/b1/rcy_cream_limestone.png"
+ },
+ "RCY_Flag": {
+  "slot": "RCY | flag",
+  "tile": 2.4,
+  "metallic": 0.0,
+  "smoothness": 0.23999997973442078,
+  "mean": "#CEA57F",
+  "source": "textures/codex/b1/rcy_flagstone.png"
+ },
+ "RCY_Shade": {
+  "slot": "RCY | shade",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.20000001788139343,
+  "mean": "#A2958C",
+  "source": "textures/codex/b1/rcy_shade_stone.png"
+ },
+ "RCY_Marble": {
+  "slot": "RCY | marble",
+  "tile": 3.0,
+  "metallic": 0.0,
+  "smoothness": 0.6000000238418579,
+  "mean": "#E9DEDB",
+  "source": "textures/codex/b1/rcy_white_marble.png"
+ },
+ "RCY_Tile": {
+  "slot": "RCY | tile",
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.2199999988079071,
+  "mean": "#766C65",
+  "source": "textures/codex/b1/rcy_roof_slate.png"
+ },
+ "RCY_Soil": {
+  "slot": "RCY | soil",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.10000000894069672,
+  "mean": "#B18C60",
+  "source": "textures/codex/b1/rcy_soil.png"
+ },
+ "RCY_Oak": {
+  "slot": "RCY | oak",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.30000001192092896,
+  "mean": "#CE8F4F",
+  "source": "textures/codex/b2/rcy_light_oak.png"
+ },
+ "RCY_Walnut": {
+  "slot": "RCY | walnut",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.3199998736381531,
+  "mean": "#753C1E",
+  "source": "textures/codex/b2/rcy_walnut.png"
+ },
+ "RCY_Timber": {
+  "slot": "RCY | timber",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.20000001788139343,
+  "mean": "#C9A370",
+  "source": "textures/codex/b2/rcy_pale_timber.png"
+ },
+ "RCY_Iron": {
+  "slot": "RCY | iron",
+  "tile": 1.0,
+  "metallic": 0.75,
+  "smoothness": 0.41999995708465576,
+  "mean": "#594B45",
+  "source": "textures/codex/b2/rcy_dark_iron.png"
+ },
+ "RCY_Brass": {
+  "slot": "RCY | brass",
+  "tile": 1.0,
+  "metallic": 0.9,
+  "smoothness": 0.44999998807907104,
+  "mean": "#A06E30",
+  "source": "textures/codex/b2/rcy_matte_brass.png"
+ },
+ "RCY_Gold": {
+  "slot": "RCY | gold",
+  "tile": 1.0,
+  "metallic": 1.0,
+  "smoothness": 0.5,
+  "mean": "#C38F31",
+  "source": "textures/codex/b2/rcy_gold.png"
+ },
+ "RCY_Coach": {
+  "slot": "RCY | coach",
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.5799999833106995,
+  "mean": "#35522B",
+  "source": "textures/codex/b2/rcy_coach_lacquer.png"
+ },
+ "RCY_Cloth": {
+  "slot": "RCY | cloth",
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.13999998569488525,
+  "mean": "#BD925F",
+  "source": "textures/codex/b3/rcy_sand_canvas.png"
+ },
+ "RCY_Sack": {
+  "slot": "RCY | sack",
+  "tile": 0.8,
+  "metallic": 0.0,
+  "smoothness": 0.11995603144168854,
+  "mean": "#997346",
+  "source": "textures/codex/b3/rcy_burlap.png"
+ },
+ "RCY_Straw": {
+  "slot": "RCY | straw",
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.1600194275379181,
+  "mean": "#CC9F47",
+  "source": "textures/codex/b3/rcy_straw.png"
+ },
+ "RCY_Rope": {
+  "slot": "RCY | rope",
+  "tile": 0.4,
+  "metallic": 0.0,
+  "smoothness": 0.13999998569488525,
+  "mean": "#A07848",
+  "source": "textures/codex/b3/rcy_rope.png"
+ },
+ "RCY_Leather": {
+  "slot": "RCY | leather",
+  "tile": 0.6,
+  "metallic": 0.0,
+  "smoothness": 0.41999995708465576,
+  "mean": "#5A311D",
+  "source": "textures/codex/b3/rcy_leather.png"
+ },
+ "RCY_Velvet": {
+  "slot": "RCY | velvet",
+  "tile": 0.6,
+  "metallic": 0.0,
+  "smoothness": 0.25,
+  "mean": "#1F331B",
+  "source": "textures/codex/b3/rcy_velvet.png"
+ },
+ "RCY_Coat": {
+  "slot": "RCY | coat",
+  "tile": 0.6,
+  "metallic": 0.0,
+  "smoothness": 0.3499999940395355,
+  "mean": "#BBBBBA",
+  "source": "textures/codex/b3/rcy_horse_coat.png"
+ },
+ "RCY_Hair": {
+  "slot": "RCY | hair",
+  "tile": 0.6,
+  "metallic": 0.0,
+  "smoothness": 0.30000001192092896,
+  "mean": "#929292",
+  "source": "textures/codex/b3/rcy_horse_mane.png"
+ },
+ "RCY_Hoof": {
+  "slot": "RCY | hoof",
+  "tile": 0.3,
+  "metallic": 0.0,
+  "smoothness": 0.5,
+  "mean": "#3E332C",
+  "source": "textures/codex/b3/rcy_hoof.png"
+ },
+ "RCY_Plume": {
+  "slot": "RCY | plume",
+  "tile": 0.4,
+  "metallic": 0.0,
+  "smoothness": 0.20000001788139343,
+  "mean": "#F1E5D1",
+  "source": "textures/codex/b3/rcy_plume.png"
+ }
+}

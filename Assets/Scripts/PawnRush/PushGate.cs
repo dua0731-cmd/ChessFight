@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     // ease-out swing opened a pawn-wide slot after ~0.45 s of one pusher), and the leaves never stop dead at speed with
     // hands on them. However many push, the gate goes at most maxCrowd times one pusher's speed: the leaves' rings stay
     // under a run (~2.5 m/s). Fully open they stay open for everyone, for good. A bar over the gate shows how far it is.
-    public sealed class PushGate : MonoBehaviour, ISectionNetPart
+    public sealed partial class PushGate : MonoBehaviour, ISectionNetPart
     {
         [Tooltip("Width of the opening, both leaves together (m)")]
         [SerializeField] float openingWidth = 8f;

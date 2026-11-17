@@ -216,26 +216,34 @@ namespace ChessFight.PawnRush
                     YardKit.Cylinder(s, "Walkway post", new Vector3(x, (bed - .35f) * .5f, z), Vector3.up, .25f, -.35f - bed, YardKit.WoodDark, Solid.None);
         }
 
-        // The wooden flume that feeds the wheel from above (as in the photo): a trough from over the wheel's top to a
-        // cistern on two trestles standing in the water between the walkways, water pouring from its mouth onto the
-        // wheel and spilling down the side the wheel turns down. Pictures, but for the trestles.
+        // R686 (승규 11-17 "떨어지는 물도 뒤에 있는 게 아니라 사진에서 왼쪽에 있고", the concept U2): the flume comes in from the
+        // west (the left, walking north) across the wheel's plane, over its top to a mouth just short of the top, its
+        // cistern and two trestles standing in the water west of the west walkway, clear of the wheel (whose model is
+        // 9.3 m round). It ran along z from behind the wheel before. FlumeLift: the trough's floor over the wheel's top
+        // (0.35 before; the wheel's model grew 0.3 m round). Water.cs pours from the same mouth.
+        public const float FlumeMouthX = -.5f, FlumeStartX = -13.6f, FlumeLift = .65f;
+        static readonly float[] FlumeTrestleX = { -10.6f, -13.3f };
+
+        // The wooden flume that feeds the wheel from above (as in the photo): a trough from a cistern on two trestles
+        // west of the walkways to over the wheel's top, water pouring from its mouth onto the wheel and spilling down
+        // the side the wheel turns down. Pictures, but for the trestles.
         void Flume(Transform s, float axle, float radius, float bed)
         {
-            float y = axle + radius + .35f, z0 = WheelZ - .3f, z1 = WalkZ1 - 1f;
-            YardKit.Span(s, "Flume", new Vector3(-.8f, y, z0), new Vector3(.8f, y + .2f, z1), YardKit.WoodDark, Solid.None);
-            foreach (float x in new[] { -.8f, .7f })
-                YardKit.Span(s, "Flume side", new Vector3(x, y + .2f, z0), new Vector3(x + .1f, y + .7f, z1), YardKit.WoodDark, Solid.None);
-            YardKit.Picture(s, "Flume water", new Vector3(-.7f, y + .2f, z0), new Vector3(.7f, y + .5f, z1), YardKit.Water);
-            YardKit.Span(s, "Cistern", new Vector3(-1.2f, y - .2f, z1 - .6f), new Vector3(1.2f, y + 1.4f, z1 + .8f), YardKit.WoodDark, Solid.None);
-            YardKit.Picture(s, "Cistern band", new Vector3(-1.25f, y + .9f, z1 - .65f), new Vector3(1.25f, y + 1.05f, z1 + .85f), YardKit.Iron);
-            foreach (float z in new[] { WheelZ + 4f, z1 })
+            float y = axle + radius + FlumeLift, x0 = FlumeStartX, x1 = FlumeMouthX, z = WheelZ;
+            YardKit.Span(s, "Flume", new Vector3(x0, y, z - .8f), new Vector3(x1, y + .2f, z + .8f), YardKit.WoodDark, Solid.None);
+            foreach (float d in new[] { -.8f, .7f })
+                YardKit.Span(s, "Flume side", new Vector3(x0, y + .2f, z + d), new Vector3(x1, y + .7f, z + d + .1f), YardKit.WoodDark, Solid.None);
+            YardKit.Picture(s, "Flume water", new Vector3(x0, y + .2f, z - .7f), new Vector3(x1, y + .5f, z + .7f), YardKit.Water);
+            YardKit.Span(s, "Cistern", new Vector3(x0 - 1.4f, y - .2f, z - 1.2f), new Vector3(x0 + .6f, y + 1.4f, z + 1.2f), YardKit.WoodDark, Solid.None);
+            YardKit.Picture(s, "Cistern band", new Vector3(x0 - 1.45f, y + .9f, z - 1.25f), new Vector3(x0 + .65f, y + 1.05f, z + 1.25f), YardKit.Iron);
+            foreach (float x in FlumeTrestleX)
             {
-                foreach (float x in new[] { -.6f, .6f })
-                    YardKit.Span(s, "Trestle post", new Vector3(x - .15f, bed, z - .15f), new Vector3(x + .15f, y - .2f, z + .15f), YardKit.WoodDark, Solid.NoClimb);
-                YardKit.Span(s, "Trestle beam", new Vector3(-.9f, y - .45f, z - .18f), new Vector3(.9f, y - .2f, z + .18f), YardKit.WoodDark, Solid.None);
+                foreach (float d in new[] { -.6f, .6f })
+                    YardKit.Span(s, "Trestle post", new Vector3(x - .15f, bed, z + d - .15f), new Vector3(x + .15f, y - .2f, z + d + .15f), YardKit.WoodDark, Solid.NoClimb);
+                YardKit.Span(s, "Trestle beam", new Vector3(x - .18f, y - .45f, z - .9f), new Vector3(x + .18f, y - .2f, z + .9f), YardKit.WoodDark, Solid.None);
             }
             // The pour from the flume's mouth onto the top of the wheel, and the spill down its falling side.
-            var pour = YardKit.Picture(s, "Pour", new Vector3(-.6f, axle + radius - .2f, z0 - .06f), new Vector3(.6f, y + .3f, z0 - .02f), YardKit.Waterfall);
+            var pour = YardKit.Picture(s, "Pour", new Vector3(x1 + .02f, axle + radius - .2f, z - .6f), new Vector3(x1 + .06f, y + .3f, z + .6f), YardKit.Waterfall);
             pour.AddComponent<WaterfallFlow>();
             float fall = crossing.clockwise ? 1f : -1f;
             var spill = YardKit.Picture(s, "Spill", new Vector3(Mathf.Min(fall * (radius - .9f), fall * (radius + .1f)), CanalWater, WheelZ - HorizontalWaterwheel.DefaultDepth * .5f - .14f),
@@ -310,6 +318,13 @@ namespace ChessFight.PawnRush
         // over it lowering a net of sacks, banners on the cliff. Pictures only, but the crane's post (on the platform, never
         // climbed): the barge's near side is 5 m and more out from the basin's edge, out of any jump's or dive's reach, so
         // nothing here is a way up or a place to be stuck.
+        // R685: an invisible solid box over a picture (stood on, walked into, not climbed past its top).
+        static void DockBlock(Transform s, string name, Vector3 min, Vector3 max)
+        {
+            var box = YardKit.Span(s, name, min, max, YardKit.WoodDark, Solid.Solid);
+            box.GetComponent<Renderer>().enabled = false;
+        }
+
         void BasinDock(Transform parent, float side)
         {
             var s = Group(side < 0f ? "Basin dock W" : "Basin dock E", parent);
@@ -353,6 +368,21 @@ namespace ChessFight.PawnRush
                 YardKit.Cylinder(s, "Barge barrel", new Vector3(cx + side * 1.9f, deck + .55f, mid + dz), Vector3.up, .8f, 1.1f, YardKit.WoodDark, Solid.None);
             YardKit.Picture(s, "Barge cloth", new Vector3(cx + side * 3.1f - .7f, deck, mid - .9f), new Vector3(cx + side * 3.1f + .7f, deck + 1.3f, mid + .9f), YardKit.Banner);
             YardKit.Picture(s, "Cloth stripe", new Vector3(cx + side * 3.1f - .12f, deck, mid - .92f), new Vector3(cx + side * 3.1f + .12f, deck + 1.32f, mid + .92f), YardKit.Gold);
+            // R685 (승규 11-17 "여기 충돌 오브젝트가 없어서 그냥 통과돼"): pawns do get onto the barge, and it and its load were
+            // pictures only, so they sank through. Invisible boxes where the pictures (and the model over them) stand: the hull
+            // to the deck, the two rails, each crate, the top crate, the barrels (boxes round them) and the load under cloth.
+            DockBlock(s, "Barge (collider)", new Vector3(bx0, water - .5f, z0), new Vector3(bx1, deck, z1));
+            DockBlock(s, "Barge rail (collider)", new Vector3(bx0 + .4f, deck, z0), new Vector3(bx1 - .4f, deck + .36f, z0 + .12f));
+            DockBlock(s, "Barge rail (collider)", new Vector3(bx0 + .4f, deck, z1 - .12f), new Vector3(bx1 - .4f, deck + .3f, z1));
+            for (int i = 0; i < 3; i++)
+            {
+                float lx = cx - side * (2.6f - i * 1.5f);
+                DockBlock(s, "Barge crate (collider)", new Vector3(lx - .6f, deck, mid - .6f), new Vector3(lx + .6f, deck + 1.2f, mid + .6f));
+            }
+            DockBlock(s, "Barge crate (collider)", new Vector3(cx - side * 2.1f - .45f, deck + 1.2f, mid - .45f), new Vector3(cx - side * 2.1f + .45f, deck + 2.1f, mid + .45f));
+            foreach (float dz in new[] { -.8f, .8f })
+                DockBlock(s, "Barge barrel (collider)", new Vector3(cx + side * 1.9f - .4f, deck, mid + dz - .4f), new Vector3(cx + side * 1.9f + .4f, deck + 1.1f, mid + dz + .4f));
+            DockBlock(s, "Barge cloth (collider)", new Vector3(cx + side * 3.1f - .7f, deck, mid - .9f), new Vector3(cx + side * 3.1f + .7f, deck + 1.3f, mid + .9f));
             // Mooring ropes to rings on the cliff.
             foreach (float rx in new[] { bx0 + 1f, bx1 - 1f })
             {
@@ -370,9 +400,7 @@ namespace ChessFight.PawnRush
             YardKit.Picture(s, "Jib rope", new Vector3(jx - .04f, deck + 3.2f, CliffZ - 4.74f), new Vector3(jx + .04f, Top + 4.42f, CliffZ - 4.66f), YardKit.WoodDark);
             var net = YardKit.Ball(s, "Sack net", new Vector3(jx, deck + 2.7f, CliffZ - 4.7f), 1f, Arena.Lit("M_YardSack", Arena.Hex("#CDB48A"), 0f, .95f), Solid.None);
             net.transform.localScale = new Vector3(1.3f, 1.1f, 1.3f);
-            // Banners on the cliff over the sluice.
-            BannerOn(s, new Vector3(cx - 4.4f, 7.6f, CliffZ - .02f), 180f);
-            BannerOn(s, new Vector3(cx + 4.4f, 7.6f, CliffZ - .02f), 180f);
+            // R682: the two blue banners on the cliff over the sluice are gone (승규 11-16 "파란색 깃발 다 지워").
         }
 
         // ------------------------------------------------------------------ 4. the platform and the final gate (own frame)

@@ -87,6 +87,13 @@ namespace ChessFight.PawnRush
                  + "sweeping into the legs tips the character over itself and passes on, instead of driving it ahead to hit it "
                  + "again; staggers keep the usual push")]
         public float downPush = -1f;
+        [Tooltip("R684: a knockdown's push goes against the part's motion (with downPush): the part sweeps the legs, the body "
+                 + "tips back over it and it passes on, instead of the body staying where it was hit while the part slides "
+                 + "through it (a timber load through a pawn's hips, 승규 11-16 \"폰이 뭔가 통과되는 느낌\")")]
+        public bool downBack;
+        [Tooltip("R684: seconds a knocked-down character still collides with the part before it is let through (0: at once). "
+                 + "The part's own body trips it for real; only one it is still against then is let through")]
+        public float ghostDelay;
 
         IMovingSurface surface;
         IHitTurns turns;
@@ -94,6 +101,7 @@ namespace ChessFight.PawnRush
         readonly Dictionary<ICharacterDriver, Hit> lastHit = new Dictionary<ICharacterDriver, Hit>();
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Due> due = new List<Due>();
+        readonly List<Waiting> waiting = new List<Waiting>();
 
         struct Hit
         {
@@ -109,6 +117,14 @@ namespace ChessFight.PawnRush
             public IHitReceiver Receiver;
             public Vector3 Push;
             public float Down;
+        }
+
+        // R684: knocked down, to be let through after ghostDelay if still against the part.
+        struct Waiting
+        {
+            public ICharacterDriver Who;
+            public IHitReceiver Receiver;
+            public float Since;
         }
 
         // A character the solid box lets through for now, and since when (and when liftOut last lifted it).
@@ -135,6 +151,7 @@ namespace ChessFight.PawnRush
         {
             lastHit.Clear();
             due.Clear();
+            waiting.Clear();
             for (int i = ghosts.Count - 1; i >= 0; i--) Collide(ghosts[i], true);
             ghosts.Clear();
         }
@@ -157,6 +174,15 @@ namespace ChessFight.PawnRush
                 YardKit.ReportHit(d.Driver, this, push, d.Down);
             }
             due.Clear();
+            // R684 ghostDelay: knocked down a moment ago; let through now only if still against the part.
+            for (int i = waiting.Count - 1; i >= 0; i--)
+            {
+                var w = waiting[i];
+                if (w.Who is Object gone && gone == null) { waiting.RemoveAt(i); continue; }
+                if (Time.time - w.Since < ghostDelay) continue;
+                waiting.RemoveAt(i);
+                if (w.Who is Component owner && Overlaps(owner.GetComponentsInChildren<Collider>())) LetThrough(w.Who, w.Receiver);
+            }
             // The box takes a knocked-down character back once they no longer overlap (after 0.35 s), or after
             // ghostSeconds (0.6 s).
             for (int i = ghosts.Count - 1; i >= 0; i--)
@@ -243,6 +269,16 @@ namespace ChessFight.PawnRush
             return Physics.ComputePenetration(part, a.position, a.rotation, body, b.position, b.rotation, out _, out float depth) && depth > .02f;
         }
 
+        // R684: let through only after ghostDelay (once per knockdown; one already let through just starts again).
+        void Wait(ICharacterDriver driver, IHitReceiver receiver, float now)
+        {
+            for (int i = 0; i < ghosts.Count; i++)
+                if (ghosts[i].Who == driver) { LetThrough(driver, receiver); return; }
+            for (int i = 0; i < waiting.Count; i++)
+                if (waiting[i].Who == driver) return;
+            waiting.Add(new Waiting { Who = driver, Receiver = receiver, Since = now });
+        }
+
         // Knocked down again while still let through: the time starts again.
         void LetThrough(ICharacterDriver driver, IHitReceiver receiver)
         {
@@ -324,6 +360,7 @@ namespace ChessFight.PawnRush
 
             bool down = coming >= knockdownSpeed;
             float push = down && downPush >= 0f ? downPush : Mathf.Min(maxPush, knockbackForce + speed * speedScale);
+            if (down && downBack) direction = -direction;
             var change = direction * push;
             if (course != null)
             {
@@ -337,7 +374,8 @@ namespace ChessFight.PawnRush
             due.Add(new Due { Driver = driver, Receiver = hits, Push = change, Down = fresh ? knockdownSeconds : 0f });
             if (fresh) YardKit.MarkDown(driver);
             // Letting the knocked-down body through the box only changes which pairs collide: fine in a callback.
-            if (down) LetThrough(driver, hits);
+            if (down && ghostDelay > 0f) Wait(driver, hits, now);
+            else if (down) LetThrough(driver, hits);
             // A stagger leaves the turn for the knockdown that may follow (a pawn caught as the charge sets off).
             lastHit[driver] = new Hit { Time = now, Turn = down ? turn : double.NaN };
             Hits++;

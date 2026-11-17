@@ -13,8 +13,8 @@ namespace ChessFight.PawnRush
     // there, dropped, sitting on the floor, hoisted back up slowly - and the next trip carries it on from there. The
     // place is the trip hashed with the gantry's seed (CargoSlam.PlaceOf), the same on every PC.
     //
-    // Warned twice over: from the start of the carry a dim red circle on the floor shows where it is going and how far
-    // its shockwave will run; held over it, the circle burns bright and pulses until the drop. On landing the wave runs
+    // Warned twice over: from the start of the carry a faint shadow circle on the floor shows where it is going and how
+    // far its shockwave will run; held over it, the shadow deepens, darkest as it falls (R685; was red and pulsing). On landing the wave runs
     // out from the chest's edge to the circle's in WaveSeconds; whoever it reaches with a foot on the floor (their lowest
     // part within GroundTolerance of it: standing, running, lying) is knocked down and pushed straight out from the
     // chest, the part towards the race's way on cut to 60 % as every yard hit; whoever it reaches in the air - a jump
@@ -24,11 +24,13 @@ namespace ChessFight.PawnRush
     // crane's crate does (YardImpact, judged by the part it touches), and the knocked-down are let through the chest
     // until it is hoisted, so nobody is left under it. On the heavy berth (R661, CargoSlam.Lowered) the chest is never let
     // go: the chains stay on it as the winch lowers it, and it is set down hard, sits a long while and is taken on.
-    public sealed class SlamChest : Obstacle
+    public sealed partial class SlamChest : Obstacle
     {
         public enum Stage { Carried, Held, Falling, Down, Hoisted }
 
-        static readonly Color CircleColor = new Color(1f, .2f, .12f, 1f), WaveColor = new Color(1f, .86f, .62f, 1f);
+        // R685 (실사 예고): the circle is the chest's shadow on the floor, deepening as it is held over its place and falls;
+        // the wave's ring is a faint line of dust under the dust wall YardFx throws out (the ten round puffs are gone).
+        static readonly Color CircleColor = YardWarn.Stop, WaveColor = YardWarn.Dust;   // red as the lamps (승규 11-17)
         const int CircleSegments = 64;
 
         [SerializeField] CargoSlam slam;
@@ -123,7 +125,7 @@ namespace ChessFight.PawnRush
             waveMaterial = new Material(Arena.Glow(WaveColor)) { name = "M_YardSlamWave" };
             wave = Circle(c, "Slam wave", waveMaterial, .6f);
             dustMaterial = new Material(Arena.Glow(new Color(.86f, .76f, .58f, .7f))) { name = "M_YardSlamDust" };
-            dust = new Transform[10];
+            dust = new Transform[0];   // R685: real dust from YardFx instead of ten round puffs
             for (int i = 0; i < dust.Length; i++)
             {
                 var puff = YardKit.Ball(c, "Slam dust", Vector3.zero, 1f, dustMaterial, Solid.None);
@@ -142,6 +144,7 @@ namespace ChessFight.PawnRush
             thud.maxDistance = 60f;
             thud.dopplerLevel = 0f;
             SectionSoundGate.Gate(thud);
+            ChestSounds();   // 2026-11-17: the recorded thud, wave and chains (SlamChest.Sound.cs)
         }
 
         static LineRenderer Circle(Transform parent, string name, Material material, float width)
@@ -398,12 +401,12 @@ namespace ChessFight.PawnRush
             {
                 area.localPosition = new Vector3(target, .03f, 0f);
                 Ring(rim, new Vector3(target, .05f, 0f), radius - .18f);
-                float pulse = .5f + .5f * (float)Math.Sin(ObstacleClock.Now * 12.0 % (2.0 * Math.PI));
+                // Faint while it is carried there, darker held over it, darkest as it falls (no flashing).
                 var fill = CircleColor;
-                fill.a = stage == Stage.Carried ? .1f : .22f + .14f * pulse;
+                fill.a = stage == Stage.Carried ? .1f : stage == Stage.Held ? .28f : .42f;
                 areaMaterial.color = fill;
                 var edge = CircleColor;
-                edge.a = stage == Stage.Carried ? .35f : .7f + .3f * pulse;
+                edge.a = stage == Stage.Carried ? .18f : stage == Stage.Held ? .4f : .55f;
                 rimMaterial.color = edge;
             }
 
@@ -416,7 +419,7 @@ namespace ChessFight.PawnRush
                 float u = Mathf.Clamp01(since / slam.WaveSeconds);
                 Ring(wave, new Vector3(target, .08f, 0f), Mathf.Lerp(Mathf.Max(size.x, size.z) * .5f, radius, u));
                 var c = WaveColor;
-                c.a = since < slam.WaveSeconds ? .9f : .9f * (1f - (since - slam.WaveSeconds) / .35f);
+                c.a = since < slam.WaveSeconds ? .45f : .45f * (1f - (since - slam.WaveSeconds) / .35f);
                 waveMaterial.color = c;
             }
             float puffs = since >= 0f && since < 1.4f ? since / 1.4f : -1f;
@@ -439,9 +442,13 @@ namespace ChessFight.PawnRush
             if (since >= 0f && since < .2f && trip != thudTrip)
             {
                 thudTrip = trip;
-                thud.volume = 1f;   // R654: the effects volume is the gate's (SectionSoundGate)
-                thud.PlayOneShot(thud.clip, 1f);
+                if (!Landed(trip))   // 2026-11-17: the recorded thud and wave; the code-made thud only without them
+                {
+                    thud.volume = 1f;   // R654: the effects volume is the gate's (SectionSoundGate)
+                    thud.PlayOneShot(thud.clip, 1f);
+                }
             }
+            Chains(trip, into);   // 2026-11-17 (SlamChest.Sound.cs)
         }
 
         static AudioClip thudClip;

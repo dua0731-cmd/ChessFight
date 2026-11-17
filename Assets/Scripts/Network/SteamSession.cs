@@ -163,7 +163,12 @@ namespace ChessFight.Network
         // v53 (R697): a Pawn Rush room a player made starts with its spectators' seats taken and its spectators go
         //      into the match - the host sends them its snapshots, state and skills. A v52 host would not start such a
         //      room, and a v52 spectator would stay behind in it.
-        public const string Protocol = "chessfight.dua0731.network.v53";
+        // v54 (seoungtest R677-R686 merged): the Royal Carriage Yard as the seoungtest branch left it - its teams turn
+        //      about their coach's rear axle (RoamingFleet pivots, the pair walking round it on the swung-out forecarriage)
+        //      with the yard's seeds vetted again, the slewing cranes' loads trip a pawn before letting it through
+        //      (YardImpact), and the course obstacles' hit sounds ride the effect stream as the last SkillFxKind
+        //      (CourseHit). The wire is the same, but a v53 PC would draw the teams on other paths than a v54 host's.
+        public const string Protocol = "chessfight.dua0731.network.v54";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

@@ -20,15 +20,16 @@ namespace ChessFight.PawnRush
     // it knocks down it lets through until clear (its roof as well, YardImpact.alsoSolid), so it never bulldozes anyone
     // lying. Its top is a ridge (faces steeper than anyone stands on), so nobody rides it across the field.
     //
-    // Warned three ways: the lamp at the jib's end shows green while the load rests and flashes red from WarnSeconds before
-    // it lifts until it is set down; a bell strikes three times in the last second before a lift; and a red sector on the
-    // floor shows where the load will be in the next second (pulsing over the first second of the coming slew while it
+    // Warned three ways: the lantern at the jib's end shows green glass while the load rests and red from WarnSeconds
+    // before it lifts until it is set down (a flame's flicker, R685); a bell strikes three times in the last second before
+    // a lift; and the load's shadow (R685; was a red sector) on the
+    // floor shows where the load will be in the next second (deepening over the first second of the coming slew while it
     // still rests). The motion is SortingYardRules.Heading, a pure function of ObstacleClock - the same on every PC without
     // a packet, and checked by the Core tests (the yard's two cranes never meet, keep clear of everything round them).
     //
     // This object is the drum's middle on the floor. Headings are degrees of Unity yaw in this object's frame: 0 points the
     // jib along local +x, -90 along local +z. Built from code on an inactive object: Configure, then switch it on.
-    public sealed class SlewCrane : MonoBehaviour
+    public sealed partial class SlewCrane : MonoBehaviour
     {
         [Header("Crane")]
         [SerializeField] float drumRadius = 1.2f;
@@ -53,7 +54,7 @@ namespace ChessFight.PawnRush
         [SerializeField] float slewSeconds = 6f;
         [Tooltip("Seconds a slew takes to reach its full turning speed, and to stop")]
         [SerializeField] float rampSeconds = 1f;
-        [Tooltip("The lamp flashes red, the bell strikes and the floor shows the coming slew from this long before the load lifts (s)")]
+        [Tooltip("The lantern turns red, the bell strikes and the load's shadow shows the coming slew from this long before the load lifts (s)")]
         [SerializeField] float warnSeconds = 1f;
         [SerializeField] float phase;
         [Header("Hit")]
@@ -89,7 +90,9 @@ namespace ChessFight.PawnRush
         int struck;
         bool built;
 
-        static readonly Color Rest = new Color(.35f, 1f, .45f, 1f), Moving = new Color(1f, .22f, .14f, 1f);
+        // R685 (실사 예고): a coloured-glass lantern with a flame's flicker; the floor sector is the load's shadow sweeping
+        // ahead of it, deepening before a lift, and the reach a worn sand line (was neon red, flashing, and an amber glow).
+        static readonly Color Rest = YardWarn.Go, Moving = YardWarn.Stop;
 
         public float InnerRadius => innerRadius;
         public float OuterRadius => outerRadius;
@@ -255,7 +258,7 @@ namespace ChessFight.PawnRush
             jib.Configure(this);
 
             // How far the load reaches: a dim arc on the floor over the sweep, and the rest chocks it is set down on.
-            reachMaterial = new Material(Arena.Glow(new Color(1f, .78f, .3f, .35f))) { name = "M_YardSlewReach" };
+            reachMaterial = new Material(Arena.Glow(YardWarn.With(YardWarn.Sand, .3f))) { name = "M_YardSlewReach" };
             reach = Arc(transform, "Slew reach", reachMaterial, .12f);
             DrawArc(reach, outerRadius + .05f);
             foreach (float heading in turnOn ? new[] { headingA, headingA + 180f } : new[] { headingA, headingB })
@@ -268,8 +271,8 @@ namespace ChessFight.PawnRush
                     YardKit.Box(transform, "Rest chock", d * r + Vector3.up * .06f, new Vector3(.25f, .1f, loadSection.x + .3f), YardKit.Iron, Solid.None, rot);
             }
 
-            // The red sector over the next second of the load's way (a mesh rebuilt each frame).
-            sectorMaterial = new Material(Arena.Glow(new Color(1f, .2f, .12f, .4f))) { name = "M_YardSlewSector" };
+            // The load's shadow over the next second of its way (a mesh rebuilt each frame).
+            sectorMaterial = new Material(Arena.Glow(YardWarn.With(YardWarn.Stop, .4f))) { name = "M_YardSlewSector" };
             var sector = new GameObject("Slew sector");
             sector.transform.SetParent(transform, false);
             sector.transform.localPosition = Vector3.up * .035f;
@@ -333,12 +336,11 @@ namespace ChessFight.PawnRush
             float heading = HeadingAt(now, out bool moving);
             float until = UntilLift(now);
             bool warn = moving || until < warnSeconds;
-            float pulse = .5f + .5f * (float)Math.Sin(now * 14.0 % (2.0 * Math.PI));
             if (lampMaterial != null)
             {
                 var c = warn ? Moving : Rest;
-                c.a = warn ? .6f + .4f * pulse : .9f;
-                lampMaterial.color = c;
+                float flame = YardWarn.Flicker(now, transform.position.x * .37f + transform.position.z * .11f);
+                lampMaterial.color = new Color(c.r * flame, c.g * flame, c.b * flame, .92f);
             }
 
             // The floor sector: while it moves, where the load will be in the next second; in the last WarnSeconds of a
@@ -351,7 +353,7 @@ namespace ChessFight.PawnRush
                 float a0 = moving ? heading : HeadingAt(from), a1 = HeadingAt(from + AheadSeconds);
                 DrawSector(a0, a1);
                 var s = sectorMaterial.color;
-                s.a = moving ? .4f : .2f + .25f * pulse;
+                s.a = moving ? .4f : .12f + .28f * YardWarn.Deepen(1f - until / warnSeconds);
                 sectorMaterial.color = s;
             }
 
@@ -371,6 +373,7 @@ namespace ChessFight.PawnRush
                     if (!late) bell.PlayOneShot(bell.clip, 1f);
                 }
             }
+            SlewSound(heading);   // 2026-11-17: the post and ropes groaning as it slews (SlewCrane.Sound.cs)
         }
 
         // An annulus sector from innerRadius to outerRadius between two headings, in this object's frame. The arrays are

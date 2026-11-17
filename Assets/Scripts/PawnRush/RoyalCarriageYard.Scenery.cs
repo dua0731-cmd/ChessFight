@@ -17,19 +17,8 @@ namespace ChessFight.PawnRush
             Merlons(s, YardHalf, 0f, CanalZ1, 5f);
             Merlons(own, -27f, ArenaStart, GateZ + 3f, Top + 3f);
             Merlons(own, 26f, ArenaStart, GateZ + 3f, Top + 3f);
-            // Banners: on the gate wall's yard face (where the carriages keep off), along the arena, on the final gate's
-            // wall. None on the yard's side walls: a charging carriage would run through them.
-            foreach (float x in new[] { -17f, -10f, 10f, 17f })
-                BannerOn(s, new Vector3(x, 5.6f, YardZ0 + .02f), 0f);
-            for (float z = ArenaStart + 6f; z < CliffZ - 3f; z += 12f)   // between the cranes' and gantries' posts in the walls
-            {
-                // R662: none where the heavy berth's gantry beam and rail run along the walls (the yard grew past it).
-                if (Mathf.Abs(z - BerthZ) < 3f) continue;
-                BannerOn(own, new Vector3(-25.9f, 9.5f, z), 90f);
-                BannerOn(own, new Vector3(25.9f, 9.5f, z), -90f);
-            }
-            foreach (float x in new[] { -18f, -12f, 12f, 18f })
-                BannerOn(own, new Vector3(x, Top + 9.5f, GateZ - 1.1f), 180f);
+            // R682: no blue banners anywhere in the yard (승규 11-16 "파란색 깃발 다 지워"). They hung on the gate wall's
+            // yard face, along the arena's walls and on the final gate's wall; BannerOn stays for a later colour.
             // Lamp posts on the canal's landings, at the arena's mouth, on the platform (none in the yard: the carriages).
             foreach (var at in new[] { new Vector3(-9f, 0f, CanalZ0 + 1f), new Vector3(9f, 0f, CanalZ0 + 1f),
                                        new Vector3(-9f, 0f, CanalZ1 - 1f), new Vector3(9f, 0f, CanalZ1 - 1f) })
@@ -81,6 +70,12 @@ namespace ChessFight.PawnRush
             YardKit.Cylinder(s, "Lamp post", at + Vector3.up * 1.6f, Vector3.up, .18f, 3.2f, YardKit.Iron, Solid.NoClimb);
             YardKit.Box(s, "Lamp", at + Vector3.up * 3.35f, new Vector3(.4f, .5f, .4f), YardKit.Lamp, Solid.None);
             YardKit.Cone(s, "Lamp cap", at + Vector3.up * 3.6f, .6f, .35f, YardKit.Iron);
+            // R684 (collider audit, 승규 "콜라이더 적용 안된 곳 있으면 해"): the model's lantern (sorting_model.lamp_post: a
+            // 0.5 m frame from 3.05 to 3.6 m, its roof 0.68 across up to 4.0) had nothing solid, and a pawn on the canal's
+            // and the platform's railings beside it put its head through. One box round frame and roof (the roof's eaves
+            // 9 cm out of it); its top, 3.95 m up, is out of a jump's reach even from those railings.
+            YardKit.Box(s, "Lantern (collider)", at + Vector3.up * 3.5f, new Vector3(.5f, .9f, .5f), null, Solid.NoClimb)
+                   .GetComponent<MeshRenderer>().enabled = false;
         }
 
         // A carriage left in the yard: the picture and its solid box, nothing that moves or hits.

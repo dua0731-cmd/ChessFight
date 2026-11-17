@@ -31,7 +31,8 @@ namespace ChessFight.PawnRush
         public static Material Banner => Arena.Lit("M_YardBanner", Arena.Hex("#24408F"), 0f, .85f);
         public static Material Hedge => Arena.Lit("M_YardHedge", Arena.Hex("#3E6A34"), 0f, .9f);
         public static Material Lamp => Arena.Emissive(Arena.Hex("#FFC86A"), 1.4f);
-        public static Material Warning => Arena.Emissive(Arena.Hex("#FF4A3A"), 1.6f);
+        // R685: a lantern behind red glass (a flame's orange-red, not a neon red).
+        public static Material Warning => Arena.Emissive(Arena.Hex("#F0602C"), 1.25f);
         public static Material CarriageGreen => Arena.Lit("M_CarriageGreen", Arena.Hex("#2E5D4B"), 0f, .35f);
         public static Material CarriageRed => Arena.Lit("M_CarriageRed", Arena.Hex("#7A2430"), 0f, .35f);
         public static Material CarriageBlue => Arena.Lit("M_CarriageBlue", Arena.Hex("#27407A"), 0f, .35f);

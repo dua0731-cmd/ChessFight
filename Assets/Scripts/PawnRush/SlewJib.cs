@@ -47,9 +47,9 @@ namespace ChessFight.PawnRush
             YardKit.Box(transform, "Jib brace", mid, new Vector3(.22f, (b - a).magnitude, .22f), YardKit.WoodDark, Solid.None,
                         Quaternion.FromToRotation(Vector3.up, (b - a).normalized));
             // The lamp at the jib's end: the crane colours it (green resting, red lifting and slewing).
-            var lampMaterial = new Material(Arena.Glow(new Color(.35f, 1f, .45f, .9f))) { name = "M_YardSlewLamp" };
-            var lamp = YardKit.Box(transform, "Jib lamp", new Vector3(r1 + .35f, jib - .35f, 0f), new Vector3(.36f, .36f, .36f), lampMaterial, Solid.None);
-            lamp.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            // R685 (승규 "신호등도 그래픽 더 좋게"): a lantern hung under the jib's end, its glass the crane's colour.
+            var lampMaterial = YardLantern.GlassMaterial("M_YardSlewLamp", YardWarn.Go);
+            var lamp = YardLantern.Build(transform, "Jib lamp", new Vector3(r1 + .35f, jib - .4f, 0f), .34f, lampMaterial);
             crane.SetLamp(lamp.transform, lampMaterial);
 
             // Two slings from the jib down to the load.
@@ -99,14 +99,24 @@ namespace ChessFight.PawnRush
             impact.speedScale = crane.SpeedScale;
             impact.maxPush = crane.MaxPush;
             impact.alongShare = crane.AlongShare;
-            impact.lift = 1.6f;
             impact.replaceSpeed = true;
             impact.minSpeed = .4f;
             impact.knockdownSpeed = crane.KnockdownSpeed;
             // A knockdown tips the pawn over the load (a push under the load's speed) and lets it through until the load
             // has passed on, so it is not driven ahead of the sweep and hit again; a stagger near the drum still sends
             // it on ahead of the slow load.
-            impact.downPush = crane.DownPush;
+            // R684 (승규 "여기 장애물 지나갈 때 폰이 뭔가 통과되는 느낌이야 수정 해"): let through at once with 1 m/s along
+            // the sweep and 1.6 up, a knocked-down pawn stayed where it was hit (0.3 m on) while the load slid through its
+            // hips - 17 .. 25 cm into it for 0.2 .. 0.3 s (a copy's Play test, pawns standing in both cranes' sweeps,
+            // four passes). Now the push goes back against the sweep (1.5 m/s at least) with 3.5 up, and for 0.3 s the
+            // load's own body trips the pawn: it is swept on about 2.5 m and falls over the timber, 7 cm into it at most
+            // and for no time, still hit once a pass. Only one the load still holds after that is let through (never
+            // pressed under a load that stops on it). Near the drum, where the load is slow and only staggers before it
+            // knocks down, it still overlaps about 0.4 s (0.55 before).
+            impact.lift = 3.5f;
+            impact.downPush = Mathf.Max(crane.DownPush, 1.5f);
+            impact.downBack = true;
+            impact.ghostDelay = .3f;
             impact.knockdownSeconds = 1f;
             impact.cooldown = .7f;
             // Long enough to cover a load that comes to rest over whoever it has just knocked down (the last second of a

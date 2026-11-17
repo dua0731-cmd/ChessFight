@@ -452,7 +452,8 @@ public static class NetworkCoreTests
                     // 이야기가 아니었어" - every body a carriage with its pair of horses.
                     Check(n == RoamingFleet.YardTeams && RoamingFleet.YardHorses == 0 && n >= 5, "horse-drawn carriages only: " + n);
                     for (int i = 0; i < n; i++)
-                        Check(fleet.Radius(i) > 3.6 && fleet.HalfTurn(i) == 3.4, "body " + i + " is a team (6.95 m long, a half turn in 3.4 s)");
+                        Check(fleet.Radius(i) > 3.6 && fleet.HalfTurn(i) == 3.4 && fleet.Pivot(i) == RoamingFleet.TeamPivot,
+                              "body " + i + " is a team (6.95 m long, a half turn in 3.4 s about its rear axle)");
                     Check(r.Timed, "kept apart in time");
                     var before = new RoamingFleet.Pose[n];
                     for (int i = 0; i < n; i++) before[i] = fleet.At(i, origin - 1);
@@ -481,7 +482,20 @@ public static class NetworkCoreTests
                             // At the half turn's peak the step is exactly the bound: a hair of slack for Unix time's rounding.
                             else Check(turned <= 180.0 * 1.5 / fleet.HalfTurn(i) * dt * 1.0001 + 1e-6, "turns smoothly");
                             if (p.Stage != RoamingFleet.Stage.Charging && b.Stage != RoamingFleet.Stage.Charging)
-                                Check(moved < 1e-9, "stands still off the charge");
+                            {
+                                // R686: turning round its turning point (on its rear axle's line, Side to its right), that point
+                                // stays put while the middle swings round it (on the spot, the middle itself); off the charge
+                                // and the turn it stands still.
+                                if (p.Stage == RoamingFleet.Stage.Turning || b.Stage == RoamingFleet.Stage.Turning)
+                                {
+                                    var tp = p.Stage == RoamingFleet.Stage.Turning ? p : b;
+                                    double pv = tp.Pivot, sd = tp.Side, ra = p.Yaw * Math.PI / 180, rb = b.Yaw * Math.PI / 180;
+                                    double ax = p.X + sd * Math.Cos(ra) - pv * Math.Sin(ra), az = p.Z - sd * Math.Sin(ra) - pv * Math.Cos(ra);
+                                    double bx = b.X + sd * Math.Cos(rb) - pv * Math.Sin(rb), bz = b.Z - sd * Math.Sin(rb) - pv * Math.Cos(rb);
+                                    Check(Math.Sqrt((ax - bx) * (ax - bx) + (az - bz) * (az - bz)) < 1e-6, "turns round its turning point at " + s.ToString("0.00"));
+                                }
+                                else Check(moved < 1e-9, "stands still off the charge and the turn");
+                            }
                             if (p.X < minX + 3) reached[i, 0] = true;
                             if (p.X > maxX - 3) reached[i, 1] = true;
                             if (p.Z < minZ + 3) reached[i, 2] = true;
@@ -499,7 +513,7 @@ public static class NetworkCoreTests
                         for (int e = 0; e < 4; e++)
                             Check(reached[i, e], "body " + i + " comes within 3 m of side " + e + " of its area: it roams the whole yard");
                     // Every leg is a real charge - a short dart when no full charge is free - or now and then a short wait.
-                    int charges = 0, darts = 0, waits = 0;
+                    int charges = 0, darts = 0, waits = 0, aboutAxle = 0, round = 0;
                     for (int i = 0; i < n; i++)
                         for (int k = 0; k < fleet.LegCount(i); k++)
                         {
@@ -509,11 +523,26 @@ public static class NetworkCoreTests
                             {
                                 charges++;
                                 if (d < r.MinCharge - 1e-6) darts++;
+                                if (l.Pivot > 0) aboutAxle++;
+                                if (l.Side != 0)
+                                {
+                                    round++;
+                                    // On the inside of the turn, one of the circles.
+                                    Check(Math.Sign(l.Side) == Math.Sign(RoamingFleet.Delta(l.HeadingFrom, l.Heading))
+                                          && Array.IndexOf(RoamingFleet.Circles, Math.Abs(l.Side)) >= 0, "turns round a circle on its inside");
+                                }
                                 Check(d >= r.ShortCharge - 1e-6 && d <= r.MaxCharge + 1e-6, "charge length " + d.ToString("0.0"));
+                                // R686: the charge runs straight the way the turn left it facing.
+                                double way = Math.Atan2(l.ToX - l.FromX, l.ToZ - l.FromZ) * 180 / Math.PI;
+                                Check(Math.Abs(RoamingFleet.Delta(way, l.Heading)) < 1e-4, "charges the way it faces");
                             }
                             else waits++;
                         }
                     Check(charges > 300 && waits * 25 < charges && darts * 5 < charges, "mostly full charges: " + charges + " charges (" + darts + " darts), " + waits + " waits");
+                    // R686: a team drives its turn round a circle, or turns about its rear axle, unless its swing would leave
+                    // the yard (then on the spot): two turns in three at least about the axle, half round a circle.
+                    Check(aboutAxle * 3 >= charges * 2 && round * 2 >= charges, "turns like a coach: " + round + " round a circle, "
+                          + aboutAxle + " about the axle, of " + charges);
                     // One plan however the clock moves on: in one jump instead of step by step.
                     var whole = YardFleet(origin, RoamingFleet.YardSeeds[0]);
                     whole.Advance(last);
@@ -586,17 +615,18 @@ public static class NetworkCoreTests
                 var q = YardFleet(3.0, 101).At(2, 3000.0);
                 Check(gap.StartTime == 3.0 && p.X == q.X && p.Z == q.Z && p.Yaw == q.Yaw, "a 50 minute gap is planned through"); });
             Test("Royal Carriage Yard roaming fleet: every vetted seed dances well, a match draws them all, a turn takes its share of a half turn", () => {
-                // Each seed's first leg end per body, as vetted (R659): a change to the yard's numbers lands here first.
+                // Each seed's first leg end per body, as vetted (R686, teams driving their turns round circles): a change to
+                // the yard's numbers lands here first.
                 var firstLegs = new Dictionary<uint, double[]>
                 {
-                    { 217, new[] { -13.085, 14.819, -0.445, 21.540, -14.231, 37.528, 13.918, 17.182, 7.353, 28.577 } },
-                    { 18, new[] { 1.636, 20.754, 5.477, 11.082, -9.744, 40.883, -4.270, 31.721, 4.028, 40.021 } },
-                    { 3, new[] { 1.162, 9.385, 9.216, 18.615, -9.606, 37.387, -5.582, 17.858, 14.465, 31.445 } },
-                    { 64, new[] { 1.603, 9.384, 0.091, 23.256, -13.427, 13.719, 14.002, 35.858, 8.656, 24.825 } },
-                    { 76, new[] { -2.728, 17.518, 1.129, 9.479, -14.390, 12.884, 10.909, 44.113, 1.608, 20.936 } },
-                    { 153, new[] { -2.307, 13.998, 6.219, 10.975, -13.518, 17.583, 12.673, 40.469, 1.840, 26.929 } },
-                    { 181, new[] { -1.181, 14.447, 10.295, 10.552, -9.526, 15.370, -6.434, 26.739, -14.345, 36.154 } },
-                    { 226, new[] { 0.650, 21.409, -11.497, 9.138, -8.318, 38.545, 8.730, 42.966, -1.951, 15.976 } },
+                    { 491, new[] { 0.463, 22.761, -12.404, 9.942, -11.869, 45.128, 11.539, 44.087, -4.231, 30.098 } },
+                    { 328, new[] { 1.028, 21.461, -7.089, 11.288, -13.748, 44.760, -3.445, 31.102, 9.693, 12.281 } },
+                    { 460, new[] { -1.715, 20.632, -10.571, 9.431, -12.452, 44.554, 12.809, 44.396, 4.910, 13.187 } },
+                    { 239, new[] { 0.089, 23.000, -4.549, 13.468, -11.329, 45.080, 8.344, 44.220, 8.782, 15.111 } },
+                    { 94, new[] { -0.661, 12.084, 0.856, 21.785, -10.366, 44.851, -5.769, 33.119, 9.581, 21.484 } },
+                    { 455, new[] { 1.980, 9.024, -4.000, 19.162, -12.767, 44.343, -3.592, 30.490, 14.029, 43.143 } },
+                    { 66, new[] { -1.370, 10.116, -1.255, 21.926, -12.452, 44.892, -9.114, 34.222, 14.240, 24.262 } },
+                    { 23, new[] { -1.489, 9.427, -10.628, 19.844, -11.849, 45.327, -4.800, 25.663, 12.684, 25.191 } },
                 };
                 Check(firstLegs.Count == RoamingFleet.YardSeeds.Length, "every listed seed is pinned");
                 foreach (uint seed in RoamingFleet.YardSeeds)
@@ -690,19 +720,24 @@ public static class NetworkCoreTests
                     };
                     int n = RoamingFleet.YardTeams, rows = (n + 1) / 2;
                     var speeds = new double[n]; var hx = new double[n]; var hz = new double[n]; var yaw = new double[n]; var radii = new double[n]; var turns = new double[n];
+                    var pivots = new double[n];
                     for (int i = 0; i < n; i++)
                     {
                         speeds[i] = 9.3f + .3f * i;
                         radii[i] = team;
                         turns[i] = 3.4f;
+                        pivots[i] = 6.95f * .5f - 4.2f * .5f + 1.3f;   // RoamingCarriage.PivotOf(Team), in floats
                         double side = n % 2 == 1 && i == n - 1 ? 0 : i % 2 == 0 ? -1 : 1;
                         hx[i] = (rules.MinX + rules.MaxX) * .5 + side * (rules.MaxX - rules.MinX) * .25;
                         hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / rows;
                         yaw[i] = side < 0 ? 90 : side > 0 ? -90 : 0;
                     }
-                    return new RoamingFleet(38, 3, speeds, hx, hz, yaw, rules, radii, turns);
+                    return new RoamingFleet(38, 3, speeds, hx, hz, yaw, rules, radii, turns, pivots);
                 };
                 Check(mapFleet(.8f).Matches(RoamingFleet.Yard(38, 3)) && RoamingFleet.Yard(41, 9).Matches(RoamingFleet.Yard(38, 3)), "the map's yard is the vetted one");
+                // R686: the same yard with its teams turning on the spot is another dance.
+                var spot = RoamingFleet.Yard(38, 3);
+                Check(spot.Pivot(0) == RoamingFleet.TeamPivot, "the vetted yard's teams turn about their rear axles");
                 Check(!mapFleet(.5f).Matches(RoamingFleet.Yard(38, 3)), "another area is not");
                 // Held (no start yet): every carriage at home, nothing planned, until a fleet with a start replaces it.
                 var held = new RoamingFleet(12, double.NaN, new double[] { 9, 9.3 }, new double[] { -5, 5 }, new double[] { 20, 30 }, new double[] { 90, -90 },
