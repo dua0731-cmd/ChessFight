@@ -168,6 +168,15 @@ namespace ChessFight.RagdollLab.Net
         SteamSession session;
         RagdollPawn prefab;
         OrbitCamera orbit;
+        // R697 (the user 2026-11-17: "3단계 진행"): a spectator - a room member in a spectator's seat, not on the
+        // roster. It has no pawn: the host sends it what the players get, it answers with what it has heard (so the
+        // skills' moments reach it once), and its camera follows a player it picks (left / right or A / D).
+        sealed class Watcher { public ushort EventAck; public bool AckSet; }
+        readonly Dictionary<ulong, Watcher> watchers = new Dictionary<ulong, Watcher>();
+        readonly List<Runner> watchOrder = new List<Runner>();
+        ulong watchId;
+        GUIStyle watchText;
+        bool Spectating => !session.Roster.ContainsKey(session.Self);
         IMoveInputSource controls;
         Material white, black;
         bool authority;
@@ -643,7 +652,9 @@ namespace ChessFight.RagdollLab.Net
             ArmStartBar();
             ArmMatchStart();
             // R514: shown from the shared start on (before it the loading screen is up), until the race is decided.
-            if (staminaBar != null) staminaBar.enabled = Started() && !ended;
+            if (staminaBar != null) staminaBar.enabled = Started() && !ended && !Spectating;
+            // R697: a spectator's camera.
+            if (Spectating) Watch();
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
             // A client's skill timers run before this frame's packets overwrite them.
@@ -652,6 +663,8 @@ namespace ChessFight.RagdollLab.Net
                     if (r.Pawn != null && r.Pawn.NetworkPuppet) r.Pawn.AdvanceSkillView(Time.unscaledDeltaTime);
             ReceiveOnce();
             var local = ReadLocalInput();
+            // R697: a spectator plays nothing - its packets only confirm what it has heard.
+            if (Spectating) local = default;
             float now = Time.realtimeSinceStartup;
             // R525 (user 11-09: "미니게임 즉시 클리어 치트 필요"): a development build's F6 finishes this player's team's next
             // mini-game - on the host at once, from a client through the host (only the host judges the mini-games).
@@ -846,7 +859,51 @@ namespace ChessFight.RagdollLab.Net
             r.Driver.Teleport(r.RespawnAt, r.RespawnRotation);   // marks the next snapshot as a jump cut
             var drop = r.Pawn.GetComponentInChildren<FallDistanceRespawn>();
             if (drop != null) drop.Forget();
-            if (r.Id == session.Self && orbit != null) orbit.Cut();
+            if ((r.Id == session.Self || (Spectating && r.Id == watchId)) && orbit != null) orbit.Cut();
+        }
+
+        // ------------------------------------------------------------------ a spectator (R697)
+
+        // The camera follows one of the players: the first of white's to begin with, the next or the one before on
+        // right / left (or D / A), in the order white's seats then black's. A player that leaves passes it on.
+        void Watch()
+        {
+            if (orbit == null) return;
+            watchOrder.Clear();
+            foreach (var r in runners.Values) if (r.Pawn != null && r.Driver != null) watchOrder.Add(r);
+            if (watchOrder.Count == 0) return;
+            watchOrder.Sort((a, b) => a.Team != b.Team ? a.Team.CompareTo(b.Team) : a.Slot.CompareTo(b.Slot));
+            int at = watchOrder.FindIndex(r => r.Id == watchId);
+            int step = 0;
+            if (!ChatBox.KeysHeld && !GameMenu.IsOpen)
+            {
+                if (LegacyKeys.Down(KeyCode.RightArrow) || LegacyKeys.Down(KeyCode.D)) step = 1;
+                else if (LegacyKeys.Down(KeyCode.LeftArrow) || LegacyKeys.Down(KeyCode.A)) step = -1;
+            }
+            int next = at < 0 ? 0 : (at + step + watchOrder.Count) % watchOrder.Count;
+            if (next == at) return;
+            var to = watchOrder[next];
+            watchId = to.Id;
+            orbit.Follow(to.Driver.FollowTarget, to.Pawn.transform, to.Pawn.transform.forward);
+            orbit.Cut();
+        }
+
+        void OnGUI()
+        {
+            if (session == null || !session.Started || session.Match == 0 || !Spectating || ended || !Started() || LoadingScreenView.Showing) return;
+            if (!runners.TryGetValue(watchId, out var r) || r.Pawn == null) return;
+            float unit = Screen.height / 1080f;
+            if (watchText == null) watchText = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, alignment = TextAnchor.MiddleCenter, richText = false, wordWrap = false };
+            watchText.fontSize = Mathf.Max(11, Mathf.RoundToInt(22f * unit));
+            watchText.fontStyle = FontStyle.Bold;
+            string line = $"관전 중 · {r.Pawn.DisplayName} ({(r.Team == Teams.White ? "백팀" : "흑팀")}) · ◀ A / D ▶ 보는 사람 바꾸기";
+            var box = new Rect(Screen.width * .5f - 420f * unit, Screen.height - 96f * unit, 840f * unit, 44f * unit);
+            var was = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, .55f);
+            GUI.DrawTexture(box, Texture2D.whiteTexture);
+            GUI.color = new Color(1f, .96f, .86f, 1f);
+            GUI.Label(box, line, watchText);
+            GUI.color = was;
         }
 
         // ------------------------------------------------------------------ the race's end
@@ -901,6 +958,7 @@ namespace ChessFight.RagdollLab.Net
             snapshotsOut++;
             int receivers = 0;
             foreach (var id in session.Roster.Keys) if (Send(id, bytes, false)) receivers++;
+            foreach (var id in session.Spectators) if (Send(id, bytes, false)) receivers++;
             snapshotReceivers = receivers;
             SendSkills(stamp);
             // The course state 30 times a second whatever the snapshots' rate (R306 [5]): its stations and pads change
@@ -943,6 +1001,16 @@ namespace ChessFight.RagdollLab.Net
                 skillOut.Events.Clear();
                 skillOut.Events.AddRange(eventBatch);
                 Send(r.Id, RagdollNetProtocol.Skills(session.Match, skillOut), false);
+            }
+            // R697: and to each spectator, from the moment it last confirmed.
+            foreach (var id in session.Spectators)
+            {
+                if (!watchers.TryGetValue(id, out var w)) watchers[id] = w = new Watcher();
+                ushort acked = w.AckSet ? w.EventAck : unchecked((ushort)(eventLog.First - 1));
+                eventLog.After(acked, fit, eventBatch);
+                skillOut.Events.Clear();
+                skillOut.Events.AddRange(eventBatch);
+                Send(id, RagdollNetProtocol.Skills(session.Match, skillOut), false);
             }
         }
 
@@ -999,6 +1067,7 @@ namespace ChessFight.RagdollLab.Net
             WriteSeats(reliable);
             byte[] bytes = state.Write(session.Match);
             foreach (var id in session.Roster.Keys) Send(id, bytes, reliable);
+            foreach (var id in session.Spectators) Send(id, bytes, reliable);
         }
 
         // R538: each seat's checkpoint and piece into this state - the players in the match and those away - when
@@ -1153,7 +1222,16 @@ namespace ChessFight.RagdollLab.Net
         // arrivedAt: when Steam received it, on Time.realtimeSinceStartupAsDouble's clock (R306 [0]).
         void ReceiveInput(ulong id, byte[] bytes, double arrivedAt)
         {
-            if (!runners.TryGetValue(id, out var r)) return;
+            if (!runners.TryGetValue(id, out var r))
+            {
+                // R697: a spectator's packet carries only what it has heard of the skills' moments.
+                if (session.IsSpectator(id) && RagdollNetProtocol.ReadLabInput(bytes, session.Match, out _, out _, out var heard))
+                {
+                    if (!watchers.TryGetValue(id, out var w)) watchers[id] = w = new Watcher();
+                    SkillWire.TakeAck(heard.eventAck, ref w.EventAck, ref w.AckSet);
+                }
+                return;
+            }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevClear) { ReceiveDevClear(r, bytes); return; }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevFly) { ReceiveDevFly(r, bytes); return; }
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;

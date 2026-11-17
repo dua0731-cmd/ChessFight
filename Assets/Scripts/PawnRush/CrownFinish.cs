@@ -248,7 +248,8 @@ namespace ChessFight.PawnRush
             if (Winner == PawnRushFinish.None || shown || Time.time - decidedAt < BannerSeconds) return;
             shown = true;
             var self = Self;
-            int team = self != null ? self.Team : Teams.White;
+            // R697: a spectator (no pawn of its own here) is shown the winners' side of the result.
+            int team = self != null ? self.Team : Winner == Teams.Black ? Teams.Black : Teams.White;
             try { PawnRushResultFlow.Show(Result(), team); }
             catch (Exception e)
             {

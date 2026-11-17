@@ -160,7 +160,10 @@ namespace ChessFight.Network
         // v52 (R694): a room a player made has four spectators' seats (sixteen in the room, room data "spec"), players
         //      change sides (asks "seat" and "move"), and a party that fits no side is seated apart. A v51 host knows
         //      none of it; a v51 player moved to a spectator's seat would think its seat lost.
-        public const string Protocol = "chessfight.dua0731.network.v52";
+        // v53 (R697): a Pawn Rush room a player made starts with its spectators' seats taken and its spectators go
+        //      into the match - the host sends them its snapshots, state and skills. A v52 host would not start such a
+        //      room, and a v52 spectator would stay behind in it.
+        public const string Protocol = "chessfight.dua0731.network.v53";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -224,7 +227,7 @@ namespace ChessFight.Network
         // R644: the waiting room's host number (every change of its host raises it), for tests and the log.
         public int WaitingEpoch => wepoch;
         bool HostCanStart => RunsRoom && reservations.Groups.All(g => g.Committed) && SeatingJoiners == 0 &&
-            (privateRoom ? Roster.Count >= 2 && spectators.Count == 0 : reservations.Ready || CanStartEarly);
+            (privateRoom ? Roster.Count >= 2 && (spectators.Count == 0 || SpectatingAllowed) : reservations.Ready || CanStartEarly);
         // What every PC can see of a waiting room: the seats reserved a team (free0 / free1) and who has arrived (the
         // roster lists only those). Ready when everyone reserved is in and the sizes allow a start.
         bool SeesRoomReady
@@ -235,7 +238,7 @@ namespace ChessFight.Network
                 int used0 = TeamCount(0), used1 = TeamCount(1);
                 int in0 = Roster.Values.Count(p => p.Team == 0), in1 = Roster.Count - in0;
                 if (in0 != used0 || in1 != used1 || SeatingJoiners > 0) return false;
-                return privateRoom ? Roster.Count >= 2 && Spectators.Count == 0
+                return privateRoom ? Roster.Count >= 2 && (Spectators.Count == 0 || SpectatingAllowed)
                      : used0 + used1 == 12 || (EarlyStartMode && used0 >= MinTeamToStart && used0 == used1);
             }
         }
@@ -279,7 +282,12 @@ namespace ChessFight.Network
         float partyRetryAt = -1, partyRetryWait = PartyRetryFirst;
         readonly List<ulong> spectators = new List<ulong>();
         readonly Dictionary<ulong, float> spectatorSince = new Dictionary<ulong, float>();
-        public IReadOnlyList<ulong> Spectators => Match == 0 || Started ? NoSpectators : HoldsBooks ? spectators : SpectatorIds(Match);
+        // R697: from the start on the room's word is the list (the host only strikes those who leave), so a PC that
+        // takes the match over needs no book of its own.
+        public IReadOnlyList<ulong> Spectators => Match == 0 ? NoSpectators : !Started && HoldsBooks ? spectators : SpectatorIds(Match);
+        // R697 (the user 2026-11-17: "3단계 진행" - the spectators' seats watch the match): only Pawn Rush sends its
+        // match to spectators so far; another mode's room still starts only with its spectators' seats empty.
+        public bool SpectatingAllowed => (MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key;
         static readonly List<ulong> NoSpectators = new List<ulong>();
         public bool IsSpectator(ulong id) => id != 0 && Spectators.Contains(id);
         static List<ulong> SpectatorIds(ulong lobby)
@@ -927,7 +935,8 @@ namespace ChessFight.Network
                 if (parts[i] == "+connect_lobby" && ulong.TryParse(parts[i + 1], out ulong lobby)) return lobby;
             return 0;
         }
-        public bool IsPeer(ulong id) => Match != 0 && (id == Host || Roster.ContainsKey(id));
+        // R697: a spectator is sent the match and answers with what it has heard.
+        public bool IsPeer(ulong id) => Match != 0 && (id == Host || Roster.ContainsKey(id) || IsSpectator(id));
         static string MemberData(ulong lobby, ulong user, string key) => lobby == 0 ? "" : SteamMatchmaking.GetLobbyMemberData(Id(lobby), Id(user), key);
         static int ParseInt(string text) => int.TryParse(text, out int value) ? value : 0;
         static ulong ParseId(string text) => ulong.TryParse(text, out ulong value) ? value : 0;
@@ -973,7 +982,8 @@ namespace ChessFight.Network
         List<HostElection.Candidate> Candidates(HashSet<ulong> present)
         {
             // R695: a waiting room's spectators are its people too (a room left to them goes to one of them).
-            var watching = Spectators;
+            // R697: not once the match runs - it is hosted by a PC that plays in it.
+            var watching = Started ? NoSpectators : Spectators;
             var humans = present.Where(id => !BotIdentity.IsBot(id) && (id == Self || Roster.ContainsKey(id) || watching.Contains(id))).OrderBy(id => id).ToList();
             var locations = humans.ToDictionary(id => id, id => id == Self ? LocalPingLocation() : MemberData(Match, id, "loc"));
             var list = new List<HostElection.Candidate>();
@@ -1645,7 +1655,7 @@ namespace ChessFight.Network
             // stays in the lobby until the host seats it. A client promoted to host
             // must not fall into the waiting-room branch below: it has no
             // reservations and would end the match, so it is in the match too.
-            if (live && (IsHost || Roster.ContainsKey(Self))) Started = true;
+            if (live && (IsHost || Roster.ContainsKey(Self) || IsSpectator(Self))) Started = true;
             if (Started) PublishLoad();
             if (IsHost)
             {
@@ -1691,6 +1701,13 @@ namespace ChessFight.Network
                         if (!present.Contains(id) && !BotIdentity.IsBot(id)) Roster.Remove(id);
                     // Only the room's owner can write the seats (HOST.md). R504: the match's end first, if it came first.
                     if (Owner(Match) == Self) { WriteEnded(); PublishSeats(); KeepManager(present); Beat(now); }
+                    // R697: a spectator that left the match is struck from the room's list.
+                    if (Owner(Match) == Self)
+                    {
+                        var watchers = SpectatorIds(Match);
+                        if (watchers.RemoveAll(id => !present.Contains(id)) > 0)
+                            Set(Match, "spec", string.Join(",", watchers.Select(x => x.ToString(CultureInfo.InvariantCulture))));
+                    }
                     AnnounceStartWhenDue(now);
                     PublishMembers();
                     PublishSuccessors(present, now);
@@ -1745,7 +1762,8 @@ namespace ChessFight.Network
                 }
                 if (!seenRoster && now > deadline) { RetryAdmission("입장 승인이 시간 초과되었습니다."); return; }
                 if (seenRoster && !Roster.ContainsKey(Self) && !watching) { Fail("예약이 해제되었거나 파티원 연결이 끊겼습니다."); return; }
-                Started = phase == "playing" && Roster.ContainsKey(Self);
+                // R697: a spectator goes into the match with the room, to watch.
+                Started = phase == "playing" && (Roster.ContainsKey(Self) || watching);
             }
             SendAsk(now);
             int away = Away;
@@ -2597,7 +2615,9 @@ namespace ChessFight.Network
             // phase, so a client that sees "playing" already sees the right host,
             // and ownership moves last, because after it only the new host can write.
             var present = Members(Match);
-            var candidates = Candidates(present);
+            // R697: the match goes to a PC that plays in it; a spectator's hosts it only when nobody plays (bots alone).
+            bool playing = Roster.Keys.Any(id => !BotIdentity.IsBot(id));
+            var candidates = playing ? Candidates(present).Where(c => Roster.ContainsKey(c.Id)).ToList() : Candidates(present).Where(c => c.Id == Self).ToList();
             float now = Time.realtimeSinceStartup;
             // R159: a player who has only just come in (the last seat filling the room
             // starts it in the same poll) has not published its machine score yet and
@@ -2614,7 +2634,8 @@ namespace ChessFight.Network
             Started = true;
             var ranked = HostElection.Rank(candidates);
             // R644: as in the waiting room - a room that has already moved its host moves it again only for a clearly better PC.
-            ulong next = HostElection.StartHost(Self, candidates, WaitingMoveMargin);
+            // R697: a host in a spectator's seat hands the match to the best PC that plays.
+            ulong next = !playing || Roster.ContainsKey(Self) ? HostElection.StartHost(Self, candidates, WaitingMoveMargin) : ranked.Count > 0 ? ranked[0] : Self;
             Debug.Log("[ChessFight] 물리 담당 정하기(경기 시작): " + string.Join(" · ", candidates.Select(c =>
                 $"{Name(c.Id)}{(c.Id == Self ? "(지금 담당)" : "")} 성능 {c.BaseFitness} 지금 {c.Fitness} 핑 {c.PingMs}")) +
                 $" → {Name(next)}" + (unknown.Count > 0 ? $" (성능을 {StartFitnessWait:0}초 기다려도 모름: {string.Join(", ", unknown.Select(c => Name(c.Id)))})" : ""));

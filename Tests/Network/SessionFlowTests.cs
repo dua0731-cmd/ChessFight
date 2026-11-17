@@ -1409,7 +1409,7 @@ public static class SessionFlowTests
                 Check(clients.All(c=>c.Started&&c.Error=="")&&RoomData(maker,"born")==born,"the room did not start a minute after it was made: "+maker.Error+best.Error);});
             // R694 (the user 2026-11-17, "방 생성"): in a room a player made, players change sides themselves, a spectator's
             // seat is a place to wait in, the manager moves players on, and the room holds sixteen.
-            Test("R694: in a room a player made a player changes sides and takes a spectator's seat; a room with a spectator does not start",()=>{
+            Test("R694: in a room a player made a player changes sides, takes a spectator's seat and comes back to a side; the room starts",()=>{
                 Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
                 int side=b.SeatOf(b.Self);
                 Check(side>=0&&side<=1&&b.CanTakeSeat(1-side)&&b.CanTakeSeat(2)&&!b.CanTakeSeat(side),"setup: a player may take the other side or a spectator's seat: "+side);
@@ -1417,8 +1417,6 @@ public static class SessionFlowTests
                 Check(clients.All(x=>x.SeatOf(b.Self)==1-side&&x.Roster.Count==3&&x.Error==""),"the player did not change sides: "+b.SeatOf(b.Self)+" "+b.Error);
                 As(c,()=>c.TakeSeat(2));Step(20);
                 Check(clients.All(x=>x.SeatOf(c.Self)==2&&x.Roster.Count==2&&x.Spectators.Count==1&&x.Error==""&&x.Match==maker.Match),"the player is not in a spectator's seat: "+c.Error+" "+c.SeatOf(c.Self));
-                Check(!maker.CanStartGame,"a room with a spectator offers a start");
-                As(maker,maker.StartGame);Step(20);Check(clients.All(x=>!x.Started),"the room started with a spectator");
                 As(c,()=>c.TakeSeat(0));Step(20);
                 Check(clients.All(x=>x.SeatOf(c.Self)==0&&x.Spectators.Count==0)&&maker.CanStartGame,"the spectator did not take a seat again: "+c.SeatOf(c.Self));
                 As(maker,maker.StartGame);Step(40);Check(clients.All(x=>x.Started&&x.Error==""),"the room did not start: "+maker.Error);});
@@ -1481,6 +1479,35 @@ public static class SessionFlowTests
                 Check(c.Party==0&&c.Error!="","setup: no party, and the reason shown: "+c.Error);
                 Step(60);
                 Check(c.Party!=0&&c.IsLeader&&c.PartyMembers.Length==1,"the party was not made again: "+c.Error);});
+            // R697 (the user 2026-11-17: "3단계 진행"): the spectators' seats watch the match (Pawn Rush).
+            Test("R697: a Pawn Rush room starts with a spectator in its seat; the spectator goes into the match off the roster and is sent to; leaving, it is struck off",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&maker.SpectatingAllowed&&maker.CanStartGame,"a Pawn Rush room with a spectator must offer a start: "+maker.SeatOf(c.Self));
+                As(maker,maker.StartGame);Step(40);
+                Check(clients.All(x=>x.Started&&x.Error==""&&x.Match==maker.Match),"the room did not start for everyone, the spectator too: "+c.Started+" "+c.Error);
+                Check(clients.All(x=>x.Roster.Count==2&&!x.Roster.ContainsKey(c.Self)&&x.IsSpectator(c.Self)&&x.Spectators.Count==1),"the spectator is on the roster, or lost: "+maker.Spectators.Count);
+                Check(maker.Host!=c.Self&&clients.All(x=>x.IsPeer(c.Self))&&c.IsPeer(c.Host),"the spectator hosts the match, or is no peer");
+                As(c,c.Cancel);clients.Remove(c);Step(20);
+                Check(maker.Spectators.Count==0&&b.Spectators.Count==0&&maker.Started&&b.Started&&maker.Error==""&&b.Error=="","a spectator that left is still listed: "+maker.Spectators.Count);});
+            Test("R697: a room's host in a spectator's seat hands the match to a PC that plays",()=>{
+                Room(new[]{600,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==maker.Self&&x.Manager==maker.Self),"setup: the maker hosts and manages");
+                As(maker,()=>maker.TakeSeat(2));Step(20);
+                Check(clients.All(x=>x.SeatOf(maker.Self)==2&&x.Roster.Count==2)&&maker.CanStartGame,"setup: the host watches, two play");
+                As(maker,maker.StartGame);Step(60);
+                Check(clients.All(x=>x.Started&&x.Error=="")&&clients.All(x=>x.Host==b.Self)&&maker.IsSpectator(maker.Self)&&!maker.IsHost,
+                      "the match was not handed to the best PC that plays: host "+maker.Host+" "+maker.Error+b.Error+c.Error);});
+            Test("R697: another mode's room does not start with a spectator",()=>{
+                Setup(3);var maker=clients[0];
+                As(maker,()=>maker.SetMode(GameModes.SwordFight.Key));Step();
+                As(maker,()=>maker.FindMatch(true));Step();
+                for(int i=1;i<clients.Count;i++){var x=clients[i];As(x,()=>x.JoinPrivateMatch(maker.Match));}
+                Step(20);var c=clients[2];
+                Check(clients.All(x=>x.Match==maker.Match&&x.Roster.Count==3)&&!maker.SpectatingAllowed,"setup: a sword fight room of three");
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&!maker.CanStartGame,"a sword fight room with a spectator offers a start");
+                As(maker,maker.StartGame);Step(20);Check(clients.All(x=>!x.Started),"a sword fight room started with a spectator");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

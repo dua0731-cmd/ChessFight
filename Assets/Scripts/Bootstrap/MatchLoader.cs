@@ -347,7 +347,8 @@ namespace ChessFight.Game
             }
             string seats = $"{white} 대 {black}" + (watching > 0 ? $" · 관전 {watching}" : "");
             state.RoomNote = session.RoomHeld ? SteamSession.RoomHeldMessage
-                : watching > 0 ? seats + " · 관전석이 비어야 시작할 수 있어요"
+                // R697: Pawn Rush's spectators go into the match and watch; another mode's room waits for the seats to empty.
+                : watching > 0 && !session.SpectatingAllowed ? seats + " · 이 모드는 관전석이 비어야 시작할 수 있어요"
                 : white + black < 2 ? seats + " · 2명 이상이면 시작할 수 있어요 (봇 포함)"
                 : state.CanStart ? seats + " · 지금 시작할 수 있어요"
                 : session.IsManager ? seats + " · 모두 입장하면 시작할 수 있어요"
