@@ -100,6 +100,8 @@ namespace Steamworks
         // whose writer no longer owns the room when it lands is dropped, as the servers take room data from the
         // owner only; until then its writer reads its own value back (the Steam client's local copy).
         public static float DataDelay;
+        // R695: Steam fails to make the next rooms asked for (its own time-out), this many times.
+        public static int CreateFails;
         // Users whose connection to Steam is down (SteamUser.BLoggedOn false). Their lobby calls still go through here.
         public static HashSet<ulong> LoggedOff=new HashSet<ulong>();
         // R689 (the 11-15 build test): members one user's Steam does not list for a while although they are in the room
@@ -108,7 +110,7 @@ namespace Steamworks
         public static HashSet<(ulong viewer,ulong member)> Unseen=new HashSet<(ulong,ulong)>();
         public static List<ulong> Listed(Lobby l)=>Unseen.Count==0?l.Members:l.Members.Where(m=>!Unseen.Contains((User,m))).ToList();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();Unseen.Clear();OwnerDelay=0;DataDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();Unseen.Clear();OwnerDelay=0;DataDelay=0;CreateFails=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -130,7 +132,8 @@ namespace Steamworks
             return l;
         }
         public static SteamAPICall_t Create(ELobbyType type,int limit)
-        {ulong id=++nextLobby;var l=new Lobby{Id=id,Owner=User,Limit=limit,Type=type};l.Members.Add(User);Lobbies[id]=l;return Result(new LobbyCreated_t{m_ulSteamIDLobby=id,m_eResult=EResult.k_EResultOK});}
+        {if(CreateFails>0){CreateFails--;return Result(new LobbyCreated_t{m_ulSteamIDLobby=0,m_eResult=EResult.k_EResultFail});}
+         ulong id=++nextLobby;var l=new Lobby{Id=id,Owner=User,Limit=limit,Type=type};l.Members.Add(User);Lobbies[id]=l;return Result(new LobbyCreated_t{m_ulSteamIDLobby=id,m_eResult=EResult.k_EResultOK});}
     }
     public static class Packsize { public static bool Test()=>true; }
     public static class DllCheck { public static bool Test()=>true; }

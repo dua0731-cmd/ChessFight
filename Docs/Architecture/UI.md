@@ -816,3 +816,7 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 상태 | `LoadingState.Room` · `RoomCode` · `RoomNote` · `CanSit[3]`(백 · 흑 · 관전) · `CanMove` · `ShowTeamBots` · `CanAddTeamBot` · `CanRemoveTeamBot` · `SpecNames` · `SpecKeys` · `SpecCanMove` · `SpecCanKick` · `SpecMe` ← `MatchLoader.FillRoom` |
 | 이벤트 | `SeatRequested(자리)` → `TakeSeat`, `MoveRequested(id)` → `MovePlayer`, `CopyRoomRequested` → 클립보드, `TeamBotRequested(팀, ±1)` → `AddTestBot` / `RemoveTestBot`, 기존 `GiveRequested` · `KickRequested` · `StartRequested` · `CancelRequested`('방 나가기') |
 | 남은 것 | 방 화면 위 채팅, 방 안에서 모드 바꾸기, 3단계 경기 관전. 로비의 비공개 방 배너(§4 · §5의 방 도구 · 더미 ±)는 이 화면에 가려져 더는 보이지 않는다 |
+
+### 방 화면 가시성 (R695, 2026-11-17)
+
+사용자 "UI가 배경과 유사색이라서 가시성이 떨어져. 특히 관전자석이 잘 안보여. 분위기는 유지하되, 가시성만". `NetworkHud.uss` 맨 끝 R695(방 배치 `load-room`에서만): 무대 불투명도 32% → 14%, 자리 카드에 짙은 바탕(빈 자리 74% · 앉은 자리 92%)과 팀 색 테두리(백 하늘색 · 흑 분홍, 빈 자리는 반투명), 빈 자리 이름 30% → 70% 흰색, '눌러서 이동'은 금색 12px, 관전석 카드는 보라 바탕 + 라벤더 테두리 · 이름 90% · 머리글 17px, 안내 줄은 가운데 짙은 띠. 유리판(`GlassPlate`) · 금선 · 글꼴은 그대로. Unity 사본 배치(그래픽 켬)에서 방 화면을 지어낸 상태로 다시 그려 확인(임시 스크립트 — Steam 없이 화면만): 사용자가 본 것과 같은 '혼자 있는 방'과 사람이 찬 방장 화면 두 장에서 자리 · 관전석 · 글자가 배경 위에 또렷하고, 안내 줄이 관전석 줄과 겹치지 않는다(사진 `Docs/Architecture/Checks/R695_RoomVisibility/`). 세션 쪽 두 가지(혼자 관전석 · 파티 다시 만들기)는 모의 세션 시험으로만 확인했고 실제 Steam에서는 돌려 보지 못했다. 사용자 재확인 전.

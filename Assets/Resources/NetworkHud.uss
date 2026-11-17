@@ -983,3 +983,34 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-room-note { position: absolute; left: 0; right: 0; bottom: 160px; font-size: 13px; -unity-text-align: middle-center; color: rgb(207, 198, 176);
                   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); display: none; }
 .load-room .load-room-note { display: flex; }
+
+/* ---------- R695: the room read against the stage ----------
+   The user's first look in Unity (2026-11-17): "UI가 배경과 유사색이라서 가시성이 떨어져. 특히 관전자석이 잘 안보여. 분위기는
+   유지하되, 가시성만". The stage steps further back, every seat stands on a dark plate with an edge in its side's colour,
+   an empty seat's words are bright enough to read, and the spectators' seats get a plate and an edge of their own. */
+.load-room .load-stage { opacity: 0.14; }
+.load-room .load-card { background-color: rgba(9, 7, 5, 0.74); border-width: 1px; border-color: rgba(233, 198, 122, 0.3); }
+.load-room .load-roster-white .load-card { border-color: rgba(127, 223, 255, 0.5); }
+.load-room .load-roster-black .load-card { border-color: rgba(255, 138, 152, 0.5); }
+.load-room .load-card-on { background-color: rgba(18, 14, 10, 0.92); }
+.load-room .load-roster-white .load-card-on { border-color: rgb(127, 223, 255); }
+.load-room .load-roster-black .load-card-on { border-color: rgb(255, 138, 152); }
+.load-room .load-card .load-name { color: rgba(255, 255, 255, 0.7); }
+.load-room .load-card-on .load-name { color: rgb(255, 246, 226); }
+.load-room .load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-room .load-state { color: rgb(240, 208, 136); font-size: 12px; }
+.load-room .load-team { font-size: 20px; }
+.load-room .load-count { font-size: 13px; }
+.load-room .load-seat-btn:hover { background-color: rgba(233, 198, 122, 0.2); }
+.load-spec-card { background-color: rgba(30, 22, 48, 0.9); border-width: 1px; border-color: rgba(206, 190, 240, 0.75); }
+.load-spec-on { background-color: rgba(46, 36, 72, 0.96); border-color: rgb(222, 208, 250); }
+.load-spec-name { font-size: 15px; color: rgba(232, 222, 250, 0.9); }
+.load-spec-on .load-spec-name { color: rgb(255, 246, 226); }
+.load-spec-count { font-size: 17px; color: rgb(222, 208, 250); }
+.load-spec-hint { font-size: 12px; color: rgba(243, 235, 221, 0.86); }
+/* The lists and the spectators' row a little higher, so the line over the buttons clears the row. */
+.load-room .load-roster { top: 122px; }
+.load-spec { top: 456px; }
+.load-room-note { left: 330px; right: 330px; bottom: 160px; padding: 3px 0 4px 0; border-radius: 12px; color: rgb(243, 235, 221);
+                  background-color: rgba(9, 7, 5, 0.78); }
+.load-room-label { color: rgb(243, 235, 221); }

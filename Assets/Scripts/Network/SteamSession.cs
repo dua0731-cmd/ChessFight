@@ -274,6 +274,9 @@ namespace ChessFight.Network
         // twelve. A spectator is in the room but not on its roster; the host keeps who they are and the room says so
         // ("spec"). Until spectators can watch a match, a room with one in a spectator's seat does not start.
         public const int SpectatorSeats = 4;
+        // R695: a party Steam failed to make is tried again after PartyRetryFirst seconds, then twice as long each time.
+        public const float PartyRetryFirst = 3f, PartyRetryMax = 30f;
+        float partyRetryAt = -1, partyRetryWait = PartyRetryFirst;
         readonly List<ulong> spectators = new List<ulong>();
         readonly Dictionary<ulong, float> spectatorSince = new Dictionary<ulong, float>();
         public IReadOnlyList<ulong> Spectators => Match == 0 || Started ? NoSpectators : HoldsBooks ? spectators : SpectatorIds(Match);
@@ -969,7 +972,9 @@ namespace ChessFight.Network
         // they published.
         List<HostElection.Candidate> Candidates(HashSet<ulong> present)
         {
-            var humans = present.Where(id => !BotIdentity.IsBot(id) && (id == Self || Roster.ContainsKey(id))).OrderBy(id => id).ToList();
+            // R695: a waiting room's spectators are its people too (a room left to them goes to one of them).
+            var watching = Spectators;
+            var humans = present.Where(id => !BotIdentity.IsBot(id) && (id == Self || Roster.ContainsKey(id) || watching.Contains(id))).OrderBy(id => id).ToList();
             var locations = humans.ToDictionary(id => id, id => id == Self ? LocalPingLocation() : MemberData(Match, id, "loc"));
             var list = new List<HostElection.Candidate>();
             foreach (ulong id in humans)
@@ -1117,6 +1122,21 @@ namespace ChessFight.Network
             // R533: the manager put this player (its party) out of the waiting room. Before the party's own route: a
             // member would otherwise follow its leader out without ever being told why.
             if (Match != 0 && !Started && KickedIds(Match).Contains(Self)) Fail(KickedMessage);
+            // R695 (the user 2026-11-17: after closing the game with a room open, the next start said "Steam 방을 만들지
+            // 못했습니다: k_EResultTimeout" and stood without a party): a party Steam failed to make is made again,
+            // a little later each time, instead of waiting for the player to press something.
+            if (Party == 0 && Match == 0 && !pending && !Searching)
+            {
+                if (partyRetryAt < 0) { partyRetryAt = now + partyRetryWait; }
+                else if (now >= partyRetryAt)
+                {
+                    partyRetryAt = -1; partyRetryWait = Math.Min(partyRetryWait * 2f, PartyRetryMax);
+                    Diagnose("파티 방을 다시 만듦");
+                    Status = "파티를 다시 만드는 중...";
+                    CreateParty();
+                }
+            }
+            else if (Party != 0) { partyRetryAt = -1; partyRetryWait = PartyRetryFirst; }
             PollParty();
             if (Match != 0) PollMatch(now);
             TrackRejoin(now);
@@ -1643,7 +1663,9 @@ namespace ChessFight.Network
                                                        : $"자리 예약 풀림: {Who(removed.Leader)} 님 파티 {removed.Members.Length}명(기한 안에 다 오지 못함)");
                             Set(Match, "grant_" + removed.Leader, removed.Ticket + "|expired");
                         }
-                        if (reservations.Find(Self) == null) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
+                        // R695 (the user 2026-11-17: alone in a room it made, it moved to a spectator's seat and was thrown
+                        // out with this message): a host in a spectator's seat has its place in the room too.
+                        if (reservations.Find(Self) == null && !spectators.Contains(Self)) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
                         PublishRoster();
                         // R644: the room keeps the reservations and the order of succession current, so whoever
                         // takes a waiting room over from a host that died starts from them.
@@ -2004,7 +2026,8 @@ namespace ChessFight.Network
         bool Seated(ulong id, HashSet<ulong> present)
         {
             var g = reservations.Find(id);
-            return g != null && g.Committed && present.Contains(id) && !BotIdentity.IsBot(id);
+            // R695: a spectator is in the room for good as well (a room left to its spectators goes on under one of them).
+            return (g != null && g.Committed || spectators.Contains(id)) && present.Contains(id) && !BotIdentity.IsBot(id);
         }
 
         // The record: the reservations, then who hosts, under the next host number, and who follows after.
@@ -2646,9 +2669,14 @@ namespace ChessFight.Network
 
         // Who manages next: the player seated longest, as far as the seats tell - the lowest seat number, white before
         // black (seats are given out in the order parties came) - of the people in the room.
-        ulong NextManager(HashSet<ulong> present, ulong not) =>
-            Roster.Values.Where(p => p.Id != not && !BotIdentity.IsBot(p.Id) && (p.Id == Self || present.Contains(p.Id)))
-                         .OrderBy(p => p.Slot).ThenBy(p => p.Team).ThenBy(p => p.Id).Select(p => p.Id).FirstOrDefault();
+        ulong NextManager(HashSet<ulong> present, ulong not)
+        {
+            ulong seated = Roster.Values.Where(p => p.Id != not && !BotIdentity.IsBot(p.Id) && (p.Id == Self || present.Contains(p.Id)))
+                                 .OrderBy(p => p.Slot).ThenBy(p => p.Team).ThenBy(p => p.Id).Select(p => p.Id).FirstOrDefault();
+            // R695: with nobody seated, the first spectator (a room is never left without someone to manage it while
+            // anyone is in it).
+            return seated != 0 ? seated : Spectators.FirstOrDefault(id => id != not && (id == Self || present.Contains(id)));
+        }
 
         // A manager on its way out of a room it can write names the next one itself; otherwise the host does on its
         // next poll (KeepManager).
@@ -3055,6 +3083,8 @@ namespace ChessFight.Network
                         // goes alone - a party member that hosts leaves its party seated.
                         var mine = reservations.Find(Self);
                         if (mine != null) { if (mine.Leader == Self) reservations.Remove(mine.Leader); else reservations.RemoveMember(Self); }
+                        // R695: or its spectator's seat.
+                        if (spectators.Remove(Self)) { spectatorSince.Remove(Self); PublishSpectators(); }
                         var present = PresentNow();
                         PublishRoster();
                         LeaveManagerBehind(present);

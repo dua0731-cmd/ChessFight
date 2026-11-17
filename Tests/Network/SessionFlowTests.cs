@@ -1453,6 +1453,34 @@ public static class SessionFlowTests
                 Check(lead.Match==maker.Match&&mate.Match==maker.Match&&lead.Error==""&&mate.Error==""&&maker.Roster.Count==12
                       &&lead.SeatOf(lead.Self)>=0&&lead.SeatOf(mate.Self)>=0&&lead.SeatOf(lead.Self)<2&&lead.SeatOf(mate.Self)<2&&lead.SeatOf(lead.Self)!=lead.SeatOf(mate.Self),
                       "the party was not seated apart: "+lead.Error+mate.Error+" roster "+maker.Roster.Count+" seats "+lead.SeatOf(lead.Self)+" "+lead.SeatOf(mate.Self));});
+            // R695 (the user's first try of the room in Unity, 2026-11-17).
+            Test("R695: alone in a room it made, its host takes a spectator's seat and stays; the room does not start; back on a side it may",()=>{
+                Setup(1);var solo=clients[0];As(solo,()=>solo.FindMatch(true));Step(10);
+                ulong room=solo.Match;Check(room!=0&&solo.CanTakeSeat(2),"setup: a room of one");
+                As(solo,()=>solo.TakeSeat(2));Step(40);
+                Check(solo.Match==room&&solo.Error==""&&solo.SeatOf(solo.Self)==2&&solo.Roster.Count==0&&solo.IsManager&&solo.IsHost,"the host was thrown out of its own room: "+solo.Error+" match "+solo.Match);
+                Check(!solo.CanStartGame,"a room of spectators offers a start");
+                As(solo,()=>solo.AddRoomBot());Step(10);As(solo,solo.StartGame);Step(20);
+                Check(!solo.Started&&solo.Match==room,"a room with its only person in a spectator's seat started");
+                As(solo,()=>solo.TakeSeat(0));Step(20);
+                Check(solo.SeatOf(solo.Self)==0&&solo.Spectators.Count==0&&solo.Match==room&&solo.Error=="","the host did not take a seat again: "+solo.Error);});
+            Test("R695: a room's manager leaves - the next player manages and hosts, a spectator if nobody is seated; the last one out ends the room",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];ulong room=maker.Match;
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2,"setup: one spectator");
+                As(maker,maker.Cancel);clients.Remove(maker);Step(40);
+                Check(b.Match==room&&c.Match==room&&b.Error==""&&c.Error==""&&b.Manager==b.Self&&c.Manager==b.Self&&b.Host==b.Self&&c.SeatOf(c.Self)==2,
+                      "the room did not go on under the next player: manager "+b.Manager+" host "+b.Host+" "+b.Error+c.Error);
+                As(b,b.Cancel);clients.Remove(b);Step(40);
+                Check(c.Match==room&&c.Error==""&&c.Manager==c.Self&&c.Host==c.Self&&c.SeatOf(c.Self)==2,"a room left to a spectator did not go on under it: "+c.Error+" manager "+c.Manager+" host "+c.Host);
+                As(c,c.Cancel);Step(10);
+                Check(c.Match==0&&!FakeSteam.Lobbies.ContainsKey(room),"the empty room is still there");});
+            Test("R695: a party Steam failed to make is made again by itself",()=>{
+                FakeSteam.Reset();clients=new List<SteamSession>();FakeSteam.User=1;FakeSteam.CreateFails=2;
+                var c=new SteamSession();c.Initialize();clients.Add(c);Step(4);
+                Check(c.Party==0&&c.Error!="","setup: no party, and the reason shown: "+c.Error);
+                Step(60);
+                Check(c.Party!=0&&c.IsLeader&&c.PartyMembers.Length==1,"the party was not made again: "+c.Error);});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}
