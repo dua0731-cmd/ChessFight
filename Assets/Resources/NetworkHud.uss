@@ -1014,3 +1014,31 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-room-note { left: 330px; right: 330px; bottom: 160px; padding: 3px 0 4px 0; border-radius: 12px; color: rgb(243, 235, 221);
                   background-color: rgba(9, 7, 5, 0.78); }
 .load-room-label { color: rgb(243, 235, 221); }
+
+/* ---------- R696: the room's sides are white and black ----------
+   The user (2026-11-17): "폰러시는 흑/백팀으로 나뉘는데 방에서는 블루/레드팀으로 보이는게 어색해. 흑/백팀으로 보일 수 있게".
+   In the room layout the white side's cards are ivory with dark words and the black side's are black with ivory words
+   (the smoked glass is not drawn there: LoadingScreenView.RoomSeat), an empty seat a see-through plate of its side's
+   colour; the side washes change in code (LoadingScreenView.Room.cs). The entrance screen outside the room keeps its
+   blue and red. */
+.load-room .load-roster-white .load-card { background-color: rgba(243, 235, 221, 0.16); border-color: rgba(243, 235, 221, 0.62); }
+.load-room .load-roster-white .load-card-on { background-color: rgba(241, 232, 214, 0.96); border-color: rgb(255, 251, 240); }
+.load-room .load-roster-white .load-card .load-name { color: rgba(243, 235, 221, 0.88); }
+.load-room .load-roster-white .load-card-on .load-name { color: rgb(38, 28, 18); }
+.load-room .load-roster-white .load-card-on.load-me .load-name { color: rgb(146, 82, 0); }
+.load-room .load-roster-white .load-card-on .load-sub { color: rgba(66, 50, 32, 0.82); }
+.load-room .load-roster-white .load-card-on .load-sub-role { color: rgb(146, 82, 0); }
+.load-room .load-roster-white .load-card-on .load-state { color: rgb(96, 70, 34); }
+.load-room .load-roster-white .load-card-on .load-card-bar { background-color: rgb(146, 112, 60); }
+.load-room .load-roster-white .load-card-on .load-avatar { background-color: rgb(255, 252, 244); border-color: rgb(146, 112, 60); }
+.load-room .load-roster-white .load-card-btn { background-color: rgba(30, 22, 14, 0.94); }
+.load-room .load-roster-white .load-count { color: rgb(243, 235, 221); }
+.load-room .load-roster-black .load-card { background-color: rgba(0, 0, 0, 0.6); border-color: rgba(156, 156, 168, 0.62); }
+.load-room .load-roster-black .load-card-on { background-color: rgba(3, 3, 5, 0.97); border-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-card .load-name { color: rgba(214, 214, 224, 0.82); }
+.load-room .load-roster-black .load-card-on .load-name { color: rgb(246, 240, 228); }
+.load-room .load-roster-black .load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-room .load-roster-black .load-card-on .load-state { color: rgb(204, 204, 214); }
+.load-room .load-roster-black .load-card-on .load-card-bar { background-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-card-on .load-avatar { background-color: rgb(40, 40, 48); border-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-count { color: rgb(196, 196, 208); }

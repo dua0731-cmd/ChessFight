@@ -38,6 +38,13 @@ namespace ChessFight.Game
         }
 
         VisualElement roomHead, specBox;
+        // R696 (the user 2026-11-17: "폰러시는 흑/백팀으로 나뉘는데 방에서는 블루/레드팀으로 보이는게 어색해"): in the
+        // room the sides are white and black - the washes at the screen's sides change from blue and red to ivory and
+        // black while the room layout is up, and the cards are drawn by the stylesheet (ivory cards with dark words,
+        // black cards with ivory words) instead of the smoked glass.
+        VisualElement sideWhite, sideBlack;
+        StyleBackground washWhite, washBlack, roomWashWhite, roomWashBlack;
+        bool roomLook;
         Label roomCode, roomNote, specCount;
         readonly List<SpecCard> specCards = new List<SpecCard>();
         readonly Button[] botMore = new Button[2], botLess = new Button[2];
@@ -45,6 +52,10 @@ namespace ChessFight.Game
         void BuildRoom()
         {
             if (screen == null) return;
+            sideWhite = screen.Q<VisualElement>("load-side-white");
+            sideBlack = screen.Q<VisualElement>("load-side-black");
+            if (sideWhite != null) { washWhite = sideWhite.style.backgroundImage; roomWashWhite = new StyleBackground(Wash(MenuArt.Hex(0xF2E6CC), false, .75f)); }
+            if (sideBlack != null) { washBlack = sideBlack.style.backgroundImage; roomWashBlack = new StyleBackground(Wash(Color.black, true, 1.9f)); }
             roomHead = Box("load-room-head");
             roomHead.Add(Text("방 번호", "load-room-label"));
             roomCode = Text("", "load-room-code");
@@ -169,6 +180,12 @@ namespace ChessFight.Game
             if (screen == null || roomHead == null) return;
             bool room = State.Room && State.Matching && !Hiding;
             screen.EnableInClassList("load-room", room);
+            if (room != roomLook)
+            {
+                roomLook = room;
+                if (sideWhite != null) sideWhite.style.backgroundImage = room ? roomWashWhite : washWhite;
+                if (sideBlack != null) sideBlack.style.backgroundImage = room ? roomWashBlack : washBlack;
+            }
             if (cancel != null)
             {
                 string leave = State.Room && State.Matching ? "방 나가기" : "매칭 취소";
@@ -215,6 +232,8 @@ namespace ChessFight.Game
         void RoomSeat(Card card, bool empty)
         {
             bool room = State.Room && State.Matching && !Hiding;
+            // R696: in the room the stylesheet draws the card (white side ivory, black side black).
+            card.Plate.Show(!room);
             bool can = room && empty && State.CanSit[card.Team];
             Shown(card.Sit, can);
             if (room && empty) card.Status.text = can ? "눌러서 이동" : "";
