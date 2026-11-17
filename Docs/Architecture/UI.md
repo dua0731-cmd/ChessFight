@@ -803,3 +803,16 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | 매칭 중 카드 | 공개 매칭이면 제목 '상대를 찾는 중', 아래 줄은 시간만(`LobbyBootstrap.BuildModel` `quick`). 돌아가는 중이면 '경기로 돌아가는 중' |
 | 입장 화면 | 공개 매칭 중에는 뜨지 않는다(`MatchLoader.EntranceWhileSearching` false — §11-2 ③ · §11-3 ① · §17의 입장 화면 '게임 시작' · [양도][강퇴] · '봇 추가 +'는 2단계에서 방 생성 방의 방 화면으로 돌아온다) |
 | 경기가 잡힌 순간 | 로비 위 배너 · 카드가 '상대를 찾았습니다'. `MatchLoader.Begin`이 로비의 `EnterGate`를 부르고 화면은 `EndWalk`에서(문을 지났거나 3초) 띄운다. 그동안 씬은 불러오되 켜지 않는다. 방 생성 방 · 나갔던 경기로 돌아갈 때는 걷지 않고 바로 화면 |
+
+### 2단계 구현 (R694, 2026-11-17) — 방 화면
+
+'방 생성'으로 만든 방(과 방 번호로 들어간 방)의 대기실은 로비 위 배너가 아니라 **입장 화면의 방 배치**다. Unity 사본 배치(그래픽 켬)에서 방 화면을 지어낸 상태로 그려 확인(임시 스크립트 — Steam 없이 화면만): 방장 화면에는 두 팀 목록이 가운데서 만나고(VS) 아래에 관전석 4칸, 제목 아래 방 번호와 '복사', 다른 사람 카드의 [옮기기][양도][강퇴], 팀 머리의 [봇 −][봇 +], '게임 시작'과 '방 나가기'가 나오고, 일반 플레이어 화면에는 그 버튼들 없이 빈 자리("눌러서 이동")와 '방 나가기'만 나온다(사진 `Docs/Architecture/Checks/R694_RoomScreen/`). 실제 Steam 방에서 누르고 옮겨 보는 것은 Unity에서 하지 못했다 — 자리 규칙은 모의 세션 시험으로만 확인. **사용자 확인 전.**
+
+| 무엇 | 어디 |
+|---|---|
+| 언제 뜨나 | `MatchLoader.RoomScreen`: 로비에서, 비공개 방 안, 시작 전. 걸어 나가는 연출 없이 바로. 시작하면 같은 화면이 로딩 화면으로 이어짐(`Begin`의 `kept`) |
+| 배치 | 루트 클래스 `load-room`(`NetworkHud.uss` 맨 끝 R694): 팀 목록 폭 440 · 좌우 154(가운데 92 간격에 'VS'), 카드 높이 44, 무대는 어둡게(32%), 제목 아래 방 번호 줄(`load-room-head`), 관전석 줄(`load-spec`, top 474), 버튼 위 안내 줄(`load-room-note`) |
+| 코드 | `LoadingScreenView.Room.cs`(`BuildRoom` · `SyncRoom` · `RoomSeat`), 카드의 [옮기기]와 빈 자리 버튼은 `LoadingScreenView.cs`의 `NewCard` · `ShowActions` |
+| 상태 | `LoadingState.Room` · `RoomCode` · `RoomNote` · `CanSit[3]`(백 · 흑 · 관전) · `CanMove` · `ShowTeamBots` · `CanAddTeamBot` · `CanRemoveTeamBot` · `SpecNames` · `SpecKeys` · `SpecCanMove` · `SpecCanKick` · `SpecMe` ← `MatchLoader.FillRoom` |
+| 이벤트 | `SeatRequested(자리)` → `TakeSeat`, `MoveRequested(id)` → `MovePlayer`, `CopyRoomRequested` → 클립보드, `TeamBotRequested(팀, ±1)` → `AddTestBot` / `RemoveTestBot`, 기존 `GiveRequested` · `KickRequested` · `StartRequested` · `CancelRequested`('방 나가기') |
+| 남은 것 | 방 화면 위 채팅, 방 안에서 모드 바꾸기, 3단계 경기 관전. 로비의 비공개 방 배너(§4 · §5의 방 도구 · 더미 ±)는 이 화면에 가려져 더는 보이지 않는다 |

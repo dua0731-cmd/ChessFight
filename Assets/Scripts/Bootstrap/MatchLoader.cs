@@ -171,6 +171,11 @@ namespace ChessFight.Game
                 // R533: the manager's buttons on a player's card, with that player's id (LoadingState.Keys).
                 screen.GiveRequested += id => runtime.Session.GiveManager(id);
                 screen.KickRequested += id => runtime.Session.Kick(id);
+                // R694: a room a player made - an empty seat clicked, the manager's "옮기기", the room's number, a side's bots.
+                screen.SeatRequested += seat => runtime.Session.TakeSeat(seat);
+                screen.MoveRequested += id => runtime.Session.MovePlayer(id);
+                screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = runtime.Session.Match.ToString();
+                screen.TeamBotRequested += (team, more) => { if (more > 0) runtime.Session.AddTestBot(team); else runtime.Session.RemoveTestBot(team); };
                 // R624: a Sword Fight piece card confirmed on this screen
                 screen.SwordPickRequested += piece => runtime.Session.PickSword(piece);
                 return screen;
@@ -202,10 +207,31 @@ namespace ChessFight.Game
 
         static bool Following(SteamSession session) => session.Party != 0 && session.Busy && !session.IsLeader && session.Match == 0;
 
+        // R694 (the user 2026-11-17, "방 생성": "현재 매칭 화면처럼 방이 생성되어"): the waiting room of a room a player
+        // made is this screen in its room layout (LoadingScreenView.Room.cs) - the two sides, the spectators' seats,
+        // the manager's buttons. From the lobby, until the room starts.
+        static bool RoomScreen(SteamSession session) =>
+            session.Online && session.PrivateRoom && session.Match != 0 && !session.Started && !session.WaitingForParty
+            && SceneManager.GetActiveScene().name == SceneNames.Lobby;
+
+        // A room's number in fours, as the lobby shows it.
+        static string Spaced(ulong id)
+        {
+            string digits = id.ToString();
+            var text = new System.Text.StringBuilder();
+            for (int i = 0; i < digits.Length; i++)
+            {
+                if (i > 0 && (digits.Length - i) % 4 == 0) text.Append(' ');
+                text.Append(digits[i]);
+            }
+            return text.ToString();
+        }
+
         void Matchmaking()
         {
             var session = runtime.Session;
-            bool wanted = PublicMatching(session);
+            bool room = RoomScreen(session);
+            bool wanted = room || PublicMatching(session);
             if (phase == Phase.Idle)
             {
                 // The lobby castle's walk in (LobbyStage.EnterGate): the party goes
@@ -217,7 +243,8 @@ namespace ChessFight.Game
                     if (gateSince >= 0) { gateSince = -1; if (stage != null) stage.LeaveGate(); }
                     return;
                 }
-                if (stage != null && stage.HasGate)
+                // R694: a room comes up at once (nobody walks anywhere to sit in a room).
+                if (!room && stage != null && stage.HasGate)
                 {
                     if (gateSince < 0) { gateSince = Time.unscaledTime; stage.EnterGate(); }
                     if (!stage.GateEntered && Time.unscaledTime - gateSince < LobbyStage.MaxWalkSeconds) return;
@@ -274,11 +301,14 @@ namespace ChessFight.Game
                        : session.RoomHeld ? "끊긴 PC를 정리하는 중"
                        : session.JoiningLive ? "나갔던 경기로 돌아가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
             state.Clear();
+            state.Room = room;
+            if (room) FillRoom(state, session);
             if (session.Match != 0 && session.Roster.Count > 0)
             {
                 foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
                 {
                     Add(state, session, p.Id, p.Team, false);
+                    state.CanMove.Add(room && session.CanMovePlayer(p.Id));
                     // R533: what this PC's player may do as the room's manager, and (development builds) each PC's score.
                     state.CanGive.Add(!session.Started && session.CanGiveManager(p.Id));
                     state.CanKick.Add(session.CanKick(p.Id));
@@ -295,6 +325,42 @@ namespace ChessFight.Game
                     state.Names.Add("BOT " + i); state.Bots.Add(true); state.Faces.Add(null);
                 }
                 if (session.Party == 0) Add(state, session, session.Self, 0, false);
+            }
+        }
+
+        // R694: what the room layout shows beside the players' cards.
+        static void FillRoom(LoadingState state, SteamSession session)
+        {
+            int white = session.TeamCount(0), black = session.TeamCount(1), watching = session.Spectators.Count;
+            state.RoomCode = Spaced(session.Match);
+            state.Expected = TeamReservations.TeamSize * 2;
+            state.CanCancel = true;
+            state.ShowAddBot = false;
+            state.ShowStart = session.IsManager;
+            state.CanStart = session.CanStartGame;
+            for (int seat = 0; seat < 3; seat++) state.CanSit[seat] = session.CanTakeSeat(seat);
+            state.ShowTeamBots = session.CanEditTestBots;
+            for (int team = 0; team < 2; team++)
+            {
+                state.CanAddTeamBot[team] = session.CanAddTestBot(team);
+                state.CanRemoveTeamBot[team] = session.CanEditTestBots && session.TestBots(team) > 0;
+            }
+            string seats = $"{white} 대 {black}" + (watching > 0 ? $" · 관전 {watching}" : "");
+            state.RoomNote = session.RoomHeld ? SteamSession.RoomHeldMessage
+                : watching > 0 ? seats + " · 관전석이 비어야 시작할 수 있어요"
+                : white + black < 2 ? seats + " · 2명 이상이면 시작할 수 있어요 (봇 포함)"
+                : state.CanStart ? seats + " · 지금 시작할 수 있어요"
+                : session.IsManager ? seats + " · 모두 입장하면 시작할 수 있어요"
+                : seats + " · 방장이 시작하기를 기다리는 중";
+            state.Step = session.NoteShowing ? session.Note
+                       : session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중";
+            foreach (ulong id in session.Spectators)
+            {
+                if (id == session.Self) state.SpecMe = state.SpecKeys.Count;
+                state.SpecKeys.Add(id);
+                state.SpecNames.Add(session.Name(id));
+                state.SpecCanMove.Add(session.CanMovePlayer(id));
+                state.SpecCanKick.Add(session.CanKick(id));
             }
         }
 
@@ -400,6 +466,7 @@ namespace ChessFight.Game
             view.State.Step = step;
             var state = view.State;
             state.Matching = false;
+            state.Room = false;
             state.Expected = 0;
             state.Clear();
             foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))

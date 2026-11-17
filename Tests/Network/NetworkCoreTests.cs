@@ -1096,6 +1096,21 @@ public static class NetworkCoreTests
                 Check(bots.Count==0,"a party's bot stayed without its people");
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
+            Test("R694: a player changes sides alone and the rest of its group stay; one player gives up a seat and takes one", () => {
+                var r=new TeamReservations(); Reserve(r,1,3); Reserve(r,4,2); r.Reconcile(new HashSet<ulong>(Ids(1,5)),1);
+                Check(r.Find(2).Team==0&&r.Find(4).Team==1,"setup: 1 2 3 white, 4 5 black");
+                Check(r.Move(2,1)&&r.Find(2).Team==1&&r.Find(1).Team==0&&r.Find(3).Team==0&&r.Used(0)==2&&r.Used(1)==3,"one member did not move alone");
+                Check(!r.Move(2,1)&&!r.Move(9,0)&&!r.Move(2,2),"a move to the same side, by a stranger, or to no side");
+                Check(r.Move(1,1)&&r.Find(3).Team==0&&r.Find(3).Leader==3&&r.Find(1).Leader==1&&r.Used(1)==4,"the leader did not move alone, or left its group without a leader");
+                r.Remove(1); Check(r.Find(1)==null&&r.Find(3)!=null,"removing the mover took its old group along");
+                var full=new TeamReservations(); Reserve(full,1,6); Reserve(full,7,1);
+                Check(!full.Move(7,0)&&full.Find(7).Team==1,"a move onto a full side");
+                Check(r.Unseat(3)&&r.Find(3)==null&&!r.Unseat(3)&&r.Seat(3,1,5)&&r.Find(3).Team==1&&r.Find(3).Committed&&!r.Seat(3,0,5),"Unseat and Seat");
+                var bots=new TeamReservations(); ulong lead=500, bot=BotIdentity.Id(lead,0);
+                bots.Reserve(lead,77,"t",new[] {lead,bot},0,out _);
+                int was=bots.Find(lead).Team;
+                Check(bots.Move(lead,1-was)&&bots.Find(bot).Team==1-was&&!bots.Move(bot,was),"a player's bots did not come along, or a bot moved by itself");
+                Check(bots.Unseat(lead)&&bots.Find(bot)!=null&&bots.Count==1,"the bots a player left behind lost their seat"); });
             Test("R644: the waiting room's line of succession, a claim that passes over several in it, and the order by machines alone", () => {
                 Func<ulong,int,HostElection.Candidate> Heir=(id,fit)=>new HostElection.Candidate{Id=id,Fitness=fit,PingMs=-1};
                 var heirs=new[]{Heir(2,900),Heir(3,800),Heir(4,700),Heir(5,600)};

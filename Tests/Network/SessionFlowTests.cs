@@ -1407,6 +1407,52 @@ public static class SessionFlowTests
                 Check(born!=""&&age>5&&Math.Abs(maker.RoomAge-age)<2,"the new host does not count the room's age on: "+born+" "+age);
                 Step(200);
                 Check(clients.All(c=>c.Started&&c.Error=="")&&RoomData(maker,"born")==born,"the room did not start a minute after it was made: "+maker.Error+best.Error);});
+            // R694 (the user 2026-11-17, "방 생성"): in a room a player made, players change sides themselves, a spectator's
+            // seat is a place to wait in, the manager moves players on, and the room holds sixteen.
+            Test("R694: in a room a player made a player changes sides and takes a spectator's seat; a room with a spectator does not start",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                int side=b.SeatOf(b.Self);
+                Check(side>=0&&side<=1&&b.CanTakeSeat(1-side)&&b.CanTakeSeat(2)&&!b.CanTakeSeat(side),"setup: a player may take the other side or a spectator's seat: "+side);
+                As(b,()=>b.TakeSeat(1-side));Step(20);
+                Check(clients.All(x=>x.SeatOf(b.Self)==1-side&&x.Roster.Count==3&&x.Error==""),"the player did not change sides: "+b.SeatOf(b.Self)+" "+b.Error);
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==2&&x.Roster.Count==2&&x.Spectators.Count==1&&x.Error==""&&x.Match==maker.Match),"the player is not in a spectator's seat: "+c.Error+" "+c.SeatOf(c.Self));
+                Check(!maker.CanStartGame,"a room with a spectator offers a start");
+                As(maker,maker.StartGame);Step(20);Check(clients.All(x=>!x.Started),"the room started with a spectator");
+                As(c,()=>c.TakeSeat(0));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==0&&x.Spectators.Count==0)&&maker.CanStartGame,"the spectator did not take a seat again: "+c.SeatOf(c.Self));
+                As(maker,maker.StartGame);Step(40);Check(clients.All(x=>x.Started&&x.Error==""),"the room did not start: "+maker.Error);});
+            Test("R694: the manager moves a player on from another PC; only the manager does; a spectator can be put out",()=>{
+                Room(new[]{300,500,400});var maker=clients[0];var host=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==host.Self&&x.Manager==maker.Self),"setup: the best PC hosts, the maker manages");
+                int from=c.SeatOf(c.Self);
+                Check(from>=0&&from<=1&&maker.CanMovePlayer(c.Self)&&maker.MoveTarget(c.Self)==1-from&&!c.CanMovePlayer(maker.Self)&&!host.CanMovePlayer(c.Self),"who may move whom");
+                As(maker,()=>maker.MovePlayer(c.Self));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==1-from&&x.Error==""),"the manager's move did not happen: "+c.SeatOf(c.Self));
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&maker.CanKick(c.Self),"setup: a spectator the manager may put out");
+                As(maker,()=>maker.Kick(c.Self));Step(30);
+                Check(c.Match==0&&maker.Spectators.Count==0&&host.Spectators.Count==0&&maker.Roster.Count==2&&maker.Error=="","the spectator was not put out: "+c.Match+" "+c.Error);});
+            Test("R694: a room a player made takes the thirteenth player as a spectator",()=>{
+                Setup(2);var maker=clients[0];var late=clients[1];
+                As(maker,()=>maker.FindMatch(true));Step();
+                As(maker,maker.FillRoomWithBots);Step(10);
+                Check(maker.Roster.Count==12,"setup: twelve in the room: "+maker.Roster.Count);
+                As(late,()=>late.JoinPrivateMatch(maker.Match));Step(40);
+                Check(late.Match==maker.Match&&late.Error==""&&late.SeatOf(late.Self)==2&&maker.Spectators.Count==1&&maker.Roster.Count==12,
+                      "the thirteenth player is not a spectator: "+late.Error+" seat "+late.SeatOf(late.Self)+" match "+late.Match);});
+            Test("R694: a party that fits no single side of a room a player made is seated apart",()=>{
+                Setup(3);var maker=clients[0];var lead=clients[1];var mate=clients[2];JoinParty(2,1);
+                As(maker,()=>maker.FindMatch(true));Step();
+                int mine=maker.SeatOf(maker.Self);
+                for(int i=0;i<4;i++)As(maker,()=>maker.AddTestBot(mine));
+                for(int i=0;i<5;i++)As(maker,()=>maker.AddTestBot(1-mine));
+                Step(10);
+                Check(maker.TeamCount(0)==5&&maker.TeamCount(1)==5,"setup: five a side: "+maker.TeamCount(0)+" v "+maker.TeamCount(1));
+                As(lead,()=>lead.JoinPrivateMatch(maker.Match));Step(60);
+                Check(lead.Match==maker.Match&&mate.Match==maker.Match&&lead.Error==""&&mate.Error==""&&maker.Roster.Count==12
+                      &&lead.SeatOf(lead.Self)>=0&&lead.SeatOf(mate.Self)>=0&&lead.SeatOf(lead.Self)<2&&lead.SeatOf(mate.Self)<2&&lead.SeatOf(lead.Self)!=lead.SeatOf(mate.Self),
+                      "the party was not seated apart: "+lead.Error+mate.Error+" roster "+maker.Roster.Count+" seats "+lead.SeatOf(lead.Self)+" "+lead.SeatOf(mate.Self));});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

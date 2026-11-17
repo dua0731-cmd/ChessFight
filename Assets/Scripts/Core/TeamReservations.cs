@@ -133,6 +133,56 @@ namespace ChessFight.Network
             if (!g.Members.Any(m => !BotIdentity.IsBot(m))) groups.Remove(g);
             return true;
         }
+        // R694 (a room a player made, the user 2026-11-17: "팀을 옮길 수 있음"): one player to the other side. The rest
+        // of its group keep their seats under another leader; the last person of a group takes the group's bots along.
+        // False when the player has no seat, sits there already, is a bot, or the side has no room.
+        public bool Move(ulong id, int team)
+        {
+            var g = Find(id);
+            if (g == null || BotIdentity.IsBot(id) || team < 0 || team > 1 || g.Team == team) return false;
+            bool alone = !g.Members.Any(m => m != id && !BotIdentity.IsBot(m));
+            if (Used(team) + (alone ? g.Members.Length : 1) > TeamSize) return false;
+            if (alone) { g.Team = team; return true; }
+            Detach(g, id);
+            Unlead(id);
+            groups.Add(new Group { Leader = id, Party = g.Party, Ticket = g.Ticket, Members = new[] { id }, Team = team, Deadline = g.Deadline, Committed = g.Committed });
+            return true;
+        }
+        // R694: a player takes a seat on a side by itself - out of a spectator's seat (in the room already: committed),
+        // or a member of a party that fits no single side (still on its way: the usual 25 s to arrive).
+        public bool Seat(ulong id, int team, double now, bool committed = true)
+        {
+            if (id == 0 || BotIdentity.IsBot(id) || team < 0 || team > 1 || Find(id) != null || Used(team) >= TeamSize) return false;
+            Unlead(id);
+            groups.Add(new Group { Leader = id, Party = id, Ticket = "seat:" + id, Members = new[] { id }, Team = team, Deadline = now + 25, Committed = committed });
+            return true;
+        }
+        // R694: a player gives up its seat (for a spectator's). The rest of its group keep theirs; bots it leaves alone
+        // stay as a group of their own. False when it had no seat.
+        public bool Unseat(ulong id)
+        {
+            var g = Find(id);
+            if (g == null || BotIdentity.IsBot(id)) return false;
+            Detach(g, id);
+            return true;
+        }
+        void Detach(Group g, ulong id)
+        {
+            g.Members = g.Members.Where(m => m != id).ToArray();
+            if (g.Members.Length == 0) { groups.Remove(g); return; }
+            if (g.Leader == id) Relead(g);
+        }
+        // A group is known by its leader (Remove, the grant): no group keeps a leader that is no longer one of it.
+        void Unlead(ulong id)
+        {
+            foreach (var g in groups)
+                if (g.Leader == id && Array.IndexOf(g.Members, id) < 0 && g.Members.Length > 0) Relead(g);
+        }
+        static void Relead(Group g)
+        {
+            ulong person = g.Members.FirstOrDefault(m => !BotIdentity.IsBot(m));
+            g.Leader = person != 0 ? person : g.Members[0];
+        }
         public bool Ready => Count == 12 && groups.All(g => g.Committed);
         // R148 (Pawn Rush): the host may start before twelve once each side has at least MinTeamToStart and the
         // two sides are the same size (3v3, 4v4, 5v5), everyone arrived.
