@@ -65,6 +65,8 @@ namespace ChessFight.Game
         public bool Blocking => phase >= Phase.Loading;
         // The screen is up (matching or loading): the chat hides under it.
         public bool Covering => phase != Phase.Idle;
+        // R698: the screen is up as a room's waiting room (RoomScreen): the chat shows over it.
+        public bool RoomUp => phase == Phase.Matching && view != null && view.State.Room;
 
         // False when the scene cannot be loaded at all (missing from the build list).
         public bool Begin(string sceneName, GameModeInfo mode)

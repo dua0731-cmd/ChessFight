@@ -1042,3 +1042,16 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-room .load-roster-black .load-card-on .load-card-bar { background-color: rgb(176, 176, 188); }
 .load-room .load-roster-black .load-card-on .load-avatar { background-color: rgb(40, 40, 48); border-color: rgb(176, 176, 188); }
 .load-room .load-roster-black .load-count { color: rgb(196, 196, 208); }
+
+/* ---------- R698: the chat over the room screen ----------
+   The user (2026-11-17): "방 화면 채팅". ChatBox.Layout.Room: the match chat's look ("chat-match" stays on), bottom left
+   in the strip the room's lists, note and progress line leave free (x 0 to 330 of 1280, under the spectators' row), and
+   a panel short enough to stay under that row while it is open. */
+.chat-room { left: 14px; right: auto; bottom: 12px; width: 308px; }
+/* The open panel (lines, entry and tabs) reaches up to just under the spectators' row; the key hints do not fit beside
+   the tabs at this width. */
+.chat-room .chat-panel { height: 176px; }
+.chat-room .chat-keys { display: none; }
+.chat-room .chat-tab-text { white-space: nowrap; }
+.chat-room .chat-entry { height: 38px; margin-top: 6px; }
+.chat-room .chat-line, .chat-room .chat-recent-line { background-color: rgba(9, 7, 5, 0.84); }
