@@ -25,7 +25,7 @@ namespace ChessFight.RagdollLab
         // The detail lines the key cards and the panel show, as codes on the wire (the texts set in the two skill files).
         static readonly string[] DetailCodes =
         {
-            "", "조준 (좌클릭 발동 · 우클릭 취소)", "예고", "예고 · 고정", "예고 · 적 조준", "도약", "받아내기", "반격", "빈틈", "후딜", "돌진", "충격파", "손",
+            "", "조준 (F 발동 · 좌·우클릭 취소)", "예고", "예고 · 고정", "예고 · 적 조준", "도약", "받아내기", "반격", "빈틈", "후딜", "돌진", "충격파", "손",
             "막힘",   // R130: the queen's thrust stopped by a king's guard (appended: the codes before it stay)
         };
         static readonly string[] EdgeDetailCodes =
@@ -241,7 +241,7 @@ namespace ChessFight.RagdollLab
         /// <summary>
         /// This client pressed something (D-S3): draw what the host will most likely do with it at once, for at most
         /// <paramref name="hold"/> seconds (about a round trip) until the host's own state says the same.
-        /// <paramref name="key"/> 0 = the skill key, 1 = the left click while aiming (go), 2 = the right click (call it off).
+        /// <paramref name="key"/> 0 = the skill key (starts the aim; again while aiming uses it, R702), 1 = the left click, 2 = the right click (both call it off while aiming, R702).
         /// The edge skill (E) is not guessed: whether its condition holds is the host's to judge.
         /// </summary>
         public void PredictPress(int key, float hold)
@@ -259,24 +259,26 @@ namespace ChessFight.RagdollLab
                         }
                         else Predict(SfStage.Aim, hold);
                     }
-                    else if (Stage == SfStage.Aim) Predict(SfStage.None, hold);
+                    else if (Stage == SfStage.Aim) PredictGo(hold);   // R702: the key again uses the aim
                     break;
-                case 1:
-                    if (Stage != SfStage.Aim) break;
-                    // What Go() does with the aim.
-                    Dir = AimDir;
-                    Point = AimPoint;
-                    bool wall = false;
-                    Reach = Piece == PieceKind.Queen ? DashDistance(Origin, Dir, S.queenLength)
-                          : Piece == PieceKind.Rook ? RookReach(Origin, Dir, out wall) : AimReach;
-                    WaveBlocked = Piece == PieceKind.Rook && wall;
-                    if (Piece == PieceKind.Knight) KnightSquaresAt(Point, Dir);
-                    Predict(Piece == PieceKind.Knight ? SfStage.Active : SfStage.Windup, hold);
-                    break;
+                case 1:   // R702: the left click calls the aim off, as the right click does (F uses it)
                 case 2:
                     if (Stage == SfStage.Aim) Predict(SfStage.None, hold);
                     break;
             }
+        }
+
+        /// <summary>What Go() does with the aim, drawn at once on this client (the F key pressed again while aiming).</summary>
+        void PredictGo(float hold)
+        {
+            Dir = AimDir;
+            Point = AimPoint;
+            bool wall = false;
+            Reach = Piece == PieceKind.Queen ? DashDistance(Origin, Dir, S.queenLength)
+                  : Piece == PieceKind.Rook ? RookReach(Origin, Dir, out wall) : AimReach;
+            WaveBlocked = Piece == PieceKind.Rook && wall;
+            if (Piece == PieceKind.Knight) KnightSquaresAt(Point, Dir);
+            Predict(Piece == PieceKind.Knight ? SfStage.Active : SfStage.Windup, hold);
         }
 
         void Predict(SfStage stage, float hold)

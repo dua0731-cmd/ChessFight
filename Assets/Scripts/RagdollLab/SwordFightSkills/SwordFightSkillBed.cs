@@ -29,7 +29,7 @@ namespace ChessFight.RagdollLab
         [Tooltip("가장자리 스킬 (E, R103)")]
         public SwordFightEdgeParams edge = new SwordFightEdgeParams();
 
-        [Header("키 (임시, 다른 스킬 시험 씬과 같음: F 조준 → 좌클릭 발동 · 우클릭 취소)")]
+        [Header("키 (임시, 다른 스킬 시험 씬과 같음: F 조준 → F 발동 · 좌·우클릭 취소)")]
         public KeyCode skillKey = KeyCode.F;
 
         public static readonly PieceKind[] Pieces = { PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn };
@@ -84,7 +84,7 @@ namespace ChessFight.RagdollLab
         void Start()
         {
             Floor.Find();
-            Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, F 조준 → 좌클릭 발동 · 우클릭 취소 · E 가장자리 스킬");
+            Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, F 조준 → F 발동 · 좌·우클릭 취소 · E 가장자리 스킬");
         }
 
         // ---------------------------------------------------------------- every frame
@@ -411,7 +411,7 @@ namespace ChessFight.RagdollLab
                     Place(enemies[1], new Vector3(4.0f, 0f, 3.0f), east);
                     Place(enemies[2], new Vector3(-4f, 0f, -4f), east);
                     Place(allies[0], far, east);
-                    Report("대각선 미끄럼 시험: 가장자리에 몰린 비숍 — E → 안쪽 대각선 2칸이 은색 (마우스 쪽이 진하게) → 좌클릭 = 미끄러짐 · E 한 번 더 또는 우클릭 = 취소 · Shift+F8 = 앞의 적이 다가옴");
+                    Report("대각선 미끄럼 시험: 가장자리에 몰린 비숍 — E → 안쪽 대각선 2칸이 은색 (마우스 쪽이 진하게) → E 한 번 더 = 미끄러짐 · 좌·우클릭 = 취소 · Shift+F8 = 앞의 적이 다가옴");
                     break;
                 case PieceKind.Knight:
                     Place(me, new Vector3(6.0f, 0f, 0f), west);
