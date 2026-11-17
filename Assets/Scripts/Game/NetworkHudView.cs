@@ -106,6 +106,7 @@ namespace ChessFight.Game
         // The game-mode rail down the right, one card per mode.
         VisualElement railList, rail;
         Label playLabel;
+        VisualElement startRow;
         bool railOpen;
 
         // R529 (user 11-09: "모드 선택 UI가 마우스 올리는 것 말고, 현재 선택된 모드가 뭔지 바로 알 수 있게"): the chosen mode
@@ -204,7 +205,8 @@ namespace ChessFight.Game
                         }).StartingIn(800);
                 }
             }
-            if (playLabel != null) playLabel.text = open ? "게임 시작" : "모드 선택";
+            // R693: "게임 시작" is "랜덤 매칭" now ("방 생성" stands beside it).
+            if (playLabel != null) playLabel.text = open ? "랜덤 매칭" : "모드 선택";
         }
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
@@ -317,6 +319,9 @@ namespace ChessFight.Game
             }, TrickleDown.TrickleDown);
 
             play = Bind(root, "play", PlayPressed);
+            // R693: the row the start button shares with "방 생성"; what stands over and under the start button
+            // (the mode plate, the stop note, the way back into a left match) goes round the row.
+            startRow = root.Q<VisualElement>("start-row") ?? play;
             // 10-17 (승규 님): the mode cards wait below the screen; the button reads "모드 선택" until they
             // slide up, then "게임 시작".
             rail = root.Q<VisualElement>("mode-rail");
@@ -436,12 +441,12 @@ namespace ChessFight.Game
             IconText(friendsOpen, MenuMarks.Icon.People);
             IconText(root.Q<Button>("details-open"), MenuMarks.Icon.Info);
             IconText(codeOpen, MenuMarks.Icon.Hash);
-            IconText(createTest, MenuMarks.Icon.Lock);
             IconText(copyParty, MenuMarks.Icon.Copy);
             IconText(leaveParty, MenuMarks.Icon.Exit);
             root.Q("profile-crown")?.Add(new MenuMarks.CrownMark(Brass, Color.clear, 0f));
             // 10-27 (design A): smoked glass with a polished gold edge, no arrow, no key hints under it
             if (play != null) GlassPlate.Button(play);
+            if (createTest != null) GlassPlate.Button(createTest);
             if (start != null) GlassPlate.Button(start, 10f);
             // Whatever still carries the slab class (nothing in the lobby since R83).
             ChunkyButtons.Attach(root);
@@ -1018,11 +1023,11 @@ namespace ChessFight.Game
         Label playNote;
         void BuildPlayNote()
         {
-            if (play == null || play.parent == null) return;
+            if (startRow == null || startRow.parent == null) return;
             playNote = new Label { name = "play-note", pickingMode = PickingMode.Ignore };
             playNote.AddToClassList("play-note");
             playNote.style.display = DisplayStyle.None;
-            play.parent.Insert(play.parent.IndexOf(play) + 1, playNote);
+            startRow.parent.Insert(startRow.parent.IndexOf(startRow) + 1, playNote);
         }
 
         // R538 (user 11-10: "나간 사람만 돌아올 수 있어야"): over the start button while the match this player left is
@@ -1031,7 +1036,7 @@ namespace ChessFight.Game
         Label rejoinSub;
         void BuildRejoin()
         {
-            if (play == null || play.parent == null) return;
+            if (startRow == null || startRow.parent == null) return;
             rejoin = new Button { name = "rejoin", text = "", focusable = false };
             rejoin.AddToClassList("rejoin-btn");
             var title = new Label("진행 중인 경기로 돌아가기") { pickingMode = PickingMode.Ignore };
@@ -1042,12 +1047,12 @@ namespace ChessFight.Game
             rejoin.Add(rejoinSub);
             rejoin.clicked += () => Rejoin?.Invoke();
             rejoin.style.display = DisplayStyle.None;
-            play.parent.Insert(play.parent.IndexOf(play), rejoin);
+            startRow.parent.Insert(startRow.parent.IndexOf(startRow), rejoin);
         }
 
         void BuildCurrentMode()
         {
-            if (play == null || play.parent == null) return;
+            if (startRow == null || startRow.parent == null) return;
             currentMode = new Button { name = "current-mode", focusable = false };
             currentMode.AddToClassList("current-mode");
             var kicker = new Label("현재 모드") { pickingMode = PickingMode.Ignore };
@@ -1064,7 +1069,7 @@ namespace ChessFight.Game
             currentMode.clicked += open;
             actions[currentMode] = open;
             HoverRail(currentMode);
-            play.parent.Insert(play.parent.IndexOf(play), currentMode);
+            startRow.parent.Insert(startRow.parent.IndexOf(startRow), currentMode);
         }
 
         // R529: the invite card, top centre over the lobby (built hidden; SetInvite shows it).
@@ -1318,7 +1323,9 @@ namespace ChessFight.Game
             Enable(botsMore, model.CanAddBot); Enable(botsLess, model.CanRemoveBot);
             Enable(leaveParty, model.CanLeaveParty);
 
+            Show(startRow, !model.Busy);
             Show(play, !model.Busy);
+            Show(createTest, !model.Busy);
             Show(currentMode, !model.Busy);
             Enable(play, model.CanPlay);
             if (playNote != null)
@@ -1368,7 +1375,6 @@ namespace ChessFight.Game
             if (testHint != null) testHint.text = model.TestHint;
             Enable(allyMore, model.CanAddAlly); Enable(allyLess, model.CanRemoveAlly);
             Enable(enemyMore, model.CanAddEnemy); Enable(enemyLess, model.CanRemoveEnemy);
-            SetText(createTest, sword ? "더미 테스트 (혼자 가능)" : "비공개 방");
             if (partyBotsTitle != null) partyBotsTitle.text = sword ? "파티 더미 (아군)" : "AI 봇";
             if (clearRoomBots != null) clearRoomBots.text = sword ? "추가 더미 비우기" : "봇 비우기";
             SetText(start, model.ShowTestBots ? "테스트 시작  Enter" : "경기 시작");

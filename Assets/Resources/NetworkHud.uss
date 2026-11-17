@@ -940,3 +940,9 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .course-plate-final.course-plate-shown .course-plate-name { color: rgb(255, 226, 150); }
 .course-start { position: absolute; translate: -50% 0; font-size: 12px; -unity-font-style: bold; letter-spacing: 3px;
                 color: rgba(241, 230, 207, 0.8); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+
+/* ---------- R693: "방 생성" beside "랜덤 매칭" ---------- */
+.start-row { align-items: stretch; }
+.start-btn { flex-grow: 1; flex-shrink: 1; }
+.create-room { width: 138px; margin-right: 8px; }
+.create-room .a-cta-text { font-size: 19px; letter-spacing: 2px; }

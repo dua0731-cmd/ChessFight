@@ -46,6 +46,9 @@ namespace ChessFight.Game
         ThreadPriority loadingPriority;
         bool skipFrame;
         float shownAt, readyAt = -1, matchingSince, gateSince = -1;
+        // R693: the screen of a match found by random matching waits for the party's walk out of the lobby's gate
+        // (the scene loads meanwhile): what it will show once they are through.
+        LoadingContent walkContent;
         // R548: this PC's own start (the reveal's fallback clock) and whether the reveal is skipped (RevealTime).
         double revealFrom = -1;
         bool revealSkip;
@@ -78,10 +81,25 @@ namespace ChessFight.Game
             // it left (R538) and goes in as soon as it has loaded.
             if (session.StartAt > 0) content.Kicker += " · 경기로 복귀";
 
+            // R693 (the user 2026-11-17: random matching only counts the time on the lobby screen, "like 배틀그라운드"):
+            // the lobby stood through the search, so the party walks out of its gate now, the lobby saying "상대를
+            // 찾았습니다", and this screen comes up when they are through (Update). The scene loads meanwhile and
+            // every PC's screen runs on the host's start time, so the walk only eats the screen's first moments.
+            walkContent = null;
+            gateSince = -1;
+            var stage = LobbyStage.Current;
+            bool walk = kept == null && !session.PrivateRoom && session.StartAt <= 0 && stage != null && stage.HasGate
+                        && SceneManager.GetActiveScene().name == SceneNames.Lobby;
             if (kept != null)
             {
                 view = kept;
                 view.SetContent(content);
+            }
+            else if (walk)
+            {
+                walkContent = content;
+                gateSince = Time.unscaledTime;
+                stage.EnterGate();
             }
             else view = Show(content);
 
@@ -90,14 +108,7 @@ namespace ChessFight.Game
             // (PawnRushRound.BuildForMatch). A player coming back into a running match (R538) sees it finished.
             revealSkip = session.StartAt > 0;
             revealFrom = clock();
-            if (view != null)
-            {
-                view.State.CourseKnown = session.Match != 0;
-                view.State.CourseSeed = PawnRushSections.MatchSeed(session.Match);
-                view.State.Reveal = RevealTime(session);
-                // R624: Sword Fight's found / pick / team / clash screens (not for a player coming back into a running match)
-                view.State.SwordPick = content.SwordPick && !revealSkip;
-            }
+            Prime(content);
 
             session.ReportLoading(0);
             // Loading in the background is throttled by default; nothing else
@@ -116,6 +127,33 @@ namespace ChessFight.Game
             }
             load.allowSceneActivation = false;
             return true;
+        }
+
+        // What a screen just put up shows of this match from its first frame.
+        void Prime(LoadingContent content)
+        {
+            if (view == null) return;
+            var session = runtime.Session;
+            view.State.CourseKnown = session.Match != 0;
+            view.State.CourseSeed = PawnRushSections.MatchSeed(session.Match);
+            view.State.Reveal = RevealTime(session);
+            // R624: Sword Fight's found / pick / team / clash screens (not for a player coming back into a running match)
+            view.State.SwordPick = content.SwordPick && !revealSkip;
+        }
+
+        // R693: the party is through the lobby's gate (or took too long, or the lobby is gone): the screen comes up.
+        void EndWalk()
+        {
+            if (walkContent == null) return;
+            var stage = LobbyStage.Current;
+            bool lobby = SceneManager.GetActiveScene().name == SceneNames.Lobby;
+            if (lobby && stage != null && !stage.GateEntered && Time.unscaledTime - gateSince < LobbyStage.MaxWalkSeconds) return;
+            var content = walkContent;
+            walkContent = null;
+            gateSince = -1;
+            view = Show(content);
+            Prime(content);
+            shownAt = Time.unscaledTime;
         }
 
         // A screen that fails to build must not stop the match: go on without it.
@@ -145,12 +183,18 @@ namespace ChessFight.Game
             }
         }
 
+        // R693: random matching no longer puts the entrance screen over the lobby while it searches - the lobby's
+        // own card counts the time (LobbyBootstrap.BuildModel). The screen below (the players' cards, the manager's
+        // start, hand over and kick) is kept for the rooms players create, which get it in the next stage.
+        static readonly bool EntranceWhileSearching = false;
+
         // A public search, or the public room it found, from the lobby: the
         // entrance screen instead of a lobby banner. Not for private rooms (their
         // host needs the lobby's room tools), nor for a member back early from a
         // match waiting for the rest of the party.
         static bool PublicMatching(SteamSession session)
         {
+            if (!EntranceWhileSearching) return false;
             if (!session.Online || session.PrivateRoom || session.WaitingForParty || session.Started) return false;
             if (SceneManager.GetActiveScene().name != SceneNames.Lobby) return false;
             return session.Searching || session.Match != 0 || Following(session);
@@ -301,6 +345,7 @@ namespace ChessFight.Game
             float now = Time.unscaledTime;
             int percent = 0;
             string step = "";
+            EndWalk();
             if (view != null) view.State.Reveal = RevealTime(session);
             switch (phase)
             {
@@ -315,7 +360,8 @@ namespace ChessFight.Game
                     step = picking ? "경기장을 불러오는 중" : revealing && load.progress >= .9f ? "이번 판 코스 공개 중" : "코스를 불러오는 중";
                     // A match that ended meanwhile still has to finish this load (Unity
                     // cannot abandon one); NetworkRuntime then heads back to the lobby.
-                    if ((load.progress >= .9f && now - shownAt >= MinimumShow && !revealing) || session.Match == 0)
+                    // R693: nor while the party is still walking out of the lobby (the screen is not up yet).
+                    if ((load.progress >= .9f && now - shownAt >= MinimumShow && !revealing && walkContent == null) || session.Match == 0)
                     {
                         load.allowSceneActivation = true;
                         phase = Phase.Opening;
@@ -413,6 +459,13 @@ namespace ChessFight.Game
         {
             phase = Phase.Idle;
             load = null;
+            // R693: a match that ended during the walk out: the party is back on the lobby's stage.
+            if (walkContent != null)
+            {
+                walkContent = null;
+                gateSince = -1;
+                if (LobbyStage.Current != null) LobbyStage.Current.LeaveGate();
+            }
             if (view != null) view.Hide();
             view = null;
         }

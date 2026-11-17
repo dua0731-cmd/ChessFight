@@ -13,11 +13,15 @@ public static class SessionFlowTests
     static void Step(int ticks=8)
     {for(int t=0;t<ticks;t++){UnityEngine.Time.realtimeSinceStartup+=.3f;foreach(var c in clients.ToArray())As(c,c.Tick);}}
     static void Setup(int count,Func<int,SteamSession> make=null)
-    {FakeSteam.Reset();clients=new List<SteamSession>();for(int i=1;i<=count;i++){FakeSteam.User=(ulong)i;var c=make!=null?make(i):new SteamSession();c.Initialize();clients.Add(c);}Step();}
+    {FakeSteam.Reset();clients=new List<SteamSession>();for(int i=1;i<=count;i++){FakeSteam.User=(ulong)i;var c=make!=null?make(i):new SteamSession();c.QuickStartSeconds=Quick;c.Initialize();clients.Add(c);}Step();}
+    // R693: how old a public room must be before it starts by itself with even sides (SteamSession.QuickStartSeconds).
+    // Never, unless a test says so before its Setup: the tests written before it sit in public waiting rooms for minutes
+    // to watch something else (hosts handing over, managers, seats), and start through the manager. Test puts it back.
+    static double Quick=double.PositiveInfinity;
     static string Presence(SteamSession c,string key)=>FakeSteam.Presence.TryGetValue((c.Self,key),out var v)?v:"";
     static void JoinParty(int follower,int leader){As(clients[follower],()=>clients[follower].JoinParty(clients[leader].Party));Step();}
     static void Test(string name,Action test)
-    {test();passed++;Console.WriteLine("PASS "+name);foreach(var c in clients.ToArray())As(c,c.Dispose);}
+    {test();passed++;Console.WriteLine("PASS "+name);foreach(var c in clients.ToArray())As(c,c.Dispose);Quick=double.PositiveInfinity;}
     // Host election and migration (Docs/Network/HOST.md): a private room of solo players
     // with the given fitness, the first one its creator. `configure` runs before the room.
     static void Room(int[] fitness,Action configure=null)
@@ -1366,6 +1370,43 @@ public static class SessionFlowTests
                 Check(searcher.Match==stale&&!searcher.Roster.ContainsKey(searcher.Self),"setup: the search walked into the dead PC's room");
                 Step(200);
                 Check(searcher.Match!=0&&searcher.Match!=stale&&searcher.IsHost&&searcher.Searching&&searcher.Error=="","the search kept walking into a room that never seats it: "+searcher.Match+" "+searcher.Status);});
+            // R693 (the user 2026-11-17: random matching stays on the lobby screen and only counts the time, so no screen
+            // shows a room or offers its manager a start): a public room starts by itself - twelve at once (as before), and
+            // short of twelve once it is a minute old and its sides are even and large enough.
+            Test("R693: a public room short of twelve starts by itself once it is a minute old and its sides are even; nobody presses a start",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(2);var a=clients[0];var b=clients[1];
+                As(a,()=>a.FindMatch());Step(20);As(b,()=>b.FindMatch());Step(40);
+                Check(a.Match!=0&&b.Match==a.Match&&a.Roster.Count==2&&a.TeamCount(0)==1&&a.TeamCount(1)==1,"setup: one a side in one room");
+                Check(!a.Started&&!b.Started&&a.RoomAge<SteamSession.QuickStartAfter,"the room started before its minute: age "+a.RoomAge);
+                Step(200);
+                Check(a.Started&&b.Started&&a.Error==""&&b.Error=="","the room did not start by itself: age "+a.RoomAge+" "+a.Error+b.Error);});
+            Test("R693: a public room with uneven sides waits past its minute and starts the moment the sides are even",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(4);var late=clients[3];var first=clients[0];
+                foreach(var c in clients.Take(3).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(260);
+                Check(clients.Take(3).All(c=>c.Match==first.Match&&c.Match!=0&&!c.Started)&&first.TeamCount(0)+first.TeamCount(1)==3&&first.RoomAge>=SteamSession.QuickStartAfter,
+                      "three in a room past its minute must wait: "+first.TeamCount(0)+" v "+first.TeamCount(1)+" started "+first.Started+" age "+first.RoomAge);
+                As(late,()=>late.FindMatch());Step(60);
+                Check(clients.All(c=>c.Match==first.Match&&c.Started&&c.Error==""),"the fourth player did not start the room: "+late.Error+" "+late.Match);});
+            Test("R693: with release rules a public room starts by itself from three a side, not two",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(6,i=>new SteamSession("r",false));var first=clients[0];
+                foreach(var c in clients.Take(4).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(260);
+                Check(clients.Take(4).All(c=>c.Match==first.Match&&c.Match!=0&&!c.Started)&&first.TeamCount(0)==2&&first.TeamCount(1)==2,
+                      "two a side: "+first.TeamCount(0)+" v "+first.TeamCount(1)+" started "+first.Started);
+                foreach(var c in clients.Skip(4).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(40);
+                Check(clients.All(c=>c.Match==first.Match&&c.Started&&c.Error==""),"three a side did not start: "+string.Join(" ",clients.Select(c=>c.Error)));});
+            Test("R693: a room a player made never starts by itself",()=>{
+                Quick=SteamSession.QuickStartAfter;Room(new[]{500,500});Step(400);
+                Check(clients.All(c=>c.Match!=0&&c.PrivateRoom&&!c.Started&&c.Error==""),"a private room started by itself");});
+            Test("R693: the room's age stays with the room when its host changes",()=>{
+                Quick=SteamSession.QuickStartAfter;PublicRoom(new[]{250,560});var maker=clients[0];var best=clients[1];
+                Check(clients.All(c=>c.Host==best.Self)&&!maker.Started,"setup: the room went to the better PC: host "+maker.Host);
+                string born=RoomData(maker,"born");double age=best.RoomAge;
+                Check(born!=""&&age>5&&Math.Abs(maker.RoomAge-age)<2,"the new host does not count the room's age on: "+born+" "+age);
+                Step(200);
+                Check(clients.All(c=>c.Started&&c.Error=="")&&RoomData(maker,"born")==born,"the room did not start a minute after it was made: "+maker.Error+best.Error);});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

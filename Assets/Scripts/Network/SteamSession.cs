@@ -155,7 +155,9 @@ namespace ChessFight.Network
         //      finish inside the war room. A v48 PC would build another round from the same seed.
         // v50 (R691): the round's second mini-game is drawn from seven rooms, not four - the king's three (G, H, I)
         //      are back in the section set. A v49 PC would pick another room from the same seed.
-        public const string Protocol = "chessfight.dua0731.network.v50";
+        // v51 (R693): a public room starts by itself once it is a minute old with even sides (room data "born"), and no
+        //      screen offers its manager a start any more. A v50 host would wait for a start nobody can give.
+        public const string Protocol = "chessfight.dua0731.network.v51";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -258,6 +260,23 @@ namespace ChessFight.Network
         public bool EarlyStartMode => !privateRoom && Match != 0 && ((MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key
                                                                     || (MatchMode ?? PartyMode)?.Key == GameModes.SwordFight.Key);
         public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarlyFrom(MinTeamToStart);
+        // R693 (the user 2026-11-17: random matching stays on the lobby screen, so nobody is shown a room to start): a
+        // public room starts by itself. Twelve start at once, as before; short of twelve it starts as soon as it is
+        // QuickStartSeconds old and its sides are even and large enough (CanStartEarly - what the manager's "게임
+        // 시작" needed), with nobody still being seated. The room's age is its own ("born", Steam's clock), so the
+        // next PC to host a waiting room counts on from the same moment.
+        public const double QuickStartAfter = 60;
+        public double QuickStartSeconds = QuickStartAfter;
+        public double RoomAge
+        {
+            get
+            {
+                if (Match == 0) return 0;
+                return long.TryParse(Data(Match, "born"), NumberStyles.Integer, CultureInfo.InvariantCulture, out long born) && born > 0
+                    ? Math.Max(0, ServerNow() - born) : 0;
+            }
+        }
+        bool QuickStartDue => !privateRoom && !Started && CanStartEarly && SeatingJoiners == 0 && RoomAge >= QuickStartSeconds;
         // R525 (user 11-09 build test, 3: "1대1로도 테스트 가능하도록 임시 조치"): a development build's host may start a public
         // room from one a side (the sides still even); a release build keeps three (TeamReservations.MinTeamToStart).
         // The same switch that lets development builds take bots into public rooms (M6), so nothing has to be undone.
@@ -1052,6 +1071,8 @@ namespace ChessFight.Network
                     Set(Match, "manager", Self.ToString()); Manager = lastManager = Self;
                     // A waiting room takes players until it starts; after that it takes
                     // back only its own players who left (R538, Starters).
+                    // R693: when the room was made, for the start a public room gives itself (QuickStartDue).
+                    Set(Match, "born", ((long)ServerNow()).ToString(CultureInfo.InvariantCulture));
                     Set(Match, "private", privateRoom ? "1" : "0"); Set(Match, "open", "1"); PublishRoster();
                     Set(Party, "route", Match.ToString()); mergeAt = Time.realtimeSinceStartup + 6;
                     Diagnose(privateRoom ? "비공개 방을 만듦" : "대기실을 만듦(찾은 방이 없음)");
@@ -1523,7 +1544,8 @@ namespace ChessFight.Network
                         TrackJoiners(present, now);
                         SetChanged("seating", SeatingJoiners.ToString());
                         // R159: a start that is waiting for a newcomer's machine score goes on by itself.
-                        if ((!privateRoom && reservations.Ready) || startWanted) StartNow();
+                        // R693: or a public room old enough with even sides (QuickStartDue).
+                        if ((!privateRoom && (reservations.Ready || QuickStartDue)) || startWanted) StartNow();
                         if (!Started) ElectWaiting(present, now);
                     }
                     // R644: a host waiting for the room (handed to it, or taken over from a host that died while
