@@ -20,7 +20,7 @@ namespace ChessFight.PawnRush
     //
     // This object is the row's middle on the floor, its local x along the row, local z across it. Built from code on an
     // inactive object: Configure, then switch it on.
-    public sealed class StackRow : MonoBehaviour
+    public sealed partial class StackRow : MonoBehaviour
     {
         [Tooltip("Slots in each half of the row (one of them always empty)")]
         [SerializeField] int slotsPerHalf = 9;
@@ -355,6 +355,7 @@ namespace ChessFight.PawnRush
                 marks[h].transform.localPosition = new Vector3(SlotX(h, a), .02f, 0f);
                 markMaterials[h].color = Color.Lerp(Open, Closing, closing);
             }
+            RowSounds(k, into);   // 2026-11-17: the lift, carry and set-down (StackRow.Sound.cs)
         }
 
         void OnDestroy()

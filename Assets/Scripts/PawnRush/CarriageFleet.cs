@@ -173,6 +173,7 @@ namespace ChessFight.PawnRush
             var yaw = new double[n];
             var radii = new double[n];
             var turns = new double[n];
+            var pivots = new double[n];   // R686: a team turns about its coach's rear axle
             int rows = (n + 1) / 2;
             for (int i = 0; i < n; i++)
             {
@@ -180,6 +181,7 @@ namespace ChessFight.PawnRush
                 int k = look == RoamingCarriage.Look.Horse ? i - count - teams : i;
                 speeds[i] = Mathf.Max(.5f, (look == RoamingCarriage.Look.Horse ? horseSpeed : moveSpeed) + speedStep * k);
                 radii[i] = RoamingCarriage.Reach(look);
+                pivots[i] = RoamingCarriage.PivotOf(look);
                 turns[i] = Mathf.Max(.05f, look == RoamingCarriage.Look.Horse ? horseTurnSeconds : look == RoamingCarriage.Look.Team ? teamTurnSeconds : turnSeconds);
                 bool alone = n % 2 == 1 && i == n - 1;
                 double side = alone ? 0 : (i % 2 == 0 ? -1 : 1);
@@ -187,7 +189,7 @@ namespace ChessFight.PawnRush
                 hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / rows;
                 yaw[i] = side < 0 ? 90 : side > 0 ? -90 : 0;
             }
-            return new RoamingFleet(unchecked((uint)seed), start, speeds, hx, hz, yaw, rules, radii, turns);
+            return new RoamingFleet(unchecked((uint)seed), start, speeds, hx, hz, yaw, rules, radii, turns, pivots);
         }
 
         void FixedUpdate()

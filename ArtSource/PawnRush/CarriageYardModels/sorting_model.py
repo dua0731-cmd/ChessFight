@@ -22,6 +22,19 @@ LOFT_Y0, LOFT_Y1, LOFT_HALF, LOFT_TOP, LOFT_END_TOP = 113.4, 116.6, 12.0, 2.4, 4
 BERTH_Y, BERTH_XS = 125.4, (-13.5, -4.5, 4.5, 13.5)
 POOL_Y0, CLIFF_Y, TOP, WATER = 132.85, 143.0, 8.0, -.5
 LIFT_Y, LIFT_AXLE, LANDING_Y = 137.0, 4.6, 141.4
+# R686 (textures): footings, plinths and stone under water are the concept's darker "shade stone" slot (rcy_kit
+# names it SHADE; the fallback keeps this file running on an rcy_kit without it).
+SHADE = globals().get("SHADE") or "RCY | shade"
+# R686: every gold part here is decoration, so matte brass (bright gold is only for what a pawn stands on or holds);
+# the ropes are hemp.
+ROPE = globals().get("ROPE") or "RCY | rope"
+
+
+def crate_pale(col, foot, size, dark=False):
+    """R686 (textures): entrance_model.crate with every crate's boards in honey oak, the "dark" ones too (their walnut
+    boards read red-brown and heavy; pale TIMBER read white): the concept's crates are all honey wood in a dark frame.
+    The battens, rails and braces stay walnut. `dark` is kept so the callers keep their meaning."""
+    return crate(col, foot, size)
 
 
 # ------------------------------------------------------------------ the yard's floor and walls
@@ -41,7 +54,7 @@ def yard_and_walls(col):
         parts.append(ashlar(col, "Side wall", (x0, CLIFF_Y, TOP), (x1, 159.0, 10.75), face, course=.75, length=1.6))
         g = -s * .05
         parts.append(box(col, "Side wall coping", (min(x0, x0 + g), 81.0, 10.75), (max(x1, x1 + g), 159.0, 11.0), STONE, bevel=.04))
-        parts.append(box(col, "Side wall plinth", (min(x0, x0 + g * 1.2), 81.0, 0), (max(x1, x1 + g * 1.2), POOL_Y0, .35), STONE, bevel=.03))
+        parts.append(box(col, "Side wall plinth", (min(x0, x0 + g * 1.2), 81.0, 0), (max(x1, x1 + g * 1.2), POOL_Y0, .35), SHADE, bevel=.03))
         parts += wall_rhythm(col, s)
         # The yard's south corners where the canal's landing opens 20 m wide.
         a0, a1 = sorted((s * 22.0, s * 27.0))
@@ -117,7 +130,7 @@ def cloth_awning(col, back, eave, y0, y1, high=4.6, low=3.4):
     parts.append(ob)
     for y in (y0 + .06, y1 - .06):
         parts.append(beam(col, "Awning rafter", (back, y, high), (eave, y, low), w=.1, h=.12, mat=WALNUT))
-    parts.append(cylinder(col, "Awning pole", (eave, (y0 + y1) / 2, low + .02), (0, 1, 0), .06, y1 - y0, GOLD, segments=10))
+    parts.append(cylinder(col, "Awning pole", (eave, (y0 + y1) / 2, low + .02), (0, 1, 0), .06, y1 - y0, BRASS, segments=10))
     parts += valance(col, eave + (.04 if back > eave else -.04), y0, y1, low - .04, .3, width=.68)
     return parts
 
@@ -125,7 +138,7 @@ def cloth_awning(col, back, eave, y0, y1, high=4.6, low=3.4):
 def bay_number(col, x, y, side, n):
     """The gold plaque on a bay's post. R682 (the concept: "a matte brass piece-icon plaque", pictograms only): a chess
     piece raised on it, pawn, rook, knight, bishop, queen, king bay by bay (were pips and bars counting the bay)."""
-    parts = [box(col, "Bay number", (x - .03, y - .25, 2.73), (x + .03, y + .25, 3.07), GOLD, bevel=.012, segments=1)]
+    parts = [box(col, "Bay number", (x - .03, y - .25, 2.73), (x + .03, y + .25, 3.07), BRASS, bevel=.012, segments=1)]
     face = x - side * .03
     parts.append(piece_icon(col, "Bay icon", PIECE_ORDER[(n - 1) % 6], (face + side * .002, y, 2.76), -side, .28, .03))
     return parts
@@ -141,21 +154,21 @@ def hatch(col, side, front, back, y0, y1):
     px = front + side * .05
     for y in (a - .14, b + .14):
         parts += square_post(col, "Hatch post", px, y, 0, HATCH_TOP + .25, w=.24, mat=IRON, bands=(.4, HATCH_TOP - .5))
-    parts.append(box(col, "Hatch lintel", (px - .13, a - .42, HATCH_TOP - .01), (px + .13, b + .42, HATCH_TOP + .25), GOLD, bevel=.03))
+    parts.append(box(col, "Hatch lintel", (px - .13, a - .42, HATCH_TOP - .01), (px + .13, b + .42, HATCH_TOP + .25), BRASS, bevel=.03))
     parts += valance(col, front - side * .03, a, b, HATCH_TOP - .02, .24, width=.58)
     bx = front - side * .2
     parts.append(box(col, "Hatch board", (bx - .03, CONVEYOR_Y - .8, HATCH_TOP + .27), (bx + .03, CONVEYOR_Y + .8, HATCH_TOP + .97), WALNUT, bevel=.02))
-    parts.append(box(col, "Hatch board frame", (bx - .045, CONVEYOR_Y - .84, HATCH_TOP + .25), (bx + .045, CONVEYOR_Y + .84, HATCH_TOP + .3), GOLD, bevel=.01, segments=1))
-    parts.append(box(col, "Hatch board frame", (bx - .045, CONVEYOR_Y - .84, HATCH_TOP + .94), (bx + .045, CONVEYOR_Y + .84, HATCH_TOP + .99), GOLD, bevel=.01, segments=1))
+    parts.append(box(col, "Hatch board frame", (bx - .045, CONVEYOR_Y - .84, HATCH_TOP + .25), (bx + .045, CONVEYOR_Y + .84, HATCH_TOP + .3), BRASS, bevel=.01, segments=1))
+    parts.append(box(col, "Hatch board frame", (bx - .045, CONVEYOR_Y - .84, HATCH_TOP + .94), (bx + .045, CONVEYOR_Y + .84, HATCH_TOP + .99), BRASS, bevel=.01, segments=1))
     x = front + side * 1.25
     for lo_, hi_ in ((y0 + .2, a - .35), (b + .35, y1 - .2)):
         if hi_ - lo_ < .8:
             continue
         w = min(2.2, hi_ - lo_)
         mid = (lo_ + hi_) / 2
-        parts += crate(col, (x, mid, 0), (2.2, w, 1.2))
+        parts += crate_pale(col, (x, mid, 0), (2.2, w, 1.2))
         if w > 1.2:
-            parts += crate(col, (x + side * .2, mid, 1.2), (1.4, w - .3, 1.2), dark=True)
+            parts += crate_pale(col, (x + side * .2, mid, 1.2), (1.4, w - .3, 1.2), dark=True)
     return parts
 
 
@@ -163,11 +176,11 @@ def scale(col, x, y):
     """The big scale over a stall's goods: an iron post, the gold beam, two pans on chains."""
     parts = [box(col, "Scale foot", (x - .25, y - .25, 0), (x + .25, y + .25, .12), IRON, bevel=.02)]
     parts.append(cylinder(col, "Scale post", (x, y, 1.6), (0, 0, 1), .07, 3.2, IRON, segments=10))
-    parts.append(box(col, "Scale beam", (x - .06, y - 1.1, 3.1), (x + .06, y + 1.1, 3.2), GOLD, bevel=.02))
-    parts.append(lathe(col, "Scale pivot", [(0, 3.2), (.1, 3.2), (.06, 3.32), (.03, 3.4), (0, 3.42)], (x, y, 0), seg=8, mat=GOLD))
+    parts.append(box(col, "Scale beam", (x - .06, y - 1.1, 3.1), (x + .06, y + 1.1, 3.2), BRASS, bevel=.02))
+    parts.append(lathe(col, "Scale pivot", [(0, 3.2), (.1, 3.2), (.06, 3.32), (.03, 3.4), (0, 3.42)], (x, y, 0), seg=8, mat=BRASS))
     for dy in (-1, 1):
         cy = y + dy * 1.0
-        parts.append(lathe(col, "Scale pan", [(0, 2.47), (.38, 2.47), (.4, 2.53), (.36, 2.53), (0, 2.5)], (x, cy, 0), seg=16, mat=GOLD))
+        parts.append(lathe(col, "Scale pan", [(0, 2.47), (.38, 2.47), (.4, 2.53), (.36, 2.53), (0, 2.5)], (x, cy, 0), seg=16, mat=BRASS))
         for k in range(3):
             a = 2 * math.pi * k / 3
             parts.append(beam(col, "Scale chain", (x, cy, 3.1), (x + .32 * math.cos(a), cy + .32 * math.sin(a), 2.53), w=.02, h=.02, mat=IRON, segments=1))
@@ -209,7 +222,7 @@ def stalls(col, side):
     for i in range(bays + 1):
         py = STALL_Y0 + i * step
         parts += square_post(col, "Stall post", px, py, .2, 3.36, w=.24, mat=WALNUT)
-        parts.append(box(col, "Post footing", (px - .19, py - .19, 0), (px + .19, py + .19, .2), STONE, bevel=.03))
+        parts.append(box(col, "Post footing", (px - .19, py - .19, 0), (px + .19, py + .19, .2), SHADE, bevel=.03))
         for d in (-1, 1):
             if (i == 0 and d < 0) or (i == bays and d > 0):
                 continue
@@ -240,7 +253,8 @@ def timber_store(col, side):
                 while y < STORE_Y1 - 1e-3:
                     a, b = max(y, STORE_Y0), min(y + 2.64, STORE_Y1)
                     if b - a > .2:
-                        mat = OAK if k % 4 == 0 else WALNUT
+                        # R686 (textures): raw sawn timber (TIMBER) with honey oak lengths among it, as the concept's stacks.
+                        mat = TIMBER if k % 4 == 0 else OAK
                         if fx == front:
                             # R682: the front row's lengths set back 0 - 5 cm, a little squatter, eased round edges.
                             r, dz = jitter.choice((0.0, .015, .03, .05)), jitter.uniform(0, .025)
@@ -251,7 +265,7 @@ def timber_store(col, side):
                             lo_x, hi_x = sorted((fx, fx + side * .42))
                             parts.append(box(col, "Stored beam", (lo_x, a + .01, z + .01), (hi_x, b - .01, z + h - .01), mat, bevel=.035, segments=1))
                     y += 2.64
-            parts.append(box(col, "Stored beam", (x0 + .42, STORE_Y0 + .02, z + .02), (x1 - .42, STORE_Y1 - .02, z + h - .02), OAK))
+            parts.append(box(col, "Stored beam", (x0 + .42, STORE_Y0 + .02, z + .02), (x1 - .42, STORE_Y1 - .02, z + h - .02), TIMBER))
         else:
             # Across: their ends to the yard. R682 (prop-artist, graphics pass): in clay a row of identical square ends
             # read as brickwork; each end now sits back 0 - 10 cm from the stack's face (never past it: the collider), is
@@ -262,14 +276,14 @@ def timber_store(col, side):
                 dy0, dy1, dz = jitter.uniform(0, .025), jitter.uniform(0, .025), jitter.uniform(0, .03)
                 fa, fb = sorted((front + side * (.01 + back_off), back - side * .01))
                 parts.append(box(col, "Stored beam end", (fa, y + .01 + dy0, z + .01 + dz), (fb, y + .41 - dy1, z + h - .01),
-                                 OAK if (int(y * 3) + k) % 3 else WALNUT, bevel=.05, segments=2))
+                                 TIMBER if (int(y * 3) + k) % 3 else OAK, bevel=.05, segments=2))
                 y += .42
     y = STORE_Y0 + 1.5
     while y < STORE_Y1:
         parts.append(box(col, "Store strap", (front - .03, y - .05, 0), (front + .03, y + .05, 2.44), IRON, bevel=.01, segments=1))
         parts.append(box(col, "Store strap", (x0, y - .05, 2.4), (x1, y + .05, 2.44), IRON, bevel=.01, segments=1))
         y += 3.5
-    parts.append(box(col, "Store trim", (front - .05, STORE_Y0, 2.37), (front + .05, STORE_Y1, 2.43), GOLD, bevel=.01, segments=1))
+    parts.append(box(col, "Store trim", (front - .05, STORE_Y0, 2.37), (front + .05, STORE_Y1, 2.43), BRASS, bevel=.01, segments=1))
     # Chocks on the top where the cranes' outer rests lay their loads.
     for y in (STORE_Y0 + 3.2, STORE_Y1 - 3.2):
         cx = (x0 + x1) / 2
@@ -305,8 +319,8 @@ def loft(col):
         parts += board_face(col, "Loft board", -LOFT_HALF, LOFT_HALF, inner, .1, LOFT_TOP - .3, sy)
         parts.append(box(col, "Loft beam", (-LOFT_HALF, min(fy, inner), LOFT_TOP - .3), (LOFT_HALF, max(fy, inner), LOFT_TOP - .06), WALNUT, bevel=.025))
         parts.append(box(col, "Loft sill", (-LOFT_HALF, min(fy, inner), 0), (LOFT_HALF, max(fy, inner), .1), WALNUT, bevel=.02))
-        x = -LOFT_HALF
-        while x <= LOFT_HALF + 1e-3:
+        x = -LOFT_HALF + 2.4   # R686: not at |x| = 12, where the end's own corner post stands (overlapping 13 cm, they flickered)
+        while x < LOFT_HALF - 1e-3:
             parts += square_post(col, "Loft post", x, fy - sy * .13, 0, LOFT_TOP - .06, w=.26, mat=WALNUT, bands=(.5,))
             x += 2.4
     for s in (-1, 1):
@@ -329,14 +343,14 @@ def loft(col):
             yy = LOFT_Y0 + k * .24
             lo_x, hi_x = sorted((inner_x, inner_x - s * .05))
             parts.append(box(col, "Loft end board", (lo_x, yy + .01, LOFT_TOP), (hi_x, yy + .23, LOFT_END_TOP - .06), OAK, bevel=.012, segments=1))
-        parts.append(box(col, "Loft end trim", (a, LOFT_Y0 - .06, LOFT_END_TOP - .1), (b, LOFT_Y0, LOFT_END_TOP), GOLD, bevel=.01, segments=1))
+        parts.append(box(col, "Loft end trim", (a, LOFT_Y0 - .06, LOFT_END_TOP - .1), (b, LOFT_Y0, LOFT_END_TOP), BRASS, bevel=.01, segments=1))
         # Two-high crate stacks on the end (the code's StackPicture: 2 x 1.6 x 2.6, from 1.1 in, every 2.3 m).
         mid = (LOFT_Y0 + LOFT_Y1) / 2
         x = a + 1.1
         i = 0
         while x < b - 1.0:
-            parts += crate(col, (x, mid, LOFT_END_TOP), (2.0, 2.6, .78), dark=(i % 3 == 0))
-            parts += crate(col, (x, mid, LOFT_END_TOP + .8), (1.9, 2.5, .76), dark=(i % 3 == 2))
+            parts += crate_pale(col, (x, mid, LOFT_END_TOP), (2.0, 2.6, .78), dark=(i % 3 == 0))
+            parts += crate_pale(col, (x, mid, LOFT_END_TOP + .8), (1.9, 2.5, .76), dark=(i % 3 == 2))
             x += 2.3
             i += 1
     return parts
@@ -359,19 +373,60 @@ def berth(col, x):
 
 
 def lamp_post(col, x, y, z0=0.0):
-    """An iron lamp post round the code's glowing lamp (0.4 x 0.5 x 0.4 at 3.35 over the post's foot at z0): a stepped
-    base, the shaft with two rings, a lantern frame and its roof. (z0, R680: the platform's two stand on its top.)"""
-    # The base within 7 cm of the post's collider (0.09) where a pawn's feet meet it.
-    parts = [lathe(col, "Lamp base", [(0, 0), (.16, 0), (.16, .1), (.13, .18), (.11, .42), (.085, .55), (0, .55)], (x, y, z0), seg=12, mat=IRON)]
-    parts.append(cylinder(col, "Lamp post", (x, y, z0 + 1.85), (0, 0, 1), .08, 2.6, IRON, segments=10))
-    for z in (1.0, 2.9):
-        parts.append(lathe(col, "Lamp ring", [(0, z), (.11, z), (.11, z + .06), (0, z + .06)], (x, y, z0), seg=10, mat=GOLD))
-    parts.append(box(col, "Lantern base", (x - .25, y - .25, z0 + 3.05), (x + .25, y + .25, z0 + 3.11), IRON, bevel=.01, segments=1))
+    """An iron lamp post round the code's glowing lamp (0.4 x 0.5 x 0.4 at 3.35 over the post's foot at z0). R686 (승규
+    11-17 "램프도 그래픽 좋게 해"; the concept's lamp post, RCY_08 11, and U2's lantern): a stepped, moulded iron foot,
+    a slim shaft with a bead and two collars, a capital, a square lantern cage round the lamp - base and head frames,
+    corner posts, a middle rail and a muntin on each face - under a bishop's mitre cap (cream, brass ribs and band, a
+    brass ball on top), and a scroll arm with a small unlit cage lantern (the concept's; lights and glowing glass are
+    Unity's). (z0, R680: the platform's two stand on its top; scenery_model.py uses this one too.)"""
+    def L(name, prof, mat=IRON, seg=16, smooth=True):
+        return lathe(col, name, prof, (x, y, z0), seg=seg, mat=mat, smooth=smooth, sharp=True)
+    # The foot within 7 cm of the post's collider (0.09) where a pawn's feet meet it.
+    parts = [L("Lamp base", [(0, 0), (.16, 0), (.16, .07), (.145, .09), (.145, .16), (.12, .2), (.105, .32), (.1, .44),
+                             (.115, .47), (.115, .52), (.09, .55), (0, .55)])]
+    parts.append(cylinder(col, "Lamp post", (x, y, z0 + 1.75), (0, 0, 1), .065, 2.4, IRON, segments=16))
+    for z in (.95, 2.2):
+        parts.append(L("Lamp collar", [(0, z), (.085, z), (.1, z + .03), (.1, z + .07), (.085, z + .1), (0, z + .1)]))
+    parts.append(L("Lamp bead", [(0, 1.62), (.08, 1.62), (.09, 1.65), (.08, 1.68), (0, 1.68)], mat=BRASS))
+    parts.append(L("Lamp capital", [(0, 2.9), (.07, 2.9), (.12, 2.96), (.17, 3.0), (.17, 3.05), (0, 3.05)]))
+    # The lantern cage round the code's lamp (x, y +-0.2, 3.1 .. 3.6).
+    c0, c1, h = 3.05, 3.62, .25
+    parts.append(box(col, "Lantern base", (x - h - .03, y - h - .03, z0 + c0), (x + h + .03, y + h + .03, z0 + c0 + .07), IRON, bevel=.012, segments=1))
+    parts.append(box(col, "Lantern head", (x - h - .03, y - h - .03, z0 + c1 - .06), (x + h + .03, y + h + .03, z0 + c1), IRON, bevel=.012, segments=1))
     for ex in (-1, 1):
         for ey in (-1, 1):
-            parts.append(box(col, "Lantern bar", (x + ex * .225 - .02, y + ey * .225 - .02, z0 + 3.11),
-                             (x + ex * .225 + .02, y + ey * .225 + .02, z0 + 3.6), IRON))
-    parts.append(lathe(col, "Lantern roof", [(0, 3.6), (.34, 3.6), (.12, 3.86), (.06, 3.9), (.08, 3.96), (0, 4.02)], (x, y, z0), seg=4, mat=IRON))
+            parts.append(box(col, "Lantern post", (x + ex * h - .025, y + ey * h - .025, z0 + c0 + .07), (x + ex * h + .025, y + ey * h + .025, z0 + c1 - .06), IRON, bevel=.006, segments=1))
+    for ex in (-1, 1):   # a middle rail and a muntin on each face, 3 cm off the lamp's faces
+        parts.append(box(col, "Lantern rail", (x + ex * h - .012, y - h, z0 + 3.33), (x + ex * h + .012, y + h, z0 + 3.37), IRON))
+        parts.append(box(col, "Lantern rail", (x - h, y + ex * h - .012, z0 + 3.33), (x + h, y + ex * h + .012, z0 + 3.37), IRON))
+        # the muntins 3 cm inside the rails' plane (crossing in one plane, they flickered)
+        m = h - .03
+        parts.append(box(col, "Lantern muntin", (x + ex * m - .008, y - .012, z0 + c0 + .07), (x + ex * m + .008, y + .012, z0 + c1 - .06), IRON))
+        parts.append(box(col, "Lantern muntin", (x - .012, y + ex * m - .008, z0 + c0 + .07), (x + .012, y + ex * m + .008, z0 + c1 - .06), IRON))
+    # The bishop's mitre cap: cream, a brass band and four brass ribs, a brass ball.
+    parts.append(L("Mitre band", [(0, c1), (.3, c1), (.31, c1 + .02), (.31, c1 + .07), (.3, c1 + .09), (0, c1 + .09)], mat=BRASS, seg=24))
+    parts.append(L("Mitre", [(0, c1 + .09), (.27, c1 + .09), (.29, c1 + .2), (.26, c1 + .33), (.18, c1 + .46), (.07, c1 + .56), (0, c1 + .59)], mat=MARBLE, seg=24))
+    for k in range(4):
+        t = math.pi / 4 + k * math.pi / 2
+        for (r0, z0r), (r1, z1r) in zip([(.3, c1 + .1), (.3, c1 + .22), (.275, c1 + .34), (.19, c1 + .47)],
+                                         [(.3, c1 + .22), (.275, c1 + .34), (.19, c1 + .47), (.075, c1 + .57)]):
+            a = (x + r0 * math.cos(t), y + r0 * math.sin(t), z0 + z0r)
+            b2 = (x + r1 * math.cos(t), y + r1 * math.sin(t), z0 + z1r)
+            parts.append(beam(col, "Mitre rib", a, b2, w=.035, h=.035, mat=BRASS, segments=1))
+    parts.append(L("Mitre ball", [(0, c1 + .55), (.04, c1 + .57), (.055, c1 + .62), (.04, c1 + .67), (0, c1 + .69)], mat=BRASS, seg=12))
+    # The scroll arm (towards -y, the way players come) and its small unlit cage lantern.
+    ay = y - .62
+    parts.append(beam(col, "Lamp arm", (x, y - .06, z0 + 2.62), (x, ay, z0 + 2.62), w=.045, h=.045, mat=IRON, segments=1))
+    parts.append(beam(col, "Lamp arm brace", (x, y - .06, z0 + 2.3), (x, ay + .2, z0 + 2.6), w=.03, h=.03, mat=IRON, segments=1))
+    parts.append(box(col, "Arm hook", (x - .01, ay - .01, z0 + 2.48), (x + .01, ay + .01, z0 + 2.62), IRON))
+    lz0, lz1, lr = 2.12, 2.42, .1
+    for r, zz in ((lr, lz0), (lr, lz1)):
+        parts.append(lathe(col, "Cage ring", [(0, zz), (r + .02, zz), (r + .02, zz + .03), (0, zz + .03)], (x, ay, z0), seg=12, mat=IRON, smooth=True))
+    for k in range(6):
+        t = 2 * math.pi * k / 6
+        bx, by = x + lr * math.cos(t), ay + lr * math.sin(t)
+        parts.append(box(col, "Cage bar", (bx - .01, by - .01, z0 + lz0 + .03), (bx + .01, by + .01, z0 + lz1), IRON))
+    parts.append(lathe(col, "Cage top", [(0, lz1 + .03), (lr + .03, lz1 + .03), (.03, lz1 + .1), (0, lz1 + .12)], (x, ay, z0), seg=12, mat=IRON, smooth=True))
     return parts
 
 
@@ -383,7 +438,7 @@ def basin(col):
     # The basin's near wall under the yard's edge (its gold edge is the code's), the bed under the water.
     parts.append(ashlar(col, "Basin wall", (-SORT_HALF, POOL_Y0 - .5, -3.0), (SORT_HALF, POOL_Y0, -.12), "+y", course=.5, below=-1.0))
     parts.append(box(col, "Basin coping", (-SORT_HALF, POOL_Y0 - .55, -.12), (SORT_HALF, POOL_Y0 - .25, 0), STONE, bevel=.02))
-    parts.append(flagstones(col, "Basin bed", -SORT_HALF, SORT_HALF, POOL_Y0, CLIFF_Y, -3.0, size=2.5))
+    parts.append(flagstones(col, "Basin bed", -SORT_HALF, SORT_HALF, POOL_Y0, CLIFF_Y, -3.0, size=2.5, mat=SHADE))
     # The wheel's piers, their bearings and the axle (the wheel itself is the code's VerticalWaterwheel).
     for s in (-1, 1):
         x = s * 2.5
@@ -392,7 +447,8 @@ def basin(col):
         lo_x, hi_x = sorted((x - s * .5, outer + s * .08))
         parts.append(box(col, "Pier cap", (lo_x, LIFT_Y - .78, 3.95), (hi_x, LIFT_Y + .78, 4.3), STONE, bevel=.05))
         parts.append(box(col, "Bearing block", (x - .5, LIFT_Y - .42, 4.3), (x + .5, LIFT_Y + .42, 4.5), IRON, bevel=.03))
-        parts.append(cylinder(col, "Bearing", (x, LIFT_Y, LIFT_AXLE), (1, 0, 0), .38, 1.0, IRON, segments=16, bevel=.02))
+        # R686: 3 cm short of the bearing block's ends either side (flush, its end faces flickered on the block's).
+        parts.append(cylinder(col, "Bearing", (x, LIFT_Y, LIFT_AXLE), (1, 0, 0), .38, .94, IRON, segments=16, bevel=.02))
         parts.append(box(col, "Bearing strap", (x - .3, LIFT_Y - .4, 4.82), (x + .3, LIFT_Y + .4, 4.94), IRON, bevel=.02))
         for dy in (-.32, .32):
             parts.append(cylinder(col, "Bearing bolt", (x, LIFT_Y + dy, 4.96), (0, 0, 1), .05, .1, BRASS, segments=8))
@@ -401,7 +457,7 @@ def basin(col):
     # The landing the wheel lets its riders off onto: planks on joists (its gold trim is the code's).
     y0, y1 = LANDING_Y, CLIFF_Y
     for x in (-3.3, 0.0, 3.3):
-        parts.append(box(col, "Landing joist", (x - .1, y0 + .05, TOP - .3), (x + .1, y1, TOP - .08), WALNUT, bevel=.02))
+        parts.append(box(col, "Landing joist", (x - .1, y0 + .05, TOP - .3), (x + .1, y1, TOP - .08), TIMBER, bevel=.02))
     parts.append(box(col, "Landing subfloor", (-3.48, y0 + .02, TOP - .11), (3.48, y1, TOP - .08), WALNUT))
     x = -3.5
     while x < 3.5 - 1e-3:
@@ -415,13 +471,13 @@ def basin(col):
 def banner(col, x, y, top):
     """A royal banner hung on the cliff face (y its face, the cloth to the south): a gold rod with finials, the cloth
     with a swallowtail foot, its gold stripe and crown."""
-    parts = [cylinder(col, "Banner rod", (x, y - .1, top + .1), (1, 0, 0), .04, 1.7, GOLD, segments=8)]
+    parts = [cylinder(col, "Banner rod", (x, y - .1, top + .1), (1, 0, 0), .04, 1.7, BRASS, segments=8)]
     for d in (-1, 1):
-        parts.append(lathe(col, "Rod finial", [(0, 0), (.07, 0), (.08, .06), (.04, .14), (0, .18)], (x + d * .85, y - .1, top + .1), axis="x", seg=8, mat=GOLD))
+        parts.append(lathe(col, "Rod finial", [(0, 0), (.07, 0), (.08, .06), (.04, .14), (0, .18)], (x + d * .85, y - .1, top + .1), axis="x", seg=8, mat=BRASS))
     outline = [(x - .7, top), (x + .7, top), (x + .7, top - 2.6), (x, top - 2.15), (x - .7, top - 2.6)]
     parts.append(prism(col, "Banner cloth", outline, y - .09, y - .04, CLOTH))
-    parts.append(prism(col, "Banner stripe", [(x - .12, top), (x + .12, top), (x + .12, top - 2.25), (x - .12, top - 2.25)], y - .1, y - .085, GOLD))
-    parts += crown(col, (x, y - .11, top - .9), .5)
+    parts.append(prism(col, "Banner stripe", [(x - .12, top), (x + .12, top), (x + .12, top - 2.25), (x - .12, top - 2.25)], y - .1, y - .085, BRASS))
+    # R686 (승규 11-17 "왕관 지워"): no crown on the banner.
     return parts
 
 
@@ -440,7 +496,7 @@ def gear(col, centre, r, thick, teeth=16):
     for k in range(6):
         a = 2 * math.pi * k / 6
         parts.append(beam(col, "Gear spoke", (cx, cy, cz), (cx + (r - .14) * math.cos(a), cy, cz + (r - .14) * math.sin(a)), w=.09, h=thick * .8, mat=WALNUT, segments=1))
-    parts.append(cylinder(col, "Gear hub", (cx, cy - .05, cz), (0, 1, 0), .22, thick + .1, GOLD, segments=14))
+    parts.append(cylinder(col, "Gear hub", (cx, cy - .05, cz), (0, 1, 0), .22, thick + .1, BRASS, segments=14))
     return parts
 
 
@@ -451,16 +507,17 @@ def basin_dock(col, side):
     for j in (-2.6, 2.6):
         parts.append(ashlar(col, "Sluice jamb", (cx + j - .45, CLIFF_Y - .45, WATER), (cx + j + .45, CLIFF_Y - .02, 4.6), "-y", course=.5, length=.9))
     parts.append(box(col, "Sluice lintel", (cx - 3.1, CLIFF_Y - .5, 4.6), (cx + 3.1, CLIFF_Y - .02, 5.6), STONE, bevel=.06))
-    parts.append(prism(col, "Sluice keystone", [(cx - .35, 5.5), (cx + .35, 5.5), (cx + .25, 4.7), (cx - .25, 4.7)], CLIFF_Y - .55, CLIFF_Y - .45, GOLD))
+    parts.append(prism(col, "Sluice keystone", [(cx - .35, 5.5), (cx + .35, 5.5), (cx + .25, 4.7), (cx - .25, 4.7)], CLIFF_Y - .55, CLIFF_Y - .45, BRASS))
     y0, y1 = CLIFF_Y - .3, CLIFF_Y - .2
     x = cx - 2.1
     while x < cx + 2.1 - 1e-3:
         parts.append(box(col, "Sluice gate board", (x + .01, y0, 3.42), (min(x + .3, cx + 2.1) - .01, y1, 4.55), WALNUT, bevel=.012, segments=1))
         x += .3
     for gx in (-1.8, -1.2, -.6, 0, .6, 1.2, 1.8):
-        parts.append(box(col, "Gate bar", (cx + gx - .05, y0 - .04, 3.3), (cx + gx + .05, y0, 4.55), IRON, bevel=.01, segments=1))
+        parts.append(box(col, "Gate bar", (cx + gx - .05, y0 - .035, 3.3), (cx + gx + .05, y0, 4.55), IRON, bevel=.01, segments=1))
+    # R686: the rails 4 cm proud of the bars (their fronts were 2 cm apart and flickered over the gate).
     for gz in (3.5, 4.4):
-        parts.append(box(col, "Gate rail", (cx - 2.1, y0 - .06, gz - .05), (cx + 2.1, y0 - .02, gz + .05), IRON, bevel=.01, segments=1))
+        parts.append(box(col, "Gate rail", (cx - 2.1, y0 - .075, gz - .05), (cx + 2.1, y0 - .03, gz + .05), IRON, bevel=.01, segments=1))
     parts += gear(col, (cx + side * 3.4, CLIFF_Y - .3, 3.2), .8, .14)
     # The barge moored 1.4 m off the cliff, its length along it.
     y0, y1, deck = LANDING_Y - 3.2, LANDING_Y, .15
@@ -469,7 +526,8 @@ def basin_dock(col, side):
     parts.append(prism(col, "Barge hull", hull, bx0 + .5, bx1 - .5, WALNUT, axis="x"))
     for end, d in ((bx0, 1), (bx1, -1)):
         a = end + d * .5
-        tip = [(y0 + .4, WATER - .2), (y1 - .4, WATER - .2), (y1 - .2, deck), (y0 + .2, deck)]
+        # R686: the end blocks' tops 3 cm over the deck's (level with it, they flickered: rcy-textures' 4 mm check).
+        tip = [(y0 + .4, WATER - .2), (y1 - .4, WATER - .2), (y1 - .2, deck + .03), (y0 + .2, deck + .03)]
         lo_x, hi_x = sorted((a, end))
         parts.append(prism(col, "Barge end", tip, lo_x, hi_x, WALNUT, axis="x"))
     for k in range(3):
@@ -483,17 +541,17 @@ def basin_dock(col, side):
         for k in range(7):
             px = bx0 + .5 + k * (bx1 - bx0 - 1.0) / 6
             parts.append(box(col, "Rail post", (px - .05, yy, deck + .3), (px + .05, yy + .12, deck + .42), WALNUT, bevel=.01, segments=1))
-    parts.append(box(col, "Barge trim", (bx0 + .4, y0 - .02, deck + .3), (bx1 - .4, y0 + .02, deck + .36), GOLD, bevel=.008, segments=1))
+    parts.append(box(col, "Barge trim", (bx0 + .4, y0 - .02, deck + .3), (bx1 - .4, y0 + .02, deck + .36), BRASS, bevel=.008, segments=1))
     for i in range(3):
         lx = cx - side * (2.6 - i * 1.5)
-        parts += crate(col, (lx, mid, deck), (1.2, 1.2, 1.2), dark=(i == 1))
-    parts += crate(col, (cx - side * 2.1, mid, deck + 1.2), (.9, .9, .9))
+        parts += crate_pale(col, (lx, mid, deck), (1.2, 1.2, 1.2), dark=(i == 1))
+    parts += crate_pale(col, (cx - side * 2.1, mid, deck + 1.2), (.9, .9, .9))
     for dy in (-.8, .8):
         parts += barrel(col, (cx + side * 1.9, mid + dy, deck), d=.8, h=1.1)
     parts += covered_load(col, (cx + side * 3.1 - .7, mid - .9, deck), (cx + side * 3.1 + .7, mid + .9, deck + 1.3), 7 + side)
     # Mooring ropes to rings on the cliff.
     for rx in (bx0 + 1.0, bx1 - 1.0):
-        parts.append(beam(col, "Mooring rope", (rx, y1 - .05, deck + .25), (rx, CLIFF_Y - .1, deck + .32), w=.07, h=.07, mat=LEATHER, segments=1))
+        parts.append(beam(col, "Mooring rope", (rx, y1 - .05, deck + .25), (rx, CLIFF_Y - .1, deck + .32), w=.07, h=.07, mat=ROPE, segments=1))
         ring = arc_ring(col, "Mooring ring", 0, 0, .1, .15, -.025, .025, IRON, seg=16, bevel=0)
         ring.rotation_euler = (math.radians(90), 0, 0)
         ring.location = (rx, CLIFF_Y - .06, deck + .25)
@@ -501,17 +559,17 @@ def basin_dock(col, side):
     # The jib crane on the platform over the barge, a net of sacks hanging from it.
     jx = cx + side * 2.2
     parts += square_post(col, "Jib post", jx, CLIFF_Y + 1.4, TOP, TOP + 4.8, w=.5, mat=WALNUT, bands=(TOP + .6, TOP + 4.2))
-    parts.append(box(col, "Jib post foot", (jx - .3, CLIFF_Y + 1.1, TOP), (jx + .3, CLIFF_Y + 1.7, TOP + .2), STONE, bevel=.03))
+    parts.append(box(col, "Jib post foot", (jx - .3, CLIFF_Y + 1.1, TOP), (jx + .3, CLIFF_Y + 1.7, TOP + .2), SHADE, bevel=.03))
     parts.append(beam(col, "Jib arm", (jx, CLIFF_Y + 1.6, TOP + 4.6), (jx, CLIFF_Y - 4.8, TOP + 4.6), w=.36, h=.36, mat=WALNUT))
     parts.append(beam(col, "Jib brace", (jx, CLIFF_Y + 1.25, TOP + 2.3), (jx, CLIFF_Y - 1.45, TOP + 4.45), w=.22, h=.22, mat=WALNUT))
-    parts.append(box(col, "Jib band", (jx - .2, CLIFF_Y - 4.7, TOP + 4.4), (jx + .2, CLIFF_Y - 4.5, TOP + 4.8), GOLD, bevel=.02))
+    parts.append(box(col, "Jib band", (jx - .2, CLIFF_Y - 4.7, TOP + 4.4), (jx + .2, CLIFF_Y - 4.5, TOP + 4.8), BRASS, bevel=.02))
     parts.append(lathe(col, "Jib pulley", [(0, -.06), (.16, -.06), (.12, 0), (.16, .06), (0, .06)], (jx, CLIFF_Y - 4.7, TOP + 4.3), axis="x", seg=12, mat=IRON))
-    parts.append(beam(col, "Jib rope", (jx, CLIFF_Y - 4.7, TOP + 4.25), (jx, CLIFF_Y - 4.7, deck + 3.25), w=.05, h=.05, mat=LEATHER, segments=1))
+    parts.append(beam(col, "Jib rope", (jx, CLIFF_Y - 4.7, TOP + 4.25), (jx, CLIFF_Y - 4.7, deck + 3.25), w=.05, h=.05, mat=ROPE, segments=1))
     parts.append(lathe(col, "Jib hook", [(0, 3.15), (.08, 3.15), (.1, 3.25), (.05, 3.33), (0, 3.35)], (jx, CLIFF_Y - 4.7, deck), seg=8, mat=IRON))
     parts.append(lumpy(col, "Sack net", (jx, CLIFF_Y - 4.7, deck + 2.15), (.62, .62, .55), SACK, 31 + side))
     for k in range(4):
         a = math.pi * k / 4
-        parts.append(beam(col, "Net cord", (jx + .66 * math.cos(a), CLIFF_Y - 4.7 + .66 * math.sin(a), deck + 2.5), (jx, CLIFF_Y - 4.7, deck + 3.15), w=.03, h=.03, mat=LEATHER, segments=1))
+        parts.append(beam(col, "Net cord", (jx + .66 * math.cos(a), CLIFF_Y - 4.7 + .66 * math.sin(a), deck + 2.5), (jx, CLIFF_Y - 4.7, deck + 3.15), w=.03, h=.03, mat=ROPE, segments=1))
     for bx in (cx - 4.4, cx + 4.4):
         parts += banner(col, bx, CLIFF_Y - .02, 7.7)
     return parts

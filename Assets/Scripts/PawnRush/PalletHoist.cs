@@ -23,7 +23,7 @@ namespace ChessFight.PawnRush
     // This object is the post's foot, on the floor in the middle of the plates' depth; `outward` is +1 when its outer
     // pallet is to +x (the yard's east pair), -1 for the west one. Built from code on an inactive object: Configure, then
     // switch it on.
-    public sealed class PalletHoist : MonoBehaviour
+    public sealed partial class PalletHoist : MonoBehaviour
     {
         [Tooltip("+1: the outer pallet to +x of the post (the east pair); -1: to -x")]
         [SerializeField] float outward = 1f;
@@ -206,6 +206,7 @@ namespace ChessFight.PawnRush
                 clackedSwap = swap;
                 if (clack != null) clack.PlayOneShot(clack.clip, 1f);
             }
+            HoistSounds(now, swap, first.Move, half);   // 2026-11-17: the ropes running and the pallets landing (PalletHoist.Sound.cs)
         }
 
         void OnDestroy()

@@ -325,10 +325,10 @@ def hay_bale(col, lo, hi, seed):
     for t in (.3, .7):
         if long_x:
             x = lo.x + (hi.x - lo.x) * t
-            parts.append(box(col, "Twine", (x - .02, lo.y - .01, lo.z + .03), (x + .02, hi.y + .01, hi.z + .005), LEATHER))
+            parts.append(box(col, "Twine", (x - .02, lo.y - .01, lo.z + .03), (x + .02, hi.y + .01, hi.z + .005), "RCY | rope"))
         else:
             y = lo.y + (hi.y - lo.y) * t
-            parts.append(box(col, "Twine", (lo.x - .01, y - .02, lo.z + .03), (hi.x + .01, y + .02, hi.z + .005), LEATHER))
+            parts.append(box(col, "Twine", (lo.x - .01, y - .02, lo.z + .03), (hi.x + .01, y + .02, hi.z + .005), "RCY | rope"))
     return parts
 
 
@@ -356,16 +356,16 @@ def covered_load(col, lo, hi, seed):
     parts = [mesh_object("Covered load", bm, col, (CLOTH,))]
     long_x = s.x >= s.y
     if long_x:
-        parts.append(box(col, "Cloth stripe", (lo.x - .03, c.y - .11, lo.z + .05), (hi.x + .03, c.y + .11, hi.z + .02), GOLD))
+        parts.append(box(col, "Cloth stripe", (lo.x - .03, c.y - .11, lo.z + .05), (hi.x + .03, c.y + .11, hi.z + .02), "RCY | velvet"))   # R686: a cloth band (the green trim cloth), not metal
     else:
-        parts.append(box(col, "Cloth stripe", (c.x - .11, lo.y - .03, lo.z + .05), (c.x + .11, hi.y + .03, hi.z + .02), GOLD))
+        parts.append(box(col, "Cloth stripe", (c.x - .11, lo.y - .03, lo.z + .05), (c.x + .11, hi.y + .03, hi.z + .02), "RCY | velvet"))
     for t in (.22, .78):
         if long_x:
             x = lo.x + s.x * t
-            parts.append(box(col, "Rope", (x - .03, lo.y - .04, lo.z + .1), (x + .03, hi.y + .04, hi.z + .015), LEATHER))
+            parts.append(box(col, "Rope", (x - .03, lo.y - .04, lo.z + .1), (x + .03, hi.y + .04, hi.z + .015), "RCY | rope"))
         else:
             y = lo.y + s.y * t
-            parts.append(box(col, "Rope", (lo.x - .04, y - .03, lo.z + .1), (hi.x + .04, y + .03, hi.z + .015), LEATHER))
+            parts.append(box(col, "Rope", (lo.x - .04, y - .03, lo.z + .1), (hi.x + .04, y + .03, hi.z + .015), "RCY | rope"))
     return parts
 
 
@@ -384,7 +384,7 @@ def valance(col, x, y0, y1, top, depth, width=.9):
             t = 1 - j / 8
             pts.append((a + w * t, top - depth * (.7 + .3 * math.sin(math.pi * t))))
         parts.append(prism(col, "Valance", pts, x - .025, x + .025, CLOTH, axis="x"))
-    parts.append(box(col, "Valance hem", (x - .035, y0, top - .06), (x + .035, y1, top), GOLD))
+    parts.append(box(col, "Valance hem", (x - .035, y0, top - .06), (x + .035, y1, top), BRASS))   # R686: decorative edge in matte brass (PLAN.md: gold only for crowns)
     return parts
 
 
@@ -463,7 +463,9 @@ def shed(col, side):
         p0 = Vector((back + dx * t0, 0, high + dz * t0)) + lift
         p1 = Vector((back + dx * t1, 0, high + dz * t1)) + lift
         parts.append(tile_course(col, p0, p1, SHED_Z0 - .2, SHED_Z1 + .2, up))
-    parts.append(box(col, "Fascia", (eave_x - .05, SHED_Z0 - .2, low - .14), (eave_x + .05, SHED_Z1 + .2, low + .04), GOLD, bevel=.015))
+    # R686 (texture pass): the fascia's edge in matte brass, as the concept's granary bay has it (was the gold slot, which
+    # read as a bright functional-gold line along every eave; bright gold is for what a pawn steps on or holds).
+    parts.append(box(col, "Fascia", (eave_x - .05, SHED_Z0 - .2, low - .14), (eave_x + .05, SHED_Z1 + .2, low + .04), BRASS, bevel=.015))
     # R682 (the concept's granary bay: "a crenel-cut oak fascia and a matte brass edge"): a battlement-cut oak board under
     # the brass-edged fascia (was a scalloped cloth valance; the royal canopy keeps its cloth).
     parts.append(crenel_fascia(col, "Crenel fascia", eave_x - side * .03, SHED_Z0 - .2, SHED_Z1 + .2, low - .1))
@@ -482,7 +484,7 @@ def shed(col, side):
     cx0, cx1 = min(front - side * .45, front + side * 1.2), max(front - side * .45, front + side * 1.2)
     parts.append(box(col, "Royal canopy", (cx0, mid - bay * .55, 3.55), (cx1, mid + bay * .55, 3.74), CLOTH, bevel=.04))
     parts += valance(col, front - side * .47, mid - bay * .55, mid + bay * .55, 3.6, .5, width=.75)
-    parts += crown(col, (front - side * .5, mid, 3.74), .6)
+    # R686 (승규 11-17 "왕관 지워"): no crown on the canopy.
     for i in range(bays):
         parts += load(col, side, front, SHED_Z0 + (i + .5) * bay, bay, (i * 7 + (0 if side < 0 else 3)) % 5, i + (0 if side < 0 else 20))
     return parts

@@ -16,6 +16,9 @@
 # line), the sign.
 
 # The stone and timber helpers (ashlar, flagstones, balustrade, beam ...) are rcy_kit.py's.
+# R686 (textures): footings, plinths and stone under water are the concept's darker "shade stone" slot (rcy_kit
+# names it SHADE; the fallback keeps this file running on an rcy_kit without it).
+SHADE = globals().get("SHADE") or "RCY | shade"
 
 
 def walkway(col, lo, hi, gap_south):
@@ -44,7 +47,7 @@ def build_canal():
 
     # Bed, banks, the canal's side walls (their inner faces coursed above the water).
     bl, bh = col_box("2 Canal/Canal bed")
-    pieces.append(box(col, "Canal bed", bl, bh, STONE))
+    pieces.append(box(col, "Canal bed", bl, bh, SHADE))
     for p in ("2 Canal/Bank S", "2 Canal/Bank N"):
         lo, hi = col_box(p)
         pieces.append(ashlar(col, p.split("/")[-1], lo, hi, "+y", below=None))
@@ -104,18 +107,19 @@ def build_canal():
     for i in range(2):
         lo, hi = col_box("2 Canal/Axle post", i)
         cx, cy = (lo.x + hi.x) / 2, (lo.y + hi.y) / 2
-        pieces.append(box(col, "Axle post", lo, hi, WALNUT, bevel=.06))
+        pieces.append(box(col, "Axle post", lo, hi, OAK, bevel=.06))
         for z in (water + .2, 1.2, 3.2):
             pieces.append(box(col, "Post band", (lo.x - .025, lo.y - .025, z), (hi.x + .025, hi.y + .025, z + .14), IRON, bevel=.01, segments=1))
         out = -1 if cy < 66 else 1   # braces lean away from the wheel, under the water and the axle
-        pieces.append(beam(col, "Post brace", (cx, cy + out * .3, 1.0), (cx, cy + out * 2.4, -4.5), .3, .3))
+        pieces.append(beam(col, "Post brace", (cx, cy + out * .3, 1.0), (cx, cy + out * 2.4, -4.5), .3, .3, mat=OAK))
         for sx in (-1, 1):
-            pieces.append(beam(col, "Post brace", (cx + sx * .35, cy, .6), (cx + sx * 1.8, cy, -4.5), .26, .26))
+            pieces.append(beam(col, "Post brace", (cx + sx * .35, cy, .6), (cx + sx * 1.8, cy, -4.5), .26, .26, mat=OAK))
         # The bearing (a picture in the blockout) slimmed to a pillow block hugging the axle, so the hub's medallion
         # shows round it from the entry landing.
         b = by_path("2 Canal/Bearing")[i]
         bp, bs = u2b(b["pos"]), uscale2b(b["scale"])
-        pieces.append(box(col, "Bearing", (bp.x - .36, bp.y - bs.y / 2, hi.z - .02), (bp.x + .36, bp.y + bs.y / 2, ap_z - .05), IRON, bevel=.03))
+        # R686: 3 cm proud of the post on every side (it was 1 cm and 5 mm: it flickered on the post's faces).
+        pieces.append(box(col, "Bearing", (bp.x - .38, bp.y - bs.y / 2 - .03, hi.z - .02), (bp.x + .38, bp.y + bs.y / 2 + .03, ap_z - .05), IRON, bevel=.03))
         pieces.append(cylinder(col, "Bearing cap", (bp.x, bp.y, ap_z), (0, 1, 0), .32, bs.y, IRON, 20, .02))
     ax = by_path("2 Canal/Axle")[0]
     ap = u2b(ax["pos"])
@@ -123,42 +127,47 @@ def build_canal():
     for y in (-1.6, 1.6):
         pieces.append(cylinder(col, "Axle collar", (ap.x, ap.y + y, ap.z), (0, 1, 0), .3, .12, IRON, 20, .015))
 
-    # The flume: a planked trough with iron straps, the cistern, the two trestles (solid posts in the blockout).
-    fl = by_path("2 Canal/Flume")[0]
-    fp, fs = u2b(fl["pos"]), uscale2b(fl["scale"])
-    flo, fhi = fp - fs / 2, fp + fs / 2
-    pieces.append(box(col, "Flume floor", flo, fhi, WALNUT, bevel=.02))
-    for side in by_path("2 Canal/Flume side"):
-        sp, ss = u2b(side["pos"]), uscale2b(side["scale"])
-        pieces.append(box(col, "Flume side", sp - ss / 2, sp + ss / 2, WALNUT, bevel=.02))
-    y = flo.y + .4
-    while y < fhi.y:
-        pieces.append(box(col, "Flume strap", (flo.x - .12, y, flo.z - .05), (fhi.x + .12, y + .08, fhi.z + .52), IRON, bevel=.01, segments=1))
-        y += 1.2
-    cs = by_path("2 Canal/Cistern")[0]
-    cp, csz = u2b(cs["pos"]), uscale2b(cs["scale"])
-    clo, chi = cp - csz / 2, cp + csz / 2
-    pieces.append(box(col, "Cistern", clo, chi, WALNUT, bevel=.05))
+    # The flume (R686, 승규 "떨어지는 물도 … 사진에서 왼쪽에"; the concept U2): a planked trough coming in from the west
+    # across the wheel's plane to a mouth just short of its top, iron straps, the cistern at its west end, two trestles
+    # standing in the water west of the west walkway (their posts on the code's solid boxes), each a pair of posts with
+    # X braces and a cap beam, and two raking struts carrying the trough's long reach towards the wheel. As
+    # RoyalCarriageYard.Sections.cs Flume() (FlumeMouthX, FlumeStartX, FlumeLift, FlumeTrestleX) - computed, since the
+    # Play dump (guides/rcy_built_play.json) has the flume where it was, along z behind the wheel.
+    axle_y, radius, bed = 5.267, 9.0, -4.5
+    fy = axle_y + radius + .65                     # the trough's floor (Unity y)
+    fx0, fx1, fz = -13.6, -.5, 66.0
+    pieces.append(box(col, "Flume floor", (fx0, fz - .8, fy), (fx1, fz + .8, fy + .2), OAK, bevel=.02))
+    for d in (-.8, .7):
+        pieces.append(box(col, "Flume side", (fx0, fz + d, fy + .2), (fx1, fz + d + .1, fy + .7), OAK, bevel=.02))
+    x = fx0 + 1.1   # the first strap clear of the cistern's face
+    while x < fx1 - .1:
+        pieces.append(box(col, "Flume strap", (x, fz - .83, fy - .03), (x + .1, fz + .83, fy + .72), IRON, bevel=.008, segments=1))
+        x += 1.2
+    clo, chi = Vector((fx0 - 1.4, fz - 1.2, fy - .2)), Vector((fx0 + .6, fz + 1.2, fy + 1.4))
+    pieces.append(box(col, "Cistern", clo, chi, OAK, bevel=.05))
     for z in (clo.z + .25, chi.z - .35):
-        pieces.append(box(col, "Cistern hoop", (clo.x - .03, clo.y - .03, z), (chi.x + .03, chi.y + .03, z + .1), IRON, bevel=.01, segments=1))
-    for x in (clo.x, chi.x - .18):
-        for yy in (clo.y, chi.y - .18):
-            pieces.append(box(col, "Cistern corner", (x - .02, yy - .02, clo.z - .05), (x + .2, yy + .2, chi.z + .08), WALNUT, bevel=.02))
-    posts = by_path("2 Canal/Trestle post")
-    for n in posts:
-        c = n["cols"][0]
-        lo, hi = u2b(c["min"]), u2b(c["max"])
-        pieces.append(box(col, "Trestle post", lo, hi, WALNUT, bevel=.03))
-    for n in by_path("2 Canal/Trestle beam"):
-        bp, bs = u2b(n["pos"]), uscale2b(n["scale"])
-        pieces.append(box(col, "Trestle beam", bp - bs / 2, bp + bs / 2, WALNUT, bevel=.03))
-    for y in sorted({round(u2b(n["pos"]).y, 2) for n in posts}):
-        z = -4.5
-        while z < 12.5:
-            pieces.append(beam(col, "Trestle brace", (-.6, y, z), (.6, y, z + 3.0), .14, .12))
-            pieces.append(beam(col, "Trestle brace", (.6, y, z), (-.6, y, z + 3.0), .14, .12))
-            pieces.append(box(col, "Trestle tie", (-.75, y - .07, z + 3.0), (.75, y + .07, z + 3.18), WALNUT, bevel=.02))
-            z += 3.0
+        pieces.append(box(col, "Cistern hoop", (clo.x - .03, clo.y - .03, z), (chi.x + .03, chi.y + .03, z + .12), IRON, bevel=.01, segments=1))
+    for cx in (clo.x, chi.x - .18):
+        for cy in (clo.y, chi.y - .18):
+            pieces.append(box(col, "Cistern corner", (cx - .03, cy - .03, clo.z - .05), (cx + .21, cy + .21, chi.z + .08), WALNUT, bevel=.02))
+    for tx in (-10.6, -13.3):
+        for d in (-.6, .6):
+            pieces.append(box(col, "Trestle post", (tx - .15, fz + d - .15, bed), (tx + .15, fz + d + .15, fy - .2), WALNUT, bevel=.03))
+            for zb in (water + .2, 4.0, 9.0):
+                pieces.append(box(col, "Post band", (tx - .18, fz + d - .18, zb), (tx + .18, fz + d + .18, zb + .14), IRON, bevel=.01, segments=1))
+        pieces.append(box(col, "Trestle beam", (tx - .18, fz - .9, fy - .45), (tx + .18, fz + .9, fy - .2), WALNUT, bevel=.03))
+        z = water + .3
+        while z < fy - 3.2:
+            # The X's two braces on the posts' two faces (in one plane they flickered where they cross).
+            pieces.append(beam(col, "Trestle brace", (tx - .1, fz - .6, z), (tx - .1, fz + .6, z + 2.8), .14, .12, mat=WALNUT))
+            pieces.append(beam(col, "Trestle brace", (tx + .1, fz + .6, z), (tx + .1, fz - .6, z + 2.8), .14, .12, mat=WALNUT))
+            pieces.append(box(col, "Trestle tie", (tx - .07, fz - .75, z + 2.8), (tx + .07, fz + .75, z + 2.98), WALNUT, bevel=.02))
+            z += 2.8
+    # The long reach: a raking strut each side from the inner trestle up under the trough, clear of the wheel (9.3 m round).
+    for d in (-.6, .6):
+        pieces.append(beam(col, "Flume strut", (-10.45, fz + d, 8.6), (-6.4, fz + d, fy - .03), .24, .24, mat=WALNUT))
+        pieces.append(box(col, "Strut shoe", (-6.75, fz + d - .16, fy - .12), (-6.05, fz + d + .16, fy - .02), IRON, bevel=.008))
+
     # Fold everything into one object per material family's worth of pieces (few draw calls).
     rest = [o for o in col.objects]
     # R681: then one object per ~10 m along the canal (rcy_kit.split_cells), so Unity can cull what is off screen.
@@ -223,17 +232,21 @@ def ring(col, name, r0, r1, y0, y1, segments, mat, bevel=.03):
 def build_wheel():
     col = collection("RCY Wheel")
     clear(col)
-    R, rim, depth, hub, spokes, buckets = 9.0, .6, 1.0, 1.1, 6, 28
+    # R686 (승규 "돌아가는 것도 더 두껍잖아"): the rim and buckets 1.6 m deep and out to 9.3 m (were 1.0 and 9.0), the rim
+    # 0.9 m across; the spokes stay where the code's are (its 1.0 m wheel, `code_half`), the hub reaches the new faces.
+    R, rim, depth, hub, spokes, buckets = 9.3, .9, 1.6, 1.1, 6, 28
     half = depth / 2
+    code_half, code_inside = .5, 9.0 - .6
     parts = []
     # Two rims (the blockout's: r 8.4..9.0, y 0.3..0.5 either side), segmented, an iron plate over every joint.
     for side in (-1, 1):
         y0, y1 = sorted((side * (half - .2), side * half))
-        parts += ring(col, "Rim", R - rim, R, y0, y1, buckets, WALNUT)
+        # R686 (승규 "색 … 컨셉 아트랑 똑같이"): honey oak (was walnut), the joint brackets broader and 3 cm proud.
+        parts += ring(col, "Rim", R - rim, R, y0, y1, buckets, OAK)
         for k in range(buckets):
             a = 2 * math.pi * k / buckets
-            plate_y = (y1 + .02) if side > 0 else (y0 - .02)
-            p = box(col, "Rim plate", (-.12, min(plate_y, plate_y - side * .02), R - rim + .05), (.12, max(plate_y, plate_y - side * .02), R - .05), IRON, bevel=.008, segments=1)
+            plate_y = (y1 + .03) if side > 0 else (y0 - .03)
+            p = box(col, "Rim plate", (-.2, min(plate_y, plate_y - side * .03), R - rim + .03), (.2, max(plate_y, plate_y - side * .03), R - .03), IRON, bevel=.01, segments=1)
             p.rotation_euler = (0, a, 0)
             parts.append(p)
     # The buckets: boards across the rims at the rim's outside, a wall inside each.
@@ -242,43 +255,43 @@ def build_wheel():
         a = 2 * math.pi * k / buckets
         b = box(col, "Bucket board", (-chord * .46, -half + .2, R - .1), (chord * .46, half - .2, R), OAK, bevel=.02, segments=1)
         b.rotation_euler = (0, a, 0)
-        w = box(col, "Bucket wall", (-.05, -half + .2, R - rim + .03), (.05, half - .2, R - .1), WALNUT, bevel=.01, segments=1)
+        w = box(col, "Bucket wall", (-.05, -half + .2, R - rim + .03), (.05, half - .2, R - .1), OAK, bevel=.01, segments=1)
         w.rotation_euler = (0, a + math.pi / buckets * .5, 0)
         parts += [b, w]
     # The hub: a drum of staves with iron caps, the crowned knight on brass on both faces.
-    parts.append(cylinder(col, "Hub", (0, 0, 0), (0, 1, 0), hub, depth + .4, WALNUT, 24, .05))
+    parts.append(cylinder(col, "Hub", (0, 0, 0), (0, 1, 0), hub, 2 * code_half + .4, WALNUT, 24, .05))
     for k in range(12):
         a = 2 * math.pi * k / 12
-        s = box(col, "Hub band", (-.08, -half - .2, hub - .02), (.08, half + .2, hub + .03), IRON, bevel=.01, segments=1)
+        s = box(col, "Hub band", (-.08, -code_half - .2, hub - .02), (.08, code_half + .2, hub + .03), IRON, bevel=.01, segments=1)
         s.rotation_euler = (0, a, 0)
         parts.append(s)
     for side in (-1, 1):
         # Cap and medallion as wide as the hub's face (U2), so the crowned knight shows round the axle's bearing.
-        parts.append(cylinder(col, "Hub cap", (0, side * (half + .24), 0), (0, 1, 0), hub - .02, .1, IRON, 32, .02))
-        parts.append(cylinder(col, "Medallion", (0, side * (half + .31), 0), (0, 1, 0), .92, .06, BRASS, 40, .015))
-        my0, my1 = sorted((side * (half + .34), side * (half + .4)))
+        parts.append(cylinder(col, "Hub cap", (0, side * (code_half + .24), 0), (0, 1, 0), hub - .02, .1, IRON, 32, .02))
+        parts.append(cylinder(col, "Medallion", (0, side * (code_half + .31), 0), (0, 1, 0), .92, .06, BRASS, 40, .015))
+        my0, my1 = sorted((side * (code_half + .34), side * (code_half + .4)))
         parts += ring(col, "Medallion rim", .8, .92, my0, my1, 16, BRASS, .01)
-        parts.append(relief(col, "Medallion knight", KNIGHT, side * (half + .34), side, 1.05, .12))
-        parts.append(relief(col, "Medallion crown", CROWN, side * (half + .34), side, 1.05, .1))
+        parts.append(relief(col, "Medallion knight", KNIGHT, side * (code_half + .34), side, 1.05, .12, mat=STONE))   # R686: cream knight (U2)
+        parts.append(relief(col, "Medallion crown", CROWN, side * (code_half + .34), side, 1.05, .1))
         for k in range(12):   # bolt heads round the cap
             a = 2 * math.pi * k / 12 + math.pi / 12
-            parts.append(cylinder(col, "Hub bolt", (math.sin(a) * 1.0, side * (half + .3), math.cos(a) * 1.0), (0, 1, 0), .045, .05, IRON, 8))
+            parts.append(cylinder(col, "Hub bolt", (math.sin(a) * 1.0, side * (code_half + .3), math.cos(a) * 1.0), (0, 1, 0), .045, .05, IRON, 8))
     # Spokes: a pair per blade (the blockout's: .45 wide, .22 thick at y +-.39, r 1.0..8.5), tied twice through the
     # wheel, an iron shoe where each meets the rim, an iron flange where each meets the hub.
-    inside = R - rim
+    inside = code_inside
     length = inside - hub + .2
     mid = hub - .1 + length / 2
     for i in range(spokes):
         a = 2 * math.pi * i / spokes
         blade = []
         for side in (-1, 1):
-            y = side * (half - .11)
+            y = side * (code_half - .11)
             blade.append(box(col, "Spoke", (-.225, y - .11, mid - length / 2), (.225, y + .11, mid + length / 2), OAK, bevel=.04))
             blade.append(box(col, "Spoke shoe", (-.245, y + side * .11, inside - .55), (.245, y + side * .13, inside - .1), IRON, bevel=.008, segments=1))
             blade.append(box(col, "Spoke flange", (-.3, y + side * .11, hub - .05), (.3, y + side * .13, hub + .45), IRON, bevel=.008, segments=1))
         for at in (.45, .8):
             r = hub + (inside - hub) * at
-            blade.append(box(col, "Spoke tie", (-.1575, -half + .15, r - .11), (.1575, half - .15, r + .11), WALNUT, bevel=.02))
+            blade.append(box(col, "Spoke tie", (-.1575, -code_half + .15, r - .11), (.1575, code_half - .15, r + .11), OAK, bevel=.02))
         for o in blade:
             # Blender's turn about +y is the mirror of Unity's about +z: spoke i at -i*60 degrees here.
             o.rotation_euler = (0, -a, 0)

@@ -727,6 +727,16 @@ namespace ChessFight.PawnRush
             }
         }
 
+        // R686: the castle kit's colour correction per texture (rcy-tex-movers-castle measured it; RCY_MODELS.md).
+        static readonly Dictionary<string, Color> CastleTint = new Dictionary<string, Color>
+        {
+            { "RcyCastle_OuterGate", new Color(1.20f, 1.17f, 1.08f) },
+            { "RcyCastle_Towers", new Color(1.33f, 1.14f, 1.06f) },
+            { "RcyCastle_Walls", new Color(1.10f, 1.05f, .93f) },
+            { "RcyCastle_FinalGate", new Color(1.02f, 1.02f, .93f) },
+            { "RcyCastle_SectionEnd", new Color(.98f, .88f, .70f) },
+        };
+
         // A slot's textured material: Resources/PawnRushCarriageYard/<slot> (base colour) and <slot>_N (normal map); the
         // clay when the texture is missing.
         Material CastlePaint(string slot)
@@ -740,6 +750,10 @@ namespace ChessFight.PawnRush
             }
             m = ChessFight.Game.LitMaterials.NewLit(Color.white, .18f);
             m.name = "M_" + slot;
+            // R686 (승규 "성 키트 진행" → colour only, the kit's textures kept): each texture's stone (its brightest 65 %,
+            // area-weighted where the model's UVs land) brought to the yard's library stone RCY_Stone #DCBC90 - a LINEAR
+            // multiplier, some over 1, so it goes in as .gamma (SetColor converts a colour from sRGB to linear).
+            if (CastleTint.TryGetValue(slot, out var tint)) m.SetColor("_BaseColor", tint.gamma);
             m.mainTexture = albedo;
             var normal = Resources.Load<Texture2D>(ModelFolder + slot + "_N");
             if (normal != null && m.HasProperty("_BumpMap"))

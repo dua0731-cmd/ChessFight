@@ -268,6 +268,14 @@ def join(col, name, objs):
     # Cleanup (R680 QA): bevels on boxes thinner than twice their width left zero-area faces; dissolve them (1e-5 m).
     bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
     turn_outward(bm)   # shells the cleanup closed (thin bevelled boards) are checked too
+    if RCY_UNFIGHT:
+        moved = {}   # part -> the directions it moved: once along each axis (a beam's top and its end)
+        for _ in range(int(os.environ.get("RCY_UNFIGHT_PASSES", UNFIGHT_PASSES))):   # a part flush on two sides moves once a pass
+            if not unfight(bm, moved):
+                break
+    if RCY_UVS:
+        surface_uvs(bm, kinds={i: TINT_SLOTS[m.name.split(".")[0]] for i, m in enumerate(mats)
+                               if m.name.split(".")[0] in TINT_SLOTS})
     for o in objs:
         bpy.data.objects.remove(o, do_unlink=True)
     me = bpy.data.meshes.new(name)
@@ -278,6 +286,228 @@ def join(col, name, objs):
     ob = bpy.data.objects.new(name, me)
     col.objects.link(ob)
     return ob
+
+
+# ------------------------------------------------------------------ surface UVs (R686, the texture pass)
+
+# R686 (seoungtest, 11-17 승규 "재질 텍스쳐 컨셉 아트대로 … 구워", uv-workflow / texture-workflow): every joined model gets
+# one UV map in METRES, laid out part by part, so the tiling surface textures (rcy_textures.py, one tile a material,
+# Unity's tiling = 1 / the tile's metres) keep one texel density everywhere. A part is a connected piece (one block, one
+# slab, one board, one tile course): its own frame (the normal of its biggest face, the biggest face across that, and
+# their cross), each face projected on the frame plane it faces most, U along the part's longest side (so wood grain
+# runs down a board and a beam, not across it), plus a random offset from the part's position (each block and board
+# shows another patch of the tile, so neighbours differ in tone and the tile's repeat does not line up). split_cells
+# carries the UVs through its cuts.
+RCY_UVS = True
+UV_SPREAD = 16.0   # metres: the range of the random offset
+
+
+# R686 (승규 11-17 "깜빡깜빡 거리는 곳 고쳐", qa/zfight_check.py): two parts with faces looking the same way within a
+# few mm (a deck's boards flush with the hull's top, a kerb with the flags, an iron band on a chest's face, a beam's
+# face with its posts', corner blocks of two walls) z-fight - the depth test takes one, then the other, frame by frame.
+# join() pushes the smaller part of each such pair UNFIGHT_PUSH along that face's normal, so it sits just proud (its
+# biggest overlap's, a pass; two passes). Faces looking down, and faces with something right in front of them (a back
+# face inside the model), are left: they are never seen, and pushing them made new contacts.
+RCY_UNFIGHT = True
+UNFIGHT_GAP = .02      # faces this close fight (6 mm still flickered in Unity: 승규 11-17, the basin landing's kerb)
+UNFIGHT_PUSH = .02     # and the smaller part moves this far out (clear of the depth test and the shadow bias)
+UNFIGHT_PASSES = 3
+
+
+def open_front(tree, f, n, reach=.5):
+    """A face that can be seen: from its middle or a point halfway to any corner, the space in front is open for
+    `reach` (a face pressed against another part or inside a wall has something right in front of it)."""
+    c = f.calc_center_median()
+    for p in [c] + [(c + v.co) / 2 for v in f.verts]:
+        if tree.ray_cast(p + n * .01, n, reach)[0] is None:
+            return True
+    return False
+
+
+def unfight(bm, moved=None):
+    from mathutils.bvhtree import BVHTree
+    bm.faces.ensure_lookup_table()
+    bm.faces.index_update()
+    lab = [-1] * len(bm.faces)
+    k = 0
+    for f0 in bm.faces:
+        if lab[f0.index] >= 0:
+            continue
+        stack = [f0]
+        lab[f0.index] = k
+        while stack:
+            f = stack.pop()
+            for e in f.edges:
+                for g in e.link_faces:
+                    if lab[g.index] < 0:
+                        lab[g.index] = k
+                        stack.append(g)
+        k += 1
+    if k < 2:
+        return 0
+    area = [0.0] * k
+    for f in bm.faces:
+        area[lab[f.index]] += f.calc_area()
+    tree = BVHTree.FromBMesh(bm)
+    pairs = []   # (part to move, the part it fights, overlap area, normal)
+    for f in bm.faces:
+        a = f.calc_area()
+        if a < 2e-4 or f.normal.z < -.5:
+            continue
+        c, n = f.calc_center_median(), f.normal
+        # Every face passing within UNFIGHT_GAP of this face's middle or of a point halfway to each corner (a ray from
+        # the middle found the face itself first when two faces are exactly level, and a flag only partly under the
+        # basin's kerb has nothing under its middle: both were missed, 11-17).
+        near = []
+        for p in [c] + [(c + v.co) / 2 for v in f.verts]:
+            near += [hit[2] for hit in tree.find_nearest_range(p, UNFIGHT_GAP)]
+        if len(near) <= 5 or not open_front(tree, f, n):
+            continue   # nothing but itself near, or inside the model (a back face against another part): never seen
+        for gi in dict.fromkeys(near):
+            g = bm.faces[gi]
+            if g.index == f.index or lab[g.index] == lab[f.index] or g.normal.dot(n) < .97:
+                continue
+            if abs((g.verts[0].co - c).dot(n)) > UNFIGHT_GAP:
+                continue   # near those points only through its edge, not lying in this face's plane
+            i, j = lab[f.index], lab[g.index]
+            mover = i if (area[i], i) < (area[j], j) else j
+            if moved is not None and any(abs(u.dot(n)) > .5 for u in moved.get(mover, ())):
+                continue   # moved along this axis already (its first push stands; moving the bigger one cascaded)
+            other = j if mover == i else i
+            pairs.append((mover, other, a, n.copy()))
+            break
+    # A part that wraps the other (an iron band round a post or a beam, a tyre on a rim) is flush on opposite sides:
+    # pushed one way, its far side would land on the post (rcy-tex-canal-sorting, 11-17: the timber cranes' jib bands
+    # flickered after the first push), and swelling it set off the parts round it in turn. Such a part is left: the
+    # model makes it stand more than UNFIGHT_GAP proud (sorting_machines_model PROUD = 3 cm).
+    # Wrapping is per partner: a slab flush with its neighbours on both sides still moves off a kerb laid over it.
+    seen = {}
+    for m, o, a, n in pairs:
+        seen.setdefault((m, o), []).append(n)
+    wraps = {k for k, ns in seen.items() if any(a.dot(b) < -.9 for a in ns for b in ns)}
+    best = {}   # part -> (overlap area, normal)
+    for m, o, a, n in pairs:
+        if (m, o) not in wraps and (m not in best or best[m][0] < a):
+            best[m] = (a, n)
+    if not best:
+        return 0
+    verts = {}
+    for f in bm.faces:
+        if lab[f.index] in best:
+            for v in f.verts:
+                verts[v] = lab[f.index]
+    for v, i in verts.items():
+        v.co += best[i][1] * UNFIGHT_PUSH
+    if moved is not None:
+        for i, (_a, n) in best.items():
+            moved.setdefault(i, []).append(n)
+    return len(best)
+
+
+# R686 (승규 11-17 "판석마다 짙은 돌 섞기"): a stone part's tone as a vertex colour ("Color", linear, per part from the
+# same position hash as its UV offset), which the yard's tinted Lit (Assets/Art/PawnRushCarriageYard/Shaders/RcyTintLit,
+# on RCY_Flag / RCY_Stone / RCY_Shade) multiplies into the albedo: most slabs near 1, about one in six a darker stone,
+# a few warmer; wall blocks a gentler spread. Every other part's colour is white (1, 1, 1).
+TINT_SLOTS = {"RCY | flag": "flag", "RCY | stone": "wall", "RCY | shade": "wall"}
+
+
+def part_tint(kind, r):
+    u, a, b = r.random(), r.random(), r.random()
+    if kind == "flag":
+        if u < .17:                                   # a darker stone
+            v = .70 + .14 * a
+            return (v, v * .965, v * .93)
+        if u < .25:                                   # a warmer one
+            v = .96 + .05 * a
+            return (v, v * .955, v * .89)
+        v = .93 + .09 * a
+        return (v, v * (1 - .02 * b), v * (1 - .035 * b))
+    if kind == "wall":
+        if u < .1:
+            v = .84 + .08 * a
+            return (v, v * .975, v * .95)
+        v = .94 + .07 * a
+        return (v, v * (1 - .015 * b), v * (1 - .03 * b))
+    return (1.0, 1.0, 1.0)
+
+
+def surface_uvs(bm, salt=0, kinds=None):
+    """kinds: material index -> TINT_SLOTS kind ('flag', 'wall'); the parts in those materials get a tone (part_tint)."""
+    import zlib
+    uv = bm.loops.layers.uv.verify()
+    tint = bm.loops.layers.float_color.get("Color") or bm.loops.layers.float_color.new("Color")
+    kinds = kinds or {}
+    bm.faces.index_update()
+    seen = bytearray(len(bm.faces))
+    parts = 0
+    for f0 in bm.faces:
+        if seen[f0.index]:
+            continue
+        seen[f0.index] = 1
+        stack, faces = [f0], []
+        while stack:
+            f = stack.pop()
+            faces.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if not seen[g.index]:
+                        seen[g.index] = 1
+                        stack.append(g)
+        r = _part_uvs(faces, uv, salt, zlib)
+        tone = {}
+        for f in faces:
+            kind = kinds.get(f.material_index)
+            if kind not in tone:
+                tone[kind] = part_tint(kind, random.Random(r * 7919 + len(tone))) if kind else (1.0, 1.0, 1.0)
+            c = tone[kind] + (1.0,)
+            for loop in f.loops:
+                loop[tint] = c
+        parts += 1
+    return parts
+
+
+_UV_AXES = (Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1)))
+
+
+def _part_uvs(faces, uv, salt, zlib):
+    areas = [f.calc_area() for f in faces]
+    k = max(range(len(faces)), key=areas.__getitem__)
+    a = faces[k].normal.copy()
+    if a.length < .5:
+        a = Vector((0, 0, 1))
+    b, best = None, 0.0
+    for f, ar in zip(faces, areas):
+        if ar > best and abs(f.normal.dot(a)) < .2:
+            b, best = f.normal, ar
+    if b is None:
+        b = min(_UV_AXES, key=lambda w: abs(w.dot(a)))
+    b = (b - a * b.dot(a)).normalized()
+    axes = (a, b, a.cross(b))
+    verts = {v for f in faces for v in f.verts}
+    lo, ext = [], []
+    for x in axes:
+        ds = [v.co.dot(x) for v in verts]
+        lo.append(min(ds))
+        ext.append(max(ds) - min(ds))
+    long = max(range(3), key=ext.__getitem__)
+    c = sum((v.co for v in verts), Vector()) / len(verts)
+    key = zlib.crc32(("%d %d %d %d" % (round(c.x * 50), round(c.y * 50), round(c.z * 50), salt)).encode())
+    r = random.Random(key)
+    ou, ov = r.random() * UV_SPREAD, r.random() * UV_SPREAD
+    for f in faces:
+        n = f.normal
+        k = max(range(3), key=lambda i: abs(n.dot(axes[i])))
+        plane = [i for i in range(3) if i != k]
+        if long in plane:
+            iu = long
+            iv = plane[0] if plane[1] == long else plane[1]
+        else:
+            iu, iv = sorted(plane, key=lambda i: -ext[i])
+        au, av, lu, lv = axes[iu], axes[iv], lo[iu], lo[iv]
+        for loop in f.loops:
+            p = loop.vert.co
+            loop[uv].uv = (p.dot(au) - lu + ou, p.dot(av) - lv + ov)
+    return key   # the part's hash: surface_uvs draws its tone from it too
 
 
 CELL = 10.0   # R681: the length of a zone model's cells along Blender y (Unity z), split_cells
@@ -471,6 +701,8 @@ def tris(col):
 import random
 
 rnd = random.Random(678)
+SHADE, TIMBER, SOIL = "RCY | shade", "RCY | timber", "RCY | soil"   # R686: plinths/footings/stone under water, raw sawn timber, earth (textures/PLAN.md)
+FLAG = "RCY | flag"   # R686: paving, its own slot (the concept's flagstone swatch, warmer and worn smoother than the walls')
 STONE, MARBLE, WALNUT, OAK, IRON, BRASS = ("RCY | stone", "RCY | marble", "RCY | walnut", "RCY | oak", "RCY | iron",
                                            "RCY | brass")
 
@@ -542,7 +774,7 @@ def ashlar(col, name, lo, hi, face, course=.55, length=1.15, mat=STONE, below=No
     return join(col, name, parts)
 
 
-def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=STONE, rng=None):
+def flagstones(col, name, x0, x1, y0, y1, top=0.0, size=1.0, mat=FLAG, rng=None):
     """A paved top: beveled slabs in running bond, their tops at `top`, on a base slab 6 cm down. Only what can be
     seen is kept: a slab's bottom and the joints between slabs are dropped, the edge of the paving stays."""
     rng = rng or rnd
@@ -594,12 +826,12 @@ def setts_line(col, name, a, b, y0, y1, top, rng):
     """One line of small square setts a..b wide along y (a flagstones() band this narrow would leave its running bond's
     slivers out), on a base like the flags', with the same edges and hidden faces."""
     w = b - a
-    parts = [box(col, name + " base", (a, y0, top - 1.0), (b, y1, top - FLAG_DEPTH), STONE)]
+    parts = [box(col, name + " base", (a, y0, top - 1.0), (b, y1, top - FLAG_DEPTH), FLAG)]
     y = y0
     while y < y1 - 1e-3:
         d = min(w * rng.uniform(.9, 1.15), y1 - y)
         sides = {"-z"} | ({"-y"} if y > y0 + 1e-6 else set()) | ({"+y"} if y + d < y1 - 1e-3 else set())
-        parts.append(hide_sides(box(col, name, (a, y, top - FLAG_DEPTH), (b, y + d, top), STONE, bevel=min(FLAG_BEVEL[0], w / 5),
+        parts.append(hide_sides(box(col, name, (a, y, top - FLAG_DEPTH), (b, y + d, top), FLAG, bevel=min(FLAG_BEVEL[0], w / 5),
                                     segments=FLAG_BEVEL[1], bevel_face="+z" if FLAG_DEPTH > .06 else None), sides))
         y += d
     return join(col, name, parts)

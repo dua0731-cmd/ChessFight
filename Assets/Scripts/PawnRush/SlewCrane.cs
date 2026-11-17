@@ -29,7 +29,7 @@ namespace ChessFight.PawnRush
     //
     // This object is the drum's middle on the floor. Headings are degrees of Unity yaw in this object's frame: 0 points the
     // jib along local +x, -90 along local +z. Built from code on an inactive object: Configure, then switch it on.
-    public sealed class SlewCrane : MonoBehaviour
+    public sealed partial class SlewCrane : MonoBehaviour
     {
         [Header("Crane")]
         [SerializeField] float drumRadius = 1.2f;
@@ -373,6 +373,7 @@ namespace ChessFight.PawnRush
                     if (!late) bell.PlayOneShot(bell.clip, 1f);
                 }
             }
+            SlewSound(heading);   // 2026-11-17: the post and ropes groaning as it slews (SlewCrane.Sound.cs)
         }
 
         // An annulus sector from innerRadius to outerRadius between two headings, in this object's frame. The arrays are

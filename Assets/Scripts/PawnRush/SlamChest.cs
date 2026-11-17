@@ -24,7 +24,7 @@ namespace ChessFight.PawnRush
     // crane's crate does (YardImpact, judged by the part it touches), and the knocked-down are let through the chest
     // until it is hoisted, so nobody is left under it. On the heavy berth (R661, CargoSlam.Lowered) the chest is never let
     // go: the chains stay on it as the winch lowers it, and it is set down hard, sits a long while and is taken on.
-    public sealed class SlamChest : Obstacle
+    public sealed partial class SlamChest : Obstacle
     {
         public enum Stage { Carried, Held, Falling, Down, Hoisted }
 
@@ -144,6 +144,7 @@ namespace ChessFight.PawnRush
             thud.maxDistance = 60f;
             thud.dopplerLevel = 0f;
             SectionSoundGate.Gate(thud);
+            ChestSounds();   // 2026-11-17: the recorded thud, wave and chains (SlamChest.Sound.cs)
         }
 
         static LineRenderer Circle(Transform parent, string name, Material material, float width)
@@ -441,9 +442,13 @@ namespace ChessFight.PawnRush
             if (since >= 0f && since < .2f && trip != thudTrip)
             {
                 thudTrip = trip;
-                thud.volume = 1f;   // R654: the effects volume is the gate's (SectionSoundGate)
-                thud.PlayOneShot(thud.clip, 1f);
+                if (!Landed(trip))   // 2026-11-17: the recorded thud and wave; the code-made thud only without them
+                {
+                    thud.volume = 1f;   // R654: the effects volume is the gate's (SectionSoundGate)
+                    thud.PlayOneShot(thud.clip, 1f);
+                }
             }
+            Chains(trip, into);   // 2026-11-17 (SlamChest.Sound.cs)
         }
 
         static AudioClip thudClip;

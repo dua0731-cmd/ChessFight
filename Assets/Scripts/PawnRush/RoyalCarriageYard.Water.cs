@@ -43,10 +43,22 @@ namespace ChessFight.PawnRush
             [Tooltip("Swell height (m) and its main wavelength (m) on the canal and the pond")]
             public float waveHeight = .028f, waveLength = 3.4f;
             [Tooltip("Degrees past the top at which the giant wheel's buckets start to tip out (they are empty by 132 deg, "
-                     + "or 6 deg before they reach the water). Under ~65 the streams fall back through the buckets below")]
-            [Range(10f, 110f)] public float spillFrom = 65f;
+                     + "or 6 deg before they reach the water). Under ~65 the streams fall back through the wheel's inside "
+                     + "(R686: 26 hung white curtains between the spokes - 승규 \"부자연스러워\"); 80: they empty outside it, "
+                     + "under the rim's overflow")]
+            [Range(10f, 110f)] public float spillFrom = 80f;
             [Tooltip("Speed the water leaves a bucket at, on top of the bucket's own (m/s)")]
-            public float spillOut = .35f;
+            public float spillOut = .9f;
+            [Tooltip("R686: a full bucket's stream radius (m); the concept's pour is a thick cascade (was 0.07)")]
+            public float spillStream = .13f;
+            [Tooltip("R686: the flume's sheet over its mouth: half its width (m) and the speed it leaves at (m/s)")]
+            public float pourHalfWidth = .7f, pourSpeed = .45f;
+            [Tooltip("R686: the water the flume gives the top buckets more of than they hold, riding over the outside of the "
+                     + "giant wheel's falling side and leaving it where gravity can no longer turn it (the concept U2's "
+                     + "cascade over the upper right of the wheel)")]
+            public bool rimOverflow = true;
+            [Tooltip("R686: that overflow's depth over the rim once it has filled (m)")]
+            public float overflowDepth = .1f;
             [Tooltip("Speed the falls leave the cliff's lip and the sluices' sills (m/s): the nappes land u sqrt(2 h / g) out")]
             public float cliffLip = .7f, sluiceLip = 1f;
             [Tooltip("A pawn falling into the canal or the pond splashes (the garden's splash) and rings the water")]
@@ -97,7 +109,8 @@ namespace ChessFight.PawnRush
             var box = Child<Renderer>(canal, "Water");
             float depth = box != null ? Mathf.Abs(box.transform.localScale.y) : 3.3f;
             water.AddSurface("canal", box, surface, new Vector3(waterLook.canalFlow, 0f, 0f), waterLook.waveHeight, waterLook.waveLength, depth, .32f, root);
-            water.AddSurface("flume", Child<Renderer>(canal, "Flume water"), surface, new Vector3(0f, 0f, -waterLook.flumeFlow), .006f, .8f, .3f, .08f, root);
+            // R686: the flume comes in from the west now (Sections.cs Flume), so its water runs east (+x) to the mouth.
+            water.AddSurface("flume", Child<Renderer>(canal, "Flume water"), surface, new Vector3(waterLook.flumeFlow, 0f, 0f), .006f, .8f, .3f, .08f, root);
             foreach (var name in new[] { "Pour", "Spill", "Foam" }) water.Hide(Child<Renderer>(canal, name));
 
             var wheel = canal.GetComponentInChildren<HorizontalWaterwheel>(true);
@@ -105,14 +118,24 @@ namespace ChessFight.PawnRush
             var falls = YardWaterfall.Create(canal, "Water falling (giant wheel)", water, sheet, CanalWater);
             float axle = wheel.transform.localPosition.y, radius = crossing.wheelRadius;
             float sign = crossing.clockwise ? -1f : 1f;
-            // 28 buckets (HorizontalWaterwheel's), the lip at the boards' outer edge, 0.3 m either side of the middle.
-            falls.AddWheel(wheel.transform, Vector3.forward, Vector3.up, radius - .1f, 28, HorizontalWaterwheel.DefaultDepth * .5f - .2f,
-                           sign * Mathf.Abs(crossing.rotationSpeed), true, waterLook.spillFrom, waterLook.spillOut, .07f, 1.6f, 10f, true);
-            // The flume's mouth (Flume(): its floor's top 0.55 m over the wheel's top, the water 0.3 deep in it) pours a
-            // 1.2 m sheet over its end onto the buckets at the top, 0.25 m/s out: it lands 0.1 m on, inside the wheel.
-            float floor = axle + radius + .55f;
-            falls.AddSheet(new Vector3(-.6f, floor + .15f, WheelZ - .3f), new Vector3(.6f, floor + .15f, WheelZ - .3f), Vector3.back, .25f,
-                           axle + radius - .05f, false, 0, .23f);
+            // 28 buckets (HorizontalWaterwheel's), the lip at the boards' outer edge. R686: the wheel's model (canal_model.py)
+            // is 0.3 m bigger round and 1.6 m deep (the concept's thicker wheel; the code's 1.0 m wheel and its colliders
+            // are unchanged inside it): the lip 9.2 m out, the buckets 0.6 m either side of the middle.
+            const float modelGrow = .3f, modelHalfDepth = .8f;
+            falls.AddWheel(wheel.transform, Vector3.forward, Vector3.up, radius + modelGrow - .1f, 28, modelHalfDepth - .2f,
+                           sign * Mathf.Abs(crossing.rotationSpeed), true, waterLook.spillFrom, waterLook.spillOut, waterLook.spillStream,
+                           1.6f, 10f, true);
+            // R686: what the top buckets cannot hold runs over the outside of the rim on the falling side and off it
+            // (YardWaterfall 8): the concept's cascade, outside the wheel instead of through it.
+            if (waterLook.rimOverflow)
+                falls.AddRimFilm(radius + modelGrow + .005f, modelHalfDepth - .2f, Mathf.Max(.03f, waterLook.overflowDepth), .41f);
+            // The flume's mouth (Flume(): its floor's top FlumeLift + 0.2 over the code wheel's top, the water 0.3 deep in
+            // it, R686: the mouth west of the top, the trough running east) pours a sheet as wide as the trough (1.4 m, the
+            // concept's thick pour) east over its end onto the buckets at the top. No round jets out of it (R686: over a
+            // 0.75 m drop they read as stray white threads).
+            float floor = axle + radius + FlumeLift + .2f, pw = waterLook.pourHalfWidth;
+            falls.AddSheet(new Vector3(FlumeMouthX, floor + .15f, WheelZ - pw), new Vector3(FlumeMouthX, floor + .15f, WheelZ + pw), Vector3.right,
+                           waterLook.pourSpeed, axle + radius + modelGrow - .05f, false, 0, .23f);
             falls.Finish();
             if (waterLook.splashes) SplashSlab(water, canal, "canal", -YardHalf, YardHalf, CanalZ0, CanalZ1, CanalWater);
         }

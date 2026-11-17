@@ -264,6 +264,7 @@ namespace ChessFight.PawnRush
             Lighting();
             Water();   // R684: the worked-out water, over the pictures it replaces (RoyalCarriageYard.Water.cs)
             Fx();      // R685: the obstacles' dust, chips, sparks and glints (RoyalCarriageYard.Fx.cs)
+            Sounds();  // 2026-11-17: the wheels turning, the falling and the flowing water (RoyalCarriageYard.Sound.cs)
         }
 
         // The round placed this section and gave it its start and seed (R508; again when a match learns its go).

@@ -46,12 +46,19 @@ namespace ChessFight.PawnRush
     //
     // Never covered: what tells a player something (water, the pour and the spill, the gold jump lines, signs and the
     // countdown, the coaches' lamps that go red through a charge, the charge lines) and the lamps' glow.
-    // Untextured for now: every slot is drawn in the hall's clay (승규: modelling without textures is one grey clay).
-    // The castle kit's RcyCastleOuterGate, RcyCastleFinalGate and RcyCastleSectionEnd come with their textures and are
-    // drawn in them (RoyalCarriageYard.Castle.cs, which also adds their colliders).
+    // Materials (R686, 승규 11-17 "재질 텍스쳐 컨셉 아트대로 … 구워"): each slot "RCY | <name>" is drawn in the baked library
+    // material Resources/PawnRushCarriageYard/Materials/RCY_<Name> (URP Lit, a seamless tile in metres - the models'
+    // UVs are in metres; ArtSource/PawnRush/CarriageYardModels/textures/PLAN.md), or in Materials/<model>/RCY_<Name>
+    // when a model has its own; a slot with neither stays in the hall's clay. The castle kit's RcyCastleOuterGate,
+    // RcyCastleFinalGate and RcyCastleSectionEnd come with their textures and are drawn in them
+    // (RoyalCarriageYard.Castle.cs, which also adds their colliders).
     public partial class RoyalCarriageYard
     {
         const string ModelFolder = "PawnRushCarriageYard/";
+        const string MaterialFolder = ModelFolder + "Materials/";
+
+        [Tooltip("R686: draw the models in the baked material library (Resources/PawnRushCarriageYard/Materials); off = all clay.")]
+        public bool bakedMaterials = true;
 
         // A zone's dressing: its FBX and the blockout group it covers, but for the pieces named in `keep` (a name, or a
         // name's start followed by '*').
@@ -186,6 +193,9 @@ namespace ChessFight.PawnRush
                 }
             hidden += DressSortingMachines();
             Debug.Log("[RoyalCarriageYard] 움직이는 모델 · 블록아웃 " + hidden + "개 그림 끔(충돌은 그대로)");
+            // R686: how many slots got the baked library (Resources/PawnRushCarriageYard/Materials) and which names did not.
+            Debug.Log("[RoyalCarriageYard] 구운 재질 " + bakedSlots + "칸 · 클레이 " + claySlots + "칸" + (bakedMaterials ? "" : " (bakedMaterials 꺼짐)")
+                      + (missedSlots.Count > 0 ? " · 재질 못 찾은 칸 이름: " + string.Join(", ", missedSlots) : ""));
         }
 
         // Zone 3's machines (sorting_machines_model.py): each machine's standing part on its root, each moving part on
@@ -352,14 +362,29 @@ namespace ChessFight.PawnRush
 
         Material HorsePaint(string slot, YardHorse.Coat coat)
         {
-            slot = slot.ToLowerInvariant();
             int c = (int)coat;
+            // R686: the baked coat and hair are neutral grey, tinted per coat; the tack and hooves straight from the library.
+            var key = SlotKey(slot);
+            if (key == "RCY_Coat" || key == "RCY_Hair")
+            {
+                // The grey coat a warm light grey-beige (concept sheet 08; #ECE8E1 over the neutral tile read white and blue).
+                var tint = key == "RCY_Coat" ? new[] { "#8B4A22", "#D6CFC4", "#2A2523" }[c] : new[] { "#3B2216", "#BDB7AE", "#151211" }[c];
+                var tinted = Tinted(Baked(slot, "RcyHorse"), key + c, tint);
+                if (tinted != null) return tinted;
+            }
+            else if (key != null && key != "RCY_Eye")
+            {
+                var m = Baked(slot, "RcyHorse");
+                if (m != null) return m;
+            }
+            slot = slot.ToLowerInvariant();
             if (slot.Contains("coat")) return Paint("coat" + c, new[] { "#8B4A22", "#ECE8E1", "#2A2523" }[c], .35f);
             if (slot.Contains("hair")) return Paint("hair" + c, new[] { "#3B2216", "#BDB7AE", "#151211" }[c], .3f);
             if (slot.Contains("hoof")) return Paint("hoof" + c, new[] { "#2B221D", "#5E5852", "#1C1816" }[c], .5f);
             if (slot.Contains("eye")) return Paint("eye", "#0E0B0A", .85f);
             if (slot.Contains("leather")) return Paint("leather", "#5B3320", .45f);
             if (slot.Contains("gold")) return Paint("gold", "#D9A938", .65f, .85f);
+            if (slot.Contains("brass")) return Paint("brass", "#A07234", .45f, .9f);   // R686: the tack's studs and rosettes
             if (slot.Contains("plume")) return Paint("plume", "#F3ECDB", .2f);
             if (slot.Contains("cloth")) return Paint("cloth", "#8F1D2A", .3f);
             return clay;
@@ -431,7 +456,8 @@ namespace ChessFight.PawnRush
             return model;
         }
 
-        // A model under `parent` (a pivot turned 180 degrees about y), every slot in clay, casting shadows.
+        // A model under `parent` (a pivot turned 180 degrees about y), each slot in its baked material (clay without
+        // one), casting shadows.
         Transform Hang(GameObject model, Transform parent, string name)
         {
             var pivot = new GameObject(name + " (model)").transform;
@@ -442,11 +468,70 @@ namespace ChessFight.PawnRush
             foreach (var r in view.GetComponentsInChildren<Renderer>(true))
             {
                 var slots = r.sharedMaterials;
-                for (int i = 0; i < slots.Length; i++) slots[i] = clay;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    var m = slots[i] != null ? Baked(slots[i].name, name) : null;
+                    if (m != null) bakedSlots++;
+                    else if (slots[i] == null || !slots[i].name.StartsWith("RcyCastle_"))   // the kit's slots: CastlePaint, just after
+                    {
+                        claySlots++;
+                        if (slots[i] != null) missedSlots.Add(slots[i].name);
+                    }
+                    slots[i] = m != null ? m : clay;
+                }
                 r.sharedMaterials = slots;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
             return pivot;
+        }
+
+        // R686: the baked material for an FBX slot ("RCY | stone", Unity may add " (Instance)" and the like): the model's
+        // own Materials/<model>/RCY_Stone first, then the library's Materials/RCY_Stone; null when there is neither (or
+        // bakedMaterials is off). Loaded once each.
+        readonly Dictionary<string, Material> baked = new Dictionary<string, Material>();
+
+        Material Baked(string slot, string modelName)
+        {
+            if (!bakedMaterials) return null;
+            var key = SlotKey(slot);
+            if (key == null) return null;
+            var cache = modelName + "/" + key;
+            if (baked.TryGetValue(cache, out var m)) return m;
+            m = Resources.Load<Material>(MaterialFolder + modelName + "/" + key);
+            if (m == null) m = Resources.Load<Material>(MaterialFolder + key);
+            return baked[cache] = m;
+        }
+
+        // "RCY | stone" -> "RCY_Stone"; null for a name that is not a library slot.
+        // Whatever the importer made of the '|' and the spaces ("RCY | stone", "RCY _ stone", "RCY___stone",
+        // "RCY | stone (Instance)"): the first word after "RCY".
+        static string SlotKey(string slot)
+        {
+            if (string.IsNullOrEmpty(slot) || slot.Length < 4 || !slot.StartsWith("RCY", System.StringComparison.OrdinalIgnoreCase)) return null;
+            int a = 3;
+            while (a < slot.Length && !char.IsLetter(slot[a])) a++;
+            int b = a;
+            while (b < slot.Length && char.IsLetter(slot[b])) b++;
+            if (b == a) return null;
+            return "RCY_" + char.ToUpperInvariant(slot[a]) + slot.Substring(a + 1, b - a - 1).ToLowerInvariant();
+        }
+
+        // What Hang did, for the console: slots drawn baked, in clay, and the slot names that found no material.
+        int bakedSlots, claySlots;
+        readonly HashSet<string> missedSlots = new HashSet<string>();
+
+        // A copy of a baked material with its base colour multiplied by `hex` (the neutral coat and hair per coat), cached.
+        readonly Dictionary<string, Material> tintedMaterials = new Dictionary<string, Material>();
+
+        Material Tinted(Material source, string key, string hex)
+        {
+            if (source == null) return null;
+            if (tintedMaterials.TryGetValue(key, out var m) && m != null) return m;
+            m = new Material(source) { name = source.name + " " + key };
+            // The neutral tile averages about 0.8 grey: lift the tint so the coat's mean matches the old flat colour.
+            var c = Arena.Hex(hex) * 1.25f;
+            m.SetColor("_BaseColor", new Color(Mathf.Min(c.r, 1f), Mathf.Min(c.g, 1f), Mathf.Min(c.b, 1f), 1f));
+            return tintedMaterials[key] = m;
         }
     }
 }

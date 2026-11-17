@@ -15,6 +15,7 @@
 # its towers and the section end's arch, railings and steps are the castle kit's (castle_model.py).
 
 CLIFF_Y, CLIFF_BACK, TOP, WATER = 143.0, 143.6, 8.0, -.5
+KERB_BACK = 144.35   # the platform kerb's back (the paving starts there)
 PLATFORM_HALF, PLATFORM_Y1 = 26.0, 159.0
 LANDING_HALF = 3.5                      # the lifting wheel's landing meets the platform between the railings
 SLUICE_X, SLUICE_HALF = 15.5, 3.1       # the basin docks' sluice arches in the cliff (sorting_model.py)
@@ -32,7 +33,7 @@ def cliff(col):
     """The marble face over the basin, x +-26, from the basin's bed (z -3) to the platform (8). Nothing stands in front of
     y 143 (the collider's face, where the lifting wheel's riders and the swimmers touch it)."""
     x0, x1, f, b = -PLATFORM_HALF, PLATFORM_HALF, CLIFF_Y, CLIFF_BACK
-    parts = [box(col, "Cliff core", (x0, f, -3.0), (x1, b, -.4), MARBLE)]
+    parts = [box(col, "Cliff core", (x0, f, -3.0), (x1, b, -.4), SHADE)]
     # A rusticated base from just under the water, big blocks.
     parts.append(ashlar(col, "Cliff base", (x0, f, -.4), (x1, b, 1.3), "-y", course=.85, length=2.4, mat=MARBLE))
     parts.append(box(col, "Cliff plinth", (x0, f, 1.3), (x1, b, 1.52), MARBLE, bevel=.06))
@@ -69,10 +70,13 @@ def cliff(col):
 
 
 def platform(col):
-    parts = [box(col, "Platform core", (-PLATFORM_HALF, CLIFF_BACK, -3.0), (PLATFORM_HALF, PLATFORM_Y1, TOP - 1.0), STONE)]
-    parts.append(flagstones(col, "Platform paving", -PLATFORM_HALF, PLATFORM_HALF, 143.9, PLATFORM_Y1, TOP, size=2.0))
+    parts = [box(col, "Platform core", (-PLATFORM_HALF, CLIFF_BACK, -3.0), (PLATFORM_HALF, PLATFORM_Y1, TOP - 1.0), SHADE)]
+    # R686 (rcy-textures' z-fighting check): the paving starts behind the kerb - it used to run under it from 143.9, the
+    # kerb's top over the first slabs' tops and its face over the paving base's face (12 m2 drawn twice) - and the kerb
+    # goes down to the paving base's depth, filling what the paving no longer does under it.
+    parts.append(flagstones(col, "Platform paving", -PLATFORM_HALF, PLATFORM_HALF, KERB_BACK, PLATFORM_Y1, TOP, size=2.0))
     # A marble kerb along the coping.
-    parts.append(box(col, "Platform kerb", (-PLATFORM_HALF, 143.9, TOP - .3), (PLATFORM_HALF, 144.35, TOP), MARBLE, bevel=.03))
+    parts.append(box(col, "Platform kerb", (-PLATFORM_HALF, 143.9, TOP - 1.0), (PLATFORM_HALF, KERB_BACK, TOP), MARBLE, bevel=.03))
     parts += edge_railings(col)
     return parts
 
@@ -136,7 +140,7 @@ def rail_bay(col, x0, x1):
 
 def finish_court(col):
     h = COURT_HALF
-    parts = [box(col, "Court core", (-h, COURT_Y0, -3.0), (h, COURT_Y1, TOP - 1.0), STONE)]
+    parts = [box(col, "Court core", (-h, COURT_Y0, -3.0), (h, COURT_Y1, TOP - 1.0), SHADE)]
     parts.append(flagstones(col, "Court paving", -h + .6, h - .6, COURT_Y0, COURT_Y1 - .6, TOP, size=1.6))
     # A marble border round the paving, along the walls.
     for lo, hi in (((-h, COURT_Y0), (-h + .6, COURT_Y1)), ((h - .6, COURT_Y0), (h, COURT_Y1)),
@@ -252,7 +256,7 @@ def section_floors(col):
     parts = []
     for name, y0, y1, top in (("Runout paving", PLATFORM_Y1, RUNOUT_Y1, TOP), ("Terrace paving", RUNOUT_Y1, TERRACE_Y1, TOP),
                               ("Band paving", BAND_Y0, BAND_Y1, TOP - 1.0)):
-        parts.append(box(col, name + " core", (-6.0, y0, -3.0), (6.0, y1, top - 1.0), STONE))
+        parts.append(box(col, name + " core", (-6.0, y0, -3.0), (6.0, y1, top - 1.0), SHADE))
         parts.append(flagstones(col, name, -6.0, 6.0, y0, y1, top, size=1.5))
     # The terrace's edge over the steps in marble.
     parts.append(box(col, "Terrace edge", (-6.0, TERRACE_Y1 - .45, TOP - .3), (6.0, TERRACE_Y1, TOP), MARBLE, bevel=.03))

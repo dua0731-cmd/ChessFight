@@ -412,6 +412,212 @@ QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, �
 - 자동 검사: `Tools/Test-NetworkCore.ps1` Core 통과 · 모의 세션 92 통과(C#은 주석만 바뀜). **Unity에서 불러 본 것 없음, 승규 확인 전, 커밋 안 함.**
   다시 내는 법: `blender -b --factory-startup --python qa/rebuild_models.py -- canal`(entrance · sorting · movers 각각, 마당 · 하역 창고는 몇 분).
 
+## 11-17 R686 마차 · 말 · 승강장 · 배경 · 성 재질 (세션 rcy-tex-movers-castle, 커밋 안 함 · 사용자 Unity 확인 전)
+
+승규 "재질 텍스쳐 컨셉 아트대로 재질 그래픽 극대화로 나오게 구워", 마차 견본을 보고 "바퀴·지붕 고치고 진행". 규칙은 `ArtSource/PawnRush/CarriageYardModels/textures/PLAN.md`(rcy-textures):
+재질 칸마다 라이브러리 타일 1세트 + 부품마다 미터 UV(`rcy_kit.surface_uvs`). 이 세션은 모델 소스의 **칸 이름과 UV만** 바꿈 — 위치 · 크기 · 축 · 뼈 · 콜라이더 상자 그대로.
+
+- **칸 이름:** `movers_model.py` — 마차 · 바퀴 · 연결대의 장식 gold 23곳 → brass(지붕 왕관 `crown()`과 문 문장 위 `Crest crown`만 gold), 바퀴살 oak → walnut,
+  지붕 처마 · 돔 walnut → `RCY | tile`(컨셉의 짙은 회색 지붕판, 그 밑 처마 몰딩은 walnut), 출발 문짝 판 oak → walnut(컨셉 "walnut leaves").
+  `horse_model.py` — 마구의 징 · 장미 장식 · 버클 · 이마 장식 gold → brass(Dressing의 `HorsePaint`에 brass 색은 rcy-textures가 넣음).
+  `platform_model.py` — 승강장 · 결승 마당 · 구간 바닥 · 절벽의 숨은 속 채움 4개 → SHADE(판석은 rcy_kit 기본값 FLAG). `scenery_model.py` · `castle_model.py` 변경 없음.
+- **말 UV:** 말은 `rcy_kit.join()`을 거치지 않아 `export_horse()`가 `horse_uvs()`로 메쉬마다 월드 좌표에서 `surface_uvs`를 건 뒤 LOD1을 만든다
+  (LOD1이 같은 UV를 물려받음). UV는 면 모서리 값이라 점 · 점 순서 · 가중치 · 뼈 이름 그대로.
+- **성 3개:** PLAN대로 AI 키트 UV · 텍스처 그대로, 다시 굽지 않음. 색을 잼(모델 UV 위치에서 albedo를 넓이 가중 평균, 밝은 65 % = 돌):
+  OuterGate #CBAF8B · Towers #C2B18C · Walls #D3B996/#D2B794 · FinalGate #DABA95 · SectionEnd #DEC7A9, 라이브러리 RCY_Stone #DCBC90. 바깥 성문 · 탑은 15 ~ 30 % 어둡고
+  구간 끝은 덜 따뜻함. 곱하기(선형) OuterGate (1.20, 1.17, 1.08) · Towers (1.33, 1.14, 1.06) · Walls (1.10, 1.05, .93) · FinalGate (1.02, 1.02, .93) · SectionEnd (.98, .88, .70)로
+  Blender 전 / 후 렌더(scratchpad `castle_compare.png`)를 보니 차이가 작아 "크게 어긋남"은 아님. 그 뒤 승규 "성 키트 진행" → "색 보정만": 위 값을 `CastlePaint` `_BaseColor`로 넣도록 rcy-textures에 요청함(Castle.cs는 그쪽 몫, 키트 텍스처 · UV는 그대로).
+  rcy-textures가 넣음: `RoyalCarriageYard.Castle.cs`의 `CastleTint` 표(위 선형 값 5개, `_BaseColor = tint.gamma`), `Dressing.cs` `Hang`은 RcyCastle_ 칸을 '못 찾은 칸'으로 안 셈.
+  그쪽 파일은 컴파일 오류 없음(전체 컴파일은 그때 사운드 세션 `CargoConveyor.Sound.cs`의 중복 정의로 실패 중). Unity에서 본 사람 없음.
+- **잰 것(scratchpad에서 다시 지은 FBX vs 지금 FBX, `qa/compare_fbx.py`):** 11개 모두 삼각형 · 넓이 · 크기 · 점 거리 차이 0 —
+  RcyCoach 13,222 · RcyCoachWheel 3,616 · RcyHitch 428 · RcyGateLeafW/E 3,700 · RcyHorse 59,880(LOD0 46,952 · LOD1 12,928) · RcyPlatform 50,688 ·
+  RcyFinishCourt 55,084 · RcySectionFloors 16,164 · RcyScenery 26,080 · RcySceneryOwn 37,472. 말 LOD0 메쉬 4개는 점 위치 · 가중치가 그대로(가중치 한 점 반올림 차이),
+  LOD1은 decimate가 UV 이음을 지키느라 점 순서만 달라짐(모양 차이 0).
+- **텍스처 메모리:** 이 대상들이 새로 더하는 텍스처 없음 — 라이브러리(PLAN 4절, 마차뜰 전체 약 33 MB PC)를 같이 씀. 성은 지금 키트 텍스처 10장 그대로.
+- **렌더(Blender Eevee, PLAN의 조명 · ACES, Unity 아님):** 마차 · 말 3색 · 대리석 절벽 · 승강장 판석 · 결승 마당 · 하역 창고 흉벽을 컨셉 시트 RCY_08과 나란히
+  (이 세션 scratchpad `sample3/` · `zones/`). 승규가 마차 견본을 봄 → 바퀴 · 지붕 고침.
+- **내보냄(승규 "Play 껐어, 내보내"):** `qa/rebuild_models.py -- movers,horse,platform,scenery` → `Assets/Resources/PawnRushCarriageYard`의 위 11개 FBX(.meta 그대로).
+  scratchpad 빌드와 비교 차이 0, 모두 UV 있음, 쓰는 칸은 모두 PLAN 표 안. Unity 재질 · `Dressing.cs`는 rcy-textures가 넣음 — 넣기 전에는 칸이 클레이로 보인다.
+- **꼭짓점 색(rcy-textures, 승규 "판석마다 짙은 돌 섞기"):** `surface_uvs`가 조각마다 "Color"를 씀 → 같은 11개를 다시 냄(Unity가 Play에서 나온 뒤). 판석 · 돌의 가장 짙은 값은 파일에 약 .65(.70 × .93, Unity가 그대로 읽음 —
+  Blender로 다시 읽으면 sRGB → 선형 변환 때문에 .38로 보임), 결승 마당 · 구간 바닥 꼭짓점의 약 57 %가 1 아래, 마차 · 말 · 문짝은 모두 1.0. 모양 · 삼각형 · 칸 · .meta 그대로. Unity의 RCY_Flag · Stone · Shade가 이 색을 곱함(`ChessFight/RcyTintLit`).
+- **그 뒤 rcy-textures가 바꿈(승규 "왕관 지워주고 깜빡깜빡 거리는 곳 고쳐"):** 마차 지붕 왕관 · 받침을 뺌(문 문장의 `Crest crown`만 gold), `rcy_kit.join`의 `unfight()`가 4 mm 안에 겹친
+  같은 방향 면의 작은 부품을 6 mm 띄움 → 말 · 성 빼고 다시 냄. 이 세션이 잰 차이(전 빌드 → 지금 Assets): RcyCoach 13,222 → 11,814 삼각형(왕관 자리만 0.39 m), 문짝 · 승강장 ·
+  결승 마당 · 구간 바닥은 삼각형 그대로 · 점이 최대 0.6 ~ 1.3 cm 움직임, 바퀴 · 연결대 · 말 · 배경은 차이 0. 이어서 `unfight()` 기준을 2 cm(겹친 면이 2 cm 안이면 작은 부품을 2 cm 띄움)로 키워 같은 FBX를 다시 냄(rcy-textures, 말 · 성 그대로) —
+  폰이 닿는 면이 콜라이더에서 최대 2 cm 더 나올 수 있음(승규 기준 10 cm 안).
+- **겹친 면(깜빡임) 소스에서 고침(rcy-textures의 4 mm 검사가 남긴 둘):** 출발 문짝 — 뒤쪽 가로 띠목(Ledge)이 대각 버팀목(Brace)과 같은 6 cm 깊이라 교차하는 곳의 앞면이
+  겹쳤음 → 띠목을 9 cm로(버팀목보다 3 cm 앞, 문 충돌 상자 0.35 m에서 9 cm 나옴 — 10 cm 안). 승강장 — 판석이 갓돌 밑(y 143.9 ~ 144.35)까지 깔려 갓돌 윗면 · 앞면이 판석 윗면 ·
+  바닥판 앞면과 겹쳤음 → 판석은 갓돌 뒤(`KERB_BACK` 144.35)부터, 갓돌은 바닥판 깊이(TOP − 1)까지 채움(갓돌을 앞으로 내면 걷는 면에서 절벽 갓돌과 3 cm 겹쳐 안 함).
+  다시 잰 결과(같은 방향 · 4 mm 안 겹침, scratchpad `fleet/coplanar.py`): 문짝 0, 승강장 갓돌 · 판석 0. 삼각형 그대로(RcyGateLeafW/E 3,700, RcyPlatform 50,688).
+- **가로등(운하·분류장 세션이 `sorting_model.lamp_post`를 컨셉대로 다시 만듦):** 배경을 다시 냄 — RcyScenery 26,080 → 33,712(운하 착지대 가로등 4개),
+  RcySceneryOwn 37,472 → 41,504(승강장 가로등 2개).
+- **라이브러리 의견(rcy-textures 반영):** 회색 말 곱하기 색 #ECE8E1 → #D6CFC4(Dressing.cs), RCY_Flag 넓은 얼룩 뺌. 모양 차이(문 문장이 둥근 메달 · 지붕 왕관이
+  컨셉보다 작음)는 재질 작업 밖이라 남김.
+- **Unity에서 볼 것(아무도 안 봄):** 마차 녹색 칠 · 호두나무 틀과 바퀴 · 슬레이트 지붕 · 무광 황동 띠와 금 왕관, 말 세 털색과 황동 장식, 출발 문짝 호두나무,
+  대리석 절벽 · 판석 · 결승 마당 담 · 벨벳 쿠션(병 녹색), 부품마다 텍스처 이음이 눈에 띄지 않는지, 말 질주 때 털 텍스처가 늘어나 보이지 않는지.
+
+## 11-17 R686 운하 · 하역 창고 · 기계 재질 (세션 rcy-tex-canal-sorting, 커밋 안 함 · 사용자 Unity 확인 전)
+
+승규 "재질 텍스쳐 컨셉 아트대로 재질 그래픽 극대화로 나오게 구워", 하역 창고 견본(Blender 렌더 vs 컨셉 U3 · RCY_09 · RCY_05)을 보고 "승인, 나머지 진행".
+규칙은 `ArtSource/PawnRush/CarriageYardModels/textures/PLAN.md`(rcy-textures): 재질 칸마다 라이브러리 타일 1세트 + 부품마다 미터 UV(`rcy_kit.join()`의
+`surface_uvs`). 이 세션은 모델 소스의 **칸 이름만** 바꿈 — 위치 · 크기 · 회전축 · 경첩 · 콜라이더 상자 · 컨베이어 판자 없음(ConveyorSlats가 그림)은 그대로.
+
+- **칸 이름:**
+  - `canal_model.py` — 운하 바닥 STONE → SHADE(물 아래 돌).
+  - `sorting_model.py` — 장식 GOLD 18곳 → BRASS(차양 기둥, 칸 번호판, 승강구 상인방 · 판 틀, 저울, 목재 더미 테, 다락 끝 테, 등 고리, 깃대 · 끝 장식 · 깃발 띠,
+    톱니 바퀴통, 수문 쐐기돌, 바지선 테, 지브 띠). 벽 받침 · 기둥 주춧돌 · 지브 기둥 받침 → SHADE, 수조 바닥 판석 `mat=SHADE`. 계류 밧줄 · 지브 밧줄 · 그물 끈
+    LEATHER → ROPE. 목재 더미: 밝은 줄 TIMBER + 꿀색 OAK(전에는 OAK + WALNUT, 뒤 심은 WALNUT 그대로 — 틈의 그늘), 물레방아 착지대 장선 → TIMBER.
+  - `sorting_machines_model.py` — 줄 크레인 · 하역장 문형 크레인 주춧돌 · 목재 크레인 평형추 → SHADE, 승강 물레방아 바퀴통 덮개 GOLD → BRASS,
+    목재 크레인 짐 TIMBER + OAK(끝면은 WALNUT). 궤짝 위 왕관(`crown()`)만 GOLD.
+  - 세 파일 모두 `SHADE = globals().get("SHADE") or "RCY | shade"`(sorting은 `ROPE`도) — rcy_kit에 상수가 있으면 그것을 씀.
+  - 분류장이 쓰는 `entrance_model.py` 짐 함수(짚단 끈 · 덮개 밧줄 → rope, 덮개 줄무늬 → velvet, 차양 단 → brass)는 rcy-textures가 고침.
+- **내보냄:** 같은 빌드를 scratchpad에 먼저 내 비교한 뒤 18개 FBX 파일만 `Assets/Resources/PawnRushCarriageYard`에 옮김(.meta 그대로, 옮긴 파일 = scratchpad 빌드).
+  삼각형 수 18개 모두 그대로 — RcyCanal 156,566 · RcyGiantWaterwheel 19,956 · RcySorting 322,308 · RcyConveyor 3,940 · ConveyorCrate 1,036 ·
+  ConveyorStack 2,144 · StackRow 10,472 · StackCrate 2,288 · RowTrolley 1,748 · SlamGantry 8,052 · SlamChest 4,468 · SlamTrolley 4,868 · SlewCrane 3,372 ·
+  SlewJib 4,912 · HoistFrame 3,248 · HoistPalletP/N 1,428 · LiftWheel 6,464 = **558,698**. 모두 UV 있음, 쓰는 칸 17종(stone · flag · shade · marble · tile ·
+  oak · walnut · timber · iron · brass · gold · cloth · sack · straw · rope · leather · velvet)이 모두 PLAN 표 안.
+  하역 창고 넓이(m²): flag 8,827 · stone 8,024 · walnut 2,989 · oak 2,289 · shade 2,023 · timber 1,466 · cloth 863 · rope 162 · brass 117 · gold 5.
+  운하: stone 5,993 · shade 2,968 · flag 1,091 · walnut 446 · marble 326 · oak 185 · iron 62.
+- **텍스처 메모리:** 이 대상들이 새로 더하는 텍스처 없음 — 라이브러리(PLAN 4절, 마차뜰 전체 약 33 MB PC)의 23종 중 17종을 같이 씀.
+- **렌더(Blender Eevee, PLAN의 조명 · ACES · 노출 .6, Unity 아님, 코드가 그리는 물 · 등불 · 밧줄 · 표지 없음):** 하역 창고 전경(승규 그림 U3 시점) · 목재 크레인 ·
+  상자 더미 · 다락 · 하역장. 렌더 스크립트는 `qa/texture_lookdev.py`의 재질 · 조명에 하역 창고 장면 + 기계 15개를 Play 기록(`guides/rcy_built_play.json`)
+  자리에 건 것(이 세션 scratchpad `sorting_lookdev.py`, 커밋 안 함). 판석이 거의 흰색으로 보여 rcy-textures에 알림 → RCY_Flag · Stone 색을 낮춤.
+- **남은 차이(재질 작업 밖 · 후속):** 판석마다 짙은 돌 섞기(컨셉 U3)는 꼭짓점 색 + 셰이더로(rcy-textures가 승규 확인 뒤 후속으로 남김), 목재 크레인 받침이
+  컨셉은 톱니 돌탑인데 지금은 매끈한 원통(모양).
+- **상자 색(승규 "다음 작업", 11-17 15:00 내보냄):** 쌓인 상자 윗단(`dark=True`) 판이 호두나무라 컨셉보다 붉고 어두웠음 → `sorting_model.crate_pale()`
+  (entrance `crate()`를 감쌈)이 모든 상자 판을 OAK로, 틀 · 대각 버팀목은 WALNUT, 모서리 IRON 그대로. TIMBER 판도 렌더해 봤으나 너무 하얘서 뺌.
+  컨베이어 짐 · 짐더미 줄 · 판매대 · 다락 끝 · 바지선 상자 모두. 하역 창고 · 기계 FBX 16개 다시 냄(삼각형 · .meta 그대로), 운하 · 거대 물레방아는 그대로.
+- **목재 크레인 받침(승규 "목재 크레인이랑 판석마다 짙은 돌 섞기 시작", 11-17):** 컨셉(RCY_08 5 · RCY_09 4 · U3)의 톱니 둥근 돌탑으로 —
+  `sorting_machines_model.crane_tower()`: 그늘 돌 받침단(0 ~ .22, r 1.24), 크림 석회암 블록 4단 × 10개(단마다 엇갈림, r 1.196 ~ 1.212, 줄눈 2 cm 뒤에
+  SHADE 심 r 1.175), 띠돌(2.04 ~ 2.15, r 1.24), 톱니 8개(꼭대기 2.4 — 위에서 도는 크레인 집과 안 겹침) · 사이 홈 2.26, 남쪽 면(Unity −z) 크림 방패 +
+  황동 나이트(앞면 −1.275). 새 `drum_block`(6° 꺾임 · 둥근 셰이딩; entrance `arc_block`은 15°라 1.2 m 원기둥에서 모서리가 보였음). 콜라이더 원기둥
+  (r 1.2 · 높이 2.4)에서 바깥 면 7.5 cm 안. 옛 철 띠 · `drum_profile` 뺌. RcySlewCrane 3,372 → **9,416** 삼각형(맵에 2대) — 18개 합계 564,742.
+- **판석마다 짙은 돌(같은 지시, 규칙 · 셰이더는 rcy-textures):** `rcy_kit.surface_uvs`가 조각마다 꼭짓점 색 "Color"(판석 약 17 % 짙은 돌 .70 ~ .84,
+  벽 · 받침 10 % .84 ~ .92), Unity `RcyTintLit`(URP Lit × 꼭짓점 색)가 RCY_Flag · Stone · Shade. 이 세션은 18개를 지금 rcy_kit으로 다시 냄(색 층 있음 —
+  .9 아래 꼭짓점 하역 창고 11.8 % · 운하 22.7 % · 크레인 22.4 %, 삼각형 위와 같음, .meta 그대로). Unity Play로 본 것 없음.
+- **크레인 기둥 · 팔, 하역장 감는 드럼(승규 스크린샷 2장 + "이 부분도 실제 컨셉 아트처럼 해주고 줄이 감겨 보이도록 해서 디테일하게", 11-17):**
+  - 목재 크레인(RCY_08 5 · RCY_09 4): 둥근 호두나무 기둥(받침 모델, 서 있음) → `crane_mast()` 네모 참나무 기둥 0.4 m(콜라이더 상자 0.45 안, 돌 때 모서리
+    6 cm까지)를 **팔 모델(RcySlewJib)로 옮겨 팔과 함께 돎**, 쇠 받침 신발 · 볼트 박힌 쇠띠 3개 · 머리의 쇠 집게판 2장(볼트 4개씩) · 덮개.
+    팔 · 버팀목 호두나무 → 참나무, 얇은 쇠띠 9개 → 볼트 박힌 쇠띠 6개(`iron_band`), 버팀목 양 끝 볼트 박힌 쇠 받침판.
+  - 하역장 크레인 수레(RCY_08 8 · RCY_09 8): 쇠 원통 + 쇠고리 → 호두나무 드럼에 삼 밧줄 나선 두 겹(`rope_coil`, 맞닿은 감김 7 cm 간격, 가운데로 나뉨),
+    볼트 8개 박힌 쇠 테 3장(양 끝 · 가운데), 쇠 축. 사슬은 코드 그대로.
+  - 삼각형: RcySlewCrane 9,416 → 8,988(기둥이 팔로), RcySlewJib 4,912 → 6,632, RcySlamTrolley 4,868 → 13,536. (rcy-textures의 왕관 제거로 RcySlamChest 4,468 → 3,072.)
+    기계 15개를 지금 소스(+ rcy_kit 색 · 겹침 띄우기)로 다시 내 Play 꺼진 뒤 옮김, .meta 그대로. Blender 렌더로만 봄, Unity Play로 본 것 없음.
+- **목재 크레인 전체 · 하단부(승규 Unity 스크린샷 + 컨셉 RCY_09 4 "컨셉 아트처럼 전체적인 부분이랑 하단부가 두껍게 … 나이트 장식은 하지 말고"):**
+  기둥 0.4 → 0.6 m(`MAST_W`, 코드 상자 0.45 — 모두 2.4 m 위라 폰이 안 닿음), 집 지붕 위로 나오는 곳에 두꺼운 참나무 칼라 0.9 m(4.45 ~ 5.35, 쇠띠 둘),
+  쇠띠 · 머리 집게판 키움, 팔 0.4 → 0.5 m(`JIB_W`, 코드 상자 0.4 · 7.6 m 위), 버팀목 둘(앞 · 뒤, `timber_brace`, 양 끝 볼트 쇠판 — 뒤 쇠막대 뺌),
+  평형추 = 쇠 걸이 4개에 매달린 짙은 쇠 덩어리 + 톱니 4개(회색 상자였음). 받침 두 단(r 1.30 · .12 m, r 1.255 · .38 m — 콜라이더 r 1.2에서 10 cm 안,
+  바닥에 붙음), 돌 단을 그 위로. **나이트 장식 뺌:** 받침 방패 · 황동 나이트, 팔 끝 나이트 머리(→ 쇠 덮개). RcySlewCrane 9,008 · RcySlewJib 7,148 삼각형.
+- **깜빡임 · 쇠띠 디테일(승규 Unity 스크린샷 "디테일이 부족하고 깜빡깜빡 거려", 11-17 17:19 내보냄):** 원인 — 쇠띠를 들보 · 기둥에서 2 cm 띄워
+  만들었는데 `rcy_kit.unfight`(2 cm 안이면 작은 부품을 2 cm 옮김)가 감싸는 띠를 **통째로** 한쪽으로 밀어 반대쪽 면이 나무 면에 붙음.
+  `qa/zfight_check.py`(4 mm): 문형 크레인 기둥 3곳 각 7 m², 짐더미 줄 26곳, 크레인 팔 12곳, 승강 물레방아 타이어 5곳.
+  고침(`PROUD = .03`): 감싸는 쇠를 모두 3 cm 나오게 — 크레인 기둥 · 칼라 · 팔 띠(16 cm 폭, 볼트 r 3 cm), 목재 짐 띠 · 끈, 문형 크레인 기둥 띠 · 들보 덧판,
+  짐더미 줄 기둥 띠 · 들보 덧판, 승강 물레방아 바퀴살(테 면에서 3 cm 안으로) · 바퀴살 띠 · 타이어(4 cm, 옆 3.5 cm 안), 상자 쇠 모서리(3 cm, 윗면 위로).
+  결과: 기계 15개 0곳(남은 것 승강대 판 2 · 궤짝 1, 0.004 ~ 0.013 m²). 삼각형 RcyStackRow 11,048 · RcySlamGantry 8,628 · RcySlewJib 7,708 ·
+  RcyLiftWheel 6,976. unfight가 감싸는 부품을 미는 문제는 rcy-textures에 알림(다른 구역도 같을 수 있음).
+  남은 것(안 보이는 곳 · 미룸): 운하 물 아래 끝벽 vs 코드 블록아웃(약 170 m², 물 밑 y −2.8), 하역 창고 바깥 담 뒤(x ±27, 벽 밖).
+- **거대 물레방아 색 · 떨어지는 물(승규 "컨셉 아트랑 달라 색 위에서 떨어지는 물 위치 굵기 컨셉 아트랑 똑같이 해", rcy-tex-movers-castle가 전함, 11-17):**
+  - 색(`canal_model.py`, U2): 테 · 통 칸막이 · 바퀴살 묶음대 호두나무 → 꿀색 참나무, 테 이음 쇠 꺾쇠 0.24 → 0.4 m 폭 · 3 cm 두께, 메달 나이트를 크림 돌로(황동 원판
+    위), 축 기둥 · 버팀목 · 홈통 · 물통 · 홈통 받침탑(격자 탑) 호두나무 → 참나무. 삼각형 그대로(RcyCanal 156,566 · RcyGiantWaterwheel 19,956), 겹침 검사 바퀴 0.
+  - 물(`RoyalCarriageYard.Water.cs`, Inspector 'Look: water'): 통이 쏟기 시작하는 각 65° → **26°**(꼭대기 근처부터 오른쪽 위 테를 따라 — 물리로는 65° 아래 줄기가
+    아래 통으로 다시 떨어지지만 컨셉 모양을 따름), 쏟는 속도 .35 → .9 m/s, 통 줄기 굵기 0.07 → **0.13 m**(새 `spillStream`), 홈통 입 물판 1.2 → **1.4 m**
+    (`pourHalfWidth` .7) · 0.25 → 0.45 m/s(`pourSpeed`) · 둥근 줄기 3개. `Tools/Test-NetworkCompile.ps1` PASS. **Unity Play로 본 것 없음.**
+  - (그 뒤 바로 아래에서 옮김.)
+- **홈통을 왼쪽으로 · 바퀴 두껍게 · 색 진하게(승규 위에서 본 스크린샷 + "떨어지는 물도 뒤에 있는 게 아니라 사진에서 왼쪽에 있고 돌아가는 것도 더
+  두껍잖아 똑같이 맞춰 그리고 색도 이거보다 더 진해야 돼", 11-17):**
+  - 맵 코드 `RoyalCarriageYard.Sections.cs` `Flume()`: 홈통이 바퀴 뒤(z를 따라)에서 → **서쪽에서 x를 따라** 바퀴 면 위로(`FlumeStartX` −13.6 ~ `FlumeMouthX`
+    −0.5, z 66, 바닥 = 바퀴 꼭대기 + `FlumeLift` 0.65), 물통은 서쪽 끝, 받침틀 둘은 서쪽 걷는 길 바깥 물 위 x −10.6 · −13.3(기둥 콜라이더 `Solid.NoClimb`
+    그대로의 크기, 자리만 옮김 — 걷는 길 · 착지대와 안 겹침), 쏟는 물 그림(블록아웃)도 입으로.
+  - 물 `RoyalCarriageYard.Water.cs`: 홈통 물 표면이 동쪽(+x)으로 흐름, 입의 물판이 x −0.5에서 동쪽으로(z ±0.7 폭) 바퀴 꼭대기 통으로, 통 테 반지름 ·
+    폭을 모델(9.3 m, 1.6 m)에 맞춤. `Test-NetworkCompile.ps1` PASS.
+  - 모델 `canal_model.py`: 홈통 · 물통 · 받침틀을 코드 숫자로 계산해 지음(Play 덤프는 옛 자리) — 받침틀 = 기둥 둘 + 쇠띠 + 기둥 양면의 X 버팀목 + 머리
+    들보, 바퀴 쪽으로 긴 홈통을 받치는 비스듬한 버팀대 둘(바퀴 9.3 m 밖), 받침 · 물통 모서리 호두나무. 바퀴(`build_wheel`): 테 · 통 1.0 → **1.6 m 깊이**,
+    바깥 9.0 → **9.3 m**(테 0.9 m 폭) — 코드 바퀴(1.0 m)와 바퀴살 콜라이더는 그대로, 바퀴살 · 바퀴통은 코드 자리(테 · 통은 걷는 길 밖 물 위).
+    축 받침 쇠 상자 3 cm 띄움, 홈통 첫 쇠띠를 물통 면에서 뗌(겹침). RcyCanal 157,054 · RcyGiantWaterwheel 19,956 삼각형, 겹침 검사 바퀴 0 · 새 홈통 0.
+  - 색: 받침틀 · 버팀대 호두나무, 바퀴 참나무는 모델별 덮어쓰기 `Materials/RcyGiantWaterwheel/RCY_Oak.mat`(_BaseColor .78, .77, .99 — 컨셉 테
+    #9D6C4F ~ #A67454) — rcy-textures가 만듦(텍스처 평균 × 색 ≈ #A06E4E).
+  - **Unity Play로 본 것 없음.**
+- **1.5 cm 겹침 마저(rcy-textures 검사 요청, 11-17 17:43 내보냄):** 문형 크레인 레일 받침을 레일 밑으로(윗면 1 cm 차이, 15.6 m² 둘), 승강 물레방아 날개 쇠
+  끝을 3 cm 나오게(0.5 cm), 문형 크레인 기둥 사이 X 버팀목 둘을 기둥 양면으로(한 평면), 목재 크레인 집 기둥 0.16 → 0.2(판자 면에서 1 cm). 1.5 cm 기준
+  남은 것은 작은 곳뿐(승강대 판 · 컨베이어 · 물레방아 날개 끝, 각 모델 0.45 m² 이하, 4 mm 기준 0). 기계 15개 다시 냄, .meta 그대로.
+- **떨어지는 물 사실적으로 · 승강 물레방아 컨셉대로(승규 스크린샷 2장 "물 떨어지는 거 더 사실적으로 묘사 하고 2번 째 사진도 컨셉아트에 맞춰서", 11-17 18:21):**
+  - 물(`YardWaterfall.cs`): 통 하나의 쏟는 물이 품질 단계별 1 · 2 · 2줄기 → **2 · 3 · 5줄기**, 통 넓이의 55 % → **85 %**에 걸쳐 겹쳐 하나의 물막으로,
+    떨어지며 가늘어지는 정도를 둥근 줄기의 (v0/v)^0.5에서 넓은 물막의 **(v0/v)^0.3**으로(바닥에서 4 cm 실처럼 보였음). 승강 물레방아 날개가 떨구는
+    물(모드 1)은 그대로. Unity Play 중에 한 번 고쳤다가 되돌리고 Play가 끝난 뒤 다시 넣음. `Test-NetworkCompile.ps1` PASS.
+  - **(승규 스크린샷 "물 표현이 부자연스러워", 11-17 19:48)** 원인: 쏟기 시작 각을 26°로 앞당겨 꼭대기 근처 통의 물이 **바퀴 안쪽**으로 떨어져 바퀴살 사이에
+    줄무늬 하얀 커튼이 걸려 보였음(R684 설명대로 65° 아래는 줄기가 바퀴 안으로 떨어짐). 고침:
+    - `spillFrom` 26 → **80°**(통은 바퀴 바깥 아래에서 비움).
+    - 새 **테를 타고 넘치는 물막**(`YardWaterfall` 8 `RimFilm` · `AddRimFilm`, `RoyalCarriageYard.Water.cs` 'Look: water' `rimOverflow` · `overflowDepth` .1):
+      홈통이 더 대 준 물이 떨어지는 쪽(동쪽) 테 바깥면을 바퀴와 같은 속도 v = ωR(2.44 m/s)로 타다가, 중력이 더는 축 쪽으로 돌릴 수 없는
+      φ_d = acos(v²/(gR)) ≈ **86°**(축 높이, x 9.34 · y 5.9)에서 떨어져 나가 자유 낙하(1.47초, x 9.57에 닿음 — 걷는 길 x 6.2에서 3 m 밖). 두께 2.5 cm → 0.1 m
+      (테 위) → +0.3 m(낙하 중 공기), 면 · 뒤 · 옆 닫힌 물 덩어리, 줄무늬는 물의 나이(테 위 호 길이 / v, 그 뒤 낙하 시간)로 흐름, 앞면 물결, 닿는 자리 수면
+      거품 줄 · 튀는 물방울 · 물안개. 컨셉 U2의 오른쪽 위로 넘쳐 떨어지는 물을 바퀴 안이 아니라 바깥으로.
+    - 홈통 물판의 둥근 줄기 3개 뺌(0.75 m 낙차에서 하얀 실로 보임).
+    - scratchpad에서 고치고 Play가 끝난 뒤 넣음. `Test-NetworkCompile.ps1` PASS, Unity 재컴파일 오류 0(19:49). **Unity Play로 본 것 없음.**
+  - 승강 물레방아(`sorting_machines_model.lift_wheel`, RCY_09 3 · RCY_06): 두꺼운 테(반지름 방향 0.42 m · 0.28 m 폭, 면마다 쇠 볼트 24개, 쇠 타이어 뺌),
+    넓은 바퀴살 0.34 m(테 면에서 4 cm 안) + 쇠띠, 날개 = 두꺼운 판 3장(4.15 ~ 5.35 m, 0.36 m 두께, 테 밖으로) + 쇠 끝 + 뒤 덧댄 나무, 바퀴통 = 호두나무
+    통 + 쇠 원판(볼트 10개) + 황동 고리 · 황동 혹(왕관 없음). 날개 · 바퀴살 자리는 코드 그대로(잡기 전용 상자), 금 손잡이는 코드. 색 테 · 바퀴살 참나무
+    (rcy-textures에 `Materials/RcyLiftWheel/RCY_Oak.mat` 진하게 요청), 날개 TIMBER, 바퀴통 호두나무. 6,976 → 14,312 삼각형, 겹침(1.5 cm) 0.
+  - **Unity Play로 본 것 없음.**
+- **가로등(승규 "램프도 그래픽 좋게 해", 11-17 18:38):** `sorting_model.lamp_post`를 컨셉(RCY_08 11 · U2)대로 — 계단 모양 쇠 받침(기둥 콜라이더 0.09에서
+  7 cm 안), 가는 기둥 + 황동 구슬 · 쇠 고리 둘 · 머리 장식, 코드 빛(Lamp, 3.1 ~ 3.6) 둘레 네모 등 틀(밑 · 위 테, 모서리 기둥, 가운데 가로대, 면마다
+  창살), 그 위 **비숍 모자 갓**(크림 대리석 · 황동 띠 · 황동 살 4줄 · 황동 공), 옆 팔(남쪽)에 매단 작은 새장 등(불 없음 — 빛 · 빛나는 유리는 Unity).
+  가로등 하나 360 → **2,268 삼각형**(따로 지어 셈; 처음 적은 RcySorting 차이는 같은 때의 rcy_kit 변경이 섞인 값), 하역 창고 6개 · 운하 4개 ·
+  승강장 2개 = 12개 약 2.7만. 가로등 둘레 겹침(1.5 cm) 0. `scenery_model.py`의 운하 4개 · 승강장 2개도 이 함수 — rcy-tex-movers-castle가
+  배경을 다시 냄(RcyScenery 26,080 → 33,712, RcySceneryOwn 37,472 → 41,504). Unity Play로 본 것 없음.
+- **겹침 마저(rcy-textures의 새 `unfight` · `zfight_check` 뒤 4 mm, 11-17 18:59):** 바지선 끝 블록 윗면을 갑판보다 3 cm 위로(1.4 m² 넷), 궤짝 가로 쇠띠 둘을
+  세로 띠보다 앞뒤 2 cm 두껍게(0.44 m² 넷) — 이 둘은 서로 관통해 자동으로 안 되던 곳. 같은 검사에서 수문 쇠 가로대를 막대보다 4 cm 앞으로(1.3 m² 둘),
+  다락 몸통 양 끝 기둥 빼기(끝 기둥과 13 cm 겹쳐 0.86 m² 여섯), 새 가로등 창살을 가로대 면에서 3 cm 안으로, 승강 물레방아 축 받침 원통 3 cm 짧게.
+  RcySorting 328,460 삼각형. 담 안쪽 남은 것 2.5 m²(판매대 앞 0.38 · 벽기둥 0.19 m²들), 담 밖 · 물 밑은 안 보이는 곳. 하역 창고 · 기계 16개 다시 냄.
+- **Unity에서 볼 것(아무도 안 봄, rcy-textures가 재질 · `Dressing.cs`를 넣은 뒤):** 운하 벽 석회암 · 대리석 난간 · 나무 길, 거대 물레방아 호두나무 테 · 참나무 통 ·
+  황동 메달, 하역 창고 판석 · 벽 · 판매대 차양(모래색 천) · 목재 더미 · 다락 판자, 기계 15개(상자 판 · 쇠 모서리 · 크레인 슬레이트 지붕 · 승강대 · 궤짝),
+  부품마다 텍스처 이음 · 늘어남이 눈에 띄지 않는지, 회전하는 물레방아 · 크레인 · 움직이는 상자에서 텍스처가 함께 움직이는지.
+
+## 11-17 R686 말 회전 동작 (세션 rcy-tex-movers-castle, 커밋 안 함 · 사용자 Unity 확인 전)
+
+승규 "말 도는 것을 진짜 자연스럽게 표현 해 봐 지금 있는 말 시스템 바꿔도 되니까". 팀은 게임 규칙대로 상자 가운데를 축으로 제자리 회전(반 바퀴 3.4초)하고, 그때
+말 둘(가운데에서 2.2 m 앞)은 최대 약 3 m/s로 옆으로 움직인다. 예전에는 그 거리를 걸음 수로만 바꿔 **다리가 앞뒤로만 흔들리며 말이 옆으로 미끄러졌다**.
+상자 · 경로 · 콜라이더 · 계획(Core `RoamingFleet`)은 그대로, 그림만 바꿈.
+
+- **`YardHorse.Move`(새):** 말마다 땅 위 속도(말 기준 x 옆 · z 앞)와 회전 속도를 받아, **발굽마다 실제로 가는 방향**(말의 속도 + 회전 × 발굽 위치)으로 디딤 —
+  디딘 발굽은 그 자리에 있고 다리가 앞뒤 · 옆으로(어깨 · 엉덩이의 roll) 쓸려 감, 옆걸음 보폭 1.2 m · 디딤 비율 .5, 안쪽으로 건너가는 다리는 반대 다리 앞으로
+  더 접혀 교차, 몸은 가는 쪽으로 최대 7°(뒤 피벗 기준, 끌줄이 허락하는 만큼) 비스듬히, 고개는 회전 쪽 + **아직 돌아야 할 각도**(돌기 · 겨누기 동안)를 미리 봄(±24°).
+  보폭 진행은 발굽 속도로. 옛 `Pose`(마구간 말 `StableCharger`)는 앞으로만 같은 계산.
+- **뒷다리 관절 방향 바로잡음(직진에도 적용):** 디딜 때 스타이플 · 비절이 펴지고, 들 때 스타이플이 펴져 뒷발이 8 cm밖에 안 들렸음 → 디딜 때 살짝 굽고(+6° / −8°),
+  들 때 스타이플 굽힘 +20 ~ 30° · 비절 −55 ~ 80°.
+- **`RoamingCarriage`:** 말마다 몸 상자 기준 위치(앞수레 꺾임 포함)에서 계획의 속도 · 회전으로 땅 위 속도를 계산해 `Move`로 넘김, "아직 돌아야 할 각도" =
+  계획의 Yaw와 돌진 목표 방향의 차(±40°). 프레임마다 쌓던 걸음 거리(`travelled` · `lastRotation`)는 지움. 앞수레 꺾임(최대 4°)은 콜라이더 때문에 그대로.
+  사운드 세션의 `Footfall`(발굽 닿는 순간) · `HorseSounds` · `Calls`는 그대로 — 옆걸음 때 발굽 소리가 더 잦아짐.
+- **잰 것(같은 계산을 파이썬으로 옮긴 발 미끄러짐 검사, 이 세션 scratchpad `horse/slip.py`):** 팀 말 W 제자리 반 바퀴 동안 디딘 발굽이 땅에서 움직인 거리(한 디딤 평균)
+  앞 1.02 / 1.03 · 뒤 .64 / .80 m → 앞 .08 / .15 · 뒤 .09 / .06 m, 뒷발 들림 .08 ~ .10 → .23 m. 직진(3 m/s)은 앞발 그대로 · 뒷발 .28 / .24 → .10 / .04 m.
+  Blender에 실제 말 모델로 같은 자세를 걸어 렌더(scratchpad `horse/sidestep_compare.png`): 옆걸음 · 다리 교차 · 고개 돌림 확인.
+- **검사:** `Test-NetworkCompile.ps1` PASS(고친 두 파일 경고 0), `Test-NetworkCore.ps1` 모의 세션 92 통과. **Unity Play로 본 사람 없음.**
+- **Unity에서 볼 것:** 팀 마차 제자리 회전 때 말 둘이 옆으로 걸으며 다리를 교차하는지 · 발이 미끄러져 보이지 않는지, 고개가 돌 방향을 먼저 보는지, 몸이 끌줄에서
+  떨어져 보이지 않는지(7°), 질주 때 뒷다리가 전보다 높이 접히는지, 발굽 소리 박자.
+- **더 하려면(게임 변경, 승규 결정):** 진짜 마차처럼 말이 앞으로 걸어 원을 그리고 마차가 뒷바퀴를 축으로 따라오려면 팀 회전축 · 콜라이더(말 상자 + 마차 상자)와
+  함대 간격(`Reach`)을 바꿔야 함. → 승규 "더 나아가"로 아래처럼 함(게임 변경).
+
+### 원을 그리며 도는 팀 (승규 "더 나아가", 게임 규칙 변경 · 프로토콜 v46 · 커밋 안 함 · 사용자 Unity 확인 전)
+
+- **먼저 따져 본 것(파이썬 계산, scratchpad `fleet/`):** 6.95 m 팀이 한 점을 축으로 제자리 회전하면 축이 어디든 앞의 말은 옆으로 움직일 수밖에 없다 — 뒷바퀴 축에서
+  제자리로 돌면 마차는 그럴듯해지지만 말이 옆으로 가는 거리가 가운데 축보다 오히려 길다(120°: 4.6 → 8 ~ 10 m). 말이 앞으로 걸으려면 팀이 앞으로 나아가며 **원을
+  돌아야** 한다: 회전점이 뒷바퀴 축 선상에서 회전 안쪽으로 ρ — ρ 4 m면 말 W가 걷는 거리의 61 ~ 72 %가 앞(제자리 20 %), 뒷바퀴는 원 위를 굴러감.
+- **Core `RoamingFleet`(게임 규칙):** 몸마다 `pivots`(가운데에서 뒷바퀴 축까지, 팀 `TeamPivot` 2.675 m), 다리(leg)마다 회전점(`Leg.Pivot` 뒤 · `Leg.Side` 오른쪽 부호,
+  `TurnX/Z` = 회전 시작 자리). 돌기 동안 가운데가 회전점 둘레 원호를 따라 움직이고(`Arc`, Pose `Pivot` · `Side` · `HeadingFrom` · `Heading`), 돌진은 원호 끝에서
+  뽑은 점을 향해 곧게(`Facing`이 방향을 풀어 냄). 계획 순서: 원 `Circles` 4 m(두 번) → 2 m → 뒷바퀴 축(0 m) → 제자리 → 짧은 돌진(2 m 원 · 제자리) → 대기. 원호는
+  구역 안(끝 · 동서남북 극점까지 정확히), 다른 몸과는 시간마다 원호의 현 + 휜 만큼(`Bulge`) 띄움. 회전점 없는 몸(풀린 말 · 마차 하나)은 예전과 바이트까지 같음.
+- **씨앗 다시 고름:** 마차뜰 씨앗 1 ~ 512를 Core 테스트 기준(돌진 85 % · 가운데 50 % · 대기 4 % · 6초 넘게 서 있지 않음 · 서로 안 만남 · 같은 춤 · 네 변 · 문 앞 서 / 동)
+  + 짧은 돌진 20 % 미만 + 뒷바퀴 축 계열 2/3 이상 · 원 1/2 이상으로 검사(scratchpad `fleet/SeedSearch.cs`) → 9개 통과, 여유 큰 8개
+  `YardSeeds` = { 491, 328, 460, 239, 94, 455, 66, 23 }(원 회전 56 ~ 65 %, 뒷바퀴 축 계열 76 ~ 80 %). 테스트 고정값(첫 다리 끝) 새로.
+- **Unity:** `CarriageFleet`가 `RoamingCarriage.PivotOf`(팀 2.675)을 넘김, `RoamingCarriage` — 원을 돌 때 앞수레(말 · 끌채 · 앞바퀴)를 `atan(4.85 m / ρ)`(ρ 4 → 약 50°,
+  뒷바퀴 축 → 최대 85°)까지, 작은 회전은 회전각 × .65, 회전의 처음 · 끝 45 %에 걸쳐 꺾었다 폄. 말마다 계획에서 앞뒤 시각의 위치로 땅 위 속도 · 회전을 내 `Move`로.
+  꺾여 있을 때(5° 넘게) 몸 상자는 마차 + 끌채만, 말 상자(`Pair (collider)`)가 앞수레를 따라감 — 곧을 때(모든 돌진 포함)는 예전 긴 상자 하나(타격은 그 상자로 판정).
+  돌 때도 실제로 움직이니 스프링 흔들림 · 바퀴 소리는 실제 이동 속도로.
+- **프로토콜:** `SteamSession.Protocol` v45 → **v46**(패킷은 같지만 v45 PC는 팀을 다른 길로 그림).
+- **검사:** `Test-NetworkCore.ps1` Core 197 · 모의 세션 92 통과(마차뜰 검사: 회전점이 돌기 내내 제자리, 원은 회전 안쪽, 돌진은 바라보는 방향으로, 원 1/2 · 축 2/3 이상),
+  `Test-NetworkCompile.ps1` PASS. 위에서 본 비교 그림 scratchpad `fleet/topview_circle.png`(왼쪽 예전 제자리 · 오른쪽 4 m 원). **Unity Play로 본 사람 없음.**
+- **Unity에서 볼 것:** 팀이 원을 그리며 돌고 뒷바퀴가 원 위를 구르는지, 앞수레가 돌 쪽으로 꺾이며 말이 앞으로 걸어 도는지, 꺾인 말에 폰이 부딪히는지(말 상자),
+  벽 가까이에서는 제자리로 도는지, 마차끼리 안 겹치는지, 돌 때 바퀴 소리. 온라인은 두 PC 모두 새 빌드여야 함(v46).
+
 ## 이어서 할 일 (진행 중이던 것)
 
 1. **스킬 기반 QA (승규 "텍스쳐는 입히지 말고 스킬 써서 기존에 있는 거 해봐", "블렌더 94개 스킬 극한으로 사용해").** `.claude/skills`의
@@ -785,3 +991,21 @@ Inspected in Blender (temporary scene, removed afterwards). Stills: stills/rcy_a
   either side of the middle, 0.34 under the trolley's centre) down to its eye, splaying a little, with an iron hook in the
   eye; the ropes are hemp cylinders (0.045 m, a three-strand twist texture tiled every 0.07 m along whatever length, tan,
   matte). The reeling of R682 is unchanged. Dressing keeps "Row rope*" (rope and hook). Compiled only.
+
+## 11-17 R686 재질 · 텍스처 — 공용 라이브러리 · Unity 연결 · 입구 (세션 "rcy-textures", 커밋 안 함 · 사용자 Unity 확인 전)
+
+승규 "재질 텍스쳐 컨셉 아트대로 재질 그래픽 극대화로 나오게 구워" → "작업 속도를 위해 … 2개 세션을 추가한다" → "코덱스에게 모든 재질 텍스쳐를 받아 내".
+세 세션의 공용 계획 · 재질 표 · 규칙: [textures/PLAN.md](../../ArtSource/PawnRush/CarriageYardModels/textures/PLAN.md). 운하 · 분류장 · 기계와 마차 · 말 · 승강장 · 배경 · 성은 각 세션이 자기 절을 쓴다.
+
+- **방식:** 재질 칸마다 이어지는 타일 1세트(라이브러리 23종) + 모델은 부품마다 미터 단위 UV(`rcy_kit.surface_uvs`, `join()` 끝에서 자동, U = 부품의 긴 축 = 나뭇결, 위치로 정한 무작위 오프셋). 아틀라스 · 고유 굽기 없음(구역이 40 ~ 50 m라 텍셀 밀도가 안 나옴, 블록 · 판자는 이미 모양).
+- **텍스처:** Codex image_gen albedo 23장(`textures/codex/b1 ~ b3`, 프롬프트 `PROMPT.md`, 컨셉 4장을 -i로) → `rcy_textures.py`(Blender 배치): Moisan 주기 분해 + 가장자리 반 칸 섞기로 이음매 제거, 조명 얼룩 펴기, 계획 색 쪽으로 70 %, albedo 세부에서 노멀 · 부드러움(알파). 황동 · 금은 붓질 방향을 지움(마차 세션: 나뭇결처럼 보임), 판석은 #CDA57F로 낮추고 반 미터 얼룩 30 % 줄임(분류장 세션: 흰색으로 날아감). 다른 미니게임 `PR_*`는 바닥용 줄눈이 그려져 있어 안 씀.
+- **새 칸:** `RCY | flag`(바닥 판석, `flagstones` · `setts_line` 기본값), `shade`(받침돌 · 물 아래 돌), `timber`(날것의 목재), `soil`; 장식 gold → brass(왕관만 gold), velvet은 짙은 병 녹색. 입구: 처마 Fascia · Valance hem → brass, 덮개 Cloth stripe → velvet, Twine · Rope → rope.
+- **Unity:** `Assets/Art/PawnRushCarriageYard/Textures/RCY_*_Albedo|Normal.png`(46장, 큰 면 9종 최대 1024 · 나머지 512, 밉맵, 삼선형, 비등방 4) + `Assets/Resources/PawnRushCarriageYard/Materials/RCY_*.mat`(23개, URP Lit, 알파 = 부드러움, 타일링 1/타일 m), 생성기 `textures/rcy_unity_materials.py`(GUID 고정). `RoyalCarriageYard.Dressing.cs` `Hang`: 칸 `RCY | xxx` → `Materials/<모델>/RCY_Xxx` → `Materials/RCY_Xxx` → 없으면 클레이. 말 coat · hair는 무채색 재질 사본에 털 색을 곱함(갈색 #8B4A22 · 회색 #D6CFC4 · 흑 #2A2523), eye는 코드 색. Inspector `bakedMaterials`(끄면 전부 클레이).
+- **입구:** RcyEntrance를 UV와 함께 다시 냄 — 248,912 삼각형(변화 없음), 7칸.
+- **예산:** 삼각형 · 그리기 횟수 그대로(재질 칸이 이미 따로 그려짐), 재질 23개(+ 성 키트 5). 텍스처 메모리(PC, 밉맵 포함) 큰 면 9 × 2.7 MB + 작은 것 14 × 0.7 MB ≈ 33 MB. Mobile 품질 단계는 같은 PC 빌드라 지금은 같음 — 반으로 줄이려면 Quality 설정에 텍스처 밉맵 제한 그룹이 필요(전역 설정, 승규 확인 뒤).
+- **고친 것(11-17, 승규 "유니티 적용이 안됐어"):** Unity가 FBX 재질 이름의 `|`를 `_`로 바꿔 들여와서(`RCY _ stone`, Library 산출물에서 확인) `SlotKey`가 하나도 못 맞추고 전부 클레이였음 → "RCY" 뒤 첫 단어로 읽게 고침. Play 때 콘솔에 `[RoyalCarriageYard] 구운 재질 N칸 · 클레이 M칸 · 재질 못 찾은 칸 이름: …` 한 줄.
+- **왕관 지움 · 깜빡임(11-17, 승규 사진 4장 "왕관 지워주고 깜빡깜빡 거리는 곳 고쳐"):** 3D 왕관(`crown()`) 4곳을 뺌 — 곳간 차양, 마차 지붕(받침째), 거대 짐 궤짝(쿠션째), 절벽 깃발 (마차 문 문장 · 물레방아 메달의 납작한 부조는 남김). 깜빡임 = 같은 쪽을 보는 두 면이 4 mm 안에 겹친 z-fighting: 새 검사기 `qa/zfight_check.py`(모든 FBX, 보이는 면만 — 아래를 보거나 바로 앞이 막힌 면은 뺌)로 찾고, `rcy_kit.unfight`(join 안, `RCY_UNFIGHT`)가 겹친 두 부품 중 작은 쪽을 그 면 방향으로 띄움(가장 크게 겹친 방향 하나씩, 세 번). 처음 6 mm로 했더니 승규 사진 5(수조 가장자리 연석 · 판석)가 여전히 깜빡여서 **2 cm 안에서 겹친 면을 찾아 2 cm 띄움**(`UNFIGHT_GAP` · `UNFIGHT_PUSH` = .02). 감싼 부품(기둥을 두른 쇠띠 · 바퀴 링 — 마주 보는 두 방향으로 겹침)은 한쪽으로 밀면 반대쪽이 붙어서(운하 · 분류장 세션 알림) 옮기지 않고 소스에서 3 cm 띄움(`sorting_machines_model` `PROUD`); 한 부품은 두 회차(`UNFIGHT_PASSES`)를 통틀어 한 번만, 작은 쪽이 이미 움직였으면 큰 쪽은 그대로(큰 부품까지 밀면 연쇄로 늘었음). 남은 것(1.5 cm 기준, 맵 안): 출발 마당 벽 모서리 약 1 m², 거대 짐 문형 크레인 레일과 받침(9 m 높이), 승강 물레방아 쇠띠 — 운하 · 분류장 세션이 소스에서 띄우기로. 고친 큰 곳: 거룻배 갑판 판자 = 선체 윗면(26 m² ×2), 하역장 가장자리 연석 = 판석(13.5 m²), 다락 들보 = 기둥 면(4.6 m² ×2), 궤짝 쇠띠, 마차 황동 띠, 승강장 갓돌 = 판석, 벽 모서리 블록. 보이는 겹침 합: 입구 108 → 1.9 m², 분류장 224 → 6.6 m²(맵 안), 승강장 56 → 0.6 m², 결승 마당 27 → 0.4 m². 남은 것: 출발 마당 벽 모서리 약 1 m², 분류장 판매대 쪽 작은 면, 말 갈기(가죽 · 털 겹침, 다시 내지 않음), 성 키트(AI). 말을 뺀 모든 FBX 다시 냄(왕관만큼 삼각형 줄음: 입구 248,912 → 246,336).
+- **깜빡임 2차(11-17, 승규 영상 "아직 여기 깜빡 거려" — 수조 하역장 가장자리):** 영상 61프레임에서 밝기가 번갈아 뒤집히는 픽셀을 지도로 그려 물가에서 1 m 안쪽의 긴 연석 띠를 찾음. FBX를 재 보니 연석 윗면과 판석 윗면이 둘 다 y 0 — `unfight`가 놓쳤음: (가) 높이가 완전히 같은 두 면은 가운데에서 쏜 광선이 자기 면을 먼저 맞음, (나) 연석 아래에 일부만 걸친 판석은 가운데 점 아래에 아무것도 없음. → 면마다 가운데 + 꼭짓점 쪽 중간점에서 `find_nearest_range`로 찾기, 감쌈은 같은 상대와 마주 보는 방향일 때만, 한 부품은 축마다 한 번(3회차), 이미 움직인 후보는 건너뛰고 다음 후보를 봄. `qa/zfight_check.py`도 같은 방식으로. 연석 위 판석이 2 cm 올라감(연석 · 판석 0), 다락 들보 · 기둥 0. 4 mm 기준 남은 것(서로 관통해서 소스에서 고침): 거룻배 양 끝 블록 = 갑판, 거대 짐 궤짝 쇠띠끼리, 출발 문짝 가로대 = 판자, 승강장 갓돌 앞면 = 판석 앞면 → 운하 · 분류장 / 마차 · 승강장 세션에 요청.
+- **깜빡임 마무리(11-17 19시):** 소스에서 고친 네 곳(거룻배 끝 블록 +3 cm, 궤짝 가로 쇠띠 +2 cm, 출발 문짝 띠목 9 cm, 승강장 판석을 갓돌 뒤부터) 뒤 4 mm 기준 전체 검사: 보이는 겹침 합 약 17.7 m²(입구 출발 마당 벽 모서리 5.2, 결승 마당 · 구간 바닥 모서리 각 3, 승강장 3, 분류장 2.5, 마차 0.45 — 모두 작은 모서리 면). 뺀 것: 성 키트(AI) · 말, 맵 밖 면, 성문 벽 · 운하 둑에 가려진 입구 바닥 끝면, 절벽 판 뒷면.
+- **확인:** `Test-NetworkCompile.ps1` PASS(Dressing.cs 경고 0). Blender Eevee 견본 렌더(ACES 1.3 · 노출 .6 · 해 1.85, `qa/texture_lookdev.py`)로 컨셉과 비교. **Unity에서 본 것 없음 — 사용자 확인 전.**
+- **판석마다 짙은 돌(11-17, 승규 "판석마다 짙은 돌 섞기 시작"):** `rcy_kit.surface_uvs`가 조각마다 꼭짓점 색 톤(판석 약 17 % 짙은 돌, 벽 10 % 조금 어둡게), Unity 새 셰이더 `ChessFight/RcyTintLit`(URP Lit + 꼭짓점 색 곱하기, 생성기 `textures/rcy_tint_shader.py`)을 RCY_Flag · Stone · Shade가 씀. 입구 다시 냄(248,912 그대로), 다른 구역은 각 세션이 다시 냄. 규칙: textures/PLAN.md 9절.

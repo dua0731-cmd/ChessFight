@@ -23,9 +23,10 @@ HORSE_RNG = random.Random(1115)
 MB_K = .575                      # a metaball's visible radius per unit radius (stiffness 2, threshold .6)
 
 COAT, HOOF, EYE, HAIR = "RCY | coat", "RCY | hoof", "RCY | eye", "RCY | hair"
-LEATHER, GOLD, PLUME, CLOTH = "RCY | leather", "RCY | gold", "RCY | plume", "RCY | cloth"
+# R686 (textures/PLAN.md): the tack's studs, rosettes, buckles and brow ornament are the concept's dull matte brass.
+LEATHER, BRASS, PLUME, CLOTH = "RCY | leather", "RCY | brass", "RCY | plume", "RCY | cloth"
 HORSE_SLOTS = (COAT, HOOF, EYE, HAIR)                 # the slot order Unity paints by (RoyalCarriageYard.Dressing.cs)
-TACK_SLOTS = (LEATHER, GOLD, PLUME, CLOTH)
+TACK_SLOTS = (LEATHER, BRASS, PLUME, CLOTH)
 FORE_Y, HIND_Y, LEG_X = .52, -.8, .2     # where the hooves stand
 
 
@@ -786,7 +787,7 @@ def tack(col, body):
         pts = [base + up * (length * t) + Vector((side * .075 * t + .03 * t ** 3, -(back * length) * t * t, -.08 * t ** 3))
                for t in (j / 11 for j in range(12))]
         strand(plume, pts, .07, .026, Vector((0, .6, .8)), tip=.25)
-    return assemble(col, "Tack", [(lea, LEATHER), (gold, GOLD), (plume, PLUME)])
+    return assemble(col, "Tack", [(lea, LEATHER), (gold, BRASS), (plume, PLUME)])
 
 
 def harness(col, body):
@@ -823,7 +824,7 @@ def harness(col, body):
     for u in (.12, .32, .62):
         p, o, al = crupper.at(u)
         stud(gold, p, o, .015)
-    return assemble(col, "Harness", [(lea, LEATHER), (gold, GOLD)])
+    return assemble(col, "Harness", [(lea, LEATHER), (gold, BRASS)])
 
 
 def saddle(col, body):
@@ -846,7 +847,7 @@ def saddle(col, body):
         leather = strap(lea, body, rays, .035, .012, gap=.024)
         p, o, al = leather.at(1)
         torus(gold, p - al * .05 + o * .02, (0, 1, 0), .045, .009)
-    return assemble(col, "Saddle", [(cloth, CLOTH), (gold, GOLD), (lea, LEATHER)])
+    return assemble(col, "Saddle", [(cloth, CLOTH), (gold, BRASS), (lea, LEATHER)])
 
 
 # ------------------------------------------------------------------ the armature (YardHorseRig.cs reads these names)
@@ -1174,6 +1175,20 @@ def horse_lods(col):
     return made
 
 
+def horse_uvs(col):
+    """R686 (textures/PLAN.md): the library's metre UVs on each skinned mesh (it is joined by bpy, not rcy_kit.join),
+    laid out in world space as exported. Only the loops' UV layer changes: the vertices, their order, the weights and the
+    bones stay. Runs before horse_lods, so each LOD1 carries the same UVs through its decimation."""
+    for o in [o for o in col.objects if o.type == "MESH"]:
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bm.transform(o.matrix_world)
+        surface_uvs(bm)
+        bm.transform(o.matrix_world.inverted())
+        bm.to_mesh(o.data)
+        bm.free()
+
+
 def restore_lods(col, made):
     for lod in made:
         bpy.data.objects.remove(lod, do_unlink=True)
@@ -1186,6 +1201,7 @@ def export_horse(name="RcyHorse"):
     """Writes the skinned horse, its tack and the armature as one FBX (the zone models' import settings but a
     Generic rig, so the skin weights come in; no animation, the bones kept as transforms), with an LOD1 of each mesh."""
     col = bpy.data.collections["RCY Horse"]
+    horse_uvs(col)
     lods = horse_lods(col)
     try:
         return _export_horse(col, name)

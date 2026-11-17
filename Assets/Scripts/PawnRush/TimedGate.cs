@@ -11,7 +11,7 @@ namespace ChessFight.PawnRush
     //
     // The object's position is the hinge. The leaf runs `width` from it along local +x (or -x with extendsLeft) and
     // swings to local +z, away from the players waiting behind it.
-    public sealed class TimedGate : Obstacle
+    public sealed partial class TimedGate : Obstacle
     {
         [SerializeField] float width = 3f;
         [SerializeField] float height = 5.4f;
@@ -83,6 +83,7 @@ namespace ChessFight.PawnRush
 
         void Update()
         {
+            GateSound();   // 2026-11-17: the bolt and the hinges as it opens (TimedGate.Sound.cs)
             if (countdown == null) return;
             float left = SecondsToOpen;
             string text = left > 0f ? Mathf.CeilToInt(left).ToString() : "";

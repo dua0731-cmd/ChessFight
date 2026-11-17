@@ -39,6 +39,10 @@ namespace ChessFight.RagdollLab
         // a rope); a jump off the floor (count 1: a vault off a ledge); a landing (count 0 on the feet, 1 a flop on
         // the body; size: how fast it came down, m/s). A PC that does not know a kind skips it.
         CourseDive, CourseGrab, CourseJump, CourseLand,
+        // 2026-11-17 (승규 "온라인 참가자 pc 에서도 다 들리게 해"): a course obstacle knocked this pawn away (by: the pawn; count:
+        // the course's kind of hit; size: how hard, 0..1), raised where the knock-back is given and sent on like the
+        // movement moments so every PC hears it (Gameplay.CourseHitSound, CourseHitRelay). Last, so no kind's number moves.
+        CourseHit,
     }
 
     public struct SkillFxEvent

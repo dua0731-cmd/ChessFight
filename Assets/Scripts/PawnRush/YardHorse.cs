@@ -55,6 +55,12 @@ namespace ChessFight.PawnRush
         // a tenth of a stride behind), not one horse drawn twice.
         float gaitOffset;
         double lastNow = double.NaN;
+        // 2026-11-17 sound (승규 "1번 말 마차"): told the moment each hoof comes down in the drawn stride - its place in
+        // the stride wraps to 0 - with the leg (0 FL, 1 FR, 2 HL, 3 HR), how much it gallops (0..1) and how much it is
+        // moving (0..1). Read off the pose only, so every PC hears the hooves the legs show (RoamingCarriage.Sound.cs).
+        public System.Action<int, float, float> Footfall;
+        readonly float[] footAt = { -1f, -1f, -1f, -1f };
+        readonly double[] footWhen = { -9, -9, -9, -9 };
 
         // Built under `parent` at `at` (local), nose to the parent's +z. `saddle`: a royal cloth on its back (a ridden
         // or stable horse); off, a harness collar (a carriage horse).
@@ -164,75 +170,135 @@ namespace ChessFight.PawnRush
         // tail. Every angle below turns about x: a positive one swings the lower end of a leg's part backward, tips
         // the neck and the head down, lifts the tail.
         // R683: `turn` (degrees a second, + to the right) - turning, the horse leans into the turn and looks where it goes.
+        // (The stable's charger: it only runs forward, its stride from `travelled`.)
         public void Pose(double now, float rear, float speed, float topSpeed, float travelled, float turn = 0f)
+        {
+            float advance = 0f;
+            if (lastTravelled >= 0f)
+            {
+                advance = travelled - lastTravelled;
+                if (advance < 0f) advance += 1000f;
+                if (advance >= 10f) advance = 0f;
+            }
+            lastTravelled = travelled;
+            Drive(now, rear, new Vector3(0f, 0f, speed), topSpeed, turn, 0f, advance);
+        }
+
+        // R686 (승규 11-17 "말 도는 것을 진짜 자연스럽게 표현 해 봐 지금 있는 말 시스템 바꿔도 되니까"): a team turning on
+        // the spot carries its pair sideways round its middle at up to ~3 m/s, and they used to slide there with their legs
+        // swinging only fore and aft. Now each hoof steps the way the ground goes under it: `velocity` is the horse's own
+        // way over the ground (its frame: x to its right, z ahead, m/s) and `turn` how fast it turns (degrees a second, +
+        // to the right), so each hoof's way is the horse's plus the turn's about the horse's middle. A planted hoof stays
+        // where it came down while the leg sweeps over it, forward and sideways; a leg swinging across the other one
+        // crosses in front of it, folded high; the horse sets its body a little toward the way it goes (as far as the
+        // traces let it) and looks into the turn, `lookAhead` degrees (+ right) being how far it still has to turn. The
+        // stride runs with the ground the hooves cover, shorter stepping sideways, so the legs never skate.
+        public void Move(double now, float rear, Vector3 velocity, float topSpeed, float turn, float lookAhead = 0f) =>
+            Drive(now, rear, velocity, topSpeed, turn, lookAhead, -1f);
+
+        // Where each hoof stands at rest (root space): fore FL FR, hind HL HR.
+        static readonly Vector3[] HoofAt = { new Vector3(-.2f, 0f, .57f), new Vector3(.2f, 0f, .57f), new Vector3(-.21f, 0f, -.75f), new Vector3(.21f, 0f, -.75f) };
+        // A stride stepping straight sideways (m): a horse side-passes in short crossing steps.
+        const float SideStride = 1.2f;
+        // How far a harnessed body turns toward the way it goes (degrees, about its hind pivot: the chest moves ~17 cm).
+        const float CrabMost = 7f;
+        readonly Vector2[] hoofWay = new Vector2[4];
+
+        // `advance`: the ground covered this frame for the stride (m), or below 0 to take it from the hooves' speed.
+        void Drive(double now, float rear, Vector3 velocity, float topSpeed, float turn, float lookAhead, float advance)
         {
             if (body == null) return;
             float dt = double.IsNaN(lastNow) ? 0f : Mathf.Clamp((float)(now - lastNow), 0f, .1f);
             lastNow = now;
-            float share = Mathf.Clamp01(speed / Mathf.Max(.1f, topSpeed));
-            // How much it is running, eased so it does not snap between a gallop and standing.
-            stir = Mathf.MoveTowards(stir, speed > .2f ? 1f : 0f, dt * 2.5f);
-            float gallop = Smooth((share - .35f) / .35f);
-            // The stride with the ground it covers, so a hoof stays where it came down while the horse goes over it.
-            float stride = Mathf.Lerp(1.7f, 3.3f, gallop);
-            if (lastTravelled >= 0f)
+            // Each hoof's way over the ground: the horse's, and the turn's about its middle (w x r).
+            float spin = turn * Mathf.Deg2Rad, pace = 0f, across = 0f;
+            for (int i = 0; i < 4; i++)
             {
-                float step = travelled - lastTravelled;
-                if (step < 0f) step += 1000f;
-                if (step < 10f) phase = (phase + step / stride) % 1f;
+                var h = HoofAt[i];
+                var v = new Vector2(velocity.x + spin * h.z, velocity.z - spin * h.x);
+                hoofWay[i] = v;
+                pace += v.magnitude * .25f;
+                across += Mathf.Abs(v.x) * .25f;
             }
-            lastTravelled = travelled;
-            // The share of a stride each hoof is down, and how far its leg sweeps back meanwhile (the ground covered
-            // then, over the leg's length).
-            float duty = Mathf.Lerp(.45f, .32f, gallop);
-            float sweep = Mathf.Asin(Mathf.Min(.9f, stride * duty * .5f / 1.25f)) * Mathf.Rad2Deg * stir;
+            float share = Mathf.Clamp01(Mathf.Abs(velocity.z) / Mathf.Max(.1f, topSpeed));
+            // How much it is running, eased so it does not snap between a gallop and standing.
+            stir = Mathf.MoveTowards(stir, pace > .2f ? 1f : 0f, dt * 2.5f);
+            float gallop = Smooth((share - .35f) / .35f);
+            float side = pace > 1e-3f ? Mathf.Clamp01(across / pace) * (1f - gallop) : 0f;
+            // The stride with the ground it covers, so a hoof stays where it came down while the horse goes over it.
+            float stride = Mathf.Lerp(Mathf.Lerp(1.7f, 3.3f, gallop), SideStride, side);
+            if (advance < 0f) advance = pace * dt;
+            phase = (phase + advance / stride) % 1f;
+            // The share of a stride each hoof is down, and how far its leg sweeps meanwhile (the ground covered then,
+            // over the leg's length), along and across the horse for each hoof's own way.
+            float duty = Mathf.Lerp(Mathf.Lerp(.45f, .32f, gallop), .5f, side);
+            float reach = stride * duty * .5f / 1.25f;
             for (int i = 0; i < 4; i++)
             {
                 var leg = legs[i];
                 if (leg == null || leg[0] == null) continue;
                 bool fore = i < 2;
+                float legSide = i % 2 == 0 ? -1f : 1f;
+                var way = pace > 1e-3f ? hoofWay[i] / pace : new Vector2(0f, 1f);
+                float sweep = Mathf.Asin(Mathf.Clamp(reach * way.y, -.9f, .9f)) * Mathf.Rad2Deg * stir;
+                float sweepSide = Mathf.Asin(Mathf.Clamp(reach * way.x, -.9f, .9f)) * Mathf.Rad2Deg * stir;
                 float u = Mathf.Repeat(phase + gaitOffset + Mathf.Lerp(TrotAt[i], GallopAt[i], gallop), 1f);
-                float top, mid, low, fetlock;
+                // Sound: the hoof down (its place wraps past 0), at most once in 0.12 s a leg (a gallop's stride is 0.33 s).
+                if (Footfall != null && stir > .2f && footAt[i] > .75f && u < .25f && now - footWhen[i] > .12)
+                {
+                    footWhen[i] = now;
+                    Footfall(i, gallop, stir);
+                }
+                footAt[i] = u;
+                float top, mid, low, fetlock, roll;
                 if (u < duty)
                 {
-                    // Down: the leg sweeps back under the horse, the fetlock sinking and the hind leg giving under
-                    // the weight halfway.
+                    // Down: the leg sweeps back under the horse (and across it, stepping sideways: a positive roll puts
+                    // the hoof to the horse's right), the fetlock sinking and the hind leg giving under the weight halfway
+                    // (R686: its stifle and hock flex - they used to open, which slid the planted hind hoof ~0.3 m a step).
                     float s = u / duty, load = Mathf.Sin(s * Mathf.PI) * stir;
                     top = Mathf.Lerp(-sweep, sweep, s);
-                    mid = fore ? 0f : -8f * load;
-                    low = fore ? 0f : -10f * load;
+                    roll = Mathf.Lerp(sweepSide, -sweepSide, s);
+                    mid = fore ? 0f : 6f * load;
+                    low = fore ? 0f : -8f * load;
                     fetlock = -Mathf.Lerp(16f, 24f, gallop) * load;
                 }
                 else
                 {
                     // Up: it swings forward folded, a fore knee folding early and straightening for the reach, a hind
-                    // leg drawn up under the belly.
+                    // leg drawn up under the belly. Swinging across under the horse toward its other leg (stepping
+                    // sideways), it crosses in front of that leg, folded higher, instead of through it.
                     float w = (u - duty) / (1f - duty);
                     float fold = Mathf.Sin(w * Mathf.PI) * stir, early = Mathf.Sin(Mathf.Clamp01(w * 1.25f) * Mathf.PI) * stir;
-                    top = Mathf.Lerp(sweep, -sweep, Smooth(w));
+                    float cross = sweepSide * legSide < 0f ? Mathf.Clamp01(Mathf.Abs(sweepSide) / 8f) * fold : 0f;
+                    top = Mathf.Lerp(sweep, -sweep, Smooth(w)) - 14f * cross;
+                    roll = Mathf.Lerp(-sweepSide, sweepSide, Smooth(w));
                     if (fore)
                     {
-                        mid = -(12f + 18f * gallop) * fold;
-                        low = (65f + 40f * gallop) * early;
-                        fetlock = (25f + 15f * gallop) * early;
+                        mid = -(12f + 18f * gallop) * fold - 6f * cross;
+                        low = (65f + 40f * gallop) * early + 20f * cross;
+                        fetlock = (25f + 15f * gallop) * early + 10f * cross;
                     }
                     else
                     {
-                        mid = -(15f + 15f * gallop) * fold;
-                        low = -(25f + 30f * gallop) * fold;
-                        fetlock = (30f + 15f * gallop) * fold;
+                        // R686: the stifle flexes (the gaskin's lower end back) and the hock folds the cannon up under
+                        // it - the hind hoof used to clear the ground by 8 cm, now ~23 cm, as a horse's does.
+                        mid = (20f + 10f * gallop) * fold + 6f * cross;
+                        low = -(55f + 25f * gallop) * fold - 15f * cross;
+                        fetlock = (30f + 15f * gallop) * fold + 10f * cross;
                     }
                 }
                 if (fore)
                 {
-                    // Rearing, the fore legs fold up.
+                    // Rearing, the fore legs fold up (and come in under the chest).
                     top -= 45f * rear;
                     mid -= 25f * rear;
                     low += 95f * rear;
                     fetlock += 30f * rear;
+                    roll *= 1f - rear;
                 }
                 else top += 32f * rear;         // the hind legs stay under it as the body tips back
-                leg[0].localRotation = Quaternion.Euler(top, 0f, 0f);
+                leg[0].localRotation = Quaternion.Euler(top, 0f, roll);
                 leg[1].localRotation = Quaternion.Euler(mid, 0f, 0f);
                 leg[2].localRotation = Quaternion.Euler(low, 0f, 0f);
                 leg[3].localRotation = Quaternion.Euler(fetlock, 0f, 0f);
@@ -245,8 +311,10 @@ namespace ChessFight.PawnRush
             float bob = Mathf.Lerp(.5f - .5f * Mathf.Cos(4f * Mathf.PI * ph), .5f - .5f * Mathf.Cos(2f * Mathf.PI * (ph - .15f)), gallop);
             float rock = Mathf.Sin(2f * Mathf.PI * (ph - .3f)) * gallop * stir;
             float lean = Mathf.Clamp(-turn * .035f, -5f, 5f);
+            // R686: stepping sideways, the chest leads the way it goes (about the hind pivot), as far as the traces let it.
+            float crab = Mathf.Clamp(Mathf.Atan2(velocity.x, Mathf.Abs(velocity.z) + 1.5f) * Mathf.Rad2Deg, -CrabMost, CrabMost) * stir * (1f - gallop);
             body.localPosition = BodyAt + new Vector3(0f, (.025f + .075f * gallop) * bob * stir, 0f);
-            body.localRotation = Quaternion.Euler(-32f * rear + 6.5f * rock, 0f, lean);
+            body.localRotation = Quaternion.Euler(-32f * rear + 6.5f * rock, crab, lean);
             float clock = (float)(now % 1000.0);
             if (neck != null)
             {
@@ -254,7 +322,8 @@ namespace ChessFight.PawnRush
                 float nod = Mathf.Sin(2f * Mathf.PI * (ph - .1f)) * (2.5f + 8.5f * gallop) * stir;
                 float toss = 8f * Mathf.Sin(clock * 9f) * rear;
                 float idle = 2f * Mathf.Sin(clock * .7f) * (1f - stir);
-                float look = Mathf.Clamp(turn * .09f, -14f, 14f);
+                // R686: into the turn, and ahead to where it is still to face (the head leads the body round).
+                float look = Mathf.Clamp(turn * .09f + .45f * lookAhead + .6f * crab, -24f, 24f);
                 neck.localRotation = Quaternion.Euler(-12f * rear + toss + 6f * gallop * stir + nod - 5f * rock + idle, look, 0f);
                 if (head != null) head.localRotation = Quaternion.Euler(-.5f * nod - 6f * rear, .6f * look, 0f);
             }

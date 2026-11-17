@@ -17,6 +17,9 @@
 # The horse itself is one skinned model now, horse_model.py (RcyHorse); its five pinned parts (RcyHorseBody, ...Neck,
 # ...ForeLeg, ...HindLeg, ...Harness) are gone.
 
+# R686 (rcy-textures, 승규 "재질 텍스쳐 컨셉 아트대로"): the concept's trims are dull matte brass; only the crowns (the
+# roof finial, crown() from entrance_model, and the crest's crown on each door) stay "RCY | gold". The start gate's
+# boards are walnut like its frame (the concept's "two walnut leaves").
 PAINT, HIDE = "RCY | coach", "RCY | hide"
 
 
@@ -185,7 +188,7 @@ def shutter(col, s, y0, y1, z0, z1):
         for ya, yb in ((y0 + .045, mid - .02), (mid + .02, y1 - .045)):
             bm = _box_bm(Vector((s * (HALF - .036), (ya + yb) / 2, z)), Vector((.055, yb - ya, .012)), tilt)
             parts.append(mesh_object("Shutter slat", bm, col, (WALNUT,)))
-    parts.append(cylinder(col, "Shutter knob", (s * (HALF + .005), mid, (z0 + z1) / 2), (1, 0, 0), .018, .03, GOLD, segments=8))
+    parts.append(cylinder(col, "Shutter knob", (s * (HALF + .005), mid, (z0 + z1) / 2), (1, 0, 0), .018, .03, BRASS, segments=8))
     return parts
 
 
@@ -217,13 +220,13 @@ def coach_locker(col):
         for ya, yb in ((-.6, -.04), (.04, .6)):
             for blo, bhi in (((fa, ya, za), (fb, yb, za + .025)), ((fa, ya, zb - .025), (fb, yb, zb)),
                              ((fa, ya, za), (fb, ya + .025, zb)), ((fa, yb - .025, za), (fb, yb, zb))):
-                parts.append(box(col, "Locker bead", blo, bhi, GOLD))
-            parts.append(cylinder(col, "Locker pull", (s * (face + proud + .01), (ya + yb) / 2, (za + zb) / 2), (0, 1, 0), .012, .12, GOLD, segments=8))
+                parts.append(box(col, "Locker bead", blo, bhi, BRASS))
+            parts.append(cylinder(col, "Locker pull", (s * (face + proud + .01), (ya + yb) / 2, (za + zb) / 2), (0, 1, 0), .012, .12, BRASS, segments=8))
     for s in (-1, 1):
         ea, eb = sorted((s * (y - .02), s * (y - .02 + proud)))
         for blo, bhi in (((-.95, ea, za), (.95, eb, za + .025)), ((-.95, ea, zb - .025), (.95, eb, zb)),
                          ((-.95, ea, za), (-.925, eb, zb)), ((.925, ea, za), (.95, eb, zb))):
-            parts.append(box(col, "Locker bead", blo, bhi, GOLD))
+            parts.append(box(col, "Locker bead", blo, bhi, BRASS))
     return parts
 
 
@@ -238,7 +241,7 @@ def coach_trunk(col):
         parts.append(box(col, "Boot rail", (-.92, y0, za), (.92, y1, zb), WALNUT, bevel=.012))
     for blo, bhi in (((-.7, y0 - .002, .52), (.7, y0 + .01, .545)), ((-.7, y0 - .002, .695), (.7, y0 + .01, .72)),
                      ((-.7, y0 - .002, .52), (-.675, y0 + .01, .72)), ((.675, y0 - .002, .52), (.7, y0 + .01, .72))):
-        parts.append(box(col, "Boot bead", blo, bhi, GOLD))
+        parts.append(box(col, "Boot bead", blo, bhi, BRASS))
     parts.append(box(col, "Luggage rack", (-.96, y0, .84), (.96, y1 + .015, .9), WALNUT, bevel=.015))
     for s in (-1, 1):
         parts.append(box(col, "Rack rail", (min(s * .96, s * .92), y0, .9), (max(s * .96, s * .92), y1, .98), WALNUT, bevel=.01, segments=1))
@@ -288,7 +291,7 @@ def coach(col):
         parts.append(beam(col, "Futchell", (s * .45, .9, .66), (s * .2, 1.85, .66), w=.08, h=.08, mat=WALNUT, segments=1))
     # --- the body: the tub, the upper body's frame round its windows, louvred shutters in them, the doors, the crest
     parts.append(coach_tub(col))
-    parts.append(box(col, "Waist rail", (-HALF - .025, CAB_Y0 - .02, WAIST - .03), (HALF + .025, CAB_Y1 + .02, WAIST + .07), GOLD, bevel=.02))
+    parts.append(box(col, "Waist rail", (-HALF - .025, CAB_Y0 - .02, WAIST - .03), (HALF + .025, CAB_Y1 + .02, WAIST + .07), BRASS, bevel=.02))
     parts.append(box(col, "Upper body", (-HALF + .07, CAB_Y0 + .07, WAIST), (HALF - .07, CAB_Y1 - .07, CAB_TOP), PAINT))
     frame = .07
     windows = ((-1.6, -.95), (-.66, .06), (.32, 1.0))    # rear quarter, door, front quarter (y)
@@ -302,15 +305,15 @@ def coach(col):
         for a, b in windows:
             parts += shutter(col, s, a, b, 1.7, CAB_TOP - .2)
             for ya, yb, za, zb in ((a, b, 1.68, 1.72), (a, b, CAB_TOP - .22, CAB_TOP - .18), (a - .02, a + .02, 1.7, CAB_TOP - .2), (b - .02, b + .02, 1.7, CAB_TOP - .2)):
-                parts.append(box(col, "Window bead", (x0 if s > 0 else x0 - .012, ya, za), (x1 + .012 if s > 0 else x1, yb, zb), GOLD))
+                parts.append(box(col, "Window bead", (x0 if s > 0 else x0 - .012, ya, za), (x1 + .012 if s > 0 else x1, yb, zb), BRASS))
         dx = s * (HALF + .012)
         for ya, yb in ((-.74, -.7), (.1, .14)):
-            parts.append(box(col, "Door line", (min(dx, dx - s * .03), ya, 1.0), (max(dx, dx - s * .03), yb, CAB_TOP - .12), GOLD))
-        parts.append(cylinder(col, "Door handle", (s * (HALF + .04), -.62, 1.62), (0, 1, 0), .025, .16, GOLD, segments=8))
+            parts.append(box(col, "Door line", (min(dx, dx - s * .03), ya, 1.0), (max(dx, dx - s * .03), yb, CAB_TOP - .12), BRASS))
+        parts.append(cylinder(col, "Door handle", (s * (HALF + .04), -.62, 1.62), (0, 1, 0), .025, .16, BRASS, segments=8))
         cz = 1.22
         tub_x = max(abs(p.x) for p in tub_section(-.3) if abs(p.z - cz) < .12)
         medal = lathe(col, "Crest", [(0, 0), (.2, 0), (.22, .02 * s), (.2, .04 * s), (.15, .05 * s), (0, .055 * s)],
-                      (s * (tub_x - .01), -.3, cz), axis="x", seg=24, mat=GOLD, smooth=True)
+                      (s * (tub_x - .01), -.3, cz), axis="x", seg=24, mat=BRASS, smooth=True)
         parts.append(medal)
         cc = prism(col, "Crest crown", [(-.11, -.07), (.11, -.07), (.13, .09), (.06, .02), (0, .11), (-.06, .02), (-.13, .09)],
                    0, .03, GOLD, axis="y")
@@ -322,28 +325,28 @@ def coach(col):
         yy = y - sgn * .07
         parts.append(box(col, "End panel", (-HALF + .07, min(yy, y), WAIST), (HALF - .07, max(yy, y), CAB_TOP), PAINT))
         for xa, xb, za, zb in ((-.7, .7, 1.75, 1.79), (-.7, .7, 2.22, 2.26), (-.72, -.68, 1.75, 2.26), (.68, .72, 1.75, 2.26)):
-            parts.append(box(col, "End bead", (xa, min(y, y + sgn * .012), za), (xb, max(y, y + sgn * .012), zb), GOLD))
+            parts.append(box(col, "End bead", (xa, min(y, y + sgn * .012), za), (xb, max(y, y + sgn * .012), zb), BRASS))
     for s in (-1, 1):
         for y in (CAB_Y0 + .07, CAB_Y1 - .07):
             parts.append(cylinder(col, "Corner post", (s * (HALF - .07), y, (WAIST + CAB_TOP) / 2), (0, 0, 1), .07, CAB_TOP - WAIST, PAINT, segments=12))
-    # --- roof: a moulded eave, a domed top, a gilt rail round it, the crown in the middle
-    parts.append(box(col, "Roof eave", (-HALF - .08, CAB_Y0 - .08, CAB_TOP), (HALF + .08, CAB_Y1 + .08, CAB_TOP + .08), WALNUT, bevel=.035))
+    # --- roof: a moulded eave, a domed top, a gilt rail round it, the crown in the middle. R686 (승규 "바퀴·지붕 고치고",
+    # the concept's dark grey roof slab): the eave and the dome in the roof slate, the cornice under them walnut
+    parts.append(box(col, "Roof eave", (-HALF - .08, CAB_Y0 - .08, CAB_TOP), (HALF + .08, CAB_Y1 + .08, CAB_TOP + .08), TILE, bevel=.035))
     # R683 (stylized-style: a stepped cornice reads at a distance): a moulding stepping the eave out from the body and
     # a gilt bead under it
     parts.append(box(col, "Cornice", (-HALF - .035, CAB_Y0 - .035, CAB_TOP - .07), (HALF + .035, CAB_Y1 + .035, CAB_TOP), WALNUT, bevel=.025))
-    parts.append(box(col, "Cornice bead", (-HALF - .015, CAB_Y0 - .015, CAB_TOP - .1), (HALF + .015, CAB_Y1 + .015, CAB_TOP - .07), GOLD, bevel=.01, segments=1))
+    parts.append(box(col, "Cornice bead", (-HALF - .015, CAB_Y0 - .015, CAB_TOP - .1), (HALF + .015, CAB_Y1 + .015, CAB_TOP - .07), BRASS, bevel=.01, segments=1))
     parts.append(loft(col, "Roof dome", [((0, CAB_Y0 + .02, CAB_TOP + .08), .3, .02), ((0, CAB_Y0 + .1, CAB_TOP + .08), HALF + .02, .08),
                                           ((0, -.3, CAB_TOP + .08), HALF + .02, .14), ((0, CAB_Y1 - .1, CAB_TOP + .08), HALF + .02, .08),
-                                          ((0, CAB_Y1 - .02, CAB_TOP + .08), .3, .02)], seg=24, mat=WALNUT, subsurf=1))
+                                          ((0, CAB_Y1 - .02, CAB_TOP + .08), .3, .02)], seg=24, mat=TILE, subsurf=1))
     for s in (-1, 1):
-        parts.append(box(col, "Rail", (s * (HALF - .02) - .02, CAB_Y0 + .05, 2.68), (s * (HALF - .02) + .02, CAB_Y1 - .05, 2.71), GOLD))
+        parts.append(box(col, "Rail", (s * (HALF - .02) - .02, CAB_Y0 + .05, 2.68), (s * (HALF - .02) + .02, CAB_Y1 - .05, 2.71), BRASS))
         for k in range(9):
             y = CAB_Y0 + .05 + (CAB_Y1 - CAB_Y0 - .1) * k / 8
-            parts.append(lathe(col, "Rail post", [(0, 2.56), (.025, 2.56), (.018, 2.62), (.025, 2.68), (0, 2.7)], (s * (HALF - .02), y, 0), seg=6, mat=GOLD))
+            parts.append(lathe(col, "Rail post", [(0, 2.56), (.025, 2.56), (.018, 2.62), (.025, 2.68), (0, 2.7)], (s * (HALF - .02), y, 0), seg=6, mat=BRASS))
     for y in (CAB_Y0 + .05, CAB_Y1 - .05):
-        parts.append(box(col, "Rail", (-HALF, y - .02, 2.68), (HALF, y + .02, 2.71), GOLD))
-    parts.append(lathe(col, "Crown seat", [(0, 2.6), (.3, 2.6), (.3, 2.66), (.24, 2.7), (0, 2.7)], (0, -.3, 0), seg=20, mat=GOLD))
-    parts += crown(col, (0, -.3, 2.7), .42)
+        parts.append(box(col, "Rail", (-HALF, y - .02, 2.68), (HALF, y + .02, 2.71), BRASS))
+    # R686 (승규 11-17 "왕관 지워"): no crown (nor its seat) on the roof.
     # --- the driver's box under its hammercloth, the cushion, the footboard and its irons
     parts.append(box(col, "Box seat", (-.62, 1.2, .98), (.62, 1.78, 1.3), WALNUT, bevel=.02))
     hem = [(.75, 1.33)]
@@ -358,7 +361,7 @@ def coach(col):
             side_hem.append((1.17 + .7 * t, .95 + .07 * abs(math.sin(math.pi * 4 * t))))
         parts.append(prism(col, "Hammercloth side", side_hem, s * .75 - .015, s * .75 + .015, CLOTH, axis="x"))
     parts.append(box(col, "Hammercloth top", (-.77, 1.15, 1.3), (.77, 1.88, 1.34), CLOTH, bevel=.02))
-    parts.append(box(col, "Hammercloth fringe", (-.77, 1.86, 1.27), (.77, 1.89, 1.34), GOLD))
+    parts.append(box(col, "Hammercloth fringe", (-.77, 1.86, 1.27), (.77, 1.89, 1.34), BRASS))
     cushion = box(col, "Cushion", (-.6, 1.25, 1.34), (.6, 1.78, 1.44), LEATHER)
     bevel_mod(cushion, .045, 3)
     parts.append(cushion)
@@ -366,7 +369,7 @@ def coach(col):
     parts.append(beam(col, "Footboard", (0, 1.76, .99), (0, 2.08, .9), w=1.45, h=.05, mat=WALNUT))
     for s in (-1, 1):
         parts.append(beam(col, "Box iron", (s * .6, 1.6, .66), (s * .62, 2.04, .9), w=.04, h=.04, mat=IRON, segments=1))
-        parts.append(beam(col, "Seat rail", (s * .66, 1.24, 1.45), (s * .66, 1.76, 1.45), w=.03, h=.03, mat=GOLD, segments=1))
+        parts.append(beam(col, "Seat rail", (s * .66, 1.24, 1.45), (s * .66, 1.76, 1.45), w=.03, h=.03, mat=BRASS, segments=1))
     # --- behind: the luggage rack (was the footman's board) and its trunk, the footman's hand straps over it
     parts += coach_trunk(col)
     for s in (-1, 1):
@@ -379,8 +382,8 @@ def coach(col):
     for s in (-1, 1):
         cx, cy = s * 1.08, 1.2
         parts.append(lathe(col, "Lamp cap", [(0, 2.29), (.2, 2.29), (.2, 2.31), (.08, 2.42), (.04, 2.42), (.04, 2.5), (.06, 2.5), (0, 2.53)],
-                           (cx, cy, 0), seg=8, mat=GOLD))
-        parts.append(lathe(col, "Lamp cup", [(0, 1.62), (.03, 1.62), (.06, 1.66), (.19, 1.73), (.19, 1.75), (0, 1.75)], (cx, cy, 0), seg=8, mat=GOLD))
+                           (cx, cy, 0), seg=8, mat=BRASS))
+        parts.append(lathe(col, "Lamp cup", [(0, 1.62), (.03, 1.62), (.06, 1.66), (.19, 1.73), (.19, 1.75), (0, 1.75)], (cx, cy, 0), seg=8, mat=BRASS))
         parts.append(beam(col, "Lamp bracket", (s * .98, 1.08, 1.75), (cx, cy, 1.66), w=.03, h=.03, mat=IRON, segments=1))
     return parts
 
@@ -395,13 +398,13 @@ def coach_wheel(col):
                                      (.14, .075), (.115, .12), (.09, .135), (.065, .15), (0, .15)], (0, 0, 0), axis="x", seg=16,
                        mat=WALNUT, smooth=True))
     for x in (-.115, .115):
-        parts.append(ring_x(col, "Nave band", x, .1, .123, -.014, .014, GOLD, seg=20, bevel=0))
+        parts.append(ring_x(col, "Nave band", x, .1, .123, -.014, .014, BRASS, seg=20, bevel=0))
     for sgn in (-1, 1):
         parts.append(lathe(col, "Hub cap", [(0, .15 * sgn), (.06, .15 * sgn), (.055, .175 * sgn), (.035, .19 * sgn), (0, .195 * sgn)],
-                           (0, 0, 0), axis="x", seg=16, mat=GOLD, smooth=True))
+                           (0, 0, 0), axis="x", seg=16, mat=BRASS, smooth=True))
     for k in range(12):
         sp = lathe(col, "Spoke", [(0, .12), (.04, .12), (.036, .2), (.03, .32), (.027, .43), (0, .43)], (0, 0, 0), axis="z", seg=8,
-                   mat=OAK, smooth=True)
+                   mat=WALNUT, smooth=True)   # R686: walnut like the concept's wheels (was oak)
         sp.rotation_euler = (2 * math.pi * k / 12, 0, 0)
         parts.append(sp)
         a = 2 * math.pi * (k + .5) / 12
@@ -416,7 +419,7 @@ def coach_wheel(col):
 def hitch(col):
     """In the team's frame: the carriage's nose at y .725, the horses' roots at x +-.55, y 2.175 (RcyHorse's middle)."""
     parts = [lathe(col, "Pole", [(0, .7), (.07, .7), (.065, 1.0), (.055, 2.5), (.045, 3.2), (0, 3.2)], (0, 0, .95), axis="y", seg=10, mat=WALNUT, smooth=True)]
-    parts.append(lathe(col, "Pole tip", [(0, 3.15), (.06, 3.15), (.08, 3.22), (.06, 3.3), (.03, 3.34), (0, 3.35)], (0, 0, .95), axis="y", seg=12, mat=GOLD, smooth=True))
+    parts.append(lathe(col, "Pole tip", [(0, 3.15), (.06, 3.15), (.08, 3.22), (.06, 3.3), (.03, 3.34), (0, 3.35)], (0, 0, .95), axis="y", seg=12, mat=BRASS, smooth=True))
     parts.append(lathe(col, "Swingle tree", [(0, -.88), (.04, -.88), (.06, -.6), (.07, 0), (.06, .6), (.04, .88), (0, .88)], (0, .84, .95), axis="x", seg=10, mat=WALNUT, smooth=True))
     for x in (-.86, .86):
         parts.append(lathe(col, "Swingle ferrule", [(0, -.03), (.05, -.03), (.05, .03), (0, .03)], (x, .84, .95), axis="x", seg=10, mat=IRON))
@@ -458,7 +461,7 @@ def gate_leaf(col, side):
         b = .26 + (W - .52) * (k + 1) / n
         x0, x1 = X(a + .008, b - .008)
         for z0, z1 in ((.3, 2.58), (2.86, H - .3)):
-            parts.append(box(col, "Board", (x0, -T / 2 + .04, z0), (x1, T / 2 - .04, z1), OAK, bevel=.012, segments=1))
+            parts.append(box(col, "Board", (x0, -T / 2 + .04, z0), (x1, T / 2 - .04, z1), WALNUT, bevel=.012, segments=1))
     # The court's face: three iron bands (the code's, at 0.97 / 2.70 / 4.43 m) with studs and a fleur at the free end,
     # the knuckles round the wall's pintles.
     for zc in (.97, 2.70, 4.43):
@@ -474,8 +477,10 @@ def gate_leaf(col, side):
     x0, x1 = X(.26, W - .26)
     for za, zb in ((.3, 2.58), (2.86, H - .3)):
         parts.append(beam(col, "Brace", (side * .3, T / 2 + .03, za + .15), (side * (W - .3), T / 2 + .03, zb - .15), w=.18, h=.06, mat=WALNUT))
+    # R686 (rcy-textures' z-fighting check): the ledges stand 3 cm proud of the braces (both were 6 cm deep, their faces
+    # drawn over each other where a brace crosses a ledge).
     for zc in (.97, 2.70, 4.43):
-        parts.append(box(col, "Ledge", (x0, T / 2, zc - .12), (x1, T / 2 + .06, zc + .12), WALNUT, bevel=.015))
+        parts.append(box(col, "Ledge", (x0, T / 2, zc - .12), (x1, T / 2 + .09, zc + .12), WALNUT, bevel=.015))
     return parts
 
 

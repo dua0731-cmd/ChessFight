@@ -15,7 +15,7 @@ namespace ChessFight.PawnRush
     //
     // This object is the conveyor's middle on the floor, its local x along the belt (the way the loads go), local z
     // across. Built from code on an inactive object: Configure, then switch it on.
-    public sealed class CargoConveyor : MonoBehaviour
+    public sealed partial class CargoConveyor : MonoBehaviour
     {
         [Tooltip("Length of the belt (m), centred on this object along its local x")]
         [SerializeField] float length = 47f;
@@ -96,6 +96,7 @@ namespace ChessFight.PawnRush
                 crate.Configure(this, at[i], Hash(seed, i, 7) < .45f);
                 crates[i] = crate;
             }
+            BeltSounds();   // 2026-11-17: the belt's run and each load's rattle (CargoConveyor.Sound.cs)
         }
 
         // Where each load starts round the loop (m from the west end): every gap minGap and a share of the rest of the loop

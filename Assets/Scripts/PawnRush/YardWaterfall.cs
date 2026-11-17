@@ -85,9 +85,11 @@ namespace ChessFight.PawnRush
 
         static readonly Detail[] Details =
         {
-            new Detail { around = 4, along = 10, drops = 5, crown = 0, spillEmitters = 1, dripEmitters = 2, column = .8f, drip = .45f, jets = false },
-            new Detail { around = 5, along = 16, drops = 9, crown = 3, spillEmitters = 2, dripEmitters = 3, column = .45f, drip = .7f, jets = true },
-            new Detail { around = 7, along = 22, drops = 14, crown = 6, spillEmitters = 2, dripEmitters = 5, column = .3f, drip = 1f, jets = true },
+            // R686 (승규 11-17 "물 떨어지는 거 더 사실적으로"): a bucket 1.2 m wide pours a broad sheet, not a thread or two -
+            // 2 / 3 / 5 overlapping streams over 85 % of its width (were 1 / 2 / 2 over 55 %), so they read as one.
+            new Detail { around = 4, along = 10, drops = 5, crown = 0, spillEmitters = 2, dripEmitters = 2, column = .8f, drip = .45f, jets = false },
+            new Detail { around = 5, along = 16, drops = 9, crown = 3, spillEmitters = 3, dripEmitters = 3, column = .45f, drip = .7f, jets = true },
+            new Detail { around = 7, along = 22, drops = 14, crown = 6, spillEmitters = 5, dripEmitters = 5, column = .3f, drip = 1f, jets = true },
         };
 
         abstract class Part
@@ -160,7 +162,7 @@ namespace ChessFight.PawnRush
                     if (phi < 0f) phi += 2f * Mathf.PI;
                     if (spills && phi > spillFrom && phi < spillTo + w * Span)
                         for (int k = 0; k < d.spillEmitters; k++)
-                            f.Stream(this, c, A, dir, phi, 0f, Across(k, d.spillEmitters, .55f), i * 31 + k, t, 0);
+                            f.Stream(this, c, A, dir, phi, 0f, Across(k, d.spillEmitters, .85f), i * 31 + k, t, 0);
                     // Seconds since the blade's lip came out of the water (phi past 2 pi - phi_sub; the top wraps to 0).
                     float since = (phi >= emerge ? phi - emerge : phi + 2f * Mathf.PI - emerge) / w;
                     if (since < drainTime * 3f + 1.6f)
@@ -219,6 +221,39 @@ namespace ChessFight.PawnRush
             }
 
             public override void Build(YardWaterfall f, float t, float dt) => f.Nappe(this, t);
+        }
+
+        // ------------------------------------------------------------------ the overflow over a wheel's rim (8)
+
+        // R686 (승규 11-17 "물 표현이 부자연스러워"; the concept U2: the flume's water running over the wheel's upper falling
+        // side and off it): the water the flume gives the top buckets more of than they hold, riding over the outside of
+        // the rim with them and leaving it where gravity can no longer turn it round the axle. Drawn as a body of water
+        // (face, back, sides) like a nappe (6). The formulas:
+        //  - It moves with the rim, v = |omega| R. A layer on the outside of a turning drum stays on it while gravity's
+        //    pull towards the axle can supply the turn, g cos(phi) >= v^2 / R, so it leaves at
+        //      phi_d = acos(v^2 / (g R))      (the giant wheel: 15 deg/s, R 9.3 m -> v 2.43 m/s, phi_d 86 deg),
+        //    and then falls freely from there with the rim's velocity: P(tau) = P_d + v t_d tau + g tau^2 / 2, landing
+        //    at tau_land = (v_y + sqrt(v_y^2 + 2 g h)) / g (v_y its downward speed, h its height over the water).
+        //  - Its depth over the rim grows from 2.5 cm at the top to `thick` a third of the way round (the buckets
+        //    overflow more as they fill), then the falling sheet takes in air and bulks: thick + 0.3 m (tau / tau_land).
+        //  - Its streaks ride with the water: UV.y = the shader's streak speed times the water's age (arc / v on the
+        //    rim, then the fall's tau), so they slide round the rim and stretch as the sheet speeds up.
+        sealed class RimFilm : Part
+        {
+            public Wheel wheel;          // the wheel whose rim it runs over (its axle, its turn)
+            public float radius;         // the rim's outside (m)
+            public float halfWidth;      // half its width along the axle (m)
+            public float thick;          // its depth over the rim once it has filled (m)
+            public float seed;
+            public int line = -1;
+
+            public override void Extend(Transform frame, ref Bounds bounds)
+            {
+                var c = frame.InverseTransformPoint(wheel.wheel.position);
+                bounds.Encapsulate(new Bounds(c, Vector3.one * (radius + 7f) * 2f));
+            }
+
+            public override void Build(YardWaterfall f, float t, float dt) => f.Film(this, t);
         }
 
         YardWater owner;
@@ -319,6 +354,20 @@ namespace ChessFight.PawnRush
             });
         }
 
+        // R686: the overflow over the rim of the wheel added last (8): `radius` the rim's outside, `halfWidth` half its
+        // width along the axle, `thick` the layer's depth once it has filled.
+        public void AddRimFilm(float radius, float halfWidth, float thick, float seed)
+        {
+            Wheel w = null;
+            for (int i = parts.Count - 1; i >= 0 && w == null; i--) w = parts[i] as Wheel;
+            if (w == null) return;
+            var c = transform.InverseTransformPoint(w.wheel.position);
+            var part = new RimFilm { wheel = w, radius = radius, halfWidth = halfWidth, thick = thick, seed = seed, top = c.y + radius - waterY };
+            part.line = lines.Count;
+            lines.Add(new Line());   // filled once it lands
+            parts.Add(part);
+        }
+
         // The material and the mesh once every part is in; registers with YardWater.
         public void Finish()
         {
@@ -330,7 +379,8 @@ namespace ChessFight.PawnRush
             {
                 fallHeight = Mathf.Max(fallHeight, p.top + .3f);
                 var b = p is Sheet sheet ? new Bounds(sheet.lip0, Vector3.zero)
-                      : p is Wheel wheel ? new Bounds(transform.InverseTransformPoint(wheel.wheel.position), Vector3.zero) : new Bounds();
+                      : p is Wheel wheel ? new Bounds(transform.InverseTransformPoint(wheel.wheel.position), Vector3.zero)
+                      : p is RimFilm film ? new Bounds(transform.InverseTransformPoint(film.wheel.wheel.position), Vector3.zero) : new Bounds();
                 p.Extend(transform, ref b);
                 if (first) bounds = b; else bounds.Encapsulate(b);
                 first = false;
@@ -454,9 +504,12 @@ namespace ChessFight.PawnRush
                 centre[k] = Parcel(c, A, dir, w.lip, w.omega, a, out_, tau, g, out velocity[k]);
                 if (k == 0) speed0 = velocity[0].magnitude;
                 float q = Flow(w, mode, phi, since, tau, abs);
-                // 2: continuity; a neck as it breaks up.
+                // 2: continuity; a neck as it breaks up. R686: a bucket's pour (mode 0) is a broad sheet that spreads
+                // sideways as it speeds up, so its thickness falls as (v0 / v)^0.3 rather than a round jet's ^0.5 (the
+                // pours read as white threads 4 cm thick at the bottom).
                 float neck = Mathf.Min(1f, (tauB - tau) / .12f + .3f);
-                radius[k] = (mode == 0 ? w.streamRadius : w.filmRadius) * Mathf.Sqrt(q) * Mathf.Sqrt(speed0 / Mathf.Max(velocity[k].magnitude, .05f)) * neck;
+                float thin = speed0 / Mathf.Max(velocity[k].magnitude, .05f);
+                radius[k] = (mode == 0 ? w.streamRadius : w.filmRadius) * Mathf.Sqrt(q) * (mode == 0 ? Mathf.Pow(thin, .3f) : Mathf.Sqrt(thin)) * neck;
                 flowCoord[k] = StreakSpeed * (.85f + .3f * seed) * tau;
             }
             Tube(rows, seed);
@@ -686,6 +739,129 @@ namespace ChessFight.PawnRush
                 }
                 Grid(start, rows, 1);
             }
+        }
+
+        // 8: the overflow riding the outside of a wheel's rim from its top, then falling off it (RimFilm, formulas there).
+        readonly float[] rowAge = new float[MaxAlong + 16];
+        readonly Vector3[] rowOut = new Vector3[MaxAlong + 16];
+
+        void Film(RimFilm film, float t)
+        {
+            var w = film.wheel;
+            float om = Mathf.Abs(w.omega);
+            if (om < .02f || Full) return;
+            var tf = transform;
+            var c = tf.InverseTransformPoint(w.wheel.position);
+            var A = tf.InverseTransformDirection(w.wheel.TransformDirection(w.axisLocal)).normalized;
+            var up = tf.InverseTransformDirection(Vector3.up);
+            var ahead = Vector3.Cross(A * w.omega, up).normalized;   // the way the top moves: the falling side
+            var g = Vector3.down * G;
+            const float Phi0 = .05f, Bulk = .3f, Lump = .04f;
+            const int ArcRows = 12;
+            float R = film.radius, v = om * R;
+            float phiD = Mathf.Acos(Mathf.Clamp01(v * v / (G * R)));
+            var nD = up * Mathf.Cos(phiD) + ahead * Mathf.Sin(phiD);
+            var vD = (ahead * Mathf.Cos(phiD) - up * Mathf.Sin(phiD)) * v;
+            var pD = c + nD * (R + .006f + film.thick * .5f);
+            float vy = -vD.y, h = pD.y - waterY;
+            if (h <= .05f) return;
+            float tauLand = (vy + Mathf.Sqrt(vy * vy + 2f * G * h)) / G;
+            float ageD = R * (phiD - Phi0) / Mathf.Max(v, .01f);
+            int fallRows = Mathf.Min(detail.along, MaxAlong), rows = ArcRows + fallRows;
+            float width = 2f * film.halfWidth;
+            int cols = Mathf.Max(2, Mathf.CeilToInt(width / detail.column)), row = cols + 1;
+            if (face == null || face.Length < (rows + 1) * row) { face = new Vector3[(rows + 1) * row]; back = new Vector3[face.Length]; }
+            for (int r = 0; r <= rows; r++)
+            {
+                Vector3 mid, outN;
+                float th, age;
+                if (r <= ArcRows)
+                {
+                    float f = (float)r / ArcRows, phi = Phi0 + (phiD - Phi0) * f;
+                    outN = up * Mathf.Cos(phi) + ahead * Mathf.Sin(phi);
+                    th = Mathf.Lerp(.025f, film.thick, Mathf.Clamp01(f * 3f));
+                    mid = c + outN * (R + .006f + th * .5f);
+                    age = R * (phi - Phi0) / Mathf.Max(v, .01f);
+                }
+                else
+                {
+                    float tau = tauLand * (r - ArcRows) / fallRows;
+                    var vel = vD + g * tau;
+                    mid = pD + vD * tau + .5f * tau * tau * g;
+                    outN = Vector3.Cross(A, vel).normalized;
+                    if (Vector3.Dot(outN, mid - c) < 0f) outN = -outN;
+                    th = film.thick + Bulk * tau / tauLand;
+                    age = ageD + tau;
+                }
+                rowAge[r] = age;
+                rowOut[r] = outN;
+                float left = t - age, grown = (float)r / rows;
+                for (int k = 0; k <= cols; k++)
+                {
+                    float a = ((float)k / cols - .5f) * width;
+                    float lump = Lump * (.3f + .7f * grown)
+                                 * (.5f + .3f * Mathf.Sin(a * 2.3f + left * 5.1f + film.seed * 13f) + .2f * Mathf.Sin(a * 5.7f - left * 8.3f + film.seed * 29f));
+                    var p = mid + A * a;
+                    face[r * row + k] = p + outN * (th * .5f + lump);
+                    back[r * row + k] = p - outN * (th * .5f);
+                }
+            }
+            float streak = StreakSpeed * (.85f + .3f * film.seed), backSeed = (film.seed + .29f) % 1f;
+            // The face: its normals from its shape, turned outwards.
+            int start = verts.Count;
+            for (int r = 0; r <= rows; r++)
+                for (int k = 0; k <= cols; k++)
+                {
+                    var down = face[Mathf.Min(rows, r + 1) * row + k] - face[Mathf.Max(0, r - 1) * row + k];
+                    var side = face[r * row + Mathf.Min(cols, k + 1)] - face[r * row + Mathf.Max(0, k - 1)];
+                    var n = Vector3.Cross(side, down).normalized;
+                    if (Vector3.Dot(n, rowOut[r]) < 0f) n = -n;
+                    var p = face[r * row + k];
+                    verts.Add(p);
+                    normals.Add(n);
+                    uvs.Add(new Vector2((float)k / cols * width, streak * rowAge[r]));
+                    colors.Add(new Color((float)k / cols, Fallen(p.y), film.seed, .62f));
+                }
+            Grid(start, rows, cols);
+            // The back, towards the rim and then the wheel.
+            start = verts.Count;
+            for (int r = 0; r <= rows; r++)
+                for (int k = 0; k <= cols; k++)
+                {
+                    var p = back[r * row + k];
+                    verts.Add(p);
+                    normals.Add(-rowOut[r]);
+                    uvs.Add(new Vector2((float)k / cols * width + 3.7f, streak * rowAge[r]));
+                    colors.Add(new Color((float)k / cols, Fallen(p.y), backSeed, .5f));
+                }
+            Grid(start, rows, cols);
+            // The two sides, closing it.
+            foreach (int k in new[] { 0, cols })
+            {
+                var n = k == 0 ? -A : A;
+                start = verts.Count;
+                for (int r = 0; r <= rows; r++)
+                {
+                    var a = back[r * row + k];
+                    var b = face[r * row + k];
+                    verts.Add(a); normals.Add(n); uvs.Add(new Vector2(0f, streak * rowAge[r])); colors.Add(new Color(k == 0 ? 0f : 1f, Fallen(a.y), film.seed, .75f));
+                    verts.Add(b); normals.Add(n); uvs.Add(new Vector2((b - a).magnitude, streak * rowAge[r])); colors.Add(new Color(k == 0 ? 0f : 1f, Fallen(b.y), film.seed, .75f));
+                }
+                Grid(start, rows, 1);
+            }
+            // 7: where it lands - the pool's churn and foam under a landing line, drops jumping back up, the mist.
+            var land = pD + vD * tauLand + .5f * tauLand * tauLand * g;
+            land.y = waterY;
+            var la = land - A * film.halfWidth;
+            var lb = land + A * film.halfWidth;
+            if (film.line >= 0) lines[film.line] = new Line { a = la, b = lb, strength = 1.5f, reach = 1.2f, scale = 1.1f };
+            var vl = vD + g * tauLand;
+            var outH = new Vector3(vl.x, 0f, vl.z);
+            outH = outH.sqrMagnitude > 1e-4f ? outH.normalized : ahead;
+            int spots = Mathf.Max(1, Mathf.CeilToInt(width / (detail.column * 1.3f)));
+            for (int k = 0; k < spots && !Full; k++)
+                Crown(la + (lb - la) * ((k + .5f) / spots), outH * .5f, 1.4f, k * 7 + 500, t, detail.crown);
+            if (detail.jets && !Full) Veil(la, lb - la, outH, t, film.seed);
         }
 
         // The mist a plunging sheet throws up where it lands: a curtain along the landing line rising 0.9 m and leaning
