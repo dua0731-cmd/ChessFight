@@ -4,7 +4,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "6번 거대 짐" - the thud and its wave, the chains lowering and hoisting - made with the ElevenLabs
     // MCP): the giant chest's recorded sounds, baked by ArtSource/PawnRush/Sfx/bake_carriage_yard.py into
-    // Resources/PawnRushCarriageYardSfx (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 10).
+    // Resources/PawnRushCarriageYardSfx (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 11).
     //   land    as it touches down (the moment the wave starts): a deep wooden-and-iron boom and, under it, the floor's
     //           rumble with rattling grit as the wave runs out. Without these files the code-made ThudSound plays.
     //   chains  paying out over the 1.1 s it is lowered (only when it is lowered on its chains: CargoSlam.Lowered) and

@@ -7,7 +7,7 @@ namespace ChessFight.PawnRush
     // 2026-11-17 (승규 "1번 말 마차" - hooves, a call before the charge, a hit - "너가 만들어 일레븐랩스 mcp 연결해서"): the
     // horses' own sounds, on top of the code-made wheel rumble and whip crack. Takes made with ElevenLabs sound effects,
     // baked by ArtSource/PawnRush/Sfx/bake_carriage_yard.py into Resources/PawnRushCarriageYardSfx (prompts:
-    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 9).
+    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 10).
     //   hooves  one strike each time a hoof comes down in the drawn stride (YardHorse.Footfall): a walk's or trot's
     //           lighter clop, a gallop's heavier one (from half a gallop), louder the harder it runs; at the horses'
     //           heads, so a team is heard from its front. From the pose, so every PC hears the legs it draws.

@@ -5,7 +5,7 @@ namespace ChessFight.PawnRush
     // 2026-11-17 (승규 "4·5번 물레방아·물" - the wheels turning, the pouring water and falls, the flowing water - made with
     // the ElevenLabs MCP): the yard's standing loops, under "Yard sounds" beside "Built" (YardSoundscape). Baked by
     // ArtSource/PawnRush/Sfx/bake_carriage_yard.py into Resources/PawnRushCarriageYardSfx (prompts:
-    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 13). Switching that object off silences them; nothing else changes.
+    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 14). Switching that object off silences them; nothing else changes.
     public sealed partial class RoyalCarriageYard
     {
         void Sounds()
