@@ -43,6 +43,7 @@ namespace ChessFight.PawnRush
             else if (owner.GameIndex == PawnRushMissions.EnPassant) ClockworkBallroom(owner);   // MiniGameModels.Ballroom.cs (R508)
             else if (owner.GameIndex == PawnRushMissions.CheckBlock) KingsBedchamber(owner);   // MiniGameModels.Bedchamber.cs (R511)
             GateMoment(owner);
+            SolidProps(owner);   // R701: the props by the pawns' ways get colliders (MiniGameModels.PropColliders.cs)
         }
 
         // R643 (승규 님 11-14, "미니게임 클리어 시 파란 폭죽 없애고 새로 넣기" - only the rooms without a moment of their
