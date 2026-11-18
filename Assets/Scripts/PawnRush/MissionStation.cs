@@ -153,6 +153,15 @@ namespace ChessFight.PawnRush
 
         void OpenGate()
         {
+            // R704: under the flow rule "모여서 발판" a mini-game room's gate waits for the team on its pad
+            // (MiniGameSection.Rules.cs opens it with OpenGateNow). Course 01's stations have no such room.
+            if (PawnRushRules.Current.After == PawnRushRules.AfterGather && GetComponentInParent<MiniGameSection>(true) != null) return;
+            if (gate != null) gate.Open();
+        }
+
+        // R704: the gather pad's word where the games are judged, or the host's (the course state's gate flag).
+        public void OpenGateNow()
+        {
             if (gate != null) gate.Open();
         }
 

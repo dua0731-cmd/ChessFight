@@ -391,6 +391,8 @@ namespace ChessFight.RagdollLab.Net
             TeamZone.Intruded -= OnIntruded;
             RagdollPawn.SkillFx -= OnPawnRushFx;
             if (finish != null) finish.Decided -= OnDecided;
+            // R704: the room's flow rules end with its match (an offline course after it plays the game as it was).
+            PawnRushRules.Current = default;
             Course01Playtest.NetworkDriver = null;
             SectionPlaytest.NetworkDriver = null;
             MiniGameBase.LocalDriver = null;
@@ -1050,6 +1052,8 @@ namespace ChessFight.RagdollLab.Net
                 state.Game[k] = (sbyte)(station != null ? station.GameIndex : -1);
                 state.Progress[k] = game != null ? game.Progress01 : 0f;
                 state.Completed[k] = game != null && game.Completed;
+                // R704: the gate itself (under "모여서 발판" it opens after the game's done, when the team has gathered).
+                state.GateOpen[k] = station != null && station.Gate != null && station.Gate.IsOpen;
                 var block = new NetBlock(state.Block[k], 0, PawnRushNetState.BlockBytes);
                 if (game != null) game.WriteNet(ref block);
                 state.BlockLength[k] = block.Written;
@@ -1368,6 +1372,7 @@ namespace ChessFight.RagdollLab.Net
                 var block = new NetBlock(s.Block[k], 0, s.BlockLength[k]);
                 game.ReadNet(ref block);
                 game.ApplyRemote(s.Progress[k], s.Completed[k]);
+                if (s.GateOpen[k]) station.OpenGateNow();
             }
             match.ApplyAfter(s);
             if (finish != null) finish.ApplyRemote(s.Winner, s.Clock, s.FinisherSeat, s.FinisherTime, s.FinisherCount);

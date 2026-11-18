@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-18 R704 · 게임 흐름 규칙 2단계 '모여서 발판': 깬 뒤에도 문은 닫혀 있고 문 앞 금색 발판(`GatherPad`)에 팀 과반이 서면 열림(`MiniGameSection.Rules.cs` `Gather`), 코스 상태 스테이션 플래그에 문 열림 비트(`GateOpen`), 문 연출은 문이 열릴 때(`ArenaDressing`). 프로토콜 v56. 사용자 확인 전.
 - 2026-11-18 R703 · 게임 흐름 규칙 1단계: 방 생성 방의 방장이 방 화면 '게임 규칙' 패널에서 고름(`PawnRushRules`, 방 데이터 `rules`), 상대 문 20초 뒤 개방(`MiniGameSection.Rules.cs` · `CompleteLate`), 낙오자 구제(`SectionRelief`: 정원 다리 · 대계단 유리 발판 전부 정답 · 때리는 장애물 끔). 프로토콜 v55. 사용자 확인 전.
 - 2026-11-17 R702 · 소드 파이트 퀸 · 룩 · 비숍 · 나이트 F 스킬: F 조준(미리보기) → F 한 번 더 발동, 좌·우클릭 취소, 비숍 E 미끄럼도 E 미리보기 → E 한 번 더 미끄러짐 · 좌·우클릭 취소(SwordFightSkills · .Edge · PredictPress · 안내 문구). 컴파일 PASS · Core · 모의 세션 113, 사용자 Unity 확인 전.
 - 2026-11-17 R701 · 미니게임 소품에 충돌 상자(MiniGameModels.PropColliders.cs: 한 소품씩 건 것 · C 소품은 메시 경계, B · E · J 합친 소품은 잰 상자 46개, NoClimbSurface). G 룩 차고 · 킹 길 옆 기둥, 바닥에 납작한 것, 손 안 닿는 장식은 제외. 컴파일 PASS · Core · 모의 세션 113, 사용자 Unity 확인 전.

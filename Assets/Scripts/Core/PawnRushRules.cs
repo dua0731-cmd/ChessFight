@@ -41,9 +41,8 @@ namespace ChessFight.Network
 
         static int Clamp(int value, int max) => value < 0 ? 0 : value > max ? 0 : value;
 
-        // Not built yet: the room's panel shows them and does not let them be picked.
-        public static bool Ready(int setting, int choice) =>
-            !(setting == 1 && choice == AfterGather) && !(setting == 2 && choice == EndingThrone);
+        // Not built yet: the room's panel shows them and does not let them be picked. (R704: the pad at the gate is.)
+        public static bool Ready(int setting, int choice) => !(setting == 2 && choice == EndingThrone);
 
         // The room's panel: the settings' names and their choices' short names.
         public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩" };

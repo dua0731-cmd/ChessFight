@@ -1139,8 +1139,19 @@ public static class NetworkCoreTests
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
                 Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
-                Check(!PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&!PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
+                Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&!PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
+            Test("R704: a station's gate travels with the course state apart from its game's done", () => {
+                var a=new PawnRushNetState{Tick=5,StationCount=4};
+                for (int st=0; st<4; st++) a.Game[st]=(sbyte)st;
+                a.Completed[1]=true; a.Completed[2]=true; a.GateOpen[2]=true; a.GateOpen[3]=true;
+                var b=new PawnRushNetState(); Check(PawnRushNetState.Read(a.Write(9UL),9UL,b),"read");
+                Check(!b.Completed[0]&&!b.GateOpen[0],"nothing done, nothing open");
+                Check(b.Completed[1]&&!b.GateOpen[1],"cleared with its gate still shut (the team has not gathered)");
+                Check(b.Completed[2]&&b.GateOpen[2],"cleared and open");
+                Check(!b.Completed[3]&&b.GateOpen[3],"the gate's bit is its own");
+                var c=new PawnRushNetState(); c.CopyFrom(b); Check(c.Completed[1]&&!c.GateOpen[1]&&c.GateOpen[2]&&c.GateOpen[3],"the copy");
+                Check(PawnRushFinish.Needed(6)==4&&PawnRushFinish.Needed(5)==3&&PawnRushFinish.Needed(4)==3&&PawnRushFinish.Needed(3)==2&&PawnRushFinish.Needed(2)==2&&PawnRushFinish.Needed(1)==1,"how many of a team the pad takes: the win's own majority"); });
             Test("R694: a player changes sides alone and the rest of its group stay; one player gives up a seat and takes one", () => {
                 var r=new TeamReservations(); Reserve(r,1,3); Reserve(r,4,2); r.Reconcile(new HashSet<ulong>(Ids(1,5)),1);
                 Check(r.Find(2).Team==0&&r.Find(4).Team==1,"setup: 1 2 3 white, 4 5 black");

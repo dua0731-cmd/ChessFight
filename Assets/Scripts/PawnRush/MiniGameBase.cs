@@ -51,6 +51,8 @@ namespace ChessFight.PawnRush
         static void ResetStatics()
         {
             Remote = false;
+            // R704: a new Play starts by the game as it was (the match link sets the room's rules when it attaches).
+            PawnRushRules.Current = default;
             SeatOf = null;
             DriverOf = null;
             LocalDriver = null;

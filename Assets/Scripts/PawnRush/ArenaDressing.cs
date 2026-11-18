@@ -19,7 +19,7 @@ namespace ChessFight.PawnRush
         Transform fill;
         float shown, pulse;
         int quarter;
-        bool done;
+        bool done, opened;
         int game = -2;
 
         public void Configure(MissionStation station, TextMesh symbol, TextMesh title, Transform fill, TextMesh count)
@@ -40,6 +40,7 @@ namespace ChessFight.PawnRush
             shown = 0f;
             quarter = 0;
             done = false;
+            opened = false;
             if (count != null) count.text = "";
         }
 
@@ -78,9 +79,16 @@ namespace ChessFight.PawnRush
                 done = true;
                 quarter = 4;
                 var gate = station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f));
-                var team = station.Accent(station.Team);
                 bool ours = MissionStation.LocalTeam == station.Team;
                 ArenaFx.Sfx("sfx_mg_complete", gate, twoD: true, volume: ours ? 1f : .35f);
+            }
+            // R704: the gate's own moment comes when the gate opens. That is the frame the game is done, except under
+            // the flow rule "모여서 발판" (PawnRushRules.AfterGather), where the gate waits for the team on its pad.
+            if (done && !opened && (station.Gate == null || station.Gate.IsOpen))
+            {
+                opened = true;
+                var gate = station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f));
+                var team = station.Accent(station.Team);
                 // The gate's opening sounds the same anywhere in this mini-game (MiniGameEar): every ArenaFx.Sfx in this
                 // moment, the shared one and each game's own IGateFx.Opened, goes flat for a listener inside.
                 MiniGameEar.Current = station;

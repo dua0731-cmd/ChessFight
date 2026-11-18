@@ -171,7 +171,10 @@ namespace ChessFight.Network
         // v55 (R703): a room a player made carries the round's flow rules (room data "rules", the manager's ask
         //      "rules"): relief for the obstacle section before a cleared mini-game, the other team's gate opening
         //      20 s after one team's clear. A v54 PC would play the same room by the old flow.
-        public const string Protocol = "chessfight.dua0731.network.v55";
+        // v56 (R704): the flow rule "모여서 발판" can be picked, and the course state's station flags carry the gate
+        //      (bit 2) apart from the game's done: under that rule a cleared game's gate opens when most of the team
+        //      stands on the pad before it. A v55 PC would open the gate on the clear.
+        public const string Protocol = "chessfight.dua0731.network.v56";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

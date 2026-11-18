@@ -104,7 +104,8 @@ namespace ChessFight.PawnRush
                 GUI.Label(new Rect(rect.x + 56f * scale, rect.y, rect.width - 60f * scale, rect.height), visibleHint, directionStyle);
             }
             // R703: the flow rules' line (the other team is through: this gate opens by itself in so many seconds).
-            if (showBrief) RulesLine(scale);
+            // R704: or the team's count on its gather pad, shown to its players anywhere on the course.
+            RulesLine(scale, showBrief);
             GUI.color = previous;
         }
 
