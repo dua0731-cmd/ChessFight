@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using ChessFight.Gameplay;
 using ChessFight.ProtectKing;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -9,10 +10,12 @@ using UnityEngine.Rendering;
 
 namespace ChessFight.PawnRush.Editor
 {
-    // R712: the Royal Observatory's graybox checked in Play Mode, in the course prefab test scene (the way a person opens
-    // it): the draft is listed there, it builds, the section check passes (the route's gaps, floor under every
-    // checkpoint, what may be climbed, the kill volume, entry and exit), its devices are all there and move as the
-    // builder set them (lifts, rams, winds, shields, the turntable), and pictures from above and along the way.
+    // The Royal Observatory's graybox checked in Play Mode, in the course prefab test scene (the way a person opens
+    // it). R712 for the first build; R720 for the second, on structure v0.3 with the eight new obstacles: the draft is
+    // listed there, it builds, the section check passes (the route's gaps, floor under every checkpoint, what may be
+    // climbed, the kill volume, entry and exit), its devices are all there and move as the builder set them (the
+    // variable stars' petals, the comet, the moon, the planets, the binary star, the irises' leaves, the focus beams'
+    // spots, the meteors and their rule), and pictures from above and along the way.
     // Not a person playing it: nothing here says a beat can be passed or how long the course takes.
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.RoyalObservatoryValidation.RunPlayBatch
     // (no -quit, no -nographics). Report and pictures: Logs/RoyalObservatory.
@@ -30,10 +33,15 @@ namespace ChessFight.PawnRush.Editor
         static PawnRushSection section;
         static Camera captureCamera;
 
-        // What is watched while the course runs: each device's least and greatest value.
+        // What is watched while the course runs: each device's least and greatest value, how far round each turning
+        // thing has gone, where each sliding thing started, the most meteors showing at once.
         static readonly Dictionary<string, Vector2> ranges = new Dictionary<string, Vector2>();
-        static readonly Dictionary<AirVent, int> windStates = new Dictionary<AirVent, int>();
-        static float discTurned, discLast;
+        static readonly Dictionary<string, float> turned = new Dictionary<string, float>(), lastHeading = new Dictionary<string, float>();
+        static readonly Dictionary<string, Vector3> firstPlace = new Dictionary<string, Vector3>(), farPlace = new Dictionary<string, Vector3>();
+        // How many meteors each shower had landed when the watch began (they fall from the section's start).
+        static readonly Dictionary<MeteorShower, int> landedBefore = new Dictionary<MeteorShower, int>();
+        static int showing;
+        static double watchedFrom;
 
         static RoyalObservatoryValidation()
         {
@@ -48,7 +56,7 @@ namespace ChessFight.PawnRush.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, "report.txt"),
-                "Royal Observatory graybox (R712): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
+                "Royal Observatory graybox on structure v0.3 (R720): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(CoursePrefabMenu.TestScene) == null) CoursePrefabMenu.BuildScene();
             EditorSceneManager.OpenScene(CoursePrefabMenu.TestScene, OpenSceneMode.Single);
             EditorSceneManager.playModeStartScene = null;
@@ -75,8 +83,8 @@ namespace ChessFight.PawnRush.Editor
         {
             if (change == PlayModeStateChange.EnteredPlayMode && SessionState.GetBool(ActiveKey, false))
             {
-                errors.Clear(); ranges.Clear(); windStates.Clear();
-                failures = 0; stage = 0; section = null; discTurned = 0f; discLast = float.NaN;
+                errors.Clear(); ranges.Clear(); turned.Clear(); lastHeading.Clear(); firstPlace.Clear(); farPlace.Clear(); landedBefore.Clear();
+                failures = 0; stage = 0; section = null; showing = 0; watchedFrom = double.NaN;
                 stepAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
                 EditorApplication.update -= Tick;
@@ -159,6 +167,13 @@ namespace ChessFight.PawnRush.Editor
             return null;
         }
 
+        // The turning things: the root that turns and the child that is watched going round it.
+        static readonly (string root, string child, float degreesPerSecond)[] Turning =
+        {
+            ("Device_EclipseMoon", "Moon", 30f), ("Device_Planet 1", "Planet body", 40f), ("Device_Planet 2", "Planet body", -72f),
+            ("Device_Planet 3", "Planet body", 360f / 5.5f), ("Device_Planet 4", "Planet body", -36f), ("Device_BinaryStar", "Binary star A", -45f),
+        };
+
         static void Built()
         {
             var test = Object.FindFirstObjectByType<CoursePrefabTest>();
@@ -167,7 +182,11 @@ namespace ChessFight.PawnRush.Editor
             Check(section.Kind == PawnRushSection.SlotKind.Obstacle && section.Slot == 4, "an obstacle section in the late slot (5)");
             Check((section.ExitLocal.position - RoyalObservatoryBuilder.Exit).magnitude < .01f && section.EntryLocal.position == Vector3.zero,
                   "entry " + section.EntryLocal.position + ", exit " + section.ExitLocal.position);
-            Check(section.Beats.Length == 7, "beats: " + section.Beats.Length);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PawnRushSections/" + RoyalObservatorySection.Id + ".prefab");
+            var saved = prefab != null ? prefab.GetComponent<PawnRushSection>() : null;
+            Check(saved != null && (saved.ExitLocal.position - RoyalObservatoryBuilder.Exit).magnitude < .01f,
+                  "the prefab's own exit (read before it is built) is the same: " + (saved != null ? saved.ExitLocal.position.ToString() : "-"));
+            Check(section.Beats.Length == RoyalObservatoryBuilder.BeatBoxes, "beat boxes: " + section.Beats.Length);
 
             var pawn = MiniGameBase.LocalDriver?.FollowTarget;
             Check(pawn != null && Vector3.Distance(Local(pawn.position), Vector3.zero) < 12f, "the pawn stands at the entry: " + (pawn != null ? Local(pawn.position).ToString("0.0") : "-"));
@@ -179,23 +198,48 @@ namespace ChessFight.PawnRush.Editor
             Check(found.Count == 0, "the section check: " + found.Count + " errors");
 
             int checkpoints = section.GetComponentsInChildren<CourseCheckpoint>(true).Length;
-            int rams = section.GetComponentsInChildren<TelescopeRam>(true).Length;
-            int winds = section.GetComponentsInChildren<AirVent>(true).Length;
-            int weights = section.GetComponentsInChildren<PendulumSwing>(true).Length;
-            int belts = 0, shields = 0;
-            foreach (var t in section.GetComponentsInChildren<Transform>(true))
+            int petals = section.GetComponentsInChildren<StarPetal>(true).Length;
+            int showers = section.GetComponentsInChildren<MeteorShower>(true).Length;
+            int comets = section.GetComponentsInChildren<CometFerry>(true).Length;
+            int leaves = section.GetComponentsInChildren<IrisLeaf>(true).Length;
+            int beams = section.GetComponentsInChildren<FocusBeam>(true).Length;
+            Check(checkpoints == RoyalObservatoryBuilder.Checkpoints, "checkpoints: " + checkpoints);
+            Check(petals == 15 && showers == 2 && comets == 1 && leaves == 6 && beams == 2,
+                  $"devices: {petals} petals (three variable stars), {showers} meteor showers, {comets} comet, {leaves} iris leaves (three gates), {beams} focus beams");
+            int turning = 0;
+            foreach (var t in Turning)
             {
-                if (t.name.StartsWith("08 Belt")) belts++;
-                if (t.name.StartsWith("06 Shutter shields")) shields++;
+                var root = Named(t.root);
+                if (root != null && root.Find(t.child) != null && root.GetComponent<ChessFight.ProtectKing.ObstacleMotion>() != null) turning++;
             }
-            Check(checkpoints == 8, "checkpoints: " + checkpoints);
-            Check(rams == 3 && winds == 5 && weights == 1 && belts == 4 && shields == 2,
-                  $"devices: {rams} rams, {winds} winds, {weights} weight, {belts} belts, {shields} shield pairs");
-            Check(Named("Device_PlanetLift A") != null && Named("Device_PlanetLift B") != null && Named("Device_OrreryTurntable") != null
-                  && Named("Device_GlobeArm") != null && Named("Device_SpinBar B1 ring 1") != null && Named("Device_SpinBar B1 ring 2") != null
-                  && Named("Device_HighBar B1 ring 2") != null && Named("Device_SpinBar B4 low arm") != null,
-                  "the lifts, the turntable, its two arms and the ring court's three bars are there");
-            foreach (var vent in section.GetComponentsInChildren<AirVent>(true)) windStates[vent] = 0;
+            Check(turning == Turning.Length, $"the moon, the four planets and the binary star are there and turn ({turning} of {Turning.Length})");
+            Check(Named("Planet ring") != null && Named("Great globe glass") != null && Named("Globe climb") != null && Named("Telescope deck") != null
+                  && Named("Observing stage") != null && Named("Balcony") != null, "the globe, its climb, the fourth planet's ring, the stage, the deck and the balcony are there");
+            Check(section.GetComponentsInChildren<AirVent>(true).Length == 0 && section.GetComponentsInChildren<PendulumSwing>(true).Length == 0,
+                  "none of the first build's imported hazards are left");
+
+            // The meteors' rule, over ten minutes of them: never the same line twice running, never two closer in
+            // time than half the interval, every one clear of its line's ends.
+            foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true))
+            {
+                int count = (int)(600f / shower.Interval), repeats = 0, close = 0, off = 0;
+                var lines = new int[shower.LineCount];
+                var before = shower.At(0);
+                lines[before.Line]++;
+                for (int n = 1; n < count; n++)
+                {
+                    var m = shower.At(n);
+                    lines[m.Line]++;
+                    if (m.Line == before.Line) repeats++;
+                    if (m.Time - before.Time < shower.Interval * .5 - 1e-6) close++;
+                    if (m.Along < 0f || m.Along > 1f) off++;
+                    before = m;
+                }
+                Check(repeats == 0 && close == 0 && off == 0 && System.Array.TrueForAll(lines, c => c > count / (lines.Length * 2)),
+                      $"{shower.name}: {count} meteors on {lines.Length} lines ({string.Join(" / ", lines)}), {repeats} twice running on a line, {close} too close in time");
+            }
+            foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true)) landedBefore[shower] = shower.Landed;
+            watchedFrom = ObstacleClock.Now;
         }
 
         static void Range(string key, float value)
@@ -206,56 +250,97 @@ namespace ChessFight.PawnRush.Editor
         static void Sample()
         {
             if (section == null) return;
-            foreach (var name in new[] { "Device_PlanetLift A", "Device_PlanetLift B" })
+            var up = section.transform.up;
+            foreach (var petal in section.GetComponentsInChildren<StarPetal>(true))
+                Range("petal " + petal.name, Vector3.Angle(petal.transform.up, up));
+            foreach (var leaf in section.GetComponentsInChildren<IrisLeaf>(true)) Slide("leaf " + leaf.name, leaf.transform);
+            foreach (var comet in section.GetComponentsInChildren<CometFerry>(true)) Slide("comet", comet.transform);
+            foreach (var beam in section.GetComponentsInChildren<FocusBeam>(true))
             {
-                var t = Named(name);
-                if (t != null) Range(name, Local(t.position).y);
+                var spot = beam.transform.Find("Hot spot");
+                if (spot == null) continue;
+                Range("beam " + beam.name + " across", spot.localPosition.x);
+                Range("beam " + beam.name + " along", spot.localPosition.z);
             }
-            for (int i = 1; i <= 3; i++)
+            foreach (var t in Turning)
             {
-                var t = Named("Device_TelescopeRam " + i);
-                if (t != null) Range("ram " + i, Local(t.position).z);
+                var root = Named(t.root);
+                var child = root != null ? root.Find(t.child) : null;
+                if (child == null) continue;
+                var offset = Local(child.position) - Local(root.position);
+                float heading = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+                if (lastHeading.TryGetValue(t.root, out float was))
+                    turned[t.root] = (turned.TryGetValue(t.root, out float sum) ? sum : 0f) + Mathf.DeltaAngle(was, heading);
+                lastHeading[t.root] = heading;
             }
-            foreach (var t in section.GetComponentsInChildren<Transform>(true))
-                if (t.name == "Left sliding wall" || t.name == "Right sliding wall")
-                    Range(t.parent.name + " / " + t.name, Local(t.position).z);
-            var disc = Named("Device_OrreryTurntable");
-            if (disc != null)
-            {
-                float yaw = disc.eulerAngles.y;
-                if (!float.IsNaN(discLast)) discTurned += Mathf.DeltaAngle(discLast, yaw);
-                discLast = yaw;
-            }
-            var keys = new List<AirVent>(windStates.Keys);
-            foreach (var vent in keys)
-                if (vent != null) windStates[vent] |= 1 << (int)vent.State;
+            foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true)) showing = Mathf.Max(showing, shower.Showing);
+        }
+
+        // How far apart the places a sliding thing has been seen at are (it slides along a straight line, so the
+        // corners of the box it has been in are its two ends - wherever in its travel it was first seen).
+        static void Slide(string key, Transform t)
+        {
+            var at = Local(t.position);
+            var least = firstPlace.TryGetValue(key, out var a) ? Vector3.Min(a, at) : at;
+            var most = farPlace.TryGetValue(key, out var c) ? Vector3.Max(c, at) : at;
+            firstPlace[key] = least;
+            farPlace[key] = most;
+            Range(key, (most - least).magnitude);
         }
 
         static void Moved()
         {
             if (section == null) return;
-            Has("Device_PlanetLift A", out var a);
-            Has("Device_PlanetLift B", out var bb);
-            Check(a.x < .15f && a.y > 2.9f && a.y < 3.05f, $"lift A's deck rides {a.x:0.00} .. {a.y:0.00} m (the W landing 0, the ledge 3)");
-            Check(bb.x > 2.9f && bb.x < 3.1f && bb.y > 5.85f && bb.y < 6.05f, $"lift B's deck rides {bb.x:0.00} .. {bb.y:0.00} m (the ledge 3, the NW landing 6)");
-            for (int i = 1; i <= 3; i++)
-            {
-                Has("ram " + i, out var r);
-                Check(r.x < 99.9f && r.y > 106.1f, $"ram {i}'s face goes from z {r.y:0.00} to {r.x:0.00} (the bridge is z 100 .. 106)");
-            }
-            int moved = 0, walls = 0;
+            float watched = (float)(ObstacleClock.Now - watchedFrom);
+            Log($"  watched {watched:0.0} s of the obstacle clock");
+
+            int folded = 0, petals = 0;
+            float least = 180f, most = 0f;
             foreach (var kv in ranges)
-                if (kv.Key.Contains("sliding wall"))
+                if (kv.Key.StartsWith("petal "))
                 {
-                    walls++;
-                    if (kv.Value.y - kv.Value.x > 5.5f) moved++;
-                    Log($"  {kv.Key}: z {kv.Value.x:0.00} .. {kv.Value.y:0.00}");
+                    petals++;
+                    least = Mathf.Min(least, kv.Value.y);
+                    most = Mathf.Max(most, kv.Value.x);
+                    if (kv.Value.x < 1f && kv.Value.y > 80f) folded++;
                 }
-            Check(walls == 4 && moved == 4, $"the four shield walls slide across their half ({moved} of {walls} moved 6 m)");
-            Check(discTurned > 100f && discTurned < 300f, $"the turntable turned {discTurned:0} deg in {Watch:0} s (15 deg/s)");
-            int all = 0;
-            foreach (var kv in windStates) if (kv.Value == 7) all++;
-            Check(all == windStates.Count && all == 5, $"the five winds each rested, warned and blew ({all} of {windStates.Count})");
+            Check(petals == 15 && folded == 15, $"the fifteen petals each lay level and hung folded ({folded} of {petals}; the least fold {least:0} deg, the least level {most:0.0} deg)");
+
+            int leaves = 0, closed = 0;
+            foreach (var kv in ranges)
+                if (kv.Key.StartsWith("leaf "))
+                {
+                    leaves++;
+                    if (kv.Value.y > 2.5f && kv.Value.y < 2.7f) closed++;
+                    Log($"  {kv.Key}: slid {kv.Value.y:0.00} m");
+                }
+            Check(leaves == 6 && closed == 6, $"the six iris leaves each slid to the deck's middle and back ({closed} of {leaves} went 2.58 m)");
+
+            Has("comet", out var comet);
+            Check(comet.y > 4.7f && comet.y < 5.2f, $"the comet crossed between its docks: {comet.y:0.00} m");
+
+            foreach (var beam in section.GetComponentsInChildren<FocusBeam>(true))
+            {
+                Has("beam " + beam.name + " across", out var across);
+                Has("beam " + beam.name + " along", out var along);
+                Check(across.x < -1.7f && across.y > 1.7f && along.x < -1.7f && along.y > 1.7f,
+                      $"{beam.name}: its spot went {across.x:0.0} .. {across.y:0.0} m across the deck and {along.x:0.0} .. {along.y:0.0} m along it");
+            }
+
+            foreach (var t in Turning)
+            {
+                float went = turned.TryGetValue(t.root, out float sum) ? sum : 0f, expected = t.degreesPerSecond * watched;
+                Check(Mathf.Abs(went - expected) < Mathf.Abs(expected) * .1f + 10f, $"{t.root} went round {went:0} deg in {watched:0.0} s ({t.degreesPerSecond:0.#} deg/s: {expected:0})");
+            }
+
+            foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true))
+            {
+                float expected = watched / shower.Interval;
+                int landed = shower.Landed - (landedBefore.TryGetValue(shower, out int before) ? before : 0);
+                Check(landed >= expected - 2f && landed <= expected + 2f, $"{shower.name}: {landed} meteors landed in {watched:0.0} s (one in {shower.Interval} s: {expected:0.0})");
+            }
+            Check(showing >= 1, "meteors were drawn: at most " + showing + " at once on one shower");
+
             var pawn = MiniGameBase.LocalDriver?.FollowTarget;
             Check(pawn != null && Local(pawn.position).y > -1f, "the pawn is still on the entry floor after " + (Settle + Watch) + " s: " + (pawn != null ? Local(pawn.position).ToString("0.0") : "-"));
         }
@@ -279,17 +364,17 @@ namespace ChessFight.PawnRush.Editor
             captureCamera.clearFlags = CameraClearFlags.SolidColor;
             captureCamera.backgroundColor = new Color(.06f, .07f, .11f);
             var view = Vector3.up;
-            Capture("00_plan", new Vector3(25f, 120f, 66f), new Vector3(25f, 0f, 66f), Vector3.forward, 72f, true, 1200, 1600);
-            Capture("01_from_the_tunnel", new Vector3(0f, 2.4f, 11f), new Vector3(30f, 7f, 92f), view, 70f, false, 1600, 900);
-            Capture("02_overview", new Vector3(57f, 28f, 15f), new Vector3(20f, 0f, 78f), view, 62f, false, 1600, 900);
-            Capture("03_ring_court", new Vector3(-5f, 9f, 8f), new Vector3(0f, 0f, 27f), view, 60f, false, 1600, 900);
-            Capture("04_belts_and_shields", new Vector3(8f, 11f, 31f), new Vector3(30f, 0f, 44f), view, 60f, false, 1600, 900);
-            Capture("05_vent_bridge", new Vector3(41f, 9f, 43f), new Vector3(50f, 0f, 62f), view, 60f, false, 1600, 900);
-            Capture("06_orrery", new Vector3(42f, 11f, 94f), new Vector3(22f, 1f, 77f), view, 60f, false, 1600, 900);
-            Capture("07_lifts", new Vector3(24f, 10f, 80f), new Vector3(7f, 3f, 91f), view, 60f, false, 1600, 900);
-            Capture("08_telescope_bridge", new Vector3(9f, 12f, 95f), new Vector3(30f, 6f, 104f), view, 60f, false, 1600, 900);
-            Capture("09_constellation_wall", new Vector3(41f, 11f, 98f), new Vector3(50f, 8.5f, 112f), view, 60f, false, 1600, 900);
-            Capture("10_back_from_the_terrace", new Vector3(50f, 14f, 126f), new Vector3(20f, 0f, 70f), view, 62f, false, 1600, 900);
+            Capture("00_plan", new Vector3(-3f, 150f, 66f), new Vector3(-3f, 0f, 66f), Vector3.forward, 70f, true, 1200, 1600);
+            Capture("01_from_the_tunnel", new Vector3(1f, 2.6f, 11f), new Vector3(-12f, 4f, 52f), view, 72f, false, 1600, 900);
+            Capture("02_overview", new Vector3(30f, 40f, 30f), new Vector3(-4f, 5f, 68f), view, 64f, false, 1600, 900);
+            Capture("03_dipper_handle", new Vector3(5f, 10f, 20f), new Vector3(-19f, 1f, 35f), view, 60f, false, 1600, 900);
+            Capture("04_dipper_bowl", new Vector3(-18f, 15f, 36f), new Vector3(-33f, 2f, 55f), view, 60f, false, 1600, 900);
+            Capture("05_west_gate", new Vector3(-31f, 9f, 55f), new Vector3(-8f, 7f, 64f), view, 60f, false, 1600, 900);
+            Capture("06_inside_the_globe", new Vector3(-11.5f, 7.6f, 61.2f), new Vector3(6f, 10.5f, 64.6f), view, 70f, false, 1600, 900);
+            Capture("07_cassiopeia", new Vector3(36f, 20f, 64f), new Vector3(21f, 11.5f, 80f), view, 60f, false, 1600, 900);
+            Capture("08_stage_and_tube", new Vector3(25f, 20f, 82f), new Vector3(9f, 15f, 103f), view, 60f, false, 1600, 900);
+            Capture("09_up_the_tube", new Vector3(9f, 14.4f, 94f), new Vector3(9f, 19.4f, 114f), view, 70f, false, 1600, 900);
+            Capture("10_back_from_the_balcony", new Vector3(9f, 25f, 128f), new Vector3(-4f, 6f, 66f), view, 64f, false, 1600, 900);
             Object.Destroy(go);
         }
 

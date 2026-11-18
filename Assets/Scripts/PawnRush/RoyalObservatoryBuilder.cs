@@ -1,42 +1,99 @@
 using System;
+using System.Collections.Generic;
 using ChessFight.Gameplay;
 using ChessFight.ProtectKing;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The Royal Observatory's graybox (R712), written from the level design v0.1
-    // (Docs/PawnRush/PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md, its tables' coordinates): boxes and the existing
-    // devices, their sizes, periods and phases set on the placed instances. Section frame: the entry's threshold is the
-    // origin, +z north (the way in), +x east, y the floor's top. One way, no branches:
+    // The Royal Observatory's graybox, second build (R720): structure v0.3
+    // (Docs/PawnRush/PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md) with the eight obstacles of the obstacle plan v0.1
+    // (PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md). The first build (R712, the level design v0.1's seven beats
+    // round three sides of a square) is gone. Section frame: the entry's threshold is the origin, +z north (the way
+    // in), +x east, y the floor's top. A round hall, its middle at (0, 64); the way passes THROUGH its set pieces
+    // one after another instead of winding round the middle:
     //
-    //   B0 entry tunnel (z 0..12) -> B1 ring court (north) -> SW landing -> B2 star-chart belts (east) -> SE landing
-    //   -> B3 vent grating bridge (north) -> NE landing -> B4 the orrery's turntable (west) -> W landing
-    //   -> B5 planet lifts (north, up to y 6) -> NW landing -> B6 telescope bridge (east) -> the observation platform
-    //   -> B7 constellation wall (north, up to y 10.5) -> terrace, steps, run-out -> exit (50, 11.5, 132)
+    //   0 entry tunnel (z 0..14)
+    //   1 the Big Dipper: seven star platforms on single pillars, joined by 3 m constellation lines, bending west
+    //     and north (y 0 -> 3.2). Stars 2, 3 and 5 are variable stars (StarPetal), meteors fall on the bowl's
+    //     three lines (MeteorShower), a comet shuttles the short way from star 4 to star 7 (CometFerry)
+    //   2 the great globe: in by the west gate (y 4), straight up a 6 m climb inside the glass, out by the east
+    //     gate (y 12). The moon on the ecliptic ring crosses both gates in turn; four planets cross the climb
+    //   3 Cassiopeia: four stars and a binary star in a W, east of the globe at y 11.2 .. 12.2. Meteors on its two
+    //     real lines; the binary's two platforms turn about each other
+    //   4 the observing stage (a rest, railed)
+    //   5 the great telescope: up the deck inside its truss tube (y 12 -> 20), through three iris gates (IrisLeaf)
+    //     and two focus beams (FocusBeam), out through the dome's slit
+    //   6 the balcony outside the dome -> exit (9, 20, 130)
     //
-    // Everything that moves is a pure function of the shared obstacle clock (ObstacleMotion, the imported hazards,
-    // TelescopeRam), so the section sends nothing in a match. Where the graybox departs from the design's first
-    // numbers it says so beside the beat (the design document lists them under "회색 상자에서 바꾼 것").
+    // No imported obstacle prefab is used: everything that moves is new, and all of it is a pure function of the
+    // shared obstacle clock (the meteors also of the section's seed), so the section sends nothing in a match.
+    // Where the graybox departs from the two plans' numbers it says so beside the thing (the structure document
+    // lists them under "회색 상자에서 바꾼 것"). Nothing here has been played by a person.
     public static class RoyalObservatoryBuilder
     {
-        public const float Upper = 6f, Terrace = 10.5f, ExitTop = 11.5f, HallFloor = -18f;
-        public static readonly Vector3 Entry = Vector3.zero, Exit = new Vector3(50f, ExitTop, 132f);
+        public const float StageTop = 12f, ExitTop = 20f, HallFloor = -18f, KillTop = -5f;
+        public const int Checkpoints = 9, BeatBoxes = 6;
+        public static readonly Vector3 Entry = Vector3.zero, Exit = new Vector3(9f, ExitTop, 130f);
 
-        const float RailHeight = 1.1f, T = .3f, CourtHalf = 6.2f;
-        // B2: the two belt pairs' and the two shield pairs' middles along x.
-        const float Belt1 = 17.5f, Shield1 = 25.1f, Belt2 = 32.7f, Shield2 = 40.35f;
-        // B3 and B7: the winds' cycle and how fast they carry a pawn.
-        const float WindDrift = 4.5f, WindWarn = .8f, WindBlow = 2.2f;
-        // B4: the turntable.
-        static readonly Vector3 Hub = new Vector3(22f, 0f, 77f);
-        const float DiscRadius = 9f;
-        // B5: the lifts.
-        const float LiftPeriod = 5f, LiftTravel = 1.475f;
-        // B6: the rams' cycle (rest, warning, thrust, hold, back = 4.5 s) and the time between neighbours.
-        const float RamRest = 1.6f, RamWarn = 1f, RamThrust = .5f, RamHold = .5f, RamBack = .9f, RamStagger = 2.2f;
-        // B7: three tiers of 1.5 m, two ledges 1.2 m deep.
-        const float Tier = 1.5f, Ledge = 1.2f, WallZ = 109.4f;
+        const float RailHeight = 1.1f, T = .3f, LineWidth = 3f, StarThickness = .6f;
+
+        struct Star
+        {
+            public Vector3 at;     // the middle of its top
+            public float radius;
+
+            public Star(float x, float y, float z, float radius)
+            {
+                at = new Vector3(x, y, z);
+                this.radius = radius;
+            }
+        }
+
+        // 1: the Big Dipper, handle first (stars 1 .. 4), then the bowl (4 .. 7).
+        static readonly Star[] Dipper =
+        {
+            new Star(-2f, 0f, 18f, 4f), new Star(-10f, .8f, 26f, 3.2f), new Star(-19f, 1.8f, 33f, 3.2f), new Star(-27f, 2.4f, 43f, 3.6f),
+            new Star(-38f, 1.2f, 49f, 3.2f), new Star(-37f, 2.2f, 62f, 3.6f), new Star(-25f, 3.2f, 60f, 4f),
+        };
+        // Which of them are variable stars, and how far apart in time (seconds).
+        static readonly int[] VariableStars = { 1, 2, 4 };
+        const float VariableStagger = 2f;
+        // Graybox: the core is 1.75 m (the plan's 1.6), so with every petal down the gap from a line's end to the
+        // core is 1.45 m - inside the 1.5 m a required gap may be.
+        const float CoreRadius = 1.75f, PetalAngle = 84f;
+        const float CometRadius = 2.2f;
+
+        // 2: the great globe.
+        static readonly Vector3 Globe = new Vector3(0f, 10f, 64f), Sun = new Vector3(0f, 16f, 64f);
+        static readonly Vector3 WestGate = new Vector3(-12.65f, 4f, 64f), EastGate = new Vector3(13.86f, 12f, 64f);
+        const float GlobeRadius = 14f, ClimbHalf = 3f, EclipticRadius = 15.6f, EclipticTilt = 12.8f, MoonRadius = 3.4f, MoonPeriod = 12f;
+        const float PlanetGap = .2f;
+
+        // 3: Cassiopeia's stars 1, 2, 4 and 5; its third is the binary star.
+        static readonly Star[] Cassiopeia =
+        {
+            new Star(19f, 12f, 68f, 3f), new Star(27f, 11.2f, 73f, 3.4f), new Star(27f, 11.6f, 85f, 3.4f), new Star(20f, 12.2f, 89.5f, 3f),
+        };
+        // Graybox: the binary's platforms are at 11.4 (the plan's star 3 stood at 12.6). Their sweep reaches 5.7 m
+        // from the middle, which leaves 1 m of line to each neighbour, and 1.4 m of rise in 1 m is no slope.
+        static readonly Vector3 Binary = new Vector3(19f, 11.4f, 79f);
+        const float BinaryOrbit = 3.4f, BinaryRadius = 2.3f, BinaryPeriod = 8f;
+
+        // 4, 5: the stage and the telescope's deck.
+        static readonly Vector3 Stage = new Vector3(9f, StageTop, 90f);
+        const float StageRadius = 8f;
+        static readonly Vector3 DeckFoot = new Vector3(9f, StageTop, 93f), DeckHead = new Vector3(9f, ExitTop, 118f);
+        const float DeckHalf = 2.5f, TubeRadius = 3.7f;
+        // Along the deck, 0 its foot .. 1 its head: the tube's seven rings, three of them irises; the two beams.
+        static readonly float[] TubeRings = { .04f, .28f, .41f, .54f, .67f, .8f, .96f };
+        static readonly float[] Irises = { .28f, .54f, .8f };
+        static readonly float[] Beams = { .41f, .67f };
+        const float IrisStagger = 1.7f, LeafClear = .1f, LeafHeight = 2.4f;
+
+        // The hall. Graybox: its wall is drawn at 50 m (the plan's 46), nothing collided with - a camera following a
+        // pawn along the Dipper's far stars has to stay inside what is drawn.
+        const float HallRadius = 50f, WallTop = 14f;
 
         public static GameObject Build(RoyalObservatorySection observatory)
         {
@@ -50,19 +107,19 @@ namespace ChessFight.PawnRush
             root.SetActive(false);
             root.transform.SetParent(observatory.transform, false);
             var b = new CourseBuilder(kit, root.transform);
+            var route = new List<(Vector3 at, string beat)>();
 
-            b.In("B0 Entry tunnel", () => EntryTunnel(b));
-            b.In("B1 Ring court", () => RingCourt(b));
-            b.In("B2 Star-chart belts and shutter shields", () => Belts(b));
-            b.In("B3 Vent grating bridge", () => VentBridge(b));
-            b.In("B4 Orrery turntable", () => Orrery(b));
-            b.In("B5 Planet lifts", () => Lifts(b));
-            b.In("B6 Telescope bridge", () => TelescopeBridge(b));
-            b.In("B7 Constellation wall", () => ConstellationWall(b));
-            b.In("Exit terrace", () => ExitTerrace(b));
+            b.In("0 Entry tunnel", () => EntryTunnel(b, route));
+            b.In("1 Big Dipper", () => BigDipper(b, route));
+            b.In("2 Great globe", () => GreatGlobe(b, route));
+            b.In("3 Cassiopeia", () => CassiopeiaPath(b, route));
+            b.In("4 Observing stage", () => ObservingStage(b, route));
+            b.In("5 Great telescope", () => Telescope(b, route));
+            b.In("6 Balcony", () => Balcony(b, route));
             b.In("Hall (looks)", () => Hall(b));
-            b.In("KillVolumes", () => b.Trigger<KillVolume>("Kill volume (y -10)", V(-40f, -12f, -20f), V(90f, -10f, 160f)));
-            Path(b);
+            // Everything under the way is a fall: the hall's floor is 18 m down, and what falls is taken 5 m down.
+            b.In("KillVolumes", () => b.Trigger<KillVolume>("Kill volume (y -5)", V(-56f, KillTop - 2f, 2f), V(56f, KillTop, 132f)));
+            Path(b, route);
 
             var section = observatory.GetComponent<PawnRushSection>();
             if (section != null)
@@ -73,6 +130,9 @@ namespace ChessFight.PawnRush
         }
 
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
+        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+        // The heading of a direction: 0 north (+z), 90 east (+x).
+        static float Yaw(Vector3 d) => Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
 
         // ------------------------------------------------------------------ the vocabulary
 
@@ -91,22 +151,6 @@ namespace ChessFight.PawnRush
         static void RailZ(CourseBuilder b, string name, float x, bool east, float z0, float z1, float floor) =>
             b.Rail(name, east ? x : x - T, east ? x + T : x, z0, z1, floor, RailHeight);
 
-        // An imported obstacle, turned to its direction of travel (north 0, east 90, south 180, west 270), with its
-        // phase in seconds on the shared clock.
-        static GameObject Hazard(CourseBuilder b, GameObject prefab, string name, Vector3 at, float yaw = 0f, float phaseSeconds = 0f)
-        {
-            var go = b.Obstacle(prefab, name, at, yaw);
-            ObstaclePhase.Shift(go, phaseSeconds);
-            return go;
-        }
-
-        static void ForChildren(GameObject go, string name, Action<Transform> act)
-        {
-            if (go == null) return;
-            foreach (var t in go.GetComponentsInChildren<Transform>(true))
-                if (t != go.transform && t.name == name) act(t);
-        }
-
         // An empty device root carrying an ObstacleMotion (its Rigidbody comes with it).
         static ObstacleMotion Mover(CourseBuilder b, string name, Vector3 at, MotionKind kind, Vector3 axis)
         {
@@ -119,437 +163,657 @@ namespace ChessFight.PawnRush
             return motion;
         }
 
-        // A bar spinning about its middle, 0.2 to 0.52 m up: jumped (course 01's and the war room's bar).
-        static void SpinBar(CourseBuilder b, string name, Vector3 hub, float length, float degreesPerSecond)
+        // A bar from one point to another, drawn only.
+        static GameObject Bar(CourseBuilder b, string name, Vector3 from, Vector3 to, float width, float height, Material material)
         {
-            var motion = Mover(b, "Device_SpinBar " + name, hub + Vector3.up * .65f, MotionKind.Rotate, Vector3.up);
-            motion.degreesPerSecond = degreesPerSecond;
-            Under(b, motion.transform, () =>
-            {
-                b.Box("Bar", V(-length * .5f, -.45f, -.225f), V(length * .5f, -.13f, .225f), b.kit.hazard);
-                b.Cylinder("Hub", V(0f, -.65f, 0f), .85f, .9f, b.kit.rankGold, false);
-            });
+            var go = b.SlopeBetween(name, from, to, width, height * .5f, height * .5f, material);
+            UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
+            return go;
         }
 
-        // One arm over the heads of pawns standing (1.35 to 1.7 m): it passes over a runner and strikes one who jumps.
-        static void HighBar(CourseBuilder b, string name, Vector3 hub, float reach, float degreesPerSecond)
+        // A ring of boxes round the root's y axis, drawn only: `thick` out from the middle, `depth` along the axis.
+        // `keep`: which headings (degrees round the axis) get a box.
+        static Transform Hoop(CourseBuilder b, string name, Vector3 center, Quaternion facing, float radius, float thick, float depth,
+                              Material material, int segments, Func<float, bool> keep = null)
         {
-            var motion = Mover(b, "Device_HighBar " + name, hub, MotionKind.Rotate, Vector3.up);
-            motion.degreesPerSecond = degreesPerSecond;
-            Under(b, motion.transform, () =>
-            {
-                b.Box("High bar", V(.3f, 1.35f, -.2f), V(reach, 1.7f, .2f), b.kit.hazard);
-                b.Box("Mast", V(-.2f, .9f, -.2f), V(.2f, 1.9f, .2f), b.kit.rankGold, false, false);
-            });
-        }
-
-        // 15, its wind made a box `wide` across, `high` up and `deep` out from its mouth, blowing a pawn along at
-        // WindDrift (the grand stair hall's vents carry at 3.5). `rest` seconds between gusts.
-        static GameObject Wind(CourseBuilder b, string name, Vector3 at, float yaw, float phaseSeconds, float rest, float wide, float high, float deep)
-        {
-            var vent = Hazard(b, b.kit.airVent, name, at, yaw, phaseSeconds);
-            var air = vent != null ? vent.GetComponentInChildren<AirVent>(true) : null;
-            if (air == null) return vent;
-            air.DriftSpeed = WindDrift;
-            air.IdleDuration = rest;
-            air.WarningDuration = WindWarn;
-            air.BlowDuration = WindBlow;
-            if (air.WindTrigger != null)
-            {
-                air.WindTrigger.transform.localPosition = new Vector3(0f, high * .5f, .2f + deep * .5f);
-                air.WindTrigger.center = Vector3.zero;
-                air.WindTrigger.size = new Vector3(wide, high, deep);
-            }
-            // The drawn streams reach as far as the wind does.
-            ForChildren(vent, "Air stream", t =>
-            {
-                t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, .2f + deep * .5f);
-                t.localScale = new Vector3(t.localScale.x, t.localScale.y, deep);
-            });
-            ForChildren(vent, "Arrow tip", t => t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, deep));
-            return vent;
-        }
-
-        // ------------------------------------------------------------------ B0, B1
-
-        static void EntryTunnel(CourseBuilder b)
-        {
-            b.Floor("Entry floor", -6f, 6f, 0f, 12f);
-            RailZ(b, "Entry rail W", -6f, false, 0f, 12f, 0f);
-            RailZ(b, "Entry rail E", 6f, true, 0f, 12f, 0f);
-            b.Checkpoint(0, V(0f, 0f, 6f), 0f, 10f);
-        }
-
-        // Two ring devices sweep the whole court (the bars are as long as the court is wide; rails either side). Ring 1:
-        // a low bar. Ring 2: a low bar the other way and a high bar over it - jump the one, not under the other.
-        static void RingCourt(CourseBuilder b)
-        {
-            b.Floor("Ring court floor", -CourtHalf, CourtHalf, 12f, 38f);
-            RailZ(b, "Ring court rail W", -CourtHalf, false, 12f, 38f, 0f);
-            RailZ(b, "Ring court rail E", CourtHalf, true, 12f, 38f, 0f);
-            foreach (float z in new[] { 18.4f, 31.6f })
-                b.Cylinder("Ring inlay " + z, V(0f, .005f, z), CourtHalf * 2f, .02f, b.kit.boardDark, false);
-            SpinBar(b, "B1 ring 1", V(0f, 0f, 18.4f), CourtHalf * 2f, 100f);
-            SpinBar(b, "B1 ring 2", V(0f, 0f, 31.6f), CourtHalf * 2f, -100f);
-            HighBar(b, "B1 ring 2", V(0f, 0f, 31.6f), CourtHalf, 55f);
-        }
-
-        // ------------------------------------------------------------------ B2
-
-        // East along z 38..50. Two pairs of belts, each pair one lane onward and one back (1.5 m/s), the lanes swapped in
-        // the second pair; after each pair a pair of shutter shields (06 for a 12 m way, as the war room's bookshelves:
-        // each closes half the way in turn, 4.5 s), and the half the onward lane leads to is the one that closes first.
-        // Graybox: the belts are 8 m (the prefab's own length; the design said 10) and a shield pair takes 6.6 m of the
-        // way (the prefab's two 3 m walls), so the pairs stand at x 25.1 and 40.35.
-        static void Belts(CourseBuilder b)
-        {
-            var k = b.kit;
-            b.Floor("SW landing", -CourtHalf, 12f, 38f, 50f);
-            RailZ(b, "SW landing rail W", -CourtHalf, false, 38f, 50f, 0f);
-            RailX(b, "SW landing rail N", -CourtHalf - T, 12f, 50f, true, 0f);
-            RailX(b, "SW landing rail S", CourtHalf + T, 12f, 38f, false, 0f);
-            b.Checkpoint(1, V(11f, 0f, 44f), 90f, 12f);
-
-            b.Floor("Belt bridge floor a", 12f, Belt1 - 4f, 38f, 50f);
-            b.Floor("Belt bridge floor b", Belt1 + 4f, Belt2 - 4f, 38f, 50f);
-            b.Floor("Belt bridge floor c", Belt2 + 4f, 44f, 38f, 50f);
-            // 08 is 6 x 8, its top 0.4 over its root, and it carries toward its own -z: facing west (270) it carries east.
-            Hazard(b, k.conveyor, "08 Belt 1 N (onward)", V(Belt1, -.4f, 47f), 270f);
-            Hazard(b, k.conveyor, "08 Belt 1 S (back)", V(Belt1, -.4f, 41f), 90f);
-            Hazard(b, k.conveyor, "08 Belt 2 N (back)", V(Belt2, -.4f, 47f), 90f);
-            Hazard(b, k.conveyor, "08 Belt 2 S (onward)", V(Belt2, -.4f, 41f), 270f);
-            b.Box("Belt bed 1", V(Belt1 - 4f, -2f, 38f), V(Belt1 + 4f, -1f, 50f), k.trimBlack, false, false);
-            b.Box("Belt bed 2", V(Belt2 - 4f, -2f, 38f), V(Belt2 + 4f, -1f, 50f), k.trimBlack, false, false);
-
-            Shields(b, "1", Shield1, false, 0f);
-            Shields(b, "2", Shield2, true, 2.25f);
-            // The rails stop where a shield slides through (it fills the gap itself, at rest and out).
-            RailX(b, "Belt rail N 0", 12f, Shield1 - 3.3f, 50f, true, 0f);
-            RailX(b, "Belt rail N 1", Shield1 - .3f, Shield2 + .3f, 50f, true, 0f);
-            RailX(b, "Belt rail N 2", Shield2 + 3.3f, 44f, 50f, true, 0f);
-            RailX(b, "Belt rail S 0", 12f, Shield1 + .3f, 38f, false, 0f);
-            RailX(b, "Belt rail S 1", Shield1 + 3.3f, Shield2 - 3.3f, 38f, false, 0f);
-            RailX(b, "Belt rail S 2", Shield2 - .3f, 44f, 38f, false, 0f);
-
-            b.Floor("SE landing", 44f, 56f, 38f, 50f);
-            RailX(b, "SE landing rail S", 44f, 56f + T, 38f, false, 0f);
-            RailZ(b, "SE landing rail E", 56f, true, 38f, 50f, 0f);
-            RailX(b, "SE landing rail N w", 44f, 47f, 50f, true, 0f);
-            RailX(b, "SE landing rail N e", 53f, 56f + T, 50f, true, 0f);
-            b.Checkpoint(2, V(50f, 0f, 49f), 0f, 10f);
-        }
-
-        // 06 turned east (its "left" wall is then the north one, met first). `southFirst`: the pair mirrored along the
-        // way, so the south wall is met first.
-        static void Shields(CourseBuilder b, string name, float x, bool southFirst, float phaseSeconds)
-        {
-            var go = Hazard(b, b.kit.slidingWalls, "06 Shutter shields " + name, V(x, 0f, 44f), 90f, phaseSeconds);
-            foreach (Transform child in go.transform)
-            {
-                bool left = child.name == "Left sliding wall", right = child.name == "Right sliding wall";
-                var p = child.localPosition;
-                if (left || right)
-                {
-                    child.localPosition = new Vector3(left ? -9f : 9f, p.y, southFirst ? -p.z : p.z);
-                    var motion = child.GetComponent<ObstacleMotion>();
-                    if (motion != null) motion.distance = 6f;
-                    var wall = child.Find("Rook wall");
-                    if (wall != null) wall.localScale = new Vector3(6f, wall.localScale.y, wall.localScale.z);
-                }
-                else if (child.name == "Wall housing")
-                    child.localPosition = new Vector3(Mathf.Sign(p.x) * 12.3f, p.y, southFirst ? -p.z : p.z);
-            }
-        }
-
-        // ------------------------------------------------------------------ B3
-
-        // North along x 47..53, no rails, a floor seen through. Three winds from the east blow across it (each 4 m of the
-        // way, the bridge's whole width), each 1.7 s LATER than the one before it: rest 2.0, warning 0.8, wind 2.2 (5.0 s).
-        // A phase on the shared clock moves a cycle earlier, so "1.7 s later" is the cycle less 1.7 s (R713: the first
-        // graybox had them 1.7 s earlier each, and the calm ran south, against the runner). A sprint (7 m from one
-        // wind to the next in 1.9 s) rides the calm through all three; a run gets through two and waits for the third.
-        static void VentBridge(CourseBuilder b)
-        {
-            var deck = b.Floor("Grating bridge", 47f, 53f, 50f, 71f);
-            if (b.kit.glass != null) deck.GetComponent<MeshRenderer>().sharedMaterial = b.kit.glass;
-            float[] zs = { 55f, 62f, 69f };
-            for (int i = 0; i < zs.Length; i++)
-            {
-                Wind(b, "15 Side wind " + (i + 1), V(53.3f, 0f, zs[i]), 270f, Mathf.Repeat(-1.7f * i, 2f + WindWarn + WindBlow), 2f, 4f, 3f, 6.3f);
-                b.Wall("Vent pier " + (i + 1), 53.3f, 54.6f, HallFloor, 0f, zs[i] - 1.3f, zs[i] + 1.3f, false);
-                // Where a wind crosses, on the floor.
-                b.Box("Wind mark " + (i + 1), V(47f, .005f, zs[i] - 2f), V(53f, .02f, zs[i] + 2f), b.kit.marker, false, false);
-            }
-
-            b.Floor("NE landing", 44f, 56f, 71f, 83f);
-            RailX(b, "NE landing rail S w", 44f - T, 47f, 71f, false, 0f);
-            RailX(b, "NE landing rail S e", 53f, 56f + T, 71f, false, 0f);
-            RailZ(b, "NE landing rail E", 56f, true, 71f, 83f, 0f);
-            RailX(b, "NE landing rail N", 44f - T, 56f + T, 83f, true, 0f);
-            RailZ(b, "NE landing rail W s", 44f, false, 71f, 74f, 0f);
-            RailZ(b, "NE landing rail W n", 44f, false, 80f, 83f, 0f);
-            b.Checkpoint(3, V(45f, 0f, 77f), 270f, 10f);
-        }
-
-        // ------------------------------------------------------------------ B4
-
-        // West across the great orrery's turntable: a disc 18 m across turning 15 deg/s, no rails; a low arm through the
-        // hub the other way at 60 deg/s (jumped; to a rider every 2.4 s) and an arm carrying a 2 m globe round the rim
-        // at 70 deg/s (not jumped: it sweeps the rim, where the ways on and off are). The hub's pillar stands in the
-        // middle, so the way goes round it - by the south with the turntable (clockwise from above: a rider is carried
-        // east -> south -> west, and meets the low arm head on), or by the north against it.
-        static void Orrery(CourseBuilder b)
-        {
-            var k = b.kit;
-            b.Floor("Orrery approach", 31f, 44f, 74f, 80f);
-            RailX(b, "Approach rail N", 32f, 44f, 80f, true, 0f);
-            RailX(b, "Approach rail S", 32f, 44f, 74f, false, 0f);
-
-            var disc = b.Cylinder("Device_OrreryTurntable", Hub - Vector3.up * .5f, DiscRadius * 2f, .5f, k.boardDark);
-            disc.AddComponent<CourseFloor>();
-            var turn = disc.AddComponent<ObstacleMotion>();
-            turn.kind = MotionKind.Rotate;
-            turn.axis = Vector3.up;
-            turn.degreesPerSecond = 15f;
-            // Spokes that turn with it, so its turning is seen.
-            Under(b, disc.transform, () =>
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    var spoke = b.Group("Spoke " + (i + 1));
-                    spoke.localRotation = Quaternion.Euler(0f, i * 45f, 0f);
-                    Under(b, spoke, () => b.Box("Line", V(.09f, 1f, -.008f), V(.49f, 1.04f, .008f), k.rankGold, false, false));
-                }
-            });
-
-            b.Cylinder("Orrery hub pillar", Hub, 3f, 3.2f, k.wallNoClimb, true, true);
-            SpinBar(b, "B4 low arm", Hub, DiscRadius * 2f + .4f, -60f);
-            var globe = Mover(b, "Device_GlobeArm", Hub, MotionKind.Rotate, Vector3.up);
-            globe.degreesPerSecond = 70f;
-            Under(b, globe.transform, () =>
-            {
-                b.Box("Arm", V(1.5f, 1.8f, -.15f), V(7.5f, 2.1f, .15f), k.rankGold, false, false);
-                b.Box("Drop rod", V(7.4f, 1.2f, -.1f), V(7.6f, 1.8f, .1f), k.rankGold, false, false);
-                b.Sphere("Globe", V(7.5f, 1.2f, 0f), 2f, k.hazard);
-            });
-
-            b.Floor("W landing", 1f, 13f, 71f, 83f);
-            RailX(b, "W landing rail S", 1f - T, 13f, 71f, false, 0f);
-            RailZ(b, "W landing rail W", 1f, false, 71f, 83f, 0f);
-            RailX(b, "W landing rail N w", 1f - T, 4f, 83f, true, 0f);
-            RailX(b, "W landing rail N e", 10f, 13f, 83f, true, 0f);
-            RailZ(b, "W landing rail E s", 13f, true, 71f, 73f, 0f);
-            RailZ(b, "W landing rail E n", 13f, true, 81f, 83f, 0f);
-            b.Checkpoint(4, V(7f, 0f, 82f), 0f, 10f);
-        }
-
-        // ------------------------------------------------------------------ B5
-
-        // North and up over the drop: lift A (0 to 3), a fixed ledge at 3 with a planet weight (11) swinging across it,
-        // lift B (3 to 6). 5 s each; B is at its foot 2.25 s after A is at its top. A fall is the drop (back to CP4).
-        // Graybox: the design had three lifts of 2 m over a floor with the weight over the middle lift - a weight cannot
-        // swing over a deck that rises through it, and a deck coming down on a floor closes on whoever stands there, so
-        // it is two lifts either side of a fixed ledge, over the drop.
-        static void Lifts(CourseBuilder b)
-        {
-            var k = b.kit;
-            Lift(b, "A", 83.2f, 88.2f, 1.525f, 0f);
-            // The ledge: a slab at y 3.
-            b.Floor("Lift ledge", 4f, 10f, 88.4f, 92.4f, 3f);
-            var weight = Hazard(b, k.pendulum, "11 Planet weight", V(7f, 3f, 90.4f), 0f, 0f);
-            var swing = weight != null ? weight.GetComponentInChildren<PendulumSwing>(true) : null;
-            if (swing != null) swing.SwingDuration = 1.15f;   // the grand stair hall's hammers since R680
-            ForChildren(weight, "Swing boundary", t => t.gameObject.SetActive(false));
-            b.Wall("Weight frame post W", .2f, .8f, HallFloor, 14.3f, 90.1f, 90.7f, false);
-            b.Wall("Weight frame post E", 13.2f, 13.8f, HallFloor, 14.3f, 90.1f, 90.7f, false);
-            b.Wall("Weight frame beam", .2f, 13.8f, 13.8f, 14.3f, 90.1f, 90.7f, false);
-            // B's wave is at its lowest 3.75 s into its cycle and A's at its highest 1.25 s in: 0.25 s on puts B at its
-            // foot 2.25 s after A's top (the ledge is 4 m, 1.6 s at a run, and the weight to wait for).
-            Lift(b, "B", 92.6f, 97.6f, 4.475f, .25f);
-
-            b.Floor("NW landing", 1f, 13f, 97.8f, 108f, Upper);
-            RailZ(b, "NW landing rail W", 1f, false, 97.8f, 108f, Upper);
-            RailX(b, "NW landing rail N", 1f - T, 13f + T, 108f, true, Upper);
-            RailX(b, "NW landing rail S w", 1f - T, 4f, 97.8f, false, Upper);
-            RailX(b, "NW landing rail S e", 10f, 13f + T, 97.8f, false, Upper);
-            RailZ(b, "NW landing rail E s", 13f, true, 97.8f, 100f, Upper);
-            RailZ(b, "NW landing rail E n", 13f, true, 106f, 108f, Upper);
-            b.Checkpoint(5, V(12f, Upper, 103f), 90f, 8f);
-        }
-
-        // A deck 6 x 5 m riding up and down LiftTravel either side of `middle` (its top), on a column from the hall floor.
-        static void Lift(CourseBuilder b, string name, float z0, float z1, float middle, float phaseSeconds)
-        {
-            float z = (z0 + z1) * .5f, half = (z1 - z0) * .5f;
-            var motion = Mover(b, "Device_PlanetLift " + name, V(7f, middle, z), MotionKind.Translate, Vector3.up);
-            motion.distance = LiftTravel;
-            motion.period = LiftPeriod;
-            motion.shove = false;
-            Under(b, motion.transform, () =>
-            {
-                b.Box("Deck", V(-3f, -.4f, -half), V(3f, 0f, half), b.kit.boardLight).AddComponent<CourseFloor>();
-                b.Box("Deck rim", V(-3f, -.5f, -half), V(3f, -.4f, half), b.kit.rankGold, false, false);
-                b.Box("Piston", V(-.5f, -8f, -.5f), V(.5f, -.5f, .5f), b.kit.rankGold, false, false);
-            });
-            ObstaclePhase.Shift(motion.gameObject, phaseSeconds);
-            b.Box("Lift column " + name, V(6.2f, HallFloor, z - .8f), V(7.8f, middle - LiftTravel - 2f, z + .8f), b.kit.trimBlack, false, false);
-        }
-
-        // ------------------------------------------------------------------ B6
-
-        // East along z 100..106 at y 6, a rail on the north side only: the south is the drop. Three telescope rams 4 m
-        // wide thrust from the north across the whole bridge, 2.2 s after one another (the time a sprint takes from one
-        // to the next); between them 4 m pockets.
-        static void TelescopeBridge(CourseBuilder b)
-        {
-            b.Floor("Telescope bridge", 13f, 43f, 100f, 106f, Upper);
-            float[] xs = { 19f, 27f, 35f };
-            RailX(b, "Bridge rail N 0", 13f, xs[0] - 2f, 106f, true, Upper);
-            RailX(b, "Bridge rail N 1", xs[0] + 2f, xs[1] - 2f, 106f, true, Upper);
-            RailX(b, "Bridge rail N 2", xs[1] + 2f, xs[2] - 2f, 106f, true, Upper);
-            RailX(b, "Bridge rail N 3", xs[2] + 2f, 43f, 106f, true, Upper);
-            for (int i = 0; i < xs.Length; i++) Ram(b, i + 1, xs[i], RamStagger * i);
-        }
-
-        // A block 4 m wide, 1.6 m high and 6.6 m long, its face 0.2 m north of the bridge at rest and 6.2 m on (0.2 m
-        // past the south edge) at full reach, so the whole width is closed while it is out.
-        static void Ram(CourseBuilder b, int number, float x, float phaseSeconds)
-        {
-            var k = b.kit;
-            var mark = b.Box("Ram " + number + " warning", V(x - 2f, Upper + .005f, 100f), V(x + 2f, Upper + .03f, 106f), k.marker, false, false);
-            var root = b.Group("Device_TelescopeRam " + number);
-            root.localPosition = V(x, Upper, 106.2f);
-            root.localRotation = Quaternion.Euler(0f, 180f, 0f);   // its forward is south, across the bridge
+            var root = b.Group(name);
+            root.localPosition = center;
+            root.localRotation = facing;
+            float chord = 2f * (radius + thick * .5f) * Mathf.Tan(Mathf.PI / segments) + .02f;
             Under(b, root, () =>
             {
-                b.Box("Ram", V(-2f, .05f, -6.6f), V(2f, 1.65f, 0f), k.hazard);
-                b.Box("Lens", V(-1.6f, .25f, 0f), V(1.6f, 1.45f, .06f), k.rankGold, false, false);
-                b.Box("Barrel", V(-.8f, 1.65f, -6.6f), V(.8f, 2.6f, -.6f), k.boardDark, false, false);
+                for (int i = 0; i < segments; i++)
+                {
+                    float heading = (i + .5f) * 360f / segments;
+                    if (keep != null && !keep(heading)) continue;
+                    var piece = b.Group("Segment " + (i + 1));
+                    piece.localRotation = Quaternion.Euler(0f, heading, 0f);
+                    Under(b, piece, () => b.Box("Arc", V(-chord * .5f, -depth * .5f, radius - thick * .5f), V(chord * .5f, depth * .5f, radius + thick * .5f),
+                                                material, false, false));
+                }
             });
-            root.gameObject.AddComponent<TelescopeRam>().Configure(6.4f, RamRest, RamWarn, RamThrust, RamHold, RamBack, mark, phaseSeconds);
-            b.Box("Ram mount " + number, V(x - 2.4f, Upper - 1f, 106.3f), V(x + 2.4f, Upper, 113f), k.trimBlack, false, false);
+            return root;
         }
 
-        // ------------------------------------------------------------------ B7
-
-        // The observation platform (the design's round one, square in the graybox) and the wall to the terrace: three
-        // tiers of 1.5 m to climb, two ledges 1.2 m deep between them, a wind from the wall behind each ledge blowing
-        // out over it (rest 2.2, warning 0.8, wind 2.2), the two half a cycle apart. A pawn on a ledge when its wind
-        // blows is carried off it, down a tier.
-        // Graybox: the design had two tiers of 2.25 m and winds blowing down the faces. A wind does not move a pawn that
-        // is climbing (RagdollPawn.Blow), so the winds are on the ledges, where a pawn stands.
-        static void ConstellationWall(CourseBuilder b)
+        // A prism: a convex outline (x, z) between two heights, in the current group's frame; its collider is that
+        // convex mesh. (The course builder makes boxes, cylinders and spheres only. The mesh is made here, at build
+        // time, and lives with the built content - the prefab holds none of it.)
+        static GameObject Prism(CourseBuilder b, string name, Vector2[] outline, float y0, float y1, Material material, bool solid = true)
         {
-            b.Floor("Observation platform", 43f, 57f, 96f, WallZ, Upper);
-            RailZ(b, "Platform rail W s", 43f, false, 96f, 100f, Upper);
-            RailZ(b, "Platform rail W n", 43f, false, 106f, WallZ, Upper);
-            RailX(b, "Platform rail S", 43f - T, 57f + T, 96f, false, Upper);
-            RailZ(b, "Platform rail E", 57f, true, 96f, WallZ, Upper);
-            b.Checkpoint(6, V(44.5f, Upper, 103f), 90f, 8f);
+            int n = outline.Length;
+            float area = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                Vector2 p = outline[i], q = outline[(i + 1) % n];
+                area += p.x * q.y - q.x * p.y;
+            }
+            bool ccw = area > 0f;   // counter-clockwise seen from above (x to the right, z up the page)
+            var vertices = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var triangles = new List<int>();
+            // The top and the bottom, each a fan (Unity's front faces go clockwise).
+            for (int face = 0; face < 2; face++)
+            {
+                int first = vertices.Count;
+                bool top = face == 0;
+                for (int i = 0; i < n; i++)
+                {
+                    vertices.Add(new Vector3(outline[i].x, top ? y1 : y0, outline[i].y));
+                    uv.Add(outline[i]);
+                }
+                for (int i = 1; i < n - 1; i++)
+                {
+                    bool flip = ccw == top;
+                    triangles.Add(first);
+                    triangles.Add(first + (flip ? i + 1 : i));
+                    triangles.Add(first + (flip ? i : i + 1));
+                }
+            }
+            // The sides, each its own four corners (flat shading).
+            for (int i = 0; i < n; i++)
+            {
+                Vector2 p = outline[i], q = outline[(i + 1) % n];
+                int s = vertices.Count;
+                vertices.Add(new Vector3(p.x, y1, p.y));
+                vertices.Add(new Vector3(q.x, y1, q.y));
+                vertices.Add(new Vector3(q.x, y0, q.y));
+                vertices.Add(new Vector3(p.x, y0, p.y));
+                uv.Add(new Vector2(0f, 1f));
+                uv.Add(new Vector2(1f, 1f));
+                uv.Add(new Vector2(1f, 0f));
+                uv.Add(new Vector2(0f, 0f));
+                int[] quad = ccw ? new[] { 0, 1, 2, 0, 2, 3 } : new[] { 0, 2, 1, 0, 3, 2 };
+                foreach (int corner in quad) triangles.Add(s + corner);
+            }
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
 
-            float y1 = Upper + Tier, y2 = Upper + Tier * 2f, z1 = WallZ + Ledge, z2 = WallZ + Ledge * 2f;
-            b.Wall("Constellation tier 1", 44f, 56f, Upper - 1f, y1, WallZ, z1, true, true);
-            b.Wall("Constellation tier 2", 44f, 56f, Upper - 1f, y2, z1, z2, true, true);
-            b.Wall("Constellation tier 3", 44f, 56f, Upper - 1f, Terrace, z2, 118f, true, true);
-            // Walls either side: no way round the tiers, nor off a ledge's end.
-            b.Wall("Tier cheek W", 43f, 44f, Upper - 1f, Terrace + 2f, WallZ, 120f, false);
-            b.Wall("Tier cheek E", 56f, 57f, Upper - 1f, Terrace + 2f, WallZ, 120f, false);
-
-            // Each wind's mouth is in the face behind its ledge, its housing inside the tier (drawn at just over half its
-            // height, to stay under the tier's top).
-            var low = Wind(b, "15 Ledge wind 1", V(50f, y1, z1), 180f, 0f, 2.2f, 12f, 2.4f, Ledge + .5f);
-            var high = Wind(b, "15 Ledge wind 2", V(50f, y2, z2), 180f, 2.6f, 2.2f, 12f, 2.4f, Ledge + .3f);
-            foreach (var vent in new[] { low, high })
-                ForChildren(vent, "VentModel", t => t.localScale = new Vector3(1f, .55f, 1f));
+            var go = new GameObject(name);
+            go.transform.SetParent(b.parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = material;
+            if (solid)
+            {
+                var collider = go.AddComponent<MeshCollider>();
+                collider.sharedMesh = mesh;
+                collider.convex = true;
+            }
+            return go;
         }
 
-        static void ExitTerrace(CourseBuilder b)
+        // A constellation line: a bridge `width` across, its top from one point to the other.
+        static GameObject Line(CourseBuilder b, string name, Vector3 from, Vector3 to, float width = LineWidth)
         {
-            b.Checkpoint(7, V(50f, Terrace, 114.5f), 0f, 12f);
-            // Four steps of 0.25 m, then the run-out to the arch.
-            for (int i = 0; i < 4; i++)
-                b.Wall("Exit step " + (i + 1), 44f, 56f, Terrace - 1f, Terrace + .25f * (i + 1), 118f + .5f * i, 118.5f + .5f * i, false, true);
-            b.Floor("Exit run-out", 44f, 56f, 120f, Exit.z, ExitTop);
-            RailZ(b, "Run-out rail W", 44f, false, 120f, Exit.z, ExitTop);
-            RailZ(b, "Run-out rail E", 56f, true, 120f, Exit.z, ExitTop);
+            var go = b.SlopeBetween(name, from, to, width, .4f, 0f, b.kit.boardLight);
+            go.AddComponent<CourseFloor>().sloped = Mathf.Abs(to.y - from.y) > .01f;
+            Bar(b, name + " mark", from + Vector3.up * .012f, to + Vector3.up * .012f, .14f, .02f, b.kit.rankGold);
+            return go;
+        }
+
+        // The ends of the line between two round platforms: on each one's rim, a little inside it.
+        static void Ends(Vector3 a, float insideA, Vector3 c, float insideC, out Vector3 from, out Vector3 to)
+        {
+            var flat = Flat(c - a).normalized;
+            from = a + flat * insideA;
+            to = c - flat * insideC;
+        }
+
+        // Five gold rays on a platform's top.
+        static void StarMark(CourseBuilder b, string name, Vector3 at, float reach)
+        {
+            var mark = b.Group(name);
+            mark.localPosition = at;
+            Under(b, mark, () =>
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    var ray = b.Group("Ray " + (i + 1));
+                    ray.localRotation = Quaternion.Euler(0f, i * 72f, 0f);
+                    Under(b, ray, () => b.Box("Gold", V(-.14f, .004f, 0f), V(.14f, .02f, reach), b.kit.rankGold, false, false));
+                }
+            });
+        }
+
+        // The one thin pillar a platform stands on, from the hall's floor (drawn only).
+        static void Pillar(CourseBuilder b, string name, Vector3 under, float diameter) =>
+            b.Cylinder(name, V(under.x, HallFloor, under.z), diameter, under.y - HallFloor, b.kit.rankGold, false);
+
+        // A star platform: a round deck with a brass rim, five gold rays and its pillar.
+        static void StarPlatform(CourseBuilder b, string name, Star s)
+        {
+            var k = b.kit;
+            b.Cylinder(name, s.at - Vector3.up * StarThickness, s.radius * 2f, StarThickness, k.boardDark).AddComponent<CourseFloor>();
+            b.Cylinder(name + " brass rim", s.at - Vector3.up * (StarThickness + .15f), s.radius * 2f + .3f, StarThickness, k.rankGold, false);
+            StarMark(b, name + " mark", s.at, s.radius * .78f);
+            Pillar(b, name + " pillar", s.at - Vector3.up * StarThickness, .5f);
+        }
+
+        // ------------------------------------------------------------------ 0 the entry
+
+        static void EntryTunnel(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            b.Floor("Entry floor", -6f, 6f, 0f, 14f);
+            RailZ(b, "Entry rail W", -6f, false, 0f, 14f, 0f);
+            RailZ(b, "Entry rail E", 6f, true, 0f, 14f, 0f);
+            // The tunnel's mouth: a tongue under the first star (a centimetre lower, so the two tops do not flicker),
+            // rails either side of it.
+            b.Floor("Entry threshold", -5.5f, 1.5f, 14f, 16.2f, -.01f);
+            RailX(b, "Entry rail N w", -6f - T, -5.5f, 14f, true, 0f);
+            RailX(b, "Entry rail N e", 1.5f, 6f + T, 14f, true, 0f);
+            b.Checkpoint(0, V(0f, 0f, 6f), 0f, 10f);
+            route.Add((V(0f, 0f, 0f), "0"));
+            route.Add((V(0f, 0f, 14f), "0"));
+        }
+
+        // ------------------------------------------------------------------ 1 the Big Dipper
+
+        static bool IsVariable(int star) => Array.IndexOf(VariableStars, star) >= 0;
+        // How far inside a star's rim a line's end is: just inside a variable star's petals, well inside a plain deck.
+        static float Reach(int star) => Dipper[star].radius - (IsVariable(star) ? .05f : .3f);
+
+        static void BigDipper(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            for (int i = 0; i < Dipper.Length; i++)
+            {
+                string name = "Dipper star " + (i + 1);
+                int variable = Array.IndexOf(VariableStars, i);
+                if (variable >= 0) VariableStar(b, name, Dipper[i], Dipper[i - 1].at, Dipper[i + 1].at, VariableStagger * variable);
+                else StarPlatform(b, name, Dipper[i]);
+            }
+            var lines = new MeteorShower.Line[Dipper.Length - 1];
+            for (int i = 0; i + 1 < Dipper.Length; i++)
+            {
+                Ends(Dipper[i].at, Reach(i), Dipper[i + 1].at, Reach(i + 1), out var from, out var to);
+                Line(b, "Dipper line " + (i + 1) + "-" + (i + 2), from, to);
+                lines[i] = new MeteorShower.Line(from, to);
+                string beat = i < 3 ? "1" : "2";
+                route.Add((Dipper[i].at, beat));
+                route.Add((from, beat));
+                route.Add((to, beat));
+            }
+            route.Add((Dipper[6].at, "2"));
+
+            // Meteors on the bowl's three lines (4-5, 5-6, 6-7), one about every 1.25 s.
+            var shower = b.Group("Device_MeteorShower Dipper");
+            shower.gameObject.AddComponent<MeteorShower>().Configure(new[] { lines[3], lines[4], lines[5] }, 1.25f, 31);
+            Comet(b);
+
+            // The pointer: on from the bowl's last star to the globe's west gate (its threshold is the globe's).
+            var toGate = Flat(WestGate - Dipper[6].at).normalized;
+            Vector3 pointerFrom = Dipper[6].at + toGate * (Dipper[6].radius - .3f);
+            Vector3 pointerTo = Dipper[6].at + toGate * ((-18.3f - Dipper[6].at.x) / toGate.x);
+            pointerTo.y = WestGate.y;
+            Line(b, "Pointer line 7-west gate", pointerFrom, pointerTo);
+            route.Add((pointerFrom, "2"));
+            route.Add((pointerTo, "3"));
+
+            // Falls go back to the star before: stars 1, 4 and 7.
+            b.Checkpoint(1, Dipper[0].at, Yaw(Dipper[1].at - Dipper[0].at), Dipper[0].radius * 2f);
+            b.Checkpoint(2, Dipper[3].at, Yaw(Dipper[4].at - Dipper[3].at), Dipper[3].radius * 2f);
+            b.Checkpoint(3, Dipper[6].at, Yaw(WestGate - Dipper[6].at), Dipper[6].radius * 2f);
+        }
+
+        // A variable star: a core that stays and five petals round it that fold down one after another and come up
+        // together (StarPetal: level 2.6 s, warning 0.8 s, 0.25 s apart, 0.5 s each, up in 0.75 s; 6 s in all - the
+        // last one hangs 0.35 s, the plan's "0.6 s or so" less what a 6 s cycle leaves). The wave starts beside the
+        // way in and ends on the way out, so the petal a runner leaves by holds longest.
+        static void VariableStar(CourseBuilder b, string name, Star s, Vector3 from, Vector3 to, float phaseSeconds)
+        {
+            var k = b.kit;
+            b.Cylinder(name + " core", s.at - Vector3.up * StarThickness, CoreRadius * 2f, StarThickness, k.boardDark).AddComponent<CourseFloor>();
+            StarMark(b, name + " mark", s.at, CoreRadius * .8f);
+            Pillar(b, name + " pillar", s.at - Vector3.up * StarThickness, .5f);
+
+            float yawIn = Yaw(from - s.at), around = Mathf.Repeat(Yaw(to - s.at) - yawIn, 360f);
+            float step = around <= 180f ? 72f : -72f;   // round the star by the shorter way to the way out
+            if (around > 180f) around = 360f - around;
+            // The last petal the line out touches (a 3 m line's end spans 28 degrees either side of its middle).
+            float lineHalf = Mathf.Asin(LineWidth * .5f / s.radius) * Mathf.Rad2Deg;
+            int last = Mathf.Clamp(Mathf.FloorToInt((around + lineHalf + 36f) / 72f), 0, 4);
+            float hinge = CoreRadius * Mathf.Cos(36f * Mathf.Deg2Rad);
+            var outline = PetalOutline(s.radius - .02f, hinge);
+            for (int i = 0; i < 5; i++)
+            {
+                var facing = Quaternion.Euler(0f, yawIn + step * i, 0f);
+                var petal = b.Group("Device_StarPetal " + name + " " + (i + 1));
+                // A centimetre under the core's top: the core's deck covers the petal's inner edge.
+                petal.localPosition = s.at + facing * Vector3.forward * hinge + Vector3.down * .01f;
+                petal.localRotation = facing;
+                GameObject warning = null;
+                Under(b, petal, () =>
+                {
+                    Prism(b, "Petal", outline, -.3f, 0f, k.boardLight).AddComponent<CourseFloor>();
+                    warning = Prism(b, "Petal warning", outline, .002f, .02f, k.marker, false);
+                    warning.SetActive(false);
+                });
+                petal.gameObject.AddComponent<StarPetal>().Configure((i - last + 4) % 5, 2.6f, .8f, .25f, .5f, .75f, 6f, PetalAngle, warning, phaseSeconds);
+            }
+        }
+
+        // A petal seen from above, its hinge along x at z 0 and the star's rim away from it (+z): a fifth of the
+        // ring between the core and the rim, a hair narrower so neighbours do not touch.
+        static Vector2[] PetalOutline(float radius, float hinge)
+        {
+            const float Half = 35.3f;
+            float inner = CoreRadius * Mathf.Sin(Half * Mathf.Deg2Rad);
+            var points = new List<Vector2> { new Vector2(inner, 0f) };
+            for (int i = 0; i <= 4; i++)
+            {
+                float a = Mathf.Lerp(Half, -Half, i / 4f) * Mathf.Deg2Rad;
+                points.Add(new Vector2(radius * Mathf.Sin(a), radius * Mathf.Cos(a) - hinge));
+            }
+            points.Add(new Vector2(-inner, 0f));
+            return points.ToArray();
+        }
+
+        // The comet: a platform 4.4 m across shuttling the short way across the bowl, from star 4's rim to star 7's
+        // (wait 1.5 s, cross 3.5 s, wait, back: 10 s). Graybox: it travels 4.9 m - the 17 m of the plan is from the
+        // one star's middle to the other's, and the two stars and the platform itself take the rest.
+        static void Comet(CourseBuilder b)
+        {
+            var k = b.kit;
+            Star a = Dipper[3], c = Dipper[6];
+            var flat = Flat(c.at - a.at).normalized;
+            Vector3 near = a.at + flat * (a.radius + CometRadius + .1f), far = c.at - flat * (c.radius + CometRadius + .1f);
+            var comet = b.Group("Device_Comet");
+            comet.localPosition = near;
+            Under(b, comet, () =>
+            {
+                b.Cylinder("Comet deck", V(0f, -.5f, 0f), CometRadius * 2f, .5f, k.boardLight).AddComponent<CourseFloor>();
+                b.Cylinder("Comet brass rim", V(0f, -.65f, 0f), CometRadius * 2f + .3f, .5f, k.rankGold, false);
+                b.Sphere("Comet head", V(0f, -1.1f, 0f), 1.8f, k.rankGold, false);
+                // Its tail streams away from the sun lamp, as a comet's does.
+                var tail = b.Group("Comet tail");
+                tail.localRotation = Quaternion.Euler(0f, Yaw(near - Sun), 0f);
+                var pale = k.glass != null ? k.glass : k.boardLight;
+                Under(b, tail, () =>
+                {
+                    for (int i = 0; i < 3; i++)
+                        b.Box("Tail " + (i + 1), V(-.7f + .2f * i, -1.3f, 1.2f + 1.6f * i), V(.7f - .2f * i, -1f, 2.6f + 1.6f * i), pale, false, false);
+                });
+            });
+            comet.gameObject.AddComponent<CometFerry>().Configure(far - near, 1.5f, 3.5f, 0f);
+            Bar(b, "Comet orbit line", a.at + flat * a.radius + Vector3.down * .8f, c.at - flat * c.radius + Vector3.down * .8f, .12f, .06f, k.rankGold);
+        }
+
+        // ------------------------------------------------------------------ 2 the great globe
+
+        // The climb's height at an x inside the globe.
+        static float ClimbY(float x) => Mathf.LerpUnclamped(WestGate.y, EastGate.y, (x - WestGate.x) / (EastGate.x - WestGate.x));
+
+        // A glass sphere 28 m across in the hall's middle (drawn only - glass does not hold a pawn, and a camera
+        // sees through it). The way: a threshold outside each gate, 7 m wide (graybox: the plan's 3 m line would be
+        // swept clean by the moon; on the east the threshold itself reaches the first of Cassiopeia's stars), and
+        // one straight climb 6 m wide from the west gate (y 4) to the east (y 12), 17 degrees. No rails anywhere:
+        // off the climb is a fall, back to the checkpoint just inside the west gate.
+        static void GreatGlobe(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            var k = b.kit;
+            b.Floor("West gate threshold", -18.5f, -12.4f, 60.5f, 67.5f, WestGate.y);
+            b.RampX("Globe climb", Globe.z - ClimbHalf, Globe.z + ClimbHalf, WestGate.x, EastGate.x, WestGate.y, EastGate.y, .4f);
+            b.Floor("East gate threshold", 13.6f, 17.2f, 60.5f, 67.5f, EastGate.y - .01f);
+            b.Checkpoint(4, V(-11.3f, ClimbY(-11.3f), Globe.z), 90f, ClimbHalf * 2f);
+            b.Checkpoint(5, V(12.6f, ClimbY(12.6f), Globe.z), 90f, ClimbHalf * 2f);
+            route.Add((WestGate, "3"));
+            route.Add((EastGate, "3"));
+
+            // The eclipse gate: the moon, a disc 6.8 m across, rides the ecliptic ring once in 12 s (30 deg/s). The
+            // ring is tilted, west low and east high, so the moon crosses the west gate at y 6.5 and the east at
+            // 13.5, six seconds apart, and each is covered for about a second and a half. It is thin: what it meets
+            // on a threshold it turns aside along the way, toward the gate or back.
+            var moon = Mover(b, "Device_EclipseMoon", Globe, MotionKind.Rotate, Vector3.up);
+            moon.transform.localRotation = Quaternion.Euler(0f, 0f, EclipticTilt);
+            moon.degreesPerSecond = 360f / MoonPeriod;
+            Under(b, moon.transform, () =>
+            {
+                var disc = b.Cylinder("Moon", V(EclipticRadius, -.2f, 0f), MoonRadius * 2f, .4f, k.boardLight, true, true);
+                disc.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);   // its faces look along the ring's radius
+            });
+
+            // The planets: each on a level orbit about the globe's axis, crossing the climb at one place (x) and
+            // passing under or over it on the other side. The inner two are quick, the outer two slow; neighbours
+            // turn opposite ways. Graybox: an orbit is level and the climb is not, so a planet is hung 0.2 m over
+            // the highest the climb gets under its path (the west two ride 0.15 m higher than the plan's sum).
+            var planets = new (float x, float body, float period, bool ring)[]
+            {
+                (-9f, 1.2f, 9f, false), (-4.5f, .9f, -5f, false), (4.5f, 1f, 5.5f, false), (9f, 1.6f, -10f, true),
+            };
+            for (int i = 0; i < planets.Length; i++)
+            {
+                var p = planets[i];
+                float orbit = Mathf.Abs(p.x);
+                float edge = p.x * Mathf.Cos(Mathf.Asin(Mathf.Min(1f, ClimbHalf / orbit)));
+                float foot = Mathf.Max(ClimbY(p.x), ClimbY(edge)) + PlanetGap, y = foot + p.body;
+                var planet = Mover(b, "Device_Planet " + (i + 1), V(Globe.x, y, Globe.z), MotionKind.Rotate, Vector3.up);
+                planet.degreesPerSecond = 360f / p.period;
+                planet.phase = i * .29f;
+                Under(b, planet.transform, () =>
+                {
+                    b.Sphere("Planet body", V(p.x, 0f, 0f), p.body * 2f, k.hazard).AddComponent<NoClimbSurface>();
+                    if (!p.ring) return;
+                    // The fourth planet's ring: jumped, where the body is gone round. Graybox: a disc low round its
+                    // foot (0.2 .. 0.4 m over the climb, tilted with it) - a ring at the body's middle would be at a
+                    // pawn's head.
+                    var ring = b.Cylinder("Planet ring", V(p.x, 0f, 0f), (p.body + 1f) * 2f, .2f, k.rankGold, true, true);
+                    ring.transform.localPosition = V(p.x, ClimbY(p.x) + .3f - y, 0f);
+                    ring.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(EastGate.y - WestGate.y, EastGate.x - WestGate.x) * Mathf.Rad2Deg);
+                });
+                Hoop(b, "Planet orbit " + (i + 1), V(Globe.x, y, Globe.z), Quaternion.identity, orbit, .08f, .08f, k.trimWhite, 24);
+            }
+
+            // What the globe looks like (drawn only): the glass, its three rings, the sun lamp, the stepped base,
+            // the two gates' brass frames.
+            b.Sphere("Great globe glass", Globe, GlobeRadius * 2f, k.glass != null ? k.glass : k.boardLight, false);
+            Hoop(b, "Meridian ring", Globe, Quaternion.Euler(0f, 0f, -90f), 16.5f, .5f, .5f, k.rankGold, 36);
+            Hoop(b, "Horizon ring", Globe, Quaternion.identity, 18f, 2f, .3f, k.rankGold, 36);
+            Hoop(b, "Ecliptic ring", Globe, Quaternion.Euler(0f, 0f, EclipticTilt), EclipticRadius, .35f, .35f, k.rankGold, 36);
+            b.Sphere("Sun lamp", Sun, 4.4f, k.rankGold, false);
+            float[] radii = { 13f, 10.5f, 7f, 4.5f }, tops = { -14f, -10f, -6.5f, Globe.y - GlobeRadius };
+            float bottom = HallFloor;
+            for (int i = 0; i < radii.Length; i++)
+            {
+                b.Cylinder("Globe base " + (i + 1), V(Globe.x, bottom, Globe.z), radii[i] * 2f, tops[i] - bottom, (i & 1) == 0 ? k.trimBlack : k.trimWhite, false);
+                bottom = tops[i];
+            }
+            var across = Quaternion.Euler(0f, 0f, -90f);
+            Hoop(b, "West gate frame", WestGate + V(-.5f, 1.9f, 0f), across, 3.8f, .35f, .5f, k.rankGold, 16);
+            Hoop(b, "East gate frame", EastGate + V(.5f, 1.9f, 0f), across, 3.8f, .35f, .5f, k.rankGold, 16);
+        }
+
+        // ------------------------------------------------------------------ 3 Cassiopeia
+
+        // A W of four stars and a binary, 11 to 12 m up. Graybox: the stars stand close, so only two of the plan's
+        // four lines are long enough to rain on (1-2 and 4-5); the two by the binary are 1 m stubs.
+        static void CassiopeiaPath(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            var k = b.kit;
+            Star s1 = Cassiopeia[0], s2 = Cassiopeia[1], s4 = Cassiopeia[2], s5 = Cassiopeia[3];
+            StarPlatform(b, "Cassiopeia star 1", s1);
+            StarPlatform(b, "Cassiopeia star 2", s2);
+            StarPlatform(b, "Cassiopeia star 4", s4);
+            StarPlatform(b, "Cassiopeia star 5", s5);
+
+            Ends(s1.at, s1.radius - .3f, s2.at, s2.radius - .3f, out var a0, out var a1);
+            Line(b, "Cassiopeia line 1-2", a0, a1);
+            Ends(s4.at, s4.radius - .3f, s5.at, s5.radius - .3f, out var c0, out var c1);
+            Line(b, "Cassiopeia line 4-5", c0, c1);
+            // On to the stage: its rim and the fifth star's just touch, so a short line laps over both.
+            Ends(s5.at, s5.radius - 1f, Stage, StageRadius - 1f, out var d0, out var d1);
+            Line(b, "Cassiopeia line 5-stage", d0, d1);
+
+            // The binary star: two platforms 4.6 m across, 3.4 m from their common middle, once round in 8 s. A line's
+            // end is 0.15 m outside their sweep; a platform comes by each end every 4 s. Graybox: the W puts the way
+            // in and the way out 74 degrees apart, so they turn the short way from the one to the other and the ride
+            // is 1.6 s, not the plan's half turn - who misses the way out goes round again.
+            float sweep = BinaryOrbit + BinaryRadius + .15f;
+            Vector3 toIn = Flat(s2.at - Binary).normalized, toOut = Flat(s4.at - Binary).normalized;
+            Vector3 in0 = s2.at - toIn * (s2.radius - .3f), in1 = Binary + toIn * sweep;
+            Vector3 out0 = Binary + toOut * sweep, out1 = s4.at - toOut * (s4.radius - .3f);
+            Line(b, "Cassiopeia stub 2-binary", in0, in1);
+            Line(b, "Cassiopeia stub binary-4", out0, out1);
+            var binary = Mover(b, "Device_BinaryStar", Binary, MotionKind.Rotate, Vector3.up);
+            binary.degreesPerSecond = -360f / BinaryPeriod;
+            Under(b, binary.transform, () =>
+            {
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    string name = side < 0 ? "Binary star A" : "Binary star B";
+                    var at = V(side * BinaryOrbit, 0f, 0f);
+                    b.Cylinder(name, at + Vector3.down * .5f, BinaryRadius * 2f, .5f, k.boardDark).AddComponent<CourseFloor>();
+                    b.Cylinder(name + " brass rim", at + Vector3.down * .65f, BinaryRadius * 2f + .3f, .5f, k.rankGold, false);
+                    StarMark(b, name + " mark", at, BinaryRadius * .75f);
+                }
+                b.Box("Binary bar", V(-BinaryOrbit, -.95f, -.15f), V(BinaryOrbit, -.65f, .15f), k.rankGold, false, false);
+            });
+            Pillar(b, "Binary pillar", Binary + Vector3.down * .95f, .5f);
+            // The way across is a ride: nothing stands there for the section check to find.
+            var ride = b.Group("Binary ride (intended gap)");
+            ride.localPosition = Binary;
+            ride.gameObject.AddComponent<IntendedGap>().Configure(new Vector3(13f, 6f, 13f), "쌍성: 도는 발판을 타고 건넌다");
+
+            // Meteors on the two real lines, taking turns, one about every 1.4 s.
+            var shower = b.Group("Device_MeteorShower Cassiopeia");
+            shower.gameObject.AddComponent<MeteorShower>().Configure(new[] { new MeteorShower.Line(a0, a1), new MeteorShower.Line(c0, c1) }, 1.4f, 32);
+
+            b.Checkpoint(6, s2.at, Yaw(Binary - s2.at), s2.radius * 2f);
+
+            route.Add((s1.at, "4"));
+            route.Add((a0, "4"));
+            route.Add((a1, "4"));
+            route.Add((s2.at, "4"));
+            route.Add((in0, "4"));
+            route.Add((in1, "4"));
+            float from = Mathf.Atan2(toIn.z, toIn.x), to = Mathf.Atan2(toOut.z, toOut.x);
+            for (int i = 0; i <= 4; i++)
+            {
+                float a = Mathf.Lerp(from, to, i / 4f);
+                route.Add((Binary + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * BinaryOrbit, "4"));
+            }
+            route.Add((out0, "4"));
+            route.Add((out1, "4"));
+            route.Add((s4.at, "4"));
+            route.Add((c0, "4"));
+            route.Add((c1, "4"));
+            route.Add((s5.at, "4"));
+            route.Add((d0, "4"));
+            route.Add((d1, "5"));
+        }
+
+        // ------------------------------------------------------------------ 4 the observing stage
+
+        // A round deck 16 m across at y 12 on one thick pillar: the rest before the telescope. Railed all round but
+        // where the fifth star's line comes in and where the tube's deck leaves; the fork mount's two arms stand
+        // either side of the deck's foot and close the rim there.
+        static void ObservingStage(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            var k = b.kit;
+            b.Cylinder("Observing stage", Stage - Vector3.up * .8f, StageRadius * 2f, .8f, k.boardDark).AddComponent<CourseFloor>();
+            b.Cylinder("Observing stage brass rim", Stage - Vector3.up * 1f, StageRadius * 2f + .4f, .8f, k.rankGold, false);
+            b.Cylinder("Sun mark", Stage + Vector3.up * .004f, 3f, .016f, k.rankGold, false);
+            var rays = b.Group("Sun rays");
+            rays.localPosition = Stage;
+            Under(b, rays, () =>
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    var ray = b.Group("Ray " + (i + 1));
+                    ray.localRotation = Quaternion.Euler(0f, i * 30f, 0f);
+                    Under(b, ray, () => b.Box("Gold", V(-.12f, .004f, 1.9f), V(.12f, .02f, StageRadius * .82f), k.rankGold, false, false));
+                }
+            });
+            Pillar(b, "Observing stage pillar", Stage - Vector3.up * .8f, 2.4f);
+
+            const int Segments = 36;
+            float chord = 2f * StageRadius * Mathf.Tan(Mathf.PI / Segments) + .02f, toStar = Yaw(Cassiopeia[3].at - Stage);
+            var rails = b.Group("Stage rails");
+            rails.localPosition = Stage;
+            Under(b, rails, () =>
+            {
+                for (int i = 0; i < Segments; i++)
+                {
+                    float heading = (i + .5f) * 360f / Segments;
+                    if (Mathf.Abs(Mathf.DeltaAngle(heading, 0f)) < 31f || Mathf.Abs(Mathf.DeltaAngle(heading, toStar)) < 17f) continue;
+                    var piece = b.Group("Segment " + (i + 1));
+                    piece.localRotation = Quaternion.Euler(0f, heading, 0f);
+                    Under(b, piece, () => b.Wall("Stage rail", -chord * .5f, chord * .5f, 0f, RailHeight, StageRadius - T, StageRadius, false));
+                }
+            });
+            b.Wall("Fork arm W", Stage.x - 4.1f, Stage.x - DeckHalf - .1f, StageTop - .8f, StageTop + 9.5f, 95.4f, 97.4f, false);
+            b.Wall("Fork arm E", Stage.x + DeckHalf + .1f, Stage.x + 4.1f, StageTop - .8f, StageTop + 9.5f, 95.4f, 97.4f, false);
+
+            b.Checkpoint(7, V(Stage.x, StageTop, 88f), 0f, 12f);
+            route.Add((Stage, "5"));
+        }
+
+        // ------------------------------------------------------------------ 5 the great telescope
+
+        static Vector3 DeckAlong => (DeckHead - DeckFoot).normalized;
+        static Vector3 DeckNormal => Vector3.Cross(DeckAlong, Vector3.right);
+        static Vector3 DeckPoint(float f) => Vector3.LerpUnclamped(DeckFoot, DeckHead, f);
+
+        // A deck 5 m wide and 26 m long, 18 degrees, from the stage (y 12) up through the dome's slit to the balcony
+        // (y 20), inside a truss tube of seven rings (drawn only: its sides are open, and off the deck is a fall).
+        //   three iris gates at 0.28, 0.54 and 0.80 of the way: each two leaves closing from left and right (open
+        //   2.4 s, warning 0.8 s, closing 0.5 s, shut 0.8 s, opening 0.5 s; 5 s), each 1.7 s later than the one below
+        //   it, so the opening runs up the tube
+        //   two focus beams between them, at 0.41 and 0.67: a hot spot 2.6 m across wandering over the 6.8 m of deck
+        //   between two irises - the place a runner waits
+        static void Telescope(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            var k = b.kit;
+            Vector3 along = DeckAlong, normal = DeckNormal;
+            var facing = Quaternion.LookRotation(along, normal);
+            b.Ramp("Telescope deck", DeckFoot.x - DeckHalf, DeckFoot.x + DeckHalf, DeckFoot.z, DeckHead.z, DeckFoot.y, DeckHead.y, .4f);
+            route.Add((DeckFoot, "5"));
+            route.Add((DeckHead, "5"));
+
+            for (int i = 0; i < Irises.Length; i++) Iris(b, i + 1, Irises[i], Mathf.Repeat(-IrisStagger * i, 5f));
+
+            // The light comes from the objective, the tube's top ring.
+            float axis = Mathf.Sqrt(TubeRadius * TubeRadius - DeckHalf * DeckHalf);
+            Vector3 objective = DeckPoint(TubeRings[TubeRings.Length - 1]) + normal * axis;
+            for (int i = 0; i < Beams.Length; i++)
+            {
+                var beam = b.Group("Device_FocusBeam " + (i + 1));
+                beam.localPosition = DeckPoint(Beams[i]);
+                beam.localRotation = facing;
+                beam.gameObject.AddComponent<FocusBeam>().Configure(1.3f, 1.9f, 2f, 3.1f, 4.7f, 1.9f * i,
+                    Quaternion.Inverse(facing) * (objective - DeckPoint(Beams[i])),
+                    Arena.Glow(new Color(1f, .82f, .35f, .8f)), Arena.Glow(new Color(1f, .9f, .6f, .16f)));
+            }
+
+            // The tube (drawn only): its rings round the axis, the deck a chord of them; four struts, two over the
+            // heads and two under the deck, so nothing drawn stands where a rail would; the finder scope on top.
+            var round = Quaternion.FromToRotation(Vector3.up, along);
+            for (int i = 0; i < TubeRings.Length; i++)
+            {
+                bool top = i == TubeRings.Length - 1, iris = Array.IndexOf(Irises, TubeRings[i]) >= 0;
+                Hoop(b, (top ? "Objective ring" : iris ? "Iris ring " : "Tube ring ") + (top ? "" : (i + 1).ToString()),
+                     DeckPoint(TubeRings[i]) + normal * axis, round, top ? TubeRadius + .5f : TubeRadius, top ? .7f : .35f, top ? .7f : .35f,
+                     iris ? k.hazard : k.rankGold, 16);
+            }
+            foreach (float degrees in new[] { 45f, 135f, 250f, 290f })
+            {
+                float a = degrees * Mathf.Deg2Rad;
+                var offset = normal * axis + (Vector3.right * Mathf.Cos(a) + normal * Mathf.Sin(a)) * TubeRadius;
+                Bar(b, "Tube strut " + degrees, DeckPoint(TubeRings[0]) + offset, DeckPoint(TubeRings[TubeRings.Length - 1]) + offset, .2f, .2f, k.rankGold);
+            }
+            var above = normal * (axis + TubeRadius + .8f);
+            Bar(b, "Finder scope", DeckPoint(.3f) + above, DeckPoint(.64f) + above, .9f, .9f, k.boardDark);
+        }
+
+        // The leaf seen from above its own frame: it slides along +z, its leading edge a prow.
+        static readonly Vector2[] LeafOutline =
+        {
+            new Vector2(-.25f, -2.7f), new Vector2(.25f, -2.7f), new Vector2(.25f, -.3f), new Vector2(0f, 0f), new Vector2(-.25f, -.3f),
+        };
+
+        // One iris gate: two leaves 2.7 m long standing on the deck, waiting just outside its edges and meeting on
+        // its middle line. Graybox: the plan's eight blades are for the art; what is collided with is these two.
+        static void Iris(CourseBuilder b, int number, float f, float phaseSeconds)
+        {
+            var k = b.kit;
+            Vector3 normal = DeckNormal, at = DeckPoint(f);
+            var mark = b.Group("Iris " + number + " warning");
+            mark.localPosition = at;
+            mark.localRotation = Quaternion.LookRotation(DeckAlong, normal);
+            Under(b, mark, () => b.Box("Mark", V(-DeckHalf, .008f, -.4f), V(DeckHalf, .03f, .4f), k.marker, false, false));
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var leaf = b.Group("Device_IrisLeaf " + number + (side < 0 ? " W" : " E"));
+                leaf.localPosition = at + Vector3.right * (side * (DeckHalf + LeafClear));
+                leaf.localRotation = Quaternion.LookRotation(Vector3.right * -side, normal);   // toward the deck's middle
+                Under(b, leaf, () => Prism(b, "Leaf", LeafOutline, .05f, LeafHeight, k.hazard).AddComponent<NoClimbSurface>());
+                leaf.gameObject.AddComponent<IrisLeaf>().Configure(DeckHalf + LeafClear - .02f, 2.4f, .8f, .5f, .8f, .5f,
+                                                                  side < 0 ? mark.gameObject : null, phaseSeconds);
+            }
+        }
+
+        // ------------------------------------------------------------------ 6 the balcony
+
+        // Outside the dome: 12 x 12 m at y 20, railed west and east, nothing on it - a clear run to the exit.
+        static void Balcony(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            float x0 = Exit.x - 6f, x1 = Exit.x + 6f, z0 = DeckHead.z;
+            b.Floor("Balcony", x0, x1, z0, Exit.z, ExitTop);
+            RailZ(b, "Balcony rail W", x0, false, z0, Exit.z, ExitTop);
+            RailZ(b, "Balcony rail E", x1, true, z0, Exit.z, ExitTop);
+            RailX(b, "Balcony rail S w", x0 - T, Exit.x - DeckHalf, z0, false, ExitTop);
+            RailX(b, "Balcony rail S e", Exit.x + DeckHalf, x1 + T, z0, false, ExitTop);
+            b.Checkpoint(8, V(Exit.x, ExitTop, 121f), 0f, 10f);
             // The arch's posts (looks): 12 m between them, 6 m high.
-            b.Box("Exit arch post W", V(43.2f, ExitTop, Exit.z - .6f), V(44f, ExitTop + 6f, Exit.z), b.kit.trimWhite, false, false);
-            b.Box("Exit arch post E", V(56f, ExitTop, Exit.z - .6f), V(56.8f, ExitTop + 6f, Exit.z), b.kit.trimWhite, false, false);
-            b.Box("Exit arch lintel", V(43.2f, ExitTop + 6f, Exit.z - .6f), V(56.8f, ExitTop + 6.8f, Exit.z), b.kit.trimWhite, false, false);
+            b.Box("Exit arch post W", V(x0 - .8f, ExitTop, Exit.z - .6f), V(x0, ExitTop + 6f, Exit.z), b.kit.trimWhite, false, false);
+            b.Box("Exit arch post E", V(x1, ExitTop, Exit.z - .6f), V(x1 + .8f, ExitTop + 6f, Exit.z), b.kit.trimWhite, false, false);
+            b.Box("Exit arch lintel", V(x0 - .8f, ExitTop + 6f, Exit.z - .6f), V(x1 + .8f, ExitTop + 6.8f, Exit.z), b.kit.trimWhite, false, false);
+            route.Add((Exit, "출구"));
         }
 
         // ------------------------------------------------------------------ the hall round it (looks only)
 
-        // The size of the place, nothing collided with: the hall's floor 18 m under the way, its walls to 30 m over it
-        // (the south one open at the tunnel, the north one at the exit), and the great orrery - a spire through the
-        // turntable, two rings tumbling slowly round it over the heads, planet globes hung in the drop. The walls
-        // stand 6 m outside the design's 70 x 99 m on the west, east and north: they are drawn, not collided with,
-        // and a camera following a pawn along an outer landing has to stay inside them.
+        // The size of the place, nothing collided with: the round floor 18 m under the way, the wall to 14 m over it
+        // (open at the tunnel), and the dome over that as ribs, a hoop and a crown - open between the two ribs the
+        // telescope passes, the slit.
         static void Hall(CourseBuilder b)
         {
             var k = b.kit;
-            const float top = 30f, West = -16f, East = 66f, North = 114f;
-            b.Box("Hall floor", V(West, HallFloor - 1f, 12f), V(East, HallFloor, North), k.trimBlack, false, false);
-            b.Box("Hall wall W", V(West - .5f, HallFloor, 12f), V(West, top, North), k.trimWhite, false, false);
-            b.Box("Hall wall E", V(East, HallFloor, 12f), V(East + .5f, top, North), k.trimWhite, false, false);
-            b.Box("Hall wall S w", V(West, HallFloor, 11.5f), V(-6.6f, top, 12f), k.trimWhite, false, false);
-            b.Box("Hall wall S e", V(6.6f, HallFloor, 11.5f), V(East, top, 12f), k.trimWhite, false, false);
-            b.Box("Hall wall S over the tunnel", V(-6.6f, 6f, 11.5f), V(6.6f, top, 12f), k.trimWhite, false, false);
-            b.Box("Hall wall N w", V(West, HallFloor, North), V(43f, top, North + .5f), k.trimWhite, false, false);
-            b.Box("Hall wall N e", V(57f, HallFloor, North), V(East, top, North + .5f), k.trimWhite, false, false);
+            var middle = V(Globe.x, 0f, Globe.z);
+            b.Cylinder("Hall floor", middle + Vector3.up * (HallFloor - 1f), HallRadius * 2f, 1f, k.trimBlack, false);
+            Hoop(b, "Hall wall", middle + Vector3.up * ((HallFloor + WallTop) * .5f), Quaternion.identity, HallRadius + .25f, .5f, WallTop - HallFloor,
+                 k.trimWhite, 36, heading => Mathf.Abs(Mathf.DeltaAngle(heading, 180f)) > 10.5f);
+            Hoop(b, "Hall wall coping", middle + Vector3.up * WallTop, Quaternion.identity, HallRadius + .25f, 1f, .6f, k.rankGold, 36);
+            // Where the wall is left open for the tunnel: its jambs and the wall over it.
+            b.Box("Hall wall S w", V(-8.9f, HallFloor, 14f), V(-6.3f, WallTop, 14.5f), k.trimWhite, false, false);
+            b.Box("Hall wall S e", V(6.3f, HallFloor, 14f), V(8.9f, WallTop, 14.5f), k.trimWhite, false, false);
+            b.Box("Hall wall S over the tunnel", V(-6.3f, 6f, 14f), V(6.3f, WallTop, 14.5f), k.trimWhite, false, false);
 
-            b.Cylinder("Orrery pedestal", V(Hub.x, HallFloor, Hub.z), 4f, -HallFloor - .5f, k.trimBlack, false);
-            b.Cylinder("Orrery spire", V(Hub.x, 3.2f, Hub.z), 1f, 22f, k.rankGold, false);
-            b.Sphere("Orrery sun", V(Hub.x, 16f, Hub.z), 4f, k.rankGold, false);
-            Ring(b, "Orrery ring 1", V(Hub.x, 16f, Hub.z), 11f, Quaternion.Euler(0f, 0f, 25f), Vector3.right, 8f);
-            Ring(b, "Orrery ring 2", V(Hub.x, 16f, Hub.z), 9.5f, Quaternion.Euler(35f, 40f, 0f), Vector3.forward, -6f);
-            var planets = new[]
+            var crown = middle + Vector3.up * WallTop;
+            float slit = Yaw(V(DeckHead.x, 0f, 113f) - middle);
+            Func<float, float, Vector3> onDome = (heading, elevation) =>
+                crown + Quaternion.Euler(0f, heading, 0f) * new Vector3(0f, Mathf.Sin(elevation * Mathf.Deg2Rad), Mathf.Cos(elevation * Mathf.Deg2Rad)) * HallRadius;
+            for (int rib = 0; rib < 12; rib++)
             {
-                (V(34f, -6f, 60f), 3.5f), (V(8f, -9f, 60f), 2.5f), (V(36f, -4f, 92f), 2f),
-                (V(30f, 12f, 52f), 3f), (V(-2f, 10f, 92f), 2.2f), (V(52f, 14f, 90f), 2.8f),
-            };
-            for (int i = 0; i < planets.Length; i++)
-                b.Sphere("Planet globe " + (i + 1), planets[i].Item1, planets[i].Item2, (i & 1) == 0 ? k.boardLight : k.boardDark, false);
-        }
-
-        // A ring of 24 boxes turning slowly about one of its own diameters (looks: no colliders).
-        static void Ring(CourseBuilder b, string name, Vector3 center, float radius, Quaternion tilt, Vector3 axis, float degreesPerSecond)
-        {
-            var motion = Mover(b, name, center, MotionKind.Rotate, axis);
-            motion.transform.localRotation = tilt;
-            motion.degreesPerSecond = degreesPerSecond;
-            motion.shove = false;
-            const int Segments = 24;
-            float chord = 2f * radius * Mathf.Sin(Mathf.PI / Segments) + .05f;
-            Under(b, motion.transform, () =>
-            {
-                for (int i = 0; i < Segments; i++)
-                {
-                    var piece = b.Group("Segment " + (i + 1));
-                    piece.localRotation = Quaternion.Euler(0f, i * 360f / Segments, 0f);
-                    Under(b, piece, () => b.Box("Arc", V(-chord * .5f, -.2f, radius - .2f), V(chord * .5f, .2f, radius + .2f), b.kit.rankGold, false, false));
-                }
-            });
+                float heading = slit - 15f + rib * 30f;
+                for (int step = 0; step < 7; step++)
+                    Bar(b, "Dome rib " + (rib + 1), onDome(heading, step * 12f), onDome(heading, (step + 1) * 12f), .5f, .5f, k.rankGold);
+            }
+            const float HoopAt = 36f, CrownAt = 84f;
+            Hoop(b, "Dome hoop", crown + Vector3.up * (HallRadius * Mathf.Sin(HoopAt * Mathf.Deg2Rad)), Quaternion.identity,
+                 HallRadius * Mathf.Cos(HoopAt * Mathf.Deg2Rad), .4f, .4f, k.trimWhite, 36, heading => Mathf.Abs(Mathf.DeltaAngle(heading, slit)) > 15f);
+            Hoop(b, "Dome crown", crown + Vector3.up * (HallRadius * Mathf.Sin(CrownAt * Mathf.Deg2Rad)), Quaternion.identity,
+                 HallRadius * Mathf.Cos(CrownAt * Mathf.Deg2Rad), .5f, .5f, k.rankGold, 12);
         }
 
         // ------------------------------------------------------------------ the route and the beats
 
-        static void Path(CourseBuilder b)
+        static void Path(CourseBuilder b, List<(Vector3 at, string beat)> points)
         {
-            var points = new (Vector3 at, string beat)[]
-            {
-                (V(0f, 0f, 0f), "0"), (V(0f, 0f, 12f), "1"), (V(0f, 0f, 38f), "1"), (V(0f, 0f, 44f), "2"), (V(44f, 0f, 44f), "2"),
-                (V(50f, 0f, 44f), "3"), (V(50f, 0f, 71f), "3"), (V(50f, 0f, 77f), "4"), (V(31f, 0f, 77f), "4"),
-                (V(26.5f, 0f, 72.5f), "4"), (V(22f, 0f, 70.5f), "4"), (V(17.5f, 0f, 72.5f), "4"), (V(13f, 0f, 77f), "4"),
-                (V(7f, 0f, 77f), "5"), (V(7f, 0f, 83.2f), "5"), (V(7f, 3f, 88.4f), "5"), (V(7f, 3f, 92.6f), "5"), (V(7f, Upper, 97.8f), "5"),
-                (V(7f, Upper, 103f), "6"), (V(43f, Upper, 103f), "6"), (V(50f, Upper, 103f), "7"), (V(50f, Upper, WallZ), "7"),
-                (V(50f, Upper + Tier, WallZ), "7"), (V(50f, Upper + Tier, WallZ + Ledge), "7"),
-                (V(50f, Upper + Tier * 2f, WallZ + Ledge), "7"), (V(50f, Upper + Tier * 2f, WallZ + Ledge * 2f), "7"),
-                (V(50f, Terrace, WallZ + Ledge * 2f), "7"), (V(50f, Terrace, 118f), "출구"), (V(50f, ExitTop, 120f), "출구"), (Exit, "출구"),
-            };
-            var route = new Vector3[points.Length];
-            var names = new string[points.Length];
-            for (int i = 0; i < points.Length; i++)
+            var route = new Vector3[points.Count];
+            var names = new string[points.Count];
+            for (int i = 0; i < points.Count; i++)
             {
                 route[i] = points[i].at;
                 names[i] = points[i].beat;
@@ -559,15 +823,15 @@ namespace ChessFight.PawnRush
             path.AddComponent<ProgressPath>().Configure(route, (Vector3[])route.Clone(), names);
         }
 
+        // Five beats in six boxes (Cassiopeia's second box is the east gate's threshold).
         static SectionBeat[] Beats() => new[]
         {
-            new SectionBeat("1 고리 마당", V(-7f, -2f, 12f), V(7f, 6f, 38f)),
-            new SectionBeat("2 별지도 벨트와 차양 방패", V(12f, -2f, 37f), V(44f, 6f, 51f)),
-            new SectionBeat("3 환기구 격자 다리", V(46f, -2f, 50f), V(55f, 6f, 71f)),
-            new SectionBeat("4 대천구의 회전판", V(13f, -2f, 67f), V(44f, 6f, 87f)),
-            new SectionBeat("5 행성 승강대", V(3f, -2f, 83f), V(11f, 12f, 97.8f)),
-            new SectionBeat("6 망원경 다리", V(13f, 4f, 99f), V(43f, 12f, 107f)),
-            new SectionBeat("7 별자리 등반벽", V(43f, 4f, 96f), V(57f, 16f, 112f)),
+            new SectionBeat("1 북두칠성 손잡이", V(-31f, -3f, 14f), V(4f, 8f, 47f)),
+            new SectionBeat("2 북두칠성 국자", V(-43f, -3f, 39f), V(-18.5f, 9f, 67f)),
+            new SectionBeat("3 대천구", V(-18.5f, 0f, 58f), V(13.6f, 18f, 70f)),
+            new SectionBeat("4 카시오페이아", V(17.2f, 8f, 60f), V(32f, 18f, 93f)),
+            new SectionBeat("4 카시오페이아", V(13.6f, 8f, 60f), V(17.2f, 18f, 68f)),
+            new SectionBeat("5 관측대와 대망원경", V(0f, 9f, 81f), V(17.2f, 28f, 118f)),
         };
     }
 }
