@@ -51,13 +51,19 @@ namespace ChessFight.Game
         // above only, so from under it the sky showed through where a piece had fallen in. The gameplay side sets it
         // (WaterZone); null or -infinity, no floor. Not for the free camera.
         public static System.Func<Vector3, float> FloorAt;
+        // R710 (승규 11-18): a place may widen the view where the followed body is - x = degrees more field of view,
+        // y = metres further back - the Royal Library from its portal to the typewriter. Every PC's own camera asks for
+        // its own body, so every player sees it; eased in and out. Null: nothing.
+        public static System.Func<Vector3, Vector2> Widen;
+        Vector2 widened;
+        float fixedBlend, setupDistance = -1f;
         // The key that toggles the free camera (승규 님's test scene flies with F2 itself: None). R529: F4 (the ragdoll lab's
         // free camera key too); F1 flies the pawn itself now (DevCheats, user 11-09 "f1키 자유카메라에서 캐릭터 비행으로").
         public const KeyCode DefaultFlyKey = KeyCode.F4;
         public static KeyCode FlyKey = DefaultFlyKey;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => FlyKey = DefaultFlyKey;
+        static void ResetStatics() { FlyKey = DefaultFlyKey; Widen = null; }
 
         // Fly from a given place and view (the test scene's look over the whole map).
         public void FlyAt(Vector3 position, float yawDegrees, float pitchDegrees)
@@ -91,6 +97,7 @@ namespace ChessFight.Game
             if (!distanceTaken && GameSettings.Has("camdist"))
                 distance = Mathf.Clamp(GameSettings.CameraDistance, minDistance, maxDistance);
             distanceTaken = true;
+            if (setupDistance < 0f) setupDistance = distance;
         }
 
         // Settings → 화면 → 시야 범위, relative to the default 60° so a camera set up otherwise keeps its offset.
@@ -98,7 +105,7 @@ namespace ChessFight.Game
         {
             if (view == null && !TryGetComponent(out view)) return;
             if (baseFov < 0f) baseFov = view.fieldOfView;
-            view.fieldOfView = Mathf.Clamp(baseFov + GameSettings.Fov - 60f, 20f, 120f);
+            view.fieldOfView = Mathf.Clamp(baseFov + GameSettings.Fov - 60f + widened.x, 20f, 120f);
         }
 
         // A teleport: cut to the new place instead of swooping there.
@@ -134,6 +141,13 @@ namespace ChessFight.Game
         void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
+            var widenTo = Widen != null && target != null && !FreeFly ? Widen(target.position) : Vector2.zero;
+            widened = Vector2.Lerp(widened, widenTo, 1f - Mathf.Exp(-2.5f * dt));
+            // R710 (승규 "마우스 스크롤로 조절 못하게"): in a widened place the wheel does nothing and the camera stands at
+            // the distance it was set up with (the scene's, or the settings' 카메라 거리) plus the place's - the same for
+            // every player, whatever they had scrolled to before; it eases back to their own after.
+            bool fixedDistance = widenTo != Vector2.zero;
+            fixedBlend = Mathf.MoveTowards(fixedBlend, fixedDistance ? 1f : 0f, dt / .4f);
             ApplyFov();
             bool look = Cursor.lockState == CursorLockMode.Locked;
             if (look)
@@ -141,7 +155,7 @@ namespace ChessFight.Game
                 yaw += GameSettings.LookX * mouseSensitivity;
                 pitch = Mathf.Clamp(pitch - GameSettings.LookY * mouseSensitivity, FreeFly ? -85f : minPitch, FreeFly ? 85f : maxPitch);
                 float wheel = Input.mouseScrollDelta.y;
-                if (!FreeFly && Mathf.Abs(wheel) > 0.01f)
+                if (!FreeFly && !fixedDistance && Mathf.Abs(wheel) > 0.01f)
                     distance = Mathf.Clamp(distance * Mathf.Pow(0.88f, wheel), minDistance, maxDistance);
             }
             if (FreeFly)
@@ -170,8 +184,9 @@ namespace ChessFight.Game
             Vector3 back = rot * Vector3.back;
             // Pull in in front of walls (quickly), ease back out (slowly). The character's
             // own colliders never count, nor a moving part that only sweeps past (CameraSeeThrough).
-            float allowed = distance;
-            int n = Physics.SphereCastNonAlloc(pivot, collisionRadius, back, hits, distance, ~0, QueryTriggerInteraction.Ignore);
+            float reach = Mathf.Lerp(distance, setupDistance > 0f ? setupDistance : distance, fixedBlend) + Mathf.Max(0f, widened.y);
+            float allowed = reach;
+            int n = Physics.SphereCastNonAlloc(pivot, collisionRadius, back, hits, reach, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];

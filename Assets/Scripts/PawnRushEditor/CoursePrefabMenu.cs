@@ -152,6 +152,14 @@ namespace ChessFight.PawnRush.Editor
                     bool lit = light != null && built is bool b && b;
                     if (!lit) failures++;
                     Log((lit ? "PASS " : "FAIL ") + "the library's light is on the course" + (light != null ? ", sun " + (RenderSettings.sun != null ? RenderSettings.sun.color.ToString() : "-") : ""));
+                    // R710: the wider view from the portal to the typewriter.
+                    var widen = ChessFight.Game.OrbitCamera.Widen;
+                    Vector2 before = widen != null ? widen(s.transform.TransformPoint(new Vector3(0f, 1f, -140f))) : Vector2.zero;
+                    Vector2 inside = widen != null ? widen(s.transform.TransformPoint(new Vector3(0f, 1f, -100f))) : Vector2.zero;
+                    Vector2 after = widen != null ? widen(s.transform.TransformPoint(new Vector3(0f, 1f, -40f))) : Vector2.zero;
+                    bool wide = before == Vector2.zero && inside.x > 17f && after == Vector2.zero;
+                    if (!wide) failures++;
+                    Log((wide ? "PASS " : "FAIL ") + $"wider view only between the portal and the typewriter: z -140 {before}, z -100 {inside}, z -40 {after}");
                 }
             }
             index++;

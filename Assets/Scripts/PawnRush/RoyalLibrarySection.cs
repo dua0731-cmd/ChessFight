@@ -79,6 +79,34 @@ namespace ChessFight.PawnRush
             }
         }
 
+        // R710 (승규 11-18 "여기 문을 지나면 타자기 구간까지 모든 참가자 방장 물리담당이 시야가 넓어지게"): from the portal's
+        // threshold (z -136.4) to the typewriter (z -60) the camera that follows a body there sees wider - each PC its own
+        // (OrbitCamera.Widen), so every player, the host and the physics PC alike. Ramps in over 3 m past the portal and
+        // out over the 8 m before the typewriter's floor.
+        const float WidenFrom = -136.4f, WidenTo = -60f, WidenFov = 18f, WidenBack = 4f;
+        System.Func<Vector3, Vector2> widen;
+
+        void OnEnable()
+        {
+            widen = Widen;
+            ChessFight.Game.OrbitCamera.Widen = widen;
+        }
+
+        void OnDisable()
+        {
+            if (ChessFight.Game.OrbitCamera.Widen == widen) ChessFight.Game.OrbitCamera.Widen = null;
+        }
+
+        Vector2 Widen(Vector3 world)
+        {
+            if (this == null) return Vector2.zero;
+            var p = transform.InverseTransformPoint(world);
+            if (Mathf.Abs(p.x) > 45f || p.y < -30f || p.y > 40f || p.z < WidenFrom || p.z > WidenTo) return Vector2.zero;
+            float k = Mathf.Min(Mathf.Clamp01((p.z - WidenFrom) / 3f), Mathf.Clamp01((WidenTo - p.z) / 8f));
+            k = k * k * (3f - 2f * k);
+            return new Vector2(WidenFov, WidenBack) * k;
+        }
+
         void OnDestroy()
         {
             foreach (var book in books) if (book != null) book.Crushed -= OnCrushed;
