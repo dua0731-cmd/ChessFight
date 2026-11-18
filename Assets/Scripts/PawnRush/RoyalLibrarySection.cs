@@ -69,6 +69,14 @@ namespace ChessFight.PawnRush
             match.LocalCharacter = () => MiniGameBase.LocalDriver != null ? MiniGameBase.LocalDriver.FollowTarget : null;
             Describe();
             if (transform.Find(GroupName) == null) Build();
+            // R709 (승규 11-18 "왕실 서재 조명이나 분위기가 달라졌어"): the library's light and the F2 fly camera add themselves
+            // to the dressing only as a scene loads, so a library built later - the course prefab test's pick, the section
+            // test's F8 - had neither and showed the round's plain light. The section adds them itself.
+            foreach (var dressing in GetComponentsInChildren<RoyalLibraryDressing>(true))
+            {
+                if (dressing.GetComponent<RoyalLibraryLighting>() == null) dressing.gameObject.AddComponent<RoyalLibraryLighting>();
+                if (dressing.GetComponent<RoyalLibraryFlyCam>() == null) dressing.gameObject.AddComponent<RoyalLibraryFlyCam>();
+            }
         }
 
         void OnDestroy()

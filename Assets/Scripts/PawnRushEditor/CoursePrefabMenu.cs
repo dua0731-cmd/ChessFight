@@ -144,6 +144,15 @@ namespace ChessFight.PawnRush.Editor
                 bool ok = s != null && pawn != null && Vector3.Distance(s.transform.InverseTransformPoint(pawn.position), s.EntryLocal.position) < 12f;
                 if (!ok) failures++;
                 Log((ok ? "PASS " : "FAIL ") + "key " + (index + 1) + ": " + (s != null ? s.Id + " · " + s.DisplayName + " (slot " + (s.Slot + 1) + ")" : "nothing built") + ", pawn at " + where);
+                if (s != null && s.Id == RoyalLibrarySection.Id)
+                {
+                    // R709: the library's own light on a library built after the scene loaded.
+                    var light = s.GetComponentInChildren<RoyalLibraryLighting>(true);
+                    var built = light != null ? typeof(RoyalLibraryLighting).GetField("built", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(light) : null;
+                    bool lit = light != null && built is bool b && b;
+                    if (!lit) failures++;
+                    Log((lit ? "PASS " : "FAIL ") + "the library's light is on the course" + (light != null ? ", sun " + (RenderSettings.sun != null ? RenderSettings.sun.color.ToString() : "-") : ""));
+                }
             }
             index++;
             var entries = typeof(CoursePrefabTest).GetField("entries", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(test) as System.Collections.IList;
