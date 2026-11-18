@@ -2,6 +2,8 @@
 
 2026-11-19 · R715 · 사용자 피드백으로 Claude가 다시 잡은 구조. [레벨 디자인 v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md)의 배치를 대신할 안이다.
 
+> **R716(11-19): 버린 안이다.** 사용자 "이 구조는 너무 대계단하고 비슷해. 천문대만의 구조가 필요해." 가운데를 돌며 오르는 뼈대가 대계단의 나선과 같았다 → [구조안 v0.3 — 별자리 둘, 천구 하나, 망원경 하나](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md).
+
 > **구조안만 있다.** 장애물은 아직 놓지 않았다(사용자: "장애물보다 구조적인게 먼저야"). 회색 상자(R712, `RoyalObservatoryBuilder`)는 v0.1 배치 그대로이고, 이 구조가 정해지면 다시 짓는다. 사용자 검수 전.
 
 ![구조안 — 위에서](Mockups/R715_RoyalObservatoryStructure.svg)

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 730" width="100%" style="height:auto;max-width:1180px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R716 왕실 천문대 구조안 v0.3 — 별자리 둘, 천구 하나, 망원경 하나</title>
+<defs><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#ffffff"/></marker></defs>
+<rect width="1180" height="730" fill="#171a22"/>
+<text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">왕실 천문대 구조안 v0.3 — 별자리 둘, 천구 하나, 망원경 하나 (R716)</text>
+<text x="24" y="56" font-size="13" fill="#a39a85">위에서 본 배치 · 북쪽이 위 · 홀 중심 (0, 64) · 흰 점선 = 진행 경로 · 장애물은 아직 놓지 않았다(구조 먼저)</text>
+
+<g transform="translate(250 696) scale(4.6 -4.6)">
+  <circle cx="0" cy="64" r="46" fill="#0f1320" stroke="#3b4257" stroke-width=".4"/>
+  <path d="M 3.2 109.9 A 46 46 0 0 1 14.7 107.6" fill="none" stroke="#EF9F27" stroke-width="1.2" transform="rotate(0)"/>
+  <rect x="-6" y="0" width="12" height="14" fill="#85B7EB"/>
+  <g stroke="#85B7EB" stroke-width="3" fill="none">
+    <polyline points="0,13 -2,18 -10,26 -19,33 -27,43 -38,49 -37,62 -25,60 -12.6,64"/>
+  </g>
+  <line x1="-27" y1="43" x2="-25" y2="60" stroke="#B5D4F4" stroke-width="1.5" stroke-dasharray="2 1.2"/>
+  <g fill="#85B7EB" stroke="#BA7517" stroke-width=".4">
+    <circle cx="-2" cy="18" r="4"/><circle cx="-10" cy="26" r="3.2"/><circle cx="-19" cy="33" r="3.2"/><circle cx="-27" cy="43" r="3.6"/>
+    <circle cx="-38" cy="49" r="3.2"/><circle cx="-37" cy="62" r="3.6"/><circle cx="-25" cy="60" r="4"/>
+  </g>
+  <circle cx="0" cy="64" r="18" fill="none" stroke="#BA7517" stroke-width="2.2"/>
+  <circle cx="0" cy="64" r="14" fill="#85B7EB" fill-opacity=".28" stroke="#BA7517" stroke-width=".4"/>
+  <line x1="0" y1="47.4" x2="0" y2="80.6" stroke="#BA7517" stroke-width="1.1"/>
+  <rect x="-12.65" y="61" width="26.5" height="6" fill="#5DCAA5"/>
+  <circle cx="0" cy="64" r="2.2" fill="#FAC775"/>
+  <g stroke="#AFA9EC" stroke-width="3" fill="none"><polyline points="13.9,64 19,68 27,73 19,79 27,85 20,89.5 16.4,90"/></g>
+  <g fill="#AFA9EC" stroke="#BA7517" stroke-width=".4">
+    <circle cx="19" cy="68" r="3"/><circle cx="27" cy="73" r="3.4"/><circle cx="19" cy="79" r="3"/><circle cx="27" cy="85" r="3.4"/><circle cx="20" cy="89.5" r="3"/>
+    <circle cx="9" cy="90" r="8"/>
+  </g>
+  <rect x="6.5" y="93" width="5" height="25" fill="#F0997B"/>
+  <g fill="none" stroke="#BA7517" stroke-width=".5">
+    <line x1="5" y1="93" x2="13" y2="93"/><line x1="5" y1="98" x2="13" y2="98"/><line x1="5" y1="103" x2="13" y2="103"/><line x1="5" y1="108" x2="13" y2="108"/><line x1="5" y1="113" x2="13" y2="113"/><line x1="4.4" y1="118" x2="13.6" y2="118"/>
+  </g>
+  <rect x="3" y="118" width="12" height="12" fill="#F0997B"/>
+  <path d="M0,1 L0,13 L-2,18 L-10,26 L-19,33 L-27,43 L-38,49 L-37,62 L-25,60 L-12.6,64 L13.9,64 L19,68 L27,73 L19,79 L27,85 L20,89.5 L9,90 L9,128" fill="none" stroke="#ffffff" stroke-width=".4" stroke-dasharray="1.4 1" marker-end="url(#tip)"/>
+  <g font-size="13" font-weight="700" fill="#f4ead2">
+    <text transform="translate(-45 28) scale(.217 -.217)">① 북두칠성 길</text>
+    <text transform="translate(-9 43) scale(.217 -.217)">② 대천구</text>
+    <text transform="translate(31 78) scale(.217 -.217)">③ 카시오페이아 길</text>
+    <text transform="translate(-22 92) scale(.217 -.217)">④ 관측대</text>
+    <text transform="translate(-22 104) scale(.217 -.217)">⑤ 대망원경 경통</text>
+    <text transform="translate(17 124) scale(.217 -.217)">⑥ 돔 밖 발코니 · 출구</text>
+    <text transform="translate(8 4) scale(.217 -.217)">입구</text>
+  </g>
+  <g font-size="11" fill="#a39a85">
+    <text transform="translate(-23 51) scale(.217 -.217)">지름길(가는 선)</text>
+    <text transform="translate(16 110) scale(.217 -.217)">돔의 슬릿</text>
+    <text transform="translate(-14 57.5) scale(.217 -.217)">서문 4 m</text>
+    <text transform="translate(3 57.5) scale(.217 -.217)">동문 12 m</text>
+  </g>
+</g>
+
+<rect x="500" y="76" width="660" height="330" rx="8" fill="#1f232d"/>
+<text x="518" y="102" font-size="15" font-weight="700" fill="#f4ead2">가운데를 감아 오르지 않는다 — 구조물을 하나씩 통과한다</text>
+<g font-size="12" fill="#a39a85"><text x="518" y="126">구조물</text><text x="672" y="126">무엇</text><text x="900" y="126">지나는 법</text><text x="1084" y="126">높이</text></g>
+<line x1="518" y1="134" x2="1142" y2="134" stroke="#3b4257"/>
+<g font-size="12.5" fill="#f4ead2">
+  <text x="518" y="160">① 북두칠성 길</text><text x="518" y="204">② 대천구</text><text x="518" y="248">③ 카시오페이아 길</text>
+  <text x="518" y="292">④ 관측대</text><text x="518" y="336">⑤ 대망원경 경통</text><text x="518" y="380">⑥ 돔 밖 발코니</text>
+</g>
+<g font-size="12" fill="#d8cfba">
+  <text x="672" y="160">별 단 일곱 + 별자리 선 (국자 모양)</text><text x="672" y="204">지름 28 m 유리 천구와 고리 셋</text><text x="672" y="248">별 단 다섯 (W자)</text>
+  <text x="672" y="292">태양 무늬 둥근 단, 포크 가대</text><text x="672" y="336">고리 일곱의 트러스 경통</text><text x="672" y="380">슬릿을 나선 바깥 단</text>
+  <text x="900" y="160">별에서 별로, 끝의 두 별이 천구로</text><text x="900" y="204">속을 가로질러 태양 아래로 오름</text><text x="900" y="248">허공에서 네 번 꺾음</text>
+  <text x="900" y="292">경통 어귀로</text><text x="900" y="336">경통 속 갑판을 타고 오름</text><text x="900" y="380">출구</text>
+  <text x="1084" y="160">0 → 3.2 m</text><text x="1084" y="204">4 → 12 m</text><text x="1084" y="248">약 12 m</text><text x="1084" y="292">12 m</text><text x="1084" y="336">12 → 20 m</text><text x="1084" y="380">20 m</text>
+</g>
+<g>
+  <circle cx="653" cy="156" r="7" fill="#85B7EB"/><rect x="646" y="193" width="14" height="14" fill="#5DCAA5"/><circle cx="653" cy="244" r="7" fill="#AFA9EC"/>
+  <circle cx="653" cy="288" r="7" fill="#AFA9EC"/><rect x="646" y="325" width="14" height="14" fill="#F0997B"/><rect x="646" y="369" width="14" height="14" fill="#F0997B"/>
+</g>
+<g stroke="#2b303c"><line x1="518" y1="176" x2="1142" y2="176"/><line x1="518" y1="220" x2="1142" y2="220"/><line x1="518" y1="264" x2="1142" y2="264"/><line x1="518" y1="308" x2="1142" y2="308"/><line x1="518" y1="352" x2="1142" y2="352"/></g>
+
+<rect x="500" y="418" width="660" height="200" rx="8" fill="#1f232d"/>
+<text x="518" y="444" font-size="15" font-weight="700" fill="#f4ead2">경로를 따라 본 높이 — 천구 속과 경통 속에서 오른다</text>
+<g stroke="#2b303c"><line x1="548" y1="590" x2="1136" y2="590"/><line x1="548" y1="518" x2="1136" y2="518"/><line x1="548" y1="470" x2="1136" y2="470"/></g>
+<g font-size="11" fill="#a39a85" text-anchor="end"><text x="542" y="594">0 m</text><text x="542" y="522">12 m</text><text x="542" y="474">20 m</text></g>
+<polyline points="548,590 582,590 594,590 621,585 650,579 681,576 710,583 742,577 771,571 800,566 867,518 884,518 906,523 930,514 955,520 974,517 1008,518 1071,470 1100,470" fill="none" stroke="#f4ead2" stroke-width="3" stroke-linejoin="round"/>
+<g font-size="12" font-weight="700" fill="#f4ead2" text-anchor="middle">
+  <text x="680" y="562">①</text><text x="826" y="532">②</text><text x="930" y="502">③</text><text x="996" y="506">④</text><text x="1030" y="486">⑤</text><text x="1090" y="458">⑥</text>
+</g>
+<g font-size="11" fill="#a39a85"><text x="548" y="608">0 m</text><text x="1100" y="608" text-anchor="end">약 225 m</text></g>
+
+<rect x="500" y="630" width="660" height="80" rx="8" fill="#1f232d"/>
+<text x="518" y="656" font-size="12.5" fill="#d8cfba">실제 하늘과 같다: 북두칠성의 끝 두 별을 이으면 북극성(천구)에 닿고, 그 반대편에 W자 카시오페이아가 있다.</text>
+<text x="518" y="678" font-size="12.5" fill="#d8cfba">돔 천장의 별자리표에 같은 자리로 두 별자리가 그려져 있다 — 천장이 코스의 지도다.</text>
+<text x="518" y="700" font-size="12.5" fill="#a39a85">구조안이다. 회색 상자(R712)는 아직 v0.1 배치 그대로 — 상세: PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md</text>
+</svg>

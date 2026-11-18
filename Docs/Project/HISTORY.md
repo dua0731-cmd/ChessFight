@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-19 R716 · 왕실 천문대 구조안 v0.3 '별자리 둘, 천구 하나, 망원경 하나'(`PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md` · `Mockups/R716_RoyalObservatoryStructure.svg`): 북두칠성 길 → 유리 천구 속 오르막 → 카시오페이아 길 → 트러스 경통 속을 올라 돔 밖으로. v0.2(동심 궤도)는 대계단과 닮아 버림. 구조만, 회색 상자는 아직 v0.1, 검수 전
 - 2026-11-19 R715 · 왕실 천문대 구조안 v0.2 '코스가 혼천의다'(`PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.2.md` · `Mockups/R715_RoyalObservatoryStructure.svg`): ㄷ자 반복 대신 원판 둘 → 바깥 궤도 호 → 기울어진 궤도 반 바퀴 → 심장 원대 → 대망원경 오르막 → 슬릿 발코니. 구조만(장애물 없음), 회색 상자는 아직 v0.1, 검수 전
 - 2026-11-19 R714 · 왕실 천문대 그래픽 입힌 미리보기 그림 한 장(`ConceptArt/R714_RoyalObservatoryDressed/observatory_dressed_v1.png`, Blender 스크립트 `ArtSource/PawnRush/RoyalObservatory/observatory_dress_preview.py`). 그림뿐 — Unity 반영 없음
 - 2026-11-19 R713 · 왕실 천문대 비트별 특징 · 의도 · 예상 플레이어 행동 분석(`PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md`, 가설 11개 — 예측). 격자 다리 바람 순서를 설계대로(1.7초씩 늦게) · 회전판 진행 경로를 남쪽으로. 컴파일 PASS, Unity 재확인 안 함
