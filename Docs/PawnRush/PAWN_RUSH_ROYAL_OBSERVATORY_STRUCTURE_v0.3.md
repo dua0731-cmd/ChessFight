@@ -8,6 +8,10 @@
 
 ![구조안 v0.3 — 위에서](Mockups/R716_RoyalObservatoryStructure.svg)
 
+구조와 새 장애물을 입힌 컨셉 그림(R718, Blender 렌더 — 그림일 뿐 Unity에는 없다):
+
+![왕실 천문대 v0.3 컨셉 그림](ConceptArt/R718_RoyalObservatoryV3/observatory_v3_concept.png)
+
 ## 무엇이 바뀌나
 
 | 피드백 | v0.2 | v0.3 |

@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-19 R718 · 왕실 천문대 v0.3 컨셉 그림(`ConceptArt/R718_RoyalObservatoryV3/observatory_v3_concept.png`, Blender 스크립트 `observatory_v3_concept.py`): 별자리 길 · 유리 천구 · 대망원경과 새 장애물 여덟 종. 그림뿐 — Unity 반영 없음
 - 2026-11-19 R717 · 왕실 천문대 새 장애물 여덟 종 기획(`PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md`): 변광성 · 유성우 · 혜성 · 월식 문 · 행성 궤도 · 쌍성 · 조리개 문 · 초점 광선. 기획만 — 코드 · 회색 상자 없음, 검수 전
 - 2026-11-19 R716 · 왕실 천문대 구조안 v0.3 '별자리 둘, 천구 하나, 망원경 하나'(`PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md` · `Mockups/R716_RoyalObservatoryStructure.svg`): 북두칠성 길 → 유리 천구 속 오르막 → 카시오페이아 길 → 트러스 경통 속을 올라 돔 밖으로. v0.2(동심 궤도)는 대계단과 닮아 버림. 구조만, 회색 상자는 아직 v0.1, 검수 전
 - 2026-11-19 R715 · 왕실 천문대 구조안 v0.2 '코스가 혼천의다'(`PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.2.md` · `Mockups/R715_RoyalObservatoryStructure.svg`): ㄷ자 반복 대신 원판 둘 → 바깥 궤도 호 → 기울어진 궤도 반 바퀴 → 심장 원대 → 대망원경 오르막 → 슬릿 발코니. 구조만(장애물 없음), 회색 상자는 아직 v0.1, 검수 전
