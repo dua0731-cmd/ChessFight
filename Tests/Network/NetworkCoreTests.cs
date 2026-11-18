@@ -1841,7 +1841,10 @@ public static class NetworkCoreTests
                 }
                 Check(KnightRoad.Baseline.Squares.SequenceEqual(KnightRoad.For(5).Squares) && KnightRoad.Baseline.Pieces == 5, "five a side is the baseline");
                 // A gold tub holds for eight seconds after the last pawn left it; the king's tub comes up in 1.2 s, goes under in 2 s.
-                Check(KnightRoad.Pressed(0f) && KnightRoad.Pressed(8f) && !KnightRoad.Pressed(8.1f) && !KnightRoad.Pressed(-1f), "pressed for eight seconds on");
+                // R688: a gold tub counts only while stood on (and a quarter second after), too short to cross from one
+                // gold tub to the other, so the two take two players; the king's tub stays up 8 s after both were held
+                Check(KnightRoad.Pressed(0f) && KnightRoad.Pressed(.25f) && !KnightRoad.Pressed(.3f) && !KnightRoad.Pressed(-1f), "pressed while stood on");
+                Check(KnightRoad.PressGrace < 1f && KnightRoad.HeldUp(0f) && KnightRoad.HeldUp(8f) && !KnightRoad.HeldUp(8.1f) && !KnightRoad.HeldUp(-1f), "held up eight seconds after both");
                 float raise = 0f;
                 for (int i = 0; i < 60; i++) raise = KnightRoad.Raise(raise, true, .02f);
                 Check(Math.Abs(raise - 1f) < 1e-4f && KnightRoad.Raise(1f, true, 5f) == 1f, "up in 1.2 s: " + raise);

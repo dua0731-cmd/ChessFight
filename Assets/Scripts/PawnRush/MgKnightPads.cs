@@ -20,8 +20,8 @@ namespace ChessFight.PawnRush
     //   - two to four roads side by side, by the team's size, each four tubs from the entrance floor's edge, the pieces
     //     spread over them - a piece a player - so a team that splits up is done sooner;
     //   - the last piece, the king, on a tub of its own in front of the gate that lies under the water: it rises
-    //     while both gold tubs beside it are pressed (a teammate on each, or one who stood there within eight
-    //     seconds) and sinks again when they are not; once the game is done it stays up, the way to the gate;
+    //     while both gold tubs beside it are pressed (R688: a teammate on each AT ONCE - two players - and then
+    //     eight seconds more) and sinks again when they are not; once the game is done it stays up, the way to the gate;
     //   - easier: larger tubs (2.4 to 2.6 m), a wider pad, a longer reach, and a pawn that falls in the water starts
     //     again from the last tub it stood on (MgWaterReturn.ReturnPoint), not from the entrance floor.
     //
@@ -53,6 +53,7 @@ namespace ChessFight.PawnRush
         // the host's: the tub of the roads each of this team's pawns stood on last, and when each gold tub was stood on
         readonly Dictionary<ICharacterDriver, int> lastTub = new Dictionary<ICharacterDriver, int>();
         readonly float[] stoodAt = { -100f, -100f };
+        float togetherAt = -100f;                // R688: the last moment both gold tubs were pressed at once
 
         // The look. (Up to eight pieces - the block's one byte - on up to sixteen tubs and the king's.)
         Transform[] pads;
@@ -64,6 +65,7 @@ namespace ChessFight.PawnRush
         Rigidbody kingBody;
         Vector3 kingRest;                       // the king's tub's place when it is up, in this game's frame
         readonly Transform[] pressRings = new Transform[2];
+        readonly MarkGlow[] pressGlow = new MarkGlow[2];
         readonly Vector3[] pressAt = new Vector3[2];
         readonly float[] takenAt = new float[8];
         readonly Vector3[] takenFrom = new Vector3[8], takenDir = new Vector3[8];
@@ -72,6 +74,15 @@ namespace ChessFight.PawnRush
         int shownTaken, shownLaunches, shownPressed;
         float shownRaise;
         bool shownUp;
+        // R688 (seoungtest, "함께 밟기 구간 ... vfx 가 필요해"): pictures only, worked out on every PC from what it already
+        // has - when each gold tub went pressed here, when this PC last saw a teammate on it, the charge drawn, the
+        // king's tub's last height and whether it was up far enough.
+        const float ChargeSeconds = 1.2f;
+        readonly float[] pressOnAt = { -100f, -100f }, seenOn = { -100f, -100f }, charge = new float[2];
+        int standing;
+        float lastRaise;
+        bool shownRaised;
+        IWaterGameFx Fx => MiniGameLaundryFx.For(station);
 
         public int Done { get { int n = 0; for (int b = taken; b != 0; b &= b - 1) n++; return n; } }
         public int Total => road.Pieces;
@@ -133,7 +144,7 @@ namespace ChessFight.PawnRush
                     pad.localPosition = c;
                     MiniGameParts.Part(pad, PrimitiveType.Cylinder, new Vector3(0f, .03f, 0f), new Vector3(1.3f, .03f, 1.3f), spring);
                     MiniGameParts.Part(pad, PrimitiveType.Cylinder, new Vector3(0f, .08f, 0f), new Vector3(1.2f, .02f, 1.2f), padMat);
-                    MiniGameParts.Loop(pad, "Pad ring", new Vector3(0f, .11f, 0f), .8f, .08f, Arena.Gold);
+                    MiniGameMarks.Ring(pad, "Pad ring", new Vector3(0f, .1f, 0f), .8f, .1f);   // R688 ("7번 노란색 원형 그래픽 좋게"): brass inlay
                     pads[at] = pad;
                     var number = Arena.Text(b.parent, "Road number", c + new Vector3(0f, .04f, -h + .3f), .35f, Arena.Gold);
                     number.text = (step + 1).ToString();
@@ -144,8 +155,9 @@ namespace ChessFight.PawnRush
                     var ring = new GameObject("Press ring " + name).transform;
                     ring.SetParent(b.parent, false);
                     ring.localPosition = c + new Vector3(0f, .14f, 0f);
-                    MiniGameParts.Loop(ring, "Press loop", Vector3.zero, h * .96f, .16f, Arena.Gold);
-                    MiniGameParts.Loop(ring, "Press loop inner", Vector3.zero, h * .8f, .06f, Arena.Gold);
+                    // R688 ("7번 노란색 원형 그래픽 좋게"): a brass inlay whose light spill brightens while pressed
+                    pressGlow[press] = MiniGameMarks.Ring(ring, "Press loop", Vector3.zero, h * .93f, .2f).GetComponent<MarkGlow>();
+                    MiniGameMarks.Ring(ring, "Press loop inner", Vector3.zero, h * .78f, .07f, 48, 0f, null, .018f, false);
                     var word = Arena.Text(b.parent, "Press word", c + new Vector3(0f, .05f, h - .35f), .32f, Arena.Gold);
                     word.text = "함께 밟기";
                     word.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
@@ -168,7 +180,7 @@ namespace ChessFight.PawnRush
             var crown = new GameObject("King ring").transform;
             crown.SetParent(kingTub, false);
             crown.localPosition = new Vector3(0f, .12f, 0f);
-            MiniGameParts.Loop(crown, "King loop", Vector3.zero, h * .9f, .12f, Arena.Gold);
+            MiniGameMarks.Ring(crown, "King loop", Vector3.zero, h * .9f, .14f);
 
             // The other side's pieces: on the roads' tubs a little off the pad, the king in the middle of its own tub.
             var them = Opponent;
@@ -254,6 +266,72 @@ namespace ChessFight.PawnRush
             // it heard it (shownRaise glides there on every PC, so the body never jumps).
             shownRaise = Mathf.MoveTowards(shownRaise, raise, Time.fixedDeltaTime / KnightRoad.RaiseSeconds);
             if (kingBody != null) kingBody.MovePosition(World(kingRest + Vector3.down * (KnightRoad.SunkDepth * (1f - shownRaise))));
+            Watch();
+            Landings();
+        }
+
+        // R688 (seoungtest, 승규 with a shot of a pawn on a tub: "여기 착지 할 때 나는 소리넣어줘"): a hollow wooden thump with
+        // water sloshing inside (two ElevenLabs takes, sfx_tub_land_1|2) when a pawn comes down on a tub - the roads'
+        // tubs and the king's once it is up. Every PC from the pawns it draws (falling, then stopped on a tub), nothing
+        // sent; louder the longer the fall; one per pawn per 0.35 s, so a bounce does not rattle.
+        readonly Dictionary<ICharacterDriver, float> fallingSince = new Dictionary<ICharacterDriver, float>();
+        readonly Dictionary<ICharacterDriver, float> landedAt = new Dictionary<ICharacterDriver, float>();
+
+        void Landings()
+        {
+            if (pads == null) return;
+            float t = Time.time, half = road.SquareSize * .5f;
+            foreach (var p in station.Pawns())
+            {
+                if (p.Driver == null) continue;
+                if (p.Velocity.y < -1.5f)
+                {
+                    if (!fallingSince.ContainsKey(p.Driver)) fallingSince[p.Driver] = t;
+                    continue;
+                }
+                if (!fallingSince.TryGetValue(p.Driver, out float since)) continue;
+                fallingSince.Remove(p.Driver);
+                float fell = t - since;
+                if (fell < .1f || p.Local.y <= -.2f || p.Local.y >= 1.7f) continue;
+                if (landedAt.TryGetValue(p.Driver, out float last) && t - last < .35f) continue;
+                Vector3 tub = Vector3.zero;
+                bool on = false;
+                for (int i = 0; i < pads.Length && !on; i++)
+                {
+                    var c = pads[i].localPosition;
+                    if (Mathf.Abs(p.Local.x - c.x) <= half && Mathf.Abs(p.Local.z - c.z) <= half) { tub = c; on = true; }
+                }
+                if (!on && shownRaise > .5f && Mathf.Abs(p.Local.x - kingRest.x) <= half && Mathf.Abs(p.Local.z - kingRest.z) <= half)
+                {
+                    tub = kingRest;
+                    on = true;
+                }
+                if (!on) continue;
+                landedAt[p.Driver] = t;
+                var at = World(new Vector3(p.Local.x, tub.y, p.Local.z));
+                ArenaFx.Sfx("sfx_tub_land_" + Random.Range(1, 3), at, volume: Mathf.Lerp(.55f, 1f, Mathf.Clamp01((fell - .1f) / .6f)),
+                            pitch: Random.Range(.94f, 1.06f));
+            }
+        }
+
+        // R688: pictures only - which gold tubs this PC sees a teammate standing on (Judge's test, read again here on
+        // every PC: the charge's look builds under a pawn and drains when it has gone). Nothing is decided or sent.
+        void Watch()
+        {
+            float half = road.SquareSize * .5f;
+            standing = 0;
+            foreach (var p in station.Pawns())
+            {
+                if (!p.Own || p.Local.y <= -.2f || p.Local.y >= 1.7f) continue;
+                for (int k = 0; k < 2; k++)
+                {
+                    if (pressRings[k] == null) continue;
+                    var c = pressAt[k];
+                    if (Mathf.Abs(p.Local.x - c.x) > half || Mathf.Abs(p.Local.z - c.z) > half) continue;
+                    standing |= 1 << k;
+                    seenOn[k] = Time.time;
+                }
+            }
         }
 
         void Judge()
@@ -288,8 +366,12 @@ namespace ChessFight.PawnRush
                 }
             }
             pressed = (KnightRoad.Pressed(t - stoodAt[0]) ? 1 : 0) | (KnightRoad.Pressed(t - stoodAt[1]) ? 2 : 0);
-            // up while both are pressed; for good once the game is done (the way to the gate)
-            raise = KnightRoad.Raise(raise, pressed == 3 || Completed, Time.fixedDeltaTime);
+            // R688 ("1명이 다 함께 밟기 해도 깨지는 구조야 이거 수정해"): both stood on at the same time - two players -
+            // and from the last such moment the king's tub stays up PressHold (bit 2 says so, for the pictures);
+            // for good once the game is done (the way to the gate)
+            if (pressed == 3) togetherAt = t;
+            if (KnightRoad.HeldUp(t - togetherAt)) pressed |= 4;
+            raise = KnightRoad.Raise(raise, (pressed & 4) != 0 || Completed, Time.fixedDeltaTime);
             if (Completed) return;
             Progress01 = Done / (float)Total;
             if (Done >= Total) Complete();
@@ -325,15 +407,11 @@ namespace ChessFight.PawnRush
                 {
                     bounceAt[launchSquare] = t;
                     var at = World(pads[launchSquare].localPosition);
-                    // a station may play its own picture (J's soapy jet, MiniGameLaundryFx); else the shared burst and ring
-                    var own = station != null ? station.GetComponent<IWaterGameFx>() : null;
-                    if (own != null) own.PadLaunch(at);
-                    else
-                    {
-                        ArenaFx.Burst(at + Vector3.up * .1f, new[] { new Color(.8f, .72f, .6f), Arena.Gold }, 8, 1.4f, 1.5f, .5f, .07f);
-                        ArenaFx.Ring(at, 0f, 1.6f, .5f, Arena.Gold);
-                    }
-                    ArenaFx.Sfx("sfx_pad_launch", at);
+                    // J's soapy jet (MiniGameLaundryFx; R688: always J's own, never the shared burst and ring)
+                    Fx?.PadLaunch(at);
+                    // R688 (seoungtest, 승규 "넣어줘" to the silent pad jet): sfx_pad_launch never existed, so the garden's
+                    // jump-pad splash (PawnRushGardenSfx/PadSplash) plays for the soapy jet
+                    ArenaFx.Sfx("sfx_pad_launch", at, volume: .8f, fallbackPath: "PawnRushGardenSfx/PadSplash");
                 }
             }
             for (int i = 0; i < pads.Length; i++)
@@ -347,40 +425,81 @@ namespace ChessFight.PawnRush
 
         // R686: a gold tub clicks and its ring swells as it is pressed; the king's tub comes up through the water with a
         // splash once both are, and goes under with a quieter one.
+        // R688 (seoungtest, "함께 밟기 구간 ... vfx 가 필요해", "실사로"): J's own pictures for all of it (MiniGameLaundryFx) -
+        // a pressed gold tub squeezes water out and blooms gold, its charge builds under a teammate and drains with the
+        // hold; both pressed sends gold over the water to the king's tub; the king's tub sheds water, foam and steam as it
+        // rises and is swallowed in foam as it sinks; up far enough, a glint over the king.
         void Pressing(float t)
         {
+            var fx = Fx;
+            float half = road.SquareSize * .5f;
             for (int k = 0; k < 2; k++)
             {
                 bool now = (pressed >> k & 1) != 0, was = (shownPressed >> k & 1) != 0;
                 if (pressRings[k] != null)
                 {
-                    float beat = now ? 1.08f + .05f * Mathf.Sin(t * 6f) : 1f;
+                    float beat = now ? 1.04f + .03f * Mathf.Sin(t * 6f) : 1f;
+                    if (pressGlow[k] != null) pressGlow[k].Boost = Mathf.MoveTowards(pressGlow[k].Boost, now ? 1f : (pressed & 4) != 0 ? .45f : 0f, Time.deltaTime * 4f);
                     pressRings[k].localScale = new Vector3(beat, 1f, beat);
                 }
-                if (now == was) continue;
-                var at = World(pressAt[k] + Vector3.up * .1f);
-                if (now)
+                var top = World(pressAt[k]);
+                if (now && !was)
                 {
-                    ArenaFx.Ring(at, .4f, road.SquareSize * .75f, .5f, Arena.Gold);
-                    ArenaFx.Sfx("sfx_ratchet_click", at);
+                    pressOnAt[k] = t;
+                    fx?.TubPressed(k, top, half);
+                    ArenaFx.Sfx("sfx_ratchet_click", World(pressAt[k] + Vector3.up * .1f));
                 }
+                // the charge: builds while a teammate stands on it; with nobody on it, it drains with the hold left
+                // (from when this PC last saw one there, or from when it went pressed if it saw none)
+                bool on = (standing >> k & 1) != 0;
+                if (!now) charge[k] = Mathf.MoveTowards(charge[k], 0f, Time.deltaTime * 3f);
+                else if (on) charge[k] = Mathf.MoveTowards(charge[k], 1f, Time.deltaTime / ChargeSeconds);
+                else
+                {
+                    float since = seenOn[k] >= pressOnAt[k] - .5f ? seenOn[k] : pressOnAt[k];
+                    charge[k] = Mathf.Min(charge[k], Mathf.Clamp01(1f - (t - since) / KnightRoad.PressGrace));
+                }
+                if (now) fx?.PressHeld(k, top, half, charge[k], on);
+            }
+            if ((pressed & 3) == 3 && (shownPressed & 3) != 3)
+            {
+                fx?.PressedTogether(World(pressAt[0]), World(pressAt[1]), World(new Vector3(kingRest.x, Surface, kingRest.z)));
+                BubbleSound(World(new Vector3(kingRest.x, Surface, kingRest.z)), .8f);   // R688: the water boils up
             }
             shownPressed = pressed;
+            // the king's tub moving (shownRaise glides in FixedUpdate; the tub's own place is its top)
+            if (kingTub != null)
+            {
+                float dr = shownRaise - lastRaise;
+                if (Mathf.Abs(dr) > 1e-5f) fx?.KingMoving(kingTub.position, half, World(new Vector3(kingRest.x, Surface, kingRest.z)).y, dr > 0f ? 1 : -1);
+                lastRaise = shownRaise;
+                bool raised = shownRaise >= KnightRoad.RaisedEnough;
+                if (raised && !shownRaised) fx?.KingRaised(kingTub.position, half);
+                shownRaised = raised;
+            }
             bool up = shownRaise > .5f;
             if (up != shownUp)
             {
                 shownUp = up;
                 var at = World(new Vector3(kingRest.x, Surface, kingRest.z));
-                var own = station != null ? station.GetComponent<IWaterGameFx>() : null;
-                if (own != null) own.Splash(at, up ? 1.2f : .6f);
-                else
-                {
-                    ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, up ? 26 : 12, 1.6f, up ? 4.5f : 2f, .8f, .08f);
-                    ArenaFx.Ring(at, .4f, road.SquareSize, .7f, up ? Arena.Gold : Arena.Hex("#BFE6F5"));
-                }
+                fx?.Splash(at, up ? 1.2f : .6f);
                 ArenaFx.Sfx("sfx_moat_water", at, volume: up ? 1f : .5f);
+                BubbleSound(at, up ? .7f : .6f);   // R688: foam as the tub breaks the surface / goes under
             }
         }
+
+        // R688 (seoungtest, 승규: "7번 세탁장 거품 소리 물에 빠지는 소리 넣어줘"): J's water sounds. A splash: "sfx_splash" was
+        // called here and in MgWaterReturn but never existed (silent), so it falls back to the garden's three splashes
+        // (PawnRushGardenSfx/GardenSplash*). Bubbles: two ElevenLabs takes of soapy foam fizzing in a washtub
+        // (Resources/PawnRushMiniGameSfx/sfx_laundry_bubbles_1|2, flow cCzjRzZPRKJvTKRCNz4P).
+        internal static void SplashSound(Vector3 at, float volume)
+        {
+            int n = Random.Range(1, 4);
+            ArenaFx.Sfx("sfx_splash", at, volume: volume, fallbackPath: "PawnRushGardenSfx/GardenSplash" + (n == 1 ? "" : n.ToString()));
+        }
+
+        internal static void BubbleSound(Vector3 at, float volume) =>
+            ArenaFx.Sfx("sfx_laundry_bubbles_" + Random.Range(1, 3), at, volume: volume);
 
         void Take(int i)
         {
@@ -399,13 +518,8 @@ namespace ChessFight.PawnRush
             splashed[i] = false;
             if (pieceColliders[i] != null) pieceColliders[i].enabled = false;
             var at = World(takenFrom[i] + Vector3.up * .6f);
-            var own = station.GetComponent<IWaterGameFx>();
-            if (own != null) own.PieceTaken(World(takenFrom[i]), transform.TransformDirection(takenDir[i]));
-            else
-            {
-                ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.4f, 3f, 1f, .1f);
-                ArenaFx.Ring(World(takenFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
-            }
+            // J's cotton, lint and soapy water, and the gold mark going out in a glint (R688: never the shared burst and ring)
+            Fx?.PieceTaken(World(takenFrom[i]), transform.TransformDirection(takenDir[i]));
             ArenaFx.Sfx("sfx_ep_capture", at, pitch: Mathf.Pow(2f, (Done - Total) / 12f));
         }
 
@@ -424,10 +538,9 @@ namespace ChessFight.PawnRush
             {
                 splashed[i] = true;
                 var at = World(new Vector3(to.x, Surface, to.z));
-                var own = station.GetComponent<IWaterGameFx>();
-                if (own != null) own.Splash(at, .7f);
-                else ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 16, 1.4f, 4f, .8f, .07f);
-                ArenaFx.Sfx("sfx_splash", at, volume: .7f);
+                Fx?.Splash(at, .7f);
+                SplashSound(at, .6f);   // R688: was a missing sfx_splash (silent)
+                BubbleSound(at, .4f);
             }
         }
 
@@ -455,7 +568,7 @@ namespace ChessFight.PawnRush
             taken = block.ReadU8();
             launches = block.ReadU8();
             launchSquare = block.ReadU8();
-            pressed = block.ReadU8() & 3;
+            pressed = block.ReadU8() & 7;
             raise = block.ReadU8() / 255f;
         }
 
@@ -466,7 +579,10 @@ namespace ChessFight.PawnRush
             pressed = 0;
             raise = 0f;
             stoodAt[0] = stoodAt[1] = -100f;
+            togetherAt = -100f;
             lastTub.Clear();
+            fallingSince.Clear();
+            landedAt.Clear();
         }
     }
 }

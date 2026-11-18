@@ -57,15 +57,12 @@ namespace ChessFight.PawnRush
                 if (!wet.Contains(p.Driver))
                 {
                     var at = game.TransformPoint(new Vector3(p.Local.x, surface, p.Local.z));
-                    // a station may play its own splash (J's crown, ripples and foam, MiniGameLaundryFx)
-                    var own = station.GetComponent<IWaterGameFx>();
-                    if (own != null) own.Splash(at, 1f);
-                    else
-                    {
-                        ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 24, 1.6f, 5f, .9f, .08f);
-                        ArenaFx.Ring(at, 0f, 2f, .7f, Arena.Hex("#BFE6F5"));
-                    }
-                    ArenaFx.Sfx("sfx_splash", at);
+                    // J's crown, ripples and foam (MiniGameLaundryFx; R688 (seoungtest), "이런 vfx 말고": always J's own,
+                    // never the shared burst and ring)
+                    MiniGameLaundryFx.For(station)?.Splash(at, 1f);
+                    // R688 ("물에 빠지는 소리 넣어줘"): a splash (was the missing sfx_splash, silent) and foam bubbling after it
+                    MgKnightPads.SplashSound(at, 1f);
+                    MgKnightPads.BubbleSound(at, .55f);
                 }
             }
             wet.Clear();

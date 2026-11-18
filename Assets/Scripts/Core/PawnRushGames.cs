@@ -216,6 +216,11 @@ namespace ChessFight.Network
     // front of the gate (d8) that lies under the water: it rises only while both gold tubs beside it (c7 and e7, the
     // two middle roads' ends) are pressed - a teammate standing on each, or having stood there within PressHold
     // seconds, so that one player left alone can still do it - and sinks again when they are not.
+    // R688 (seoungtest, 승규: "지금 시스템이 1명이 다 함께 밟기 해도 깨지는 구조야 이거 수정해"): one player could
+    // stand on one gold tub, jump to the other within the 8 s and raise the king alone. Now the two gold tubs must be
+    // stood on AT THE SAME TIME (each counts only PressGrace after its pawn left, too short to get from one to the
+    // other), so it takes two players; from the last moment both were held the king's tub stays up PressHold seconds,
+    // time enough to step over onto it, then sinks.
     //
     // The tubs are larger than the board's squares now (2.4 to 2.6 m; the water between two of them 1.9 to 2.1 m).
     // No two tubs of the roads touch (Spread): the only way from one to the next is a jump, to the next of its road
@@ -225,10 +230,10 @@ namespace ChessFight.Network
     {
         public const string KingSquare = "d8";
         public static readonly string[] PressSquares = { "c7", "e7" };
-        // A gold tub stays pressed this long after the last pawn left it; the king's tub takes RaiseSeconds to come
-        // up and SinkSeconds to go under, SunkDepth below the others; from RaisedEnough of the way up the king can
-        // be taken.
-        public const float PressHold = 8f, RaiseSeconds = 1.2f, SinkSeconds = 2f, SunkDepth = 1f, RaisedEnough = .9f;
+        // R688: a gold tub counts as pressed PressGrace after its pawn left it (a bump, a hop on the spot), and the
+        // king's tub stays up PressHold after both were last pressed together; it takes RaiseSeconds to come up and
+        // SinkSeconds to go under, SunkDepth below the others; from RaisedEnough of the way up the king can be taken.
+        public const float PressGrace = .25f, PressHold = 8f, RaiseSeconds = 1.2f, SinkSeconds = 2f, SunkDepth = 1f, RaisedEnough = .9f;
 
         // West to east. A smaller team has the middle roads (their ends are the gold tubs).
         static readonly string[] LaneA = { "b1", "a3", "b5", "a7" }, LaneC = { "d1", "c3", "d5", "c7" },
@@ -351,8 +356,11 @@ namespace ChessFight.Network
         // Which gold tub a tub of the roads is (0 or 1), or -1.
         public int PressOf(int square) => square >= 0 && square < Squares.Length ? Array.IndexOf(PressSquares, Squares[square]) : -1;
 
-        // A gold tub is pressed while a pawn stands on it and for PressHold seconds after the last one left.
-        public static bool Pressed(float sinceStood) => sinceStood >= 0f && sinceStood <= PressHold;
+        // A gold tub is pressed while a pawn stands on it (and PressGrace after it left: R688, was PressHold).
+        public static bool Pressed(float sinceStood) => sinceStood >= 0f && sinceStood <= PressGrace;
+
+        // R688: the king's tub is held up for PressHold after the last moment both gold tubs were pressed together.
+        public static bool HeldUp(float sinceTogether) => sinceTogether >= 0f && sinceTogether <= PressHold;
 
         // The king's tub, 0 under the water .. 1 level with the others, a step of `dt` seconds on: up while both gold
         // tubs are pressed (or for good once the game is done - it is the way to the gate), down while they are not.

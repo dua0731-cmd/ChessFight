@@ -65,12 +65,25 @@ namespace ChessFight.PawnRush
         // What is drawn (eased on a client) and the moments already played.
         float shownS;
         readonly float[] shownRook = new float[MaxRooks];
-        float lastS, dustAt, sandAt, bumpAt = -1f;
+        float lastS, dustAt, sandAt, bumpAt = -1f, bumpFxAt = -10f;
         readonly float[] lastRook = new float[MaxRooks];
         readonly bool[] wasGaraged = new bool[MaxRooks], wasBlocked = new bool[MaxRooks];
         readonly float[] popAt = { -1f, -1f, -1f };
         bool arrived;
-        AudioSource drag, sand, stone;
+        // R688 (seoungtest, 승규: "8번 stop하면 소리가 갑자기 멈춰 자연스럽게 이어"): the drag loops ease out (FadingLoop)
+        // instead of being cut dead the frame the sled stops, and a step's flicker no longer cuts and restarts them.
+        readonly FadingLoop drag = new FadingLoop(), sand = new FadingLoop(), stone = new FadingLoop();
+
+        // R688 (seoungtest, 승규 님 11-17: "8번 9번 0번 vfx 가 필요해 아직 작업 x"): the room's own effects
+        // (MiniGameProcessionFx: dust, sand grains, marble chips, brass sparks, gold glints) in place of ArenaFx's bursts
+        // and ring; added on first use, so the saved prefab carries nothing new. Sounds stay ArenaFx's.
+        MiniGameProcessionFx fx;
+        MiniGameProcessionFx Fx => fx != null ? fx : (fx = gameObject.AddComponent<MiniGameProcessionFx>());
+        // A steadier read of the sled's motion for the pictures: s moves in FixedUpdate, so a frame's own step is often
+        // nought; the sled counts as rolling for 0.15 s after its last step.
+        float fxS, fxT, fxSpeed, rollAt = -10f, stillAt = -10f;
+        bool rolling;
+        readonly float[] grindAt = new float[MaxRooks];
 
         public float Distance => s;
 
@@ -128,6 +141,7 @@ namespace ChessFight.PawnRush
             pushers = holders = 0;
             arrived = false;
             bumpAt = -1f;
+            ResetFx();
             CutSounds();
             if (board != null) DestroyImmediate(board.gameObject);
             board = new GameObject("Road " + seed).transform;
@@ -175,15 +189,21 @@ namespace ChessFight.PawnRush
                 // the new way from its other side).
                 if (road.Turns(i))
                 {
-                    MiniGameParts.Loop(lane, "Corner " + cells[i], c + Vector3.up * .1f, .9f, .16f, Arena.Gold);
+                    // R688 (seoungtest, 승규 with a shot of it: "8번 ... 사진 효과 교체"): the flat yellow line ring and
+                    // the two flat bars became a bevelled brass ring and chevron inlaid in the road, a warm light round them
+                    MiniGameMarks.Ring(lane, "Corner " + cells[i], c + Vector3.up * .08f, .9f, .16f);
                     var p = road.Points;
                     var to = Dir(p[i + 1].V - p[i].V, p[i + 1].U - p[i].U);
                     float yaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
-                    foreach (float side in new[] { -1f, 1f })
+                    // 2nd (승규, a shot of the dim little chevron on the dark wood: "화살표 잘 보이는 걸로 만들어"): two
+                    // bigger, thicker chevrons one behind the other ("»" the way on) with a steady warm glow of their own
+                    // (not enough to bloom over the screen), so they read on the dark wood as well as on the sand
+                    foreach (float along in new[] { -.24f, .2f })
                     {
-                        var arm = Arena.Picture(lane, "Corner arrow", new Vector3(-.04f, 0f, -.3f), new Vector3(.04f, .02f, .3f), gold);
-                        arm.transform.localPosition = c + Quaternion.Euler(0f, yaw, 0f) * new Vector3(side * .18f, .1f, .1f);
-                        arm.transform.localRotation = Quaternion.Euler(0f, yaw - side * 40f, 0f);
+                        var arrow = MiniGameMarks.Chevron(lane, "Corner arrow", c + Vector3.up * .08f + Quaternion.Euler(0f, yaw, 0f) * new Vector3(0f, 0f, along),
+                                                          .42f, yaw, null, .4f);
+                        var shine = arrow.GetComponent<MarkGlow>();
+                        if (shine != null) shine.Boost = along > 0f ? .5f : .35f;
                     }
                 }
                 // The end (R524): a gold frame just round the sled's footprint, where it stops and the gate opens. The
@@ -371,39 +391,59 @@ namespace ChessFight.PawnRush
 
             // Moving: dust behind (sand: more, and sand-coloured), the drag loop pitched by speed.
             SledAt(shownS, out var dir);
-            var behind = sledAt - transform.TransformDirection(dir) * (SledHalf + .1f) + Vector3.up * .05f;
-            if (moving && !onSand && t - dustAt >= .3f)
+            var fwd = transform.TransformDirection(dir);
+            fwd.y = 0f;
+            fwd = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : transform.forward;
+            var behind = sledAt - fwd * (SledHalf + .05f);
+            // R688: the motion the pictures read (see fxS), and the sled breaking loose after standing a while.
+            if (shownS > fxS + 1e-5f)
+            {
+                fxSpeed = (shownS - fxS) / Mathf.Max(1e-3f, t - fxT);
+                fxS = shownS;
+                fxT = t;
+                if (fxSpeed > .05f) rollAt = t;
+            }
+            else if (shownS < fxS - 1e-5f) { fxS = shownS; fxT = t; }
+            bool wasRolling = rolling;
+            rolling = !Completed && t - rollAt < .15f;
+            if (rolling && !wasRolling && t - stillAt >= .4f) Fx.Breakaway(sledAt, fwd, SledHalf, onSand);
+            if (!rolling && wasRolling) stillAt = t;
+            // R688: ArenaFx.Burst's cubes gave way to a soft dust trail off the runners' tails, grains kicked up on sand.
+            if (rolling && !onSand && t - dustAt >= .2f)
             {
                 dustAt = t;
-                ArenaFx.Burst(behind, new[] { new Color(.8f, .72f, .6f) }, 3, .7f, .5f, .5f, .06f);
+                Fx.Scrape(behind, -fwd, false, Mathf.Clamp01(fxSpeed / 1.1f));
             }
-            if (moving && onSand && t - sandAt >= .12f)
+            if (rolling && onSand && t - sandAt >= .1f)
             {
                 sandAt = t;
-                ArenaFx.Burst(behind, new[] { Arena.Hex("#D9C07A") }, 6, .9f, .7f, .5f, .06f);
+                Fx.Scrape(behind, -fwd, true, Mathf.Clamp01(fxSpeed / 1.1f));
             }
-            if (moving)
-            {
-                if (drag == null || !drag.isPlaying) drag = ArenaFx.Hold("sfx_sled_drag", sledAt, 1f, .6f, loop: true);
-                if (drag != null) { drag.transform.position = sledAt; drag.pitch = Mathf.Lerp(.8f, 1.2f, Mathf.Clamp01(speed / 1.1f)); }
-                if (onSand && (sand == null || !sand.isPlaying)) sand = ArenaFx.Hold("sfx_sand_crunch", sledAt, 1f, .6f, loop: true);
-                if (sand != null) sand.transform.position = sledAt;
-            }
-            if (!moving) { ArenaFx.Cut(drag); drag = null; }
-            if (!moving || !onSand) { ArenaFx.Cut(sand); sand = null; }
+            bool sounding = (moving || rolling) && !Completed;
+            drag.Tick(sounding, "sfx_sled_drag", sledAt, t, moving ? Mathf.Lerp(.8f, 1.2f, Mathf.Clamp01(speed / 1.1f)) : -1f);
+            sand.Tick(sounding && onSand, "sfx_sand_crunch", sledAt, t);
 
             // The rooks: stopped in front of one, pushing one, one in its garage.
-            bool rookMoving = false;
+            bool rookMoving = false, atRook = false;
             Vector3 movingAt = sledAt;
             for (int k = 0; k < road.Rooks; k++)
             {
                 if (rooks[k] == null) continue;
                 bool g = shownRook[k] >= KingEscortPath.RookDrag - .01f;
                 bool blocked = !g && !moving && Mathf.Abs(shownS - road.RookStop(k)) < .02f;
+                if (!g && Mathf.Abs(shownS - road.RookStop(k)) < .05f) atRook = true;
                 if (blocked && !wasBlocked[k])
                 {
                     bumpAt = t;
                     ArenaFx.Sfx("sfx_sled_blocked", sledAt);
+                    // R688: the sled's front against the rook - brass sparks, marble chips. Once per 1.5 s at most
+                    // (승규, a shot of a white blow-out in 8: "빛이 너무 강해" - `moving` flickers frame to frame while the
+                    // team pushes on the rook, so `blocked` came back on and on and the flashes piled up).
+                    if (t - bumpFxAt >= 1.5f)
+                    {
+                        bumpFxAt = t;
+                        Fx.Bump(sledAt + fwd * (SledHalf + .05f), fwd);
+                    }
                 }
                 wasBlocked[k] = blocked;
                 var ring = blocked && Mathf.Repeat(t / .5f, 1f) < .5f ? ringWarn : ringPlain;
@@ -414,14 +454,20 @@ namespace ChessFight.PawnRush
                 {
                     rookMoving = true;
                     movingAt = rooks[k].transform.position;
-                    if (Random.value < .2f) ArenaFx.Burst(rooks[k].transform.position + Vector3.up * .05f, new[] { new Color(.6f, .6f, .6f) }, 2, .5f, .4f, .4f, .05f);
+                    // R688: stone dust at its foot and marble grit skipping off, a few times a second.
+                    if (t - grindAt[k] >= .14f)
+                    {
+                        grindAt[k] = t;
+                        Fx.Grind(rooks[k].transform.position, transform.TransformDirection(Groove(k)));
+                    }
                 }
                 if (g && !wasGaraged[k])
                 {
                     popAt[k] = t;
                     var at = World(stops[k].localPosition);
-                    ArenaFx.Ring(at, 0f, 2f, .5f, Arena.Gold);
-                    ArenaFx.Burst(at + Vector3.up * .2f, new[] { Arena.Gold, new Color(.6f, .6f, .6f) }, 14, 1.6f, 1.6f, .7f, .08f);
+                    // R688: no gold ring on the floor ("원은 사용 하지 않는 vfx") and no cube burst: a gold flash on the
+                    // brass stop, brass sparks, the garage's dust shoved out, gold glints.
+                    Fx.Latch(at, transform.TransformDirection(Groove(k)));
                     ArenaFx.Sfx("sfx_latch", at);
                 }
                 wasGaraged[k] = g;
@@ -432,12 +478,10 @@ namespace ChessFight.PawnRush
                     stops[k].localPosition = new Vector3(sp.x, .1f + (pop < 1f ? .08f * Mathf.Sin(pop * Mathf.PI) : 0f), sp.z);
                 }
             }
-            if (rookMoving)
-            {
-                if (stone == null || !stone.isPlaying) stone = ArenaFx.Hold("sfx_stone_drag", movingAt, 1f, .6f, loop: true);
-                if (stone != null) stone.transform.position = movingAt;
-            }
-            else { ArenaFx.Cut(stone); stone = null; }
+            stone.Tick(rookMoving, "sfx_stone_drag", movingAt, t);
+
+            // R688: the sled coming to rest on the open road (not at a rook: that is the bump; not on the frame: arrive).
+            if (!rolling && wasRolling && !Completed && !atRook) Fx.Settle(sledAt + fwd * SledHalf, fwd, onSand);
 
             // A bump when the sled hits a rook's stop: a 0.1 s jolt of its look.
             float bump = (t - bumpAt) / .1f;
@@ -449,7 +493,10 @@ namespace ChessFight.PawnRush
             if (Completed && !arrived)
             {
                 arrived = true;
-                ArenaFx.Sfx("sfx_castle_land", World(SledAt(road.Length, out _)));
+                var end = World(SledAt(road.Length, out _));
+                ArenaFx.Sfx("sfx_castle_land", end);
+                // R688: no team colour (R643); its dust settling round it and gold glints off the frame's corners.
+                Fx.Arrive(end, fwd, SledHalf + .1f, road.IsSand(road.Length - 1e-3f));
             }
             if (!Completed) arrived = false;
         }
@@ -459,9 +506,9 @@ namespace ChessFight.PawnRush
 
         void CutSounds()
         {
-            ArenaFx.Cut(drag); drag = null;
-            ArenaFx.Cut(sand); sand = null;
-            ArenaFx.Cut(stone); stone = null;
+            drag.Stop();
+            sand.Stop();
+            stone.Stop();
         }
 
         // ------------------------------------------------------------------ the wire (11 bytes)
@@ -540,7 +587,57 @@ namespace ChessFight.PawnRush
             }
             arrived = false;
             pushers = holders = 0;
+            ResetFx();
             if (sled != null) Place(0f, true);
+        }
+
+        // R688: the pictures' read of the sled's motion back at the start (no break-loose puff from a reset).
+        void ResetFx()
+        {
+            fxS = fxSpeed = 0f;
+            fxT = Time.time;
+            rolling = false;
+            rollAt = stillAt = -10f;
+            for (int k = 0; k < MaxRooks; k++) grindAt[k] = -1f;
+        }
+    }
+
+    // R688 (seoungtest, 승규: "8번 stop하면 소리가 갑자기 멈춰 자연스럽게 이어"): a looping ArenaFx voice that keeps going
+    // Hold seconds after its cause stops (a step's flicker never cuts it), then eases out over Fade seconds, its
+    // pitch sagging a little as it goes, the way a sled grinding to a halt sounds; back on while fading, it swells up
+    // again without a restart. Stop() still cuts at once (the game taken away).
+    sealed class FadingLoop
+    {
+        const float Hold = .2f, Fade = .45f;
+        AudioSource voice;
+        float baseVolume, basePitch = 1f, lastOn = -10f;
+
+        public void Tick(bool on, string name, Vector3 at, float t, float pitch = -1f)
+        {
+            if (on)
+            {
+                lastOn = t;
+                if (voice == null || !voice.isPlaying)
+                {
+                    voice = ArenaFx.Hold(name, at, 1f, .6f, loop: true);
+                    if (voice != null) { baseVolume = voice.volume; basePitch = voice.pitch; }
+                }
+                if (pitch > 0f) basePitch = pitch;
+            }
+            if (voice == null) return;
+            voice.transform.position = at;
+            float off = t - lastOn - Hold;
+            float k = off <= 0f ? 1f : 1f - off / Fade;
+            if (k <= 0f) { Stop(); return; }
+            voice.volume = baseVolume * k * k;
+            voice.pitch = basePitch * (.85f + .15f * k);
+        }
+
+        public void Stop()
+        {
+            ArenaFx.Cut(voice);
+            voice = null;
+            lastOn = -10f;
         }
     }
 }

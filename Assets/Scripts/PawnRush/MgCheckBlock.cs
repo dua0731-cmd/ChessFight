@@ -46,6 +46,12 @@ namespace ChessFight.PawnRush
         Material beamMat, beamGrey, beamRed;
         float sparkAt;
         AudioSource roll;
+        // R688 (seoungtest), 승규 11-17 "8번 9번 0번 vfx 가 필요해": the bedchamber's own effects (MiniGameBedchamberFx:
+        // energy beams, sparks off the screens, dust, feathers, short lights) in place of ArenaFx's bursts and rings;
+        // added on first use, so the prefab is unchanged. Pictures only, from the state every PC already has.
+        MiniGameBedchamberFx fx;
+        MiniGameBedchamberFx Fx => fx != null ? fx : (fx = gameObject.AddComponent<MiniGameBedchamberFx>());
+        bool sawOpen, wasCompleted;
 
         public int Done
         {
@@ -100,6 +106,8 @@ namespace ChessFight.PawnRush
             doubleUp = doubleDone = wasDoubleUp = wasDoubleDone = false;
             kingDrag = kingShown = 0f;
             foreach (var h in hums) ArenaFx.Cut(h);
+            // R688: the new position's lines shoot out again.
+            if (fx != null) fx.Clear();
             if (root != null) DestroyImmediate(root.gameObject);
             root = new GameObject("Position " + seed).transform;
             root.SetParent(transform, false);
@@ -166,8 +174,9 @@ namespace ChessFight.PawnRush
                         line.transform.localPosition = mid + Vector3.up * .055f;
                         line.transform.localRotation = Quaternion.LookRotation(z - a);
                         line.transform.localScale = new Vector3(.36f, .01f, (z - a).magnitude);
-                        var diamond = MiniGameParts.Loop(root, "Block diamond", z + Vector3.up * .07f, 1.02f, .13f, Arena.Gold, true, 4);
-                        diamond.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
+                        // R688 (seoungtest, "10번. 2번 째 사진 그래픽 좋게"): the flat yellow line square became a bevelled
+                        // brass frame inlaid round the square to fill, a warm light round it (same place and size)
+                        MiniGameMarks.Ring(root, "Block diamond", z + Vector3.up * .055f, 1.02f * .7071f, .13f, 4, 45f);
                         // The shield: a walnut cart with our piece on it, pushed or held and pulled (grab-only, R128).
                         var cart = new GameObject("Shield cart " + (i + 1));
                         cart.transform.SetParent(root, false);
@@ -241,6 +250,8 @@ namespace ChessFight.PawnRush
             var go = MiniGameParts.Part(root, PrimitiveType.Cube, Vector3.zero, new Vector3(thick, thick, 1f), beamMat);
             go.name = name;
             look = go.GetComponent<Renderer>();
+            // R688: the bar stays as the line's place (Stretch); its picture is the Fx's energy beam when it can draw.
+            look.enabled = !MiniGameBedchamberFx.CanDraw;
             return go.transform;
         }
 
@@ -405,11 +416,15 @@ namespace ChessFight.PawnRush
                 var from = At(s.From) + Vector3.up * BeamHeight;
                 if (s.Kind == CheckBlockGenerator.Kind.Knight) from = MoverAt(i, shown[i]) + Vector3.up * BeamHeight;
                 // A blocked line ends at the shield, grey; a knight dragged off or a pawn taken has none.
+                float thick = s.Attacker == PieceKind.Queen ? .34f : .12f;
                 if (s.Kind == CheckBlockGenerator.Kind.Rail && solved)
                 {
                     var to = At(s.Block) + Vector3.up * BeamHeight;
-                    Stretch(beams[i], from, to - (to - from).normalized * (Cart * .5f));
+                    var face = to - (to - from).normalized * (Cart * .5f);
+                    Stretch(beams[i], from, face);
                     if (beamLooks[i].sharedMaterial != beamGrey) beamLooks[i].sharedMaterial = beamGrey;
+                    // R688: stopped on the screen, dim, smouldering where it presses.
+                    Fx.Beam(i, true, World(from), World(face), station.Accent(Opponent), thick, true);
                 }
                 else
                 {
@@ -417,6 +432,8 @@ namespace ChessFight.PawnRush
                     bool on = !solved;
                     if (beams[i].gameObject.activeSelf != on) beams[i].gameObject.SetActive(on);
                     if (on) Stretch(beams[i], from, king);
+                    // R688: the live line, an energy beam shooting out and biting the king.
+                    Fx.Beam(i, on, World(from), World(king), station.Accent(Opponent), thick, false);
                 }
                 Hum(i, !solved, from);
                 if (s.Kind == CheckBlockGenerator.Kind.Rail && moverLooks[i] != null)
@@ -432,7 +449,8 @@ namespace ChessFight.PawnRush
                     {
                         sparkAt = t;
                         var face = MoverAt(i, shown[i]) + Vector3.up * BeamHeight;
-                        ArenaFx.Burst(World(face), new[] { station.Accent(Opponent) }, 3, .8f, .8f, .3f, .05f);
+                        // R688: sparks and a thread of smoke off the screen (was ArenaFx.Burst's cube bits).
+                        Fx.Scorch(World(face), (World(from) - World(face)).normalized, station.Accent(Opponent));
                     }
                 }
                 if (s.Kind != CheckBlockGenerator.Kind.Rail && !solved && moverLooks[i] != null)
@@ -457,9 +475,16 @@ namespace ChessFight.PawnRush
 
             // The check ring pulses (0.35 - 0.65 at 4 Hz) while any check is on.
             bool checkOn = !Completed;
+            // R688: no ring on the floor ("원은 사용 하지 않는 vfx"): a slow red pulse of light on the king instead, the
+            // ring kept only where the Fx cannot draw.
+            Fx.InCheck(World(KingAt(kingShown)), checkOn);
+            if (checkOn) sawOpen = true;
+            // Every check lifted (seen open first, so a late joiner's finished room stays quiet).
+            if (Completed && !wasCompleted && sawOpen) Fx.AllClear(World(KingAt(kingShown)), station.Accent(station.Team));
+            wasCompleted = Completed;
             if (checkRing != null)
             {
-                checkRing.enabled = checkOn;
+                checkRing.enabled = checkOn && !MiniGameBedchamberFx.CanDraw;
                 var c = Arena.Red;
                 c.a = .5f + .15f * Mathf.Sin(t * 4f * Mathf.PI * 2f);
                 checkRing.startColor = checkRing.endColor = c;
@@ -488,19 +513,34 @@ namespace ChessFight.PawnRush
             solvedAt[i] = Time.time;
             var s = layout.Situations[i];
             var at = World(MoverAt(i, 1f));
+            // R688: the bedchamber's own moments in place of ArenaFx's gold ring and cube bursts; the sounds stay.
+            var accent = station.Accent(Opponent);
+            float thick = s.Attacker == PieceKind.Queen ? .34f : .12f;
+            var kingFoot = KingAt(kingShown);
+            var kingEye = World(kingFoot + Vector3.up * BeamHeight);
+            var eye = At(s.From) + Vector3.up * BeamHeight;
             switch (s.Kind)
             {
                 case CheckBlockGenerator.Kind.Rail:
-                    ArenaFx.Ring(at, 0f, 2.2f, .5f, Arena.Gold);
-                    ArenaFx.Burst(at + Vector3.up * .8f, new[] { Arena.Gold, station.Accent(Opponent), Color.white }, 24, 2f, 2.5f, .8f, .08f);
+                {
+                    // the line slams into the screen; its part behind the screen drains into the king
+                    var block = At(s.Block) + Vector3.up * BeamHeight;
+                    var face = block - (block - eye).normalized * (Cart * .5f);
+                    Fx.Blocked(i, World(face), (World(eye) - World(face)).normalized, kingEye, at, accent, thick, World(kingFoot));
                     ArenaFx.Sfx("sfx_shield_lock", at);
                     break;
+                }
                 case CheckBlockGenerator.Kind.Knight:
-                    ArenaFx.Burst(at + Vector3.up * .6f, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent) }, 20, 1.8f, 2f, .8f, .08f);
+                {
+                    var away = World(MoverAt(i, 1f)) - World(MoverAt(i, 0f));
+                    away.y = 0f;
+                    Fx.KnightDown(i, World(MoverAt(i, 1f) + Vector3.up * BeamHeight), kingEye, at, away.sqrMagnitude > 1e-4f ? away.normalized : Vector3.forward,
+                        MiniGameParts.PieceColor(Opponent), accent, thick, World(kingFoot));
                     ArenaFx.Sfx("sfx_piece_fall", at);
                     break;
+                }
                 default:
-                    ArenaFx.Burst(at + Vector3.up * .5f, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 18, 1.8f, 2f, .8f, .08f);
+                    Fx.PawnRammed(i, World(eye), kingEye, at, MiniGameParts.PieceColor(Opponent), accent, thick, World(kingFoot));
                     ArenaFx.Sfx("sfx_ep_capture", at);
                     break;
             }
@@ -515,13 +555,13 @@ namespace ChessFight.PawnRush
             {
                 doubleAt = t;
                 var k = World(KingAt(0f));
-                ArenaFx.Ring(k, 0f, 5f, .6f, Arena.Red);
+                // R688: floorboards burst where the two rise, red sparks and two red light beats on the king (were two
+                // red floor rings, the second 0.2 s later).
+                Fx.DoubleCheck(k, World(At(layout.DoubleRook)), World(At(layout.DoubleBishop)));
                 ArenaFx.Sfx("sfx_double_check", k);
                 for (int i = 0; i < 2; i++) doublePieces[i].gameObject.SetActive(true);
                 escapePlate.SetActive(true);
             }
-            if (doubleUp && doubleAt >= 0f && t - doubleAt >= .2f && t - doubleAt - Time.deltaTime < .2f)
-                ArenaFx.Ring(World(KingAt(0f)), 0f, 3f, .6f, Arena.Red);
             wasDoubleUp = doubleUp;
             if (!doubleUp)
             {
@@ -529,6 +569,7 @@ namespace ChessFight.PawnRush
                 {
                     if (doublePieces[i].gameObject.activeSelf) doublePieces[i].gameObject.SetActive(false);
                     if (doubleBeams[i].gameObject.activeSelf) doubleBeams[i].gameObject.SetActive(false);
+                    if (fx != null) fx.Beam(MaxSituations + i, false, Vector3.zero, Vector3.zero, Arena.Red, .12f, false);
                     Hum(MaxSituations + i, false, Vector3.zero);
                 }
                 if (escapePlate.activeSelf) escapePlate.SetActive(false);
@@ -545,12 +586,18 @@ namespace ChessFight.PawnRush
                 var r = doubleBeams[i].GetComponent<Renderer>();
                 var want = doubleDone ? beamGrey : beamRed;
                 if (r.sharedMaterial != want) r.sharedMaterial = want;
+                // R688: the red lines as energy beams; once the king is safe they are gone (drained below).
+                Fx.Beam(MaxSituations + i, show && !doubleDone, World(At(squares[i], BeamHeight)), World(king), Arena.Red, .12f, false);
                 Hum(MaxSituations + i, show && !doubleDone, At(squares[i], BeamHeight));
             }
             if (doubleDone && !wasDoubleDone)
             {
                 var at = World(At(layout.Escape));
-                ArenaFx.Ring(at, 0f, 3f, .6f, station.Accent(station.Team));
+                // R688: a warm team-and-gold bloom on the safe square (was a team-colour floor ring); both red lines
+                // drain away into the king.
+                Fx.Escape(at, station.Accent(station.Team));
+                for (int i = 0; i < 2; i++)
+                    Fx.CutLine(MaxSituations + i, World(At(squares[i], BeamHeight)), World(king), Arena.Red, .12f);
                 ArenaFx.Sfx("sfx_resolve", at);
                 escapePlate.SetActive(false);
             }

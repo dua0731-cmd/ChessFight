@@ -174,7 +174,10 @@ namespace ChessFight.Network
         // v56 (R704): the flow rule "모여서 발판" can be picked, and the course state's station flags carry the gate
         //      (bit 2) apart from the game's done: under that rule a cleared game's gate opens when most of the team
         //      stands on the pad before it. A v55 PC would open the gate on the clear.
-        public const string Protocol = "chessfight.dua0731.network.v56";
+        // v57 (R705, seoungtest R688 merged): J's two gold tubs must be stood on at the same time (two players) and the
+        //      king's tub then stays up 8 s; the pressed byte carries a third bit (held up). A v56 host would let one
+        //      player raise it alone. (The mini-game rooms' new effects and sounds send nothing.)
+        public const string Protocol = "chessfight.dua0731.network.v57";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
