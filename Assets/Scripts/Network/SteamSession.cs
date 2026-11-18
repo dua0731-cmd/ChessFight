@@ -182,7 +182,11 @@ namespace ChessFight.Network
         //      state (the chess start, the door, the typewriter's keys, the crushed pawns). A v57 PC would always build
         //      the war room where a v58 host may build the library (every later section 300 m off) and read the state's
         //      section bytes out of step.
-        public const string Protocol = "chessfight.dua0731.network.v58";
+        // v59 (R707): the flow rule "왕좌 차지전" can be picked. Under it the round's ending section carries the
+        //      contest in the course state (seven more part bytes: begun and who holds, the two teams' times and
+        //      targets), and the win is the contest's. A v58 PC would count those bytes as another part's and end
+        //      the round on the first majority.
+        public const string Protocol = "chessfight.dua0731.network.v59";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

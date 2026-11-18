@@ -1139,8 +1139,25 @@ public static class NetworkCoreTests
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
                 Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
-                Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&!PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
+                Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
+            Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
+                Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
+                Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");
+                Check(PawnRushThrone.Holder(1,1,0,0)==0&&PawnRushThrone.Holder(0,0,0,0)==PawnRushThrone.Nobody&&PawnRushThrone.Holder(2,3,3,5)==PawnRushThrone.Both,"who holds, other sizes; a team of nobody never holds");
+                float w=0,b=0; int won=PawnRushThrone.Nobody;
+                for (int i=0; i<100&&won==PawnRushThrone.Nobody; i++) won=PawnRushThrone.Step(ref w,ref b,0,.1f,20,30);   // white holds 10 s
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(w-10)<.01f&&b==0,"ten seconds of white: "+w);
+                for (int i=0; i<50; i++) won=PawnRushThrone.Step(ref w,ref b,PawnRushThrone.Both,.1f,20,30);
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(w-10)<.01f&&b==0,"both on it: nobody's time ran");
+                for (int i=0; i<50; i++) won=PawnRushThrone.Step(ref w,ref b,PawnRushThrone.Nobody,.1f,20,30);
+                Check(Math.Abs(w-10)<.01f,"nobody on it: white kept its time");
+                for (int i=0; i<80; i++) won=PawnRushThrone.Step(ref w,ref b,1,.1f,20,30);                                 // black holds 8 s
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(b-8)<.01f&&Math.Abs(w-10)<.01f,"eight seconds of black");
+                int steps=0; while (won==PawnRushThrone.Nobody&&steps<1000) { won=PawnRushThrone.Step(ref w,ref b,0,.1f,20,30); steps++; }
+                Check(won==0&&steps>=99&&steps<=101&&w==20,"white fills its 20 s after ten more seconds and wins: "+steps);
+                float w2=0,b2=29.95f; Check(PawnRushThrone.Step(ref w2,ref b2,1,.1f,20,30)==1&&b2==30,"black wins at its 30 s");
+                float w3=20,b3=0; Check(PawnRushThrone.Step(ref w3,ref b3,1,.1f,20,30)==PawnRushThrone.Nobody,"a full team that is not holding does not win on the other's step"); });
             Test("R704: a station's gate travels with the course state apart from its game's done", () => {
                 var a=new PawnRushNetState{Tick=5,StationCount=4};
                 for (int st=0; st<4; st++) a.Game[st]=(sbyte)st;

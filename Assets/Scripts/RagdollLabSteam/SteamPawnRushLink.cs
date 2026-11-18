@@ -336,6 +336,7 @@ namespace ChessFight.RagdollLab.Net
             // R130: a client's promotion choice rides its input (pieceAsk / pieceSeq) to the host.
             PromotionChooser.Asked = authority ? null : (Action<PieceKind>)AskPiece;
             Checkpoint.Reached += OnCheckpoint;
+            ThroneContest.Began += OnThroneBegan;
             KillVolume.Entered += OnKill;
             FallDistanceRespawn.Fell += OnFell;
             WaterZone.Entered += OnWater;
@@ -385,6 +386,7 @@ namespace ChessFight.RagdollLab.Net
             requests?.Dispose();
             controls?.Disable();
             Checkpoint.Reached -= OnCheckpoint;
+            ThroneContest.Began -= OnThroneBegan;
             KillVolume.Entered -= OnKill;
             FallDistanceRespawn.Fell -= OnFell;
             WaterZone.Entered -= OnWater;
@@ -818,6 +820,13 @@ namespace ChessFight.RagdollLab.Net
             r.Checkpoint = checkpoint.Order;
             r.RespawnAt = spots != null && spots.SpotCount > 0 ? spots.SpotWorld(r.Slot % spots.SpotCount) : checkpoint.RespawnPosition;
             r.RespawnRotation = checkpoint.transform.rotation;
+        }
+
+        // R707: the throne contest has just stood everyone by the platform: the camera goes there at once instead of
+        // flying the length of the course.
+        void OnThroneBegan()
+        {
+            if (orbit != null) orbit.Cut();
         }
 
         void Schedule(ICharacterDriver who, float delay)

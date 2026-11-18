@@ -240,6 +240,8 @@ namespace ChessFight.PawnRush
             var finish = GetComponent<CrownFinish>();
             if (finish == null) finish = gameObject.AddComponent<CrownFinish>();
             finish.Bind(holder.transform);
+            // R707: under the flow rule "왕좌 차지전" the ending is a contest for the platform (none otherwise).
+            ThroneContest.Attach(this, finish);
         }
 
         public CrownFinish Finish => finishRace ? GetComponent<CrownFinish>() : null;

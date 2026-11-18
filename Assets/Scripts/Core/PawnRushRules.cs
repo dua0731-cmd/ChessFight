@@ -41,8 +41,9 @@ namespace ChessFight.Network
 
         static int Clamp(int value, int max) => value < 0 ? 0 : value > max ? 0 : value;
 
-        // Not built yet: the room's panel shows them and does not let them be picked. (R704: the pad at the gate is.)
-        public static bool Ready(int setting, int choice) => !(setting == 2 && choice == EndingThrone);
+        // A choice not built yet: the room's panel shows it and does not let it be picked. (R704: the pad at the gate
+        // is built; R707: the throne contest is - every choice can be picked now.)
+        public static bool Ready(int setting, int choice) => true;
 
         // The room's panel: the settings' names and their choices' short names.
         public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩" };
@@ -65,5 +66,34 @@ namespace ChessFight.Network
         // One line for the log and the match's first banner.
         public override string ToString() =>
             Settings[0] + " " + Choices[0][Relief] + " · " + Settings[1] + " " + Choices[1][After] + " · " + Settings[2] + " " + Choices[2][Ending];
+    }
+
+    // R707 (option 5, PawnRushRules.EndingThrone - the user 2026-11-17: "과반수 이상이 발판 위에 일정 시간 올라와 있어야
+    // 승리 ... 원래 총 30초인데 미니게임 클리어 팀은 5초씩 차감"): the hold-the-throne contest's sums. While most of a
+    // team's players stand on the crown platform its time runs; with both teams' majorities on it at once nobody's
+    // does; time is kept when a team steps off; the first to fill its time wins. A team's time is Seconds less
+    // PerClear for each mini-game it cleared by playing it. Core: no Unity.
+    public static class PawnRushThrone
+    {
+        public const float Seconds = 30f, PerClear = 5f, Least = 10f;
+        // Who holds the platform: 0 white, 1 black, or one of these.
+        public const int Nobody = -1, Both = 2;
+
+        public static float Target(int clears) => System.Math.Max(Least, Seconds - PerClear * System.Math.Max(0, clears));
+
+        public static int Holder(int whiteOn, int whitePlayers, int blackOn, int blackPlayers)
+        {
+            bool white = PawnRushFinish.Reached(whiteOn, whitePlayers), black = PawnRushFinish.Reached(blackOn, blackPlayers);
+            return white && black ? Both : white ? 0 : black ? 1 : Nobody;
+        }
+
+        // One step: the holder's time runs. The winner (0, 1), or Nobody.
+        public static int Step(ref float white, ref float black, int holder, float dt, float whiteTarget, float blackTarget)
+        {
+            if (dt < 0f) dt = 0f;
+            if (holder == 0) white = System.Math.Min(whiteTarget, white + dt);
+            else if (holder == 1) black = System.Math.Min(blackTarget, black + dt);
+            return holder == 0 && white >= whiteTarget ? 0 : holder == 1 && black >= blackTarget ? 1 : Nobody;
+        }
     }
 }

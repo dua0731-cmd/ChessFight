@@ -48,6 +48,10 @@ namespace ChessFight.PawnRush
 
         // Judged here (offline, or this PC hosts); otherwise the host's word arrives with the course state.
         public bool Authority = true;
+        // R707: the round ends in a throne contest (PawnRushRules.EndingThrone, set by ThroneContest.Attach): the win
+        // is the contest's to give (Win), not a majority's first moment on the platform, and the platform's
+        // first-stood times count from the contest's beginning.
+        public ThroneContest Contest;
 
         readonly List<Runner> runners = new List<Runner>();
         Vector3 middle;
@@ -181,6 +185,7 @@ namespace ChessFight.PawnRush
             Winner = PawnRushFinish.None;
             decidedAt = -1f;
             shown = false;
+            if (Contest != null) Contest.ResetContest();
             foreach (var r in runners) { r.FirstOn = -1f; r.On = false; }
         }
 
@@ -190,19 +195,26 @@ namespace ChessFight.PawnRush
         {
             if (!found) return;
             int whiteOn = 0, blackOn = 0, whitePlayers = 0, blackPlayers = 0;
+            bool contest = Contest != null, live = !contest || Contest.Started;
             foreach (var r in runners)
             {
                 var hips = r.Driver != null ? r.Driver.FollowTarget : null;
                 r.On = hips != null && PawnRushFinish.OnPlatform(hips.position.x - middle.x, hips.position.y - middle.y, hips.position.z - middle.z, radius);
                 if (!Authority) continue;
-                if (r.On && r.FirstOn < 0f && Winner == PawnRushFinish.None) r.FirstOn = Clock;
+                if (r.On && r.FirstOn < 0f && Winner == PawnRushFinish.None && live) r.FirstOn = Clock;
                 if (!r.Counts) continue;
                 if (r.Team == Teams.White) { whitePlayers++; if (r.On) whiteOn++; }
                 else if (r.Team == Teams.Black) { blackPlayers++; if (r.On) blackOn++; }
             }
-            if (!Authority || Winner != PawnRushFinish.None) return;
+            if (!Authority || Winner != PawnRushFinish.None || contest) return;
             int winner = PawnRushFinish.Winner(whiteOn, whitePlayers, blackOn, blackPlayers);
             if (winner != PawnRushFinish.None) Decide(winner, Clock);
+        }
+
+        // R707: the throne contest's word (where it is judged): this team filled its time.
+        public void Win(int team)
+        {
+            if (Winner == PawnRushFinish.None && (team == Teams.White || team == Teams.Black)) Decide(team, Clock);
         }
 
         void Decide(int team, float clock)
@@ -210,7 +222,7 @@ namespace ChessFight.PawnRush
             Winner = team;
             WinClock = clock;
             decidedAt = Time.time;
-            Debug.Log($"[PawnRush] 승리: {Teams.Name(team)}팀 (왕관 발판 과반, {MatchResult.Clock(clock)})");
+            Debug.Log($"[PawnRush] 승리: {Teams.Name(team)}팀 ({(Contest != null ? "왕좌 차지전" : "왕관 발판 과반")}, {MatchResult.Clock(clock)})");
             Decided?.Invoke(team);
         }
 
@@ -325,7 +337,8 @@ namespace ChessFight.PawnRush
                 line = new GUIStyle(banner) { fontSize = 15 };
             }
             int w = Players(Teams.White), b = Players(Teams.Black);
-            string count = $"왕관 발판  백 {OnPlatform(Teams.White)}/{PawnRushFinish.Needed(w)}  ·  흑 {OnPlatform(Teams.Black)}/{PawnRushFinish.Needed(b)}  (팀 과반이 동시에 올라가면 승리)";
+            string count = $"왕관 발판  백 {OnPlatform(Teams.White)}/{PawnRushFinish.Needed(w)}  ·  흑 {OnPlatform(Teams.Black)}/{PawnRushFinish.Needed(b)}  "
+                           + (Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)" : "(팀 과반이 동시에 올라가면 승리)");
             // R682: the standings strip (PawnRushStandingsHud) stands in this place and carries the count; this box is
             // drawn only where there is no strip, and the note goes under whichever is there.
             bool strip = PawnRushStandingsHud.Showing;
@@ -338,7 +351,9 @@ namespace ChessFight.PawnRush
             NoteNeeded(w, b);
             if (Winner == PawnRushFinish.None && Time.time < needNoteUntil)
             {
-                var under = new Rect((Screen.width - 520) * .5f, strip ? PawnRushStandingsHud.Bottom + 4f : 38, 520, 24);
+                // R707: under the throne contest's bars while they are up.
+                float noteTop = Mathf.Max(strip ? PawnRushStandingsHud.Bottom + 4f : 38, ThroneContest.HudBottom + 4f);
+                var under = new Rect((Screen.width - 520) * .5f, noteTop, 520, 24);
                 GUI.Box(under, GUIContent.none);
                 GUI.Label(under, needNote, line);
             }
