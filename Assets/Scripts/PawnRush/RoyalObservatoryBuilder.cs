@@ -264,7 +264,10 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ B3
 
         // North along x 47..53, no rails, a floor seen through. Three winds from the east blow across it (each 4 m of the
-        // way, the bridge's whole width), 1.7 s after one another: rest 2.0, warning 0.8, wind 2.2 (5.0 s).
+        // way, the bridge's whole width), each 1.7 s LATER than the one before it: rest 2.0, warning 0.8, wind 2.2 (5.0 s).
+        // A phase on the shared clock moves a cycle earlier, so "1.7 s later" is the cycle less 1.7 s (R713: the first
+        // graybox had them 1.7 s earlier each, and the calm ran south, against the runner). A sprint (7 m from one
+        // wind to the next in 1.9 s) rides the calm through all three; a run gets through two and waits for the third.
         static void VentBridge(CourseBuilder b)
         {
             var deck = b.Floor("Grating bridge", 47f, 53f, 50f, 71f);
@@ -272,7 +275,7 @@ namespace ChessFight.PawnRush
             float[] zs = { 55f, 62f, 69f };
             for (int i = 0; i < zs.Length; i++)
             {
-                Wind(b, "15 Side wind " + (i + 1), V(53.3f, 0f, zs[i]), 270f, 1.7f * i, 2f, 4f, 3f, 6.3f);
+                Wind(b, "15 Side wind " + (i + 1), V(53.3f, 0f, zs[i]), 270f, Mathf.Repeat(-1.7f * i, 2f + WindWarn + WindBlow), 2f, 4f, 3f, 6.3f);
                 b.Wall("Vent pier " + (i + 1), 53.3f, 54.6f, HallFloor, 0f, zs[i] - 1.3f, zs[i] + 1.3f, false);
                 // Where a wind crosses, on the floor.
                 b.Box("Wind mark " + (i + 1), V(47f, .005f, zs[i] - 2f), V(53f, .02f, zs[i] + 2f), b.kit.marker, false, false);
@@ -293,7 +296,8 @@ namespace ChessFight.PawnRush
         // West across the great orrery's turntable: a disc 18 m across turning 15 deg/s, no rails; a low arm through the
         // hub the other way at 60 deg/s (jumped; to a rider every 2.4 s) and an arm carrying a 2 m globe round the rim
         // at 70 deg/s (not jumped: it sweeps the rim, where the ways on and off are). The hub's pillar stands in the
-        // middle, so the way goes round it.
+        // middle, so the way goes round it - by the south with the turntable (clockwise from above: a rider is carried
+        // east -> south -> west, and meets the low arm head on), or by the north against it.
         static void Orrery(CourseBuilder b)
         {
             var k = b.kit;
@@ -536,7 +540,7 @@ namespace ChessFight.PawnRush
             {
                 (V(0f, 0f, 0f), "0"), (V(0f, 0f, 12f), "1"), (V(0f, 0f, 38f), "1"), (V(0f, 0f, 44f), "2"), (V(44f, 0f, 44f), "2"),
                 (V(50f, 0f, 44f), "3"), (V(50f, 0f, 71f), "3"), (V(50f, 0f, 77f), "4"), (V(31f, 0f, 77f), "4"),
-                (V(26.5f, 0f, 81.5f), "4"), (V(22f, 0f, 83.5f), "4"), (V(17.5f, 0f, 81.5f), "4"), (V(13f, 0f, 77f), "4"),
+                (V(26.5f, 0f, 72.5f), "4"), (V(22f, 0f, 70.5f), "4"), (V(17.5f, 0f, 72.5f), "4"), (V(13f, 0f, 77f), "4"),
                 (V(7f, 0f, 77f), "5"), (V(7f, 0f, 83.2f), "5"), (V(7f, 3f, 88.4f), "5"), (V(7f, 3f, 92.6f), "5"), (V(7f, Upper, 97.8f), "5"),
                 (V(7f, Upper, 103f), "6"), (V(43f, Upper, 103f), "6"), (V(50f, Upper, 103f), "7"), (V(50f, Upper, WallZ), "7"),
                 (V(50f, Upper + Tier, WallZ), "7"), (V(50f, Upper + Tier, WallZ + Ledge), "7"),

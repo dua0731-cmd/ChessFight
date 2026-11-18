@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-19 R713 · 왕실 천문대 비트별 특징 · 의도 · 예상 플레이어 행동 분석(`PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md`, 가설 11개 — 예측). 격자 다리 바람 순서를 설계대로(1.7초씩 늦게) · 회전판 진행 경로를 남쪽으로. 컴파일 PASS, Unity 재확인 안 함
 - 2026-11-18 R712 · 왕실 천문대 회색 상자(`Late_3-2_RoyalObservatory.prefab` · `RoyalObservatoryBuilder` · 새 장치 `TelescopeRam`): 코스 프리팹 시험 6번, 구간 목록의 새 초안 칸(`drafts`)이라 판 · 프로토콜 그대로. 사본 배치 21항목 PASS, 사용자 확인 전
 - 2026-11-18 R711 · 후반 장애물 '왕실 천문대' 레벨 디자인 초안 v0.1(`PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md` · 배치도 `Mockups/R711_RoyalObservatory.svg` · 컨셉 아트 보관): 대천구의를 감아 오르는 272 m · 비트 일곱 · 낙사 셋 · 기존 장치만. 문서뿐 — 코드 · 프리팹 없음, 사용자 검수 전
 - 2026-11-18 R710 · 서재 차원문 → 타자기 구간에서 모든 PC의 카메라 시야 +18° · 4 m 뒤로 · 휠 막음(`OrbitCamera.Widen`). 사본 배치 PASS, 사용자 확인 전
