@@ -1,0 +1,17 @@
+{
+    "name": "ChessFight.GrdProbe.Editor",
+    "rootNamespace": "ChessFight.PawnRush.Editor",
+    "references": [
+        "ChessFight.PawnRush",
+        "ChessFight.PawnRush.Editor",
+        "ChessFight.Gameplay",
+        "ChessFight.Game",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.GPUDriven.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": false
+}

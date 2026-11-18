@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-19 R719 · GPU Resident Drawer · GPU 가림 컬링 시험(사본 · AI 측정, 노트북 Iris Xe): GRD는 그리기 CPU 이득 없이 GPU +11 ~ 23% · 게임 루프 +0.7 ~ 1.4 ms, 가림 컬링은 큰 메시를 빼먹음 → 둘 다 켜지 않음(승규). 설정 파일 변경 없음. 측정 도구 `Tools/GrdProbe`, `Docs/Environment/GPU_RESIDENT_DRAWER.md`, PITFALLS 53 ~ 56. main 커밋 · 푸시(승규 허락)
 - 2026-11-19 R718 · 왕실 천문대 v0.3 컨셉 그림(`ConceptArt/R718_RoyalObservatoryV3/observatory_v3_concept.png`, Blender 스크립트 `observatory_v3_concept.py`): 별자리 길 · 유리 천구 · 대망원경과 새 장애물 여덟 종. 그림뿐 — Unity 반영 없음
 - 2026-11-19 R717 · 왕실 천문대 새 장애물 여덟 종 기획(`PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md`): 변광성 · 유성우 · 혜성 · 월식 문 · 행성 궤도 · 쌍성 · 조리개 문 · 초점 광선. 기획만 — 코드 · 회색 상자 없음, 검수 전
 - 2026-11-19 R716 · 왕실 천문대 구조안 v0.3 '별자리 둘, 천구 하나, 망원경 하나'(`PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md` · `Mockups/R716_RoyalObservatoryStructure.svg`): 북두칠성 길 → 유리 천구 속 오르막 → 카시오페이아 길 → 트러스 경통 속을 올라 돔 밖으로. v0.2(동심 궤도)는 대계단과 닮아 버림. 구조만, 회색 상자는 아직 v0.1, 검수 전

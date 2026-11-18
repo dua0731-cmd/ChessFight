@@ -52,3 +52,4 @@
   - 물리(PhysX · 래그돌)는 GPU로 못 옮김. 이 기능은 CPU의 그리기 명령 부담을 GPU로 넘김 → CPU 병목이면 프레임이 오르고, GPU 병목이면 거의 그대로. 그래픽 모습은 바뀌지 않음(아낀 성능을 그림자 · 디테일에 쓸 수 있음).
   - 먼저 실측: GiantChessCourse Play → 체스 방 한가운데, Game 창 Stats(CPU main · render thread ms, Batches)와 Profiler(CPU vs GPU 시간). 켜기 전 수치를 남겨 둘 것.
   - 조건: URP 렌더링 경로 Forward+, URP 에셋의 GPU Resident Drawer(Instanced Drawing) · GPU Occlusion Culling — **프로젝트 전체 설정**이라 모든 장면(왕의 서재, 마차뜰, 미니게임 방, 칼싸움)을 다시 확인. 자체 셰이더(마차뜰 `RcyTintLit` 등) · property block으로 색을 바꾸는 렌더러(팀 색, 경고 빨강) · 스킨드 메시(래그돌, 거인)는 예전 방식으로 그려짐(깨지지 않음). 셰이더 변형 · 빌드 크기 조금 늘어남. 문제 있으면 설정만 되돌리면 됨.
+- **R719 결과(11-19, 이어받은 Claude 계정):** 사본의 AI 측정(노트북 Iris Xe, 체스 방 한가운데 · 앞 서재 입구 · 위에서)에서 GRD는 그리기 CPU를 줄이지 못하고(−0.2 ~ +0.2 ms) GPU를 11 ~ 23% 더 썼으며 게임 루프가 +0.7 ~ 1.4 ms 늘었다. GPU 가림 컬링은 벽 · 천장 · 바닥 같은 큰 메시를 빼먹었다(마차뜰 · 무도회장 · 침실 등 여러 장면). 승규 결정: **둘 다 켜지 않음**(설정 변경 없음). 다시 볼 때는 RTX 데스크톱에서 `Tools/GrdProbe`로. → [GPU_RESIDENT_DRAWER](../Environment/GPU_RESIDENT_DRAWER.md)

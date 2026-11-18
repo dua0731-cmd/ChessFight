@@ -380,3 +380,25 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 - **증상:** 물리 담당이던 PC가 경기에서 나갔다가 곧바로 '경기로 돌아가기'로 돌아온 지 2초 뒤 "예약이 해제되었거나 파티원 연결이 끊겼습니다"로 다시 나가짐(명단 1, 자기 없음).
 - **원인:** 방 데이터는 방 주인만 쓴다. 나간 물리 담당이 마지막에 쓴 명단(자기가 든)은 다음 물리 담당이 방 주인이 될 때까지 그대로 남는다. 돌아온 PC는 그 명단에서 자기를 보고 입장된 것으로 여겨 자리 요청을 멈췄고, 다음 물리 담당이 방을 받은 뒤 쓴 첫 명단(나가 있던 동안 빠진)에서 빠져 나갔다.
 - **규칙:** 돌아오는 PC는 물리 담당의 답(`grant` = `ok`)을 받은 뒤에만 앉은 것으로 본다(`SteamSession.PollMatch`). 방의 명단은 누가 언제 썼는지 모르는 값이다.
+
+## 53. 사본에 복사한 Library 때문에 사본의 Unity가 열린 에디터의 IL 후처리 도우미를 끈다 (R719, 11-19)
+- **증상:** 원본 Library를 사본(`C:\유니티\ChessFight_TestCopy`)으로 통째로 복사해 배치 Unity를 돌린 뒤, 원본 에디터의 `Library/ilpp.pid`에 적힌 `Unity.ILPP.Runner`가 사라졌다. 원본 에디터는 다음 스크립트 컴파일 때 다시 띄운다(R684 마차뜰 충돌 점검도 11-16에 "Found a lingering IL Post Processing runner process ... Killing it"을 봤다).
+- **원인:** 복사한 Library의 `ilpp.pid` · `EditorInstance.json` · `ArtifactDB-lock` · `SourceAssetDB-lock`은 원본 에디터의 것이다. 사본의 Unity가 그 PID를 남은 프로세스로 보고 끈다.
+- **규칙:** 사본에서 Unity를 켜기 전에 그 네 파일을 지운다(`Tools/GrdProbe/Run-GrdProbe.ps1` · `Tools/ColliderAudit/Run-CarriageYardColliderAudit.ps1`은 지움, `Tools/Run-CarriageYardBots.ps1`은 아직 안 지움). Library를 복사해 사본을 새로 만들 때 특히 조심한다.
+
+## 54. BatchRendererGroup Variants "Keep All"의 저장 값은 2다 — 1은 Strip All (R719, 11-19)
+- **증상(예상):** GRD 작업 프롬프트가 `ProjectSettings/GraphicsSettings.asset`의 `m_BrgStripping`을 1로 예상했다. 1로 쓰면 DOTS 인스턴싱 변형이 모두 빠지고 GRD는 경고와 함께 꺼진다.
+- **확인:** 6000.3.11f1의 `UnityEditor.Rendering.BatchRendererGroupStrippingMode` = KeepIfEntitiesGraphics 0 · StripAll 1 · KeepAll 2(DLL에서 직접 읽음). 코드 속성 `EditorGraphicsSettings.batchRendererGroupShaderStrippingMode`는 이 버전에서 읽기 전용이다(쓰면 CS0200). 편집기 코드로 바꾸려면 `SerializedObject`로 GraphicsSettings의 `m_BrgStripping`을 쓴다. 켜진 에디터는 파일을 고쳐도 새로고침 때 다시 읽는다.
+- **같이 겪은 것:** `GPUResidentDrawer` · `GPUResidentDrawerMode`는 `Unity.RenderPipelines.GPUDriven.Runtime` 어셈블리에 있다. URP 에셋의 `gpuResidentDrawerMode`를 쓰는 편집기 코드는 asmdef에 그 참조가 있어야 한다(없으면 CS0012). Unity 밖에서 컴파일을 미리 볼 때 ScriptAssemblies의 DLL을 다 넣으면 이걸 못 잡으니, asmdef에 적힌 참조만 넣고 본다.
+
+## 55. GPU 가림 컬링을 켜면 큰 메시(바닥 · 벽 · 천장 · 성문)가 사라진다 (R719, 11-19, AI 측정)
+- **증상:** 사본 배치 모드(Intel Iris Xe · D3D11)에서 GRD + GPU Occlusion Culling을 켜면 마차뜰 입구의 바닥 · 성문 · 탑, 왕의 서재의 벽 · 천장 · 문, 대무도회장 · 침실 · 거인 체스의 큰 껍데기가 사라지고 작은 물체만 남는다. 순간이동 직후만이 아니라 가만히 있어도, Unity가 카메라를 스스로 그려도 그렇다. GRD만 켜면 이상 없다.
+- **원인:** 확정 못 했다. 카메라를 감싸는 큰 메시(경계 구 안에 카메라가 있음)가 가려진 것으로 판정되는 것으로 보인다. 서재의 벽은 Play 때 코드가 만드는 메시(`RoyalLibraryDressing.Reskin`)라 Unity 이슈 UUM-108782(런타임 메시 + GRD에서 사라짐)와도 비슷하다.
+- **규칙:** 가림 컬링은 켜지 않는다(승규 11-19). 다시 볼 때는 다른 GPU · 새 Unity 버전에서 `Tools/GrdProbe/Run-GrdProbe.ps1 -Mode sweep`으로 장면 전체 사진을 비교하고, 사람이 Game 창에서 본다. [GPU_RESIDENT_DRAWER §6](GPU_RESIDENT_DRAWER.md)
+
+## 56. 배치 모드에서 렌더링을 잴 때의 함정 (R719, 11-19)
+- Unity의 Batches · SetPass · Draw Calls · Triangles 카운터(ProfilerRecorder · `UnityStats`)는 배치 모드에서 프로파일러를 켜도 0이다. 프로파일러를 켜 두니 "running out of memory" 경고까지 났다(16 GB 노트북, 원본 에디터와 동시). 그리기 수는 사람이 Game 창 Stats로 본다.
+- 배치 모드에서는 아무것도 스스로 그려지지 않는다. Play 중에 URP 에셋 값(GRD 등)을 바꾸면 파이프라인은 다음 카메라 렌더 때 다시 만들어지므로, 바꾼 뒤 한 번 그려야 GRD가 켜지고 꺼진다(그리기 전에 상태를 보면 한 박자 늦다).
+- 렌더 스레드가 없다(`threading SingleThreaded`). "CPU main · render thread"를 나눌 수 없고 `Gfx.WaitForPresentOnGfxThread`도 없다. 카메라를 렌더 텍스처에 그린 시간(CPU)과 GPU가 끝날 때까지(합계)로 잰다.
+- 렌더링 디버거용 GRD 통계(`debugStats.enabled`)를 켠 채 재면 GRD 쪽이 3 ~ 4 ms 더 나온다. 시간을 재는 구간에서는 끈다.
+- 꺼 둔 카메라를 `Camera.Render()`로 손으로 그리는 것과, 켜 두고 targetTexture를 줘서 플레이어 루프가 매 프레임 그리게 하는 것(게임과 같은 길)을 둘 다 써서 결과를 맞춰 봤다 — 가림 컬링 누락은 둘 다에서 났다.
