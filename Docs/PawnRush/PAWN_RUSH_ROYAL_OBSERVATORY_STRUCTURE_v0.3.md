@@ -4,6 +4,8 @@
 
 > **구조안만 있다.** 장애물은 아직 놓지 않았다. 회색 상자(R712, `RoyalObservatoryBuilder`)는 v0.1 배치 그대로이고, 이 구조가 정해지면 다시 짓는다. 사용자 검수 전.
 
+> **R717(11-19): 이 구조에 얹을 장애물을 따로 기획했다** → [새 장애물 기획 v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md)(변광성 · 유성우 · 혜성 · 월식 문 · 행성 궤도 · 쌍성 · 조리개 문 · 초점 광선). 아래 '컨셉 아트의 것들이 갈 자리'의 후보는 그 문서가 대신한다.
+
 ![구조안 v0.3 — 위에서](Mockups/R716_RoyalObservatoryStructure.svg)
 
 ## 무엇이 바뀌나
