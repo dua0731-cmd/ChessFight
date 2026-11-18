@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-18 R708 · 코스 프리팹 시험 장면(Open Course Prefab Test, `PawnRush_Courses`): 장애물 코스를 코스 1 · 2 · 3으로 나눠 숫자 키로. 사본 배치 다섯 코스 열림, 사용자 확인 전
 - 2026-11-18 R707 · 게임 흐름 규칙 3단계 '왕좌 차지전': 작전실 큰 문이 열리면 모두 왕관 발판 옆으로 순간이동, 팀 과반이 발판 위에 있는 시간을 쌓아 30초(스스로 깬 미니게임당 −5초), 동시 과반이면 멈춤(`ThroneContest` · Core `PawnRushThrone` · `CrownFinish.Win` · `Checkpoint.Report`), 코스 상태에 차지전 7바이트. 프로토콜 v59. 사용자 확인 전.
 - 2026-11-18 R706 · 왕의 서재 → 거인 체스 코스(seoungtest R687 그래픽 · R689 온라인 동기화)를 main으로: 장애물 3에 작전 회의실과 번갈아 나오는 후보 `Late_3-1_RoyalLibrary`, 서재 조명은 카메라가 서재 안에 있을 때만, 프로토콜 v58. 복사본 Unity 배치 23항목 PASS, 사용자 확인 전
 - 2026-11-18 R704 · 게임 흐름 규칙 2단계 '모여서 발판': 깬 뒤에도 문은 닫혀 있고 문 앞 금색 발판(`GatherPad`)에 팀 과반이 서면 열림(`MiniGameSection.Rules.cs` `Gather`), 코스 상태 스테이션 플래그에 문 열림 비트(`GateOpen`), 문 연출은 문이 열릴 때(`ArenaDressing`). 프로토콜 v56. 사용자 확인 전.

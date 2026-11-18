@@ -77,6 +77,7 @@
 | Build → Mid 2-1 Grand Stair Hall | 프리팹 안(`Content`)을 지우고 기획서 좌표로 다시 만들어 저장(가져온 장애물은 프리팹 연결·인스턴스 값 유지) → 검증 |
 | Build → All Mini-game Prefabs | (R312) 미니게임10프리팹을 코드에서 다시 구워 저장하고 슬롯2·4·6에3·4·3개 등록. 기존 장애물과 다른 후보는 보존 |
 | Open Mini-game Prefab Test | (R312) 별도 오프라인 시험 씬 `Assets/Scenes/PawnRush_MiniGames.unity`. 숫자1~0 선택·F5 팀 전환·F6 완료 연결 시험·F8 초기화([상세](PAWN_RUSH_MINIGAME_SECTIONS.md#1-파일과-여는-법)) |
+| Open Course Prefab Test | (R708) 장애물 코스 시험 장면 `Assets/Scenes/PawnRush_Courses.unity`(처음 열 때 구간 시험 장면을 복사해 만듦). 숫자 키: 코스 1(초반) 1 수로 정원 · 2 마차뜰 / 코스 2(중반) 3 대계단 홀 / 코스 3(후반) 4 작전 회의실 · 5 왕의 서재 · 거인 체스 — 구간 목록의 장애물 슬롯 순서. F8 새 씨앗 · F5 팀. 배치 점검 `CoursePrefabMenu.RunPlayBatch` |
 | Open Section Test | 시험 씬 `Assets/Scenes/PawnRush_Sections.unity` |
 | Validate → Sections | 구간 목록의 프리팹을 하나씩 빈 임시 씬에 놓고(안 구운 것은 그 자리에서 만듦) `SectionValidator`로 검사, 결과 창. 임시 씬은 저장하지 않고 닫음 |
 | Validate → Mini Game Prefabs | 저장한 미니게임 프리팹·시험 씬 참조 검사. [검사 범위](PAWN_RUSH_MINIGAME_SECTIONS.md#5-확인-범위) |
