@@ -177,7 +177,12 @@ namespace ChessFight.Network
         // v57 (R705, seoungtest R688 merged): J's two gold tubs must be stood on at the same time (two players) and the
         //      king's tub then stays up 8 s; the pressed byte carries a third bit (held up). A v56 host would let one
         //      player raise it alone. (The mini-game rooms' new effects and sounds send nothing.)
-        public const string Protocol = "chessfight.dua0731.network.v57";
+        // v58 (R706, seoungtest R689 brought in): the late obstacle section draws from two prefabs - the war room and the
+        //      Royal Library with its giant chess (Late_3-1_RoyalLibrary) - and the library sends 33 bytes of section
+        //      state (the chess start, the door, the typewriter's keys, the crushed pawns). A v57 PC would always build
+        //      the war room where a v58 host may build the library (every later section 300 m off) and read the state's
+        //      section bytes out of step.
+        public const string Protocol = "chessfight.dua0731.network.v58";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

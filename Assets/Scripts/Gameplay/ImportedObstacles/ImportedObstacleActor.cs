@@ -33,6 +33,23 @@ namespace ChessFight.ProtectKing
                 return false;
             }
         }
+        // The nearest support under the character, by the same cast as Grounded (the Royal Library's typewriter
+        // keys read which key is under the feet; pr/2, brought to seoungtest 11-17).
+        public bool TryGetGroundCollider(out Collider support)
+        {
+            support = null;
+            if (!isActiveAndEnabled || Velocity.y > 1.5f) return false;
+            int n = Physics.SphereCastNonAlloc(Position + Vector3.up * .24f, .15f, Vector3.down,
+                groundHits, .4f, ~0, QueryTriggerInteraction.Ignore);
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < n; i++)
+            {
+                var hit = groundHits[i];
+                if (hit.collider.transform.IsChildOf(owner.transform) || hit.normal.y <= .55f || hit.distance >= nearest) continue;
+                nearest = hit.distance; support = hit.collider;
+            }
+            return support != null;
+        }
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {
             this.owner=owner; this.driver=driver;

@@ -3302,6 +3302,62 @@ public static class NetworkCoreTests
                 Check(rules.AllPicked && rules.Advance(.02) && rules.Phase == SwordPhase.Countdown, "all assigned: straight to 3, 2, 1");
                 Check(!rules.Assign(1, PieceKind.King), "no assigning after the pick");
                 Check(SwordSkillNames.Skill(PieceKind.Queen) == "꼬치 베기" && SwordSkillNames.Edge(PieceKind.Knight) == "벼랑 끝 역전", "skill names"); });
+            Test("R689 giant chess: the seed's series never repeats a game in a row, the replay is a function of time, the start rides in tenths", () => {
+                const int count = 40;
+                for (int seed = 1; seed < 300; seed++)
+                {
+                    int previous = -1;
+                    for (int turn = 0; turn < 12; turn++)
+                    {
+                        int game = GiantChessReplay.Game(seed, turn, count);
+                        Check(game >= 0 && game < count, "a game of the library");
+                        Check(game != previous, "never the same game twice in a row, seed " + seed);
+                        Check(game == GiantChessReplay.Game(seed, turn, count), "the same seed, the same series");
+                        previous = game;
+                    }
+                }
+                Check(GiantChessReplay.Game(5, 3, 1) == 0 && GiantChessReplay.Game(5, 0, 0) == -1, "one game repeats; none is none");
+                var seen = new HashSet<int>();
+                for (int seed = 1; seed < 200; seed++) seen.Add(GiantChessReplay.Game(seed, 0, count));
+                Check(seen.Count > 30, "first games spread over the library: " + seen.Count);
+
+                // Plies 3 and 2 for two games; rest 2, move 3, warn 5, strike .5, end 10: a move is 10.5 replay seconds.
+                var timing = new GiantChessReplay.Timing(2, 3, 5, .5, 10);
+                int seed2 = 7, first = GiantChessReplay.Game(seed2, 0, count), second = GiantChessReplay.Game(seed2, 1, count);
+                Func<int, int> plies = g => g == first ? 3 : 2;
+                Check(Math.Abs(timing.Ply - 10.5) < 1e-9 && Math.Abs(timing.Game(3) - 41.5) < 1e-9, "a move, a game");
+                var s = GiantChessReplay.Locate(-1, seed2, count, plies, timing);
+                Check(s.Cycle == 0 && s.Game == first && s.Ply == 0 && s.Phase == GiantChessReplay.Rest && s.T == 0, "not started: the first game's first rest");
+                s = GiantChessReplay.Locate(1, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Rest && Math.Abs(s.T - 1) < 1e-9, "resting");
+                s = GiantChessReplay.Locate(2.5, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Move && Math.Abs(s.T - .5) < 1e-9, "the piece flies");
+                s = GiantChessReplay.Locate(10.2, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Strike && Math.Abs(s.T - .2) < 1e-9, "the strike");
+                s = GiantChessReplay.Locate(10.5 * 2 + 6, seed2, count, plies, timing);
+                Check(s.Ply == 2 && s.Phase == GiantChessReplay.Warn && Math.Abs(s.T - 1) < 1e-9, "the third move warns");
+                s = GiantChessReplay.Locate(31.5 + 4, seed2, count, plies, timing);
+                Check(s.Cycle == 0 && s.Ply == 3 && s.Phase == GiantChessReplay.End && Math.Abs(s.T - 4) < 1e-9, "the game is over: End");
+                s = GiantChessReplay.Locate(41.5 + 13, seed2, count, plies, timing);
+                Check(s.Cycle == 1 && s.Game == second && s.Ply == 1 && s.Phase == GiantChessReplay.Move && Math.Abs(s.T - .5) < 1e-9, "the next game follows");
+                s = GiantChessReplay.Locate(41.5 + 31 + 1, seed2, count, plies, timing);
+                Check(s.Cycle == 2 && s.Ply == 0 && s.Phase == GiantChessReplay.Rest, "and the next");
+                // Every phase's start, found again from the spot: what the offline N key and the catch-up count on.
+                for (double t = 0; t < 200; t += .37)
+                {
+                    var spot = GiantChessReplay.Locate(t, seed2, count, plies, timing);
+                    double start = GiantChessReplay.PhaseStart(spot, seed2, count, plies, timing);
+                    Check(Math.Abs(start + spot.T - t) < 1e-6, "phase start + time into it = the time, at " + t);
+                    var before = GiantChessReplay.Locate(t - .3, seed2, count, plies, timing);
+                    Check(!spot.Before(before), "the replay never goes back, at " + t);
+                }
+                // The host's start on the wire: tenths after the round's start, 0 = not started; the host keeps the rounded time.
+                double origin = 1234.56;
+                Check(GiantChessReplay.Encode(double.NaN, origin) == 0 && double.IsNaN(GiantChessReplay.Decode(0, origin)), "not started");
+                double start2 = GiantChessReplay.Round(origin + 187.34, origin);
+                Check(Math.Abs(start2 - (origin + 187.3)) < 1e-9 && GiantChessReplay.Decode(GiantChessReplay.Encode(start2, origin), origin) == start2, "a tenth, both ways");
+                Check(GiantChessReplay.Encode(origin - 5, origin) == 1, "never before the round's start");
+                Check(GiantChessReplay.Encode(origin + 1e6, origin) == 65535, "clamped: 109 minutes"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

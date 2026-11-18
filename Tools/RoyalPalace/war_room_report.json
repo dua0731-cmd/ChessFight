@@ -1,0 +1,142 @@
+{
+  "prefab": "Assets/Resources/RoyalPalace/WarRoomComplete.prefab",
+  "scene": "Assets/Scenes/GiantChessCourse.unity",
+  "new_obstacles": [],
+  "occluder_boxes": [
+    {
+      "name": "HQ front facade",
+      "center": [
+        -65,
+        24,
+        -10
+      ],
+      "size": [
+        118,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ front facade",
+      "center": [
+        65,
+        24,
+        -10
+      ],
+      "size": [
+        118,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ doorway header",
+      "center": [
+        0,
+        34,
+        -10
+      ],
+      "size": [
+        12,
+        48,
+        2
+      ]
+    },
+    {
+      "name": "HQ side wall",
+      "center": [
+        -124,
+        24,
+        80
+      ],
+      "size": [
+        2,
+        68,
+        182
+      ]
+    },
+    {
+      "name": "HQ side wall",
+      "center": [
+        124,
+        24,
+        80
+      ],
+      "size": [
+        2,
+        68,
+        182
+      ]
+    },
+    {
+      "name": "HQ rear wall",
+      "center": [
+        0,
+        24,
+        170
+      ],
+      "size": [
+        250,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ coffered ceiling",
+      "center": [
+        0,
+        58.5,
+        80
+      ],
+      "size": [
+        250,
+        1,
+        182
+      ]
+    },
+    {
+      "name": "Closed HQ door",
+      "center": [
+        -3,
+        5,
+        -10
+      ],
+      "size": [
+        6,
+        10,
+        0.6
+      ]
+    },
+    {
+      "name": "Closed HQ door",
+      "center": [
+        3,
+        5,
+        -10
+      ],
+      "size": [
+        6,
+        10,
+        0.6
+      ]
+    }
+  ],
+  "transition_route": [],
+  "footprint_m": [
+    320,
+    320
+  ],
+  "root": 8104961798903569984,
+  "root_transform": 103023748741740860,
+  "local_id_scheme": "hierarchy-type-sha256-v2",
+  "target_seconds": [
+    120,
+    180
+  ],
+  "preview_fractions": [
+    0,
+    0.25,
+    0.55,
+    0.9
+  ]
+}

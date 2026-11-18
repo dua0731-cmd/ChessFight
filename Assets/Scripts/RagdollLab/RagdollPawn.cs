@@ -1456,6 +1456,10 @@ namespace ChessFight.RagdollLab
             bool exact = fromGround && PawnRushJumpExact && !BodyCarried;
             if (exact) up = PawnRushTakeoff(up);
             riseExact = exact;
+            // A pressed spring key (the Royal Library's typewriter, pr/2) adds a small boost only to an actual grounded jump.
+            if (fromGround && Grounded && groundCollider != null &&
+                groundCollider.GetComponentInParent<IJumpSpringSurface>() is IJumpSpringSurface spring)
+                up += Mathf.Clamp(spring.TakeJumpBonus(Hips.position), 0f, 2f);
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {
