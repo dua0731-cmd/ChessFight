@@ -54,6 +54,11 @@ namespace ChessFight.PawnRush
         Transform[] attack;
         readonly float[] attackShown = new float[64];
         readonly bool[] attacked = new bool[64];
+        // R688: the plates' light - per square tint and flicker, and when each one lit (a brief swell as it comes on).
+        Renderer[] attackLooks;
+        readonly float[] attackLitAt = new float[64];
+        MaterialPropertyBlock attackTint;
+        Color attackTeam;
         Material skin, gold, dotOff, dotOn;
 
         // The look of each king's last move: from, to, when (Time.time), a stalemate jump or a hop.
@@ -94,8 +99,14 @@ namespace ChessFight.PawnRush
             float m = MiniGameParts.Mirror(station);
             var board = b.Group("Board");
             var team = station.Accent(station.Team);
-            var plate = Arena.Glow(new Color(team.r, team.g, team.b, .28f));
+            // R688 (seoungtest) ("그냥 그려놓은 거 같은 느낌이야 진짜 vfx로"): the plate is light added onto the board (bright
+            // seams, a soft fill, a slight flicker: CheckmateFx.FloorLight) instead of a flat see-through band; the old
+            // band stays the fallback without the particle shader.
+            var light = CheckmateFx.FloorLight();
+            var plate = light != null ? light : Arena.Glow(new Color(team.r, team.g, team.b, .28f));
+            attackTeam = team;
             attack = new Transform[64];
+            attackLooks = new Renderer[64];
             for (int s = 0; s < 64; s++)
             {
                 int f = PawnRushBoard.FileOf(s), r = PawnRushBoard.RankOf(s);
@@ -107,6 +118,7 @@ namespace ChessFight.PawnRush
                 a.transform.localPosition = c + new Vector3(0f, .065f, 0f);
                 a.SetActive(false);
                 attack[s] = a.transform;
+                attackLooks[s] = light != null ? a.GetComponent<Renderer>() : null;
             }
 
             // The fence: wooden posts every 1.5 m 0.2 m outside the east and west edges (the north edge is the gate
@@ -276,6 +288,9 @@ namespace ChessFight.PawnRush
             {
                 flinchAt[k] = Time.time;
                 Fx.Check(at, PawnRushBoard.Cell, transform.eulerAngles.y);
+                // R688: a red glint on the check dot that just lit
+                int lit = Mathf.Clamp(now.Checks - 1, 0, dots[k].Length - 1);
+                Fx.DotLit(dots[k][lit].transform.position);
                 if (Time.time >= nextCheckSound)
                 {
                     Sound("sfx_check", RevealSfx + "RevealTick2", at, .48f, .90f + .14f * now.Checks);
@@ -309,7 +324,9 @@ namespace ChessFight.PawnRush
                 var want = d < v.Checks || (frozen && v.Mated) ? dotOn : dotOff;
                 if (dots[k][d].sharedMaterial != want) dots[k][d].sharedMaterial = want;
             }
-            halos[k].enabled = frozen;
+            // R688 (seoungtest) ("원은 사용 하지 않는 vfx"): the frozen halo (a line ring) stays hidden; a frozen king is lit
+            // gold by its own light with motes and glints instead (CheckmateFx.KingGlow, from Update).
+            halos[k].enabled = false;
         }
 
         static void Sound(string name, string fallback, Vector3 at, float gain, float pitch = 1f) =>
@@ -364,7 +381,12 @@ namespace ChessFight.PawnRush
             for (int k = 0; k < kings.Length; k++)
             {
                 var look = looks[k];
-                if (view[k].State == CheckmateHunt.KingState.Captured) { Fly(k); continue; }
+                if (view[k].State == CheckmateHunt.KingState.Captured)
+                {
+                    if (fx != null) fx.KingGlow(k, Vector3.zero, false);   // R688: its gold light goes out
+                    Fly(k);
+                    continue;
+                }
                 float age = t - movedAt[k];
                 float y = 0f, scale = 1f;
                 if (jumped[k])
@@ -400,13 +422,9 @@ namespace ChessFight.PawnRush
                 bool frozen = view[k].State == CheckmateHunt.KingState.Frozen;
                 if (frozen) shiver = 2f * Mathf.Sin(t * 12f * Mathf.PI * 2f);
                 look.localRotation = Quaternion.Euler(tilt, 0f, shiver);
-                if (frozen)
-                {
-                    float pulse = .5f + .5f * Mathf.Sin(t * 5f);
-                    var halo = halos[k].transform;
-                    halo.localScale = Vector3.one * (1.08f + .28f * pulse);
-                    halo.localRotation = Quaternion.Euler(25f, t * 130f % 360f, 0f);
-                }
+                // R688: the frozen king's own gold light, motes and glints (the line-ring halo is no longer shown).
+                if (frozen) Fx.KingGlow(k, kings[k].position, true);
+                else if (fx != null) fx.KingGlow(k, Vector3.zero, false);
             }
             Attacks();
         }
@@ -426,13 +444,36 @@ namespace ChessFight.PawnRush
             }
             float step = Time.deltaTime / .1f;
             float size = PawnRushBoard.Cell * .92f;
+            // R688: the light's seams sit on the square's own edges (the texture's seam is at FrameEdge of the plate).
+            bool light = attackLooks != null && attackLooks[0] != null;
+            if (light)
+            {
+                size = PawnRushBoard.Cell * .97f / CheckmateFx.FrameEdge;
+                if (attackTint == null) attackTint = new MaterialPropertyBlock();
+            }
+            float t = Time.time;
             for (int s = 0; s < 64; s++)
             {
+                if (attacked[s] && attackShown[s] <= 0f) attackLitAt[s] = t;
                 attackShown[s] = Mathf.MoveTowards(attackShown[s], attacked[s] ? 1f : 0f, step);
                 bool show = attackShown[s] > .01f;
                 var a = attack[s];
                 if (a.gameObject.activeSelf != show) a.gameObject.SetActive(show);
-                if (show) a.localScale = new Vector3(size * attackShown[s], .01f, size * attackShown[s]);
+                if (!show) continue;
+                if (!light)
+                {
+                    a.localScale = new Vector3(size * attackShown[s], .01f, size * attackShown[s]);
+                    continue;
+                }
+                // Grows in from 85 %, swells bright as it comes on and settles, and flickers a little like real light.
+                float grow = .85f + .15f * attackShown[s];
+                a.localScale = new Vector3(size * grow, .01f, size * grow);
+                float swell = 1f + .9f * Mathf.Exp(-(t - attackLitAt[s]) * 7f);
+                float flicker = .9f + .1f * Mathf.PerlinNoise(t * 4.5f, s * .37f);
+                float k = .95f * attackShown[s] * swell * flicker;
+                attackTint.Clear();
+                global::ChessFight.Game.LitMaterials.SetColor(attackTint, new Color(attackTeam.r * k, attackTeam.g * k, attackTeam.b * k, 1f));
+                attackLooks[s].SetPropertyBlock(attackTint);
             }
         }
 
@@ -458,6 +499,9 @@ namespace ChessFight.PawnRush
             {
                 landed[k] = true;
                 Fx.TrayLand(World(spot), station.Accent(station.Team));
+                // R688: the last king in the tray - gold rising all along it
+                if (slot[k] == hunt.Count - 1 && captured == hunt.Count)
+                    Fx.Sweep(World(TraySpot(0)), World(TraySpot(hunt.Count - 1)), station.Accent(station.Team));
                 Sound("sfx_ep_tray", BoardSfx + "sfx_ratchet_click", World(spot), .34f, .9f);
             }
         }

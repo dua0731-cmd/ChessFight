@@ -5,7 +5,8 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // J's water (mini-games v1.0 §8.2.6): a pawn that falls in floats for 1.2 s and is put back on the station's
-    // south floor (u 1, v 0), not sent to the course's checkpoint. The water is a WaterZone that does not report
+    // south floor (u 1, v 0) - or, R686, where the game says (ReturnPoint: the last tub it stood on) - not sent to the
+    // course's checkpoint. The water is a WaterZone that does not report
     // (the ragdoll floats on it; the course never hears of it), and this puts pawns back - on the host, or
     // offline. Every PC plays the splash when it sees hips go under the surface.
     public sealed class MgWaterReturn : MonoBehaviour
@@ -19,6 +20,10 @@ namespace ChessFight.PawnRush
         readonly Dictionary<ICharacterDriver, float> wetSince = new Dictionary<ICharacterDriver, float>();
         readonly HashSet<ICharacterDriver> wet = new HashSet<ICharacterDriver>(), now = new HashSet<ICharacterDriver>();
         readonly List<ICharacterDriver> done = new List<ICharacterDriver>();
+
+        /// <summary>R686: where a pawn starts again, in the game's frame (the ground point its feet go on); none: the
+        /// south floor. Asked on the host (or offline) as it puts the pawn back.</summary>
+        public System.Func<ICharacterDriver, Vector3> ReturnPoint;
 
         public static MgWaterReturn Make(Transform game, MissionStation station, float surface, float bottom, float u0, float u1)
         {
@@ -52,15 +57,12 @@ namespace ChessFight.PawnRush
                 if (!wet.Contains(p.Driver))
                 {
                     var at = game.TransformPoint(new Vector3(p.Local.x, surface, p.Local.z));
-                    // a station may play its own splash (J's crown, ripples and foam, MiniGameLaundryFx)
-                    var own = station.GetComponent<IWaterGameFx>();
-                    if (own != null) own.Splash(at, 1f);
-                    else
-                    {
-                        ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 24, 1.6f, 5f, .9f, .08f);
-                        ArenaFx.Ring(at, 0f, 2f, .7f, Arena.Hex("#BFE6F5"));
-                    }
-                    ArenaFx.Sfx("sfx_splash", at);
+                    // J's crown, ripples and foam (MiniGameLaundryFx; R688 (seoungtest), "이런 vfx 말고": always J's own,
+                    // never the shared burst and ring)
+                    MiniGameLaundryFx.For(station)?.Splash(at, 1f);
+                    // R688 ("물에 빠지는 소리 넣어줘"): a splash (was the missing sfx_splash, silent) and foam bubbling after it
+                    MgKnightPads.SplashSound(at, 1f);
+                    MgKnightPads.BubbleSound(at, .55f);
                 }
             }
             wet.Clear();
@@ -74,7 +76,7 @@ namespace ChessFight.PawnRush
             {
                 if (!now.Contains(kv.Key)) { done.Add(kv.Key); continue; }
                 if (Time.time - kv.Value < Delay) continue;
-                kv.Key.Teleport(game.TransformPoint(new Vector3(0f, 0f, 1f)), game.rotation);
+                kv.Key.Teleport(game.TransformPoint(ReturnPoint != null ? ReturnPoint(kv.Key) : new Vector3(0f, 0f, 1f)), game.rotation);
                 done.Add(kv.Key);
             }
             foreach (var d in done) wetSince.Remove(d);

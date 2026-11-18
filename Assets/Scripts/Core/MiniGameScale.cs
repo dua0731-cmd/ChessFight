@@ -19,7 +19,7 @@ namespace ChessFight.Network
     //   G king escort          11 squares   13           15           17            the road, its sand and rooks, the sled's weight
     //   H checkmate hunt       4            5            6            7             kings
     //   I check block          lighter      light        as it was    heavier       how many checks a position holds
-    //   J knight's road        6 x 1.9 m    7 x 2.0 m    8 x 2.05 m   9 x 2.2 m     squares, and how wide
+    //   J knight's road        2 roads, 3   3 roads, 4   3 roads, 5   4 roads, 6    roads side by side and pieces to take (R686); tubs 2.4 to 2.6 m
     public static class MiniGameScale
     {
         public const int Min = 3, Max = 6, Baseline = 5;
@@ -78,9 +78,12 @@ namespace ChessFight.Network
         // H: kings to hunt.
         public static int CheckmateKings(int teamSize) => Pick(teamSize, 4, 5, 6, 7);
 
-        // J: the road's squares (two of them without a piece: the first and the last) and how wide one is.
-        public static int KnightSquares(int teamSize) => Pick(teamSize, 6, 7, 8, 9);
-        public static float KnightSquareSize(int teamSize) => Pick(teamSize, 1.9f, 2f, 2.05f, 2.2f);
+        // J (R686: branching roads, KnightRoad): how many roads run side by side, how many pieces stand on them - a
+        // piece a player, the king among them - and how wide a tub is (wider than the board's 2.25 m square: a
+        // bigger team needs the room to stand, and the smaller tubs were too hard to land on).
+        public static int KnightLanes(int teamSize) => Pick(teamSize, 2, 3, 3, 4);
+        public static int KnightPieces(int teamSize) => Pick(teamSize, 3, 4, 5, 6);
+        public static float KnightSquareSize(int teamSize) => Pick(teamSize, 2.4f, 2.5f, 2.5f, 2.6f);
     }
 
     // A board of `Files` x `Ranks` squares in a station's frame (v across, u north), a1 dark as on a real board. A's

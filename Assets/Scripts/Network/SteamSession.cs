@@ -143,7 +143,12 @@ namespace ChessFight.Network
         // v46 (R686, seoungtest): the Royal Carriage Yard's teams turn about their coach's rear axle (RoamingFleet pivots),
         //      the pair walking round it on the swung-out forecarriage, and the yard's seeds were vetted again. The wire is
         //      the same, but a v45 PC would draw the teams turning on the spot along other paths than a v46 host's.
-        public const string Protocol = "chessfight.dua0731.network.v46";
+        // v47 (seoungtest, main R686 + R687 brought in): J, the knight's road, is two to four roads side by side with a
+        //      king's tub that two gold tubs raise (KnightRoad), larger tubs, and a game block of five bytes (was three).
+        //      A v46 PC would build the one old chain and read the block two short. (main's own v48 says the same.)
+        // v48 (seoungtest R688): J's two gold tubs must be stood on at the same time (two players) and the king's tub
+        //      then stays up 8 s; the pressed byte carries a third bit (held up). A v47 host would let one player do it.
+        public const string Protocol = "chessfight.dua0731.network.v48";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

@@ -46,6 +46,25 @@ namespace ChessFight.Network
             "나이트 길에만 바닥이 있다: 점프대에서 Space로 높이 뛰고 다이빙으로 건너가, 길 위 상대 기물 6개를 다이빙으로 잡아라",
         };
 
+        // R679 (the user after the 6 vs 6 test: "미니게임 설명 더 확실히 (흑 백 진영 구분 및 미니게임 방법)"): what a
+        // section round shows a player who walks into the room (MiniGameSection's briefing card and the line that
+        // stays under it). Hints above went to course 01's picture card only, and their counts (32 squares, 10
+        // planks, 6 pieces) are six a side's: these say the same without a number, since R543 sizes every game by
+        // the teams that started. Two short clauses each, split at " · ".
+        public static readonly string[] HowTo =
+        {
+            "백팀은 밝은 칸, 흑팀은 어두운 칸 위에 서 있으면 칠해집니다 · 우리 칸을 모두 칠하면 문이 열립니다",
+            "판자를 우클릭으로 잡아 들고 다리 끝 빈자리에 놓으세요 · 상대 판자도 가져올 수 있습니다",
+            "밧줄 매듭을 우클릭으로 잡고 뒤로 걸어 당기세요 · 질주하면 더 세게 당깁니다",
+            "캡스턴 막대를 화살표 방향으로 밀어 돌리세요 · 돌리는 만큼 쇠살문이 올라갑니다",
+            "탑을 올라 꼭대기의 종을 울리세요 · 종을 모두 울리면 문이 열립니다",
+            "두 칸 전진해 빛나는 폰을 다이빙으로 들이받아 잡으세요 · 빛이 꺼지기 전에만 잡힙니다",
+            "밧줄을 우클릭으로 잡고 킹의 썰매를 문까지 끄세요 · 길을 막은 룩은 옆 차고로 끌어 넣습니다",
+            "우리 폰 둘레 3×3칸이 공격 칸입니다 · 킹을 몰아 체크로 굳힌 뒤 다이빙으로 잡으세요",
+            "방패 수레를 밀어 공격선을 막으세요 · 나이트는 끌어내리고 폰은 들이받아 체크를 모두 풉니다",
+            "점프대에서 Space로 높이 뛰어 상대 기물이 있는 통에 올라서면 그 기물을 잡습니다 · 금색 통 둘을 함께 밟으면 물에 잠긴 킹이 떠오릅니다",
+        };
+
         // §2.5 groups: pulling, painting, carrying, climbing, diving, chasing, flying.
         public const int GroupPull = 0, GroupPaint = 1, GroupCarry = 2, GroupClimb = 3, GroupDive = 4, GroupChase = 5, GroupFly = 6;
         public static readonly int[] Group =

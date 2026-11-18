@@ -14,7 +14,10 @@ namespace ChessFight.PawnRush
     //   capture   gold and team twinkles and cream flakes fly up from the square as the king tips over
     //   stalemate a soft blue-grey puff where the king vanishes and where it turns up
     //   hop       a little marble dust where a king lands
-    public sealed class CheckmateFx : MonoBehaviour
+    // R688 (seoungtest) ("8번 9번 0번 vfx 가 필요해 아직 작업 x"): the square frames are now seam light on the board (the
+    // texture of CheckmateFx.Real's FloorLight, growing only a little) instead of an outline gliding out, and every moment
+    // also gets light, marble chips and glints from CheckmateFx.Real.cs.
+    public sealed partial class CheckmateFx : MonoBehaviour
     {
         static Texture2D dot, star, frameTex, shaftTex, flake, puff;
         ParticleSystem sparks, stars, frame, shaft, flakes, dust;
@@ -61,6 +64,8 @@ namespace ChessFight.PawnRush
             Shrink(dust, .5f, 1.4f);
             var d = dust.main;
             d.gravityModifier = -.03f;
+
+            AwakeReal();   // R688: lights, chips, motes, glints, floor dust
         }
 
         // ------------------------------------------------------------------ moments (at = the king's foot)
@@ -68,12 +73,16 @@ namespace ChessFight.PawnRush
         public void Check(Vector3 at, float square, float yaw)
         {
             Frame(at + Vector3.up * .08f, square, yaw, .6f, Glow(Red, 2f));
+            var head = at + Vector3.up * (MgCheckmate.KingHeight + .25f);
             for (int i = 0; i < 8; i++)
             {
                 var dir = Random.insideUnitCircle.normalized;
-                Emit(sparks, at + Vector3.up * (MgCheckmate.KingHeight + .25f), new Vector3(dir.x, 0f, dir.y) * Random.Range(.8f, 1.6f) + Vector3.up * Random.Range(1f, 2f),
+                Emit(sparks, head, new Vector3(dir.x, 0f, dir.y) * Random.Range(.8f, 1.6f) + Vector3.up * Random.Range(1f, 2f),
                      Random.Range(.35f, .55f), Random.Range(.05f, .08f), Glow(Red, 2.4f));
             }
+            // R688: the check is a blow of red light on the king (a short point light) with a hot glint at its head
+            FlashLight(head, new Color(1f, .32f, .25f), 2.2f, .18f, 2.6f);
+            Emit(glints, head, Vector3.zero, .22f, .5f, Glow(new Color(1f, .55f, .45f), 3f), Random.Range(0f, 90f));
         }
 
         public void Freeze(Vector3 at, float square, float yaw)
@@ -86,10 +95,24 @@ namespace ChessFight.PawnRush
                 Emit(stars, at + new Vector3(p.x, Random.Range(.2f, MgCheckmate.KingHeight + .4f), p.y), Vector3.up * Random.Range(.1f, .5f),
                      Random.Range(.6f, 1f), Random.Range(.25f, .45f), Glow(Gold, 3f), Random.Range(0f, 360f));
             }
+            // R688: the shaft's light really lands (a gold light swelling down on the king), dust motes hang in the shaft
+            // and settle, and the lock knocks a breath of marble dust off the square.
+            FlashLight(at + Vector3.up * 1.6f, Warm, 3.2f, .7f, 4f);
+            Emit(glints, at + Vector3.up * (MgCheckmate.KingHeight + .2f), Vector3.zero, .35f, .8f, Glow(Gold, 3f), Random.Range(0f, 90f));
+            for (int i = 0; i < 14; i++)
+            {
+                var p = Random.insideUnitCircle * .55f;
+                Emit(motes, at + new Vector3(p.x, Random.Range(.6f, 3f), p.y), new Vector3(0f, -Random.Range(.15f, .4f), 0f),
+                     Random.Range(1.1f, 1.6f), Random.Range(.03f, .06f), Glow(Gold, 2.6f));
+            }
+            FloorDust(at, 6, .9f, Marble);
         }
 
         public void Rescue(Vector3 at, Color team)
         {
+            // R688: the gold cracks off - a flash of the rescuer's colour and real chips that fall and bounce
+            FlashLight(at + Vector3.up * .7f, Color.Lerp(team, Color.white, .35f), 2.4f, .25f, 3f);
+            Chips(at + Vector3.up * .5f, 8, 1.8f, 2.6f);
             for (int i = 0; i < 10; i++)
                 Emit(dust, at + Vector3.up * Random.Range(.2f, .9f) + Random.insideUnitSphere * .25f, Random.insideUnitSphere * .6f + Vector3.up * .3f,
                      Random.Range(.7f, 1.1f), Random.Range(.4f, .7f), Stone);
@@ -116,6 +139,12 @@ namespace ChessFight.PawnRush
                 Emit(flakes, at + Vector3.up * .5f, new Vector3(dir.x, 0f, dir.y) * Random.Range(.8f, 2.2f) + Vector3.up * Random.Range(3f, 5f),
                      Random.Range(1.2f, 1.8f), Random.Range(.12f, .2f), i % 3 == 0 ? Gold : i % 3 == 1 ? team : Marble, Random.Range(0f, 360f));
             }
+            // R688: the dive hits like a blow - a bright gold flash lights the pawns round, a big glint, marble chips off
+            // the square bounce on the board and dust rolls out low.
+            FlashLight(at + Vector3.up * .8f, Warm, 4.5f, .35f, 4.5f);
+            Emit(glints, at + Vector3.up * .7f, Vector3.zero, .3f, 1.1f, Glow(Gold, 3f), Random.Range(0f, 90f));
+            Chips(at + Vector3.up * .1f, 12, 2.2f, 3f);
+            FloorDust(at, 10, 1.6f, Marble);
         }
 
         public void CaptureTrail(Vector3 at, Color team)
@@ -132,6 +161,10 @@ namespace ChessFight.PawnRush
                 var outwards = new Vector3(Mathf.Cos(angle), .65f, Mathf.Sin(angle));
                 Emit(stars, at + Vector3.up * .12f, outwards * 1.65f, .46f, .26f, Glow(i % 3 == 0 ? team : Gold, 2.6f));
             }
+            // R688: the king clacks down on the wood - a small warm light, a few chips and a little dust
+            FlashLight(at + Vector3.up * .5f, Warm, 1.6f, .2f, 2.2f);
+            Chips(at + Vector3.up * .1f, 4, 1f, 1.6f);
+            FloorDust(at, 4, .7f, new Color(.72f, .62f, .5f));
         }
 
         public void Vanish(Vector3 at)
@@ -142,6 +175,7 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < 5; i++)
                 Emit(stars, at + Vector3.up * Random.Range(.3f, 1.1f) + Random.insideUnitSphere * .3f, Vector3.up * .3f, .7f, Random.Range(.25f, .4f),
                      Glow(Smoke, 2.5f), Random.Range(0f, 360f));
+            FlashLight(at + Vector3.up * .7f, Cool, 1.8f, .3f, 2.6f);   // R688: a cool blink where it goes and comes
         }
 
         public void Land(Vector3 at)
@@ -155,7 +189,9 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ parts (as PaintBoardFx)
 
-        const float FrameEdge = .82f, FrameFrom = 1f / 1.35f;
+        // R688: the frame spreads only 8 % now (light swelling on the square, not an outline gliding away)
+        public const float FrameEdge = .82f;
+        const float FrameFrom = 1f / 1.08f;
 
         void Frame(Vector3 at, float side, float yaw, float life, Color color) =>
             Emit(frame, at, Vector3.zero, life, side / FrameEdge / FrameFrom, color, yaw);
@@ -242,11 +278,8 @@ namespace ChessFight.PawnRush
                 float core = Mathf.Pow(Mathf.Clamp01(1f - r * 2.6f), 1.5f);
                 return Mathf.Max(spikes * spikes, core);
             });
-            frameTex = Draw(256, (x, y) =>
-            {
-                float d = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
-                return Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(d - FrameEdge) / .07f), 2f);
-            });
+            // R688: seam light (bright seams, a soft fill inside) in place of the bare outline
+            frameTex = Draw(256, SeamLight);
             // a soft vertical shaft: a column a quarter of the quad wide, soft sides, bright at the top, gone at the foot
             shaftTex = Draw(128, (x, y) =>
             {

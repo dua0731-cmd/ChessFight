@@ -25,6 +25,14 @@ namespace ChessFight.PawnRush
 
         [SerializeField] MissionStation station;
 
+        // R688 (seoungtest, 승규 11-17: "6번 7번 세탁장 함께 밟기 구간. 8번 9번 0번 vfx 가 필요해 아직 작업 x"): F's own
+        // effects (MiniGameBallroomFx: brass sparks, gears, dust, glints, a flash) in place of ArenaFx's bursts and floor
+        // ring, plus the moments that had none (the wind-up, the two taps of the step, the window shutting, the tray
+        // landing). Added on first use, so the saved prefab carries nothing new; played from the same clock and bits on
+        // every PC, nothing sent. Sounds stay ArenaFx.Sfx.
+        MiniGameBallroomFx fx;
+        MiniGameBallroomFx Fx => fx != null ? fx : (fx = gameObject.AddComponent<MiniGameBallroomFx>());
+
         // The statues of this game (R543: how many, where they stand, when each steps).
         EnPassantField field = EnPassantField.Baseline;
         Transform[] statues, looks;
@@ -32,7 +40,7 @@ namespace ChessFight.PawnRush
         Collider[] colliders;
         Renderer[][] skins;
         Renderer[] rings;
-        LineRenderer[] halos;
+        Transform[] halos;      // R688: brass halo inlays (MiniGameMarks) in place of the flat gold line
         TextMesh counter;
         Material skin, glowSkin, ring, warnRing;
 
@@ -100,7 +108,7 @@ namespace ChessFight.PawnRush
             colliders = new Collider[n];
             skins = new Renderer[n][];
             rings = new Renderer[n];
-            halos = new LineRenderer[n];
+            halos = new Transform[n];
             for (int i = 0; i < n; i++)
             {
                 var go = MiniGameParts.Piece(b.parent, "Statue " + (i + 1), PieceKind.Pawn, StatueHeight, skin, station.Accent(them), true, StatueRadius);
@@ -116,9 +124,12 @@ namespace ChessFight.PawnRush
                     else all.Add(r);
                 }
                 skins[i] = all.ToArray();
-                halos[i] = MiniGameParts.Loop(looks[i], "Window halo", new Vector3(0f, StatueHeight + .2f, 0f), .55f, .07f, Arena.Gold);
-                halos[i].transform.localRotation = Quaternion.Euler(12f, 0f, 0f);
-                halos[i].enabled = false;
+                // R688 (seoungtest, "6번 노란색 원형 그래픽 좋게 교체"): a bevelled brass halo with a warm light round it
+                halos[i] = MiniGameMarks.Ring(looks[i], "Window halo", new Vector3(0f, StatueHeight + .2f, 0f), .55f, .09f, 48, 0f, null, .03f);
+                halos[i].localRotation = Quaternion.Euler(12f, 0f, 0f);
+                var haloGlow = halos[i].GetComponent<MarkGlow>();
+                if (haloGlow != null) haloGlow.Boost = 1f;
+                halos[i].gameObject.SetActive(false);
             }
             ShowCount();
         }
@@ -193,11 +204,10 @@ namespace ChessFight.PawnRush
             landed[i] = false;
             if (colliders[i] != null) colliders[i].enabled = false;
             if (bodies[i] != null) bodies[i].interpolation = RigidbodyInterpolation.None;
-            halos[i].enabled = false;
+            halos[i].gameObject.SetActive(false);
             Paint(i, false, false);
             var at = World(fallFrom[i] + Vector3.up * .5f);
-            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.5f, 3f, 1f, .1f);
-            ArenaFx.Ring(World(fallFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
+            Fx.Capture(World(fallFrom[i]), transform.TransformDirection(fallDir[i]), station.Accent(Opponent));
             ArenaFx.Sfx("sfx_ep_capture", at);
             ShowCount();
         }
@@ -205,7 +215,7 @@ namespace ChessFight.PawnRush
         void Clank(int i)
         {
             shake[i] = .1f;
-            ArenaFx.Burst(World(statues[i].localPosition + Vector3.up * .2f), new[] { new Color(.55f, .55f, .55f) }, 8, 1.2f, .8f, .6f, .07f);
+            Fx.Clank(World(statues[i].localPosition + Vector3.up * .35f));
             ArenaFx.Sfx("sfx_ep_clank", World(statues[i].localPosition));
         }
 
@@ -235,8 +245,8 @@ namespace ChessFight.PawnRush
                 looks[i].localPosition = new Vector3(x, y, 0f);
                 bool open = EnPassantRules.InWindow(ph);
                 bool blink = open && ph > EnPassantRules.WindowEnd - .3f && Mathf.Repeat(Time.time * 8f, 1f) < .5f;
-                halos[i].enabled = open && !blink;
-                if (open) halos[i].transform.localRotation = Quaternion.Euler(12f, (float)(now * 1080.0 % 360.0), 0f);
+                if (halos[i].gameObject.activeSelf != (open && !blink)) halos[i].gameObject.SetActive(open && !blink);
+                if (open) halos[i].localRotation = Quaternion.Euler(12f, (float)(now * 1080.0 % 360.0), 0f);
                 bool warnBlink = EnPassantRules.Warning(ph) && Mathf.Repeat(Time.time * 6f, 1f) < .5f;
                 Paint(i, open, warnBlink);
             }
@@ -250,6 +260,7 @@ namespace ChessFight.PawnRush
             {
                 secondStep[i] = 0f;
                 ArenaFx.Sfx("sfx_ep_step", World(statues[i].localPosition), pitch: .95f);
+                Fx.Step(World(statues[i].localPosition), South, true);
             }
             if (now == stage[i]) return;
             int before = stage[i];
@@ -257,18 +268,28 @@ namespace ChessFight.PawnRush
             // A statue first seen mid-cycle (a new game, a late join) plays nothing until its next change.
             if (before < 0) return;
             var at = World(statues[i].localPosition);
-            if (now == 1) ArenaFx.Sfx("sfx_ep_ready", at, volume: .6f);
+            if (now == 1)
+            {
+                ArenaFx.Sfx("sfx_ep_ready", at, volume: .6f);
+                Fx.Wind(at, -South);
+            }
             else if (now == 2)
             {
                 ArenaFx.Sfx("sfx_ep_step", at);
+                Fx.Step(at, South, false);
                 secondStep[i] = Time.time + .15f;
             }
             else if (now == 3)
             {
-                ArenaFx.Burst(at + Vector3.up * .05f, new[] { new Color(.8f, .72f, .6f) }, 4, .6f, .4f, .5f, .06f);
+                Fx.WindowOpen(at);
                 ArenaFx.Sfx("sfx_ep_window", at, volume: .8f);
             }
+            // R688: the window shutting had no picture.
+            else if (before == 3) Fx.WindowClose(at);
         }
+
+        // The way a statue steps (two squares south, -u), in the world.
+        Vector3 South => transform.TransformDirection(Vector3.back);
 
         void Paint(int i, bool glow, bool warn)
         {
@@ -308,6 +329,7 @@ namespace ChessFight.PawnRush
             {
                 landed[i] = true;
                 ArenaFx.Sfx("sfx_ep_tray", World(spot));
+                Fx.TrayLand(World(spot));
             }
         }
 
