@@ -65,6 +65,9 @@ namespace ChessFight.Game
         // side 0, side 1, among the spectators. CanMove: the manager may move that entry on. The spectators are
         // listed apart (they are not on the roster): name, key, what the manager may do, which one is this PC's.
         public bool Room, ShowTeamBots;
+        // R703: the room's flow rules (PawnRushRules.Encode) and whether this PC's player may change them (the manager).
+        public int Rules;
+        public bool CanSetRules;
         public string RoomCode = "", RoomNote = "";
         public readonly bool[] CanSit = new bool[3], CanAddTeamBot = new bool[2], CanRemoveTeamBot = new bool[2];
         public readonly List<bool> CanMove = new List<bool>();

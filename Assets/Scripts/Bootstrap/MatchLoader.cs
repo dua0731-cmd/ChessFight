@@ -177,6 +177,8 @@ namespace ChessFight.Game
                 screen.SeatRequested += seat => runtime.Session.TakeSeat(seat);
                 screen.MoveRequested += id => runtime.Session.MovePlayer(id);
                 screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = runtime.Session.Match.ToString();
+                // R703: the manager picked a flow rule.
+                screen.RulesRequested += packed => runtime.Session.SetRules(packed);
                 screen.TeamBotRequested += (team, more) => { if (more > 0) runtime.Session.AddTestBot(team); else runtime.Session.RemoveTestBot(team); };
                 // R624: a Sword Fight piece card confirmed on this screen
                 screen.SwordPickRequested += piece => runtime.Session.PickSword(piece);
@@ -335,6 +337,8 @@ namespace ChessFight.Game
         {
             int white = session.TeamCount(0), black = session.TeamCount(1), watching = session.Spectators.Count;
             state.RoomCode = Spaced(session.Match);
+            state.Rules = session.RoomRules;
+            state.CanSetRules = session.CanSetRules;
             state.Expected = TeamReservations.TeamSize * 2;
             state.CanCancel = true;
             state.ShowAddBot = false;

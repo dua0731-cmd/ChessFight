@@ -168,7 +168,10 @@ namespace ChessFight.Network
         //      with the yard's seeds vetted again, the slewing cranes' loads trip a pawn before letting it through
         //      (YardImpact), and the course obstacles' hit sounds ride the effect stream as the last SkillFxKind
         //      (CourseHit). The wire is the same, but a v53 PC would draw the teams on other paths than a v54 host's.
-        public const string Protocol = "chessfight.dua0731.network.v54";
+        // v55 (R703): a room a player made carries the round's flow rules (room data "rules", the manager's ask
+        //      "rules"): relief for the obstacle section before a cleared mini-game, the other team's gate opening
+        //      20 s after one team's clear. A v54 PC would play the same room by the old flow.
+        public const string Protocol = "chessfight.dua0731.network.v55";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -304,6 +307,21 @@ namespace ChessFight.Network
         }
         // Where a player sits in the room: 0 or 1 a side, 2 a spectator's seat, -1 nowhere.
         public const int SpectatorSeat = 2;
+        // R703 (the user 2026-11-17: five ways for the round's flow, "방장 권한으로 켜고 끌 수 있게"): the flow rules
+        // of a room a player made (PawnRushRules, one number in room data "rules"), the manager's to set before the
+        // start. Every PC reads them from the room when the match begins; a room found by random matching has none.
+        public int RoomRules => Match == 0 ? 0 : PawnRushRules.Decode(ParseInt(Data(Match, "rules"))).Encode();
+        public bool CanSetRules => RoomSeats && IsManager;
+        public void SetRules(int packed)
+        {
+            if (!CanSetRules) return;
+            if (IsHost && Owner(Match) == Self) SetRulesNow(packed); else Ask("rules", 0, packed);
+        }
+        void SetRulesNow(int packed)
+        {
+            if (!RunsRoom || !privateRoom || Started) return;
+            SetChanged("rules", PawnRushRules.Decode(packed).Encode().ToString(CultureInfo.InvariantCulture));
+        }
         public int SeatOf(ulong id) => Roster.TryGetValue(id, out var p) ? (p.Team == 0 ? 0 : 1) : IsSpectator(id) ? SpectatorSeat : -1;
         public int SeatsFree(int seat) => seat == SpectatorSeat ? SpectatorSeats - Spectators.Count
                                         : seat == 0 || seat == 1 ? TeamReservations.TeamSize - TeamCount(seat) : 0;
@@ -2785,7 +2803,7 @@ namespace ChessFight.Network
             // The same thing asked again while it is on its way (a second click) only keeps it going; a bot more is
             // one more each time.
             // R694: a seat asked for again replaces the one on its way.
-            if (op == "seat" || op == "move") asks.RemoveAll(a => a.Op == op && a.Target == target);
+            if (op == "seat" || op == "move" || op == "rules") asks.RemoveAll(a => a.Op == op && a.Target == target);
             bool once = op == "start" || op == "give" || op == "kick" || op == "fill" || op == "clearbots";
             var same = once ? asks.Find(a => a.Op == op && a.Target == target) : null;
             if (same != null) { same.Until = until; return; }
@@ -2827,6 +2845,7 @@ namespace ChessFight.Network
                     break;
                 case "give": GiveManagerNow(request.target); break;
                 case "kick": KickNow(request.target); break;
+                case "rules": SetRulesNow(request.team); break;
                 case "seat": SeatNow(sender, request.team); break;
                 case "move": SeatNow(request.target, request.team); break;
                 case "fill": if (privateRoom || AllowPublicBots) FillNow(); break;

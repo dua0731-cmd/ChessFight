@@ -22,6 +22,10 @@ namespace ChessFight.PawnRush
     {
         public float Progress01 { get; protected set; }
         public bool Completed { get; private set; }
+        // R703 (the flow rules' option 4): done because the other team cleared first and this team's gate opened
+        // PawnRushRules.GateDelay later - not by playing it. Known where the games are judged (offline, the host);
+        // the other PCs hear only that it is done.
+        public bool Late { get; private set; }
 
         public event Action Finished;
 
@@ -70,10 +74,19 @@ namespace ChessFight.PawnRush
         // Development shortcut (the playtest's F6): done now.
         public void ForceComplete() => Complete();
 
+        // R703: the other team is through and this gate opens by the clock (MiniGameSection.Rules.cs).
+        public void CompleteLate()
+        {
+            if (Completed) return;
+            Late = true;
+            Complete();
+        }
+
         // A new round: back to the start.
         public virtual void ResetGame()
         {
             Completed = false;
+            Late = false;
             Progress01 = 0f;
         }
 

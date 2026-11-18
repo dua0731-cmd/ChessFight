@@ -1,0 +1,34 @@
+rules: 낙오자 구제 한 팀이 깨면 · 미니게임을 깬 뒤 상대 문 20초 뒤 · 엔딩 왕관 발판
+
+Round seed 1: 1 왕실 마차뜰 | 2 정문 의장 광장 | 3 대계단 현관홀 | 4 국왕 침실 | 5 국왕 작전실 | 6 국왕 알현실 (임시)
+
+Round seed 2: 1 왕실 수로 정원 | 2 정문 쇠살문 누각 | 3 대계단 현관홀 | 4 왕궁 세탁장 | 5 국왕 작전실 | 6 국왕 알현실 (임시)
+ok   the round begins with the garden and has the hall third
+ok   no relief before anything is cleared
+picture garden_boats_before
+picture hall_stones_before
+white's first mini-game cleared at 2.5
+log  [PawnRush] 낙오자 구제 - 왕실 수로 정원: 쉬운 길 1곳 · 꺼진 장애물 19개
+ok   the garden got its relief when one team cleared the first mini-game
+ok   the hall has no relief yet
+ok   a bridge stands over the garden's reservoir
+ok   the boats are gone
+ok   the garden's robot arms, geysers and spin bars are off
+ok   white's gate is open, black's still shut
+picture garden_bridge_after
+log  [PawnRush] 시차 개방: 흑팀 문이 20초 뒤 열림 (정문 쇠살문 누각)
+ok   black's gate opened by itself about 20 s after white's clear (late, not cleared)
+ok   white's clear is a real one
+log  [PawnRush] 낙오자 구제 - 대계단 현관홀: 쉬운 길 1곳 · 꺼진 장애물 10개
+ok   the hall got its relief when one team cleared the second mini-game
+ok   every glass stone holds (14 squares)
+ok   the hall's rolling statues and falling chandeliers are off
+picture hall_stones_after
+
+Round seed 1: 1 왕실 마차뜰 | 2 정문 의장 광장 | 3 대계단 현관홀 | 4 국왕 침실 | 5 국왕 작전실 | 6 국왕 알현실 (임시)
+ok   the second round begins with the carriage yard: 왕실 마차뜰
+ok   with 'when both have cleared', one team's clear gives no relief
+log  [PawnRush] 낙오자 구제 - 왕실 마차뜰: 쉬운 길 0곳 · 꺼진 장애물 2개
+ok   the carriage yard got its relief once both teams had cleared
+ok   the yard's roaming teams are off
+RESULT: PASS

@@ -1055,3 +1055,23 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-room .chat-tab-text { white-space: nowrap; }
 .chat-room .chat-entry { height: 38px; margin-top: 6px; }
 .chat-room .chat-line, .chat-room .chat-recent-line { background-color: rgba(9, 7, 5, 0.84); }
+
+/* ---------- R703: the room's flow rules ----------
+   The manager's panel of a room a player made (LoadingScreenView.Room.cs, BuildRules), bottom right in the strip the
+   room's lists leave free (the chat stands bottom left): a row a setting, a button a choice, the room's choice gold. */
+.load-rules { position: absolute; right: 14px; bottom: 12px; width: 310px; padding: 6px 10px 8px 10px; border-radius: 10px; display: none;
+              border-width: 1px; border-color: rgba(233, 198, 122, 0.45); background-color: rgba(9, 7, 5, 0.86); }
+.load-room .load-rules { display: flex; }
+.load-rules-head { flex-direction: row; align-items: flex-end; margin-bottom: 2px; }
+.load-rules-title { font-size: 14px; -unity-font-style: bold; color: rgb(255, 233, 184); }
+.load-rules-note { font-size: 10px; color: rgba(243, 235, 221, 0.7); }
+.load-rules-label { font-size: 11px; -unity-font-style: bold; color: rgb(233, 198, 122); margin-top: 4px; margin-bottom: 3px; }
+.load-rules-row { flex-direction: row; }
+.load-rule-btn { flex-grow: 1; flex-basis: 0; height: 22px; margin: 0 4px 0 0; padding: 0 3px; font-size: 10px; border-width: 1px; border-radius: 6px;
+                 color: rgb(207, 198, 176); background-color: rgba(30, 22, 14, 0.9); border-color: rgba(233, 198, 122, 0.3); white-space: nowrap; }
+.load-rule-btn:last-child { margin-right: 0; }
+.load-rule-btn .a-btn-text { font-size: 10px; }
+.load-rule-btn.load-rule-on, .load-rule-btn.load-rule-on:hover, .load-rule-btn.load-rule-on:disabled {
+    color: rgb(34, 24, 12); background-color: rgb(233, 198, 122); border-color: rgb(255, 233, 184); opacity: 1; }
+.load-rule-btn.load-rule-on .a-btn-text { color: rgb(34, 24, 12); }
+.load-rule-btn:disabled { opacity: 0.45; }

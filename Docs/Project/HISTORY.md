@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-18 R703 · 게임 흐름 규칙 1단계: 방 생성 방의 방장이 방 화면 '게임 규칙' 패널에서 고름(`PawnRushRules`, 방 데이터 `rules`), 상대 문 20초 뒤 개방(`MiniGameSection.Rules.cs` · `CompleteLate`), 낙오자 구제(`SectionRelief`: 정원 다리 · 대계단 유리 발판 전부 정답 · 때리는 장애물 끔). 프로토콜 v55. 사용자 확인 전.
 - 2026-11-17 R702 · 소드 파이트 퀸 · 룩 · 비숍 · 나이트 F 스킬: F 조준(미리보기) → F 한 번 더 발동, 좌·우클릭 취소, 비숍 E 미끄럼도 E 미리보기 → E 한 번 더 미끄러짐 · 좌·우클릭 취소(SwordFightSkills · .Edge · PredictPress · 안내 문구). 컴파일 PASS · Core · 모의 세션 113, 사용자 Unity 확인 전.
 - 2026-11-17 R701 · 미니게임 소품에 충돌 상자(MiniGameModels.PropColliders.cs: 한 소품씩 건 것 · C 소품은 메시 경계, B · E · J 합친 소품은 잰 상자 46개, NoClimbSurface). G 룩 차고 · 킹 길 옆 기둥, 바닥에 납작한 것, 손 안 닿는 장식은 제외. 컴파일 PASS · Core · 모의 세션 113, 사용자 Unity 확인 전.
 - 2026-11-17 R700 · seoungtest(왕실 마차뜰 R677–R686)를 main에 병합: 프로토콜 v54, seoungtest 전용 시험 설정(`SeoungTestYardOnly` · 맵 시험 장면 마차뜰 전용) 제외, 문서 양쪽 유지(경기 오디오 마차뜰 절 §10 ~ §18), 성문 밀기 소리는 마차뜰 문에서만, PC 전역 그래픽 설정은 빼고 Blender 스킬은 넣음. 컴파일 PASS · Core 200 · 모의 세션 113 · 정적 검사 PASS, 사용자 Unity 확인 전.

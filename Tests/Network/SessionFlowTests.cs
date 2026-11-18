@@ -1508,6 +1508,21 @@ public static class SessionFlowTests
                 As(c,()=>c.TakeSeat(2));Step(20);
                 Check(maker.SeatOf(c.Self)==2&&!maker.CanStartGame,"a sword fight room with a spectator offers a start");
                 As(maker,maker.StartGame);Step(20);Check(clients.All(x=>!x.Started),"a sword fight room started with a spectator");});
+            // R703 (the user 2026-11-17: five ways for the round's flow, the manager's to switch).
+            Test("R703: the manager of a room a player made sets the round's flow rules, from another PC too; nobody else does, and not in a public room",()=>{
+                Room(new[]{300,500,400});var maker=clients[0];var host=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==host.Self&&x.Manager==maker.Self&&x.RoomRules==0),"setup: the best PC hosts, the maker manages, no rules yet");
+                Check(maker.CanSetRules&&!host.CanSetRules&&!c.CanSetRules,"who may set the rules");
+                int rules=new PawnRushRules{Relief=PawnRushRules.ReliefBoth,After=PawnRushRules.AfterDelay}.Encode();
+                As(c,()=>c.SetRules(rules));Step(20);Check(clients.All(x=>x.RoomRules==0),"a player who does not manage set the rules");
+                As(maker,()=>maker.SetRules(rules));Step(20);
+                Check(clients.All(x=>x.RoomRules==rules&&x.Error==""),"the manager's rules did not reach the room: "+maker.RoomRules);
+                As(maker,()=>maker.SetRules(0));Step(20);Check(clients.All(x=>x.RoomRules==0),"the rules were not put back");
+                As(maker,()=>maker.SetRules(rules));Step(20);As(maker,maker.StartGame);Step(40);
+                Check(clients.All(x=>x.Started&&x.RoomRules==rules),"the rules did not stay with the started match");
+                PublicRoom(new[]{500,400});var first=clients[0];
+                Check(!first.CanSetRules,"a public room's manager may set rules");
+                As(first,()=>first.SetRules(rules));Step(20);Check(clients.All(x=>x.RoomRules==0),"a public room took rules");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

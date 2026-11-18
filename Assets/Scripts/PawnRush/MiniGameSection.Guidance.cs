@@ -103,6 +103,8 @@ namespace ChessFight.PawnRush
                 GUI.Label(new Rect(rect.x, rect.y, 56f * scale, rect.height), hintTeam == Teams.White ? "백팀" : "흑팀", directionStyle);
                 GUI.Label(new Rect(rect.x + 56f * scale, rect.y, rect.width - 60f * scale, rect.height), visibleHint, directionStyle);
             }
+            // R703: the flow rules' line (the other team is through: this gate opens by itself in so many seconds).
+            if (showBrief) RulesLine(scale);
             GUI.color = previous;
         }
 

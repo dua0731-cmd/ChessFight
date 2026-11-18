@@ -26,6 +26,13 @@ namespace ChessFight.Game
         public event Action<ulong> MoveRequested;
         public event Action CopyRoomRequested;
         public event Action<int, int> TeamBotRequested;
+        // R703: the manager picked a flow rule: the room's rules with that choice (PawnRushRules.Encode).
+        public event Action<int> RulesRequested;
+        VisualElement rulesBox;
+        Label rulesNote;
+        readonly List<Button[]> ruleButtons = new List<Button[]>();
+        // Some choice is not built yet: the manager's head says what the dim ones are.
+        bool rulesUnready;
 
         sealed class SpecCard
         {
@@ -86,6 +93,7 @@ namespace ChessFight.Game
 
             roomNote = Text("", "load-room-note");
             screen.Add(roomNote);
+            BuildRules();
 
             for (int team = 0; team < 2; team++)
             {
@@ -101,6 +109,60 @@ namespace ChessFight.Game
                 rosterHead.Insert(at, botMore[team]);
                 rosterHead.Insert(at, botLess[team]);
             }
+        }
+
+        // R703: the round's flow rules, bottom right (the chat stands bottom left): a row a setting, a button a choice,
+        // the room's choice lit. Only the manager's clicks count; a choice not built yet cannot be picked.
+        void BuildRules()
+        {
+            rulesBox = Box("load-rules");
+            var head = Box("load-rules-head");
+            head.Add(Text("게임 규칙", "load-rules-title"));
+            var gap = new VisualElement { pickingMode = PickingMode.Ignore };
+            gap.AddToClassList("grow");
+            head.Add(gap);
+            rulesNote = Text("", "load-rules-note");
+            head.Add(rulesNote);
+            rulesBox.Add(head);
+            for (int setting = 0; setting < Network.PawnRushRules.Settings.Length; setting++)
+            {
+                rulesBox.Add(Text(Network.PawnRushRules.Settings[setting], "load-rules-label"));
+                var row = Box("load-rules-row");
+                var names = Network.PawnRushRules.Choices[setting];
+                var buttons = new Button[names.Length];
+                for (int choice = 0; choice < names.Length; choice++)
+                {
+                    int s = setting, c = choice;
+                    rulesUnready |= !Network.PawnRushRules.Ready(setting, choice);
+                    var button = Small(names[choice], "load-rule-btn");
+                    button.style.display = DisplayStyle.Flex;
+                    button.clicked += () =>
+                    {
+                        if (State.CanSetRules && Network.PawnRushRules.Ready(s, c))
+                            RulesRequested?.Invoke(Network.PawnRushRules.Decode(State.Rules).With(s, c).Encode());
+                    };
+                    buttons[choice] = button;
+                    row.Add(button);
+                }
+                ruleButtons.Add(buttons);
+                rulesBox.Add(row);
+            }
+            screen.Add(rulesBox);
+        }
+
+        void SyncRules()
+        {
+            if (rulesBox == null) return;
+            var rules = Network.PawnRushRules.Decode(State.Rules);
+            string note = !State.CanSetRules ? "방장이 정해요" : rulesUnready ? "눌러서 바꾸기 · 흐린 칸은 준비 중" : "눌러서 바꾸기";
+            if (rulesNote.text != note) rulesNote.text = note;
+            for (int setting = 0; setting < ruleButtons.Count; setting++)
+                for (int choice = 0; choice < ruleButtons[setting].Length; choice++)
+                {
+                    var button = ruleButtons[setting][choice];
+                    button.EnableInClassList("load-rule-on", rules.Of(setting) == choice);
+                    button.SetEnabled(Network.PawnRushRules.Ready(setting, choice) && (State.CanSetRules || rules.Of(setting) == choice));
+                }
         }
 
         // As many as the room has (SteamSession.SpectatorSeats; the Game assembly does not see the session).
@@ -201,6 +263,7 @@ namespace ChessFight.Game
             }
             if (!room) return;
 
+            SyncRules();
             if (roomCode.text != State.RoomCode) roomCode.text = State.RoomCode;
             if (roomNote.text != State.RoomNote) roomNote.text = State.RoomNote;
             int seated = Mathf.Min(State.SpecNames.Count, specCards.Count);

@@ -28,6 +28,10 @@ namespace ChessFight.PawnRush
         [SerializeField] int salt = 4;
 
         bool[] leftHolds;
+        // R703 (the section's relief, SectionRelief - the user: "모두 정답 발판이 되는 식"): every square holds.
+        bool relieved;
+        // A relieved bridge shows it: every square in gold, a tinted copy of the squares' own glass.
+        Material goldGlass, plainGlass;
         float[] standing, brokenAt;          // per square: left rows first, then right rows
         Transform[][] shards;
         AudioClip breakClip;
@@ -53,6 +57,8 @@ namespace ChessFight.PawnRush
             standing = new float[rows * 2];
             brokenAt = new float[rows * 2];
             receivedState = false;
+            Tint(false);
+            relieved = false;
             if (breakClip == null) breakClip = Resources.Load<AudioClip>("PawnRushHallSfx/BridgeGlassBreak");
             for (int i = 0; i < rows * 2; i++) Mend(i);
         }
@@ -86,6 +92,8 @@ namespace ChessFight.PawnRush
                     continue;
                 }
                 float open = (v - 1) / 10f, at = Time.time - open;
+                // R703: a relieved bridge's squares stay whole here (the host's close in its next state).
+                if (relieved) continue;
                 if (float.IsNegativeInfinity(brokenAt[i]))
                     Break(i, at, receivedState && open <= .4f);
                 else if (Mathf.Abs(brokenAt[i] - at) > .5f) brokenAt[i] = at;
@@ -122,7 +130,47 @@ namespace ChessFight.PawnRush
             if (shards != null && shards[i] != null)
                 foreach (var piece in shards[i]) if (piece != null) piece.gameObject.SetActive(false);
         }
-        bool Holds(int i) => i < Rows ? leftHolds[i] : !leftHolds[i - Rows];
+        bool Holds(int i) => relieved || (i < Rows ? leftHolds[i] : !leftHolds[i - Rows]);
+
+        // R703: from now on every square holds; the ones open now close.
+        public void Relieve()
+        {
+            relieved = true;
+            Tint(true);
+            if (brokenAt == null) return;
+            for (int i = 0; i < Rows * 2; i++) if (Square(i) != null) Mend(i);
+        }
+
+        // Gold for a relieved bridge ("모두 정답 발판" has to be seen before anyone dares to step), the plain glass back
+        // for a new round.
+        void Tint(bool gold)
+        {
+            for (int i = 0; i < Rows * 2; i++)
+            {
+                var square = Square(i);
+                var look = square != null ? square.GetComponent<Renderer>() : null;
+                if (look == null) continue;
+                if (!gold)
+                {
+                    if (goldGlass != null && look.sharedMaterial == goldGlass) look.sharedMaterial = plainGlass;
+                    continue;
+                }
+                if (goldGlass == null && look.sharedMaterial != null)
+                {
+                    plainGlass = look.sharedMaterial;
+                    goldGlass = new Material(plainGlass) { name = plainGlass.name + " (relief)" };
+                    if (goldGlass.HasProperty("_BaseColor")) goldGlass.SetColor("_BaseColor", new Color(1f, .78f, .22f, .82f));
+                    if (goldGlass.HasProperty("_FresnelColor")) goldGlass.SetColor("_FresnelColor", new Color(1f, .95f, .62f, 1f));
+                    if (goldGlass.HasProperty("_Frost")) goldGlass.SetFloat("_Frost", .8f);
+                }
+                if (goldGlass != null) look.sharedMaterial = goldGlass;
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (goldGlass != null) Destroy(goldGlass);
+        }
 
         void FixedUpdate()
         {

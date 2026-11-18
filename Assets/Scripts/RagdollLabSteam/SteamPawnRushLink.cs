@@ -104,6 +104,9 @@ namespace ChessFight.RagdollLab.Net
             // the same sections and seeds on every PC; its start is the lobby's go (ArmMatchStart), which comes after
             // every PC has loaded, so until then a start ProvisionalStart ahead holds the gates shut and the carriages
             // at home.
+            // R703: the round's flow rules, as the room's manager set them (none in a room random matching found).
+            PawnRushRules.Current = PawnRushRules.Decode(session.RoomRules);
+            Debug.Log("[ChessFight] 폰 러쉬: 이번 판의 규칙 - " + PawnRushRules.Current);
             if (round != null)
             {
                 // R543 (user 11-11: "몇 대 몇이냐에 따라 미니게임 규모를 정할거야"): the round is built for the size the

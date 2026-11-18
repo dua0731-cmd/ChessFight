@@ -1131,6 +1131,16 @@ public static class NetworkCoreTests
                 Check(bots.Count==0,"a party's bot stayed without its people");
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
+            Test("R703: the round's flow rules pack into one number and back; a number that is not rules is the game as it was", () => {
+                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) {
+                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending,"rules changed on the way: "+relief+after+ending); }
+                Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
+                var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
+                Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
+                Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
+                Check(!PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&!PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
+                Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
             Test("R694: a player changes sides alone and the rest of its group stay; one player gives up a seat and takes one", () => {
                 var r=new TeamReservations(); Reserve(r,1,3); Reserve(r,4,2); r.Reconcile(new HashSet<ulong>(Ids(1,5)),1);
                 Check(r.Find(2).Team==0&&r.Find(4).Team==1,"setup: 1 2 3 white, 4 5 black");
