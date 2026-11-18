@@ -7,7 +7,7 @@
 <pattern id="grate" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#7c8496"/><path d="M0,0 L1,0 M0,0 L0,1" stroke="#39404f" stroke-width=".18"/></pattern>
 </defs>
 <rect width="1400" height="1010" fill="#171a22"/>
-<text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">왕실 천문대 레벨 디자인 초안 v0.1 — 위에서 본 배치 (R711)</text>
+<text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">왕실 천문대 레벨 디자인 초안 v0.1 — 위에서 본 배치 (R711, 회색 상자 R712 반영)</text>
 <text x="24" y="58" font-size="13" fill="#a39a85">북쪽이 위 · 좌표는 구간 로컬 (x 동쪽, z 북쪽), 단위 m · 흰 점선 = 진행 경로 · 빨간 점선 = 난간 없는 낭떠러지 · 초록 점 = 체크포인트 · 금색 = 움직이는 장치</text>
 
 <!-- ===================== plan: world metres, x -12..62, z -2..136 ===================== -->
@@ -28,7 +28,6 @@
     <rect x="44" y="71" width="12" height="12"/>
     <rect x="31" y="74" width="13" height="6"/>
     <rect x="1" y="71" width="12" height="12"/>
-    <rect x="-1" y="83" width="16" height="15" fill="#b3ac9a"/>
   </g>
   <rect x="47" y="50" width="6" height="21" fill="url(#grate)" stroke="#8d8674" stroke-width=".15"/>
 
@@ -96,10 +95,11 @@
 
   <!-- beat 5: planet lifts -->
   <g fill="#2a3a63" stroke="#e2b23c" stroke-width=".2">
-    <rect x="4" y="83" width="6" height="5"/><rect x="4" y="88" width="6" height="5"/><rect x="4" y="93" width="6" height="5"/>
+    <rect x="4" y="83.2" width="6" height="5"/><rect x="4" y="92.6" width="6" height="5"/>
+    <rect x="4" y="88.4" width="6" height="4" fill="#bfc4c9" stroke="#8d8674"/>
   </g>
-  <line x1="2.5" y1="90.5" x2="11.5" y2="90.5" stroke="#e2b23c" stroke-width=".3" stroke-dasharray=".7 .5"/>
-  <circle cx="9" cy="90.5" r=".8" fill="#e2b23c"/>
+  <line x1="2.5" y1="90.4" x2="11.5" y2="90.4" stroke="#e2b23c" stroke-width=".3" stroke-dasharray=".7 .5"/>
+  <circle cx="9" cy="90.4" r=".8" fill="#e2b23c"/>
 
   <!-- beat 6: telescope bridge -->
   <g fill="#e2b23c" fill-opacity=".38">
@@ -149,9 +149,9 @@
     <text transform="translate(13 35) scale(.1538 -.1538)">벨트 4장(서로 반대로) + 반쪽 방패 2쌍</text>
     <text transform="translate(45.5 56.5) scale(.1538 -.1538)" text-anchor="end">옆바람 3곳, 물결처럼</text>
     <text transform="translate(-9 63) scale(.1538 -.1538)">회전판 지름 18 m + 회전팔 2개</text>
-    <text transform="translate(16.5 87.8) scale(.1538 -.1538)">3단 승강(0 → 6 m) + 행성 추</text>
+    <text transform="translate(16.5 87.8) scale(.1538 -.1538)">승강대 둘(0 → 6 m) + 턱의 행성 추</text>
     <text transform="translate(28 93.6) scale(.1538 -.1538)" text-anchor="middle">망원경 밀대 3개, 남쪽은 낭떠러지</text>
-    <text transform="translate(42.5 112.6) scale(.1538 -.1538)" text-anchor="end">2단 벽 + 하강풍</text>
+    <text transform="translate(42.5 112.6) scale(.1538 -.1538)" text-anchor="end">3단 벽 + 턱 위 바람</text>
     <text transform="translate(16 15) scale(.1538 -.1538)">돔 홀 70 × 99 m, 바닥 아래 허공 18 m</text>
   </g>
   <g font-size="9.5" fill="#1c2233" font-weight="700">
@@ -197,16 +197,16 @@
   <text x="760" y="360">컨베이어 4장 1.5 m/s + 반쪽 방패 2쌍(4.5초)</text>
   <text x="760" y="400">옆바람 3곳 5초 주기, 1.7초씩 어긋난 물결</text>
   <text x="760" y="440">회전판 15°/초 + 낮은 팔 + 천구 달린 팔</text>
-  <text x="760" y="480">승강 3단(5초, 서로 반 박자) + 행성 추 1</text>
+  <text x="760" y="480">승강대 2(5초) + 가운데 턱의 행성 추 1</text>
   <text x="760" y="520">망원경 밀대 3개 4.5초, 한쪽 난간 없음</text>
-  <text x="760" y="560">2.25 m 벽 2단 + 단마다 하강풍</text>
+  <text x="760" y="560">1.5 m 벽 3단 + 턱 두 곳에 벽에서 부는 바람</text>
 </g>
 <g font-size="12" fill="#d8cfba">
   <text x="1070" y="320">넘어짐 (약 3초)</text>
   <text x="1070" y="360">밀려 휘청, 벨트가 되돌림 (약 4초)</text>
   <text x="1070" y="400">낙사 → CP2 (약 9초)</text>
   <text x="1070" y="440">낙사 → CP3 (약 11초)</text>
-  <text x="1070" y="480">아래 뜰로 떨어짐, 다시 탐 (약 8초)</text>
+  <text x="1070" y="480">낙사 → CP4 (약 8초)</text>
   <text x="1070" y="520">낙사 → CP5 (약 10초)</text>
   <text x="1070" y="560">아래 단으로 떨어짐 (약 5초)</text>
 </g>
@@ -260,6 +260,6 @@
 <rect x="556" y="876" width="828" height="110" rx="8" fill="#1f232d"/>
 <text x="574" y="902" font-size="15" font-weight="700" fill="#f4ead2">추정 시간과 한계</text>
 <text x="574" y="926" font-size="12.5" fill="#d8cfba">실수 없이 약 2분 4초 · 실패 포함 평균 약 2분 57초 · 12명 혼잡을 더하면 3분 25초 ~ 3분 40초 (손계산 추정, 플레이 확인 전)</text>
-<text x="574" y="948" font-size="12.5" fill="#d8cfba">낙사 비트 3곳(③ ④ ⑥), 아래로 떨어져 다시 타는 비트 2곳(⑤ ⑦). 장치는 모두 기존 프리팹의 크기 · 주기 · 위상만 바꿔 쓴다.</text>
-<text x="574" y="970" font-size="12.5" fill="#a39a85">이 그림과 수치는 설계 초안이다. Unity에 만든 것은 없다 — 상세: Docs/PawnRush/PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md</text>
+<text x="574" y="948" font-size="12.5" fill="#d8cfba">낙사 비트 4곳(③ ④ ⑤ ⑥), 아래 단으로 떨어지는 비트 1곳(⑦). 새 장치는 망원경 밀대 하나, 나머지는 기존 장치의 설정만 바꾼다.</text>
+<text x="574" y="970" font-size="12.5" fill="#a39a85">설계 초안 + 회색 상자(R712)를 지으며 바꾼 곳 반영. 사람이 달려 본 것은 아니다 — 상세: Docs/PawnRush/PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md</text>
 </svg>

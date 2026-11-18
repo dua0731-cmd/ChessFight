@@ -1,0 +1,44 @@
+Royal Observatory graybox (R712): built in the course prefab test scene in Play Mode. Not a person playing, not online.
+PASS the course prefab test is in the scene
+PASS the Royal Observatory is listed in the course prefab test: key 6 of 6
+PASS no round draws it (it is in a slot's drafts only); the rounds draw from 16 prefabs as before
+PASS built: Late_3-2_RoyalObservatory · 왕실 천문대 (회색 상자), slot 5
+PASS an obstacle section in the late slot (5)
+PASS entry (0.00, 0.00, 0.00), exit (50.00, 11.50, 132.00)
+PASS beats: 7
+PASS the pawn stands at the entry: (0.0, 0.3, 4.0)
+  note 구간 왕실 천문대 (회색 상자) (Late_3-2_RoyalObservatory)
+  note 장애물 덮음 검사 0곳
+  note 백팀 길 278.9 m, 가장 넓은 틈 0.25 m
+  note 체크포인트 8개, 부활 자리 48곳
+  note 오를 수 없는 면 60개
+  note 입구 (0.0, 0.0, 0.0) → 출구 (50.0, 11.5, 132.0)
+PASS the section check: 0 errors
+PASS checkpoints: 8
+PASS devices: 3 rams, 5 winds, 1 weight, 4 belts, 2 shield pairs
+PASS the lifts, the turntable, its two arms and the ring court's three bars are there
+PASS lift A's deck rides 0.05 .. 3.00 m (the W landing 0, the ledge 3)
+PASS lift B's deck rides 3.00 .. 5.95 m (the ledge 3, the NW landing 6)
+PASS ram 1's face goes from z 106.46 to 99.80 (the bridge is z 100 .. 106)
+PASS ram 2's face goes from z 106.46 to 99.80 (the bridge is z 100 .. 106)
+PASS ram 3's face goes from z 106.46 to 99.80 (the bridge is z 100 .. 106)
+  06 Shutter shields 1 / Left sliding wall: z 47.00 .. 53.00
+  06 Shutter shields 1 / Right sliding wall: z 35.00 .. 41.00
+  06 Shutter shields 2 / Left sliding wall: z 47.00 .. 53.00
+  06 Shutter shields 2 / Right sliding wall: z 35.00 .. 41.00
+PASS the four shield walls slide across their half (4 of 4 moved 6 m)
+PASS the turntable turned 195 deg in 13 s (15 deg/s)
+PASS the five winds each rested, warned and blew (5 of 5)
+PASS the pawn is still on the entry floor after 17 s: (0.0, 0.3, 4.0)
+picture 00_plan.png
+picture 01_from_the_tunnel.png
+picture 02_overview.png
+picture 03_ring_court.png
+picture 04_belts_and_shields.png
+picture 05_vent_bridge.png
+picture 06_orrery.png
+picture 07_lifts.png
+picture 08_telescope_bridge.png
+picture 09_constellation_wall.png
+picture 10_back_from_the_terrace.png
+RESULT PASS

@@ -112,9 +112,15 @@ namespace ChessFight.PawnRush.Editor
             var prefabs = new List<GameObject>();
             if (set != null)
                 for (int i = 0; i < set.SlotCount; i++)
+                {
                     if (set[i] != null && set[i].prefabs != null)
                         foreach (var p in set[i].prefabs)
                             if (p != null && !prefabs.Contains(p)) prefabs.Add(p);
+                    // R712: the drafts too (a graybox the rounds do not draw yet).
+                    if (set[i] != null && set[i].drafts != null)
+                        foreach (var p in set[i].drafts)
+                            if (p != null && !prefabs.Contains(p)) prefabs.Add(p);
+                }
             if (prefabs.Count == 0)
             {
                 EditorUtility.DisplayDialog("Validate Sections", SectionSet + "에 구간 프리팹이 없습니다.", "확인");
@@ -174,6 +180,9 @@ namespace ChessFight.PawnRush.Editor
                     // R493: the war room (slot 7) is never baked; it is built here as in Play.
                     var room = go.GetComponent<WarRoomSection>();
                     if (room != null && !room.HasContent) Course01v4Builder.BuildWarRoomSection(room);
+                    // R712: the Royal Observatory's graybox is built when it wakes, as the war room.
+                    var observatory = go.GetComponent<RoyalObservatorySection>();
+                    if (observatory != null && !observatory.HasContent) RoyalObservatoryBuilder.Build(observatory);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

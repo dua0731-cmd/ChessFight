@@ -66,6 +66,10 @@ namespace ChessFight.PawnRush
                 course++;
                 foreach (var prefab in slot.prefabs)
                     if (prefab != null) entries.Add(new Entry { course = course, slot = s, prefab = prefab });
+                // R712: the slot's drafts (a graybox not in any round yet) come after its own.
+                if (slot.drafts != null)
+                    foreach (var prefab in slot.drafts)
+                        if (prefab != null) entries.Add(new Entry { course = course, slot = s, prefab = prefab });
             }
         }
 

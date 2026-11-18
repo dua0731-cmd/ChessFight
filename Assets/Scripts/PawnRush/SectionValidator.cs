@@ -99,6 +99,8 @@ namespace ChessFight.PawnRush
             if (hall != null) return hall.Kit;
             var garden = section.GetComponent<RoyalWaterGarden>();
             if (garden != null) return garden.Kit;
+            var observatory = section.GetComponent<RoyalObservatorySection>();
+            if (observatory != null) return observatory.Kit;
             var room = section.GetComponent<WarRoomSection>();
             return room != null ? room.Kit : null;
         }

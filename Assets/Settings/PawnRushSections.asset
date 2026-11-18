@@ -43,6 +43,8 @@ MonoBehaviour:
     prefabs:
     - {fileID: 1000, guid: 059960ab5c944997acc8d8e393fd203d, type: 3}
     - {fileID: 1000, guid: c4dcbac7283eae1cad9bf04590c10ee3, type: 3}
+    drafts:
+    - {fileID: 1000, guid: 6450fa1391291b2131395d4c2703010f, type: 3}
   - name: "\uC5D4\uB529 \uAD6C\uAC04"
     kind: 2
     prefabs:
