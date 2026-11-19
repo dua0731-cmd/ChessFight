@@ -959,6 +959,7 @@ namespace ChessFight.RagdollLab
         {
             if (Floating) return;   // the water catches it
             if (KingCallShielded) return;   // on its way in to its king (R146)
+            if (WardCatchesKnockdown(cause)) return;   // JY-skill-lab: under a close guard (근접 호위): a stagger instead
             DropHook();
             DropRope();
             EndClimbPose();
@@ -3393,7 +3394,8 @@ namespace ChessFight.RagdollLab
             if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
             // Heavier pieces go less far (M11): the king a third, the rook two thirds.
-            push *= PushScale;
+            // (JY-skill-lab: and a piece under a close guard much less, 근접 호위.)
+            push *= PushScale * WardPushScale;
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
             AddVelocity(push);

@@ -356,6 +356,7 @@ namespace ChessFight.RagdollLab
                 else HoldBound(dt);
             }
             UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
+            UpdateHillStates(dt);     // a close guard on it, squashed and sliding (RagdollPawn.HillSkills.cs)
             TrackGetUp(s);
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
@@ -483,7 +484,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>What a skill does to the piece it hits (DESIGN §2.3-2.4): a knockdown is the skill's to
         /// give, not the impact's; a piece that is down is only pushed, one just up only staggers.</summary>
-        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause)
+        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false)
         {
             if (target == null || target.NetworkPuppet) return "-";
             if (target.SkillUntargetable)
@@ -494,6 +495,22 @@ namespace ChessFight.RagdollLab
             }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             push *= StagePower;   // the growing system's stage (the skill window)
+            // A close guard (근접 호위, RagdollPawn.HillSkills.cs): the piece that gave it is covered by a guarded teammate
+            // standing near it, who takes the hit instead; a guarded piece only staggers and gives a little.
+            var cover = covered ? null : target.WardCover();
+            if (cover != null)
+            {
+                target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
+                SkillHit(cover, push, knockdown, cause, true);
+                return $"{cover.DisplayName}이(가) 대신 막음";
+            }
+            if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
+            {
+                target.TakeHit(Flat(push), 0f, 0f, false);   // (TakeHit scales a guarded piece's push down)
+                target.Stagger(PawnRushSkills != null ? PawnRushSkills.wardStagger : 0.2f);
+                target.LastSkillHit = $"{cause}: 호위로 버팀";
+                return "호위로 버팀 (밀림만 조금)";
+            }
             string result;
             if (knockdown && target.State == PawnState.Ragdoll)
             {
@@ -1382,6 +1399,7 @@ namespace ChessFight.RagdollLab
             }
             // 10-26: the bishop on its rope (RagdollPawn.BishopLasso.cs).
             if (LassoPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR)) return;
+            if (HillPose(ref chest, ref head)) return;   // Queen of the Hill's six (a lean only)
             if (skillPiece == PieceKind.Knight && skillStage == SkillStage.Windup)
             {
                 // R138 (승규 님: "좀 더 나이트다! 라는 연출"): it rears up like a horse before it springs: leaning back, head up,

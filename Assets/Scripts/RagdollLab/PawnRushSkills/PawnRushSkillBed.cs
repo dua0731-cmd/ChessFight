@@ -538,7 +538,12 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.TwoSteps:
                     case PawnRushSkillIds.RingShove:
                     case PawnRushSkillIds.Fork:
+                    case PawnRushSkillIds.Ward:
+                    case PawnRushSkillIds.Squeeze:
                         use = $"{key} 사용";
+                        break;
+                    case PawnRushSkillIds.AirVolley:
+                        use = running ? $"{click} 발사 ({me.VolleyShotsLeft}발) · {key} 내려옴" : $"{key} 떠오름 → {click} 발사";
                         break;
                     default:
                         use = $"{key} 조준 → {click}";
@@ -753,7 +758,9 @@ namespace ChessFight.RagdollLab
                 else
                 {
                     line = pawn.SkillBound ? "묶임" : pawn.State == PawnState.Ragdoll ? "넘어짐" : pawn.Staggered ? "휘청" : pawn.GetUpGuardLeft > 0f ? "기상 보호" : "";
-                    // JY-skill-lab: plan 1-나's holds on it.
+                    // JY-skill-lab: the new skills' holds on it.
+                    if (pawn.Squashed) line = "납작" + (line.Length > 0 ? " · " + line : "");
+                    if (pawn.Warded) line = $"호위 {pawn.WardLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.Pinned) line = $"핀 {pawn.PinLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.CheckedBy() != null) line = "체크!" + (line.Length > 0 ? " · " + line : "");
                     // R146: a king's call to it, and its trip in.

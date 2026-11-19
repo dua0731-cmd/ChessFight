@@ -12,6 +12,12 @@ namespace ChessFight.Network
         public const int None = 0;
         public const int TwoSteps = 1, TurnLeap = 2, CrossRope = 3, ChainPull = 4, RingShove = 5;
         public const int EnPassant = 11, Fork = 12, Pin = 13, Castling = 14, Check = 15;
+        // Queen of the Hill's six (승규 님, R89), brought over to the slots: the king's close guard, the queen's long slash,
+        // the rook's castling swap, the bishop's crossed air barrage, the knight's press leap, the pawn's squeeze through.
+        public const int Ward = 44, Slash = 45, CastleSwap = 46, AirVolley = 47, PressLeap = 48, Squeeze = 49;
+
+        /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
+        public static bool Castle(int id) => id == Castling || id == CastleSwap;
 
         /// <summary>One of the skills as they are: made for one piece, with that piece's effects and sounds.</summary>
         public static bool Old(int id) => id >= TwoSteps && id <= RingShove;

@@ -209,6 +209,109 @@ namespace ChessFight.RagdollLab
         public float[] stageCooldown = { 1f, 0.75f, 0.55f };
         public float[] stagePower = { 1f, 1.25f, 1.5f };
 
+        [Header("퀸 오브 더 힐에서 옮긴 스킬 (승규 님 R89~R156의 수치 그대로)")]
+        [Tooltip("이 여섯 스킬에 넘어지면 이 시간 동안 누워 있음 (초). 0이면 래그돌 기본")]
+        public float hillDownHold = 1f;
+
+        [Header("옮긴 스킬 — 근접 호위 (킹)")]
+        [Tooltip("준비 동작 (초)")]
+        public float wardWindup = 0.45f;
+        [Tooltip("이 반경(m) 안의 팀원이 호위를 받는다. 호위 받는 팀원이 준 사람에게서 이 반경 안에 서 있으면 준 사람이 맞을 것을 대신 받는다")]
+        public float wardRadius = 2.5f;
+        [Tooltip("위아래로 이만큼 안이면 받는다 (m)")]
+        public float wardHeight = 2f;
+        [Tooltip("호위 시간 (초)")]
+        public float wardTime = 2.9f;
+        [Tooltip("호위 중 밀림 배율")]
+        public float wardPush = 0.25f;
+        [Tooltip("호위 중 넘어질 일이 대신 이만큼 휘청 (초)")]
+        public float wardStagger = 0.2f;
+        public float wardRecovery = 0.45f;
+        public float wardCooldown = 9f;
+
+        [Header("옮긴 스킬 — 팔방 검격 (퀸)")]
+        [Tooltip("좌클릭 뒤 베기까지 (초)")]
+        public float slashWindup = 0.45f;
+        [Tooltip("검격 길이 (m) = 4칸")]
+        public float slashLength = 6f;
+        public float slashWidth = 1.2f;
+        [Tooltip("검기가 끝까지 가는 시간 (초)")]
+        public float slashTravel = 0.2f;
+        public float slashPush = 5f;
+        public float slashLift = 1.5f;
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 높은 곳(점프 중인 적)까지 맞는다 (m)")]
+        public float slashHeight = 1.2f;
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 낮게 선 적까지 맞는다 (m)")]
+        public float slashDrop = 0.45f;
+        [Tooltip("검기가 타고 오르는 턱의 높이 (m). 이보다 높은 면에서 막힌다. 낭떠러지는 얼마든 따라 내려간다")]
+        public float slashClimb = 1.05f;
+        public float slashRecovery = 0.6f;
+        public float slashCooldown = 6f;
+
+        [Header("옮긴 스킬 — 캐슬링 교대 (룩, 1-나 캐슬링과 같은 코드 · 수치만 다름)")]
+        public float swapRange = 9f;
+        [Tooltip("조준선에서 이 각도 안의 팀원을 고른다 (도)")]
+        public float swapCone = 35f;
+        [Tooltip("팀원이 받을 때까지 기다리는 시간 (초). 넘으면 취소, 쿨타임 없음")]
+        public float swapWait = 3f;
+        public float swapDummyAnswer = 0.4f;
+        [Tooltip("두 기물이 날아가 자리를 바꾸는 시간 (초)")]
+        public float swapTime = 0.55f;
+        public float swapArc = 0.9f;
+        public float swapCooldown = 12f;
+
+        [Header("옮긴 스킬 — 교차 공중 포격 (비숍)")]
+        [Tooltip("떠오르는 높이 (발이 바닥에서, m)")]
+        public float volleyHover = 1.3f;
+        public float volleyRise = 0.25f;
+        [Tooltip("첫 발을 쏘기 전까지 떠 있는 시간 (초). 다 되면 쏘지 않고 내려옴. 첫 발을 쏜 뒤에는 시간 제한 없음")]
+        public float volleyHoverTime = 3f;
+        [Tooltip("떠 있는 동안 이동 키로 미끄러지는 속도 (m/s)")]
+        public float volleyDrift = 0.7f;
+        public float volleyDriftEase = 0.9f;
+        [Tooltip("한 번 떠올라 쏠 수 있는 견제탄 수 (1~3)")]
+        public int volleyShots = 2;
+        public float volleyRange = 9f;
+        [Tooltip("견제탄이 날아가는 시간 (초)")]
+        public float volleyFlight = 0.65f;
+        [Tooltip("X자 파동 한쪽 팔 길이 (m)와 폭 (m)")]
+        public float volleyArm = 1.6f;
+        public float volleyArmWidth = 0.6f;
+        [Tooltip("가운데(조준점)에서 이 반경 안은 맞는다 (m)")]
+        public float volleyCenter = 0.75f;
+        public float volleyPush = 6.5f;
+        public float volleyLift = 2.8f;
+        public float volleyCooldown = 9f;
+
+        [Header("옮긴 스킬 — 도약 압착 (나이트)")]
+        public float pressRange = 6f;
+        [Tooltip("지금 바닥보다 이만큼 높은 곳까지만 뛰어오른다 (m)")]
+        public float pressMaxRise = 1.05f;
+        [Tooltip("호의 높이 (m)와 호를 나는 중력 배율 (클수록 짧고 굵게)")]
+        public float pressArc = 1.6f;
+        public float pressGravity = 1.6f;
+        public float pressWindup = 0.3f;
+        [Tooltip("착지 원 반경 (m)")]
+        public float pressRadius = 1.3f;
+        [Tooltip("조준점에서 이 거리(m) 안에 적이 있으면 그 적의 머리 위로 자동 조준")]
+        public float pressSnap = 1.05f;
+        [Tooltip("납작해지는 시간 (초)")]
+        public float pressFlatten = 0.7f;
+        [Tooltip("납작해진 적이 바깥으로 미끄러지는 속도 (m/s)와 시간 (초)")]
+        public float pressSlide = 2.6f;
+        public float pressSlideTime = 0.35f;
+        public float pressRecovery = 0.3f;
+        public float pressCooldown = 7f;
+
+        [Header("옮긴 스킬 — 비집고 돌파 (폰)")]
+        public float squeezeCrouch = 0.08f;
+        public float squeezeDistance = 1.8f;
+        public float squeezeSpeed = 8f;
+        public float squeezeRise = 0.22f;
+        [Tooltip("지나가며 부딪힌 기물을 옆으로 비키게 미는 속도 (m/s)")]
+        public float squeezeNudge = 1.4f;
+        public float squeezeCooldown = 5f;
+
         [Header("1-나 폰 — 앙파상 (지나치는 놈 발 걸기)")]
         [Tooltip("적이 이 거리 안을 스쳐 지나가면 (m), 서로 지나치는 빠르기가 이 이상일 때 (m/s) 걸 수 있다")]
         public float passRange = 2f;

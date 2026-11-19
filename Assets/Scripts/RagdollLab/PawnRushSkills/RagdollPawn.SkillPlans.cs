@@ -124,7 +124,8 @@ namespace ChessFight.RagdollLab
             {
                 // A new skill floored (or in the water) mid-way: it ends here; one already spent runs its cooldown.
                 Log($"{DisplayName}: {PawnRushSkillBook.Name(activeSkill)} 끊김 ({(Floating ? "물" : "넘어짐")})");
-                bool spent = planPhase != PlanPhase.Aim;
+                // (The air barrage is spent from the moment it rises: its aim is the hover.)
+                bool spent = planPhase != PlanPhase.Aim || activeSkill == PawnRushSkillIds.AirVolley;
                 float cooldown = NewSkillCooldown(activeSkill, s);
                 EndPlanSkill();
                 if (spent) StartCooldown(cooldown);
@@ -185,8 +186,15 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.EnPassant: UpdatePawnPass(s, press, dt); break;
                 case PawnRushSkillIds.Fork: UpdateKnightFork(s, press, dt); break;
                 case PawnRushSkillIds.Pin: UpdateBishopPin(s, press, confirm, cancel, dt); break;
-                case PawnRushSkillIds.Castling: UpdateRookCastle(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.Castling: UpdateRookCastle(s, press, confirm, cancel, dt, id); break;
                 case PawnRushSkillIds.Check: UpdateQueenCheck(s, press, confirm, cancel, dt); break;
+                // Queen of the Hill's six (RagdollPawn.HillSkills.cs).
+                case PawnRushSkillIds.Ward: UpdateWard(s, press, dt); break;
+                case PawnRushSkillIds.Slash: UpdateSlash(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.CastleSwap: UpdateRookCastle(s, press, confirm, cancel, dt, id); break;
+                case PawnRushSkillIds.AirVolley: UpdateVolley(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.PressLeap: UpdatePressLeap(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.Squeeze: UpdateSqueeze(s, press, dt); break;
             }
         }
 
@@ -199,6 +207,12 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Pin: return s.pinCooldown;
                 case PawnRushSkillIds.Castling: return s.castleCooldown;
                 case PawnRushSkillIds.Check: return s.checkCooldown;
+                case PawnRushSkillIds.Ward: return s.wardCooldown;
+                case PawnRushSkillIds.Slash: return s.slashCooldown;
+                case PawnRushSkillIds.CastleSwap: return s.swapCooldown;
+                case PawnRushSkillIds.AirVolley: return s.volleyCooldown;
+                case PawnRushSkillIds.PressLeap: return s.pressCooldown;
+                case PawnRushSkillIds.Squeeze: return s.squeezeCooldown;
                 default: return 0f;
             }
         }
@@ -221,6 +235,7 @@ namespace ChessFight.RagdollLab
                     input.ability2 = false;
                 }
             }
+            HillKeys();   // Queen of the Hill's six: what each lets the keys do in its phase
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -256,6 +271,7 @@ namespace ChessFight.RagdollLab
             planTarget = null;
             if (dashing) EndDash();
             SkillDetail = "";
+            ClearHillSkills();
         }
 
         /// <summary>Everything a new skill leaves running when the skills are cleared (a knockdown, a piece switch, being
@@ -723,10 +739,31 @@ namespace ChessFight.RagdollLab
         RagdollPawn castleOfferBy;
         float castleOfferAge;
         bool castleAccepted;
-        // The swap's flight, either piece.
-        bool castleCarry, castleForced;
+        // The swap's flight, either piece (and the knight's press leap, RagdollPawn.HillSkills.cs: an arc of its own
+        // to a spot, or onto a head it follows; nothing on the way drops it).
+        bool castleCarry, castleForced, carryFree;
         Vector3 castleFrom, castleTo;
         float castleT, castleTime, castleArcHeight, castleSideWidth;
+        RagdollPawn carryHome;
+
+        /// <summary>A castling's numbers: plan 1-나's, or the ones of Queen of the Hill's swap (the same skill made twice:
+        /// that one reaches less far, waits longer for the answer, costs nothing when refused, and flies lower and quicker).</summary>
+        struct CastleNumbers
+        {
+            public float range, assist, window, dummy, flight, arc, cooldown, refused;
+            public bool enemies;
+            public string name;
+        }
+
+        static CastleNumbers CastleOf(PawnRushSkillParams s, int id) => id == PawnRushSkillIds.CastleSwap
+            ? new CastleNumbers { range = s.swapRange, assist = s.swapCone, window = s.swapWait, dummy = s.swapDummyAnswer, flight = s.swapTime,
+                                  arc = s.swapArc, cooldown = s.swapCooldown, refused = 0f, enemies = false, name = "캐슬링 교대" }
+            : new CastleNumbers { range = s.castleRange, assist = s.castleAssist, window = s.castleWindow, dummy = s.castleDummyAnswer,
+                                  flight = s.castleFlight, arc = s.castleArc, cooldown = s.castleCooldown, refused = s.castleRefusedCooldown,
+                                  enemies = s.castleEnemies, name = "캐슬링" };
+
+        /// <summary>The seconds a teammate has to answer this piece's castling (the one it is casting, or would).</summary>
+        public float CastleWindow => PawnRushSkills != null ? CastleOf(PawnRushSkills, PlanSkill).window : 2f;
 
         /// <summary>In a castling's flight now (the host's).</summary>
         public bool CastleFlying => castleCarry;
@@ -735,31 +772,31 @@ namespace ChessFight.RagdollLab
         public RagdollPawn CastleOfferingMe()
         {
             foreach (var p in All)
-                if (p != null && p != this && p.PlanSkill == PawnRushSkillIds.Castling && p.planPhase == PlanPhase.Windup
+                if (p != null && p != this && PawnRushSkillIds.Castle(p.PlanSkill) && p.planPhase == PlanPhase.Windup
                     && p.planTarget == this && p.IsAllyOf(this)) return p;
             return null;
         }
 
         /// <summary>The seconds a teammate still has to answer (0 unless this piece waits for one).</summary>
         public float CastleOfferLeft =>
-            PlanSkill == PawnRushSkillIds.Castling && planPhase == PlanPhase.Windup && PawnRushSkills != null
-                ? Mathf.Max(0f, PawnRushSkills.castleWindow - planTime) : 0f;
+            PawnRushSkillIds.Castle(PlanSkill) && planPhase == PlanPhase.Windup && PawnRushSkills != null
+                ? Mathf.Max(0f, CastleWindow - planTime) : 0f;
 
         /// <summary>The piece it would castle with: a teammate (an enemy too with castleEnemies) standing within
         /// castleAssist of the aim, in reach and in sight; the nearest to the aim.</summary>
-        RagdollPawn FindCastleMate(PawnRushSkillParams s)
+        RagdollPawn FindCastleMate(PawnRushSkillParams s, CastleNumbers c)
         {
             Vector3 flat = AimFlat(), from = bodies[(int)BodyId.Chest].position;
             RagdollPawn best = null;
-            float bestAngle = s.castleAssist;
+            float bestAngle = c.assist;
             foreach (var other in All)
             {
                 if (other == null || other == this || other.State != PawnState.Active || other.SkillUntargetable || other.Floating
                     || other.chainCarry || other.kingCarry || other.castleCarry) continue;
-                if (!IsAllyOf(other) && !(s.castleEnemies && IsEnemyOf(other))) continue;
+                if (!IsAllyOf(other) && !(c.enemies && IsEnemyOf(other))) continue;
                 Vector3 to = other.bodies[(int)BodyId.Chest].position - from;
                 float across = Flat(to).magnitude;
-                if (across < 1.5f || across > s.castleRange) continue;
+                if (across < 1.5f || across > c.range) continue;
                 float angle = Vector3.Angle(flat, Flat(to));
                 if (angle > bestAngle || !ClearSight(from, other.bodies[(int)BodyId.Chest].position)) continue;
                 best = other;
@@ -768,8 +805,9 @@ namespace ChessFight.RagdollLab
             return best;
         }
 
-        void UpdateRookCastle(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
+        void UpdateRookCastle(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt, int id)
         {
+            var c = CastleOf(s, id);
             switch (planPhase)
             {
                 case PlanPhase.None:
@@ -778,18 +816,18 @@ namespace ChessFight.RagdollLab
                         planPhase = PlanPhase.Aim;
                         planTime = 0f;
                         skillGrabLatch = skillGrabRaw;
-                        planTarget = FindCastleMate(s);
-                        SkillDetail = "캐슬링 조준 (팀원을 보고 좌클릭 · 우클릭/스킬 키 취소)";
+                        planTarget = FindCastleMate(s, c);
+                        SkillDetail = $"{c.name} 조준 (팀원을 보고 좌클릭 · 우클릭/스킬 키 취소)";
                     }
                     break;
                 case PlanPhase.Aim:
                     planTime += dt;
-                    planTarget = FindCastleMate(s);
+                    planTarget = FindCastleMate(s, c);
                     if (cancel || press)
                     {
                         if (cancel) skillGrabLatch = true;
                         EndPlanSkill();
-                        Log("캐슬링: 조준 취소");
+                        Log($"{c.name}: 조준 취소");
                         break;
                     }
                     if (!confirm) break;
@@ -808,7 +846,7 @@ namespace ChessFight.RagdollLab
                         planTarget.castleOfferAge = 0f;
                         planTarget.castleAccepted = false;
                         SkillDetail = $"캐슬링 제안 → {planTarget.DisplayName} (스킬 키로 받기)";
-                        Log($"캐슬링 → {planTarget.DisplayName}(팀원): {s.castleWindow:0.#}초 안에 스킬 키로 받기");
+                        Log($"{c.name} → {planTarget.DisplayName}(팀원): {c.window:0.#}초 안에 스킬 키로 받기");
                     }
                     else
                     {
@@ -822,9 +860,9 @@ namespace ChessFight.RagdollLab
                     var mate = planTarget;
                     if (Staggered || bindLeft > 0f || mate == null || mate.SkillUntargetable || mate.Floating || mate.castleCarry)
                     {
-                        Log("캐슬링: 끊김");
+                        Log($"{c.name}: 끊김");
                         EndPlanSkill();
-                        StartCooldown(s.castleCooldown);
+                        StartCooldown(c.cooldown);
                         break;
                     }
                     if (IsAllyOf(mate))
@@ -832,13 +870,13 @@ namespace ChessFight.RagdollLab
                         if (mate.castleAccepted)
                         {
                             mate.castleAccepted = false;
-                            StartCastle(s, mate, false);
+                            StartCastle(s, mate, false, c);
                         }
-                        else if (planTime >= s.castleWindow)
+                        else if (planTime >= c.window)
                         {
-                            Log($"캐슬링: {mate.DisplayName}가 받지 않음");
+                            Log($"{c.name}: {mate.DisplayName}가 받지 않음");
                             EndPlanSkill();
-                            StartCooldown(s.castleRefusedCooldown);
+                            if (c.refused > 0f) StartCooldown(c.refused);
                         }
                         break;
                     }
@@ -849,10 +887,10 @@ namespace ChessFight.RagdollLab
                     {
                         Log($"캐슬링: {mate.DisplayName}가 피함 ({(!seen ? "가려짐" : "공중")})");
                         EndPlanSkill();
-                        StartCooldown(s.castleCooldown);
+                        StartCooldown(c.cooldown);
                         break;
                     }
-                    StartCastle(s, mate, true);
+                    StartCastle(s, mate, true, c);
                     break;
                 }
                 case PlanPhase.Active:
@@ -861,7 +899,7 @@ namespace ChessFight.RagdollLab
                     if (!castleCarry)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.castleCooldown);
+                        StartCooldown(c.cooldown);
                     }
                     break;
                 default:
@@ -876,13 +914,13 @@ namespace ChessFight.RagdollLab
         {
             var by = castleOfferBy;
             if (by == null) return press;
-            if (by.PlanSkill != PawnRushSkillIds.Castling || by.planPhase != PlanPhase.Windup || by.planTarget != this)
+            if (!PawnRushSkillIds.Castle(by.PlanSkill) || by.planPhase != PlanPhase.Windup || by.planTarget != this)
             {
                 castleOfferBy = null;
                 return press;
             }
             castleOfferAge += dt;
-            bool yes = SkillBot ? castleOfferAge >= s.castleDummyAnswer : press;
+            bool yes = SkillBot ? castleOfferAge >= CastleOf(s, by.PlanSkill).dummy : press;
             if (!yes) return press;
             // Down, tied, held or in the water: the answer waits (the key is used up).
             if (State != PawnState.Active || bindLeft > 0f || BeingHeld || Floating) return false;
@@ -892,21 +930,21 @@ namespace ChessFight.RagdollLab
             return false;
         }
 
-        void StartCastle(PawnRushSkillParams s, RagdollPawn mate, bool forced)
+        void StartCastle(PawnRushSkillParams s, RagdollPawn mate, bool forced, CastleNumbers c)
         {
             Vector3 a = bodies[0].position, b = mate.bodies[0].position;
             float aFloor = FeetPoint.y, bFloor = mate.FeetPoint.y;
             // Each lands standing on the other's floor.
-            mate.BeginCastleCarry(new Vector3(a.x, aFloor + mate.standHeight, a.z), s, forced, false);
-            BeginCastleCarry(new Vector3(b.x, bFloor + standHeight, b.z), s, false, true);
+            mate.BeginCastleCarry(new Vector3(a.x, aFloor + mate.standHeight, a.z), s, forced, false, c);
+            BeginCastleCarry(new Vector3(b.x, bFloor + standHeight, b.z), s, false, true, c);
             planPhase = PlanPhase.Active;
             planTime = 0f;
             planTarget = mate;
-            SkillDetail = "캐슬링!";
-            Log($"캐슬링: {DisplayName} ↔ {mate.DisplayName} 자리 바꿈 ({Flat(b - a).magnitude:0.0} m, {s.castleFlight:0.0#}초)");
+            SkillDetail = c.name + "!";
+            Log($"{c.name}: {DisplayName} ↔ {mate.DisplayName} 자리 바꿈 ({Flat(b - a).magnitude:0.0} m, {c.flight:0.0#}초)");
         }
 
-        void BeginCastleCarry(Vector3 to, PawnRushSkillParams s, bool forced, bool own)
+        void BeginCastleCarry(Vector3 to, PawnRushSkillParams s, bool forced, bool own, CastleNumbers c)
         {
             if (!own) ClearSkills();   // the other piece's own skill stops; the cooldowns it has keep running
             DropHook();
@@ -915,13 +953,36 @@ namespace ChessFight.RagdollLab
             LetGo(0.3f);
             castleCarry = true;
             castleForced = forced;
+            carryFree = false;
+            carryHome = null;
             castleFrom = bodies[0].position;
             castleTo = to;
             castleT = 0f;
-            castleTime = Mathf.Max(0.1f, s.castleFlight);
+            castleTime = Mathf.Max(0.1f, c.flight);
             // The caster's arc is the higher, and each bows out to its own right: they pass each other, not through.
-            castleArcHeight = own ? s.castleArc : s.castleArc * 0.7f;
+            castleArcHeight = own ? c.arc : c.arc * 0.7f;
             castleSideWidth = s.castleSide;
+        }
+
+        /// <summary>The knight's press leap (RagdollPawn.HillSkills.cs): the same carried flight on an arc of its own - over
+        /// <paramref name="time"/> seconds, its top at <paramref name="topY"/> - to a spot, or onto the head of
+        /// <paramref name="home"/>, which the arc's end follows. Nothing on the way drops it.</summary>
+        void BeginArcCarry(Vector3 to, float time, float topY, RagdollPawn home)
+        {
+            DropHook();
+            DropRope();
+            EndClimbPose();
+            LetGo(0.3f);
+            castleCarry = true;
+            castleForced = false;
+            carryFree = true;
+            carryHome = home;
+            castleFrom = bodies[0].position;
+            castleTo = to;
+            castleT = 0f;
+            castleTime = Mathf.Max(0.1f, time);
+            castleArcHeight = Mathf.Max(0.2f, topY - (castleFrom.y + to.y) * 0.5f);
+            castleSideWidth = 0f;
         }
 
         Vector3 CastlePath(float t)
@@ -949,10 +1010,16 @@ namespace ChessFight.RagdollLab
                 EndCastleCarry(true);
                 return false;
             }
+            if (carryHome != null && carryHome.State == PawnState.Active)
+            {
+                // Coming down on a head: the end of the arc follows it if the piece moves (5 m/s, as the mode had it).
+                Vector3 head = carryHome.bodies[(int)BodyId.Head].position;
+                castleTo = Vector3.MoveTowards(castleTo, new Vector3(head.x, castleTo.y, head.z), 5f * dt);
+            }
             Vector3 at = bodies[0].position, next = CastlePath(castleT + dt);
             Vector3 step = next - at;
-            // Something solid on the way drops it there (as a rook's chain does).
-            if (castleT > 0.1f && step.sqrMagnitude > 1e-6f && ChainBlocked(at, step))
+            // Something solid on the way drops it there (as a rook's chain does); a leap goes its own way.
+            if (!carryFree && castleT > 0.1f && step.sqrMagnitude > 1e-6f && ChainBlocked(at, step))
             {
                 Log($"{DisplayName}: 캐슬링 도중 장애물에 걸려 떨어짐");
                 EndCastleCarry(false);
@@ -966,6 +1033,8 @@ namespace ChessFight.RagdollLab
         {
             if (!castleCarry) return;
             castleCarry = false;
+            carryFree = false;
+            carryHome = null;
             if (!arrived)
             {
                 EndFlight(bodies[0].linearVelocity * 0.5f);
@@ -1143,11 +1212,11 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- over the network (RagdollPawn.SkillNet.cs)
 
         // Flags2 bits of a piece's skill state (128 is a retired mode's): a new skill's phase is in it; a pin is on the piece.
-        const byte NetNewSkill = 1, NetPinned = 2, NetPinPost = 4;
+        const byte NetNewSkill = 1, NetPinned = 2, NetPinPost = 4, NetWarded = 8;
 
         /// <summary>Something of the slots' beyond the first slot's cooldown is worth sending: a new skill under way, a pin on
         /// this piece, another slot's cooldown.</summary>
-        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f;
+        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f;
 
         /// <summary>Host: the slots' part of this piece's skill state - the skill under way and each slot's cooldown.</summary>
         void CaptureSlotNet(ref SkillWireState s)
@@ -1165,6 +1234,7 @@ namespace ChessFight.RagdollLab
         {
             s.Flags2 |= NetNewSkill;
             s.D = (byte)planPhase;
+            s.C = planNote;   // the skill's own small number (the aim can go there, the shots left)
             s.A = planTime;
             dir = planDir;
             p = planPoint;
@@ -1174,6 +1244,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Host: a pin on this piece. Other the piece it is tied to, Q the post.</summary>
         void CapturePinNet(ref SkillWireState s, Func<RagdollPawn, byte> refOf, ref Vector3 q)
         {
+            if (wardLeft > 0f) s.Flags2 |= NetWarded;   // a close guard on this piece (RagdollPawn.HillSkills.cs)
             if (pinLeft <= 0f) return;
             s.Flags2 |= NetPinned;
             if (pinToPost)
@@ -1207,6 +1278,7 @@ namespace ChessFight.RagdollLab
             if ((s.Flags2 & NetNewSkill) != 0)
             {
                 planPhase = (PlanPhase)s.D;
+                planNote = s.C;
                 planTime = s.A;
                 if (dir.sqrMagnitude > 0.5f) planDir = dir.normalized;
                 planPoint = p;
@@ -1215,9 +1287,13 @@ namespace ChessFight.RagdollLab
             else
             {
                 planPhase = PlanPhase.None;
+                planNote = 0;
                 planTime = 0f;
                 planTarget = null;
             }
+            // (A guard's time left is this screen's own count from when it first saw it, as a pin's is.)
+            if ((s.Flags2 & NetWarded) == 0) wardLeft = 0f;
+            else if (wardLeft <= 0f) wardLeft = PawnRushSkills != null ? PawnRushSkills.wardTime : 2.9f;
             bool pinned = (s.Flags2 & NetPinned) != 0;
             if (!pinned)
             {
@@ -1243,6 +1319,8 @@ namespace ChessFight.RagdollLab
             pinLeft = 0f;
             pinMate = null;
             pinToPost = false;
+            wardLeft = 0f;
+            planNote = 0;
             activeSkill = 0;
             activeSlot = -1;
             oldHome = -1;
@@ -1255,6 +1333,7 @@ namespace ChessFight.RagdollLab
         {
             if (planPhase != PlanPhase.None) planTime += dt;
             if (pinLeft > 0f) pinLeft = Mathf.Max(0.05f, pinLeft - dt);
+            if (wardLeft > 0f) wardLeft = Mathf.Max(0.05f, wardLeft - dt);
             slotCd[1] -= dt;
             slotCd[2] -= dt;
         }

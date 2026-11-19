@@ -1152,6 +1152,7 @@ public static class NetworkCoreTests
                 Check(moves.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.EnPassant&&moves.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check&&PawnRushLoadout.Preset(2).Skill(PieceKind.Pawn,0)==0,"plan 1-na, and the empty one");
                 for (int id=1; id<=5; id++) Check(PawnRushSkillIds.Old(id)&&now.Skill(PawnRushSkillIds.OldPiece(id),0)==id,"an old skill's own piece: "+id);
                 Check(!PawnRushSkillIds.Old(0)&&!PawnRushSkillIds.Old(PawnRushSkillIds.EnPassant),"the new skills are not old");
+                Check(PawnRushSkillIds.Castle(PawnRushSkillIds.Castling)&&PawnRushSkillIds.Castle(PawnRushSkillIds.CastleSwap)&&!PawnRushSkillIds.Castle(PawnRushSkillIds.Ward)&&!PawnRushSkillIds.Old(PawnRushSkillIds.Squeeze)&&PawnRushSkillIds.Ward==44&&PawnRushSkillIds.Squeeze==49,"Queen of the Hill's six: their numbers, and the two castlings");
                 var mine=new PawnRushLoadout{system=PawnRushLoadout.Many};
                 mine.Set(0,0,PawnRushSkillIds.ChainPull); mine.Set(0,2,PawnRushSkillIds.Check); mine.Set(4,1,PawnRushSkillIds.TwoSteps); mine.Set(9,0,7); mine.Set(0,5,7); mine.SetStage(3,9);
                 Check(mine.SlotCount==3&&mine.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.ChainPull&&mine.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Check&&mine.Skill(PieceKind.Queen,1)==PawnRushSkillIds.TwoSteps&&mine.SlotOf(PieceKind.Pawn,PawnRushSkillIds.Check)==2,"any skill in any slot");

@@ -23,6 +23,8 @@ namespace ChessFight.RagdollLab
         static readonly Color Red = new Color(1f, 0.22f, 0.18f);
         static readonly Color Violet = new Color(0.74f, 0.52f, 1f);
         static readonly Color White = Color.white;
+        static readonly Color Gold = new Color(1f, 0.82f, 0.3f);
+        static readonly Color Grey = new Color(0.62f, 0.64f, 0.7f);
 
         readonly List<LineRenderer> pool = new List<LineRenderer>();
         int used;
@@ -46,14 +48,21 @@ namespace ChessFight.RagdollLab
             {
                 if (pawn == null || pawn.PawnRushSkills == null) continue;
                 DrawPin(pawn);
+                DrawWarded(pawn);
                 // By the skill, not the piece: the loadout (the skill window) may put any skill on any piece.
                 if (pawn.HasSkill(PawnRushSkillIds.EnPassant)) DrawPass(pawn, me);
                 switch (pawn.PlanSkill)
                 {
                     case PawnRushSkillIds.Fork: DrawFork(pawn); break;
                     case PawnRushSkillIds.Pin: DrawPinLine(pawn); break;
-                    case PawnRushSkillIds.Castling: DrawCastle(pawn); break;
+                    case PawnRushSkillIds.Castling:
+                    case PawnRushSkillIds.CastleSwap: DrawCastle(pawn); break;
                     case PawnRushSkillIds.Check: DrawCheck(pawn); break;
+                    // Queen of the Hill's (RagdollPawn.HillSkills.cs).
+                    case PawnRushSkillIds.Ward: DrawWardCast(pawn); break;
+                    case PawnRushSkillIds.Slash: DrawSlash(pawn); break;
+                    case PawnRushSkillIds.AirVolley: DrawVolley(pawn); break;
+                    case PawnRushSkillIds.PressLeap: DrawPressLeap(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -139,7 +148,7 @@ namespace ChessFight.RagdollLab
             SkillMarks.Circle(Next(), mate.FeetPoint, 0.5f, Fade(c, a), 0.06f, 24);
             if (phase != PlanPhase.Windup) return;
             // The time left: the teammate's to answer in, or the enemy's warning, as a ring closing on the other piece.
-            float total = ally ? s.castleWindow : s.castleEnemyWindup;
+            float total = ally ? pawn.CastleWindow : s.castleEnemyWindup;
             float left = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, total));
             SkillMarks.Circle(Next(), mate.FeetPoint, 0.5f + 0.9f * left, Fade(c, 0.9f), 0.04f, 28);
         }
@@ -168,6 +177,94 @@ namespace ChessFight.RagdollLab
             if (target != null) SkillMarks.Segment(Next(), Chest(pawn), Chest(target), Fade(Red, 0.6f), 0.05f, false);
         }
 
+        // ---------------------------------------------------------------- Queen of the Hill's six (RagdollPawn.HillSkills.cs)
+
+        /// <summary>A close guard on a piece: a gold ring under it, blinking as it runs out.</summary>
+        void DrawWarded(RagdollPawn pawn)
+        {
+            if (!pawn.Warded) return;
+            float a = pawn.WardLeft < 0.6f ? 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 18f)) : 1f;
+            SkillMarks.Circle(Next(), pawn.FeetPoint, 0.55f, Fade(Gold, a), 0.08f, 24);
+            SkillMarks.Circle(Next(), pawn.FeetPoint, 0.42f, Fade(Gold, a * 0.5f), 0.04f, 20);
+        }
+
+        /// <summary>The close guard being given: its reach, and a ring growing out to it over the windup.</summary>
+        void DrawWardCast(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            var s = pawn.PawnRushSkills;
+            Vector3 at = pawn.FeetPoint;
+            if (phase == PlanPhase.Windup)
+            {
+                float k = Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.wardWindup));
+                SkillMarks.Circle(Next(), at, s.wardRadius, Fade(Gold, 0.45f + 0.4f * k), 0.06f, 40);
+                SkillMarks.Circle(Next(), at, Mathf.Max(0.2f, s.wardRadius * k), Fade(Gold, 0.9f), 0.05f, 32);
+            }
+            else if (phase == PlanPhase.Recovery)
+            {
+                float a = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.wardRecovery));
+                SkillMarks.Circle(Next(), at, s.wardRadius, Fade(Gold, a), 0.1f, 40);
+            }
+        }
+
+        /// <summary>The long slash: its strip along the floor to where it ends (a wall, a guarded piece), brighter once it
+        /// is locked, and its front running out along it.</summary>
+        void DrawSlash(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase == PlanPhase.Recovery || phase == PlanPhase.None) return;
+            var s = pawn.PawnRushSkills;
+            Vector3 from = pawn.FeetPoint + Vector3.up * 0.05f, to = pawn.PlanPoint + Vector3.up * 0.05f;
+            Vector3 dir = pawn.PlanDir, side = Vector3.Cross(Vector3.up, dir) * (s.slashWidth * 0.5f);
+            float a = phase == PlanPhase.Aim ? 0.4f : phase == PlanPhase.Windup ? 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 20f)) : 1f;
+            Color c = Fade(Red, a);
+            SkillMarks.Segment(Next(), from + side, to + side, c, 0.05f);
+            SkillMarks.Segment(Next(), from - side, to - side, c, 0.05f);
+            SkillMarks.Segment(Next(), to + side, to - side, c, 0.05f);
+            if (phase != PlanPhase.Active) return;
+            float k = Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.01f, s.slashTravel));
+            Vector3 front = Vector3.Lerp(from, to, k);
+            SkillMarks.Segment(Next(), front + side, front - side, White, 0.14f);
+        }
+
+        /// <summary>The air barrage: the X the shot will make where it is aimed (grey where it cannot go), and the shot on
+        /// its way.</summary>
+        void DrawVolley(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Aim && phase != PlanPhase.Active) return;
+            var s = pawn.PawnRushSkills;
+            bool flying = phase == PlanPhase.Active && pawn.PlanTime < s.volleyFlight;
+            if (phase == PlanPhase.Active && !flying) return;
+            Vector3 c = pawn.PlanPoint + Vector3.up * 0.05f;
+            Color col = pawn.PlanAimValid ? Fade(Violet, flying ? 1f : 0.6f) : Fade(Grey, 0.5f);
+            for (int i = 0; i < 2; i++)
+            {
+                Vector3 arm = Quaternion.Euler(0f, i == 0 ? 45f : -45f, 0f) * pawn.PlanDir * s.volleyArm;
+                SkillMarks.Segment(Next(), c - arm, c + arm, col, flying ? 0.1f : 0.06f);
+            }
+            SkillMarks.Circle(Next(), pawn.PlanPoint, s.volleyCenter, col, 0.05f, 28);
+            if (!flying) return;
+            float k = Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.volleyFlight));
+            Vector3 shot = Vector3.Lerp(Chest(pawn), pawn.PlanPoint, k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 1.2f);
+            SkillMarks.Circle(Next(), shot, 0.16f, White, 0.1f, 12);
+        }
+
+        /// <summary>The press leap: the landing circle where it is aimed (grey where it cannot go), a ring on the enemy whose
+        /// head it would come down on, and the way there once it goes.</summary>
+        void DrawPressLeap(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase == PlanPhase.Recovery || phase == PlanPhase.None) return;
+            var s = pawn.PawnRushSkills;
+            bool aim = phase == PlanPhase.Aim;
+            Color col = !aim || pawn.PlanAimValid ? Fade(SkillMarks.Target, aim ? 0.6f : 1f) : Fade(Grey, 0.5f);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, s.pressRadius, col, aim ? 0.06f : 0.1f, 36);
+            var target = pawn.PlanTarget;
+            if (target != null) SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(Red, 0.6f + 0.4f * Mathf.Sin(Time.time * 16f)), 0.07f, 24);
+            if (!aim) SkillMarks.Segment(Next(), pawn.FeetPoint + Vector3.up * 0.05f, pawn.PlanPoint + Vector3.up * 0.05f, Fade(SkillMarks.Target, 0.5f), 0.04f);
+        }
+
         // ---------------------------------------------------------------- what is being done to the piece played here
 
         void OnGUI()
@@ -180,7 +277,7 @@ namespace ChessFight.RagdollLab
             var queen = me.CheckedBy();
             if (rook != null && rook.PawnRushSkills != null)
             {
-                float window = Mathf.Max(0.1f, rook.PawnRushSkills.castleWindow);
+                float window = Mathf.Max(0.1f, rook.CastleWindow);
                 line = "캐슬링!  스킬 키로 받기";
                 sub = $"{rook.DisplayName}와 자리 바꾸기 · {rook.CastleOfferLeft:0.0}초";
                 share = Mathf.Clamp01(rook.CastleOfferLeft / window);
@@ -198,6 +295,12 @@ namespace ChessFight.RagdollLab
                 line = "핀!  묶였어요";
                 sub = (mate != null ? $"{mate.DisplayName}와 한 줄 · " : "벽에 묶임 · ") + $"{me.PinLeft:0.0}초";
                 share = Mathf.Clamp01(me.PinLeft / Mathf.Max(0.1f, me.PawnRushSkills.pinSeconds));
+            }
+            else if (me.Warded && me.PawnRushSkills != null)
+            {
+                line = "호위!  넘어지지 않아요";
+                sub = $"밀림도 조금만 · {me.WardLeft:0.0}초";
+                share = Mathf.Clamp01(me.WardLeft / Mathf.Max(0.1f, me.PawnRushSkills.wardTime));
             }
             if (line == null) return;
             if (big == null)

@@ -36,7 +36,7 @@ namespace ChessFight.RagdollLab
     /// lists - the five as they are, plan 1-나's five, the candidates of Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md that are
     /// not made yet, and (the user: "승규님이 옛날에 스킬 만들 때 ... 되게 많이 만들었었는데 그것들 다 여기다 넣어줘", "문서 말고
     /// 실제로 만들었던 것들") every skill 승규 님 made as code in any mode: Pawn Rush's earlier ones, Queen of the Hill's six
-    /// (off main since R497, still on the remote branches), Sword Fight's F and E skills (on main, for pieces with a
+    /// (brought over to the slots: RagdollPawn.HillSkills.cs), Sword Fight's F and E skills (on main, for pieces with a
     /// sword). What cannot be put in a slot yet is shown dim, with where its code is. A new skill is one more line here,
     /// its number in PawnRushSkillIds and its code in RagdollPawn.SkillPlans.cs (RunNewSkill).
     /// </summary>
@@ -86,7 +86,6 @@ namespace ChessFight.RagdollLab
         const string OnMainKing = "\n코드: main에 있음 (킹 기물 전용이라 칸에는 아직 못 넣음)";
         const string OnMainSwitch = "\n코드: main에 있음 (bishopRope 스위치를 끄면 나옴, 칸에는 아직 못 넣음)";
         const string InHistory = "\n코드: git 기록에만 있음 (R153에 지금 스킬로 바뀜)";
-        const string OnBranches = "\n코드: main에서는 R497에 빠짐. GitHub 브랜치(skill-network-test 등 12곳)에 남아 있음";
         const string OnMainSword = "\n코드: main에 있음 (칼을 든 소드 파이트 기물용이라 폰 러쉬로 옮겨야 함)";
 
         public static readonly SkillEntry[] All =
@@ -124,19 +123,19 @@ namespace ChessFight.RagdollLab
             Idea(43, "꺾어 도약 (옛 자유 도약)", PieceKind.Knight, SkillOrigin.PawnRush, SkillTag.Move | SkillTag.Block,
                 "1.6 m 높이로 4.5 m 도약. 공중에서 한 번 더 누르면 3 m 안 적의 머리를 찍거나 90° 꺾어 다시 차고 나감 · 쿨 7초 (10-07의 첫 모양)" + InHistory),
 
-            // 승규 님's Queen of the Hill skills (R89, 10-09).
-            Idea(44, "근접 호위", PieceKind.King, SkillOrigin.QueenHill, SkillTag.Ally | SkillTag.Buff,
-                "반경 2.5 m 아군을 2.5초 호위: 밀림은 25%만, 넘어질 일은 휘청으로. 킹 자신은 빠짐 · 쿨 9초" + OnBranches),
-            Idea(45, "팔방 검격", PieceKind.Queen, SkillOrigin.QueenHill, SkillTag.Block,
-                "4칸(6 m) 검기가 바닥과 계단을 따라가며 칸 위의 적을 넘어뜨림 · 쿨 6초" + OnBranches),
-            Idea(46, "캐슬링 교대", PieceKind.Rook, SkillOrigin.QueenHill, SkillTag.Ally | SkillTag.Move,
-                "9 m 안 아군에게 요청, 수락하면 서로 자리를 바꿈 · 쿨 12초 (1-나 캐슬링과 같은 생각)" + OnBranches),
-            Idea(47, "교차 공중 포격", PieceKind.Bishop, SkillOrigin.QueenHill, SkillTag.Block | SkillTag.Move,
-                "떠올라 견제탄 2발. X자 파동에 밀려 넘어지고, 벽에 매달린 적은 떨어짐 · 쿨 9초" + OnBranches),
-            Idea(48, "도약 압착", PieceKind.Knight, SkillOrigin.QueenHill, SkillTag.Move | SkillTag.Block | SkillTag.Buff,
-                "한 층 높이까지 도약, 착지 1.05 m 안의 적은 머리를 밟혀 0.7초 납작해짐 · 쿨 7초" + OnBranches),
-            Idea(49, "비집고 돌파", PieceKind.Pawn, SkillOrigin.QueenHill, SkillTag.Move,
-                "몸을 낮춰 2.6 m 돌파, 부딪힌 적은 옆으로 비킴 · 쿨 5초" + OnBranches),
+            // 승규 님's Queen of the Hill skills (R89, 10-09), brought over to the slots (RagdollPawn.HillSkills.cs).
+            Made(PawnRushSkillIds.Ward, "근접 호위", PieceKind.King, SkillOrigin.QueenHill, SkillTag.Ally | SkillTag.Buff,
+                "키 = 0.45초 준비 뒤, 둘레 2.5 m 안의 팀원이 2.9초 동안 호위를 받음: 넘어질 일은 휘청으로, 밀림은 4분의 1만\n쓴 사람 자신은 호위를 못 받지만, 호위 받는 팀원이 2.5 m 안에 서 있으면 그 팀원이 대신 맞아 줌 · 쿨 9초"),
+            Made(PawnRushSkillIds.Slash, "팔방 검격", PieceKind.Queen, SkillOrigin.QueenHill, SkillTag.Block,
+                "키 = 조준 (빨간 띠, 6 m) · 좌클릭 = 0.45초 뒤 검기가 띠를 따라 나감 · 우클릭/키 = 취소\n띠 위의 적은 넘어지며 밀려남. 턱(1 m까지)은 타고 오르고 낭떠러지는 따라 내려감 · 벽과 호위 받는 적에서 막힘 · 쿨 6초"),
+            Made(PawnRushSkillIds.CastleSwap, "캐슬링 교대", PieceKind.Rook, SkillOrigin.QueenHill, SkillTag.Ally | SkillTag.Move,
+                "키 = 조준 (팀원을 보면 청록 선, 9 m) · 좌클릭 = 요청 · 우클릭/키 = 취소\n팀원이 3초 안에 자기 스킬 키(F)로 받으면 서로 자리를 바꿈 · 안 받으면 쿨타임 없이 취소 · 쿨 12초\n(1-나 캐슬링과 같은 방식이고 수치만 다름: 더 가깝고, 더 오래 기다리고, 낮고 빠르게 낢)"),
+            Made(PawnRushSkillIds.AirVolley, "교차 공중 포격", PieceKind.Bishop, SkillOrigin.QueenHill, SkillTag.Block | SkillTag.Move,
+                "키 = 1.3 m 떠오름 (이동 키로 천천히 미끄러짐) · 좌클릭 = 조준점에 견제탄, 2발까지 · 우클릭/키 = 내려옴\n떨어진 곳의 X자와 가운데에 있던 적은 넘어지며 밀려남 · 3초 안에 한 발도 안 쏘면 취소 · 쿨 9초"),
+            Made(PawnRushSkillIds.PressLeap, "도약 압착", PieceKind.Knight, SkillOrigin.QueenHill, SkillTag.Move | SkillTag.Block | SkillTag.Buff,
+                "키 = 착지점 조준 (주황 원, 6 m, 한 층 높이까지) · 좌클릭 = 도약 · 우클릭/키 = 취소\n착지 원 1.3 m 안의 적은 0.7초 납작해지며 바깥으로 미끄러짐 (가장자리면 떨어짐)\n조준 근처에 적이 있으면 그 머리를 밟음 · 쿨 7초"),
+            Made(PawnRushSkillIds.Squeeze, "비집고 돌파", PieceKind.Pawn, SkillOrigin.QueenHill, SkillTag.Move,
+                "키 = 몸을 낮추고 가는 방향으로 1.8 m 돌파 · 부딪힌 기물은 옆으로 비킴 (넘어뜨리지 않음) · 벽에서 멈춤 · 쿨 5초"),
 
             // 승규 님's Sword Fight skills: F (R91, 10-09) and the edge skills on E (R103, 10-10; the bishop's R236).
             Idea(50, "왕의 반격", PieceKind.King, SkillOrigin.SwordFight, SkillTag.Counter | SkillTag.Block,
@@ -210,6 +209,12 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.Pin, "빛줄로 적을 꿰어 뒤의 적이나 벽에 묶는다" },
             { PawnRushSkillIds.Castling, "팀원과 자리를 바꾼다. 팀원이 스킬 키로 받아야 한다" },
             { PawnRushSkillIds.Check, "적 한 명을 지목한다. 제때 그 칸을 벗어나지 못하면 날아간다" },
+            { PawnRushSkillIds.Ward, "곁의 팀원을 잠깐 호위한다. 호위 받는 팀원은 넘어지지 않는다" },
+            { PawnRushSkillIds.Slash, "조준한 쪽으로 긴 검기를 날려 줄 위의 적을 넘어뜨린다" },
+            { PawnRushSkillIds.CastleSwap, "가까운 팀원과 자리를 바꾼다. 팀원이 스킬 키로 받아야 한다" },
+            { PawnRushSkillIds.AirVolley, "떠올라 견제탄을 두 발 쏜다. X자 파동에 맞으면 넘어진다" },
+            { PawnRushSkillIds.PressLeap, "조준한 곳으로 뛰어내려 둘레의 적을 납작하게 만든다" },
+            { PawnRushSkillIds.Squeeze, "몸을 낮추고 짧게 비집고 나간다. 부딪힌 기물은 옆으로 비킨다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>
