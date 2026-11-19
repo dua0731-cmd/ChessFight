@@ -32,7 +32,80 @@ namespace ChessFight.RagdollLab
         PawnRushSkillFx fx;
         PawnRushSkillSfx sfx;
         PlaytestSpawner spawner;
+        PawnRushSkillWindow window;
+        const int OwnLoadout = -2;
         int loadoutPreset = -1;
+        System.Action<int, int> loadoutAsk;
+
+        // ---- the developers' skill tree over a match (JY-skill-lab; the match link sets these) ----
+
+        /// <summary>Set by the match link on a PC that does not run the skills: a change made in the skill tree is asked
+        /// of the host with it (unset - offline, the host - the change is made here).</summary>
+        public System.Action<int, int> LoadoutAsk
+        {
+            get => loadoutAsk;
+            set
+            {
+                loadoutAsk = value;
+                if (window != null) window.Send = value;
+            }
+        }
+
+        /// <summary>Set by the match link: this PC is the room's manager, who may lock the loadout and change a locked
+        /// one. Unset (offline): yes.</summary>
+        public System.Func<bool> LoadoutManager { get; set; }
+
+        /// <summary>Goes up with every change to the loadout made on this PC (the host sends it to everyone again).</summary>
+        public int LoadoutVersion { get; private set; }
+
+        bool Manager => LoadoutManager == null || LoadoutManager();
+
+        /// <summary>The loadout changed on the PC that runs the skills: every skill under way and every cooldown start over.</summary>
+        void OnLoadoutChanged()
+        {
+            foreach (var pawn in RagdollPawn.All)
+                if (pawn != null && !pawn.NetworkPuppet) pawn.ResetSkill();
+            LoadoutVersion++;
+        }
+
+        /// <summary>The host's: a change a player asked for (PawnRushLoadout.Apply's two numbers), if that player may make
+        /// it. Kept as this PC's own loadout for the next play, as its own changes are.</summary>
+        public bool EditLoadout(int op, int value, bool manager)
+        {
+            if (!skills.loadout.Allows(op, manager) || !skills.loadout.Apply(op, value)) return false;
+            PawnRushSkillWindow.Save(skills.loadout);
+            OnLoadoutChanged();
+            return true;
+        }
+
+        /// <summary>A client's: the host's loadout as it arrived.</summary>
+        public void TakeLoadout(PawnRushLoadout from)
+        {
+            if (from != null && !skills.loadout.Same(from)) skills.loadout.CopyFrom(from);
+        }
+
+        string CardName(PieceKind piece)
+        {
+            var lo = skills.loadout;
+            string names = "";
+            for (int k = 0; k < lo.SlotCount; k++)
+            {
+                int id = lo.Skill(piece, k);
+                if (id != 0) names += (names.Length > 0 ? " · " : "") + PawnRushSkillBook.Name(id);
+            }
+            return names.Length > 0 ? names : "스킬 없음";
+        }
+
+        string CardLine(PieceKind piece)
+        {
+            var lo = skills.loadout;
+            for (int k = 0; k < lo.SlotCount; k++)
+            {
+                int id = lo.Skill(piece, k);
+                if (id != 0) return PawnRushSkillBook.Card(id);
+            }
+            return "칸이 비어 있다 (스킬트리 K)";
+        }
 
         /// <summary>The pawn played at this PC (set by the online link; offline it is the playtest's).</summary>
         public RagdollPawn Local { get; set; }
@@ -78,12 +151,29 @@ namespace ChessFight.RagdollLab
             // JY-skill-lab: the 2.0 skill plan prototypes' lines and rings (plan 1-나, RagdollPawn.SkillPlans.cs).
             var marks = gameObject.AddComponent<PawnRushPlanMarks>();
             marks.Viewer = () => Viewer;
+            // JY-skill-lab: the developers' skill tree (K), here too - alone on the course and in a room's match, where
+            // everyone opens it and the room's manager may keep the changes to himself (the match link carries them).
+            window = gameObject.AddComponent<PawnRushSkillWindow>();
+            window.Skills = skills;
+            window.OwnCursor = true;
+            window.KeyName = CourseKey;
+            window.CanEdit = op => skills.loadout.Allows(op, Manager);
+            window.LockedNote = op => op == PawnRushLoadout.OpHostOnly ? "잠금은 방장만 바꿀 수 있어요" : "방장만 바꿀 수 있게 잠겨 있어요";
+            window.ShowLock = () => Online;
+            window.Blocked = () => ChessFight.Game.LoadingScreenView.Showing;
+            window.Changed = OnLoadoutChanged;
+            window.Send = loadoutAsk;
+            // The promotion cards name the skills in the piece's slots.
+            PawnRushPromotion.NameNow = CardName;
+            PawnRushPromotion.LineNow = CardLine;
             spawner = FindFirstObjectByType<PlaytestSpawner>(FindObjectsInactive.Include);
         }
 
         void OnDestroy()
         {
-            if (Current == this) Current = null;
+            if (Current != this) return;
+            Current = null;
+            PawnRushPromotion.NameNow = PawnRushPromotion.LineNow = null;
         }
 
         /// <summary>The key of a slot as the settings bind it: 기물 스킬 (Use), then the two ability keys (Skill, Skill2).</summary>
@@ -106,24 +196,20 @@ namespace ChessFight.RagdollLab
                 Destroy(gameObject);
                 return;
             }
-            // JY-skill-lab: the skill plan the room's manager picked (PawnRushRules.Skills, the rules panel). Offline the
-            // rules are the game as it is; Ctrl + Shift + K switches the plan there, to try it on the course alone.
-            if (!Online && Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.K))
+            // JY-skill-lab: what a room's match starts with is the room's rule (PawnRushRules.Skills, the rules panel): the
+            // skills as they are, plan 1-나's, or the loadout this PC last made in the skill tree (the host's reaches the
+            // others over the match link). Alone on the course there is no room: this PC's own last loadout. From there
+            // the skill tree (K) changes it. (Looked at every frame: the match link may say "online" a moment after the
+            // course is up.)
+            int start = Online ? PawnRushRules.Current.Skills : OwnLoadout;
+            if (start != loadoutPreset)
             {
-                var rules = PawnRushRules.Current;
-                rules.Skills = rules.Skills == PawnRushRules.SkillsChessMoves ? PawnRushRules.SkillsNow : PawnRushRules.SkillsChessMoves;
-                PawnRushRules.Current = rules;
-                foreach (var pawn in RagdollPawn.All)
-                    if (pawn != null && !pawn.NetworkPuppet) pawn.ResetSkill();
-                Debug.Log("[ChessFight] 폰 러쉬: 스킬 기획안 - " + PawnRushRules.Choices[3][rules.Skills]);
-            }
-            // (The loadout is one of the two that come with the game for now; the skill window's own loadout reaches a room
-            // once it goes over the network.)
-            int preset = PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves ? 1 : 0;
-            if (preset != loadoutPreset)
-            {
-                loadoutPreset = preset;
-                skills.loadout.CopyFrom(PawnRushLoadout.Preset(preset));
+                loadoutPreset = start;
+                if (start == OwnLoadout || start == PawnRushRules.SkillsTree) PawnRushSkillWindow.LoadSaved(skills);
+                else skills.loadout.CopyFrom(PawnRushLoadout.Preset(start == PawnRushRules.SkillsChessMoves ? 1 : 0));
+                // (Alone, the lock means nothing; a room's is its manager's to set.)
+                if (start == OwnLoadout) skills.loadout.hostOnly = false;
+                OnLoadoutChanged();
             }
             foreach (var pawn in RagdollPawn.All)
             {

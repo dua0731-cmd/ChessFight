@@ -188,7 +188,9 @@ namespace ChessFight.Network
         //      the round on the first majority.
         // JY-skill-lab: this branch's builds meet only each other (the room rules carry a skill plan main does not know,
         // and its skills run by it). Back to main's name when the branch goes in.
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab1";
+        // skilllab2: the skill state carries the skill under way and two more cooldowns (36 bytes), the skill loadout
+        // and the changes to it go over the match (two new packets), and the rules have a third skill choice.
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab2";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

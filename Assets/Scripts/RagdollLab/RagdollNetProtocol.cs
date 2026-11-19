@@ -219,6 +219,15 @@ namespace ChessFight.RagdollLab
         // R529: a development build's flight cheat (F1): fly or stop, for the sender's own pawn.
         public const byte TypeDevFly = 11;
         public const int DevFlyBytes = 4 + 1 + 8 + 1 + 1;   // 15
+        // JY-skill-lab (the developers' skill tree, PawnRushLoadout). TypeLoadout: the loadout every piece plays by, the
+        // host's to everyone - at once when it changes and now and again besides (a PC that has just come in): a number
+        // that goes up with every change (never 0), the system, whether only the room's manager changes it, the fifteen
+        // slots, the five stages. TypeLoadoutAsk: one change asked of the host (PawnRushLoadout.Apply's two numbers),
+        // numbered like DevClear so the host takes it once.
+        public const byte TypeLoadout = 12;
+        public const int LoadoutBytes = 4 + 1 + 8 + 1 + 1 + 1 + PawnRushLoadout.Rows * PawnRushLoadout.Slots + PawnRushLoadout.Rows;   // 36
+        public const byte TypeLoadoutAsk = 13;
+        public const int LoadoutAskBytes = 4 + 1 + 8 + 1 + 1 + 1 + 1;   // 17
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
@@ -524,6 +533,68 @@ namespace ChessFight.RagdollLab
             seq = r.ReadByte();
             on = r.ReadByte() != 0;
             return seq != 0;
+        }
+
+        // JY-skill-lab: the loadout, the host's to everyone (TypeLoadout).
+        public static byte[] Loadout(ulong session, byte rev, PawnRushLoadout loadout)
+        {
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeLoadout);
+            w.Write(session);
+            w.Write(rev);
+            w.Write((byte)loadout.system);
+            w.Write((byte)(loadout.hostOnly ? 1 : 0));
+            for (int row = 0; row < PawnRushLoadout.Rows; row++)
+                for (int slot = 0; slot < PawnRushLoadout.Slots; slot++)
+                    w.Write((byte)Mathf.Clamp(loadout.Raw(row, slot), 0, 255));
+            for (int row = 0; row < PawnRushLoadout.Rows; row++) w.Write((byte)Mathf.Clamp(loadout.stages[row], 1, 3));
+            return streams.Finish();
+        }
+
+        public static bool ReadLoadout(byte[] bytes, ulong session, out byte rev, PawnRushLoadout into)
+        {
+            rev = 0;
+            if (into == null || bytes == null || bytes.Length != LoadoutBytes) return false;
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeLoadout || r.ReadUInt64() != session) return false;
+            rev = r.ReadByte();
+            int system = r.ReadByte();
+            int flags = r.ReadByte();
+            if (rev == 0 || system < PawnRushLoadout.One || system > PawnRushLoadout.Many || flags > 1) return false;
+            into.system = system;
+            into.hostOnly = flags == 1;
+            for (int row = 0; row < PawnRushLoadout.Rows; row++)
+                for (int slot = 0; slot < PawnRushLoadout.Slots; slot++)
+                    into.Set(row, slot, r.ReadByte());
+            for (int row = 0; row < PawnRushLoadout.Rows; row++) into.SetStage(row, r.ReadByte());
+            return true;
+        }
+
+        // JY-skill-lab: one change to the loadout, a client's to the host (TypeLoadoutAsk).
+        public static byte[] LoadoutAsk(ulong session, byte seq, byte op, byte value)
+        {
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeLoadoutAsk);
+            w.Write(session);
+            w.Write(seq);
+            w.Write(op);
+            w.Write(value);
+            w.Write((byte)(seq ^ op ^ value ^ 0x5A));   // (told apart from the king's call by its length as well as its type)
+            return streams.Finish();
+        }
+
+        public static bool ReadLoadoutAsk(byte[] bytes, ulong session, out byte seq, out byte op, out byte value)
+        {
+            seq = op = value = 0;
+            if (bytes == null || bytes.Length != LoadoutAskBytes) return false;
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeLoadoutAsk || r.ReadUInt64() != session) return false;
+            seq = r.ReadByte();
+            op = r.ReadByte();
+            value = r.ReadByte();
+            return r.ReadByte() == (byte)(seq ^ op ^ value ^ 0x5A) && seq != 0;
         }
 
         public static byte[] Dev(ulong session, string text)

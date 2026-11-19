@@ -159,6 +159,8 @@ namespace ChessFight.RagdollLab.Net
             public byte DevClearSeq;
             // Host only (R529): the last flight cheat press heard from this player (TypeDevFly's number).
             public byte DevFlySeq;
+            // JY-skill-lab: the number of this player's last change to the skill loadout taken.
+            public byte LoadoutSeq;
         }
 
         // What the match runs on (R508): course 01 or a section round.
@@ -321,6 +323,9 @@ namespace ChessFight.RagdollLab.Net
                 finish.Decided += OnDecided;
             }
             if (PawnRushCourseSkills.Current != null) PawnRushCourseSkills.Current.Online = true;
+            // JY-skill-lab: the developers' skill tree goes over the match (the loadout from the host, the changes to it).
+            loadoutAskSeq = (byte)UnityEngine.Random.Range(1, 255);
+            HookLoadout();
             // The obstacle clock: this link's from now on (MatchObstacleTime), the runtime's shared one underneath.
             sharedClock = ObstacleClock.Source ?? (() => Time.timeAsDouble);
             SyncObstacleClock();
@@ -395,6 +400,11 @@ namespace ChessFight.RagdollLab.Net
             if (finish != null) finish.Decided -= OnDecided;
             // R704: the room's flow rules end with its match (an offline course after it plays the game as it was).
             PawnRushRules.Current = default;
+            if (PawnRushCourseSkills.Current != null)
+            {
+                PawnRushCourseSkills.Current.LoadoutAsk = null;
+                PawnRushCourseSkills.Current.LoadoutManager = null;
+            }
             Course01Playtest.NetworkDriver = null;
             SectionPlaytest.NetworkDriver = null;
             MiniGameBase.LocalDriver = null;
@@ -568,6 +578,12 @@ namespace ChessFight.RagdollLab.Net
             authority = host;
             MiniGameBase.Remote = !host;
             ObstacleClock.Authority = host;
+            // JY-skill-lab: the skill loadout is the new host's to send (from the one it last heard), everyone else's to
+            // hear afresh; changes are asked of whoever hosts now.
+            if (host) loadoutRev = loadoutHeard;
+            loadoutSent = -1;
+            loadoutHeard = 0;
+            HookLoadout();
             if (finish != null) finish.Authority = host;
             if (host)
             {
@@ -683,6 +699,7 @@ namespace ChessFight.RagdollLab.Net
                 if (rearmAt >= 0f && Time.time >= rearmAt) { rearmAt = -1f; Rearm(); }
                 foreach (var r in runners.Values) CheckRespawn(r);
                 if (SnapshotDue(now)) SendSnapshot();   // the course state goes with it, 30 a second at most
+                SendLoadout(now);
                 session.ReportHostSilence(0f);
             }
             else
@@ -1170,6 +1187,7 @@ namespace ChessFight.RagdollLab.Net
                             byte type = RagdollNetProtocol.TypeOf(bytes);
                             if (type == RagdollNetProtocol.TypeSkills) ReceiveSkills(bytes);
                             else if (type == RagdollNetProtocol.TypeSnapshot) ReceiveSnapshot(bytes);
+                            else if (type == RagdollNetProtocol.TypeLoadout) ReceiveLoadout(bytes);
                         }
                     }
                     catch (Exception e)
@@ -1185,6 +1203,75 @@ namespace ChessFight.RagdollLab.Net
                 }
                 if (count < incoming.Length) break;
             }
+        }
+
+        // ------------------------------------------------------------------ the developers' skill tree (JY-skill-lab)
+
+        // The user (2026-11-19): "테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게 하되, 방장이 직접 지정하는 것(다른
+        // 인원들은 스킬 못 바꾸는 것)도 가능하게". The loadout every piece plays by (PawnRushCourseSkills.skills.loadout) is the
+        // host's: it sends it to everyone at once when it changes and every LoadoutEvery seconds besides (a PC that has
+        // just come in, a packet that crossed a host change). Anyone's change in the skill tree is asked of the host -
+        // reliably, numbered so it is taken once - and the host makes it if that player may: anyone while the loadout is
+        // open, the room's manager alone once he has locked it (and the lock itself is his alone).
+        const float LoadoutEvery = 2f;
+        byte loadoutRev, loadoutHeard, loadoutAskSeq;
+        int loadoutSent = -1;
+        float loadoutAt = -1f;
+        readonly PawnRushLoadout loadoutIn = new PawnRushLoadout();
+
+        void HookLoadout()
+        {
+            var course = PawnRushCourseSkills.Current;
+            if (course == null) return;
+            course.LoadoutManager = () => session.IsManager;
+            course.LoadoutAsk = authority ? null : (Action<int, int>)AskLoadout;
+        }
+
+        // Host: the loadout to everyone, with a number that goes up when it has changed.
+        void SendLoadout(float now)
+        {
+            var course = PawnRushCourseSkills.Current;
+            if (course == null) return;
+            bool changed = course.LoadoutVersion != loadoutSent || loadoutRev == 0;
+            if (!changed && now < loadoutAt) return;
+            if (changed)
+            {
+                loadoutSent = course.LoadoutVersion;
+                loadoutRev = (byte)(loadoutRev == 255 ? 1 : loadoutRev + 1);
+            }
+            loadoutAt = now + LoadoutEvery;
+            byte[] bytes = RagdollNetProtocol.Loadout(session.Match, loadoutRev, course.skills.loadout);
+            foreach (var id in session.Roster.Keys) Send(id, bytes, true);
+            foreach (var id in session.Spectators) Send(id, bytes, true);
+        }
+
+        // Not the host: the host's loadout. One overtaken on the way is dropped; the same number again only mends a copy
+        // that has drifted from it.
+        void ReceiveLoadout(byte[] bytes)
+        {
+            var course = PawnRushCourseSkills.Current;
+            if (course == null || !RagdollNetProtocol.ReadLoadout(bytes, session.Match, out byte rev, loadoutIn)) return;
+            if (loadoutHeard != 0 && rev != loadoutHeard && (byte)(rev - loadoutHeard) > 127) return;
+            loadoutHeard = rev;
+            course.TakeLoadout(loadoutIn);
+        }
+
+        // Not the host: one change made in this PC's skill tree, asked of the host.
+        void AskLoadout(int op, int value)
+        {
+            loadoutAskSeq = (byte)(loadoutAskSeq == 255 ? 1 : loadoutAskSeq + 1);
+            bool sent = Send(session.Host, RagdollNetProtocol.LoadoutAsk(session.Match, loadoutAskSeq, (byte)Mathf.Clamp(op, 0, 255), (byte)Mathf.Clamp(value, 0, 255)), true);
+            if (!sent) Debug.Log("[PawnRush] 스킬트리: 바꾸기 요청을 방장에게 보내지 못함");
+        }
+
+        // Host: a player's change, made if that player may make it.
+        void ReceiveLoadoutAsk(Runner r, byte[] bytes)
+        {
+            var course = PawnRushCourseSkills.Current;
+            if (course == null || !RagdollNetProtocol.ReadLoadoutAsk(bytes, session.Match, out byte seq, out byte op, out byte value) || seq == r.LoadoutSeq) return;
+            r.LoadoutSeq = seq;
+            bool taken = course.EditLoadout(op, value, r.Id == session.Manager);
+            Debug.Log($"[PawnRush] 스킬트리: {session.Name(r.Id)} 님이 바꿈 ({op} = {value})" + (taken ? "" : " - 받지 않음 (잠겨 있거나 같은 값)"));
         }
 
         // R525: the mini-game cheat (development builds). The host finishes its own team's next mini-game; a client asks
@@ -1250,6 +1337,7 @@ namespace ChessFight.RagdollLab.Net
             }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevClear) { ReceiveDevClear(r, bytes); return; }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevFly) { ReceiveDevFly(r, bytes); return; }
+            if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeLoadoutAsk) { ReceiveLoadoutAsk(r, bytes); return; }
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;
             if (r.Sequence != 0 && !RagdollNetProtocol.Newer(sequence, r.Sequence)) return;   // overtaken: its counts are stale
             if (!r.Synced)

@@ -32,7 +32,11 @@ namespace ChessFight.Network
 
     // The loadout: the skill system the user listed (1 a skill a piece, 2 the same and it grows, 3 several a piece),
     // the skills in each piece's slots, and for system 2 the stage each piece's skill is at. Core: no Unity (it goes
-    // into a text for the settings of this PC, and later into the room's data).
+    // into a text for the settings of this PC, and over a match from the host to everyone).
+    //
+    // Over a match (the user: "테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게 하되, 방장이 직접 지정하는 것(다른
+    // 인원들은 스킬 못 바꾸는 것)도 가능하게"): a change is two numbers (Apply: which thing, what value), so anyone's
+    // change can be asked of the host; hostOnly says only the room's manager may change anything (Allows).
     [Serializable]
     public sealed class PawnRushLoadout
     {
@@ -42,9 +46,17 @@ namespace ChessFight.Network
         /// <summary>The pieces that have slots, in the window's order.</summary>
         public static readonly PieceKind[] RowPieces = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen };
 
+        // A change's first number: 0..14 a slot (row * Slots + slot, its value the skill), then these.
+        public const int OpStage = Rows * Slots;          // 15..19: a row's stage (its value 1..3)
+        public const int OpSystem = OpStage + Rows;       // 20: the system (1..3)
+        public const int OpPreset = OpSystem + 1;         // 21: one of the loadouts that come with the game (Preset)
+        public const int OpHostOnly = OpPreset + 1;       // 22: only the manager changes it (1) or everyone (0)
+
         public int system = One;
         public int[] slots = new int[Rows * Slots];
         public int[] stages = { 1, 1, 1, 1, 1 };
+        /// <summary>A room's: only its manager changes the loadout (everyone still sees it).</summary>
+        public bool hostOnly;
 
         public static int Row(PieceKind piece)
         {
@@ -123,17 +135,68 @@ namespace ChessFight.Network
             other.Mend();
             Mend();
             system = other.system;
+            hostOnly = other.hostOnly;
             Array.Copy(other.slots, slots, slots.Length);
             Array.Copy(other.stages, stages, stages.Length);
         }
 
+        /// <summary>May this change be made by a player who is the room's manager or is not? Locking is the manager's
+        /// alone; a locked loadout is the manager's to change.</summary>
+        public bool Allows(int op, bool manager) => manager || (!hostOnly && op != OpHostOnly);
+
+        /// <summary>One change (see the Op numbers). False when it is no change, or not one at all.</summary>
+        public bool Apply(int op, int value)
+        {
+            Mend();
+            if (op >= 0 && op < OpStage)
+            {
+                if (value < 0 || value > 255 || slots[op] == value) return false;
+                slots[op] = value;
+                return true;
+            }
+            if (op >= OpStage && op < OpSystem)
+            {
+                int stage = value < 1 ? 1 : value > 3 ? 3 : value;
+                if (stages[op - OpStage] == stage) return false;
+                stages[op - OpStage] = stage;
+                return true;
+            }
+            switch (op)
+            {
+                case OpSystem:
+                    if (value < One || value > Many || system == value) return false;
+                    system = value;
+                    return true;
+                case OpPreset:
+                {
+                    // The slots only: the system, the stages and the lock stay as they are.
+                    if (value < 0 || value > 2) return false;
+                    var preset = Preset(value);
+                    bool changed = false;
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        changed |= slots[i] != preset.slots[i];
+                        slots[i] = preset.slots[i];
+                    }
+                    return changed;
+                }
+                case OpHostOnly:
+                    if (hostOnly == (value != 0)) return false;
+                    hostOnly = value != 0;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public bool Same(PawnRushLoadout other) => other != null && Encode() == other.Encode();
 
-        /// <summary>As one line of text: the system, the fifteen slots, the five stages.</summary>
+        /// <summary>As one line of text: the system, the fifteen slots, the five stages, and whether only the manager
+        /// changes it.</summary>
         public string Encode()
         {
             Mend();
-            return system + "|" + string.Join(",", slots) + "|" + string.Join(",", stages);
+            return system + "|" + string.Join(",", slots) + "|" + string.Join(",", stages) + "|" + (hostOnly ? "1" : "0");
         }
 
         /// <summary>From <see cref="Encode"/>'s text; anything that is not one is the game as it is.</summary>
@@ -142,11 +205,12 @@ namespace ChessFight.Network
             var result = Preset(0);
             if (string.IsNullOrEmpty(text)) return result;
             var parts = text.Split('|');
-            if (parts.Length != 3 || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
+            // (Three parts: a text from before the lock was there.)
+            if ((parts.Length != 3 && parts.Length != 4) || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
             var slotTexts = parts[1].Split(',');
             var stageTexts = parts[2].Split(',');
             if (slotTexts.Length != Rows * Slots || stageTexts.Length != Rows) return result;
-            var read = new PawnRushLoadout { system = system };
+            var read = new PawnRushLoadout { system = system, hostOnly = parts.Length == 4 && parts[3] == "1" };
             for (int i = 0; i < slotTexts.Length; i++)
             {
                 if (!int.TryParse(slotTexts[i], out int id) || id < 0 || id > 255) return result;

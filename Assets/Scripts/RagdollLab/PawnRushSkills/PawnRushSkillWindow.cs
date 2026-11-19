@@ -1,35 +1,52 @@
 using System;
+using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// The developers' skill window (JY-skill-lab, 2026-11-19; the user: "스킬 창을 따로 만들고, 거기에 각 칸에 드래그 앤 드롭으로
-    /// 스킬들이 ... 자유롭게 넣었다 뺐다 할 수 있는 거야. 막 바꿔보면서 테스트할 수 있게 ... 개발자용 테스트", "창은 k키 같은 걸로
-    /// 열리게", "아무 기물에다 넣을 수 있게"). K opens it. On the left the skill book (PawnRushSkillBook), each skill with the
-    /// colours of its tags and filtered by tag; on the right every piece's slots. A skill is dragged onto a slot (or
-    /// clicked, then the slot clicked), any skill on any piece; the cross on a slot empties it. The skill system at the
-    /// top: 1 a slot a piece, 2 the same with a stage 1..3 set here by hand, 3 three slots a piece (the skill key and the
-    /// two ability keys). What it edits is PawnRushSkillParams.loadout, kept on this PC between plays.
+    /// 개발자 폰러쉬 스킬트리 - the developers' skill tree (JY-skill-lab, 2026-11-19; the user: "스킬 창을 따로 만들고, 거기에 각 칸에
+    /// 드래그 앤 드롭으로 스킬들이 ... 자유롭게 넣었다 뺐다 할 수 있는 거야. 막 바꿔보면서 테스트할 수 있게 ... 개발자용 테스트",
+    /// "창은 k키 같은 걸로 열리게", "아무 기물에다 넣을 수 있게", and its name: "이걸 '개발자 폰러쉬 스킬트리'라 이름짓고"). K opens
+    /// it. On the left the skill book (PawnRushSkillBook), each skill with the colours of its tags and filtered by tag; on
+    /// the right every piece's slots. A skill is dragged onto a slot (or clicked, then the slot clicked), any skill on any
+    /// piece; the cross on a slot empties it. The skill system at the top: 1 a slot a piece, 2 the same with a stage 1..3
+    /// set here by hand, 3 three slots a piece (the skill key and the two ability keys). What it edits is
+    /// PawnRushSkillParams.loadout, kept on this PC between plays.
     ///
-    /// For now it edits only where this PC runs the skills itself (offline); a room still plays one of the two loadouts
-    /// its rules name. Everyone opening it and the room's manager locking it come with the loadout going over the network.
+    /// Every change is two numbers (PawnRushLoadout.Apply). Where this PC runs the skills itself (offline, a match's host)
+    /// the window makes the change; elsewhere it is asked of the host (<see cref="Send"/>) and shows when the host's
+    /// loadout comes back. In a room everyone opens it ("테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게"), and the room's
+    /// manager can keep the changes to himself with the switch at the top ("방장이 직접 지정하는 것(다른 인원들은 스킬 못 바꾸는
+    /// 것)도 가능하게").
     /// </summary>
     [DefaultExecutionOrder(260)]
     public class PawnRushSkillWindow : MonoBehaviour
     {
+        public const string Title = "개발자 폰러쉬 스킬트리";
+
         public KeyCode toggleKey = KeyCode.K;
 
         /// <summary>The numbers whose loadout this window edits.</summary>
         public PawnRushSkillParams Skills;
-        /// <summary>False: the window shows the loadout but changes nothing (with <see cref="LockedNote"/> saying why).</summary>
-        public Func<bool> CanEdit;
-        public string LockedNote = "";
-        /// <summary>The loadout was changed here.</summary>
+        /// <summary>May this change (PawnRushLoadout's Op numbers) be made here now? Unset: yes.</summary>
+        public Func<int, bool> CanEdit;
+        /// <summary>Why not, for the player.</summary>
+        public Func<int, string> LockedNote;
+        /// <summary>Set where another PC runs the skills (a match's host): a change is asked of it instead of made here.</summary>
+        public Action<int, int> Send;
+        /// <summary>A change was made here (not one sent on).</summary>
         public Action Changed;
         /// <summary>The names of the three slots' keys, as this scene binds them.</summary>
         public Func<int, string> KeyName;
+        /// <summary>A room: the "only the manager changes it" switch is shown.</summary>
+        public Func<bool> ShowLock;
+        /// <summary>The window may not be opened now (the entrance screen still up).</summary>
+        public Func<bool> Blocked;
+        /// <summary>The window frees the mouse itself while it is open (the course: GameSettings.PointerTaken, as the
+        /// promotion cards do). The lab's scenes keep their own cursor rule (LabGame.UiWantsCursor).</summary>
+        public bool OwnCursor;
 
         public bool Open { get; private set; }
         /// <summary>The window's place on the screen while it is open (for the cursor: clicks on it are its own).</summary>
@@ -38,9 +55,12 @@ namespace ChessFight.RagdollLab
         const string Pref = "ChessFight.PawnRushLoadout";
 
         SkillTag filter = SkillTag.None;
-        int dragId, pickId;
+        int dragId, pickId, hoverId;
+        float scroll;
         string message = "";
         float messageUntil;
+        bool cursorTaken, savedVisible;
+        CursorLockMode savedLock;
         GUIStyle label, small, title, cardName, center;
         Texture2D white;
 
@@ -56,10 +76,23 @@ namespace ChessFight.RagdollLab
             skills.loadout.CopyFrom(PawnRushLoadout.Decode(PlayerPrefs.GetString(Pref, "")));
         }
 
+        /// <summary>Keeps a loadout as this PC's own for the next play.</summary>
+        public static void Save(PawnRushLoadout loadout)
+        {
+            if (loadout != null) PlayerPrefs.SetString(Pref, loadout.Encode());
+        }
+
         void Update()
         {
-            if (Input.GetKeyDown(toggleKey) && !ChessFight.Game.ChatBox.KeysHeld) Toggle();
+            if (Open && Blocked != null && Blocked()) Toggle();
+            if (LegacyKeys.Down(toggleKey) && !ChatBox.KeysHeld && !GameMenu.IsOpen && !SettingsWindow.IsOpen
+                && (Open || Blocked == null || !Blocked())) Toggle();
+            if (!OwnCursor) return;
+            if (Open) TakeCursor();
+            else GiveCursorBack();
         }
+
+        void OnDisable() => GiveCursorBack();
 
         public void Toggle()
         {
@@ -67,7 +100,34 @@ namespace ChessFight.RagdollLab
             dragId = pickId = 0;
         }
 
-        bool Editable => Skills != null && (CanEdit == null || CanEdit());
+        // The mouse is the window's while it is open (every frame: whatever locks the cursor under it would leave it
+        // unclickable), and goes back as it was.
+        void TakeCursor()
+        {
+            if (!cursorTaken)
+            {
+                cursorTaken = true;
+                savedLock = Cursor.lockState;
+                savedVisible = Cursor.visible;
+            }
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            GameSettings.PointerTaken = true;
+        }
+
+        void GiveCursorBack()
+        {
+            if (!cursorTaken) return;
+            cursorTaken = false;
+            // The menu or the match sheet, opened over the window, holds the mouse on.
+            if (GameMenu.IsOpen || VoiceHud.SheetOpen) return;
+            GameSettings.PointerTaken = false;
+            if (savedLock == CursorLockMode.Locked && !Application.isFocused) return;
+            Cursor.lockState = savedLock;
+            Cursor.visible = savedVisible;
+        }
+
+        bool Allowed(int op) => Skills != null && (CanEdit == null || CanEdit(op));
 
         void Say(string text)
         {
@@ -75,30 +135,39 @@ namespace ChessFight.RagdollLab
             messageUntil = Time.unscaledTime + 2.5f;
         }
 
-        void Apply()
+        /// <summary>One change: made here, or asked of the PC that runs the skills. False when it is not allowed.</summary>
+        bool Change(int op, int value)
         {
-            PlayerPrefs.SetString(Pref, Skills.loadout.Encode());
+            if (Skills == null) return false;
+            if (!Allowed(op))
+            {
+                string why = LockedNote != null ? LockedNote(op) : "";
+                Say(string.IsNullOrEmpty(why) ? "지금은 바꿀 수 없어요" : why);
+                return false;
+            }
+            if (Send != null)
+            {
+                Send(op, value);   // the host's loadout coming back shows it
+                return true;
+            }
+            if (!Skills.loadout.Apply(op, value)) return true;
+            Save(Skills.loadout);
             Changed?.Invoke();
+            return true;
         }
 
         void Put(int row, int slot, int id)
         {
-            if (!Editable)
-            {
-                Say(string.IsNullOrEmpty(LockedNote) ? "지금은 바꿀 수 없어요" : LockedNote);
-                return;
-            }
             var entry = PawnRushSkillBook.Find(id);
             if (id != 0 && (entry == null || !entry.built))
             {
-                Say("아직 안 만든 스킬이에요");
+                Say("아직 칸에 넣을 수 없는 스킬이에요");
                 return;
             }
-            Skills.loadout.Set(row, slot, id);
             pickId = 0;
+            if (!Change(row * PawnRushLoadout.Slots + slot, id)) return;
             if (entry != null && entry.Old && entry.home != PawnRushLoadout.RowPieces[row])
                 Say($"'{entry.name}'은 {ChessPieces.Name(entry.home)}용으로 만든 스킬이라, 다른 기물에서는 이펙트와 소리가 안 나올 수 있어요");
-            Apply();
         }
 
         void EnsureStyles()
@@ -181,6 +250,14 @@ namespace ChessFight.RagdollLab
             small.alignment = oldAlign;
         }
 
+        static string TagNames(SkillTag tags)
+        {
+            string names = "";
+            foreach (var tag in PawnRushSkillBook.Tags)
+                if ((tags & tag) != 0) names += (names.Length > 0 ? " · " : "") + PawnRushSkillBook.TagName(tag);
+            return names;
+        }
+
         void OnGUI()
         {
             if (!Open || Skills == null) return;
@@ -197,74 +274,92 @@ namespace ChessFight.RagdollLab
             Frame(area, Edge);
             float x0 = area.x + 14f, y = area.y + 10f, right = area.xMax - 14f;
 
-            GUI.Label(new Rect(x0, y, 320f, 24f), "스킬 창 (개발자용)", title);
+            GUI.Label(new Rect(x0, y, 320f, 24f), Title, title);
             var oldAlign = small.alignment;
             small.alignment = TextAnchor.MiddleRight;
-            GUI.Label(new Rect(right - 330f, y, 330f, 24f), Editable ? $"끌어다 놓기 · 스킬을 누른 뒤 칸을 눌러도 됨 · {toggleKey} 닫기" : LockedNote, small);
+            string hint = Allowed(0) ? $"끌어다 놓기 · 스킬을 누른 뒤 칸을 눌러도 됨 · {toggleKey} 닫기"
+                : (LockedNote != null ? LockedNote(0) : "지금은 바꿀 수 없어요") + $" · {toggleKey} 닫기";
+            GUI.Label(new Rect(right - 400f, y, 400f, 24f), hint, small);
             small.alignment = oldAlign;
             y += 30f;
 
-            // The skill system, and the loadouts that come with the game.
+            // The skill system, the loadouts that come with the game, and (a room) who may change it.
             GUI.Label(new Rect(x0, y, 64f, 24f), "스킬 방식", label);
             float x = x0 + 68f;
             string[] systems = { "1안 칸 하나", "2안 하나가 강해짐", "3안 칸 셋" };
             for (int i = 0; i < 3; i++)
             {
                 float bw = i == 1 ? 126f : 92f;
-                if (Chip(new Rect(x, y, bw, 24f), systems[i], lo.system == i + 1) && Editable && lo.system != i + 1)
-                {
-                    lo.system = i + 1;
-                    Apply();
-                }
+                if (Chip(new Rect(x, y, bw, 24f), systems[i], lo.system == i + 1) && lo.system != i + 1) Change(PawnRushLoadout.OpSystem, i + 1);
                 x += bw + 6f;
             }
-            x += 14f;
+            x += 10f;
             string[] presets = { "지금 스킬", "1-나", "비우기" };
             for (int i = 0; i < 3; i++)
             {
-                if (Chip(new Rect(x, y, 70f, 24f), presets[i], false) && Editable)
-                {
-                    int system = lo.system;
-                    lo.CopyFrom(PawnRushLoadout.Preset(i));
-                    lo.system = system;
+                if (Chip(new Rect(x, y, 66f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, i))
                     Say(i == 2 ? "모든 칸을 비웠어요" : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
-                    Apply();
-                }
-                x += 76f;
+                x += 72f;
+            }
+            if (ShowLock != null && ShowLock())
+            {
+                var lr = new Rect(right - 132f, y, 132f, 24f);
+                if (Chip(lr, lo.hostOnly ? "방장만 바꾸기: 켬" : "방장만 바꾸기: 끔", lo.hostOnly)) Change(PawnRushLoadout.OpHostOnly, lo.hostOnly ? 0 : 1);
             }
             y += 32f;
 
             // The tags.
             x = x0;
-            if (Chip(new Rect(x, y, 52f, 22f), "전체", filter == SkillTag.None)) filter = SkillTag.None;
+            if (Chip(new Rect(x, y, 52f, 22f), "전체", filter == SkillTag.None)) { filter = SkillTag.None; scroll = 0f; }
             x += 58f;
             foreach (var tag in PawnRushSkillBook.Tags)
             {
                 string name = PawnRushSkillBook.TagName(tag);
                 float bw = 30f + name.Length * 12f;
-                if (Chip(new Rect(x, y, bw, 22f), name, filter == tag, PawnRushSkillBook.TagColor(tag))) filter = filter == tag ? SkillTag.None : tag;
+                if (Chip(new Rect(x, y, bw, 22f), name, filter == tag, PawnRushSkillBook.TagColor(tag)))
+                {
+                    filter = filter == tag ? SkillTag.None : tag;
+                    scroll = 0f;
+                }
                 x += bw + 6f;
             }
             y += 30f;
 
-            // Left: the book. Right: the slots.
+            // Left: the book, scrolled by the wheel, and under it what the skill under the mouse does. Right: the slots.
             float boardW = 356f, listW = area.width - 28f - boardW - 14f;
             float listX = x0, boardX = x0 + listW + 14f, top = y;
+            const float detailH = 78f;
+            var view = new Rect(listX, top + 20f, listW, area.yMax - 34f - detailH - (top + 20f));
             int made = 0, shown = 0;
             foreach (var entry in PawnRushSkillBook.All) if (entry.built) made++;
             int cols = Mathf.Max(1, Mathf.FloorToInt((listW + 6f) / 150f));
             float cw = (listW - (cols - 1) * 6f) / cols, ch = 40f;
-            float ly = top + 20f;
+            int count = 0;
+            foreach (var entry in PawnRushSkillBook.All)
+                if (filter == SkillTag.None || (entry.tags & filter) != 0) count++;
+            float content = Mathf.Ceil(count / (float)cols) * (ch + 6f);
+            float maxScroll = Mathf.Max(0f, content - view.height);
+            if (e.type == EventType.ScrollWheel && view.Contains(e.mousePosition))
+            {
+                scroll += e.delta.y * 22f;
+                e.Use();
+            }
+            scroll = Mathf.Clamp(scroll, 0f, maxScroll);
+            bool mouseInView = view.Contains(e.mousePosition);
+            int hovered = 0;
+            GUI.BeginGroup(view);
             foreach (var entry in PawnRushSkillBook.All)
             {
                 if (filter != SkillTag.None && (entry.tags & filter) == 0) continue;
-                var r = new Rect(listX + (shown % cols) * (cw + 6f), ly + (shown / cols) * (ch + 6f), cw, ch);
+                var r = new Rect((shown % cols) * (cw + 6f), (shown / cols) * (ch + 6f) - scroll, cw, ch);
                 shown++;
-                if (r.yMax > area.yMax - 30f) continue;
+                if (r.yMax < 0f || r.y > view.height) continue;
                 DrawCard(r, entry, pickId == entry.id, false);
-                if (e.type == EventType.MouseDown && e.button == 0 && r.Contains(e.mousePosition))
+                if (!mouseInView || !r.Contains(e.mousePosition)) continue;
+                hovered = entry.id;
+                if (e.type == EventType.MouseDown && e.button == 0)
                 {
-                    if (!entry.built) Say("아직 안 만든 스킬이에요");
+                    if (!entry.built) Say("아직 칸에 넣을 수 없는 스킬이에요");
                     else
                     {
                         dragId = entry.id;
@@ -273,7 +368,28 @@ namespace ChessFight.RagdollLab
                     e.Use();
                 }
             }
-            GUI.Label(new Rect(listX, top, listW, 18f), $"스킬 목록 {shown}개 (만든 것 {made}개) · 색 점 = 종류", small);
+            GUI.EndGroup();
+            if (e.type == EventType.Repaint) hoverId = hovered;
+            if (maxScroll > 0f)
+            {
+                // A thin bar at the list's right edge: where the view is in the list.
+                float barH = Mathf.Max(24f, view.height * view.height / content);
+                Fill(new Rect(view.xMax + 3f, view.y + (view.height - barH) * (scroll / maxScroll), 3f, barH), Edge);
+            }
+            GUI.Label(new Rect(listX, top, listW, 18f), $"스킬 목록 {shown}개 (칸에 넣을 수 있는 것 {made}개) · 색 점 = 종류" + (maxScroll > 0f ? " · 휠로 넘기기" : ""), small);
+
+            // What the skill under the mouse (or the one picked) does.
+            var about = PawnRushSkillBook.Find(hoverId != 0 ? hoverId : pickId);
+            var detail = new Rect(listX, view.yMax + 6f, listW, detailH);
+            Fill(detail, SlotEmpty);
+            Frame(detail, Edge);
+            if (about != null)
+            {
+                GUI.Label(new Rect(detail.x + 8f, detail.y + 3f, detail.width - 16f, 20f),
+                    $"<b>{about.name}</b>  <size=11><color=#9EA9BD>{ChessPieces.Name(about.home)} · {TagNames(about.tags)}{(about.built ? "" : " · 아직 못 넣음")}</color></size>", label);
+                GUI.Label(new Rect(detail.x + 8f, detail.y + 24f, detail.width - 16f, detail.height - 26f), about.how, small);
+            }
+            else GUI.Label(new Rect(detail.x + 8f, detail.y + 6f, detail.width - 16f, 40f), "스킬에 마우스를 올리면 여기에 설명이 나와요.", small);
 
             GUI.Label(new Rect(boardX, top, boardW, 18f), "기물별 칸", small);
             float by = top + 20f, sw = lo.system == PawnRushLoadout.Many ? 96f : 150f, sh = 46f;
@@ -327,11 +443,8 @@ namespace ChessFight.RagdollLab
                     // The growing system: the stage, set by hand for now.
                     GUI.Label(new Rect(sx + 4f, by, 34f, sh), "단계", small);
                     for (int stage = 1; stage <= 3; stage++)
-                        if (Chip(new Rect(sx + 34f + (stage - 1) * 34f, by + 10f, 30f, 24f), " " + stage, lo.stages[row] == stage) && Editable && lo.stages[row] != stage)
-                        {
-                            lo.SetStage(row, stage);
-                            Apply();
-                        }
+                        if (Chip(new Rect(sx + 34f + (stage - 1) * 34f, by + 10f, 30f, 24f), " " + stage, lo.stages[row] == stage) && lo.stages[row] != stage)
+                            Change(PawnRushLoadout.OpStage + row, stage);
                 }
                 by += sh + 8f;
             }
@@ -340,6 +453,10 @@ namespace ChessFight.RagdollLab
                 : "3안: 기물마다 세 칸. 한 번에 스킬 하나만 돌고, 쿨타임은 칸마다 따로예요.";
             GUI.Label(new Rect(boardX, by, boardW, 34f), note, small);
             GUI.Label(new Rect(boardX, by + 36f, boardW, 34f), "구성을 바꾸면 쓰던 스킬과 쿨타임이 처음으로 돌아가요.", small);
+            if (ShowLock != null && ShowLock())
+                GUI.Label(new Rect(boardX, by + 56f, boardW, 50f), lo.hostOnly
+                    ? "방: 방장만 바꿀 수 있어요. 다른 사람은 보기만 해요."
+                    : "방: 누구나 바꿀 수 있고, 바꾸면 모두에게 똑같이 적용돼요. 방장은 위의 '방장만 바꾸기'로 잠글 수 있어요.", small);
 
             if (Time.unscaledTime < messageUntil)
             {

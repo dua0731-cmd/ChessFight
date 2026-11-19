@@ -23,8 +23,15 @@ namespace ChessFight.Network
         // random one (a player who walked off, or a lost connection, never keeps the pad held for good).
         public const float ChooseSeconds = 10f;
 
+        // JY-skill-lab: the skills are whatever the loadout puts in a piece's slots (the developers' skill tree), so the
+        // cards ask the course's skills for the names and the line (PawnRushCourseSkills sets these; unset - a test, a
+        // scene without the skills - the cards say what the room's rules name).
+        public static Func<PieceKind, string> NameNow, LineNow;
+
         public static string SkillName(PieceKind piece)
         {
+            string now = NameNow != null ? NameNow(piece) : null;
+            if (!string.IsNullOrEmpty(now)) return now;
             // JY-skill-lab: the room plays by skill plan 1-나 (PawnRushRules.Skills), the cards name its skills.
             if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
                 switch (piece)
@@ -47,6 +54,8 @@ namespace ChessFight.Network
 
         public static string SkillLine(PieceKind piece)
         {
+            string now = LineNow != null ? LineNow(piece) : null;
+            if (!string.IsNullOrEmpty(now)) return now;
             if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
                 switch (piece)
                 {

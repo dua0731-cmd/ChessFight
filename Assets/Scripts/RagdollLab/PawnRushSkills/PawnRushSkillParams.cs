@@ -202,8 +202,8 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- Pawn Rush 2.0 skill plans (JY-skill-lab, 2026-11-19)
 
-        [Header("스킬 구성 (개발자용 스킬 창, K)")]
-        [Tooltip("기물마다 칸에 들어 있는 스킬과 스킬 방식 (1 = 칸 하나 · 2 = 하나가 강해짐 · 3 = 칸 셋). 스킬 창(K)에서 바꾼다")]
+        [Header("스킬 구성 (개발자 폰러쉬 스킬트리, K)")]
+        [Tooltip("기물마다 칸에 들어 있는 스킬과 스킬 방식 (1 = 칸 하나 · 2 = 하나가 강해짐 · 3 = 칸 셋). 스킬트리(K)에서 바꾼다")]
         public PawnRushLoadout loadout = PawnRushLoadout.Preset(0);
         [Tooltip("2안(하나가 강해짐) 시험: 단계 1 · 2 · 3에서 쿨타임에 곱하는 값, 스킬이 미는 힘에 곱하는 값. 임시 값이다 (스킬마다 고유한 강화는 아직 없다)")]
         public float[] stageCooldown = { 1f, 0.75f, 0.55f };

@@ -1134,14 +1134,14 @@ public static class NetworkCoreTests
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
             Test("R703: the round's flow rules pack into one number and back; a number that is not rules is the game as it was", () => {
-                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) for (int skills=0; skills<2; skills++) {
+                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) for (int skills=0; skills<3; skills++) {
                     var r=new PawnRushRules{Relief=relief,After=after,Ending=ending,Skills=skills}; var back=PawnRushRules.Decode(r.Encode());
                     Check(back.Relief==relief&&back.After==after&&back.Ending==ending&&back.Skills==skills,"rules changed on the way: "+relief+after+ending+skills); }
                 Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
-                Check(PawnRushRules.Settings.Length==4&&PawnRushRules.Choices.Length==4&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==2,"the panel's names");
-                Check(new PawnRushRules().With(3,PawnRushRules.SkillsChessMoves).Skills==1&&new PawnRushRules{Skills=1}.Of(3)==1&&PawnRushRules.Decode(32).Skills==1&&PawnRushRules.Decode(64).Skills==0,"the skill plan (JY-skill-lab)");
+                Check(PawnRushRules.Settings.Length==4&&PawnRushRules.Choices.Length==4&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==3,"the panel's names");
+                Check(new PawnRushRules().With(3,PawnRushRules.SkillsChessMoves).Skills==1&&new PawnRushRules{Skills=1}.Of(3)==1&&PawnRushRules.Decode(32).Skills==1&&PawnRushRules.Decode(64).Skills==PawnRushRules.SkillsTree&&PawnRushRules.Decode(96).Skills==0&&new PawnRushRules().With(3,PawnRushRules.SkillsTree).Encode()==64,"the skill plan and the skill tree (JY-skill-lab)");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
             Test("JY-skill-lab: the skill loadout - the game's own is one old skill a piece, any skill sits in any slot, and it goes into a text and back", () => {
@@ -1164,7 +1164,17 @@ public static class NetworkCoreTests
                 mine.system=PawnRushLoadout.Many; Check(mine.Stage(PieceKind.Pawn)==1,"stages only with the growing system");
                 foreach (var junk in new[]{null,"","1","9|0|1","1|1,2|1,1,1,1,1","1|a,0,0,0,0,0,0,0,0,0,0,0,0,0,0|1,1,1,1,1","1|999,0,0,0,0,0,0,0,0,0,0,0,0,0,0|1,1,1,1,1"})
                     Check(PawnRushLoadout.Decode(junk).Same(now),"a text that is not a loadout is the game as it is: "+junk);
-                var copy=new PawnRushLoadout(); copy.CopyFrom(back); Check(copy.Same(back)&&!copy.Same(now)&&!copy.Same(null),"CopyFrom and Same"); });
+                var copy=new PawnRushLoadout(); copy.CopyFrom(back); Check(copy.Same(back)&&!copy.Same(now)&&!copy.Same(null),"CopyFrom and Same");
+                // A change as two numbers (what a client asks of the host), and the manager's lock.
+                var room=PawnRushLoadout.Preset(0);
+                Check(room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,7)&&room.system==PawnRushLoadout.Many,"the system");
+                Check(room.Apply(1,PawnRushSkillIds.Check)&&room.Skill(PieceKind.Pawn,1)==PawnRushSkillIds.Check&&!room.Apply(1,PawnRushSkillIds.Check)&&room.Apply(14,PawnRushSkillIds.Fork)&&room.Skill(PieceKind.Queen,2)==PawnRushSkillIds.Fork&&!room.Apply(3,999)&&!room.Apply(-1,1)&&!room.Apply(99,1),"a slot");
+                Check(room.Apply(PawnRushLoadout.OpStage+3,2)&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpStage+3,2)&&room.Apply(PawnRushLoadout.OpStage,9)&&room.stages[0]==3,"a stage");
+                Check(room.Apply(PawnRushLoadout.OpPreset,1)&&room.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.EnPassant&&room.Skill(PieceKind.Pawn,1)==0&&room.system==PawnRushLoadout.Many&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpPreset,1)&&!room.Apply(PawnRushLoadout.OpPreset,5),"a loadout that comes with the game fills the slots only");
+                Check(room.Allows(0,false)&&room.Allows(PawnRushLoadout.OpSystem,false)&&!room.Allows(PawnRushLoadout.OpHostOnly,false)&&room.Allows(PawnRushLoadout.OpHostOnly,true),"open: anyone changes it, the manager alone locks it");
+                Check(room.Apply(PawnRushLoadout.OpHostOnly,1)&&room.hostOnly&&!room.Apply(PawnRushLoadout.OpHostOnly,1)&&!room.Allows(0,false)&&!room.Allows(PawnRushLoadout.OpPreset,false)&&room.Allows(0,true)&&room.Allows(PawnRushLoadout.OpHostOnly,true),"locked: the manager's alone");
+                var kept=PawnRushLoadout.Decode(room.Encode()); Check(kept.hostOnly&&kept.Same(room)&&!PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").hostOnly&&PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").Same(now),"the lock in the text; a text from before it reads as open");
+                var held=new PawnRushLoadout(); held.CopyFrom(room); Check(held.hostOnly&&held.Apply(PawnRushLoadout.OpHostOnly,0)&&!held.hostOnly&&room.hostOnly,"the lock is copied, and opened again"); });
             Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
                 Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
                 Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");

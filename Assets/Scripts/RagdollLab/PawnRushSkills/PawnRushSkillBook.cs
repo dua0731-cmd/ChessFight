@@ -19,13 +19,15 @@ namespace ChessFight.RagdollLab
         public SkillTag tags;
         public bool built;
         public string how;
+        /// <summary>One line for the promotion card (unset: the first line of <see cref="how"/>).</summary>
+        public string card;
 
         /// <summary>One of the skills as they are: its effects and sounds are its home piece's.</summary>
         public bool Old => PawnRushSkillIds.Old(id);
     }
 
     /// <summary>
-    /// The skill book (JY-skill-lab, 2026-11-19): every Pawn Rush skill the developers' skill window (PawnRushSkillWindow, K)
+    /// The skill book (JY-skill-lab, 2026-11-19): every Pawn Rush skill the developers' skill tree (PawnRushSkillWindow, K)
     /// lists - the five as they are, plan 1-나's five, and the candidates of Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md that
     /// are not made yet (shown dim; they cannot be put in a slot). A new skill is one more line here, its number in
     /// PawnRushSkillIds and its code in RagdollPawn.SkillPlans.cs (RunNewSkill).
@@ -120,6 +122,32 @@ namespace ChessFight.RagdollLab
         {
             var e = Find(id);
             return e != null ? e.how : "";
+        }
+
+        // The promotion cards' lines as the game has them (PawnRushPromotion.SkillLine), by skill.
+        static readonly System.Collections.Generic.Dictionary<int, string> cards = new System.Collections.Generic.Dictionary<int, string>
+        {
+            { PawnRushSkillIds.TwoSteps, "두 칸을 빠르게 내딛는다" },
+            { PawnRushSkillIds.TurnLeap, "높이 뛰어 꺾어 착지한다. 틈과 턱을 넘기 좋다" },
+            { PawnRushSkillIds.CrossRope, "대각선 밧줄을 깔아 길을 막는다. 상대 견제용" },
+            { PawnRushSkillIds.ChainPull, "사슬을 던져 적은 끌어오고 팀원은 옆으로 데려온다" },
+            { PawnRushSkillIds.RingShove, "둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다" },
+            { PawnRushSkillIds.EnPassant, "옆을 스쳐 지나간 적의 발을 건다" },
+            { PawnRushSkillIds.Fork, "뛰어올라 앞 좌우 두 자리를 찬다. 둘을 한꺼번에 맞혀야 넘어진다" },
+            { PawnRushSkillIds.Pin, "빛줄로 적을 꿰어 뒤의 적이나 벽에 묶는다" },
+            { PawnRushSkillIds.Castling, "팀원과 자리를 바꾼다. 팀원이 스킬 키로 받아야 한다" },
+            { PawnRushSkillIds.Check, "적 한 명을 지목한다. 제때 그 칸을 벗어나지 못하면 날아간다" },
+        };
+
+        /// <summary>A skill's line for the promotion card.</summary>
+        public static string Card(int id)
+        {
+            var e = Find(id);
+            if (e == null) return "";
+            if (!string.IsNullOrEmpty(e.card)) return e.card;
+            if (cards.TryGetValue(id, out string line)) return line;
+            int cutAt = e.how.IndexOf('\n');
+            return cutAt > 0 ? e.how.Substring(0, cutAt) : e.how;
         }
     }
 }

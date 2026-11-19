@@ -102,8 +102,9 @@ namespace ChessFight.RagdollLab
             window = GetComponent<PawnRushSkillWindow>();
             if (window == null) window = gameObject.AddComponent<PawnRushSkillWindow>();
             window.Skills = skills;
-            window.CanEdit = () => !Online;
-            window.LockedNote = "온라인에서는 아직 못 바꿔요 (다음 단계에서 연결)";
+            // (This scene's own online test, the skill net, does not carry the loadout yet: a room's Pawn Rush match does.)
+            window.CanEdit = op => !Online;
+            window.LockedNote = op => "스킬넷 온라인에서는 아직 못 바꿔요 (방에서 하는 폰 러쉬 경기에서는 돼요)";
             window.KeyName = SlotKey;
             window.Changed = OnLoadoutChanged;
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
@@ -620,9 +621,9 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(label, p1.Piece == kind ? selected : button, GUILayout.Height(26f))) SetPiece(p1, kind);
             }
             GUILayout.EndHorizontal();
-            // JY-skill-lab: the developers' skill window, and the skills in this piece's slots.
+            // JY-skill-lab: the developers' skill tree (PawnRushSkillWindow), and the skills in this piece's slots.
             GUILayout.BeginHorizontal();
-            if (window != null && GUILayout.Button(window.Open ? $"스킬 창 닫기 ({window.toggleKey})" : $"스킬 창 열기 ({window.toggleKey})", window.Open ? selected : button, GUILayout.Height(24f), GUILayout.Width(150f)))
+            if (window != null && GUILayout.Button(window.Open ? $"스킬트리 닫기 ({window.toggleKey})" : $"스킬트리 열기 ({window.toggleKey})", window.Open ? selected : button, GUILayout.Height(24f), GUILayout.Width(150f)))
                 window.Toggle();
             GUILayout.Label($"  방식 {skills.loadout.system}안" + (skills.loadout.system == PawnRushLoadout.Grow ? $" · 단계 {p1.SkillStageLevel}" : ""), small);
             GUILayout.EndHorizontal();
@@ -645,7 +646,7 @@ namespace ChessFight.RagdollLab
                     GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + (p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : ""), text);
                     GUILayout.Label(PawnRushSkillBook.How(id), small);
                 }
-                if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬 창({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
+                if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬트리({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
             }
 
             GUILayout.Space(2f);
