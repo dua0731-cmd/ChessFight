@@ -55,6 +55,7 @@ namespace ChessFight.RagdollLab
         const string Pref = "ChessFight.PawnRushLoadout";
 
         SkillTag filter = SkillTag.None;
+        int originFilter = -1;   // SkillOrigin, or -1 for every one
         int dragId, pickId, hoverId;
         float scroll;
         string message = "";
@@ -250,6 +251,9 @@ namespace ChessFight.RagdollLab
             small.alignment = oldAlign;
         }
 
+        bool Shown(SkillEntry entry) =>
+            (filter == SkillTag.None || (entry.tags & filter) != 0) && (originFilter < 0 || (int)entry.origin == originFilter);
+
         static string TagNames(SkillTag tags)
         {
             string names = "";
@@ -323,12 +327,29 @@ namespace ChessFight.RagdollLab
                 }
                 x += bw + 6f;
             }
+            y += 28f;
+
+            // Where the skills come from.
+            x = x0;
+            if (Chip(new Rect(x, y, 76f, 22f), "출처 전체", originFilter < 0)) { originFilter = -1; scroll = 0f; }
+            x += 82f;
+            foreach (var origin in PawnRushSkillBook.Origins)
+            {
+                string name = PawnRushSkillBook.OriginName(origin);
+                float bw = 18f + name.Length * 12f;
+                if (Chip(new Rect(x, y, bw, 22f), name, originFilter == (int)origin))
+                {
+                    originFilter = originFilter == (int)origin ? -1 : (int)origin;
+                    scroll = 0f;
+                }
+                x += bw + 6f;
+            }
             y += 30f;
 
             // Left: the book, scrolled by the wheel, and under it what the skill under the mouse does. Right: the slots.
             float boardW = 356f, listW = area.width - 28f - boardW - 14f;
             float listX = x0, boardX = x0 + listW + 14f, top = y;
-            const float detailH = 78f;
+            const float detailH = 86f;
             var view = new Rect(listX, top + 20f, listW, area.yMax - 34f - detailH - (top + 20f));
             int made = 0, shown = 0;
             foreach (var entry in PawnRushSkillBook.All) if (entry.built) made++;
@@ -336,7 +357,7 @@ namespace ChessFight.RagdollLab
             float cw = (listW - (cols - 1) * 6f) / cols, ch = 40f;
             int count = 0;
             foreach (var entry in PawnRushSkillBook.All)
-                if (filter == SkillTag.None || (entry.tags & filter) != 0) count++;
+                if (Shown(entry)) count++;
             float content = Mathf.Ceil(count / (float)cols) * (ch + 6f);
             float maxScroll = Mathf.Max(0f, content - view.height);
             if (e.type == EventType.ScrollWheel && view.Contains(e.mousePosition))
@@ -350,7 +371,7 @@ namespace ChessFight.RagdollLab
             GUI.BeginGroup(view);
             foreach (var entry in PawnRushSkillBook.All)
             {
-                if (filter != SkillTag.None && (entry.tags & filter) == 0) continue;
+                if (!Shown(entry)) continue;
                 var r = new Rect((shown % cols) * (cw + 6f), (shown / cols) * (ch + 6f) - scroll, cw, ch);
                 shown++;
                 if (r.yMax < 0f || r.y > view.height) continue;
@@ -386,7 +407,7 @@ namespace ChessFight.RagdollLab
             if (about != null)
             {
                 GUI.Label(new Rect(detail.x + 8f, detail.y + 3f, detail.width - 16f, 20f),
-                    $"<b>{about.name}</b>  <size=11><color=#9EA9BD>{ChessPieces.Name(about.home)} · {TagNames(about.tags)}{(about.built ? "" : " · 아직 못 넣음")}</color></size>", label);
+                    $"<b>{about.name}</b>  <size=11><color=#9EA9BD>{ChessPieces.Name(about.home)} · {PawnRushSkillBook.OriginName(about.origin)} · {TagNames(about.tags)}{(about.built ? "" : " · 아직 못 넣음")}</color></size>", label);
                 GUI.Label(new Rect(detail.x + 8f, detail.y + 24f, detail.width - 16f, detail.height - 26f), about.how, small);
             }
             else GUI.Label(new Rect(detail.x + 8f, detail.y + 6f, detail.width - 16f, 40f), "스킬에 마우스를 올리면 여기에 설명이 나와요.", small);
