@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     //   1 the Big Dipper (y 0 -> 3.2), bending west and north. Its handle: four star platforms on single pillars
     //     joined by 3 m constellation lines; stars 2 and 3 are variable stars (StarPetal) and meteors fall on the
     //     lines (MeteorShower). Its bowl, from star 4 to star 7, is two ways (R723): the long one round the west on
-    //     three crossing orbits of turning platforms, the short one straight over a row of six spinning planets
+    //     three crossing orbits of turning platforms, the short one straight across on one planet that rolls as it goes to and fro (R724)
     //   2 the great globe: in by the west gate (y 4), across the tilted floor inside the glass - the plane of its
     //     solar system - and out by the east gate (y 12). Two moons on the ecliptic ring cross the gates in turn;
     //     the sun lamp flares and only the planets' moving shadows shelter (SolarFlare)
@@ -76,14 +76,11 @@ namespace ChessFight.PawnRush
         // The long way: three orbits 7.2 m across, their middles 6 m apart so each crosses the next, three platforms
         // 2.9 m across on each, 30 deg/s (1.9 m/s).
         const float OrbitRadius = 3.6f, OrbitPlanet = 1.45f, OrbitDock = .15f, OrbitApart = 6f, OrbitSpeed = 30f;
-        // The short way: six planets in a row from star 4's rim to star 7's, each spinning about the way itself.
-        // How far along from star 4's rim, its radius, and how fast it carries a pawn on its crest sideways (m/s,
-        // + to the east; the game reads the ground's speed at a pawn's hips, HipHeight over its feet).
-        static readonly (float at, float radius, float carry)[] RowPlanets =
-        {
-            (1f, 1.7f, 1.6f), (2.5f, 2.1f, -1.9f), (4f, 1.8f, 1.6f), (5.5f, 2.3f, -2.1f), (7f, 1.9f, 1.8f), (8.5f, 1.6f, -1.6f),
-        };
-        const float HipHeight = .9f;
+        // The short way (R724, the user on R723's six planets spinning where they stood: "내가 말한건 이런게 아니라 공
+        // 하나가 왔다갔다하는데 ... 움직임에 따라 회전하는 구체에서 중심을 잡으며 이동하는걸 말하는거야"): one planet 4.4 m
+        // across going to and fro between the two stars, rolling as it goes. It stands RollDwell at a star, its
+        // middle RollDock beyond that star's rim, and crosses in RollCross, speeding up and slowing over RollEase.
+        const float RollRadius = 2.2f, RollDock = .6f, RollDwell = 1.2f, RollCross = 6f, RollEase = .6f;
 
         // 2: the great globe. Its floor is the plane through the two gates: 17 degrees, west low.
         static readonly Vector3 Globe = new Vector3(0f, 10f, 64f);
@@ -418,10 +415,11 @@ namespace ChessFight.PawnRush
             // since R723: neither of its ways has a line.
             Shower(b, "Device_MeteorShower Dipper handle", lines, 1.2f, 30, .9f);
 
-            // The bowl, star 4 to star 7: the long way and the short way (R723). The route measured is the short one -
-            // it is the one that always has something under it.
+            // The bowl, star 4 to star 7: the long way and the short way (R723, the short way again R724). Both are
+            // rides, so the route measured is the straight line between the two stars and the section check is
+            // told it is a ride (IntendedGap).
             OrbitCrossing(b);
-            PlanetRow(b, route);
+            RollingPlanetWay(b, route);
             route.Add((Dipper[6].at, "2"));
 
             // The pointer: on from the bowl's last star to the globe's west gate (its threshold is the globe's).
@@ -511,7 +509,7 @@ namespace ChessFight.PawnRush
         // a zip: one of this orbit, one of that, each coming within 0.1 m of the one before it and running beside it
         // for about a second - the time to step across. The way: on at star 4, round to the crossing, across, round
         // the second orbit's far side to the next crossing, across, round to star 7. About 490 degrees of riding,
-        // 16 s, against the 9.5 m straight over the planets.
+        // 16 s, against the 9.5 m straight across on the rolling planet.
         // All three lie in one plane tilted 3 degrees, star 4's height (2.4) at its dock and star 7's (3.2) at its.
         // Nothing falls on it and nothing folds: what there is to it is waiting for a platform and not stepping off
         // into the gap.
@@ -564,49 +562,56 @@ namespace ChessFight.PawnRush
             }
         }
 
-        // R723 - the bowl's short way, the hard one: straight from star 4's rim to star 7's over the tops of six
-        // planets in a row, like walking a rolling log - each planet spins about the way itself, so its crest runs
-        // sideways under a pawn's feet, and each the other way from the one before it. They are 3.2 to 4.6 m
-        // across and 1.5 m apart, so they run into one another and the way over them is one ridge with a dip of
-        // 0.15 m between crests; a crest is level for no more than a metre either side before it falls away. A pawn
-        // is carried 1.6 to 2.1 m/s sideways (a run is 2.5), a metre or more in the 0.6 s a planet takes at a run -
-        // more than the crest is wide. Off the side is the fall, back to star 4, which is right there.
-        // A plank 2.2 m wide leads on from star 4's rim and off onto star 7's.
-        static void PlanetRow(CourseBuilder b, List<(Vector3, string)> route)
+        // R724 - the bowl's short way, the hard one: ONE planet, a ball 4.4 m across, going to and fro between star 4
+        // and star 7 and rolling as it goes, like a ball rolled along the ground - its top runs the way it travels.
+        // A pawn rides its top as a log is ridden on water. Standing still it is carried forward off the crest (the
+        // top runs on at 1.5 m/s over the ball's own 1.5 m/s), so the rider walks BACK against the roll, about
+        // 2.2 m/s to stay where it is (a run is 2.5), for the 6 s of the crossing - and the crest is level for under
+        // a metre any way before it falls away. Coming back the ball rolls the other way.
+        // It stands 1.2 s at each star (still: the time to step on or off), its top 5 cm over the star's deck and
+        // 0.6 m beyond its rim; 14.4 s there and back. A miss is the fall, back to star 4, and a wait for it.
+        // (R723's six planets spinning where they stood were a ridge to run along - not what was meant.)
+        static void RollingPlanetWay(CourseBuilder b, List<(Vector3, string)> route)
         {
             var k = b.kit;
             Star s4 = Dipper[3], s7 = Dipper[6];
             var flat = Flat(s7.at - s4.at).normalized;
-            Vector3 from = s4.at + flat * s4.radius, to = s7.at - flat * s7.radius;
-            float length = Flat(to - from).magnitude;
-            // The line of the crests rises with the way (0.8 m in 9.5); east of it is the way's right hand.
-            Vector3 along = (to - from).normalized, east = Vector3.Cross(Vector3.up, along).normalized, normal = Vector3.Cross(along, east);
-            var facing = Quaternion.LookRotation(along, normal);
-            Func<float, Vector3> crest = at => Vector3.LerpUnclamped(from, to, at / length);
-            route.Add((from, "2"));
-            for (int i = 0; i < RowPlanets.Length; i++)
+            Vector3 lift = Vector3.up * (.05f - RollRadius);
+            Vector3 near = s4.at + flat * (s4.radius + RollDock) + lift, far = s7.at - flat * (s7.radius + RollDock) + lift;
+            var planet = b.Group("Device_RollingPlanet");
+            planet.localPosition = near;
+            Under(b, planet, () =>
             {
-                var p = RowPlanets[i];
-                Vector3 top = crest(p.at), centre = top - normal * p.radius;
-                var planet = Mover(b, "Device_SpinPlanet " + (i + 1), centre, MotionKind.Rotate, Vector3.forward);
-                planet.transform.localRotation = facing;
-                // Turning forward-handed about the way, a crest runs west: so the other way for a carry to the east.
-                planet.degreesPerSecond = -p.carry / (p.radius + HipHeight) * Mathf.Rad2Deg;
-                Under(b, planet.transform, () =>
-                {
-                    var ball = b.Sphere("Planet", Vector3.zero, p.radius * 2f, k.hazard);
-                    ball.AddComponent<CourseFloor>().sloped = true;
-                    ball.AddComponent<NoClimbSurface>();
-                    // What shows it turning: a band round it through its poles, and a spot.
-                    Hoop(b, "Band", Vector3.zero, Quaternion.Euler(0f, 0f, -90f), p.radius + .01f, .06f, .5f, k.boardLight, 16);
-                    b.Sphere("Spot", Quaternion.Euler(0f, 0f, 50f) * Vector3.up * (p.radius - .15f) + Vector3.forward * .35f, .9f, k.rankGold, false);
-                });
-                Pillar(b, "Spin planet axle " + (i + 1), centre + Vector3.down * p.radius, .4f);
-                route.Add((top, "2"));
+                var ball = b.Sphere("Planet", Vector3.zero, RollRadius * 2f, k.hazard);
+                ball.AddComponent<CourseFloor>().sloped = true;
+                ball.AddComponent<NoClimbSurface>();
+                // What shows it rolling: two bands round it that tumble as it turns, and a spot.
+                Hoop(b, "Band a", Vector3.zero, Quaternion.identity, RollRadius + .01f, .06f, .45f, k.boardLight, 20);
+                Hoop(b, "Band b", Vector3.zero, Quaternion.Euler(90f, 0f, 0f), RollRadius + .01f, .06f, .45f, k.boardLight, 20);
+                b.Sphere("Spot", new Vector3(.5f, .7f, .5f).normalized * (RollRadius - .15f), 1f, k.rankGold, false);
+            });
+            planet.gameObject.AddComponent<RollingPlanet>().Configure(far - near, RollRadius, RollDwell, RollCross, RollEase, 0f);
+
+            // The rails it rolls on (drawn only), from under the one star's rim to under the other's.
+            var side = Vector3.Cross(Vector3.up, flat) * .8f;
+            Vector3 under = Vector3.down * (RollRadius + .1f), railFrom = near - flat * 1.2f + under, railTo = far + flat * 1.2f + under;
+            foreach (float way in new[] { -1f, 1f })
+                Bar(b, "Planet rail", railFrom + side * way, railTo + side * way, .16f, .16f, k.rankGold);
+            for (int i = 0; i <= 2; i++)
+            {
+                var at = Vector3.Lerp(railFrom, railTo, i * .5f);
+                Bar(b, "Planet rail tie " + (i + 1), at - side, at + side, .16f, .12f, k.rankGold);
+                Pillar(b, "Planet rail post " + (i + 1), at + Vector3.down * .1f, .35f);
             }
-            Line(b, "Planet row plank 4", crest(-.3f), crest(.5f), 2.2f);
-            Line(b, "Planet row plank 7", crest(RowPlanets[RowPlanets.Length - 1].at + .5f), crest(length + .3f), 2.2f);
+
+            // The way measured: rim to rim, across the ride.
+            Vector3 from = s4.at + flat * s4.radius, to = s7.at - flat * s7.radius;
+            route.Add((from, "2"));
             route.Add((to, "2"));
+            var ride = b.Group("Rolling planet ride (intended gap)");
+            ride.localPosition = (from + to) * .5f;
+            ride.localRotation = Quaternion.LookRotation(flat, Vector3.up);
+            ride.gameObject.AddComponent<IntendedGap>().Configure(new Vector3(6f, 8f, Vector3.Distance(from, to) + 1f), "구르는 행성: 타고 건넌다");
         }
 
         // ------------------------------------------------------------------ 2 the great globe

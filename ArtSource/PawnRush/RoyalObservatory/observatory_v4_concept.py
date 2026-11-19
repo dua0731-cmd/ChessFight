@@ -1,8 +1,8 @@
-# The Royal Observatory as its graybox stands after R723, dressed as a concept picture: two renders, the whole hall
+# The Royal Observatory as its graybox stands after R724, dressed as a concept picture: two renders, the whole hall
 # and the Big Dipper's bowl from near. A picture only: nothing here goes into Unity. The layout is
 # RoyalObservatoryBuilder's (section frame: x east, y up, z north; in Blender (X, Y, Z) = (x, z, y)):
 #   the handle's variable stars (a hub and five petals), the bowl's two ways - three crossing orbits of turning
-#   platforms round the west, six spinning planets in a row straight across - the globe's tilted floor with the sun
+#   platforms round the west, one planet rolling to and fro straight across - the globe's tilted floor with the sun
 #   lamp, the planets and their shadows, two moons on the ecliptic ring, Cassiopeia's standing star and four meshed
 #   gears, the stage, the telescope with four irises and two focus beams.
 #
@@ -195,46 +195,50 @@ for i, (cx, cz) in enumerate(ORBITS):
         bar("Orbit arm", (cx, cy - 0.85, cz), (px, py - 0.85, pz), 0.16, M_GOLD)
         RIDERS.append((px, py, pz))
 
-# ---------------------------------------------------------------- the bowl's short way: six spinning planets
-ROW = ((1.0, 1.7, 1), (2.5, 2.1, -1), (4.0, 1.8, 1), (5.5, 2.3, -1), (7.0, 1.9, 1), (8.5, 1.6, -1))
+# ---------------------------------------------------------------- the bowl's short way: one rolling planet
+RR, RDOCK, ACROSS = 2.2, 0.6, 0.44
 fl = unit((S7[0] - S4[0], S7[2] - S4[2]))
-R0 = U(S4[0] + fl.x * S4[3], S4[1], S4[2] + fl.y * S4[3])
-R1 = U(S7[0] - fl.x * S7[3], S7[1], S7[2] - fl.y * S7[3])
-ROWLEN = Vector((R1.x - R0.x, R1.y - R0.y)).length
-r_along = (R1 - R0).normalized()
+near = U(S4[0] + fl.x * (S4[3] + RDOCK), S4[1] + 0.05 - RR, S4[2] + fl.y * (S4[3] + RDOCK))
+far = U(S7[0] - fl.x * (S7[3] + RDOCK), S7[1] + 0.05 - RR, S7[2] - fl.y * (S7[3] + RDOCK))
+r_along = (far - near).normalized()
 r_east = r_along.cross(Vector((0, 0, 1))).normalized()
 r_up = r_east.cross(r_along)
+ball_at = near + (far - near) * ACROSS
 
 
-def crest(at):
-    return R0 + (R1 - R0) * (at / ROWLEN)
+def sec(v):
+    return (v.x, v.z, v.y)
 
 
-CRESTS = []
-for i, (at, rad, spin) in enumerate(ROW):
-    top = crest(at)
-    mid = top - r_up * rad
-    inst(ME_SPH, "Spinning planet", PLANET_MATS[i % 4], mid, (rad * 2, rad * 2, rad * 2))
-    # What shows it turning: a band through its poles, a spot, and the arrows of its spin on the crest.
-    a = D(25 + 47 * i)
-    axis = r_east * math.cos(a) + r_up * math.sin(a)
-    band = torus("Planet band", 0, 0, 0, rad + 0.02, 0.09, M_GOLD)
-    put(band, mid, r_along, axis.cross(r_along), axis)
-    girdle = torus("Planet girdle", 0, 0, 0, rad + 0.02, 0.05, M_BRASS)
-    put(girdle, mid, r_east, r_up, r_along)
-    spot = r_up * math.cos(D(40)) + r_east * (math.sin(D(40)) * spin)
-    inst(ME_SPH, "Planet spot", M_GLOW, mid + spot * (rad - 0.1) + r_along * 0.3, (0.9, 0.9, 0.5))
-    for s in (-0.45, 0.45):
-        tip = top + r_along * s + r_east * (0.85 * spin) - r_up * 0.2
-        tail = top + r_along * s - r_east * (0.55 * spin) - r_up * 0.07
-        arrow = inst(ME_CONE, "Spin arrow", M_LAMP, (tip + tail) / 2 + r_up * 0.1, (0.3, 0.3, (tip - tail).length))
-        arrow.rotation_euler = (tip - tail).to_track_quat("Z", "Y").to_euler()
-    o = inst(ME_CYL8, "Planet axle", M_GOLD, mid - Vector((0, 0, (mid.z - rad - FLOOR) / 2 + rad)), (0.4, 0.4, mid.z - rad - FLOOR))
-    CRESTS.append(top)
-for (a0, a1) in ((-0.3, 0.5), (ROW[-1][0] + 0.5, ROWLEN + 0.3)):
-    A, B = crest(a0), crest(a1)
-    plank("Planet row plank", (A.x, A.z, A.y), (B.x, B.z, B.y), 2.2, 0.3, M_LINE)
-    bar("Planet row plank light", (A.x, A.z + 0.03, A.y), (B.x, B.z + 0.03, B.y), 0.14, M_GLOW)
+def rolled(v):
+    # A direction fixed in the ball, after it has rolled this far: about the axis that carries its top the way it goes.
+    turn = Matrix.Rotation((far - near).length * ACROSS / RR, 3, -r_east)
+    return turn @ v
+
+
+inst(ME_SPH, "Rolling planet", M_MARS, ball_at, (RR * 2, RR * 2, RR * 2))
+for start in (r_up, r_along):
+    n = rolled(start)
+    put(torus("Rolling planet band", 0, 0, 0, RR + 0.02, 0.1, M_GOLD), ball_at, r_east, n.cross(r_east), n)
+spot = rolled((r_east * 0.5 + r_up * 0.7 + r_along * 0.5).normalized())
+inst(ME_SPH, "Rolling planet spot", M_GLOW, ball_at + spot * (RR - 0.12), (1.0, 1.0, 0.6))
+# the rails it rolls on, from under the one star's rim to under the other's
+low = r_up * (RR + 0.1)
+r0, r1 = near - r_along * 1.2 - low, far + r_along * 1.2 - low
+for s_ in (-0.8, 0.8):
+    bar("Planet rail", sec(r0 + r_east * s_), sec(r1 + r_east * s_), 0.16, M_GOLD)
+for k in range(3):
+    at = r0 + (r1 - r0) * (k / 2)
+    bar("Planet rail tie", sec(at - r_east * 0.8), sec(at + r_east * 0.8), 0.14, M_GOLD)
+    inst(ME_CYL8, "Planet rail post", M_GOLD, Vector((at.x, at.y, (at.z + FLOOR) / 2)), (0.35, 0.35, at.z - FLOOR))
+# where it has been: three streaks behind it, and where it stands at either star
+for h in (-0.9, 0.2, 1.2):
+    a = ball_at - r_along * (RR + 0.5) + r_up * h
+    bar("Planet streak", sec(a), sec(a - r_along * (2.2 - abs(h) * 0.6)), 0.07, M_GLOW)
+for dock in (near, far):
+    put(torus("Planet dock", 0, 0, 0, 1.3, 0.05, M_GOLD), dock + r_up * (RR - 0.02), r_east, r_along, r_up)
+lamps.append(sec(ball_at + r_up * (RR + 1.6)))
+BALL_TOP = ball_at + r_up * RR - r_along * 0.3
 
 # ---------------------------------------------------------------- the great globe: its floor, the sun and the shadows
 GY, GR = 10.0, 14.0
@@ -374,7 +378,7 @@ PAWNS = [(0, 0, 5), (-2, 0, 10), (-3, 0, 17), (-1, 0, 20), (-10.6, 0.8, 26.8), (
          (-25, 3.2, 59), (-23.5, 3.2, 61.5), (-19.6, 3.7, 61.8), (-16.6, 4, 64.6), (15.4, 12, 63.4), (19.5, 12, 66.2), (18.4, 12, 67.6),
          (12, 12, 88), (7, 12, 86), (TX - 1, 13.3, 97), (TX + 1.2, 15.5, 104), (TX - 0.8, 18.1, 112), (TX, 20, 122), (TX + 2, 20, 127)]
 PAWNS += [RIDERS[1], RIDERS[4], (RIDERS[4][0] + 0.7, RIDERS[4][1], RIDERS[4][2] - 0.5), RIDERS[8]]
-PAWNS += [(c.x + 0.25 * (1 if i % 2 else -1), c.z, c.y) for i, c in enumerate(CRESTS) if i in (1, 4)]
+PAWNS += [sec(BALL_TOP)]
 for i in (0, 0, 3, 5):
     s = SHADES[i] + FX * random.uniform(-0.7, 0.7) + FZ * random.uniform(-0.7, 0.7)
     PAWNS.append((s.x, s.z, s.y))

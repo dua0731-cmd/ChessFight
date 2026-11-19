@@ -12,7 +12,7 @@ namespace ChessFight.PawnRush.Editor
 {
     // The Royal Observatory's graybox checked in Play Mode, in the course prefab test scene (the way a person opens
     // it). R712 for the first build; R720 for the second, on structure v0.3 with the new obstacles; R721 after the user's first run (the solar flare, the
-    // gear train, everything quicker and closer); R723 the bowl's two ways (crossing orbits, a row of spinning planets): the draft is
+    // gear train, everything quicker and closer); R723 and R724 the bowl's two ways (crossing orbits, one rolling planet): the draft is
     // listed there, it builds, the section check passes (the route's gaps, floor under every checkpoint, what may be
     // climbed, the kill volume, entry and exit), its devices are all there and move as the builder set them (the
     // variable stars' petals, the comet, the moon, the planets, the binary star, the irises' leaves, the focus beams'
@@ -24,7 +24,7 @@ namespace ChessFight.PawnRush.Editor
     public static class RoyalObservatoryValidation
     {
         const string ActiveKey = "RoyalObservatory.Active", ExitKey = "RoyalObservatory.Exit", CodeKey = "RoyalObservatory.Code";
-        const double Settle = 4, Watch = 13;
+        const double Settle = 4, Watch = 15;
 
         static string Folder => Path.Combine(Directory.GetCurrentDirectory(), "Logs", "RoyalObservatory");
 
@@ -46,6 +46,11 @@ namespace ChessFight.PawnRush.Editor
         // The flare: which of calm (1), warning (2) and burn (4) were seen; planets without a shadow, and how far
         // past the floor's edge a shadow reached. The gears: the worst a mesh was off, in cogs.
         static int flareStates, shadeMisses;
+        // The rolling planet: where and how it was last seen, how far it has gone and how far round it has turned.
+        static bool rollSeen;
+        static Vector3 rollAt;
+        static Quaternion rollPose;
+        static float rollWent, rollTurned, rollWith, rollSquare;
         static float shadeReach, meshWorst;
 
         static RoyalObservatoryValidation()
@@ -61,7 +66,7 @@ namespace ChessFight.PawnRush.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, "report.txt"),
-                "Royal Observatory graybox on structure v0.3 (R723, the bowl's two ways rebuilt): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
+                "Royal Observatory graybox on structure v0.3 (R724, the bowl's short way one rolling planet): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(CoursePrefabMenu.TestScene) == null) CoursePrefabMenu.BuildScene();
             EditorSceneManager.OpenScene(CoursePrefabMenu.TestScene, OpenSceneMode.Single);
             EditorSceneManager.playModeStartScene = null;
@@ -91,6 +96,7 @@ namespace ChessFight.PawnRush.Editor
                 errors.Clear(); ranges.Clear(); turned.Clear(); lastHeading.Clear(); firstPlace.Clear(); farPlace.Clear(); landedBefore.Clear();
                 failures = 0; stage = 0; section = null; showing = 0; watchedFrom = double.NaN;
                 flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f;
+                rollSeen = false; rollWent = 0f; rollTurned = 0f; rollWith = 0f; rollSquare = 0f;
                 stepAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
                 EditorApplication.update -= Tick;
@@ -224,12 +230,11 @@ namespace ChessFight.PawnRush.Editor
             int checkpoints = section.GetComponentsInChildren<CourseCheckpoint>(true).Length;
             int petals = section.GetComponentsInChildren<StarPetal>(true).Length;
             int showers = section.GetComponentsInChildren<MeteorShower>(true).Length;
-            int rings = 0, decks = 0, spinning = 0;
+            int rings = 0, decks = 0, rolling = section.GetComponentsInChildren<RollingPlanet>(true).Length;
             foreach (var t in section.GetComponentsInChildren<Transform>(true))
             {
                 if (t.name.StartsWith("Device_OrbitRing ")) rings++;
                 if (t.name.StartsWith("Planet deck ")) decks++;
-                if (t.name.StartsWith("Device_SpinPlanet ")) spinning++;
             }
             int leaves = section.GetComponentsInChildren<IrisLeaf>(true).Length;
             int beams = section.GetComponentsInChildren<FocusBeam>(true).Length;
@@ -237,8 +242,9 @@ namespace ChessFight.PawnRush.Editor
             Check(checkpoints == RoyalObservatoryBuilder.Checkpoints, "checkpoints: " + checkpoints);
             Check(petals == 10 && showers == 2 && leaves == 8 && beams == 2 && flares.Length == 1,
                   $"devices: {petals} petals (two variable stars), {showers} meteor showers, {leaves} iris leaves (four gates), {beams} focus beams, {flares.Length} solar flare");
-            Check(rings == 3 && decks == 9 && spinning == 6 && Named("Device_Comet") == null && Named("Dipper star 5 core") == null && Named("Dipper star 6 core") == null,
-                  $"the bowl: {rings} crossing orbits with {decks} platforms, {spinning} spinning planets in a row; the comet and the bowl's two variable stars are gone");
+            Check(rings == 3 && decks == 9 && rolling == 1 && Named("Device_Comet") == null && Named("Device_SpinPlanet 1") == null
+                  && Named("Dipper star 5 core") == null && Named("Dipper star 6 core") == null,
+                  $"the bowl: {rings} crossing orbits with {decks} platforms, {rolling} rolling planet; the comet, the row of spinning planets and the bowl's two variable stars are gone");
             Check(flares.Length == 1 && flares[0].PlanetCount == 7, "the flare's planets: " + (flares.Length == 1 ? flares[0].PlanetCount : 0));
             int turning = 0;
             foreach (var t in Turning)
@@ -348,14 +354,39 @@ namespace ChessFight.PawnRush.Editor
                     if (gap < .3f) Range("dock height " + star, Top(deck).y - Top(platform).y);
                 }
             }
-            // R723, the short way: how far round its own axis (its forward) each planet has gone.
-            foreach (var t in section.GetComponentsInChildren<Transform>(true))
+            // R724, the short way: the one planet - how far it has gone and how far round it has turned, how near its
+            // middle comes to the two stars' rims and how high its top is when it stands there.
+            foreach (var planet in section.GetComponentsInChildren<RollingPlanet>(true))
             {
-                if (!t.name.StartsWith("Device_SpinPlanet ")) continue;
-                float roll = Vector3.SignedAngle(Vector3.ProjectOnPlane(up, t.forward), t.up, t.forward);
-                if (lastHeading.TryGetValue(t.name, out float was))
-                    turned[t.name] = (turned.TryGetValue(t.name, out float sum) ? sum : 0f) + Mathf.DeltaAngle(was, roll);
-                lastHeading[t.name] = roll;
+                var at = Local(planet.transform.position);
+                Slide("roll", planet.transform);
+                if (rollSeen)
+                {
+                    rollWent += Vector3.Distance(at, rollAt);
+                    rollTurned += Quaternion.Angle(rollPose, planet.transform.rotation);
+                    // Which way its top runs, against which way it goes: the turn since it was last seen, taken at
+                    // its top (the way a rider is carried: Obstacle.PointVelocity).
+                    (planet.transform.rotation * Quaternion.Inverse(rollPose)).ToAngleAxis(out float degrees, out Vector3 about);
+                    if (degrees > 180f) degrees -= 360f;
+                    if (!float.IsNaN(about.x) && !float.IsInfinity(about.x))
+                    {
+                        var topRuns = Vector3.Cross(about * (degrees * Mathf.Deg2Rad), up * planet.Radius);
+                        var goes = planet.transform.position - World(rollAt);
+                        rollWith += Vector3.Dot(topRuns, goes);
+                        rollSquare += goes.sqrMagnitude;
+                    }
+                }
+                rollSeen = true;
+                rollAt = at;
+                rollPose = planet.transform.rotation;
+                foreach (string star in new[] { "Dipper star 4", "Dipper star 7" })
+                {
+                    var platform = Named(star);
+                    if (platform == null) continue;
+                    float beyond = Level(at, Top(platform)) - Half(platform);
+                    Range("roll dock " + star, beyond);
+                    if (beyond < .62f) Range("roll dock top " + star, at.y + planet.Radius - Top(platform).y);
+                }
             }
             foreach (var beam in section.GetComponentsInChildren<FocusBeam>(true))
             {
@@ -461,48 +492,28 @@ namespace ChessFight.PawnRush.Editor
                 Check(d4.x > .08f && d4.x < .25f && d7.x > .08f && d7.x < .25f && Mathf.Max(Mathf.Abs(h4.x), Mathf.Abs(h4.y)) < .08f && Mathf.Max(Mathf.Abs(h7.x), Mathf.Abs(h7.y)) < .08f,
                       $"a platform passes star 4's rim {d4.x:0.00} m off and star 7's {d7.x:0.00} m off, level with each within {Mathf.Max(Mathf.Abs(h4.x), Mathf.Abs(h4.y), Mathf.Abs(h7.x), Mathf.Abs(h7.y)):0.00} m");
             }
-            // R723, the short way: six planets, each spinning about the way, neighbours opposite ways; how fast each
-            // carries a pawn sideways (its hips 0.9 m over its feet); the ridge over them from rim to rim.
+            // R724, the short way: one planet going to and fro between the two stars, turning as far as a ball rolling
+            // that far turns; standing at each star with its middle just beyond the rim and its top level with the deck.
             {
-                string say = "";
-                bool spinOk = true;
-                float sign = 0f;
-                for (int i = 1; i <= 6; i++)
+                var planets = section.GetComponentsInChildren<RollingPlanet>(true);
+                Has("roll", out var roll);
+                float radius = planets.Length == 1 ? planets[0].Radius : 0f;
+                float perMetre = rollWent > .5f ? rollTurned / rollWent : 0f, rolls = radius > 0f ? Mathf.Rad2Deg / radius : 0f;
+                Check(planets.Length == 1 && roll.y > 8.1f && roll.y < 8.6f && Mathf.Abs(perMetre - rolls) < rolls * .06f,
+                      $"the planet ({radius * 2f:0.0} m across) went {roll.y:0.00} m between its docks and turned {perMetre:0.0} deg for every metre ({rolls:0.0} is rolling without slipping)");
+                float with = rollSquare > 1e-4f ? rollWith / rollSquare : 0f;
+                Check(with > .85f && with < 1.15f, $"its top runs the way it goes, and as fast again as it goes: {with:0.00} of its own going (1 is rolling along the ground; -1 would be the other way)");
+                Has("roll dock Dipper star 4", out var d4);
+                Has("roll dock Dipper star 7", out var d7);
+                Has("roll dock top Dipper star 4", out var t4);
+                Has("roll dock top Dipper star 7", out var t7);
+                Check(d4.x > .52f && d4.x < .68f && d7.x > .52f && d7.x < .68f && t4.x > 0f && t4.y < .1f && t7.x > 0f && t7.y < .1f,
+                      $"it stands with its middle {d4.x:0.00} m beyond star 4's rim and {d7.x:0.00} m beyond star 7's, its top {t4.x:0.00} m and {t7.y:0.00} m over their decks");
+                if (planets.Length == 1)
                 {
-                    var planet = Named("Device_SpinPlanet " + i);
-                    var motion = planet != null ? planet.GetComponent<ObstacleMotion>() : null;
-                    var ball = planet != null ? planet.Find("Planet") : null;
-                    if (motion == null || ball == null) { spinOk = false; continue; }
-                    float went = turned.TryGetValue(planet.name, out float sum) ? sum : 0f, expected = motion.degreesPerSecond * watched;
-                    float carry = Mathf.Abs(motion.degreesPerSecond) * Mathf.Deg2Rad * (ball.lossyScale.x * .5f + .9f);
-                    if (Mathf.Abs(went - expected) > Mathf.Abs(expected) * .1f + 10f || carry < 1.4f || carry > 2.3f) spinOk = false;
-                    if (i > 1 && Mathf.Sign(motion.degreesPerSecond) == sign) spinOk = false;
-                    sign = Mathf.Sign(motion.degreesPerSecond);
-                    say += (i > 1 ? ", " : "") + $"{ball.lossyScale.x:0.0} m {(motion.degreesPerSecond < 0f ? "east" : "west")} {carry:0.0} m/s";
+                    float cruise = planets[0].CruiseSpeed(roll.y);
+                    Log($"  it goes {cruise:0.00} m/s; its top runs on another {cruise:0.00} m/s, {cruise * (radius + .9f) / radius:0.00} m/s where a pawn's hips are - what a rider walks back against");
                 }
-                Check(spinOk, "the six planets spin about the way, neighbours opposite ways (across, carrying to, at): " + say);
-
-                Transform s4 = Named("Dipper star 4"), s7 = Named("Dipper star 7");
-                float dip = 0f, bump = 0f;
-                int missed = 0, count = 0;
-                if (s4 != null && s7 != null)
-                {
-                    Vector3 a = Top(s4), c = Top(s7);
-                    var flat = new Vector3(c.x - a.x, 0f, c.z - a.z).normalized;
-                    Vector3 from = a + flat * Half(s4), to = c - flat * Half(s7);
-                    float length = Vector3.Distance(from, to);
-                    for (float d = 0f; d <= length; d += .05f)
-                    {
-                        count++;
-                        var at = Vector3.Lerp(from, to, d / length);
-                        if (!Physics.Raycast(World(at + Vector3.up * 1.5f), -section.transform.up, out var hit, 4f, ~0, QueryTriggerInteraction.Ignore)) { missed++; continue; }
-                        float off = Local(hit.point).y - at.y;
-                        dip = Mathf.Min(dip, off);
-                        bump = Mathf.Max(bump, off);
-                    }
-                }
-                Check(count > 100 && missed == 0 && dip > -.22f && bump < .05f,
-                      $"the ridge over the planets from star 4's rim to star 7's: {count} places, {missed} with nothing under them, at most {-dip:0.00} m under the straight line");
             }
             // R722: a variable star's core is only a hub - a folded star is not hopped across by it.
             {
@@ -574,7 +585,7 @@ namespace ChessFight.PawnRush.Editor
             Capture("04_dipper_bowl", new Vector3(-14f, 15f, 38f), new Vector3(-32f, 2f, 53f), view, 62f, false, 1600, 900);
             // R723: the bowl straight down - star 4 below, star 7 above, the three orbits west, the planets between.
             Capture("04b_bowl_from_above", new Vector3(-31.5f, 36f, 51.5f), new Vector3(-31.5f, 2.8f, 51.5f), Vector3.forward, 50f, false, 1200, 1200);
-            Capture("04c_planet_row", new Vector3(-27.6f, 5f, 42.6f), new Vector3(-25.4f, 3f, 57f), view, 62f, false, 1600, 900);
+            Capture("04c_rolling_planet", new Vector3(-27.6f, 5f, 42.6f), new Vector3(-25.4f, 3f, 57f), view, 62f, false, 1600, 900);
             Capture("04d_orbits", new Vector3(-44f, 9f, 41f), new Vector3(-34f, 2.4f, 53f), view, 62f, false, 1600, 900);
             Capture("05_west_gate", new Vector3(-31f, 9f, 55f), new Vector3(-8f, 7f, 64f), view, 60f, false, 1600, 900);
             Capture("06_inside_the_globe", new Vector3(-12f, 6.4f, 62f), new Vector3(6f, 10.5f, 65f), view, 75f, false, 1600, 900);
