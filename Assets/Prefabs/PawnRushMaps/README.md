@@ -28,3 +28,4 @@
 |---|---|
 | `RoyalCarriageYard` | 왕실 마차뜰(R284, R286 수정): 외부 성문 → 돌아다니는 마차 4대가 있는 마당 → 길 2개가 지나가는 거대 물레방아 → 경기장(회전 마차, 세로 물레방아, 화물 경사로) → 밀어서 여는 최종 성문. Play 때 코드가 짓는 맵이라 프리팹은 컴포넌트 하나, 값은 Inspector에서 → [ROYAL_CARRIAGE_YARD](../../../Docs/PawnRush/ROYAL_CARRIAGE_YARD.md) |
 | `RoyalCarriageYard_Obstacles` | 왕실 마차뜰 장애물을 하나씩 시험하는 곳(달리는 마차 · 목재 다리 포함) |
+| `RoyalVault` | 왕실 금고실 회색 박스(R725), 구간 프리팹 `Late_3-3_RoyalVault`의 맵 시험 쌍둥이(우클릭 → ChessFight → Test In Pawn Rush Map Test). Play 때 코드가 짓는 맵이라 프리팹은 루트 하나, 폰은 `Start`(앞뜰 0, 0, 3)에서 시작. 폴더 밖의 `Late_3-3_RoyalVault`는 우클릭하지 않는다(씬의 maps 목록에 들어가 씬이 저장됨). 코스 프리팹 시험 7번(슬롯 5의 초안)으로도 열린다 |

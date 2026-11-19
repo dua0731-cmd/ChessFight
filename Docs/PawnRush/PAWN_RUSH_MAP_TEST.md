@@ -69,6 +69,7 @@
 | 맵 | 문서 |
 |---|---|
 | `RoyalCarriageYard`(왕실 마차뜰, R284) · `RoyalCarriageYard_Obstacles`(그 장애물 시험장) | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
+| `RoyalVault`(왕실 금고실, R725 — 후반 장애물 셋째 후보(슬롯 5의 둘째 초안)의 회색 모형, 구간 프리팹 `Late_3-3_RoyalVault`의 쌍둥이. 폴더 밖 `Late_3-3_RoyalVault`는 오른쪽 클릭하지 않는다) | [PAWN_RUSH_ROYAL_VAULT](PAWN_RUSH_ROYAL_VAULT.md) §1 |
 
 ## 6. 아직 안 된 것
 

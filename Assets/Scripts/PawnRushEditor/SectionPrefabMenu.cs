@@ -19,7 +19,11 @@ namespace ChessFight.PawnRush.Editor
     //   Open Match Round                 the lobby's 폰 러쉬 match scene (PawnRush_Round.unity, R508): the same round with a
     //                                    crown finish on the war room's goal; played on its own it is offline
     //   Validate Sections                every prefab in the section set, built in a scratch scene and checked
-    //                                    (SectionValidator), then the scratch scene is thrown away
+    //                                    (SectionValidator), then the scratch scene is thrown away. The war room, the
+    //                                    Royal Observatory (R712) and the royal vault (R725, Late_3-3_RoyalVault,
+    //                                    RoyalVaultBuilder) are never baked: they are built here as in Play. The two
+    //                                    grayboxes are checked here as drafts of the late-obstacle slot; Validate >
+    //                                    Royal Vault (Edit), RoyalVaultValidation, also runs SectionValidator on the vault.
     // Hand edits inside the prefab's Content are lost on the next build: change the builder instead.
     public static class SectionPrefabMenu
     {
@@ -183,6 +187,9 @@ namespace ChessFight.PawnRush.Editor
                     // R712: the Royal Observatory's graybox is built when it wakes, as the war room.
                     var observatory = go.GetComponent<RoyalObservatorySection>();
                     if (observatory != null && !observatory.HasContent) RoyalObservatoryBuilder.Build(observatory);
+                    // R725: so is the royal vault (a root-only prefab; its Awake builds it in Play).
+                    var vault = go.GetComponent<RoyalVaultSection>();
+                    if (vault != null && !vault.HasContent) RoyalVaultBuilder.Build(vault);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

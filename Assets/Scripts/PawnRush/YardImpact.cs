@@ -27,9 +27,9 @@ namespace ChessFight.PawnRush
     // PC that simulates the character (YardKit.Movable). The part's own solid collider still pushes physically; this
     // makes the result a clear knock-back instead of a body ground against a moving box, and a part with a `solid` box
     // lets a character it has just knocked down through that box until it is clear (at most 0.6 s), so the box does not
-    // catch it and carry it on at its own speed. Once per character per `cooldown`, so a body lying against a part is
-    // not hit every physics step, and one knockdown a turn for a part that has turns (IHitTurns; a stagger does not use
-    // the turn up).
+    // catch it and carry it on at its own speed. Once per character per `cooldown` (after a stagger, per staggerCooldown
+    // if set), so a body lying against a part is not hit every physics step, and one knockdown a turn for a part that has
+    // turns (IHitTurns; a stagger does not use the turn up).
     [RequireComponent(typeof(Collider))]
     public sealed class YardImpact : MonoBehaviour
     {
@@ -53,6 +53,10 @@ namespace ChessFight.PawnRush
         public float knockdownSeconds = .9f;
         [Tooltip("Seconds before the same character can be hit by this part again")]
         public float cooldown = .7f;
+        [Tooltip("R725: seconds before a character this part only staggered can be hit by it again, if not negative (negative: "
+                 + "cooldown). A stagger lets nothing through `solid`, so a part that leaves the characters it knocks down alone "
+                 + "for long (a royal vault hurdle's free half turn) keeps the staggered ones' wait short")]
+        public float staggerCooldown = -1f;
         [Tooltip("Share of the push along the part's motion (1); the rest goes straight out from its line, to the side the character is on (0)")]
         [Range(0f, 1f)] public float alongShare = .7f;
         [Tooltip("The push sets the character's speed across the floor instead of adding to it")]
@@ -107,6 +111,7 @@ namespace ChessFight.PawnRush
         {
             public float Time;
             public double Turn;
+            public bool Down;   // a knockdown, not a stagger (staggerCooldown)
         }
 
         // A hit found in a trigger callback, given in the next FixedUpdate: TakeHit lets go of what the hands hold,
@@ -332,7 +337,7 @@ namespace ChessFight.PawnRush
             if (surface == null || !YardKit.Movable(other, out var driver, out var hits)) return;
             float now = Time.time;
             double turn = turns != null ? turns.HitTurn : double.NaN;
-            if (lastHit.TryGetValue(driver, out var before) && (now - before.Time < cooldown || before.Turn == turn)) return;
+            if (lastHit.TryGetValue(driver, out var before) && (now - before.Time < Cooldown(before) || before.Turn == turn)) return;
             var target = driver.FollowTarget != null ? driver.FollowTarget.position : other.transform.position;
             var centre = shell.bounds.center;
             var velocity = surface.PointVelocity(fromCentre ? centre : target);
@@ -377,7 +382,7 @@ namespace ChessFight.PawnRush
             if (down && ghostDelay > 0f) Wait(driver, hits, now);
             else if (down) LetThrough(driver, hits);
             // A stagger leaves the turn for the knockdown that may follow (a pawn caught as the charge sets off).
-            lastHit[driver] = new Hit { Time = now, Turn = down ? turn : double.NaN };
+            lastHit[driver] = new Hit { Time = now, Turn = down ? turn : double.NaN, Down = down };
             Hits++;
             if (lastHit.Count > 64) Forget(now);
         }
@@ -422,12 +427,15 @@ namespace ChessFight.PawnRush
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
+        // How long after this hit the same character is left alone: a stagger's own staggerCooldown, if set (R725).
+        float Cooldown(Hit hit) => hit.Down || staggerCooldown < 0f ? cooldown : staggerCooldown;
+
         // Old enough that neither the cooldown nor a turn (a charge is a few seconds) still holds it.
         void Forget(float now)
         {
             var old = new List<ICharacterDriver>();
             foreach (var pair in lastHit)
-                if (now - pair.Value.Time > Mathf.Max(cooldown, 10f) || (pair.Key is Object o && o == null)) old.Add(pair.Key);
+                if (now - pair.Value.Time > Mathf.Max(Mathf.Max(cooldown, staggerCooldown), 10f) || (pair.Key is Object o && o == null)) old.Add(pair.Key);
             foreach (var key in old) lastHit.Remove(key);
         }
     }

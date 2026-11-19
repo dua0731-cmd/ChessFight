@@ -3,6 +3,8 @@
 2026-11-02. 기획: [대계단 현관홀 레벨 디자인 v0.3](PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md)(성한 님, 사용자 첨부 원문), 참고: [4분 장애물 코스 컨셉아트 v2](PAWN_RUSH_CONCEPT_ART_v2.md), [장소별 4분 코스 설계](PAWN_RUSH_PLACES_4MIN.md), [미니게임 경계 설계](PAWN_RUSH_MINIGAME_BOUNDARY.svg). 사용자: "폰 러시는 장애물 구간 3개와 미니게임 구간 3개, 마지막 구간 1개 총 7개의 구간이 한 판을 이룰거야. 따라서 각 구간들은 해당 구간에서 나올 수 있는 프리팹 목록 중 랜덤으로 한 가지 프리팹을 뽑아 등장하고 조합되어 한 판을 이룰거야."
 **R300~R303 자동검사 기록은 컴파일·Core 테스트·좌표 점검 기준이다.** 현재 사용자 확인 목록은 [VALIDATION](../Network/VALIDATION.md)에 모은다.
 
+**R725(11-18 ~ 11-20) 왕실 금고실 회색 상자 — 슬롯 5의 둘째 초안.** 사용자 "RoyalVault_Design_v0.1.zip … 'A안' 으로 맵을 구현해봐" · "아무런 색도 입히지 말고 모형들만" · "재미검증도 거쳐가면서" → 사용자 기획서 v0.1의 A안 "두 갈래 고가 회랑"을 6구간 판(R688 · R690)에 맞춰 다시 짠 후반 장애물 `Late_3-3_RoyalVault`(뿌리만 — Awake에서 `RoyalVaultBuilder`가 지음, 박자는 Core `RoyalVaultRules`). 슬롯 5의 `drafts`에 천문대 다음으로 넣어 **코스 프리팹 시험 7번**과 Validate Sections에만 나오고 판에는 안 나온다(프로토콜 v59 그대로). 맵 시험 쌍둥이 `Assets/Prefabs/PawnRushMaps/RoyalVault.prefab`. 회색 재질 하나 + 따로 `Cue …` 신호. 길 200.9 m, 출구 (0, 12, 196), 체크포인트 7개(판에서 400 ~ 406). 봇 12마리 재미 검증과 고친 것은 [금고실 §7](PAWN_RUSH_ROYAL_VAULT.md). 공용 도구에서 바꾼 것: `SectionValidator`(`RV ` 이름은 오를 수 없어야 함), `SectionPrefabMenu`(Validate Sections가 금고실을 지어 검사), `SectionCorridorValidation`(작전실 컨베이어 검사는 슬롯 5가 작전실일 때만 — 서재가 뽑힌 판도 이제 실패하지 않음). **사용자 확인 전.**
+
 **R720 · R721(11-19) 왕실 천문대 회색 상자를 구조 v0.3으로.** 같은 프리팹 `Late_3-2_RoyalObservatory`(여전히 슬롯 5의 `drafts`, 판에는 안 나옴)이 이제 별자리 · 천구 · 망원경 구조다: 출구 (9, 20, 130), 체크포인트 400 ~ 407(8곳). 기존 수입 장애물은 쓰지 않고 새 코드 여섯(`StarPetal` · `MeteorShower` · `IrisLeaf` · `FocusBeam` · `SolarFlare` · R724의 `RollingPlanet` — `CometFerry`는 R723에 삭제)과 `ObstacleMotion` 회전만 쓴다. 전부 공유 시계의 시간 함수(유성은 구간 씨앗도)라 구간 상태로 보낼 것이 없다. 자세히: [구조안 v0.3](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md) · [새 장애물 기획](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md).
 
 **R712(11-18) 구간 목록의 '초안' 칸 · 왕실 천문대 회색 상자.** 사용자 "회색 상자 진행". 구간 목록(`PawnRushSections.asset`)의 슬롯마다 `prefabs` 옆에 **`drafts`**(초안)가 생겼다: 아직 설계 중인 구간(회색 상자)을 두는 곳으로, **코스 프리팹 시험**(그 슬롯의 프리팹 뒤에 번호가 이어짐)과 **Validate → Sections**에는 나오지만 판은 뽑지 않는다(`PawnRushSectionSet.Options`는 `prefabs`만 읽음) — 초안을 넣고 빼도 판과 프로토콜은 그대로다. 첫 초안: 후반 장애물 칸의 `Late_3-2_RoyalObservatory`(왕실 천문대, 코스 프리팹 시험 6번; 뿌리만 저장하고 Play 때 `RoyalObservatoryBuilder`가 지음). 판에 넣으려면 `drafts`에서 `prefabs`로 옮기고 `Resources/Loading/PawnRushCourse.txt`에 이름을 넣은 뒤 프로토콜을 올린다. 점검: **Validate → Royal Observatory graybox (Play)** 또는 배치 `RoyalObservatoryValidation.RunPlayBatch`(→ `Logs/RoyalObservatory`). 설계와 회색 상자에서 바꾼 것: [왕실 천문대 설계 v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md). **사용자 Unity 확인 전.**
@@ -81,7 +83,7 @@
 | Build → Mid 2-1 Grand Stair Hall | 프리팹 안(`Content`)을 지우고 기획서 좌표로 다시 만들어 저장(가져온 장애물은 프리팹 연결·인스턴스 값 유지) → 검증 |
 | Build → All Mini-game Prefabs | (R312) 미니게임10프리팹을 코드에서 다시 구워 저장하고 슬롯2·4·6에3·4·3개 등록. 기존 장애물과 다른 후보는 보존 |
 | Open Mini-game Prefab Test | (R312) 별도 오프라인 시험 씬 `Assets/Scenes/PawnRush_MiniGames.unity`. 숫자1~0 선택·F5 팀 전환·F6 완료 연결 시험·F8 초기화([상세](PAWN_RUSH_MINIGAME_SECTIONS.md#1-파일과-여는-법)) |
-| Open Course Prefab Test | (R708) 장애물 코스 시험 장면 `Assets/Scenes/PawnRush_Courses.unity`(처음 열 때 구간 시험 장면을 복사해 만듦). 숫자 키: 코스 1(초반) 1 수로 정원 · 2 마차뜰 / 코스 2(중반) 3 대계단 홀 / 코스 3(후반) 4 작전 회의실 · 5 왕의 서재 · 거인 체스 — 구간 목록의 장애물 슬롯 순서. F8 새 씨앗 · F5 팀. 배치 점검 `CoursePrefabMenu.RunPlayBatch` |
+| Open Course Prefab Test | (R708) 장애물 코스 시험 장면 `Assets/Scenes/PawnRush_Courses.unity`(처음 열 때 구간 시험 장면을 복사해 만듦). 숫자 키: 코스 1(초반) 1 수로 정원 · 2 마차뜰 / 코스 2(중반) 3 대계단 홀 / 코스 3(후반) 4 작전 회의실 · 5 왕의 서재 · 거인 체스 · 6 왕실 천문대(초안) · 7 왕실 금고실(초안) — 구간 목록의 장애물 슬롯 순서, 슬롯마다 `drafts`는 `prefabs` 뒤에 번호가 이어짐. F8 새 씨앗 · F5 팀. 배치 점검 `CoursePrefabMenu.RunPlayBatch` |
 | Open Section Test | 시험 씬 `Assets/Scenes/PawnRush_Sections.unity` |
 | Validate → Sections | 구간 목록의 프리팹을 하나씩 빈 임시 씬에 놓고(안 구운 것은 그 자리에서 만듦) `SectionValidator`로 검사, 결과 창. 임시 씬은 저장하지 않고 닫음 |
 | Validate → Mini Game Prefabs | 저장한 미니게임 프리팹·시험 씬 참조 검사. [검사 범위](PAWN_RUSH_MINIGAME_SECTIONS.md#5-확인-범위) |
@@ -94,7 +96,7 @@
 | 2 | 미니게임 1 | **C 해자 도개교 · D 쇠살문 누각 · A 의장 광장**(R312,3종) |
 | 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall** |
 | 4 | 미니게임 2 | **B 보수 중인 동관 · E 왕궁 서고 · F 대무도회장 · J 왕궁 세탁장**(R312,4종) · **G 왕의 행차 회랑 · H 국왕 체스 홀 · I 국왕 침실**(R691: 후반 3종이 이 슬롯으로 — 모두 7종) |
-| 5 | 장애물 3 (후반 · 윗궁 3-x) | **Final_WarRoom** = 국왕 작전실(R688: 엔딩이 아니라 후반 장애물 구간. R493 SeoungTest 구역 E와 같은 코드, 파일 이름은 그대로) · **Late_3-1_RoyalLibrary**(R706, 왕의 서재 → 거인 체스 — seoungtest R687 그래픽 · R689 온라인, [온라인 설계](GIANT_CHESS_ONLINE.md); 판 씨앗이 둘 중 하나) |
+| 5 | 장애물 3 (후반 · 윗궁 3-x) | **Final_WarRoom** = 국왕 작전실(R688: 엔딩이 아니라 후반 장애물 구간. R493 SeoungTest 구역 E와 같은 코드, 파일 이름은 그대로) · **Late_3-1_RoyalLibrary**(R706, 왕의 서재 → 거인 체스 — seoungtest R687 그래픽 · R689 온라인, [온라인 설계](GIANT_CHESS_ONLINE.md); 판 씨앗이 둘 중 하나). 초안(`drafts` — 코스 프리팹 시험 · 구간 검사에만, 판에는 안 나옴): **Late_3-2_RoyalObservatory**(R712, 왕실 천문대) · **Late_3-3_RoyalVault**(R725, [왕실 금고실](PAWN_RUSH_ROYAL_VAULT.md)) |
 | 6 | 엔딩 구간 | **Final_AudienceHall_Temp** = 국왕 알현실 자리의 임시 바닥(R688, 결승 원판. 진짜 알현실이 생기면 바꾼다) |
 
 판에서 빠진 것(R688): 세 번째 미니게임 **슬롯**(거기서 나오던 G · H · I는 R691에서 슬롯 4 후보로 돌아왔다), 임시 후반 바닥 `Late_3-0_TempFloor`(파일은 남음).

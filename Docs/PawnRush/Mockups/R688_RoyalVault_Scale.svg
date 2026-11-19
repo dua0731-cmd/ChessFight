@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 795" width="100%" style="height:auto;max-width:1280px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>폰 러시 맵 규모 비교 — 최신 main(R687) 기준, 같은 축척</title>
+<defs><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="context-stroke"/></marker><pattern id="abyss" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#0b0d12"/><line x1="0" y1="0" x2="0" y2="10" stroke="#ffffff" stroke-opacity=".05" stroke-width="3"/></pattern><pattern id="hz" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#e0604f" fill-opacity=".16"/><line x1="0" y1="0" x2="0" y2="8" stroke="#e0604f" stroke-opacity=".55" stroke-width="2"/></pattern></defs>
+<rect width="1280" height="795" fill="#171a22"/>
+<text x="24" y="34" font-size="20" fill="#f4ead2" text-anchor="start" font-weight="700">폰 러시 맵 규모 비교 — 최신 main(R687) 기준, 같은 축척</text>
+<text x="24" y="58" font-size="13" fill="#a39a85" text-anchor="start">장애물 구간 3개 · 임시 바닥 · 작전 회의실 · 미니게임 방 · 복도, 그리고 왕실 금고실 시안 A · B · C(금색 테두리)</text>
+<text x="24" y="78" font-size="12" fill="#a39a85" text-anchor="start">같은 축척(1 m = 2.15 px). 사각형 = 걸을 수 있는 바닥의 바깥 테두리(장식 제외). 아래 숫자: 폭 × 길이 · 길 길이 · 오르는 높이 · 시간</text>
+<rect x="33.76" y="258.68" width="150.51" height="287.04" fill="#a99d80" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="109.01" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">왕실 수로 정원</text>
+<text x="109.01" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">장애물 구간 · 슬롯 1</text>
+<text x="109.01" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">70 × 133.5 m</text>
+<text x="109.01" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 259 m</text>
+<text x="109.01" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 4.5 m</text>
+<text x="109.01" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">실측 73 ~ 146초</text>
+<rect x="194.27" y="122.15" width="111.81" height="423.58" fill="#a99d80" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="250.17" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">왕실 마차뜰</text>
+<text x="250.17" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">장애물 구간 · 슬롯 1</text>
+<text x="250.17" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">52 × 197 m</text>
+<text x="250.17" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 210 m</text>
+<text x="250.17" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 8 m</text>
+<text x="250.17" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">봇 25 + 40초(두 구역)</text>
+<rect x="316.08" y="179.56" width="109.66" height="366.17" fill="#a99d80" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="370.9" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">대계단 현관홀</text>
+<text x="370.9" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">장애물 구간 · 슬롯 3</text>
+<text x="370.9" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">51 × 170.3 m</text>
+<text x="370.9" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 303 m</text>
+<text x="370.9" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 16 m</text>
+<text x="370.9" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">실측 112 ~ 246초</text>
+<rect x="472.83" y="494.13" width="25.8" height="51.6" fill="#5c5649" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="485.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">후반 임시 바닥</text>
+<text x="485.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">임시 바닥 · 슬롯 5</text>
+<text x="485.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">12 × 24 m</text>
+<text x="485.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 24 m</text>
+<text x="485.73" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0</text>
+<text x="485.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">실측 5초</text>
+<rect x="546.49" y="413.28" width="98.48" height="132.45" fill="#7a4fa0" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="595.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">작전 회의실</text>
+<text x="595.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">마지막 구간 · 슬롯 7</text>
+<text x="595.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">45.8 × 61.6 m</text>
+<text x="595.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 56 m</text>
+<text x="595.73" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 -8 ~ 1.5 m</text>
+<text x="595.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">첫 사람 28초</text>
+<rect x="658.43" y="468.32" width="94.61" height="77.41" fill="#3f8f6b" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="705.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">미니게임 방</text>
+<text x="705.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">미니게임 · 슬롯 2·4·6</text>
+<text x="705.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">44 × 36 m</text>
+<text x="705.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 59 ~ 62 m</text>
+<text x="705.73" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 ~ 0.4 m</text>
+<text x="705.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">실측 80 ~ 120초</text>
+<rect x="802.83" y="524.23" width="25.8" height="21.5" fill="#8c8474" stroke="#5c5649" stroke-width="1" fill-opacity="0.9"/>
+<text x="815.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">복도</text>
+<text x="815.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">복도</text>
+<text x="815.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">12 × 10 m</text>
+<text x="815.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 10 m</text>
+<text x="815.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">약 3초</text>
+<rect x="882.73" y="120" width="86.01" height="425.73" fill="#d9b25a" stroke="#f4ead2" stroke-width="2" fill-opacity="0.9"/>
+<text x="925.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">금고실 시안 A</text>
+<text x="925.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">금고실 시안 · 슬롯 5</text>
+<text x="925.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">40 × 198 m</text>
+<text x="925.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 약 205 ~ 250 m</text>
+<text x="925.73" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 12 m</text>
+<text x="925.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">선두 약 1:20 (계산)</text>
+<rect x="1020.04" y="382.32" width="31.39" height="163.41" fill="#d9b25a" stroke="#f4ead2" stroke-width="2" fill-opacity="0.9"/>
+<text x="1035.73" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">금고실 시안 B</text>
+<text x="1035.73" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">금고실 시안 · 슬롯 5</text>
+<text x="1035.73" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">14.6 × 76 m</text>
+<text x="1035.73" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 약 190 m</text>
+<text x="1035.73" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 12 m</text>
+<text x="1035.73" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">선두 약 1:20 (계산)</text>
+<rect x="1095.73" y="188.8" width="150.51" height="356.92" fill="#d9b25a" stroke="#f4ead2" stroke-width="2" fill-opacity="0.9"/>
+<text x="1170.99" y="561.73" font-size="11" fill="#f4ead2" text-anchor="middle" font-weight="700">금고실 시안 C</text>
+<text x="1170.99" y="576.73" font-size="9.5" fill="#a39a85" text-anchor="middle">금고실 시안 · 슬롯 5</text>
+<text x="1170.99" y="591.73" font-size="10" fill="#f4ead2" text-anchor="middle">70 × 166 m</text>
+<text x="1170.99" y="606.73" font-size="10" fill="#f4ead2" text-anchor="middle">길 약 175 ~ 210 m</text>
+<text x="1170.99" y="621.73" font-size="10" fill="#f4ead2" text-anchor="middle">높이 0 → 10 m</text>
+<text x="1170.99" y="636.73" font-size="10" fill="#e9dfc4" text-anchor="middle">선두 약 1:25 (계산)</text>
+<rect x="30" y="98" width="21.5" height="6" fill="#f4ead2"/>
+<text x="57.5" y="104" font-size="10" fill="#a39a85" text-anchor="start">10 m</text>
+<rect x="110" y="98" width="107.51" height="6" fill="none" stroke="#f4ead2" stroke-width="1"/>
+<text x="223.51" y="104" font-size="10" fill="#a39a85" text-anchor="start">50 m</text>
+<rect x="24" y="641.73" width="1232" height="144" fill="#1f232d" rx="8"/>
+<text x="38" y="663.73" font-size="13" fill="#f4ead2" text-anchor="start" font-weight="700">숫자 출처</text>
+<text x="38" y="685.73" font-size="11.5" fill="#f4ead2" text-anchor="start">바닥 크기 · 길 길이 · 높이는 코드(빌더 상수와 진행 경로 ProgressPath 점의 합)에서 읽음. 시간: 정원 · 대계단 홀 · 미니게임 · 작전 회의실은 11-15 6대6 빌드 시험 CSV</text>
+<text x="38" y="702.73" font-size="11.5" fill="#f4ead2" text-anchor="start">실측(한 사람 기준, 넘어짐 포함), 마차뜰은 R660 봇 측정(구역별), 금고실은 시안 계산(선두 · 중앙값).</text>
+<text x="38" y="719.73" font-size="11.5" fill="#e5dcc5" text-anchor="start">· 한 판(7슬롯 + 복도 6개) 진행 경로 약 830 ~ 900 m, 11-15 공개 경기 2판은 승리까지 11분 31초 · 11분 35초. 한 사람의 슬롯별 중앙값은 88 + 93 + 142 +</text>
+<text x="38" y="736.73" font-size="11.5" fill="#f4ead2" text-anchor="start">95 + 5 + 58 + 14초.</text>
+<text x="38" y="753.73" font-size="11.5" fill="#e5dcc5" text-anchor="start">· 금고실 자리(슬롯 5 후반 장애물)는 지금 12 × 24 m 임시 바닥(5초). 다른 장애물 구간 규모(길 210 ~ 303 m, 높이 +4.5 ~ +16 m, 한 사람 1분 15초 ~ 4분)에</text>
+<text x="38" y="770.73" font-size="11.5" fill="#f4ead2" text-anchor="start">맞추면 한 판이 약 2분 늘어남.</text>
+</svg>
