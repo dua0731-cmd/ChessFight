@@ -1,0 +1,77 @@
+Royal Observatory graybox on structure v0.3 (R724, the bowl's short way one rolling planet): built in the course prefab test scene in Play Mode. Not a person playing, not online.
+PASS the course prefab test is in the scene
+PASS the Royal Observatory is listed in the course prefab test: key 6 of 6
+PASS no round draws it (it is in a slot's drafts only); the rounds draw from 16 prefabs as before
+PASS built: Late_3-2_RoyalObservatory · 왕실 천문대 (회색 상자), slot 5
+PASS an obstacle section in the late slot (5)
+PASS entry (0.00, 0.00, 0.00), exit (9.00, 20.00, 130.00)
+PASS the prefab's own exit (read before it is built) is the same: (9.00, 20.00, 130.00)
+PASS beat boxes: 6
+PASS the pawn stands at the entry: (0.0, 0.3, 4.0)
+  note 구간 왕실 천문대 (회색 상자) (Late_3-2_RoyalObservatory)
+  note 장애물 덮음 검사 0곳
+  note 백팀 길 206.4 m, 가장 넓은 틈 0.30 m
+  note 뜻한 틈 3곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+  note 체크포인트 8개, 부활 자리 48곳
+  note 오를 수 없는 면 45개
+  note 입구 (0.0, 0.0, 0.0) → 출구 (9.0, 20.0, 130.0)
+PASS the section check: 0 errors
+PASS checkpoints: 8
+PASS devices: 10 petals (two variable stars), 2 meteor showers, 8 iris leaves (four gates), 2 focus beams, 1 solar flare
+PASS the bowl: 3 crossing orbits with 9 platforms, 1 rolling planet; the comet, the row of spinning planets and the bowl's two variable stars are gone
+PASS the flare's planets: 7
+PASS the moons, the globe's three planet orbits, the bowl's three orbits and the four gears are there and turn (11 of 11)
+PASS the globe, its floor, the second moon, Cassiopeia's standing star, the stage, the deck and the balcony are there
+PASS the climb, its crossing planets and the binary star are gone; no imported hazard is used
+PASS the gear train: 16 teeth 28.125 deg/s, 20 teeth -22.5 deg/s, 16 teeth 28.125 deg/s, 12 teeth -37.5 deg/s; every rim 1.96 m/s, neighbours turn against each other and touch
+PASS Device_MeteorShower Dipper handle: 499 meteors on 3 lines (166 / 167 / 166), 0 twice running on a line, 0 too close in time
+PASS Device_MeteorShower Cassiopeia: 666 meteors on 5 lines (133 / 133 / 133 / 133 / 134), 0 twice running on a line, 0 too close in time
+  watched 15.0 s of the obstacle clock
+PASS the ten petals each lay level and hung folded (10 of 10; the least fold 84 deg, the least level 0.0 deg)
+PASS the eight iris leaves each slid to the deck's middle and back (8 of 8 went 2.58 m)
+PASS where two orbits cross, their platforms come within 0.10 m and 0.10 m of each other, rim to rim, and never overlap
+PASS the first and the last orbit's platforms stay 1.24 m apart or more
+PASS a platform passes star 4's rim 0.15 m off and star 7's 0.15 m off, level with each within 0.05 m
+PASS the planet (4.4 m across) went 8.36 m between its docks and turned 25.6 deg for every metre (26.0 is rolling without slipping)
+PASS its top runs the way it goes, and as fast again as it goes: 1.00 of its own going (1 is rolling along the ground; -1 would be the other way)
+PASS it stands with its middle 0.60 m beyond star 4's rim and 0.60 m beyond star 7's, its top 0.05 m and 0.05 m over their decks
+  it goes 1.55 m/s; its top runs on another 1.55 m/s, 2.18 m/s where a pawn's hips are - what a rider walks back against
+PASS a variable star's hub is 0.70 m across
+PASS Device_FocusBeam 1: its spot went -1.3 .. 1.3 m across the deck and -1.2 .. 1.2 m along it
+PASS Device_FocusBeam 2: its spot went -1.3 .. 1.3 m across the deck and -1.2 .. 1.2 m along it
+PASS Device_EclipseMoon went round 446 deg in 15.0 s (30 deg/s: 450)
+PASS Device_PlanetOrbit 1 went round 266 deg in 15.0 s (18 deg/s: 270)
+PASS Device_PlanetOrbit 2 went round -415 deg in 15.0 s (-27.7 deg/s: -415)
+PASS Device_PlanetOrbit 3 went round 769 deg in 15.0 s (51.4 deg/s: 771)
+PASS Device_OrbitRing 1 went round -448 deg in 15.0 s (-30 deg/s: -450)
+PASS Device_OrbitRing 2 went round 448 deg in 15.0 s (30 deg/s: 450)
+PASS Device_OrbitRing 3 went round -448 deg in 15.0 s (-30 deg/s: -450)
+PASS Device_StarGear Cassiopeia gear 2 went round 420 deg in 15.0 s (28.1 deg/s: 422)
+PASS Device_StarGear Cassiopeia gear 3 went round -336 deg in 15.0 s (-22.5 deg/s: -338)
+PASS Device_StarGear Cassiopeia gear 4 went round 420 deg in 15.0 s (28.1 deg/s: 422)
+PASS Device_StarGear Cassiopeia gear 5 went round -560 deg in 15.0 s (-37.5 deg/s: -563)
+PASS where two gears meet their cogs stay interleaved: at worst 0.000 of a cog off
+PASS the sun lamp was calm, warned and burned
+PASS the seven planets each threw a shadow on the floor the whole time (0 missing; track / radius: 10.4 m out / 1.91 m, 10.4 m out / 1.91 m, 10.4 m out / 1.91 m, 6.8 m out / 1.85 m, 6.8 m out / 1.85 m, 3.3 m out / 1.71 m, 3.3 m out / 1.71 m)
+PASS Device_MeteorShower Dipper handle: 12 meteors landed in 15.0 s (one in 1.2 s: 12.5)
+PASS Device_MeteorShower Cassiopeia: 16 meteors landed in 15.0 s (one in 0.9 s: 16.7)
+PASS meteors were drawn: at most 2 at once on one shower
+PASS the pawn is still on the entry floor after 19 s: (0.0, 0.3, 4.0)
+picture 00_plan.png
+picture 01_from_the_tunnel.png
+picture 02_overview.png
+picture 03_dipper_handle.png
+picture 03b_variable_star.png
+picture 04_dipper_bowl.png
+picture 04b_bowl_from_above.png
+picture 04c_rolling_planet.png
+picture 04d_orbits.png
+picture 05_west_gate.png
+picture 06_inside_the_globe.png
+picture 07_globe_floor.png
+picture 08_cassiopeia_gears.png
+picture 09_gears_from_above.png
+picture 10_stage_and_tube.png
+picture 11_up_the_tube.png
+picture 12_back_from_the_balcony.png
+RESULT PASS

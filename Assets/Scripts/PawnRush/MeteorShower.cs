@@ -22,11 +22,13 @@ namespace ChessFight.PawnRush
         public struct Line
         {
             public Vector3 from, to;   // the bridge's top, end to end, in this object's frame
+            public float arch;         // R725: the top's middle this far above the straight line (a parabola; < 0 sags); 0 = straight
 
-            public Line(Vector3 from, Vector3 to)
+            public Line(Vector3 from, Vector3 to, float arch = 0f)
             {
                 this.from = from;
                 this.to = to;
+                this.arch = arch;
             }
         }
 
@@ -163,7 +165,8 @@ namespace ChessFight.PawnRush
             float length = Vector3.Distance(line.from, line.to);
             if (length < .01f) return line.from;
             float margin = Mathf.Min(endMargin, length * .3f);
-            return Vector3.Lerp(line.from, line.to, (margin + (length - 2f * margin) * m.Along) / length);
+            float t = (margin + (length - 2f * margin) * m.Along) / length;
+            return Vector3.Lerp(line.from, line.to, t) + Vector3.up * (line.arch * 4f * t * (1f - t));
         }
 
         void FixedUpdate()

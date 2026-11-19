@@ -1,0 +1,57 @@
+You are generating concept art for a 3D game art team. Use your image generation tool; do NOT write code. Generate exactly THREE final images, one at a time and in this order, each 1536x1024 landscape (3:2), and copy each generated PNG into the current working directory with these exact names:
+
+- RO_1_whole_hall.png
+- RO_2_dipper_bowl.png
+- RO_3_cassiopeia_telescope.png
+
+The three images show THE SAME PLAYABLE ROOM - the Royal Observatory, the last obstacle course of a party race game - from three camera positions, all in ONE consistent art direction (the same materials, palette and lighting in all three). For each image build the prompt as: STYLE (word for word) + HALL (word for word) + that image's VIEW block + AVOID (word for word). Attach the style reference and that image's layout reference to each generation. Ask the tool for 1536x1024 (or 3:2). Never resize, crop or convert a result. Call the tool at most twice per image: if the result breaks a CHECK line, generate once more naming the failed checks first, and keep the better one. This prompt is complete: do not read any other file in the repository and change no other file. After saving, reply with the three file paths and one short line describing each.
+
+## Attached references (in this order)
+
+1. `ref1_style_concept.webp` - THE TARGET ART DIRECTION: a lavish stylized 3D game render of a royal observatory. Copy its materials, palette, lighting, density of ornament and render quality: polished cream marble with soft veins, warm polished gold and brass trim, deep navy-and-violet floor panels inlaid with gold stars and compass roses, glowing pearl lamp globes on brass posts along every railing, purple banners with a gold chess crown or rook, white chess-piece statues and brass armillary spheres in arched wall niches, slender brass columns and truss work, shafts of light from above, a deep dim void below the walkways. Copy ONLY the look - NOT its layout (its straight bridges, square towers and boxy telescope bridge are an older layout that no longer exists).
+2. `ref2_layout_whole_hall.png` - THE ACTUAL LAYOUT, whole hall (a placeholder render). Use for image 1.
+3. `ref3_layout_dipper_bowl.png` - THE ACTUAL LAYOUT, near view of the Big Dipper's bowl (a placeholder render). Use for image 2.
+4. `ref4_layout_east_side.png` - THE ACTUAL LAYOUT, the east side: Cassiopeia's gears, the observing stage and the telescope (a placeholder render). Use for image 3.
+5. `ref5_pawns_in_game.png` - the players: small chess-pawn characters, one team white, one team black, as they look in game. Attach it to every generation.
+
+Refs 2-4 are a flat pastel placeholder: their lilac walls, pale blue, pink and mint planets, plain white statues and grey floor are NOT the look. Keep their SHAPES, ARRANGEMENT and PROPORTIONS exactly; dress everything in ref 1's art direction.
+
+## STYLE (paste word for word into every image)
+
+Lavish stylized 3D game environment concept art, the same art direction as reference 1: polished cream marble with soft grey veins, warm polished gold and brass with crisp bevels and engraved stars, deep navy and violet enamel panels inlaid with gold stars, gold compass roses and twelve-ray suns, pearl-white glowing lamp globes on short brass posts all along the railings, ornate brass balustrades, purple velvet banners with a gold chess crown, white marble chess-piece statues and small brass armillary spheres standing in arched wall niches, slender brass columns. Clean readable game shapes with chunky rounded bevels, soft global illumination, warm golden key light from above against cool deep-blue shadow, light shafts falling through the dome's slit, faint dust in the beams, a dark misty void far below the walkways. Rich, magical, overwhelming in scale and ornament but every walking surface clearly readable.
+
+## HALL (paste word for word into every image)
+
+A vast ROUND domed hall about 100 metres across. The round wall rises in two to three tiers of tall arched niches separated by gold-capped pilasters, each niche holding a white marble chess-piece statue or a brass armillary sphere, purple banners hanging between the arches. Above the wall a deep navy hemispherical DOME painted inside as a star chart: a fine gold grid of meridians and parallels, golden constellation lines and stars, the Big Dipper and Cassiopeia drawn on it. In the north-north-east the dome has a tall open SLIT through which a night sky and moonlight show. The hall floor is far below the course (about 18 metres down), a dark polished floor inlaid with large gold orbit circles; the course floats above it on single slender brass columns.
+
+The course is ONE path that does not wind around the centre; it passes THROUGH star-shaped structures:
+- ENTRY (south): a short marble deck with brass railings and a purple arched gate.
+- THE BIG DIPPER (west side, low, 0 to 3 metres up): round STAR PLATFORMS, each a disc 6 to 8 metres across with a gold five-pointed star inlaid in a navy top and a brass rim, each standing on ONE slender brass column with a small ring under the disc; 3-metre-wide bridges ("constellation lines") between them. The handle's stars are VARIABLE STARS: their decks are made of five petal-shaped leaves around a tiny hub, which fold down and open again. The handle's lines carry a METEOR SHOWER: small glowing white-gold stones falling with short trails. At the Dipper's bowl the path splits into two ways:
+  * the long way round the west - three CROSSING ORBITS: three rings of brass track, each around a small gold sun on a column, every ring carrying three round planet-platforms (navy disc, brass rim, a small planet globe under each) on brass arms; neighbouring rings cross like chain links;
+  * the short hard way straight across - ONE BIG ROLLING PLANET about 4.4 metres across, a polished banded planet globe that rolls to and fro on a brass rail track between the two star platforms; players balance on its top.
+- THE GREAT CELESTIAL GLOBE (centre): a huge transparent GLASS sphere about 28 metres across, engraved with fine gold meridians and stars, wrapped by a vertical gold MERIDIAN RING and a wide horizontal HORIZON RING, standing on a stepped three-tier base of navy and cream bands with gold trim. Two round brass-framed gates: the west gate low, the east gate high. INSIDE: one tilted round floor (a disc that fills the sphere, tilted about 17 degrees, a cream and gold star map), a glowing SUN LAMP hanging above its middle, planets of different sizes orbiting the sun on thin gold orbit rings and casting dark round shadows on the floor, a slanted gold ECLIPTIC RING around the floor with two pale MOON discs riding on it. Seen through the glass from outside.
+- CASSIOPEIA (east side, high, about 12 metres up): one standing star platform, then FOUR MESHED STAR GEARS in a W shape - big round geared discs 6 to 10 metres across that touch and turn against each other like clockwork, their rims made of alternating navy and cream tooth-segments with brass cogs underneath, brass spokes and a gold hub on top, each on a tall brass column. Meteors fall across them.
+- THE OBSERVING STAGE (north-east, 12 metres up): a round stage 16 metres across with a gold twelve-ray sun inlaid in navy, a brass railing with lamp globes, one thick column down to the floor.
+- THE GREAT TELESCOPE: a giant open TRUSS telescope tube about 26 metres long and 7 metres across, rising at about 18 degrees from the stage up through the dome's slit. Made of seven gold lens rings joined by brass struts, the inside open so the walking deck is visible; a fork mount with two tall arms at its foot, a finder scope along its side, a large objective ring at the top. Along the deck inside, four IRIS doors: pairs of curved gold leaves with a pointed bow-shaped edge that close across the deck and open again; two pale FOCUS BEAMS of light sweep the deck.
+- EXIT: the tube's top end leads out through the slit to a small railed marble BALCONY outside the dome under the night sky.
+
+Players: about a dozen small chess-pawn characters (white team and black team, like reference 5) running along the course, tiny against the huge hall - they show the scale: a pawn is about 1.8 metres tall, a star platform is 6 to 8 metres across.
+
+## VIEW 1 - RO_1_whole_hall.png (layout: ref2)
+
+High three-quarter bird's-eye view of the WHOLE hall from the south-east, looking north-west, the same camera as reference 2: the Big Dipper's chain of star platforms curving up the left side from the entry deck at the lower left, the great glass celestial globe dominating the centre with the sun lamp glowing inside, Cassiopeia's meshed star gears on the right, the observing stage and the truss telescope rising to the upper right into the dome's slit, the round wall of niches and the star-chart dome behind everything.
+CHECK: one round domed hall; the glass globe is in the centre and is transparent with the tilted floor, sun lamp and planets visible inside; the left path is round star platforms on single columns; the right side shows four touching gear discs; the telescope is an open truss of gold rings; pawns are visible on the course.
+
+## VIEW 2 - RO_2_dipper_bowl.png (layout: ref3)
+
+A closer, lower three-quarter view of the BIG DIPPER, the same camera as reference 3: in the foreground the handle's star platforms joined by constellation-line bridges, one VARIABLE STAR with its five petals half folded down showing the drop below, meteors falling onto a line; in the middle the bowl's two ways side by side - on the left the three CROSSING ORBITS with their planet-platforms on brass arms around little gold suns, on the right the ONE BIG ROLLING PLANET on its brass rail between two star platforms, a pawn balancing on its top; behind them the glass celestial globe's west gate and its gold rings, the niche wall beyond.
+CHECK: star platforms are round discs with a gold five-pointed star; one star shows petals folding; the two ways are clearly two different things (orbits on the left, one rolling ball on the right); at least one pawn stands on the rolling planet.
+
+## VIEW 3 - RO_3_cassiopeia_telescope.png (layout: ref4)
+
+A three-quarter view of the EAST side, the same camera as reference 4: the glass celestial globe's east half in the left foreground with its gold rings and the planets visible inside; in the middle Cassiopeia's FOUR MESHED STAR GEARS on tall brass columns, teeth interlocking, pawns stepping from one gear to the next; behind them the round OBSERVING STAGE with its gold twelve-ray sun and lamp-lit railing; the giant TRUSS TELESCOPE rising from the stage through the dome's slit, gold iris leaves half closed inside it and a pale focus beam on its deck; moonlight and night sky pouring through the slit, the small railed balcony just outside.
+CHECK: four gears visibly mesh (teeth interlocked); the stage has a twelve-ray sun; the telescope is open truss rings with a deck inside, not a closed tube; the slit opens to a night sky.
+
+## AVOID (paste word for word into every image)
+
+No text, letters, numbers, logos, watermarks, UI, arrows or labels anywhere. No title banner. No straight boxy bridges or square stone towers from the old layout. No closed solid telescope tube. No pastel lilac, pink or mint colours from the placeholder renders. No realistic humans; the players are only small chess pawns. No fisheye distortion, no blur over the course, no cropped-off globe.

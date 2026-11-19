@@ -1,0 +1,590 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:1 char:575
++ ... PROMPT.md | & $c exec -C $D -s workspace-write -c 'approval_policy="n ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.169.0-alpha.11.1
+--------
+workdir: C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R725_RoyalObservatoryConcept
+model: gpt-6.2-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: none
+reasoning summaries: none
+session id: 01a1f2c2-2af5-7381-b669-529eb171829a
+--------
+user
+You are generating concept art for a 3D game art team. Use your image generation tool; do NOT write code. Generate exac
+tly THREE final images, one at a time and in this order, each 1536x1024 landscape (3:2), and copy each generated PNG in
+to the current working directory with these exact names:
+
+- RO_1_whole_hall.png
+- RO_2_dipper_bowl.png
+- RO_3_cassiopeia_telescope.png
+
+The three images show THE SAME PLAYABLE ROOM - the Royal Observatory, the last obstacle course of a party race game - f
+rom three camera positions, all in ONE consistent art direction (the same materials, palette and lighting in all three)
+. For each image build the prompt as: STYLE (word for word) + HALL (word for word) + that image's VIEW block + AVOID (w
+ord for word). Attach the style reference and that image's layout reference to each generation. Ask the tool for 1536x1
+024 (or 3:2). Never resize, crop or convert a result. Call the tool at most twice per image: if the result breaks a CHE
+CK line, generate once more naming the failed checks first, and keep the better one. This prompt is complete: do not re
+ad any other file in the repository and change no other file. After saving, reply with the three file paths and one sho
+rt line describing each.
+
+## Attached references (in this order)
+
+1. `ref1_style_concept.webp` - THE TARGET ART DIRECTION: a lavish stylized 3D game render of a royal observatory. Copy 
+its materials, palette, lighting, density of ornament and render quality: polished cream marble with soft veins, warm p
+olished gold and brass trim, deep navy-and-violet floor panels inlaid with gold stars and compass roses, glowing pearl 
+lamp globes on brass posts along every railing, purple banners with a gold chess crown or rook, white chess-piece statu
+es and brass armillary spheres in arched wall niches, slender brass columns and truss work, shafts of light from above,
+ a deep dim void below the walkways. Copy ONLY the look - NOT its layout (its straight bridges, square towers and boxy 
+telescope bridge are an older layout that no longer exists).
+2. `ref2_layout_whole_hall.png` - THE ACTUAL LAYOUT, whole hall (a placeholder render). Use for image 1.
+3. `ref3_layout_dipper_bowl.png` - THE ACTUAL LAYOUT, near view of the Big Dipper's bowl (a placeholder render). Use fo
+r image 2.
+4. `ref4_layout_east_side.png` - THE ACTUAL LAYOUT, the east side: Cassiopeia's gears, the observing stage and the tele
+scope (a placeholder render). Use for image 3.
+5. `ref5_pawns_in_game.png` - the players: small chess-pawn characters, one team white, one team black, as they look in
+ game. Attach it to every generation.
+
+Refs 2-4 are a flat pastel placeholder: their lilac walls, pale blue, pink and mint planets, plain white statues and gr
+ey floor are NOT the look. Keep their SHAPES, ARRANGEMENT and PROPORTIONS exactly; dress everything in ref 1's art dire
+ction.
+
+## STYLE (paste word for word into every image)
+
+Lavish stylized 3D game environment concept art, the same art direction as reference 1: polished cream marble with soft
+ grey veins, warm polished gold and brass with crisp bevels and engraved stars, deep navy and violet enamel panels inla
+id with gold stars, gold compass roses and twelve-ray suns, pearl-white glowing lamp globes on short brass posts all al
+ong the railings, ornate brass balustrades, purple velvet banners with a gold chess crown, white marble chess-piece sta
+tues and small brass armillary spheres standing in arched wall niches, slender brass columns. Clean readable game shape
+s with chunky rounded bevels, soft global illumination, warm golden key light from above against cool deep-blue shadow,
+ light shafts falling through the dome's slit, faint dust in the beams, a dark misty void far below the walkways. Rich,
+ magical, overwhelming in scale and ornament but every walking surface clearly readable.
+
+## HALL (paste word for word into every image)
+
+A vast ROUND domed hall about 100 metres across. The round wall rises in two to three tiers of tall arched niches separ
+ated by gold-capped pilasters, each niche holding a white marble chess-piece statue or a brass armillary sphere, purple
+ banners hanging between the arches. Above the wall a deep navy hemispherical DOME painted inside as a star chart: a fi
+ne gold grid of meridians and parallels, golden constellation lines and stars, the Big Dipper and Cassiopeia drawn on i
+t. In the north-north-east the dome has a tall open SLIT through which a night sky and moonlight show. The hall floor i
+s far below the course (about 18 metres down), a dark polished floor inlaid with large gold orbit circles; the course f
+loats above it on single slender brass columns.
+
+The course is ONE path that does not wind around the centre; it passes THROUGH star-shaped structures:
+- ENTRY (south): a short marble deck with brass railings and a purple arched gate.
+- THE BIG DIPPER (west side, low, 0 to 3 metres up): round STAR PLATFORMS, each a disc 6 to 8 metres across with a gold
+ five-pointed star inlaid in a navy top and a brass rim, each standing on ONE slender brass column with a small ring un
+der the disc; 3-metre-wide bridges ("constellation lines") between them. The handle's stars are VARIABLE STARS: their d
+ecks are made of five petal-shaped leaves around a tiny hub, which fold down and open again. The handle's lines carry a
+ METEOR SHOWER: small glowing white-gold stones falling with short trails. At the Dipper's bowl the path splits into tw
+o ways:
+  * the long way round the west - three CROSSING ORBITS: three rings of brass track, each around a small gold sun on a 
+column, every ring carrying three round planet-platforms (navy disc, brass rim, a small planet globe under each) on bra
+ss arms; neighbouring rings cross like chain links;
+  * the short hard way straight across - ONE BIG ROLLING PLANET about 4.4 metres across, a polished banded planet globe
+ that rolls to and fro on a brass rail track between the two star platforms; players balance on its top.
+- THE GREAT CELESTIAL GLOBE (centre): a huge transparent GLASS sphere about 28 metres across, engraved with fine gold m
+eridians and stars, wrapped by a vertical gold MERIDIAN RING and a wide horizontal HORIZON RING, standing on a stepped 
+three-tier base of navy and cream bands with gold trim. Two round brass-framed gates: the west gate low, the east gate 
+high. INSIDE: one tilted round floor (a disc that fills the sphere, tilted about 17 degrees, a cream and gold star map)
+, a glowing SUN LAMP hanging above its middle, planets of different sizes orbiting the sun on thin gold orbit rings and
+ casting dark round shadows on the floor, a slanted gold ECLIPTIC RING around the floor with two pale MOON discs riding
+ on it. Seen through the glass from outside.
+- CASSIOPEIA (east side, high, about 12 metres up): one standing star platform, then FOUR MESHED STAR GEARS in a W shap
+e - big round geared discs 6 to 10 metres across that touch and turn against each other like clockwork, their rims made
+ of alternating navy and cream tooth-segments with brass cogs underneath, brass spokes and a gold hub on top, each on a
+ tall brass column. Meteors fall across them.
+- THE OBSERVING STAGE (north-east, 12 metres up): a round stage 16 metres across with a gold twelve-ray sun inlaid in n
+avy, a brass railing with lamp globes, one thick column down to the floor.
+- THE GREAT TELESCOPE: a giant open TRUSS telescope tube about 26 metres long and 7 metres across, rising at about 18 d
+egrees from the stage up through the dome's slit. Made of seven gold lens rings joined by brass struts, the inside open
+ so the walking deck is visible; a fork mount with two tall arms at its foot, a finder scope along its side, a large ob
+jective ring at the top. Along the deck inside, four IRIS doors: pairs of curved gold leaves with a pointed bow-shaped 
+edge that close across the deck and open again; two pale FOCUS BEAMS of light sweep the deck.
+- EXIT: the tube's top end leads out through the slit to a small railed marble BALCONY outside the dome under the night
+ sky.
+
+Players: about a dozen small chess-pawn characters (white team and black team, like reference 5) running along the cour
+se, tiny against the huge hall - they show the scale: a pawn is about 1.8 metres tall, a star platform is 6 to 8 metres
+ across.
+
+## VIEW 1 - RO_1_whole_hall.png (layout: ref2)
+
+High three-quarter bird's-eye view of the WHOLE hall from the south-east, looking north-west, the same camera as refere
+nce 2: the Big Dipper's chain of star platforms curving up the left side from the entry deck at the lower left, the gre
+at glass celestial globe dominating the centre with the sun lamp glowing inside, Cassiopeia's meshed star gears on the 
+right, the observing stage and the truss telescope rising to the upper right into the dome's slit, the round wall of ni
+ches and the star-chart dome behind everything.
+CHECK: one round domed hall; the glass globe is in the centre and is transparent with the tilted floor, sun lamp and pl
+anets visible inside; the left path is round star platforms on single columns; the right side shows four touching gear 
+discs; the telescope is an open truss of gold rings; pawns are visible on the course.
+
+## VIEW 2 - RO_2_dipper_bowl.png (layout: ref3)
+
+A closer, lower three-quarter view of the BIG DIPPER, the same camera as reference 3: in the foreground the handle's st
+ar platforms joined by constellation-line bridges, one VARIABLE STAR with its five petals half folded down showing the 
+drop below, meteors falling onto a line; in the middle the bowl's two ways side by side - on the left the three CROSSIN
+G ORBITS with their planet-platforms on brass arms around little gold suns, on the right the ONE BIG ROLLING PLANET on 
+its brass rail between two star platforms, a pawn balancing on its top; behind them the glass celestial globe's west ga
+te and its gold rings, the niche wall beyond.
+CHECK: star platforms are round discs with a gold five-pointed star; one star shows petals folding; the two ways are cl
+early two different things (orbits on the left, one rolling ball on the right); at least one pawn stands on the rolling
+ planet.
+
+## VIEW 3 - RO_3_cassiopeia_telescope.png (layout: ref4)
+
+A three-quarter view of the EAST side, the same camera as reference 4: the glass celestial globe's east half in the lef
+t foreground with its gold rings and the planets visible inside; in the middle Cassiopeia's FOUR MESHED STAR GEARS on t
+all brass columns, teeth interlocking, pawns stepping from one gear to the next; behind them the round OBSERVING STAGE 
+with its gold twelve-ray sun and lamp-lit railing; the giant TRUSS TELESCOPE rising from the stage through the dome's s
+lit, gold iris leaves half closed inside it and a pale focus beam on its deck; moonlight and night sky pouring through 
+the slit, the small railed balcony just outside.
+CHECK: four gears visibly mesh (teeth interlocked); the stage has a twelve-ray sun; the telescope is open truss rings w
+ith a deck inside, not a closed tube; the slit opens to a night sky.
+
+## AVOID (paste word for word into every image)
+
+No text, letters, numbers, logos, watermarks, UI, arrows or labels anywhere. No title banner. No straight boxy bridges 
+or square stone towers from the old layout. No closed solid telescope tube. No pastel lilac, pink or mint colours from 
+the placeholder renders. No realistic humans; the players are only small chess pawns. No fisheye distortion, no blur ov
+er the course, no cropped-off globe.
+
+
+codex
+imagegen 스킬로 전체 홀, 큰곰자리 국자부, 카시오페이아 동쪽 구역을 순서대로 생성하고, 각 장면을 요청하신 체크 항목과 대조하겠습니다.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'C:/Users/Make
+bot2/.codex/skills/.system/imagegen/SKILL.md'" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptAr
+t\R725_RoyalObservatoryConcept
+ succeeded in 603ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illu
+strations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new imag
+e, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rath
+er than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-nati
+ve assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups
+, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and transparent-
+image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the CLI/API/mode
+l path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first unles
+s they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate ass
+ets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per req
+uested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_
+KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific locat
+ion is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before fin
+ishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default
+ `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versi
+oned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, comp
+ositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request a
+s **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images gener
+ated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so
+ the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and ne
+eds many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; dis
+tinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if explicit
+ly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_i
+mage` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requ
+irements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated a
+lpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generate
+d_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or refe
+rences. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user exp
+licitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, si
+ze, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whe
+ther the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, bu
+t do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled
+ line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ??candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ??product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ??app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ??diagrams/infographics with structured layout and text.
+- scientific-educational ??classroom explainers, scientific diagrams, and learning visuals with required labels and acc
+uracy constraints.
+- ads-marketing ??campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual ??slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ??logo/mark exploration, vector-friendly.
+- illustration-story ??comics, children?셲 book art, narrative scenes.
+- stylized-concept ??style-driven concept art, 3D/stylized renders.
+- historical-scene ??period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ??translate/replace in-image text, preserve layout.
+- identity-preserve ??try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ??remove/replace a specific element (including interior swaps).
+- lighting-weather ??time-of-day/season/atmosphere changes only.
+- background-extraction ??transparent background / clean cutout. Ask built-in `image_gen` for actual transparency.
+- style-transfer ??apply reference style while changing subject/scene.
+- compositing ??multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ??drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which c
+ontrols output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in
+ the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in `references/sample-prompts.md`
+.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user explici
+tly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final assets
+, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges multiple
+s of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package m
+anager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it in
+to their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI m
+ode.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-ChildItem -Name -Path ref*' in C:\Users\
+Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R725_RoyalObservatoryConcept
+ succeeded in 215ms:
+ref1_style_concept.webp
+ref2_layout_whole_hall.png
+ref3_layout_dipper_bowl.png
+ref4_layout_east_side.png
+ref5_pawns_in_game.png
+
+codex
+전체 홀 장면에 중앙 천구의 내부 구조와 양쪽 코스가 함께 보입니다. 이제 큰곰자리 국자부의 두 갈래 길을 가까이에서 보여주는 장면을 생성하겠습니다.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/Makebot2/.c
+odex/generated_images/01a1f2c2-2af5-7381-b669-529eb171829a/exec-0f940333-1a4b-4cd2-b354-cf2fadf7e235.png' -Destination 
+'RO_1_whole_hall.png'" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R725_RoyalObservatoryC
+oncept
+ succeeded in 212ms:
+codex
+국자부 장면에는 아래로 접힌 별판과 구르는 행성 위의 폰이 보입니다. 마지막 장면은 맞물리는 기어와 망원경 내부 통로가 한 화면에 보이도록 생성하겠습니다.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/Makebot2/.c
+odex/generated_images/01a1f2c2-2af5-7381-b669-529eb171829a/exec-8461725a-3a8c-4e20-9989-418e002b34b8.png' -Destination 
+'RO_2_dipper_bowl.png'" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R725_RoyalObservatory
+Concept
+ succeeded in 225ms:
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:/Users/Makebot2/.c
+odex/generated_images/01a1f2c2-2af5-7381-b669-529eb171829a/exec-e7c07833-78b5-4e55-aed7-130627cd1a6d.png' -Destination 
+'RO_3_cassiopeia_telescope.png'
+Get-Item -LiteralPath 'RO_1_whole_hall.png','RO_2_dipper_bowl.png','RO_3_cassiopeia_telescope.png' | Select-Object Name
+,Length
+Get-Command magick,identify -ErrorAction SilentlyContinue | Select-Object Name" in C:\Users\Makebot2\Documents\GitHub\C
+hessFight\Docs\PawnRush\ConceptArt\R725_RoyalObservatoryConcept
+ exited 1 in 4166ms:
+
+Name                           Length
+----                           ------
+RO_1_whole_hall.png           2890080
+RO_2_dipper_bowl.png          2696716
+RO_3_cassiopeia_telescope.png 2885222
+
+
+
+codex
+- [RO_1_whole_hall.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObservatoryCon
+cept/RO_1_whole_hall.png) — 투명한 중앙 천구와 양쪽 장애물 코스를 담은 왕립 천문대 전경.
+- [RO_2_dipper_bowl.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObservatoryCo
+ncept/RO_2_dipper_bowl.png) — 접히는 별판, 교차 궤도, 구르는 행성 위의 폰을 보여주는 큰곰자리 국자부.
+- [RO_3_cassiopeia_telescope.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObse
+rvatoryConcept/RO_3_cassiopeia_telescope.png) — 카시오페이아의 기어 네 개와 밤하늘로 이어지는 개방형 트러스 망원경.
+
+세 장 모두 1536×1024 PNG 원본을 그대로 복사했습니다. 2번과 3번의 근접 구도에서는 중앙 천구 일부가 프레임 밖으로 이어집니다.
+tokens used
+36,113
+- [RO_1_whole_hall.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObservatoryConcept/RO_1_whole_hall.png) — 투명한 중앙 천구와 양쪽 장애물 코스를 담은 왕립 천문대 전경.
+- [RO_2_dipper_bowl.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObservatoryConcept/RO_2_dipper_bowl.png) — 접히는 별판, 교차 궤도, 구르는 행성 위의 폰을 보여주는 큰곰자리 국자부.
+- [RO_3_cassiopeia_telescope.png](C:/Users/Makebot2/Documents/GitHub/ChessFight/Docs/PawnRush/ConceptArt/R725_RoyalObservatoryConcept/RO_3_cassiopeia_telescope.png) — 카시오페이아의 기어 네 개와 밤하늘로 이어지는 개방형 트러스 망원경.
+
+세 장 모두 1536×1024 PNG 원본을 그대로 복사했습니다. 2번과 3번의 근접 구도에서는 중앙 천구 일부가 프레임 밖으로 이어집니다.

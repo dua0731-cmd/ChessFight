@@ -1,0 +1,45 @@
+Royal Observatory - what is drawn and how long a frame takes (R725). Editor batch mode on a project copy, not a player.
+
+Under the section: 371 renderers drawn, 1,910,826 triangles with every LOD group at LOD0, 249 distinct meshes, 80 distinct materials, 158 LOD groups (their triangles by level: 1,190,428 / 497,601 / 245,595 / 0).
+Lights under the section: 77 (77 point, 0 spot, 0 casting shadows). Whole scene: 78 lights, 1 casting shadows.
+
+Triangles by group (the builder's groups):
+  RoHall wall (model)               874,530
+  1 Big Dipper                      129,982
+  RoHallStatues (model)             122,772
+  RoBalcony (model)                  72,462
+  2 Great globe                      71,528
+  RoHallBanners (model)              70,754
+  RoGlobeShell (model)               64,612
+  RoHallDome (model)                 54,108
+  RoTube (model)                     51,516
+  RoStage (model)                    49,910
+  RoEntryGate (model)                47,919
+  RoEntryWalk (model)                37,324
+  RoDipperLines (model)              30,390
+  RoHallAbyss (model)                29,662
+  RoHallOutside (model)              27,316
+  5 Great telescope                  23,584
+  3 Cassiopeia                       22,976
+  RoDipperStar7 (model)              22,383
+  RoDipperStar1 (model)              22,383
+  RoDipperStar4 (model)              20,755
+  RoPlanetRails (model)              19,256
+  RoCassiopeiaStatic (model)         14,444
+  RoFork (model)                     14,208
+  RoDeck (model)                      6,068
+  RoOrbitPillars (model)              3,960
+  RoVariableHub3 (model)              3,112
+  RoVariableHub2 (model)              2,912
+
+Views (1920x1080, the game camera's settings from 'Main Camera'):
+  view                              renderers   triangles   CPU ms   + GPU ms   worst
+  tunnel mouth                           304   1,193,609      9.0       38.1   336.3
+  dipper handle (player height)          155     798,066      5.6       28.7    29.9
+  dipper bowl                            214     948,365      5.8       30.5    44.9
+  inside the globe                       128     685,778      4.7       23.8    28.0
+  cassiopeia                             142     703,569      5.0       23.0    26.9
+  up the tube                             48     310,729      3.5       23.3    25.5
+  whole hall (worst case)                304   1,104,827      5.7       30.8    35.9
+
+Compare: the Royal Library's baseline on this PC (R719, Docs/Environment/GPU_RESIDENT_DRAWER.md), measured the same way.
