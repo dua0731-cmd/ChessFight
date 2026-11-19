@@ -35,10 +35,10 @@ namespace ChessFight.RagdollLab
         float lassoPull, lassoReel, lassoHands;
 
         /// <summary>How far (degrees) the whole body leans back hauling on the rope (the chest leans back further on top).</summary>
-        public float LassoLeanBack => piece == PieceKind.Bishop && lassoPhase == LassoPhase.Hold ? 20f * lassoPull * (1f - lassoReel) : 0f;
+        public float LassoLeanBack => skillPiece == PieceKind.Bishop && lassoPhase == LassoPhase.Hold ? 20f * lassoPull * (1f - lassoReel) : 0f;
 
         /// <summary>Holding its rope it keeps facing the piece on it, walking any way (the run does not turn it).</summary>
-        public bool LassoFacesTarget => piece == PieceKind.Bishop && lassoPhase == LassoPhase.Hold && lassoOn != null;
+        public bool LassoFacesTarget => skillPiece == PieceKind.Bishop && lassoPhase == LassoPhase.Hold && lassoOn != null;
 
         public LassoPhase BishopLassoPhase => lassoPhase;
         /// <summary>The piece its rope is round (held), or none.</summary>
@@ -56,7 +56,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn LassoedBy => lassoBy;
         /// <summary>The mouse wheel works the rope now, not the camera: from the aim until the rope is back (the camera
         /// zoomed whenever the rope was not held, and the view ended up inside the bishop's back).</summary>
-        public bool WheelOnSkill => piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope && skillStage != SkillStage.None;
+        public bool WheelOnSkill => skillPiece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope && skillStage != SkillStage.None;
 
         /// <summary>Between the bishop's hands, where the two ropes leave from.</summary>
         public Vector3 LassoHands => (bodies[(int)BodyId.HandL].position + bodies[(int)BodyId.HandR].position) * 0.5f;
@@ -439,7 +439,7 @@ namespace ChessFight.RagdollLab
         bool LassoPose(ref Quaternion armL, ref Quaternion armR, ref Quaternion chest, ref Quaternion head,
                        ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
         {
-            if (piece != PieceKind.Bishop || PawnRushSkills == null || !PawnRushSkills.bishopRope) return false;
+            if (skillPiece != PieceKind.Bishop || PawnRushSkills == null || !PawnRushSkills.bishopRope) return false;
             if (skillStage == SkillStage.Windup)
             {
                 // The coils held out in front, ready.

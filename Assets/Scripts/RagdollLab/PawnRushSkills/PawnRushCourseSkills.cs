@@ -32,6 +32,7 @@ namespace ChessFight.RagdollLab
         PawnRushSkillFx fx;
         PawnRushSkillSfx sfx;
         PlaytestSpawner spawner;
+        int loadoutPreset = -1;
 
         /// <summary>The pawn played at this PC (set by the online link; offline it is the playtest's).</summary>
         public RagdollPawn Local { get; set; }
@@ -85,6 +86,10 @@ namespace ChessFight.RagdollLab
             if (Current == this) Current = null;
         }
 
+        /// <summary>The key of a slot as the settings bind it: 기물 스킬 (Use), then the two ability keys (Skill, Skill2).</summary>
+        static string CourseKey(int slot) =>
+            ChessFight.Game.GameSettings.KeyCap(slot == 0 ? ChessFight.Game.GameKey.Use : slot == 1 ? ChessFight.Game.GameKey.Skill : ChessFight.Game.GameKey.Skill2);
+
         RagdollPawn Viewer
         {
             get
@@ -112,7 +117,14 @@ namespace ChessFight.RagdollLab
                     if (pawn != null && !pawn.NetworkPuppet) pawn.ResetSkill();
                 Debug.Log("[ChessFight] 폰 러쉬: 스킬 기획안 - " + PawnRushRules.Choices[3][rules.Skills]);
             }
-            skills.plan = PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves ? PawnRushSkillParams.PlanChessMoves : PawnRushSkillParams.PlanNow;
+            // (The loadout is one of the two that come with the game for now; the skill window's own loadout reaches a room
+            // once it goes over the network.)
+            int preset = PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves ? 1 : 0;
+            if (preset != loadoutPreset)
+            {
+                loadoutPreset = preset;
+                skills.loadout.CopyFrom(PawnRushLoadout.Preset(preset));
+            }
             foreach (var pawn in RagdollPawn.All)
             {
                 if (pawn == null) continue;
@@ -128,24 +140,10 @@ namespace ChessFight.RagdollLab
             if (ChessFight.Game.LoadingScreenView.Showing) return;
             var me = Viewer;
             if (me == null || me.PawnRushSkills == null || me.Piece == PieceKind.King) return;
-            bool running = me.SkillStage != SkillStage.None || me.PlanBusy, ready = !running && me.SkillCooldown <= 0f;
-            // R674: the keys as the settings window has them bound (F and the left click unless rebound).
-            string key = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Use);
-            string click = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Shove);
-            string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? $"{key} 조준 → {click}" : $"{key} 사용";
-            if (me.PlanB)
-            {
-                // JY-skill-lab: plan 1-나 (the pawn's key lights only with an enemy that has just brushed past it).
-                var passing = me.PassTarget;
-                how = me.Piece == PieceKind.Pawn ? (passing != null ? $"{key} 발 걸기" : "스쳐 지나가는 적에게 " + key)
-                    : me.Piece == PieceKind.Knight ? $"{key} 사용"
-                    : $"{key} 조준 → {click}";
-                if (me.Piece == PieceKind.Pawn && passing == null && !running) ready = false;
-            }
-            if (me.Piece == PieceKind.Pawn) how += " · 승격 발판에 서서 승격";
-            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), key, $"{ChessPieces.Name(me.Piece)} · {me.SkillNameNow}",
-                SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), me.Piece,
-                ready || running, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
+            // R674: the keys as the settings window has them bound (F, E, Q and the left click unless rebound).
+            // JY-skill-lab: a card for each of the piece's slots that holds a skill (PawnRushSkillBed.SlotCards).
+            PawnRushSkillBed.SlotCards(me, CourseKey, ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Shove), false,
+                ChessPieces.Name(me.Piece), me.Piece == PieceKind.Pawn ? " · 승격 발판에 서서 승격" : null);
         }
     }
 }

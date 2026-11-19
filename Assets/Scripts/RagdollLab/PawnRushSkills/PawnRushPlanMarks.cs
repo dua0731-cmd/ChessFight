@@ -44,15 +44,16 @@ namespace ChessFight.RagdollLab
             var me = Viewer != null ? Viewer() : null;
             foreach (var pawn in RagdollPawn.All)
             {
-                if (pawn == null || !pawn.PlanB) continue;
+                if (pawn == null || pawn.PawnRushSkills == null) continue;
                 DrawPin(pawn);
-                switch (pawn.Piece)
+                // By the skill, not the piece: the loadout (the skill window) may put any skill on any piece.
+                if (pawn.HasSkill(PawnRushSkillIds.EnPassant)) DrawPass(pawn, me);
+                switch (pawn.PlanSkill)
                 {
-                    case PieceKind.Pawn: DrawPass(pawn, me); break;
-                    case PieceKind.Knight: DrawFork(pawn); break;
-                    case PieceKind.Bishop: DrawPinLine(pawn); break;
-                    case PieceKind.Rook: DrawCastle(pawn); break;
-                    case PieceKind.Queen: DrawCheck(pawn); break;
+                    case PawnRushSkillIds.Fork: DrawFork(pawn); break;
+                    case PawnRushSkillIds.Pin: DrawPinLine(pawn); break;
+                    case PawnRushSkillIds.Castling: DrawCastle(pawn); break;
+                    case PawnRushSkillIds.Check: DrawCheck(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -172,7 +173,7 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             var me = Viewer != null ? Viewer() : null;
-            if (me == null || !me.PlanB) return;
+            if (me == null || me.PawnRushSkills == null) return;
             string line = null, sub = null;
             float share = 0f;
             var rook = me.CastleOfferingMe();
@@ -181,14 +182,14 @@ namespace ChessFight.RagdollLab
             {
                 float window = Mathf.Max(0.1f, rook.PawnRushSkills.castleWindow);
                 line = "캐슬링!  스킬 키로 받기";
-                sub = $"{rook.DisplayName}(룩)와 자리 바꾸기 · {rook.CastleOfferLeft:0.0}초";
+                sub = $"{rook.DisplayName}와 자리 바꾸기 · {rook.CastleOfferLeft:0.0}초";
                 share = Mathf.Clamp01(rook.CastleOfferLeft / window);
             }
             else if (queen != null && queen.PawnRushSkills != null)
             {
                 float window = Mathf.Max(0.1f, queen.PawnRushSkills.checkSeconds);
                 line = "체크!  빨간 칸 밖으로";
-                sub = $"{queen.DisplayName}(퀸) · {queen.CheckLeft:0.0}초";
+                sub = $"{queen.DisplayName} · {queen.CheckLeft:0.0}초";
                 share = Mathf.Clamp01(queen.CheckLeft / window);
             }
             else if (me.Pinned && me.PawnRushSkills != null)

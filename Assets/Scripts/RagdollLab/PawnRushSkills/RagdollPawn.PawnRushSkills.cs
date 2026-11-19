@@ -97,7 +97,7 @@ namespace ChessFight.RagdollLab
             Vector3.Lerp(bodies[(int)BodyId.Chest].position, other.bodies[(int)BodyId.Chest].position, 0.5f);
 
         SkillStage skillStage;
-        float stageTime, skillCooldownLeft, cooldownTotal, skillGrace;
+        float stageTime, skillGrace;   // (the cooldown is each slot's: skillCooldownLeft, cooldownTotal in RagdollPawn.SkillPlans.cs)
         bool skillPressed, skillConfirm, skillCancel, skillGrabRaw, skillGrabLatch, aimLocked;
         Vector3 skillMoveRaw;
         // A dash (the pawn's steps): a fixed speed along a fixed line for a while.
@@ -141,7 +141,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A rook or a bishop between its key and the left click.</summary>
         public bool SkillAiming => Aiming && planPhase != PlanPhase.Aim;   // (plan 1-나's aim has its own marks: PlanPhaseNow)
-        public bool BishopAiming => piece == PieceKind.Bishop && skillStage == SkillStage.Windup;
+        public bool BishopAiming => skillPiece == PieceKind.Bishop && skillStage == SkillStage.Windup;
         public bool BishopAimValid => bishopValid;
         public Vector3 BishopAimPoint => bishopPoint;
         public Vector3 BishopAimYaw => bishopYaw;
@@ -156,7 +156,7 @@ namespace ChessFight.RagdollLab
         /// <summary>On the floor, or just off it (the coyote time).</summary>
         public bool OnTheFloor => OnFloor;
         /// <summary>The knight's landing is to be shown: in its leap, until it has come down on the head.</summary>
-        public bool KnightShowsLanding => piece == PieceKind.Knight && skillStage == SkillStage.Active && !knightTapped;
+        public bool KnightShowsLanding => skillPiece == PieceKind.Knight && skillStage == SkillStage.Active && !knightTapped;
         public Vector3 KnightLandingSpot => knightSpot;
         /// <summary>The bishop's throw: where its X leaves from and how long it flies.</summary>
         public Vector3 BishopThrowFrom => bishopFrom;
@@ -166,7 +166,7 @@ namespace ChessFight.RagdollLab
         public static bool SkillMarksHidden { get; set; }
 
         bool Aiming => (skillStage == SkillStage.Windup && !aimLocked
-                        && (piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King))   // R146: the king's list, its clicks the list's
+                        && (skillPiece == PieceKind.Rook || skillPiece == PieceKind.Bishop || skillPiece == PieceKind.King))   // R146: the king's list, its clicks the list's
                        || planPhase == PlanPhase.Aim;   // plan 1-나 (RagdollPawn.SkillPlans.cs): the bishop, the rook and the queen aim
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
@@ -193,7 +193,10 @@ namespace ChessFight.RagdollLab
         public void ResetSkill()
         {
             ClearSkills();
-            skillCooldownLeft = cooldownTotal = 0f;
+            for (int k = 0; k < slotCd.Length; k++) slotCd[k] = slotCdTotal[k] = 0f;
+            activeSlot = -1;
+            activeSkill = 0;
+            cdSlot = 0;
             bindLeft = 0f;
             EndPin();
         }
@@ -256,8 +259,8 @@ namespace ChessFight.RagdollLab
             if (PawnRushSkills != null && skillStage != SkillStage.None)
             {
                 // Tied mid-skill: it ends here, and the cooldown runs as if it had finished.
-                Log($"{DisplayName}: {SkillName(piece)} 끊김 (묶임)");
-                bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
+                Log($"{DisplayName}: {SkillName(skillPiece)} 끊김 (묶임)");
+                bool firedAlready = skillPiece == PieceKind.Bishop && skillStage == SkillStage.Active;
                 ClearSkills();
                 if (!firedAlready) StartCooldown(PieceCooldown(PawnRushSkills));
             }
@@ -294,7 +297,7 @@ namespace ChessFight.RagdollLab
                 skillCancel |= input.grab && !skillGrabLatch;
                 input.shove = false;
             }
-            if (piece == PieceKind.Bishop && lassoPhase != LassoPhase.None)
+            if (skillPiece == PieceKind.Bishop && lassoPhase != LassoPhase.None)
             {
                 // 10-26: holding its rope, the right click lets go; the left click does nothing; it walks (no sprint).
                 if (lassoPhase == LassoPhase.Hold) skillCancel |= input.grab && !skillGrabLatch;
@@ -317,10 +320,10 @@ namespace ChessFight.RagdollLab
                 input.grab = false;
             }
             // Aiming, the rook walks (and jumps) as usual but cannot sprint; from the click to the end it stays put (R153).
-            if (Aiming && piece == PieceKind.Rook) input.sprint = false;
+            if (Aiming && skillPiece == PieceKind.Rook) input.sprint = false;
             bool rooted = dashing || skillStage == SkillStage.Recovery
-                          || (skillStage == SkillStage.Windup && (piece == PieceKind.Queen || (piece == PieceKind.Rook && aimLocked)))
-                          || (piece == PieceKind.Rook && skillStage == SkillStage.Active);
+                          || (skillStage == SkillStage.Windup && (skillPiece == PieceKind.Queen || (skillPiece == PieceKind.Rook && aimLocked)))
+                          || (skillPiece == PieceKind.Rook && skillStage == SkillStage.Active);
             if (!rooted) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -335,7 +338,12 @@ namespace ChessFight.RagdollLab
             if (s == null) return;
             bool press = skillPressed, confirm = skillConfirm, cancel = skillCancel;
             skillPressed = skillConfirm = skillCancel = false;
-            skillCooldownLeft -= dt;
+            // The loadout (the skill window): the second and third slots' keys, every slot's cooldown, and the slot whose
+            // cooldown the old skills' code reads and writes - the skill's under way.
+            bool key1 = slotKey1, key2 = slotKey2;
+            slotKey1 = slotKey2 = false;
+            for (int k = 0; k < slotCd.Length; k++) slotCd[k] -= dt;
+            cdSlot = SkillRunning && activeSlot >= 0 ? activeSlot : 0;
             getUpGuardLeft -= dt;
             skillGuardLeft -= dt;
             skillGrace -= dt;
@@ -370,29 +378,14 @@ namespace ChessFight.RagdollLab
             if (skillStage != SkillStage.None && (State == PawnState.Ragdoll || Floating))
             {
                 // Floored (or in the water) mid-skill: it ends here, and the cooldown runs as if it had finished.
-                Log($"{DisplayName}: {SkillName(piece)} 끊김 ({(Floating ? "물" : "넘어짐")})");
-                bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
+                Log($"{DisplayName}: {SkillName(skillPiece)} 끊김 ({(Floating ? "물" : "넘어짐")})");
+                bool firedAlready = skillPiece == PieceKind.Bishop && skillStage == SkillStage.Active;
                 ClearSkills();
                 if (!firedAlready) StartCooldown(PieceCooldown(s));
             }
 
-            if (PlanB)
-            {
-                // The room (or the test bed) plays by plan 1-나: each piece's other skill, with its own marks (PawnRushPlanMarks).
-                UpdatePlanSkill(s, press, confirm, cancel, dt);
-                HideSkillMarks();
-                return;
-            }
-
-            switch (piece)
-            {
-                case PieceKind.Pawn: UpdatePawnSkill(s, press, dt); break;
-                case PieceKind.Knight: UpdateKnightSkill(s, press, dt); break;
-                case PieceKind.Bishop: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
-                case PieceKind.Rook: UpdateRookChain(s, press, confirm, cancel, dt); break;
-                case PieceKind.Queen: UpdateQueenSkill(s, press, dt); break;
-                case PieceKind.King: UpdateKingCall(s, press, cancel, dt); break;
-            }
+            // Each slot's skill, the old ones and the new, on whatever piece the loadout put it (RagdollPawn.SkillPlans.cs).
+            RunSlots(s, press, key1, key2, confirm, cancel, dt);
             DrawSkillMarks(s);
         }
 
@@ -417,7 +410,7 @@ namespace ChessFight.RagdollLab
             ClearPlanSkills();
         }
 
-        float PieceCooldown(PawnRushSkillParams s) => piece switch
+        float PieceCooldown(PawnRushSkillParams s) => skillPiece switch
         {
             PieceKind.Pawn => s.pawnCooldown,
             PieceKind.Knight => s.knightCooldown,
@@ -432,6 +425,7 @@ namespace ChessFight.RagdollLab
         {
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
+            seconds *= StageCooldown;   // the growing system's stage (the skill window)
             cooldownTotal = Mathf.Max(0f, seconds);
             skillCooldownLeft = cooldownTotal;
         }
@@ -499,6 +493,7 @@ namespace ChessFight.RagdollLab
                 return "대상 아님";
             }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
+            push *= StagePower;   // the growing system's stage (the skill window)
             string result;
             if (knockdown && target.State == PawnState.Ragdoll)
             {
@@ -1249,7 +1244,7 @@ namespace ChessFight.RagdollLab
             Vector3 foot = new Vector3(bodies[0].position.x, floorY + 0.05f, bodies[0].position.z);
             HideSkillMarks();
             if (SkillMarksHidden) return;   // the effects draw them (design A, R90)
-            switch (piece)
+            switch (skillPiece)
             {
                 case PieceKind.Rook when skillStage == SkillStage.Windup:
                 {
@@ -1387,7 +1382,7 @@ namespace ChessFight.RagdollLab
             }
             // 10-26: the bishop on its rope (RagdollPawn.BishopLasso.cs).
             if (LassoPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR)) return;
-            if (piece == PieceKind.Knight && skillStage == SkillStage.Windup)
+            if (skillPiece == PieceKind.Knight && skillStage == SkillStage.Windup)
             {
                 // R138 (승규 님: "좀 더 나이트다! 라는 연출"): it rears up like a horse before it springs: leaning back, head up,
                 // the arms (its front legs) up in front pawing the air, then drops into the crouch.
@@ -1403,7 +1398,7 @@ namespace ChessFight.RagdollLab
                 footL = footR = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(22f, 0f, 0f), gather);
                 return;
             }
-            if (piece == PieceKind.Knight && skillStage == SkillStage.Active && !OnFloor)
+            if (skillPiece == PieceKind.Knight && skillStage == SkillStage.Active && !OnFloor)
             {
                 // R138: a jumping horse. Going up the front legs fold under the chest and it looks up; over the top it
                 // stretches out level; coming down the front legs reach for the ground and it looks at where it lands.
@@ -1443,7 +1438,7 @@ namespace ChessFight.RagdollLab
                 footL = footR = Quaternion.Euler(14f, 0f, 0f);
                 return;
             }
-            if (piece == PieceKind.Rook && (aimLocked || chainPhase != ChainPhase.None) && skillStage != SkillStage.None)
+            if (skillPiece == PieceKind.Rook && (aimLocked || chainPhase != ChainPhase.None) && skillStage != SkillStage.None)
             {
                 // R153: the throw: the right arm swung out along the chain's line, the left braced back, leaning back
                 // against the pull while it hauls in.

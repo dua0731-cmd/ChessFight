@@ -32,8 +32,6 @@ namespace ChessFight.RagdollLab
         [Tooltip("R153 (승규 님 10-22: \"스킬넷에서 룩 시험 해볼 수 있는 환경 만들어줘\"): 룩 시험장으로 가기 / 시험장의 높은 단 위로")]
         public KeyCode rookGroundKey = KeyCode.H;
         public KeyCode rookLedgeKey = KeyCode.J;
-        [Tooltip("폰 러쉬 2.0 스킬 기획안 바꾸기 (JY-skill-lab): 1-가 지금 스킬 ↔ 1-나 (앙파상 · 포크 · 핀 · 캐슬링 · 체크!)")]
-        public KeyCode planKey = KeyCode.G;
         [Tooltip("앙파상 시험 (JY-skill-lab): 적 더미 하나가 뒤에서 내 옆을 달려 지나간다")]
         public KeyCode passRunKey = KeyCode.M;
 
@@ -95,12 +93,19 @@ namespace ChessFight.RagdollLab
             if (sfx == null) sfx = gameObject.AddComponent<PawnRushSkillSfx>();
             // R153: a teammate rook's chain handle held out to the piece played here ("우클릭: 잡기").
             if (GetComponent<PawnRushChainPrompt>() == null) gameObject.AddComponent<PawnRushChainPrompt>();
-            // JY-skill-lab: the 2.0 skill plan prototypes' lines and rings, and the plan last tried here.
+            // JY-skill-lab: the new skills' lines and rings, and the developers' skill window (K) with the loadout this PC
+            // last had (an automated run keeps the game's own: the skills as they are).
             var marks = GetComponent<PawnRushPlanMarks>();
             if (marks == null) marks = gameObject.AddComponent<PawnRushPlanMarks>();
             marks.Viewer = () => Me;
-            skills.plan = PlayerPrefs.GetInt(PlanPref, PawnRushSkillParams.PlanNow) == PawnRushSkillParams.PlanChessMoves
-                ? PawnRushSkillParams.PlanChessMoves : PawnRushSkillParams.PlanNow;
+            if (game == null || !game.AutoTest) PawnRushSkillWindow.LoadSaved(skills);
+            window = GetComponent<PawnRushSkillWindow>();
+            if (window == null) window = gameObject.AddComponent<PawnRushSkillWindow>();
+            window.Skills = skills;
+            window.CanEdit = () => !Online;
+            window.LockedNote = "온라인에서는 아직 못 바꿔요 (다음 단계에서 연결)";
+            window.KeyName = SlotKey;
+            window.Changed = OnLoadoutChanged;
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
@@ -136,8 +141,6 @@ namespace ChessFight.RagdollLab
             if (me == null || game.SuppressInput) return;
             if (Input.GetKeyDown(previousPieceKey)) StepPiece(me, -1);
             if (Input.GetKeyDown(nextPieceKey)) StepPiece(me, 1);
-            if (Input.GetKeyDown(planKey))
-                SetPlan(skills.plan == PawnRushSkillParams.PlanChessMoves ? PawnRushSkillParams.PlanNow : PawnRushSkillParams.PlanChessMoves);
             if (!Online && Input.GetKeyDown(clusterKey)) ClusterDummies(me);
             if (!Online && Input.GetKeyDown(summonEnemyKey)) Summon(me, false);
             if (!Online && Input.GetKeyDown(summonAllyKey)) Summon(me, true);
@@ -153,7 +156,8 @@ namespace ChessFight.RagdollLab
             if (game == null) return;
             Vector2 mouse = Input.mousePosition;
             mouse.y = Screen.height - mouse.y;
-            bool over = Cursor.lockState != CursorLockMode.Locked && !game.PanelOpen && panelRect.Contains(mouse);
+            bool over = (Cursor.lockState != CursorLockMode.Locked && !game.PanelOpen && panelRect.Contains(mouse))
+                        || (window != null && window.Open);   // the skill window: the mouse is its own while it is open
             if (over)
             {
                 game.UiWantsCursor = true;
@@ -192,24 +196,47 @@ namespace ChessFight.RagdollLab
             Report($"앙파상 시험: {d.DisplayName}가 뒤에서 내 오른쪽을 달려 지나감 — 지나친 뒤 1초 안에 {skillKey} ({passRunKey}로 다시)");
         }
 
-        const string PlanPref = "ChessFight.PawnRushSkillPlan";
+        PawnRushSkillWindow window;
 
-        /// <summary>JY-skill-lab: the skill plan every piece here plays by (PawnRushSkillParams.plan). Online only the host
-        /// switches it (it runs the skills); the others learn it from the pieces' skill states.</summary>
-        void SetPlan(int plan)
+        /// <summary>The key of a slot in this scene: the bed's skill key, then the lab's two ability keys.</summary>
+        string SlotKey(int slot) => slot == 0 ? skillKey.ToString() : slot == 1 ? "E" : "Q";
+
+        /// <summary>The skill window changed the loadout: every skill under way and every cooldown starts over.</summary>
+        void OnLoadoutChanged()
         {
-            if (Online && !game.NetworkHost)
-            {
-                Report("스킬 기획안은 방장만 바꿀 수 있어요");
-                return;
-            }
-            skills.plan = plan;
-            PlayerPrefs.SetInt(PlanPref, plan);
             foreach (var pawn in RagdollPawn.All)
                 if (pawn != null && !pawn.NetworkPuppet) pawn.ResetSkill();
-            Report(plan == PawnRushSkillParams.PlanChessMoves
-                ? "스킬 기획안 1-나: 폰 앙파상 · 나이트 포크 · 비숍 핀 · 룩 캐슬링 · 퀸 체크!"
-                : "스킬 기획안 1-가: 지금 스킬");
+            Report("스킬 구성이 바뀜 — 쓰던 스킬과 쿨타임은 처음으로");
+        }
+
+        /// <summary>The names of the skills in a piece's slots.</summary>
+        static string SlotNames(RagdollPawn pawn)
+        {
+            if (pawn.Piece == PieceKind.King) return RagdollPawn.SkillName(PieceKind.King);
+            string names = "";
+            for (int k = 0; k < pawn.SlotCount; k++)
+            {
+                int id = pawn.SlotSkill(k);
+                if (id == 0) continue;
+                names += (names.Length > 0 ? " · " : "") + PawnRushSkillBook.Name(id);
+            }
+            return names.Length > 0 ? names : "스킬 없음";
+        }
+
+        /// <summary>The slots still cooling down, by their skills' names.</summary>
+        static string CooldownLine(RagdollPawn pawn)
+        {
+            if (pawn.Piece == PieceKind.King)
+                return pawn.SkillCooldown > 0f ? $"{RagdollPawn.SkillName(PieceKind.King)} {pawn.SkillCooldown:0.0}" : "";
+            string line = "";
+            for (int k = 0; k < pawn.SlotCount; k++)
+            {
+                int id = pawn.SlotSkill(k);
+                float cd = pawn.SlotCooldown(k);
+                if (id == 0 || cd <= 0f) continue;
+                line += (line.Length > 0 ? " · " : "") + $"{PawnRushSkillBook.Name(id)} {cd:0.0}";
+            }
+            return line;
         }
 
         void StepPiece(RagdollPawn pawn, int step)
@@ -231,7 +258,7 @@ namespace ChessFight.RagdollLab
             }
             pawn.SetPiece(kind);
             pawn.ResetSkill();
-            Report($"{pawn.DisplayName} → {ChessPieces.Name(kind)} ({pawn.SkillNameNow})");
+            Report($"{pawn.DisplayName} → {ChessPieces.Name(kind)} ({SlotNames(pawn)})");
             if (kind == PieceKind.Rook) ClusterDummies(pawn);
         }
 
@@ -443,27 +470,9 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- the panel
 
-        static string HowTo(PieceKind kind) => kind switch
-        {
-            PieceKind.Pawn => "F = 1.5 m 걸음 (방향키 방향) · 0.1~0.8초 안에 F 한 번 더 = 두 번째 걸음\n두 번째 걸음은 앞쪽 ±60°·3 m 안의 넘어진 팀원(청록 고리)이나 서 있는 적(주황 고리)에게 휘어 들어감 · 대상 없으면 안 나감\n곧게 부딪히면 밀침, 대각선이면 넘어뜨림 · 넘어진 팀원은 부축 (기상 보호 1.5초)",
-            PieceKind.Queen => "F = 0.35초 예고(금빛 원이 조여들고 작은 불빛이 피어오름) 뒤 반경 3 m 충격파\n1.5 m 안은 넘어지고 바깥은 밀림 · 후딜 0.45초",
-            PieceKind.Rook => "F = 조준: 8 m 흰 선이 마우스 방향을 따라감 (걸을 수 있음, Shift 질주 X, 위아래 ±45°)\n좌클릭 = 사슬 던지기 · 우클릭/F = 취소 · 던진 순간부터 끝날 때까지 룩은 제자리\n적: 자동으로 걸려 룩 앞 1.5 m로 끌려오고 휘청 · 팀원: 2초 안에 우클릭으로 잡으면 룩 옆으로\n룩이 맞거나 휘청하면 사슬이 끊김 · 쿨 8초 (팀원이 안 잡으면 4초)",
-            PieceKind.Bishop => "F = 조준 (7 m 안, 조준 근처 적에게 자동) · 좌클릭 = 두 손에서 밧줄 2가닥이 X자로 날아가 적 허리에 감김 · 우클릭/F = 취소\n잡고 있는 동안 (6초): WASD로 걸어 다니며 끌고 다니기 (질주 X) · 휠↑ = 느슨하게 (길게) · 휠↓ = 팽팽하게 (짧게), 1.5~3.5 m\n늘어난 만큼 끌려옴 (적이 버티면 줄다리기) · 3 m 넘게 늘어나면 끊어짐 · F/우클릭 = 놓기 (팽팽하면 비숍 쪽으로 튕겨 옴)\n비숍이 맞거나 휘청하면 밧줄을 놓침",
-            PieceKind.Knight => "앞쪽 ±60°·1.5~5 m 안의 서 있는 적 머리 위에 빨간 고리가 뜨면 F = 그 적에게 도약 (대상 없으면 F 무시)\n체공 0.8~1.14초 동안 적을 따라감 (초당 3 m) · 머리 찍기 = 넘어뜨림, 옆에 착지\n포크: 착지 1.5 m 안 다른 적 휘청 0.4초 · 빗나가면 휘청 없음 · 점프 중에도 대상 있으면 가능 · 쿨 7초",
-            PieceKind.King => "F = 같은 구간 팀원 목록 → 좌클릭으로 2명까지 고르기 → F로 부르기 · 우클릭 = 닫기\n불린 팀원이 3초 안에 자기 F → 12 cm 떠서 0.6초 만에 킹 뒤 칸으로 (벽 통과 · 오는 동안 무적)\n부르는 동안 킹이 맞으면 출발 안 한 팀원 취소 · 더미는 0.8초 뒤 스스로 대답",
-            _ => "",
-        };
-
-        /// <summary>JY-skill-lab: how plan 1-나's skills are used (RagdollPawn.SkillPlans.cs).</summary>
-        static string PlanHowTo(PieceKind kind) => kind switch
-        {
-            PieceKind.Pawn => "앙파상: 적이 내 옆 2 m 안을 나보다 빠르게 스쳐 지나가면 그 적 발밑에 주황 고리가 1초 뜸 → 그동안 F = 뛰어들어 발 걸기\n걸린 적은 달리던 쪽으로 넘어져 미끄러지고, 폰은 그 자리에 섬 · 스쳐 지나간 적이 없으면 F 무시 · 쿨 4초\n더미는 서 있기만 해서 혼자서는 시험이 어려움: 나를 지나쳐 가는 사람이 있어야 함",
-            PieceKind.Knight => "포크: F = 0.2초 준비 뒤 앞으로 3 m 도약, 착지하며 앞 좌우 두 자리(주황 고리)를 뒷발로 참\n두 자리에 적이 한꺼번에 있으면 둘 다 넘어지며 바깥으로 날아감 · 한 자리만이면 밀기만 · 쿨 7초\n시험: V로 더미 4명을 앞에 뭉쳐 세우고 고리 두 개에 걸치게",
-            PieceKind.Bishop => "핀: F = 조준 (보라 선, 9 m) · 좌클릭 = 쏘기 · 우클릭/F = 취소\n처음 맞은 적 뒤 4 m 안, 같은 줄 위에 다른 적이나 벽 · 기둥이 있으면 둘이 2 m 줄로 5초 묶임 (보라 줄)\n뒤에 아무것도 없으면 맞은 적만 0.5초 휘청 · 쿨 8초\n시험: 적 둘이 한 줄로 서게 옆에서 조준하거나, 벽 앞에 선 적에게",
-            PieceKind.Rook => "캐슬링: F = 조준 (팀원을 보면 청록 선) · 좌클릭 = 제안 · 우클릭/F = 취소\n팀원이 2초 안에 자기 스킬 키로 받으면 둘이 포물선으로 날아 자리를 바꿈 (더미 팀원은 0.6초 뒤 스스로 받음)\n안 받으면 쿨 4초 · 바꾸면 쿨 12초\n시험: 아군 소환(N) · 변형(적과도 바꾸기)은 Inspector Skills → Castle Enemies",
-            PieceKind.Queen => "체크!: F = 조준 (적을 보면 빨간 고리) · 좌클릭 = 체크! · 우클릭/F = 취소\n그 적이 서 있던 자리가 빨간 칸이 됨 → 1.5초 안에 칸 밖으로 못 나가면 넘어지며 날아감\n막기: 퀸과 그 적 사이에 선 적 팀 기물이 대신 맞음 · 잡기: 그 전에 퀸이 맞으면 취소 · 쿨 8초",
-            _ => "",
-        };
+        // How each skill is used is in the skill book now (PawnRushSkillBook): the panel shows the lines of the skills in
+        // the piece's slots. The king has no slots (out of Pawn Rush since R153); its call's line stays here.
+        const string KingHowTo = "F = 같은 구간 팀원 목록 → 좌클릭으로 2명까지 고르기 → F로 부르기 · 우클릭 = 닫기\n불린 팀원이 3초 안에 자기 F → 12 cm 떠서 0.6초 만에 킹 뒤 칸으로 (벽 통과 · 오는 동안 무적)\n부르는 동안 킹이 맞으면 출발 안 한 팀원 취소 · 더미는 0.8초 뒤 스스로 대답";
 
         static string PlanPhaseName(PlanPhase phase) => phase switch
         {
@@ -479,29 +488,72 @@ namespace ChessFight.RagdollLab
         /// draining it from the top otherwise; under the name, what it is doing, the cooldown left, or how to use it.</summary>
         void KeyCard(RagdollPawn p1)
         {
-            if (p1.PlanB)
+            if (p1.Piece == PieceKind.King)
             {
-                // JY-skill-lab: plan 1-나's card (the pawn's key lights only with an enemy that has just brushed past).
-                bool busy = p1.PlanBusy, can = !busy && p1.SkillCooldown <= 0f;
-                var passing = p1.PassTarget;
-                if (p1.Piece == PieceKind.Pawn && passing == null && !busy) can = false;
-                string use = p1.Piece == PieceKind.Pawn ? (passing != null ? $"{skillKey} → {passing.DisplayName}" : "스쳐 지나간 적 없음")
-                           : p1.Piece == PieceKind.Knight ? $"{skillKey} 사용"
-                           : $"{skillKey} 조준 → 좌클릭";
-                PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), p1.SkillNameNow,
-                    SkillKeyCard.Line(busy ? StageName(p1) : null, p1.SkillCooldown, use), p1.Piece,
-                    can || busy, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+                // The king has no slots: its call's card, as it was.
+                bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
+                PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
+                    SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, $"{skillKey} 사용"), p1.Piece,
+                    ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
                 return;
             }
-            bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
-            // R153: the knight's key lights only with an enemy to leap at.
-            if (p1.Piece == PieceKind.Knight && p1.KnightMarked == null && !running) ready = false;
-            string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭"
-                       : p1.Piece == PieceKind.Knight ? (p1.KnightMarked != null ? $"{skillKey} → {p1.KnightMarked.DisplayName}" : "대상 없음")
-                       : $"{skillKey} 사용";
-            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
-                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), p1.Piece,
-                ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+            SlotCards(p1, SlotKey, "좌클릭", true, null, null);
+        }
+
+        /// <summary>JY-skill-lab: the key cards at the bottom right, one for each of the piece's slots that holds a skill,
+        /// the first lowest (with one skill, the card as it always was). A card is lit while its skill can be used or is
+        /// under way; the en passant only with an enemy that has just brushed past. <paramref name="lab"/>: the test
+        /// bed's wording (who the key would go to by name, and the knight's key lit only with an enemy to leap at, R153);
+        /// the course's cards say what they said.</summary>
+        public static void SlotCards(RagdollPawn me, System.Func<int, string> keyName, string click, bool lab, string firstName, string firstExtra)
+        {
+            int row = 0;
+            for (int k = 0; k < me.SlotCount; k++)
+            {
+                int id = me.SlotSkill(k);
+                if (id == 0) continue;
+                bool running = me.ActiveSlot == k;
+                float cd = me.SlotCooldown(k), total = me.SlotCooldownTotal(k);
+                bool can = !me.SkillRunning && cd <= 0f;
+                string key = keyName != null ? keyName(k) : k == 0 ? "F" : k == 1 ? "E" : "Q";
+                string use;
+                switch (id)
+                {
+                    case PawnRushSkillIds.EnPassant:
+                    {
+                        var passing = me.PassTarget;
+                        if (passing == null && !running) can = false;
+                        use = lab ? (passing != null ? $"{key} → {passing.DisplayName}" : "스쳐 지나간 적 없음")
+                            : passing != null ? $"{key} 발 걸기" : "스쳐 지나가는 적에게 " + key;
+                        break;
+                    }
+                    case PawnRushSkillIds.TurnLeap:
+                    {
+                        var marked = me.KnightMarked;
+                        if (lab && marked == null && !running) can = false;
+                        use = !lab ? $"{key} 사용" : marked != null ? $"{key} → {marked.DisplayName}" : "대상 없음";
+                        break;
+                    }
+                    case PawnRushSkillIds.TwoSteps:
+                    case PawnRushSkillIds.RingShove:
+                    case PawnRushSkillIds.Fork:
+                        use = $"{key} 사용";
+                        break;
+                    default:
+                        use = $"{key} 조준 → {click}";
+                        break;
+                }
+                string name = PawnRushSkillBook.Name(id);
+                if (row == 0)
+                {
+                    if (!string.IsNullOrEmpty(firstName)) name = $"{firstName} · {name}";
+                    if (!string.IsNullOrEmpty(firstExtra)) use += firstExtra;
+                }
+                PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(row), key, name,
+                    SkillKeyCard.Line(running ? StageName(me) : null, cd, use), me.Piece,
+                    can || running, total > 0f ? Mathf.Clamp01(cd / total) : 0f);
+                row++;
+            }
         }
 
         public static string StageName(RagdollPawn pawn)
@@ -568,16 +620,33 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(label, p1.Piece == kind ? selected : button, GUILayout.Height(26f))) SetPiece(p1, kind);
             }
             GUILayout.EndHorizontal();
-            // JY-skill-lab: the 2.0 skill plan every piece here plays by.
+            // JY-skill-lab: the developers' skill window, and the skills in this piece's slots.
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"기획안 ({planKey})", small, GUILayout.Width(76f));
-            if (GUILayout.Button("1-가 지금 스킬", !p1.PlanB ? selected : button, GUILayout.Height(24f))) SetPlan(PawnRushSkillParams.PlanNow);
-            if (GUILayout.Button("1-나 체스 수", p1.PlanB ? selected : button, GUILayout.Height(24f))) SetPlan(PawnRushSkillParams.PlanChessMoves);
+            if (window != null && GUILayout.Button(window.Open ? $"스킬 창 닫기 ({window.toggleKey})" : $"스킬 창 열기 ({window.toggleKey})", window.Open ? selected : button, GUILayout.Height(24f), GUILayout.Width(150f)))
+                window.Toggle();
+            GUILayout.Label($"  방식 {skills.loadout.system}안" + (skills.loadout.system == PawnRushLoadout.Grow ? $" · 단계 {p1.SkillStageLevel}" : ""), small);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(4f);
-            GUILayout.Label($"<b>{ChessPieces.Name(p1.Piece)} — {p1.SkillNameNow}</b>   (팀 {Teams.Name(p1.Team)}, 무게 {p1.Weight:0.#})", text);
-            GUILayout.Label(p1.PlanB ? PlanHowTo(p1.Piece) : HowTo(p1.Piece), small);
+            GUILayout.Label($"<b>{ChessPieces.Name(p1.Piece)}</b>   (팀 {Teams.Name(p1.Team)}, 무게 {p1.Weight:0.#})", text);
+            if (p1.Piece == PieceKind.King)
+            {
+                GUILayout.Label($"<b>{skillKey} · {RagdollPawn.SkillName(PieceKind.King)}</b>", text);
+                GUILayout.Label(KingHowTo, small);
+            }
+            else
+            {
+                bool anySkill = false;
+                for (int k = 0; k < p1.SlotCount; k++)
+                {
+                    int id = p1.SlotSkill(k);
+                    if (id == 0) continue;
+                    anySkill = true;
+                    GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + (p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : ""), text);
+                    GUILayout.Label(PawnRushSkillBook.How(id), small);
+                }
+                if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬 창({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
+            }
 
             GUILayout.Space(2f);
             GUILayout.Label($"단계: <b>{StageName(p1)}</b>" + (p1.PlanBusy ? $"  {p1.PlanTime:0.00}초" : p1.SkillStage != SkillStage.None ? $"  {p1.SkillStageTime:0.00}초" : ""), text);
@@ -588,7 +657,9 @@ namespace ChessFight.RagdollLab
             string extra = "";
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
-            GUILayout.Label("E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
+            GUILayout.Label(skills.loadout.system == PawnRushLoadout.Many
+                ? "3안: 스킬을 넣은 둘째 · 셋째 칸은 E · Q가 스킬 키 (빈 칸이면 랩의 원래 기능)"
+                : "E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
             if (fx != null)
             {
                 GUILayout.BeginHorizontal();
@@ -635,7 +706,7 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button($"룩 시험장 ({rookGroundKey})", button)) RookGround(p1, false);
             if (GUILayout.Button($"단 위로 ({rookLedgeKey})", button)) RookGround(p1, true);
             GUILayout.EndHorizontal();
-            if (p1.PlanB && GUILayout.Button($"앙파상 시험: 적이 내 옆을 달려 지나감 ({passRunKey})", button)) RunPast(p1);
+            if (p1.HasSkill(PawnRushSkillIds.EnPassant) && GUILayout.Button($"앙파상 시험: 적이 내 옆을 달려 지나감 ({passRunKey})", button)) RunPast(p1);
             if (p1.Piece == PieceKind.King)
             {
                 // R146: the king's call needs teammates (and, to see the rule, two sections).
@@ -677,8 +748,7 @@ namespace ChessFight.RagdollLab
                 if (sp.z <= 0f) continue;
                 string line;
                 if (pawn == Me)
-                    line = pawn.SkillStage != SkillStage.None || pawn.PlanBusy ? StageName(pawn)
-                        : pawn.SkillCooldown > 0f ? $"{pawn.SkillNameNow} {pawn.SkillCooldown:0.0}" : "";
+                    line = pawn.SkillStage != SkillStage.None || pawn.PlanBusy ? StageName(pawn) : CooldownLine(pawn);
                 else
                 {
                     line = pawn.SkillBound ? "묶임" : pawn.State == PawnState.Ragdoll ? "넘어짐" : pawn.Staggered ? "휘청" : pawn.GetUpGuardLeft > 0f ? "기상 보호" : "";

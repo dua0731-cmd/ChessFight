@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -201,13 +202,12 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- Pawn Rush 2.0 skill plans (JY-skill-lab, 2026-11-19)
 
-        /// <summary>The skill plans the room's manager switches between (PawnRushRules.Skills): the game as it is, and
-        /// plan 1-나 of Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md.</summary>
-        public const int PlanNow = 0, PlanChessMoves = 1;
-
-        [Header("스킬 기획안 (폰 러쉬 2.0 시험)")]
-        [Tooltip("0 = 1-가 지금 스킬 · 1 = 1-나 (폰 앙파상 · 나이트 포크 · 비숍 핀 · 룩 캐슬링 · 퀸 체크!). 프로토타입: 판정과 물리만, 표시는 선과 고리")]
-        public int plan = PlanNow;
+        [Header("스킬 구성 (개발자용 스킬 창, K)")]
+        [Tooltip("기물마다 칸에 들어 있는 스킬과 스킬 방식 (1 = 칸 하나 · 2 = 하나가 강해짐 · 3 = 칸 셋). 스킬 창(K)에서 바꾼다")]
+        public PawnRushLoadout loadout = PawnRushLoadout.Preset(0);
+        [Tooltip("2안(하나가 강해짐) 시험: 단계 1 · 2 · 3에서 쿨타임에 곱하는 값, 스킬이 미는 힘에 곱하는 값. 임시 값이다 (스킬마다 고유한 강화는 아직 없다)")]
+        public float[] stageCooldown = { 1f, 0.75f, 0.55f };
+        public float[] stagePower = { 1f, 1.25f, 1.5f };
 
         [Header("1-나 폰 — 앙파상 (지나치는 놈 발 걸기)")]
         [Tooltip("적이 이 거리 안을 스쳐 지나가면 (m), 서로 지나치는 빠르기가 이 이상일 때 (m/s) 걸 수 있다")]

@@ -75,7 +75,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn RookOfferingMe()
         {
             foreach (var p in All)
-                if (p != null && p != this && p.piece == PieceKind.Rook && p.chainPhase == ChainPhase.Offer && p.chainOn == this) return p;
+                if (p != null && p != this && p.skillPiece == PieceKind.Rook && p.chainPhase == ChainPhase.Offer && p.chainOn == this) return p;
             return null;
         }
 
