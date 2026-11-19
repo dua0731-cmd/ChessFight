@@ -228,7 +228,7 @@ namespace ChessFight.PawnRush.Editor
             int beams = section.GetComponentsInChildren<FocusBeam>(true).Length;
             var flares = section.GetComponentsInChildren<SolarFlare>(true);
             Check(checkpoints == RoyalObservatoryBuilder.Checkpoints, "checkpoints: " + checkpoints);
-            Check(petals == 20 && showers == 3 && comets == 1 && leaves == 8 && beams == 3 && flares.Length == 1,
+            Check(petals == 20 && showers == 3 && comets == 1 && leaves == 8 && beams == 2 && flares.Length == 1,
                   $"devices: {petals} petals (four variable stars), {showers} meteor showers, {comets} comet, {leaves} iris leaves (four gates), {beams} focus beams, {flares.Length} solar flare");
             Check(flares.Length == 1 && flares[0].PlanetCount == 7, "the flare's planets: " + (flares.Length == 1 ? flares[0].PlanetCount : 0));
             int turning = 0;
@@ -300,6 +300,8 @@ namespace ChessFight.PawnRush.Editor
             ranges[key] = ranges.TryGetValue(key, out var r) ? new Vector2(Mathf.Min(r.x, value), Mathf.Max(r.y, value)) : new Vector2(value, value);
         }
 
+        static readonly string[] CometStars = { "Dipper star 4", "Dipper star 7" };
+
         static void Sample()
         {
             if (section == null) return;
@@ -307,7 +309,19 @@ namespace ChessFight.PawnRush.Editor
             foreach (var petal in section.GetComponentsInChildren<StarPetal>(true))
                 Range("petal " + petal.name, Vector3.Angle(petal.transform.up, up));
             foreach (var leaf in section.GetComponentsInChildren<IrisLeaf>(true)) Slide("leaf " + leaf.name, leaf.transform);
-            foreach (var comet in section.GetComponentsInChildren<CometFerry>(true)) Slide("comet", comet.transform);
+            foreach (var comet in section.GetComponentsInChildren<CometFerry>(true))
+            {
+                Slide("comet", comet.transform);
+                // R722: how near its middle comes to the two stars it shuttles between.
+                foreach (string star in CometStars)
+                {
+                    var deck = Named(star);
+                    if (deck == null) continue;
+                    var offset = Local(comet.transform.position) - Local(deck.position);
+                    offset.y = 0f;
+                    Range("comet from " + star, offset.magnitude);
+                }
+            }
             foreach (var beam in section.GetComponentsInChildren<FocusBeam>(true))
             {
                 var spot = beam.transform.Find("Hot spot");
@@ -397,13 +411,37 @@ namespace ChessFight.PawnRush.Editor
             Check(leaves == 8 && closed == 8, $"the eight iris leaves each slid to the deck's middle and back ({closed} of {leaves} went 2.58 m)");
 
             Has("comet", out var comet);
-            Check(comet.y > 4.7f && comet.y < 5.2f, $"the comet crossed between its docks: {comet.y:0.00} m");
+            Check(comet.y > 3.2f && comet.y < 3.6f, $"the comet crossed between its docks: {comet.y:0.00} m");
+            // R722: the short way is the hard one - the comet docks a jump short of either star.
+            {
+                var ferries = section.GetComponentsInChildren<CometFerry>(true);
+                var deck = ferries.Length == 1 ? ferries[0].transform.Find("Comet deck") : null;
+                float half = deck != null ? deck.lossyScale.x * .5f : 0f;
+                bool gapsOk = deck != null;
+                string say = "";
+                foreach (string star in CometStars)
+                {
+                    var platform = Named(star);
+                    if (platform == null || !Has("comet from " + star, out var from)) { gapsOk = false; continue; }
+                    float gap = from.x - platform.lossyScale.x * .5f - half;
+                    say += $" {star} {gap:0.00} m";
+                    gapsOk &= gap > 1.4f && gap < 1.8f;
+                }
+                Check(gapsOk, $"the comet ({half * 2f:0.0} m across) docks a jump short of each star:{say}");
+            }
+            // R722: a variable star's core is only a hub - a folded star is not hopped across by it.
+            {
+                var hub = Named("Dipper star 2 core");
+                var line = Named("Dipper line 1-2");
+                Check(hub != null && hub.lossyScale.x < .75f && line != null,
+                      "a variable star's hub is " + (hub != null ? hub.lossyScale.x.ToString("0.00") : "-") + " m across");
+            }
 
             foreach (var beam in section.GetComponentsInChildren<FocusBeam>(true))
             {
                 Has("beam " + beam.name + " across", out var across);
                 Has("beam " + beam.name + " along", out var along);
-                Check(across.x < -1.4f && across.y > 1.4f && along.x < -1.1f && along.y > 1.1f,
+                Check(across.x < -1.1f && across.y > 1.1f && along.x < -1f && along.y > 1f,
                       $"{beam.name}: its spot went {across.x:0.0} .. {across.y:0.0} m across the deck and {along.x:0.0} .. {along.y:0.0} m along it");
             }
 
@@ -456,7 +494,11 @@ namespace ChessFight.PawnRush.Editor
             Capture("01_from_the_tunnel", new Vector3(1f, 2.6f, 11f), new Vector3(-12f, 4f, 52f), view, 72f, false, 1600, 900);
             Capture("02_overview", new Vector3(30f, 40f, 30f), new Vector3(-4f, 5f, 68f), view, 64f, false, 1600, 900);
             Capture("03_dipper_handle", new Vector3(5f, 10f, 20f), new Vector3(-19f, 1f, 35f), view, 60f, false, 1600, 900);
+            // R722: a variable star's hub and petals from near (star 2).
+            Capture("03b_variable_star", new Vector3(-3f, 9f, 19f), new Vector3(-10f, .8f, 26f), view, 50f, false, 1600, 900);
             Capture("04_dipper_bowl", new Vector3(-18f, 15f, 36f), new Vector3(-33f, 2f, 55f), view, 60f, false, 1600, 900);
+            // R722: the comet between star 4 (below) and star 7 (above), straight down - the two jumps.
+            Capture("04b_comet_from_above", new Vector3(-26f, 26f, 51.5f), new Vector3(-26f, 2.8f, 51.5f), Vector3.forward, 50f, false, 1200, 1200);
             Capture("05_west_gate", new Vector3(-31f, 9f, 55f), new Vector3(-8f, 7f, 64f), view, 60f, false, 1600, 900);
             Capture("06_inside_the_globe", new Vector3(-12f, 6.4f, 62f), new Vector3(6f, 10.5f, 65f), view, 75f, false, 1600, 900);
             Capture("07_globe_floor", new Vector3(-9f, 30f, 44f), new Vector3(1f, 8f, 64f), view, 60f, false, 1600, 900);

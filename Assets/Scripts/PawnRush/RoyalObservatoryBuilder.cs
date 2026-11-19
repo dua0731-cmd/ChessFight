@@ -64,9 +64,16 @@ namespace ChessFight.PawnRush
         static readonly int[] VariableStars = { 1, 2, 4, 5 };
         // R721: the core is 2 m across (R720's was 3.5 m, a place to stand out the whole cycle) and the cycle 4.5 s
         // (was 6): level 1.5 s, warning 0.6 s, the petals 0.18 s apart and 0.4 s each, up in 0.75 s.
-        const float CoreRadius = 1f, PetalAngle = 84f;
-        const float PetalLevel = 1.5f, PetalWarn = .6f, PetalApart = .18f, PetalFold = .4f, PetalRise = .75f, PetalCycle = 4.5f;
-        const float CometRadius = 2.2f;
+        // R722 (the user after running R721: "땅이 접혀도 점프로 그냥 넘어갈 수 있어. 점프로는 못넘어가게 해줘" - a
+        // 2.15 m hop to the core and another off it crossed a folded star): the core is a hub 0.7 m across, nothing
+        // to hop by - folded, the star is a 6.3 m hole from line to line, twice a sprint's jump. With no core to stop
+        // on, the petals lie level longer: 2.4 s (was 1.5), the cycle 5.4 s.
+        const float CoreRadius = .35f, PetalAngle = 84f;
+        const float PetalLevel = 2.4f, PetalWarn = .6f, PetalApart = .18f, PetalFold = .4f, PetalRise = .75f, PetalCycle = 5.4f;
+        // R722 (the user: "빠른 길이 더 쉬워. 난이도를 바꿔줘" - riding the comet across the bowl was easier than the
+        // long way round it): the short way is the hard one now. The comet is 3 m across (was 4.4) and docks
+        // CometGap short of either star - a jump on and a jump off, over the fall.
+        const float CometRadius = 1.5f, CometGap = 1.6f;
 
         // 2: the great globe. Its floor is the plane through the two gates: 17 degrees, west low.
         static readonly Vector3 Globe = new Vector3(0f, 10f, 64f);
@@ -107,12 +114,16 @@ namespace ChessFight.PawnRush
         static readonly Vector3 DeckFoot = new Vector3(9f, StageTop, 93f), DeckHead = new Vector3(9f, ExitTop, 118f);
         const float DeckHalf = 2.5f, TubeRadius = 3.7f;
         // Along the deck, 0 its foot .. 1 its head: the tube's seven rings, four of them irises; the three beams.
-        // (R721: four irises and three beams - R720 had three and two.)
+        // (R721: four irises and three beams - R720 had three and two. R722: four and two.)
         static readonly float[] TubeRings = { .04f, .2f, .4f, .5f, .6f, .8f, .96f };
         static readonly float[] Irises = { .2f, .4f, .6f, .8f };
-        static readonly float[] Beams = { .3f, .5f, .7f };
+        // R722: two beams (R721's three left no gap between gates to wait in): the stretch between the second and
+        // third gates is free of them.
+        static readonly float[] Beams = { .3f, .7f };
         // R721: an iris's cycle is 3.6 s (was 5): open 1.4, warning 0.6, closing 0.35, shut 0.9, opening 0.35.
-        const float IrisOpen = 1.4f, IrisWarn = .6f, IrisClose = .35f, IrisShut = .9f, IrisReopen = .35f, IrisStagger = 1.2f;
+        // R722 (the user on R721's tube: "여긴 너무 어려운 것 같아"): 4.4 s - open 2.0, warning 0.7, closing 0.4, shut
+        // 0.9, opening 0.4 - and each gate 1.8 s after the one below it (was 1.2), a run's pace up the deck.
+        const float IrisOpen = 2f, IrisWarn = .7f, IrisClose = .4f, IrisShut = .9f, IrisReopen = .4f, IrisStagger = 1.8f;
         const float LeafClear = .1f, LeafHeight = 2.4f;
 
         // The hall. Graybox: its wall is drawn at 50 m (the plan's 46), nothing collided with - a camera following a
@@ -395,8 +406,10 @@ namespace ChessFight.PawnRush
 
             // Meteors (R721: on the handle's lines too, and nearly twice as thick on the bowl's): the handle's three
             // lines one about every 1.2 s, warned 0.9 s; the bowl's three one about every 0.75 s, warned 0.8 s.
+            // R722: the bowl's as calm as the handle's (one about every 1.3 s, warned 0.9 s) - the long way round
+            // the bowl is the safe one, the comet the risk.
             Shower(b, "Device_MeteorShower Dipper handle", new[] { lines[0], lines[1], lines[2] }, 1.2f, 30, .9f);
-            Shower(b, "Device_MeteorShower Dipper bowl", new[] { lines[3], lines[4], lines[5] }, .75f, 31, .8f);
+            Shower(b, "Device_MeteorShower Dipper bowl", new[] { lines[3], lines[4], lines[5] }, 1.3f, 31, .9f);
             Comet(b);
 
             // The pointer: on from the bowl's last star to the globe's west gate (its threshold is the globe's).
@@ -414,12 +427,14 @@ namespace ChessFight.PawnRush
             b.Checkpoint(3, Dipper[6].at, Yaw(WestGate - Dipper[6].at), Dipper[6].radius * 2f);
         }
 
-        // A variable star: a core 2 m across that stays and five petals round it that fold down one after another and
-        // come up together (StarPetal). R721, after the user found it too easy: the core no longer holds a crowd, the
-        // cycle is 4.5 s, and the wave comes AT the runner - the petal on the way out goes first and the one on the
-        // way in last. So a runner either crosses the whole star while it is level (6.4 m in 2.1 s: a sprint) or
-        // stops on the core and leaves as the petals come up. With the petals down the core is 2.15 m from a line's
-        // end - more than a jump that has to be made may be, but none has to be made: the petals come back.
+        // A variable star: a hub that stays and five petals round it that fold down one after another and come up
+        // together (StarPetal). R721, after the user found it too easy: the wave comes AT the runner - the petal on
+        // the way out goes first and the one on the way in last.
+        // R722, after the user hopped across folded stars by their 2 m cores: the hub is 0.7 m across, only what the
+        // petals hinge on. A star is crossed while it is level - 6.3 m from line to line, 2.5 s at a run and 1.8 s
+        // at a sprint, of the 3 s before the petal on the way out starts down (2.4 s level, 0.6 s warned) - or
+        // waited for on the line before it. Folded there is nothing to cross by: the hub is 2.8 m from a line's end
+        // (a sprint's jump reaches about 3.1 m, onto 0.7 m) and nobody jumps 2.8 m from a standstill on it.
         static void VariableStar(CourseBuilder b, string name, Star s, Vector3 from, Vector3 to, float phaseSeconds)
         {
             var k = b.kit;
@@ -476,15 +491,18 @@ namespace ChessFight.PawnRush
             return points.ToArray();
         }
 
-        // The comet: a platform 4.4 m across shuttling the short way across the bowl, from star 4's rim to star 7's.
-        // R721: wait 1 s, cross 2.5 s, wait, back - 7 s (was 10). Graybox: it travels 4.9 m - the 17 m of the plan is
-        // from the one star's middle to the other's, and the two stars and the platform itself take the rest.
+        // The comet: a platform shuttling the short way across the bowl, between star 4 and star 7.
+        // R721: 4.4 m across, rim to rim, wait 1 s, cross 2.5 s, wait, back - 7 s (was 10).
+        // R722 - the short way is the hard way: 3 m across, docking CometGap (1.6 m) short of either star, wait
+        // 0.6 s, cross 1.6 s, wait, back - 4.4 s. A jump on from star 4's rim, a jump off onto star 7, each over
+        // the fall and each in the 0.6 s it stands still (or onto it moving). A miss is back at star 4. It travels
+        // 3.3 m - the 17 m of the plan is from the one star's middle to the other's.
         static void Comet(CourseBuilder b)
         {
             var k = b.kit;
             Star a = Dipper[3], c = Dipper[6];
             var flat = Flat(c.at - a.at).normalized;
-            Vector3 near = a.at + flat * (a.radius + CometRadius + .1f), far = c.at - flat * (c.radius + CometRadius + .1f);
+            Vector3 near = a.at + flat * (a.radius + CometRadius + CometGap), far = c.at - flat * (c.radius + CometRadius + CometGap);
             var comet = b.Group("Device_Comet");
             comet.localPosition = near;
             Under(b, comet, () =>
@@ -502,7 +520,7 @@ namespace ChessFight.PawnRush
                         b.Box("Tail " + (i + 1), V(-.7f + .2f * i, -1.3f, 1.2f + 1.6f * i), V(.7f - .2f * i, -1f, 2.6f + 1.6f * i), pale, false, false);
                 });
             });
-            comet.gameObject.AddComponent<CometFerry>().Configure(far - near, 1f, 2.5f, 0f);
+            comet.gameObject.AddComponent<CometFerry>().Configure(far - near, .6f, 1.6f, 0f);
             Bar(b, "Comet orbit line", a.at + flat * a.radius + Vector3.down * .8f, c.at - flat * c.radius + Vector3.down * .8f, .12f, .06f, k.rankGold);
         }
 
@@ -800,6 +818,11 @@ namespace ChessFight.PawnRush
         //   sprint (1.5 s a gate) rides it through all four, a run (2.1 s) through three
         //   three focus beams between them, at 0.3, 0.5 and 0.7: a hot spot 3 m across wandering over the deck
         //   between two irises - the place a runner waits
+        // R722 - eased, the user found R721's too hard:
+        //   the four gates 4.4 s a cycle and open 2 s of it, each 1.8 s after the one below - a run (2.1 s a gate)
+        //   rides the opening through all four, a sprint waits a moment at each
+        //   two beams, at 0.3 and 0.7, a spot 2.4 m across (half the deck is always clear of it) at R720's pace;
+        //   no beam between the second and third gates
         static void Telescope(CourseBuilder b, List<(Vector3, string)> route)
         {
             var k = b.kit;
@@ -821,7 +844,8 @@ namespace ChessFight.PawnRush
                 beam.localPosition = DeckPoint(Beams[i]);
                 beam.localRotation = facing;
                 // R721: a spot 3 m across (was 2.6), across the deck in 2.3 s and along it in 3.7 s (were 3.1 and 4.7).
-                beam.gameObject.AddComponent<FocusBeam>().Configure(1.5f, 1.6f, 1.3f, 2.3f, 3.7f, 1.3f * i,
+                // R722: 2.4 m across, 1.3 m either side of the deck's middle, back to 3.1 s and 4.7 s.
+                beam.gameObject.AddComponent<FocusBeam>().Configure(1.2f, 1.3f, 1.2f, 3.1f, 4.7f, 1.3f * i,
                     Quaternion.Inverse(facing) * (objective - DeckPoint(Beams[i])),
                     Arena.Glow(new Color(1f, .82f, .35f, .8f)), Arena.Glow(new Color(1f, .9f, .6f, .16f)));
             }
