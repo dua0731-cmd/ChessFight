@@ -422,7 +422,9 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.RightBracket)) slots.Vote(true);
             }
 
-            if (PanelOpen || UiWantsCursor || SkillListOpen || EmoteWheelOpen) Cursor.lockState = CursorLockMode.None;
+            // (JY-skill-lab: the developers' skill tree too - its own flag, as the skill list's: the network panel sets
+            // UiWantsCursor every frame, before this reads it.)
+            if (PanelOpen || UiWantsCursor || SkillListOpen || EmoteWheelOpen || PawnRushSkillWindow.AnyOpen) Cursor.lockState = CursorLockMode.None;
             else if (Cursor.lockState != CursorLockMode.Locked && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
             {
                 Cursor.lockState = CursorLockMode.Locked;
