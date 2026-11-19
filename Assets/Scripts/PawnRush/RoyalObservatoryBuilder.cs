@@ -14,10 +14,10 @@ namespace ChessFight.PawnRush
     // the middle:
     //
     //   0 entry tunnel (z 0..14)
-    //   1 the Big Dipper: seven star platforms on single pillars, joined by 3 m constellation lines, bending west
-    //     and north (y 0 -> 3.2). Stars 2, 3, 5 and 6 are variable stars (StarPetal), meteors fall on all six
-    //     lines (MeteorShower, thicker on the bowl's), a comet shuttles the short way from star 4 to star 7
-    //     (CometFerry)
+    //   1 the Big Dipper (y 0 -> 3.2), bending west and north. Its handle: four star platforms on single pillars
+    //     joined by 3 m constellation lines; stars 2 and 3 are variable stars (StarPetal) and meteors fall on the
+    //     lines (MeteorShower). Its bowl, from star 4 to star 7, is two ways (R723): the long one round the west on
+    //     three crossing orbits of turning platforms, the short one straight over a row of six spinning planets
     //   2 the great globe: in by the west gate (y 4), across the tilted floor inside the glass - the plane of its
     //     solar system - and out by the east gate (y 12). Two moons on the ecliptic ring cross the gates in turn;
     //     the sun lamp flares and only the planets' moving shadows shelter (SolarFlare)
@@ -60,8 +60,9 @@ namespace ChessFight.PawnRush
             new Star(-2f, 0f, 18f, 4f), new Star(-10f, .8f, 26f, 3.2f), new Star(-19f, 1.8f, 33f, 3.2f), new Star(-27f, 2.4f, 43f, 3.6f),
             new Star(-38f, 1.2f, 49f, 3.2f), new Star(-37f, 2.2f, 62f, 3.6f), new Star(-25f, 3.2f, 60f, 4f),
         };
-        // Which of them are variable stars (R721: four, each half a cycle from the one before it).
-        static readonly int[] VariableStars = { 1, 2, 4, 5 };
+        // Which of them are variable stars: the handle's two, half a cycle apart. (R721 to R722 the bowl's stars 5 and
+        // 6 were too; R723 took those two platforms away - the bowl's long way is the orbits now.)
+        static readonly int[] VariableStars = { 1, 2 };
         // R721: the core is 2 m across (R720's was 3.5 m, a place to stand out the whole cycle) and the cycle 4.5 s
         // (was 6): level 1.5 s, warning 0.6 s, the petals 0.18 s apart and 0.4 s each, up in 0.75 s.
         // R722 (the user after running R721: "땅이 접혀도 점프로 그냥 넘어갈 수 있어. 점프로는 못넘어가게 해줘" - a
@@ -70,10 +71,19 @@ namespace ChessFight.PawnRush
         // on, the petals lie level longer: 2.4 s (was 1.5), the cycle 5.4 s.
         const float CoreRadius = .35f, PetalAngle = 84f;
         const float PetalLevel = 2.4f, PetalWarn = .6f, PetalApart = .18f, PetalFold = .4f, PetalRise = .75f, PetalCycle = 5.4f;
-        // R722 (the user: "빠른 길이 더 쉬워. 난이도를 바꿔줘" - riding the comet across the bowl was easier than the
-        // long way round it): the short way is the hard one now. The comet is 3 m across (was 4.4) and docks
-        // CometGap short of either star - a jump on and a jump off, over the fall.
-        const float CometRadius = 1.5f, CometGap = 1.6f;
+        // The bowl (R723, the user after running R722: the short way was still the easier - "반대가 되어야 해" - and the
+        // long way's variable stars and meteors were the handle's over again).
+        // The long way: three orbits 7.2 m across, their middles 6 m apart so each crosses the next, three platforms
+        // 2.9 m across on each, 30 deg/s (1.9 m/s).
+        const float OrbitRadius = 3.6f, OrbitPlanet = 1.45f, OrbitDock = .15f, OrbitApart = 6f, OrbitSpeed = 30f;
+        // The short way: six planets in a row from star 4's rim to star 7's, each spinning about the way itself.
+        // How far along from star 4's rim, its radius, and how fast it carries a pawn on its crest sideways (m/s,
+        // + to the east; the game reads the ground's speed at a pawn's hips, HipHeight over its feet).
+        static readonly (float at, float radius, float carry)[] RowPlanets =
+        {
+            (1f, 1.7f, 1.6f), (2.5f, 2.1f, -1.9f), (4f, 1.8f, 1.6f), (5.5f, 2.3f, -2.1f), (7f, 1.9f, 1.8f), (8.5f, 1.6f, -1.6f),
+        };
+        const float HipHeight = .9f;
 
         // 2: the great globe. Its floor is the plane through the two gates: 17 degrees, west low.
         static readonly Vector3 Globe = new Vector3(0f, 10f, 64f);
@@ -383,7 +393,8 @@ namespace ChessFight.PawnRush
 
         static void BigDipper(CourseBuilder b, List<(Vector3, string)> route)
         {
-            for (int i = 0; i < Dipper.Length; i++)
+            // The handle's four stars and the bowl's last one. (Stars 5 and 6 are not platforms any more: R723.)
+            foreach (int i in new[] { 0, 1, 2, 3, 6 })
             {
                 string name = "Dipper star " + (i + 1);
                 int variable = Array.IndexOf(VariableStars, i);
@@ -391,26 +402,27 @@ namespace ChessFight.PawnRush
                 if (variable >= 0) VariableStar(b, name, Dipper[i], Dipper[i - 1].at, Dipper[i + 1].at, (variable & 1) * PetalCycle * .5f);
                 else StarPlatform(b, name, Dipper[i]);
             }
-            var lines = new MeteorShower.Line[Dipper.Length - 1];
-            for (int i = 0; i + 1 < Dipper.Length; i++)
+            // The handle: three lines, star 1 to star 4.
+            var lines = new MeteorShower.Line[3];
+            for (int i = 0; i < lines.Length; i++)
             {
                 Ends(Dipper[i].at, Reach(i), Dipper[i + 1].at, Reach(i + 1), out var from, out var to);
                 Line(b, "Dipper line " + (i + 1) + "-" + (i + 2), from, to);
                 lines[i] = new MeteorShower.Line(from, to);
-                string beat = i < 3 ? "1" : "2";
-                route.Add((Dipper[i].at, beat));
-                route.Add((from, beat));
-                route.Add((to, beat));
+                route.Add((Dipper[i].at, "1"));
+                route.Add((from, "1"));
+                route.Add((to, "1"));
             }
-            route.Add((Dipper[6].at, "2"));
+            route.Add((Dipper[3].at, "1"));
+            // Meteors on the handle's three lines, one about every 1.2 s, warned 0.9 s (R721). None on the bowl
+            // since R723: neither of its ways has a line.
+            Shower(b, "Device_MeteorShower Dipper handle", lines, 1.2f, 30, .9f);
 
-            // Meteors (R721: on the handle's lines too, and nearly twice as thick on the bowl's): the handle's three
-            // lines one about every 1.2 s, warned 0.9 s; the bowl's three one about every 0.75 s, warned 0.8 s.
-            // R722: the bowl's as calm as the handle's (one about every 1.3 s, warned 0.9 s) - the long way round
-            // the bowl is the safe one, the comet the risk.
-            Shower(b, "Device_MeteorShower Dipper handle", new[] { lines[0], lines[1], lines[2] }, 1.2f, 30, .9f);
-            Shower(b, "Device_MeteorShower Dipper bowl", new[] { lines[3], lines[4], lines[5] }, 1.3f, 31, .9f);
-            Comet(b);
+            // The bowl, star 4 to star 7: the long way and the short way (R723). The route measured is the short one -
+            // it is the one that always has something under it.
+            OrbitCrossing(b);
+            PlanetRow(b, route);
+            route.Add((Dipper[6].at, "2"));
 
             // The pointer: on from the bowl's last star to the globe's west gate (its threshold is the globe's).
             var toGate = Flat(WestGate - Dipper[6].at).normalized;
@@ -491,37 +503,110 @@ namespace ChessFight.PawnRush
             return points.ToArray();
         }
 
-        // The comet: a platform shuttling the short way across the bowl, between star 4 and star 7.
-        // R721: 4.4 m across, rim to rim, wait 1 s, cross 2.5 s, wait, back - 7 s (was 10).
-        // R722 - the short way is the hard way: 3 m across, docking CometGap (1.6 m) short of either star, wait
-        // 0.6 s, cross 1.6 s, wait, back - 4.4 s. A jump on from star 4's rim, a jump off onto star 7, each over
-        // the fall and each in the 0.6 s it stands still (or onto it moving). A miss is back at star 4. It travels
-        // 3.3 m - the 17 m of the plan is from the one star's middle to the other's.
-        static void Comet(CourseBuilder b)
+        // R723 - the bowl's long way, the easy one: planets going round, as the shadows go round the globe's floor.
+        // Three orbits in a chain round the west of the bowl, each crossing the next; on each, three round platforms
+        // a third of a turn apart, 1.9 m/s. A platform of the first orbit passes star 4's rim every 4 s (0.15 m
+        // off), one of the last passes star 7's. Neighbouring orbits turn against each other, so through the place
+        // where two cross their platforms run the same way, and they are set to take turns there like the teeth of
+        // a zip: one of this orbit, one of that, each coming within 0.1 m of the one before it and running beside it
+        // for about a second - the time to step across. The way: on at star 4, round to the crossing, across, round
+        // the second orbit's far side to the next crossing, across, round to star 7. About 490 degrees of riding,
+        // 16 s, against the 9.5 m straight over the planets.
+        // All three lie in one plane tilted 3 degrees, star 4's height (2.4) at its dock and star 7's (3.2) at its.
+        // Nothing falls on it and nothing folds: what there is to it is waiting for a platform and not stepping off
+        // into the gap.
+        static void OrbitCrossing(CourseBuilder b)
         {
             var k = b.kit;
-            Star a = Dipper[3], c = Dipper[6];
-            var flat = Flat(c.at - a.at).normalized;
-            Vector3 near = a.at + flat * (a.radius + CometRadius + CometGap), far = c.at - flat * (c.radius + CometRadius + CometGap);
-            var comet = b.Group("Device_Comet");
-            comet.localPosition = near;
-            Under(b, comet, () =>
+            Star s4 = Dipper[3], s7 = Dipper[6];
+            // Which way each star's dock lies, and where a platform's middle is as it passes: the star's rim, the
+            // gap, its own radius.
+            Vector3 out4 = new Vector3(-.92f, 0f, .39f).normalized, out7 = new Vector3(-.96f, 0f, -.28f).normalized;
+            Vector3 dock4 = s4.at + out4 * (s4.radius + OrbitDock + OrbitPlanet), dock7 = s7.at + out7 * (s7.radius + OrbitDock + OrbitPlanet);
+            var rise = Flat(dock7 - dock4);
+            float slope = (dock7.y - dock4.y) / rise.magnitude;
+            var uphill = rise.normalized;
+            var tilt = Quaternion.FromToRotation(Vector3.up, (Vector3.up - uphill * slope).normalized);
+            Func<Vector3, Vector3> onPlane = at => V(at.x, dock4.y + slope * Vector3.Dot(Flat(at - dock4), uphill), at.z);
+            Vector3 first = onPlane(dock4 + out4 * OrbitRadius), last = onPlane(dock7 + out7 * OrbitRadius);
+            var centres = new[] { first, onPlane(Touching(first, OrbitApart, last, OrbitApart, Vector3.left)), last };
+            float[] turn = { -1f, 1f, -1f };
+            float heading = 0f;
+            for (int i = 0; i < centres.Length; i++)
             {
-                b.Cylinder("Comet deck", V(0f, -.5f, 0f), CometRadius * 2f, .5f, k.boardLight).AddComponent<CourseFloor>();
-                b.Cylinder("Comet brass rim", V(0f, -.65f, 0f), CometRadius * 2f + .3f, .5f, k.rankGold, false);
-                b.Sphere("Comet head", V(0f, -1.1f, 0f), 1.8f, k.rankGold, false);
-                // Its tail streams away from the sun lamp, as a comet's does.
-                var tail = b.Group("Comet tail");
-                tail.localRotation = Quaternion.Euler(0f, Yaw(near - SunLamp), 0f);
-                var pale = k.glass != null ? k.glass : k.boardLight;
-                Under(b, tail, () =>
+                if (i > 0)
                 {
-                    for (int i = 0; i < 3; i++)
-                        b.Box("Tail " + (i + 1), V(-.7f + .2f * i, -1.3f, 1.2f + 1.6f * i), V(.7f - .2f * i, -1f, 2.6f + 1.6f * i), pale, false, false);
+                    // When a platform of the orbit before is at the crossing, the nearest of this one's is a sixth
+                    // of a turn short of it: the two orbits' platforms pass it by turns, 2 s apart.
+                    Vector3 before = centres[i - 1], crossing = Touching(before, OrbitRadius, centres[i], OrbitRadius, Vector3.forward);
+                    heading = Yaw(crossing - centres[i]) - turn[i] * 60f + Yaw(crossing - before) - heading;
+                }
+                var orbit = Mover(b, "Device_OrbitRing " + (i + 1), centres[i], MotionKind.Rotate, Vector3.up);
+                orbit.transform.localRotation = tilt * Quaternion.Euler(0f, heading, 0f);
+                orbit.degreesPerSecond = turn[i] * OrbitSpeed;
+                Under(b, orbit.transform, () =>
+                {
+                    for (int n = 0; n < 3; n++)
+                    {
+                        var at = Toward(n * 120f) * OrbitRadius;
+                        b.Cylinder("Planet deck " + (n + 1), at + Vector3.down * .4f, OrbitPlanet * 2f, .4f, k.boardDark).AddComponent<CourseFloor>();
+                        b.Cylinder("Planet brass rim " + (n + 1), at + Vector3.down * .55f, OrbitPlanet * 2f + .25f, .4f, k.rankGold, false);
+                        b.Sphere("Planet body " + (n + 1), at + Vector3.down * 1.05f, 2.2f, k.hazard, false);
+                        StarMark(b, "Planet mark " + (n + 1), at, OrbitPlanet * .7f);
+                        var arm = b.Group("Arm " + (n + 1));
+                        arm.localRotation = Quaternion.Euler(0f, n * 120f, 0f);
+                        Under(b, arm, () => b.Box("Rod", V(-.08f, -.92f, .6f), V(.08f, -.76f, OrbitRadius - .9f), k.rankGold, false, false));
+                    }
+                    b.Sphere("Orbit sun", V(0f, -.7f, 0f), 1.5f, k.rankGold, false);
                 });
-            });
-            comet.gameObject.AddComponent<CometFerry>().Configure(far - near, .6f, 1.6f, 0f);
-            Bar(b, "Comet orbit line", a.at + flat * a.radius + Vector3.down * .8f, c.at - flat * c.radius + Vector3.down * .8f, .12f, .06f, k.rankGold);
+                Hoop(b, "Orbit track " + (i + 1), centres[i] + Vector3.down * .5f, tilt, OrbitRadius, .12f, .06f, k.rankGold, 36);
+                Pillar(b, "Orbit pillar " + (i + 1), centres[i] + Vector3.down * 1.3f, .5f);
+            }
+        }
+
+        // R723 - the bowl's short way, the hard one: straight from star 4's rim to star 7's over the tops of six
+        // planets in a row, like walking a rolling log - each planet spins about the way itself, so its crest runs
+        // sideways under a pawn's feet, and each the other way from the one before it. They are 3.2 to 4.6 m
+        // across and 1.5 m apart, so they run into one another and the way over them is one ridge with a dip of
+        // 0.15 m between crests; a crest is level for no more than a metre either side before it falls away. A pawn
+        // is carried 1.6 to 2.1 m/s sideways (a run is 2.5), a metre or more in the 0.6 s a planet takes at a run -
+        // more than the crest is wide. Off the side is the fall, back to star 4, which is right there.
+        // A plank 2.2 m wide leads on from star 4's rim and off onto star 7's.
+        static void PlanetRow(CourseBuilder b, List<(Vector3, string)> route)
+        {
+            var k = b.kit;
+            Star s4 = Dipper[3], s7 = Dipper[6];
+            var flat = Flat(s7.at - s4.at).normalized;
+            Vector3 from = s4.at + flat * s4.radius, to = s7.at - flat * s7.radius;
+            float length = Flat(to - from).magnitude;
+            // The line of the crests rises with the way (0.8 m in 9.5); east of it is the way's right hand.
+            Vector3 along = (to - from).normalized, east = Vector3.Cross(Vector3.up, along).normalized, normal = Vector3.Cross(along, east);
+            var facing = Quaternion.LookRotation(along, normal);
+            Func<float, Vector3> crest = at => Vector3.LerpUnclamped(from, to, at / length);
+            route.Add((from, "2"));
+            for (int i = 0; i < RowPlanets.Length; i++)
+            {
+                var p = RowPlanets[i];
+                Vector3 top = crest(p.at), centre = top - normal * p.radius;
+                var planet = Mover(b, "Device_SpinPlanet " + (i + 1), centre, MotionKind.Rotate, Vector3.forward);
+                planet.transform.localRotation = facing;
+                // Turning forward-handed about the way, a crest runs west: so the other way for a carry to the east.
+                planet.degreesPerSecond = -p.carry / (p.radius + HipHeight) * Mathf.Rad2Deg;
+                Under(b, planet.transform, () =>
+                {
+                    var ball = b.Sphere("Planet", Vector3.zero, p.radius * 2f, k.hazard);
+                    ball.AddComponent<CourseFloor>().sloped = true;
+                    ball.AddComponent<NoClimbSurface>();
+                    // What shows it turning: a band round it through its poles, and a spot.
+                    Hoop(b, "Band", Vector3.zero, Quaternion.Euler(0f, 0f, -90f), p.radius + .01f, .06f, .5f, k.boardLight, 16);
+                    b.Sphere("Spot", Quaternion.Euler(0f, 0f, 50f) * Vector3.up * (p.radius - .15f) + Vector3.forward * .35f, .9f, k.rankGold, false);
+                });
+                Pillar(b, "Spin planet axle " + (i + 1), centre + Vector3.down * p.radius, .4f);
+                route.Add((top, "2"));
+            }
+            Line(b, "Planet row plank 4", crest(-.3f), crest(.5f), 2.2f);
+            Line(b, "Planet row plank 7", crest(RowPlanets[RowPlanets.Length - 1].at + .5f), crest(length + .3f), 2.2f);
+            route.Add((to, "2"));
         }
 
         // ------------------------------------------------------------------ 2 the great globe
@@ -644,12 +729,13 @@ namespace ChessFight.PawnRush
             var first = new Gear(CassiopeiaFirst.at + northEast * (CassiopeiaFirst.radius + 4f), 16, 1f);
             var second = new Gear(first.at + northWest * (first.Radius + 5f), 20, -1f);
             var third = new Gear(second.at + northEast * (second.Radius + 4f), 16, 1f);
-            var last = new Gear(Touching(third.at, third.Radius + 3f, Stage, 3f + StageRadius), 12, -1f);
+            var last = new Gear(Touching(third.at, third.Radius + 3f, Stage, 3f + StageRadius, Vector3.forward), 12, -1f);
             return new[] { first, second, third, last };
         }
 
-        // The point `fromA` from a and `fromB` from b (level distances), on the north side of the line between them.
-        static Vector3 Touching(Vector3 a, float fromA, Vector3 b, float fromB)
+        // The point `fromA` from a and `fromB` from b (level distances), on the side of the line between them that
+        // `toward` points to.
+        static Vector3 Touching(Vector3 a, float fromA, Vector3 b, float fromB, Vector3 toward)
         {
             var ab = Flat(b - a);
             float d = ab.magnitude;
@@ -657,7 +743,7 @@ namespace ChessFight.PawnRush
             float along = (fromA * fromA - fromB * fromB + d * d) / (2f * d);
             float off = Mathf.Sqrt(Mathf.Max(0f, fromA * fromA - along * along));
             var side = new Vector3(-u.z, 0f, u.x);
-            if (side.z < 0f) side = -side;
+            if (Vector3.Dot(side, toward) < 0f) side = -side;
             return V(a.x, a.y, a.z) + u * along + side * off;
         }
 
