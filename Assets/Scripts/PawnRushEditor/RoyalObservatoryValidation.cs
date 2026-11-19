@@ -11,7 +11,8 @@ using UnityEngine.Rendering;
 namespace ChessFight.PawnRush.Editor
 {
     // The Royal Observatory's graybox checked in Play Mode, in the course prefab test scene (the way a person opens
-    // it). R712 for the first build; R720 for the second, on structure v0.3 with the eight new obstacles: the draft is
+    // it). R712 for the first build; R720 for the second, on structure v0.3 with the new obstacles; R721 after the user's first run (the solar flare, the
+    // gear train, everything quicker and closer): the draft is
     // listed there, it builds, the section check passes (the route's gaps, floor under every checkpoint, what may be
     // climbed, the kill volume, entry and exit), its devices are all there and move as the builder set them (the
     // variable stars' petals, the comet, the moon, the planets, the binary star, the irises' leaves, the focus beams'
@@ -42,6 +43,10 @@ namespace ChessFight.PawnRush.Editor
         static readonly Dictionary<MeteorShower, int> landedBefore = new Dictionary<MeteorShower, int>();
         static int showing;
         static double watchedFrom;
+        // The flare: which of calm (1), warning (2) and burn (4) were seen; planets without a shadow, and how far
+        // past the floor's edge a shadow reached. The gears: the worst a mesh was off, in cogs.
+        static int flareStates, shadeMisses;
+        static float shadeReach, meshWorst;
 
         static RoyalObservatoryValidation()
         {
@@ -56,7 +61,7 @@ namespace ChessFight.PawnRush.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, "report.txt"),
-                "Royal Observatory graybox on structure v0.3 (R720): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
+                "Royal Observatory graybox on structure v0.3 (R721, after the user's first run): built in the course prefab test scene in Play Mode. Not a person playing, not online.\n");
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(CoursePrefabMenu.TestScene) == null) CoursePrefabMenu.BuildScene();
             EditorSceneManager.OpenScene(CoursePrefabMenu.TestScene, OpenSceneMode.Single);
             EditorSceneManager.playModeStartScene = null;
@@ -85,6 +90,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 errors.Clear(); ranges.Clear(); turned.Clear(); lastHeading.Clear(); firstPlace.Clear(); farPlace.Clear(); landedBefore.Clear();
                 failures = 0; stage = 0; section = null; showing = 0; watchedFrom = double.NaN;
+                flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f;
                 stepAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
                 EditorApplication.update -= Tick;
@@ -167,12 +173,29 @@ namespace ChessFight.PawnRush.Editor
             return null;
         }
 
-        // The turning things: the root that turns and the child that is watched going round it.
+        // The turning things: the root that turns, the child that is watched going round it (none: the root's own
+        // heading), and how fast.
         static readonly (string root, string child, float degreesPerSecond)[] Turning =
         {
-            ("Device_EclipseMoon", "Moon", 30f), ("Device_Planet 1", "Planet body", 40f), ("Device_Planet 2", "Planet body", -72f),
-            ("Device_Planet 3", "Planet body", 360f / 5.5f), ("Device_Planet 4", "Planet body", -36f), ("Device_BinaryStar", "Binary star A", -45f),
+            ("Device_EclipseMoon", "Moon A", 30f), ("Device_PlanetOrbit 1", "Planet 1", 18f), ("Device_PlanetOrbit 2", "Planet 1", -360f / 13f),
+            ("Device_PlanetOrbit 3", "Planet 1", 360f / 7f),
+            ("Device_StarGear Cassiopeia gear 2", null, 28.125f), ("Device_StarGear Cassiopeia gear 3", null, -22.5f),
+            ("Device_StarGear Cassiopeia gear 4", null, 28.125f), ("Device_StarGear Cassiopeia gear 5", null, -37.5f),
         };
+        static readonly string[] GearTrain =
+        {
+            "Device_StarGear Cassiopeia gear 2", "Device_StarGear Cassiopeia gear 3", "Device_StarGear Cassiopeia gear 4", "Device_StarGear Cassiopeia gear 5",
+        };
+
+        static float Heading(Transform t) => (Quaternion.Inverse(section.transform.rotation) * t.rotation).eulerAngles.y;
+
+        static int Teeth(Transform gear)
+        {
+            int teeth = 0;
+            foreach (Transform child in gear)
+                if (child.name.StartsWith("Tooth ")) teeth++;
+            return teeth;
+        }
 
         static void Built()
         {
@@ -203,20 +226,50 @@ namespace ChessFight.PawnRush.Editor
             int comets = section.GetComponentsInChildren<CometFerry>(true).Length;
             int leaves = section.GetComponentsInChildren<IrisLeaf>(true).Length;
             int beams = section.GetComponentsInChildren<FocusBeam>(true).Length;
+            var flares = section.GetComponentsInChildren<SolarFlare>(true);
             Check(checkpoints == RoyalObservatoryBuilder.Checkpoints, "checkpoints: " + checkpoints);
-            Check(petals == 15 && showers == 2 && comets == 1 && leaves == 6 && beams == 2,
-                  $"devices: {petals} petals (three variable stars), {showers} meteor showers, {comets} comet, {leaves} iris leaves (three gates), {beams} focus beams");
+            Check(petals == 20 && showers == 3 && comets == 1 && leaves == 8 && beams == 3 && flares.Length == 1,
+                  $"devices: {petals} petals (four variable stars), {showers} meteor showers, {comets} comet, {leaves} iris leaves (four gates), {beams} focus beams, {flares.Length} solar flare");
+            Check(flares.Length == 1 && flares[0].PlanetCount == 7, "the flare's planets: " + (flares.Length == 1 ? flares[0].PlanetCount : 0));
             int turning = 0;
             foreach (var t in Turning)
             {
                 var root = Named(t.root);
-                if (root != null && root.Find(t.child) != null && root.GetComponent<ChessFight.ProtectKing.ObstacleMotion>() != null) turning++;
+                if (root != null && (t.child == null || root.Find(t.child) != null) && root.GetComponent<ObstacleMotion>() != null) turning++;
             }
-            Check(turning == Turning.Length, $"the moon, the four planets and the binary star are there and turn ({turning} of {Turning.Length})");
-            Check(Named("Planet ring") != null && Named("Great globe glass") != null && Named("Globe climb") != null && Named("Telescope deck") != null
-                  && Named("Observing stage") != null && Named("Balcony") != null, "the globe, its climb, the fourth planet's ring, the stage, the deck and the balcony are there");
-            Check(section.GetComponentsInChildren<AirVent>(true).Length == 0 && section.GetComponentsInChildren<PendulumSwing>(true).Length == 0,
-                  "none of the first build's imported hazards are left");
+            Check(turning == Turning.Length, $"the moons, the three planet orbits and the four gears are there and turn ({turning} of {Turning.Length})");
+            Check(Named("Ecliptic floor") != null && Named("Great globe glass") != null && Named("Moon B") != null && Named("Cassiopeia star 1") != null
+                  && Named("Telescope deck") != null && Named("Observing stage") != null && Named("Balcony") != null,
+                  "the globe, its floor, the second moon, Cassiopeia's standing star, the stage, the deck and the balcony are there");
+            Check(Named("Globe climb") == null && Named("Device_BinaryStar") == null && Named("Planet ring") == null
+                  && section.GetComponentsInChildren<AirVent>(true).Length == 0 && section.GetComponentsInChildren<PendulumSwing>(true).Length == 0,
+                  "the climb, its crossing planets and the binary star are gone; no imported hazard is used");
+
+            // The gears: one rim speed, neighbours turning against each other, each touching the next.
+            string gearsSay = "";
+            bool gearsOk = true;
+            float rim = float.NaN;
+            for (int i = 0; i < GearTrain.Length; i++)
+            {
+                var gear = Named(GearTrain[i]);
+                var motion = gear != null ? gear.GetComponent<ObstacleMotion>() : null;
+                if (motion == null) { gearsOk = false; continue; }
+                int teeth = Teeth(gear);
+                // A quarter of a metre of radius a tooth: the speed where it meshes.
+                float speed = Mathf.Abs(motion.degreesPerSecond) * Mathf.Deg2Rad * teeth * .25f;
+                if (float.IsNaN(rim)) rim = speed;
+                if (Mathf.Abs(speed - rim) > .001f) gearsOk = false;
+                if (i > 0)
+                {
+                    var before = Named(GearTrain[i - 1]);
+                    var other = before.GetComponent<ObstacleMotion>();
+                    float apart = Vector3.Distance(Local(gear.position), Local(before.position));
+                    if (Mathf.Sign(other.degreesPerSecond) == Mathf.Sign(motion.degreesPerSecond)) gearsOk = false;
+                    if (Mathf.Abs(apart - (teeth + Teeth(before)) * .25f) > .01f) gearsOk = false;
+                }
+                gearsSay += (i > 0 ? ", " : "") + teeth + " teeth " + motion.degreesPerSecond.ToString("0.###") + " deg/s";
+            }
+            Check(gearsOk, $"the gear train: {gearsSay}; every rim {rim:0.00} m/s, neighbours turn against each other and touch");
 
             // The meteors' rule, over ten minutes of them: never the same line twice running, never two closer in
             // time than half the interval, every one clear of its line's ends.
@@ -265,13 +318,41 @@ namespace ChessFight.PawnRush.Editor
             foreach (var t in Turning)
             {
                 var root = Named(t.root);
-                var child = root != null ? root.Find(t.child) : null;
-                if (child == null) continue;
-                var offset = Local(child.position) - Local(root.position);
-                float heading = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+                if (root == null) continue;
+                float heading;
+                if (t.child == null) heading = Heading(root);
+                else
+                {
+                    var child = root.Find(t.child);
+                    if (child == null) continue;
+                    var offset = Local(child.position) - Local(root.position);
+                    heading = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+                }
                 if (lastHeading.TryGetValue(t.root, out float was))
                     turned[t.root] = (turned.TryGetValue(t.root, out float sum) ? sum : 0f) + Mathf.DeltaAngle(was, heading);
                 lastHeading[t.root] = heading;
+            }
+            // Where two gears meet, a cog of the one between two of the other: how far from that, in cogs.
+            for (int i = 1; i < GearTrain.Length; i++)
+            {
+                Transform a = Named(GearTrain[i - 1]), c = Named(GearTrain[i]);
+                if (a == null || c == null) continue;
+                var between = Local(c.position) - Local(a.position);
+                float mesh = Mathf.Atan2(between.x, between.z) * Mathf.Rad2Deg, pitchA = 360f / Teeth(a), pitchC = 360f / Teeth(c);
+                float cogs = Mathf.DeltaAngle(mesh, Heading(a)) / pitchA + Mathf.DeltaAngle(mesh + 180f, Heading(c)) / pitchC - .5f;
+                meshWorst = Mathf.Max(meshWorst, Mathf.Abs(cogs - Mathf.Round(cogs)));
+            }
+            foreach (var flare in section.GetComponentsInChildren<SolarFlare>(true))
+            {
+                double now = ObstacleClock.Now;
+                flareStates |= flare.Burning(now) ? 4 : flare.Warning(now) ? 2 : 1;
+                for (int i = 0; i < flare.PlanetCount; i++)
+                {
+                    if (!flare.Shade(i, out var middle, out float size)) { shadeMisses++; continue; }
+                    shadeReach = Mathf.Max(shadeReach, middle.magnitude + size - flare.Radius);
+                    Range("shade " + i, middle.magnitude);
+                    Range("shade size " + i, size);
+                }
             }
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true)) showing = Mathf.Max(showing, shower.Showing);
         }
@@ -304,7 +385,7 @@ namespace ChessFight.PawnRush.Editor
                     most = Mathf.Max(most, kv.Value.x);
                     if (kv.Value.x < 1f && kv.Value.y > 80f) folded++;
                 }
-            Check(petals == 15 && folded == 15, $"the fifteen petals each lay level and hung folded ({folded} of {petals}; the least fold {least:0} deg, the least level {most:0.0} deg)");
+            Check(petals == 20 && folded == 20, $"the twenty petals each lay level and hung folded ({folded} of {petals}; the least fold {least:0} deg, the least level {most:0.0} deg)");
 
             int leaves = 0, closed = 0;
             foreach (var kv in ranges)
@@ -312,9 +393,8 @@ namespace ChessFight.PawnRush.Editor
                 {
                     leaves++;
                     if (kv.Value.y > 2.5f && kv.Value.y < 2.7f) closed++;
-                    Log($"  {kv.Key}: slid {kv.Value.y:0.00} m");
                 }
-            Check(leaves == 6 && closed == 6, $"the six iris leaves each slid to the deck's middle and back ({closed} of {leaves} went 2.58 m)");
+            Check(leaves == 8 && closed == 8, $"the eight iris leaves each slid to the deck's middle and back ({closed} of {leaves} went 2.58 m)");
 
             Has("comet", out var comet);
             Check(comet.y > 4.7f && comet.y < 5.2f, $"the comet crossed between its docks: {comet.y:0.00} m");
@@ -323,7 +403,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 Has("beam " + beam.name + " across", out var across);
                 Has("beam " + beam.name + " along", out var along);
-                Check(across.x < -1.7f && across.y > 1.7f && along.x < -1.7f && along.y > 1.7f,
+                Check(across.x < -1.4f && across.y > 1.4f && along.x < -1.1f && along.y > 1.1f,
                       $"{beam.name}: its spot went {across.x:0.0} .. {across.y:0.0} m across the deck and {along.x:0.0} .. {along.y:0.0} m along it");
             }
 
@@ -332,6 +412,14 @@ namespace ChessFight.PawnRush.Editor
                 float went = turned.TryGetValue(t.root, out float sum) ? sum : 0f, expected = t.degreesPerSecond * watched;
                 Check(Mathf.Abs(went - expected) < Mathf.Abs(expected) * .1f + 10f, $"{t.root} went round {went:0} deg in {watched:0.0} s ({t.degreesPerSecond:0.#} deg/s: {expected:0})");
             }
+            Check(meshWorst < .08f, $"where two gears meet their cogs stay interleaved: at worst {meshWorst:0.000} of a cog off");
+
+            Check(flareStates == 7, "the sun lamp was calm, warned and burned" + (flareStates == 7 ? "" : " (seen: " + flareStates + ")"));
+            string tracks = "";
+            for (int i = 0; i < 7; i++)
+                if (ranges.TryGetValue("shade " + i, out var track) && ranges.TryGetValue("shade size " + i, out var size))
+                    tracks += (tracks.Length > 0 ? ", " : "") + $"{track.y:0.0} m out / {size.y:0.00} m";
+            Check(shadeMisses == 0 && shadeReach < .6f, $"the seven planets each threw a shadow on the floor the whole time ({shadeMisses} missing; track / radius: {tracks})");
 
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true))
             {
@@ -370,11 +458,13 @@ namespace ChessFight.PawnRush.Editor
             Capture("03_dipper_handle", new Vector3(5f, 10f, 20f), new Vector3(-19f, 1f, 35f), view, 60f, false, 1600, 900);
             Capture("04_dipper_bowl", new Vector3(-18f, 15f, 36f), new Vector3(-33f, 2f, 55f), view, 60f, false, 1600, 900);
             Capture("05_west_gate", new Vector3(-31f, 9f, 55f), new Vector3(-8f, 7f, 64f), view, 60f, false, 1600, 900);
-            Capture("06_inside_the_globe", new Vector3(-11.5f, 7.6f, 61.2f), new Vector3(6f, 10.5f, 64.6f), view, 70f, false, 1600, 900);
-            Capture("07_cassiopeia", new Vector3(36f, 20f, 64f), new Vector3(21f, 11.5f, 80f), view, 60f, false, 1600, 900);
-            Capture("08_stage_and_tube", new Vector3(25f, 20f, 82f), new Vector3(9f, 15f, 103f), view, 60f, false, 1600, 900);
-            Capture("09_up_the_tube", new Vector3(9f, 14.4f, 94f), new Vector3(9f, 19.4f, 114f), view, 70f, false, 1600, 900);
-            Capture("10_back_from_the_balcony", new Vector3(9f, 25f, 128f), new Vector3(-4f, 6f, 66f), view, 64f, false, 1600, 900);
+            Capture("06_inside_the_globe", new Vector3(-12f, 6.4f, 62f), new Vector3(6f, 10.5f, 65f), view, 75f, false, 1600, 900);
+            Capture("07_globe_floor", new Vector3(-9f, 30f, 44f), new Vector3(1f, 8f, 64f), view, 60f, false, 1600, 900);
+            Capture("08_cassiopeia_gears", new Vector3(38f, 24f, 64f), new Vector3(21f, 11.5f, 80f), view, 60f, false, 1600, 900);
+            Capture("09_gears_from_above", new Vector3(21.5f, 46f, 79f), new Vector3(21.5f, 12f, 79.5f), Vector3.forward, 50f, false, 1200, 1200);
+            Capture("10_stage_and_tube", new Vector3(25f, 20f, 82f), new Vector3(9f, 15f, 103f), view, 60f, false, 1600, 900);
+            Capture("11_up_the_tube", new Vector3(9f, 14.4f, 94f), new Vector3(9f, 19.4f, 114f), view, 70f, false, 1600, 900);
+            Capture("12_back_from_the_balcony", new Vector3(9f, 25f, 128f), new Vector3(-4f, 6f, 66f), view, 64f, false, 1600, 900);
             Object.Destroy(go);
         }
 

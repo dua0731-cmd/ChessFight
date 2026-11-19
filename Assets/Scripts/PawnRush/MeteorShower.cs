@@ -89,6 +89,14 @@ namespace ChessFight.PawnRush
             this.salt = salt;
         }
 
+        // The same, with how long the ring warns (the streak keeps to the last four tenths of it).
+        public void Configure(Line[] lines, float interval, int salt, float warning)
+        {
+            Configure(lines, interval, salt);
+            this.warning = Mathf.Max(.2f, warning);
+            streak = Mathf.Min(streak, this.warning * .4f);
+        }
+
         public void OnSection(PawnRushSection section)
         {
             seed = SeededSchedule.Hash(section.Seed, salt);

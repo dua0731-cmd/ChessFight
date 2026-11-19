@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-19 R721 · 왕실 천문대 회색 상자, 사용자가 달려 본 뒤("너무 쉬워"): 천구 속 = 기울어진 바닥 + 태양 플레어와 행성 그림자(`SolarFlare`), 카시오페이아 = 맞물린 톱니 별 넷, 변광성 넷 · 가운데 2 m · 4.5초, 유성 · 혜성 · 달 · 조리개 · 광선 전부 더 빠르고 촘촘하게. 사본 Unity 배치 42항목 PASS, 고친 뒤 사람이 달려 본 적 없음
 - 2026-11-19 R720 · 왕실 천문대 회색 상자를 구조 v0.3으로 다시 지음: 별 단 · 천구 · 경통 + 새 장애물 여덟 종(새 코드 StarPetal · MeteorShower · CometFerry · IrisLeaf · FocusBeam, TelescopeRam 삭제). 사본 Unity 배치 32항목 PASS, 사람이 달려 본 적 없음
 - 2026-11-19 R719 · GPU Resident Drawer · GPU 가림 컬링 시험(사본 · AI 측정, 노트북 Iris Xe): GRD는 그리기 CPU 이득 없이 GPU +11 ~ 23% · 게임 루프 +0.7 ~ 1.4 ms, 가림 컬링은 큰 메시를 빼먹음 → 둘 다 켜지 않음(승규). 설정 파일 변경 없음. 측정 도구 `Tools/GrdProbe`, `Docs/Environment/GPU_RESIDENT_DRAWER.md`, PITFALLS 53 ~ 56. main 커밋 · 푸시(승규 허락)
 - 2026-11-19 R718 · 왕실 천문대 v0.3 컨셉 그림(`ConceptArt/R718_RoyalObservatoryV3/observatory_v3_concept.png`, Blender 스크립트 `observatory_v3_concept.py`): 별자리 길 · 유리 천구 · 대망원경과 새 장애물 여덟 종. 그림뿐 — Unity 반영 없음
