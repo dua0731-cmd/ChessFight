@@ -1132,13 +1132,14 @@ public static class NetworkCoreTests
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
             Test("R703: the round's flow rules pack into one number and back; a number that is not rules is the game as it was", () => {
-                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) {
-                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending}; var back=PawnRushRules.Decode(r.Encode());
-                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending,"rules changed on the way: "+relief+after+ending); }
+                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) for (int skills=0; skills<2; skills++) {
+                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending,Skills=skills}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending&&back.Skills==skills,"rules changed on the way: "+relief+after+ending+skills); }
                 Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
-                Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
+                Check(PawnRushRules.Settings.Length==4&&PawnRushRules.Choices.Length==4&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==2,"the panel's names");
+                Check(new PawnRushRules().With(3,PawnRushRules.SkillsChessMoves).Skills==1&&new PawnRushRules{Skills=1}.Of(3)==1&&PawnRushRules.Decode(32).Skills==1&&PawnRushRules.Decode(64).Skills==0,"the skill plan (JY-skill-lab)");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
             Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {

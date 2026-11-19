@@ -25,6 +25,16 @@ namespace ChessFight.Network
 
         public static string SkillName(PieceKind piece)
         {
+            // JY-skill-lab: the room plays by skill plan 1-나 (PawnRushRules.Skills), the cards name its skills.
+            if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
+                switch (piece)
+                {
+                    case PieceKind.Queen: return "체크!";
+                    case PieceKind.Rook: return "캐슬링";
+                    case PieceKind.Bishop: return "핀";
+                    case PieceKind.Knight: return "포크";
+                    default: return "앙파상";
+                }
             switch (piece)
             {
                 case PieceKind.Queen: return "팔방 밀치기";
@@ -37,6 +47,15 @@ namespace ChessFight.Network
 
         public static string SkillLine(PieceKind piece)
         {
+            if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
+                switch (piece)
+                {
+                    case PieceKind.Queen: return "적 한 명을 지목한다. 제때 그 칸을 벗어나지 못하면 날아간다";
+                    case PieceKind.Rook: return "팀원과 자리를 바꾼다. 팀원이 스킬 키로 받아야 한다";
+                    case PieceKind.Bishop: return "빛줄로 적을 꿰어 뒤의 적이나 벽에 묶는다";
+                    case PieceKind.Knight: return "뛰어올라 앞 좌우 두 자리를 찬다. 둘을 한꺼번에 맞혀야 넘어진다";
+                    default: return "옆을 스쳐 지나간 적의 발을 건다";
+                }
             switch (piece)
             {
                 case PieceKind.Queen: return "둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다";

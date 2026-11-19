@@ -140,7 +140,7 @@ namespace ChessFight.RagdollLab
         public string LastSkillHit { get; internal set; } = "-";
 
         /// <summary>A rook or a bishop between its key and the left click.</summary>
-        public bool SkillAiming => Aiming;
+        public bool SkillAiming => Aiming && planPhase != PlanPhase.Aim;   // (plan 1-나's aim has its own marks: PlanPhaseNow)
         public bool BishopAiming => piece == PieceKind.Bishop && skillStage == SkillStage.Windup;
         public bool BishopAimValid => bishopValid;
         public Vector3 BishopAimPoint => bishopPoint;
@@ -165,8 +165,9 @@ namespace ChessFight.RagdollLab
         /// lines (SkillMarks) are not drawn then.</summary>
         public static bool SkillMarksHidden { get; set; }
 
-        bool Aiming => skillStage == SkillStage.Windup && !aimLocked
-                       && (piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King);   // R146: the king's list, its clicks the list's
+        bool Aiming => (skillStage == SkillStage.Windup && !aimLocked
+                        && (piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King))   // R146: the king's list, its clicks the list's
+                       || planPhase == PlanPhase.Aim;   // plan 1-나 (RagdollPawn.SkillPlans.cs): the bishop, the rook and the queen aim
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -194,6 +195,7 @@ namespace ChessFight.RagdollLab
             ClearSkills();
             skillCooldownLeft = cooldownTotal = 0f;
             bindLeft = 0f;
+            EndPin();
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);
@@ -284,6 +286,7 @@ namespace ChessFight.RagdollLab
             PreLassoDrag();          // 10-26: a bishop's rope's drag of the last step taken off before the run
             HoldKeysForKingCall();   // R146: on its way in to its king
             ChainGrabKey();          // R153: a rook's chain handle held out to it (the right click), or riding the chain
+            PlanKeys();              // plan 1-나: in a castling's flight
             if (Aiming)
             {
                 // Aiming: the left click (the dive) fires the skill and the right click (the grab) calls it off.
@@ -354,6 +357,15 @@ namespace ChessFight.RagdollLab
                 DrawSkillMarks(s);
                 return;
             }
+            // Plan 1-나 (RagdollPawn.SkillPlans.cs): a castling offered to this piece (its own key answers), a pin's rope on
+            // it, the castling's flight.
+            press = UpdatePlanMate(s, press, dt);
+            UpdatePin(s, dt);
+            if (UpdatePlanCarry(s, dt))
+            {
+                HideSkillMarks();
+                return;
+            }
 
             if (skillStage != SkillStage.None && (State == PawnState.Ragdoll || Floating))
             {
@@ -362,6 +374,14 @@ namespace ChessFight.RagdollLab
                 bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
                 ClearSkills();
                 if (!firedAlready) StartCooldown(PieceCooldown(s));
+            }
+
+            if (PlanB)
+            {
+                // The room (or the test bed) plays by plan 1-나: each piece's other skill, with its own marks (PawnRushPlanMarks).
+                UpdatePlanSkill(s, press, confirm, cancel, dt);
+                HideSkillMarks();
+                return;
             }
 
             switch (piece)
@@ -394,6 +414,7 @@ namespace ChessFight.RagdollLab
             ClearKingCall();
             ClearRookChain();
             ClearLasso();
+            ClearPlanSkills();
         }
 
         float PieceCooldown(PawnRushSkillParams s) => piece switch

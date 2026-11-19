@@ -333,6 +333,7 @@ namespace ChessFight.RagdollLab
                 float d = to.magnitude, stretch = d - lassoRest;
                 if (stretch > 0f && d > 1e-3f) want = to / d * (Mathf.Min(s.bishopRopeStiffness * stretch, s.bishopRopePull) * s.bishopRopeBrace);
             }
+            want += PinPull(s);   // plan 1-나: a bishop's pin ties this piece to another, or to a post (RagdollPawn.SkillPlans.cs)
             ApplyLassoDrag(want, dt);
         }
 

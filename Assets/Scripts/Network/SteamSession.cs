@@ -186,7 +186,9 @@ namespace ChessFight.Network
         //      contest in the course state (seven more part bytes: begun and who holds, the two teams' times and
         //      targets), and the win is the contest's. A v58 PC would count those bytes as another part's and end
         //      the round on the first majority.
-        public const string Protocol = "chessfight.dua0731.network.v59";
+        // JY-skill-lab: this branch's builds meet only each other (the room rules carry a skill plan main does not know,
+        // and its skills run by it). Back to main's name when the branch goes in.
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab1";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

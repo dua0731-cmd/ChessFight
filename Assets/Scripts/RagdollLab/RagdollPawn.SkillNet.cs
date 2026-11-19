@@ -83,7 +83,7 @@ namespace ChessFight.RagdollLab
         public bool SkillNetIdle =>
             PawnRushSkills == null
             || (skillStage == SkillStage.None && skillCooldownLeft <= 0f && getUpGuardLeft <= 0f && chainPhase == ChainPhase.None
-                && lassoPhase == LassoPhase.None);
+                && lassoPhase == LassoPhase.None && !PlanNetBusy);
 
         /// <summary>This piece's skill as the others need to draw it. <paramref name="refOf"/> turns a piece into its
         /// roster place.</summary>
@@ -106,7 +106,9 @@ namespace ChessFight.RagdollLab
             if (knightTapped) s.Flags |= NetTapped;
             dir = piece == PieceKind.Bishop ? bishopYaw : skillDir;
             RagdollPawn target = null;
-            switch (piece)
+            // Plan 1-나 (RagdollPawn.SkillPlans.cs): its own phase and target in the same slots, and Flags2 says so.
+            if (PlanB) CapturePlanNet(ref s, refOf, ref dir, ref p, ref q, ref target);
+            else switch (piece)
             {
                 case PieceKind.Bishop when PawnRushSkills != null && PawnRushSkills.bishopRope:
                     // 10-26, the X rope: D its phase, A its length, P its tip, Q where it left from, Target the piece
@@ -175,6 +177,19 @@ namespace ChessFight.RagdollLab
             bishopValid = (s.Flags & NetValid) != 0;
             knightTapped = (s.Flags & NetTapped) != 0;
             netKicked = knightTapped;
+            // Plan 1-나: the host's state says which plan the match plays by (the skill test bed's switch is the host's).
+            bool planB = (s.Flags2 & NetPlanB) != 0;
+            if (PawnRushSkills != null) PawnRushSkills.plan = planB ? PawnRushSkillParams.PlanChessMoves : PawnRushSkillParams.PlanNow;
+            if (planB)
+            {
+                ApplyPlanNet(s, dir, p, q, target, pawnOf);
+                knightTarget = null;
+                pawnTarget = null;
+                getUpGuardLeft = s.B;
+                ApplyPrediction();
+                return;
+            }
+            ClearPlanNet();
             if (piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope)
             {
                 // 10-26, the X rope (see the host's side above).
@@ -229,7 +244,9 @@ namespace ChessFight.RagdollLab
         /// <summary>This piece is not in the host's packet: its skill is idle (a client's puppet).</summary>
         public void ClearSkillNet()
         {
-            if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None) return;
+            if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None
+                && !PlanNetBusy) return;
+            ClearPlanNet();
             netStage = SkillStage.None;
             netLocked = netKicked = false;
             skillStage = SkillStage.None;
@@ -252,6 +269,7 @@ namespace ChessFight.RagdollLab
             if (skillStage != SkillStage.None) stageTime += dt;
             skillCooldownLeft -= dt;
             getUpGuardLeft -= dt;
+            AdvancePlanView(dt);
             if (chainPhase != ChainPhase.None)
             {
                 chainT += dt;
@@ -281,6 +299,14 @@ namespace ChessFight.RagdollLab
         public void ViewAim(Vector3 aim)
         {
             if (PawnRushSkills == null) return;
+            if (PlanB)
+            {
+                // Plan 1-나: the pawn's own screen watches who brushes past it (its ring); the aims are drawn from the host's state.
+                float now = Time.unscaledTime;
+                if (piece == PieceKind.Pawn && now > passViewAt) TrackPasses(PawnRushSkills, Mathf.Min(0.1f, now - passViewAt));
+                passViewAt = now;
+                return;
+            }
             // R153: the Pawn Rush knight's target is found on its own screen at once (its icon and the ring over the enemy);
             // the host finds its own when the key arrives.
             if (piece == PieceKind.Knight)
@@ -298,7 +324,8 @@ namespace ChessFight.RagdollLab
         /// </summary>
         public void PredictPress(int key, float hold)
         {
-            if (PawnRushSkills == null || State != PawnState.Active) return;
+            // (Plan 1-나's skills are not guessed ahead: they show when the host's state arrives.)
+            if (PawnRushSkills == null || State != PawnState.Active || PlanB) return;
             bool aims = piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King;
             bool aiming = skillStage == SkillStage.Windup && !aimLocked && aims;
             switch (key)
@@ -384,6 +411,9 @@ namespace ChessFight.RagdollLab
                 StartCooldown(PieceCooldown(PawnRushSkills));
             getUpGuardLeft = Mathf.Max(0f, guard);
         }
+
+        // Plan 1-나: when this screen last watched its own pawn's passers-by (ViewAim).
+        float passViewAt;
 
         // The local player's own rook aims on this screen (ViewAim): its aim target is its own, not the host's late one.
         int localView = -10;

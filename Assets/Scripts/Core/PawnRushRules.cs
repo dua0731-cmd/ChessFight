@@ -14,6 +14,11 @@ namespace ChessFight.Network
     //   Ending   the crown platform a team's majority must stand on at once (as before), or the hold-the-throne game
     //            everyone is taken to when the war room's great gate opens (option 5).
     //
+    //   Skills   which skill plan the pieces play by (JY-skill-lab, 2026-11-19, the user: "프로토타입을 만들어보고, 다 직접
+    //            인게임에서 해보고 판단" with the manager's switches): the skills as they are (plan 1-가), or plan 1-나 of
+    //            Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md (pawn en passant, knight fork, bishop pin, rook castling, queen
+    //            check). Prototypes: rules and physics only.
+    //
     // The room carries them as one number (room data "rules"); every PC builds its round from it, and a room found by
     // random matching has none - the game as it has played so far. Core: no Unity, no Steam.
     public struct PawnRushRules
@@ -21,22 +26,24 @@ namespace ChessFight.Network
         public const int ReliefOff = 0, ReliefFirst = 1, ReliefBoth = 2;
         public const int AfterStraight = 0, AfterGather = 1, AfterDelay = 2;
         public const int EndingCrown = 0, EndingThrone = 1;
+        public const int SkillsNow = 0, SkillsChessMoves = 1;
 
         // Option 4: how long after one team's clear the other team's gate opens.
         public const double GateDelay = 20;
 
-        public int Relief, After, Ending;
+        public int Relief, After, Ending, Skills;
 
         // What the running round plays by: the match link sets it from the room before the round is built; offline it
         // stays as it is (a test may set it).
         public static PawnRushRules Current;
 
-        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16;
+        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16 + Clamp(Skills, 1) * 32;
 
         public static PawnRushRules Decode(int packed)
         {
             if (packed < 0) packed = 0;
-            return new PawnRushRules { Relief = Clamp(packed & 3, 2), After = Clamp((packed >> 2) & 3, 2), Ending = Clamp((packed >> 4) & 1, 1) };
+            return new PawnRushRules { Relief = Clamp(packed & 3, 2), After = Clamp((packed >> 2) & 3, 2), Ending = Clamp((packed >> 4) & 1, 1),
+                                       Skills = Clamp((packed >> 5) & 3, 1) };
         }
 
         static int Clamp(int value, int max) => value < 0 ? 0 : value > max ? 0 : value;
@@ -46,26 +53,28 @@ namespace ChessFight.Network
         public static bool Ready(int setting, int choice) => true;
 
         // The room's panel: the settings' names and their choices' short names.
-        public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩" };
+        public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩", "스킬 기획안" };
         public static readonly string[][] Choices =
         {
             new[] { "끔", "한 팀이 깨면", "두 팀이 깨면" },
             new[] { "바로 통과", "모여서 발판", "상대 문 20초 뒤" },
             new[] { "왕관 발판", "왕좌 차지전" },
+            new[] { "1-가 지금", "1-나 체스 수" },
         };
 
-        public int Of(int setting) => setting == 0 ? Relief : setting == 1 ? After : Ending;
+        public int Of(int setting) => setting == 0 ? Relief : setting == 1 ? After : setting == 2 ? Ending : Skills;
 
         public PawnRushRules With(int setting, int choice)
         {
             var r = this;
-            if (setting == 0) r.Relief = choice; else if (setting == 1) r.After = choice; else r.Ending = choice;
+            if (setting == 0) r.Relief = choice; else if (setting == 1) r.After = choice; else if (setting == 2) r.Ending = choice; else r.Skills = choice;
             return Decode(r.Encode());
         }
 
         // One line for the log and the match's first banner.
         public override string ToString() =>
-            Settings[0] + " " + Choices[0][Relief] + " · " + Settings[1] + " " + Choices[1][After] + " · " + Settings[2] + " " + Choices[2][Ending];
+            Settings[0] + " " + Choices[0][Relief] + " · " + Settings[1] + " " + Choices[1][After] + " · " + Settings[2] + " " + Choices[2][Ending]
+            + " · " + Settings[3] + " " + Choices[3][Skills];
     }
 
     // R707 (option 5, PawnRushRules.EndingThrone - the user 2026-11-17: "과반수 이상이 발판 위에 일정 시간 올라와 있어야

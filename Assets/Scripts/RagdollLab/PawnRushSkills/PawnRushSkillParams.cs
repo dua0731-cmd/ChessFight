@@ -198,5 +198,100 @@ namespace ChessFight.RagdollLab
         public float kingCallDummyAnswer = 0.8f;
         [Tooltip("쿨타임 (초): 아직 안 정함, 시험용 2초")]
         public float kingCooldown = 2f;
+
+        // ---------------------------------------------------------------- Pawn Rush 2.0 skill plans (JY-skill-lab, 2026-11-19)
+
+        /// <summary>The skill plans the room's manager switches between (PawnRushRules.Skills): the game as it is, and
+        /// plan 1-나 of Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md.</summary>
+        public const int PlanNow = 0, PlanChessMoves = 1;
+
+        [Header("스킬 기획안 (폰 러쉬 2.0 시험)")]
+        [Tooltip("0 = 1-가 지금 스킬 · 1 = 1-나 (폰 앙파상 · 나이트 포크 · 비숍 핀 · 룩 캐슬링 · 퀸 체크!). 프로토타입: 판정과 물리만, 표시는 선과 고리")]
+        public int plan = PlanNow;
+
+        [Header("1-나 폰 — 앙파상 (지나치는 놈 발 걸기)")]
+        [Tooltip("적이 이 거리 안을 스쳐 지나가면 (m), 서로 지나치는 빠르기가 이 이상일 때 (m/s) 걸 수 있다")]
+        public float passRange = 2f;
+        public float passSpeed = 1.2f;
+        [Tooltip("지나친 뒤 걸 수 있는 시간 (초)")]
+        public float passWindow = 1f;
+        [Tooltip("뛰어드는 최대 거리 (m)와 빠르기 (m/s), 닿았다고 보는 거리 (m)")]
+        public float passLunge = 3.5f;
+        public float passLungeSpeed = 10f;
+        public float passReach = 0.75f;
+        [Tooltip("걸린 적: 달리던 쪽으로 적어도 이 빠르기로 미끄러진다 (m/s), 위로 뜨는 빠르기 (m/s)")]
+        public float passTripSpeed = 4.5f;
+        public float passTripLift = 1.6f;
+        public float passCooldown = 4f;
+
+        [Header("1-나 나이트 — 포크 (두 갈래 차기)")]
+        public float forkWindup = 0.2f;
+        [Tooltip("도약: 앞으로 이만큼 (m, 2칸), 체공 (초), 최고 높이 (m)")]
+        public float forkLeap = 3f;
+        public float forkFlight = 0.55f;
+        public float forkHeight = 1.2f;
+        [Tooltip("두 자리: 착지점에서 진행 방향 좌우 이 각도 (도)로 이만큼 앞 (m), 자리 반경 (m)")]
+        public float forkAngle = 50f;
+        public float forkAhead = 1.6f;
+        public float forkRadius = 1.1f;
+        [Tooltip("둘을 한꺼번에 맞혔을 때: 바깥으로 미는 빠르기 · 위로 (m/s), 넘어뜨림. 한 자리만 맞혔을 때: 밀기만 (m/s)")]
+        public float forkPush = 6.5f;
+        public float forkLift = 2.2f;
+        public float forkSinglePush = 3.5f;
+        public float forkRecovery = 0.35f;
+        public float forkCooldown = 7f;
+
+        [Header("1-나 비숍 — 핀 (꿰어 묶기)")]
+        [Tooltip("빛줄이 닿는 거리 (m, 6칸), 굵기 (m), 조준 도움 각도 (도)")]
+        public float pinRange = 9f;
+        public float pinRadius = 0.3f;
+        public float pinAssist = 10f;
+        [Tooltip("처음 맞은 적 뒤로 이 거리 안 (m)의 다른 적이나 벽 · 기둥에 꽂히면 묶인다")]
+        public float pinBehind = 4f;
+        [Tooltip("묶는 줄 길이 (m), 묶인 시간 (초)")]
+        public float pinRest = 2f;
+        public float pinSeconds = 5f;
+        [Tooltip("줄이 1 m 늘어날 때마다 끌려가는 빠르기 (m/s), 그 최대 (m/s), 이만큼 넘게 늘어나면 끊어짐 (m)")]
+        public float pinStiffness = 6f;
+        public float pinPull = 6f;
+        public float pinBreak = 3.5f;
+        [Tooltip("뒤에 아무것도 없을 때 맞은 적이 휘청이는 시간 (초)")]
+        public float pinMissStagger = 0.5f;
+        public float pinRecovery = 0.3f;
+        public float pinCooldown = 8f;
+
+        [Header("1-나 룩 — 캐슬링 (자리 바꾸기)")]
+        [Tooltip("팀원까지 거리 (m, 8칸), 조준 도움 각도 (도)")]
+        public float castleRange = 12f;
+        public float castleAssist = 15f;
+        [Tooltip("팀원이 자기 스킬 키로 받을 시간 (초), 시험 더미가 스스로 받는 데 걸리는 시간 (초)")]
+        public float castleWindow = 2f;
+        public float castleDummyAnswer = 0.6f;
+        [Tooltip("자리 바꾸는 비행 시간 (초), 호의 높이 (m), 서로 비켜 가는 옆 너비 (m)")]
+        public float castleFlight = 0.6f;
+        public float castleArc = 1.5f;
+        public float castleSide = 0.6f;
+        [Tooltip("변형 시험: 적과도 바꾼다 (동의 없음). 예고 (초) 동안 둘 사이에 선이 보이고, 끝에 적이 공중이거나 가려지면 실패")]
+        public bool castleEnemies = false;
+        public float castleEnemyWindup = 0.8f;
+        public float castleEnemyStagger = 0.4f;
+        public float castleCooldown = 12f;
+        [Tooltip("팀원이 안 받았을 때 쿨타임 (초)")]
+        public float castleRefusedCooldown = 4f;
+
+        [Header("1-나 퀸 — 체크!")]
+        [Tooltip("적까지 거리 (m, 6칸), 조준 도움 각도 (도)")]
+        public float checkRange = 9f;
+        public float checkAssist = 20f;
+        [Tooltip("칸의 반경 (m): 체크 순간 적이 서 있던 자리. 이 시간 (초) 안에 벗어나지 않으면 맞는다")]
+        public float checkSquare = 1.5f;
+        public float checkSeconds = 1.5f;
+        [Tooltip("맞으면: 퀸 반대쪽으로 미는 빠르기 · 위로 (m/s), 넘어뜨림")]
+        public float checkPush = 7.5f;
+        public float checkLift = 2.5f;
+        [Tooltip("막기: 퀸과 그 적 사이, 줄에서 이 거리 안 (m)에 선 적 팀 기물이 대신 맞는다")]
+        public float checkBlock = 0.6f;
+        public float checkRecovery = 0.3f;
+        public float checkCooldown = 8f;
     }
 }
