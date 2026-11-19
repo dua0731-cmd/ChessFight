@@ -67,6 +67,8 @@ namespace ChessFight.Game
             Application.runInBackground = true;
             savedShadowDistance = PipelineSettings.ShadowDistance;
             PipelineSettings.ShadowDistance = 90f;
+            // R679: the winners' or the losers' music (nothing until its file exists)
+            ResultMusic.Play(gameObject, victory);
 
             // Loaded by a race that just ended (R125): its match, and the way back to the lobby.
             if (PawnRushResultFlow.Take(out var raced, out int racedTeam))

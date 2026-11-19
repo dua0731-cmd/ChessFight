@@ -8,7 +8,7 @@ namespace ChessFight.PawnRush
 {
     // A robot arm over the royal water garden's dyke (v31 beat 5): hung from a gantry on the dyke's north side, it
     // rests raised on its own side, winds up, sweeps south across the dyke just over the floor, holds out over the
-    // water, swings back north across it and rests (RoyalWaterGardenRules.RobotAngle, 6 s). A pure function of the
+    // water, swings back north across it and rests (RoyalWaterGardenRules.RobotAngle, 4.5 s since R680). A pure function of the
     // shared obstacle clock. Its arm and hand push what they touch like any moving collider; on top of that, the
     // authority knocks a pawn the hand reaches while it crosses low: off the dyke into the water on the sweep, back
     // against the north wall on the return - once per pass.

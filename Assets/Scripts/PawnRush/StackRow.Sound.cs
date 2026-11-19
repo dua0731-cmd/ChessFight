@@ -4,7 +4,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "8번 짐더미 줄" - the set-down thud, the lift and carry - made with the ElevenLabs MCP): a storage
     // row's crane sounds, baked by ArtSource/PawnRush/Sfx/bake_carriage_yard.py into Resources/PawnRushCarriageYardSfx
-    // (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 11). Per half, at the trolley's place 1.2 m over the floor:
+    // (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 12). Per half, at the trolley's place 1.2 m over the floor:
     //   move  the ropes pulling taut and the trolley rolling, from the lift's start (the gap's open time over) through
     //         the lift, the carry and the lowering; a PC that first sees it part way plays it from there (up to Late in)
     //   set   the stack set down in the gap (the trip's end, the next trip's start), as YardFx throws its dust

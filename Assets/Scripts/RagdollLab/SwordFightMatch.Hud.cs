@@ -79,6 +79,10 @@ namespace ChessFight.RagdollLab
                 endStamped = true;
                 string how = view.Phase == SwordPhase.Result && view.Clock < settings.Duration - 0.01 ? $"먼저 {settings.Target}점" : view.Clock > settings.Duration + 0.01 ? "서든데스" : "4:00 종료";
                 Stamp(view.Winner < 0 ? "무승부" : $"{Team(view.Winner)} 팀 승리", $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
+                // R679: the winners' or the losers' music from the result on (a draw has none; nothing until its file exists)
+                var self = game.Local;
+                if (view.Winner >= 0 && self != null && self.Pawn != null)
+                    ChessFight.Game.ResultMusic.Play(gameObject, view.Winner == self.Pawn.Team);
             }
             if (view.Phase != SwordPhase.Result) endStamped = false;
             for (int i = stampQueue.Count - 1; i >= 0; i--)
@@ -343,7 +347,7 @@ namespace ChessFight.RagdollLab
                 if (sk != null) f += sk.Cooldown > 0f ? $" {sk.Cooldown:0.0}초" : " 준비";
                 string e = piece == PieceKind.Pawn ? "E 없음" : $"E {SwordFightSkills.EdgeName(piece)}" + (sk != null && sk.EdgeCooldown > 0f ? $" {sk.EdgeCooldown:0.0}초" : " 준비");
                 main = $"{ChessPieces.Name(piece)} · {f} · {e}";
-                sub = piece == PieceKind.Pawn ? "대각선으로 부딪히면 넘어뜨린다. 둘째 걸음은 방향을 바꿀 수 있다" : "좌클릭 베기 · F 조준 뒤 좌클릭 발동, 우클릭 취소 · E는 떨어지기 시작할 때";
+                sub = piece == PieceKind.Pawn ? "대각선으로 부딪히면 넘어뜨린다. 둘째 걸음은 방향을 바꿀 수 있다" : "좌클릭 베기 · F 조준 뒤 F 발동, 좌·우클릭 취소 · E는 떨어지기 시작할 때";
             }
             float pw = Mathf.Min(760f * ui, w - 24f), ph = 58f * ui;
             var r = new Rect(w * 0.5f - pw / 2f, h - ph - 14f * ui, pw, ph);

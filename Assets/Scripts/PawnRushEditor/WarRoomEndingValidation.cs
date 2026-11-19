@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(Folder);
             File.WriteAllText(Path.Combine(Folder, Report),
-                "War room check: a section round built in Play Mode, its last section's four turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
+                "War room check: a section round built in Play Mode, its last section's turrets, their volleys, the exit door and the ending's floor, and pictures.\n" +
                 "Not a play test (no pawn rides, is hit or pushes the door) and not online.\n");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             SessionState.SetBool(ActiveKey, true);
@@ -223,10 +223,11 @@ namespace ChessFight.PawnRush.Editor
 
         static bool Find()
         {
-            room = round.Sections.LastOrDefault();
-            if (room == null || room.GetComponent<WarRoomSection>() == null)
+            // R688: the war room is the late obstacle section, the ending follows it
+            room = round.Sections.FirstOrDefault(s => s != null && s.GetComponent<WarRoomSection>() != null);
+            if (room == null)
             {
-                Check(false, "the round's last section is not the war room: " + (room != null ? room.name : "none"));
+                Check(false, "the round has no war room: " + string.Join(" | ", round.Sections.Select(s => s.name)));
                 return false;
             }
             turrets = room.GetComponentsInChildren<LibraryRookTurret>(false).Where(t => t.Volley).OrderBy(t => t.TurretIndex).ToArray();
@@ -242,7 +243,7 @@ namespace ChessFight.PawnRush.Editor
 
         static void CheckTurrets()
         {
-            Check(turrets.Length == Course01v4Builder.WarRoomTurretCount, "turrets firing as a battery: " + turrets.Length + " (4 wanted)");
+            Check(turrets.Length == Course01v4Builder.WarRoomTurretCount, "turrets firing as a battery: " + turrets.Length + " (" + Course01v4Builder.WarRoomTurretCount + " wanted)");
             var loose = room.GetComponentsInChildren<LibraryRookTurret>(false).Count(t => !t.Volley);
             Check(loose == 0, loose + " rook(s) still fire on their own rounds");
             foreach (var t in room.GetComponentsInChildren<Transform>(false))
@@ -359,7 +360,7 @@ namespace ChessFight.PawnRush.Editor
                 count[who]++;
                 if (n < first + 40) order.Append(Course01v4Builder.WarRoomTurretNames[who]).Append(' ');
                 Check(who == TurretVolleys.Turret(room.Seed, n, turrets.Length), "volley " + n + ": turret " + who + " fires, the rule says " + TurretVolleys.Turret(room.Seed, n, turrets.Length));
-                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its two seconds (0.55 wanted)");
+                Check(Math.Abs(fire - (TurretVolleys.Start(n) + .55)) < 1e-3, "volley " + n + " fires " + (fire - TurretVolleys.Start(n)).ToString("0.000") + " s into its " + TurretVolleys.Period + " seconds (0.55 wanted)");
                 Check(Vector3.Distance(from, turrets[who].GapPoint) < .8f, "volley " + n + " leaves from " + V(Local(from)) + ", not from turret " + who);
                 longest = Mathf.Max(longest, (float)(impact - fire));
                 // Intersect the actual flight segment with the deck's longitudinal centre plane and evaluate
@@ -466,15 +467,15 @@ namespace ChessFight.PawnRush.Editor
             // shut: a pawn-high slab across the opening meets the leaves
             var across = Solids(new Vector3(0f, floor + 1.2f, z), new Vector3(1.4f, .8f, .05f));
             Check(across.Count > 0, "shut, nothing stands in the opening");
-            // the finish and the second checkpoint are beyond the door
+            // R688: no finish in the war room; the round's last section is the ending and holds the one finish
             var finish = room.GetComponentsInChildren<FinishZone>(true);
-            Check(finish.Length == 1, finish.Length + " finish zones in the war room");
-            foreach (var f in finish)
-            {
-                var at = Local(f.GetComponent<Collider>().bounds.center);
-                Check(at.z > Course01v4Builder.WarRoomWallBack + 2f && Mathf.Abs(at.x) < .1f, "the finish is at " + V(at) + ", not beyond the door");
-                Log("finish at " + V(at) + " (the rear wall's back is at z " + Course01v4Builder.WarRoomWallBack + ")");
-            }
+            Check(finish.Length == 0, finish.Length + " finish zones in the war room (the finish is the ending's)");
+            var last = round.Sections.LastOrDefault();
+            int ending = last != null ? last.GetComponentsInChildren<FinishZone>(true).Length : 0;
+            Check(last != null && last != room && last.Kind == PawnRushSection.SlotKind.Final && ending == 1,
+                  "the round's last section is not an ending with the one finish: " + (last != null ? last.name + ", " + last.Kind + ", " + ending + " finish zones" : "none"));
+            Check(room.Kind == PawnRushSection.SlotKind.Obstacle && round.Sections.Count == PawnRushSections.SlotCount, "the war room is " + room.Kind + " in a round of " + round.Sections.Count);
+            if (last != null) Log("the round's sections: " + string.Join(" | ", round.Sections.Select(s => (s.Slot + 1) + " " + s.DisplayName)) + "; the finish is in " + last.DisplayName);
             Check(round.Finish != null, "the round has no crown finish bound");
             var numbers = room.GetComponentsInChildren<CourseCheckpoint>(true).Select(c => c.Number).OrderBy(x => x).ToArray();
             Check(numbers.SequenceEqual(new[] { 0, 1 }), "checkpoints: " + string.Join(", ", numbers) + " (0 and 1 wanted)");
@@ -496,7 +497,7 @@ namespace ChessFight.PawnRush.Editor
             // and nothing a pawn would walk into on the way from the star platform to the finish
             foreach (float x in new[] { -1.2f, 0f, 1.2f })
             {
-                Vector3 a = World(new Vector3(x, floor + 1.2f, 22.9f)), b = World(new Vector3(x, floor + 1.2f, Course01v4Builder.WarRoomFinishAt));
+                Vector3 a = World(new Vector3(x, floor + 1.2f, 22.9f)), b = World(new Vector3(x, floor + 1.2f, Course01v4Builder.WarRoomExit.z + 4f));
                 bool hit = Physics.SphereCast(a, .4f, (b - a).normalized, out var wall, Vector3.Distance(a, b), ~0, QueryTriggerInteraction.Ignore);
                 Check(!hit, "open, walking x " + x + " from the star platform to the finish meets " + (hit ? wall.collider.name + " at " + V(Local(wall.point)) : ""));
             }
@@ -511,6 +512,28 @@ namespace ChessFight.PawnRush.Editor
                 before = y; low = Mathf.Min(low, y); high = Mathf.Max(high, y);
             }
             Check(step < .31f, "a step of " + step.ToString("0.00") + " m on the way out");
+            // R688: and on from the room's exit through the corridor to the ending's finish - a floor all the way, no step
+            // over 0.31 m, nothing to walk into
+            var last = round.Sections.LastOrDefault();
+            var zone = last != null && last != room ? last.GetComponentInChildren<FinishZone>(true) : null;
+            if (zone != null)
+            {
+                Vector3 from = room.ExitWorld.position, to = zone.GetComponent<Collider>().bounds.center;
+                to.y = from.y;
+                float length = Vector3.Distance(from, to), worst = 0f, prev = float.NaN;
+                int holes = 0;
+                for (float d = 0f; d <= length; d += .25f)
+                {
+                    var at = Vector3.Lerp(from, to, d / length) + Vector3.up * 2f;
+                    if (!Physics.Raycast(at, Vector3.down, out var under, 5f, ~0, QueryTriggerInteraction.Ignore)) { holes++; continue; }
+                    if (!float.IsNaN(prev)) worst = Mathf.Max(worst, Mathf.Abs(under.point.y - prev));
+                    prev = under.point.y;
+                }
+                bool blocked = Physics.SphereCast(from + Vector3.up * 1.2f, .4f, (to - from).normalized, out var wall, length, ~0, QueryTriggerInteraction.Ignore);
+                Check(holes == 0 && worst < .31f && !blocked, "from the war room's exit to the ending's finish (" + length.ToString("0.0") + " m): " + holes + " holes, largest step " +
+                      worst.ToString("0.00") + " m" + (blocked ? ", walks into " + wall.collider.name : ""));
+                Log("from the war room's exit to the finish in " + last.DisplayName + ": " + length.ToString("0.0") + " m of floor, largest step " + worst.ToString("0.00") + " m, nothing in the way");
+            }
             Log("exit gate open: the passage is clear; floor from the star platform to the ending between y " + low.ToString("0.00") + " and " + high.ToString("0.00") +
                 ", largest step " + step.ToString("0.00") + " m");
         }

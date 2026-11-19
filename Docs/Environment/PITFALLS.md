@@ -343,3 +343,62 @@ Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에
 - **원인:** 맞은 표시(`SwordFightPawn.HitFlash`)를 0.14초로 켜고 물리 스텝(1/120초)마다 줄였는데, 다른 PC는 상태 패킷에 실린 값이 0.13 이상으로 뛰어야 타격으로 본다. 0.13 이상인 시간이 8 ~ 17 ms뿐이라 17 ~ 33 ms 간격 패킷이 자주 건너뛰었다. 맞은 기물의 스텝이 벤 기물보다 뒤에 도는 짝은 같은 스텝에서 바로 한 번 줄어 더 짧았다.
 - **해결:** 0.3초(`CutFlash`)로 켠다: 0.13 이상 170 ms, 가장 느린 전송(30 Hz)에서도 다섯 장에 실린다.
 - **규칙:** "값이 뛰면 일이 일어난 것"으로 읽는 표시값은 문턱 위에 **패킷 간격의 세 배 이상** 머물게 하거나, 눌린 횟수처럼 세는 값(`PressCount`) · 번호 붙은 순간(`SkillWire` 이벤트)으로 보낸다. 방장 화면에서는 직접 불려서 늘 잘 나오므로, 한 PC 시험으로는 드러나지 않는다.
+
+## R679 경기 중 클릭하는 화면이 `PointerTaken`을 안 세우면 첫 클릭에 커서가 다시 잠긴다 (11-16)
+
+승격 카드(`PromotionChooser`)는 커서를 풀고 `GUI.Button`으로 클릭을 받게 돼 있었는데, 6 대 6 시험에서 "마우스로 선택이 안 된다". `OrbitCamera.Update`는 커서가 풀려 있을 때 마우스 버튼이 눌리면 **다시 잠근다**(`GameSettings.PointerTaken`이 꺼져 있으면). 그래서 카드를 누른 그 클릭에 커서가 잠겨 포인터가 화면 가운데(2 · 3번 카드 사이 틈)로 가고, 같은 클릭이 다이빙으로도 나갔다. 카드는 커서를 한 번만 풀었으므로 그 뒤로는 계속 못 눌렀다.
+
+- 경기 중에 마우스로 누르는 화면(메뉴 `GameMenu`, 경기 표 `VoiceHud`, 승격 카드)은 떠 있는 동안 `GameSettings.PointerTaken = true`.
+- 커서는 한 번이 아니라 **떠 있는 동안 매 프레임** 풀어 둔다(다른 화면이 닫히며 잠그거나 창이 뒤로 갔다 오면 다시 잠긴다).
+- 돌려줄 때 다른 화면(메뉴 · 경기 표)이 아직 열려 있으면 `PointerTaken`을 끄지 않는다.
+
+## 47. 스텝 뒤쪽에서 바뀌는 단계는 '앞뒤 비교'로 못 본다 (R683, 11-15)
+- **증상:** 소드 파이트가 끝난 방이 계속 '경기 중'으로 남아, 나간 사람 모두에게 '경기로 돌아가기'가 뜨고 새 매칭이 막힘(11-15 빌드 시험, 다섯 PC). 마지막 점수의 슬로 모션도 없었음.
+- **원인:** 물리 담당(`SwordFightMatch.FixedUpdate`)이 `rules.Advance` 앞뒤로만 단계를 비교했는데, 경기를 끝내는 득점(10점 · 서든데스)은 같은 스텝 뒤쪽의 낙하 처리(`RingOut`)에서 난다. 다음 스텝에는 처음부터 결과 단계라 '바뀜'이 한 번도 참이 아니었고, 결과 진입에 달린 것(방에 끝 알리기 · 슬로 모션 · 싸움 멈춤)이 R149부터 득점 종료에서는 한 번도 안 돌았다. 시간 종료(`Advance`가 끝냄)만 정상이라 시험에서 안 드러났다.
+- **규칙:** 상태가 한 스텝 안 여러 곳에서 바뀔 수 있으면, 읽는 쪽이 비교하지 말고 **바꾸는 쪽이 알리게** 한다(Core `SwordMatchRules.TakeEntered`: 들어간 단계를 순서대로 한 번씩 건넴, Core 시험 "R683 Sword Fight …").
+
+## 48. 코드로 건 UI Toolkit 필터(blur · grayscale)는 빌드에 셰이더가 없다 (R683, 11-15)
+- **증상:** 빌드에서만 `ArgumentNullException: shader`(`FilterFunctionDefinitionUtils.CreateBlurFilterFunctionDefinition`) — 입장 화면의 코스 공개 · 기물 선택이 열릴 때마다. 뒤 배경이 안 흐려지고 그 프레임의 `Update` 나머지가 건너뛰어짐. 편집기에서는 멀쩡함.
+- **원인:** Unity는 `style.filter`의 재질을 `new Material(Shader.Find("Hidden/UIR/GaussianBlur"))`(회색 등은 `"Hidden/UIR/ColorEffect"`)로 만든다(6000.3.11f1의 `UnityEngine.UIElementsModule.dll`을 풀어 확인). 이 두 내장 셰이더는 PanelSettings **에셋**(`m_RuntimeGaussianBlurShader` · `m_RuntimeColorEffectShader`)이 참조해야 빌드에 들어가는데, 이 게임은 PanelSettings를 코드로 만든다(`RuntimePanels` · `ScreenOverlay`의 `CreateInstance`) → 어느 빌드에도 없어 `Shader.Find`가 null.
+- **고침 · 규칙:** `ProjectSettings/GraphicsSettings.asset`의 Always Included Shaders에 내장 20300 · 20301을 넣었다(`Tools/run-tests-linux.sh --checks-only`가 본다). 필터를 거는 코드는 셰이더가 있는지 먼저 묻고 실패해도 화면이 이어지게 한다(`LoadingScreenView.SoftenStage`). 다른 필터 종류를 새로 쓰면 그 셰이더 번호를 편집기에서 확인한다(`AssetDatabase.TryGetGUIDAndLocalFileIdentifier(Shader.Find(이름), …)`). 빌드로는 아직 확인 못 함.
+
+## 49. 실패한 Steam P2P 세션은 저절로 다시 열리지 않는다 (R683, 11-15)
+- **증상:** 경기 시작 약 12 ~ 20초 뒤 "물리 계산을 맡은 PC와 연결이 끊어졌습니다"로 나가짐 — 로딩 중 Player.log에 `Steam P2P 연결 실패 … 5008`(또는 시간 초과)이 한 줄 있고, '경기로 돌아가기'로 돌아가면 바로 연결됨(11-15, 두 PC).
+- **원인:** `SteamNetworkingMessages.SendMessageToUser`는 세션이 한 번 실패하면 `CloseSessionWithUser`를 부르거나 `k_nSteamNetworkingSend_AutoRestartBrokenSession`을 줄 때까지 계속 `k_EResultNoConnection`을 돌려준다(SDK 설명). 실패 콜백은 로그만 남겼고 전송에는 그 깃발이 없어, 한 번 실패한 연결이 방을 나갈 때까지 죽어 있었다. (상대 PC가 아직 이 PC를 명단에 안 올려 세션 요청을 안 받는 순간에도 실패할 수 있다.)
+- **규칙:** Steam P2P 전송은 `SteamSend.Unreliable` · `Reliable` · `Flags`로만 한다(새 전송 줄을 만들 때도). 실제 Steam에서는 확인 전.
+
+## 50. kinematic 몸에는 속도를 넣을 수 없다 — 먼저 풀고 넣는다 (R683, 11-15)
+- **증상:** 물리 담당을 이어받는 순간 Player.log에 "Setting linear velocity of a kinematic body is not supported" · "angular"가 기물마다 22줄(몸 11조각 × 2). 11-15 한 PC에서 770줄.
+- **원인 · 고침:** `RagdollPawn.SetNetworkPuppet(false)`가 `isKinematic = false`보다 먼저 속도를 0으로 넣었다(Unity는 무시하고 경고). 순서를 바꿨다. 꼭두각시(kinematic) 몸을 물리로 되돌릴 때는 늘 푼 다음에 속도를 정한다.
+
+## 51. Steam 방 사람 목록은 PC마다 잠깐 다를 수 있다 — 넘겨받자마자 자리를 빼지 않는다 (R689, 11-15)
+- **증상:** 대기실 물리 담당이 성능 1등 PC로 넘어간 1초 뒤, 방을 만든 사람이 "예약이 해제되었거나 파티원 연결이 끊겼습니다"로 튕겼다가 4초 뒤 다시 들어옴. 넘겨받은 PC의 Player.log에 그 순간 "자리 정리: ○○ 님 파티가 모두 방을 나감"(그 사람 이름이 방 안 이름이 아니라 Steam 이름으로 — 그 PC의 Steam 목록에 없었다는 표시).
+- **원인:** 넘겨받은 PC는 방이 자기 것이 되는 순간 자리 장부를 Steam 방 목록과 맞춰 보고(`TeamReservations.Reconcile`) 목록에 없는 사람의 자리를 바로 풀었다. 그 순간 그 PC의 Steam만 방에 있던 사람을 목록에 안 보였다(이유는 모름).
+- **규칙:** 다른 PC에서 넘겨받은 장부를 처음 맞출 때는 Steam 목록 한 번만 보고 자리를 빼지 않는다 — 앞 물리 담당이 앉힌 사람은 3초 지킨다(`SteamSession.HoldAdoptedSeats`).
+
+## 52. 경기에서 나간 물리 담당의 명단은 방에 남는다 — 돌아온 PC는 명단이 아니라 답을 믿는다 (R689, 11-15)
+- **증상:** 물리 담당이던 PC가 경기에서 나갔다가 곧바로 '경기로 돌아가기'로 돌아온 지 2초 뒤 "예약이 해제되었거나 파티원 연결이 끊겼습니다"로 다시 나가짐(명단 1, 자기 없음).
+- **원인:** 방 데이터는 방 주인만 쓴다. 나간 물리 담당이 마지막에 쓴 명단(자기가 든)은 다음 물리 담당이 방 주인이 될 때까지 그대로 남는다. 돌아온 PC는 그 명단에서 자기를 보고 입장된 것으로 여겨 자리 요청을 멈췄고, 다음 물리 담당이 방을 받은 뒤 쓴 첫 명단(나가 있던 동안 빠진)에서 빠져 나갔다.
+- **규칙:** 돌아오는 PC는 물리 담당의 답(`grant` = `ok`)을 받은 뒤에만 앉은 것으로 본다(`SteamSession.PollMatch`). 방의 명단은 누가 언제 썼는지 모르는 값이다.
+
+## 53. 사본에 복사한 Library 때문에 사본의 Unity가 열린 에디터의 IL 후처리 도우미를 끈다 (R719, 11-19)
+- **증상:** 원본 Library를 사본(`C:\유니티\ChessFight_TestCopy`)으로 통째로 복사해 배치 Unity를 돌린 뒤, 원본 에디터의 `Library/ilpp.pid`에 적힌 `Unity.ILPP.Runner`가 사라졌다. 원본 에디터는 다음 스크립트 컴파일 때 다시 띄운다(R684 마차뜰 충돌 점검도 11-16에 "Found a lingering IL Post Processing runner process ... Killing it"을 봤다).
+- **원인:** 복사한 Library의 `ilpp.pid` · `EditorInstance.json` · `ArtifactDB-lock` · `SourceAssetDB-lock`은 원본 에디터의 것이다. 사본의 Unity가 그 PID를 남은 프로세스로 보고 끈다.
+- **규칙:** 사본에서 Unity를 켜기 전에 그 네 파일을 지운다(`Tools/GrdProbe/Run-GrdProbe.ps1` · `Tools/ColliderAudit/Run-CarriageYardColliderAudit.ps1`은 지움, `Tools/Run-CarriageYardBots.ps1`은 아직 안 지움). Library를 복사해 사본을 새로 만들 때 특히 조심한다.
+
+## 54. BatchRendererGroup Variants "Keep All"의 저장 값은 2다 — 1은 Strip All (R719, 11-19)
+- **증상(예상):** GRD 작업 프롬프트가 `ProjectSettings/GraphicsSettings.asset`의 `m_BrgStripping`을 1로 예상했다. 1로 쓰면 DOTS 인스턴싱 변형이 모두 빠지고 GRD는 경고와 함께 꺼진다.
+- **확인:** 6000.3.11f1의 `UnityEditor.Rendering.BatchRendererGroupStrippingMode` = KeepIfEntitiesGraphics 0 · StripAll 1 · KeepAll 2(DLL에서 직접 읽음). 코드 속성 `EditorGraphicsSettings.batchRendererGroupShaderStrippingMode`는 이 버전에서 읽기 전용이다(쓰면 CS0200). 편집기 코드로 바꾸려면 `SerializedObject`로 GraphicsSettings의 `m_BrgStripping`을 쓴다. 켜진 에디터는 파일을 고쳐도 새로고침 때 다시 읽는다.
+- **같이 겪은 것:** `GPUResidentDrawer` · `GPUResidentDrawerMode`는 `Unity.RenderPipelines.GPUDriven.Runtime` 어셈블리에 있다. URP 에셋의 `gpuResidentDrawerMode`를 쓰는 편집기 코드는 asmdef에 그 참조가 있어야 한다(없으면 CS0012). Unity 밖에서 컴파일을 미리 볼 때 ScriptAssemblies의 DLL을 다 넣으면 이걸 못 잡으니, asmdef에 적힌 참조만 넣고 본다.
+
+## 55. GPU 가림 컬링을 켜면 큰 메시(바닥 · 벽 · 천장 · 성문)가 사라진다 (R719, 11-19, AI 측정)
+- **증상:** 사본 배치 모드(Intel Iris Xe · D3D11)에서 GRD + GPU Occlusion Culling을 켜면 마차뜰 입구의 바닥 · 성문 · 탑, 왕의 서재의 벽 · 천장 · 문, 대무도회장 · 침실 · 거인 체스의 큰 껍데기가 사라지고 작은 물체만 남는다. 순간이동 직후만이 아니라 가만히 있어도, Unity가 카메라를 스스로 그려도 그렇다. GRD만 켜면 이상 없다.
+- **원인:** 확정 못 했다. 카메라를 감싸는 큰 메시(경계 구 안에 카메라가 있음)가 가려진 것으로 판정되는 것으로 보인다. 서재의 벽은 Play 때 코드가 만드는 메시(`RoyalLibraryDressing.Reskin`)라 Unity 이슈 UUM-108782(런타임 메시 + GRD에서 사라짐)와도 비슷하다.
+- **규칙:** 가림 컬링은 켜지 않는다(승규 11-19). 다시 볼 때는 다른 GPU · 새 Unity 버전에서 `Tools/GrdProbe/Run-GrdProbe.ps1 -Mode sweep`으로 장면 전체 사진을 비교하고, 사람이 Game 창에서 본다. [GPU_RESIDENT_DRAWER §6](GPU_RESIDENT_DRAWER.md)
+
+## 56. 배치 모드에서 렌더링을 잴 때의 함정 (R719, 11-19)
+- Unity의 Batches · SetPass · Draw Calls · Triangles 카운터(ProfilerRecorder · `UnityStats`)는 배치 모드에서 프로파일러를 켜도 0이다. 프로파일러를 켜 두니 "running out of memory" 경고까지 났다(16 GB 노트북, 원본 에디터와 동시). 그리기 수는 사람이 Game 창 Stats로 본다.
+- 배치 모드에서는 아무것도 스스로 그려지지 않는다. Play 중에 URP 에셋 값(GRD 등)을 바꾸면 파이프라인은 다음 카메라 렌더 때 다시 만들어지므로, 바꾼 뒤 한 번 그려야 GRD가 켜지고 꺼진다(그리기 전에 상태를 보면 한 박자 늦다).
+- 렌더 스레드가 없다(`threading SingleThreaded`). "CPU main · render thread"를 나눌 수 없고 `Gfx.WaitForPresentOnGfxThread`도 없다. 카메라를 렌더 텍스처에 그린 시간(CPU)과 GPU가 끝날 때까지(합계)로 잰다.
+- 렌더링 디버거용 GRD 통계(`debugStats.enabled`)를 켠 채 재면 GRD 쪽이 3 ~ 4 ms 더 나온다. 시간을 재는 구간에서는 끈다.
+- 꺼 둔 카메라를 `Camera.Render()`로 손으로 그리는 것과, 켜 두고 targetTexture를 줘서 플레이어 루프가 매 프레임 그리게 하는 것(게임과 같은 길)을 둘 다 써서 결과를 맞춰 봤다 — 가림 컬링 누락은 둘 다에서 났다.

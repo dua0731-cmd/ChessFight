@@ -21,7 +21,8 @@ namespace ChessFight.PawnRush
     //      (from out on the balconies a pier hides half of it), and on a tower 1.5 m high its shots clear the
     //      balustrades.
     //   2  They fire as one battery (LibraryRookTurret.ConfigureVolley, Core TurretVolleys): one turret every two
-    //      seconds, drawn from the section's seed, never the one before, through the carriage at rider height.
+    //      seconds (1.5 s and six turrets since R679, below), drawn from the section's seed, never the one before,
+    //      through the carriage at rider height.
     //   3  The great door behind the star platform - until now a relief on the solid rear wall - is the way out: the
     //      relief's two leaves are cut out of it and hung on a PushGate (the carriage yard's final gate: held with the
     //      right mouse button and walked open, its progress in the course state), the wall behind them is opened, and
@@ -78,14 +79,20 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ 1, 2: the turrets
 
-        public const int WarRoomTurretCount = 4;
+        // R679 (the user after the 6 vs 6 test, 11-16: "엔딩구간 난이도 증가 (포탑 개수도 2개 늘리고 사격 범위를 늘려야 할 듯)"):
+        // six turrets (were four) - two more half way along the well, one on each balcony's open half beside its
+        // enclosure - a volley every 1.5 s (Core TurretVolleys) and a wider shot (LibraryRookTurret).
+        public const int WarRoomTurretCount = 6;
         public const float WarRoomTurretTower = 1.5f;         // the tower under a rook's own pedestal
-        public static readonly string[] WarRoomTurretNames = { "SW", "SE", "NW", "NE" };
-        // The towers' feet: the start floor's level south of the well, the goal floor's (1.2) at the head of the goal stairs.
+        public static readonly string[] WarRoomTurretNames = { "SW", "SE", "NW", "NE", "W", "E" };
+        // The towers' feet: the start floor's level south of the well, the goal floor's (1.2) at the head of the goal
+        // stairs, and the balconies' own floor half way (R679).
         public static readonly Vector3[] WarRoomTurretSpots =
         {
             new Vector3(-8.65f, 0f, -13f), new Vector3(8.65f, 0f, -13f),
             new Vector3(-8.65f, 1.2f, 13f), new Vector3(8.65f, 1.2f, 13f),
+            // between the balcony's middle pier (z 0, half a metre to each side) and its blower's mouth (from z -+2.55)
+            new Vector3(-8.65f, 0f, -1.6f), new Vector3(8.65f, 0f, 1.6f),
         };
 
         static bool WarRoomTurrets(Transform content)
@@ -112,7 +119,10 @@ namespace ChessFight.PawnRush
                 middle.gameObject.SetActive(false);
             }
             // The copies first, while the two side rooks still stand where the model put them.
-            var rooks = new[] { west, east, Object.Instantiate(west.gameObject, west.parent).transform, Object.Instantiate(east.gameObject, east.parent).transform };
+            var rooks = new Transform[WarRoomTurretCount];
+            rooks[0] = west;
+            rooks[1] = east;
+            for (int i = 2; i < rooks.Length; i++) rooks[i] = Object.Instantiate((i % 2 == 0 ? west : east).gameObject, west.parent).transform;
             // In the section's frame (the room is built at the origin and moved to its place after): a rook's window, as
             // modelled, looks down the hall; waiting, it looks at the middle of the well, at the deck's height.
             Vector3 facing = Vector3.back, rest = new Vector3(0f, .2f, 0f);
@@ -138,7 +148,7 @@ namespace ChessFight.PawnRush
                 rook.name = "Goal_rook_" + WarRoomTurretNames[i];
                 rook.GetComponent<LibraryRookTurret>().ConfigureVolley(i, WarRoomTurretCount, content, facing, rest, piece, gap, pedestal);
             }
-            Debug.Log("[작전 회의실] 2초마다 포탑 한 대가 캐리지 위의 플레이어 높이를 가로질러 발사합니다.");
+            Debug.Log($"[작전 회의실] 포탑 {WarRoomTurretCount}대 중 한 대가 {ChessFight.Network.TurretVolleys.Period:0.#}초마다 캐리지 위의 플레이어 높이를 가로질러 발사합니다.");
             return true;
         }
 
@@ -455,30 +465,24 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ beyond the door
 
-        // The ending's place, for now: the user will build the ending's own space later ("엔딩 구간에 대한 공간은 나중에 따로
-        // 만들거야"). Until then a plain floor at the goal floor's height behind the rear wall, railed on three sides, a
-        // checkpoint just past the door (through the door is through: a pawn that falls is not sent back to the room's
-        // start) and the round's finish on it - a 4.8 m circle, as the star platform's was (R508). When the ending's
-        // space is made, it takes this function's place; the door, the checkpoint's number and the finish's kind stay.
-        public const float WarRoomEndingHalf = 6f, WarRoomEndingLength = 14f, WarRoomFinishAt = 33f, WarRoomFinishRadius = 2.4f;
+        // Beyond the door (R688): a short landing at the goal floor's height behind the rear wall, railed either side and
+        // open at its far end, where the corridor to the ending section joins (as wide as a corridor), with a checkpoint
+        // just past the door (through the door is through: a pawn that falls is not sent back to the room's start).
+        // R616 had the round's finish here on a 14 m floor ("엔딩 구간에 대한 공간은 나중에 따로 만들거야"); the ending is a
+        // section of its own now and holds the finish.
+        public const float WarRoomEndingHalf = 6f, WarRoomEndingLength = 6f;
 
-        static void WarRoomEnding(CourseBuilder b)
+        static void WarRoomLanding(CourseBuilder b)
         {
             var parent = b.parent;
-            var ending = new GameObject("Ending (temporary floor)").transform;
+            var ending = new GameObject("Landing (beyond the door)").transform;
             ending.SetParent(parent, false);
             b.parent = ending;
             float z0 = WarRoomWallBack, z1 = WarRoomWallBack + WarRoomEndingLength, y = WarRoomGoalFloor;
             b.Floor("Floor", -WarRoomEndingHalf, WarRoomEndingHalf, z0, z1, y);
             b.Rail("Railing W", -WarRoomEndingHalf - .3f, -WarRoomEndingHalf, z0, z1, y, 1.1f);
             b.Rail("Railing E", WarRoomEndingHalf, WarRoomEndingHalf + .3f, z0, z1, y, 1.1f);
-            b.Rail("Railing N", -WarRoomEndingHalf - .3f, WarRoomEndingHalf + .3f, z1, z1 + .3f, y, 1.1f);
-            // The finish's circle, drawn (the trigger itself is a box round it; CrownFinish takes its narrower half).
-            var gold = YardKit.Gold;
-            YardKit.Cylinder(ending, "Finish circle", new Vector3(0f, y + .015f, WarRoomFinishAt), Vector3.up, WarRoomFinishRadius * 2f, .03f, gold, YardKit.Solid.None);
             b.Checkpoint(1, new Vector3(0f, y, WarRoomWallBack + 2.6f), 0f, 10f);
-            b.Trigger<FinishZone>("Finish (goal)", new Vector3(-WarRoomFinishRadius, y, WarRoomFinishAt - WarRoomFinishRadius),
-                                  new Vector3(WarRoomFinishRadius, y + 3.4f, WarRoomFinishAt + WarRoomFinishRadius)).Configure(true);
             b.parent = parent;
         }
     }

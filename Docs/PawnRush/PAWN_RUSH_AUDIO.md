@@ -187,7 +187,29 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **같은 파일이 나는 다른 곳:** `sfx_ep_capture`는 I 침실(공격 기물 잡기)과 J 세탁장(나이트 도약대 발판, 진행에 따라 높아짐)에서도 난다 — 이번에 처음 소리가 난다. `sfx_mg_complete`는 승격 발판을 고를 때도 0.6으로 난다.
 - **아직 없음:** `sfx_gate_open`(팀 문 열림), §7.4 ~ 7.7.
 
-## 9. 마차뜰 말 마차 소리 (R686 소리 1, 2026-11-17, seoungtest)
+## 9. 낙하 · 복귀 소리와 승리 · 패배 음악 (R679)
+
+사용자(6 대 6 시험 뒤) "낙하 시 유저피드백 확실히" · "승리,패배 BGM 추가". 코드 자리는 들어갔고 **파일은 아직 없다.**
+
+| 자리 | 파일 | 지금 | 부르는 곳 |
+|---|---|---|---|
+| 내 폰이 떨어짐 · 물에 빠짐 | `Assets/Resources/PawnRushMiniGameSfx/sfx_fall.wav` | 없음 → `PawnRushSkillSfx/SkillFail`이 대신 | `PawnRushFallNotice.Begin`(2D, 내 폰만) |
+| 체크포인트로 돌아옴 | `Assets/Resources/PawnRushMiniGameSfx/sfx_respawn.wav` | 없음 → `sfx_mg_quarter`(승격 발판 차임)가 대신 | `PawnRushFallNotice.Back`(2D, 내 폰만) |
+| 이긴 팀 결과 음악 | `Assets/Resources/ResultMusic/Victory.wav` | 없음 → 무음 | `ResultMusic.Play`(폰 러쉬 승리 장면 · 소드 파이트 결과) |
+| 진 팀 결과 음악 | `Assets/Resources/ResultMusic/Defeat.wav` | 없음 → 무음 | `ResultMusic.Play`(폰 러쉬 패배 장면 · 소드 파이트 결과) |
+
+결과 음악은 굽는 단계가 필요 없다: 불러올 때 앞 30초의 RMS를 재서 다른 음악과 같은 크기(기본 음악 음량에서 −28 dBFS)로 맞추고 한 번만 재생한다(반복 없음). 폰 러쉬 결과 장면은 12초 뒤 로비로 가므로 **10 ~ 14초** 길이가 맞다. 효과음 둘은 받으면 `ArtSource/PawnRush/Sfx/bake_minigame.py` 방식으로 앞 빈소리를 자르고 크기를 맞춰 넣는다.
+
+ElevenLabs 프롬프트:
+
+- **sfx_fall** (Sound Effects, 0.7초): `Short cartoon falling whistle: a quick descending slide-whistle "pew-oo" ending in a soft muffled thud, light and comedic, a small wooden chess piece tumbling off a ledge, dry, close, no reverb tail, no music, no voice`
+- **sfx_respawn** (Sound Effects, 0.5초): `Short bright magical pop with a tiny rising two-note chime, a wooden chess piece popping back onto a board, playful, clean attack, dry, no reverb tail, no music, no voice`
+- **Victory** (Music v2.5, 12초): `Triumphant comedic brass band victory fanfare, 150 BPM, F major, the same marching band as a playful chase theme: bright trumpets and trombones, tuba, snare roll into a big held final chord with a cymbal crash, joyful and a little silly, about 12 seconds, a clear ending, instrumental only`
+- **Defeat** (Music v2.5, 10초): `Gentle comedic "better luck next time" brass band sting, slow, F minor resolving to a warm major chord, a muted trumpet wah-wah falling phrase answered by tuba, soft brushed snare, light-hearted and not sad, about 10 seconds, a clear ending, instrumental only`
+
+귀로 들은 것 없음 — 임시 대체음(스킬 실패음 · 승격 차임)이 어울리는지도 사용자 확인 전.
+
+## 10. 마차뜰 말 마차 소리 (R686 소리 1, 2026-11-17, seoungtest)
 
 승규 "사운드 알아서 채우지 말고 하나하나 할거야" — 마차뜰 소리는 목록에서 하나씩 골라 넣는다. 첫 번째 "1번 말 마차"에서 말발굽 · 조준 예고음 · 부딪힘을 골랐고, "너가 만들어 일레븐랩스 mcp 연결해서"라 AI가 ElevenLabs MCP(효과음 `eleven_text_to_sound_v2`, Prompt influence 0.3 기본값, 프롬프트마다 4개)로 만들었다. 바퀴 구르는 소리 · 채찍은 고르지 않아 코드로 만든 소리(`YardKit.RumbleSound` · `CrackSound`) 그대로다. **AI는 소리를 듣지 못해 파형(타격 위치 · 끝 감쇠) · 음높이(자기상관) 숫자로만 골랐다. 사용자 청취 전.**
 
@@ -209,13 +231,13 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **굽기:** MP3를 Blender(`aud`)로 WAV로 푼 뒤 `"C:/Program Files/Blender Foundation/Blender 5.2/5.2/python/bin/python.exe" -I ArtSource/PawnRush/Sfx/bake_carriage_yard.py`. 모노(두 채널이 닮으면 합침), 1 ms 페이드 인 · 코사인 페이드 아웃, 피크 −1 dBFS(누름 8 dB까지), `.meta`는 R675와 같은 설정(PCM · 미리 읽음 · 정규화 끔). 쓸 테이크 · 크기는 파일 맨 위 표. `RCY_SFX_ROOT`를 주면 다른 폴더에 시험으로 굽는다.
 - **발굽 (코드):** `YardHorse.Pose`가 다리마다 걸음 위치가 0을 지나는 순간(발굽이 땅에 닿음, 다리당 0.12초에 한 번까지) `Footfall(다리, 질주 정도, 움직임)`을 부른다 — 그림의 다리와 같은 박자라 모든 PC가 같다. `RoamingCarriage.Sound.cs`가 말 머리 쪽 소리(3 ~ 30 m)에서 한 번씩 낸다: 질주 0.5 이상이면 무거운 소리, 크기는 질주에 따라 0.55 ~ 1, 뒷발 0.85. 같은 파일이 연달아 나오지 않음. 질주하면 말 두 마리가 1초에 약 24번이라 겹쳐서 한 번보다 크게 들린다.
 - **조준 예고 (코드):** 조준이 시작되는 프레임에 콧김 · 울음 4개 중 하나(조준 시작 시각으로 골라 모든 PC 같음), 조준에 0.3초 넘게 늦게 들어온 PC는 건너뜀. 소리 자리는 말 머리(5 ~ 40 m).
-- **부딪힘 (코드):** 마차 · 말 껍질의 넉백. R686 소리 9부터 다른 타격과 함께 `YardSoundscape.Hits.cs`가 내고 효과 이벤트로 참가자 PC에도 간다(§17). 처음(R686 소리 1)에는 `RoamingCarriage.Sound.cs`가 방장 · 오프라인에서만 냈다.
+- **부딪힘 (코드):** 마차 · 말 껍질의 넉백. R686 소리 9부터 다른 타격과 함께 `YardSoundscape.Hits.cs`가 내고 효과 이벤트로 참가자 PC에도 간다(§18). 처음(R686 소리 1)에는 `RoamingCarriage.Sound.cs`가 방장 · 오프라인에서만 냈다.
 - 모든 소리는 `SectionSoundGate`를 거친다(구간 밖 무음, 효과음 설정).
 - **Unity에서 들을 것:** 마차뜰(맵 시험 또는 구간 라운드)에서 ① 걷는 · 질주하는 발굽이 다리와 맞는지, 너무 시끄럽거나 따닥거리지 않는지(줄일 때 `bake_carriage_yard.py`의 `heard`), ② 빨간 등이 켜지고 돌진하기 전 콧김 · 울음이 들리는지 · 다섯 대가 같은 소리로 느껴지지 않는지, ③ 마차에 맞을 때 '쿵'이 어울리는지(나무 '톡' 같은 소리라 가벼우면 다시 만듦), ④ 바퀴 · 채찍 코드 소리와 같이 들을 때.
 
-## 10. 마차뜰 거대 짐 소리 (R686 소리 2, 2026-11-17, seoungtest)
+## 11. 마차뜰 거대 짐 소리 (R686 소리 2, 2026-11-17, seoungtest)
 
-승규 "6번 거대 짐"에서 "쿵 교체 + 충격파"와 "사슬 내림 · 들어 올림"을 골랐다(크레인 옮김 · 멈춤 예고음은 고르지 않음). §9와 같이 AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.** 한 번은 10.4초: 옮김 2.4 → 멈춤 1.0 → 사슬로 내림 1.1 → 놓여 있음 4.5 → 들어 올림 1.4.
+승규 "6번 거대 짐"에서 "쿵 교체 + 충격파"와 "사슬 내림 · 들어 올림"을 골랐다(크레인 옮김 · 멈춤 예고음은 고르지 않음). §10과 같이 AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.** 한 번은 10.4초: 옮김 2.4 → 멈춤 1.0 → 사슬로 내림 1.1 → 놓여 있음 4.5 → 들어 올림 1.4.
 
 | 파일 | 원본 | 나는 때 | 들리는 크기 |
 |---|---|---|---|
@@ -233,9 +255,9 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **코드:** `SlamChest.Sound.cs`. 닿는 순간은 전과 같은 자리(`LateUpdate`, 한 번에 한 번)에서 쿵 + 울림을 내고, 파일이 없으면 예전 코드 쿵(`ThudSound`). 사슬은 내림(`CargoSlam.Lowered`일 때만) · 들어 올림이 시작될 때 한 소스에서, 0.4초 넘게 늦게 본 PC는 건너뛰고 그 안이면 늦은 만큼 앞을 건너뛰고 튼다. 두 테이크는 번 번호로 번갈아(모든 PC 같음). 소리 자리는 궤짝(쿵 6 ~ 60 m, 사슬 4 ~ 40 m), `SectionSoundGate`를 거침. 거대 짐은 둘(G1 · G2)이고 2.6초 어긋나 번갈아 쿵.
 - **Unity에서 들을 것:** ① 닿는 순간과 쿵이 맞는지, 충분히 무거운지 · 너무 큰지, ② 울림이 쿵을 흐리지 않는지, ③ 사슬 소리가 내리는 · 들어 올리는 움직임과 길이가 맞는지.
 
-## 11. 마차뜰 짐더미 줄 소리 (R686 소리 3, 2026-11-17, seoungtest)
+## 12. 마차뜰 짐더미 줄 소리 (R686 소리 3, 2026-11-17, seoungtest)
 
-승규 "8번 짐더미 줄"에서 "내려놓는 쿵"과 "들기 · 옮기기"를 골랐다(틈 닫힘 예고음 · 밀려남 소리는 고르지 않음). §9와 같이 AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.** 짐더미 줄 2개 × 양쪽 절반 = 크레인 4대, 한 번 약 2.5초: 틈 열림 1.1 ~ 1.4 → 들기 0.35 → 옮기기 0.7 → 내려놓기 0.35.
+승규 "8번 짐더미 줄"에서 "내려놓는 쿵"과 "들기 · 옮기기"를 골랐다(틈 닫힘 예고음 · 밀려남 소리는 고르지 않음). §10과 같이 AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.** 짐더미 줄 2개 × 양쪽 절반 = 크레인 4대, 한 번 약 2.5초: 틈 열림 1.1 ~ 1.4 → 들기 0.35 → 옮기기 0.7 → 내려놓기 0.35.
 
 | 파일 | 원본 | 나는 때 | 들리는 크기 |
 |---|---|---|---|
@@ -249,7 +271,7 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **코드:** `StackRow.Sound.cs`(`StackRow.LateUpdate` 끝에서 `RowSounds`). 절반마다 트롤리를 따라가는 소리 자리(바닥 위 1.2 m, 옮기기 3 ~ 30 m, 쿵 4 ~ 35 m). 들기는 0.3초 넘게 늦게 본 PC는 건너뜀. 처음 본 순간에는 쿵을 내지 않음. `SectionSoundGate`를 거침.
 - **Unity에서 들을 것:** ① 놓이는 순간과 쿵이 맞는지, ② 4대가 계속 움직여 시끄럽거나 지겹지 않은지(줄일 때 `bake_carriage_yard.py`의 `heard`), ③ 옮기기 소리가 트롤리 움직임과 어울리는지.
 
-## 12. 마차뜰 컨베이어 소리 (R686 소리 4, 2026-11-17, seoungtest)
+## 13. 마차뜰 컨베이어 소리 (R686 소리 4, 2026-11-17, seoungtest)
 
 승규 "7번 컨베이어"에서 "벨트 반복음"(ElevenLabs로 새로)과 "짐 덜컥"을 골랐다(창구 들고 남 · 밀려남 소리는 고르지 않음). AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.**
 
@@ -266,9 +288,9 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **코드:** `CargoConveyor.Sound.cs`(`CargoConveyor.Build` 끝에서 `BeltSounds`, 자기 `LateUpdate`). 짐 소리는 짐 오브젝트에 붙어 같이 움직이고, 짐이 벨트 위로 그려질 때 초당 6배 속도로 커지고 바닥 밑(보이지 않는 곳)으로 가면 줄어 멈춘다. 짐마다 반복음 시작 자리를 달리해 함께 웅웅거리지 않게. 모두 `SectionSoundGate`를 거침, 그림에서 읽으므로 모든 PC 같음.
 - **Unity에서 들을 것:** ① 벨트 소리가 계속 들리는 게 거슬리지 않는지(크기), ② 짐 덜컥이 짐 속도(3.6 m/s)와 어울리는지 · 짐이 여럿일 때 시끄럽지 않은지, ③ 반복 이음새가 튀지 않는지.
 
-## 13. 마차뜰 물레방아 · 물 소리 (R686 소리 5, 2026-11-17, seoungtest)
+## 14. 마차뜰 물레방아 · 물 소리 (R686 소리 5, 2026-11-17, seoungtest)
 
-승규 "4·5번 물레방아·물"에서 "물레방아 도는 소리", "쏟아지는 물 · 폭포", "흐르는 물"을 골랐다(바퀴살 휙 · 맞음은 고르지 않음). AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. 테이크가 1 ~ 2초라 §12처럼 이어 붙여 반복음으로 만들었다. **사용자 청취 전.**
+승규 "4·5번 물레방아·물"에서 "물레방아 도는 소리", "쏟아지는 물 · 폭포", "흐르는 물"을 골랐다(바퀴살 휙 · 맞음은 고르지 않음). AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. 테이크가 1 ~ 2초라 §13처럼 이어 붙여 반복음으로 만들었다. **사용자 청취 전.**
 
 | 파일 | 원본 | 나는 곳 | 들리는 크기 |
 |---|---|---|---|
@@ -285,7 +307,7 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **크기 조절 (11-17):** 승규 "물 소리가 30퍼 줄여" → 쏟아지는 물 · 흐르는 물만 `YardSoundscape.WaterVolume` 0.7(코드, 파일은 그대로). 물레방아 도는 소리 · 빠질 때 첨벙(정원 소리)은 그대로.
 - **Unity에서 들을 것:** ① 물레방아 소리가 바퀴 크기 · 속도와 어울리는지, ② 쏟아지는 물이 버킷 · 폭포 자리에서 들리는지 · 너무 크지 않은지(연못 쪽은 세 곳이 겹침), ③ 흐르는 물이 운하 · 연못 가에서만 은은하게 들리는지, ④ 반복 이음새(쏟아지는 물의 이음새 샘플 튐 0.034는 다른 것보다 큼).
 
-## 14. 마차뜰 목재 크레인 · 다락 승강대 소리 (R686 소리 6, 2026-11-17, seoungtest)
+## 15. 마차뜰 목재 크레인 · 다락 승강대 소리 (R686 소리 6, 2026-11-17, seoungtest)
 
 승규 "9·10번 크레인·승강대"에서 "크레인 도는 소리"와 "승강대 오르내림"을 골랐다(종 · 래칫 교체, 목재 휙은 고르지 않음 — 코드로 만든 종 3번 · 래칫 딸깍은 그대로). AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.**
 
@@ -303,7 +325,7 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **코드:** `SlewCrane.Sound.cs`(`SlewCrane.LateUpdate` 끝 `SlewSound`, 방향 변화로 도는 속도를 재고 30° 넘게 튀면 컷으로 봄), `PalletHoist.Sound.cs`(`PalletHoist.LateUpdate` 끝 `HoistSounds`, 래칫과 같은 짝 바뀜 시각, 0.3초 넘게 늦게 본 PC는 건너뜀). 테이크는 짝 바뀜마다 번갈아. 모두 `SectionSoundGate`, 공유 시계라 모든 PC 같음.
 - **Unity에서 들을 것:** ① 크레인이 돌 때만 삐걱이고 쉴 때 조용한지, ② 승강대 밧줄 소리가 오르내림과 길이가 맞는지 · 닿는 쿵이 판자가 멈추는 순간인지, ③ 종 · 래칫(코드 소리)과 같이 들을 때 어색하지 않은지.
 
-## 15. 마차뜰 출발 성문 · 최종 성문 소리 (R686 소리 7, 2026-11-17, seoungtest)
+## 16. 마차뜰 출발 성문 · 최종 성문 소리 (R686 소리 7, 2026-11-17, seoungtest)
 
 승규 "2·12번 성문"에서 "출발 성문 열림"과 "최종 성문 밀림"을 골랐다(최종 성문 다 열림 쿵은 고르지 않음). AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.**
 
@@ -319,7 +341,7 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **코드:** `TimedGate.Sound.cs`(`TimedGate.Update`에서 `GateSound`, 공유 시작 시각 `openAt`에 한 번, +x로 열리는 문짝만, 0.5초 넘게 늦게 본 PC는 건너뜀 · 그 안이면 늦은 만큼 앞을 건너뜀). `PushGate.Sound.cs`(자기 `LateUpdate`, 진행 값의 초당 변화를 0.3초쯤 부드럽게 해 크기 · 음높이 0.9 ~ 1.05, 참가자 PC는 방장이 보내는 진행 값으로 같음). 모두 `SectionSoundGate`.
 - **Unity에서 들을 것:** ① 출발 문이 열릴 때 빗장 · 삐걱이 문 움직임과 맞는지(2.7초 테이크는 끝에 문 닫히는 쿵), ② 최종 문을 밀 때만 삐걱 · 끌림이 나고 손을 떼면 멈추는지, 여럿이 밀 때 커지는지.
 
-## 16. 마차뜰 타격음 (R686 소리 8, 2026-11-17, seoungtest)
+## 17. 마차뜰 타격음 (R686 소리 8, 2026-11-17, seoungtest)
 
 승규 "13번 타격음". 마차뜰 장애물이 폰을 쳐 낼 때(모든 `YardImpact`가 `YardKit.HitGiven`을 냄) 나는 소리. AI가 ElevenLabs MCP로 만들고 숫자로만 골랐다. **사용자 청취 전.**
 
@@ -332,11 +354,11 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - 나무 쿵: A heavy wooden crate shoving a small wooden toy figure off its feet: one punchy hollow wooden bump with a quick clatter, slightly comical, about 0.4 seconds, close and dry, outdoors, no voice, no music.
 - 날개 철썩: A big wet wooden waterwheel paddle swatting a small wooden toy figure aside: one strong hollow wooden whack with a splash of water drops, punchy and a little comical, about 0.5 seconds, close, outdoors, no voice, no music.
 
-- **코드:** `YardSoundscape.Hits.cs`(마차뜰 "Yard sounds"의 `YardSoundscape`, 소리 4개를 돌려 써 가까운 타격끼리 끊지 않음). 맞은 폰의 엉덩이 자리(3 ~ 30 m), 음높이 ±6 %. 마차 · 말(`CarriageHit`, §9)도 여기서 낸다(R686 소리 9). 거대 짐(충격파의 쿵 · 울림)은 여기서 내지 않음. 마차뜰 밖(다른 맵의 같은 부품)은 무시. `SectionSoundGate`를 거침.
-- **온라인 (R686 소리 9):** 넉백은 폰을 움직이는 PC(오프라인 · 방장)에서만 계산되므로 타격음은 효과 이벤트 `SkillFxKind.CourseHit`로 참가자 PC에 보낸다(§17). 처음에는 방장 · 오프라인에서만 들렸다.
+- **코드:** `YardSoundscape.Hits.cs`(마차뜰 "Yard sounds"의 `YardSoundscape`, 소리 4개를 돌려 써 가까운 타격끼리 끊지 않음). 맞은 폰의 엉덩이 자리(3 ~ 30 m), 음높이 ±6 %. 마차 · 말(`CarriageHit`, §10)도 여기서 낸다(R686 소리 9). 거대 짐(충격파의 쿵 · 울림)은 여기서 내지 않음. 마차뜰 밖(다른 맵의 같은 부품)은 무시. `SectionSoundGate`를 거침.
+- **온라인 (R686 소리 9):** 넉백은 폰을 움직이는 PC(오프라인 · 방장)에서만 계산되므로 타격음은 효과 이벤트 `SkillFxKind.CourseHit`로 참가자 PC에 보낸다(§18). 처음에는 방장 · 오프라인에서만 들렸다.
 - **Unity에서 들을 것:** ① 짐 · 짐더미 · 판자 · 목재에 맞을 때 쿵이 어울리는지, ② 물레방아 날개 철썩이 어울리는지, ③ 너무 자주 · 크게 나지 않는지.
 
-## 17. 마차뜰 소리를 온라인 참가자 PC에서도 (R686 소리 9, 2026-11-17, seoungtest)
+## 18. 마차뜰 소리를 온라인 참가자 PC에서도 (R686 소리 9, 2026-11-17, seoungtest)
 
 승규 "온라인 참가자 pc 에서도 다 들리게 해 main에 합칠거니까 / 지금은 합치지는 않을거야". 마차뜰 소리마다 참가자 PC에서 무엇으로 소리 낼 때를 아는지 따졌다. **두 PC로 들어 본 것 없음, main에 합치지 않음.**
 

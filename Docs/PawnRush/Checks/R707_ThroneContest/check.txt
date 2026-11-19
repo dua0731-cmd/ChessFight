@@ -1,0 +1,56 @@
+rules: 낙오자 구제 끔 · 미니게임을 깬 뒤 바로 통과 · 엔딩 왕좌 차지전
+log  [PawnRush] 왕좌 차지전: 국왕 알현실 (임시)에서 · 시작 신호 앞 구간의 큰 문(Exit gate)
+
+Round seed 1: 1 왕실 마차뜰 | 2 정문 의장 광장 | 3 대계단 현관홀 | 4 국왕 침실 | 5 국왕 작전실 | 6 국왕 알현실 (임시)
+ok   the contest stands on the round's ending (국왕 알현실 (임시))
+ok   it waits for the great gate of 국왕 작전실 (Exit gate)
+ok   the round's online parts: 4 parts, 25 of 96 bytes, the contest among them
+ok   not begun
+ok   the mini-games cleared, everyone still at the start: not begun
+log  [PawnRush] 왕좌 차지전 시작: 백 20초 · 흑 30초
+ok   the great gate open: the contest has begun (1 time)
+ok   white cleared two by play: 20 s; black's gate opened late: 30 s (20, 30)
+ok   everyone was told the ending's checkpoint (12 of 12)
+ok   white stands 4.6 m left of the platform's middle, black as far right, on its floor
+ok   nobody on the platform: no time yet
+picture throne_teams_placed
+     백 3.00/20 · 흑 0.00/30 · holder 0
+ok   four of white on it for 3 s: white's time ran about 3 s
+picture throne_white_holds
+     백 3.00/20 · 흑 0.00/30 · holder 2
+ok   both majorities on it for 2 s: nobody's time ran
+ok   the contest writes its 7 bytes
+     백 3.00/20 · 흑 2.00/30 · holder 1
+ok   white off, black on for 2 s: black's time ran, white kept its own
+     백 3.00/20 · 흑 2.00/30 · holder -1
+ok   three of six is no majority: nobody holds
+log  [PawnRush] 승리: 백팀 (왕좌 차지전, 0:28)
+     백 20.00/20 · 흑 2.00/30 · holder 0 · after 17.0 s more
+ok   white filled its 20 s and won; black stayed at its 2 s
+ok   that took the rest of white's time (17.0 s)
+
+A PC that does not judge
+ok   the race from the start again, not judging: nothing begins by itself
+log  [PawnRush] 왕좌 차지전 시작: 백 20초 · 흑 30초
+     백 3.00/20 · 흑 0.00/30 · holder 2
+ok   the host's bytes: begun, both hold, white about 3 of 20 s, black 0 of 30 s
+
+Somebody already in the ending
+log  [PawnRush] 왕좌 차지전: 국왕 알현실 (임시)에서 · 시작 신호 엔딩 구간에 들어서는 첫 폰
+
+Round seed 1: 1 왕실 수로 정원 | 2 정문 쇠살문 누각 | 3 대계단 현관홀 | 4 국왕 체스 홀 | 5 왕의 서재 · 거인 체스 | 6 국왕 알현실 (임시)
+ok   a new round: a new contest on its ending, not begun
+ok   the Royal Library has no great gate to wait for
+ok   this round's online parts: 3 parts, 54 of 96 bytes
+ok   a pawn a metre short of the ending's entry: not begun
+log  [PawnRush] 왕좌 차지전 시작: 백 30초 · 흑 30초
+ok   one pawn past the ending's entry: begun, 30 s each (no clears)
+ok   that pawn was stood with its team
+
+Without the rule
+
+Round seed 1: 1 왕실 마차뜰 | 2 정문 의장 광장 | 3 대계단 현관홀 | 4 국왕 침실 | 5 국왕 작전실 | 6 국왕 알현실 (임시)
+ok   no contest on the round
+log  [PawnRush] 승리: 백팀 (왕관 발판 과반, 0:01)
+ok   four of white on the platform win at once, as before
+RESULT: PASS

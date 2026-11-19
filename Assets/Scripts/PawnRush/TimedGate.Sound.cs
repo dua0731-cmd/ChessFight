@@ -5,7 +5,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "2·12번 성문" - the outer gate opening): the bolt and the long creak of the hinges as the gate swings
     // open at the race's start, made with the ElevenLabs MCP (Resources/PawnRushCarriageYardSfx/GateOpen0..1,
-    // bake_carriage_yard.py; prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 15). Played once by the leaf that runs to +x
+    // bake_carriage_yard.py; prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 16). Played once by the leaf that runs to +x
     // (a pair's two leaves would play it twice), from the gate's middle (the leaf's free edge when shut), at the shared
     // start; a PC that first sees it part way plays it from there (up to Late in). Through SectionSoundGate.
     public sealed partial class TimedGate

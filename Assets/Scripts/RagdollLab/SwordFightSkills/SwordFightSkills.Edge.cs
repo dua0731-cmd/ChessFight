@@ -518,8 +518,8 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Bishop:
                 {
-                    // R236: the diagonals show and the mouse picks; a left click slides him, E again or a right click
-                    // calls it off (StepBishopEdge).
+                    // R236: the diagonals show and the mouse picks; E again slides him, a left or right click calls it
+                    // off (R702, StepBishopEdge).
                     SetEdge(SfEdge.Aim, AimLine);
                     bishopClick = false;
                     BishopAims();
@@ -896,11 +896,11 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- bishop
 
         /// <summary>The bishop's aim line on the key card (R236).</summary>
-        public const string AimLine = "조준 (좌클릭 = 미끄러짐 · E 또는 우클릭 = 취소)";
+        public const string AimLine = "조준 (E = 미끄러짐 · 좌·우클릭 = 취소)";
 
         readonly int[] bishopWays = new int[4];
         /// <summary>A left click came in while he picks (taken from the input in <see cref="Filter"/>, so a client's click
-        /// on the host too): it sends him.</summary>
+        /// on the host too): it calls the slide off (R702; E again sends him).</summary>
         bool bishopClick;
         readonly HashSet<RagdollPawn> slideHit = new HashSet<RagdollPawn>();
 
@@ -942,13 +942,13 @@ namespace ChessFight.RagdollLab
                     // Knocked over or hit while he picks: called off, no cooldown (it never went).
                     if (Pawn.State != PawnState.Active || Pawn.Hits != edgeHits) { BishopCallsOff("넘어짐"); return; }
                     if (cancel) { BishopCallsOff("우클릭"); return; }
-                    // 10-29 (승규 님: "e 쓰고 e 두번 쓰면 취소. e 쓰고 좌클릭 시 스킬 사용, 우클릭도 스킬 취소"): E again calls
-                    // the aim off like the right click; only a left click sends him.
-                    if (press) { BishopCallsOff("E 한 번 더"); return; }
-                    int pick = BishopAims();
+                    // R702 (승규: "비숍 대각선 미끄럼틀도 바꿔", as the F skills): E shows the ways, E again sends him, a
+                    // left or right click calls it off (10-29 before: the left click sent him, E again called it off).
                     bool click = bishopClick;
                     bishopClick = false;
-                    if (!click) return;
+                    if (click) { BishopCallsOff("좌클릭"); return; }
+                    int pick = BishopAims();
+                    if (!press) return;
                     if (pick < 0) { BishopCallsOff("갈 수 있는 대각선 칸이 없음"); return; }
                     // He pushes off along the bold one.
                     EdgeStart = Pawn.Hips.position;

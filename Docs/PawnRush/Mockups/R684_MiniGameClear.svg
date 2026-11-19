@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1140" width="100%" style="height:auto;max-width:1280px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+  <title>R684 미니게임 클리어 개편 설계안 (6 대 6 피드백 3번)</title>
+  <defs>
+    <pattern id="wait" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#f08a2c" fill-opacity=".22"/>
+      <rect width="4" height="10" fill="#f08a2c" fill-opacity=".55"/>
+    </pattern>
+    <marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#f4ead2"/>
+    </marker>
+    <!-- one time axis: 0 .. 150 s on x 250 .. 1150 (6 px a second) -->
+    <g id="axis">
+      <line x1="250" y1="0" x2="1150" y2="0" stroke="#8d8672" stroke-width="1"/>
+      <g stroke="#8d8672" stroke-width="1">
+        <line x1="250" y1="-4" x2="250" y2="4"/><line x1="430" y1="-4" x2="430" y2="4"/><line x1="610" y1="-4" x2="610" y2="4"/>
+        <line x1="790" y1="-4" x2="790" y2="4"/><line x1="970" y1="-4" x2="970" y2="4"/><line x1="1150" y1="-4" x2="1150" y2="4"/>
+      </g>
+      <g font-size="11" fill="#a39a85" text-anchor="middle">
+        <text x="250" y="18">0초</text><text x="430" y="18">30</text><text x="610" y="18">60</text>
+        <text x="790" y="18">90</text><text x="970" y="18">120</text><text x="1150" y="18">150초</text>
+      </g>
+    </g>
+  </defs>
+
+  <rect width="1280" height="1140" fill="#171a22"/>
+  <text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">미니게임 클리어 개편 — 지금과 두 가지 안</text>
+  <text x="24" y="58" font-size="13" fill="#a39a85">예시: 두 팀이 같은 때 미니게임 방에 들어와 백팀은 90초, 흑팀은 140초 걸리는 판 (지난 빌드 시험의 미니게임 한 번은 80 ~ 120초)</text>
+
+  <!-- ============================== NOW -->
+  <g transform="translate(0,84)">
+    <rect x="16" y="0" width="1248" height="216" rx="8" fill="#1f232d"/>
+    <text x="32" y="30" font-size="16" font-weight="700" fill="#f4ead2">지금</text>
+    <text x="32" y="52" font-size="12.5" fill="#a39a85">팀마다 자기 문 · 깬 팀만 통과</text>
+    <text x="150" y="98" font-size="13" font-weight="700" fill="#3fc1d9" text-anchor="end">백팀</text>
+    <rect x="250" y="82" width="540" height="24" rx="3" fill="#3fc1d9" fill-opacity=".45"/>
+    <text x="520" y="99" font-size="12" fill="#eaf8fb" text-anchor="middle">미니게임</text>
+    <line x1="794" y1="94" x2="1140" y2="94" stroke="#3fc1d9" stroke-width="5" marker-end="url(#tip)"/>
+    <text x="960" y="86" font-size="12" fill="#9fe3f0" text-anchor="middle">다음 구간으로 (팀 전원)</text>
+    <text x="150" y="140" font-size="13" font-weight="700" fill="#f08a2c" text-anchor="end">흑팀</text>
+    <rect x="250" y="124" width="840" height="24" rx="3" fill="#f08a2c" fill-opacity=".45"/>
+    <text x="670" y="141" font-size="12" fill="#fff3e6" text-anchor="middle">미니게임 (못 깨면 끝까지 갇힘)</text>
+    <line x1="1094" y1="136" x2="1140" y2="136" stroke="#f08a2c" stroke-width="5" marker-end="url(#tip)"/>
+    <g stroke="#ff6b6b" stroke-width="2" fill="none">
+      <path d="M790,152 L790,159 L1090,159 L1090,152"/>
+    </g>
+    <text x="940" y="176" font-size="12.5" font-weight="700" fill="#ff8f8f" text-anchor="middle">50초 차이 · 상한 없음 → 이후 두 팀이 만나지 않음</text>
+    <use href="#axis" transform="translate(0,188)"/>
+    <text x="200" y="98" font-size="11" fill="#a39a85" text-anchor="middle">90초에 깸</text>
+    <text x="200" y="140" font-size="11" fill="#a39a85" text-anchor="middle">140초에 깸</text>
+  </g>
+
+  <!-- ============================== A -->
+  <g transform="translate(0,316)">
+    <rect x="16" y="0" width="1248" height="214" rx="8" fill="#1f232d" stroke="#f1cf7a" stroke-width="2"/>
+    <text x="32" y="30" font-size="16" font-weight="700" fill="#f1cf7a">A안 · 시차 개방 (추천)</text>
+    <text x="32" y="52" font-size="12.5" fill="#e8dfc8">먼저 깬 팀 문이 열리면 상대 문에 카운트다운이 걸리고, 0이 되면 저절로 열린다. 남은 일이 적을수록 짧고(5 ~ 30초), 계속 하면 더 줄어든다.</text>
+    <text x="150" y="104" font-size="13" font-weight="700" fill="#3fc1d9" text-anchor="end">백팀</text>
+    <rect x="250" y="88" width="540" height="24" rx="3" fill="#3fc1d9" fill-opacity=".45"/>
+    <text x="520" y="105" font-size="12" fill="#eaf8fb" text-anchor="middle">미니게임</text>
+    <line x1="794" y1="100" x2="1140" y2="100" stroke="#3fc1d9" stroke-width="5" marker-end="url(#tip)"/>
+    <text x="1000" y="92" font-size="12" fill="#9fe3f0" text-anchor="middle">다음 구간으로</text>
+    <text x="150" y="146" font-size="13" font-weight="700" fill="#f08a2c" text-anchor="end">흑팀</text>
+    <rect x="250" y="130" width="540" height="24" rx="3" fill="#f08a2c" fill-opacity=".45"/>
+    <text x="520" y="147" font-size="12" fill="#fff3e6" text-anchor="middle">미니게임 (진척 60%)</text>
+    <rect x="790" y="130" width="72" height="24" rx="3" fill="url(#wait)" stroke="#f08a2c"/>
+    <text x="826" y="172" font-size="11.5" fill="#ffd2a6" text-anchor="middle">카운트다운 12초</text>
+    <text x="826" y="186" font-size="10.5" fill="#a39a85" text-anchor="middle">(15초에서 시작 · 계속 해서 단축)</text>
+    <line x1="866" y1="142" x2="1140" y2="142" stroke="#f08a2c" stroke-width="5" marker-end="url(#tip)"/>
+    <g stroke="#7ee08a" stroke-width="2" fill="none">
+      <path d="M790,118 L790,124 L862,124 L862,118"/>
+    </g>
+    <text x="1010" y="126" font-size="12.5" font-weight="700" fill="#9af0a6" text-anchor="middle">12초 차이 · 최대 30초 → 다음 구간에서 다시 섞임</text>
+    <use href="#axis" transform="translate(0,198)"/>
+    <text x="200" y="104" font-size="11" fill="#a39a85" text-anchor="middle">90초에 깸</text>
+    <text x="200" y="146" font-size="11" fill="#a39a85" text-anchor="middle">102초에 열림</text>
+  </g>
+
+  <!-- ============================== B -->
+  <g transform="translate(0,546)">
+    <rect x="16" y="0" width="1248" height="196" rx="8" fill="#1f232d"/>
+    <text x="32" y="30" font-size="16" font-weight="700" fill="#f4ead2">B안 · 같이 통과 + 보상</text>
+    <text x="32" y="52" font-size="12.5" fill="#e8dfc8">한 팀이 깨면 두 팀 문이 같이 열린다. 깬 팀은 앞서 가는 대신 보상(예: 전원 10초 가속 · 스태미나 가득, 나중엔 아이템)을 받는다.</text>
+    <text x="150" y="98" font-size="13" font-weight="700" fill="#3fc1d9" text-anchor="end">백팀</text>
+    <rect x="250" y="82" width="540" height="24" rx="3" fill="#3fc1d9" fill-opacity=".45"/>
+    <text x="520" y="99" font-size="12" fill="#eaf8fb" text-anchor="middle">미니게임</text>
+    <line x1="794" y1="94" x2="1140" y2="94" stroke="#3fc1d9" stroke-width="5" marker-end="url(#tip)"/>
+    <rect x="800" y="74" width="150" height="16" rx="8" fill="#f1cf7a"/>
+    <text x="875" y="86" font-size="11" font-weight="700" fill="#171a22" text-anchor="middle">보상: 10초 가속</text>
+    <text x="150" y="140" font-size="13" font-weight="700" fill="#f08a2c" text-anchor="end">흑팀</text>
+    <rect x="250" y="124" width="540" height="24" rx="3" fill="#f08a2c" fill-opacity=".45"/>
+    <text x="520" y="141" font-size="12" fill="#fff3e6" text-anchor="middle">미니게임 (진척 60%에서 중단)</text>
+    <line x1="794" y1="136" x2="1140" y2="136" stroke="#f08a2c" stroke-width="5" marker-end="url(#tip)"/>
+    <text x="1000" y="118" font-size="12.5" font-weight="700" fill="#9af0a6" text-anchor="middle">차이 0초 · 같이 출발 (깬 팀만 잠깐 빠름)</text>
+    <use href="#axis" transform="translate(0,166)"/>
+    <text x="200" y="98" font-size="11" fill="#a39a85" text-anchor="middle">90초에 깸</text>
+    <text x="200" y="140" font-size="11" fill="#a39a85" text-anchor="middle">90초에 열림</text>
+  </g>
+
+  <!-- ============================== what players see (A) -->
+  <text x="24" y="782" font-size="15" font-weight="700" fill="#f4ead2">A안에서 화면에 뜨는 안내 (예상)</text>
+  <g transform="translate(24,796)">
+    <text x="0" y="16" font-size="12" fill="#a39a85">먼저 깬 팀</text>
+    <rect x="0" y="24" width="590" height="46" rx="4" fill="#0e121c" stroke="#3fc1d9"/>
+    <rect x="0" y="24" width="5" height="46" fill="#3fc1d9"/>
+    <text x="20" y="53" font-size="15" font-weight="700" fill="#f4ead2">백팀  먼저 통과!  상대 문은 15초 뒤 열립니다</text>
+  </g>
+  <g transform="translate(650,796)">
+    <text x="0" y="16" font-size="12" fill="#a39a85">아직 못 깬 팀</text>
+    <rect x="0" y="24" width="606" height="66" rx="4" fill="#0e121c" stroke="#f08a2c"/>
+    <rect x="0" y="24" width="5" height="66" fill="#f08a2c"/>
+    <text x="20" y="50" font-size="15" font-weight="700" fill="#f4ead2">흑팀  상대가 먼저 통과 · 우리 문은 12초 뒤 열립니다</text>
+    <text x="20" y="70" font-size="12" fill="#bfae8e">미니게임을 계속하면 더 빨리 열립니다</text>
+    <rect x="20" y="78" width="566" height="5" fill="#000" fill-opacity=".5"/>
+    <rect x="20" y="78" width="330" height="5" fill="#f1cf7a"/>
+  </g>
+
+  <!-- ============================== pros and cons -->
+  <g transform="translate(24,920)" font-size="13" fill="#e8dfc8">
+    <text x="0" y="0" font-size="15" font-weight="700" fill="#f4ead2">비교</text>
+    <text x="0" y="28"><tspan font-weight="700" fill="#f1cf7a">A안</tspan>  먼저 깬 보람(최대 30초 앞섬)이 남고, 진 팀도 갇히지 않으며 끝까지 미니게임을 할 이유가 있다. 규칙이 한 줄이라 10종 모두 같은 코드로 된다.</text>
+    <text x="0" y="52"><tspan font-weight="700" fill="#f4ead2">B안</tspan>  두 팀이 늘 같이 달려 가장 많이 부딪친다. 대신 "상대가 깨 주기를 기다리는" 팀이 생길 수 있어 보상이 충분히 세야 하고, 보상 자체를 새로 만들어야 한다.</text>
+    <text x="0" y="76"><tspan font-weight="700" fill="#a39a85">그 밖에 본 안</tspan>  상대가 깨면 우리 미니게임이 2배 빨라짐(10종을 하나씩 고쳐야 하고 차이에 상한이 없음) · 진 팀이 결계를 함께 부숨(옛 기획, 새 장치가 필요).</text>
+    <text x="0" y="108" font-size="12.5" fill="#a39a85">A안의 숫자(처음 값): 카운트다운 = 5초 + 25초 × (남은 진척). 진척 0%면 30초, 60%면 15초, 거의 다 했으면 5초. 늦게 도착한 팀은 문이 이미 열려 있을 수 있다.</text>
+    <text x="0" y="130" font-size="12.5" fill="#a39a85">두 안을 섞을 수도 있다: A안의 시차 개방 + 먼저 깬 팀에 작은 보상. 아이템(9번)을 만들 때 보상을 붙이기 좋다.</text>
+  </g>
+</svg>

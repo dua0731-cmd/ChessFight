@@ -31,6 +31,13 @@ namespace ChessFight.Gameplay
         // Listeners must be idempotent.
         public static event Action<ICharacterDriver, Checkpoint> Reached;
 
+        // R707: a character put past a checkpoint without walking through it (the throne contest stands everyone in
+        // the ending): told as if it had, so a fall from there comes back here.
+        public static void Report(ICharacterDriver driver, Checkpoint checkpoint)
+        {
+            if (driver != null && checkpoint != null) Reached?.Invoke(driver, checkpoint);
+        }
+
         void Awake() => GetComponent<BoxCollider>().isTrigger = true;
 
         void OnTriggerEnter(Collider other)

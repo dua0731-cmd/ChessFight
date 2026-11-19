@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" width="100%" style="height:auto;max-width:1400px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R690 한 판의 컨셉 — 세 구역, 두 관문 (6구간)</title>
+<rect width="1400" height="900" fill="#171a22"/>
+<text x="22" y="34" font-size="21" font-weight="700" fill="#f4ead2">한 판의 컨셉 — 세 구역, 두 관문</text>
+<text x="22" y="58" font-size="13" fill="#a39a85">폰이 왕궁 바깥에서 왕 앞까지 올라간다. 구역은 셋(바깥뜰 · 아랫궁 · 윗궁), 구역 사이를 막는 문이 둘 — 미니게임은 팀이 힘을 모아 그 문을 여는 곳이다.</text>
+
+<!-- zones -->
+<rect x="22" y="76" width="330" height="24" rx="5" fill="#DDD1B9" fill-opacity=".22"/>
+<text x="187" y="93" font-size="12" font-weight="700" fill="#DDD1B9" text-anchor="middle">왕궁 바깥 (1단계 아트 세트)</text>
+<rect x="364" y="76" width="444" height="24" rx="5" fill="#b0764a" fill-opacity=".26"/>
+<text x="586" y="93" font-size="12" font-weight="700" fill="#e0b78f" text-anchor="middle">아랫궁 (2단계 아트 세트)</text>
+<rect x="820" y="76" width="558" height="24" rx="5" fill="#7d68a0" fill-opacity=".30"/>
+<text x="1099" y="93" font-size="12" font-weight="700" fill="#c8b8e6" text-anchor="middle">윗궁 (3단계 아트 세트)</text>
+<rect x="353" y="72" width="10" height="32" rx="2" fill="#E2B23C"/>
+<rect x="809" y="72" width="10" height="32" rx="2" fill="#E2B23C"/>
+
+<!-- the pawn's climb: six steps, ranks 3 to 8 -->
+<polygon points="22,184 22,170 238,170 238,161 466,161 466,152 694,152 694,143 922,143 922,134 1150,134 1150,125 1378,125 1378,184" fill="#262b37"/>
+<polyline points="22,170 238,170 238,161 466,161 466,152 694,152 694,143 922,143 922,134 1150,134 1150,125 1378,125" fill="none" stroke="#f4ead2" stroke-opacity=".55" stroke-width="2"/>
+<circle cx="44" cy="154" r="6" fill="#f4ead2"/><polygon points="38,170 50,170 47,158 41,158" fill="#f4ead2"/>
+<text x="60" y="164" font-size="11" fill="#a39a85">출발 = 2랭크</text>
+<text x="190" y="164" font-size="11" fill="#a39a85" text-anchor="middle">아치에 3랭크</text>
+<text x="358" y="150" font-size="12" font-weight="700" fill="#E2B23C" text-anchor="middle">4랭크</text>
+<text x="586" y="141" font-size="11" fill="#a39a85" text-anchor="middle">아치에 5랭크</text>
+<text x="814" y="132" font-size="12" font-weight="700" fill="#E2B23C" text-anchor="middle">6랭크</text>
+<text x="1042" y="123" font-size="11" fill="#a39a85" text-anchor="middle">아치에 7랭크</text>
+<text x="1270" y="114" font-size="12" font-weight="700" fill="#E2B23C" text-anchor="middle">8랭크 = 승격</text>
+
+<!-- 1 outer court -->
+<rect x="22" y="196" width="216" height="318" rx="8" fill="#1f232d"/>
+<rect x="22" y="196" width="216" height="30" rx="8" fill="#DDD1B9"/><rect x="22" y="212" width="216" height="14" fill="#DDD1B9"/>
+<text x="36" y="216" font-size="12" font-weight="700" fill="#2b2a24">1구간 · 장애물</text>
+<text x="36" y="254" font-size="20" font-weight="700" fill="#f4ead2">바깥뜰</text>
+<text x="36" y="276" font-size="12" fill="#a39a85">맑은 낮 · 크림 돌 · 노천 물</text>
+<text x="36" y="306" font-size="11" font-weight="700" fill="#c9b27a">지금 게임에</text>
+<text x="36" y="325" font-size="13" fill="#f4ead2">왕실 수로 정원</text>
+<text x="36" y="344" font-size="13" fill="#f4ead2">왕실 마차뜰</text>
+<text x="36" y="388" font-size="11" font-weight="700" fill="#c9b27a">컨셉아트 v2의 나머지</text>
+<text x="36" y="407" font-size="12" fill="#cfc6b0">리본 화단 정원 · 깃발 연무뜰</text>
+<text x="36" y="425" font-size="12" fill="#cfc6b0">나이트 마구간 · 룩 성벽길</text>
+<rect x="30" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="130" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">끝 아치: 돌 · 화분</text>
+
+<!-- 2 first gate -->
+<rect x="250" y="196" width="216" height="318" rx="8" fill="#1f232d" stroke="#E2B23C" stroke-width="2"/>
+<rect x="250" y="196" width="216" height="30" rx="8" fill="#E2B23C"/><rect x="250" y="212" width="216" height="14" fill="#E2B23C"/>
+<text x="264" y="216" font-size="12" font-weight="700" fill="#2b2a24">2구간 · 미니게임</text>
+<path d="M438 222 v-10 a7 7 0 0 1 14 0 v10 z" fill="none" stroke="#2b2a24" stroke-width="2"/>
+<text x="264" y="254" font-size="20" font-weight="700" fill="#f4ead2">첫째 관문 · 성문</text>
+<text x="264" y="276" font-size="12" fill="#a39a85">바깥에서 궁 안으로 들어가는 문</text>
+<text x="264" y="306" font-size="11" font-weight="700" fill="#c9b27a">여기서 나오는 미니게임 (그대로)</text>
+<text x="264" y="325" font-size="13" fill="#f4ead2">C 해자 도개교</text>
+<text x="264" y="344" font-size="13" fill="#f4ead2">D 정문 쇠살문 누각</text>
+<text x="264" y="363" font-size="13" fill="#f4ead2">A 정문 의장 광장</text>
+<text x="264" y="407" font-size="12" fill="#cfc6b0">셋 다 이미 ‘성문’이다.</text>
+<text x="264" y="425" font-size="12" fill="#cfc6b0">문을 지나면 현관홀(실내).</text>
+<rect x="258" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="358" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">아트: 바깥 세트 그대로</text>
+
+<!-- 3 lower palace -->
+<rect x="478" y="196" width="216" height="318" rx="8" fill="#1f232d"/>
+<rect x="478" y="196" width="216" height="30" rx="8" fill="#8a5a3a"/><rect x="478" y="212" width="216" height="14" fill="#8a5a3a"/>
+<text x="492" y="216" font-size="12" font-weight="700" fill="#f4ead2">3구간 · 장애물</text>
+<text x="492" y="254" font-size="20" font-weight="700" fill="#f4ead2">아랫궁</text>
+<text x="492" y="276" font-size="12" fill="#a39a85">창빛과 촛불 · 대리석 · 판벽</text>
+<text x="492" y="306" font-size="11" font-weight="700" fill="#c9b27a">지금 게임에</text>
+<text x="492" y="325" font-size="13" fill="#f4ead2">대계단 현관홀</text>
+<text x="492" y="388" font-size="11" font-weight="700" fill="#c9b27a">컨셉아트 v2의 나머지</text>
+<text x="492" y="407" font-size="12" fill="#cfc6b0">왕실 초상화 회랑 · 대연회장</text>
+<text x="492" y="425" font-size="12" fill="#cfc6b0">근위대 무구실 · 왕궁 주방</text>
+<rect x="486" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="586" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">끝 아치: 판벽 · 등불</text>
+
+<!-- 4 second gate -->
+<rect x="706" y="196" width="216" height="318" rx="8" fill="#1f232d" stroke="#E2B23C" stroke-width="2"/>
+<rect x="706" y="196" width="216" height="30" rx="8" fill="#E2B23C"/><rect x="706" y="212" width="216" height="14" fill="#E2B23C"/>
+<text x="720" y="216" font-size="12" font-weight="700" fill="#2b2a24">4구간 · 미니게임</text>
+<path d="M894 222 v-10 a7 7 0 0 1 14 0 v10 z" fill="none" stroke="#2b2a24" stroke-width="2"/>
+<text x="720" y="254" font-size="20" font-weight="700" fill="#f4ead2">둘째 관문 · 윗궁 문</text>
+<text x="720" y="276" font-size="12" fill="#a39a85">신하의 궁에서 왕의 궁으로</text>
+<text x="720" y="306" font-size="11" font-weight="700" fill="#e0b78f">아랫궁 쪽 방 (그대로)</text>
+<text x="720" y="325" font-size="13" fill="#f4ead2">B 보수 중인 동관 · E 왕궁 서고</text>
+<text x="720" y="344" font-size="13" fill="#f4ead2">F 대무도회장 · J 왕궁 세탁장</text>
+<text x="720" y="388" font-size="11" font-weight="700" fill="#c8b8e6">왕의 앞방 (R691에 다시 넣음)</text>
+<text x="720" y="407" font-size="13" fill="#f4ead2">G 왕의 행차 회랑</text>
+<text x="720" y="426" font-size="13" fill="#f4ead2">H 국왕 체스 홀 · I 국왕 침실</text>
+<rect x="714" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="814" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">아트: 방마다 한 세트로 통째</text>
+
+<!-- 5 upper palace -->
+<rect x="934" y="196" width="216" height="318" rx="8" fill="#1f232d"/>
+<rect x="934" y="196" width="216" height="30" rx="8" fill="#3a4a72"/><rect x="934" y="212" width="216" height="14" fill="#3a4a72"/>
+<text x="948" y="216" font-size="12" font-weight="700" fill="#f4ead2">5구간 · 장애물</text>
+<text x="948" y="254" font-size="20" font-weight="700" fill="#f4ead2">윗궁</text>
+<text x="948" y="276" font-size="12" fill="#a39a85">천창 빛기둥 · 남색 · 보라 벨벳</text>
+<text x="948" y="306" font-size="11" font-weight="700" fill="#c9b27a">지금 게임에</text>
+<text x="948" y="325" font-size="13" fill="#f4ead2">국왕 작전실</text>
+<text x="948" y="388" font-size="11" font-weight="700" fill="#c9b27a">컨셉아트 v2의 나머지</text>
+<text x="948" y="407" font-size="12" fill="#cfc6b0">왕실 금고실 · 국왕 집무실</text>
+<text x="948" y="425" font-size="12" fill="#cfc6b0">왕의 옷방 · 왕실 천문대</text>
+<rect x="942" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="1042" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">끝 아치: 대리석 · 벨벳</text>
+
+<!-- 6 the audience hall -->
+<rect x="1162" y="196" width="216" height="318" rx="8" fill="#1f232d"/>
+<rect x="1162" y="196" width="216" height="30" rx="8" fill="#604B72"/><rect x="1162" y="212" width="216" height="14" fill="#604B72"/>
+<text x="1176" y="216" font-size="12" font-weight="700" fill="#f4ead2">6구간 · 엔딩</text>
+<polygon points="1342,221 1342,207 1347,214 1352,204 1357,214 1362,207 1362,221" fill="#E2B23C"/>
+<text x="1176" y="254" font-size="20" font-weight="700" fill="#f4ead2">국왕 알현실</text>
+<text x="1176" y="276" font-size="12" fill="#a39a85">왕 앞 · 왕관 결승</text>
+<text x="1176" y="306" font-size="11" font-weight="700" fill="#c9b27a">지금 게임에</text>
+<text x="1176" y="325" font-size="13" fill="#f4ead2">임시 바닥</text>
+<text x="1176" y="344" font-size="12" fill="#cfc6b0">(레벨디자인 진행 중)</text>
+<text x="1176" y="388" font-size="11" font-weight="700" fill="#c9b27a">윗궁 그림 읽는 법</text>
+<text x="1176" y="407" font-size="12" fill="#cfc6b0">윗궁 5곳의 아치 너머 광장은</text>
+<text x="1176" y="425" font-size="12" fill="#cfc6b0">미니게임이 아니라 알현실 앞.</text>
+<rect x="1170" y="472" width="200" height="32" rx="5" fill="#262b37"/>
+<text x="1270" y="492" font-size="12" fill="#f4ead2" text-anchor="middle">아트: 윗궁 세트의 끝</text>
+
+<!-- why -->
+<rect x="22" y="534" width="690" height="346" rx="8" fill="#1f232d"/>
+<text x="38" y="564" font-size="16" font-weight="700" fill="#f4ead2">왜 어색하지 않은가</text>
+<text x="38" y="596" font-size="13" font-weight="700" fill="#E2B23C">1. 미니게임을 ‘단계의 끝 방’이 아니라 ‘구역 사이의 문’으로 읽는다</text>
+<text x="38" y="617" font-size="13" fill="#cfc6b0">구역이 셋이면 그 사이의 문은 둘이다. 마지막 구역(윗궁) 뒤에는 문이 아니라 목적지인 알현실이</text>
+<text x="38" y="637" font-size="13" fill="#cfc6b0">온다. 세 번째 미니게임이 없는 것이 빠진 자리가 아니라 맞는 자리가 된다.</text>
+<text x="38" y="676" font-size="13" font-weight="700" fill="#E2B23C">2. 놀이 규칙과 같은 말이 된다</text>
+<text x="38" y="697" font-size="13" fill="#cfc6b0">미니게임은 지금도 ‘팀이 과제를 끝내면 문이 열리는 방’이다. 도개교를 내리고 쇠살문을 올리는</text>
+<text x="38" y="717" font-size="13" fill="#cfc6b0">초반 3종은 이미 성문 그 자체이고, 킹이 나오는 G · H · I는 왕의 구역 문턱에 어울린다.</text>
+<text x="38" y="756" font-size="13" font-weight="700" fill="#E2B23C">3. 컨셉아트 v2는 다시 그릴 것이 없다</text>
+<text x="38" y="777" font-size="13" fill="#cfc6b0">코스 끝 아치의 랭크 3 · 5 · 7 표시와 경계 재질(돌 · 화분 / 판벽 · 등불 / 대리석 · 벨벳)이 그대로</text>
+<text x="38" y="797" font-size="13" fill="#cfc6b0">맞는다. 관문이 4 · 6랭크, 알현실이 8랭크(승격)가 되어 여섯 구간이 폰의 여섯 걸음이 된다.</text>
+<text x="38" y="817" font-size="13" fill="#cfc6b0">윗궁 5곳의 그림은 아치 너머 광장을 ‘미니게임 광장’이 아니라 ‘알현실 앞’으로만 읽으면 된다.</text>
+
+<!-- what changes -->
+<rect x="724" y="534" width="654" height="346" rx="8" fill="#1f232d"/>
+<text x="740" y="564" font-size="16" font-weight="700" fill="#f4ead2">바뀌는 것</text>
+<text x="740" y="594" font-size="13" fill="#cfc6b0">• 후반 미니게임 G · H · I를 둘째 관문 후보로 다시 넣는다 (R691에서 게임에 반영)</text>
+<text x="740" y="618" font-size="13" fill="#cfc6b0">• 아트 규칙 한 줄: ‘단계 전용 모티프는 다른 단계에 안 나온다’ → 둘째 관문만 예외.</text>
+<text x="752" y="638" font-size="13" fill="#cfc6b0">방 하나는 아랫궁 세트나 윗궁 세트 하나로 통째로 짓고, 한 방 안에서 섞지 않는다</text>
+<text x="740" y="662" font-size="13" fill="#cfc6b0">• 3단계 세트 = 윗궁 코스 + 알현실 (전: 윗궁 코스 + 미니게임 G · H · I + 마지막 방)</text>
+<text x="740" y="686" font-size="13" fill="#cfc6b0">• 부르는 이름: 미니게임 1 → 첫째 관문 · 성문 / 미니게임 2 → 둘째 관문 · 윗궁 문</text>
+<text x="740" y="728" font-size="16" font-weight="700" fill="#f4ead2">그대로인 것</text>
+<text x="740" y="756" font-size="13" fill="#cfc6b0">• 장애물 15곳의 컨셉과 3단계 팔레트, 미니게임 10종의 방 · 규칙 · 지금까지 만든 아트</text>
+<text x="740" y="798" font-size="16" font-weight="700" fill="#f4ead2">알아 둘 점</text>
+<text x="740" y="826" font-size="13" fill="#cfc6b0">• 성문 후보는 3종, 윗궁 문 후보는 7종이라 첫 미니게임이 더 자주 겹친다.</text>
+<text x="752" y="846" font-size="13" fill="#cfc6b0">새 미니게임을 만든다면 바깥(성문) 쪽이 좋다</text>
+<text x="1378" y="894" font-size="11" fill="#6f6a5d" text-anchor="end">R690 컨셉 정리 · R691 게임 반영 · 2026-11-16</text>
+</svg>

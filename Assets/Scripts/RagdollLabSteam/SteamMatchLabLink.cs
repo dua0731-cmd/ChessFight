@@ -101,7 +101,7 @@ namespace ChessFight.RagdollLab.Net
             try
             {
                 SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                    Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
+                    SteamSend.Unreliable, Channel);
                 connected.Add(id);
             }
             finally

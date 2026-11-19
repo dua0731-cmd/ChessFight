@@ -146,7 +146,7 @@ namespace ChessFight.RagdollLab.Net
             var identity = new SteamNetworkingIdentity(); identity.SetSteamID64(id);
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try { SteamNetworkingMessages.SendMessageToUser(ref identity, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                (reliable ? Constants.k_nSteamNetworkingSend_Reliable : Constants.k_nSteamNetworkingSend_Unreliable) | Constants.k_nSteamNetworkingSend_NoNagle, Channel); }
+                SteamSend.Flags(reliable), Channel); }
             finally { handle.Free(); }
         }
         void Receive()

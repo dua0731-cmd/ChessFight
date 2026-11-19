@@ -548,12 +548,7 @@ namespace ChessFight.Game
                 sword.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
                 var hidden = on ? new StyleEnum<Visibility>(Visibility.Hidden) : new StyleEnum<Visibility>(StyleKeyword.Null);
                 foreach (var e in swordHides) e.style.visibility = hidden;
-                if (swordStage != null)
-                {
-                    swordStage.style.filter = on ? new StyleList<FilterFunction>(new List<FilterFunction> { BlurFilter(10f), GreyFilter(.35f) })
-                                                 : new StyleList<FilterFunction>(StyleKeyword.Null);
-                    swordStage.style.scale = on ? new Scale(new Vector2(1.05f, 1.05f)) : new StyleScale(StyleKeyword.Null);
-                }
+                SoftenStage(swordStage, on);   // R683: the same soft, grey study as the course reveal
             }
             if (!on) { swordClosedAt = -1f; swordScreen = -1; SyncSwordSound(-1f); return; }
             FitBox(swordBox);

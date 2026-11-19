@@ -19,7 +19,8 @@
   기록이 없으면 마차뜰이 안 보였다 → 장면의 `PawnRushMapTest`를 `includeCalibrationYard 0` · `onlyMap RoyalCarriageYard`(새 필드, 비우면 예전처럼 전부)로,
   편집기 도구 `PawnRushEditor/SeoungTestYardOnly.cs`가 편집기를 켤 때(세션당 한 번, 저장 안 한 장면이 있으면 안 바꿈) 이 장면을 열고 어느 장면에서 Play해도
   이 장면으로 시작(`playModeStartScene`). 끄기: `ChessFight > Pawn Rush > Carriage Yard Only (seoungtest)`. 마차뜰은 Play 때 지어지므로 편집 모드에서는 빈 장면이다.
-  main으로 옮길 때는 이 파일과 장면의 두 값을 빼야 한다.
+  main으로 옮길 때는 이 파일과 장면의 두 값을 빼야 한다. **→ R700(11-17) main 병합에서 뺐다:** main에는 이 도구가 없고 장면은 main 값(보정 마당 포함,
+  `onlyMap` 없음)이다. seoungtest 브랜치에는 그대로 남아 있다. `PawnRushMapTest.onlyMap` 필드는 비어 있으면 모든 맵이라 main에도 남겼다.
 - **다른 PC에서 이어 하기(11-16, HOSEO PC `C:\Users\HOSEO\Documents\GitHub\ChessFight`에서 처음 세팅):** 스크립트의 프로젝트 경로는
   `RCY_ROOT` 하나(exec 네임스페이스 또는 환경 변수, 없으면 처음 PC의 `C:/Work/ChessFight-SeoungTest`) — 예: `g = {"__name__": "rcy", "RCY_ROOT": r"C:/Users/HOSEO/Documents/GitHub/ChessFight", ...}`.
   이 PC 세팅: Blender 5.2.3 LTS(winget, 같은 5.2 줄), BlenderMCP 애드온 2.0(`addon.py`, github.com/ahujasid/blender-mcp, 켜 두면 Blender를 열 때 localhost:9876 자동 시작, 사용 데이터 전송 꺼짐),
@@ -159,7 +160,8 @@ QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, �
 7. **원래 남은 보이는 것:** 깃발은 코드의 파란 천(파란색 없애는 색 작업), 최종 성벽 가운데 기둥 음영 이음, 표지 글씨가 돌 위에서 어두움,
    "1. 짐마차 마당" 표지가 닫힌 문과 겹침, 최종 문짝 뒷면의 글씨 같은 무늬.
 8. **main으로 옮길 때:** `PawnRushEditor/SeoungTestYardOnly.cs`와 `PawnRush_MapTest.unity`의 `includeCalibrationYard 0` · `onlyMap`은 빼고(seoungtest 전용),
-   [PITFALLS R507](../Environment/PITFALLS.md) 순서(seoungtest 계열 병합)를 따른다.
+   [PITFALLS R507](../Environment/PITFALLS.md) 순서(seoungtest 계열 병합)를 따른다. **→ R700(11-17) 함:** 갈라진 점이 main의 R676 커밋이고 그 뒤
+   seoungtest에 병합 커밋이 없어 보통 병합으로 충분했다(main 쪽 삭제 0, 장면 · 빌드 목록 · 프로젝트 설정 변경 0 확인).
 
 ## 11-16 R682 성 · 승강장 · 결승 마당 (세션 "성·승강장·결승마당·배경", 커밋 안 함 · 사용자 확인 전)
 
@@ -279,7 +281,7 @@ QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, �
 7. 설정 창 그래픽 품질 낮음 / 중간 / 높음을 바꿔 콘솔의 `품질 단계` 줄과 등불 수, 프레임.
 8. 빛 번짐 끔이 마차뜰 안에서도 번짐을 끄는지.
 
-**전역 설정(승규 "진행", 11-16 — 게임 전체에 적용):** PC URP 자산 `PC_RPAsset` 그림자 거리 40 → 70 m · 2단 경계 .25 → .15(가까운 단 10.5 m, 전과 비슷한 선명도; 마당 44 m라 40이면 조감에서 먼 그림자가 끊겼음), PC 렌더러 `PC_Renderer` SSAO 반경 .25 → .5(굵은 베벨 · 판석 홈이 더 읽힘, 비용 조금 늘어남 — 표본 수 · 세기는 그대로). Mobile 자산은 그대로. 설정 창에서 그림자 단계를 한 번이라도 고르면 그 값(25 · 50 · 90 m)이 우선(`PipelineSettings.SetShadows`). 클레이 값(회색 .62 → .66, 부드러움 .15 → .22)은 `Dressing.cs`를 맡은 세션에 제안함(대계단 홀과 같이 쓰는 재질이라 마차뜰 전용으로).
+**전역 설정(승규 "진행", 11-16 — 게임 전체에 적용):** PC URP 자산 `PC_RPAsset` 그림자 거리 40 → 70 m · 2단 경계 .25 → .15(가까운 단 10.5 m, 전과 비슷한 선명도; 마당 44 m라 40이면 조감에서 먼 그림자가 끊겼음), PC 렌더러 `PC_Renderer` SSAO 반경 .25 → .5(굵은 베벨 · 판석 홈이 더 읽힘, 비용 조금 늘어남 — 표본 수 · 세기는 그대로). Mobile 자산은 그대로. 설정 창에서 그림자 단계를 한 번이라도 고르면 그 값(25 · 50 · 90 m)이 우선(`PipelineSettings.SetShadows`). 클레이 값(회색 .62 → .66, 부드러움 .15 → .22)은 `Dressing.cs`를 맡은 세션에 제안함(대계단 홀과 같이 쓰는 재질이라 마차뜰 전용으로). **→ R700(11-17) main 병합에서는 이 전역 설정을 뺐다**(승규 "빼기": 게임 전체에 걸리는 값이라): main의 `PC_RPAsset` · `PC_Renderer`는 40 m · .25 · SSAO .25 그대로, 70 m · .15 · .5는 seoungtest에만 있다. main의 마차뜰은 조감에서 40 m 밖 그림자가 예전처럼 끊긴다.
 
 ## 11-16 R684 물 (세션 "마차뜰 물 그래픽", 커밋 안 함 · 사용자 확인 전)
 

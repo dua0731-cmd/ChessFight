@@ -181,7 +181,8 @@ namespace ChessFight.PawnRush
             // 쪽에 자연스럽게 배치해주고"): each vent's face on the way's inner edge, standing on a stone ledge out of the
             // way's side on two consoles, instead of 0.1 m into the way on a post up from the hall floor.
             Walkway(b, "Windy way", 575f, 640f, 14f, 14.8f, 1.5f, 1.5f);
-            float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 3.4f };
+            // R680: the vents rest 2 s between gusts (WindIdle, was the prefab's 3), still half their cycle (5.8 s) apart
+            float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 2.9f };
             for (int i = 0; i < ventPhi.Length; i++)
             {
                 float phi = ventPhi[i], y = Mathf.Lerp(14f, 14.8f, (phi - 575f) / 65f);
@@ -202,11 +203,19 @@ namespace ChessFight.PawnRush
             // 4d. The last stair (φ 640 -> 717, y 14.8 -> 16) round the dais: two 10 falling chess pieces on it, half
             // their cycle apart, then onto the dais.
             Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f);
-            float[] piecePhi = { 662f, 694f }, piecePhase = { 0f, 2.27f };
+            // R680: a piece falls every 3.6 s (was the prefab's 4.55): warned 1.2 s (was 1.4), at rest 1.05 s (was 1.8);
+            // still half a cycle apart
+            float[] piecePhi = { 662f, 694f }, piecePhase = { 0f, 1.8f };
             for (int i = 0; i < piecePhi.Length; i++)
             {
                 float phi = piecePhi[i], y = Mathf.Lerp(14.8f, 16f, (phi - 640f) / 77f);
                 var piece = Hazard(b, k.fallingPiece, "10 Falling piece " + (i + 1), OnSpiral(phi, y), Heading(phi), piecePhase[i]);
+                var falling = piece != null ? piece.GetComponentInChildren<FallingChessPiece>(true) : null;
+                if (falling != null)
+                {
+                    falling.warningSeconds = 1.2f;
+                    falling.restSeconds = 1.05f;
+                }
                 Span(piece, Outward(phi), -5f, 5f, y);
             }
             b.SlopeBetween("Onto the dais", OnSpiral(716f, 16f), Polar(717f, DaisRadius - .5f, 16f), 3.5f, .6f, 0f, k.floorChecker, true)
@@ -263,7 +272,9 @@ namespace ChessFight.PawnRush
         // (was the prefab's 2), as long as their whoosh (HallHammerWhoosh, hall_hammer_sounds.py SWING_SECONDS), so the
         // ball is fastest as the sound is loudest. The second keeps its place in the first's cycle: 1.6 s of 4.4 then,
         // 1.16 s of 3.2 now (2 x (swing + the 0.2 s pause)).
-        const float HammerSwing = 1.4f, HammerPhase2 = 1.16f;
+        // R680 (the 6 vs 6 test: obstacles too easy): end to end in 1.15 s (cycle 2.7 s); the whoosh, cut for 1.4 s, plays as
+        // much faster (HammerChainSway.Sound), and the second keeps its place in the first's cycle (0.98 s of 2.7).
+        const float HammerSwing = 1.15f, HammerPhase2 = .98f;
 
         static void Chandelier(CourseBuilder b, string name, float phi, float y, float phase)
         {
@@ -336,13 +347,14 @@ namespace ChessFight.PawnRush
 
         // A 15 vent's wind (R301): it carries a pawn (DriftSpeed) instead of pushing its bodies, and its arrows reach
         // the far edge of what it blows over (the prefab draws them 3.7 m out of a 6.2 m wind).
-        const float WindWide = 3f, WindDrift = 3.5f;
+        const float WindWide = 3f, WindDrift = 3.5f, WindIdle = 2f;
 
         static void Gust(GameObject vent)
         {
             var air = vent != null ? vent.GetComponentInChildren<AirVent>(true) : null;
             if (air == null) return;
             air.DriftSpeed = WindDrift;
+            air.IdleDuration = WindIdle;
             if (air.WindTrigger != null) air.WindTrigger.size = new Vector3(WindWide, air.WindTrigger.size.y, air.WindTrigger.size.z);
             ForChildren(vent, "Air stream", t =>
             {
@@ -408,9 +420,11 @@ namespace ChessFight.PawnRush
             Solid(b, "Knight alcove W", V(-8f, 16f, 121.9f), V(-5.2f, 19f, 127.7f));
             Solid(b, "Knight alcove E", V(5.2f, 16f, 121.9f), V(8f, 19f, 127.7f));
             // Two 17 knights: land at (-4, 16, 123.3) and charge 8 m east; land at (4, 16, 126.3) and charge west. Half
-            // a cycle apart (7.62 s), so one lane is always quiet. They leap from their alcoves.
+            // a cycle apart, so one lane is always quiet. They leap from their alcoves. R680: a charge every 6 s (was the
+            // prefab's 7.62): the warning, the leap and the charge as long as before, the idle 0.3 s (was 1) and the
+            // cooldown 1.08 s (was 2).
             Knight(b, "W", V(-2f, 16f, 123.3f), 0f, 0f);
-            Knight(b, "E", V(2f, 16f, 126.3f), 180f, 3.81f);
+            Knight(b, "E", V(2f, 16f, 126.3f), 180f, 3f);
             // The 09 clock gate (two doors, 5 s, out of step) and its blocking walls to the sides (5.8 m).
             var gates = Hazard(b, k.clockGates, "09 Clock gate (the palace door)", V(0f, 16f, 128.3f), 0f, 0f);
             Span(gates, Vector3.right, -4.3f, 4.3f, 16f);
@@ -443,6 +457,8 @@ namespace ChessFight.PawnRush
             var go = Hazard(b, b.kit.knightCavalry, "17 Guard knight " + side, root, yaw, phase);
             var knight = go != null ? go.GetComponent<KnightCavalryCharge>() : null;
             if (knight == null) return;
+            knight.IdleDuration = .3f;
+            knight.CooldownDuration = 1.08f;
             var start = new Vector3(-4.6f, 3f, 0f);
             if (knight.StartPoint != null) knight.StartPoint.position = go.transform.TransformPoint(start);
             if (knight.KnightRoot != null) knight.KnightRoot.transform.position = go.transform.TransformPoint(start);

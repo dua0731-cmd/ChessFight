@@ -259,6 +259,10 @@ namespace ChessFight.Game
             bool sword = mode == GameModes.SwordFight;
             bool dummyRoom = inRoom && session.PrivateRoom && sword && !session.Started;
 
+            // R693: random matching - a public search or the public room it found. The lobby stays; its card counts the
+            // time and nothing else (the user 2026-11-17: "매칭 시간만 카운트").
+            bool quick = busy && !session.PrivateRoom && !waiting && !following;
+
             int ourTeam = 0, ours = party, theirs = 0;
             if (inRoom && session.Roster.TryGetValue(session.Self, out var me))
             {
@@ -305,22 +309,22 @@ namespace ChessFight.Game
                 RejoinNote = session.CanRejoin ? $"{session.RejoinMode.Name} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요" : "",
                 BusyTitle = waiting ? "파티원 경기 중"
                           : following ? "파티장을 따라가는 중"
-                          : inRoom && session.Started ? "경기 시작!"
+                          : inRoom && session.Started ? (session.PrivateRoom ? "경기 시작!" : "상대를 찾았습니다")
+                          : session.JoiningLive ? "경기로 돌아가는 중"
                           : inRoom && session.PrivateRoom ? "비공개 방"
-                          : "매칭 중",
-                BusySub = $"{Clock(now)} · {(inRoom ? roomCount : party)}/12",
+                          : "상대를 찾는 중",
+                BusySub = quick ? Clock(now) : $"{Clock(now)} · {(inRoom ? roomCount : party)}/12",
                 CanCancel = session.Busy && !waiting,
                 ShowStart = inRoom && session.PrivateRoom && session.IsManager,
                 // Mirrors StartGame's real rules, so the button is never a no-op.
                 CanStart = session.CanStartGame,
 
-                // A public search covers the lobby with the entrance screen
-                // (MatchLoader); the banner stays for private rooms and for a
-                // member waiting for the party.
+                // R693: a public search shows the card over the start button only; the banner is for private rooms,
+                // for a member waiting for the party, and for the moment a match is found (the party walks out).
                 ShowMatch = busy && (session.PrivateRoom || waiting || session.Started),
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
                 MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
-                           : session.Started ? "경기를 시작합니다!"
+                           : session.Started ? (session.PrivateRoom ? "경기를 시작합니다!" : "상대를 찾았습니다")
                            : session.JoiningLive ? "나갔던 경기로 돌아가는 중..."
                            : dummyRoom && session.IsManager ? "더미를 추가하고 시작하세요"
                            : session.PrivateRoom ? (session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")

@@ -4,7 +4,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "2·12번 성문" - the final gate pushed open): a loop of the heavy gate's hinges groaning and its foot
     // scraping the stone while it moves, made with the ElevenLabs MCP (Resources/PawnRushCarriageYardSfx/GatePush,
-    // bake_carriage_yard.py; prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 15). Its volume follows how fast the gate
+    // bake_carriage_yard.py; prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 16). Its volume follows how fast the gate
     // is opening (the progress per second, eased - a match's other PCs get the progress in steps from the host), so it
     // stops when the pushers let go and is gone once the gate stands open. From the gate's middle. Through
     // SectionSoundGate.
@@ -13,9 +13,14 @@ namespace ChessFight.PawnRush
         static AudioClip pushClip;
         AudioSource pushSound;
         float lastProgress = -1f, openRate;
+        // R700 (main merge, 승규 "마차뜰에서만 나게"): the sound is the carriage yard's final gate's. A PushGate anywhere else
+        // (the war room's exit door, Course01v4Builder.WarRoomEnding) stays silent as it was. -1: not looked yet.
+        int inYard = -1;
 
         void LateUpdate()
         {
+            if (inYard < 0) inYard = GetComponentInParent<RoyalCarriageYard>(true) != null ? 1 : 0;
+            if (inYard == 0) return;
             if (pushSound == null)
             {
                 if (pushClip == null) pushClip = Resources.Load<AudioClip>("PawnRushCarriageYardSfx/GatePush");

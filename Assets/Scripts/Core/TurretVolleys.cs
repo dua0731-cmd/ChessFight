@@ -15,9 +15,14 @@ namespace ChessFight.Network
     // others, drawn; the block's last is one of those that is neither the one before it nor the next block's first. So
     // no turret fires twice running, inside a block or across two, and every turret comes up as often as the others.
     // (Two turrets can only take turns, one turret always fires.)
+    //
+    // R679 (the user after the 6 vs 6 test, 11-16: "엔딩구간 난이도 증가 (포탑 개수도 2개 늘리고 사격 범위를 늘려야 할 듯)"):
+    // six turrets, and a volley every 1.5 s (was 2: R653). With one turret firing at a time two more turrets alone
+    // would add no shot; at 1.5 s a turret still comes up about every nine seconds (it was eight with four) and the
+    // room takes a third more shots.
     public static class TurretVolleys
     {
-        public const double Period = 2.0;
+        public const double Period = 1.5;
         const int Block = 16;
 
         // The volley a time on the shared clock is in, and when a volley begins.

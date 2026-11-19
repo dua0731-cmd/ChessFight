@@ -1,0 +1,353 @@
+{
+ "RL_CreamStone": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.280052125453949,
+  "size": 1024,
+  "mean": "#E8C193",
+  "target": "#E8C397",
+  "source": "textures/codex/r0/rl_cream_stone.png",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "grain",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.2,
+   "size": 512
+  }
+ },
+ "RL_Walnut": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.3799999952316284,
+  "size": 1024,
+  "mean": "#7C4020",
+  "target": "#7D4323",
+  "source": "textures/codex/r0/rl_walnut.png",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "fibre",
+   "albedo_amp": 0.11,
+   "normal_strength": 2.4,
+   "size": 512
+  }
+ },
+ "RL_VarnishedWalnut": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.7200000286102295,
+  "size": 1024,
+  "mean": "#673319",
+  "target": "#69371C",
+  "source": "textures/codex/r0/rl_varnished_walnut.png",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "fibre",
+   "albedo_amp": 0.06,
+   "normal_strength": 1.2,
+   "size": 512
+  }
+ },
+ "RL_Brass": {
+  "tile": 1.0,
+  "metallic": 0.95,
+  "smoothness": 0.7400000095367432,
+  "size": 1024,
+  "mean": "#C58A3A",
+  "target": "#C58B3C",
+  "source": "textures/codex/r0/rl_polished_brass.png",
+  "detail": {
+   "tile": 0.25,
+   "pattern": "hairline",
+   "albedo_amp": 0.03,
+   "normal_strength": 0.9,
+   "size": 512
+  }
+ },
+ "RL_RedLeather": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.41999998688697815,
+  "size": 1024,
+  "mean": "#852A1F",
+  "target": "#852B20",
+  "source": "textures/codex/r0/rl_red_leather.png",
+  "detail": {
+   "tile": 0.2,
+   "pattern": "pebble",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.4,
+   "size": 512
+  }
+ },
+ "RL_Parchment": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.14000000059604645,
+  "size": 1024,
+  "mean": "#F3CE96",
+  "target": "#F5D19D",
+  "source": "textures/codex/r0/rl_parchment.png",
+  "detail": {
+   "tile": 0.4,
+   "pattern": "paper",
+   "albedo_amp": 0.04,
+   "normal_strength": 0.9,
+   "size": 512
+  }
+ },
+ "RL_InkGlass": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.9200000166893005,
+  "size": 1024,
+  "mean": "#231818",
+  "target": "#231919",
+  "source": "textures/codex/r0/rl_ink_black_glass.png"
+ },
+ "RL_CreamCloth": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.11999998986721039,
+  "size": 1024,
+  "mean": "#DFB888",
+  "target": "#DDB88B",
+  "source": "textures/codex/r0/rl_cream_cloth.png",
+  "detail": {
+   "tile": 0.1,
+   "pattern": "weave",
+   "albedo_amp": 0.05,
+   "normal_strength": 1.5,
+   "size": 512
+  }
+ },
+ "RL_RedWax": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.6499999761581421,
+  "size": 256,
+  "mean": "#8E1A16",
+  "target": "#8E1A16",
+  "source": "procedural"
+ },
+ "RL_LeatherBrown": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.41999998688697815,
+  "size": 1024,
+  "mean": "#6A3B20",
+  "target": "#6A3B20",
+  "source": "tint of RL_RedLeather",
+  "detail": {
+   "tile": 0.2,
+   "pattern": "pebble",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_RedLeather"
+ },
+ "RL_LeatherDark": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.41999998688697815,
+  "size": 1024,
+  "mean": "#4A1B14",
+  "target": "#4A1B14",
+  "source": "tint of RL_RedLeather",
+  "detail": {
+   "tile": 0.2,
+   "pattern": "pebble",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_RedLeather"
+ },
+ "RL_LeatherTan": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.41999998688697815,
+  "size": 1024,
+  "mean": "#A86E3C",
+  "target": "#A86E3C",
+  "source": "tint of RL_RedLeather",
+  "detail": {
+   "tile": 0.2,
+   "pattern": "pebble",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_RedLeather"
+ },
+ "RL_LeatherSlate": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.41999998688697815,
+  "size": 1024,
+  "mean": "#4B4A4C",
+  "target": "#4B4A4C",
+  "source": "tint of RL_RedLeather",
+  "detail": {
+   "tile": 0.2,
+   "pattern": "pebble",
+   "albedo_amp": 0.07,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_RedLeather"
+ },
+ "RL_Marble": {
+  "tile": 3.0,
+  "metallic": 0.0,
+  "smoothness": 0.5499999523162842,
+  "size": 1024,
+  "mean": "#EBDDD0",
+  "target": "#EBDECF",
+  "source": "textures/codex/r0/rl_white_marble.png",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "grain",
+   "albedo_amp": 0.025,
+   "normal_strength": 0.9,
+   "size": 512
+  }
+ },
+ "RL_Ivory": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.7200000286102295,
+  "size": 512,
+  "mean": "#E6D3B1",
+  "target": "#E6D3B1",
+  "source": "procedural"
+ },
+ "RL_Ebony": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.6999999284744263,
+  "size": 1024,
+  "mean": "#2B1D17",
+  "target": "#2B1D17",
+  "source": "tint of RL_Walnut",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "fibre",
+   "albedo_amp": 0.11,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_Walnut"
+ },
+ "RL_Leaf": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.699999988079071,
+  "size": 256,
+  "mean": "#35652C",
+  "target": "#35652C",
+  "source": "procedural"
+ },
+ "RL_LeafLight": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.550000011920929,
+  "size": 256,
+  "mean": "#619930",
+  "target": "#619930",
+  "source": "procedural"
+ },
+ "RL_Stem": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.3499999940395355,
+  "size": 256,
+  "mean": "#4B7630",
+  "target": "#4B7630",
+  "source": "procedural"
+ },
+ "RL_Soil": {
+  "tile": 1,
+  "metallic": 0.0,
+  "smoothness": 0.10008514672517776,
+  "size": 256,
+  "mean": "#35271D",
+  "target": "#35271D",
+  "source": "procedural"
+ },
+ "RL_PetalCream": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.44999998807907104,
+  "size": 256,
+  "mean": "#EDE5CB",
+  "target": "#EDE5CB",
+  "source": "procedural"
+ },
+ "RL_PetalPink": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.44999998807907104,
+  "size": 256,
+  "mean": "#F3ADAD",
+  "target": "#F3ADAD",
+  "source": "procedural"
+ },
+ "RL_Ceramic": {
+  "tile": 2,
+  "metallic": 0.0,
+  "smoothness": 0.7999999523162842,
+  "size": 256,
+  "mean": "#E7D4AD",
+  "target": "#E7D4AD",
+  "source": "procedural"
+ },
+ "RL_Pollen": {
+  "tile": 0.3,
+  "metallic": 0.0,
+  "smoothness": 0.3500000238418579,
+  "size": 256,
+  "mean": "#ECCB59",
+  "target": "#EDCB59",
+  "source": "procedural"
+ },
+ "RL_Bark": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.25,
+  "size": 1024,
+  "mean": "#61452C",
+  "target": "#61452C",
+  "source": "tint of RL_Walnut",
+  "detail": {
+   "tile": 0.5,
+   "pattern": "fibre",
+   "albedo_amp": 0.11,
+   "normal_strength": 2.4,
+   "size": 512
+  },
+  "share": "RL_Walnut"
+ },
+ "RL_Portrait": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.32,
+  "size": [
+   1024,
+   1280
+  ],
+  "mean": "#723810",
+  "target": "",
+  "source": "painting",
+  "uv": "0..1 over the canvas"
+ },
+ "RL_Tea": {
+  "tile": 0.5,
+  "metallic": 0.0,
+  "smoothness": 0.899927020072937,
+  "size": 256,
+  "mean": "#6B300F",
+  "target": "#6B300F",
+  "source": "procedural"
+ }
+}

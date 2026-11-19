@@ -176,6 +176,10 @@ public static class NetworkCoreTests
             Test("Pawn Rush draw (v1.0 §2.5): never two games of the same group in a round, 1,000 seeds", () => {
                 Check(PawnRushMissions.Group.Length == PawnRushMissions.Count && PawnRushMissions.Ids.Length == PawnRushMissions.Count
                       && PawnRushMissions.Names.Length == PawnRushMissions.Count && PawnRushMissions.Hints.Length == PawnRushMissions.Count, "tables");
+                // R679: a section round's briefing line for every game, two clauses, and no count in it (R543 sizes the games)
+                Check(PawnRushMissions.HowTo.Length == PawnRushMissions.Count, "a briefing line for every game");
+                foreach (var how in PawnRushMissions.HowTo)
+                    Check(how.Split(new[] { " · " }, StringSplitOptions.None).Length == 2 && !System.Text.RegularExpressions.Regex.IsMatch(how, "(?<!×)[0-9]+(칸|개|장|바퀴|번| m)"), "two clauses and no count (H's 3×3 is a shape): " + how);
                 int last1 = -1, last2 = -1;
                 for (int seed = 0; seed < 1000; seed++)
                 {
@@ -207,24 +211,26 @@ public static class NetworkCoreTests
                 Check(PawnRushSections.SectionSeed(5, 2) != PawnRushSections.SectionSeed(5, 4), "slots differ"); });
             Test("Pawn Rush round: one prefab per section, shared games once a round, the previous pick left out", () => {
                 Check(PawnRushSections.Kind.Length == PawnRushSections.SlotCount && PawnRushSections.SlotNames.Length == PawnRushSections.SlotCount, "tables");
-                // Obstacle slots 1-x / 2-x / 3-x, the three mini-game slots share ten games, one final.
+                // R688: six sections - obstacle, mini-game, obstacle, mini-game, obstacle, the ending.
+                Check(PawnRushSections.SlotCount == 6 && string.Join("", PawnRushSections.Kind) == "010102", "obstacle, game, obstacle, game, obstacle, ending");
+                // Obstacle slots 1-x / 2-x / 3-x, the two mini-game slots share ten games, one ending.
                 var games = new[] { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
-                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, games, new[] { 40 } };
+                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, new[] { 40 } };
                 int[] last = null;
                 var seenGames = new HashSet<int>();
                 for (int seed = 0; seed < 500; seed++)
                 {
                     var p = PawnRushSections.Choose(seed, options, last);
-                    Check(p.Length == 7 && p[4] == 30 && p[6] == 40, "single options");
-                    Check(p[1] != p[3] && p[1] != p[5] && p[3] != p[5], "three different games, seed " + seed);
-                    for (int s = 0; s < 7; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
+                    Check(p.Length == 6 && p[4] == 30 && p[5] == 40, "single options");
+                    Check(p[1] != p[3], "two different games, seed " + seed);
+                    for (int s = 0; s < 6; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
                     if (last != null) Check(p[0] != last[0] && p[2] != last[2] && p[1] != last[1], "previous round left out, seed " + seed);
-                    seenGames.Add(p[1]); seenGames.Add(p[3]); seenGames.Add(p[5]);
+                    seenGames.Add(p[1]); seenGames.Add(p[3]);
                     last = p;
                 }
                 Check(seenGames.Count == 10, "every game comes up");
                 var x = PawnRushSections.Choose(9, options); var y = PawnRushSections.Choose(9, options);
-                for (int s = 0; s < 7; s++) Check(x[s] == y[s], "same seed, same round");
+                for (int s = 0; s < 6; s++) Check(x[s] == y[s], "same seed, same round");
                 var holes = PawnRushSections.Choose(3, new[] { new int[0], null, new[] { 5 }, new[] { 5 } });
                 Check(holes[0] == -1 && holes[1] == -1 && holes[2] == 5 && holes[3] == 5, "empty slots and a one-prefab list"); });
             Test("Pawn Rush course table (R548): read as written, the round's own draw by name", () => {
@@ -234,8 +240,7 @@ public static class NetworkCoreTests
                     new PawnRushCourseTable.Row(1, "G1", "해자 도개교"), new PawnRushCourseTable.Row(1, "G2", "정문 쇠살문 누각"),
                     new PawnRushCourseTable.Row(1, "G3", "정문 의장 광장"), new PawnRushCourseTable.Row(2, "B1", "대계단 현관홀"),
                     new PawnRushCourseTable.Row(3, "G2", "정문 쇠살문 누각"), new PawnRushCourseTable.Row(3, "G4", "왕궁 서고"),
-                    new PawnRushCourseTable.Row(4, "C1", "후반 장애물"), new PawnRushCourseTable.Row(5, "G1", "해자 도개교"),
-                    new PawnRushCourseTable.Row(5, "G5", "국왕 침실"), new PawnRushCourseTable.Row(6, "F", "작전 회의실"),
+                    new PawnRushCourseTable.Row(4, "C1", "국왕 작전실"), new PawnRushCourseTable.Row(5, "F", "국왕 알현실"),
                 };
                 // A byte order mark, Windows line ends, comments, a line that is not one, a slot out of range and a key
                 // listed twice in its slot: none of them changes the table.
@@ -245,7 +250,7 @@ public static class NetworkCoreTests
                 Check(table.Count == rows.Count, "every row once: " + table.Count);
                 Check(table.Names(0)[0] == "왕실 수로 정원" && table.Names(1).Count == 3 && table.Names(1)[1] == "정문 쇠살문 누각", "names in order");
                 // PawnRushSectionSet.Options numbers the prefabs as they first appear, slot after slot: the same by hand.
-                var options = new[] { new[] { 0, 1 }, new[] { 2, 3, 4 }, new[] { 5 }, new[] { 3, 6 }, new[] { 7 }, new[] { 2, 8 }, new[] { 9 } };
+                var options = new[] { new[] { 0, 1 }, new[] { 2, 3, 4 }, new[] { 5 }, new[] { 3, 6 }, new[] { 7 }, new[] { 8 } };
                 for (int seed = -50; seed < 400; seed++)
                 {
                     var ids = PawnRushSections.Choose(seed, options);
@@ -264,7 +269,8 @@ public static class NetworkCoreTests
                 {
                     var s = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
                     s.Advance(1600.0);
-                    Check(s.Count > 230 && s.Count < 380, "about one every 2.1 s: " + s.Count);
+                    // R680: a roll every 1.2 to 2 s (was 1.6 to 2.6)
+                    Check(s.Count > 300 && s.Count < 500, "about one every 1.6 s: " + s.Count);
                     var lanes = new int[4];
                     int statues = 0;
                     for (int i = 0; i < s.Count; i++)
@@ -273,7 +279,7 @@ public static class NetworkCoreTests
                         lanes[e.Lane]++;
                         if (e.Statue) statues++;
                         Check(e.Serial == i, "serials in order");
-                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.6 - 1e-9 && e.Time - s[i - 1].Time <= 2.6 + 1e-9, "gap 1.6 ~ 2.6 s");
+                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.2 - 1e-9 && e.Time - s[i - 1].Time <= 2.0 + 1e-9, "gap 1.2 ~ 2 s");
                         int inWindow = e.Statue ? 1 : 0;
                         for (int j = i - 1; j >= 0 && e.Time - s[j].Time < 4.0; j--)
                         {
@@ -305,14 +311,15 @@ public static class NetworkCoreTests
                 {
                     var c = new ChandelierSchedule(SeededSchedule.Hash(seed, 2), 50.0);
                     c.Advance(650.0);
-                    Check(c.Count > 380 && c.Count < 900, "about one a second: " + c.Count);
+                    // R680: a drop every 0.5 to 1 s (was 0.7 to 1.4), busy for 2 s (was 2.2)
+                    Check(c.Count > 500 && c.Count < 1250, "about four in three seconds: " + c.Count);
                     for (int i = 0; i < c.Count; i++)
                     {
                         var d = c[i];
                         Check(d.X >= -13 && d.X <= 13 && d.Z >= 54 && d.Z <= 65, "in the area");
                         Check(!(d.X > -2 && d.X < 2 && d.Z > 61 && d.Z < 65), "not on the king's base");
-                        if (i > 0) Check(d.Time - c[i - 1].Time >= .7 - 1e-9, "at least 0.7 s apart");
-                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.2; j--)
+                        if (i > 0) Check(d.Time - c[i - 1].Time >= .5 - 1e-9, "at least 0.5 s apart");
+                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.0; j--)
                         {
                             double dx = d.X - c[j].X, dz = d.Z - c[j].Z;
                             Check(dx * dx + dz * dz >= 36 - 1e-9, "6 m from a drop still warning or just fallen, seed " + seed);
@@ -393,26 +400,30 @@ public static class NetworkCoreTests
                 var one = RoyalWaterGardenRules.RollBoatLanes(1); var two = RoyalWaterGardenRules.RollBoatLanes(2);
                 for (int i = 0; i < one.Length; i++) differs |= one[i].Dir != two[i].Dir || one[i].Speed != two[i].Speed;
                 Check(differs, "another seed, other lanes"); });
-            Test("Royal water garden geysers: one after another, 0.8 s bubbling then 1 s jet every 5 s", () => {
+            Test("Royal water garden geysers: one after another, 0.6 s bubbling then 1 s jet every 4 s (R680)", () => {
                 double into;
                 for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++)
-                    foreach (double cycle in new[] { 0.0, 5.0, 1.7e9 })
+                    foreach (double cycle in new[] { 0.0, 4.0, 1.7e9 })
                     {
                         double t0 = cycle + k * RoyalWaterGardenRules.GeyserStep;
                         Check(RoyalWaterGardenRules.GeyserState(k, t0 + .01, out into) == RoyalWaterGardenRules.Jet.Warn && Math.Abs(into - .01) < 1e-4, "bubbling first, geyser " + k);
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .79, out into) == RoyalWaterGardenRules.Jet.Warn, "0.8 s of bubbling");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .81, out into) == RoyalWaterGardenRules.Jet.Jet, "then the jet");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.79, out into) == RoyalWaterGardenRules.Jet.Jet, "1 s of jet");
-                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.81, out into) == RoyalWaterGardenRules.Jet.Rest, "then rest");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .59, out into) == RoyalWaterGardenRules.Jet.Warn, "0.6 s of bubbling");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .61, out into) == RoyalWaterGardenRules.Jet.Jet, "then the jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.59, out into) == RoyalWaterGardenRules.Jet.Jet, "1 s of jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.61, out into) == RoyalWaterGardenRules.Jet.Rest, "then rest");
                         Check(RoyalWaterGardenRules.GeyserState(k, t0 - .01, out into) == RoyalWaterGardenRules.Jet.Rest, "rest before");
-                        Check(RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + 5.01) == RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + .01) + 1, "next eruption");
+                        Check(RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + 4.01) == RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + .01) + 1, "next eruption");
                     }
-                // At any moment at most two jets are up, so there is always room between them.
+                // At any moment at most two neighbours are up, so there is always room beside them. R680: with a 4 s
+                // cycle the far end fires again while the near end's last two are up - three at most, never three in a row.
                 for (double t = 0; t < 20; t += .01)
                 {
                     int up = 0;
-                    for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++) if (RoyalWaterGardenRules.GeyserState(k, t, out into) == RoyalWaterGardenRules.Jet.Jet) up++;
-                    Check(up <= 2, "at most two jets at once: " + up);
+                    var jets = new bool[RoyalWaterGardenRules.Geysers];
+                    for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++)
+                        if (jets[k] = RoyalWaterGardenRules.GeyserState(k, t, out into) == RoyalWaterGardenRules.Jet.Jet) up++;
+                    Check(up <= 3, "at most three jets at once: " + up);
+                    for (int k = 0; k + 2 < jets.Length; k++) Check(!(jets[k] && jets[k + 1] && jets[k + 2]), "never three neighbours at once, at " + t);
                 } });
             Test("Royal water garden robots: rest, wind up, sweep, hold over the water, back; low only while crossing", () => {
                 double into, last = RoyalWaterGardenRules.RobotAngle(0);
@@ -426,8 +437,10 @@ public static class NetworkCoreTests
                     last = a;
                 }
                 Check(RoyalWaterGardenRules.RobotAngle(2.2) == RoyalWaterGardenRules.RobotDown, "holds over the water");
-                Check(RoyalWaterGardenRules.RobotAngle(5.0) == RoyalWaterGardenRules.RobotRest, "rests raised");
-                Check(RoyalWaterGardenRules.RobotPhase(6.0 * 283333333 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
+                // R680: a swing every 4.5 s (was 6): the wind-up and the sweep as long as before, the rest 0.65 s
+                Check(RoyalWaterGardenRules.RobotCycle == 4.5 && RoyalWaterGardenRules.WindUntil == 1.0 && RoyalWaterGardenRules.SweepUntil == 1.85, "4.5 s, the same warning and sweep");
+                Check(RoyalWaterGardenRules.RobotAngle(4.2) == RoyalWaterGardenRules.RobotRest, "rests raised");
+                Check(RoyalWaterGardenRules.RobotPhase(4.5 * 377777777 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
             Test("Royal Carriage Yard roaming fleet: horse-drawn carriages share the yard between the sheds, never meet, stay in it, never jump, roam all of it, one plan however it is advanced", () => {
                 foreach (double origin in new[] { 3.0, 1762000003.25 })
                 {
@@ -1118,6 +1131,59 @@ public static class NetworkCoreTests
                 Check(bots.Count==0,"a party's bot stayed without its people");
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
+            Test("R703: the round's flow rules pack into one number and back; a number that is not rules is the game as it was", () => {
+                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) {
+                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending,"rules changed on the way: "+relief+after+ending); }
+                Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
+                var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
+                Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
+                Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
+                Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
+                Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
+            Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
+                Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
+                Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");
+                Check(PawnRushThrone.Holder(1,1,0,0)==0&&PawnRushThrone.Holder(0,0,0,0)==PawnRushThrone.Nobody&&PawnRushThrone.Holder(2,3,3,5)==PawnRushThrone.Both,"who holds, other sizes; a team of nobody never holds");
+                float w=0,b=0; int won=PawnRushThrone.Nobody;
+                for (int i=0; i<100&&won==PawnRushThrone.Nobody; i++) won=PawnRushThrone.Step(ref w,ref b,0,.1f,20,30);   // white holds 10 s
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(w-10)<.01f&&b==0,"ten seconds of white: "+w);
+                for (int i=0; i<50; i++) won=PawnRushThrone.Step(ref w,ref b,PawnRushThrone.Both,.1f,20,30);
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(w-10)<.01f&&b==0,"both on it: nobody's time ran");
+                for (int i=0; i<50; i++) won=PawnRushThrone.Step(ref w,ref b,PawnRushThrone.Nobody,.1f,20,30);
+                Check(Math.Abs(w-10)<.01f,"nobody on it: white kept its time");
+                for (int i=0; i<80; i++) won=PawnRushThrone.Step(ref w,ref b,1,.1f,20,30);                                 // black holds 8 s
+                Check(won==PawnRushThrone.Nobody&&Math.Abs(b-8)<.01f&&Math.Abs(w-10)<.01f,"eight seconds of black");
+                int steps=0; while (won==PawnRushThrone.Nobody&&steps<1000) { won=PawnRushThrone.Step(ref w,ref b,0,.1f,20,30); steps++; }
+                Check(won==0&&steps>=99&&steps<=101&&w==20,"white fills its 20 s after ten more seconds and wins: "+steps);
+                float w2=0,b2=29.95f; Check(PawnRushThrone.Step(ref w2,ref b2,1,.1f,20,30)==1&&b2==30,"black wins at its 30 s");
+                float w3=20,b3=0; Check(PawnRushThrone.Step(ref w3,ref b3,1,.1f,20,30)==PawnRushThrone.Nobody,"a full team that is not holding does not win on the other's step"); });
+            Test("R704: a station's gate travels with the course state apart from its game's done", () => {
+                var a=new PawnRushNetState{Tick=5,StationCount=4};
+                for (int st=0; st<4; st++) a.Game[st]=(sbyte)st;
+                a.Completed[1]=true; a.Completed[2]=true; a.GateOpen[2]=true; a.GateOpen[3]=true;
+                var b=new PawnRushNetState(); Check(PawnRushNetState.Read(a.Write(9UL),9UL,b),"read");
+                Check(!b.Completed[0]&&!b.GateOpen[0],"nothing done, nothing open");
+                Check(b.Completed[1]&&!b.GateOpen[1],"cleared with its gate still shut (the team has not gathered)");
+                Check(b.Completed[2]&&b.GateOpen[2],"cleared and open");
+                Check(!b.Completed[3]&&b.GateOpen[3],"the gate's bit is its own");
+                var c=new PawnRushNetState(); c.CopyFrom(b); Check(c.Completed[1]&&!c.GateOpen[1]&&c.GateOpen[2]&&c.GateOpen[3],"the copy");
+                Check(PawnRushFinish.Needed(6)==4&&PawnRushFinish.Needed(5)==3&&PawnRushFinish.Needed(4)==3&&PawnRushFinish.Needed(3)==2&&PawnRushFinish.Needed(2)==2&&PawnRushFinish.Needed(1)==1,"how many of a team the pad takes: the win's own majority"); });
+            Test("R694: a player changes sides alone and the rest of its group stay; one player gives up a seat and takes one", () => {
+                var r=new TeamReservations(); Reserve(r,1,3); Reserve(r,4,2); r.Reconcile(new HashSet<ulong>(Ids(1,5)),1);
+                Check(r.Find(2).Team==0&&r.Find(4).Team==1,"setup: 1 2 3 white, 4 5 black");
+                Check(r.Move(2,1)&&r.Find(2).Team==1&&r.Find(1).Team==0&&r.Find(3).Team==0&&r.Used(0)==2&&r.Used(1)==3,"one member did not move alone");
+                Check(!r.Move(2,1)&&!r.Move(9,0)&&!r.Move(2,2),"a move to the same side, by a stranger, or to no side");
+                Check(r.Move(1,1)&&r.Find(3).Team==0&&r.Find(3).Leader==3&&r.Find(1).Leader==1&&r.Used(1)==4,"the leader did not move alone, or left its group without a leader");
+                r.Remove(1); Check(r.Find(1)==null&&r.Find(3)!=null,"removing the mover took its old group along");
+                var full=new TeamReservations(); Reserve(full,1,6); Reserve(full,7,1);
+                Check(!full.Move(7,0)&&full.Find(7).Team==1,"a move onto a full side");
+                Check(r.Unseat(3)&&r.Find(3)==null&&!r.Unseat(3)&&r.Seat(3,1,5)&&r.Find(3).Team==1&&r.Find(3).Committed&&!r.Seat(3,0,5),"Unseat and Seat");
+                var bots=new TeamReservations(); ulong lead=500, bot=BotIdentity.Id(lead,0);
+                bots.Reserve(lead,77,"t",new[] {lead,bot},0,out _);
+                int was=bots.Find(lead).Team;
+                Check(bots.Move(lead,1-was)&&bots.Find(bot).Team==1-was&&!bots.Move(bot,was),"a player's bots did not come along, or a bot moved by itself");
+                Check(bots.Unseat(lead)&&bots.Find(bot)!=null&&bots.Count==1,"the bots a player left behind lost their seat"); });
             Test("R644: the waiting room's line of succession, a claim that passes over several in it, and the order by machines alone", () => {
                 Func<ulong,int,HostElection.Candidate> Heir=(id,fit)=>new HostElection.Candidate{Id=id,Fitness=fit,PingMs=-1};
                 var heirs=new[]{Heir(2,900),Heir(3,800),Heir(4,700),Heir(5,600)};
@@ -2716,6 +2782,41 @@ public static class NetworkCoreTests
                 Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
                 Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
                 Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            // R683 (the 11-15 build test: a Sword Fight room stayed "playing" after its result and everyone who left was taken
+            // back into it): the host looked for a new phase before and after Advance only, and the point that wins a match
+            // is scored by RingOut, later in the same step - the result was never entered on the host. The rules now hand
+            // every phase they enter to the host themselves (TakeEntered).
+            Test("R683 Sword Fight: every phase the rules enter is handed to the host once - also the result a fall decides, which Advance never reports", () => {
+                var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(3, 1); SwordPhase p;
+                Check(!r.TakeEntered(out p) && p == SwordPhase.Pick, "nothing is entered at the start");
+                r.Advance(15.01); Check(r.TakeEntered(out p) && p == SwordPhase.Countdown && !r.TakeEntered(out p), "the countdown, once");
+                r.Advance(3.01); Check(r.TakeEntered(out p) && p == SwordPhase.Playing && !r.TakeEntered(out p), "play, once");
+                for (int i = 0; i < 9; i++) { r.RingOut(3); r.Advance(3.01); r.TryRespawn(3); }
+                Check(r.White == 9 && r.Phase == SwordPhase.Playing && !r.TakeEntered(out p), "nine points enter nothing");
+                // The host's step: Advance, a look at the phase, then the falls. The tenth point ends the match after the look.
+                var before = r.Phase; bool seen = r.Advance(1 / 120.0) || r.Phase != before;
+                r.RingOut(3);
+                before = r.Phase; seen |= r.Advance(1 / 120.0) || r.Phase != before;
+                Check(r.Phase == SwordPhase.Result && r.Winner == 0 && !seen, "setup: a look before and after Advance never sees the tenth point's result");
+                Check(r.TakeEntered(out p) && p == SwordPhase.Result && !r.TakeEntered(out p), "the result of the tenth point was not handed to the host");
+                // Sudden death: the tie is entered by Advance, the point that ends it by the fall; in the order entered.
+                var s = new SwordMatchRules(3); s.Add(1, 0); s.Add(2, 1); s.Advance(15.1); s.Advance(3.1); s.Advance(240);
+                Check(s.TakeEntered(out p) && p == SwordPhase.Countdown && s.TakeEntered(out p) && p == SwordPhase.Playing
+                      && s.TakeEntered(out p) && p == SwordPhase.SuddenDeath && !s.TakeEntered(out p), "the phases in the order they were entered");
+                s.RingOut(1); Check(s.Winner == 1 && s.TakeEntered(out p) && p == SwordPhase.Result && !s.TakeEntered(out p), "the sudden-death point's result");
+                // Time up with a lead: Advance enters the result itself, as before.
+                var t = new SwordMatchRules(5); t.Add(1, 0); t.Add(2, 1); t.Advance(15.1); t.Advance(3.1); t.RingOut(2); while (t.TakeEntered(out p)) { }
+                t.Advance(240); Check(t.Phase == SwordPhase.Result && t.TakeEntered(out p) && p == SwordPhase.Result && !t.TakeEntered(out p), "time up");
+                // A new host (SwordFightMatch.TakeOver): the state copied in is no phase entered, the fall it then adopts
+                // from the bodies is; a result the old host had already shown is not entered again.
+                var q = new SwordMatchRules(7); q.Add(1, 0); q.Add(3, 1); q.Advance(15.01); q.Advance(3.01);
+                for (int i = 0; i < 9; i++) { q.RingOut(3); q.Advance(3.01); q.TryRespawn(3); }
+                var h = new SwordMatchRules(7); h.Add(1, 0); h.Add(3, 1); h.Restore(q.State(), .05);
+                Check(h.Phase == SwordPhase.Playing && h.White == 9 && !h.TakeEntered(out p), "a restored phase was handed over as one entered");
+                h.Adopt(3, false, PieceKind.Knight, 3);
+                Check(h.Phase == SwordPhase.Result && h.TakeEntered(out p) && p == SwordPhase.Result && !h.TakeEntered(out p), "the point a new host adopts from the bodies");
+                var e = new SwordMatchRules(7); e.Add(1, 0); e.Add(3, 1); e.Restore(h.State());
+                Check(e.Phase == SwordPhase.Result && !e.TakeEntered(out p), "a result taken over was entered again"); });
             // R655 (승규 님 온라인 시험: 바닥이 감지되지 않고 떨어짐): every PC chose its own board (2 or 2.5 m squares); now the
             // host's square side rides in the state and a client builds that board.
             Test("Sword Fight board size: the host's square side rides in the match state; an older text and a wild size are refused", () => {
@@ -3090,10 +3191,11 @@ public static class NetworkCoreTests
                 Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
                 Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
                       "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
-            Test("War room turret volleys: a turret every two seconds, never the one before, every turret as often, the same on every PC", () => {
-                Check(TurretVolleys.Period == 2.0 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.999) == 0 && TurretVolleys.Volley(2) == 1
-                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 14.0, "a volley every two seconds of the clock");
-                foreach (int turrets in new[] { 3, 4, 5, 8 })
+            Test("War room turret volleys: a turret every 1.5 seconds (R679), never the one before, every turret as often, the same on every PC", () => {
+                Check(TurretVolleys.Period == 1.5 && TurretVolleys.Volley(0) == 0 && TurretVolleys.Volley(1.499) == 0 && TurretVolleys.Volley(1.5) == 1
+                      && TurretVolleys.Volley(-.001) == -1 && TurretVolleys.Start(7) == 10.5, "a volley every 1.5 seconds of the clock");
+                // six: the war room's battery since R679
+                foreach (int turrets in new[] { 3, 4, 5, 6, 8 })
                     foreach (int seed in new[] { 1, 2, 77, -5, 20261112, int.MaxValue })
                     {
                         var count = new int[turrets];
@@ -3128,6 +3230,42 @@ public static class NetworkCoreTests
                 // Two turrets take turns, one fires every time.
                 for (long n = -20; n < 20; n++)
                     Check(TurretVolleys.Turret(3, n, 2) != TurretVolleys.Turret(3, n + 1, 2) && TurretVolleys.Turret(3, n, 1) == 0, "two take turns"); });
+            Test("R682 Pawn Rush standings: a rank from the section and how far through it, level racers share it, the list keeps this PC's own racer, the track's segments", () => {
+                // Six racers: two in the fourth section's mini-game (their team's progress 0.45), one there for the other
+                // team (0.2), three in the third section by distance.
+                var progress = new[] { PawnRushStandings.Progress(3, .45), PawnRushStandings.Progress(3, .45), PawnRushStandings.Progress(3, .2),
+                                       PawnRushStandings.Progress(2, .78), PawnRushStandings.Progress(2, .62), PawnRushStandings.Progress(2, .3) };
+                var ranks = new int[6]; var order = new int[6];
+                PawnRushStandings.Ranks(progress, 6, ranks);
+                Check(ranks[0] == 1 && ranks[1] == 1 && ranks[2] == 3 && ranks[3] == 4 && ranks[4] == 5 && ranks[5] == 6, "ranks: " + string.Join(" ", ranks));
+                PawnRushStandings.Order(ranks, 6, order);
+                Check(string.Join(" ", order) == "0 1 2 3 4 5", "level racers keep the roster's order: " + string.Join(" ", order));
+                // Given in another order, the same ranks; a later section beats any place in an earlier one.
+                var mixed = new[] { progress[5], progress[2], progress[0], progress[4], progress[1], progress[3] };
+                PawnRushStandings.Ranks(mixed, 6, ranks);
+                PawnRushStandings.Order(ranks, 6, order);
+                Check(string.Join(" ", ranks) == "6 3 1 5 1 4" && string.Join(" ", order) == "2 4 1 5 3 0", "mixed: " + string.Join(" ", ranks) + " / " + string.Join(" ", order));
+                Check(PawnRushStandings.Progress(3, 0) > PawnRushStandings.Progress(2, 1) - 1e-9 && PawnRushStandings.Progress(3, .01) > PawnRushStandings.Progress(2, 5), "a later section is ahead");
+                Check(PawnRushStandings.Progress(-1, .5) == .5 && PawnRushStandings.Progress(2, double.NaN) == 2 && PawnRushStandings.Progress(2, -3) == 2, "clamped");
+                // The list: its first rows; this PC's own racer takes the last line when it is further down.
+                var twelve = new int[12]; var shown = new int[6];
+                for (int i = 0; i < 12; i++) twelve[i] = i;
+                Check(PawnRushStandings.ListRows(twelve, 12, 3, 6, shown) == 6 && string.Join(" ", shown) == "0 1 2 3 4 5", "own racer in the first six");
+                Check(PawnRushStandings.ListRows(twelve, 12, 9, 6, shown) == 6 && string.Join(" ", shown) == "0 1 2 3 4 9", "own racer further down: " + string.Join(" ", shown));
+                Check(PawnRushStandings.ListRows(twelve, 4, 3, 6, shown) == 4 && shown[3] == 3, "fewer racers than lines");
+                Check(PawnRushStandings.ListRows(twelve, 12, -1, 6, shown) == 6 && shown[5] == 5, "no own racer (a watcher)");
+                // The track: a mini-game a fixed share, another section by the root of its length, with gaps, filling 0..1.
+                Check(PawnRushStandings.Weight(true, 36) == 1.1 && PawnRushStandings.Weight(true, 900) == 1.1, "a mini-game's share is fixed");
+                Check(Math.Abs(PawnRushStandings.Weight(false, 60) - 1) < 1e-9 && PawnRushStandings.Weight(false, 259) == 2 && PawnRushStandings.Weight(false, 20) == .7
+                      && PawnRushStandings.Weight(false, 0) == 1, "by the root of the length, 0.7 to 2");
+                var weights = new[] { 2, 1.1, 2, 1.1, .7, 1.1, .96 };
+                var start = new double[7]; var width = new double[7];
+                PawnRushStandings.Layout(weights, 7, .007, start, width);
+                Check(start[0] == 0 && Math.Abs(start[6] + width[6] - 1) < 1e-9, "from 0 to 1");
+                for (int i = 1; i < 7; i++) Check(Math.Abs(start[i] - (start[i - 1] + width[i - 1] + .007)) < 1e-9, "a gap between neighbours");
+                Check(Math.Abs(width[0] / width[1] - 2 / 1.1) < 1e-9 && Math.Abs(width[0] - width[2]) < 1e-12, "shared by weight");
+                Check(Math.Abs(PawnRushStandings.OnTrack(start, width, 7, 2, .5) - (start[2] + width[2] * .5)) < 1e-12
+                      && PawnRushStandings.OnTrack(start, width, 7, 9, 2) == start[6] + width[6] && PawnRushStandings.OnTrack(start, width, 7, -1, -1) == 0, "a dot's place, clamped"); });
             Test("R624 sword pick on the entrance screen: the earlier pick keeps a piece, the close draws the rest, the same on every PC", () => {
                 // The member data's text, both ways; a broken or unpickable one is no pick.
                 PieceKind kind; double at;
@@ -3181,6 +3319,62 @@ public static class NetworkCoreTests
                 Check(rules.AllPicked && rules.Advance(.02) && rules.Phase == SwordPhase.Countdown, "all assigned: straight to 3, 2, 1");
                 Check(!rules.Assign(1, PieceKind.King), "no assigning after the pick");
                 Check(SwordSkillNames.Skill(PieceKind.Queen) == "꼬치 베기" && SwordSkillNames.Edge(PieceKind.Knight) == "벼랑 끝 역전", "skill names"); });
+            Test("R689 giant chess: the seed's series never repeats a game in a row, the replay is a function of time, the start rides in tenths", () => {
+                const int count = 40;
+                for (int seed = 1; seed < 300; seed++)
+                {
+                    int previous = -1;
+                    for (int turn = 0; turn < 12; turn++)
+                    {
+                        int game = GiantChessReplay.Game(seed, turn, count);
+                        Check(game >= 0 && game < count, "a game of the library");
+                        Check(game != previous, "never the same game twice in a row, seed " + seed);
+                        Check(game == GiantChessReplay.Game(seed, turn, count), "the same seed, the same series");
+                        previous = game;
+                    }
+                }
+                Check(GiantChessReplay.Game(5, 3, 1) == 0 && GiantChessReplay.Game(5, 0, 0) == -1, "one game repeats; none is none");
+                var seen = new HashSet<int>();
+                for (int seed = 1; seed < 200; seed++) seen.Add(GiantChessReplay.Game(seed, 0, count));
+                Check(seen.Count > 30, "first games spread over the library: " + seen.Count);
+
+                // Plies 3 and 2 for two games; rest 2, move 3, warn 5, strike .5, end 10: a move is 10.5 replay seconds.
+                var timing = new GiantChessReplay.Timing(2, 3, 5, .5, 10);
+                int seed2 = 7, first = GiantChessReplay.Game(seed2, 0, count), second = GiantChessReplay.Game(seed2, 1, count);
+                Func<int, int> plies = g => g == first ? 3 : 2;
+                Check(Math.Abs(timing.Ply - 10.5) < 1e-9 && Math.Abs(timing.Game(3) - 41.5) < 1e-9, "a move, a game");
+                var s = GiantChessReplay.Locate(-1, seed2, count, plies, timing);
+                Check(s.Cycle == 0 && s.Game == first && s.Ply == 0 && s.Phase == GiantChessReplay.Rest && s.T == 0, "not started: the first game's first rest");
+                s = GiantChessReplay.Locate(1, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Rest && Math.Abs(s.T - 1) < 1e-9, "resting");
+                s = GiantChessReplay.Locate(2.5, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Move && Math.Abs(s.T - .5) < 1e-9, "the piece flies");
+                s = GiantChessReplay.Locate(10.2, seed2, count, plies, timing);
+                Check(s.Ply == 0 && s.Phase == GiantChessReplay.Strike && Math.Abs(s.T - .2) < 1e-9, "the strike");
+                s = GiantChessReplay.Locate(10.5 * 2 + 6, seed2, count, plies, timing);
+                Check(s.Ply == 2 && s.Phase == GiantChessReplay.Warn && Math.Abs(s.T - 1) < 1e-9, "the third move warns");
+                s = GiantChessReplay.Locate(31.5 + 4, seed2, count, plies, timing);
+                Check(s.Cycle == 0 && s.Ply == 3 && s.Phase == GiantChessReplay.End && Math.Abs(s.T - 4) < 1e-9, "the game is over: End");
+                s = GiantChessReplay.Locate(41.5 + 13, seed2, count, plies, timing);
+                Check(s.Cycle == 1 && s.Game == second && s.Ply == 1 && s.Phase == GiantChessReplay.Move && Math.Abs(s.T - .5) < 1e-9, "the next game follows");
+                s = GiantChessReplay.Locate(41.5 + 31 + 1, seed2, count, plies, timing);
+                Check(s.Cycle == 2 && s.Ply == 0 && s.Phase == GiantChessReplay.Rest, "and the next");
+                // Every phase's start, found again from the spot: what the offline N key and the catch-up count on.
+                for (double t = 0; t < 200; t += .37)
+                {
+                    var spot = GiantChessReplay.Locate(t, seed2, count, plies, timing);
+                    double start = GiantChessReplay.PhaseStart(spot, seed2, count, plies, timing);
+                    Check(Math.Abs(start + spot.T - t) < 1e-6, "phase start + time into it = the time, at " + t);
+                    var before = GiantChessReplay.Locate(t - .3, seed2, count, plies, timing);
+                    Check(!spot.Before(before), "the replay never goes back, at " + t);
+                }
+                // The host's start on the wire: tenths after the round's start, 0 = not started; the host keeps the rounded time.
+                double origin = 1234.56;
+                Check(GiantChessReplay.Encode(double.NaN, origin) == 0 && double.IsNaN(GiantChessReplay.Decode(0, origin)), "not started");
+                double start2 = GiantChessReplay.Round(origin + 187.34, origin);
+                Check(Math.Abs(start2 - (origin + 187.3)) < 1e-9 && GiantChessReplay.Decode(GiantChessReplay.Encode(start2, origin), origin) == start2, "a tenth, both ways");
+                Check(GiantChessReplay.Encode(origin - 5, origin) == 1, "never before the round's start");
+                Check(GiantChessReplay.Encode(origin + 1e6, origin) == 65535, "clamped: 109 minutes"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

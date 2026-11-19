@@ -104,6 +104,10 @@
   - 소드 파이트(`SteamMatchLabLink`)와 래그돌 랩 · 로컬 시험(`LabNetLink`): 같은 규칙. 공동 시작 시각이 없는 랩 · 로컬 시험은 씬에 들어온 때부터(예전과 같음).
 - 방장이 바뀌면 이 시계도 새 방장 기준으로 다시 시작한다(`HostSilence.Enter`).
 
+### 끊긴 Steam 세션은 다음 전송이 다시 연다 (R683, 2026-11-15)
+
+Steam P2P 메시지(`SteamNetworkingMessages`)의 세션은 한 번 실패하면(`SessionFailed`: 5003 시간 초과, 5008 연결 협상 실패) 그 뒤의 전송이 계속 `NoConnection`으로 돌아온다 — `CloseSessionWithUser`를 부르거나 전송에 `AutoRestartBrokenSession`을 줘야 새 세션이 열린다. 11-15 빌드 시험에서 로딩 중 물리 담당과의 세션이 한 번 실패한 두 PC가 경기 시작 12초 뒤 "물리 담당 소식 없음"으로 나갔고, 돌아가자(새 세션) 바로 연결됐다. 이제 모든 전송(대기실 `SteamMotion`, 폰 러쉬 · 소드 파이트 · 랩 링크, 음성)이 `SteamSend.Unreliable` · `Reliable` · `Flags`를 쓴다: 실패한 세션에 대한 다음 전송이 새 세션을 연다. 화면 글은 "Steam P2P 연결이 끊겨 다시 연결하는 중입니다"(그 사람의 다음 패킷이 이 줄기로 오면 "Steam으로 연결됨"으로 바뀜), Player.log의 `Steam P2P 연결 실패` 줄 끝에는 "같은 방 → 다시 연결함" / "방에 없는 사람(나간 뒤 정리)"이 붙는다. 12초 침묵 규칙은 그대로다(정말 못 붙는 PC는 전처럼 나간다). 실제 Steam에서는 확인 전([PITFALLS 49](../Environment/PITFALLS.md)).
+
 ## 5. 아직 없는 것
 
 신뢰 전송 이벤트 채널, 보간 버퍼(지금은 `1-exp(-18·dt)` Lerp 표시), 입력 이력 재현, 되감기 판정. 호스트 이전은 `claude/host-migration`(R50)에 있다 → [HOST](HOST.md). [PLAN_V0.1_STATUS](PLAN_V0.1_STATUS.md), [ROADMAP](../Project/ROADMAP.md).

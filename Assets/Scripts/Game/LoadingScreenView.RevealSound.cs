@@ -129,12 +129,12 @@ namespace ChessFight.Game
             float swapHalf = TitleSwap / 2f;
             Add("RevealTitle", TitleSwapAt + swapHalf + swapHalf * backLands, LeadTitle, .5f, StagePan(200f));
             foreach (var p in revealPanels)
-                Add("RevealSlam", VersusMerge, LeadSlam, .6f, StagePan(PanelLeft + p.Index * PanelStep + PanelWide / 2f));
+                Add("RevealSlam", VersusMerge, LeadSlam, .6f, StagePan(PanelX(p.Index) + PanelWide / 2f));
 
             foreach (var p in revealPanels)
             {
                 int i = p.Index;
-                float pan = StagePan(PanelLeft + i * PanelStep + PanelWide / 2f);
+                float pan = StagePan(PanelX(i) + PanelWide / 2f);
                 if (p.Names.Length == 0 || p.Pick < 0) continue;
                 int last = p.Hops.Length - 1;
                 for (int j = 0; j < last; j++)

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 730" width="100%" style="height:auto;max-width:1180px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R715 왕실 천문대 구조안 v0.2 — 코스가 혼천의다</title>
+<defs><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#ffffff"/></marker></defs>
+<rect width="1180" height="730" fill="#171a22"/>
+<text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">왕실 천문대 구조안 v0.2 — 코스가 혼천의다 (R715)</text>
+<text x="24" y="56" font-size="13" fill="#a39a85">위에서 본 배치 · 북쪽이 위 · 중심 (0, 70) · 흰 점선 = 진행 경로 · 장애물은 아직 놓지 않았다(구조 먼저)</text>
+
+<g transform="translate(250 700) scale(5 -5)">
+  <circle cx="0" cy="70" r="42" fill="#0f1320" stroke="#3b4257" stroke-width=".4"/>
+  <rect x="-9" y="8" width="18" height="24" fill="#0f1320" stroke="#3b4257" stroke-width=".4"/>
+  <rect x="-8.6" y="27.5" width="17.2" height="5" fill="#0f1320"/>
+  <circle cx="0" cy="70" r="30" fill="none" stroke="#9c8354" stroke-width=".35" stroke-dasharray="1.2 1"/>
+  <rect x="-6" y="0" width="12" height="10" fill="#85B7EB"/>
+  <circle cx="0" cy="16.5" r="6.5" fill="#85B7EB"/>
+  <circle cx="0" cy="29.5" r="6.5" fill="#85B7EB"/>
+  <path d="M -3.656 40.224 A 30 30 0 0 1 12.202 97.406" fill="none" stroke="#85B7EB" stroke-width="8"/>
+  <rect x="-4" y="35.5" width="8" height="2" fill="#85B7EB"/>
+  <line x1="9.5" y1="86.454" x2="13" y2="92.517" stroke="#85B7EB" stroke-width="5"/>
+  <path d="M 8 83.856 A 16 16 0 0 1 -8 56.144" fill="none" stroke="#5DCAA5" stroke-width="6"/>
+  <line x1="-6.5" y1="58.742" x2="-4" y2="63.072" stroke="#AFA9EC" stroke-width="5"/>
+  <rect x="-3" y="78" width="6" height="25" fill="#F0997B"/>
+  <circle cx="0" cy="70" r="8" fill="#AFA9EC"/>
+  <path d="M 13.861 104.306 A 37 37 0 0 1 -13.861 104.306" fill="none" stroke="#F0997B" stroke-width="8"/>
+  <rect x="-6" y="110.5" width="12" height="12.5" fill="#F0997B"/>
+  <path d="M0,1 L0,36 L0,40 A 30 30 0 0 1 15 95.981 L 9.5,86.454 L 8,83.856 A 16 16 0 0 1 -8,56.144 L -4,63.072 L 0,70 L 0,121" fill="none" stroke="#ffffff" stroke-width=".4" stroke-dasharray="1.4 1" marker-end="url(#tip)"/>
+  <g font-size="13" font-weight="700" fill="#f4ead2">
+    <text transform="translate(9 20) scale(.2 -.2)">① 자오선 원판</text>
+    <text transform="translate(31 44) scale(.2 -.2)">② 바깥 궤도</text>
+    <text transform="translate(-41 88) scale(.2 -.2)">③ 기울어진 궤도</text>
+    <text transform="translate(10 67) scale(.2 -.2)">④ 심장 원대</text>
+    <text transform="translate(-5 96) scale(.2 -.2)" text-anchor="end">⑤ 대망원경</text>
+    <text transform="translate(17 112) scale(.2 -.2)">⑥ 슬릿 발코니</text>
+    <text transform="translate(8 3) scale(.2 -.2)">입구</text>
+    <text transform="translate(8 119) scale(.2 -.2)">출구</text>
+  </g>
+  <g font-size="11" fill="#a39a85">
+    <text transform="translate(16 88) scale(.2 -.2)">낮은 끝 0 m</text>
+    <text transform="translate(-22 52) scale(.2 -.2)">높은 끝 6 m</text>
+    <text transform="translate(-40 40) scale(.2 -.2)">가는 황동 고리</text>
+    <text transform="translate(-40 37) scale(.2 -.2)">(걸을 수 없음)</text>
+  </g>
+</g>
+
+<rect x="500" y="76" width="660" height="330" rx="8" fill="#1f232d"/>
+<text x="518" y="102" font-size="15" font-weight="700" fill="#f4ead2">여섯 가지 모양 — 같은 모양이 두 번 나오지 않는다</text>
+<g font-size="12" fill="#a39a85"><text x="518" y="126">구간</text><text x="660" y="126">모양</text><text x="900" y="126">천문대의 무엇</text><text x="1076" y="126">높이</text></g>
+<line x1="518" y1="134" x2="1142" y2="134" stroke="#3b4257"/>
+<g font-size="12.5" fill="#f4ead2">
+  <text x="518" y="160">① 자오선 원판</text><text x="518" y="204">② 바깥 궤도</text><text x="518" y="248">③ 기울어진 궤도</text>
+  <text x="518" y="292">④ 심장 원대</text><text x="518" y="336">⑤ 대망원경</text><text x="518" y="380">⑥ 슬릿 발코니</text>
+</g>
+<g font-size="12" fill="#d8cfba">
+  <text x="660" y="160">직선 위의 둥근 판 둘 (26 m)</text><text x="660" y="204">넓은 초승달 호 150° (79 m)</text><text x="660" y="248">솟아오르는 반 바퀴 (50 m)</text>
+  <text x="660" y="292">기둥 위 둥근 단 (지름 16 m)</text><text x="660" y="336">곧은 오르막 다리 (26 m)</text><text x="660" y="380">벽의 호 발코니와 출구 길</text>
+  <text x="900" y="160">자오선과 아스트롤라베</text><text x="900" y="204">가장 바깥 행성의 궤도</text><text x="900" y="248">혼천의의 황도 고리</text>
+  <text x="900" y="292">혼천의의 심장, 태양</text><text x="900" y="336">슬릿을 겨눈 경통</text><text x="900" y="380">돔이 열리는 곳</text>
+  <text x="1076" y="160">0 m</text><text x="1076" y="204">0 m</text><text x="1076" y="248">0 → 6 m</text><text x="1076" y="292">6 m</text><text x="1076" y="336">6 → 14 m</text><text x="1076" y="380">14 m</text>
+</g>
+<g fill="none" stroke-width="3">
+  <rect x="632" y="149" width="14" height="14" fill="#85B7EB" stroke="none"/><rect x="632" y="193" width="14" height="14" fill="#85B7EB" stroke="none"/>
+  <rect x="632" y="237" width="14" height="14" fill="#5DCAA5" stroke="none"/><rect x="632" y="281" width="14" height="14" fill="#AFA9EC" stroke="none"/>
+  <rect x="632" y="325" width="14" height="14" fill="#F0997B" stroke="none"/><rect x="632" y="369" width="14" height="14" fill="#F0997B" stroke="none"/>
+</g>
+<g stroke="#2b303c"><line x1="518" y1="176" x2="1142" y2="176"/><line x1="518" y1="220" x2="1142" y2="220"/><line x1="518" y1="264" x2="1142" y2="264"/><line x1="518" y1="308" x2="1142" y2="308"/><line x1="518" y1="352" x2="1142" y2="352"/></g>
+
+<rect x="500" y="418" width="660" height="200" rx="8" fill="#1f232d"/>
+<text x="518" y="444" font-size="15" font-weight="700" fill="#f4ead2">경로를 따라 본 높이 — 고리의 기울기와 망원경이 오르막이다</text>
+<g stroke="#2b303c"><line x1="548" y1="590" x2="1136" y2="590"/><line x1="548" y1="542" x2="1136" y2="542"/><line x1="548" y1="478" x2="1136" y2="478"/></g>
+<g font-size="11" fill="#a39a85" text-anchor="end"><text x="542" y="594">0 m</text><text x="542" y="546">6 m</text><text x="542" y="482">14 m</text></g>
+<path d="M548,590 L843,590 C873,590 933,542 963,542 L1008,542 L1071,478 L1136,478" fill="none" stroke="#f4ead2" stroke-width="3"/>
+<g font-size="12" font-weight="700" fill="#f4ead2" text-anchor="middle">
+  <text x="600" y="580">①</text><text x="736" y="580">②</text><text x="903" y="556">③</text><text x="986" y="532">④</text><text x="1034" y="500">⑤</text><text x="1104" y="468">⑥</text>
+</g>
+<g font-size="11" fill="#a39a85"><text x="548" y="608">0 m</text><text x="1136" y="608" text-anchor="end">약 240 m</text></g>
+
+<rect x="500" y="630" width="660" height="80" rx="8" fill="#1f232d"/>
+<text x="518" y="656" font-size="12.5" fill="#d8cfba">입구에 서면 자오선 정면 위로 심장의 태양 구와 대망원경, 그 끝의 출구가 한 줄로 보인다.</text>
+<text x="518" y="678" font-size="12.5" fill="#d8cfba">대망원경은 지나온 두 궤도 위를 다리처럼 건넌다. 기울어진 궤도는 높은 쪽이 6 m라 건너뛸 수 없다.</text>
+<text x="518" y="700" font-size="12.5" fill="#a39a85">구조안이다. 회색 상자(R712)는 아직 v0.1 배치 그대로 — 상세: PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.2.md</text>
+</svg>

@@ -1,0 +1,59 @@
+Royal Observatory graybox on structure v0.3 (R720): built in the course prefab test scene in Play Mode. Not a person playing, not online.
+PASS the course prefab test is in the scene
+PASS the Royal Observatory is listed in the course prefab test: key 6 of 6
+PASS no round draws it (it is in a slot's drafts only); the rounds draw from 16 prefabs as before
+PASS built: Late_3-2_RoyalObservatory · 왕실 천문대 (회색 상자), slot 5
+PASS an obstacle section in the late slot (5)
+PASS entry (0.00, 0.00, 0.00), exit (9.00, 20.00, 130.00)
+PASS the prefab's own exit (read before it is built) is the same: (9.00, 20.00, 130.00)
+PASS beat boxes: 6
+PASS the pawn stands at the entry: (0.0, 0.3, 4.0)
+  note 구간 왕실 천문대 (회색 상자) (Late_3-2_RoyalObservatory)
+  note 장애물 덮음 검사 0곳
+  note 백팀 길 227.3 m, 가장 넓은 틈 0.05 m
+  note 뜻한 틈 1곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+  note 체크포인트 9개, 부활 자리 54곳
+  note 오를 수 없는 면 43개
+  note 입구 (0.0, 0.0, 0.0) → 출구 (9.0, 20.0, 130.0)
+PASS the section check: 0 errors
+PASS checkpoints: 9
+PASS devices: 15 petals (three variable stars), 2 meteor showers, 1 comet, 6 iris leaves (three gates), 2 focus beams
+PASS the moon, the four planets and the binary star are there and turn (6 of 6)
+PASS the globe, its climb, the fourth planet's ring, the stage, the deck and the balcony are there
+PASS none of the first build's imported hazards are left
+PASS Device_MeteorShower Dipper: 480 meteors on 3 lines (160 / 160 / 160), 0 twice running on a line, 0 too close in time
+PASS Device_MeteorShower Cassiopeia: 428 meteors on 2 lines (214 / 214), 0 twice running on a line, 0 too close in time
+  watched 13.0 s of the obstacle clock
+PASS the fifteen petals each lay level and hung folded (15 of 15; the least fold 84 deg, the least level 0.0 deg)
+  leaf Device_IrisLeaf 1 W: slid 2.58 m
+  leaf Device_IrisLeaf 1 E: slid 2.58 m
+  leaf Device_IrisLeaf 2 W: slid 2.58 m
+  leaf Device_IrisLeaf 2 E: slid 2.58 m
+  leaf Device_IrisLeaf 3 W: slid 2.58 m
+  leaf Device_IrisLeaf 3 E: slid 2.58 m
+PASS the six iris leaves each slid to the deck's middle and back (6 of 6 went 2.58 m)
+PASS the comet crossed between its docks: 4.98 m
+PASS Device_FocusBeam 1: its spot went -1.9 .. 1.9 m across the deck and -2.0 .. 2.0 m along it
+PASS Device_FocusBeam 2: its spot went -1.9 .. 1.9 m across the deck and -2.0 .. 2.0 m along it
+PASS Device_EclipseMoon went round 389 deg in 13.0 s (30 deg/s: 390)
+PASS Device_Planet 1 went round 520 deg in 13.0 s (40 deg/s: 520)
+PASS Device_Planet 2 went round -936 deg in 13.0 s (-72 deg/s: -936)
+PASS Device_Planet 3 went round 851 deg in 13.0 s (65.5 deg/s: 851)
+PASS Device_Planet 4 went round -468 deg in 13.0 s (-36 deg/s: -468)
+PASS Device_BinaryStar went round -585 deg in 13.0 s (-45 deg/s: -585)
+PASS Device_MeteorShower Dipper: 11 meteors landed in 13.0 s (one in 1.25 s: 10.4)
+PASS Device_MeteorShower Cassiopeia: 9 meteors landed in 13.0 s (one in 1.4 s: 9.3)
+PASS meteors were drawn: at most 2 at once on one shower
+PASS the pawn is still on the entry floor after 17 s: (0.0, 0.3, 4.0)
+picture 00_plan.png
+picture 01_from_the_tunnel.png
+picture 02_overview.png
+picture 03_dipper_handle.png
+picture 04_dipper_bowl.png
+picture 05_west_gate.png
+picture 06_inside_the_globe.png
+picture 07_cassiopeia.png
+picture 08_stage_and_tube.png
+picture 09_up_the_tube.png
+picture 10_back_from_the_balcony.png
+RESULT PASS

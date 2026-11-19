@@ -1456,6 +1456,10 @@ namespace ChessFight.RagdollLab
             bool exact = fromGround && PawnRushJumpExact && !BodyCarried;
             if (exact) up = PawnRushTakeoff(up);
             riseExact = exact;
+            // A pressed spring key (the Royal Library's typewriter, pr/2) adds a small boost only to an actual grounded jump.
+            if (fromGround && Grounded && groundCollider != null &&
+                groundCollider.GetComponentInParent<IJumpSpringSurface>() is IJumpSpringSurface spring)
+                up += Mathf.Clamp(spring.TakeJumpBonus(Hips.position), 0f, 2f);
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {
@@ -3552,12 +3556,16 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < Count; i++)
             {
                 var rb = bodies[i];
+                // R683 (the 11-15 build test): out of puppet mode first, then the velocities. A kinematic body takes
+                // no velocity: set before this line, Unity dropped both and warned about each ("Setting linear
+                // velocity of a kinematic body is not supported") - twenty-two lines a pawn every time a PC took a
+                // match over, 770 in one player's log. SwordFightPawn.Respawn already worked round it this way.
+                rb.isKinematic = on;
                 if (!on)
                 {
                     rb.linearVelocity = Vector3.zero;
                     rb.angularVelocity = Vector3.zero;
                 }
-                rb.isKinematic = on;
                 rb.interpolation = on ? RigidbodyInterpolation.None : RigidbodyInterpolation.Interpolate;
             }
             cameraFooting = false;   // a remote pawn's floor is not sensed here; follow its hips

@@ -13,11 +13,15 @@ public static class SessionFlowTests
     static void Step(int ticks=8)
     {for(int t=0;t<ticks;t++){UnityEngine.Time.realtimeSinceStartup+=.3f;foreach(var c in clients.ToArray())As(c,c.Tick);}}
     static void Setup(int count,Func<int,SteamSession> make=null)
-    {FakeSteam.Reset();clients=new List<SteamSession>();for(int i=1;i<=count;i++){FakeSteam.User=(ulong)i;var c=make!=null?make(i):new SteamSession();c.Initialize();clients.Add(c);}Step();}
+    {FakeSteam.Reset();clients=new List<SteamSession>();for(int i=1;i<=count;i++){FakeSteam.User=(ulong)i;var c=make!=null?make(i):new SteamSession();c.QuickStartSeconds=Quick;c.Initialize();clients.Add(c);}Step();}
+    // R693: how old a public room must be before it starts by itself with even sides (SteamSession.QuickStartSeconds).
+    // Never, unless a test says so before its Setup: the tests written before it sit in public waiting rooms for minutes
+    // to watch something else (hosts handing over, managers, seats), and start through the manager. Test puts it back.
+    static double Quick=double.PositiveInfinity;
     static string Presence(SteamSession c,string key)=>FakeSteam.Presence.TryGetValue((c.Self,key),out var v)?v:"";
     static void JoinParty(int follower,int leader){As(clients[follower],()=>clients[follower].JoinParty(clients[leader].Party));Step();}
     static void Test(string name,Action test)
-    {test();passed++;Console.WriteLine("PASS "+name);foreach(var c in clients.ToArray())As(c,c.Dispose);}
+    {test();passed++;Console.WriteLine("PASS "+name);foreach(var c in clients.ToArray())As(c,c.Dispose);Quick=double.PositiveInfinity;}
     // Host election and migration (Docs/Network/HOST.md): a private room of solo players
     // with the given fitness, the first one its creator. `configure` runs before the room.
     static void Room(int[] fitness,Action configure=null)
@@ -666,6 +670,87 @@ public static class SessionFlowTests
                 Step(30);
                 Check(Owner(c)==c.Self&&RoomData(c,"ended")=="1"&&RoomData(c,"open")=="0"&&!FakeSteam.Lobbies[c.Match].Joinable,
                       "the end was lost with the room's move: ended="+RoomData(c,"ended")+" door "+FakeSteam.Lobbies[c.Match].Joinable);});
+            // R683 (the 11-15 build test: Sword Fight rooms stayed "playing" after their result and took everyone back in):
+            // only the host writes the room's end, once the room is its own (R504, above). A host that left before that
+            // took the end along, and the next host - which had seen the result as a player - had nothing to write. A PC
+            // that saw the result takes the end with the host role now.
+            Action<float> endLeftBehind=delay=>{
+                Room(new[]{900,500,700,600},()=>FakeSteam.DataDelay=delay);var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];As(a,a.StartGame);Step(20);
+                Check(a.IsHost&&clients.All(x=>x.Started)&&RoomData(a,"successors").StartsWith(c.Self+","+d.Self),"setup: "+RoomData(a,"successors"));
+                FakeSteam.OwnerDelay=5;FakeSteam.Crash(a.Self);clients.Remove(a);Step(2);
+                Check(c.IsHost&&Owner(c)==b.Self,"setup: the new host before the room is its own");
+                // The match is decided: every PC sees the result and the host asks for the end - then leaves at once.
+                foreach(var x in clients.ToArray())As(x,x.SawResult);
+                As(c,c.EndMatch);Step(1);ulong room=c.Match;
+                Check(RoomData(b,"ended")!="1","setup: the end was written before the room was the host's");
+                As(c,c.Cancel);Step(40);
+                Check(d.IsHost&&Owner(d)==d.Self&&RoomData(d,"ended")=="1"&&RoomData(d,"open")=="0"&&!FakeSteam.Lobbies[room].Joinable,
+                      "the end went away with the host that left: host "+d.Host+" owner "+Owner(d)+" ended="+RoomData(d,"ended")+" door "+FakeSteam.Lobbies[room].Joinable);
+                Check(b.MatchEnded&&d.MatchEnded&&!c.CanRejoin&&c.RejoinMatch==0,"the host that left is offered the way back into a decided match");};
+            Test("R683: a host that leaves before the room's end is written leaves it to the next host, which saw the result as a player",()=>endLeftBehind(0));
+            // R644's rule for session changes: the same with room data that reaches Steam a moment late (FakeSteam.DataDelay).
+            Test("R683: the same while Steam sends the room's data a moment late",()=>endLeftBehind(.5f));
+            // R683: the same from the lobby's side. A player who saw the result is not offered the way back, even while the
+            // room still reads "playing" (its end unwritten, as on 11-15, or written a moment after the player left).
+            Test("R683: a player who saw the match's result is not offered the way back into it, whatever the room still says",()=>{
+                Setup(3);var host=clients[0];var seen=clients[1];var blind=clients[2];
+                As(host,()=>host.FindMatch());Step(20);As(seen,()=>seen.FindMatch());Step(20);As(blind,()=>blind.FindMatch());Step(20);
+                As(host,host.FillRoomWithBots);Step(10);
+                Check(host.Started&&seen.Started&&blind.Started,"setup: a started match");
+                ulong room=host.Match;
+                As(seen,seen.SawResult);Step(1);As(seen,seen.Cancel);As(blind,blind.Cancel);Step(5);
+                Check(RoomData(host,"ended")!="1"&&RoomData(host,"phase")=="playing"&&host.Started,"setup: the room still reads playing");
+                Check(blind.CanRejoin&&blind.RejoinMatch==room,"setup: a player who left a match under way is offered the way back: "+blind.Error);
+                Check(!seen.CanRejoin&&seen.RejoinMatch==0,"a player who saw the result is offered the way back into the match");
+                As(seen,seen.Rejoin);Step(10);Check(seen.Match==0,"a player who saw the result went back into the match");});
+            // R689 (the 11-15 build test, the third waiting room): the PC a waiting room had just been handed to read the
+            // seats once the room was its own and gave up the maker's seat, its Steam not listing the maker right then; the
+            // maker, finding itself off the roster, left ("예약이 해제되었거나 파티원 연결이 끊겼습니다"). The seats as the
+            // last host left them stand for SteamSession.AdoptedSeatHold now - a hold, not a pass: a player the new host's
+            // Steam still does not list after that gives up its seat as before.
+            Action<float> handedOverBlind=blind=>{
+                Setup(2);var maker=clients[0];var best=clients[1];maker.LocalFitness=852;best.LocalFitness=914;FakeSteam.OwnerDelay=2;
+                As(maker,()=>maker.FindMatch());Step(20);ulong room=maker.Match;
+                Check(maker.IsHost&&room!=0,"setup: the maker hosts its waiting room");
+                As(best,()=>best.FindMatch());
+                for(int t=0;t<120&&!(best.Match==room&&best.IsHost);t++)Step(1);
+                Check(best.IsHost&&Owner(best)==maker.Self&&best.Roster.ContainsKey(maker.Self),"setup: the room handed to the better PC, its ownership on the way");
+                // The new host's Steam stops listing the maker; then the room becomes the new host's.
+                FakeSteam.Unseen.Add((best.Self,maker.Self));int lines=UnityEngine.Debug.Lines.Count;
+                for(int t=0;t<40&&Owner(best)!=best.Self;t++)Step(1);
+                // (The room became the new host's up to a step and a poll before this.)
+                Step(1);float adopted=UnityEngine.Time.realtimeSinceStartup;
+                Check(Owner(best)==best.Self&&UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("넘겨받은 대기실")),"setup: the room is the new host's and says it holds the maker's seat");
+                while(UnityEngine.Time.realtimeSinceStartup<adopted+Math.Min(blind,SteamSession.AdoptedSeatHold-1.2f))Step(1);
+                Check(maker.Match==room&&maker.Error==""&&maker.Roster.ContainsKey(maker.Self)&&best.Roster.ContainsKey(maker.Self)&&clients.All(c=>c.Manager==maker.Self),
+                      "the maker lost its seat or the room's management as the room was handed on: "+maker.Error+" | host sees the maker "+best.Roster.ContainsKey(maker.Self)+
+                      ", managers "+string.Join(",",clients.Select(c=>c.Manager)));
+                while(UnityEngine.Time.realtimeSinceStartup<adopted+blind)Step(1);
+                FakeSteam.Unseen.Remove((best.Self,maker.Self));Step(10);
+                bool kept=maker.Match==room&&maker.Error==""&&best.Roster.ContainsKey(maker.Self);
+                Check(kept==(blind<SteamSession.AdoptedSeatHold),"after "+blind+" s unlisted the maker's seat was "+(kept?"still held":"given up")+": "+maker.Error);};
+            Test("R689: a waiting room handed on keeps the seats its last host gave while the new host's Steam does not list a player for a moment",()=>handedOverBlind(1));
+            Test("R689: the seat is held for a moment only: a player the new host's Steam still does not list after that gives it up",()=>handedOverBlind(5));
+            // R689 (the 11-15 build test, the fourth match): a host that leaves a match leaves its last roster in the room,
+            // itself on it. Coming back at once, the PC found itself there and stopped asking for its seat; once the room
+            // was the next host's, that host's first roster - without it, as it had been away - threw it out. A player
+            // coming back is seated by the host's answer to its own request now.
+            Test("R689: a host that leaves a match and comes straight back is seated by the next host, not thrown out by the roster it left behind",()=>{
+                Room(new[]{500,900,700,600});var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];
+                As(a,a.StartGame);Step(20);
+                Check(b.IsHost&&Owner(b)==b.Self&&clients.All(x=>x.Started)&&RoomData(b,"successors").StartsWith(c.Self+","),"setup: the best PC hosts and owns the match: "+RoomData(b,"successors"));
+                // Someone is away already (on 11-15 others had left that room before), so the room's door stands open.
+                ulong room=b.Match;As(d,d.Cancel);Step(2);
+                Check(FakeSteam.Lobbies[room].Joinable&&b.Away==1,"setup: one player away, the door open");
+                FakeSteam.OwnerDelay=8;int lines=UnityEngine.Debug.Lines.Count;
+                As(b,b.Cancel);Step(1);
+                Check(c.IsHost&&Owner(c)!=c.Self&&b.CanRejoin&&b.RejoinMatch==room,"setup: the next PC hosts before the room is its own, the leaver may go back: owner "+Owner(c));
+                As(b,b.Rejoin);
+                for(int t=0;t<15&&!(b.Match==room&&b.Roster.ContainsKey(b.Self));t++)Step(1);
+                Check(b.Match==room&&b.Roster.ContainsKey(b.Self)&&Owner(c)!=c.Self,"setup: back in the room, the leaver reads the roster it left behind before the room is the next host's: match "+b.Match+" on it "+b.Roster.ContainsKey(b.Self)+" owner "+Owner(c));
+                Step(40);
+                Check(b.Match==room&&b.Started&&b.Error==""&&new[]{a,b,c}.All(x=>x.Roster.ContainsKey(b.Self)),"the leaver did not get back into its match: "+b.Error);
+                Check(!UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("예약이 해제되었거나")),"the roster the leaver left behind threw it out");});
             // R504: accepting an old invite to one's own party left it and joined it again, and a leader lost the lead.
             Test("An invite to the party one is already in changes nothing, and the leader keeps the lead",()=>{
                 Setup(2);JoinParty(1,0);var leader=clients[0];var member=clients[1];ulong party=leader.Party;
@@ -1285,6 +1370,159 @@ public static class SessionFlowTests
                 Check(searcher.Match==stale&&!searcher.Roster.ContainsKey(searcher.Self),"setup: the search walked into the dead PC's room");
                 Step(200);
                 Check(searcher.Match!=0&&searcher.Match!=stale&&searcher.IsHost&&searcher.Searching&&searcher.Error=="","the search kept walking into a room that never seats it: "+searcher.Match+" "+searcher.Status);});
+            // R693 (the user 2026-11-17: random matching stays on the lobby screen and only counts the time, so no screen
+            // shows a room or offers its manager a start): a public room starts by itself - twelve at once (as before), and
+            // short of twelve once it is a minute old and its sides are even and large enough.
+            Test("R693: a public room short of twelve starts by itself once it is a minute old and its sides are even; nobody presses a start",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(2);var a=clients[0];var b=clients[1];
+                As(a,()=>a.FindMatch());Step(20);As(b,()=>b.FindMatch());Step(40);
+                Check(a.Match!=0&&b.Match==a.Match&&a.Roster.Count==2&&a.TeamCount(0)==1&&a.TeamCount(1)==1,"setup: one a side in one room");
+                Check(!a.Started&&!b.Started&&a.RoomAge<SteamSession.QuickStartAfter,"the room started before its minute: age "+a.RoomAge);
+                Step(200);
+                Check(a.Started&&b.Started&&a.Error==""&&b.Error=="","the room did not start by itself: age "+a.RoomAge+" "+a.Error+b.Error);});
+            Test("R693: a public room with uneven sides waits past its minute and starts the moment the sides are even",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(4);var late=clients[3];var first=clients[0];
+                foreach(var c in clients.Take(3).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(260);
+                Check(clients.Take(3).All(c=>c.Match==first.Match&&c.Match!=0&&!c.Started)&&first.TeamCount(0)+first.TeamCount(1)==3&&first.RoomAge>=SteamSession.QuickStartAfter,
+                      "three in a room past its minute must wait: "+first.TeamCount(0)+" v "+first.TeamCount(1)+" started "+first.Started+" age "+first.RoomAge);
+                As(late,()=>late.FindMatch());Step(60);
+                Check(clients.All(c=>c.Match==first.Match&&c.Started&&c.Error==""),"the fourth player did not start the room: "+late.Error+" "+late.Match);});
+            Test("R693: with release rules a public room starts by itself from three a side, not two",()=>{
+                Quick=SteamSession.QuickStartAfter;Setup(6,i=>new SteamSession("r",false));var first=clients[0];
+                foreach(var c in clients.Take(4).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(260);
+                Check(clients.Take(4).All(c=>c.Match==first.Match&&c.Match!=0&&!c.Started)&&first.TeamCount(0)==2&&first.TeamCount(1)==2,
+                      "two a side: "+first.TeamCount(0)+" v "+first.TeamCount(1)+" started "+first.Started);
+                foreach(var c in clients.Skip(4).ToArray()){var x=c;As(x,()=>x.FindMatch());Step(20);}
+                Step(40);
+                Check(clients.All(c=>c.Match==first.Match&&c.Started&&c.Error==""),"three a side did not start: "+string.Join(" ",clients.Select(c=>c.Error)));});
+            Test("R693: a room a player made never starts by itself",()=>{
+                Quick=SteamSession.QuickStartAfter;Room(new[]{500,500});Step(400);
+                Check(clients.All(c=>c.Match!=0&&c.PrivateRoom&&!c.Started&&c.Error==""),"a private room started by itself");});
+            Test("R693: the room's age stays with the room when its host changes",()=>{
+                Quick=SteamSession.QuickStartAfter;PublicRoom(new[]{250,560});var maker=clients[0];var best=clients[1];
+                Check(clients.All(c=>c.Host==best.Self)&&!maker.Started,"setup: the room went to the better PC: host "+maker.Host);
+                string born=RoomData(maker,"born");double age=best.RoomAge;
+                Check(born!=""&&age>5&&Math.Abs(maker.RoomAge-age)<2,"the new host does not count the room's age on: "+born+" "+age);
+                Step(200);
+                Check(clients.All(c=>c.Started&&c.Error=="")&&RoomData(maker,"born")==born,"the room did not start a minute after it was made: "+maker.Error+best.Error);});
+            // R694 (the user 2026-11-17, "방 생성"): in a room a player made, players change sides themselves, a spectator's
+            // seat is a place to wait in, the manager moves players on, and the room holds sixteen.
+            Test("R694: in a room a player made a player changes sides, takes a spectator's seat and comes back to a side; the room starts",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                int side=b.SeatOf(b.Self);
+                Check(side>=0&&side<=1&&b.CanTakeSeat(1-side)&&b.CanTakeSeat(2)&&!b.CanTakeSeat(side),"setup: a player may take the other side or a spectator's seat: "+side);
+                As(b,()=>b.TakeSeat(1-side));Step(20);
+                Check(clients.All(x=>x.SeatOf(b.Self)==1-side&&x.Roster.Count==3&&x.Error==""),"the player did not change sides: "+b.SeatOf(b.Self)+" "+b.Error);
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==2&&x.Roster.Count==2&&x.Spectators.Count==1&&x.Error==""&&x.Match==maker.Match),"the player is not in a spectator's seat: "+c.Error+" "+c.SeatOf(c.Self));
+                As(c,()=>c.TakeSeat(0));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==0&&x.Spectators.Count==0)&&maker.CanStartGame,"the spectator did not take a seat again: "+c.SeatOf(c.Self));
+                As(maker,maker.StartGame);Step(40);Check(clients.All(x=>x.Started&&x.Error==""),"the room did not start: "+maker.Error);});
+            Test("R694: the manager moves a player on from another PC; only the manager does; a spectator can be put out",()=>{
+                Room(new[]{300,500,400});var maker=clients[0];var host=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==host.Self&&x.Manager==maker.Self),"setup: the best PC hosts, the maker manages");
+                int from=c.SeatOf(c.Self);
+                Check(from>=0&&from<=1&&maker.CanMovePlayer(c.Self)&&maker.MoveTarget(c.Self)==1-from&&!c.CanMovePlayer(maker.Self)&&!host.CanMovePlayer(c.Self),"who may move whom");
+                As(maker,()=>maker.MovePlayer(c.Self));Step(20);
+                Check(clients.All(x=>x.SeatOf(c.Self)==1-from&&x.Error==""),"the manager's move did not happen: "+c.SeatOf(c.Self));
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&maker.CanKick(c.Self),"setup: a spectator the manager may put out");
+                As(maker,()=>maker.Kick(c.Self));Step(30);
+                Check(c.Match==0&&maker.Spectators.Count==0&&host.Spectators.Count==0&&maker.Roster.Count==2&&maker.Error=="","the spectator was not put out: "+c.Match+" "+c.Error);});
+            Test("R694: a room a player made takes the thirteenth player as a spectator",()=>{
+                Setup(2);var maker=clients[0];var late=clients[1];
+                As(maker,()=>maker.FindMatch(true));Step();
+                As(maker,maker.FillRoomWithBots);Step(10);
+                Check(maker.Roster.Count==12,"setup: twelve in the room: "+maker.Roster.Count);
+                As(late,()=>late.JoinPrivateMatch(maker.Match));Step(40);
+                Check(late.Match==maker.Match&&late.Error==""&&late.SeatOf(late.Self)==2&&maker.Spectators.Count==1&&maker.Roster.Count==12,
+                      "the thirteenth player is not a spectator: "+late.Error+" seat "+late.SeatOf(late.Self)+" match "+late.Match);});
+            Test("R694: a party that fits no single side of a room a player made is seated apart",()=>{
+                Setup(3);var maker=clients[0];var lead=clients[1];var mate=clients[2];JoinParty(2,1);
+                As(maker,()=>maker.FindMatch(true));Step();
+                int mine=maker.SeatOf(maker.Self);
+                for(int i=0;i<4;i++)As(maker,()=>maker.AddTestBot(mine));
+                for(int i=0;i<5;i++)As(maker,()=>maker.AddTestBot(1-mine));
+                Step(10);
+                Check(maker.TeamCount(0)==5&&maker.TeamCount(1)==5,"setup: five a side: "+maker.TeamCount(0)+" v "+maker.TeamCount(1));
+                As(lead,()=>lead.JoinPrivateMatch(maker.Match));Step(60);
+                Check(lead.Match==maker.Match&&mate.Match==maker.Match&&lead.Error==""&&mate.Error==""&&maker.Roster.Count==12
+                      &&lead.SeatOf(lead.Self)>=0&&lead.SeatOf(mate.Self)>=0&&lead.SeatOf(lead.Self)<2&&lead.SeatOf(mate.Self)<2&&lead.SeatOf(lead.Self)!=lead.SeatOf(mate.Self),
+                      "the party was not seated apart: "+lead.Error+mate.Error+" roster "+maker.Roster.Count+" seats "+lead.SeatOf(lead.Self)+" "+lead.SeatOf(mate.Self));});
+            // R695 (the user's first try of the room in Unity, 2026-11-17).
+            Test("R695: alone in a room it made, its host takes a spectator's seat and stays; the room does not start; back on a side it may",()=>{
+                Setup(1);var solo=clients[0];As(solo,()=>solo.FindMatch(true));Step(10);
+                ulong room=solo.Match;Check(room!=0&&solo.CanTakeSeat(2),"setup: a room of one");
+                As(solo,()=>solo.TakeSeat(2));Step(40);
+                Check(solo.Match==room&&solo.Error==""&&solo.SeatOf(solo.Self)==2&&solo.Roster.Count==0&&solo.IsManager&&solo.IsHost,"the host was thrown out of its own room: "+solo.Error+" match "+solo.Match);
+                Check(!solo.CanStartGame,"a room of spectators offers a start");
+                As(solo,()=>solo.AddRoomBot());Step(10);As(solo,solo.StartGame);Step(20);
+                Check(!solo.Started&&solo.Match==room,"a room with its only person in a spectator's seat started");
+                As(solo,()=>solo.TakeSeat(0));Step(20);
+                Check(solo.SeatOf(solo.Self)==0&&solo.Spectators.Count==0&&solo.Match==room&&solo.Error=="","the host did not take a seat again: "+solo.Error);});
+            Test("R695: a room's manager leaves - the next player manages and hosts, a spectator if nobody is seated; the last one out ends the room",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];ulong room=maker.Match;
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2,"setup: one spectator");
+                As(maker,maker.Cancel);clients.Remove(maker);Step(40);
+                Check(b.Match==room&&c.Match==room&&b.Error==""&&c.Error==""&&b.Manager==b.Self&&c.Manager==b.Self&&b.Host==b.Self&&c.SeatOf(c.Self)==2,
+                      "the room did not go on under the next player: manager "+b.Manager+" host "+b.Host+" "+b.Error+c.Error);
+                As(b,b.Cancel);clients.Remove(b);Step(40);
+                Check(c.Match==room&&c.Error==""&&c.Manager==c.Self&&c.Host==c.Self&&c.SeatOf(c.Self)==2,"a room left to a spectator did not go on under it: "+c.Error+" manager "+c.Manager+" host "+c.Host);
+                As(c,c.Cancel);Step(10);
+                Check(c.Match==0&&!FakeSteam.Lobbies.ContainsKey(room),"the empty room is still there");});
+            Test("R695: a party Steam failed to make is made again by itself",()=>{
+                FakeSteam.Reset();clients=new List<SteamSession>();FakeSteam.User=1;FakeSteam.CreateFails=2;
+                var c=new SteamSession();c.Initialize();clients.Add(c);Step(4);
+                Check(c.Party==0&&c.Error!="","setup: no party, and the reason shown: "+c.Error);
+                Step(60);
+                Check(c.Party!=0&&c.IsLeader&&c.PartyMembers.Length==1,"the party was not made again: "+c.Error);});
+            // R697 (the user 2026-11-17: "3단계 진행"): the spectators' seats watch the match (Pawn Rush).
+            Test("R697: a Pawn Rush room starts with a spectator in its seat; the spectator goes into the match off the roster and is sent to; leaving, it is struck off",()=>{
+                Room(new[]{500,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&maker.SpectatingAllowed&&maker.CanStartGame,"a Pawn Rush room with a spectator must offer a start: "+maker.SeatOf(c.Self));
+                As(maker,maker.StartGame);Step(40);
+                Check(clients.All(x=>x.Started&&x.Error==""&&x.Match==maker.Match),"the room did not start for everyone, the spectator too: "+c.Started+" "+c.Error);
+                Check(clients.All(x=>x.Roster.Count==2&&!x.Roster.ContainsKey(c.Self)&&x.IsSpectator(c.Self)&&x.Spectators.Count==1),"the spectator is on the roster, or lost: "+maker.Spectators.Count);
+                Check(maker.Host!=c.Self&&clients.All(x=>x.IsPeer(c.Self))&&c.IsPeer(c.Host),"the spectator hosts the match, or is no peer");
+                As(c,c.Cancel);clients.Remove(c);Step(20);
+                Check(maker.Spectators.Count==0&&b.Spectators.Count==0&&maker.Started&&b.Started&&maker.Error==""&&b.Error=="","a spectator that left is still listed: "+maker.Spectators.Count);});
+            Test("R697: a room's host in a spectator's seat hands the match to a PC that plays",()=>{
+                Room(new[]{600,400,300});var maker=clients[0];var b=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==maker.Self&&x.Manager==maker.Self),"setup: the maker hosts and manages");
+                As(maker,()=>maker.TakeSeat(2));Step(20);
+                Check(clients.All(x=>x.SeatOf(maker.Self)==2&&x.Roster.Count==2)&&maker.CanStartGame,"setup: the host watches, two play");
+                As(maker,maker.StartGame);Step(60);
+                Check(clients.All(x=>x.Started&&x.Error=="")&&clients.All(x=>x.Host==b.Self)&&maker.IsSpectator(maker.Self)&&!maker.IsHost,
+                      "the match was not handed to the best PC that plays: host "+maker.Host+" "+maker.Error+b.Error+c.Error);});
+            Test("R697: another mode's room does not start with a spectator",()=>{
+                Setup(3);var maker=clients[0];
+                As(maker,()=>maker.SetMode(GameModes.SwordFight.Key));Step();
+                As(maker,()=>maker.FindMatch(true));Step();
+                for(int i=1;i<clients.Count;i++){var x=clients[i];As(x,()=>x.JoinPrivateMatch(maker.Match));}
+                Step(20);var c=clients[2];
+                Check(clients.All(x=>x.Match==maker.Match&&x.Roster.Count==3)&&!maker.SpectatingAllowed,"setup: a sword fight room of three");
+                As(c,()=>c.TakeSeat(2));Step(20);
+                Check(maker.SeatOf(c.Self)==2&&!maker.CanStartGame,"a sword fight room with a spectator offers a start");
+                As(maker,maker.StartGame);Step(20);Check(clients.All(x=>!x.Started),"a sword fight room started with a spectator");});
+            // R703 (the user 2026-11-17: five ways for the round's flow, the manager's to switch).
+            Test("R703: the manager of a room a player made sets the round's flow rules, from another PC too; nobody else does, and not in a public room",()=>{
+                Room(new[]{300,500,400});var maker=clients[0];var host=clients[1];var c=clients[2];
+                Check(clients.All(x=>x.Host==host.Self&&x.Manager==maker.Self&&x.RoomRules==0),"setup: the best PC hosts, the maker manages, no rules yet");
+                Check(maker.CanSetRules&&!host.CanSetRules&&!c.CanSetRules,"who may set the rules");
+                int rules=new PawnRushRules{Relief=PawnRushRules.ReliefBoth,After=PawnRushRules.AfterDelay}.Encode();
+                As(c,()=>c.SetRules(rules));Step(20);Check(clients.All(x=>x.RoomRules==0),"a player who does not manage set the rules");
+                As(maker,()=>maker.SetRules(rules));Step(20);
+                Check(clients.All(x=>x.RoomRules==rules&&x.Error==""),"the manager's rules did not reach the room: "+maker.RoomRules);
+                As(maker,()=>maker.SetRules(0));Step(20);Check(clients.All(x=>x.RoomRules==0),"the rules were not put back");
+                As(maker,()=>maker.SetRules(rules));Step(20);As(maker,maker.StartGame);Step(40);
+                Check(clients.All(x=>x.Started&&x.RoomRules==rules),"the rules did not stay with the started match");
+                PublicRoom(new[]{500,400});var first=clients[0];
+                Check(!first.CanSetRules,"a public room's manager may set rules");
+                As(first,()=>first.SetRules(rules));Step(20);Check(clients.All(x=>x.RoomRules==0),"a public room took rules");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

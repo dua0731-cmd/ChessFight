@@ -4,7 +4,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "9·10번 크레인·승강대" - the crane turning): a timber crane's post and ropes groaning as it slews, a loop
     // made with the ElevenLabs MCP (Resources/PawnRushCarriageYardSfx/CraneSlew, bake_carriage_yard.py; prompts:
-    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 14). At the post; its volume and pitch follow how fast the jib turns, read off
+    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 15). At the post; its volume and pitch follow how fast the jib turns, read off
     // the heading each frame (the slew's ramps ease it in and out; at rest it is silent). The code-made bell stays.
     // Through SectionSoundGate; the same on every PC (the heading is the shared clock's).
     public sealed partial class SlewCrane

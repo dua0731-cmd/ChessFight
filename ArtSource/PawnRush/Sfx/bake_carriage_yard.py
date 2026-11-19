@@ -1,5 +1,5 @@
 """Royal Carriage Yard sounds (2026-11-17, 승규 "1번 말 마차" -> "너가 만들어 일레븐랩스 mcp 연결해서"): bakes the takes made
-with ElevenLabs sound effects (eleven_text_to_sound_v2, prompts in Docs/PawnRush/PAWN_RUSH_AUDIO.md section 9) in
+with ElevenLabs sound effects (eleven_text_to_sound_v2, prompts in Docs/PawnRush/PAWN_RUSH_AUDIO.md sections 10-18) in
 raw/CarriageYard/ into Assets/Resources/PawnRushCarriageYardSfx/, where RoamingCarriage plays them:
 
   HoofLight0..5  one hoof on the cobbles at a walk or trot     (YardHorse.Footfall, below a half gallop)

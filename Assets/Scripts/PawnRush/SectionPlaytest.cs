@@ -57,6 +57,10 @@ namespace ChessFight.PawnRush
         int falls, hits;
         string lastHit = "";
         float lastHitAt = -10f;
+        // R689: until when the last fall's respawn delay runs (Time.time). A kill volume reports each body once, and a
+        // body falling through two of them before it is put back (the grand stair hall's glass stepping stones, 11-15
+        // build test: every fall written twice, 1.2 to 1.4 s apart, the second one outside the beat) is one fall.
+        float fallingUntil = -10f;
         GUIStyle style;
 
         void OnEnable()
@@ -186,6 +190,7 @@ namespace ChessFight.PawnRush
             runStart = Time.time;
             currentBeat = null;
             falls = hits = 0;
+            fallingUntil = -10f;
             Log("-", "restart");
         }
 
@@ -194,6 +199,9 @@ namespace ChessFight.PawnRush
         void OnFall(ICharacterDriver who, KillVolume volume)
         {
             if (who == null || who != Driver) return;
+            // R689: the same fall into a second kill volume, before the first one has put the pawn back.
+            if (Time.time < fallingUntil) return;
+            fallingUntil = Time.time + volume.RespawnDelay;
             falls++;
             Log(currentBeat ?? "-", "fall");
         }

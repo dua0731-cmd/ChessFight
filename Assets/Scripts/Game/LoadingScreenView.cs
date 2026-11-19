@@ -60,6 +60,21 @@ namespace ChessFight.Game
         // plays them (not for a player coming back into a running match). Per entry, the piece it holds (Pawn: none yet)
         // and whether it was drawn for it at the close rather than picked; SwordAllPicked: every player holds one.
         public bool SwordPick, SwordAllPicked;
+        // R694: the waiting room of a room a player made (LoadingScreenView.Room.cs), while Matching. RoomCode: its
+        // number as shown; RoomNote: the line over the buttons. CanSit: this PC's player may take an empty seat on
+        // side 0, side 1, among the spectators. CanMove: the manager may move that entry on. The spectators are
+        // listed apart (they are not on the roster): name, key, what the manager may do, which one is this PC's.
+        public bool Room, ShowTeamBots;
+        // R703: the room's flow rules (PawnRushRules.Encode) and whether this PC's player may change them (the manager).
+        public int Rules;
+        public bool CanSetRules;
+        public string RoomCode = "", RoomNote = "";
+        public readonly bool[] CanSit = new bool[3], CanAddTeamBot = new bool[2], CanRemoveTeamBot = new bool[2];
+        public readonly List<bool> CanMove = new List<bool>();
+        public readonly List<string> SpecNames = new List<string>();
+        public readonly List<ulong> SpecKeys = new List<ulong>();
+        public readonly List<bool> SpecCanMove = new List<bool>(), SpecCanKick = new List<bool>();
+        public int SpecMe = -1;
         public readonly List<PieceKind> Picks = new List<PieceKind>();
         public readonly List<bool> PickAuto = new List<bool>();
 
@@ -68,7 +83,8 @@ namespace ChessFight.Game
             Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear(); Faces.Clear();
             CanGive.Clear(); CanKick.Clear(); Scores.Clear(); Keys.Clear();
             Picks.Clear(); PickAuto.Clear();
-            Me = -1; Host = -1; Manager = -1;
+            CanMove.Clear(); SpecNames.Clear(); SpecKeys.Clear(); SpecCanMove.Clear(); SpecCanKick.Clear();
+            Me = -1; Host = -1; Manager = -1; SpecMe = -1;
         }
     }
 
@@ -141,7 +157,7 @@ namespace ChessFight.Game
         {
             public VisualElement Root, Avatar, Flash, Actions;
             public Label Name, Sub, Status;
-            public Button Give, Kick;
+            public Button Give, Kick, Move, Sit;
             public GlassPlate Plate;
             public int Team, Spot;
             // R533: the player this card stands for (0: an empty seat), and when each of its buttons was armed.
@@ -222,6 +238,8 @@ namespace ChessFight.Game
                 start.focusable = false;
                 start.clicked += () => { if (State.CanStart) StartRequested?.Invoke(); };
             }
+            // R694: what a room a player made adds (its number, the spectators' seats, the sides' bot buttons).
+            BuildRoom();
             ChunkyButtons.Attach(root);
 
             tipTitle = root.Q<Label>("load-tip-kicker");
@@ -385,6 +403,7 @@ namespace ChessFight.Game
             // R608: the stage's lights go down while Pawn Rush's course reveal covers it
             studio.House = State.CourseKnown && State.Reveal >= 0f ? 1f : 0f;
             studio.Animate(now);
+            SyncRoom(now);
             SyncCards(now);
             SyncReveal();
             SyncSword(now);
@@ -437,6 +456,7 @@ namespace ChessFight.Game
                 // The manager's buttons take the status label's place: a card is too narrow for both and a name.
                 bool managed = ShowActions(card, i, isIn && State.Matching && !Hiding, now);
                 card.Status.style.display = managed ? DisplayStyle.None : DisplayStyle.Flex;
+                RoomSeat(card, false);
                 Slide(card, age);
             }
             for (int team = 0; team < 2; team++)
@@ -454,6 +474,7 @@ namespace ChessFight.Game
                     if (empty.Sub.text != "") empty.Sub.text = "";
                     empty.Sub.RemoveFromClassList("load-sub-role");
                     ShowActions(empty, -1, false, now);
+                    RoomSeat(empty, true);
                     Slide(empty, -1);
                 }
                 for (int k = 0; k < cards[team].Count; k++) cards[team][k].Root.style.display = k < shown ? DisplayStyle.Flex : DisplayStyle.None;
@@ -478,14 +499,17 @@ namespace ChessFight.Game
             card.Key = key;
             bool give = on && key != 0 && entry < State.CanGive.Count && State.CanGive[entry];
             bool kick = on && key != 0 && entry < State.CanKick.Count && State.CanKick[entry];
+            // R694: "옮기기" in a room a player made.
+            bool move = on && key != 0 && entry < State.CanMove.Count && State.CanMove[entry];
+            card.Move.style.display = move ? DisplayStyle.Flex : DisplayStyle.None;
             card.Give.style.display = give ? DisplayStyle.Flex : DisplayStyle.None;
             card.Kick.style.display = kick ? DisplayStyle.Flex : DisplayStyle.None;
-            card.Actions.style.display = give || kick ? DisplayStyle.Flex : DisplayStyle.None;
+            card.Actions.style.display = give || kick || move ? DisplayStyle.Flex : DisplayStyle.None;
             if (!give) card.GiveArmedAt = -10;
             if (!kick) card.KickArmedAt = -10;
             Arm(card.Give, give && now - card.GiveArmedAt < ArmSeconds, "양도", "load-card-give-armed");
             Arm(card.Kick, kick && now - card.KickArmedAt < ArmSeconds, "강퇴", "load-card-kick-armed");
-            return give || kick;
+            return give || kick || move;
         }
 
         // An armed button asks once more ("확인") in its own colour; left alone it goes back.
@@ -588,9 +612,14 @@ namespace ChessFight.Game
                 if (Time.unscaledTime - card.KickArmedAt < ArmSeconds) { card.KickArmedAt = -10; KickRequested?.Invoke(card.Key); }
                 else card.KickArmedAt = Time.unscaledTime;
             };
+            // R694: the manager moves this player on (the session picks where to).
+            card.Move = new Button { text = "옮기기", focusable = false };
+            card.Move.AddToClassList("a-btn"); card.Move.AddToClassList("a-sm"); card.Move.AddToClassList("load-card-btn");
+            card.Move.clicked += () => { if (card.Key != 0) MoveRequested?.Invoke(card.Key); };
+            card.Actions.Add(card.Move);
             card.Actions.Add(card.Give);
             card.Actions.Add(card.Kick);
-            card.Actions.style.display = card.Give.style.display = card.Kick.style.display = DisplayStyle.None;
+            card.Actions.style.display = card.Give.style.display = card.Kick.style.display = card.Move.style.display = DisplayStyle.None;
             card.Root.Add(card.Actions);
             card.Status = new Label { pickingMode = PickingMode.Ignore };
             card.Status.AddToClassList("load-state");
@@ -598,6 +627,9 @@ namespace ChessFight.Game
             card.Flash = new VisualElement { pickingMode = PickingMode.Ignore };
             card.Flash.AddToClassList("load-card-flash");
             card.Root.Add(card.Flash);
+            // R694: an empty seat as a button (a room a player made).
+            card.Sit = SeatButton(team);
+            card.Root.Add(card.Sit);
             rosters[team]?.Add(card.Root);
             return card;
         }

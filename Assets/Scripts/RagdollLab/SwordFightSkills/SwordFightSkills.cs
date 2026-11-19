@@ -55,8 +55,8 @@ namespace ChessFight.RagdollLab
     /// stopped by solid things, no turning once it goes), 비숍 관통 핀 (two hands reaching on the diagonals to a point:
     /// every piece there is pinned by the ankles, then slowed; anywhere on the floor since R102, before only with the
     /// floor ending right behind it), 나이트 포크 강하 (a leap to a chosen spot that hits two spots ahead).
-    /// The skill key (F in the test scene) starts the aim, the left click uses it, the right click (or the key again) calls it
-    /// off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
+    /// The skill key (F in the test scene) starts the aim, the key again uses it (R702; the left click before), the left or the
+    /// right click calls it off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
     /// Each piece also has an edge skill on E (R103, <c>SwordFightSkills.Edge.cs</c>).
     /// Online in this scene since R121: the host runs every piece's skills, the clients draw them
     /// (<c>SwordFightSkills.Net.cs</c>, LabNetLink.Sword.cs). The match scene's own link still carries no skills.
@@ -150,16 +150,16 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- input
 
-        /// <summary>The skill key went down (starts the aim; again while aiming calls it off). Kept until the next step.</summary>
+        /// <summary>The skill key went down (starts the aim; again while aiming uses it, R702). Kept until the next step.</summary>
         public void PressKey() => pressEdge = true;
 
-        /// <summary>Use the aimed skill (the left click while aiming; it also comes in with the match's input).</summary>
+        /// <summary>Use the aimed skill (scripted runs; players press the skill key again, R702).</summary>
         public void Confirm() => confirmEdge = true;
 
         /// <summary>Call the aim off (the right click while aiming).</summary>
         public void CancelAim() => cancelEdge = true;
 
-        /// <summary>Scripted runs: a left click while the bishop picks his diagonal (R236; players' come in through
+        /// <summary>Scripted runs: a left click while the bishop picks his diagonal, calling it off since R702 (players' come in through
         /// <see cref="Filter"/>).</summary>
         public void ClickEdge() { if (EdgeStage == SfEdge.Aim) bishopClick = true; }
 
@@ -179,12 +179,10 @@ namespace ChessFight.RagdollLab
         {
             if (raw.aim.sqrMagnitude > 0.01f) rawAim = raw.aim;
             rawMove = raw.move;   // the pawn's second step may turn (R149), read before the step roots the piece
-            if (Stage == SfStage.Aim && raw.shove)
-            {
-                confirmEdge = true;
-                raw.shove = raw.shoveHeld = false;
-            }
-            // R236: a left click while the bishop picks his diagonal sends him along it.
+            // R702: a left click while aiming calls the aim off (the F key uses it now); the click itself is swallowed
+            // below with every skill stage.
+            if (Stage == SfStage.Aim && raw.shove) cancelEdge = true;
+            // R236: a left click while the bishop picks his diagonal (R702: calls it off; E again sends him).
             if (EdgeStage == SfEdge.Aim && raw.shove) bishopClick = true;
             if (Stage != SfStage.None || EdgeStage != SfEdge.None)
             {
@@ -377,11 +375,13 @@ namespace ChessFight.RagdollLab
                     if (cooldownLeft > 0f) { Say($"{Pawn.DisplayName}: 쿨타임 {cooldownLeft:0.0}초"); break; }
                     if (Pawn.State != PawnState.Active) break;
                     if (Piece == PieceKind.King) { BeginKing(); break; }
-                    SetStage(SfStage.Aim, "조준 (좌클릭 발동 · 우클릭 취소)");
+                    SetStage(SfStage.Aim, "조준 (F 발동 · 좌·우클릭 취소)");
                     break;
                 case SfStage.Aim:
-                    if (cancel || press) { Say($"{Pawn.DisplayName}: 조준 취소"); Clear(); break; }
-                    if (confirm) Go();
+                    // R702 (승규: "F를 누르면 미리보기 후 F를 눌러야 스킬 발동", "조준 중 좌클릭은 취소"): the key again uses
+                    // the aim, either click calls it off (scripted runs still Confirm()).
+                    if (cancel) { Say($"{Pawn.DisplayName}: 조준 취소"); Clear(); break; }
+                    if (press || confirm) Go();
                     break;
                 default:
                     StepSkill(dt);

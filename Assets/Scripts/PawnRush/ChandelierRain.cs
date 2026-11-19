@@ -31,10 +31,12 @@ namespace ChessFight.PawnRush
         [SerializeField] float floorY = 8f;
 
         [Header("When")]
-        [SerializeField] float minGap = .7f;
-        [SerializeField] float maxGap = 1.4f;
+        // R680 (the user after the 6 vs 6 test: obstacles too easy, their rounds too far apart; the approved number table): a drop every 0.5 to 1 s (was 0.7 to 1.4) after a
+        // warning of 1 s (was 1.2)
+        [SerializeField] float minGap = .5f;
+        [SerializeField] float maxGap = 1f;
         [SerializeField] float minDistance = 6f;
-        [SerializeField] float warning = 1.2f;
+        [SerializeField] float warning = 1f;
         [SerializeField] float fall = .4f;
         [SerializeField] float debris = 1.5f;
         [Tooltip("How high over the floor it comes down from when it shows.")]

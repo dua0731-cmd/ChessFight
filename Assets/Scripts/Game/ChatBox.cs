@@ -32,11 +32,15 @@ namespace ChessFight.Game
     [DisallowMultipleComponent]
     public sealed class ChatBox : MonoBehaviour
     {
-        public enum Layout { Hidden, Lobby, Match }
+        // R698 (the user 2026-11-17: "방 화면 채팅"): Room - over the waiting room of a room a player made (the entrance
+        // screen in its room layout), bottom left under the seats, with the match chat's look.
+        public enum Layout { Hidden, Lobby, Match, Room }
 
         // Above every scene's HUD (those keep the default, 0) and under the
         // loading screen (100).
         const float SortingOrder = 50f;
+        // R698: over the room screen (the entrance screen's panel is 100).
+        const float RoomSortingOrder = 110f;
         // Closed, a new line floats this long, the last FadeSeconds of it fading.
         const float RecentSeconds = 8f, FadeSeconds = 2f, NoteSeconds = 3f;
         const int PanelLines = 8, RecentLines = 4;
@@ -163,7 +167,11 @@ namespace ChessFight.Game
         void Update()
         {
             if (box == null) return;
-            if (Where != lastWhere) { lastWhere = Where; picked = false; scroll = 0; }
+            if (Where != lastWhere)
+            {
+                lastWhere = Where; picked = false; scroll = 0;
+                if (ownedPanel != null) ownedPanel.sortingOrder = Where == Layout.Room ? RoomSortingOrder : SortingOrder;
+            }
             // No chat over the name screen (R85): it covers the lobby and its field has the keys.
             // No chat in the lobby at all since 10-17 (승규); matches keep theirs.
             if (Where == Layout.Hidden || Where == Layout.Lobby || log == null || !GameSettings.ChatOn || NameScreen.Showing)
@@ -173,7 +181,8 @@ namespace ChessFight.Game
                 return;
             }
             box.EnableInClassList("chat-lobby", Where == Layout.Lobby);
-            box.EnableInClassList("chat-match", Where == Layout.Match);
+            box.EnableInClassList("chat-match", Where == Layout.Match || Where == Layout.Room);
+            box.EnableInClassList("chat-room", Where == Layout.Room);
             Show(box, true);
 
             bool blocked = Blocked();
@@ -208,7 +217,10 @@ namespace ChessFight.Game
         void OpenPanel()
         {
             if (!(picked && Usable(channel)))
-                channel = Where == Layout.Match
+                channel = Where == Layout.Room
+                    // R698: in a room, everyone in the room first.
+                    ? (Usable(ChatChannel.All) ? ChatChannel.All : Usable(ChatChannel.Team) ? ChatChannel.Team : ChatChannel.Party)
+                    : Where == Layout.Match
                     ? (Usable(ChatChannel.Team) ? ChatChannel.Team : Usable(ChatChannel.All) ? ChatChannel.All : ChatChannel.Party)
                     : (Usable(channel) ? channel : ChatChannel.Party);
             if (!Usable(channel)) return;
@@ -290,7 +302,7 @@ namespace ChessFight.Game
                 if (closedKey != null) closedKey.text = GameSettings.KeyName(GameSettings.Key(GameKey.Chat));
             }
             // R674, settings → 채팅 배경 진하기: a dark backing behind the match chat (clear at 0, as before).
-            float backing = Where == Layout.Match ? GameSettings.ChatBacking : 0f;
+            float backing = Where == Layout.Match || Where == Layout.Room ? GameSettings.ChatBacking : 0f;
             if (!Mathf.Approximately(backing, drawnBacking))
             {
                 drawnBacking = backing;

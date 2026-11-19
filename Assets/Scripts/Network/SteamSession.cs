@@ -140,15 +140,53 @@ namespace ChessFight.Network
         //      a storage row, two slewing timber cranes, a loft whose two hoist pairs lift pallets to its deck, a second
         //      row, the heavy berth. The wire is the same, but a v44 PC would build a shorter section (the next one placed
         //      17 m south of the host's) and draw a yard whose cranes and pallets are not there.
-        // v46 (R686, seoungtest): the Royal Carriage Yard's teams turn about their coach's rear axle (RoamingFleet pivots),
-        //      the pair walking round it on the swung-out forecarriage, and the yard's seeds were vetted again. The wire is
-        //      the same, but a v45 PC would draw the teams turning on the spot along other paths than a v46 host's.
-        // v47 (seoungtest, main R686 + R687 brought in): J, the knight's road, is two to four roads side by side with a
-        //      king's tub that two gold tubs raise (KnightRoad), larger tubs, and a game block of five bytes (was three).
-        //      A v46 PC would build the one old chain and read the block two short. (main's own v48 says the same.)
-        // v48 (seoungtest R688): J's two gold tubs must be stood on at the same time (two players) and the king's tub
-        //      then stays up 8 s; the pressed byte carries a third bit (held up). A v47 host would let one player do it.
-        public const string Protocol = "chessfight.dua0731.network.v48";
+        // v46 (R679): the war room's battery is six turrets (two more half way along the well) firing a volley every
+        //      1.5 s (was four, every 2 s) with a wider shot. Nothing new is sent, but a v45 PC would draw four turrets'
+        //      other shots where a v46 host knocks pawns down.
+        // v47 (R680): the garden's and the grand stair hall's obstacles run faster and more often (the spin bars, the
+        //      geysers' and sluice gates' and robot arms' cycles, the boats; the rolls, the chandeliers, the hammers, the
+        //      falling pieces, the guard knights, the wind vents). Nothing new is sent, but every PC works these out of
+        //      the shared clock: a v46 PC would draw them elsewhere than a v47 host knocks pawns with them.
+        // v48 (R686): J, the knight's road, is two to four roads side by side with a king's tub that two gold tubs raise
+        //      (KnightRoad), larger tubs, and a game block of five bytes (was three: the gold tubs pressed and how far up
+        //      the king's tub is). A v47 PC would build the one old chain and read the block two short.
+        // v49 (R688): a round is six sections - obstacle, mini-game, obstacle, mini-game, the war room as the late
+        //      obstacle section, an ending (a stand-in with the finish) - instead of seven with a third mini-game and the
+        //      finish inside the war room. A v48 PC would build another round from the same seed.
+        // v50 (R691): the round's second mini-game is drawn from seven rooms, not four - the king's three (G, H, I)
+        //      are back in the section set. A v49 PC would pick another room from the same seed.
+        // v51 (R693): a public room starts by itself once it is a minute old with even sides (room data "born"), and no
+        //      screen offers its manager a start any more. A v50 host would wait for a start nobody can give.
+        // v52 (R694): a room a player made has four spectators' seats (sixteen in the room, room data "spec"), players
+        //      change sides (asks "seat" and "move"), and a party that fits no side is seated apart. A v51 host knows
+        //      none of it; a v51 player moved to a spectator's seat would think its seat lost.
+        // v53 (R697): a Pawn Rush room a player made starts with its spectators' seats taken and its spectators go
+        //      into the match - the host sends them its snapshots, state and skills. A v52 host would not start such a
+        //      room, and a v52 spectator would stay behind in it.
+        // v54 (seoungtest R677-R686 merged): the Royal Carriage Yard as the seoungtest branch left it - its teams turn
+        //      about their coach's rear axle (RoamingFleet pivots, the pair walking round it on the swung-out forecarriage)
+        //      with the yard's seeds vetted again, the slewing cranes' loads trip a pawn before letting it through
+        //      (YardImpact), and the course obstacles' hit sounds ride the effect stream as the last SkillFxKind
+        //      (CourseHit). The wire is the same, but a v53 PC would draw the teams on other paths than a v54 host's.
+        // v55 (R703): a room a player made carries the round's flow rules (room data "rules", the manager's ask
+        //      "rules"): relief for the obstacle section before a cleared mini-game, the other team's gate opening
+        //      20 s after one team's clear. A v54 PC would play the same room by the old flow.
+        // v56 (R704): the flow rule "모여서 발판" can be picked, and the course state's station flags carry the gate
+        //      (bit 2) apart from the game's done: under that rule a cleared game's gate opens when most of the team
+        //      stands on the pad before it. A v55 PC would open the gate on the clear.
+        // v57 (R705, seoungtest R688 merged): J's two gold tubs must be stood on at the same time (two players) and the
+        //      king's tub then stays up 8 s; the pressed byte carries a third bit (held up). A v56 host would let one
+        //      player raise it alone. (The mini-game rooms' new effects and sounds send nothing.)
+        // v58 (R706, seoungtest R689 brought in): the late obstacle section draws from two prefabs - the war room and the
+        //      Royal Library with its giant chess (Late_3-1_RoyalLibrary) - and the library sends 33 bytes of section
+        //      state (the chess start, the door, the typewriter's keys, the crushed pawns). A v57 PC would always build
+        //      the war room where a v58 host may build the library (every later section 300 m off) and read the state's
+        //      section bytes out of step.
+        // v59 (R707): the flow rule "왕좌 차지전" can be picked. Under it the round's ending section carries the
+        //      contest in the course state (seven more part bytes: begun and who holds, the two teams' times and
+        //      targets), and the win is the contest's. A v58 PC would count those bytes as another part's and end
+        //      the round on the first majority.
+        public const string Protocol = "chessfight.dua0731.network.v59";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -212,7 +250,7 @@ namespace ChessFight.Network
         // R644: the waiting room's host number (every change of its host raises it), for tests and the log.
         public int WaitingEpoch => wepoch;
         bool HostCanStart => RunsRoom && reservations.Groups.All(g => g.Committed) && SeatingJoiners == 0 &&
-            (privateRoom ? Roster.Count >= 2 : reservations.Ready || CanStartEarly);
+            (privateRoom ? Roster.Count >= 2 && (spectators.Count == 0 || SpectatingAllowed) : reservations.Ready || CanStartEarly);
         // What every PC can see of a waiting room: the seats reserved a team (free0 / free1) and who has arrived (the
         // roster lists only those). Ready when everyone reserved is in and the sizes allow a start.
         bool SeesRoomReady
@@ -223,7 +261,7 @@ namespace ChessFight.Network
                 int used0 = TeamCount(0), used1 = TeamCount(1);
                 int in0 = Roster.Values.Count(p => p.Team == 0), in1 = Roster.Count - in0;
                 if (in0 != used0 || in1 != used1 || SeatingJoiners > 0) return false;
-                return privateRoom ? Roster.Count >= 2
+                return privateRoom ? Roster.Count >= 2 && (Spectators.Count == 0 || SpectatingAllowed)
                      : used0 + used1 == 12 || (EarlyStartMode && used0 >= MinTeamToStart && used0 == used1);
             }
         }
@@ -251,6 +289,151 @@ namespace ChessFight.Network
         public bool EarlyStartMode => !privateRoom && Match != 0 && ((MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key
                                                                     || (MatchMode ?? PartyMode)?.Key == GameModes.SwordFight.Key);
         public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarlyFrom(MinTeamToStart);
+        // R693 (the user 2026-11-17: random matching stays on the lobby screen, so nobody is shown a room to start): a
+        // public room starts by itself. Twelve start at once, as before; short of twelve it starts as soon as it is
+        // QuickStartSeconds old and its sides are even and large enough (CanStartEarly - what the manager's "게임
+        // 시작" needed), with nobody still being seated. The room's age is its own ("born", Steam's clock), so the
+        // next PC to host a waiting room counts on from the same moment.
+        public const double QuickStartAfter = 60;
+        // R694 (the user 2026-11-17, "방 생성": the room's players change sides, a full side is left through a
+        // spectator's seat, the manager moves players): a room a player made has SpectatorSeats seats beside its
+        // twelve. A spectator is in the room but not on its roster; the host keeps who they are and the room says so
+        // ("spec"). Until spectators can watch a match, a room with one in a spectator's seat does not start.
+        public const int SpectatorSeats = 4;
+        // R695: a party Steam failed to make is tried again after PartyRetryFirst seconds, then twice as long each time.
+        public const float PartyRetryFirst = 3f, PartyRetryMax = 30f;
+        float partyRetryAt = -1, partyRetryWait = PartyRetryFirst;
+        readonly List<ulong> spectators = new List<ulong>();
+        readonly Dictionary<ulong, float> spectatorSince = new Dictionary<ulong, float>();
+        // R697: from the start on the room's word is the list (the host only strikes those who leave), so a PC that
+        // takes the match over needs no book of its own.
+        public IReadOnlyList<ulong> Spectators => Match == 0 ? NoSpectators : !Started && HoldsBooks ? spectators : SpectatorIds(Match);
+        // R697 (the user 2026-11-17: "3단계 진행" - the spectators' seats watch the match): only Pawn Rush sends its
+        // match to spectators so far; another mode's room still starts only with its spectators' seats empty.
+        public bool SpectatingAllowed => (MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key;
+        static readonly List<ulong> NoSpectators = new List<ulong>();
+        public bool IsSpectator(ulong id) => id != 0 && Spectators.Contains(id);
+        static List<ulong> SpectatorIds(ulong lobby)
+        {
+            var ids = new List<ulong>();
+            foreach (string part in Data(lobby, "spec").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                if (ids.Count < SpectatorSeats && ulong.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out ulong id) && id != 0 && !ids.Contains(id)) ids.Add(id);
+            return ids;
+        }
+        // Where a player sits in the room: 0 or 1 a side, 2 a spectator's seat, -1 nowhere.
+        public const int SpectatorSeat = 2;
+        // R703 (the user 2026-11-17: five ways for the round's flow, "방장 권한으로 켜고 끌 수 있게"): the flow rules
+        // of a room a player made (PawnRushRules, one number in room data "rules"), the manager's to set before the
+        // start. Every PC reads them from the room when the match begins; a room found by random matching has none.
+        public int RoomRules => Match == 0 ? 0 : PawnRushRules.Decode(ParseInt(Data(Match, "rules"))).Encode();
+        public bool CanSetRules => RoomSeats && IsManager;
+        public void SetRules(int packed)
+        {
+            if (!CanSetRules) return;
+            if (IsHost && Owner(Match) == Self) SetRulesNow(packed); else Ask("rules", 0, packed);
+        }
+        void SetRulesNow(int packed)
+        {
+            if (!RunsRoom || !privateRoom || Started) return;
+            SetChanged("rules", PawnRushRules.Decode(packed).Encode().ToString(CultureInfo.InvariantCulture));
+        }
+        public int SeatOf(ulong id) => Roster.TryGetValue(id, out var p) ? (p.Team == 0 ? 0 : 1) : IsSpectator(id) ? SpectatorSeat : -1;
+        public int SeatsFree(int seat) => seat == SpectatorSeat ? SpectatorSeats - Spectators.Count
+                                        : seat == 0 || seat == 1 ? TeamReservations.TeamSize - TeamCount(seat) : 0;
+        bool RoomSeats => privateRoom && Match != 0 && !Started;
+        // A player's own move: to a free seat on either side or among the spectators.
+        public bool CanTakeSeat(int seat) => RoomSeats && SeatOf(Self) >= 0 && SeatOf(Self) != seat && SeatsFree(seat) > 0;
+        public void TakeSeat(int seat)
+        {
+            if (!CanTakeSeat(seat)) return;
+            if (IsHost && Owner(Match) == Self) SeatNow(Self, seat); else Ask("seat", Self, seat);
+        }
+        // The manager's "옮기기": a player goes to the other side, or to a spectator's seat when that side is full; a
+        // spectator to the smaller side. -1: nowhere to go.
+        public int MoveTarget(ulong id)
+        {
+            int from = SeatOf(id);
+            if (from < 0) return -1;
+            if (from == SpectatorSeat)
+            {
+                int first = TeamCount(0) <= TeamCount(1) ? 0 : 1;
+                return SeatsFree(first) > 0 ? first : SeatsFree(1 - first) > 0 ? 1 - first : -1;
+            }
+            return SeatsFree(1 - from) > 0 ? 1 - from : SeatsFree(SpectatorSeat) > 0 ? SpectatorSeat : -1;
+        }
+        public bool CanMovePlayer(ulong id) => RoomSeats && IsManager && id != Self && !BotIdentity.IsBot(id) && MoveTarget(id) >= 0;
+        public void MovePlayer(ulong id)
+        {
+            if (!CanMovePlayer(id)) return;
+            int seat = MoveTarget(id);
+            if (IsHost && Owner(Match) == Self) SeatNow(id, seat); else Ask("move", id, seat);
+        }
+        // The host moves a player (its own word, or the manager's).
+        void SeatNow(ulong id, int seat)
+        {
+            if (!RunsRoom || !privateRoom || Started || BotIdentity.IsBot(id) || seat < 0 || seat > SpectatorSeat) return;
+            bool spectating = spectators.Contains(id);
+            if (!spectating && reservations.Find(id) == null) return;
+            float now = Time.realtimeSinceStartup;
+            if (seat == SpectatorSeat)
+            {
+                if (spectating || spectators.Count >= SpectatorSeats || !reservations.Unseat(id)) return;
+                spectators.Add(id);
+            }
+            else if (spectating)
+            {
+                if (!reservations.Seat(id, seat, now)) return;
+                spectators.Remove(id); spectatorSince.Remove(id);
+            }
+            else if (!reservations.Move(id, seat)) return;
+            Diagnose($"자리 옮김: {Who(id)} → {(seat == SpectatorSeat ? "관전석" : seat == 0 ? "백팀" : "흑팀")}");
+            PublishRoster();
+            PublishSpectators();
+            PublishReservations(false);
+        }
+        void PublishSpectators() => SetChanged("spec", string.Join(",", spectators.Select(x => x.ToString(CultureInfo.InvariantCulture))));
+        // A spectator that left the room gives up its seat (one seated before it arrived has the usual 25 s to come).
+        void KeepSpectators(HashSet<ulong> present, float now)
+        {
+            foreach (ulong id in spectators) if (present.Contains(id)) spectatorSince.Remove(id);
+            spectators.RemoveAll(id => !present.Contains(id) && (!spectatorSince.TryGetValue(id, out float since) || now - since > 25f));
+            PublishSpectators();
+        }
+        // A party that fits no single side of a room a player made is seated apart, each on the side with more room,
+        // and past twelve in the spectators' seats. Asked again once done, it is done.
+        bool SeatApart(ulong sender, Request request, float now)
+        {
+            var members = request.members;
+            if (!TeamReservations.ValidRequest(sender, request.party, request.ticket, members) || members.Any(BotIdentity.IsBot)
+                || reservations.CoolingDown(sender, now)) return false;
+            int placed = members.Count(id => reservations.Find(id) != null || spectators.Contains(id));
+            if (placed == members.Length) return true;
+            if (placed > 0) return false;
+            int free = 2 * TeamReservations.TeamSize - reservations.Used(0) - reservations.Used(1) + SpectatorSeats - spectators.Count;
+            if (members.Length > free) return false;
+            var present = PresentNow();
+            foreach (ulong id in members)
+            {
+                int team = reservations.Used(0) <= reservations.Used(1) ? 0 : 1;
+                if (reservations.Used(team) >= TeamReservations.TeamSize) team = 1 - team;
+                if (reservations.Seat(id, team, now, present.Contains(id))) continue;
+                spectators.Add(id); spectatorSince[id] = now;
+            }
+            Diagnose($"파티를 나눠 앉힘: {Who(sender)} 님 파티 {members.Length}명");
+            PublishSpectators();
+            return true;
+        }
+        public double QuickStartSeconds = QuickStartAfter;
+        public double RoomAge
+        {
+            get
+            {
+                if (Match == 0) return 0;
+                return long.TryParse(Data(Match, "born"), NumberStyles.Integer, CultureInfo.InvariantCulture, out long born) && born > 0
+                    ? Math.Max(0, ServerNow() - born) : 0;
+            }
+        }
+        bool QuickStartDue => !privateRoom && !Started && CanStartEarly && SeatingJoiners == 0 && RoomAge >= QuickStartSeconds;
         // R525 (user 11-09 build test, 3: "1대1로도 테스트 가능하도록 임시 조치"): a development build's host may start a public
         // room from one a side (the sides still even); a release build keeps three (TeamReservations.MinTeamToStart).
         // The same switch that lets development builds take bots into public rooms (M6), so nothing has to be undone.
@@ -342,6 +525,9 @@ namespace ChessFight.Network
         // R644: how long a seated player this host has been hearing may be silent before its seat in the waiting
         // room is given up (a PC that lost power stays in Steam's room for a long while).
         public const float PeerLostAfter = 3f;
+        // R689: how long a waiting room just taken over keeps the seats its last host had given while this PC's Steam
+        // does not list their players (the same 3 seconds a seated player this host stopped hearing keeps its seat).
+        public const float AdoptedSeatHold = PeerLostAfter;
         // R644: how long a room's owner that does not host may keep the room from a host that took the role by a
         // claim before it counts as gone itself (GhostOwner) - a live owner passes the room on within a poll.
         public const float GhostAfter = 1.5f;
@@ -557,6 +743,14 @@ namespace ChessFight.Network
         // SteamMotion), and those silent for PeerLostAfter: no longer counted as in the room.
         readonly Dictionary<ulong, float> peerSilence = new Dictionary<ulong, float>();
         readonly HashSet<ulong> lostPeers = new HashSet<ulong>();
+        // R689 (the 11-15 build test, the third waiting room): a PC that a waiting room has just come to reads its seats
+        // once the room is its own, and used to give up at once the seat of anyone its Steam did not list right then.
+        // On 11-15 the PC the room came to did not list the room's maker for that moment (the maker's name came out as
+        // its Steam name, the room one short): the maker's seat went, and the maker, finding itself off the roster, left
+        // ("예약이 해제되었거나 파티원 연결이 끊겼습니다"). Those the last host had seated (adoptedSeats) now count as in
+        // the room until adoptedUntil, AdoptedSeatHold after the room became this PC's.
+        readonly HashSet<ulong> adoptedSeats = new HashSet<ulong>();
+        float adoptedUntil = -1;
         // R644: the waiting room this party member left on its own (0: none): it follows its party again once the
         // party moves on from that room.
         ulong leftRoom;
@@ -734,8 +928,26 @@ namespace ChessFight.Network
             var present = Members(Match);
             if (Started) return present;
             if (ghost != 0) present.Remove(ghost);
-            if (IsHost) present.ExceptWith(lostPeers);
+            if (IsHost)
+            {
+                present.ExceptWith(lostPeers);
+                // R689: and, for a moment after the waiting room became this PC's, those its last host had seated.
+                if (Time.realtimeSinceStartup < adoptedUntil)
+                    foreach (ulong id in adoptedSeats) if (id != ghost && !lostPeers.Contains(id)) present.Add(id);
+            }
             return present;
+        }
+        // R689: the seats the last host left in a waiting room this PC has just taken over, as its roster has them, stand
+        // for AdoptedSeatHold for anyone this PC's Steam does not list yet (PresentNow).
+        void HoldAdoptedSeats(float now)
+        {
+            adoptedSeats.Clear();
+            foreach (ulong id in Roster.Keys) if (id != Self && !BotIdentity.IsBot(id)) adoptedSeats.Add(id);
+            adoptedUntil = now + AdoptedSeatHold;
+            var listed = Members(Match);
+            var unlisted = adoptedSeats.Where(id => !listed.Contains(id)).ToList();
+            if (unlisted.Count > 0)
+                Diagnose($"넘겨받은 대기실: Steam 목록에 지금 없는 {string.Join(", ", unlisted.Select(Who))} 님의 자리를 {AdoptedSeatHold:0}초 지킴");
         }
         static void Set(ulong lobby, string key, string value) => SteamMatchmaking.SetLobbyData(Id(lobby), key, value);
         static bool Live(ulong lobby) => Data(lobby, "phase") == "playing";
@@ -761,7 +973,8 @@ namespace ChessFight.Network
                 if (parts[i] == "+connect_lobby" && ulong.TryParse(parts[i + 1], out ulong lobby)) return lobby;
             return 0;
         }
-        public bool IsPeer(ulong id) => Match != 0 && (id == Host || Roster.ContainsKey(id));
+        // R697: a spectator is sent the match and answers with what it has heard.
+        public bool IsPeer(ulong id) => Match != 0 && (id == Host || Roster.ContainsKey(id) || IsSpectator(id));
         static string MemberData(ulong lobby, ulong user, string key) => lobby == 0 ? "" : SteamMatchmaking.GetLobbyMemberData(Id(lobby), Id(user), key);
         static int ParseInt(string text) => int.TryParse(text, out int value) ? value : 0;
         static ulong ParseId(string text) => ulong.TryParse(text, out ulong value) ? value : 0;
@@ -806,7 +1019,10 @@ namespace ChessFight.Network
         // they published.
         List<HostElection.Candidate> Candidates(HashSet<ulong> present)
         {
-            var humans = present.Where(id => !BotIdentity.IsBot(id) && (id == Self || Roster.ContainsKey(id))).OrderBy(id => id).ToList();
+            // R695: a waiting room's spectators are its people too (a room left to them goes to one of them).
+            // R697: not once the match runs - it is hosted by a PC that plays in it.
+            var watching = Started ? NoSpectators : Spectators;
+            var humans = present.Where(id => !BotIdentity.IsBot(id) && (id == Self || Roster.ContainsKey(id) || watching.Contains(id))).OrderBy(id => id).ToList();
             var locations = humans.ToDictionary(id => id, id => id == Self ? LocalPingLocation() : MemberData(Match, id, "loc"));
             var list = new List<HostElection.Candidate>();
             foreach (ulong id in humans)
@@ -954,6 +1170,21 @@ namespace ChessFight.Network
             // R533: the manager put this player (its party) out of the waiting room. Before the party's own route: a
             // member would otherwise follow its leader out without ever being told why.
             if (Match != 0 && !Started && KickedIds(Match).Contains(Self)) Fail(KickedMessage);
+            // R695 (the user 2026-11-17: after closing the game with a room open, the next start said "Steam 방을 만들지
+            // 못했습니다: k_EResultTimeout" and stood without a party): a party Steam failed to make is made again,
+            // a little later each time, instead of waiting for the player to press something.
+            if (Party == 0 && Match == 0 && !pending && !Searching)
+            {
+                if (partyRetryAt < 0) { partyRetryAt = now + partyRetryWait; }
+                else if (now >= partyRetryAt)
+                {
+                    partyRetryAt = -1; partyRetryWait = Math.Min(partyRetryWait * 2f, PartyRetryMax);
+                    Diagnose("파티 방을 다시 만듦");
+                    Status = "파티를 다시 만드는 중...";
+                    CreateParty();
+                }
+            }
+            else if (Party != 0) { partyRetryAt = -1; partyRetryWait = PartyRetryFirst; }
             PollParty();
             if (Match != 0) PollMatch(now);
             TrackRejoin(now);
@@ -994,7 +1225,7 @@ namespace ChessFight.Network
         {
             int op = ++generation; pending = true; deadline = Time.realtimeSinceStartup + 20;
             var call = CallResult<LobbyCreated_t>.Create(); calls.Add(call);
-            call.Set(SteamMatchmaking.CreateLobby(match && !privateRoom ? ELobbyType.k_ELobbyTypePublic : ELobbyType.k_ELobbyTypePrivate, match ? 12 : 6), (c, failed) =>
+            call.Set(SteamMatchmaking.CreateLobby(match && !privateRoom ? ELobbyType.k_ELobbyTypePublic : ELobbyType.k_ELobbyTypePrivate, match ? (privateRoom ? 12 + SpectatorSeats : 12) : 6), (c, failed) =>
             {
                 calls.Remove(call); call.Dispose();
                 if (disposed || op != generation) { if (!failed && c.m_eResult == EResult.k_EResultOK) SteamMatchmaking.LeaveLobby(Id(c.m_ulSteamIDLobby)); return; }
@@ -1008,6 +1239,7 @@ namespace ChessFight.Network
                 {
                     Match = lobby; Host = Self; admitted = true; Started = false; ResetHostState();
                     reservations.Clear(); reservations.Reserve(Self, Party, ticket, queuedMembers, Time.realtimeSinceStartup, out _);
+                    spectators.Clear(); spectatorSince.Clear();
                     Set(Match, "host", Self.ToString()); Set(Match, "phase", "waiting"); Set(Match, "mode", queuedMode);
                     // R644: the waiting room's hosts are numbered from 1, and each says which number it holds.
                     wepoch = ownWClaim = 1; Set(Match, "wepoch", "1");
@@ -1016,6 +1248,8 @@ namespace ChessFight.Network
                     Set(Match, "manager", Self.ToString()); Manager = lastManager = Self;
                     // A waiting room takes players until it starts; after that it takes
                     // back only its own players who left (R538, Starters).
+                    // R693: when the room was made, for the start a public room gives itself (QuickStartDue).
+                    Set(Match, "born", ((long)ServerNow()).ToString(CultureInfo.InvariantCulture));
                     Set(Match, "private", privateRoom ? "1" : "0"); Set(Match, "open", "1"); PublishRoster();
                     Set(Party, "route", Match.ToString()); mergeAt = Time.realtimeSinceStartup + 6;
                     Diagnose(privateRoom ? "비공개 방을 만듦" : "대기실을 만듦(찾은 방이 없음)");
@@ -1459,7 +1693,7 @@ namespace ChessFight.Network
             // stays in the lobby until the host seats it. A client promoted to host
             // must not fall into the waiting-room branch below: it has no
             // reservations and would end the match, so it is in the match too.
-            if (live && (IsHost || Roster.ContainsKey(Self))) Started = true;
+            if (live && (IsHost || Roster.ContainsKey(Self) || IsSpectator(Self))) Started = true;
             if (Started) PublishLoad();
             if (IsHost)
             {
@@ -1469,24 +1703,29 @@ namespace ChessFight.Network
                     // until the room is its own (only the owner can write it).
                     if (Owner(Match) == Self)
                     {
-                        if (adoptReservations) { LoadReservations(); adoptReservations = false; }
+                        // R689: the seats as the last host left them stand a moment for those Steam does not list here yet.
+                        if (adoptReservations) { LoadReservations(); adoptReservations = false; HoldAdoptedSeats(now); present = PresentNow(); }
                         foreach (var removed in reservations.Reconcile(present, now))
                         {
                             Diagnose(removed.Committed ? $"자리 정리: {Who(removed.Leader)} 님 파티가 모두 방을 나감"
                                                        : $"자리 예약 풀림: {Who(removed.Leader)} 님 파티 {removed.Members.Length}명(기한 안에 다 오지 못함)");
                             Set(Match, "grant_" + removed.Leader, removed.Ticket + "|expired");
                         }
-                        if (reservations.Find(Self) == null) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
+                        // R695 (the user 2026-11-17: alone in a room it made, it moved to a spectator's seat and was thrown
+                        // out with this message): a host in a spectator's seat has its place in the room too.
+                        if (reservations.Find(Self) == null && !spectators.Contains(Self)) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
                         PublishRoster();
                         // R644: the room keeps the reservations and the order of succession current, so whoever
                         // takes a waiting room over from a host that died starts from them.
                         PublishReservations(false);
                         PublishWaitingSuccessors(present, now);
                         KeepManager(present);
+                        KeepSpectators(present, now);
                         TrackJoiners(present, now);
                         SetChanged("seating", SeatingJoiners.ToString());
                         // R159: a start that is waiting for a newcomer's machine score goes on by itself.
-                        if ((!privateRoom && reservations.Ready) || startWanted) StartNow();
+                        // R693: or a public room old enough with even sides (QuickStartDue).
+                        if ((!privateRoom && (reservations.Ready || QuickStartDue)) || startWanted) StartNow();
                         if (!Started) ElectWaiting(present, now);
                     }
                     // R644: a host waiting for the room (handed to it, or taken over from a host that died while
@@ -1500,6 +1739,13 @@ namespace ChessFight.Network
                         if (!present.Contains(id) && !BotIdentity.IsBot(id)) Roster.Remove(id);
                     // Only the room's owner can write the seats (HOST.md). R504: the match's end first, if it came first.
                     if (Owner(Match) == Self) { WriteEnded(); PublishSeats(); KeepManager(present); Beat(now); }
+                    // R697: a spectator that left the match is struck from the room's list.
+                    if (Owner(Match) == Self)
+                    {
+                        var watchers = SpectatorIds(Match);
+                        if (watchers.RemoveAll(id => !present.Contains(id)) > 0)
+                            Set(Match, "spec", string.Join(",", watchers.Select(x => x.ToString(CultureInfo.InvariantCulture))));
+                    }
                     AnnounceStartWhenDue(now);
                     PublishMembers();
                     PublishSuccessors(present, now);
@@ -1538,15 +1784,24 @@ namespace ChessFight.Network
                 // R644: the owner that has gone silent is no longer shown (its seat is given up once the room can be written).
                 if (!live && ghost != 0) Roster.Remove(ghost);
                 if (before != null) NoteArrivals(Roster.Keys.Where(id => !before.Contains(id)));
-                if (Roster.ContainsKey(Self))
+                // R694: a spectator's seat is a seat too.
+                bool watching = IsSpectator(Self);
+                if (Roster.ContainsKey(Self) || watching)
                 {
-                    admitted = true; seenRoster = true;
+                    // R689 (the 11-15 build test, the fourth match): a player coming back is seated once the host has
+                    // answered its own request (the grant above), not because the room's roster has it. A host that leaves
+                    // a match leaves its last roster in the room, itself on it: coming back into that room at once, a PC
+                    // found itself there, stopped asking for its seat, and the next host's first roster - without it, as
+                    // it had been away - threw it out ("예약이 해제되었거나 파티원 연결이 끊겼습니다"). Now it goes on
+                    // asking until the host, the room's owner by then, seats it.
+                    if (!rejoining || admitted) { admitted = true; seenRoster = true; }
                     // Steam can deliver roster and grant metadata in either order.
                     if (IsLeader && !rejoining && Route(Party) != Match.ToString()) Set(Party, "route", Match.ToString());
                 }
                 if (!seenRoster && now > deadline) { RetryAdmission("입장 승인이 시간 초과되었습니다."); return; }
-                if (seenRoster && !Roster.ContainsKey(Self)) { Fail("예약이 해제되었거나 파티원 연결이 끊겼습니다."); return; }
-                Started = phase == "playing" && Roster.ContainsKey(Self);
+                if (seenRoster && !Roster.ContainsKey(Self) && !watching) { Fail("예약이 해제되었거나 파티원 연결이 끊겼습니다."); return; }
+                // R697: a spectator goes into the match with the room, to watch.
+                Started = phase == "playing" && (Roster.ContainsKey(Self) || watching);
             }
             SendAsk(now);
             int away = Away;
@@ -1768,6 +2023,11 @@ namespace ChessFight.Network
             // R644: and it says which host number it holds, which is what moves the room to it (FollowHost step 3).
             if (next == Self && Match != 0 && ownClaim != newEpoch)
             { ownClaim = newEpoch; SteamMatchmaking.SetLobbyMemberData(Id(Match), "claim", ownClaim.ToString()); }
+            // R683 (the 11-15 build test): a PC that saw the match's result while another PC hosted it (SawResult, on
+            // every PC) takes the end with the role. Only the host writes "ended", once the room is its own (R504),
+            // and a host that left with the end unwritten took it along: the next host had seen the result, but as a
+            // player it had nothing to write, and the room stayed "playing" for everyone who had left it.
+            if (next == Self && Match != 0 && resultSeen == Match) endWanted = true;
             lastHandoff = now;
             // R536: whoever hosts now weighs the room afresh from the players it finds (ElectLive).
             liveElectorate = null; liveSeen = "";
@@ -1810,6 +2070,7 @@ namespace ChessFight.Network
         void TrackJoiners(HashSet<ulong> present, float now)
         {
             var seated = new HashSet<ulong>(reservations.Groups.SelectMany(g => g.Members));
+            foreach (ulong id in spectators) seated.Add(id);
             foreach (ulong id in unseatedSince.Keys.ToList())
                 if (!present.Contains(id) || seated.Contains(id)) unseatedSince.Remove(id);
             foreach (ulong id in present)
@@ -1821,7 +2082,8 @@ namespace ChessFight.Network
         bool Seated(ulong id, HashSet<ulong> present)
         {
             var g = reservations.Find(id);
-            return g != null && g.Committed && present.Contains(id) && !BotIdentity.IsBot(id);
+            // R695: a spectator is in the room for good as well (a room left to its spectators goes on under one of them).
+            return (g != null && g.Committed || spectators.Contains(id)) && present.Contains(id) && !BotIdentity.IsBot(id);
         }
 
         // The record: the reservations, then who hosts, under the next host number, and who follows after.
@@ -2102,6 +2364,9 @@ namespace ChessFight.Network
                 if (!listed.Contains(p.Id))
                     list.Add(new TeamReservations.Group { Leader = p.Id, Party = p.Id, Ticket = "seat:" + p.Id, Members = new[] { p.Id }, Team = p.Team, Committed = true, Deadline = local + 25 });
             reservations.Restore(list);
+            // R694: and the spectators the room names.
+            spectators.Clear(); spectatorSince.Clear();
+            if (privateRoom) spectators.AddRange(SpectatorIds(Match));
             publishedResv = "";
         }
 
@@ -2173,6 +2438,7 @@ namespace ChessFight.Network
             ownPast = 0; passOverSince = -1; endWanted = false;
             waitingHandedTo = 0; handedAt = 0; wepoch = ownWClaim = 0; publishedWQuiet = publishedResv = ""; ownWPast = ""; ownerAwaySince = -1;
             ghost = 0; strandedSince = -1; peerSilence.Clear(); lostPeers.Clear(); unanswered = 0; unansweredAt = 0;
+            adoptedSeats.Clear(); adoptedUntil = -1;
             nextFitPublish = nextSuccessors = nextOwnerFix = noteUntil = 0; lastHandoff = -1000; Note = "";
             liveElectorate = null; liveSeen = ""; liveSeenSince = 0;
             startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0; lastWaitElection = "";
@@ -2337,6 +2603,8 @@ namespace ChessFight.Network
             { Set(Match, "grant_" + sender.m_SteamID, request.ticket + "|bots"); return; }
             if (Started) { SeatLate(sender.m_SteamID, request); return; }
             bool ok = reservations.Reserve(sender.m_SteamID, request.party, request.ticket, request.members, Time.realtimeSinceStartup, out _);
+            // R694: a room a player made takes a party apart rather than turn it away, and past twelve as spectators.
+            if (!ok && privateRoom) ok = SeatApart(sender.m_SteamID, request, Time.realtimeSinceStartup);
             Set(Match, "grant_" + sender.m_SteamID, request.ticket + (ok ? "|ok" : "|full"));
             if (ok) PublishRoster();
         }
@@ -2385,7 +2653,9 @@ namespace ChessFight.Network
             // phase, so a client that sees "playing" already sees the right host,
             // and ownership moves last, because after it only the new host can write.
             var present = Members(Match);
-            var candidates = Candidates(present);
+            // R697: the match goes to a PC that plays in it; a spectator's hosts it only when nobody plays (bots alone).
+            bool playing = Roster.Keys.Any(id => !BotIdentity.IsBot(id));
+            var candidates = playing ? Candidates(present).Where(c => Roster.ContainsKey(c.Id)).ToList() : Candidates(present).Where(c => c.Id == Self).ToList();
             float now = Time.realtimeSinceStartup;
             // R159: a player who has only just come in (the last seat filling the room
             // starts it in the same poll) has not published its machine score yet and
@@ -2402,7 +2672,8 @@ namespace ChessFight.Network
             Started = true;
             var ranked = HostElection.Rank(candidates);
             // R644: as in the waiting room - a room that has already moved its host moves it again only for a clearly better PC.
-            ulong next = HostElection.StartHost(Self, candidates, WaitingMoveMargin);
+            // R697: a host in a spectator's seat hands the match to the best PC that plays.
+            ulong next = !playing || Roster.ContainsKey(Self) ? HostElection.StartHost(Self, candidates, WaitingMoveMargin) : ranked.Count > 0 ? ranked[0] : Self;
             Debug.Log("[ChessFight] 물리 담당 정하기(경기 시작): " + string.Join(" · ", candidates.Select(c =>
                 $"{Name(c.Id)}{(c.Id == Self ? "(지금 담당)" : "")} 성능 {c.BaseFitness} 지금 {c.Fitness} 핑 {c.PingMs}")) +
                 $" → {Name(next)}" + (unknown.Count > 0 ? $" (성능을 {StartFitnessWait:0}초 기다려도 모름: {string.Join(", ", unknown.Select(c => Name(c.Id)))})" : ""));
@@ -2450,16 +2721,21 @@ namespace ChessFight.Network
         void KeepManager(HashSet<ulong> present)
         {
             ulong record = ParseId(Data(Match, "manager"));
-            if (record != 0 && (record == Self || present.Contains(record)) && Roster.ContainsKey(record)) return;
+            if (record != 0 && (record == Self || present.Contains(record)) && (Roster.ContainsKey(record) || spectators.Contains(record))) return;
             ulong next = NextManager(present, 0);
             if (next != record) Set(Match, "manager", next == 0 ? "" : next.ToString());
         }
 
         // Who manages next: the player seated longest, as far as the seats tell - the lowest seat number, white before
         // black (seats are given out in the order parties came) - of the people in the room.
-        ulong NextManager(HashSet<ulong> present, ulong not) =>
-            Roster.Values.Where(p => p.Id != not && !BotIdentity.IsBot(p.Id) && (p.Id == Self || present.Contains(p.Id)))
-                         .OrderBy(p => p.Slot).ThenBy(p => p.Team).ThenBy(p => p.Id).Select(p => p.Id).FirstOrDefault();
+        ulong NextManager(HashSet<ulong> present, ulong not)
+        {
+            ulong seated = Roster.Values.Where(p => p.Id != not && !BotIdentity.IsBot(p.Id) && (p.Id == Self || present.Contains(p.Id)))
+                                 .OrderBy(p => p.Slot).ThenBy(p => p.Team).ThenBy(p => p.Id).Select(p => p.Id).FirstOrDefault();
+            // R695: with nobody seated, the first spectator (a room is never left without someone to manage it while
+            // anyone is in it).
+            return seated != 0 ? seated : Spectators.FirstOrDefault(id => id != not && (id == Self || present.Contains(id)));
+        }
 
         // A manager on its way out of a room it can write names the next one itself; otherwise the host does on its
         // next poll (KeepManager).
@@ -2490,7 +2766,7 @@ namespace ChessFight.Network
         // bot tools take those out).
         public const string KickedMessage = "방장이 방에서 내보냈습니다.";
         public bool CanKick(ulong id) =>
-            ManagesRoom && id != 0 && id != Self && !BotIdentity.IsBot(id) && Roster.ContainsKey(id) && !(Party != 0 && Members(Party).Contains(id));
+            ManagesRoom && id != 0 && id != Self && !BotIdentity.IsBot(id) && (Roster.ContainsKey(id) || IsSpectator(id)) && !(Party != 0 && Members(Party).Contains(id));
         public void Kick(ulong id)
         {
             if (!CanKick(id)) return;
@@ -2499,6 +2775,18 @@ namespace ChessFight.Network
         void KickNow(ulong id)
         {
             if (!RunsRoom) return;
+            // R694: a spectator is put out alone.
+            if (spectators.Contains(id) && id != ParseId(Data(Match, "manager")))
+            {
+                var out_ = KickedIds(Match).ToList();
+                if (!out_.Contains(id)) out_.Add(id);
+                if (out_.Count > KickedKept) out_.RemoveRange(0, out_.Count - KickedKept);
+                Set(Match, "kicked", string.Join(",", out_.Select(x => x.ToString(CultureInfo.InvariantCulture))));
+                Diagnose($"방장이 내보냄: {Who(id)} (관전석)");
+                spectators.Remove(id); spectatorSince.Remove(id);
+                PublishSpectators();
+                return;
+            }
             var group = reservations.Find(id);
             ulong manager = ParseId(Data(Match, "manager"));
             if (group == null || BotIdentity.IsBot(id) || Array.IndexOf(group.Members, manager) >= 0) return;
@@ -2529,6 +2817,8 @@ namespace ChessFight.Network
             float until = Time.realtimeSinceStartup + (op == "start" ? 12f : 2.5f);
             // The same thing asked again while it is on its way (a second click) only keeps it going; a bot more is
             // one more each time.
+            // R694: a seat asked for again replaces the one on its way.
+            if (op == "seat" || op == "move" || op == "rules") asks.RemoveAll(a => a.Op == op && a.Target == target);
             bool once = op == "start" || op == "give" || op == "kick" || op == "fill" || op == "clearbots";
             var same = once ? asks.Find(a => a.Op == op && a.Target == target) : null;
             if (same != null) { same.Until = until; return; }
@@ -2539,7 +2829,9 @@ namespace ChessFight.Network
         void SendAsk(float now)
         {
             if (asks.Count == 0) return;
-            if (!IsManager) { asks.Clear(); return; }
+            // R694: a player's own seat is anyone's to ask; the rest is the manager's.
+            if (!IsManager) asks.RemoveAll(a => a.Op != "seat");
+            if (asks.Count == 0) return;
             asks.RemoveAll(a => now > a.Until || (a.Op == "start" && !CanStartGame));
             foreach (var ask in asks)
             {
@@ -2553,7 +2845,9 @@ namespace ChessFight.Network
         // ready for yet (a host that has just taken it over, a start that cannot happen yet) waits for its repeat.
         void Manage(ulong sender, Request request)
         {
-            if (sender != ParseId(Data(Match, "manager")) || request.seq <= 0 || string.IsNullOrEmpty(request.op)) return;
+            // R694: "seat" is a player's own move and anyone in the room may ask it; everything else is the manager's.
+            bool own = request.op == "seat";
+            if ((!own && sender != ParseId(Data(Match, "manager"))) || request.seq <= 0 || string.IsNullOrEmpty(request.op)) return;
             if (!Started && adoptReservations) return;
             if (!asksDone.TryGetValue(sender, out var done)) asksDone[sender] = done = new HashSet<int>();
             if (done.Contains(request.seq)) return;
@@ -2566,6 +2860,9 @@ namespace ChessFight.Network
                     break;
                 case "give": GiveManagerNow(request.target); break;
                 case "kick": KickNow(request.target); break;
+                case "rules": SetRulesNow(request.team); break;
+                case "seat": SeatNow(sender, request.team); break;
+                case "move": SeatNow(request.target, request.team); break;
                 case "fill": if (privateRoom || AllowPublicBots) FillNow(); break;
                 case "addbot": if (privateRoom || AllowPublicBots) AddRoomBotNow(); break;
                 case "clearbots": ClearRoomBotsNow(); break;
@@ -2638,7 +2935,10 @@ namespace ChessFight.Network
             if (Match != 0)
             {
                 if (!Started || !Roster.ContainsKey(Self)) return;
-                if (MatchEnded) { ForgetRejoin(); return; }
+                // R683: nor a match whose result this PC has seen. The room's own mark may still be on its way (only
+                // the room's owner writes it), and a player who left in that moment was offered the way back into a
+                // match that was over (the 11-15 build test, where the mark was never written at all).
+                if (MatchEnded || resultSeen == Match) { ForgetRejoin(); return; }
                 if (RejoinTarget == Match) return;
                 rejoinMatch = Match; rejoinLoaded = true; rejoinGone = false;
                 SaveRejoin?.Invoke(Match.ToString(CultureInfo.InvariantCulture));
@@ -2837,12 +3137,14 @@ namespace ChessFight.Network
                     else if (Owner(Match) == Self)
                     {
                         // R295: a room handed to us and left before we read its
-                        // reservations: they are only in the room's record so far.
-                        if (adoptReservations) { LoadReservations(); adoptReservations = false; }
+                        // reservations: they are only in the room's record so far. R689: with the seats held as above.
+                        if (adoptReservations) { LoadReservations(); adoptReservations = false; HoldAdoptedSeats(Time.realtimeSinceStartup); }
                         // A party's leader takes the party along (its members follow it out). R644: anyone else
                         // goes alone - a party member that hosts leaves its party seated.
                         var mine = reservations.Find(Self);
                         if (mine != null) { if (mine.Leader == Self) reservations.Remove(mine.Leader); else reservations.RemoveMember(Self); }
+                        // R695: or its spectator's seat.
+                        if (spectators.Remove(Self)) { spectatorSince.Remove(Self); PublishSpectators(); }
                         var present = PresentNow();
                         PublishRoster();
                         LeaveManagerBehind(present);

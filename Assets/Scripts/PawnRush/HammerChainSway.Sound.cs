@@ -20,6 +20,7 @@ namespace ChessFight.PawnRush
         const float AtEnd = .05f;   // degrees short of the swing's end that count as hanging there
 
         static AudioClip whooshClip, creakClip;
+        const float WhooshSwing = 1.4f;     // the swing HallHammerWhoosh was cut for (hall_hammer_sounds.py SWING_SECONDS)
         static bool clipsLooked;
 
         // R544 (승규 11-09 "해머 구간 통과하면 다른 소리가 묻혀 - 입장하기 전에는 유지하고 통과하면 소리를 더 줄여"):
@@ -76,7 +77,13 @@ namespace ChessFight.PawnRush
 
             bool atEnd = AtSwingEnd();
             if (atEnd && !wasAtEnd) Play(creakVoice, creakClip, Random.Range(.96f, 1.03f), 0f);   // reached an end
-            else if (!atEnd && wasAtEnd) Play(whooshVoice, whooshClip, 1f, SinceLeft());          // left it: a swing
+            else if (!atEnd && wasAtEnd)                                                           // left it: a swing
+            {
+                // R680: the clip is one 1.4 s swing long (R547); a swing of another length plays it as much faster or
+                // slower, so it still ends as the ball stops (the hall's hammers swing in 1.15 s now)
+                float rate = Mathf.Clamp(WhooshSwing / Mathf.Max(.3f, swing.SwingDuration), .7f, 1.6f);
+                Play(whooshVoice, whooshClip, rate, SinceLeft() * rate);
+            }
             wasAtEnd = atEnd;
         }
 

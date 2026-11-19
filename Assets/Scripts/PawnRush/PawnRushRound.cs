@@ -182,6 +182,10 @@ namespace ChessFight.PawnRush
             if (finishRace) BindFinish();
             // R652: the race music (PawnRushRoundMusic), once per round object
             if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();
+            // R679: what the player is shown when its own pawn falls and comes back (PawnRushFallNotice)
+            if (Application.isPlaying && GetComponent<PawnRushFallNotice>() == null) gameObject.AddComponent<PawnRushFallNotice>();
+            // R682: the standings - this PC's rank, the course's progress strip, the ranking list (PawnRushStandingsHud)
+            if (Application.isPlaying && GetComponent<PawnRushStandingsHud>() == null) gameObject.AddComponent<PawnRushStandingsHud>();
             Debug.Log(log.ToString());
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();
@@ -236,6 +240,8 @@ namespace ChessFight.PawnRush
             var finish = GetComponent<CrownFinish>();
             if (finish == null) finish = gameObject.AddComponent<CrownFinish>();
             finish.Bind(holder.transform);
+            // R707: under the flow rule "왕좌 차지전" the ending is a contest for the platform (none otherwise).
+            ThroneContest.Attach(this, finish);
         }
 
         public CrownFinish Finish => finishRace ? GetComponent<CrownFinish>() : null;

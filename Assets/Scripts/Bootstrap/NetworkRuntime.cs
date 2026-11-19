@@ -279,7 +279,9 @@ namespace ChessFight.Game
             // (its own simulation or not), hidden on the title and under the
             // entrance screen (matchmaking and loading).
             if (chat != null)
-                chat.Where = loading || loader.Covering ? ChatBox.Layout.Hidden
+                // R698: over a room's waiting room too (the entrance screen in its room layout).
+                chat.Where = !loading && loader.RoomUp ? ChatBox.Layout.Room
+                    : loading || loader.Covering ? ChatBox.Layout.Hidden
                     : inMatchScene ? ChatBox.Layout.Match
                     : SceneManager.GetActiveScene().name == SceneNames.Lobby ? ChatBox.Layout.Lobby
                     : ChatBox.Layout.Hidden;

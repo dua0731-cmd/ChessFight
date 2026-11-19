@@ -78,20 +78,34 @@ namespace ChessFight.PawnRush
         }
 
         // A free mouse while the cards are up (so they can be clicked), given back as it was.
+        //
+        // R679 (user after the 6 vs 6 test: "승격발판 마우스로도 선택 가능하게"): the mouse is the cards' meanwhile
+        // (GameSettings.PointerTaken, as for the menu and the match sheet). Without it the camera locked the cursor
+        // again on the very click that meant a card (OrbitCamera), the pointer jumped to the middle of the screen -
+        // the gap between the second and third card - and the same click dived: a card could never be clicked.
+        // Every frame, not once: whatever locks the cursor under the cards (the menu closing, the window coming
+        // back to the front) would leave them unclickable for the rest of the ten seconds.
         void TakeCursor()
         {
-            if (cursorTaken) return;
-            cursorTaken = true;
-            savedLock = Cursor.lockState;
-            savedVisible = Cursor.visible;
+            if (!cursorTaken)
+            {
+                cursorTaken = true;
+                savedLock = Cursor.lockState;
+                savedVisible = Cursor.visible;
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+            GameSettings.PointerTaken = true;
         }
 
         void GiveCursorBack()
         {
             if (!cursorTaken) return;
             cursorTaken = false;
+            // The menu or the match sheet, opened over the cards, holds the mouse on.
+            if (GameMenu.IsOpen || VoiceHud.SheetOpen) return;
+            GameSettings.PointerTaken = false;
+            if (savedLock == CursorLockMode.Locked && !Application.isFocused) return;
             Cursor.lockState = savedLock;
             Cursor.visible = savedVisible;
         }

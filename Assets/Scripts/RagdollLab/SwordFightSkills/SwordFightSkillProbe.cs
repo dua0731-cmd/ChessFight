@@ -494,9 +494,9 @@ namespace ChessFight.RagdollLab
             EdgeState(s, "조준 0.5초 (그대로여야 함)");
             if (mode == 2 || mode == 3)
             {
-                Show(mode == 2 ? "우클릭 · 취소" : "E 한 번 더 · 취소");
+                Show(mode == 2 ? "우클릭 · 취소" : "좌클릭 · 취소");
                 if (mode == 2) s.CancelAim();
-                else s.PressEdge();
+                else s.ClickEdge();   // R702: the left click calls it off (E again sends him)
                 yield return new WaitForSeconds(0.1f);
                 EdgeState(s, "취소 뒤");
                 yield return new WaitForSeconds(0.4f);
@@ -505,8 +505,8 @@ namespace ChessFight.RagdollLab
                 yield break;
             }
             Vector3 start = me.Pawn.Hips.position;
-            Show("좌클릭 · 미끄러짐");
-            s.ClickEdge();
+            Show("E 한 번 더 · 미끄러짐");
+            s.PressEdge();   // R702: E again sends him
             yield return new WaitForSeconds(0.1f + s.BishopSlideTime + 0.1f);
             Vector3 d = me.Pawn.Hips.position - start;
             d.y = 0f;

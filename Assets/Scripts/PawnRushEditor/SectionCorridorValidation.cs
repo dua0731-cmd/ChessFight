@@ -269,7 +269,7 @@ namespace ChessFight.PawnRush.Editor
                 pictures.Enqueue(() => CaptureView(corridor, id + "_joinStartOut", new Vector3(3.5f, 2.2f, -6f), new Vector3(-6.3f, 3f, .5f), 66f));
                 pictures.Enqueue(() => CaptureView(corridor, id + "_joinEndIn", new Vector3(2.5f, 1.7f, 3.5f), new Vector3(-4.5f, 2.6f, 10.5f), 66f));
                 pictures.Enqueue(() => CaptureView(corridor, id + "_joinEndOut", new Vector3(3.5f, 2.2f, 16f), new Vector3(-6.3f, 3f, 9.5f), 66f));
-                if (after.Kind == PawnRushSection.SlotKind.Final)
+                if (after.GetComponent<WarRoomSection>() != null)
                 {
                     // The war room's start floor: the end walls either side of the way in.
                     pictures.Enqueue(() => CaptureView(corridor, id + "_finalE", new Vector3(8f, 3.5f, 21f), new Vector3(-3f, 5f, 10f), 72f));

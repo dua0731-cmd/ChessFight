@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1010" width="100%" style="height:auto;max-width:1400px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R699 게임 흐름 규칙 다섯 가지 — 방장이 켜고 끄는 설정안</title>
+<defs><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#E2B23C"/></marker></defs>
+<rect width="1400" height="1010" fill="#171a22"/>
+<text x="22" y="34" font-size="21" font-weight="700" fill="#f4ead2">게임 흐름 규칙 다섯 가지 — 방장이 방에서 켜고 끄는 설정안</text>
+<text x="22" y="58" font-size="13" fill="#a39a85">문제: ① 미니게임을 먼저 깬 팀이 통째로 앞서 나가 그대로 굳는다(스노우볼) ② 뒤처진 사람이 따라잡을 길이 없다. 다섯 안을 세 묶음의 설정으로 나눠, 방 생성 방에서 조합해 시험한다.</text>
+
+<!-- settings panel -->
+<rect x="22" y="76" width="600" height="556" rx="8" fill="#1f232d"/>
+<text x="38" y="104" font-size="15" font-weight="700" fill="#f4ead2">방 화면의 「게임 규칙」 (방장만 바꿈 · 모두에게 보임)</text>
+<rect x="38" y="118" width="568" height="150" rx="6" fill="#262b3a"/>
+<text x="52" y="142" font-size="14" font-weight="700" fill="#E2B23C">① 낙오자 구제</text>
+<rect x="52" y="152" width="96" height="30" rx="5" fill="#3a4050" stroke="#f4ead2"/><text x="100" y="172" font-size="12.5" fill="#f4ead2" text-anchor="middle">끔 (지금)</text>
+<rect x="156" y="152" width="204" height="30" rx="5" fill="#2b2f3c"/><text x="258" y="172" font-size="12.5" fill="#cfc6b0" text-anchor="middle">한 팀이 깨면 쉬워짐 · 1번안</text>
+<rect x="368" y="152" width="224" height="30" rx="5" fill="#2b2f3c"/><text x="480" y="172" font-size="12.5" fill="#cfc6b0" text-anchor="middle">두 팀이 다 깨면 쉬워짐 · 2번안</text>
+<text x="52" y="204" font-size="12" fill="#cfc6b0">미니게임이 깨진 순간, 그 앞 장애물 구간에서 공격하는 장애물이 꺼진다.</text>
+<text x="52" y="222" font-size="12" fill="#cfc6b0">(구르는 석상 · 망치 · 샹들리에 · 회전봉 · 물기둥 · 포탑처럼 치는 것만. 발판 · 배 · 승강대는 그대로)</text>
+<text x="52" y="250" font-size="12" fill="#a39a85">1번안 = 먼저 깬 팀의 뒤처진 사람부터 구제 · 2번안 = 늦은 팀까지 다 깬 뒤에 구제</text>
+
+<rect x="38" y="278" width="568" height="170" rx="6" fill="#262b3a"/>
+<text x="52" y="302" font-size="14" font-weight="700" fill="#E2B23C">② 미니게임을 깬 뒤</text>
+<rect x="52" y="312" width="128" height="30" rx="5" fill="#3a4050" stroke="#f4ead2"/><text x="116" y="332" font-size="12.5" fill="#f4ead2" text-anchor="middle">바로 통과 (지금)</text>
+<rect x="188" y="312" width="180" height="30" rx="5" fill="#2b2f3c"/><text x="278" y="332" font-size="12.5" fill="#cfc6b0" text-anchor="middle">모여서 발판 · 3번안</text>
+<rect x="376" y="312" width="216" height="30" rx="5" fill="#2b2f3c"/><text x="484" y="332" font-size="12.5" fill="#cfc6b0" text-anchor="middle">상대 문 시차 개방 · 4번안</text>
+<text x="52" y="366" font-size="12" fill="#cfc6b0">3번안: 깨도 문은 닫혀 있다. 문 앞 금색 발판에 우리 팀 과반(6명이면 4명)이</text>
+<text x="52" y="384" font-size="12" fill="#cfc6b0">함께 서면 열린다 — 앞선 사람이 뒤처진 팀원을 기다리게 된다.</text>
+<text x="52" y="410" font-size="12" fill="#cfc6b0">4번안: 한 팀이 깨면 그 팀은 바로 통과하고, 20초 뒤 상대 팀 문도 열린다</text>
+<text x="52" y="428" font-size="12" fill="#cfc6b0">(못 깬 채로 통과 — 격차는 최대 20초).</text>
+
+<rect x="38" y="458" width="568" height="160" rx="6" fill="#262b3a"/>
+<text x="52" y="482" font-size="14" font-weight="700" fill="#E2B23C">③ 엔딩</text>
+<rect x="52" y="492" width="150" height="30" rx="5" fill="#3a4050" stroke="#f4ead2"/><text x="127" y="512" font-size="12.5" fill="#f4ead2" text-anchor="middle">왕관 발판 (지금)</text>
+<rect x="210" y="492" width="180" height="30" rx="5" fill="#2b2f3c"/><text x="300" y="512" font-size="12.5" fill="#cfc6b0" text-anchor="middle">왕좌 차지전 · 5번안</text>
+<text x="52" y="546" font-size="12" fill="#cfc6b0">5번안: 작전실의 큰 문이 열리는 순간 두 팀 모두 왕좌 앞으로 순간이동한다.</text>
+<text x="52" y="564" font-size="12" fill="#cfc6b0">팀 과반이 금색 발판 위에 있는 동안 그 팀의 시간이 쌓이고, 30초가 차면 승리.</text>
+<text x="52" y="582" font-size="12" fill="#cfc6b0">미니게임을 깬 팀은 1개당 5초 짧게(둘 다 깼으면 20초). 두 팀이 동시에 과반이면 멈춤.</text>
+<text x="52" y="606" font-size="12" fill="#a39a85">지금 방식: 과반이 한 번에 올라서는 순간 승리</text>
+
+<!-- timeline -->
+<rect x="634" y="76" width="744" height="556" rx="8" fill="#1f232d"/>
+<text x="650" y="104" font-size="15" font-weight="700" fill="#f4ead2">한 판에서 일어나는 일</text>
+<g font-size="12" text-anchor="middle">
+<rect x="650" y="122" width="112" height="44" rx="5" fill="#DDD1B9"/><text x="706" y="149" fill="#2b2a24" font-weight="700">장애물 1</text>
+<rect x="770" y="122" width="112" height="44" rx="5" fill="#E2B23C"/><text x="826" y="149" fill="#2b2a24" font-weight="700">미니게임 1</text>
+<rect x="890" y="122" width="112" height="44" rx="5" fill="#8a5a3a"/><text x="946" y="149" fill="#f4ead2" font-weight="700">장애물 2</text>
+<rect x="1010" y="122" width="112" height="44" rx="5" fill="#E2B23C"/><text x="1066" y="149" fill="#2b2a24" font-weight="700">미니게임 2</text>
+<rect x="1130" y="122" width="112" height="44" rx="5" fill="#3a4a72"/><text x="1186" y="149" fill="#f4ead2" font-weight="700">국왕 작전실</text>
+<rect x="1250" y="122" width="112" height="44" rx="5" fill="#604B72"/><text x="1306" y="149" fill="#f4ead2" font-weight="700">엔딩</text>
+</g>
+
+<text x="650" y="200" font-size="13" font-weight="700" fill="#E2B23C">① 구제 (1 · 2번안)</text>
+<path d="M826 232 C 800 250, 740 250, 712 232" fill="none" stroke="#E2B23C" stroke-width="2" marker-end="url(#tip)"/>
+<path d="M1066 232 C 1040 250, 980 250, 952 232" fill="none" stroke="#E2B23C" stroke-width="2" marker-end="url(#tip)"/>
+<text x="826" y="226" font-size="11.5" fill="#f4ead2" text-anchor="middle">깨짐</text><text x="706" y="226" font-size="11.5" fill="#f4ead2" text-anchor="middle">장애물 꺼짐</text>
+<text x="1066" y="226" font-size="11.5" fill="#f4ead2" text-anchor="middle">깨짐</text><text x="946" y="226" font-size="11.5" fill="#f4ead2" text-anchor="middle">장애물 꺼짐</text>
+<text x="650" y="276" font-size="12" fill="#cfc6b0">아직 그 구간에 남은 사람이 걸어서 지나올 수 있게 된다. 화면에 “앞 구간 장애물이 꺼졌습니다”.</text>
+
+<line x1="650" y1="294" x2="1362" y2="294" stroke="#fff" stroke-opacity=".08"/>
+<text x="650" y="320" font-size="13" font-weight="700" fill="#E2B23C">② 모여서 발판 (3번안)</text>
+<rect x="866" y="330" width="26" height="14" rx="2" fill="#E2B23C"/><rect x="1106" y="330" width="26" height="14" rx="2" fill="#E2B23C"/>
+<text x="826" y="342" font-size="11.5" fill="#f4ead2" text-anchor="middle">깸 → 문 닫힘</text><text x="946" y="342" font-size="11.5" fill="#f4ead2" text-anchor="middle">과반이 서면 열림</text>
+<text x="1066" y="342" font-size="11.5" fill="#f4ead2" text-anchor="middle">깸 → 문 닫힘</text><text x="1196" y="342" font-size="11.5" fill="#f4ead2" text-anchor="middle">과반이 서면 열림</text>
+<text x="650" y="372" font-size="12" fill="#cfc6b0">앞서 깬 사람들이 발판에서 팀원을 기다린다 → 팀이 뭉쳐서 다음 구간에 들어간다. 구제(①)와 같이 쓰는 안.</text>
+
+<line x1="650" y1="390" x2="1362" y2="390" stroke="#fff" stroke-opacity=".08"/>
+<text x="650" y="416" font-size="13" font-weight="700" fill="#E2B23C">② 상대 문 시차 개방 (4번안)</text>
+<text x="826" y="440" font-size="11.5" fill="#f4ead2" text-anchor="middle">백팀이 깸</text>
+<line x1="866" y1="436" x2="986" y2="436" stroke="#E2B23C" stroke-width="2" marker-end="url(#tip)"/>
+<text x="926" y="430" font-size="11.5" fill="#E2B23C" text-anchor="middle">20초</text>
+<text x="1066" y="440" font-size="11.5" fill="#f4ead2" text-anchor="middle">흑팀 문도 열림</text>
+<text x="650" y="468" font-size="12" fill="#cfc6b0">늦은 팀 화면에 “상대 팀이 먼저 통과 · 20초 뒤 문이 열립니다”와 카운트다운. 두 팀의 차이는 20초를 넘지 않는다.</text>
+
+<line x1="650" y1="486" x2="1362" y2="486" stroke="#fff" stroke-opacity=".08"/>
+<text x="650" y="512" font-size="13" font-weight="700" fill="#E2B23C">③ 왕좌 차지전 (5번안)</text>
+<text x="1186" y="536" font-size="11.5" fill="#f4ead2" text-anchor="middle">큰 문이 열림</text>
+<line x1="1236" y1="532" x2="1262" y2="532" stroke="#E2B23C" stroke-width="2" marker-end="url(#tip)"/>
+<text x="1310" y="536" font-size="11.5" fill="#f4ead2" text-anchor="middle">모두 순간이동</text>
+<rect x="650" y="548" width="330" height="14" rx="3" fill="#2b2f3c"/><rect x="650" y="548" width="210" height="14" rx="3" fill="#f4ead2"/>
+<text x="990" y="560" font-size="11.5" fill="#f4ead2">백팀 14 / 20초 (미니게임 2개 깸)</text>
+<rect x="650" y="568" width="330" height="14" rx="3" fill="#2b2f3c"/><rect x="650" y="568" width="99" height="14" rx="3" fill="#8f8f9c"/>
+<text x="990" y="580" font-size="11.5" fill="#f4ead2">흑팀 9 / 30초 (0개)</text>
+<text x="650" y="606" font-size="12" fill="#cfc6b0">앞선 팀의 이점은 ‘짧은 목표 시간’으로만 남고, 승부는 발판 위 몸싸움에서 난다. 밀치기 · 스킬은 그대로.</text>
+
+<!-- to decide -->
+<rect x="22" y="644" width="1356" height="346" rx="8" fill="#1f232d"/>
+<text x="38" y="674" font-size="15" font-weight="700" fill="#f4ead2">정해 주실 것 — 괄호 안이 추천값</text>
+<text x="38" y="704" font-size="13" fill="#E2B23C" font-weight="700">1. ‘쉬워짐’의 뜻</text>
+<text x="170" y="704" font-size="13" fill="#cfc6b0">(추천) 그 구간에서 치는 장애물이 꺼진다 · 대안 A: 꺼지지 않고 맞아도 밀리지 않게 · 대안 B: 떨어지면 다음 체크포인트에서 시작</text>
+<text x="38" y="730" font-size="13" fill="#E2B23C" font-weight="700">2. 3번안의 인원</text>
+<text x="170" y="730" font-size="13" fill="#cfc6b0">(추천) 팀 과반 — 6명이면 4명, 5명이면 3명, 승리 조건과 같은 셈법 · 대안: 전원</text>
+<text x="38" y="756" font-size="13" fill="#E2B23C" font-weight="700">3. 4번안의 시차</text>
+<text x="170" y="756" font-size="13" fill="#cfc6b0">(추천) 20초. 시차로 열린 팀은 ‘깬 것’으로 치지 않는다(5번안의 시간 차감 없음)</text>
+<text x="38" y="782" font-size="13" fill="#E2B23C" font-weight="700">4. 5번안의 수치</text>
+<text x="170" y="782" font-size="13" fill="#cfc6b0">(추천) 30초에서 미니게임 1개당 5초 차감 · 시간은 쌓이는 방식(내려와도 안 줄어듦) · 두 팀이 동시에 과반이면 둘 다 멈춤</text>
+<text x="38" y="808" font-size="13" fill="#E2B23C" font-weight="700">5. 5번안의 장소</text>
+<text x="170" y="808" font-size="13" fill="#cfc6b0">(추천) 지금의 임시 엔딩 바닥(12 × 20 m, 금색 원판)을 그대로 쓰고 두 팀을 양쪽 끝에 세운다 — 알현실이 만들어지면 그곳으로</text>
+<text x="38" y="834" font-size="13" fill="#E2B23C" font-weight="700">6. 랜덤 매칭</text>
+<text x="170" y="834" font-size="13" fill="#cfc6b0">(추천) 지금 방식 그대로. 방 생성 방에서만 고를 수 있고, 채택되는 조합이 나오면 그때 기본값으로</text>
+
+<text x="38" y="878" font-size="15" font-weight="700" fill="#f4ead2">만드는 순서 — 단계마다 보여 드리고 검수받는다</text>
+<text x="38" y="906" font-size="13" fill="#E2B23C" font-weight="700">1단계</text>
+<text x="92" y="906" font-size="13" fill="#cfc6b0">방 화면의 「게임 규칙」 틀(방장이 고르면 모든 PC가 같은 규칙으로 판을 짓는다) + 4번안 시차 개방 + 1 · 2번안 구제</text>
+<text x="38" y="932" font-size="13" fill="#E2B23C" font-weight="700">2단계</text>
+<text x="92" y="932" font-size="13" fill="#cfc6b0">3번안 모여서 발판(문 앞 금색 발판, 인원 표시)</text>
+<text x="38" y="958" font-size="13" fill="#E2B23C" font-weight="700">3단계</text>
+<text x="92" y="958" font-size="13" fill="#cfc6b0">5번안 왕좌 차지전(순간이동, 팀별 시간 막대, 미니게임 차감)</text>
+<text x="1362" y="982" font-size="11" fill="#6f6a5d" text-anchor="end">R699 · 2026-11-17 · 제안(구현 전)</text>
+</svg>

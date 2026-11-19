@@ -1,0 +1,228 @@
+rules: 낙오자 구제 끔 · 미니게임을 깬 뒤 모여서 발판 · 엔딩 왕관 발판
+
+Room 1/10: Early_MG_C_MoatDrawbridge(Clone) (game 2)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (해자 도개교)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (해자 도개교)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 2/10: Early_MG_D_PortcullisCourt(Clone) (game 3)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (정문 쇠살문 누각)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (정문 쇠살문 누각)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 3/10: Early_MG_A_ParadeCourt(Clone) (game 0)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.40, 18.85)
+     its door at station z 20.45
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.40, 18.85)
+     its door at station z 20.45
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (정문 의장 광장)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (정문 의장 광장)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 4/10: Mid_MG_B_RepairWing(Clone) (game 1)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (보수 중인 동관)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (보수 중인 동관)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 5/10: Mid_MG_E_RoyalLibrary(Clone) (game 4)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (왕궁 서고)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (왕궁 서고)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 6/10: Mid_MG_F_ClockworkBallroom(Clone) (game 5)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (대무도회장)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (대무도회장)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 7/10: Mid_MG_J_PalaceLaundry(Clone) (game 9)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (왕궁 세탁장)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (왕궁 세탁장)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 8/10: Late_MG_G_RoyalProcession(Clone) (game 6)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (왕의 행차 회랑)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (왕의 행차 회랑)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 9/10: Late_MG_H_KingsChessHall(Clone) (game 7)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (국왕 체스 홀)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (국왕 체스 홀)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+Room 10/10: Late_MG_I_KingsBedchamber(Clone) (game 8)
+ok   a pad before each gate
+     백 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   백's pad lies before its own door, on a floor
+     흑 pad at station (0.00, 0.00, 21.60)
+     its door at station z 23.20
+ok   흑's pad lies before its own door, on a floor
+ok   nothing waits yet; six a side need four (4, 4)
+ok   both gates shut
+ok   four on the pad of a game not cleared: the gate stays shut
+ok   white cleared: its gate stays shut and its pad waits
+ok   black's pad does not wait
+ok   three of white and four of black on white's pad: still shut
+log  [PawnRush] 모여서 발판: 백팀 4/4명이 모여 문이 열림 (국왕 침실)
+ok   four of white on the pad: the gate opens
+ok   black's gate is still shut
+log  [PawnRush] 모여서 발판: 흑팀 5/4명이 모여 문이 열림 (국왕 침실)
+ok   black already on its pad opens with its clear
+ok   a new round: gates shut, pads at rest
+
+A team of four, a team of nobody
+ok   four players need three, no players need none (3, 0)
+log  [PawnRush] 모여서 발판: 흑팀 0/0명이 모여 문이 열림 (국왕 침실)
+ok   a team with no player opens on its clear
+ok   two of four: shut
+log  [PawnRush] 모여서 발판: 백팀 3/3명이 모여 문이 열림 (국왕 침실)
+ok   three of four: open
+
+A PC that does not judge
+ok   the host's 'done' with everyone on the pad: this PC does not open the gate itself
+ok   the host's gate flag opens it
+
+Without the rule
+ok   a clear opens its gate at once, as before
+ok   the pads are put away
+RESULT: PASS

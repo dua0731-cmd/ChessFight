@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1010" width="100%" style="height:auto;max-width:1400px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R711 왕실 천문대 레벨 디자인 초안 v0.1 — 위에서 본 배치</title>
+<defs>
+<marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#ffffff"/></marker>
+<marker id="wind" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#7fd0e0"/></marker>
+<marker id="gold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#e2b23c"/></marker>
+<pattern id="grate" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#7c8496"/><path d="M0,0 L1,0 M0,0 L0,1" stroke="#39404f" stroke-width=".18"/></pattern>
+</defs>
+<rect width="1400" height="1010" fill="#171a22"/>
+<text x="24" y="34" font-size="20" font-weight="700" fill="#f4ead2">왕실 천문대 레벨 디자인 초안 v0.1 — 위에서 본 배치 (R711, 회색 상자 R712 반영)</text>
+<text x="24" y="58" font-size="13" fill="#a39a85">북쪽이 위 · 좌표는 구간 로컬 (x 동쪽, z 북쪽), 단위 m · 흰 점선 = 진행 경로 · 빨간 점선 = 난간 없는 낭떠러지 · 초록 점 = 체크포인트 · 금색 = 움직이는 장치</text>
+
+<!-- ===================== plan: world metres, x -12..62, z -2..136 ===================== -->
+<g transform="translate(40 78) scale(6.5 -6.5) translate(12 -136)">
+  <!-- hall shell and dome -->
+  <rect x="-10" y="12" width="70" height="99" fill="#0f1320" stroke="#3b4257" stroke-width=".35"/>
+  <rect x="44" y="111" width="12" height="20" fill="#0f1320" stroke="#3b4257" stroke-width=".35"/>
+  <circle cx="25" cy="72" r="35" fill="none" stroke="#3b4a6b" stroke-width=".25" stroke-dasharray="1.4 1.2"/>
+  <rect x="24" y="78" width="2" height="29" fill="#f6e7a8" fill-opacity=".10" stroke="#f6e7a8" stroke-opacity=".35" stroke-width=".12" stroke-dasharray=".8 .8"/>
+
+  <!-- lower level, y 0 -->
+  <g fill="#cfc8b6" stroke="#8d8674" stroke-width=".15">
+    <rect x="-6" y="0" width="12" height="12"/>
+    <rect x="-6.2" y="12" width="12.4" height="26"/>
+    <rect x="-6.2" y="38" width="18.2" height="12"/>
+    <rect x="12" y="38" width="32" height="12"/>
+    <rect x="44" y="38" width="12" height="12"/>
+    <rect x="44" y="71" width="12" height="12"/>
+    <rect x="31" y="74" width="13" height="6"/>
+    <rect x="1" y="71" width="12" height="12"/>
+  </g>
+  <rect x="47" y="50" width="6" height="21" fill="url(#grate)" stroke="#8d8674" stroke-width=".15"/>
+
+  <!-- upper level, y 6 -->
+  <g fill="#a9bfe0" stroke="#6c83a8" stroke-width=".15">
+    <rect x="1" y="98" width="12" height="10"/>
+    <rect x="13" y="100" width="30" height="6"/>
+    <circle cx="50" cy="103" r="7"/>
+    <rect x="44" y="103" width="12" height="6.4" stroke="none"/>
+    <path d="M44,105.3 L44,109.4 M56,105.3 L56,109.4" fill="none"/>
+  </g>
+  <!-- top level, y 10.5 - 11.5 -->
+  <g fill="#c9b3e6" stroke="#8a72ab" stroke-width=".15">
+    <rect x="44" y="110.6" width="12" height="6.4"/>
+    <rect x="44" y="117" width="12" height="2" fill="#b49ad6"/>
+    <rect x="44" y="119" width="12" height="12"/>
+  </g>
+  <line x1="44" y1="131" x2="56" y2="131" stroke="#604b72" stroke-width=".7"/>
+
+  <!-- beat 1: ring court -->
+  <g fill="#2a3a63" stroke="#e2b23c" stroke-width=".3">
+    <circle cx="0" cy="18.4" r="6.2"/>
+    <circle cx="0" cy="31.6" r="6.2"/>
+    <line x1="-5.37" y1="15.3" x2="5.37" y2="21.5" stroke-width=".55"/>
+    <line x1="-5.37" y1="34.7" x2="5.37" y2="28.5" stroke-width=".55"/>
+    <line x1="0" y1="31.6" x2="-4.4" y2="36" stroke-width=".45" stroke-dasharray=".7 .5"/>
+  </g>
+  <circle cx="0" cy="18.4" r=".9" fill="#e2b23c"/><circle cx="0" cy="31.6" r=".9" fill="#e2b23c"/>
+
+  <!-- beat 2: star-chart belts and shutter shields -->
+  <g fill="#2a3a63" stroke="#e2b23c" stroke-width=".15">
+    <rect x="14" y="44" width="10" height="6"/><rect x="14" y="38" width="10" height="6"/>
+    <rect x="29" y="44" width="10" height="6"/><rect x="29" y="38" width="10" height="6"/>
+  </g>
+  <g stroke="#e2b23c" stroke-width=".35" marker-end="url(#gold)">
+    <line x1="16" y1="47" x2="22" y2="47"/><line x1="22" y1="41" x2="16" y2="41"/>
+    <line x1="37" y1="47" x2="31" y2="47"/><line x1="31" y1="41" x2="37" y2="41"/>
+  </g>
+  <g fill="#e2b23c">
+    <rect x="25.2" y="44" width=".7" height="6"/><rect x="27.2" y="38" width=".7" height="6"/>
+    <rect x="40.2" y="38" width=".7" height="6"/><rect x="42.2" y="44" width=".7" height="6"/>
+  </g>
+
+  <!-- beat 3: vent grate bridge -->
+  <g fill="#7fd0e0" fill-opacity=".38">
+    <rect x="47" y="53" width="6" height="4"/><rect x="47" y="60" width="6" height="4"/><rect x="47" y="67" width="6" height="4"/>
+  </g>
+  <g fill="#5c6477" stroke="#e2b23c" stroke-width=".15">
+    <rect x="54.6" y="54" width="2" height="2"/><rect x="54.6" y="61" width="2" height="2"/><rect x="54.6" y="68" width="2" height="2"/>
+  </g>
+  <g stroke="#7fd0e0" stroke-width=".3" marker-end="url(#wind)">
+    <line x1="54.4" y1="55" x2="44.6" y2="55"/><line x1="54.4" y1="62" x2="44.6" y2="62"/><line x1="54.4" y1="69" x2="44.6" y2="69"/>
+  </g>
+  <g stroke="#e0483b" stroke-width=".25" stroke-dasharray=".9 .6">
+    <line x1="47" y1="50" x2="47" y2="71"/><line x1="53" y1="50" x2="53" y2="71"/>
+  </g>
+
+  <!-- beat 4: the great orrery turntable -->
+  <circle cx="22" cy="77" r="9" fill="#2a3a63" stroke="#e0483b" stroke-width=".25" stroke-dasharray=".9 .6"/>
+  <circle cx="22" cy="77" r="6.5" fill="none" stroke="#e2b23c" stroke-opacity=".5" stroke-width=".12"/>
+  <line x1="14.2" y1="72.5" x2="29.8" y2="81.5" stroke="#e2b23c" stroke-width=".55"/>
+  <line x1="22" y1="77" x2="18.25" y2="83.5" stroke="#e2b23c" stroke-width=".3" stroke-dasharray=".7 .5"/>
+  <circle cx="18.25" cy="83.5" r="1" fill="#e2b23c"/>
+  <circle cx="22" cy="77" r="1.5" fill="#e2b23c"/>
+
+  <!-- beat 5: planet lifts -->
+  <g fill="#2a3a63" stroke="#e2b23c" stroke-width=".2">
+    <rect x="4" y="83.2" width="6" height="5"/><rect x="4" y="92.6" width="6" height="5"/>
+    <rect x="4" y="88.4" width="6" height="4" fill="#bfc4c9" stroke="#8d8674"/>
+  </g>
+  <line x1="2.5" y1="90.4" x2="11.5" y2="90.4" stroke="#e2b23c" stroke-width=".3" stroke-dasharray=".7 .5"/>
+  <circle cx="9" cy="90.4" r=".8" fill="#e2b23c"/>
+
+  <!-- beat 6: telescope bridge -->
+  <g fill="#e2b23c" fill-opacity=".38">
+    <rect x="17" y="100" width="4" height="6"/><rect x="25" y="100" width="4" height="6"/><rect x="33" y="100" width="4" height="6"/>
+  </g>
+  <g fill="#2a3a63" stroke="#e2b23c" stroke-width=".18">
+    <rect x="18.2" y="106.4" width="1.6" height="4.2"/><rect x="26.2" y="106.4" width="1.6" height="4.2"/><rect x="34.2" y="106.4" width="1.6" height="4.2"/>
+  </g>
+  <g fill="#e2b23c">
+    <rect x="17" y="105.9" width="4" height=".6"/><rect x="25" y="105.9" width="4" height=".6"/><rect x="33" y="105.9" width="4" height=".6"/>
+  </g>
+  <g stroke="#e2b23c" stroke-width=".3" marker-end="url(#gold)">
+    <line x1="19" y1="105.4" x2="19" y2="99"/><line x1="27" y1="105.4" x2="27" y2="99"/><line x1="35" y1="105.4" x2="35" y2="99"/>
+  </g>
+  <line x1="13" y1="100" x2="43" y2="100" stroke="#e0483b" stroke-width=".25" stroke-dasharray=".9 .6"/>
+  <line x1="13" y1="106" x2="43" y2="106" stroke="#6c83a8" stroke-width=".4"/>
+
+  <!-- beat 7: constellation climbing wall, two tiers -->
+  <rect x="44" y="109.4" width="12" height="1.2" fill="#f1ead8" stroke="#e2b23c" stroke-width=".2"/>
+  <g fill="#e2b23c">
+    <circle cx="45.5" cy="109.75" r=".22"/><circle cx="47.5" cy="110.25" r=".22"/><circle cx="49.5" cy="109.75" r=".22"/><circle cx="51.5" cy="110.25" r=".22"/><circle cx="53.5" cy="109.75" r=".22"/><circle cx="55" cy="110.25" r=".22"/>
+  </g>
+
+  <!-- route -->
+  <path d="M0,1 L0,44 L50,44 L50,77 L31,77 Q22,90 13,77 L7,77 L7,103 L43,103 L50,103 L50,129" fill="none" stroke="#ffffff" stroke-opacity=".9" stroke-width=".32" stroke-dasharray="1.3 .9" marker-end="url(#tip)"/>
+
+  <!-- checkpoints -->
+  <g fill="#5fd08a" stroke="#0f1320" stroke-width=".2">
+    <circle cx="0" cy="6" r="1"/><circle cx="3" cy="44" r="1"/><circle cx="50" cy="44" r="1"/><circle cx="50" cy="77" r="1"/>
+    <circle cx="7" cy="77" r="1"/><circle cx="7" cy="103" r="1"/><circle cx="50" cy="103" r="1"/><circle cx="50" cy="114" r="1"/>
+  </g>
+
+  <!-- labels (un-flipped) -->
+  <g font-size="12" font-weight="700" fill="#f4ead2">
+    <text transform="translate(8 3) scale(.1538 -.1538)">입구 (앞 복도에서)</text>
+    <text transform="translate(8 24) scale(.1538 -.1538)">① 고리 마당</text>
+    <text transform="translate(13 52.5) scale(.1538 -.1538)">② 별지도 벨트 · 차양 방패</text>
+    <text transform="translate(45.5 60) scale(.1538 -.1538)" text-anchor="end">③ 환기구 격자 다리</text>
+    <text transform="translate(-9 66) scale(.1538 -.1538)">④ 대천구의 회전판</text>
+    <text transform="translate(16.5 91) scale(.1538 -.1538)">⑤ 행성 승강대</text>
+    <text transform="translate(28 96.5) scale(.1538 -.1538)" text-anchor="middle">⑥ 망원경 다리</text>
+    <text transform="translate(42.5 115.5) scale(.1538 -.1538)" text-anchor="end">⑦ 별자리 등반벽</text>
+    <text transform="translate(42.5 126) scale(.1538 -.1538)" text-anchor="end">출구 (엔딩 구간으로)</text>
+  </g>
+  <g font-size="10.5" fill="#a39a85">
+    <text transform="translate(8 20.5) scale(.1538 -.1538)">회전 막대 2곳, 난간 있음</text>
+    <text transform="translate(13 35) scale(.1538 -.1538)">벨트 4장(서로 반대로) + 반쪽 방패 2쌍</text>
+    <text transform="translate(45.5 56.5) scale(.1538 -.1538)" text-anchor="end">옆바람 3곳, 물결처럼</text>
+    <text transform="translate(-9 63) scale(.1538 -.1538)">회전판 지름 18 m + 회전팔 2개</text>
+    <text transform="translate(16.5 87.8) scale(.1538 -.1538)">승강대 둘(0 → 6 m) + 턱의 행성 추</text>
+    <text transform="translate(28 93.6) scale(.1538 -.1538)" text-anchor="middle">망원경 밀대 3개, 남쪽은 낭떠러지</text>
+    <text transform="translate(42.5 112.6) scale(.1538 -.1538)" text-anchor="end">3단 벽 + 턱 위 바람</text>
+    <text transform="translate(16 15) scale(.1538 -.1538)">돔 홀 70 × 99 m, 바닥 아래 허공 18 m</text>
+  </g>
+  <g font-size="9.5" fill="#1c2233" font-weight="700">
+    <text transform="translate(-5.4 39.2) scale(.1538 -.1538)">y 0</text>
+    <text transform="translate(1.6 104.8) scale(.1538 -.1538)">y 6</text>
+    <text transform="translate(44.6 120) scale(.1538 -.1538)">y 11.5</text>
+    <text transform="translate(44.6 112) scale(.1538 -.1538)">y 10.5</text>
+  </g>
+</g>
+
+<!-- ===================== right panel ===================== -->
+<rect x="556" y="76" width="828" height="150" rx="8" fill="#1f232d"/>
+<text x="574" y="102" font-size="15" font-weight="700" fill="#f4ead2">범례</text>
+<rect x="574" y="116" width="26" height="14" fill="#cfc8b6"/><text x="608" y="128" font-size="12" fill="#d8cfba">아래층 바닥 (y 0)</text>
+<rect x="574" y="140" width="26" height="14" fill="#a9bfe0"/><text x="608" y="152" font-size="12" fill="#d8cfba">위층 (y 6)</text>
+<rect x="574" y="164" width="26" height="14" fill="#c9b3e6"/><text x="608" y="176" font-size="12" fill="#d8cfba">출구 테라스 (y 10.5 ~ 11.5)</text>
+<rect x="574" y="188" width="26" height="14" fill="#0f1320" stroke="#3b4257"/><text x="608" y="200" font-size="12" fill="#d8cfba">허공 — 홀 바닥 y −18, 떨어지면 체크포인트로</text>
+<line x1="880" y1="123" x2="906" y2="123" stroke="#ffffff" stroke-width="2" stroke-dasharray="7 5"/><text x="914" y="128" font-size="12" fill="#d8cfba">진행 경로 (약 272 m, 한 줄)</text>
+<line x1="880" y1="147" x2="906" y2="147" stroke="#e0483b" stroke-width="2" stroke-dasharray="6 4"/><text x="914" y="152" font-size="12" fill="#d8cfba">난간 없는 가장자리 (낙사)</text>
+<circle cx="893" cy="171" r="6" fill="#5fd08a"/><text x="914" y="176" font-size="12" fill="#d8cfba">체크포인트 8곳 (CP0 ~ CP7)</text>
+<rect x="880" y="188" width="26" height="14" fill="#e2b23c"/><text x="914" y="200" font-size="12" fill="#d8cfba">움직이는 장치 (모두 공유 시계의 주기 함수)</text>
+<rect x="1150" y="116" width="26" height="14" fill="#7fd0e0" fill-opacity=".5"/><text x="1184" y="128" font-size="12" fill="#d8cfba">바람이 부는 구역</text>
+<circle cx="1163" cy="147" r="9" fill="none" stroke="#3b4a6b" stroke-width="1.5" stroke-dasharray="4 3"/><text x="1184" y="152" font-size="12" fill="#d8cfba">돔 (지름 70 m)</text>
+<rect x="1157" y="162" width="12" height="18" fill="#f6e7a8" fill-opacity=".18" stroke="#f6e7a8" stroke-opacity=".5" stroke-dasharray="3 3"/><text x="1184" y="176" font-size="12" fill="#d8cfba">돔 슬릿 빛기둥</text>
+
+<rect x="556" y="238" width="828" height="344" rx="8" fill="#1f232d"/>
+<text x="574" y="264" font-size="15" font-weight="700" fill="#f4ead2">비트 일곱 개 — 장치 · 실패 · 난이도</text>
+<g font-size="12" fill="#a39a85">
+  <text x="574" y="288">비트</text><text x="760" y="288">장치</text><text x="1070" y="288">실패하면</text><text x="1284" y="288">난이도 (1 ~ 5)</text>
+</g>
+<line x1="574" y1="296" x2="1366" y2="296" stroke="#3b4257"/>
+<g font-size="12.5" fill="#f4ead2">
+  <text x="574" y="320">① 고리 마당</text>
+  <text x="574" y="360">② 별지도 벨트 · 차양 방패</text>
+  <text x="574" y="400">③ 환기구 격자 다리</text>
+  <text x="574" y="440">④ 대천구의 회전판</text>
+  <text x="574" y="480">⑤ 행성 승강대</text>
+  <text x="574" y="520">⑥ 망원경 다리</text>
+  <text x="574" y="560">⑦ 별자리 등반벽</text>
+</g>
+<g font-size="12" fill="#d8cfba">
+  <text x="760" y="320">낮은 회전 막대 100°/초 2곳 + 높은 막대 1</text>
+  <text x="760" y="360">컨베이어 4장 1.5 m/s + 반쪽 방패 2쌍(4.5초)</text>
+  <text x="760" y="400">옆바람 3곳 5초 주기, 1.7초씩 어긋난 물결</text>
+  <text x="760" y="440">회전판 15°/초 + 낮은 팔 + 천구 달린 팔</text>
+  <text x="760" y="480">승강대 2(5초) + 가운데 턱의 행성 추 1</text>
+  <text x="760" y="520">망원경 밀대 3개 4.5초, 한쪽 난간 없음</text>
+  <text x="760" y="560">1.5 m 벽 3단 + 턱 두 곳에 벽에서 부는 바람</text>
+</g>
+<g font-size="12" fill="#d8cfba">
+  <text x="1070" y="320">넘어짐 (약 3초)</text>
+  <text x="1070" y="360">밀려 휘청, 벨트가 되돌림 (약 4초)</text>
+  <text x="1070" y="400">낙사 → CP2 (약 9초)</text>
+  <text x="1070" y="440">낙사 → CP3 (약 11초)</text>
+  <text x="1070" y="480">낙사 → CP4 (약 8초)</text>
+  <text x="1070" y="520">낙사 → CP5 (약 10초)</text>
+  <text x="1070" y="560">아래 단으로 떨어짐 (약 5초)</text>
+</g>
+<g fill="#e2b23c">
+  <rect x="1284" y="309" width="14" height="12"/><rect x="1300" y="309" width="14" height="12"/><rect x="1316" y="309" width="14" height="12"/>
+  <rect x="1284" y="349" width="14" height="12"/><rect x="1300" y="349" width="14" height="12"/><rect x="1316" y="349" width="14" height="12"/>
+  <rect x="1284" y="389" width="14" height="12"/><rect x="1300" y="389" width="14" height="12"/><rect x="1316" y="389" width="14" height="12"/><rect x="1332" y="389" width="14" height="12"/>
+  <rect x="1284" y="429" width="14" height="12"/><rect x="1300" y="429" width="14" height="12"/><rect x="1316" y="429" width="14" height="12"/><rect x="1332" y="429" width="14" height="12"/>
+  <rect x="1284" y="469" width="14" height="12"/><rect x="1300" y="469" width="14" height="12"/><rect x="1316" y="469" width="14" height="12"/>
+  <rect x="1284" y="549" width="14" height="12"/><rect x="1300" y="549" width="14" height="12"/><rect x="1316" y="549" width="14" height="12"/><rect x="1332" y="549" width="14" height="12"/>
+</g>
+<g fill="#e0483b">
+  <rect x="1284" y="509" width="14" height="12"/><rect x="1300" y="509" width="14" height="12"/><rect x="1316" y="509" width="14" height="12"/><rect x="1332" y="509" width="14" height="12"/><rect x="1348" y="509" width="14" height="12"/>
+</g>
+<g stroke="#2b303c">
+  <line x1="574" y1="334" x2="1366" y2="334"/><line x1="574" y1="374" x2="1366" y2="374"/><line x1="574" y1="414" x2="1366" y2="414"/>
+  <line x1="574" y1="454" x2="1366" y2="454"/><line x1="574" y1="494" x2="1366" y2="494"/><line x1="574" y1="534" x2="1366" y2="534"/>
+</g>
+
+<!-- height profile -->
+<rect x="556" y="594" width="828" height="270" rx="8" fill="#1f232d"/>
+<text x="574" y="620" font-size="15" font-weight="700" fill="#f4ead2">경로를 따라 본 높이 — 0 m에서 11.5 m까지, 낮은 길을 한 바퀴 돈 뒤 올라간다</text>
+<g stroke="#2b303c">
+  <line x1="600" y1="820" x2="1350" y2="820"/><line x1="600" y1="760" x2="1350" y2="760"/><line x1="600" y1="715" x2="1350" y2="715"/>
+</g>
+<g font-size="11" fill="#a39a85" text-anchor="end">
+  <text x="594" y="824">0 m</text><text x="594" y="764">6 m</text><text x="594" y="719">10.5 m</text>
+</g>
+<g fill-opacity=".22">
+  <rect x="633" y="640" width="72" height="180" fill="#e2b23c"/>
+  <rect x="755" y="640" width="88" height="180" fill="#e2b23c"/>
+  <rect x="876" y="640" width="58" height="180" fill="#e2b23c"/>
+  <rect x="1003" y="640" width="55" height="180" fill="#e2b23c"/>
+  <rect x="1091" y="640" width="42" height="180" fill="#e2b23c"/>
+  <rect x="1163" y="640" width="83" height="180" fill="#e0483b"/>
+  <rect x="1273" y="640" width="17" height="180" fill="#e2b23c"/>
+</g>
+<g font-size="12" font-weight="700" fill="#f4ead2" text-anchor="middle">
+  <text x="669" y="656">①</text><text x="799" y="656">②</text><text x="905" y="656">③</text><text x="1030" y="656">④</text><text x="1112" y="656">⑤</text><text x="1204" y="656">⑥</text><text x="1281" y="656">⑦</text>
+</g>
+<polyline points="600,820 1091,820 1105,800 1119,780 1133,760 1284,760 1284,715 1301,715 1307,705 1340,705" fill="none" stroke="#f4ead2" stroke-width="3" stroke-linejoin="round"/>
+<g fill="#5fd08a">
+  <circle cx="617" cy="820" r="4.5"/><circle cx="738" cy="820" r="4.5"/><circle cx="859" cy="820" r="4.5"/><circle cx="950" cy="820" r="4.5"/>
+  <circle cx="1075" cy="820" r="4.5"/><circle cx="1147" cy="760" r="4.5"/><circle cx="1265" cy="760" r="4.5"/><circle cx="1292" cy="715" r="4.5"/>
+</g>
+<g font-size="11" fill="#a39a85">
+  <text x="600" y="842">0 m</text><text x="870" y="842" text-anchor="middle">100 m</text><text x="1152" y="842" text-anchor="middle">200 m</text><text x="1340" y="842" text-anchor="end">272 m</text>
+  <text x="1296" y="699">출구</text>
+</g>
+
+<rect x="556" y="876" width="828" height="110" rx="8" fill="#1f232d"/>
+<text x="574" y="902" font-size="15" font-weight="700" fill="#f4ead2">추정 시간과 한계</text>
+<text x="574" y="926" font-size="12.5" fill="#d8cfba">실수 없이 약 2분 4초 · 실패 포함 평균 약 2분 57초 · 12명 혼잡을 더하면 3분 25초 ~ 3분 40초 (손계산 추정, 플레이 확인 전)</text>
+<text x="574" y="948" font-size="12.5" fill="#d8cfba">낙사 비트 4곳(③ ④ ⑤ ⑥), 아래 단으로 떨어지는 비트 1곳(⑦). 새 장치는 망원경 밀대 하나, 나머지는 기존 장치의 설정만 바꾼다.</text>
+<text x="574" y="970" font-size="12.5" fill="#a39a85">설계 초안 + 회색 상자(R712)를 지으며 바꾼 곳 반영. 사람이 달려 본 것은 아니다 — 상세: Docs/PawnRush/PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md</text>
+</svg>

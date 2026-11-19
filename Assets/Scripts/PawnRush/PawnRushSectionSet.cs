@@ -19,6 +19,10 @@ namespace ChessFight.PawnRush
             public string name;
             public PawnRushSection.SlotKind kind;
             public GameObject[] prefabs = new GameObject[0];
+            // R712: sections still being designed (a graybox). The course prefab test lists them after the slot's own
+            // and the section check looks at them; a round never draws one (Options reads `prefabs` only), so adding
+            // or taking away a draft changes no round and no protocol.
+            public GameObject[] drafts = new GameObject[0];
         }
 
         [SerializeField] Slot[] slots = DefaultSlots();

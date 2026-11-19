@@ -36,6 +36,10 @@ namespace ChessFight.Network
         readonly List<PawnState> outgoing = new List<PawnState>(), arriving = new List<PawnState>();
         readonly Action<Packet> handleLate, transmitLate;
         public string ConnectionStatus { get; private set; } = "";
+        // R683: what the screen says while Steam opens a new session with a player whose session failed, and who that
+        // is: their next packet on this stream takes the line away again (it used to stay until the room changed).
+        const string Reconnecting = "Steam P2P 연결이 끊겨 다시 연결하는 중입니다.";
+        ulong reconnectingWith;
         // Client only: how long the host has been silent, in player terms.
         public LinkHealth Health { get; private set; }
         public float Silence { get; private set; }
@@ -95,10 +99,15 @@ namespace ChessFight.Network
             });
             failures = Callback<SteamNetworkingMessagesSessionFailed_t>.Create(c =>
             {
-                ConnectionStatus = "Steam P2P 연결 실패. 취소 후 다시 시도하세요.";
-                // R525: and why, for Player.log (Steam's end reason and its own words).
                 ulong peer = c.m_info.m_identityRemote.GetSteamID64();
-                Debug.LogWarning($"[ChessFight] Steam P2P 연결 실패: {session.Name(peer)} ({peer}) · 이유 {c.m_info.m_eEndReason} {c.m_info.m_szEndDebug}");
+                // R683: the next send to that player starts a new session (SteamSend), so there is nothing for the
+                // player to do ("취소 후 다시 시도하세요" was the only way out before). A player who has left the room
+                // is not sent to again: their session ending is no news for the screen.
+                bool inRoom = session.IsPeer(peer);
+                if (inRoom) { ConnectionStatus = Reconnecting; reconnectingWith = peer; }
+                // R525: and why, for Player.log (Steam's end reason and its own words). R683: and which of the two it was.
+                Debug.LogWarning($"[ChessFight] Steam P2P 연결 실패: {session.Name(peer)} ({peer}) · 이유 {c.m_info.m_eEndReason} {c.m_info.m_szEndDebug}" +
+                                 (inRoom ? " · 같은 방 → 다시 연결함" : " · 방에 없는 사람(나간 뒤 정리)"));
             });
         }
         public void Update(float x, float z, bool jump)
@@ -272,7 +281,7 @@ namespace ChessFight.Network
             try
             {
                 var result = SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                    Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
+                    SteamSend.Unreliable, Channel);
                 if (result != EResult.k_EResultOK) ConnectionStatus = "Steam 전송 오류: " + result;
                 connected.Add(id);
             }
@@ -308,6 +317,12 @@ namespace ChessFight.Network
         void Handle(ulong sender, byte[] bytes)
         {
             if (!session.IsPeer(sender)) return;
+            // R683: the player whose session had failed is heard again.
+            if (sender == reconnectingWith)
+            {
+                reconnectingWith = 0;
+                if (ConnectionStatus == Reconnecting) ConnectionStatus = "Steam으로 연결됨";
+            }
             float now = Time.realtimeSinceStartup;
             if (session.IsHost)
             {
@@ -364,6 +379,7 @@ namespace ChessFight.Network
             delayedOut.Clear(); delayedIn.Clear(); response.Clear();
             accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = heardHost = lostNoted = wasStarted = false;
             lastReceive = Time.realtimeSinceStartup; ConnectionStatus = ""; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
+            reconnectingWith = 0;
         }
 
         // The host role moved within the match (Docs/Network/HOST.md). Every pawn

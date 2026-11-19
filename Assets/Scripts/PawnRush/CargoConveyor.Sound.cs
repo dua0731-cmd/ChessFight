@@ -4,7 +4,7 @@ namespace ChessFight.PawnRush
 {
     // 2026-11-17 (승규 "7번 컨베이어" - the belt's loop and the loads' rattle, made new with the ElevenLabs MCP): the
     // sorting yard conveyor's sounds, baked by ArtSource/PawnRush/Sfx/bake_carriage_yard.py into
-    // Resources/PawnRushCarriageYardSfx (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 12).
+    // Resources/PawnRushCarriageYardSfx (prompts: Docs/PawnRush/PAWN_RUSH_AUDIO.md section 13).
     //   belt   one seamless loop of wooden rollers turning, from the point of the belt nearest the listener (so the
     //          whole 47 m belt sounds as one line, not one spot), always running
     //   loads  a loop of a crate rattling over the rollers on each load while it is on the belt (out of sight under the

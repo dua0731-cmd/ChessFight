@@ -105,9 +105,17 @@
                 </ui:VisualElement>
                 <ui:Label name="mode-change" text="변경 &gt;" class="mode-change" picking-mode="Ignore" />
             </ui:Button>
-            <ui:Button name="play" class="a-cta start-btn">
-                <ui:Label text="게임 시작" class="a-cta-text" picking-mode="Ignore" />
-            </ui:Button>
+            <!-- R693: the two ways into a match side by side - a room of one's own (was "비공개 방" in the party
+                 card) and random matching (was "게임 시작"). The view puts the mode plate, the stop note and the
+                 way back into a left match round this row. -->
+            <ui:VisualElement name="start-row" class="row start-row" picking-mode="Ignore">
+                <ui:Button name="create-test" class="a-cta create-room">
+                    <ui:Label text="방 생성" class="a-cta-text" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="play" class="a-cta start-btn">
+                    <ui:Label text="랜덤 매칭" class="a-cta-text" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
             <ui:VisualElement name="busy" class="busy-card a-panel">
                 <ui:VisualElement class="row busy-row">
                     <ui:VisualElement name="spinner" class="spinner" picking-mode="Ignore" />
@@ -162,7 +170,6 @@
             <ui:Label name="bots-note" class="bots-note" />
             <ui:VisualElement class="row party-actions">
                 <ui:Button name="code-open" text="코드로 참가" class="a-btn a-sm party-action" />
-                <ui:Button name="create-test" text="비공개 방" class="a-btn a-sm party-action" />
             </ui:VisualElement>
             <ui:Button name="leave-party" text="파티 나가기" class="a-btn a-sm a-danger party-leave" />
         </ui:VisualElement>

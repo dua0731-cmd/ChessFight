@@ -69,6 +69,10 @@ namespace ChessFight.Network
         public readonly sbyte[] Game = { -1, -1, -1, -1, -1, -1 };
         public readonly float[] Progress = new float[MaxStations];
         public readonly bool[] Completed = new bool[MaxStations];
+        // R704: the station's team gate is open. With the game's done as a rule; apart from it under the flow rule
+        // "모여서 발판" (PawnRushRules.AfterGather), where a cleared game's gate waits for the team on its pad. The
+        // second bit of the station's flags.
+        public readonly bool[] GateOpen = new bool[MaxStations];
         public readonly int[] BlockLength = new int[MaxStations];
         public readonly byte[][] Block = { new byte[BlockBytes], new byte[BlockBytes], new byte[BlockBytes], new byte[BlockBytes], new byte[BlockBytes], new byte[BlockBytes] };
         // The sections' own state (ISectionNetPart), in the round's order.
@@ -132,7 +136,7 @@ namespace ChessFight.Network
                 int length = Math.Max(0, Math.Min(BlockLength[s], BlockBytes));
                 b[i++] = (byte)Game[s];
                 PutU16(b, ref i, (ushort)Math.Round(Math.Max(0f, Math.Min(1f, Progress[s])) * 65535f));
-                b[i++] = (byte)(Completed[s] ? 1 : 0);
+                b[i++] = (byte)((Completed[s] ? 1 : 0) | (GateOpen[s] ? 2 : 0));
                 b[i++] = (byte)length;
                 Array.Copy(Block[s], 0, b, i, length);
                 i += length;
@@ -197,7 +201,9 @@ namespace ChessFight.Network
             {
                 into.Game[s] = (sbyte)b[i++];
                 into.Progress[s] = U16(b, ref i) / 65535f;
-                into.Completed[s] = (b[i++] & 1) != 0;
+                int flags = b[i++];
+                into.Completed[s] = (flags & 1) != 0;
+                into.GateOpen[s] = (flags & 2) != 0;
                 int length = b[i++];
                 into.BlockLength[s] = length;
                 Array.Copy(b, i, into.Block[s], 0, length);
@@ -227,7 +233,7 @@ namespace ChessFight.Network
             Array.Copy(o.FinisherTime, FinisherTime, MaxFinishers);
             for (int s = 0; s < MaxStations; s++)
             {
-                Game[s] = o.Game[s]; Progress[s] = o.Progress[s]; Completed[s] = o.Completed[s]; BlockLength[s] = o.BlockLength[s];
+                Game[s] = o.Game[s]; Progress[s] = o.Progress[s]; Completed[s] = o.Completed[s]; GateOpen[s] = o.GateOpen[s]; BlockLength[s] = o.BlockLength[s];
                 Array.Copy(o.Block[s], Block[s], BlockBytes);
             }
             PartsLength = o.PartsLength;

@@ -940,3 +940,138 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .course-plate-final.course-plate-shown .course-plate-name { color: rgb(255, 226, 150); }
 .course-start { position: absolute; translate: -50% 0; font-size: 12px; -unity-font-style: bold; letter-spacing: 3px;
                 color: rgba(241, 230, 207, 0.8); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+
+/* ---------- R693: "방 생성" beside "랜덤 매칭" ---------- */
+.start-row { align-items: stretch; }
+.start-btn { flex-grow: 1; flex-shrink: 1; }
+.create-room { width: 138px; margin-right: 8px; }
+.create-room .a-cta-text { font-size: 19px; letter-spacing: 2px; }
+
+/* ---------- R694: the room a player made (LoadingScreenView.Room.cs) ----------
+   The entrance screen's root gets "load-room" while it is such a room's waiting room: the two sides' lists meet in the
+   middle with VS between, the spectators' seats in a row below, the room's number under the title. */
+.load-room-head { position: absolute; left: 0; right: 0; top: 92px; flex-direction: row; align-items: center; justify-content: center; display: none; }
+.load-room .load-room-head { display: flex; }
+.load-room-label { font-size: 13px; color: rgb(207, 198, 176); margin-right: 8px; }
+.load-room-code { font-size: 17px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(233, 198, 122); margin-right: 10px; }
+.load-room-copy { height: 24px; padding: 0 10px; font-size: 12px; }
+.load-room-vs { position: absolute; left: 0; right: 0; top: 268px; font-size: 40px; -unity-text-align: middle-center; color: rgba(251, 239, 213, 0.9);
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8); display: none; }
+.load-room .load-room-vs { display: flex; }
+.load-room .load-stage { opacity: 0.32; }
+.load-room .load-roster { width: 440px; top: 126px; }
+.load-room .load-roster-white { left: 154px; }
+.load-room .load-roster-black { right: 154px; }
+.load-room .load-card { height: 44px; margin-top: 6px; }
+.load-room .load-allin-row { display: none; }
+.load-team-bot { height: 22px; padding: 0 8px; margin: 0 3px; font-size: 11px; }
+.load-seat-btn { position: absolute; left: 0; top: 0; right: 0; bottom: 0; margin: 0; padding: 0; border-width: 0; border-radius: 10px;
+                 background-color: rgba(0, 0, 0, 0); }
+.load-seat-btn:hover { background-color: rgba(233, 198, 122, 0.14); }
+.load-seat-btn:active { background-color: rgba(233, 198, 122, 0.24); }
+.load-spec { position: absolute; left: 154px; right: 154px; top: 474px; display: none; }
+.load-room .load-spec { display: flex; }
+.load-spec-head { flex-direction: row; align-items: flex-end; padding: 0 6px 4px 6px; }
+.load-spec-count { font-size: 14px; -unity-font-style: bold; color: rgb(200, 184, 230); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+.load-spec-hint { font-size: 11px; color: rgba(243, 235, 221, 0.6); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+.load-spec-row { flex-direction: row; }
+.load-spec-card { flex-grow: 1; flex-basis: 0; height: 42px; margin-right: 8px; padding: 0 12px; flex-direction: row; align-items: center; border-radius: 10px; }
+.load-spec-card:last-child { margin-right: 0; }
+.load-spec-name { font-size: 15px; color: rgba(255, 255, 255, 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.load-spec-on .load-spec-name { color: rgb(251, 239, 213); }
+.load-spec-on.load-me .load-spec-name { color: rgb(255, 217, 143); }
+.load-room-note { position: absolute; left: 0; right: 0; bottom: 160px; font-size: 13px; -unity-text-align: middle-center; color: rgb(207, 198, 176);
+                  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); display: none; }
+.load-room .load-room-note { display: flex; }
+
+/* ---------- R695: the room read against the stage ----------
+   The user's first look in Unity (2026-11-17): "UI가 배경과 유사색이라서 가시성이 떨어져. 특히 관전자석이 잘 안보여. 분위기는
+   유지하되, 가시성만". The stage steps further back, every seat stands on a dark plate with an edge in its side's colour,
+   an empty seat's words are bright enough to read, and the spectators' seats get a plate and an edge of their own. */
+.load-room .load-stage { opacity: 0.14; }
+.load-room .load-card { background-color: rgba(9, 7, 5, 0.74); border-width: 1px; border-color: rgba(233, 198, 122, 0.3); }
+.load-room .load-roster-white .load-card { border-color: rgba(127, 223, 255, 0.5); }
+.load-room .load-roster-black .load-card { border-color: rgba(255, 138, 152, 0.5); }
+.load-room .load-card-on { background-color: rgba(18, 14, 10, 0.92); }
+.load-room .load-roster-white .load-card-on { border-color: rgb(127, 223, 255); }
+.load-room .load-roster-black .load-card-on { border-color: rgb(255, 138, 152); }
+.load-room .load-card .load-name { color: rgba(255, 255, 255, 0.7); }
+.load-room .load-card-on .load-name { color: rgb(255, 246, 226); }
+.load-room .load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-room .load-state { color: rgb(240, 208, 136); font-size: 12px; }
+.load-room .load-team { font-size: 20px; }
+.load-room .load-count { font-size: 13px; }
+.load-room .load-seat-btn:hover { background-color: rgba(233, 198, 122, 0.2); }
+.load-spec-card { background-color: rgba(30, 22, 48, 0.9); border-width: 1px; border-color: rgba(206, 190, 240, 0.75); }
+.load-spec-on { background-color: rgba(46, 36, 72, 0.96); border-color: rgb(222, 208, 250); }
+.load-spec-name { font-size: 15px; color: rgba(232, 222, 250, 0.9); }
+.load-spec-on .load-spec-name { color: rgb(255, 246, 226); }
+.load-spec-count { font-size: 17px; color: rgb(222, 208, 250); }
+.load-spec-hint { font-size: 12px; color: rgba(243, 235, 221, 0.86); }
+/* The lists and the spectators' row a little higher, so the line over the buttons clears the row. */
+.load-room .load-roster { top: 122px; }
+.load-spec { top: 456px; }
+.load-room-note { left: 330px; right: 330px; bottom: 160px; padding: 3px 0 4px 0; border-radius: 12px; color: rgb(243, 235, 221);
+                  background-color: rgba(9, 7, 5, 0.78); }
+.load-room-label { color: rgb(243, 235, 221); }
+
+/* ---------- R696: the room's sides are white and black ----------
+   The user (2026-11-17): "폰러시는 흑/백팀으로 나뉘는데 방에서는 블루/레드팀으로 보이는게 어색해. 흑/백팀으로 보일 수 있게".
+   In the room layout the white side's cards are ivory with dark words and the black side's are black with ivory words
+   (the smoked glass is not drawn there: LoadingScreenView.RoomSeat), an empty seat a see-through plate of its side's
+   colour; the side washes change in code (LoadingScreenView.Room.cs). The entrance screen outside the room keeps its
+   blue and red. */
+.load-room .load-roster-white .load-card { background-color: rgba(243, 235, 221, 0.16); border-color: rgba(243, 235, 221, 0.62); }
+.load-room .load-roster-white .load-card-on { background-color: rgba(241, 232, 214, 0.96); border-color: rgb(255, 251, 240); }
+.load-room .load-roster-white .load-card .load-name { color: rgba(243, 235, 221, 0.88); }
+.load-room .load-roster-white .load-card-on .load-name { color: rgb(38, 28, 18); }
+.load-room .load-roster-white .load-card-on.load-me .load-name { color: rgb(146, 82, 0); }
+.load-room .load-roster-white .load-card-on .load-sub { color: rgba(66, 50, 32, 0.82); }
+.load-room .load-roster-white .load-card-on .load-sub-role { color: rgb(146, 82, 0); }
+.load-room .load-roster-white .load-card-on .load-state { color: rgb(96, 70, 34); }
+.load-room .load-roster-white .load-card-on .load-card-bar { background-color: rgb(146, 112, 60); }
+.load-room .load-roster-white .load-card-on .load-avatar { background-color: rgb(255, 252, 244); border-color: rgb(146, 112, 60); }
+.load-room .load-roster-white .load-card-btn { background-color: rgba(30, 22, 14, 0.94); }
+.load-room .load-roster-white .load-count { color: rgb(243, 235, 221); }
+.load-room .load-roster-black .load-card { background-color: rgba(0, 0, 0, 0.6); border-color: rgba(156, 156, 168, 0.62); }
+.load-room .load-roster-black .load-card-on { background-color: rgba(3, 3, 5, 0.97); border-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-card .load-name { color: rgba(214, 214, 224, 0.82); }
+.load-room .load-roster-black .load-card-on .load-name { color: rgb(246, 240, 228); }
+.load-room .load-roster-black .load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-room .load-roster-black .load-card-on .load-state { color: rgb(204, 204, 214); }
+.load-room .load-roster-black .load-card-on .load-card-bar { background-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-card-on .load-avatar { background-color: rgb(40, 40, 48); border-color: rgb(176, 176, 188); }
+.load-room .load-roster-black .load-count { color: rgb(196, 196, 208); }
+
+/* ---------- R698: the chat over the room screen ----------
+   The user (2026-11-17): "방 화면 채팅". ChatBox.Layout.Room: the match chat's look ("chat-match" stays on), bottom left
+   in the strip the room's lists, note and progress line leave free (x 0 to 330 of 1280, under the spectators' row), and
+   a panel short enough to stay under that row while it is open. */
+.chat-room { left: 14px; right: auto; bottom: 12px; width: 308px; }
+/* The open panel (lines, entry and tabs) reaches up to just under the spectators' row; the key hints do not fit beside
+   the tabs at this width. */
+.chat-room .chat-panel { height: 176px; }
+.chat-room .chat-keys { display: none; }
+.chat-room .chat-tab-text { white-space: nowrap; }
+.chat-room .chat-entry { height: 38px; margin-top: 6px; }
+.chat-room .chat-line, .chat-room .chat-recent-line { background-color: rgba(9, 7, 5, 0.84); }
+
+/* ---------- R703: the room's flow rules ----------
+   The manager's panel of a room a player made (LoadingScreenView.Room.cs, BuildRules), bottom right in the strip the
+   room's lists leave free (the chat stands bottom left): a row a setting, a button a choice, the room's choice gold. */
+.load-rules { position: absolute; right: 14px; bottom: 12px; width: 310px; padding: 6px 10px 8px 10px; border-radius: 10px; display: none;
+              border-width: 1px; border-color: rgba(233, 198, 122, 0.45); background-color: rgba(9, 7, 5, 0.86); }
+.load-room .load-rules { display: flex; }
+.load-rules-head { flex-direction: row; align-items: flex-end; margin-bottom: 2px; }
+.load-rules-title { font-size: 14px; -unity-font-style: bold; color: rgb(255, 233, 184); }
+.load-rules-note { font-size: 10px; color: rgba(243, 235, 221, 0.7); }
+.load-rules-label { font-size: 11px; -unity-font-style: bold; color: rgb(233, 198, 122); margin-top: 4px; margin-bottom: 3px; }
+.load-rules-row { flex-direction: row; }
+.load-rule-btn { flex-grow: 1; flex-basis: 0; height: 22px; margin: 0 4px 0 0; padding: 0 3px; font-size: 10px; border-width: 1px; border-radius: 6px;
+                 color: rgb(207, 198, 176); background-color: rgba(30, 22, 14, 0.9); border-color: rgba(233, 198, 122, 0.3); white-space: nowrap; }
+.load-rule-btn:last-child { margin-right: 0; }
+.load-rule-btn .a-btn-text { font-size: 10px; }
+.load-rule-btn.load-rule-on, .load-rule-btn.load-rule-on:hover, .load-rule-btn.load-rule-on:disabled {
+    color: rgb(34, 24, 12); background-color: rgb(233, 198, 122); border-color: rgb(255, 233, 184); opacity: 1; }
+.load-rule-btn.load-rule-on .a-btn-text { color: rgb(34, 24, 12); }
+.load-rule-btn:disabled { opacity: 0.45; }

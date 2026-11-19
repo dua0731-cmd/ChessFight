@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1400 1280" width="100%" style="height:auto;max-width:1400px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>R692 로비 시스템 정리안 — 랜덤 매칭 · 방 생성 · 파티</title>
+<defs>
+<g id="pawn"><circle cx="0" cy="-34" r="10"/><path d="M-6,-25 L6,-25 L11,-6 L-11,-6 Z"/><rect x="-15" y="-7" width="30" height="7" rx="2"/></g>
+<g id="face"><circle cx="0" cy="0" r="12"/></g>
+</defs>
+<rect width="1400" height="1280" fill="#171a22"/>
+<text x="22" y="34" font-size="21" font-weight="700" fill="#f4ead2">로비 시스템 정리안 — 랜덤 매칭 · 방 생성 · 파티</text>
+<text x="22" y="58" font-size="13" fill="#a39a85">리그 오브 레전드식: 파티를 먼저 꾸리고, 랜덤 매칭은 로비에서 시간만 세고, 방 생성은 방 화면에서 팀을 조율한 뒤 방장이 시작한다. (예상 화면 — 실제 그림체는 지금 로비 · 입장 화면 그대로)</text>
+
+<!-- ① lobby, idle -->
+<rect x="22" y="76" width="672" height="392" rx="8" fill="#1f232d"/>
+<text x="38" y="102" font-size="15" font-weight="700" fill="#f4ead2">① 로비 — 평소</text>
+<rect x="38" y="116" width="640" height="314" rx="6" fill="#262b3a"/>
+<rect x="38" y="116" width="640" height="26" rx="6" fill="#1a1e28"/>
+<text x="50" y="134" font-size="11" font-weight="700" fill="#E2B23C">CHESS FIGHT</text>
+<text x="140" y="134" font-size="11" fill="#a39a85">플레이     기물 도감     전적</text>
+<text x="666" y="134" font-size="11" fill="#a39a85" text-anchor="end">친구 3     정보     나이트메어</text>
+<ellipse cx="358" cy="296" rx="200" ry="30" fill="#4a3d2a"/>
+<ellipse cx="358" cy="293" rx="190" ry="26" fill="#6b5637"/>
+<use xlink:href="#pawn" x="288" y="292" fill="#f4ead2"/>
+<use xlink:href="#pawn" x="358" y="292" fill="#f4ead2"/>
+<use xlink:href="#pawn" x="428" y="292" fill="#f4ead2"/>
+<rect x="252" y="214" width="72" height="20" rx="4" fill="#3a2f22" stroke="#E2B23C"/><text x="288" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">♛ 나이트메어</text>
+<rect x="326" y="214" width="64" height="20" rx="4" fill="#3a2f22"/><text x="358" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">퀸사이드</text>
+<rect x="398" y="214" width="60" height="20" rx="4" fill="#3a2f22"/><text x="428" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">룩앤롤</text>
+<circle cx="500" cy="272" r="15" fill="none" stroke="#E2B23C" stroke-dasharray="4 3"/><text x="500" y="276" font-size="14" fill="#E2B23C" text-anchor="middle">+</text>
+<text x="500" y="302" font-size="10" fill="#c9b27a" text-anchor="middle">친구 초대</text>
+<rect x="48" y="360" width="104" height="22" rx="4" fill="#5a4636"/><text x="100" y="375" font-size="11" fill="#f4ead2" text-anchor="middle"># 코드로 참가</text>
+<rect x="48" y="390" width="296" height="30" rx="4" fill="#3a2f22"/><text x="60" y="409" font-size="10.5" fill="#f4ead2">PARTY 3 / 6  ·  파티 코드 1092 3381  ·  복사  ·  나가기</text>
+<rect x="470" y="352" width="198" height="20" rx="4" fill="#2b2f3c"/><text x="480" y="366" font-size="10.5" fill="#cfc6b0">현재 모드 · 폰 러쉬  ›</text>
+<rect x="470" y="380" width="88" height="40" rx="6" fill="#8a6a48"/><text x="514" y="405" font-size="13" font-weight="700" fill="#f4ead2" text-anchor="middle">방 생성</text>
+<rect x="566" y="380" width="102" height="40" rx="6" fill="#E2B23C"/><text x="617" y="405" font-size="13" font-weight="700" fill="#2b2a24" text-anchor="middle">랜덤 매칭 ›››</text>
+<text x="38" y="446" font-size="11.5" fill="#cfc6b0">‘게임 시작’이 ‘랜덤 매칭’이 되고 그 옆에 ‘방 생성’이 생긴다. 파티는 지금 그대로.</text>
+<text x="38" y="461" font-size="11.5" fill="#cfc6b0">왼쪽 아래 ‘비공개 방’ 버튼은 없어진다(방 생성이 대신한다).</text>
+
+<!-- ② lobby, searching -->
+<rect x="706" y="76" width="672" height="392" rx="8" fill="#1f232d"/>
+<text x="722" y="102" font-size="15" font-weight="700" fill="#f4ead2">② 로비 — 랜덤 매칭 중 (화면이 바뀌지 않는다)</text>
+<rect x="722" y="116" width="640" height="314" rx="6" fill="#262b3a"/>
+<rect x="722" y="116" width="640" height="26" rx="6" fill="#1a1e28"/>
+<text x="734" y="134" font-size="11" font-weight="700" fill="#E2B23C">CHESS FIGHT</text>
+<text x="824" y="134" font-size="11" fill="#a39a85">플레이     기물 도감     전적</text>
+<text x="1350" y="134" font-size="11" fill="#a39a85" text-anchor="end">친구 3     정보     나이트메어</text>
+<ellipse cx="1042" cy="296" rx="200" ry="30" fill="#4a3d2a"/>
+<ellipse cx="1042" cy="293" rx="190" ry="26" fill="#6b5637"/>
+<use xlink:href="#pawn" x="972" y="292" fill="#f4ead2"/>
+<use xlink:href="#pawn" x="1042" y="292" fill="#f4ead2"/>
+<use xlink:href="#pawn" x="1112" y="292" fill="#f4ead2"/>
+<rect x="936" y="214" width="72" height="20" rx="4" fill="#3a2f22" stroke="#E2B23C"/><text x="972" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">♛ 나이트메어</text>
+<rect x="1010" y="214" width="64" height="20" rx="4" fill="#3a2f22"/><text x="1042" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">퀸사이드</text>
+<rect x="1082" y="214" width="60" height="20" rx="4" fill="#3a2f22"/><text x="1112" y="228" font-size="10.5" fill="#f4ead2" text-anchor="middle">룩앤롤</text>
+<rect x="732" y="360" width="104" height="22" rx="4" fill="#5a4636" opacity=".35"/><text x="784" y="375" font-size="11" fill="#f4ead2" text-anchor="middle" opacity=".45"># 코드로 참가</text>
+<rect x="732" y="390" width="296" height="30" rx="4" fill="#3a2f22"/><text x="744" y="409" font-size="10.5" fill="#f4ead2">PARTY 3 / 6  ·  매칭 중에는 파티가 잠깁니다</text>
+<rect x="1124" y="340" width="228" height="32" rx="4" fill="#2b2f3c" stroke="#E2B23C"/>
+<circle cx="1140" cy="356" r="4" fill="#E0483B"/>
+<text x="1152" y="361" font-size="12" fill="#f4ead2">상대를 찾는 중</text>
+<text x="1340" y="362" font-size="15" font-weight="700" fill="#E2B23C" text-anchor="end">00:23</text>
+<rect x="1154" y="380" width="88" height="40" rx="6" fill="#8a6a48" opacity=".3"/><text x="1198" y="405" font-size="13" font-weight="700" fill="#f4ead2" text-anchor="middle" opacity=".4">방 생성</text>
+<rect x="1250" y="380" width="102" height="40" rx="6" fill="#b8433a"/><text x="1301" y="405" font-size="13" font-weight="700" fill="#f4ead2" text-anchor="middle">매칭 취소</text>
+<text x="722" y="446" font-size="11.5" fill="#cfc6b0">폰은 그대로 서 있고 시간만 센다(입장 화면이 로비를 덮지 않는다).</text>
+<text x="722" y="461" font-size="11.5" fill="#cfc6b0">다 모이면 ‘상대를 찾았습니다’ → 폰들이 대문으로 걸어 나감 → 대결 장면 → 코스 공개 → 경기.</text>
+
+<!-- ③ the room -->
+<rect x="22" y="486" width="1356" height="512" rx="8" fill="#1f232d"/>
+<text x="38" y="512" font-size="15" font-weight="700" fill="#f4ead2">③ 방 생성 — 방 화면 (지금 매칭 때 뜨는 입장 화면을 방으로 쓴다 · 방장이 보는 모습)</text>
+<rect x="38" y="526" width="1324" height="414" rx="6" fill="#262b3a"/>
+<rect x="38" y="526" width="1324" height="34" rx="6" fill="#1a1e28"/>
+<text x="54" y="548" font-size="13" font-weight="700" fill="#f4ead2">커스텀 방 · 폰 러쉬</text>
+<text x="610" y="548" font-size="12" fill="#cfc6b0">방 번호</text><text x="660" y="548" font-size="13" font-weight="700" fill="#E2B23C">1092 3381</text>
+<rect x="746" y="534" width="44" height="20" rx="4" fill="#8a6a48"/><text x="768" y="548" font-size="11" fill="#f4ead2" text-anchor="middle">복사</text>
+<text x="1346" y="548" font-size="11.5" fill="#a39a85" text-anchor="end">방장 나이트메어 · 12명이 차도 자동으로 시작하지 않습니다</text>
+<text x="54" y="584" font-size="13" font-weight="700" fill="#3FC1D9">백팀 6 / 6</text>
+<rect x="54" y="594" width="600" height="32" rx="5" fill="#2f3546" stroke="#E2B23C"/>
+<circle cx="76" cy="610" r="11" fill="#3FC1D9"/>
+<text x="98" y="615" font-size="12" font-weight="700" fill="#f4ead2">나이트메어 (나)</text>
+<text x="642" y="615" font-size="10.5" fill="#E2B23C" text-anchor="end">방장 · 물리 담당</text>
+<rect x="54" y="630" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="76" cy="646" r="11" fill="#3FC1D9"/>
+<text x="98" y="651" font-size="12" fill="#f4ead2">퀸사이드</text>
+<rect x="498" y="636" width="48" height="20" rx="4" fill="#4a5470"/><text x="522" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="550" y="636" width="44" height="20" rx="4" fill="#8a6a48"/><text x="572" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="598" y="636" width="44" height="20" rx="4" fill="#b8433a"/><text x="620" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="54" y="666" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="76" cy="682" r="11" fill="#3FC1D9"/>
+<text x="98" y="687" font-size="12" fill="#f4ead2">룩앤롤</text>
+<rect x="498" y="672" width="48" height="20" rx="4" fill="#4a5470"/><text x="522" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="550" y="672" width="44" height="20" rx="4" fill="#8a6a48"/><text x="572" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="598" y="672" width="44" height="20" rx="4" fill="#b8433a"/><text x="620" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="54" y="702" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="76" cy="718" r="11" fill="#3FC1D9"/>
+<text x="98" y="723" font-size="12" fill="#f4ead2">비숍킴</text>
+<rect x="498" y="708" width="48" height="20" rx="4" fill="#4a5470"/><text x="522" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="550" y="708" width="44" height="20" rx="4" fill="#8a6a48"/><text x="572" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="598" y="708" width="44" height="20" rx="4" fill="#b8433a"/><text x="620" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="54" y="738" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="76" cy="754" r="11" fill="#3FC1D9"/>
+<text x="98" y="759" font-size="12" fill="#f4ead2">폰스타</text>
+<rect x="498" y="744" width="48" height="20" rx="4" fill="#4a5470"/><text x="522" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="550" y="744" width="44" height="20" rx="4" fill="#8a6a48"/><text x="572" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="598" y="744" width="44" height="20" rx="4" fill="#b8433a"/><text x="620" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="54" y="774" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="76" cy="790" r="11" fill="#3FC1D9"/>
+<text x="98" y="795" font-size="12" fill="#f4ead2">캐슬링</text>
+<rect x="498" y="780" width="48" height="20" rx="4" fill="#4a5470"/><text x="522" y="794" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="550" y="780" width="44" height="20" rx="4" fill="#8a6a48"/><text x="572" y="794" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="598" y="780" width="44" height="20" rx="4" fill="#b8433a"/><text x="620" y="794" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<text x="746" y="584" font-size="13" font-weight="700" fill="#F08A2C">흑팀 5 / 6</text>
+<rect x="746" y="594" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="768" cy="610" r="11" fill="#F08A2C"/>
+<text x="790" y="615" font-size="12" fill="#f4ead2">앙파상</text>
+<rect x="1190" y="600" width="48" height="20" rx="4" fill="#4a5470"/><text x="1214" y="614" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="1242" y="600" width="44" height="20" rx="4" fill="#8a6a48"/><text x="1264" y="614" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="1290" y="600" width="44" height="20" rx="4" fill="#b8433a"/><text x="1312" y="614" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="746" y="630" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="768" cy="646" r="11" fill="#F08A2C"/>
+<text x="790" y="651" font-size="12" fill="#f4ead2">체크메이트</text>
+<rect x="1190" y="636" width="48" height="20" rx="4" fill="#4a5470"/><text x="1214" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="1242" y="636" width="44" height="20" rx="4" fill="#8a6a48"/><text x="1264" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="1290" y="636" width="44" height="20" rx="4" fill="#b8433a"/><text x="1312" y="650" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="746" y="666" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="768" cy="682" r="11" fill="#F08A2C"/>
+<text x="790" y="687" font-size="12" fill="#f4ead2">스테일</text>
+<rect x="1190" y="672" width="48" height="20" rx="4" fill="#4a5470"/><text x="1214" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="1242" y="672" width="44" height="20" rx="4" fill="#8a6a48"/><text x="1264" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="1290" y="672" width="44" height="20" rx="4" fill="#b8433a"/><text x="1312" y="686" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="746" y="702" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="768" cy="718" r="11" fill="#F08A2C"/>
+<text x="790" y="723" font-size="12" fill="#f4ead2">갬빗왕</text>
+<rect x="1190" y="708" width="48" height="20" rx="4" fill="#4a5470"/><text x="1214" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="1242" y="708" width="44" height="20" rx="4" fill="#8a6a48"/><text x="1264" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="1290" y="708" width="44" height="20" rx="4" fill="#b8433a"/><text x="1312" y="722" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="746" y="738" width="600" height="32" rx="5" fill="#2f3546"/>
+<circle cx="768" cy="754" r="11" fill="#F08A2C"/>
+<text x="790" y="759" font-size="12" fill="#f4ead2">핀과포크</text>
+<rect x="1190" y="744" width="48" height="20" rx="4" fill="#4a5470"/><text x="1214" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="1242" y="744" width="44" height="20" rx="4" fill="#8a6a48"/><text x="1264" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">양도</text>
+<rect x="1290" y="744" width="44" height="20" rx="4" fill="#b8433a"/><text x="1312" y="758" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="746" y="774" width="600" height="32" rx="5" fill="none" stroke="#F08A2C" stroke-dasharray="6 4"/>
+<text x="1046" y="795" font-size="12" fill="#F08A2C" text-anchor="middle">빈 자리 · 누르면 이 팀으로 옮긴다</text>
+<text x="700" y="712" font-size="38" font-weight="700" fill="#f4ead2" text-anchor="middle" opacity=".85">VS</text>
+<text x="54" y="832" font-size="13" font-weight="700" fill="#c8b8e6">관전석 2 / 4</text>
+<text x="1346" y="832" font-size="11.5" fill="#a39a85" text-anchor="end">팀이 꽉 찼으면 여기로 잠시 옮겼다가 조율 · 관전자는 경기가 시작되면 폰 없이 카메라로 본다</text>
+<rect x="54" y="842" width="314" height="32" rx="5" fill="#2f3546"/><circle cx="76" cy="858" r="11" fill="#c8b8e6"/>
+<text x="98" y="863" font-size="12" fill="#f4ead2">츠바이크</text>
+<rect x="260" y="848" width="48" height="20" rx="4" fill="#4a5470"/><text x="284" y="862" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="312" y="848" width="44" height="20" rx="4" fill="#b8433a"/><text x="334" y="862" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="380" y="842" width="314" height="32" rx="5" fill="#2f3546"/><circle cx="402" cy="858" r="11" fill="#c8b8e6"/>
+<text x="424" y="863" font-size="12" fill="#f4ead2">프로모션</text>
+<rect x="586" y="848" width="48" height="20" rx="4" fill="#4a5470"/><text x="610" y="862" font-size="10.5" fill="#f4ead2" text-anchor="middle">옮기기</text>
+<rect x="638" y="848" width="44" height="20" rx="4" fill="#b8433a"/><text x="660" y="862" font-size="10.5" fill="#f4ead2" text-anchor="middle">강퇴</text>
+<rect x="706" y="842" width="314" height="32" rx="5" fill="none" stroke="#c8b8e6" stroke-dasharray="6 4"/>
+<text x="863" y="863" font-size="12" fill="#c8b8e6" text-anchor="middle">빈 관전석 · 누르면 관전</text>
+<rect x="1032" y="842" width="314" height="32" rx="5" fill="none" stroke="#c8b8e6" stroke-dasharray="6 4"/>
+<text x="1189" y="863" font-size="12" fill="#c8b8e6" text-anchor="middle">빈 관전석 · 누르면 관전</text>
+<rect x="54" y="890" width="110" height="34" rx="6" fill="#b8433a"/><text x="109" y="912" font-size="13" font-weight="700" fill="#f4ead2" text-anchor="middle">방 나가기</text>
+<rect x="176" y="890" width="96" height="34" rx="6" fill="#5a4636"/><text x="224" y="912" font-size="12" fill="#f4ead2" text-anchor="middle">봇 추가 +</text>
+<text x="284" y="912" font-size="11" fill="#a39a85">(테스트 빌드만)</text>
+<text x="1190" y="912" font-size="12" fill="#cfc6b0" text-anchor="end">6 대 5 · 관전 2 · 방장이 시작할 수 있어요</text>
+<rect x="1206" y="886" width="140" height="40" rx="6" fill="#E2B23C"/><text x="1276" y="912" font-size="14" font-weight="700" fill="#2b2a24" text-anchor="middle">게임 시작 ›››</text>
+<text x="38" y="962" font-size="12" fill="#cfc6b0">빈 자리를 누르면 내가 그 자리로 옮겨 간다. 옮기기 · 양도 · 강퇴 · 게임 시작은 방장 화면에만 나오고, 다른 사람 화면에는 빈 자리 누르기와 방 나가기만 있다.</text>
+<text x="38" y="982" font-size="12" fill="#cfc6b0">들어오는 길: 방 번호를 받아 로비의 ‘# 코드로 참가’로. 파티장이 방을 만들거나 들어가면 파티원은 따라 들어온다(같은 팀에 먼저 앉고, 각자 옮길 수 있다).</text>
+
+<!-- flow and stages -->
+<rect x="22" y="1016" width="1356" height="246" rx="8" fill="#1f232d"/>
+<text x="38" y="1044" font-size="15" font-weight="700" fill="#f4ead2">흐름</text>
+<text x="38" y="1070" font-size="12.5" fill="#E2B23C" font-weight="700">랜덤 매칭</text>
+<text x="118" y="1070" font-size="12.5" fill="#cfc6b0">로비(파티 구성) → 랜덤 매칭 → 로비에서 시간만 센다 → ‘상대를 찾았습니다’ → 대결 장면 · 코스 공개 → 경기 → 결과 → 로비</text>
+<text x="38" y="1094" font-size="12.5" fill="#E2B23C" font-weight="700">방 생성</text>
+<text x="118" y="1094" font-size="12.5" fill="#cfc6b0">로비(파티 구성) → 방 생성 또는 코드로 참가 → 방 화면(팀 조율 · 관전석) → 방장이 게임 시작 → 대결 장면 · 코스 공개 → 경기(관전자는 관전) → 결과 → 로비</text>
+<text x="38" y="1134" font-size="15" font-weight="700" fill="#f4ead2">만드는 순서 — 단계마다 보여 드리고 검수받는다</text>
+<text x="38" y="1162" font-size="12.5" fill="#E2B23C" font-weight="700">1단계</text>
+<text x="88" y="1162" font-size="12.5" fill="#cfc6b0">로비 버튼 정리(랜덤 매칭 · 방 생성), 랜덤 매칭 중에는 로비에 머물고 시간만 센다. 방장 · 강퇴 · 양도는 랜덤 매칭에서 없어진다.</text>
+<text x="38" y="1186" font-size="12.5" fill="#E2B23C" font-weight="700">2단계</text>
+<text x="88" y="1186" font-size="12.5" fill="#cfc6b0">방 화면: 방 번호 · 자리 옮기기 · 방장의 옮기기 / 양도 / 강퇴 / 게임 시작 · 12명이 차도 자동 시작 없음.</text>
+<text x="38" y="1210" font-size="12.5" fill="#E2B23C" font-weight="700">3단계</text>
+<text x="88" y="1210" font-size="12.5" fill="#cfc6b0">관전석과 경기 관전: 관전 카메라(보는 사람 바꾸기), 관전자에게 경기 화면 보내기, 결과 화면. 가장 큰 작업이라 마지막.</text>
+<text x="38" y="1242" font-size="11.5" fill="#a39a85">3단계 전까지는 관전석에 사람이 앉아 있으면 게임 시작이 꺼진다(자리를 조율하는 대기석으로만 쓴다).</text>
+<text x="1362" y="1252" font-size="11" fill="#6f6a5d" text-anchor="end">R692 제안 · R693 방 화면 배치 수정(관전석을 아래로) · 2026-11-17</text>
+</svg>

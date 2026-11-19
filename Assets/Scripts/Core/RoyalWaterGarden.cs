@@ -13,8 +13,8 @@ namespace ChessFight.Network
     //            2.0 or 2.4 m/s). A boat runs out of sight under the tunnel at either end, sinks there, comes round
     //            under the water and rises in the other tunnel.
     //   geysers  eight jets along the canal walk and its ramp, firing one after another every 0.55 s (the far
-    //            end first, a wave running at the pawns), each once every 5 s: 0.8 s of bubbling, then 1 s of jet.
-    //   robots   the robot arms' 6 s swing: rest raised on their own side, wind up, sweep across the dyke just
+    //            end first, a wave running at the pawns), each once every 4 s: 0.6 s of bubbling, then 1 s of jet.
+    //   robots   the robot arms' 4.5 s swing: rest raised on their own side, wind up, sweep across the dyke just
     //            over the floor, hold over the water, swing back across, rest.
     public static class RoyalWaterGardenRules
     {
@@ -25,7 +25,8 @@ namespace ChessFight.Network
         // out of sight (under a tunnel roof from |x| 18; it starts sinking past SightEdge and is DiveDepth down by
         // DiveEnd, before it wraps at Loop / 2).
         public const double Loop = 48.0, BoatLength = 6.0, SightEdge = 20.5, DiveEnd = 23.0, DiveDepth = 9.8;
-        public static readonly double[] Speeds = { 1.6, 2.0, 2.4 };
+        // R680 (the 6 vs 6 test: obstacles too easy): a quarter faster (were 1.6, 2.0, 2.4)
+        public static readonly double[] Speeds = { 2.0, 2.5, 3.0 };
 
         public struct BoatLane
         {
@@ -84,7 +85,11 @@ namespace ChessFight.Network
         // ------------------------------------------------------------------ geysers
 
         public const int Geysers = 8;
-        public const double GeyserCycle = 5.0, GeyserStep = .55, GeyserWarn = .8, GeyserJet = 1.0;
+        // R680 (the 6 vs 6 test: obstacles too easy, their rounds too far apart): each once every 4 s (was 5) after
+        // 0.6 s of bubbling (was 0.8). The step and the jet are as they were, so along the wave still at most two
+        // neighbours are up at once; with the shorter cycle the far end starts again while the near end's last two
+        // are still up - a third jet, but seven geysers away.
+        public const double GeyserCycle = 4.0, GeyserStep = .55, GeyserWarn = .6, GeyserJet = 1.0;
 
         public enum Jet { Rest, Warn, Jet }
 
@@ -105,8 +110,12 @@ namespace ChessFight.Network
         // ------------------------------------------------------------------ robot arms
 
         // Degrees from hanging straight down, + towards the robot's own (north) side.
-        public const double RobotCycle = 6.0, RobotRest = 60, RobotWind = 82, RobotDown = -75;
-        public const double WindUntil = 1.0, SweepUntil = 1.85, HoldUntil = 2.6, BackUntil = 4.4;
+        // R680 (the 6 vs 6 test: obstacles too easy, their rounds too far apart): a swing every 4.5 s (was 6). The
+        // wind-up that warns of it and the sweep itself are as long as they were (a faster hand would bat pawns as the
+        // boats did, R531); the hold over the water (0.75 -> 0.5 s), the way back (1.8 -> 1.5 s) and above all the
+        // rest (1.6 -> 0.65 s) are shorter.
+        public const double RobotCycle = 4.5, RobotRest = 60, RobotWind = 82, RobotDown = -75;
+        public const double WindUntil = 1.0, SweepUntil = 1.85, HoldUntil = 2.35, BackUntil = 3.85;
 
         public enum Swing { Rest, Wind, Sweep, Hold, Back }
 

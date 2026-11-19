@@ -184,7 +184,7 @@ namespace ChessFight.Network
                     var remote = new SteamNetworkingIdentity();
                     remote.SetSteamID64(id);
                     SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
-                        Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle, VoiceWire.SteamChannel);
+                        SteamSend.Unreliable, VoiceWire.SteamChannel);
                 }
             }
             finally { handle.Free(); }

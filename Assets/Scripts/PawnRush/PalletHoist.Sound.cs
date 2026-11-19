@@ -6,7 +6,7 @@ namespace ChessFight.PawnRush
     // pulleys while the pair swaps (one pallet up, the other down, `move` s), and each pallet's clunk as it arrives - the
     // one coming down onto the floor full, the one reaching the deck softer. Made with the ElevenLabs MCP
     // (Resources/PawnRushCarriageYardSfx/HoistMove0..1, HoistLand0..1, bake_carriage_yard.py; prompts:
-    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 14). The code-made ratchet clack at the start stays. Timed off the shared
+    // Docs/PawnRush/PAWN_RUSH_AUDIO.md section 15). The code-made ratchet clack at the start stays. Timed off the shared
     // clock's swap (the same on every PC); a PC that first sees a move part way plays it from there (up to Late in).
     public sealed partial class PalletHoist
     {
