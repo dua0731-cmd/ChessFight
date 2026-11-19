@@ -396,5 +396,80 @@ namespace ChessFight.RagdollLab
         public float checkBlock = 0.6f;
         public float checkRecovery = 0.3f;
         public float checkCooldown = 8f;
+
+        [Header("기획서 A 묶음 폰 — 터치 무브 · 자두브 (P5)")]
+        [Tooltip("손을 내밀기까지 (초), 손이 닿는 거리 (m), 조준에서 좌우 각도 (도)")]
+        public float touchWindup = 0.25f;
+        public float touchReach = 1.5f;
+        public float touchCone = 55f;
+        [Tooltip("맞은 적이 멈출 수 없는 시간 (초)")]
+        public float touchSeconds = 2f;
+        [Tooltip("자두브: 건드린 팀원이 바로 선 뒤 스킬에 안 넘어지는 시간 (초, 기상 보호)")]
+        public float touchGuard = 1f;
+        public float touchRecovery = 0.25f;
+        [Tooltip("쿨타임 (초), 아무도 못 건드렸을 때 쿨타임 (초)")]
+        public float touchCooldown = 6f;
+        public float touchMissCooldown = 2.5f;
+
+        [Header("기획서 A 묶음 나이트 — 뒷발차기 (N4)")]
+        [Tooltip("등을 돌리는 예고 (초), 발이 닿는 거리 (m)와 폭 (m)")]
+        public float kickWindup = 0.35f;
+        public float kickReach = 2f;
+        public float kickWidth = 1.2f;
+        [Tooltip("미는 빠르기 (m/s, 넘어뜨리지 않음), 손이 저려 아무것도 못 잡는 시간 (초)")]
+        public float kickPush = 3.5f;
+        public float kickNumb = 3f;
+        public float kickRecovery = 0.3f;
+        public float kickCooldown = 6f;
+
+        [Header("기획서 A 묶음 비숍 — 반대색 비숍 (B1)")]
+        public float ghostWindup = 0.15f;
+        [Tooltip("적의 몸과 스킬이 통과하는 시간 (초)")]
+        public float ghostSeconds = 3f;
+        [Tooltip("풀릴 때 이 거리 (m) 안에 겹쳐 있던 적과 서로 튕기는 빠르기 (m/s)")]
+        public float ghostPopRadius = 0.7f;
+        public float ghostPop = 4f;
+        public float ghostRecovery = 0.1f;
+        public float ghostCooldown = 12f;
+
+        [Header("기획서 A 묶음 룩 — 뒤에서 밀기 (R1)")]
+        [Tooltip("바로 앞 기물까지 거리 (m), 조준에서 좌우 각도 (도)")]
+        public float pushReach = 1.8f;
+        public float pushCone = 50f;
+        [Tooltip("받치는 예고 (초). 이 사이에 점프하거나 멀어지면 빠진다")]
+        public float pushWindup = 0.5f;
+        [Tooltip("쏘는 거리 (m, 여덟 걸음쯤), 그 거리를 나는 시간 (초), 호의 높이 (m)")]
+        public float pushDistance = 6f;
+        public float pushFlight = 0.55f;
+        public float pushArc = 0.5f;
+        [Tooltip("날아가는 길에 있던 적을 옆으로 미는 빠르기 (m/s)")]
+        public float pushBump = 4f;
+        [Tooltip("켜면 벽 앞에서 멈추지 않고 끝까지 쏜다 (벽에 부딪힌다). 틈 앞에서는 늘 멈춘다")]
+        public bool pushIntoWalls = false;
+        public float pushRecovery = 0.3f;
+        [Tooltip("쿨타임 (초), 아무도 못 쐈을 때 쿨타임 (초)")]
+        public float pushCooldown = 9f;
+        public float pushMissCooldown = 3f;
+
+        [Header("기획서 A 묶음 퀸 — 두 마리 토끼 (Q4)")]
+        [Tooltip("두 적까지 거리 (m), 조준에서 좌우 각도 (도), 두 선이 보이는 예고 (초)")]
+        public float hareRange = 8f;
+        public float hareCone = 40f;
+        public float hareWindup = 0.45f;
+        [Tooltip("고무줄 길이 (m), 묶인 시간 (초)")]
+        public float hareRest = 3f;
+        public float hareSeconds = 4f;
+        [Tooltip("줄이 1 m 늘어날 때마다 끌려가는 빠르기 (m/s), 그 최대 (m/s)")]
+        public float hareStiffness = 7f;
+        public float harePull = 7f;
+        [Tooltip("줄이 이만큼 (m) 넘게 늘어나면 튕겨 서로에게 날아간다: 빠르기 (m/s), 휘청 (초), 다음 튕김까지 (초)")]
+        public float hareSnap = 1f;
+        public float hareSnapPush = 5f;
+        public float hareSnapStagger = 0.4f;
+        public float hareSnapEvery = 1.2f;
+        public float hareRecovery = 0.3f;
+        [Tooltip("쿨타임 (초), 둘을 못 묶었을 때 쿨타임 (초)")]
+        public float hareCooldown = 9f;
+        public float hareMissCooldown = 3f;
     }
 }

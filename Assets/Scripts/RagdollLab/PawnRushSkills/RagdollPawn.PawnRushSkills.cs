@@ -357,6 +357,7 @@ namespace ChessFight.RagdollLab
             }
             UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
             UpdateHillStates(dt);     // a close guard on it, squashed and sliding (RagdollPawn.HillSkills.cs)
+            UpdateBookStates(s, dt);  // touched, numb, a ghost, sent flying by a rook (RagdollPawn.BookSkills.cs)
             TrackGetUp(s);
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
@@ -431,10 +432,11 @@ namespace ChessFight.RagdollLab
             skillCooldownLeft = cooldownTotal;
         }
 
-        /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, the knight).</summary>
+        /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, the knight).
+        /// A ghost (the opposite-coloured bishop, RagdollPawn.BookSkills.cs) starts none.</summary>
         bool CanStartSkill(bool inAir = false) =>
             State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered && bindLeft <= 0f
-            && !chainCarry
+            && !chainCarry && ghostLeft <= 0f
             && (hookPhase == HookPhase.None || hookPhase == HookPhase.Held) && skillCooldownLeft <= 0f
             && (inAir || Grounded || coyote > 0f);
 

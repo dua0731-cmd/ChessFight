@@ -330,12 +330,14 @@ namespace ChessFight.RagdollLab
                 x += bw + 6f;
             }
             x += 10f;
-            string[] presets = { "지금 스킬", "1-나", "비우기" };
-            for (int i = 0; i < 3; i++)
+            // (In the order shown; each one's number is PawnRushLoadout.Preset's.)
+            string[] presets = { "지금 스킬", "1-나", "A 묶음", "비우기" };
+            int[] presetIds = { 0, 1, 3, 2 };
+            for (int i = 0; i < presets.Length; i++)
             {
-                if (Chip(new Rect(x, y, 66f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, i))
-                    Say(i == 2 ? "모든 칸을 비웠어요" : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
-                x += 72f;
+                if (Chip(new Rect(x, y, 62f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
+                    Say(presetIds[i] == 2 ? "모든 칸을 비웠어요" : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
+                x += 66f;
             }
             if (ShowLock != null && ShowLock())
             {

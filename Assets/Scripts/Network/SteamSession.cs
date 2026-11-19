@@ -192,7 +192,7 @@ namespace ChessFight.Network
         // and the changes to it go over the match (two new packets), and the rules have a third skill choice.
         // skilllab3: six more skills can sit in a slot (Queen of the Hill's, numbers 44..49); an older build would not
         // run them.
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab3";
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab4";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

@@ -93,8 +93,9 @@ namespace ChessFight.RagdollLab
                 if (owner.Owns(col) || owner.PassesThrough(col)) continue;
                 // A pawn that has just thrashed free cannot be grabbed straight back.
                 // R664: and a Pawn Rush teammate is never taken hold of (nor reached for).
+                // JY-skill-lab: nor does a ghost (the opposite-coloured bishop) take hold of an enemy.
                 if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other)
-                    && (other.GrabImmune || owner.PawnRushTeammate(other))) continue;
+                    && (other.GrabImmune || owner.PawnRushTeammate(other) || owner.SkillCannotGrab(other))) continue;
                 if (col is MeshCollider mesh && !mesh.convex) continue;
                 // An unclimbable wall or railing cannot be gripped either, or a hang-and-vault would climb it.
                 if (IsEnvironment(col) && NoClimbSurface.Blocks(col)) continue;

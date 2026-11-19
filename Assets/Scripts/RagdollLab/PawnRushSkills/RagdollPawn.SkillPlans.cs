@@ -20,7 +20,8 @@ namespace ChessFight.RagdollLab
     /// skill runs at a time; every slot has its own cooldown. A skill is a number (PawnRushSkillIds): 1..5 the skills as
     /// they are, whose code runs as it always did but for <see cref="skillPiece"/>, the piece that code believes it is
     /// (so the rook's chain works on a pawn; the effects and sounds made for those skills still look at the pawn's real
-    /// piece and may not show on another); 11..15 the new ones below.
+    /// piece and may not show on another); 11..15 the new ones below; 44..49 Queen of the Hill's six
+    /// (RagdollPawn.HillSkills.cs); 61..65 the skill idea book's bundle A (RagdollPawn.BookSkills.cs).
     ///
     ///   en passant  an enemy that has just brushed past (the closest point of their passing, the enemy the faster) can
     ///               be tripped for a moment: a lunge at its ankles, it goes down sliding on at the speed it ran.
@@ -195,6 +196,12 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.AirVolley: UpdateVolley(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.PressLeap: UpdatePressLeap(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.Squeeze: UpdateSqueeze(s, press, dt); break;
+                // The skill idea book's bundle A (RagdollPawn.BookSkills.cs).
+                case PawnRushSkillIds.TouchMove: UpdateTouchMove(s, press, dt); break;
+                case PawnRushSkillIds.BackKick: UpdateBackKick(s, press, dt); break;
+                case PawnRushSkillIds.Ghost: UpdateGhost(s, press, dt); break;
+                case PawnRushSkillIds.BackPush: UpdateBackPush(s, press, dt); break;
+                case PawnRushSkillIds.TwoHares: UpdateTwoHares(s, press, dt); break;
             }
         }
 
@@ -213,6 +220,11 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.AirVolley: return s.volleyCooldown;
                 case PawnRushSkillIds.PressLeap: return s.pressCooldown;
                 case PawnRushSkillIds.Squeeze: return s.squeezeCooldown;
+                case PawnRushSkillIds.TouchMove: return s.touchCooldown;
+                case PawnRushSkillIds.BackKick: return s.kickCooldown;
+                case PawnRushSkillIds.Ghost: return s.ghostCooldown;
+                case PawnRushSkillIds.BackPush: return s.pushCooldown;
+                case PawnRushSkillIds.TwoHares: return s.hareCooldown;
                 default: return 0f;
             }
         }
@@ -236,6 +248,7 @@ namespace ChessFight.RagdollLab
                 }
             }
             HillKeys();   // Queen of the Hill's six: what each lets the keys do in its phase
+            BookKeys();   // the idea book's bundle A: a touched piece's feet, numb hands, and the same for its five
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -272,6 +285,7 @@ namespace ChessFight.RagdollLab
             if (dashing) EndDash();
             SkillDetail = "";
             ClearHillSkills();
+            ClearBookSkills();
         }
 
         /// <summary>Everything a new skill leaves running when the skills are cleared (a knockdown, a piece switch, being
@@ -696,6 +710,9 @@ namespace ChessFight.RagdollLab
             pinToPost = toPost;
             pinLeft = s.pinSeconds;
             pinRest = s.pinRest;
+            pinIsTie = false;   // (a pin, not the queen's elastic: RagdollPawn.BookSkills.cs)
+            pinStiff = s.pinStiffness;
+            pinPullMax = s.pinPull;
             LastSkillHit = toPost ? "핀: 벽 · 기둥에 묶임" : $"핀: {(mate != null ? mate.DisplayName : "?")}와 묶임";
         }
 
@@ -706,6 +723,7 @@ namespace ChessFight.RagdollLab
             pinLeft = 0f;
             pinMate = null;
             pinToPost = false;
+            pinIsTie = false;
             if (mate != null && mate.pinMate == this) mate.EndPin();
         }
 
@@ -717,7 +735,9 @@ namespace ChessFight.RagdollLab
             Vector3 to = PinAnchor - LassoBelly;
             float d = to.magnitude, stretch = d - pinRest;
             if (stretch <= 0f || d <= 1e-3f) return Vector3.zero;
-            return to / d * Mathf.Min(s.pinStiffness * stretch, s.pinPull);
+            // (The pin's own numbers, or the ones of the queen's elastic: RagdollPawn.BookSkills.cs.)
+            float stiff = pinStiff > 0f ? pinStiff : s.pinStiffness, most = pinPullMax > 0f ? pinPullMax : s.pinPull;
+            return to / d * Mathf.Min(stiff * stretch, most);
         }
 
         /// <summary>A pinned piece's step (the host's): the time runs out, the other end is gone, it is in the water or out of
@@ -725,6 +745,11 @@ namespace ChessFight.RagdollLab
         void UpdatePin(PawnRushSkillParams s, float dt)
         {
             if (pinLeft <= 0f) return;
+            if (pinIsTie)
+            {
+                UpdateTie(s, dt);   // the queen's elastic: it does not break, it snaps the two together
+                return;
+            }
             pinLeft -= dt;
             bool lost = !pinToPost && (pinMate == null || pinMate.pinMate != this || pinMate.pinLeft <= 0f);
             float stretch = Vector3.Distance(PinAnchor, LassoBelly) - pinRest;
@@ -1212,11 +1237,12 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- over the network (RagdollPawn.SkillNet.cs)
 
         // Flags2 bits of a piece's skill state (128 is a retired mode's): a new skill's phase is in it; a pin is on the piece.
+        // (16, 32 and 64 are the idea book's bundle A's: RagdollPawn.BookSkills.cs.)
         const byte NetNewSkill = 1, NetPinned = 2, NetPinPost = 4, NetWarded = 8;
 
         /// <summary>Something of the slots' beyond the first slot's cooldown is worth sending: a new skill under way, a pin on
         /// this piece, another slot's cooldown.</summary>
-        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f;
+        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || BookNetBusy;
 
         /// <summary>Host: the slots' part of this piece's skill state - the skill under way and each slot's cooldown.</summary>
         void CaptureSlotNet(ref SkillWireState s)
@@ -1244,6 +1270,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Host: a pin on this piece. Other the piece it is tied to, Q the post.</summary>
         void CapturePinNet(ref SkillWireState s, Func<RagdollPawn, byte> refOf, ref Vector3 q)
         {
+            CaptureBookNet(ref s);   // touched, numb, a ghost, the queen's elastic (RagdollPawn.BookSkills.cs)
             if (wardLeft > 0f) s.Flags2 |= NetWarded;   // a close guard on this piece (RagdollPawn.HillSkills.cs)
             if (pinLeft <= 0f) return;
             s.Flags2 |= NetPinned;
@@ -1291,6 +1318,7 @@ namespace ChessFight.RagdollLab
                 planTime = 0f;
                 planTarget = null;
             }
+            ApplyBookNet(s);   // touched, numb, a ghost, and whether a pin on it is the queen's elastic
             // (A guard's time left is this screen's own count from when it first saw it, as a pin's is.)
             if ((s.Flags2 & NetWarded) == 0) wardLeft = 0f;
             else if (wardLeft <= 0f) wardLeft = PawnRushSkills != null ? PawnRushSkills.wardTime : 2.9f;
@@ -1303,11 +1331,11 @@ namespace ChessFight.RagdollLab
                 return;
             }
             // (The time left is this screen's own count from when it first saw the pin.)
-            if (pinLeft <= 0f) pinLeft = PawnRushSkills != null ? PawnRushSkills.pinSeconds : 5f;
+            if (pinLeft <= 0f) pinLeft = PawnRushSkills == null ? 5f : pinIsTie ? PawnRushSkills.hareSeconds : PawnRushSkills.pinSeconds;
             pinToPost = (s.Flags2 & NetPinPost) != 0;
             if (pinToPost) pinPost = q;
             pinMate = !pinToPost && s.Other != SkillWire.None ? pawnOf(s.Other) : null;
-            if (PawnRushSkills != null) pinRest = PawnRushSkills.pinRest;
+            if (PawnRushSkills != null) pinRest = pinIsTie ? PawnRushSkills.hareRest : PawnRushSkills.pinRest;
         }
 
         /// <summary>Client: this piece is not in the host's packet.</summary>
@@ -1320,6 +1348,7 @@ namespace ChessFight.RagdollLab
             pinMate = null;
             pinToPost = false;
             wardLeft = 0f;
+            ClearBookNet();
             planNote = 0;
             activeSkill = 0;
             activeSlot = -1;
@@ -1334,6 +1363,7 @@ namespace ChessFight.RagdollLab
             if (planPhase != PlanPhase.None) planTime += dt;
             if (pinLeft > 0f) pinLeft = Mathf.Max(0.05f, pinLeft - dt);
             if (wardLeft > 0f) wardLeft = Mathf.Max(0.05f, wardLeft - dt);
+            AdvanceBookView(dt);
             slotCd[1] -= dt;
             slotCd[2] -= dt;
         }

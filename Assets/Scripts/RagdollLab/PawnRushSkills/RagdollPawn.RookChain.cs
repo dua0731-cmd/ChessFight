@@ -52,9 +52,10 @@ namespace ChessFight.RagdollLab
         public void GuardFromSkills(float seconds) => skillGuardLeft = Mathf.Max(skillGuardLeft, seconds);
         public float SkillGuardLeft => Mathf.Max(0f, skillGuardLeft);
 
-        /// <summary>No skill may take this piece as its target now: on its way in to a king (R146), just respawned, or on a
-        /// spot the course rules out (the finish pad, the other team's section).</summary>
-        public bool SkillUntargetable => KingCallShielded || skillGuardLeft > 0f || (SkillUntouchable != null && SkillUntouchable(this));
+        /// <summary>No skill may take this piece as its target now: on its way in to a king (R146), just respawned, on a
+        /// spot the course rules out (the finish pad, the other team's section), or a ghost (the opposite-coloured bishop,
+        /// RagdollPawn.BookSkills.cs: its own team's skills do not take on it either).</summary>
+        public bool SkillUntargetable => KingCallShielded || skillGuardLeft > 0f || ghostLeft > 0f || (SkillUntouchable != null && SkillUntouchable(this));
 
         public ChainPhase RookChainPhase => chainPhase;
         public Vector3 RookChainTip => chainTip;

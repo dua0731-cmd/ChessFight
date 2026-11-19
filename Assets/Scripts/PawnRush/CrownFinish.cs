@@ -200,6 +200,8 @@ namespace ChessFight.PawnRush
             {
                 var hips = r.Driver != null ? r.Driver.FollowTarget : null;
                 r.On = hips != null && PawnRushFinish.OnPlatform(hips.position.x - middle.x, hips.position.y - middle.y, hips.position.z - middle.z, radius);
+                // JY-skill-lab: a piece a skill takes off the count (a ghost bishop) is not on it while that lasts.
+                if (r.On && CourseSkills.OffTheCount != null && CourseSkills.OffTheCount(r.Driver)) r.On = false;
                 if (!Authority) continue;
                 if (r.On && r.FirstOn < 0f && Winner == PawnRushFinish.None && live) r.FirstOn = Clock;
                 if (!r.Counts) continue;

@@ -49,6 +49,7 @@ namespace ChessFight.RagdollLab
                 if (pawn == null || pawn.PawnRushSkills == null) continue;
                 DrawPin(pawn);
                 DrawWarded(pawn);
+                DrawBookStates(pawn);
                 // By the skill, not the piece: the loadout (the skill window) may put any skill on any piece.
                 if (pawn.HasSkill(PawnRushSkillIds.EnPassant)) DrawPass(pawn, me);
                 switch (pawn.PlanSkill)
@@ -63,22 +64,29 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.Slash: DrawSlash(pawn); break;
                     case PawnRushSkillIds.AirVolley: DrawVolley(pawn); break;
                     case PawnRushSkillIds.PressLeap: DrawPressLeap(pawn); break;
+                    // The skill idea book's bundle A (RagdollPawn.BookSkills.cs).
+                    case PawnRushSkillIds.TouchMove: DrawTouch(pawn); break;
+                    case PawnRushSkillIds.BackKick: DrawKick(pawn); break;
+                    case PawnRushSkillIds.Ghost: DrawGhostCast(pawn); break;
+                    case PawnRushSkillIds.BackPush: DrawPush(pawn); break;
+                    case PawnRushSkillIds.TwoHares: DrawHares(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
         }
 
         /// <summary>A pin's rope, from the piece's waist to what it is tied to (drawn once for a tied pair), blinking as it
-        /// runs out.</summary>
+        /// runs out. The queen's elastic (the same rope with its own numbers) is gold.</summary>
         void DrawPin(RagdollPawn pawn)
         {
             if (!pawn.Pinned) return;
             var mate = pawn.PinMate;
             if (mate != null && mate.Pinned && mate.PinMate == pawn && pawn.GetInstanceID() > mate.GetInstanceID()) return;
             float a = pawn.PinLeft < 1f ? 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 18f)) : 1f;
-            SkillMarks.Segment(Next(), pawn.LassoBelly, pawn.PinAnchor, Fade(Violet, a), 0.06f, false);
-            SkillMarks.Circle(Next(), pawn.FeetPoint, 0.45f, Fade(Violet, a * 0.8f), 0.05f, 24);
-            if (mate != null) SkillMarks.Circle(Next(), mate.FeetPoint, 0.45f, Fade(Violet, a * 0.8f), 0.05f, 24);
+            Color c = pawn.Tied ? Gold : Violet;
+            SkillMarks.Segment(Next(), pawn.LassoBelly, pawn.PinAnchor, Fade(c, a), 0.06f, false);
+            SkillMarks.Circle(Next(), pawn.FeetPoint, 0.45f, Fade(c, a * 0.8f), 0.05f, 24);
+            if (mate != null) SkillMarks.Circle(Next(), mate.FeetPoint, 0.45f, Fade(c, a * 0.8f), 0.05f, 24);
         }
 
         /// <summary>The pawn played here: a ring under the enemy that has just brushed past it (its key trips that one).</summary>
@@ -265,6 +273,101 @@ namespace ChessFight.RagdollLab
             if (!aim) SkillMarks.Segment(Next(), pawn.FeetPoint + Vector3.up * 0.05f, pawn.PlanPoint + Vector3.up * 0.05f, Fade(SkillMarks.Target, 0.5f), 0.04f);
         }
 
+        // ---------------------------------------------------------------- the skill idea book's bundle A (RagdollPawn.BookSkills.cs)
+
+        /// <summary>What those skills leave on a piece: an orange ring beating under one that cannot stand still, a small
+        /// grey one under numb hands, white rings round a ghost (blinking as it runs out).</summary>
+        void DrawBookStates(RagdollPawn pawn)
+        {
+            Vector3 feet = pawn.FeetPoint;
+            if (pawn.Touched)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 16f);
+                SkillMarks.Circle(Next(), feet, 0.42f + 0.08f * pulse, Fade(SkillMarks.Orange, 0.7f + 0.3f * pulse), 0.08f, 24);
+            }
+            if (pawn.Numb) SkillMarks.Circle(Next(), feet, 0.34f, Fade(Grey, 0.9f), 0.07f, 20);
+            if (pawn.Ghosted)
+            {
+                float a = pawn.GhostLeft < 1f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.time * 18f)) : 1f;
+                SkillMarks.Circle(Next(), feet, 0.6f, Fade(White, a), 0.06f, 28);
+                SkillMarks.Circle(Next(), feet, 0.72f, Fade(White, a * 0.5f), 0.04f, 28);
+                SkillMarks.Circle(Next(), Chest(pawn), 0.38f, Fade(White, a * 0.6f), 0.04f, 20);
+            }
+        }
+
+        /// <summary>The pawn's palm: its reach along the aim, and a ring under the piece it would touch.</summary>
+        void DrawTouch(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Recovery) return;
+            float a = phase == PlanPhase.Windup ? 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 24f)) : 0.5f;
+            SkillMarks.Segment(Next(), Chest(pawn), pawn.PlanPoint, Fade(SkillMarks.Orange, a), 0.07f, false);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.14f, Fade(White, a), 0.06f, 12);
+            var target = pawn.PlanTarget;
+            if (phase == PlanPhase.Windup && target != null)
+                SkillMarks.Circle(Next(), target.FeetPoint, 0.45f, Fade(SkillMarks.Orange, 0.9f), 0.06f, 24);
+        }
+
+        /// <summary>The knight's back kick: the strip behind it that the hind legs sweep, blinking through the warning.</summary>
+        void DrawKick(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Recovery) return;
+            var s = pawn.PawnRushSkills;
+            Vector3 dir = pawn.PlanDir, from = pawn.FeetPoint + Vector3.up * 0.05f, to = from + dir * s.kickReach;
+            Vector3 side = Vector3.Cross(Vector3.up, dir) * (s.kickWidth * 0.5f);
+            float a = phase == PlanPhase.Windup
+                ? 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 22f))
+                : 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.kickRecovery));
+            Color c = Fade(SkillMarks.Target, a);
+            SkillMarks.Segment(Next(), from + side, to + side, c, 0.05f);
+            SkillMarks.Segment(Next(), from - side, to - side, c, 0.05f);
+            SkillMarks.Segment(Next(), to + side, to - side, c, 0.05f);
+        }
+
+        /// <summary>The bishop changing colour: a ring closing on it through the short warning.</summary>
+        void DrawGhostCast(RagdollPawn pawn)
+        {
+            if (pawn.PlanPhaseNow != PlanPhase.Windup) return;
+            float k = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, pawn.PawnRushSkills.ghostWindup));
+            SkillMarks.Circle(Next(), pawn.FeetPoint, 0.6f + 0.8f * k, Fade(White, 0.9f), 0.05f, 28);
+        }
+
+        /// <summary>The rook's push: the line from its hands through the piece it will send to where that one comes down,
+        /// and a ring closing on the piece as the warning runs out (cyan for a teammate, orange for an enemy).</summary>
+        void DrawPush(RagdollPawn pawn)
+        {
+            if (pawn.PlanPhaseNow != PlanPhase.Windup) return;
+            var t = pawn.PlanTarget;
+            if (t == null) return;
+            var s = pawn.PawnRushSkills;
+            bool ally = t.Team == pawn.Team && pawn.Team != Teams.None;
+            Color c = ally ? SkillMarks.Cyan : SkillMarks.Orange;
+            SkillMarks.Segment(Next(), Chest(pawn), Chest(t), Fade(c, 0.9f), 0.07f, false);
+            SkillMarks.Segment(Next(), t.FeetPoint + Vector3.up * 0.05f, pawn.PlanPoint + Vector3.up * 0.05f, Fade(c, 0.7f), 0.06f);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.5f, Fade(c, 0.9f), 0.07f, 24);
+            float left = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.pushWindup));
+            SkillMarks.Circle(Next(), t.FeetPoint, 0.45f + 0.8f * left, Fade(c, 0.9f), 0.05f, 28);
+        }
+
+        /// <summary>The queen's two hares: a line from her hands to each of the two she reaches for (the second's waist is
+        /// the plan's point), brighter as the elastic is about to go on.</summary>
+        void DrawHares(RagdollPawn pawn)
+        {
+            if (pawn.PlanPhaseNow != PlanPhase.Windup) return;
+            var s = pawn.PawnRushSkills;
+            float a = 0.5f + 0.5f * Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.hareWindup));
+            Vector3 hands = pawn.LassoHands;
+            var first = pawn.PlanTarget;
+            if (first != null)
+            {
+                SkillMarks.Segment(Next(), hands, first.LassoBelly, Fade(Gold, a), 0.05f, false);
+                SkillMarks.Circle(Next(), first.FeetPoint, 0.45f, Fade(Gold, a), 0.06f, 24);
+            }
+            SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(Gold, a), 0.05f, false);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.3f, Fade(Gold, a), 0.06f, 16);
+        }
+
         // ---------------------------------------------------------------- what is being done to the piece played here
 
         void OnGUI()
@@ -275,12 +378,20 @@ namespace ChessFight.RagdollLab
             float share = 0f;
             var rook = me.CastleOfferingMe();
             var queen = me.CheckedBy();
+            var pusher = me.PushedBy();
             if (rook != null && rook.PawnRushSkills != null)
             {
                 float window = Mathf.Max(0.1f, rook.CastleWindow);
                 line = "캐슬링!  스킬 키로 받기";
                 sub = $"{rook.DisplayName}와 자리 바꾸기 · {rook.CastleOfferLeft:0.0}초";
                 share = Mathf.Clamp01(rook.CastleOfferLeft / window);
+            }
+            else if (pusher != null && pusher.PawnRushSkills != null)
+            {
+                bool mine = pusher.Team == me.Team && me.Team != Teams.None;
+                line = mine ? "뒤에서 밀기!  받기 싫으면 점프" : "룩이 민다!  점프로 빠져요";
+                sub = $"{pusher.DisplayName} · {pusher.PushLeft:0.0}초";
+                share = Mathf.Clamp01(pusher.PushLeft / Mathf.Max(0.1f, pusher.PawnRushSkills.pushWindup));
             }
             else if (queen != null && queen.PawnRushSkills != null)
             {
@@ -289,12 +400,37 @@ namespace ChessFight.RagdollLab
                 sub = $"{queen.DisplayName} · {queen.CheckLeft:0.0}초";
                 share = Mathf.Clamp01(queen.CheckLeft / window);
             }
+            else if (me.Touched && me.PawnRushSkills != null)
+            {
+                line = "터치 무브!  멈출 수 없어요";
+                sub = $"방향은 틀 수 있어요 · {me.TouchLeft:0.0}초";
+                share = Mathf.Clamp01(me.TouchLeft / Mathf.Max(0.1f, me.PawnRushSkills.touchSeconds));
+            }
+            else if (me.Tied && me.PawnRushSkills != null)
+            {
+                var mate = me.PinMate;
+                line = "두 마리 토끼!  묶였어요";
+                sub = (mate != null ? $"{mate.DisplayName}와 " : "") + $"고무줄 {me.PawnRushSkills.hareRest:0.#} m · {me.PinLeft:0.0}초";
+                share = Mathf.Clamp01(me.PinLeft / Mathf.Max(0.1f, me.PawnRushSkills.hareSeconds));
+            }
             else if (me.Pinned && me.PawnRushSkills != null)
             {
                 var mate = me.PinMate;
                 line = "핀!  묶였어요";
                 sub = (mate != null ? $"{mate.DisplayName}와 한 줄 · " : "벽에 묶임 · ") + $"{me.PinLeft:0.0}초";
                 share = Mathf.Clamp01(me.PinLeft / Mathf.Max(0.1f, me.PawnRushSkills.pinSeconds));
+            }
+            else if (me.Numb && me.PawnRushSkills != null)
+            {
+                line = "손 저림!  아무것도 못 잡아요";
+                sub = $"{me.NumbLeft:0.0}초";
+                share = Mathf.Clamp01(me.NumbLeft / Mathf.Max(0.1f, me.PawnRushSkills.kickNumb));
+            }
+            else if (me.Ghosted && me.PawnRushSkills != null)
+            {
+                line = "반대색!  적이 통과해요";
+                sub = $"발판 인원에는 안 들어가요 · {me.GhostLeft:0.0}초";
+                share = Mathf.Clamp01(me.GhostLeft / Mathf.Max(0.1f, me.PawnRushSkills.ghostSeconds));
             }
             else if (me.Warded && me.PawnRushSkills != null)
             {

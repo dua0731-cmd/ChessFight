@@ -10,6 +10,10 @@ namespace ChessFight.Gameplay
     {
         public static bool PawnRush;
 
+        // JY-skill-lab: a piece that stands on a platform without counting there. The ragdoll side sets it once (the
+        // opposite-coloured bishop while enemy bodies pass through it) and CrownFinish asks; null: everyone counts.
+        public static System.Func<ICharacterDriver, bool> OffTheCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => PawnRush = false;
     }

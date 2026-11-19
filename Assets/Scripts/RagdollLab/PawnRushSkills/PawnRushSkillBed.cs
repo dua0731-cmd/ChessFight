@@ -761,7 +761,11 @@ namespace ChessFight.RagdollLab
                     // JY-skill-lab: the new skills' holds on it.
                     if (pawn.Squashed) line = "납작" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.Warded) line = $"호위 {pawn.WardLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
-                    if (pawn.Pinned) line = $"핀 {pawn.PinLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
+                    if (pawn.Pinned) line = $"{(pawn.Tied ? "토끼" : "핀")} {pawn.PinLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
+                    // The idea book's bundle A (RagdollPawn.BookSkills.cs).
+                    if (pawn.Touched) line = $"터치 {pawn.TouchLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
+                    if (pawn.Numb) line = $"손 저림 {pawn.NumbLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
+                    if (pawn.Ghosted) line = $"유령 {pawn.GhostLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.CheckedBy() != null) line = "체크!" + (line.Length > 0 ? " · " + line : "");
                     // R146: a king's call to it, and its trip in.
                     if (pawn.KingCarried) line = "오는 중 · 무적";

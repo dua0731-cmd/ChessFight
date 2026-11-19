@@ -6,7 +6,8 @@ namespace ChessFight.Network
     // 거야. 막 바꿔보면서 테스트할 수 있게", a developers' test tool): which skill sits in which slot of which piece.
     //
     // A skill is a number. 1..5 are the skills as they are, each made for one piece; 11..15 are skill plan 1-나's
-    // (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md). Any skill may sit in any piece's slot.
+    // (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md); 61..65 are bundle A of the skill idea book
+    // (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md). Any skill may sit in any piece's slot.
     public static class PawnRushSkillIds
     {
         public const int None = 0;
@@ -15,6 +16,10 @@ namespace ChessFight.Network
         // Queen of the Hill's six (승규 님, R89), brought over to the slots: the king's close guard, the queen's long slash,
         // the rook's castling swap, the bishop's crossed air barrage, the knight's press leap, the pawn's squeeze through.
         public const int Ward = 44, Slash = 45, CastleSwap = 46, AirVolley = 47, PressLeap = 48, Squeeze = 49;
+        // The skill idea book's bundle A (the user 2026-11-20: "A 묶음부터"), none of which knocks anyone down: the pawn's
+        // touch-move, the knight's back kick, the opposite-coloured bishop, the rook's push from behind, the queen's two
+        // hares (RagdollPawn.BookSkills.cs).
+        public const int TouchMove = 61, BackKick = 62, Ghost = 63, BackPush = 64, TwoHares = 65;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -176,7 +181,7 @@ namespace ChessFight.Network
                 case OpPreset:
                 {
                     // The slots only: the system, the stages and the lock stay as they are.
-                    if (value < 0 || value > 2) return false;
+                    if (value < 0 || value >= Presets) return false;
                     var preset = Preset(value);
                     bool changed = false;
                     for (int i = 0; i < slots.Length; i++)
@@ -230,14 +235,19 @@ namespace ChessFight.Network
             return read;
         }
 
+        /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
+        public const int Presets = 4;
+
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
-        /// in any slot.</summary>
+        /// in any slot, 3 the skill idea book's bundle A.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
             int[] first = which == 1
                 ? new[] { PawnRushSkillIds.EnPassant, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.Castling, PawnRushSkillIds.Check }
+                : which == 3
+                ? new[] { PawnRushSkillIds.TouchMove, PawnRushSkillIds.BackKick, PawnRushSkillIds.Ghost, PawnRushSkillIds.BackPush, PawnRushSkillIds.TwoHares }
                 : new[] { PawnRushSkillIds.TwoSteps, PawnRushSkillIds.TurnLeap, PawnRushSkillIds.CrossRope, PawnRushSkillIds.ChainPull, PawnRushSkillIds.RingShove };
             for (int row = 0; row < Rows; row++) p.slots[row * Slots] = first[row];
             return p;

@@ -10,8 +10,9 @@ namespace ChessFight.RagdollLab
     public enum SkillTag { None = 0, Move = 1, Block = 2, Ally = 4, Counter = 8, Place = 16, Buff = 32 }
 
     /// <summary>Where a skill comes from: Pawn Rush as it is or was, the two other modes 승규 님 made skills for (their code
-    /// is theirs: a sword in the hand, a tower to climb), or the 2.0 plans (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md).</summary>
-    public enum SkillOrigin { PawnRush, QueenHill, SwordFight, Plan2 }
+    /// is theirs: a sword in the hand, a tower to climb), the 2.0 plans (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md), or the
+    /// skill idea book (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md).</summary>
+    public enum SkillOrigin { PawnRush, QueenHill, SwordFight, Plan2, IdeaBook }
 
     /// <summary>One line of the skill book: a skill's number (PawnRushSkillIds), name, the piece it was thought up for, where
     /// it comes from, its tags, whether it can be put in a slot yet, and how to use it.</summary>
@@ -66,13 +67,15 @@ namespace ChessFight.RagdollLab
             _ => new Color(0.53f, 0.53f, 0.50f),
         };
 
-        public static readonly SkillOrigin[] Origins = { SkillOrigin.PawnRush, SkillOrigin.QueenHill, SkillOrigin.SwordFight, SkillOrigin.Plan2 };
+        // (In the order the skill tree lists them.)
+        public static readonly SkillOrigin[] Origins = { SkillOrigin.PawnRush, SkillOrigin.IdeaBook, SkillOrigin.QueenHill, SkillOrigin.SwordFight, SkillOrigin.Plan2 };
 
         public static string OriginName(SkillOrigin origin) => origin switch
         {
             SkillOrigin.PawnRush => "폰 러쉬",
             SkillOrigin.QueenHill => "퀸 오브 더 힐",
             SkillOrigin.SwordFight => "소드 파이트",
+            SkillOrigin.IdeaBook => "스킬 기획서",
             _ => "2.0 기획안",
         };
 
@@ -112,6 +115,18 @@ namespace ChessFight.RagdollLab
                 "키 = 조준 (팀원을 보면 청록 선, 12 m) · 좌클릭 = 제안 · 우클릭/키 = 취소\n팀원이 2초 안에 자기 스킬 키(F)로 받으면 둘이 날아 자리를 바꿈 (더미 팀원은 0.6초 뒤 스스로 받음)"),
             Made(PawnRushSkillIds.Check, "체크!", PieceKind.Queen, SkillOrigin.Plan2, SkillTag.Block,
                 "키 = 조준 (적을 보면 빨간 고리, 9 m) · 좌클릭 = 체크! · 우클릭/키 = 취소\n그 적이 서 있던 자리가 빨간 칸 → 1.5초 안에 못 나가면 넘어지며 날아감\n막기: 사이에 선 적 팀 기물이 대신 맞음 · 잡기: 그 전에 내가 맞으면 취소"),
+
+            // The skill idea book's bundle A (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md 13장; RagdollPawn.BookSkills.cs).
+            Made(PawnRushSkillIds.TouchMove, "터치 무브 · 자두브", PieceKind.Pawn, SkillOrigin.IdeaBook, SkillTag.Buff | SkillTag.Ally,
+                "키 = 0.25초 뒤 손바닥을 내밂 (1.5 m) · 맞은 적은 2초 동안 멈출 수 없음 (방향은 틀 수 있고, 벽을 잡으면 멈춤)\n넘어졌거나 휘청이거나 묶인 팀원을 건드리면 바로 서고 기상 보호 1초 · 쿨 6초 (헛치면 2.5초)"),
+            Made(PawnRushSkillIds.BackKick, "뒷발차기", PieceKind.Knight, SkillOrigin.IdeaBook, SkillTag.Block | SkillTag.Buff,
+                "키 = 보는 쪽으로 등을 돌리고 0.35초 뒤 뒷발 (2 m) · 맞은 적은 잡고 있던 것을 놓치고 한 걸음 밀림 (넘어지지 않음)\n3초 동안 손이 저려 아무것도 못 잡음 (매달리기 · 등반 · 밧줄) · 쿨 6초"),
+            Made(PawnRushSkillIds.Ghost, "반대색 비숍", PieceKind.Bishop, SkillOrigin.IdeaBook, SkillTag.Counter,
+                "키 = 3초 동안 적의 몸과 스킬이 나를 통과함 (공중에서도 됨) · 나도 그동안 적을 밀거나 잡지 못하고 스킬도 못 씀\n왕관 발판에 서 있어도 사람 수에 안 들어감 · 적과 겹친 채 풀리면 서로 튕김 · 팀의 스킬도 안 닿음 · 쿨 12초"),
+            Made(PawnRushSkillIds.BackPush, "뒤에서 밀기", PieceKind.Rook, SkillOrigin.IdeaBook, SkillTag.Ally | SkillTag.Block,
+                "바로 앞 1.8 m 안의 기물을 보고 키 = 0.5초 받친 뒤 곧게 6 m 쏨 (낮게 날아 서서 착지, 길에 있던 적은 옆으로 튕김)\n사이에 끼어든 적이 있으면 그 적이 대신 날아감 · 받기 싫으면 점프 · 틈과 벽 앞에서 멈춤 · 쿨 9초 (헛치면 3초)"),
+            Made(PawnRushSkillIds.TwoHares, "두 마리 토끼", PieceKind.Queen, SkillOrigin.IdeaBook, SkillTag.Block | SkillTag.Buff,
+                "앞쪽 8 m 안의 적 둘을 보고 키 = 두 선이 0.45초 보인 뒤 둘의 허리를 3 m 고무줄로 4초 묶음\n줄이 1 m 넘게 늘어나면 튕겨서 서로에게 날아가 휘청 · 적이 둘이 아니면 무시 · 쿨 9초 (놓치면 3초)"),
 
             // 승규 님's Pawn Rush skills that are not the five above: the king's, and the earlier forms of three pieces'.
             Idea(41, "왕의 부름", PieceKind.King, SkillOrigin.PawnRush, SkillTag.Ally | SkillTag.Move,
@@ -215,6 +230,11 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.AirVolley, "떠올라 견제탄을 두 발 쏜다. X자 파동에 맞으면 넘어진다" },
             { PawnRushSkillIds.PressLeap, "조준한 곳으로 뛰어내려 둘레의 적을 납작하게 만든다" },
             { PawnRushSkillIds.Squeeze, "몸을 낮추고 짧게 비집고 나간다. 부딪힌 기물은 옆으로 비킨다" },
+            { PawnRushSkillIds.TouchMove, "건드린 적은 잠깐 멈추지 못한다. 넘어진 팀원은 바로 세운다" },
+            { PawnRushSkillIds.BackKick, "뒷발로 차서 잡고 있던 것을 놓치게 한다. 한동안 아무것도 못 잡는다" },
+            { PawnRushSkillIds.Ghost, "잠깐 적의 몸과 스킬이 나를 그냥 통과한다" },
+            { PawnRushSkillIds.BackPush, "바로 앞의 팀원을 받쳐 곧게 쏘아 보낸다" },
+            { PawnRushSkillIds.TwoHares, "적 둘을 고무줄로 묶는다. 멀어지면 튕겨 서로 부딪힌다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>
