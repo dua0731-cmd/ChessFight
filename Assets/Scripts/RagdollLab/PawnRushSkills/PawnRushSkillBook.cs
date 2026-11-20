@@ -104,6 +104,13 @@ namespace ChessFight.RagdollLab
                 "키 = 무릎 꿇고 겨눔 (못 걸음) · 좌클릭 누르고 있기 = 모으기 (1초 동안 10 m → 30 m) · 떼기 = 쏘기 · 우클릭/키 = 일어남\n처음 닿은 적이 맞음: 12 m 안 휘청, 22 m까지 넘어짐, 그 너머는 넘어지며 날아감 · 쏘면 2 m 뒤로 미끄러져 엉덩방아\n모은 지 0.6초부터 표적 발밑에 빛점 · 팀원과 벽에서 막힘 · 쿨 18초 (후보 문서 B-중7)"),
             Made(PawnRushSkillIds.ChainBehind, "뒤에서 잡기", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
                 "키 = 조준 · 좌클릭 = 사슬 던지기 (10.5 m, 처음 닿은 것에 걸림)\n나보다 가벼운 적(폰 · 나이트 · 비숍)은 내 앞 0.9 m로 끌려와 휘청 (우클릭으로 바로 붙잡기) · 무거운 적(퀸 · 킹)과 벽 · 기둥 · 턱에는 내가 날아감\n걸린 뒤 좌클릭 누르고 있기 = 빨리 감기 (기획은 휠) · 끌려가는 적은 좌클릭 3번이면 절반에서 털어냄 · 팀원에게는 손잡이 · 쿨 16초 (후보 문서 R-중2)"),
+            // The pool's plan 3, its basic row's new ones (RagdollPawn.PoolBasics.cs).
+            Made(PawnRushSkillIds.FlankShot, "옆구리 사격", PieceKind.Bishop, SkillOrigin.Pool, SkillTag.Block,
+                "키 = 달리면서 0.15초 뒤 카메라 쪽으로 12 m 빛줄기 (멈추지 않음)\n처음 닿은 적은 줄 방향으로 2 m 밀림, 비숍은 1 m 뒤로 밀림 · 등 뒤에서 쏘면 앞으로 밀어 줌 (블런더) · 돌진 중인 적은 돌진이 끊김\n팀원 · 기둥에서 막힘 · 쿨 7초 (후보 문서 B-기6)"),
+            Made(PawnRushSkillIds.CastleOver, "넘어오는 캐슬링", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Ally | SkillTag.Block,
+                "키 = 앞쪽 6 m 안의 가장 가까운 팀원을 0.15초 웅크렸다 낮게 넘어 1.5 m 앞에 쿵\n내려선 둘레 2 m의 적이 밀림 (내려서는 순간 키 = 3 m까지) · 넘어간 팀원은 1.5초 동안 넘어지지 않음\n사이에 적이 있으면 그 등에 박고 멈춤 · 체크 중에는 못 씀 · 쿨 10초 (후보 문서 R-기2)"),
+            Made(PawnRushSkillIds.ScholarThrust, "스콜라 찌르기", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
+                "옆 이동 키 + 키 = 비스듬히 옆으로 2.5 m 미끄러짐 · 0.6초 안에 키(또는 좌클릭) 한 번 더 = 카메라 쪽으로 5 m 찌르기\n등 · 옆을 찔린 적은 3 m 밀리고 휘청 0.5초 (서 있었고 4 m 안에 그 팀원이 없으면 넘어짐)\n마주 보던 적은 밀리기만 하고 퀸이 튕겨 휘청 0.6초 · 쿨 9초 (옆걸음만 4초, 후보 문서 Q-기2)"),
             Made(PawnRushSkillIds.KingSummon, "왕의 부름 (앞으로)", PieceKind.King, SkillOrigin.Pool, SkillTag.Ally | SkillTag.Move | SkillTag.Block,
                 "키 = 같은 구간 팀원 목록 · 2명까지 골라 키로 부름 (나팔 반동으로 킹이 반 걸음 물러남) · 팀원은 3초 안에 자기 키로 받음\n불린 팀원은 킹 앞 좌우(부를 때 보던 쪽)에 내려서고, 내려서는 순간 둘레 2 m의 적이 밀려남\n그때 0.6초 안에 키 한 번 더 = 킹과 팀원이 함께 3 m 밀고 나감 · 킹만 씀 · 쿨 20초 (후보 문서 K-중1)"),
 
@@ -150,7 +157,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.Fianchetto, "피앙케토", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block | SkillTag.Buff,
                 "키 = 자리를 잡고 겨눔 (못 걸음 · 줄이 1초 동안 8 m에서 25 m로 자람) · 좌클릭 = 쏘기 · 우클릭/키 = 일어남\n줄에 처음 닿은 적은 2초 동안 발이 무거움 (0.6배, 전력질주 안 됨) · 팀원이나 벽에 먼저 닿으면 거기서 막힘 · 쿨 6초"),
             Made(PawnRushSkillIds.KingStep, "왕의 한 걸음", PieceKind.King, SkillOrigin.Kits, SkillTag.Move | SkillTag.Counter,
-                "키 = 이동 키 쪽으로 한 칸 (1.5 m) 비킴 · 공중에서도 됨 (쿨 +1초)\n잡혀 있으면 손을 뿌리치고 비킴 · 넘어져 있으면 걸음 대신 바로 일어남 (둘 다 쿨 +1.5초) · 쿨 4초"),
+                "키 = 이동 키 쪽으로 한 칸 (1.5 m) 비킴, 디딜 때 쿵 · 공중에서도 됨 (쿨 +1초) · 걸음에 닿은 적은 3 m 밀림, 킹은 그 자리에 섬\n잡혀 있으면 손을 뿌리치고 비킴 · 넘어져 있으면 이동 키 쪽으로 굴러 바로 일어남 (둘 다 쿨 +1.5초)\n걸음 끝 0.3초 안의 점프 · 다이빙은 더 멀리 · 쿨 4초 (후보 문서 K-기1의 고침)"),
 
             // 승규 님's Pawn Rush skills that are not the five above: the king's, and the earlier forms of three pieces'.
             Idea(41, "왕의 부름", PieceKind.King, SkillOrigin.PawnRush, SkillTag.Ally | SkillTag.Move,
@@ -265,6 +272,9 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.LongSnipe, "멀리서 길게 모아 쏜다. 멀수록 세게 맞는다" },
             { PawnRushSkillIds.ChainBehind, "가벼운 적은 끌어오고, 무거운 적과 벽에는 내가 날아간다" },
             { PawnRushSkillIds.KingSummon, "팀원을 내 앞 좌우로 불러 세우고 함께 밀고 나간다" },
+            { PawnRushSkillIds.FlankShot, "달리면서 빛줄기를 쏴 옆에서 밀어낸다" },
+            { PawnRushSkillIds.CastleOver, "앞의 팀원을 넘어 내려서며 둘레를 밀어낸다" },
+            { PawnRushSkillIds.ScholarThrust, "옆으로 비켜 나왔다가 등을 찔러 넘어뜨린다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

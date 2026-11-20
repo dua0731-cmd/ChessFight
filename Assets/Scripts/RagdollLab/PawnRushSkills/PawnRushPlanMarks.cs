@@ -77,6 +77,10 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.KingStep: DrawKingStep(pawn); break;
                     // The skill pool's plan 1 (RagdollPawn.PoolSkills.cs).
                     case PawnRushSkillIds.LongSnipe: DrawLongSnipe(pawn); break;
+                    // The pool's plan 3, the basic row (RagdollPawn.PoolBasics.cs).
+                    case PawnRushSkillIds.FlankShot: DrawFlankShot(pawn); break;
+                    case PawnRushSkillIds.CastleOver: DrawCastleOver(pawn); break;
+                    case PawnRushSkillIds.ScholarThrust: DrawScholar(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -466,6 +470,49 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>The pool's flank shot (B-기6): the thin line for its 0.15 s, then the beam it took for a moment.</summary>
+        void DrawFlankShot(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            Vector3 hands = pawn.LassoHands;
+            if (phase == PlanPhase.Windup)
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(Violet, 0.5f), 0.03f, false);
+            else if (phase == PlanPhase.Recovery)
+            {
+                float a = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, pawn.PawnRushSkills.flankShow));
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(pawn.FlankBlunder ? Red : Gold, 0.3f + 0.7f * a), 0.1f, false);
+            }
+        }
+
+        /// <summary>The pool's castling over (R-기2): the ring where the rook comes down and the line to the teammate it leaps.</summary>
+        void DrawCastleOver(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            var s = pawn.PawnRushSkills;
+            if (phase == PlanPhase.Windup || phase == PlanPhase.Active)
+            {
+                SkillMarks.Circle(Next(), pawn.PlanPoint, s.overRadius, Fade(SkillMarks.Target, phase == PlanPhase.Active ? 0.9f : 0.6f), 0.07f, 36);
+                SkillMarks.Circle(Next(), pawn.PlanPoint, 0.35f, Fade(White, 0.8f), 0.05f, 16);
+                var mate = pawn.PlanTarget;
+                if (mate != null && phase == PlanPhase.Windup) SkillMarks.Segment(Next(), Chest(pawn), Chest(mate), Fade(SkillMarks.Target, 0.5f), 0.03f, false);
+            }
+            else if (phase == PlanPhase.Recovery)
+            {
+                float a = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.overRecovery));
+                SkillMarks.Circle(Next(), pawn.FeetPoint, s.overRadius, Fade(White, 0.6f * a), 0.06f, 36);
+            }
+        }
+
+        /// <summary>The pool's scholar's thrust (Q-기2): from the slide out, the line it will thrust along (the warning).</summary>
+        void DrawScholar(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Aim && phase != PlanPhase.Active) return;
+            Vector3 from = Chest(pawn);
+            Vector3 to = new Vector3(pawn.PlanPoint.x, from.y, pawn.PlanPoint.z);
+            SkillMarks.Segment(Next(), from, to, Fade(Red, phase == PlanPhase.Active ? 0.9f : 0.55f), phase == PlanPhase.Active ? 0.07f : 0.04f, false);
+        }
+
         /// <summary>The king's step: the square he steps to, for the moment it takes.</summary>
         void DrawKingStep(RagdollPawn pawn)
         {
@@ -571,6 +618,18 @@ namespace ChessFight.RagdollLab
             {
                 line = "블런더?!";
                 sub = "내려설 곳이 없어요";
+                share = 1f;
+            }
+            else if (me.FlankBlunder)
+            {
+                line = "블런더 ??";
+                sub = "등 뒤에서 쏴서 앞으로 밀어 줬어요";
+                share = 1f;
+            }
+            else if (me.ScholarBlocked)
+            {
+                line = "막혔다 ??";
+                sub = "마주 보던 적은 넘어지지 않아요";
                 share = 1f;
             }
             else if (me.SnipeBest)

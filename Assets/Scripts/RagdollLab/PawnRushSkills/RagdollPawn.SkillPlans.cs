@@ -226,6 +226,10 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.KingStep: UpdateKingStep(s, press, dt); break;
                 // The skill pool's plan 1 (RagdollPawn.PoolSkills.cs).
                 case PawnRushSkillIds.LongSnipe: UpdateLongSnipe(s, press, confirm, cancel, dt); break;
+                // The pool's plan 3, its basic row (RagdollPawn.PoolBasics.cs).
+                case PawnRushSkillIds.FlankShot: UpdateFlankShot(s, press, dt); break;
+                case PawnRushSkillIds.CastleOver: UpdateCastleOver(s, press, dt); break;
+                case PawnRushSkillIds.ScholarThrust: UpdateScholarThrust(s, press, confirm, cancel, dt); break;
             }
         }
 
@@ -253,6 +257,9 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Fianchetto: return s.fianCooldown;
                 case PawnRushSkillIds.KingStep: return s.stepCooldown;
                 case PawnRushSkillIds.LongSnipe: return s.snipeCooldown;
+                case PawnRushSkillIds.FlankShot: return s.flankCooldown;
+                case PawnRushSkillIds.CastleOver: return s.overCooldown;
+                case PawnRushSkillIds.ScholarThrust: return s.scholarCooldown;
                 default: return 0f;
             }
         }

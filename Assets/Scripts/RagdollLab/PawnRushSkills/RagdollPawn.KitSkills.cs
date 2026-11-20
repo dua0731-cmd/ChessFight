@@ -73,6 +73,10 @@ namespace ChessFight.RagdollLab
         void KitKeys()
         {
             if (slowLeft > 0f) input.sprint = false;
+            // The pool's K-기1: a jump or a dive just after a king's step goes farther along it (UpdateKitStates).
+            if ((input.jump || input.shove) && PawnRushSkills != null && Time.time - stepEndAt <= PawnRushSkills.stepChainWindow
+                && (planPhase == PlanPhase.None || (activeSkill == PawnRushSkillIds.KingStep && planPhase == PlanPhase.Recovery)))
+                stepBoost = true;
             if (planPhase == PlanPhase.None) return;
             switch (activeSkill)
             {
@@ -87,8 +91,9 @@ namespace ChessFight.RagdollLab
                     break;
                 case PawnRushSkillIds.KingStep:
                     input.move = Vector3.zero;
-                    input.jump = false;
                     input.sprint = false;
+                    if (planPhase == PlanPhase.Recovery) break;   // (a jump or a dive may follow the step: K-기1)
+                    input.jump = false;
                     input.shove = false;
                     input.shoveHeld = false;
                     break;
@@ -113,6 +118,19 @@ namespace ChessFight.RagdollLab
         void UpdateKitStates(PawnRushSkillParams s, float dt)
         {
             UpdatePoolStates(s, dt);   // the skill pool's: the moment to check again (RagdollPawn.PoolSkills.cs)
+            if (stepBoost)
+            {
+                // The pool's K-기1: the jump or dive just taken goes on along the step (and the step's stop is over).
+                stepBoost = false;
+                AddVelocity(FlatDir(stepEndDir) * s.stepChainBoost);
+                if (PlanSkill == PawnRushSkillIds.KingStep && planPhase == PlanPhase.Recovery)
+                {
+                    float cooldown = StepCooldownNow(s);
+                    EndPlanSkill();
+                    StartCooldown(cooldown);
+                }
+                Log($"{DisplayName}: 왕의 한 걸음에 이어 점프 · 다이빙 → 더 멀리");
+            }
             downFor = State == PawnState.Ragdoll && !Diving ? downFor + dt : 0f;
             if (slowLeft <= 0f) return;
             // (In the water, or just back from a respawn: nothing of it is left.)
@@ -476,6 +494,9 @@ namespace ChessFight.RagdollLab
                         if (downFor < s.stepDownAfter) break;
                         SkillUses++;
                         BeginGetUp(P);
+                        // The pool's K-기1: up with a roll toward the move keys.
+                        Vector3 roll = Flat(skillMoveRaw);
+                        if (roll.sqrMagnitude > 0.04f) AddVelocity(roll.normalized * s.stepRollSpeed);
                         pendingGuard = Mathf.Max(pendingGuard, s.stepGuard);
                         StartCooldown(s.stepCooldown + s.stepDownExtra);
                         LastSkillHit = "왕의 한 걸음: 바로 일어남";
@@ -526,21 +547,30 @@ namespace ChessFight.RagdollLab
                     else
                     {
                         DriveDash(dt);
-                        dashLeft -= dt;
+                        // The pool's K-기1: an enemy the step meets is shoved 3 m, and the king stands where he is.
+                        if (KingStepShove(s))
+                        {
+                            dashLeft = 0f;
+                            HaltDash();
+                        }
+                        else dashLeft -= dt;
                     }
                     if (dashLeft <= 0f)
                     {
                         EndDash();
                         planPhase = PlanPhase.Recovery;
                         planTime = 0f;
+                        // The pool's K-기1: the foot comes down with a thud (a short hit stop), and a jump or dive may follow.
+                        stepEndAt = Time.time;
+                        stepEndDir = skillDir;
+                        FeelHit(null, FeetPoint, skillDir, FeelWeak, 1, false, s.stepStompStop);
                     }
                     break;
                 case PlanPhase.Recovery:
                     planTime += dt;
                     if (planTime >= s.stepRecovery)
                     {
-                        float cooldown = s.stepCooldown + ((planNote & StepShookOff) != 0 ? s.stepDownExtra : 0f)
-                                         + ((planNote & StepInAir) != 0 ? s.stepAirExtra : 0f);
+                        float cooldown = StepCooldownNow(s);
                         EndPlanSkill();
                         StartCooldown(cooldown);
                     }
@@ -549,6 +579,37 @@ namespace ChessFight.RagdollLab
                     EndPlanSkill();
                     break;
             }
+        }
+
+        // The pool's K-기1: when and which way the last step ended; a jump or dive taken in the moment after it.
+        float stepEndAt = -10f;
+        Vector3 stepEndDir = Vector3.forward;
+        bool stepBoost;
+
+        /// <summary>The step's cooldown: more if it shook a hand off or was taken in the air.</summary>
+        float StepCooldownNow(PawnRushSkillParams s) =>
+            s.stepCooldown + ((planNote & StepShookOff) != 0 ? s.stepDownExtra : 0f) + ((planNote & StepInAir) != 0 ? s.stepAirExtra : 0f);
+
+        /// <summary>The step this physics step meets an enemy (the first one): shoved stepShove along the step. True if so.</summary>
+        bool KingStepShove(PawnRushSkillParams s)
+        {
+            Vector3 dir = FlatDir(skillDir);
+            Vector3 at = bodies[(int)BodyId.Chest].position + dir * 0.3f;
+            int n = Physics.OverlapSphereNonAlloc(at, 0.45f, skillOverlap, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                if (!ColliderOwner.TryGetValue(skillOverlap[i], out var other) || other == null || other == this || skillHitSet.Contains(other)) continue;
+                if (!IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
+                skillHitSet.Add(other);
+                other.Kick(dir, s.stepShove, 0.3f, false);
+                other.LastSkillHit = $"왕의 한 걸음: {s.stepShove:0.#} m 밀림";
+                Vector3 contact = SkillContact(other);
+                Fx(SkillFxKind.PawnHit, other, contact, dir, 0);
+                FeelHit(other, contact, dir, FeelWeak);
+                Log($"왕의 한 걸음 → {other.DisplayName}: 닿아서 {s.stepShove:0.#} m 밀어냄, 킹은 그 자리에 섬");
+                return true;
+            }
+            return false;
         }
 
         // ---------------------------------------------------------------- castling: the king and the rook

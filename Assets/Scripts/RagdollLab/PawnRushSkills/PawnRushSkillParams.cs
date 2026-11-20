@@ -546,6 +546,12 @@ namespace ChessFight.RagdollLab
         public float stepGuard = 1.1f;
         [Tooltip("뿌리친 손이 다시 잡기까지 (초)")]
         public float stepShakeOff = 0.8f;
+        [Tooltip("후보 문서 K-기1: 디딜 때 '쿵' 멈칫 (초); 걸음이 적에 닿으면 그 적을 미는 거리 (m, 킹은 그 자리에 섬)")]
+        public float stepStompStop = 0.05f, stepShove = 3f;
+        [Tooltip("후보 문서 K-기1: 걸음이 끝나고 이 시간 (초) 안의 점프 · 다이빙은 걸음 쪽으로 이만큼 (m/s) 더 나감")]
+        public float stepChainWindow = 0.3f, stepChainBoost = 3f;
+        [Tooltip("후보 문서 K-기1: 넘어진 채 쓰면 이동 키 쪽으로 굴러 일어나는 빠르기 (m/s)")]
+        public float stepRollSpeed = 3.5f;
 
         [Header("기물별 한 벌 · 기본기 — 룩 캐슬링의 덤 (킹과 룩이 바꿀 때)")]
         [Tooltip("킹과 룩이 자리를 바꾸면 내려앉은 뒤 둘 다 이만큼 (초) 넘어지지 않는다 (기상 보호와 같은 효과)")]
@@ -619,5 +625,39 @@ namespace ChessFight.RagdollLab
         [Tooltip("내려선 뒤 이 시간 (초) 안에 키를 한 번 더 누르면 킹과 내려선 팀원이 함께 이만큼 (m) 밀고 나감, 걸리는 시간 (초)")]
         public float summonPushWindow = 0.6f, summonPushDistance = 3f, summonPushTime = 0.45f;
         public float summonCooldown = 20f;
+
+        [Header("후보 문서 3안 기본기 · 비숍 옆구리 사격 (B-기6)")]
+        [Tooltip("빛줄기 길이 (m), 조준 도움 (도), 위아래 (m), 반지름 (m); 키를 누르고 나가기까지 (초)")]
+        public float flankRange = 12f, flankAssist = 5f, flankTall = 3f, flankRadius = 0.4f, flankWindup = 0.15f;
+        [Tooltip("맞은 적이 줄 방향으로 밀리는 거리 (m), 시간 (초); 비숍이 뒤로 밀리는 거리 (m, 가장자리에서 안 멈춤)")]
+        public float flankPush = 2f, flankPushTime = 0.25f, flankRecoil = 1f;
+        [Tooltip("블런더: 이 빠르기 (m/s) 넘게 달리던 적을 그 달리는 쪽 이 각도 (도) 안으로 밀면 앞으로 밀어 준 것")]
+        public float flankBlunderSpeed = 2f, flankBlunderAngle = 35f;
+        [Tooltip("쏜 줄이 보이는 시간 (초), 쿨 (초)")]
+        public float flankShow = 0.25f, flankCooldown = 7f;
+
+        [Header("후보 문서 3안 기본기 · 룩 넘어오는 캐슬링 (R-기2)")]
+        [Tooltip("팀원을 찾는 거리 (m), 앞쪽 각도 (도), 팀원 너머 내려서는 거리 (m)")]
+        public float overRange = 6f, overAngle = 75f, overBeyond = 1.5f;
+        [Tooltip("웅크림 (초), 나는 빠르기 (m/s), 포물선 높이 (m)")]
+        public float overCrouch = 0.15f, overSpeed = 9f, overArc = 1.3f;
+        [Tooltip("내려선 둘레 이 반경 (m)의 적이 밀리는 빠르기 (m/s); 내려서는 순간 키를 누르면 이 반경 (m)까지 1.5배로")]
+        public float overRadius = 2f, overShove = 4f, overBigRadius = 3f;
+        [Tooltip("내려서는 순간의 창: 땅에 닿기 이만큼 (초) 전부터, 닿은 뒤 이만큼 (초)까지")]
+        public float overPressEarly = 0.15f, overPressLate = 0.15f;
+        [Tooltip("넘어간 팀원이 넘어질 일이 휘청이 되는 시간 (초), 후딜 (초), 쿨 (초)")]
+        public float overGuard = 1.5f, overRecovery = 0.2f, overCooldown = 10f;
+
+        [Header("후보 문서 3안 기본기 · 퀸 스콜라 찌르기 (Q-기2)")]
+        [Tooltip("옆걸음: 거리 (m), 시간 (초), 조준에서 벌어지는 각도 (도, 비스듬히 앞옆); 첫 키부터 찌르기 키를 받는 시간 (초)")]
+        public float scholarSide = 2.5f, scholarSideTime = 0.25f, scholarSideAngle = 60f, scholarWindow = 0.6f;
+        [Tooltip("찌르기: 거리 (m), 빠르기 (m/s), 닿는 반지름 (m)")]
+        public float scholarReach = 5f, scholarSpeed = 14f, scholarRadius = 0.5f;
+        [Tooltip("적이 퀸을 마주 본다고 치는 각도 (도): 그러면 밀리기만 하고 퀸이 튕겨 휘청 (초), 튕기는 거리 (m), 미는 빠르기 (m/s)")]
+        public float scholarFacing = 60f, scholarBlockedStagger = 0.6f, scholarBounce = 0.8f, scholarShove = 3f;
+        [Tooltip("등 · 옆을 찔린 적: 앞으로 밀리는 거리 (m), 휘청 (초). 서 있었고 (이 빠르기 m/s 아래) 이 거리 (m) 안에 그 적의 팀원이 없으면 넘어짐 (미는 빠르기 · 위로 m/s)")]
+        public float scholarPush = 3f, scholarStagger = 0.5f, scholarStillSpeed = 1.5f, scholarMateGap = 4f, scholarKnockPush = 5f, scholarKnockLift = 2f;
+        [Tooltip("후딜 (초), 쿨 (초), 옆걸음만 쓴 쿨 (초)")]
+        public float scholarRecovery = 0.25f, scholarCooldown = 9f, scholarStepCooldown = 4f;
     }
 }

@@ -153,6 +153,7 @@ namespace ChessFight.RagdollLab
         /// nowhere; the left click held is the draw's (not a dive), and while drawing the right click calls it off.</summary>
         void PoolKeys()
         {
+            PoolBasicKeys();   // plan 3's basics (RagdollPawn.PoolBasics.cs)
             if (planPhase == PlanPhase.None || activeSkill != PawnRushSkillIds.LongSnipe) return;
             input.move = Vector3.zero;
             input.jump = false;
