@@ -186,7 +186,10 @@ namespace ChessFight.Network
         //      contest in the course state (seven more part bytes: begun and who holds, the two teams' times and
         //      targets), and the win is the contest's. A v58 PC would count those bytes as another part's and end
         //      the round on the first majority.
-        public const string Protocol = "chessfight.dua0731.network.v59";
+        // v60 (R727): the Royal Observatory (Late_3-2_RoyalObservatory) is a round's late obstacle option beside the war
+        //      room and the Royal Library - it was a draft the rounds never drew. A v59 PC would draw another section from
+        //      the same seed. The observatory sends nothing (its devices run on the shared clock).
+        public const string Protocol = "chessfight.dua0731.network.v60";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

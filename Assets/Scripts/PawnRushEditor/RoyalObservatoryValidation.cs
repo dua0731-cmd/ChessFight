@@ -165,12 +165,12 @@ namespace ChessFight.PawnRush.Editor
                 if (prefab != null && prefab.GetComponent<RoyalObservatorySection>() != null) index = i;
             }
             if (!Check(index >= 0, "the Royal Observatory is listed in the course prefab test: key " + (index + 1) + " of " + count)) return false;
-            // A draft, not a round's section: the set's lists the rounds draw from do not hold it.
+            // R727: a round's section now (the late slot's prefabs, beside the war room and the Royal Library), no longer a draft.
             var set = AssetDatabase.LoadAssetAtPath<PawnRushSectionSet>(SectionPrefabMenu.SectionSet);
             var drawn = new List<GameObject>();
             if (set != null) set.Options(drawn);
-            Check(set != null && !drawn.Exists(p => p != null && p.GetComponent<RoyalObservatorySection>() != null),
-                  "no round draws it (it is in a slot's drafts only); the rounds draw from " + drawn.Count + " prefabs as before");
+            Check(set != null && drawn.Exists(p => p != null && p.GetComponent<RoyalObservatorySection>() != null),
+                  "a round may draw it (the late slot's prefabs); the rounds draw from " + drawn.Count + " prefabs");
             test.Select(index);
             return true;
         }

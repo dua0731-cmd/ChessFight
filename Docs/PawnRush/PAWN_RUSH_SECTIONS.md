@@ -2,6 +2,8 @@
 
 2026-11-02. 기획: [대계단 현관홀 레벨 디자인 v0.3](PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md)(성한 님, 사용자 첨부 원문), 참고: [4분 장애물 코스 컨셉아트 v2](PAWN_RUSH_CONCEPT_ART_v2.md), [장소별 4분 코스 설계](PAWN_RUSH_PLACES_4MIN.md), [미니게임 경계 설계](PAWN_RUSH_MINIGAME_BOUNDARY.svg). 사용자: "폰 러시는 장애물 구간 3개와 미니게임 구간 3개, 마지막 구간 1개 총 7개의 구간이 한 판을 이룰거야. 따라서 각 구간들은 해당 구간에서 나올 수 있는 프리팹 목록 중 랜덤으로 한 가지 프리팹을 뽑아 등장하고 조합되어 한 판을 이룰거야."
 **R300~R303 자동검사 기록은 컴파일·Core 테스트·좌표 점검 기준이다.** 현재 사용자 확인 목록은 [VALIDATION](../Network/VALIDATION.md)에 모은다.
+**R727(11-20) 왕실 천문대가 슬롯 5의 라운드 후보.** 사용자 "실제 라운드 후보로 넣어야지". `Late_3-2_RoyalObservatory`를 슬롯 5의 `drafts`에서 `prefabs`로(작전 회의실 · 왕의 서재 옆). 프로토콜 v60. 왕실 금고실은 여전히 초안.
+
 
 **R725(11-18 ~ 11-20) 왕실 금고실 회색 상자 — 슬롯 5의 둘째 초안.** 사용자 "RoyalVault_Design_v0.1.zip … 'A안' 으로 맵을 구현해봐" · "아무런 색도 입히지 말고 모형들만" · "재미검증도 거쳐가면서" → 사용자 기획서 v0.1의 A안 "두 갈래 고가 회랑"을 6구간 판(R688 · R690)에 맞춰 다시 짠 후반 장애물 `Late_3-3_RoyalVault`(뿌리만 — Awake에서 `RoyalVaultBuilder`가 지음, 박자는 Core `RoyalVaultRules`). 슬롯 5의 `drafts`에 천문대 다음으로 넣어 **코스 프리팹 시험 7번**과 Validate Sections에만 나오고 판에는 안 나온다(프로토콜 v59 그대로). 맵 시험 쌍둥이 `Assets/Prefabs/PawnRushMaps/RoyalVault.prefab`. 회색 재질 하나 + 따로 `Cue …` 신호. 길 200.9 m, 출구 (0, 12, 196), 체크포인트 7개(판에서 400 ~ 406). 봇 12마리 재미 검증과 고친 것은 [금고실 §7](PAWN_RUSH_ROYAL_VAULT.md). 공용 도구에서 바꾼 것: `SectionValidator`(`RV ` 이름은 오를 수 없어야 함), `SectionPrefabMenu`(Validate Sections가 금고실을 지어 검사), `SectionCorridorValidation`(작전실 컨베이어 검사는 슬롯 5가 작전실일 때만 — 서재가 뽑힌 판도 이제 실패하지 않음). **사용자 확인 전.**
 
