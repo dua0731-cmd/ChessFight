@@ -18,12 +18,16 @@ namespace ChessFight.PawnRush
         public static Color TailColour = new Color(1f, .82f, .55f, 1f);
         public static Color RingGlow = new Color(1f, .72f, .28f) * 1.4f;
         public static float Spin = 240f;   // degrees a second the stone turns as it falls
+        // R725 ro-vfx: the ring's glow over the warning, times RingGlow - as it appears, and as the meteor lands.
+        public static float RingGlowStart = 1f, RingGlowEnd = 2.6f;
 
         sealed class Parts
         {
-            public Transform streak, rim, stone, ring, rock;
+            public Transform streak, rim, fill, stone, ring, rock;
+            public readonly List<Material> ringGlow = new List<Material>();
         }
 
+        MeteorShower shower;
         GameObject stoneModel, ringModel;
         Action<GameObject> paint;
         Material tail;
@@ -55,6 +59,14 @@ namespace ChessFight.PawnRush
                 }
                 bool warned = p.rim.gameObject.activeSelf;
                 if (p.ring.gameObject.activeSelf != warned) p.ring.gameObject.SetActive(warned);
+                // R725 ro-vfx: the gold glows hotter as the meteor comes - the shower's fill grows to the knock-down's
+                // edge over the warning, so its width is how far the warning is.
+                if (warned && p.fill != null && shower != null && p.ringGlow.Count > 0)
+                {
+                    float k = Mathf.Clamp01(p.fill.localScale.x / Mathf.Max(2f * shower.InnerRadius, .01f));
+                    var glow = RingGlow * Mathf.Lerp(RingGlowStart, RingGlowEnd, k * k);
+                    foreach (var m in p.ringGlow) m.SetColor("_EmissionColor", glow);
+                }
             }
         }
 
@@ -65,7 +77,8 @@ namespace ChessFight.PawnRush
             if (streak == null || rim == null || stoneModel == null || ringModel == null) return null;
             Hide(streak);
             Hide(rim);
-            var p = new Parts { streak = streak, rim = rim };
+            if (shower == null) shower = GetComponent<MeteorShower>();
+            var p = new Parts { streak = streak, rim = rim, fill = view.Find("Warning fill (knock-down)") };
             p.stone = Hang(view, stoneModel, "Meteor stone (model)");
             p.ring = Hang(view, ringModel, "Meteor ring (model)");
             p.ring.localPosition = rim.localPosition;
@@ -88,6 +101,7 @@ namespace ChessFight.PawnRush
                     if (m == null) continue;
                     m.EnableKeyword("_EMISSION");
                     m.SetColor("_EmissionColor", RingGlow);
+                    p.ringGlow.Add(m);
                 }
                 r.materials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

@@ -66,7 +66,8 @@ namespace ChessFight.PawnRush
             public Material fillMaterial, flashMaterial;
         }
 
-        const float StreakFrom = 26f, StreakLength = 6f;
+        // The rod's middle starts StreakFrom + half its length over the line (public for the effects that ride it).
+        public const float StreakFrom = 26f, StreakLength = 6f;
         static readonly Color Gold = new Color(1f, .78f, .3f);
 
         uint seed;
@@ -79,6 +80,13 @@ namespace ChessFight.PawnRush
         public int LineCount => lines.Length;
         public float Interval => interval;
         public float Warning => warning;
+        // R725 ro-vfx: read only, for the effects that draw each meteor from the same clock (RoyalObservatoryVfxMeteor).
+        public double StartClock => start;   // NaN until the section starts
+        public float Streak => streak;
+        public float Flash => flash;
+        public float InnerRadius => innerRadius;
+        public float OuterRadius => outerRadius;
+        public Line LineAt(int i) => lines[i];
         // How many meteors are showing now (warning, falling or just landed).
         public int Showing { get; private set; }
         // How many have landed since this PC began to watch.

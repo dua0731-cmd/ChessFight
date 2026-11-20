@@ -21,6 +21,14 @@ namespace ChessFight.PawnRush
         const float Tremble = .02f;   // of the travel, while it warns
 
         public float Cycle => open + warn + close + shut + reopen;
+        // R725 ro-vfx: read only, for the sparks and the clash drawn from the same clock (RoyalObservatoryVfxIris).
+        public float OpenTime => open;
+        public float WarnTime => warn;
+        public float CloseTime => close;
+        public float ShutTime => shut;
+        public float Travel => travel;
+        // Seconds into its cycle at a shared-clock time (its phase added, as it moves).
+        public float CycleAt(double time) => CycleTime(time + phase);
 
         // Call it on an inactive object (the builder's root is switched on at the end).
         public void Configure(float travel, float open, float warn, float close, float shut, float reopen, GameObject warning, float phaseSeconds)

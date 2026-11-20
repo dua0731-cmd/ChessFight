@@ -24,6 +24,12 @@ namespace ChessFight.PawnRush
 
         public float Cycle => 2f * (dwell + cross);
         public float Radius => radius;
+        // Read-only, for the effects that follow it (RoyalObservatoryVfxPlanet): its own clock (the shared obstacle
+        // clock and its phase), its way (in its parent's frame) and its timing - nothing here changes how it moves.
+        public double Now => ObstacleClock.Now + phase;
+        public Vector3 Travel => travel;
+        public float Dwell => dwell;
+        public float CrossSeconds => cross;
         // How fast it goes between its speeding up and its slowing down (m/s), for a crossing `length` long.
         public float CruiseSpeed(float length) => length / (cross - Mathf.Min(ease, cross * .5f));
 

@@ -46,6 +46,9 @@ namespace ChessFight.PawnRush.Editor
         // The flare: which of calm (1), warning (2) and burn (4) were seen; planets without a shadow, and how far
         // past the floor's edge a shadow reached. The gears: the worst a mesh was off, in cogs.
         static int flareStates, shadeMisses;
+        // R725 ro-vfx: the shelter is each planet's real shadow - points of its drawn ellipse that SolarFlare.ShelteredBy
+        // disagreed with (its middle, just inside and well outside each end of both axes), and how many were tried.
+        static int ellipseMisses, ellipseTried;
         // The rolling planet: where and how it was last seen, how far it has gone and how far round it has turned.
         static bool rollSeen;
         static Vector3 rollAt;
@@ -95,7 +98,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 errors.Clear(); ranges.Clear(); turned.Clear(); lastHeading.Clear(); firstPlace.Clear(); farPlace.Clear(); landedBefore.Clear();
                 failures = 0; stage = 0; section = null; showing = 0; watchedFrom = double.NaN;
-                flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f;
+                flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f; ellipseMisses = 0; ellipseTried = 0;
                 rollSeen = false; rollWent = 0f; rollTurned = 0f; rollWith = 0f; rollSquare = 0f;
                 stepAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
@@ -435,9 +438,26 @@ namespace ChessFight.PawnRush.Editor
                     shadeReach = Mathf.Max(shadeReach, middle.magnitude + size - flare.Radius);
                     Range("shade " + i, middle.magnitude);
                     Range("shade size " + i, size);
+                    // The drawn ellipse and the shelter agree: in at the middle and just inside each end, out well past.
+                    if (!flare.ShadowEllipse(i, out var centre, out var along, out float major, out float minor)) continue;
+                    var across = new Vector2(-along.y, along.x);
+                    Probe(flare, i, middle, true);
+                    Probe(flare, i, centre, true);
+                    foreach (var (axis, half) in new[] { (along, major), (-along, major), (across, minor), (-across, minor) })
+                    {
+                        Probe(flare, i, centre + axis * (half - .12f), true);
+                        // (the grace widens the far end most: about 0.4 m on the outer orbit, 0.15 m across)
+                        Probe(flare, i, centre + axis * (half + .6f), false);
+                    }
                 }
             }
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true)) showing = Mathf.Max(showing, shower.Showing);
+        }
+
+        static void Probe(SolarFlare flare, int planet, Vector2 at, bool inside)
+        {
+            ellipseTried++;
+            if (flare.ShelteredBy(planet, new Vector3(at.x, 0f, at.y)) != inside) ellipseMisses++;
         }
 
         // How far apart the places a sliding thing has been seen at are (it slides along a straight line, so the
@@ -596,6 +616,8 @@ namespace ChessFight.PawnRush.Editor
                 if (ranges.TryGetValue("shade " + i, out var track) && ranges.TryGetValue("shade size " + i, out var size))
                     tracks += (tracks.Length > 0 ? ", " : "") + $"{track.y:0.0} m out / {size.y:0.00} m";
             Check(shadeMisses == 0 && shadeReach < .6f, $"the seven planets each threw a shadow on the floor the whole time ({shadeMisses} missing; track / radius: {tracks})");
+            Check(ellipseTried > 0 && ellipseMisses == 0,
+                  $"the shelter is the planets' real shadow from the lamp, as drawn: {ellipseTried - ellipseMisses} of {ellipseTried} points of the ellipses agreed with SolarFlare.ShelteredBy");
 
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true))
             {
