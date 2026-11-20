@@ -78,16 +78,18 @@ namespace ChessFight.PawnRush
             if (slam.Lowered && trip != loweredTrip && into >= lowerAt && into < slam.LandsAt)
             {
                 loweredTrip = trip;
-                Start(Pick(lowers, trip), into - lowerAt);
+                PlayChain(Pick(lowers, trip), into - lowerAt);
             }
             if (trip != hoistedTrip && into >= hoistAt)
             {
                 hoistedTrip = trip;
-                Start(Pick(hoists, trip), into - hoistAt);
+                PlayChain(Pick(hoists, trip), into - hoistAt);
             }
         }
 
-        void Start(AudioClip clip, float late)
+        // R729: not "Start" - Unity reads a method of that name as its message and wrote "Script error (SlamChest): Start() can
+        // not take parameters." twice at every launch (11-20 build test).
+        void PlayChain(AudioClip clip, float late)
         {
             if (clip == null || late > Late || late >= clip.length) return;
             chain.Stop();

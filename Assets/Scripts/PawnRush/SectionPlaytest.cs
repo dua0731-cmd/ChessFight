@@ -50,6 +50,10 @@ namespace ChessFight.PawnRush
 
         string currentBeat;
         PawnRushSection currentSection;
+        // R729: the last beat (or corridor) the pawn was in. A falling pawn often leaves its beat's box before it reaches
+        // the kill volume far below - every fall in the Royal Observatory, whose abyss lies under the beats, and the
+        // grand stair hall's curving stairs were written "-" (11-15 and 11-20 build tests). Such a fall is that beat's.
+        string lastBeat;
         // Between two sections (R517): the HUD and the CSV name the corridor.
         const string CorridorBeat = "구간 사이 복도";
         float runStart;
@@ -153,7 +157,11 @@ namespace ChessFight.PawnRush
                 if (currentBeat != null) Log(currentBeat, "exit");
                 currentBeat = key;
                 currentSection = section;
-                if (currentBeat != null) Log(currentBeat, "enter");
+                if (currentBeat != null)
+                {
+                    lastBeat = currentBeat;
+                    Log(currentBeat, "enter");
+                }
             }
         }
 
@@ -188,7 +196,7 @@ namespace ChessFight.PawnRush
         void Restarted()
         {
             runStart = Time.time;
-            currentBeat = null;
+            currentBeat = lastBeat = null;
             falls = hits = 0;
             fallingUntil = -10f;
             Log("-", "restart");
@@ -203,7 +211,7 @@ namespace ChessFight.PawnRush
             if (Time.time < fallingUntil) return;
             fallingUntil = Time.time + volume.RespawnDelay;
             falls++;
-            Log(currentBeat ?? "-", "fall");
+            Log(currentBeat ?? lastBeat ?? "-", "fall");
         }
 
         void OnHit(GameObject who, string what)

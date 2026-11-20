@@ -101,7 +101,11 @@ namespace ChessFight.PawnRush
             if (water == null) return false;
             Vector3 middle = beat.InverseTransformPoint(water.transform.TransformPoint(water.center));
             float z0 = middle.z - water.size.z * .5f + .3f, z1 = middle.z + water.size.z * .5f + .3f;
-            float deck = beat.InverseTransformPoint(boats[0].transform.position).y;
+            // R729 (11-20 build test: with the relief given, three pawns still fell where the boats had been and none
+            // got across): the deck at a boat's afloat height. Read off its transform it was wherever that boat happened
+            // to be - up to 9.8 m down while it dived under a tunnel (about a seventh of its loop), a bridge under the
+            // water with the boats gone.
+            float deck = beat.InverseTransformPoint(boats[0].Afloat).y;
             float x = 0f;
             foreach (var gap in beat.GetComponentsInChildren<IntendedGap>(true)) x = beat.InverseTransformPoint(gap.transform.position).x;
 
