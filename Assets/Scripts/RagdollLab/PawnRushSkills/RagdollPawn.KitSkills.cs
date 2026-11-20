@@ -54,7 +54,8 @@ namespace ChessFight.RagdollLab
         public bool LeapBlunder => PlanSkill == PawnRushSkillIds.BentLeap && planPhase == PlanPhase.Active && (planNote & LeapBlunderBit) != 0;
 
         /// <summary>The run's top speed under these skills (RagdollPawn.TopSpeed): heavy feet.</summary>
-        float SkillMoveScale => slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.fianSlow, 0.2f, 1f) : 1f;
+        float SkillMoveScale => (slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.fianSlow, 0.2f, 1f) : 1f)
+                                * MarchScale;   // the pool's king's march (RagdollPawn.PoolUltimates.cs)
 
         /// <summary>How far the seated bishop's line reaches now: fianNear at the key, fianFar once it has aimed for
         /// fianCharge seconds (any PC: the time comes with the host's skill state).</summary>

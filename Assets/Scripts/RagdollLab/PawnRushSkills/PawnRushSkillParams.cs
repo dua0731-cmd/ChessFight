@@ -732,5 +732,52 @@ namespace ChessFight.RagdollLab
         public float runLong = 2.2f, runStep = 1.8f, runShort = 1.4f;
         [Tooltip("다섯 걸음 뒤 숨 고르기 (초), 쿨 (초)")]
         public float runBreath = 0.5f, runCooldown = 18f;
+
+        [Header("후보 문서 3안 궁극기 · 게이지 (X-판5의 시간 부분)")]
+        [Tooltip("궁극기 게이지가 다 차는 시간 (초): 구성을 바꾸면 비어서 시작하고, 쓰면 다시 처음부터 (시험용 쿨이 켜져 있으면 그 값)")]
+        public float ultGauge = 180f;
+
+        [Header("후보 문서 3안 궁극기 · 폰 승격 (P-궁1)")]
+        [Tooltip("마지막 한 칸: 앞으로 내딛는 거리 (m), 시간 (초); 끝줄에 닿는 순간 둘레 이 반경 (m)의 적을 미는 빠르기 (m/s), 멈칫 (초)")]
+        public float promoteStep = 3f, promoteStepTime = 0.3f, promoteShoveRadius = 3f, promoteShove = 5f, promoteStop = 0.15f;
+        [Tooltip("퀸으로 있는 시간 (초), 끝나면 원래 기물로")]
+        public float promoteSeconds = 15f;
+
+        [Header("후보 문서 3안 궁극기 · 나이트 스머더드 메이트 (N-궁1)")]
+        [Tooltip("조건: 이 거리 (m) 안의 적 하나 둘레 이 반경 (m)에 그 적의 팀원이 둘 이상")]
+        public float smotherRange = 18f, smotherCluster = 2.5f;
+        [Tooltip("솟아 떨어지는 시간 (초), 높이 (m); 떨어지며 이동 키로 쫓는 거리 (m), 빠르기 (m/s)")]
+        public float smotherFlight = 1.3f, smotherHeight = 6f, smotherChase = 3f, smotherChaseSpeed = 5f;
+        [Tooltip("가운데 적에게서 이 거리 (m) 안에 떨어지면: 가운데 납작 (초), 둘레 팀원들은 날아감 (미는 빠르기 · 위로 m/s), 나이트는 다시 튐 (m/s)")]
+        public float smotherHit = 1.8f, smotherSquash = 3f, smotherPush = 7f, smotherLift = 3f, smotherBounce = 7f;
+        [Tooltip("닿기 직전 좌클릭: 땅에 닿기 이만큼 (초) 전부터, 납작 더하기 (초), 멈칫 (초)")]
+        public float smotherClickEarly = 0.15f, smotherClickBonus = 1f, smotherClickStop = 0.15f;
+        public float smotherRecovery = 0.3f;
+
+        [Header("후보 문서 3안 궁극기 · 비숍 긴 대각선 (B-궁1, 검토 칸의 체스 안: 줄이 남아 꿴다)")]
+        [Tooltip("줄 길이 (m, 벽에서 멈춤, 사람은 뚫음), 터지기까지 (초), 줄이 남는 시간 (초), 줄의 반지름 (m), 꿰인 적이 발이 박히는 시간 (초), 비숍 반동 (m)")]
+        public float diagRange = 60f, diagWarn = 1.5f, diagSeconds = 8f, diagRadius = 0.6f, diagNail = 2.5f, diagRecoil = 1f;
+
+        [Header("후보 문서 3안 궁극기 · 룩 활발한 룩 (R-궁6, 전차)")]
+        [Tooltip("전차인 시간 (초), 빠르기 (m/s), S로 한 번 멈추는 시간 (초), 벽에 박으면 휘청 (초)")]
+        public float chariotSeconds = 10f, chariotSpeed = 6f, chariotStop = 1f, chariotWallStagger = 1f;
+        [Tooltip("부딪힌 적: 닿는 반지름 (m), 옆으로 · 앞으로 · 위로 튕기는 빠르기 (m/s)")]
+        public float chariotRadius = 0.6f, chariotSideways = 5f, chariotForward = 3f, chariotLift = 2f;
+
+        [Header("후보 문서 3안 궁극기 · 퀸 퀸 희생 (Q-궁1)")]
+        [Tooltip("떨어질 곳을 찍는 거리 (m), 그 높이 차 (m); 날아가는 시간 (초), 높이 (m); 나는 동안 이동 키로 옮기는 거리 (m), 빠르기 (m/s)")]
+        public float sacRange = 12f, sacRise = 3f, sacFlight = 1.2f, sacHeight = 3f, sacChase = 3f, sacChaseSpeed = 5f;
+        [Tooltip("터지는 반경 (m), 미는 빠르기 · 위로 (m/s), 멈칫 (초); 잡혀 돌아가기 전 결과를 보여 주는 시간 (초)")]
+        public float sacRadius = 9f, sacPush = 9f, sacLift = 4f, sacStop = 0.15f, sacShow = 0.8f;
+        [Tooltip("이만큼 이상 날리면 '탁월한 수 !!'")]
+        public int sacBrilliant = 4;
+
+        [Header("후보 문서 3안 궁극기 · 킹 행진 (K-궁1)")]
+        [Tooltip("행진 시간 (초); 넘어지지 않는 팀원의 반경 (m); 적이 못 들어오는 반경 (m)")]
+        public float marchSeconds = 10f, marchGuard = 4f, marchKeep = 2f;
+        [Tooltip("걷는 빠르기 배수: 둘레 팀원 없음 · 한 명 · 둘 이상")]
+        public float marchAlone = 1.3f, marchOne = 1.5f, marchMany = 1.7f;
+        [Tooltip("행진 걸음 (키 다시): 앞 이 거리 (m)의 적을 이만큼 (m) 밀어냄")]
+        public float marchStepReach = 2.5f, marchStepShove = 2f;
     }
 }

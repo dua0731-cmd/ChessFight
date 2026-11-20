@@ -80,7 +80,11 @@ namespace ChessFight.RagdollLab
             if (GetComponent<SkillNetTest>() == null) gameObject.AddComponent<SkillNetTest>();
         }
 
-        void OnDestroy() => RagdollPawn.SkillLog -= OnSkill;
+        void OnDestroy()
+        {
+            RagdollPawn.SkillLog -= OnSkill;
+            RagdollPawn.SkillSendBack = null;
+        }
 
         static void OnSkill(RagdollPawn pawn, string line) => Report(line);
 
@@ -88,6 +92,8 @@ namespace ChessFight.RagdollLab
         {
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
+            // The pool's queen sacrifice sends the queen back: here, the lab's own respawn (JY-skill-lab 11-20).
+            RagdollPawn.SkillSendBack = p => { if (game != null) game.Respawn(p); };
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
             // The skills' sounds (R114, 승규 님's picks on the R107 page).
@@ -658,7 +664,11 @@ namespace ChessFight.RagdollLab
                     int id = p1.SlotSkill(k);
                     if (id == 0) continue;
                     anySkill = true;
-                    GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + (p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : "")
+                    // (An ultimate's cooldown is its gauge: how full it is, "!!" when full.)
+                    string wait = PawnRushSkillIds.Ultimate(id)
+                        ? (p1.SlotCooldown(k) > 0f ? $"   게이지 {100f * (1f - p1.SlotCooldown(k) / Mathf.Max(0.01f, p1.SlotCooldownTotal(k))):0}%" : "   <color=#fc4>!!</color>")
+                        : p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : "";
+                    GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + wait
                                     + (p1.SlotKept(k) ? "   <color=#6cf>미리 누름</color>" : ""), text);
                     GUILayout.Label(PawnRushSkillBook.How(id), small);
                 }

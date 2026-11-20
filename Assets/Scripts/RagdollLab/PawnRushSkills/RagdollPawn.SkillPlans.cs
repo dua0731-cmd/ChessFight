@@ -238,6 +238,13 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.BackRank: UpdateBackRank(s, press, dt); break;
                 case PawnRushSkillIds.FileCharge: UpdateFileCharge(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.KingRun: UpdateKingRun(s, press, dt); break;
+                // The pool's plan 3, its ultimates (RagdollPawn.PoolUltimates.cs).
+                case PawnRushSkillIds.Promote: UpdatePromote(s, press, dt); break;
+                case PawnRushSkillIds.Smother: UpdateSmother(s, press, dt); break;
+                case PawnRushSkillIds.LongDiagonal: UpdateLongDiagonal(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.Chariot: UpdateChariot(s, press, dt); break;
+                case PawnRushSkillIds.QueenSac: UpdateQueenSac(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.KingMarch: UpdateKingMarch(s, press, dt); break;
             }
         }
 
@@ -273,7 +280,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.BackRank: return s.rankCooldown;
                 case PawnRushSkillIds.FileCharge: return s.fileCooldown;
                 case PawnRushSkillIds.KingRun: return s.runCooldown;
-                default: return 0f;
+                default: return PawnRushSkillIds.Ultimate(id) ? s.ultGauge : 0f;
             }
         }
 

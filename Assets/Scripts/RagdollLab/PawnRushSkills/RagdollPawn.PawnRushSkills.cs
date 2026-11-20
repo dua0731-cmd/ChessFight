@@ -204,6 +204,7 @@ namespace ChessFight.RagdollLab
             EndPin();
             ClearFeel();
             ClearPoolStates();
+            StartGauges();   // the ultimates' gauges start empty (RagdollPawn.PoolUltimates.cs)
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);

@@ -101,6 +101,7 @@ namespace ChessFight.RagdollLab
         void UpdatePoolStates(PawnRushSkillParams s, float dt)
         {
             if (summonPushLeft > 0f && (summonPushLeft -= dt) <= 0f) summonArrived[0] = summonArrived[1] = null;
+            UpdatePromotion(dt);   // plan 3's promotion runs out (RagdollPawn.PoolUltimates.cs)
             if (checkAgainLeft <= 0f || PlanSkill == PawnRushSkillIds.Check) return;
             checkAgainLeft -= dt;
             if (checkAgainLeft > 0f) return;
@@ -116,6 +117,7 @@ namespace ChessFight.RagdollLab
             checkFollowUp = checkAgainNext = false;
             summonPushLeft = 0f;
             summonArrived[0] = summonArrived[1] = null;
+            promoteLeft = 0f;   // (a reset keeps the piece it is given: no going back)
         }
 
         // ---------------------------------------------------------------- B-중7: the long diagonal snipe
@@ -157,6 +159,7 @@ namespace ChessFight.RagdollLab
         {
             PoolBasicKeys();   // plan 3's basics (RagdollPawn.PoolBasics.cs)
             Plan2Keys();       // plan 2's (RagdollPawn.PoolPlan2.cs)
+            UltKeys();         // plan 3's ultimates (RagdollPawn.PoolUltimates.cs)
             if (planPhase == PlanPhase.None) return;
             if (activeSkill == PawnRushSkillIds.Fork)
             {

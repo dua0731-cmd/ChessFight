@@ -41,6 +41,13 @@ namespace ChessFight.Network
         // The pool's plan 2 (a skill that grows into another), the three not made for the others: the rook's back-rank
         // move (R-기5) and its straight charge (R-중1), the king's run (K-중7).
         public const int BackRank = 90, FileCharge = 91, KingRun = 92;
+        // The pool's plan 3, its ultimates (each on a gauge): the pawn's promotion (P-궁1), the knight's smothered mate
+        // (N-궁1), the bishop's long diagonal (B-궁1), the rook's chariot (R-궁6), the queen's sacrifice (Q-궁1), the king's
+        // march (K-궁1).
+        public const int Promote = 93, Smother = 94, LongDiagonal = 95, Chariot = 96, QueenSac = 97, KingMarch = 98;
+
+        /// <summary>One of the pool's ultimates: its cooldown is a gauge that starts empty.</summary>
+        public static bool Ultimate(int id) => id >= Promote && id <= KingMarch;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -304,10 +311,14 @@ namespace ChessFight.Network
                 int[] second = which == 6
                     ? new[] { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon }
                     : new[] { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.FileCharge, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingRun };
+                int[] third = which == 6
+                    ? new[] { PawnRushSkillIds.Promote, PawnRushSkillIds.Smother, PawnRushSkillIds.LongDiagonal, PawnRushSkillIds.Chariot, PawnRushSkillIds.QueenSac, PawnRushSkillIds.KingMarch }
+                    : new int[Rows];
                 for (int row = 0; row < Rows; row++)
                 {
                     p.slots[row * Slots] = first2[row];
                     p.slots[row * Slots + 1] = second[row];
+                    p.slots[row * Slots + 2] = third[row];
                 }
                 return p;
             }

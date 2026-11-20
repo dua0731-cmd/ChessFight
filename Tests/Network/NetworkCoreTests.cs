@@ -1155,7 +1155,9 @@ public static class NetworkCoreTests
                 var plan3=PawnRushLoadout.Preset(6);
                 Check(plan3.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.FlankShot&&plan3.Skill(PieceKind.Rook,0)==PawnRushSkillIds.CastleOver&&plan3.Skill(PieceKind.Queen,0)==PawnRushSkillIds.ScholarThrust&&plan3.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep
                       &&plan3.Raw(3,1)==PawnRushSkillIds.ChainBehind&&plan3.Raw(5,1)==PawnRushSkillIds.KingSummon&&plan3.Raw(0,1)==PawnRushSkillIds.ChaseAway&&plan3.Raw(1,1)==PawnRushSkillIds.Fork
-                      &&plan3.Raw(2,1)==PawnRushSkillIds.Pin&&plan3.Raw(4,1)==PawnRushSkillIds.CheckSeries&&plan3.Raw(0,2)==0&&!PawnRushSkillIds.Old(PawnRushSkillIds.FlankShot)&&!PawnRushSkillIds.Old(PawnRushSkillIds.CheckSeries),"the skill pool's plan 3: its basic row in the first slots, its mid row in the second");
+                      &&plan3.Raw(2,1)==PawnRushSkillIds.Pin&&plan3.Raw(4,1)==PawnRushSkillIds.CheckSeries&&plan3.Raw(0,2)==PawnRushSkillIds.Promote&&plan3.Raw(5,2)==PawnRushSkillIds.KingMarch
+                      &&!PawnRushSkillIds.Old(PawnRushSkillIds.FlankShot)&&!PawnRushSkillIds.Old(PawnRushSkillIds.CheckSeries)&&PawnRushSkillIds.Ultimate(PawnRushSkillIds.QueenSac)&&!PawnRushSkillIds.Ultimate(PawnRushSkillIds.KingRun)
+                      &&PawnRushLoadout.Preset(7).Raw(0,2)==0,"the skill pool's plan 3: its basic, mid and ultimate rows in the three slots (the ultimates on a gauge)");
                 var plan2=PawnRushLoadout.Preset(7);
                 Check(plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackRank&&plan2.Raw(3,1)==PawnRushSkillIds.FileCharge&&plan2.Raw(5,1)==PawnRushSkillIds.KingRun&&plan2.Raw(2,0)==PawnRushSkillIds.Fianchetto,"the skill pool's plan 2: the first skills, and what each grows into in the second slots");
                 plan2.system=PawnRushLoadout.Grow;

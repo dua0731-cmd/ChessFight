@@ -204,7 +204,8 @@ namespace ChessFight.Network
         // the pool's (another state in the same fields).
         // skilllab9: the pool's plan 2 - three more skills can sit in a slot (90..92), an eighth loadout that comes with the
         // game, and the growing system plays a row's second slot from stage 2.
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab9";
+        // skilllab10: the pool's plan 3 ultimates - six more skills can sit in a slot (93..98) on a gauge.
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab10";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
