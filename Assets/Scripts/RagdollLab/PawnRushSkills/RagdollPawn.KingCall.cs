@@ -141,6 +141,8 @@ namespace ChessFight.RagdollLab
 
         void CallKingMates(PawnRushSkillParams s)
         {
+            // The pool's K-중1 (RagdollPawn.PoolSkills.cs): they come to the squares in front, the way he looks as he calls.
+            if (kingPool) summonFwd = AimFlat();
             int most = Mathf.Clamp(s.kingCallMax, 1, 2);
             var picks = new RagdollPawn[2];
             int n = 0;
@@ -175,6 +177,8 @@ namespace ChessFight.RagdollLab
             SkillDetail = "대답 기다림";
             kingHitsAtCall = Hits;
             kingHitAtCall = LastSkillHit;
+            // The pool's K-중1: the horn's kick sets him half a step back.
+            if (kingPool) Kick(-summonFwd, s.summonRecoil, 0.2f, true);
             Log($"{DisplayName}: 왕의 부름 → {picks[0].DisplayName}{(n > 1 ? ", " + picks[1].DisplayName : "")} ({s.kingCallWindow:0.#}초 안에 F)");
         }
 
@@ -207,7 +211,7 @@ namespace ChessFight.RagdollLab
             skillStage = SkillStage.None;
             stageTime = 0f;
             SkillDetail = "";
-            StartCooldown(s.kingCooldown);
+            StartCooldown(kingPool ? s.summonCooldown : s.kingCooldown);
         }
 
         void ResetKingSlots()
@@ -258,9 +262,12 @@ namespace ChessFight.RagdollLab
         {
             var s = PawnRushSkills;
             float back = s != null ? s.kingCallBehind : 1.5f, spread = s != null ? s.kingCallSpread : 1.5f;
-            Vector3 fwd = FlatDir(facing), right = Vector3.Cross(Vector3.up, fwd);
+            // The pool's K-중1: in front of him (the pawn shield), the way he looked as he called.
+            bool front = kingPool && summonFwd.sqrMagnitude > 0.5f;
+            Vector3 fwd = front ? summonFwd : FlatDir(facing), right = Vector3.Cross(Vector3.up, fwd);
             Vector3 feet = FeetPoint;
-            Vector3 offset = -fwd * back + right * (count >= 2 ? (slot == 0 ? -0.5f : 0.5f) * spread : 0f);
+            Vector3 offset = (front ? fwd * (s != null ? s.summonFront : 1.5f) : -fwd * back)
+                             + right * (count >= 2 ? (slot == 0 ? -0.5f : 0.5f) * spread : 0f);
             foreach (float turn in KingSpotTurns)
             {
                 Vector3 at = feet + Quaternion.AngleAxis(turn, Vector3.up) * offset;
@@ -424,6 +431,8 @@ namespace ChessFight.RagdollLab
             if (!arrived) return;
             if (king != null && king.kingCalled[kingCarrySlot] == this) king.kingSlot[kingCarrySlot] = KingSlotState.Arrived;
             (king != null ? king : this).Fx(SkillFxKind.KingCallLand, this, kingCarryTo, FlatDir(king != null ? king.facing : facing), kingCarrySlot);
+            // The pool's K-중1: setting down shoves the enemies round it, and opens the moment to push on together.
+            if (king != null && king.kingPool) king.SummonLanded(this, kingCarrySlot, kingCarryTo);
             Log($"{DisplayName}: 킹 뒤 칸에 도착 ({kingCarryT:0.00}초)");
         }
 

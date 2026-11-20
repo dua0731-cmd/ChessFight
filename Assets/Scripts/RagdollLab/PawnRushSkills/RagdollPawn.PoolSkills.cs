@@ -20,7 +20,15 @@ namespace ChessFight.RagdollLab
     ///                            throws the bishop 2 m back onto its seat.
     ///   Q-기1 체크!               plan 1-나's check (RagdollPawn.SkillPlans.cs) with 12 m, a 1.5 m lunge on the click, a
     ///                            0.08 s hit stop and a bounce when it comes down, and once more within 2 s after a dodge.
-    ///   R-중2, K-중1              the rook's chain and the king's call as they are, for now.
+    ///   R-중2 뒤에서 잡기         the rook's chain (RagdollPawn.RookChain.cs) with chainPool: it catches on the first thing
+    ///                            it meets; an enemy lighter than the rook is pulled in (to 0.9 m, close enough to grab at
+    ///                            once), a heavier one (the queen, the king) or a wall, pillar or ledge pulls the rook to
+    ///                            it; the left click held reels faster (the pool's mouse wheel does not travel to the
+    ///                            host); the one pulled shakes it off half way with three left clicks; 16 s.
+    ///   K-중1 왕의 부름           the king's call (RagdollPawn.KingCall.cs) with kingPool: the teammates come to the squares
+    ///                            in front of him, left and right, the way he looked; the horn sets him half a step back;
+    ///                            each landing shoves the enemies within 2 m; the key once more just after pushes the king
+    ///                            and those set down 3 m on together; 20 s.
     ///
     /// Prototypes: lines and rings by PawnRushPlanMarks. Not seen in Unity by anyone yet.
     /// </summary>
@@ -92,6 +100,7 @@ namespace ChessFight.RagdollLab
         /// on the slot the check was in.</summary>
         void UpdatePoolStates(PawnRushSkillParams s, float dt)
         {
+            if (summonPushLeft > 0f && (summonPushLeft -= dt) <= 0f) summonArrived[0] = summonArrived[1] = null;
             if (checkAgainLeft <= 0f || PlanSkill == PawnRushSkillIds.Check) return;
             checkAgainLeft -= dt;
             if (checkAgainLeft > 0f) return;
@@ -105,6 +114,8 @@ namespace ChessFight.RagdollLab
         {
             checkAgainLeft = 0f;
             checkFollowUp = checkAgainNext = false;
+            summonPushLeft = 0f;
+            summonArrived[0] = summonArrived[1] = null;
         }
 
         // ---------------------------------------------------------------- B-중7: the long diagonal snipe
@@ -267,6 +278,161 @@ namespace ChessFight.RagdollLab
                 if (far) planNote |= SnipeBestBit;
             }
             Log($"긴 대각선 저격 → {first.DisplayName}: {along:0.#} m → {result}" + ((planNote & SnipeBestBit) != 0 ? " — 최선수!" : ""));
+        }
+
+        // ---------------------------------------------------------------- R-중2: the chain from behind
+
+        // The rook's chain runs as the pool's; the rook flying to what it caught (a client's from the skill state); its left
+        // click held this step. The piece on the chain: its left clicks so far.
+        bool chainPool, chainSelf, chainReel;
+        int chainShakes;
+        float chainSelfT, chainSelfTime, chainSelfFloor;
+        Vector3 chainSelfFrom, chainSelfTo;
+
+        float ChainCooldown(PawnRushSkillParams s) => chainPool ? s.behindCooldown : s.rookCooldown;
+
+        /// <summary>The chain's weights are the pieces' values, the king heaviest of all.</summary>
+        static int ChainWeight(PieceKind k) => k == PieceKind.King ? 100 : PieceValue(k);
+
+        bool LighterThanMe(RagdollPawn other) => ChainWeight(other.piece) < ChainWeight(piece);
+
+        /// <summary>An enemy rook's chain pulling this piece in now (any PC), so it knows to shake it off.</summary>
+        public RagdollPawn ChainPulledBy()
+        {
+            foreach (var p in All)
+                if (p != null && p != this && p.chainPhase == ChainPhase.Pull && p.chainOn == this && !p.chainSelf
+                    && p.ActiveSkill == PawnRushSkillIds.ChainBehind && IsEnemyOf(p)) return p;
+            return null;
+        }
+
+        /// <summary>The chain caught something the rook cannot pull (a heavier enemy, or <paramref name="heavy"/> null: a wall,
+        /// pillar or ledge at <paramref name="anchor"/>): the rook goes to it instead, straight, staying short of it.</summary>
+        void StartSelfPull(PawnRushSkillParams s, RagdollPawn heavy, Vector3 anchor)
+        {
+            chainPhase = ChainPhase.Pull;
+            chainT = 0f;
+            chainOn = heavy;
+            chainSelf = true;
+            chainSelfT = 0f;
+            chainSelfFrom = bodies[0].position;
+            chainSelfFloor = FeetPoint.y;
+            chainSelfTo = SelfPullEnd(s, heavy, anchor);
+            chainSelfTime = Mathf.Max(0.25f, (chainSelfTo - chainSelfFrom).magnitude / Mathf.Max(1f, s.behindPullSpeed));
+            SkillDetail = heavy != null ? "무거운 적에게 끌려감" : "벽 · 턱으로 끌려감";
+            Fx(SkillFxKind.RookHook, heavy, chainTip, skillDir, 0, chainSelfTime);
+            FeelHit(heavy, anchor, skillDir, FeelWeak, 1, heavy != null);
+            Log($"뒤에서 잡기 → {(heavy != null ? heavy.DisplayName + "(나보다 무거움)" : "벽 · 턱")}: 룩이 끌려감 {(chainSelfTo - chainSelfFrom).magnitude:0.0} m");
+        }
+
+        /// <summary>Where the rook's hips end up: short of what it caught along the flat way to it - a heavy piece's standing
+        /// height, or a wall's or ledge's catch point (never under standing on its own floor).</summary>
+        Vector3 SelfPullEnd(PawnRushSkillParams s, RagdollPawn heavy, Vector3 anchor)
+        {
+            Vector3 from = bodies[0].position;
+            Vector3 way = Flat(anchor - from);
+            way = way.sqrMagnitude > 1e-4f ? way.normalized : FlatDir(facing);
+            if (heavy != null)
+            {
+                Vector3 end = heavy.bodies[0].position - way * s.behindHeavyGap;
+                end.y = heavy.FeetPoint.y + standHeight;
+                return end;
+            }
+            Vector3 at = anchor - way * s.behindWallGap;
+            at.y = Mathf.Max(anchor.y, chainSelfFloor + standHeight);
+            return at;
+        }
+
+        void StepSelfPull(PawnRushSkillParams s, float dt)
+        {
+            float run = dt * (chainReel ? s.behindReel : 1f);
+            chainSelfT += run;
+            var heavy = chainOn;
+            if (heavy != null && heavy.State == PawnState.Active)
+            {
+                // A heavy piece that moves is followed.
+                chainSelfTo = SelfPullEnd(s, heavy, heavy.bodies[(int)BodyId.Chest].position);
+                chainTip = heavy.bodies[(int)BodyId.Chest].position;
+            }
+            if (chainSelfT >= chainSelfTime)
+            {
+                EndSelfPull(s, true);
+                return;
+            }
+            float u = Mathf.Clamp01((chainSelfT + run) / chainSelfTime);
+            float e = 0.5f - 0.5f * Mathf.Cos(Mathf.PI * u);
+            Vector3 at = bodies[0].position, next = Vector3.Lerp(chainSelfFrom, chainSelfTo, e);
+            Vector3 step = next - at;
+            if (step.sqrMagnitude > 1e-6f && ChainBlocked(at, step))
+            {
+                Log($"{DisplayName}: 끌려가다 장애물에 걸림");
+                EndSelfPull(s, false);
+                return;
+            }
+            Fly(next, step / Mathf.Max(1e-4f, dt), 0f, default, 18f);
+        }
+
+        void EndSelfPull(PawnRushSkillParams s, bool arrived)
+        {
+            chainSelf = false;
+            EndFlight(arrived ? Vector3.zero : bodies[0].linearVelocity * 0.5f);
+            KeepSkillLandingSafe();
+            Fx(SkillFxKind.RookPullEnd, chainOn, FeetPoint, FlatDir(skillDir), 0);
+            FinishChain(s);
+        }
+
+        // ---------------------------------------------------------------- K-중1: the king's call, in front of him
+
+        // The king's call runs as the pool's; the way he looked as he called; the teammates set down, and how long the key
+        // may still push them on.
+        bool kingPool;
+        Vector3 summonFwd;
+        readonly RagdollPawn[] summonArrived = new RagdollPawn[2];
+        float summonPushLeft;
+
+        /// <summary>The king may push on with those set down for this long (the host's).</summary>
+        public float SummonPushLeft => Mathf.Max(0f, summonPushLeft);
+
+        /// <summary>A called teammate set down in front of this king: the enemies round its square are shoved off it, and the
+        /// moment to push on together opens.</summary>
+        void SummonLanded(RagdollPawn mate, int slot, Vector3 at)
+        {
+            var s = PawnRushSkills;
+            if (s == null) return;
+            if (slot >= 0 && slot < summonArrived.Length) summonArrived[slot] = mate;
+            summonPushLeft = Mathf.Max(0.1f, s.summonPushWindow);
+            int shoved = 0;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || other == mate || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
+                Vector3 d = Flat(other.bodies[0].position - at);
+                if (d.magnitude > s.summonPushRadius || Mathf.Abs(other.FeetPoint.y - at.y) > 1.2f) continue;
+                Vector3 away = d.sqrMagnitude > 1e-4f ? d.normalized : FlatDir(summonFwd);
+                SkillHit(other, away * s.summonShove + Vector3.up * 0.8f, false, "왕의 부름 (내려섬)");
+                FeelHit(other, other.bodies[0].position, away, FeelWeak);
+                shoved++;
+            }
+            Log($"왕의 부름: {(mate != null ? mate.DisplayName : "팀원")} 내려섬 → 둘레 적 {shoved}명 밀림 · {s.summonPushWindow:0.#}초 안에 스킬 키 = 함께 밀고 나가기");
+        }
+
+        /// <summary>The king's key in the moment after a landing: he and those set down (still near) push on together along
+        /// the way he called. True if the key was used for it.</summary>
+        bool SummonPushKey(PawnRushSkillParams s, bool press)
+        {
+            if (!press || summonPushLeft <= 0f) return false;
+            summonPushLeft = 0f;
+            Vector3 dir = summonFwd.sqrMagnitude > 0.5f ? summonFwd : FlatDir(facing);
+            Kick(dir, s.summonPushDistance, s.summonPushTime, true);
+            int n = 0;
+            for (int i = 0; i < summonArrived.Length; i++)
+            {
+                var mate = summonArrived[i];
+                summonArrived[i] = null;
+                if (mate == null || mate.State != PawnState.Active || Flat(mate.bodies[0].position - bodies[0].position).magnitude > 4f) continue;
+                mate.Kick(dir, s.summonPushDistance, s.summonPushTime, true);
+                n++;
+            }
+            Log($"왕의 부름: 킹과 팀원 {n}명이 함께 {s.summonPushDistance:0.#} m 밀고 나감");
+            return true;
         }
     }
 }

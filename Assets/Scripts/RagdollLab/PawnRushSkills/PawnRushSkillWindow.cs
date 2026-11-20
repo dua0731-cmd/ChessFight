@@ -338,7 +338,7 @@ namespace ChessFight.RagdollLab
                 if (Chip(new Rect(x, y, 58f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
                     Say(presetIds[i] == 2 ? "모든 칸을 비웠어요"
                         : presetIds[i] == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
-                        : presetIds[i] == 5 ? "첫 칸을 후보 문서의 1안(기물당 하나)으로 채웠어요. 룩과 킹은 아직 지금 스킬이에요"
+                        : presetIds[i] == 5 ? "첫 칸을 후보 문서의 1안(기물당 하나)으로 채웠어요. 킹도 왕의 부름(앞으로)을 받아요"
                         : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
                 x += 62f;
             }

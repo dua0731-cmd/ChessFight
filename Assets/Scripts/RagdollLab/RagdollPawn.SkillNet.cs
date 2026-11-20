@@ -135,6 +135,7 @@ namespace ChessFight.RagdollLab
                     target = chainOn != null ? chainOn : skillStage == SkillStage.Windup ? chainAimTarget : null;
                     s.A = chainT;
                     s.D = (byte)chainPhase;
+                    s.C = (byte)(chainSelf ? 1 : 0);   // the pool's R-중2: the rook flies to what it caught (not pulling it)
                     break;
                 case PieceKind.Pawn:
                     target = pawnTarget;
@@ -221,6 +222,7 @@ namespace ChessFight.RagdollLab
                     break;
                 case PieceKind.Rook:
                     chainPhase = (ChainPhase)s.D;
+                    chainSelf = s.C == 1;
                     chainT = s.A;
                     chainOn = chainPhase != ChainPhase.None ? target : null;
                     if (skillStage == SkillStage.Windup && !IsLocalView) chainAimTarget = target;

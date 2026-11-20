@@ -126,11 +126,13 @@ namespace ChessFight.RagdollLab
                     break;
                 case SkillStage.Active:
                     stageTime += dt;
+                    // The pool's R-중2: the left click held reels it in faster (RagdollPawn.PoolSkills.cs).
+                    chainReel = chainPool && input.shoveHeld;
                     if (Staggered || bindLeft > 0f)
                     {
                         // Hit mid-throw (a knockdown ends every skill on its own): the chain breaks, its piece drops.
                         BreakChain(Staggered ? "룩이 휘청" : "룩이 묶임");
-                        StartCooldown(s.rookCooldown);
+                        StartCooldown(ChainCooldown(s));
                         break;
                     }
                     facing = FlatDir(skillDir);
@@ -224,14 +226,18 @@ namespace ChessFight.RagdollLab
                     if (other != null)
                     {
                         chainTip = at;
-                        if (IsEnemyOf(other)) StartChainPull(s, other, false);
+                        // The pool's R-중2: an enemy not lighter than the rook pulls the rook to it instead.
+                        if (IsEnemyOf(other) && chainPool && !LighterThanMe(other)) StartSelfPull(s, other, at);
+                        else if (IsEnemyOf(other)) StartChainPull(s, other, false);
                         else OfferChain(s, other);
                         return;
                     }
                     if (hit)
                     {
                         chainTip = at;
-                        Rewind(solid ? "벽·지형에 닿음" : "걸리지 않는 상대에 닿음");
+                        // The pool's R-중2: a wall, a pillar or a ledge it catches on pulls the rook to it.
+                        if (chainPool && solid) StartSelfPull(s, null, at);
+                        else Rewind(solid ? "벽·지형에 닿음" : "걸리지 않는 상대에 닿음");
                         return;
                     }
                     chainOut += step;
@@ -268,6 +274,11 @@ namespace ChessFight.RagdollLab
                 }
                 case ChainPhase.Pull:
                 {
+                    if (chainSelf)
+                    {
+                        StepSelfPull(s, dt);   // the rook going to what it caught (RagdollPawn.PoolSkills.cs)
+                        return;
+                    }
                     var on = chainOn;
                     if (on == null || !on.chainCarry || on.chainBy != this)
                     {
@@ -302,7 +313,7 @@ namespace ChessFight.RagdollLab
 
         void FinishChain(PawnRushSkillParams s)
         {
-            float cooldown = chainCooldown > 0f ? chainCooldown : s.rookCooldown;
+            float cooldown = chainCooldown > 0f ? chainCooldown : ChainCooldown(s);
             chainCooldown = -1f;
             chainPhase = ChainPhase.None;
             chainOn = null;
@@ -372,10 +383,14 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             chainOn = target;
             Vector3 to = ChainSpot(s, target, ally);
-            float time = ally ? s.rookAllyPull : s.rookPullTime * (target.Weight >= s.rookHeavyWeight - 0.01f ? s.rookHeavySlow : 1f);
+            float time = ally ? s.rookAllyPull
+                : chainPool ? Mathf.Max(s.rookPullTime, Flat(to - target.bodies[0].position).magnitude / Mathf.Max(1f, s.behindPullSpeed))
+                : s.rookPullTime * (target.Weight >= s.rookHeavyWeight - 0.01f ? s.rookHeavySlow : 1f);
             target.StartChainCarry(this, ally, to, time);
             SkillDetail = ally ? "팀원 끌어올림" : "적 끌어옴";
             Fx(SkillFxKind.RookHook, target, chainTip, skillDir, ally ? 2 : 0, time);
+            // The pool's R-중2: the chain going taut holds a moment (the hand feel).
+            if (chainPool && !ally) FeelHit(target, chainTip, skillDir, FeelWeak);
             Log($"룩 사슬 → {target.DisplayName}{(ally ? "(팀원): 잡음" : ": 걸림")} → {time:0.00}초 동안 {Flat(to - target.bodies[0].position).magnitude:0.0} m 끌려옴");
         }
 
@@ -389,7 +404,7 @@ namespace ChessFight.RagdollLab
             Vector3 right = Vector3.Cross(Vector3.up, fwd);
             Vector3 offset = ally
                 ? right * (Vector3.Dot(toward, right) >= 0f ? 1f : -1f) * s.rookAllyBeside + fwd * 0.2f
-                : fwd * s.rookPullFront;
+                : fwd * (chainPool ? s.behindFront : s.rookPullFront);   // the pool's: close, to grab it at once
             foreach (float turn in KingSpotTurns)
             {
                 Vector3 at = feet + Quaternion.AngleAxis(turn, Vector3.up) * offset;
@@ -405,6 +420,12 @@ namespace ChessFight.RagdollLab
         void BreakChain(string why)
         {
             if (chainPhase == ChainPhase.None) return;
+            if (chainSelf)
+            {
+                // Flying to what it caught: it drops where it is.
+                chainSelf = false;
+                EndFlight(bodies[0].linearVelocity * 0.5f);
+            }
             var on = chainOn;
             if (on != null)
             {
@@ -444,6 +465,7 @@ namespace ChessFight.RagdollLab
             }
             chainGrabPrev = skillGrabRaw;
             if (!chainCarry) return;
+            if (!chainCarryAlly && input.shove) chainShakes++;   // the pool's R-중2: shaking the chain off with the left click
             input.move = Vector3.zero;
             input.jump = false;
             input.sprint = false;
@@ -463,6 +485,7 @@ namespace ChessFight.RagdollLab
             chainCarryAlly = ally;
             chainBy = rook;
             chainCarryT = 0f;
+            chainShakes = 0;
             chainCarryTime = Mathf.Max(0.05f, seconds);
             chainCarryFrom = bodies[0].position;
             chainFromFloor = FeetPoint.y;
@@ -496,14 +519,24 @@ namespace ChessFight.RagdollLab
                 EndChainCarry(false);
                 return false;
             }
-            chainCarryT += dt;
+            // The pool's R-중2: the rook holding the left click reels it in faster.
+            float run = dt * (rook.chainReel ? s.behindReel : 1f);
+            chainCarryT += run;
             grabImmune = Mathf.Max(grabImmune, 0.25f);
             if (chainCarryT >= chainCarryTime)
             {
                 EndChainCarry(true);
                 return false;
             }
-            Vector3 at = bodies[0].position, next = ChainPath(chainCarryT + dt, s);
+            if (rook.chainPool && !chainCarryAlly && chainShakes >= s.behindShake && chainCarryT >= chainCarryTime * 0.5f)
+            {
+                // ...and shaken off with enough left clicks, it comes only half way.
+                LastSkillHit = "뒤에서 잡기: 사슬을 털어냄";
+                Log($"{DisplayName}: 사슬을 털어냄 (절반만 끌려옴)");
+                EndChainCarry(false);
+                return false;
+            }
+            Vector3 at = bodies[0].position, next = ChainPath(chainCarryT + run, s);
             // Something solid on the way drops it there (§5.6); a cliff does not stop it.
             Vector3 step = next - at;
             if (step.sqrMagnitude > 1e-6f && ChainBlocked(at, step))

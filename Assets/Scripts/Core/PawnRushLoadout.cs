@@ -27,16 +27,17 @@ namespace ChessFight.Network
         public const int BentLeap = 43, Fianchetto = 71, KingStep = 72;
         // The skill pool's plan 1 (Docs/Skills/PAWN_RUSH_SKILL_POOL.md, one skill a piece; the user 2026-11-20: "1안부터"),
         // the skills as the pool writes them: the pawn's two steps with a second step the move keys bend (P-기1, the old
-        // two steps' code), the bishop's long diagonal snipe (B-중7). The knight's bent leap and the queen's check are
-        // the ones above, changed to the pool's (N-기1, Q-기1).
-        public const int SteeredSteps = 81, LongSnipe = 82;
+        // two steps' code), the bishop's long diagonal snipe (B-중7), the rook's chain from behind (R-중2, the old chain's
+        // code), the king's call with his teammates set down in front of him (K-중1, the old call's code). The knight's
+        // bent leap and the queen's check are the ones above, changed to the pool's (N-기1, Q-기1).
+        public const int SteeredSteps = 81, LongSnipe = 82, ChainBehind = 83, KingSummon = 84;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
 
         /// <summary>One of the skills as they are: made for one piece, with that piece's effects and sounds. (The pool's
-        /// two steps run on the old two steps' code, as the pawn.)</summary>
-        public static bool Old(int id) => (id >= TwoSteps && id <= RingShove) || id == SteeredSteps;
+        /// two steps, chain and call run on the old ones' code, as the pawn, the rook and the king.)</summary>
+        public static bool Old(int id) => (id >= TwoSteps && id <= RingShove) || id == SteeredSteps || id == ChainBehind || id == KingSummon;
 
         /// <summary>The piece an old skill was made for.</summary>
         public static PieceKind OldPiece(int id)
@@ -46,7 +47,9 @@ namespace ChessFight.Network
                 case TurnLeap: return PieceKind.Knight;
                 case CrossRope: return PieceKind.Bishop;
                 case ChainPull: return PieceKind.Rook;
+                case ChainBehind: return PieceKind.Rook;
                 case RingShove: return PieceKind.Queen;
+                case KingSummon: return PieceKind.King;
                 default: return PieceKind.Pawn;
             }
         }
@@ -267,14 +270,13 @@ namespace ChessFight.Network
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
         /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece). The king's row is empty
-        /// (his call) in all but 4.</summary>
+        /// (his call) in all but 4 and 5.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
             int[] first = which == 5
-                // (The rook's and the king's are the chain and the call as they are until the pool's are made.)
-                ? new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.ChainPull, PawnRushSkillIds.Check, 0 }
+                ? new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.Check, PawnRushSkillIds.KingSummon }
                 : which == 1
                 ? new[] { PawnRushSkillIds.EnPassant, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.Castling, PawnRushSkillIds.Check, 0 }
                 : which == 3

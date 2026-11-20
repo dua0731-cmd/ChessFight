@@ -597,5 +597,27 @@ namespace ChessFight.RagdollLab
         public float snipeCooldown = 18f;
         [Tooltip("팀원이 줄을 막는다")]
         public bool snipeAlliesBlock = true;
+
+        [Header("후보 문서 1안 · 룩 뒤에서 잡기 (R-중2, 사슬 견인의 고침. 사거리 · 조준 · 휘청은 위의 룩 수치)")]
+        [Tooltip("끌어오는 빠르기 (m/s, 멀수록 오래 걸림), 끌려온 적이 내려서는 거리 (m, 룩 앞. 가까워서 우클릭으로 바로 붙잡힘)")]
+        public float behindPullSpeed = 12f, behindFront = 0.9f;
+        [Tooltip("룩이 끌려갈 때: 무거운 적 앞 몇 m에서, 벽 · 턱 몇 m 앞에서 멈추는지")]
+        public float behindHeavyGap = 0.9f, behindWallGap = 0.5f;
+        [Tooltip("걸린 뒤 좌클릭을 누르고 있으면 감는 빠르기 배수 (기획은 마우스 휠인데 휠은 네트워크로 안 가서)")]
+        public float behindReel = 1.8f;
+        [Tooltip("끌려가는 적이 이만큼 좌클릭하면 사슬을 털어낸다 (절반만 끌려옴)")]
+        public int behindShake = 3;
+        public float behindCooldown = 16f;
+
+        [Header("후보 문서 1안 · 킹 왕의 부름 (K-중1, 지금 왕의 부름의 고침. 목록 · 대답 시간 · 오는 길은 위의 킹 수치)")]
+        [Tooltip("불린 팀원이 내려서는 자리: 킹 앞 이 거리 (m, 킹이 부를 때 보던 쪽). 좌우 간격은 kingCallSpread")]
+        public float summonFront = 1.5f;
+        [Tooltip("부를 때 나팔 반동으로 킹이 물러나는 거리 (m)")]
+        public float summonRecoil = 0.5f;
+        [Tooltip("팀원이 내려서는 순간 둘레 이 반경 (m)의 적이 밀리는 빠르기 (m/s, 넘어지지 않음)")]
+        public float summonPushRadius = 2f, summonShove = 4f;
+        [Tooltip("내려선 뒤 이 시간 (초) 안에 키를 한 번 더 누르면 킹과 내려선 팀원이 함께 이만큼 (m) 밀고 나감, 걸리는 시간 (초)")]
+        public float summonPushWindow = 0.6f, summonPushDistance = 3f, summonPushTime = 0.45f;
+        public float summonCooldown = 20f;
     }
 }

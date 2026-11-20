@@ -117,6 +117,7 @@ namespace ChessFight.RagdollLab
                 // was. With a skill in his row he plays his slots like any piece.
                 oldHome = -1;
                 cdSlot = 0;
+                kingPool = false;
                 UpdateKingCall(s, press, cancel, dt);
                 return;
             }
@@ -185,7 +186,14 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.SteeredSteps: pawnSteer = true; UpdatePawnSkill(s, press, dt); break;   // the pool's P-기1
                 case PawnRushSkillIds.TurnLeap: UpdateKnightSkill(s, press, dt); break;
                 case PawnRushSkillIds.CrossRope: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
-                case PawnRushSkillIds.ChainPull: UpdateRookChain(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.ChainPull: chainPool = false; UpdateRookChain(s, press, confirm, cancel, dt); break;
+                // The skill pool's R-중2 and K-중1 on the chain's and the call's code (RagdollPawn.PoolSkills.cs).
+                case PawnRushSkillIds.ChainBehind: chainPool = true; UpdateRookChain(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.KingSummon:
+                    kingPool = true;
+                    if (SummonPushKey(s, press)) press = false;   // the moment after a teammate set down: push on together
+                    UpdateKingCall(s, press, cancel, dt);
+                    break;
                 case PawnRushSkillIds.RingShove: UpdateQueenSkill(s, press, dt); break;
             }
         }

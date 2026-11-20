@@ -486,6 +486,7 @@ namespace ChessFight.RagdollLab
             var queen = me.CheckedBy();
             var pusher = me.PushedBy();
             var sniper = me.SnipedBy();
+            var chainer = me.ChainPulledBy();
             if (rook != null && rook.PawnRushSkills != null)
             {
                 float window = Mathf.Max(0.1f, rook.CastleWindow);
@@ -506,6 +507,13 @@ namespace ChessFight.RagdollLab
                 line = "체크!  빨간 칸 밖으로";
                 sub = $"{queen.DisplayName} · {queen.CheckLeft:0.0}초";
                 share = Mathf.Clamp01(queen.CheckLeft / window);
+            }
+            else if (chainer != null && chainer.PawnRushSkills != null)
+            {
+                // The pool's chain from behind: it can be shaken off half way.
+                line = "사슬!  좌클릭 연타로 털어요";
+                sub = $"{chainer.DisplayName} · {chainer.PawnRushSkills.behindShake}번 누르면 절반만 끌려가요";
+                share = 1f;
             }
             else if (sniper != null && sniper.PawnRushSkills != null)
             {
@@ -570,6 +578,12 @@ namespace ChessFight.RagdollLab
                 line = "최선수!";
                 sub = "멀리서 맞혀 넘어뜨렸어요";
                 share = 1f - Mathf.Clamp01(me.PlanTime / 0.7f);
+            }
+            else if (me.SummonPushLeft > 0f && me.PawnRushSkills != null)
+            {
+                line = "함께 밀고 나가요!";
+                sub = $"스킬 키 · {me.SummonPushLeft:0.0}초";
+                share = Mathf.Clamp01(me.SummonPushLeft / Mathf.Max(0.1f, me.PawnRushSkills.summonPushWindow));
             }
             else if (me.CheckAgainLeft > 0f && me.PawnRushSkills != null)
             {
