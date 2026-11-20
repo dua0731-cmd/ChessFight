@@ -112,6 +112,25 @@ namespace ChessFight.PawnRush
 
         public bool HasBuilt => holder != null;
 
+        // R730 (11-20 build test: the giant chess course stuttered as the pawns went into the library and into its chess
+        // room): the round's scene has no fog, and the sections that bring their own light (the carriage yard, the Royal
+        // Library, the Royal Observatory) turn a linear haze on as the camera comes in. Fog on or off is a shader keyword,
+        // so at that moment every material in view wants another variant, and a Direct3D 12 player makes each one's
+        // pipeline there and then. A linear fog from the round's start, too far out to be seen (3000 to 6000 m - the very
+        // distances those sections fade their haze from when a scene has none), keeps the variants in use the same from
+        // the loading screen on; a section's haze then only moves the distances and the colour. A fog already on is left
+        // as it is.
+        public const float FarFogStart = 3000f, FarFogEnd = 6000f;
+
+        static void FarFog()
+        {
+            if (RenderSettings.fog) return;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogStartDistance = FarFogStart;
+            RenderSettings.fogEndDistance = FarFogEnd;
+            RenderSettings.fog = true;
+        }
+
         void OnDestroy()
         {
             if (Current == this) Current = null;
@@ -127,6 +146,7 @@ namespace ChessFight.PawnRush
         void Build(int roundSeed, double startClock, bool fresh)
         {
             Clear();
+            if (Application.isPlaying) FarFog();
             Seed = roundSeed;
             StartClock = startClock;
             if (set == null)

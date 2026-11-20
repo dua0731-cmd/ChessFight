@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using ChessFight.Game;
 using ChessFight.Gameplay;
 using UnityEngine;
@@ -77,6 +78,7 @@ namespace ChessFight.PawnRush
 
         void OnDisable()
         {
+            WriteFrameSummary();
             KillVolume.Entered -= OnFall;
             RollingSpawner.Hit -= OnHit;
             ChandelierRain.Hit -= OnHit;
@@ -99,6 +101,7 @@ namespace ChessFight.PawnRush
         void Update()
         {
             if (Driver == null || round == null) return;
+            CountFrame();
             if (Online)
             {
                 Track(NetworkDriver);
@@ -221,6 +224,79 @@ namespace ChessFight.PawnRush
             lastHit = what;
             lastHitAt = Time.time;
             Log(currentBeat ?? "-", "hit " + what);
+        }
+
+        // ------------------------------------------------------------------ frames
+
+        // R730 (11-20 build test, the user: "자이언트 체스 코스에서 엄청 끊기는 현상" - going into the library and into the
+        // giant chess room; the Player.log had no frame times to tell a hitch from a slow room): a frame of 0.1 s or more
+        // goes to the Player.log ("[끊김]") and the CSV ("hitch <ms>") with the beat the pawn is in, and as the scene goes
+        // each place's frames are summed up ("[프레임]": seconds, mean fps, the slowest 1 %, the longest frame, hitches).
+        // Frames under the loading screen, and the first few after it, are not counted.
+        const float HitchSeconds = .1f;
+        const int MaxHitchLines = 120, SettleFrames = 3;
+
+        sealed class FrameStats
+        {
+            public int Frames, Hitches;
+            public double Seconds;
+            public float Longest;
+            public readonly int[] Ms = new int[251];   // frames by whole milliseconds, the last bin 250 ms and over
+        }
+
+        readonly Dictionary<string, FrameStats> frameStats = new Dictionary<string, FrameStats>();
+        readonly List<string> frameOrder = new List<string>();
+        int hitchLines, settle = SettleFrames;
+
+        void CountFrame()
+        {
+            if (LoadingScreenView.Showing) { settle = SettleFrames; return; }
+            if (settle > 0) { settle--; return; }
+            float dt = Time.unscaledDeltaTime;
+            if (dt <= 0f) return;
+            string place = currentSection != null ? currentSection.DisplayName : currentBeat ?? "구간 밖";
+            if (!frameStats.TryGetValue(place, out var stats))
+            {
+                frameStats[place] = stats = new FrameStats();
+                frameOrder.Add(place);
+            }
+            stats.Frames++;
+            stats.Seconds += dt;
+            stats.Ms[Mathf.Clamp(Mathf.RoundToInt(dt * 1000f), 0, 250)]++;
+            if (dt > stats.Longest) stats.Longest = dt;
+            if (dt < HitchSeconds) return;
+            stats.Hitches++;
+            string where = currentBeat ?? lastBeat ?? "구간 밖";
+            Log(where, "hitch " + Mathf.RoundToInt(dt * 1000f));
+            if (hitchLines < MaxHitchLines)
+                Debug.Log(string.Format(CultureInfo.InvariantCulture, "[끊김] {0:0.00}초 멈춤 | {1} | 판 {2:0.0}초", dt, where, Time.time - runStart));
+            else if (hitchLines == MaxHitchLines)
+                Debug.Log("[끊김] 이 판은 " + MaxHitchLines + "번을 넘어 더 적지 않습니다(CSV에는 계속 적음).");
+            hitchLines++;
+        }
+
+        // Once, as the scene goes (or the test is switched off): every place the pawn spent half a second or more in.
+        void WriteFrameSummary()
+        {
+            if (frameOrder.Count == 0) return;
+            var text = new StringBuilder("[프레임] 곳마다(로딩 화면 뒤 제외)");
+            foreach (var place in frameOrder)
+            {
+                var s = frameStats[place];
+                if (s.Frames < 30 || s.Seconds < .5) continue;
+                // The slowest 1 %: the frame time that many frames reach.
+                int rank = Mathf.Max(1, s.Frames / 100), seen = 0, slow = 0;
+                for (int ms = 250; ms >= 0; ms--)
+                {
+                    seen += s.Ms[ms];
+                    if (seen >= rank) { slow = ms; break; }
+                }
+                text.AppendFormat(CultureInfo.InvariantCulture, "\n  {0}: {1:0}초 · 평균 {2:0} fps · 느린 1% {3} ms · 가장 긴 {4:0.00}초 · 0.1초 넘음 {5}번",
+                    place, s.Seconds, s.Frames / s.Seconds, slow >= 250 ? "250 이상" : slow.ToString(CultureInfo.InvariantCulture), s.Longest, s.Hitches);
+            }
+            Debug.Log(text.ToString());
+            frameOrder.Clear();
+            frameStats.Clear();
         }
 
         // ------------------------------------------------------------------ CSV
