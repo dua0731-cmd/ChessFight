@@ -50,6 +50,9 @@ namespace ChessFight.RagdollLab
         // to show as "+N" under 100, or one of the words, RagdollPawn.Pop*); a rook's wall risen (at: one end on the floor,
         // normal: the other, dir: its face's way, size: the seconds it stands, count: its number) and broken (count).
         KitPop, KitWall, KitWallBreak,
+        // ...and a map crown taken for the ultimate gauge (by: who; at: where; count: the crown's number; size: the seconds
+        // until it comes back: RagdollPawn.UltGauge.cs, PawnRushGaugeCrown).
+        KitCrown,
     }
 
     public struct SkillFxEvent
@@ -440,6 +443,12 @@ namespace ChessFight.RagdollLab
 
         void StartCooldown(float seconds)
         {
+            // The kits' second version: an ultimate has no cooldown, its gauge is what it waits for (RagdollPawn.UltGauge.cs).
+            if (UltSlotOnGauge(cdSlot))
+            {
+                cooldownTotal = skillCooldownLeft = 0f;
+                return;
+            }
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
             seconds *= StageCooldown;   // the growing system's stage (the skill window)
@@ -546,6 +555,7 @@ namespace ChessFight.RagdollLab
                 target.Knockdown(cause, hold);
                 target.AddVelocity(push * target.PushScale);
                 result = "넘어짐";
+                if (IsEnemyOf(target)) target.GaugeKnocked(this);   // floored by an enemy's skill: its gauge fills (UltGauge)
             }
             else
             {

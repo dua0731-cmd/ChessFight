@@ -56,7 +56,7 @@ namespace ChessFight.RagdollLab
         float SkillJumpScale => heavyLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.heavyJump, 0.2f, 1f) : 1f;
 
         // The words over a head (SkillFxKind.KitPop's count; under 100 a value shown as "+N").
-        public const int PopCheckEscape = 100, PopDefended = 101, PopLight = 102, PopHeavy = 103;
+        public const int PopCheckEscape = 100, PopDefended = 101, PopLight = 102, PopHeavy = 103, PopCrown = 104, PopUltCut = 105;
 
         void MakeLight(RagdollPawn other, PawnRushSkillParams s)
         {
@@ -94,6 +94,7 @@ namespace ChessFight.RagdollLab
             if (lightLeft > 0f) lightLeft = gone ? 0f : lightLeft - dt;
             if (heavyLeft > 0f) heavyLeft = gone ? 0f : heavyLeft - dt;
             if (chainWheelLeft > 0f) chainWheelLeft -= dt;
+            UpdateGauge(s, dt);   // the ultimate gauge (RagdollPawn.UltGauge.cs)
         }
 
         void ClearKitTwoStates()
@@ -596,13 +597,6 @@ namespace ChessFight.RagdollLab
         }
 
         void ClearKitTwoNet() => lightLeft = heavyLeft = 0f;
-
-        // The ultimate gauge, 0..1 (the kits' second version, Docs/Skills/PAWN_RUSH_SKILL_SYSTEM.md 7; a client is told it).
-        float ultGauge01;
-
-        void CaptureGaugeNet(ref SkillWireState s) => s.Gauge = Mathf.Clamp01(ultGauge01);
-
-        void ApplyGaugeNet(in SkillWireState s) => ultGauge01 = s.Gauge;
 
         void AdvanceKitTwoView(float dt)
         {

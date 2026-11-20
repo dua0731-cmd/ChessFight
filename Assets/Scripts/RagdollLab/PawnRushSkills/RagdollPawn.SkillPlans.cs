@@ -133,6 +133,7 @@ namespace ChessFight.RagdollLab
                 // (The air barrage is spent from the moment it rises: its aim is the hover.)
                 bool spent = planPhase != PlanPhase.Aim || activeSkill == PawnRushSkillIds.AirVolley;
                 float cooldown = NewSkillCooldown(activeSkill, s);
+                UltCut(s);   // an ultimate floored in its warning leaves half its gauge (RagdollPawn.UltGauge.cs)
                 EndPlanSkill();
                 if (spent) StartCooldown(cooldown);
             }
@@ -143,6 +144,7 @@ namespace ChessFight.RagdollLab
                 cdSlot = k;
                 if (planPhase != PlanPhase.None) RunNewSkill(activeSkill, s, slotPress[k], confirm, cancel, dt);
                 else RunOldSkill(activeSkill, s, slotPress[k], confirm, cancel, dt);
+                TrackUltimate();   // past its aim an ultimate spends the gauge (RagdollPawn.UltGauge.cs)
                 return;
             }
 
@@ -154,6 +156,8 @@ namespace ChessFight.RagdollLab
                 int id = lo.Skill(piece, k);
                 if (id == 0) continue;
                 cdSlot = k;
+                // The kits' second version: an ultimate's key goes on a full gauge only, one of a team's at a time.
+                if (slotPress[k] && !UltMayGo(k)) slotPress[k] = false;
                 float cdBefore = slotCd[k];
                 if (PawnRushSkillIds.Old(id))
                 {
@@ -166,11 +170,13 @@ namespace ChessFight.RagdollLab
                 if (!SkillRunning) continue;
                 activeSlot = k;
                 activeSkill = id;
+                TrackUltimate();
                 return;
             }
             FeelKeepPresses(s, lo);   // a key that could not go yet is kept a moment (RagdollPawn.HandFeel.cs)
             if (!anyOld) oldHome = -1;
             cdSlot = 0;
+            TrackUltimate();
         }
 
         /// <summary>One of the skills as they are, by its own code, as the piece it was made for.</summary>
@@ -1128,7 +1134,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Something of the slots' beyond the first slot's cooldown is worth sending: a new skill under way, a pin on
         /// this piece, another slot's cooldown.</summary>
         bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || slotCd[3] > 0f
-                            || BookNetBusy || KitNetBusy;
+                            || BookNetBusy || KitNetBusy || GaugeNetBusy;
 
         /// <summary>Host: the slots' part of this piece's skill state - the skill under way and each slot's cooldown.</summary>
         void CaptureSlotNet(ref SkillWireState s)
@@ -1246,8 +1252,9 @@ namespace ChessFight.RagdollLab
             activeSkill = 0;
             activeSlot = -1;
             oldHome = -1;
-            slotCd[1] = slotCd[2] = 0f;
-            slotCdTotal[1] = slotCdTotal[2] = 0f;
+            slotCd[1] = slotCd[2] = slotCd[3] = 0f;
+            slotCdTotal[1] = slotCdTotal[2] = slotCdTotal[3] = 0f;
+            // (The gauge stays what it was last told: it is sent only when it moves or is full.)
         }
 
         /// <summary>Client: between two of the host's packets the slots' clocks run on.</summary>

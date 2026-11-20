@@ -36,6 +36,8 @@ namespace ChessFight.RagdollLab
         public KeyCode rookLedgeKey = KeyCode.J;
         [Tooltip("앙파상 시험 (JY-skill-lab): 적 더미 하나가 뒤에서 내 옆을 달려 지나간다")]
         public KeyCode passRunKey = KeyCode.M;
+        [Tooltip("궁극기 게이지 시험 (JY-skill-lab, 2판): 맵의 왕관 여섯을 내 둘레에 다시 놓는다")]
+        public KeyCode crownKey = KeyCode.C;
 
         [Header("시험 장치")]
         [Tooltip("룩만 부수는 바리케이드 (바닥 가운데)")]
@@ -84,6 +86,41 @@ namespace ChessFight.RagdollLab
         {
             RagdollPawn.SkillLog -= OnSkill;
             RagdollPawn.SkillSendBack = null;
+            RagdollPawn.TeamLosing = null;
+            PawnRushGaugeCrown.ClearAll();
+        }
+
+        // ---------------------------------------------------------------- the ultimate gauge's test (the kits' second version)
+
+        // The test's "my team is losing" (time fills the gauge 1.5 times as fast for it).
+        bool losingTest;
+
+        /// <summary>Six crowns round the start, the same on every PC (the network test places them alike).</summary>
+        void PlaceStartCrowns()
+        {
+            PawnRushGaugeCrown.ClearAll();
+            Vector2[] spots = { new Vector2(-4f, 6f), new Vector2(4f, 7f), new Vector2(-7f, 11f), new Vector2(7f, 12f), new Vector2(0f, 9f), new Vector2(0f, 15f) };
+            for (int i = 0; i < spots.Length; i++)
+                PawnRushGaugeCrown.Place(i, FloorAt(LabLayout.SpawnP1 + new Vector3(spots[i].x, 0f, spots[i].y)));
+        }
+
+        /// <summary>Six crowns in a ring round the piece played here (offline: the C key).</summary>
+        void PlaceCrownsRound(RagdollPawn me)
+        {
+            PawnRushGaugeCrown.ClearAll();
+            Vector3 c = me.FeetPoint;
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * Mathf.PI * 2f / 6f;
+                PawnRushGaugeCrown.Place(i, FloorAt(c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 5f));
+            }
+            Report("왕관 여섯을 내 둘레 5 m에 놓았어요 (하나에 게이지 10%, 주우면 30초 뒤 다시 생김)");
+        }
+
+        static Vector3 FloorAt(Vector3 p)
+        {
+            if (Physics.Raycast(p + Vector3.up * 4f, Vector3.down, out var hit, 12f, ~0, QueryTriggerInteraction.Ignore)) return hit.point;
+            return p;
         }
 
         static void OnSkill(RagdollPawn pawn, string line) => Report(line);
@@ -94,6 +131,9 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<LabGame>();
             // The pool's queen sacrifice sends the queen back: here, the lab's own respawn (JY-skill-lab 11-20).
             RagdollPawn.SkillSendBack = p => { if (game != null) game.Respawn(p); };
+            // The kits' second version's ultimate gauge: map crowns round the start, and the test's losing team.
+            if (game == null || !game.AutoTest) PlaceStartCrowns();
+            RagdollPawn.TeamLosing = t => losingTest && Me != null && t == Me.Team;
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
             // The skills' sounds (R114, 승규 님's picks on the R107 page).
@@ -162,6 +202,7 @@ namespace ChessFight.RagdollLab
             if (!Online && Input.GetKeyDown(rookGroundKey)) RookGround(me, false);
             if (!Online && Input.GetKeyDown(rookLedgeKey)) RookGround(me, true);
             if (!Online && Input.GetKeyDown(passRunKey)) RunPast(me);
+            if (!Online && Input.GetKeyDown(crownKey)) PlaceCrownsRound(me);
             // The skill key itself: LabGame.ReadInput puts it into P1's input (R111).
         }
 
@@ -593,6 +634,16 @@ namespace ChessFight.RagdollLab
                     if (!string.IsNullOrEmpty(firstName)) name = $"{firstName} · {name}";
                     if (!string.IsNullOrEmpty(firstExtra)) use += firstExtra;
                 }
+                if (me.UltOnGauge(k))
+                {
+                    // The kits' second version: an ultimate's card is its gauge (lit when full), not a cooldown.
+                    bool ready = me.UltReady;
+                    PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(row), key, name,
+                        running ? StageName(me) : ready ? use : $"게이지 {me.UltGauge * 100f:0}%", me.Piece,
+                        (ready && !me.SkillRunning) || running, ready ? 0f : 1f - me.UltGauge);
+                    row++;
+                    continue;
+                }
                 PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(row), key, name,
                     SkillKeyCard.Line(running ? StageName(me) : null, cd, use), me.Piece,
                     can || running, total > 0f ? Mathf.Clamp01(cd / total) : 0f);
@@ -686,8 +737,11 @@ namespace ChessFight.RagdollLab
                     int id = p1.SlotSkill(k);
                     if (id == 0) continue;
                     anySkill = true;
-                    // (An ultimate's cooldown is its gauge: how full it is, "!!" when full.)
-                    string wait = PawnRushSkillIds.Ultimate(id)
+                    // (An ultimate's cooldown is its gauge: how full it is, "!!" when full. The kits' second version's gauge
+                    // is its own: RagdollPawn.UltGauge.cs.)
+                    string wait = p1.UltOnGauge(k)
+                        ? (p1.UltReady ? "   <color=#fc4>!! 게이지 가득</color>" : $"   게이지 {p1.UltGauge * 100f:0}%")
+                        : PawnRushSkillIds.Ultimate(id)
                         ? (p1.SlotCooldown(k) > 0f ? $"   게이지 {100f * (1f - p1.SlotCooldown(k) / Mathf.Max(0.01f, p1.SlotCooldownTotal(k))):0}%" : "   <color=#fc4>!!</color>")
                         : p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : "";
                     GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + wait
@@ -707,8 +761,19 @@ namespace ChessFight.RagdollLab
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
             GUILayout.Label(skills.loadout.system == PawnRushLoadout.Many
-                ? "3안: 스킬을 넣은 둘째 · 셋째 칸은 E · Q가 스킬 키 (빈 칸이면 랩의 원래 기능)"
+                ? "3안: 스킬을 넣은 둘째 · 셋째 · 넷째 칸은 E · R · Q가 스킬 키 (빈 칸이면 랩의 원래 기능, R은 모두 리스폰)"
                 : "E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
+            if (p1.HasUltimate)
+            {
+                // The kits' second version's ultimate gauge (RagdollPawn.UltGauge.cs).
+                GUILayout.BeginHorizontal();
+                if (!Online && GUILayout.Button("게이지 가득", button)) p1.FillGauge();
+                if (!Online && GUILayout.Button($"왕관 다시 놓기 ({crownKey})", button)) PlaceCrownsRound(p1);
+                if (GUILayout.Button(losingTest ? "지는 팀: 시간 1.5배" : "지는 팀: 아님", losingTest ? selected : button)) losingTest = !losingTest;
+                GUILayout.EndHorizontal();
+                GUILayout.Label(skills.testCooldown > 0f ? "게이지: 시험용 쿨이 켜져 있어 늘 가득 (쿨: 기획 쿨로 바꾸면 왕관 · 시간 · 당해서 넘어짐으로 참)"
+                    : $"게이지 {p1.UltGauge * 100f:0}% · 왕관 10% · 시간 1초 0.15% · 적 스킬에 넘어짐 4% (10초에 12%까지)", small);
+            }
             if (fx != null)
             {
                 GUILayout.BeginHorizontal();

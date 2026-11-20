@@ -46,7 +46,8 @@ namespace ChessFight.RagdollLab
         {
             var s = PawnRushSkills;
             var lo = Loadout;
-            if (s == null || lo == null) return;
+            // (The kits' second version's gauge is its own, filled by crowns, time and knockdowns: RagdollPawn.UltGauge.cs.)
+            if (s == null || lo == null || s.realGauge) return;
             int was = cdSlot;
             for (int k = 0; k < lo.SlotCount && k < slotCd.Length; k++)
             {
@@ -294,7 +295,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float flat = s.smotherSquash + (sharp ? s.smotherClickBonus : 0f);
-            center.Squash(flat, 0f);
+            if (center.Squash(flat, 0f)) center.GaugeKnocked(this);   // squashed by an enemy: its gauge fills (KitTwo's gauge)
             center.LastSkillHit = $"스머더드 메이트: 납작 {flat:0.#}초";
             int n = 1;
             foreach (var other in All)

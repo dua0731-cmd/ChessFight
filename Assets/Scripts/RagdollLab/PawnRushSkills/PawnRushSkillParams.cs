@@ -791,6 +791,18 @@ namespace ChessFight.RagdollLab
         [Tooltip("머리 위에 튀는 글자 (+5, 체크 탈출)가 보이는 시간 (초)")]
         public float popSeconds = 1.2f;
 
+        [Header("기물별 한 벌 2판 · 궁극기 게이지 (체계 7.4 · 7.5)")]
+        [Tooltip("켜면 궁극기는 쿨 대신 이 게이지로 나간다: 맵의 왕관, 시간, 적의 스킬에 넘어짐으로 찬다 (끄면 3안의 3분 쿨). 시험용 쿨이 켜져 있으면 늘 가득")]
+        public bool realGauge = true;
+        [Tooltip("시간: 1초에 차는 양 (0.0015 = 0.15%), 지는 팀의 배수")]
+        public float gaugeTime = 0.0015f, gaugeLosing = 1.5f;
+        [Tooltip("왕관 하나에 차는 양, 주운 왕관이 다시 생기는 시간 (초), 왕관을 줍는 거리 (m)")]
+        public float gaugeCrown = 0.1f, crownRespawn = 30f, crownReach = 0.9f;
+        [Tooltip("적의 스킬에 넘어지거나 납작해질 때마다 차는 양; 이 시간 (초) 안에 이만큼까지")]
+        public float gaugeKnock = 0.04f, gaugeKnockWindow = 10f, gaugeKnockCap = 0.12f;
+        [Tooltip("예고 중에 넘어져 끊긴 궁극기가 남기는 게이지")]
+        public float gaugeCutKeep = 0.5f;
+
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]
         public float stepPassRange = 2f, stepPassWindow = 0.4f;

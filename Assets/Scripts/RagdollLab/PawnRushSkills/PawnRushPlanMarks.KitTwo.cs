@@ -47,12 +47,39 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KitWallBreak:
                     if (e.by != null && e.by.NetworkPuppet) PawnRushKitWall.Find(e.count)?.Break();
                     break;
+                case SkillFxKind.KitCrown:
+                    // The host hid its own crown; another PC is told which.
+                    if (e.by != null && e.by.NetworkPuppet) PawnRushGaugeCrown.Find(e.count)?.Take(e.size);
+                    break;
             }
         }
+
+        /// <summary>A full gauge: a small gold crown over the head, for everyone to see (and go for).</summary>
+        void DrawReadyCrown(RagdollPawn pawn)
+        {
+            if (!pawn.UltReady || !pawn.HasUltimate) return;
+            var cam = Camera.main;
+            Vector3 right = cam != null ? cam.transform.right : Vector3.right;
+            right.y = 0f;
+            right = right.sqrMagnitude > 1e-4f ? right.normalized : Vector3.right;
+            Vector3 b = pawn.Hips.position + Vector3.up * (1.05f + Mathf.Sin(Time.time * 3f) * 0.04f);
+            crownPoints[0] = b - right * 0.2f;
+            crownPoints[1] = b - right * 0.2f + Vector3.up * 0.2f;
+            crownPoints[2] = b - right * 0.1f + Vector3.up * 0.09f;
+            crownPoints[3] = b + Vector3.up * 0.24f;
+            crownPoints[4] = b + right * 0.1f + Vector3.up * 0.09f;
+            crownPoints[5] = b + right * 0.2f + Vector3.up * 0.2f;
+            crownPoints[6] = b + right * 0.2f;
+            crownPoints[7] = b - right * 0.2f;
+            SkillMarks.Polyline(Next(), crownPoints, Fade(Gold, 1f), 0.045f);
+        }
+
+        readonly Vector3[] crownPoints = new Vector3[8];
 
         /// <summary>Light or heavy, on any piece.</summary>
         void DrawKitTwoStates(RagdollPawn pawn)
         {
+            DrawReadyCrown(pawn);
             if (pawn.Light)
             {
                 float bob = Mathf.Sin(Time.time * 6f) * 0.08f;
@@ -153,9 +180,11 @@ namespace ChessFight.RagdollLab
                     : p.code == RagdollPawn.PopDefended ? "받쳐진 말"
                     : p.code == RagdollPawn.PopLight ? "가볍게!"
                     : p.code == RagdollPawn.PopHeavy ? "무겁게!"
+                    : p.code == RagdollPawn.PopCrown ? $"왕관 +{(p.over.PawnRushSkills != null ? p.over.PawnRushSkills.gaugeCrown * 100f : 10f):0}%"
+                    : p.code == RagdollPawn.PopUltCut ? "끊김! 게이지 절반"
                     : "";
                 if (text.Length == 0) continue;
-                Color c = p.code < 100 ? Gold : p.code == RagdollPawn.PopCheckEscape ? new Color(0.5f, 1f, 0.6f)
+                Color c = p.code < 100 || p.code == RagdollPawn.PopCrown ? Gold : p.code == RagdollPawn.PopCheckEscape ? new Color(0.5f, 1f, 0.6f)
                     : p.code == RagdollPawn.PopLight ? Pale : p.code == RagdollPawn.PopHeavy ? new Color(0.75f, 0.78f, 0.86f) : White;
                 float a = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
                 float scale = p.code < 100 ? 1f + 0.4f * Mathf.Clamp01(1f - age / 0.15f) : 1f;   // a value pops in big
