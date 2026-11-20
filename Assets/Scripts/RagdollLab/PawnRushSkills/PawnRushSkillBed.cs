@@ -213,7 +213,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The names of the skills in a piece's slots.</summary>
         static string SlotNames(RagdollPawn pawn)
         {
-            if (pawn.Piece == PieceKind.King) return RagdollPawn.SkillName(PieceKind.King);
+            // (The king's row empty: his call, as it was. With a skill in it he has slots like any piece.)
+            if (pawn.Piece == PieceKind.King && !pawn.KingPlaysSlots) return RagdollPawn.SkillName(PieceKind.King);
             string names = "";
             for (int k = 0; k < pawn.SlotCount; k++)
             {
@@ -227,7 +228,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The slots still cooling down, by their skills' names.</summary>
         static string CooldownLine(RagdollPawn pawn)
         {
-            if (pawn.Piece == PieceKind.King)
+            if (pawn.Piece == PieceKind.King && !pawn.KingPlaysSlots)
                 return pawn.SkillCooldown > 0f ? $"{RagdollPawn.SkillName(PieceKind.King)} {pawn.SkillCooldown:0.0}" : "";
             string line = "";
             for (int k = 0; k < pawn.SlotCount; k++)
@@ -489,9 +490,9 @@ namespace ChessFight.RagdollLab
         /// draining it from the top otherwise; under the name, what it is doing, the cooldown left, or how to use it.</summary>
         void KeyCard(RagdollPawn p1)
         {
-            if (p1.Piece == PieceKind.King)
+            if (p1.Piece == PieceKind.King && !p1.KingPlaysSlots)
             {
-                // The king has no slots: its call's card, as it was.
+                // The king's row is empty: his call's card, as it was.
                 bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
                 PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
                     SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, $"{skillKey} 사용"), p1.Piece,
@@ -540,7 +541,14 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.Fork:
                     case PawnRushSkillIds.Ward:
                     case PawnRushSkillIds.Squeeze:
+                    case PawnRushSkillIds.KingStep:
                         use = $"{key} 사용";
+                        break;
+                    case PawnRushSkillIds.BentLeap:
+                        use = me.LeapCanTurn ? $"공중에서 {key} = 꺾기" : $"{key} 사용";
+                        break;
+                    case PawnRushSkillIds.Fianchetto:
+                        use = running ? $"{click} 쏘기 · {key} 일어남" : $"{key} 자리 잡기 → {click}";
                         break;
                     case PawnRushSkillIds.AirVolley:
                         use = running ? $"{click} 발사 ({me.VolleyShotsLeft}발) · {key} 내려옴" : $"{key} 떠오름 → {click} 발사";
@@ -635,7 +643,7 @@ namespace ChessFight.RagdollLab
 
             GUILayout.Space(4f);
             GUILayout.Label($"<b>{ChessPieces.Name(p1.Piece)}</b>   (팀 {Teams.Name(p1.Team)}, 무게 {p1.Weight:0.#})", text);
-            if (p1.Piece == PieceKind.King)
+            if (p1.Piece == PieceKind.King && !p1.KingPlaysSlots)
             {
                 GUILayout.Label($"<b>{skillKey} · {RagdollPawn.SkillName(PieceKind.King)}</b>", text);
                 GUILayout.Label(KingHowTo, small);
@@ -766,6 +774,8 @@ namespace ChessFight.RagdollLab
                     if (pawn.Touched) line = $"터치 {pawn.TouchLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.Numb) line = $"손 저림 {pawn.NumbLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.Ghosted) line = $"유령 {pawn.GhostLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
+                    // The kits' basic row (RagdollPawn.KitSkills.cs).
+                    if (pawn.Slowed) line = $"발 무거움 {pawn.SlowLeft:0.0}" + (line.Length > 0 ? " · " + line : "");
                     if (pawn.CheckedBy() != null) line = "체크!" + (line.Length > 0 ? " · " + line : "");
                     // R146: a king's call to it, and its trip in.
                     if (pawn.KingCarried) line = "오는 중 · 무적";

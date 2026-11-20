@@ -225,7 +225,7 @@ namespace ChessFight.RagdollLab
         // slots, the five stages. TypeLoadoutAsk: one change asked of the host (PawnRushLoadout.Apply's two numbers),
         // numbered like DevClear so the host takes it once.
         public const byte TypeLoadout = 12;
-        public const int LoadoutBytes = 4 + 1 + 8 + 1 + 1 + 1 + PawnRushLoadout.Rows * PawnRushLoadout.Slots + PawnRushLoadout.Rows;   // 36
+        public const int LoadoutBytes = 4 + 1 + 8 + 1 + 1 + 1 + PawnRushLoadout.Rows * PawnRushLoadout.Slots + PawnRushLoadout.Rows;   // 40 (six rows since the king has one)
         public const byte TypeLoadoutAsk = 13;
         public const int LoadoutAskBytes = 4 + 1 + 8 + 1 + 1 + 1 + 1;   // 17
         public const int HeaderBytes = 4 + 1 + 8;

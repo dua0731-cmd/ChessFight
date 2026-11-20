@@ -10,9 +10,10 @@ namespace ChessFight.RagdollLab
     public enum SkillTag { None = 0, Move = 1, Block = 2, Ally = 4, Counter = 8, Place = 16, Buff = 32 }
 
     /// <summary>Where a skill comes from: Pawn Rush as it is or was, the two other modes 승규 님 made skills for (their code
-    /// is theirs: a sword in the hand, a tower to climb), the 2.0 plans (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md), or the
-    /// skill idea book (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md).</summary>
-    public enum SkillOrigin { PawnRush, QueenHill, SwordFight, Plan2, IdeaBook }
+    /// is theirs: a sword in the hand, a tower to climb), the 2.0 plans (Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md), the
+    /// skill idea book (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md), or the kits by piece
+    /// (Docs/Skills/PAWN_RUSH_SKILL_KITS.md: only the skills made for them; a kit also uses skills from the others).</summary>
+    public enum SkillOrigin { PawnRush, QueenHill, SwordFight, Plan2, IdeaBook, Kits }
 
     /// <summary>One line of the skill book: a skill's number (PawnRushSkillIds), name, the piece it was thought up for, where
     /// it comes from, its tags, whether it can be put in a slot yet, and how to use it.</summary>
@@ -68,11 +69,12 @@ namespace ChessFight.RagdollLab
         };
 
         // (In the order the skill tree lists them.)
-        public static readonly SkillOrigin[] Origins = { SkillOrigin.PawnRush, SkillOrigin.IdeaBook, SkillOrigin.QueenHill, SkillOrigin.SwordFight, SkillOrigin.Plan2 };
+        public static readonly SkillOrigin[] Origins = { SkillOrigin.PawnRush, SkillOrigin.Kits, SkillOrigin.IdeaBook, SkillOrigin.QueenHill, SkillOrigin.SwordFight, SkillOrigin.Plan2 };
 
         public static string OriginName(SkillOrigin origin) => origin switch
         {
             SkillOrigin.PawnRush => "폰 러쉬",
+            SkillOrigin.Kits => "기물별 한 벌",
             SkillOrigin.QueenHill => "퀸 오브 더 힐",
             SkillOrigin.SwordFight => "소드 파이트",
             SkillOrigin.IdeaBook => "스킬 기획서",
@@ -128,6 +130,16 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.TwoHares, "두 마리 토끼", PieceKind.Queen, SkillOrigin.IdeaBook, SkillTag.Block | SkillTag.Buff,
                 "앞쪽 8 m 안의 적 둘을 보고 키 = 두 선이 0.45초 보인 뒤 둘의 허리를 3 m 고무줄로 4초 묶음\n줄이 1 m 넘게 늘어나면 튕겨서 서로에게 날아가 휘청 · 적이 둘이 아니면 무시 · 쿨 9초 (놓치면 3초)"),
 
+            // The kits by piece, the basic row - what each piece does in a chess opening (Docs/Skills/PAWN_RUSH_SKILL_KITS.md §6;
+            // RagdollPawn.KitSkills.cs). The other three basics are above: the pawn's two steps, the rook's castling, the
+            // queen's check.
+            Made(PawnRushSkillIds.BentLeap, "ㄱ자 도약", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Move | SkillTag.Block,
+                "키 = 0.15초 준비 뒤 높이 1.6 m로 4.5 m 도약 (공중에서도 됨) · 공중에서 한 번 더 = 이동 키 쪽으로 90°까지 꺾어 다시 차고 나감\n적의 머리를 밟으면 그 적은 휘청 0.4초, 나는 다시 튀어 오름 · 쿨 7초\n(승규 님의 10-07 첫 모양을 칸에서 돌게 다시 만든 것. 머리로 저절로 날아가지는 않음)"),
+            Made(PawnRushSkillIds.Fianchetto, "피앙케토", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block | SkillTag.Buff,
+                "키 = 자리를 잡고 겨눔 (못 걸음 · 줄이 1초 동안 8 m에서 25 m로 자람) · 좌클릭 = 쏘기 · 우클릭/키 = 일어남\n줄에 처음 닿은 적은 2초 동안 발이 무거움 (0.6배, 전력질주 안 됨) · 팀원이나 벽에 먼저 닿으면 거기서 막힘 · 쿨 6초"),
+            Made(PawnRushSkillIds.KingStep, "왕의 한 걸음", PieceKind.King, SkillOrigin.Kits, SkillTag.Move | SkillTag.Counter,
+                "키 = 이동 키 쪽으로 한 칸 (1.5 m) 비킴 · 공중에서도 됨 (쿨 +1초)\n잡혀 있으면 손을 뿌리치고 비킴 · 넘어져 있으면 걸음 대신 바로 일어남 (둘 다 쿨 +1.5초) · 쿨 4초"),
+
             // 승규 님's Pawn Rush skills that are not the five above: the king's, and the earlier forms of three pieces'.
             Idea(41, "왕의 부름", PieceKind.King, SkillOrigin.PawnRush, SkillTag.Ally | SkillTag.Move,
                 "같은 구간 팀원을 2명까지 골라 부름. 불린 팀원이 3초 안에 자기 스킬 키로 받으면 0.6초 만에 킹 뒤로 옴 (오는 동안 무적)" + OnMainKing),
@@ -135,8 +147,7 @@ namespace ChessFight.RagdollLab
                 "4.5 m 안에 X자 밧줄을 6초 깔아 둠. 지나가는 적이 걸려 묶이고, 룩은 끊고 지나감 · 쿨 8초 (10-07의 첫 모양)" + OnMainSwitch),
             Idea(29, "직선 돌파", PieceKind.Rook, SkillOrigin.PawnRush, SkillTag.Move | SkillTag.Block,
                 "조준 뒤 4칸 돌진, 최대 3명을 양옆으로 튕김, 바리케이드를 부숨, 공중 돌진도 됨 · 쿨 7초 (10-07의 첫 모양)" + InHistory),
-            Idea(43, "꺾어 도약 (옛 자유 도약)", PieceKind.Knight, SkillOrigin.PawnRush, SkillTag.Move | SkillTag.Block,
-                "1.6 m 높이로 4.5 m 도약. 공중에서 한 번 더 누르면 3 m 안 적의 머리를 찍거나 90° 꺾어 다시 차고 나감 · 쿨 7초 (10-07의 첫 모양)" + InHistory),
+            // (The knight's earlier leap, 43, is in the kits' block above: made again for the slots as "ㄱ자 도약".)
 
             // 승규 님's Queen of the Hill skills (R89, 10-09), brought over to the slots (RagdollPawn.HillSkills.cs).
             Made(PawnRushSkillIds.Ward, "근접 호위", PieceKind.King, SkillOrigin.QueenHill, SkillTag.Ally | SkillTag.Buff,
@@ -235,6 +246,9 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.Ghost, "잠깐 적의 몸과 스킬이 나를 그냥 통과한다" },
             { PawnRushSkillIds.BackPush, "바로 앞의 팀원을 받쳐 곧게 쏘아 보낸다" },
             { PawnRushSkillIds.TwoHares, "적 둘을 고무줄로 묶는다. 멀어지면 튕겨 서로 부딪힌다" },
+            { PawnRushSkillIds.BentLeap, "높이 뛰어 장애물과 사람을 넘는다. 공중에서 한 번 꺾는다" },
+            { PawnRushSkillIds.Fianchetto, "자리를 잡고 멀리 겨눈다. 맞은 적은 발이 무거워진다" },
+            { PawnRushSkillIds.KingStep, "한 칸 비킨다. 잡혀도 넘어져도 쓴다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

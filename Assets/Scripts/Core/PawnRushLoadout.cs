@@ -20,6 +20,11 @@ namespace ChessFight.Network
         // touch-move, the knight's back kick, the opposite-coloured bishop, the rook's push from behind, the queen's two
         // hares (RagdollPawn.BookSkills.cs).
         public const int TouchMove = 61, BackKick = 62, Ghost = 63, BackPush = 64, TwoHares = 65;
+        // The kits by piece (Docs/Skills/PAWN_RUSH_SKILL_KITS.md, 2026-11-20), the basic row - what each piece does in a
+        // chess opening: the knight's bent leap (the first form of 승규 님's leap, made again for the slots), the bishop's
+        // fianchetto, the king's step (RagdollPawn.KitSkills.cs). The pawn's, the rook's and the queen's basics are skills
+        // that were there already (the two steps, castling, check).
+        public const int BentLeap = 43, Fianchetto = 71, KingStep = 72;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -51,21 +56,22 @@ namespace ChessFight.Network
     [Serializable]
     public sealed class PawnRushLoadout
     {
-        public const int Rows = 5, Slots = 3;
+        public const int Rows = 6, Slots = 3;
         public const int One = 1, Grow = 2, Many = 3;
 
-        /// <summary>The pieces that have slots, in the window's order.</summary>
-        public static readonly PieceKind[] RowPieces = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen };
+        /// <summary>The pieces that have slots, in the window's order. The king's row is the last (2026-11-20: a team has
+        /// one of each piece); while it is empty the king plays his call as he always did (<see cref="KingSlots"/>).</summary>
+        public static readonly PieceKind[] RowPieces = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
 
-        // A change's first number: 0..14 a slot (row * Slots + slot, its value the skill), then these.
-        public const int OpStage = Rows * Slots;          // 15..19: a row's stage (its value 1..3)
-        public const int OpSystem = OpStage + Rows;       // 20: the system (1..3)
-        public const int OpPreset = OpSystem + 1;         // 21: one of the loadouts that come with the game (Preset)
-        public const int OpHostOnly = OpPreset + 1;       // 22: only the manager changes it (1) or everyone (0)
+        // A change's first number: 0..17 a slot (row * Slots + slot, its value the skill), then these.
+        public const int OpStage = Rows * Slots;          // 18..23: a row's stage (its value 1..3)
+        public const int OpSystem = OpStage + Rows;       // 24: the system (1..3)
+        public const int OpPreset = OpSystem + 1;         // 25: one of the loadouts that come with the game (Preset)
+        public const int OpHostOnly = OpPreset + 1;       // 26: only the manager changes it (1) or everyone (0)
 
         public int system = One;
         public int[] slots = new int[Rows * Slots];
-        public int[] stages = { 1, 1, 1, 1, 1 };
+        public int[] stages = { 1, 1, 1, 1, 1, 1 };
         /// <summary>A room's: only its manager changes the loadout (everyone still sees it).</summary>
         public bool hostOnly;
 
@@ -89,7 +95,8 @@ namespace ChessFight.Network
             }
             if (stages == null || stages.Length != Rows)
             {
-                var fresh = new[] { 1, 1, 1, 1, 1 };
+                var fresh = new int[Rows];
+                for (int i = 0; i < Rows; i++) fresh[i] = 1;
                 if (stages != null) Array.Copy(stages, fresh, Math.Min(stages.Length, fresh.Length));
                 stages = fresh;
             }
@@ -114,6 +121,17 @@ namespace ChessFight.Network
         public int Skill(PieceKind piece, int slot)
         {
             return slot < 0 || slot >= SlotCount ? 0 : Raw(Row(piece), slot);
+        }
+
+        /// <summary>The king's row holds a skill in a slot he plays now: he plays his slots. Empty: his call, as it was.</summary>
+        public bool KingSlots
+        {
+            get
+            {
+                for (int k = 0; k < SlotCount; k++)
+                    if (Skill(PieceKind.King, k) != 0) return true;
+                return false;
+            }
         }
 
         /// <summary>The slot a piece plays a skill in now, or -1.</summary>
@@ -202,7 +220,7 @@ namespace ChessFight.Network
 
         public bool Same(PawnRushLoadout other) => other != null && Encode() == other.Encode();
 
-        /// <summary>As one line of text: the system, the fifteen slots, the five stages, and whether only the manager
+        /// <summary>As one line of text: the system, the eighteen slots, the six stages, and whether only the manager
         /// changes it.</summary>
         public string Encode()
         {
@@ -220,7 +238,9 @@ namespace ChessFight.Network
             if ((parts.Length != 3 && parts.Length != 4) || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
             var slotTexts = parts[1].Split(',');
             var stageTexts = parts[2].Split(',');
-            if (slotTexts.Length != Rows * Slots || stageTexts.Length != Rows) return result;
+            // (Five rows: a text from before the king had a row. His row stays empty.)
+            bool old = slotTexts.Length == (Rows - 1) * Slots && stageTexts.Length == Rows - 1;
+            if (!old && (slotTexts.Length != Rows * Slots || stageTexts.Length != Rows)) return result;
             var read = new PawnRushLoadout { system = system, hostOnly = parts.Length == 4 && parts[3] == "1" };
             for (int i = 0; i < slotTexts.Length; i++)
             {
@@ -236,19 +256,22 @@ namespace ChessFight.Network
         }
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 4;
+        public const int Presets = 5;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
-        /// in any slot, 3 the skill idea book's bundle A.</summary>
+        /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
+        /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md). The king's row is empty (his call) in all but the last.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
             int[] first = which == 1
-                ? new[] { PawnRushSkillIds.EnPassant, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.Castling, PawnRushSkillIds.Check }
+                ? new[] { PawnRushSkillIds.EnPassant, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.Castling, PawnRushSkillIds.Check, 0 }
                 : which == 3
-                ? new[] { PawnRushSkillIds.TouchMove, PawnRushSkillIds.BackKick, PawnRushSkillIds.Ghost, PawnRushSkillIds.BackPush, PawnRushSkillIds.TwoHares }
-                : new[] { PawnRushSkillIds.TwoSteps, PawnRushSkillIds.TurnLeap, PawnRushSkillIds.CrossRope, PawnRushSkillIds.ChainPull, PawnRushSkillIds.RingShove };
+                ? new[] { PawnRushSkillIds.TouchMove, PawnRushSkillIds.BackKick, PawnRushSkillIds.Ghost, PawnRushSkillIds.BackPush, PawnRushSkillIds.TwoHares, 0 }
+                : which == 4
+                ? new[] { PawnRushSkillIds.TwoSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.Fianchetto, PawnRushSkillIds.Castling, PawnRushSkillIds.Check, PawnRushSkillIds.KingStep }
+                : new[] { PawnRushSkillIds.TwoSteps, PawnRushSkillIds.TurnLeap, PawnRushSkillIds.CrossRope, PawnRushSkillIds.ChainPull, PawnRushSkillIds.RingShove, 0 };
             for (int row = 0; row < Rows; row++) p.slots[row * Slots] = first[row];
             return p;
         }

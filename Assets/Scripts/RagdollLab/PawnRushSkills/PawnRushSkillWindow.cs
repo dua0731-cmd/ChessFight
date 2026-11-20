@@ -331,13 +331,15 @@ namespace ChessFight.RagdollLab
             }
             x += 10f;
             // (In the order shown; each one's number is PawnRushLoadout.Preset's.)
-            string[] presets = { "지금 스킬", "1-나", "A 묶음", "비우기" };
-            int[] presetIds = { 0, 1, 3, 2 };
+            string[] presets = { "지금 스킬", "1-나", "A 묶음", "기본기", "비우기" };
+            int[] presetIds = { 0, 1, 3, 4, 2 };
             for (int i = 0; i < presets.Length; i++)
             {
-                if (Chip(new Rect(x, y, 62f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
-                    Say(presetIds[i] == 2 ? "모든 칸을 비웠어요" : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
-                x += 66f;
+                if (Chip(new Rect(x, y, 58f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
+                    Say(presetIds[i] == 2 ? "모든 칸을 비웠어요"
+                        : presetIds[i] == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
+                        : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
+                x += 62f;
             }
             if (ShowLock != null && ShowLock())
             {
@@ -465,7 +467,9 @@ namespace ChessFight.RagdollLab
             else GUI.Label(new Rect(detail.x + 8f, detail.y + 6f, detail.width - 16f, 40f), "스킬 아이콘에 마우스를 올리면 여기에 설명이 나와요. 아이콘을 끌어서 오른쪽 칸에 놓으세요.", small);
 
             GUI.Label(new Rect(boardX, top, boardW, 20f), "<b>기물별 칸</b>", label);
-            float by = top + 28f, sock = 62f;
+            // Six rows (the king's is the last): they share the height there is under the heading.
+            float rowsRoom = area.yMax - 96f - (top + 28f);
+            float by = top + 28f, sock = Mathf.Clamp(rowsRoom / PawnRushLoadout.Rows, 70f, 96f) - 34f;
             for (int row = 0; row < PawnRushLoadout.Rows; row++)
             {
                 var kind = PawnRushLoadout.RowPieces[row];
@@ -520,6 +524,9 @@ namespace ChessFight.RagdollLab
                     }
                     sx += sock + 14f;
                 }
+                // The king's row left empty: he plays his call, as he always did.
+                if (kind == PieceKind.King && !lo.KingSlots && lo.system != PawnRushLoadout.Grow)
+                    GUI.Label(new Rect(sx + 2f, by + sock * 0.5f - 10f, 130f, 20f), "비우면 왕의 부름", small);
                 if (lo.system == PawnRushLoadout.Grow)
                 {
                     // The growing system: the stage, set by hand for now.

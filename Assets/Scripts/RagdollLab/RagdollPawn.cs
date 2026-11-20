@@ -142,7 +142,8 @@ namespace ChessFight.RagdollLab
             get
             {
                 float top = Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                            * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+                            * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move
+                            * SkillMoveScale;   // heavy feet (a bishop's fianchetto, RagdollPawn.KitSkills.cs)
                 // R461: over a speed lane (ISpeedSurface) at least its speed
                 return groundSpeedSurface != null ? Mathf.Max(top, groundSpeedSurface.TopSpeed) : top;
             }

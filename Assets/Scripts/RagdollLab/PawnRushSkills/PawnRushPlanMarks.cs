@@ -50,6 +50,7 @@ namespace ChessFight.RagdollLab
                 DrawPin(pawn);
                 DrawWarded(pawn);
                 DrawBookStates(pawn);
+                DrawKitStates(pawn);
                 // By the skill, not the piece: the loadout (the skill window) may put any skill on any piece.
                 if (pawn.HasSkill(PawnRushSkillIds.EnPassant)) DrawPass(pawn, me);
                 switch (pawn.PlanSkill)
@@ -70,6 +71,10 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.Ghost: DrawGhostCast(pawn); break;
                     case PawnRushSkillIds.BackPush: DrawPush(pawn); break;
                     case PawnRushSkillIds.TwoHares: DrawHares(pawn); break;
+                    // The kits' basic row (RagdollPawn.KitSkills.cs).
+                    case PawnRushSkillIds.BentLeap: DrawBentLeap(pawn); break;
+                    case PawnRushSkillIds.Fianchetto: DrawFianchetto(pawn); break;
+                    case PawnRushSkillIds.KingStep: DrawKingStep(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -368,6 +373,64 @@ namespace ChessFight.RagdollLab
             SkillMarks.Circle(Next(), pawn.PlanPoint, 0.3f, Fade(Gold, a), 0.06f, 16);
         }
 
+        // ---------------------------------------------------------------- the kits' basic row (RagdollPawn.KitSkills.cs)
+
+        static readonly Color Ice = new Color(0.55f, 0.8f, 1f);
+
+        /// <summary>Heavy feet (a bishop's fianchetto took the piece): a pale blue ring beating slowly under it, blinking
+        /// as it runs out.</summary>
+        void DrawKitStates(RagdollPawn pawn)
+        {
+            if (!pawn.Slowed) return;
+            float a = pawn.SlowLeft < 0.6f ? 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 18f)) : 1f;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
+            Vector3 feet = pawn.FeetPoint;
+            SkillMarks.Circle(Next(), feet, 0.4f + 0.05f * pulse, Fade(Ice, a), 0.08f, 24);
+            SkillMarks.Circle(Next(), feet, 0.26f, Fade(Ice, a * 0.6f), 0.05f, 20);
+        }
+
+        /// <summary>The knight's bent leap: where it comes down (worked out when it takes off, turns or bounces).</summary>
+        void DrawBentLeap(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
+            bool air = phase == PlanPhase.Active;
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.5f, Fade(SkillMarks.Target, air ? 0.95f : 0.6f), air ? 0.08f : 0.05f, 28);
+            if (air) SkillMarks.Circle(Next(), pawn.PlanPoint, 0.2f, Fade(White, 0.8f), 0.05f, 16);
+        }
+
+        /// <summary>The bishop's fianchetto: seated, its line as far as it reaches now (it grows while it aims) with a tick
+        /// where it will end once fully aimed, and a ring under the enemy it would take; shot, the line it took for a
+        /// moment.</summary>
+        void DrawFianchetto(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            var s = pawn.PawnRushSkills;
+            Vector3 hands = pawn.LassoHands;
+            if (phase == PlanPhase.Aim)
+            {
+                float full = Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.fianCharge));
+                Color line = Color.Lerp(Violet, Gold, full);
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(line, 0.55f + 0.3f * full), 0.04f + 0.03f * full, false);
+                SkillMarks.Circle(Next(), pawn.FeetPoint, 0.55f, Fade(line, 0.8f), 0.06f, 28);
+                var target = pawn.PlanTarget;
+                if (target != null) SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(line, 0.95f), 0.07f, 24);
+            }
+            else if (phase == PlanPhase.Recovery)
+            {
+                float a = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.fianRecovery));
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(White, 0.4f + 0.6f * a), 0.1f, false);
+            }
+        }
+
+        /// <summary>The king's step: the square he steps to, for the moment it takes.</summary>
+        void DrawKingStep(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.45f, Fade(Gold, 0.85f), 0.06f, 24);
+        }
+
         // ---------------------------------------------------------------- what is being done to the piece played here
 
         void OnGUI()
@@ -431,6 +494,12 @@ namespace ChessFight.RagdollLab
                 line = "반대색!  적이 통과해요";
                 sub = $"발판 인원에는 안 들어가요 · {me.GhostLeft:0.0}초";
                 share = Mathf.Clamp01(me.GhostLeft / Mathf.Max(0.1f, me.PawnRushSkills.ghostSeconds));
+            }
+            else if (me.Slowed && me.PawnRushSkills != null)
+            {
+                line = "피앙케토!  발이 무거워요";
+                sub = $"전력질주가 안 돼요 · {me.SlowLeft:0.0}초";
+                share = Mathf.Clamp01(me.SlowLeft / Mathf.Max(0.1f, me.PawnRushSkills.fianSlowSeconds));
             }
             else if (me.Warded && me.PawnRushSkills != null)
             {

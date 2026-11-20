@@ -471,5 +471,70 @@ namespace ChessFight.RagdollLab
         [Tooltip("쿨타임 (초), 둘을 못 묶었을 때 쿨타임 (초)")]
         public float hareCooldown = 9f;
         public float hareMissCooldown = 3f;
+
+        // The kits by piece, the basic row (Docs/Skills/PAWN_RUSH_SKILL_KITS.md §6; RagdollPawn.KitSkills.cs).
+        [Header("기물별 한 벌 · 기본기 — 나이트 ㄱ자 도약 (10-07 첫 모양의 수치)")]
+        [Tooltip("뒷발로 서는 준비 (초). 공중에서 쓰면 준비 없이 바로 뛴다")]
+        public float leapWindup = 0.15f;
+        [Tooltip("도약 높이 (m), 거리 (m)")]
+        public float leapHeight = 1.6f;
+        public float leapDistance = 4.5f;
+        [Tooltip("래그돌이 공중에서 잃는 만큼 보태는 값: 위로, 앞으로 (10-07에 잰 값)")]
+        public float leapLift = 1.03f;
+        public float leapCarry = 1.07f;
+        [Tooltip("공중에서 한 번 더 누르기: 뜬 뒤 이만큼 (초) 지나야 됨, 꺾을 수 있는 최대 각도 (도), 새로 차고 나가는 빠르기 (m/s), 다시 뜨는 빠르기 (m/s)")]
+        public float leapTurnAfter = 0.2f;
+        public float leapTurnMax = 90f;
+        public float leapTurnSpeed = 6.2f;
+        public float leapTurnLift = 4f;
+        [Tooltip("머리 밟기: 발이 머리에서 이만큼 (m) 안, 밟힌 적 휘청 (초), 다시 튀어 오르는 빠르기 (m/s)")]
+        public float leapStompReach = 0.45f;
+        public float leapStompStagger = 0.4f;
+        public float leapStompBounce = 4f;
+        [Tooltip("이만큼 (초) 지나도 못 내려오면 (낭떠러지로 뜀) 스킬은 끝난다")]
+        public float leapLongest = 3f;
+        [Tooltip("착지 후딜 (초), 쿨타임 (초)")]
+        public float leapRecovery = 0.35f;
+        public float leapCooldown = 7f;
+
+        [Header("기물별 한 벌 · 기본기 — 비숍 피앙케토")]
+        [Tooltip("자리를 잡자마자의 사거리 (m), 다 겨눴을 때의 사거리 (m), 다 겨누는 데 걸리는 시간 (초)")]
+        public float fianNear = 8f;
+        public float fianFar = 25f;
+        public float fianCharge = 1f;
+        [Tooltip("이만큼 (초) 넘게 안 쏘면 자리에서 일어난다 (쿨타임 없음)")]
+        public float fianHold = 5f;
+        [Tooltip("조준 보정: 위에서 본 각도 (도), 그 적이 위아래로 이만큼 (m) 안이면 줄이 그 적에게 곧게 간다 (계단 위아래). 줄의 굵기 (m: 허리가 줄에서 이만큼 안이면 맞음)")]
+        public float fianAssist = 6f;
+        public float fianTall = 8f;
+        public float fianRadius = 0.5f;
+        [Tooltip("켜면 팀원도 줄을 막는다 (체스의 비숍은 자기 편 말에 막힌다)")]
+        public bool fianAlliesBlock = true;
+        [Tooltip("맞은 적의 달리기 빠르기 (배, 전력질주도 안 됨), 그 시간 (초)")]
+        public float fianSlow = 0.6f;
+        public float fianSlowSeconds = 2f;
+        [Tooltip("쏜 뒤 후딜 (초), 쿨타임 (초)")]
+        public float fianRecovery = 0.25f;
+        public float fianCooldown = 6f;
+
+        [Header("기물별 한 벌 · 기본기 — 킹 왕의 한 걸음")]
+        [Tooltip("준비 (초), 걸음 빠르기 (m/s), 거리 (m, 한 칸), 후딜 (초)")]
+        public float stepWindup = 0.05f;
+        public float stepSpeed = 7.5f;
+        public float stepDistance = 1.5f;
+        public float stepRecovery = 0.15f;
+        [Tooltip("쿨타임 (초), 공중에서 쓰면 더해지는 쿨 (초), 잡힌 손을 뿌리치거나 넘어진 채 쓰면 더해지는 쿨 (초)")]
+        public float stepCooldown = 4f;
+        public float stepAirExtra = 1f;
+        public float stepDownExtra = 1.5f;
+        [Tooltip("넘어진 채 쓰기: 넘어지고 이만큼 (초) 뒤부터, 일어난 뒤 기상 보호 (초)")]
+        public float stepDownAfter = 0.35f;
+        public float stepGuard = 1.1f;
+        [Tooltip("뿌리친 손이 다시 잡기까지 (초)")]
+        public float stepShakeOff = 0.8f;
+
+        [Header("기물별 한 벌 · 기본기 — 룩 캐슬링의 덤 (킹과 룩이 바꿀 때)")]
+        [Tooltip("킹과 룩이 자리를 바꾸면 내려앉은 뒤 둘 다 이만큼 (초) 넘어지지 않는다 (기상 보호와 같은 효과)")]
+        public float castleRoyalGuard = 2f;
     }
 }

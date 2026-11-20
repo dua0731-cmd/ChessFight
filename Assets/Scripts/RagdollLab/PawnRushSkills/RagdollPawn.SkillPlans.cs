@@ -21,7 +21,9 @@ namespace ChessFight.RagdollLab
     /// they are, whose code runs as it always did but for <see cref="skillPiece"/>, the piece that code believes it is
     /// (so the rook's chain works on a pawn; the effects and sounds made for those skills still look at the pawn's real
     /// piece and may not show on another); 11..15 the new ones below; 44..49 Queen of the Hill's six
-    /// (RagdollPawn.HillSkills.cs); 61..65 the skill idea book's bundle A (RagdollPawn.BookSkills.cs).
+    /// (RagdollPawn.HillSkills.cs); 61..65 the skill idea book's bundle A (RagdollPawn.BookSkills.cs); 43, 71 and 72 the
+    /// kits' basic row (RagdollPawn.KitSkills.cs: the knight's bent leap, the bishop's fianchetto, the king's step). The
+    /// king has a row of his own since then; while it is empty he plays his call as he always did.
     ///
     ///   en passant  an enemy that has just brushed past (the closest point of their passing, the enemy the faster) can
     ///               be tripped for a moment: a lunge at its ankles, it goes down sliding on at the speed it ran.
@@ -69,7 +71,8 @@ namespace ChessFight.RagdollLab
         PawnRushLoadout Loadout => PawnRushSkills != null ? PawnRushSkills.loadout : null;
 
         /// <summary>How many slots this piece has now, and the skill in one (0: empty).</summary>
-        public int SlotCount => Loadout != null && PawnRushLoadout.Row(piece) >= 0 ? Loadout.SlotCount : 0;
+        public int SlotCount => Loadout != null && PawnRushLoadout.Row(piece) >= 0 && (piece != PieceKind.King || Loadout.KingSlots)
+            ? Loadout.SlotCount : 0;
         public int SlotSkill(int slot) => Loadout != null ? Loadout.Skill(piece, slot) : 0;
         public bool HasSkill(int id) => Loadout != null && Loadout.SlotOf(piece, id) >= 0;
         public float SlotCooldown(int slot) => slot >= 0 && slot < slotCd.Length ? Mathf.Max(0f, slotCd[slot]) : 0f;
@@ -108,9 +111,10 @@ namespace ChessFight.RagdollLab
         /// and the others wait; with none under way each sees its own key and the first to start takes the step.</summary>
         void RunSlots(PawnRushSkillParams s, bool press, bool key1, bool key2, bool confirm, bool cancel, float dt)
         {
-            if (piece == PieceKind.King)
+            if (piece == PieceKind.King && (s.loadout == null || !s.loadout.KingSlots))
             {
-                // The king has no slots (out of Pawn Rush since R153): its call, as it was.
+                // The king's row is empty (he was given one on 2026-11-20: a team has one of each piece): his call, as it
+                // was. With a skill in his row he plays his slots like any piece.
                 oldHome = -1;
                 cdSlot = 0;
                 UpdateKingCall(s, press, cancel, dt);
@@ -202,6 +206,10 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Ghost: UpdateGhost(s, press, dt); break;
                 case PawnRushSkillIds.BackPush: UpdateBackPush(s, press, dt); break;
                 case PawnRushSkillIds.TwoHares: UpdateTwoHares(s, press, dt); break;
+                // The kits' basic row (RagdollPawn.KitSkills.cs).
+                case PawnRushSkillIds.BentLeap: UpdateBentLeap(s, press, dt); break;
+                case PawnRushSkillIds.Fianchetto: UpdateFianchetto(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.KingStep: UpdateKingStep(s, press, dt); break;
             }
         }
 
@@ -225,6 +233,9 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Ghost: return s.ghostCooldown;
                 case PawnRushSkillIds.BackPush: return s.pushCooldown;
                 case PawnRushSkillIds.TwoHares: return s.hareCooldown;
+                case PawnRushSkillIds.BentLeap: return s.leapCooldown;
+                case PawnRushSkillIds.Fianchetto: return s.fianCooldown;
+                case PawnRushSkillIds.KingStep: return s.stepCooldown;
                 default: return 0f;
             }
         }
@@ -234,7 +245,7 @@ namespace ChessFight.RagdollLab
         void PlanKeys()
         {
             var lo = Loadout;
-            if (lo != null && lo.SlotCount > 1 && piece != PieceKind.King)
+            if (lo != null && lo.SlotCount > 1 && (piece != PieceKind.King || lo.KingSlots))
             {
                 if (input.ability && lo.Skill(piece, 1) != 0)
                 {
@@ -249,6 +260,7 @@ namespace ChessFight.RagdollLab
             }
             HillKeys();   // Queen of the Hill's six: what each lets the keys do in its phase
             BookKeys();   // the idea book's bundle A: a touched piece's feet, numb hands, and the same for its five
+            KitKeys();    // the kits' basic row: heavy feet, a seated bishop, a stepping king
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -286,6 +298,7 @@ namespace ChessFight.RagdollLab
             SkillDetail = "";
             ClearHillSkills();
             ClearBookSkills();
+            ClearKitSkills();
         }
 
         /// <summary>Everything a new skill leaves running when the skills are cleared (a knockdown, a piece switch, being
@@ -962,6 +975,7 @@ namespace ChessFight.RagdollLab
             // Each lands standing on the other's floor.
             mate.BeginCastleCarry(new Vector3(a.x, aFloor + mate.standHeight, a.z), s, forced, false, c);
             BeginCastleCarry(new Vector3(b.x, bFloor + standHeight, b.z), s, false, true, c);
+            MarkRoyalCastle(mate, forced);   // the king and the rook: the real thing (RagdollPawn.KitSkills.cs)
             planPhase = PlanPhase.Active;
             planTime = 0f;
             planTarget = mate;
@@ -1060,6 +1074,7 @@ namespace ChessFight.RagdollLab
             castleCarry = false;
             carryFree = false;
             carryHome = null;
+            LandRoyalCastle(arrived);
             if (!arrived)
             {
                 EndFlight(bodies[0].linearVelocity * 0.5f);
@@ -1242,7 +1257,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Something of the slots' beyond the first slot's cooldown is worth sending: a new skill under way, a pin on
         /// this piece, another slot's cooldown.</summary>
-        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || BookNetBusy;
+        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || BookNetBusy
+                            || KitNetBusy;
 
         /// <summary>Host: the slots' part of this piece's skill state - the skill under way and each slot's cooldown.</summary>
         void CaptureSlotNet(ref SkillWireState s)
@@ -1271,6 +1287,7 @@ namespace ChessFight.RagdollLab
         void CapturePinNet(ref SkillWireState s, Func<RagdollPawn, byte> refOf, ref Vector3 q)
         {
             CaptureBookNet(ref s);   // touched, numb, a ghost, the queen's elastic (RagdollPawn.BookSkills.cs)
+            CaptureKitNet(ref s);    // heavy feet (RagdollPawn.KitSkills.cs)
             if (wardLeft > 0f) s.Flags2 |= NetWarded;   // a close guard on this piece (RagdollPawn.HillSkills.cs)
             if (pinLeft <= 0f) return;
             s.Flags2 |= NetPinned;
@@ -1319,6 +1336,7 @@ namespace ChessFight.RagdollLab
                 planTarget = null;
             }
             ApplyBookNet(s);   // touched, numb, a ghost, and whether a pin on it is the queen's elastic
+            ApplyKitNet(s);    // heavy feet
             // (A guard's time left is this screen's own count from when it first saw it, as a pin's is.)
             if ((s.Flags2 & NetWarded) == 0) wardLeft = 0f;
             else if (wardLeft <= 0f) wardLeft = PawnRushSkills != null ? PawnRushSkills.wardTime : 2.9f;
@@ -1349,6 +1367,7 @@ namespace ChessFight.RagdollLab
             pinToPost = false;
             wardLeft = 0f;
             ClearBookNet();
+            ClearKitNet();
             planNote = 0;
             activeSkill = 0;
             activeSlot = -1;
@@ -1364,6 +1383,7 @@ namespace ChessFight.RagdollLab
             if (pinLeft > 0f) pinLeft = Mathf.Max(0.05f, pinLeft - dt);
             if (wardLeft > 0f) wardLeft = Mathf.Max(0.05f, wardLeft - dt);
             AdvanceBookView(dt);
+            AdvanceKitView(dt);
             slotCd[1] -= dt;
             slotCd[2] -= dt;
         }

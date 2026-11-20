@@ -358,6 +358,7 @@ namespace ChessFight.RagdollLab
             UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
             UpdateHillStates(dt);     // a close guard on it, squashed and sliding (RagdollPawn.HillSkills.cs)
             UpdateBookStates(s, dt);  // touched, numb, a ghost, sent flying by a rook (RagdollPawn.BookSkills.cs)
+            UpdateKitStates(s, dt);   // heavy feet, how long it has lain down (RagdollPawn.KitSkills.cs)
             TrackGetUp(s);
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
