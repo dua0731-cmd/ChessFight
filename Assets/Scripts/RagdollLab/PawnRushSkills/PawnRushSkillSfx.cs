@@ -69,6 +69,8 @@ namespace ChessFight.RagdollLab
             // out a hand at a time, let go slapping down, snapped.
             { "BishopRopeThrow", 0.7f }, { "BishopRopeHook", 0.85f }, { "BishopRopeStrain", 0.55f }, { "BishopRopeReel", 0.5f },
             { "BishopRopeRelease", 0.75f }, { "BishopRopeSnap", 1f },
+            // JY-skill-lab 11-20: the hand feel's slots (FeelSound), for when their own clips are made.
+            { "FeelPress", 0.5f }, { "FeelHit", 0.8f }, { "FeelMiss", 0.6f }, { "FeelMissAfter", 0.5f },
         };
 
         public const string Folder = "PawnRushSkillSfx";
@@ -219,8 +221,31 @@ namespace ChessFight.RagdollLab
                     Play("BishopRopeSnap", e.at);
                     EndStrain(e.by);
                     break;
+                // JY-skill-lab 11-20: the hand feel (RagdollPawn.HandFeel.cs).
+                case SkillFxKind.SkillFeel: FeelSound(e); break;
             }
         }
+
+        /// <summary>
+        /// The hand feel's three sound slots (Docs/Skills/PAWN_RUSH_SKILL_POOL.md 1.3 #6): the press (the piece's prop, at
+        /// once), the hit (a piece set down on a wooden board, "탁", with the hit stop; the skill's own hit sound plays with it)
+        /// and the miss (a swish, then a funny sound 0.3 s later). Each plays its own clip once Resources/PawnRushSkillSfx has
+        /// one named FeelPress, FeelHit, FeelMiss or FeelMissAfter; until then a sound already here stands in.
+        /// </summary>
+        void FeelSound(SkillFxEvent e)
+        {
+            switch (e.count)
+            {
+                case RagdollPawn.FeelPressMoment: Play(Slot("FeelPress", "RookTick"), e.at, 3f); break;
+                case RagdollPawn.FeelHitMoment: Play(Slot("FeelHit", "QueenHit"), e.at); break;
+                case RagdollPawn.FeelMissMoment:
+                    Play(Slot("FeelMiss", "BishopRopeThrow"), e.at, 2f, 0.8f);
+                    PlayLater(0.3f, Slot("FeelMissAfter", "SkillFail"), e.at);
+                    break;
+            }
+        }
+
+        string Slot(string own, string standIn) => sounds.ContainsKey(own) ? own : standIn;
 
         Watch OwnerWatch(RagdollPawn by) => by != null && watched.TryGetValue(by, out var w) ? w : null;
 

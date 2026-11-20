@@ -250,6 +250,7 @@ namespace ChessFight.RagdollLab
                 bool swayed = other.Stagger(s.leapStompStagger);
                 other.LastSkillHit = swayed ? $"ㄱ자 도약: 머리를 밟힘 → 휘청 {s.leapStompStagger:0.#}초" : "ㄱ자 도약: 머리를 밟힘 (휘청 안 걸림)";
                 Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
+                FeelHit(other, new Vector3(head.x, top, head.z), Flat(facing), FeelWeak);   // the hand feel (a stagger: weak)
                 // Up off the head: what it had along the ground stays, the fall becomes a rise.
                 Launch(Flat(bodies[0].linearVelocity) + Vector3.up * s.leapStompBounce);
                 leapBounceWait = 0.25f;
@@ -344,6 +345,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3 from = LassoHands, dir = planDir.sqrMagnitude > 0.5f ? planDir.normalized : FlatDir(facing);
             if (SolidRay(from, dir, reach, out var wall)) reach = wall.distance;
+            FeelKick(-dir, s.feelKickShot);   // the hand feel: the shot slides the seated bishop back (RagdollPawn.HandFeel.cs)
             RagdollPawn first = null;
             float firstAlong = reach;
             foreach (var other in All)
@@ -362,6 +364,7 @@ namespace ChessFight.RagdollLab
             planPoint = from + dir * firstAlong;
             if (first == null)
             {
+                FeelMiss(planPoint, dir);
                 Log($"피앙케토: 아무도 안 맞음 ({reach:0.#} m)");
                 return;
             }
@@ -373,6 +376,7 @@ namespace ChessFight.RagdollLab
             }
             string result = first.BeSlowed(s.fianSlowSeconds);
             Fx(SkillFxKind.PawnHit, first, first.LassoBelly, dir, 0);
+            FeelHit(first, first.LassoBelly, dir, FeelWeak);   // heavy feet: a weak hit stop
             Log($"피앙케토 → {first.DisplayName}: {result} ({firstAlong:0.#} m)");
         }
 

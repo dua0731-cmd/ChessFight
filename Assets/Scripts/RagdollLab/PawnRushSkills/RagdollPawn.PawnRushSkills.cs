@@ -43,6 +43,9 @@ namespace ChessFight.RagdollLab
         // the course's kind of hit; size: how hard, 0..1), raised where the knock-back is given and sent on like the
         // movement moments so every PC hears it (Gameplay.CourseHitSound, CourseHitRelay). Last, so no kind's number moves.
         CourseHit,
+        // JY-skill-lab 11-20: the hand feel's moment (RagdollPawn.HandFeel.cs; count: 0 a key started a use, 1 a hit, 2 a
+        // miss; size: a hit's hit stop in seconds). After CourseHit, so no kind's number moves; an older PC skips it.
+        SkillFeel,
     }
 
     public struct SkillFxEvent
@@ -199,6 +202,7 @@ namespace ChessFight.RagdollLab
             cdSlot = 0;
             bindLeft = 0f;
             EndPin();
+            ClearFeel();
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);
@@ -389,6 +393,7 @@ namespace ChessFight.RagdollLab
 
             // Each slot's skill, the old ones and the new, on whatever piece the loadout put it (RagdollPawn.SkillPlans.cs).
             RunSlots(s, press, key1, key2, confirm, cancel, dt);
+            UpdateFeelKick(dt);   // the hand feel's recoil, bounce or lurch (RagdollPawn.HandFeel.cs)
             DrawSkillMarks(s);
         }
 
@@ -429,6 +434,7 @@ namespace ChessFight.RagdollLab
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
             seconds *= StageCooldown;   // the growing system's stage (the skill window)
+            seconds = FeelRefund(seconds);   // the hand feel: a use that hit gives some back (RagdollPawn.HandFeel.cs)
             cooldownTotal = Mathf.Max(0f, seconds);
             skillCooldownLeft = cooldownTotal;
         }
@@ -646,7 +652,17 @@ namespace ChessFight.RagdollLab
                             stageTime = 0f;
                             SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
                         }
-                        else FinishPawn(s, true);
+                        else
+                        {
+                            // The hand feel: the second step went for an enemy and touched nobody - the swish, and the pawn
+                            // lurches on past where it meant to stop.
+                            if (!pawnStepHit && pawnTarget != null && IsEnemyOf(pawnTarget))
+                            {
+                                FeelMiss(FeetPoint, skillDir);
+                                FeelKick(skillDir, s.feelKickMiss);
+                            }
+                            FinishPawn(s, true);
+                        }
                     }
                     break;
                 case SkillStage.Link:
@@ -763,8 +779,11 @@ namespace ChessFight.RagdollLab
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
                 Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}");
-                // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
+                // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음). The hand feel: the
+                // hit stop, and the pawn bounces back off it once the step is over (RagdollPawn.HandFeel.cs).
                 dashLeft = Mathf.Min(dashLeft, 0.02f);
+                FeelHit(other, SkillContact(other), skillDir, diagonal ? FeelHard : FeelWeak);
+                FeelKick(-skillDir, s.feelKickBounce);
             }
         }
 

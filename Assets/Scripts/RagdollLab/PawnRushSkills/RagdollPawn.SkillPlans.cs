@@ -124,6 +124,7 @@ namespace ChessFight.RagdollLab
             slotPress[0] = press;
             slotPress[1] = key1;
             slotPress[2] = key2;
+            FeelSendKept(s, lo, dt);   // the hand feel: a key pressed a moment early goes now (RagdollPawn.HandFeel.cs)
 
             if (planPhase != PlanPhase.None && (State == PawnState.Ragdoll || Floating))
             {
@@ -153,17 +154,21 @@ namespace ChessFight.RagdollLab
                 int id = lo.Skill(piece, k);
                 if (id == 0) continue;
                 cdSlot = k;
+                float cdBefore = slotCd[k];
                 if (PawnRushSkillIds.Old(id))
                 {
                     anyOld = true;
                     RunOldSkill(id, s, slotPress[k], confirm, cancel, dt);
                 }
                 else RunNewSkill(id, s, slotPress[k], false, false, dt);
+                // The key started a use (under way, or its cooldown begun at once): the hand feel's press.
+                if (slotPress[k] && (SkillRunning || (cdBefore <= 0f && slotCd[k] > 0f))) FeelUsed(k);
                 if (!SkillRunning) continue;
                 activeSlot = k;
                 activeSkill = id;
                 return;
             }
+            FeelKeepPresses(s, lo);   // a key that could not go yet is kept a moment (RagdollPawn.HandFeel.cs)
             if (!anyOld) oldHome = -1;
             cdSlot = 0;
         }
@@ -976,6 +981,8 @@ namespace ChessFight.RagdollLab
             mate.BeginCastleCarry(new Vector3(a.x, aFloor + mate.standHeight, a.z), s, forced, false, c);
             BeginCastleCarry(new Vector3(b.x, bFloor + standHeight, b.z), s, false, true, c);
             MarkRoyalCastle(mate, forced);   // the king and the rook: the real thing (RagdollPawn.KitSkills.cs)
+            // The hand feel: the two hold a moment as they go (an enemy swapped without asking counts as a hit).
+            FeelHit(mate, SkillContact(mate), FlatDir(b - a), FeelWeak, 1, forced);
             planPhase = PlanPhase.Active;
             planTime = 0f;
             planTarget = mate;
@@ -1161,6 +1168,7 @@ namespace ChessFight.RagdollLab
                     planTime = 0f;
                     planPoint = planTarget.FeetPoint;   // the square: where it stands now
                     facing = FlatDir(planTarget.bodies[0].position - bodies[0].position);
+                    FeelKick(-facing, s.feelKickShot);   // the hand feel: the check goes out like a shot (RagdollPawn.HandFeel.cs)
                     SkillDetail = $"체크! → {planTarget.DisplayName}";
                     Log($"체크! → {planTarget.DisplayName} ({s.checkSeconds:0.#}초 안에 칸 밖으로)");
                     break;
@@ -1211,6 +1219,7 @@ namespace ChessFight.RagdollLab
             bool onSquare = Flat(feet - planPoint).magnitude <= s.checkSquare && Mathf.Abs(feet.y - planPoint.y) <= 1.5f;
             if (!onSquare)
             {
+                FeelMiss(planPoint, FlatDir(feet - planPoint));   // the hand feel: the queen's miss
                 Log($"체크: {t.DisplayName}가 칸을 벗어남 (피함)");
                 return;
             }
@@ -1219,6 +1228,7 @@ namespace ChessFight.RagdollLab
             Vector3 away = FlatDir(hit.bodies[0].position - bodies[0].position);
             string result = SkillHit(hit, away * s.checkPush + Vector3.up * s.checkLift, true, blocker != null ? "체크 (대신 막음)" : "체크");
             Fx(SkillFxKind.QueenHit, hit, hit.bodies[0].position, away, 1);
+            FeelHit(hit, hit.bodies[0].position, away, FeelHard);   // knocked flying: a hard hit stop
             Log(blocker != null
                 ? $"체크: {blocker.DisplayName}가 몸으로 막음 → {result}"
                 : $"체크 → {t.DisplayName}: 칸에 남아 있음 → {result}");

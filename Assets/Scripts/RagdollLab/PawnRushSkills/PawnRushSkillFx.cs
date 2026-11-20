@@ -179,7 +179,23 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.BishopRopeHook: BishopRopeHookFx(e); break;
                 case SkillFxKind.BishopRopeRelease: BishopRopeReleaseFx(e); break;
                 case SkillFxKind.BishopRopeSnap: BishopRopeSnapFx(e); break;
+                // JY-skill-lab 11-20: the hand feel (RagdollPawn.HandFeel.cs).
+                case SkillFxKind.SkillFeel: FeelFx(e); break;
             }
+        }
+
+        /// <summary>The hand feel's hit (RagdollPawn.HandFeel.cs): the hit stop the host worked out (e.size seconds). Offline
+        /// the test bed's stand-in holds the game; online the two pieces' picture holds, and only on the hitter's and the hit
+        /// player's own screens (Docs/Skills/PAWN_RUSH_SKILL_POOL.md 1.3 #2).</summary>
+        void FeelFx(SkillFxEvent e)
+        {
+            if (e.count != RagdollPawn.FeelHitMoment || e.size <= 0f) return;
+            if ((game != null && game.NetworkControlled) || OnlineOverride)
+            {
+                var me = Viewer;
+                if (me != null && me != e.by && me != e.target) return;
+            }
+            HitStop(e.size);
         }
 
         /// <summary>The ongoing effects follow the pieces' skill stages: started once when a stage begins, ended

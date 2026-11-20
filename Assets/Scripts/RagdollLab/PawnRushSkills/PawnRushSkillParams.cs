@@ -536,5 +536,33 @@ namespace ChessFight.RagdollLab
         [Header("기물별 한 벌 · 기본기 — 룩 캐슬링의 덤 (킹과 룩이 바꿀 때)")]
         [Tooltip("킹과 룩이 자리를 바꾸면 내려앉은 뒤 둘 다 이만큼 (초) 넘어지지 않는다 (기상 보호와 같은 효과)")]
         public float castleRoyalGuard = 2f;
+
+        [Header("손맛 공통 장치 (후보 문서 1.3의 2 · 4 · 5 · 6 · 8번, 11-20)")]
+        [Tooltip("끄면 아래 장치가 모두 꺼진다 (켜고 끄며 비교). 스킬 시험 창의 '손맛 장치' 버튼과 같다")]
+        public bool feel = true;
+        [Tooltip("멈칫 (초): 약한 CC (밀침 · 휘청 · 발 무거움) · 하드 CC (넘어뜨림) · 궁극기. 맞힌 기물과 맞은 기물의 화면에서만")]
+        public float feelStopWeak = 0.06f, feelStopHard = 0.10f, feelStopUltimate = 0.15f;
+        [Tooltip("싼 기물이 비싼 적을 맞히면 값 차이 1점마다 더 멈칫 (초; 폰 1 · 나이트 3 · 비숍 3 · 룩 5 · 퀸 9, 킹은 뺌), 멈칫의 상한 (초)")]
+        public float feelStopPerValue = 0.01f, feelStopMax = 0.20f;
+        [Tooltip("한 번에 여럿을 맞히면 하나 더마다 더 멈칫 (초, 셋까지)")]
+        public float feelStopPerExtra = 0.02f;
+        [Tooltip("이 시간 안에 또 맞히면 멈칫이 절반 (초)")]
+        public float feelStopRepeat = 0.3f;
+        [Tooltip("반동: 쏘는 스킬(피앙케토 · 체크!)이 쏜 기물을 뒤로 미는 거리 (m)")]
+        public float feelKickShot = 0.4f;
+        [Tooltip("반동: 몸으로 맞힌 폰이 되튀는 거리 (m). 나이트는 원래 머리를 밟고 위로 튄다")]
+        public float feelKickBounce = 0.5f;
+        [Tooltip("반동: 적에게 가던 몸 스킬(폰의 두 번째 걸음)이 헛치면 가던 쪽으로 더 쏠리는 거리 (m)")]
+        public float feelKickMiss = 1f;
+        [Tooltip("반동이 걸리는 시간 (초, 처음이 빠르고 점점 멎는다), 가장자리 몇 m 앞에서 멈추는지")]
+        public float feelKickTime = 0.15f, feelKickEdge = 0.3f;
+        [Tooltip("맞히면 보상: 한 번 쓸 때 적 하나를 맞히면 쿨을 이만큼 돌려받는다 (비율), 둘 이상이면")]
+        public float feelRefundOne = 0.25f, feelRefundMany = 0.5f;
+        [Tooltip("돌려받아도 쿨이 이 아래로 안 내려간다 (초). 시험용 쿨 2초에서는 돌려받기가 안 보인다 (스킬 시험 창의 쿨 버튼)")]
+        public float feelCooldownFloor = 3f;
+        [Tooltip("미리 누르기: 쿨이 끝나기 이만큼 안에, 또는 휘청이는 중에 누른 키는 쓸 수 있게 되는 첫 순간에 나간다 (초)")]
+        public float feelBuffer = 0.4f;
+        [Tooltip("미리 누르기: 넘어져 있거나 일어나는 중에 누른 키를 기다려 주는 시간 (초)")]
+        public float feelBufferDown = 2f;
     }
 }

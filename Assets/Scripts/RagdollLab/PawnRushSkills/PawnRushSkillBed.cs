@@ -17,6 +17,8 @@ namespace ChessFight.RagdollLab
     public class PawnRushSkillBed : MonoBehaviour
     {
         public PawnRushSkillParams skills = new PawnRushSkillParams();
+        // The test cooldown the panel's cooldown button gives back after "기획 쿨" (JY-skill-lab 11-20).
+        float keptTestCooldown = 2f;
 
         [Header("키 (임시, 나중에 다시 정함)")]
         public KeyCode skillKey = KeyCode.F;
@@ -656,7 +658,8 @@ namespace ChessFight.RagdollLab
                     int id = p1.SlotSkill(k);
                     if (id == 0) continue;
                     anySkill = true;
-                    GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + (p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : ""), text);
+                    GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + (p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : "")
+                                    + (p1.SlotKept(k) ? "   <color=#6cf>미리 누름</color>" : ""), text);
                     GUILayout.Label(PawnRushSkillBook.How(id), small);
                 }
                 if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬트리({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
@@ -683,6 +686,20 @@ namespace ChessFight.RagdollLab
                 if (sfx != null && GUILayout.Button(sfx.sound ? "소리 켜짐" : "소리 꺼짐", sfx.sound ? selected : button)) sfx.sound = !sfx.sound;
                 GUILayout.EndHorizontal();
             }
+            // JY-skill-lab 11-20: the hand feel's devices on and off, and the cooldown its refund needs (the test's flat 2 s
+            // is under the refund's 3 s floor, so nothing comes back there).
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(skills.feel ? "손맛 장치 켜짐" : "손맛 장치 꺼짐", skills.feel ? selected : button)) skills.feel = !skills.feel;
+            if (GUILayout.Button(skills.testCooldown > 0f ? $"쿨: 시험용 {skills.testCooldown:0.#}초" : "쿨: 기획 쿨", button))
+            {
+                if (skills.testCooldown > 0f)
+                {
+                    keptTestCooldown = skills.testCooldown;
+                    skills.testCooldown = 0f;
+                }
+                else skills.testCooldown = keptTestCooldown > 0f ? keptTestCooldown : 2f;
+            }
+            GUILayout.EndHorizontal();
 
             if (Online)
             {
