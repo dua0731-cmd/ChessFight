@@ -322,7 +322,7 @@ namespace ChessFight.RagdollLab
             // The skill system, the loadouts that come with the game, and (a room) who may change it.
             GUI.Label(new Rect(x0, y, 64f, 24f), "스킬 방식", label);
             float x = x0 + 68f;
-            string[] systems = { "1안 칸 하나", "2안 하나가 강해짐", "3안 칸 셋" };
+            string[] systems = { "1안 칸 하나", "2안 하나가 강해짐", "3안 칸 넷" };
             for (int i = 0; i < 3; i++)
             {
                 float bw = i == 1 ? 126f : 92f;
