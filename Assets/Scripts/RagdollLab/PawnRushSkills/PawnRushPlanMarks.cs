@@ -81,6 +81,9 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.FlankShot: DrawFlankShot(pawn); break;
                     case PawnRushSkillIds.CastleOver: DrawCastleOver(pawn); break;
                     case PawnRushSkillIds.ScholarThrust: DrawScholar(pawn); break;
+                    // ...and its mid row (RagdollPawn.PoolMids.cs; the fork's and the pin's are above).
+                    case PawnRushSkillIds.ChaseAway: DrawChase(pawn); break;
+                    case PawnRushSkillIds.CheckSeries: DrawSeries(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -110,41 +113,103 @@ namespace ChessFight.RagdollLab
             SkillMarks.Circle(Next(), target.FeetPoint, 0.5f + 0.1f * pulse, Fade(SkillMarks.Orange, 0.6f + 0.4f * pulse), 0.09f, 24);
         }
 
-        /// <summary>The knight's fork: where it comes down, and the two spots its hind legs kick.</summary>
+        readonly List<RagdollPawn> forkHelp = new List<RagdollPawn>();
+
+        /// <summary>The pool's fork (N-중1): aiming, where it would come down (its kick's reach) and a ring over each enemy it
+        /// would kick from there (gold for two or more); in the air, where it comes down.</summary>
         void DrawFork(RagdollPawn pawn)
         {
             var phase = pawn.PlanPhaseNow;
-            if (phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
             var s = pawn.PawnRushSkills;
-            Color spot = Fade(SkillMarks.Target, phase == PlanPhase.Active ? 1f : 0.75f);
-            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.35f, Fade(White, 0.8f), 0.05f, 20);
-            for (int side = 0; side < 2; side++)
+            if (phase == PlanPhase.Aim)
             {
-                Vector3 at = pawn.ForkSpot(side);
-                SkillMarks.Circle(Next(), at, s.forkRadius, spot, 0.07f, 32);
-                SkillMarks.Segment(Next(), pawn.PlanPoint + Vector3.up * 0.05f, at + Vector3.up * 0.05f, Fade(SkillMarks.Target, 0.5f), 0.04f);
+                SkillMarks.Circle(Next(), pawn.PlanPoint, s.forkKickRadius, Fade(SkillMarks.Target, 0.75f), 0.06f, 32);
+                SkillMarks.Segment(Next(), Chest(pawn), pawn.PlanPoint + Vector3.up * 0.05f, Fade(SkillMarks.Target, 0.4f), 0.03f, false);
+                pawn.ForkHelpTargets(forkHelp);
+                foreach (var t in forkHelp)
+                    SkillMarks.Circle(Next(), t.Hips.position + Vector3.up * 0.55f, 0.28f, Fade(forkHelp.Count >= 2 ? Gold : White, 0.9f), 0.05f, 16);
+            }
+            else if (phase == PlanPhase.Active)
+            {
+                SkillMarks.Circle(Next(), pawn.PlanPoint, s.forkKickRadius, Fade(SkillMarks.Target, 1f), 0.08f, 32);
+                SkillMarks.Circle(Next(), pawn.PlanPoint, 0.35f, Fade(White, 0.8f), 0.05f, 20);
             }
         }
 
-        /// <summary>The bishop's pin: aiming, the line as far as it reaches (to the enemy it would take first); shot, the
-        /// line it took for a moment.</summary>
+        /// <summary>The pool's pin (B-중1): aiming and drawing, the line as far as it reaches (growing and thinning, violet to
+        /// gold); held, the line the bishop may slide along and, blinking red, the pinned piece to the one behind it it
+        /// would strike by moving; shot at nothing, the line for a moment.</summary>
         void DrawPinLine(RagdollPawn pawn)
         {
             var phase = pawn.PlanPhaseNow;
             var s = pawn.PawnRushSkills;
             Vector3 hands = pawn.LassoHands;
-            if (phase == PlanPhase.Aim)
+            var target = pawn.PlanTarget;
+            if (phase == PlanPhase.Aim || phase == PlanPhase.Windup)
             {
-                Vector3 end = hands + pawn.PlanDir * s.pinRange;
-                SkillMarks.Segment(Next(), hands, end, Fade(Violet, 0.45f), 0.04f, false);
-                var target = pawn.PlanTarget;
-                if (target != null) SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(Violet, 0.9f), 0.06f, 24);
+                float full = phase == PlanPhase.Windup ? Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.pinCharge)) : 0f;
+                Color line = Color.Lerp(Violet, Gold, full);
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(line, 0.45f + 0.4f * full), Mathf.Lerp(0.05f, 0.025f, full), false);
+                if (target != null) SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(line, 0.9f), 0.06f, 24);
+            }
+            else if (phase == PlanPhase.Active && target != null)
+            {
+                SkillMarks.Segment(Next(), hands, target.LassoBelly, Fade(Violet, 0.35f), 0.03f, false);
+                if (!pawn.PinThreatLine) return;
+                float blink = 0.55f + 0.45f * Mathf.Sin(Time.time * 12f);
+                SkillMarks.Segment(Next(), target.LassoBelly, pawn.PlanPoint, Fade(Red, blink), 0.06f, false);
+                SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(Red, blink), 0.06f, 24);
             }
             else if (phase == PlanPhase.Recovery)
             {
                 float a = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.pinRecovery));
-                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(White, 0.4f + 0.6f * a), 0.09f, false);
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(White, 0.3f + 0.5f * a), 0.06f, false);
             }
+        }
+
+        /// <summary>The pool's chasing away (P-중4): the spear's line, growing while it is drawn, its tip bright.</summary>
+        void DrawChase(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Aim && phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
+            Vector3 from = Chest(pawn);
+            Vector3 end = from + pawn.PlanDir * pawn.ChaseReach;
+            end.y = from.y;
+            bool drawing = phase == PlanPhase.Windup;
+            SkillMarks.Segment(Next(), from, end, Fade(phase == PlanPhase.Aim ? White : Gold, drawing ? 0.85f : 0.5f), 0.04f, false);
+            if (!drawing) return;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 18f);
+            SkillMarks.Circle(Next(), end, 0.15f + 0.08f * pulse, Fade(Gold, 0.95f), 0.05f, 12);
+        }
+
+        /// <summary>The pool's series of checks (Q-중5): aiming, the enemy it would name; then its long square, red on three
+        /// sides and white at the far end (the way out), with the time left shrinking inside it.</summary>
+        void DrawSeries(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            var target = pawn.PlanTarget;
+            if (phase == PlanPhase.Aim)
+            {
+                if (target == null) return;
+                float blink = 0.55f + 0.45f * Mathf.Sin(Time.time * 14f);
+                SkillMarks.Circle(Next(), target.FeetPoint, 0.55f, Fade(Red, blink), 0.06f, 24);
+                SkillMarks.Segment(Next(), Chest(pawn), Chest(target), Fade(Red, 0.3f), 0.03f, false);
+                return;
+            }
+            if (phase != PlanPhase.Active && phase != PlanPhase.Windup) return;
+            var s = pawn.PawnRushSkills;
+            Vector3 c = pawn.PlanPoint, u = pawn.PlanDir, w = Vector3.Cross(Vector3.up, u), lift = Vector3.up * 0.05f;
+            float hl = s.seriesLength * 0.5f, hw = s.seriesWidth * 0.5f;
+            Vector3 nearL = c - u * hl - w * hw + lift, nearR = c - u * hl + w * hw + lift, farL = c + u * hl - w * hw + lift, farR = c + u * hl + w * hw + lift;
+            float a = phase == PlanPhase.Active ? 1f : 0.35f;
+            SkillMarks.Segment(Next(), nearL, nearR, Fade(Red, a), 0.1f, false);
+            SkillMarks.Segment(Next(), nearL, farL, Fade(Red, a), 0.1f, false);
+            SkillMarks.Segment(Next(), nearR, farR, Fade(Red, a), 0.1f, false);
+            SkillMarks.Segment(Next(), farL, farR, Fade(White, a), 0.06f, false);
+            if (phase != PlanPhase.Active) return;
+            float left = 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, pawn.SeriesFuse(pawn.SeriesCount)));
+            SkillMarks.Segment(Next(), c - u * hl * left + lift, c + u * hl * left + lift, Fade(Red, 0.6f), 0.05f, false);
+            if (target != null) SkillMarks.Segment(Next(), Chest(pawn), Chest(target), Fade(Red, 0.5f), 0.04f, false);
         }
 
         /// <summary>The rook's castling: a line to the piece it would swap with or is about to, and a ring under each.</summary>
@@ -534,6 +599,8 @@ namespace ChessFight.RagdollLab
             var pusher = me.PushedBy();
             var sniper = me.SnipedBy();
             var chainer = me.ChainPulledBy();
+            var pinner = me.PinThreatBy();
+            var series = me.SeriesCheckedBy();
             if (rook != null && rook.PawnRushSkills != null)
             {
                 float window = Mathf.Max(0.1f, rook.CastleWindow);
@@ -554,6 +621,19 @@ namespace ChessFight.RagdollLab
                 line = "체크!  빨간 칸 밖으로";
                 sub = $"{queen.DisplayName} · {queen.CheckLeft:0.0}초";
                 share = Mathf.Clamp01(queen.CheckLeft / window);
+            }
+            else if (series != null && series.PawnRushSkills != null)
+            {
+                float fuse = series.SeriesFuse(series.SeriesCount);
+                line = $"연속 체크 {series.SeriesCount}!  하얀 끝으로 나가요";
+                sub = $"{series.DisplayName} · {Mathf.Max(0f, fuse - series.PlanTime):0.0}초";
+                share = 1f - Mathf.Clamp01(series.PlanTime / Mathf.Max(0.05f, fuse));
+            }
+            else if (pinner != null && pinner.PawnRushSkills != null)
+            {
+                line = "핀!  움직이면 뒤의 팀원이 넘어져요";
+                sub = $"{pinner.DisplayName} · {Mathf.Max(0f, pinner.PawnRushSkills.pinThreatSeconds - pinner.PlanTime):0.0}초";
+                share = 1f - Mathf.Clamp01(pinner.PlanTime / Mathf.Max(0.1f, pinner.PawnRushSkills.pinThreatSeconds));
             }
             else if (chainer != null && chainer.PawnRushSkills != null)
             {
@@ -619,6 +699,24 @@ namespace ChessFight.RagdollLab
                 line = "블런더?!";
                 sub = "내려설 곳이 없어요";
                 share = 1f;
+            }
+            else if (me.RoyalFork)
+            {
+                line = "로열 포크!";
+                sub = "킹과 퀸을 한 번에";
+                share = 1f;
+            }
+            else if (me.SeriesBest)
+            {
+                line = "최선수!";
+                sub = "세 번째 체크로 몰아 잡았어요";
+                share = 1f;
+            }
+            else if (me.SeriesFollowing && me.PawnRushSkills != null)
+            {
+                line = "따라붙어요!  스킬 키";
+                sub = $"카메라 쪽이 다음 칸의 나갈 곳 · {Mathf.Max(0f, me.PawnRushSkills.seriesLink - me.PlanTime):0.0}초";
+                share = 1f - Mathf.Clamp01(me.PlanTime / Mathf.Max(0.1f, me.PawnRushSkills.seriesLink));
             }
             else if (me.FlankBlunder)
             {

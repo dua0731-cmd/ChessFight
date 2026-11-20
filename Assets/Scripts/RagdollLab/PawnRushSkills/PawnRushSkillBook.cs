@@ -111,6 +111,11 @@ namespace ChessFight.RagdollLab
                 "키 = 앞쪽 6 m 안의 가장 가까운 팀원을 0.15초 웅크렸다 낮게 넘어 1.5 m 앞에 쿵\n내려선 둘레 2 m의 적이 밀림 (내려서는 순간 키 = 3 m까지) · 넘어간 팀원은 1.5초 동안 넘어지지 않음\n사이에 적이 있으면 그 등에 박고 멈춤 · 체크 중에는 못 씀 · 쿨 10초 (후보 문서 R-기2)"),
             Made(PawnRushSkillIds.ScholarThrust, "스콜라 찌르기", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
                 "옆 이동 키 + 키 = 비스듬히 옆으로 2.5 m 미끄러짐 · 0.6초 안에 키(또는 좌클릭) 한 번 더 = 카메라 쪽으로 5 m 찌르기\n등 · 옆을 찔린 적은 3 m 밀리고 휘청 0.5초 (서 있었고 4 m 안에 그 팀원이 없으면 넘어짐)\n마주 보던 적은 밀리기만 하고 퀸이 튕겨 휘청 0.6초 · 쿨 9초 (옆걸음만 4초, 후보 문서 Q-기2)"),
+            // ...and its mid row's new ones (RagdollPawn.PoolMids.cs; the knight's and the bishop's are the fork and the pin).
+            Made(PawnRushSkillIds.ChaseAway, "쫓아내기", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
+                "키 = 창 겨눔 (달리면서) · 좌클릭 누르고 있기 = 모으기 (0.2 → 0.8초: 3 → 5 m) · 떼기 = 찌르며 돌진 · 우클릭/키 = 취소\n처음 찔린 적은 자기 값만큼 날아감: 폰 1 m, 나이트 · 비숍 3 m, 킹 4 m, 룩 5 m, 퀸 6 m (룩 · 퀸은 넘어짐)\n폰은 반동으로 튕김 · 헛치면 앞으로 엎어짐 · 쿨 15초 (후보 문서 P-중4)"),
+            Made(PawnRushSkillIds.CheckSeries, "연속 체크", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block,
+                "키 = 조준 (10 m) · 좌클릭 = 체크 · 적 발밑에 퀸 쪽으로 길쭉한 빨간 칸 (2 × 3.5 m, 하얀 먼 끝이 나갈 곳), 0.9초 뒤 터짐\n비켜 나가면 1초 안에 키 = 퀸이 빈 칸으로 미끄러져 다음 칸 (나갈 곳은 카메라 쪽, 0.7 → 0.5초, 세 번까지)\n맞으면 넘어지며 날아감 · 셋째가 맞으면 '최선수' · 쿨 18초 (후보 문서 Q-중5)"),
             Made(PawnRushSkillIds.KingSummon, "왕의 부름 (앞으로)", PieceKind.King, SkillOrigin.Pool, SkillTag.Ally | SkillTag.Move | SkillTag.Block,
                 "키 = 같은 구간 팀원 목록 · 2명까지 골라 키로 부름 (나팔 반동으로 킹이 반 걸음 물러남) · 팀원은 3초 안에 자기 키로 받음\n불린 팀원은 킹 앞 좌우(부를 때 보던 쪽)에 내려서고, 내려서는 순간 둘레 2 m의 적이 밀려남\n그때 0.6초 안에 키 한 번 더 = 킹과 팀원이 함께 3 m 밀고 나감 · 킹만 씀 · 쿨 20초 (후보 문서 K-중1)"),
 
@@ -129,9 +134,9 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.EnPassant, "앙파상", PieceKind.Pawn, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Counter,
                 "적이 내 옆 2 m 안을 나보다 빠르게 스쳐 지나가면 그 적 발밑에 주황 고리가 1초 뜸 → 그동안 키 = 뛰어들어 발 걸기\n걸린 적은 달리던 쪽으로 넘어져 미끄러짐 · 스쳐 지나간 적이 없으면 무시\n혼자 시험: 왼쪽 창 \"앙파상 시험\" (M)"),
             Made(PawnRushSkillIds.Fork, "포크", PieceKind.Knight, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Move,
-                "키 = 0.2초 준비 뒤 앞으로 3 m 도약, 착지하며 앞 좌우 두 자리(주황 고리)를 참\n두 자리에 적이 한꺼번에 있으면 둘 다 넘어지며 날아감 · 한 자리만이면 밀기만"),
+                "키 = 내릴 곳 겨눔 (9 m, 차일 적 머리에 고리) · 좌클릭 = 도약 · 우클릭/키 = 취소\n내려서며 둘레 1.6 m의 적을 양발로 참: 둘 이상이면 넘어지며 날아감 (나이트는 다시 튀어 오름, 킹과 퀸이면 '로열 포크')\n한 명만이면 밀기만 하고 나이트가 기우뚱 · 헛치면 주저앉음 · 내리꽂는 순간 좌클릭 = 1.5배 멀리 · 쿨 20초 (후보 문서 N-중1)"),
             Made(PawnRushSkillIds.Pin, "핀", PieceKind.Bishop, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Buff,
-                "키 = 조준 (보라 선, 9 m) · 좌클릭 = 쏘기 · 우클릭/키 = 취소\n처음 맞은 적 뒤 4 m 안, 같은 줄 위에 다른 적이나 벽 · 기둥이 있으면 둘이 2 m 줄로 5초 묶임\n뒤에 아무것도 없으면 맞은 적만 0.5초 휘청"),
+                "키 = 조준 · 좌클릭 누르고 있기 = 모으기 (10 → 18 m) · 떼기 = 쏘기 (비숍 1 m 반동) · 우클릭/키 = 취소\n맞은 적 뒤 4 m 안에 그 팀원이 있으면 3초 안에 움직일 때 뒤의 팀원이 넘어짐 · 뒤가 벽 · 기둥이면 거기에 3초 꿰임 · 비면 2초 발 무거움\n꿴 뒤 3초 안에 키 한 번 더 = 줄을 타고 6 m까지 다가감 · 쿨 16초 (후보 문서 B-중1)"),
             Made(PawnRushSkillIds.Castling, "캐슬링", PieceKind.Rook, SkillOrigin.Plan2, SkillTag.Ally | SkillTag.Move,
                 "키 = 조준 (팀원을 보면 청록 선, 12 m) · 좌클릭 = 제안 · 우클릭/키 = 취소\n팀원이 2초 안에 자기 스킬 키(F)로 받으면 둘이 날아 자리를 바꿈 (더미 팀원은 0.6초 뒤 스스로 받음)"),
             Made(PawnRushSkillIds.Check, "체크!", PieceKind.Queen, SkillOrigin.Plan2, SkillTag.Block,
@@ -275,6 +280,8 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.FlankShot, "달리면서 빛줄기를 쏴 옆에서 밀어낸다" },
             { PawnRushSkillIds.CastleOver, "앞의 팀원을 넘어 내려서며 둘레를 밀어낸다" },
             { PawnRushSkillIds.ScholarThrust, "옆으로 비켜 나왔다가 등을 찔러 넘어뜨린다" },
+            { PawnRushSkillIds.ChaseAway, "창으로 찔러 쫓아낸다. 비싼 기물일수록 멀리 날아간다" },
+            { PawnRushSkillIds.CheckSeries, "체크를 이어 가며 적을 원하는 쪽으로 몰아간다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

@@ -342,7 +342,7 @@ namespace ChessFight.RagdollLab
         public float forkLift = 2.2f;
         public float forkSinglePush = 3.5f;
         public float forkRecovery = 0.35f;
-        public float forkCooldown = 7f;
+        public float forkCooldown = 20f;   // the skill pool's N-중1 (was 7)
 
         [Header("1-나 비숍 — 핀 (꿰어 묶기)")]
         [Tooltip("빛줄이 닿는 거리 (m, 6칸), 굵기 (m), 조준 도움 각도 (도)")]
@@ -361,7 +361,7 @@ namespace ChessFight.RagdollLab
         [Tooltip("뒤에 아무것도 없을 때 맞은 적이 휘청이는 시간 (초)")]
         public float pinMissStagger = 0.5f;
         public float pinRecovery = 0.3f;
-        public float pinCooldown = 8f;
+        public float pinCooldown = 16f;   // the skill pool's B-중1 (was 8)
 
         [Header("1-나 룩 — 캐슬링 (자리 바꾸기)")]
         [Tooltip("팀원까지 거리 (m, 8칸), 조준 도움 각도 (도)")]
@@ -659,5 +659,52 @@ namespace ChessFight.RagdollLab
         public float scholarPush = 3f, scholarStagger = 0.5f, scholarStillSpeed = 1.5f, scholarMateGap = 4f, scholarKnockPush = 5f, scholarKnockLift = 2f;
         [Tooltip("후딜 (초), 쿨 (초), 옆걸음만 쓴 쿨 (초)")]
         public float scholarRecovery = 0.25f, scholarCooldown = 9f, scholarStepCooldown = 4f;
+
+        [Header("후보 문서 3안 중급기 · 폰 쫓아내기 (P-중4)")]
+        [Tooltip("좌클릭 모으기: 이 시간 (초) 아래는 가장 짧게, 이 시간 (초)이면 가장 길게 찌르는 거리 (m), 쥔 채 이만큼 (초) 넘으면 저절로 찌름")]
+        public float chaseChargeMin = 0.2f, chaseChargeMax = 0.8f, chaseNear = 3f, chaseFar = 5f, chaseHold = 2f;
+        [Tooltip("찌르며 돌진하는 빠르기 (m/s), 창끝이 닿는 반지름 (m)")]
+        public float chaseSpeed = 12f, chaseRadius = 0.5f;
+        [Tooltip("맞은 적은 자기 값만큼 (m: 폰 1, 나이트 · 비숍 3, 킹 4, 룩 5, 퀸 9) 날아가고, 이 거리 (m)가 상한")]
+        public float chaseMaxThrow = 6f;
+        [Tooltip("이 값 이상의 적 (룩 · 퀸)은 넘어지며 날아간다: 미는 빠르기 · 위로 (m/s). 그 아래는 밀리기만")]
+        public int chaseKnockValue = 5;
+        public float chaseKnockPush = 8f, chaseKnockLift = 3.5f;
+        [Tooltip("맞히면 폰이 반동으로 튕기는 거리 (m); 헛치면 앞으로 엎어지며 쏠리는 빠르기 (m/s)")]
+        public float chaseBounce = 0.8f, chaseMissLurch = 2.5f;
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float chaseRecovery = 0.25f, chaseCooldown = 15f;
+
+        [Header("후보 문서 3안 중급기 · 나이트 포크 (N-중1, 1-나 포크의 고침)")]
+        [Tooltip("내릴 곳을 겨누는 거리 (m), 그 높이 차 (m), 나는 빠르기 (m/s, 멀수록 오래); 내려선 곳 이 반경 (m) 안의 적을 양발로 찬다")]
+        public float forkAimRange = 9f, forkAimRise = 1.5f, forkLeapSpeed = 11f, forkKickRadius = 1.6f;
+        [Tooltip("내리꽂는 순간 좌클릭: 땅에 닿기 이만큼 (초) 전부터, 날리는 거리 배수")]
+        public float forkClickEarly = 0.15f, forkClickBoost = 1.5f;
+        [Tooltip("둘 이상 맞히면 멈칫 (초)과 공중으로 다시 튀는 빠르기 (m/s); 한 명만이면 나이트가 기우뚱 (초); 헛치면 주저앉음 (초)")]
+        public float forkDoubleStop = 0.1f, forkDoubleBounce = 5f, forkSingleWobble = 0.5f, forkMissSit = 0.6f;
+
+        [Header("후보 문서 3안 중급기 · 비숍 핀 (B-중1, 1-나 핀의 고침)")]
+        [Tooltip("좌클릭 모으기: 줄 길이 (m) 처음 · 다 모으면, 다 모으는 시간 (초); 쏜 반동 (m, 가장자리에서 안 멈춤)")]
+        public float pinNear = 10f, pinFar = 18f, pinCharge = 0.6f, pinRecoil = 1f;
+        [Tooltip("뒤 4 m 안에 그 적의 팀원: 이 시간 (초) 안에 꿰인 적이 이만큼 (m) 넘게 움직이면 뒤의 팀원이 넘어지며 날아감 (미는 빠르기 · 위로 m/s)")]
+        public float pinThreatSeconds = 3f, pinThreatMove = 0.8f, pinThreatPush = 6f, pinThreatLift = 2.5f;
+        [Tooltip("뒤에 벽 · 기둥: 거기에 꿰이는 시간 (초). 뒤가 비면: 발이 무거운 시간 (초)")]
+        public float pinPostSeconds = 3f, pinSlowSeconds = 2f;
+        [Tooltip("꿴 뒤 이 시간 (초) 안에 키를 한 번 더 누르면 줄을 타고 미끄러져 다가감 (최대 m, 적 앞 몇 m에서 멈춤)")]
+        public float pinZipWindow = 3f, pinZipMax = 6f, pinZipGap = 0.8f;
+
+        [Header("후보 문서 3안 중급기 · 퀸 연속 체크 (Q-중5)")]
+        [Tooltip("첫 체크의 사거리 (m), 조준 도움 (도); 따라붙은 뒤 다음 체크가 닿는 거리 (m)")]
+        public float seriesRange = 10f, seriesAssist = 20f, seriesFollowRange = 5f;
+        [Tooltip("빨간 칸: 폭 (m), 길이 (m, 퀸 쪽으로 길쭉), 적에서 칸의 먼 끝까지 (m, 가장 가까운 출구)")]
+        public float seriesWidth = 2f, seriesLength = 3.5f, seriesExit = 0.5f;
+        [Tooltip("칸이 터지기까지 (초): 첫째 · 둘째 · 셋째")]
+        public float seriesFuse1 = 0.9f, seriesFuse2 = 0.7f, seriesFuse3 = 0.5f;
+        [Tooltip("비켜 나간 뒤 다음 체크 키를 받는 시간 (초); 퀸이 빈 칸으로 미끄러지는 빠르기 (m/s), 그 최대 거리 (m)")]
+        public float seriesLink = 1f, seriesSlideSpeed = 12f, seriesSlideMax = 8f;
+        [Tooltip("맞으면: 미는 빠르기 · 위로 (m/s, 넘어뜨림); 셋째가 맞으면 멈칫 (초)")]
+        public float seriesPush = 7.5f, seriesLift = 2.5f, seriesFinalStop = 0.15f;
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float seriesRecovery = 0.3f, seriesCooldown = 18f;
     }
 }

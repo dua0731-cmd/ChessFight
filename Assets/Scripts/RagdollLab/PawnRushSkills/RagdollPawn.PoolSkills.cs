@@ -120,8 +120,9 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- B-중7: the long diagonal snipe
 
-        // The left click held this step (taken from the input before the run, so it does not dive); the small number's bits.
-        bool snipeHeld;
+        // The left click held this step, for the skills drawn with it (the snipe, the pawn's spear, the pin: taken from the
+        // input before the run, so it does not dive); the snipe's small number's bits.
+        bool drawHeld;
         const byte SnipeHitBit = 1, SnipeBestBit = 2;
 
         /// <summary>How far the kneeling bishop's line reaches now: snipeNear kneeling, out to snipeFar over snipeCharge of
@@ -149,16 +150,29 @@ namespace ChessFight.RagdollLab
             return null;
         }
 
-        /// <summary>Before the run (PlanKeys): kneeling from the key to the end of the sit after the shot, the bishop goes
-        /// nowhere; the left click held is the draw's (not a dive), and while drawing the right click calls it off.</summary>
+        /// <summary>Before the run (PlanKeys): the skills drawn with the left click - the kneeling bishop's snipe (it goes
+        /// nowhere from the key to the end of its sit), the pawn's spear and the pin (a walk while drawing): the left click
+        /// held is the draw's (not a dive), and while drawing the right click calls it off. The fork has its own.</summary>
         void PoolKeys()
         {
             PoolBasicKeys();   // plan 3's basics (RagdollPawn.PoolBasics.cs)
-            if (planPhase == PlanPhase.None || activeSkill != PawnRushSkillIds.LongSnipe) return;
-            input.move = Vector3.zero;
-            input.jump = false;
-            input.sprint = false;
-            snipeHeld = input.shoveHeld;
+            if (planPhase == PlanPhase.None) return;
+            if (activeSkill == PawnRushSkillIds.Fork)
+            {
+                ForkKeys();
+                return;
+            }
+            bool snipe = activeSkill == PawnRushSkillIds.LongSnipe;
+            if (!snipe && activeSkill != PawnRushSkillIds.ChaseAway && activeSkill != PawnRushSkillIds.Pin) return;
+            if (snipe)
+            {
+                input.move = Vector3.zero;
+                input.jump = false;
+                input.sprint = false;
+            }
+            else if (planPhase != PlanPhase.Aim && planPhase != PlanPhase.Windup) return;   // (thrusting, or the pin held: free)
+            else if (planPhase == PlanPhase.Windup) input.sprint = false;
+            drawHeld = input.shoveHeld;
             input.shoveHeld = false;
             if (planPhase == PlanPhase.Aim) return;   // (the aim's clicks are read after this: the left starts the draw)
             input.shove = false;
@@ -200,7 +214,7 @@ namespace ChessFight.RagdollLab
                     planPhase = PlanPhase.Windup;
                     planTime = 0f;
                     SkillDetail = "긴 대각선 저격: 모으는 중 (떼면 쏨 · 우클릭 취소)";
-                    if (!snipeHeld) FireSnipe(s);   // a click let go at once: the short shot
+                    if (!drawHeld) FireSnipe(s);   // a click let go at once: the short shot
                     break;
                 case PlanPhase.Windup:
                     planTime += dt;
@@ -213,7 +227,7 @@ namespace ChessFight.RagdollLab
                         Log("긴 대각선 저격: 모으다 취소");
                         break;
                     }
-                    if (!snipeHeld || planTime > s.snipeHold) FireSnipe(s);
+                    if (!drawHeld || planTime > s.snipeHold) FireSnipe(s);
                     break;
                 case PlanPhase.Recovery:
                     planTime += dt;

@@ -200,7 +200,9 @@ namespace ChessFight.Network
         // the rook's state says when the rook flies to what its chain caught.
         // skilllab7: the pool's plan 3 basics - three more skills can sit in a slot (85..87) and a seventh loadout that
         // comes with the game.
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab7";
+        // skilllab8: the pool's plan 3 mids - two more skills can sit in a slot (88, 89), and the fork and the pin play as
+        // the pool's (another state in the same fields).
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab8";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

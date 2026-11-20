@@ -34,6 +34,10 @@ namespace ChessFight.Network
         // The pool's plan 3, its basic row's new ones: the bishop's flank shot (B-기6), the rook's castling over a teammate
         // (R-기2), the queen's scholar's thrust (Q-기2). The pawn's, the knight's and the king's basics are 81, 43 and 72.
         public const int FlankShot = 85, CastleOver = 86, ScholarThrust = 87;
+        // ...and its mid row's new ones: the pawn's chasing away (P-중4), the queen's series of checks (Q-중5). The knight's
+        // and the bishop's mids are plan 1-나's fork and pin, made the pool's (N-중1, B-중1); the rook's and the king's are
+        // 83 and 84.
+        public const int ChaseAway = 88, CheckSeries = 89;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -273,8 +277,8 @@ namespace ChessFight.Network
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
         /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece), 6 the pool's plan 3 (basic,
-        /// mid, ultimate: its basic row, and in the second slots the mid skills made so far). The king's row is empty (his
-        /// call) in all but 4, 5 and 6.</summary>
+        /// mid, ultimate: its basic row in the first slots, its mid row in the second). The king's row is empty (his call)
+        /// in all but 4, 5 and 6.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
@@ -282,7 +286,7 @@ namespace ChessFight.Network
             if (which == 6)
             {
                 int[] basic = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.CastleOver, PawnRushSkillIds.ScholarThrust, PawnRushSkillIds.KingStep };
-                int[] mid = { 0, 0, 0, PawnRushSkillIds.ChainBehind, 0, PawnRushSkillIds.KingSummon };
+                int[] mid = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon };
                 for (int row = 0; row < Rows; row++)
                 {
                     p.slots[row * Slots] = basic[row];

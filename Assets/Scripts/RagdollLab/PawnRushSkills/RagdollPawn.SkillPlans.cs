@@ -203,8 +203,9 @@ namespace ChessFight.RagdollLab
             switch (id)
             {
                 case PawnRushSkillIds.EnPassant: UpdatePawnPass(s, press, dt); break;
-                case PawnRushSkillIds.Fork: UpdateKnightFork(s, press, dt); break;
-                case PawnRushSkillIds.Pin: UpdateBishopPin(s, press, confirm, cancel, dt); break;
+                // (Plan 1-나's fork and pin, made the skill pool's N-중1 and B-중1: RagdollPawn.PoolMids.cs.)
+                case PawnRushSkillIds.Fork: UpdatePoolFork(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.Pin: UpdatePoolPin(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.Castling: UpdateRookCastle(s, press, confirm, cancel, dt, id); break;
                 case PawnRushSkillIds.Check: UpdateQueenCheck(s, press, confirm, cancel, dt); break;
                 // Queen of the Hill's six (RagdollPawn.HillSkills.cs).
@@ -230,6 +231,9 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.FlankShot: UpdateFlankShot(s, press, dt); break;
                 case PawnRushSkillIds.CastleOver: UpdateCastleOver(s, press, dt); break;
                 case PawnRushSkillIds.ScholarThrust: UpdateScholarThrust(s, press, confirm, cancel, dt); break;
+                // ...and its mid row's new ones (RagdollPawn.PoolMids.cs).
+                case PawnRushSkillIds.ChaseAway: UpdateChaseAway(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.CheckSeries: UpdateCheckSeries(s, press, confirm, cancel, dt); break;
             }
         }
 
@@ -260,6 +264,8 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.FlankShot: return s.flankCooldown;
                 case PawnRushSkillIds.CastleOver: return s.overCooldown;
                 case PawnRushSkillIds.ScholarThrust: return s.scholarCooldown;
+                case PawnRushSkillIds.ChaseAway: return s.chaseCooldown;
+                case PawnRushSkillIds.CheckSeries: return s.seriesCooldown;
                 default: return 0f;
             }
         }
@@ -477,117 +483,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- fork
 
-        /// <summary>One of the fork's two spots (0 left, 1 right of the way it leaps), from the landing point.</summary>
-        public Vector3 ForkSpot(int side)
-        {
-            var s = PawnRushSkills;
-            if (s == null) return planPoint;
-            return planPoint + Quaternion.Euler(0f, side == 0 ? -s.forkAngle : s.forkAngle, 0f) * planDir * s.forkAhead;
-        }
-
-        /// <summary>Where the leap comes down: forkLeap ahead on the floor there, short of a wall in the way.</summary>
-        Vector3 ForkLanding(PawnRushSkillParams s, Vector3 dir)
-        {
-            Vector3 feet = FeetPoint;
-            float reach = s.forkLeap;
-            if (SolidRay(feet + Vector3.up * 0.35f, dir, reach + 0.3f, out var wall) && Mathf.Abs(wall.normal.y) < 0.5f)
-                reach = Mathf.Max(0.4f, wall.distance - 0.4f);
-            Vector3 at = feet + dir * reach;
-            if (SolidRay(at + Vector3.up * 1.5f, Vector3.down, 5f, out var floor) && floor.normal.y > 0.5f) at.y = floor.point.y;
-            return at;
-        }
-
-        void UpdateKnightFork(PawnRushSkillParams s, bool press, float dt)
-        {
-            switch (planPhase)
-            {
-                case PlanPhase.None:
-                    if (!press || !CanStartSkill()) break;
-                    SkillUses++;
-                    planDir = AimFlat();
-                    planPoint = ForkLanding(s, planDir);
-                    planPhase = PlanPhase.Windup;
-                    planTime = 0f;
-                    facing = planDir;
-                    SkillDetail = "포크 준비 (두 자리가 보임)";
-                    break;
-                case PlanPhase.Windup:
-                    // Not rooted: a running piece keeps its speed into the leap, the spots go with it.
-                    planTime += dt;
-                    planPoint = ForkLanding(s, planDir);
-                    if (planTime >= s.forkWindup)
-                    {
-                        Vector3 p = bodies[0].position;
-                        Launch(LeapVelocity(p, planPoint + Vector3.up * standHeight, s.forkFlight, s.forkHeight));
-                        facing = planDir;
-                        planPhase = PlanPhase.Active;
-                        planTime = 0f;
-                        SkillDetail = "포크 도약";
-                    }
-                    break;
-                case PlanPhase.Active:
-                    planTime += dt;
-                    if (Climbing || rope != null || planTime > s.forkFlight + 1.2f)
-                    {
-                        // Caught a ledge on the way, or still not down long after (it leapt off an edge): no kick.
-                        EndPlanSkill();
-                        StartCooldown(s.forkCooldown);
-                    }
-                    else if (planTime > 0.2f && Grounded)
-                    {
-                        ForkLand(s);
-                        planPhase = PlanPhase.Recovery;
-                        planTime = 0f;
-                        SkillDetail = "착지 후딜";
-                    }
-                    break;
-                case PlanPhase.Recovery:
-                    planTime += dt;
-                    if (planTime >= s.forkRecovery)
-                    {
-                        EndPlanSkill();
-                        StartCooldown(s.forkCooldown);
-                    }
-                    break;
-                default:
-                    EndPlanSkill();
-                    break;
-            }
-        }
-
-        /// <summary>The kick, judged from where it really came down: enemies standing on both spots at once all go down and
-        /// fly outward; on one spot only, they are shoved.</summary>
-        void ForkLand(PawnRushSkillParams s)
-        {
-            Vector3 feet = FeetPoint;
-            planPoint = feet;
-            Vector3 left = ForkSpot(0), right = ForkSpot(1);
-            var onLeft = new List<RagdollPawn>();
-            var onRight = new List<RagdollPawn>();
-            foreach (var other in All)
-            {
-                if (other == null || other == this || !IsEnemyOf(other) || other.State == PawnState.Ragdoll || other.SkillUntargetable) continue;
-                Vector3 op = other.FeetPoint;
-                if (Mathf.Abs(op.y - feet.y) > 1.2f) continue;
-                float dl = Flat(op - left).magnitude, dr = Flat(op - right).magnitude;
-                if (dl <= s.forkRadius && dl <= dr) onLeft.Add(other);
-                else if (dr <= s.forkRadius) onRight.Add(other);
-            }
-            bool both = onLeft.Count > 0 && onRight.Count > 0;
-            int hit = 0;
-            foreach (var list in new[] { onLeft, onRight })
-                foreach (var other in list)
-                {
-                    Vector3 away = FlatDir(other.bodies[0].position - bodies[0].position);
-                    string result = both
-                        ? SkillHit(other, away * s.forkPush + Vector3.up * s.forkLift, true, "포크")
-                        : SkillHit(other, away * s.forkSinglePush, false, "포크 (한 자리만)");
-                    hit++;
-                    Log($"포크 → {other.DisplayName}: {result}");
-                }
-            Fx(SkillFxKind.KnightLand, null, feet, planDir, hit, s.forkRadius);
-            Log(both ? $"포크: 두 자리 모두 맞힘 — {hit}명 넘어짐" : hit > 0 ? "포크: 한 자리만 맞힘 — 밀기만" : "포크: 빗나감");
-        }
+        // (Plan 1-나's fork became the skill pool's N-중1: RagdollPawn.PoolMids.cs, UpdatePoolFork.)
 
         // ---------------------------------------------------------------- pin
 
@@ -605,119 +501,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The other end of the rope: the piece it is tied to (its waist), or the post.</summary>
         public Vector3 PinAnchor => pinToPost || pinMate == null ? pinPost : pinMate.LassoBelly;
 
-        /// <summary>The way the line would go: flat along the aim; an enemy within pinAssist of it, in reach and in sight, is
-        /// aimed at.</summary>
-        Vector3 PinAim(PawnRushSkillParams s)
-        {
-            Vector3 flat = AimFlat(), from = LassoHands;
-            planTarget = null;
-            float best = s.pinAssist;
-            foreach (var other in All)
-            {
-                if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable
-                    || other.pinLeft > 0f) continue;
-                Vector3 to = other.LassoBelly - from;
-                float across = Flat(to).magnitude;
-                if (across < 0.6f || across > s.pinRange || Mathf.Abs(to.y) > 2f) continue;
-                float angle = Vector3.Angle(flat, Flat(to));
-                if (angle > best || !ClearSight(from, other.LassoBelly)) continue;
-                planTarget = other;
-                best = angle;
-            }
-            return planTarget != null ? FlatDir(planTarget.LassoBelly - from) : flat;
-        }
-
-        void UpdateBishopPin(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
-        {
-            switch (planPhase)
-            {
-                case PlanPhase.None:
-                    if (press && CanStartSkill())
-                    {
-                        planPhase = PlanPhase.Aim;
-                        planTime = 0f;
-                        skillGrabLatch = skillGrabRaw;
-                        planDir = PinAim(s);
-                        SkillDetail = "핀 조준 (좌클릭 쏘기 · 우클릭/스킬 키 취소)";
-                    }
-                    break;
-                case PlanPhase.Aim:
-                    planTime += dt;
-                    planDir = PinAim(s);
-                    if (Flat(skillMoveRaw).sqrMagnitude < 0.04f) facing = FlatDir(planDir);
-                    if (cancel || press)
-                    {
-                        if (cancel) skillGrabLatch = true;
-                        EndPlanSkill();
-                        Log("핀: 조준 취소");
-                        break;
-                    }
-                    if (confirm)
-                    {
-                        SkillUses++;
-                        FirePin(s);
-                        planPhase = PlanPhase.Recovery;
-                        planTime = 0f;
-                        SkillDetail = "핀";
-                    }
-                    break;
-                case PlanPhase.Recovery:
-                    planTime += dt;
-                    if (planTime >= s.pinRecovery)
-                    {
-                        EndPlanSkill();
-                        StartCooldown(s.pinCooldown);
-                    }
-                    break;
-                default:
-                    EndPlanSkill();
-                    break;
-            }
-        }
-
-        /// <summary>The line, at once: the first enemy on it (short of a wall), then what is close behind that one on the same
-        /// line - another enemy, or an upright wall or pillar - and the two are tied. Nothing behind: a short stagger.</summary>
-        void FirePin(PawnRushSkillParams s)
-        {
-            Vector3 from = LassoHands, dir = FlatDir(planDir);
-            float reach = s.pinRange;
-            if (SolidRay(from, dir, reach, out var ahead)) reach = ahead.distance;
-            var first = PinFirst(s, from, dir, 0.5f, reach, null);
-            planTarget = first;
-            if (first == null)
-            {
-                planPoint = from + dir * reach;
-                Log("핀: 아무도 안 맞음");
-                return;
-            }
-            Vector3 a = first.LassoBelly;
-            float behind = s.pinBehind;
-            bool post = SolidRay(a, dir, behind, out var wall) && Mathf.Abs(wall.normal.y) < 0.5f;
-            if (post) behind = wall.distance;
-            var second = PinFirst(s, a, dir, 0.3f, behind, first);
-            if (second != null)
-            {
-                first.BePinned(second, Vector3.zero, false, s);
-                second.BePinned(first, Vector3.zero, false, s);
-                planPoint = second.LassoBelly;
-                Fx(SkillFxKind.PawnHit, first, first.LassoBelly, dir, 0);
-                Log($"핀: {first.DisplayName}와 {second.DisplayName}를 꿰어 묶음 ({s.pinSeconds:0.#}초, 줄 {s.pinRest:0.#} m)");
-            }
-            else if (post)
-            {
-                first.BePinned(null, wall.point, true, s);
-                planPoint = wall.point;
-                Fx(SkillFxKind.PawnHit, first, first.LassoBelly, dir, 0);
-                Log($"핀: {first.DisplayName}를 뒤의 벽 · 기둥에 묶음 ({s.pinSeconds:0.#}초)");
-            }
-            else
-            {
-                planPoint = a + dir * 1.2f;
-                first.Stagger(s.pinMissStagger);
-                first.LastSkillHit = "핀: 뒤에 아무것도 없음 → 휘청";
-                Log($"핀: {first.DisplayName} 뒤에 아무것도 없음 → 휘청 {s.pinMissStagger:0.#}초");
-            }
-        }
+        // (Plan 1-나's pin became the skill pool's B-중1: RagdollPawn.PoolMids.cs, UpdatePoolPin. What is left here is the
+        // rope it ties to a post with, the queen's elastic uses too.)
 
         /// <summary>The nearest enemy the line takes between <paramref name="min"/> and <paramref name="max"/> along it.</summary>
         RagdollPawn PinFirst(PawnRushSkillParams s, Vector3 from, Vector3 dir, float min, float max, RagdollPawn skip)
@@ -1132,18 +917,22 @@ namespace ChessFight.RagdollLab
                 ? Mathf.Max(0f, PawnRushSkills.checkSeconds - planTime) : 0f;
 
         /// <summary>The enemy it would check: standing within checkAssist of the aim, in reach and in sight.</summary>
-        RagdollPawn FindCheckTarget(PawnRushSkillParams s)
+        RagdollPawn FindCheckTarget(PawnRushSkillParams s) => CheckTargetWithin(s.checkRange, s.checkAssist);
+
+        /// <summary>The enemy a check would name: standing within <paramref name="assist"/>° of the aim, within
+        /// <paramref name="range"/> and in sight (the check, and the pool's series of checks).</summary>
+        RagdollPawn CheckTargetWithin(float range, float assist)
         {
             Vector3 flat = AimFlat(), eye = bodies[(int)BodyId.Head].position;
             RagdollPawn best = null;
-            float bestAngle = s.checkAssist;
+            float bestAngle = assist;
             foreach (var other in All)
             {
                 if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable
                     || other.chainCarry || other.kingCarry || other.castleCarry) continue;
                 Vector3 to = other.bodies[0].position - bodies[0].position;
                 float across = Flat(to).magnitude;
-                if (across < 0.8f || across > s.checkRange || Mathf.Abs(to.y) > 2.5f) continue;
+                if (across < 0.8f || across > range || Mathf.Abs(to.y) > 2.5f) continue;
                 float angle = Vector3.Angle(flat, Flat(to));
                 if (angle > bestAngle || !ClearSight(eye, other.bodies[(int)BodyId.Head].position)) continue;
                 best = other;
