@@ -22,11 +22,13 @@ namespace ChessFight.PawnRush
         public struct Line
         {
             public Vector3 from, to;   // the bridge's top, end to end, in this object's frame
+            public float arch;         // R725: the top's middle this far above the straight line (a parabola; < 0 sags); 0 = straight
 
-            public Line(Vector3 from, Vector3 to)
+            public Line(Vector3 from, Vector3 to, float arch = 0f)
             {
                 this.from = from;
                 this.to = to;
+                this.arch = arch;
             }
         }
 
@@ -64,7 +66,8 @@ namespace ChessFight.PawnRush
             public Material fillMaterial, flashMaterial;
         }
 
-        const float StreakFrom = 26f, StreakLength = 6f;
+        // The rod's middle starts StreakFrom + half its length over the line (public for the effects that ride it).
+        public const float StreakFrom = 26f, StreakLength = 6f;
         static readonly Color Gold = new Color(1f, .78f, .3f);
 
         uint seed;
@@ -77,6 +80,13 @@ namespace ChessFight.PawnRush
         public int LineCount => lines.Length;
         public float Interval => interval;
         public float Warning => warning;
+        // R725 ro-vfx: read only, for the effects that draw each meteor from the same clock (RoyalObservatoryVfxMeteor).
+        public double StartClock => start;   // NaN until the section starts
+        public float Streak => streak;
+        public float Flash => flash;
+        public float InnerRadius => innerRadius;
+        public float OuterRadius => outerRadius;
+        public Line LineAt(int i) => lines[i];
         // How many meteors are showing now (warning, falling or just landed).
         public int Showing { get; private set; }
         // How many have landed since this PC began to watch.
@@ -163,7 +173,8 @@ namespace ChessFight.PawnRush
             float length = Vector3.Distance(line.from, line.to);
             if (length < .01f) return line.from;
             float margin = Mathf.Min(endMargin, length * .3f);
-            return Vector3.Lerp(line.from, line.to, (margin + (length - 2f * margin) * m.Along) / length);
+            float t = (margin + (length - 2f * margin) * m.Along) / length;
+            return Vector3.Lerp(line.from, line.to, t) + Vector3.up * (line.arch * 4f * t * (1f - t));
         }
 
         void FixedUpdate()

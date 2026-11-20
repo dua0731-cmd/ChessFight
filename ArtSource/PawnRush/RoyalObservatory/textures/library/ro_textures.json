@@ -1,0 +1,196 @@
+{
+ "RO_Motif": {
+  "atlas": [
+   4,
+   5
+  ],
+  "cell": 1024,
+  "metallic": "map",
+  "sources": [
+   "RO_T1 1",
+   "RO_T1 2",
+   "RO_T1 3",
+   "RO_T1 4",
+   "RO_T1 5",
+   "RO_T1 6",
+   "RO_T1 7",
+   "RO_T1 8",
+   "RO_T1 9",
+   "RO_T1 10",
+   "RO_T1 11",
+   "RO_T1 12",
+   "RO_T2 1",
+   "RO_T2 2",
+   "RO_T2 3",
+   "RO_T2 4",
+   "RO_T2 5",
+   "RO_T2 6",
+   "RO_T2 7",
+   "drawn"
+  ],
+  "tile": 1.0
+ },
+ "RO_Marble": {
+  "tile": 3.0,
+  "metallic": 0.0,
+  "smoothness": 0.780002772808075,
+  "size": 1024,
+  "mean": "#DABF9C",
+  "target": "#E9DFD0",
+  "source": "RO_T3 swatch 1, graded (GRADE)"
+ },
+ "RO_Gold": {
+  "tile": 0.6,
+  "metallic": 1.0,
+  "smoothness": 0.8018363118171692,
+  "size": 1024,
+  "mean": "#CE9524",
+  "target": "#E2AE48",
+  "source": "RO_T3 swatch 2, graded (GRADE)"
+ },
+ "RO_Brass": {
+  "tile": 1.0,
+  "metallic": 1.0,
+  "smoothness": 0.6199979186058044,
+  "size": 1024,
+  "mean": "#A87A38",
+  "target": "#A87A3C",
+  "source": "RO_T3 swatch 3"
+ },
+ "RO_NavyEnamel": {
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.6000000834465027,
+  "size": 1024,
+  "mean": "#252135",
+  "target": "#061A4A",
+  "source": "RO_T3 swatch 4 colour, procedural body, graded (GRADE)"
+ },
+ "RO_VioletEnamel": {
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.6000000834465027,
+  "size": 1024,
+  "mean": "#432E57",
+  "target": "#481468",
+  "source": "RO_T3 swatch 5 colour, procedural body, graded (GRADE)"
+ },
+ "RO_Pearl": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.8399999737739563,
+  "size": 1024,
+  "mean": "#EDE2D6",
+  "target": "#EDE6D8",
+  "source": "RO_T3 swatch 6"
+ },
+ "RO_HallStone": {
+  "tile": 3.0,
+  "metallic": 0.0,
+  "smoothness": 0.550000011920929,
+  "size": 1024,
+  "mean": "#424348",
+  "target": "#424348",
+  "source": "RO_T3 swatch 7 colour, procedural body"
+ },
+ "RO_Velvet": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.1799810826778412,
+  "size": 1024,
+  "mean": "#510080",
+  "target": "#4A2378",
+  "source": "RO_T3 swatch 8, graded (GRADE)"
+ },
+ "RO_PlanetJupiter": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.45,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#BC6D42",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P1_jupiter.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetSaturn": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.45,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#D09B76",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P2_saturn.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetNeptune": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.5,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#1D55C7",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P3_neptune.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetEarth": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.5,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#4E719F",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P4_earth.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetMars": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.3,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#BF5A2F",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P5_mars.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetVenus": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.45,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#E8AC70",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P6_venus.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ },
+ "RO_PlanetMercury": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.25,
+  "size": [
+   2048,
+   1024
+  ],
+  "mean": "#AD7B63",
+  "target": "",
+  "source": "AssetRefs/Planets/RO_P7_mercury.png",
+  "uv": "0..1 round the sphere (equirectangular)"
+ }
+}

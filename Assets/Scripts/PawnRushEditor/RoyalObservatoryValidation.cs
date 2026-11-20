@@ -46,6 +46,9 @@ namespace ChessFight.PawnRush.Editor
         // The flare: which of calm (1), warning (2) and burn (4) were seen; planets without a shadow, and how far
         // past the floor's edge a shadow reached. The gears: the worst a mesh was off, in cogs.
         static int flareStates, shadeMisses;
+        // R725 ro-vfx: the shelter is each planet's real shadow - points of its drawn ellipse that SolarFlare.ShelteredBy
+        // disagreed with (its middle, just inside and well outside each end of both axes), and how many were tried.
+        static int ellipseMisses, ellipseTried;
         // The rolling planet: where and how it was last seen, how far it has gone and how far round it has turned.
         static bool rollSeen;
         static Vector3 rollAt;
@@ -95,7 +98,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 errors.Clear(); ranges.Clear(); turned.Clear(); lastHeading.Clear(); firstPlace.Clear(); farPlace.Clear(); landedBefore.Clear();
                 failures = 0; stage = 0; section = null; showing = 0; watchedFrom = double.NaN;
-                flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f;
+                flareStates = 0; shadeMisses = 0; shadeReach = -100f; meshWorst = 0f; ellipseMisses = 0; ellipseTried = 0;
                 rollSeen = false; rollWent = 0f; rollTurned = 0f; rollWith = 0f; rollSquare = 0f;
                 stepAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
@@ -135,6 +138,9 @@ namespace ChessFight.PawnRush.Editor
                     if (now - stepAt < Watch) return;
                     Moved();
                     Pictures();
+                    // R725: with the modelling sessions' models on - what is drawn and how long a frame takes.
+                    try { if (section != null) RoyalObservatoryPerf.Measure(section.transform, Folder); }
+                    catch (System.Exception e) { Log("NOTE: the performance measure threw " + e.Message); }
                     Finish();
                 }
             }
@@ -183,7 +189,7 @@ namespace ChessFight.PawnRush.Editor
         // heading), and how fast.
         static readonly (string root, string child, float degreesPerSecond)[] Turning =
         {
-            ("Device_EclipseMoon", "Moon A", 30f), ("Device_PlanetOrbit 1", "Planet 1", 18f), ("Device_PlanetOrbit 2", "Planet 1", -360f / 13f),
+            ("Device_PlanetOrbit 1", "Planet 1", 18f), ("Device_PlanetOrbit 2", "Planet 1", -360f / 13f),
             ("Device_PlanetOrbit 3", "Planet 1", 360f / 7f),
             ("Device_OrbitRing 1", "Planet deck 1", -30f), ("Device_OrbitRing 2", "Planet deck 1", 30f), ("Device_OrbitRing 3", "Planet deck 1", -30f),
             ("Device_StarGear Cassiopeia gear 2", null, 28.125f), ("Device_StarGear Cassiopeia gear 3", null, -22.5f),
@@ -252,10 +258,10 @@ namespace ChessFight.PawnRush.Editor
                 var root = Named(t.root);
                 if (root != null && (t.child == null || root.Find(t.child) != null) && root.GetComponent<ObstacleMotion>() != null) turning++;
             }
-            Check(turning == Turning.Length, $"the moons, the globe's three planet orbits, the bowl's three orbits and the four gears are there and turn ({turning} of {Turning.Length})");
-            Check(Named("Ecliptic floor") != null && Named("Great globe glass") != null && Named("Moon B") != null && Named("Cassiopeia star 1") != null
+            Check(turning == Turning.Length, $"the globe's three planet orbits, the bowl's three orbits and the four gears are there and turn ({turning} of {Turning.Length})");
+            Check(Named("Ecliptic floor") != null && Named("Great globe glass") != null && Named("Device_EclipseMoon") == null && Named("Cassiopeia star 1") != null
                   && Named("Telescope deck") != null && Named("Observing stage") != null && Named("Balcony") != null,
-                  "the globe, its floor, the second moon, Cassiopeia's standing star, the stage, the deck and the balcony are there");
+                  "the globe, its floor (no moons since R725), Cassiopeia's standing star, the stage, the deck and the balcony are there");
             Check(Named("Globe climb") == null && Named("Device_BinaryStar") == null && Named("Planet ring") == null
                   && section.GetComponentsInChildren<AirVent>(true).Length == 0 && section.GetComponentsInChildren<PendulumSwing>(true).Length == 0,
                   "the climb, its crossing planets and the binary star are gone; no imported hazard is used");
@@ -432,9 +438,26 @@ namespace ChessFight.PawnRush.Editor
                     shadeReach = Mathf.Max(shadeReach, middle.magnitude + size - flare.Radius);
                     Range("shade " + i, middle.magnitude);
                     Range("shade size " + i, size);
+                    // The drawn ellipse and the shelter agree: in at the middle and just inside each end, out well past.
+                    if (!flare.ShadowEllipse(i, out var centre, out var along, out float major, out float minor)) continue;
+                    var across = new Vector2(-along.y, along.x);
+                    Probe(flare, i, middle, true);
+                    Probe(flare, i, centre, true);
+                    foreach (var (axis, half) in new[] { (along, major), (-along, major), (across, minor), (-across, minor) })
+                    {
+                        Probe(flare, i, centre + axis * (half - .12f), true);
+                        // (the grace widens the far end most: about 0.4 m on the outer orbit, 0.15 m across)
+                        Probe(flare, i, centre + axis * (half + .6f), false);
+                    }
                 }
             }
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true)) showing = Mathf.Max(showing, shower.Showing);
+        }
+
+        static void Probe(SolarFlare flare, int planet, Vector2 at, bool inside)
+        {
+            ellipseTried++;
+            if (flare.ShelteredBy(planet, new Vector3(at.x, 0f, at.y)) != inside) ellipseMisses++;
         }
 
         // How far apart the places a sliding thing has been seen at are (it slides along a straight line, so the
@@ -449,11 +472,60 @@ namespace ChessFight.PawnRush.Editor
             Range(key, (most - least).magnitude);
         }
 
+        // R725: the globe's armillary (GlobeArmillary) is drawn only, so nothing stops it - pose it over four and a half
+        // minutes of the clock (the three periods together) and check that no ring of any gimbal comes within 0.6 m of
+        // anything solid (a walkway, a rail, a star, a gate's threshold); and that the gimbals are nested and swing.
+        static readonly float[] ModelReach = { .5f, .52f, .45f };
+
+        static void ArmillarySweep()
+        {
+            var armillary = section.GetComponentInChildren<GlobeArmillary>(true);
+            var g = armillary != null ? armillary.Gimbals : new GlobeArmillary.Gimbal[0];
+            if (!Check(g.Length == 3 && g[1].pivot.parent == g[0].pivot && g[2].pivot.parent == g[1].pivot,
+                       "the globe's rings are an armillary like the lobby's: " + g.Length + " gimbals nested one in the other"))
+                return;
+            var hits = new int[g.Length];
+            var first = new string[g.Length];
+            int samples = 0;
+            var buffer = new Collider[8];
+            for (int s = 0; s < 540; s++)
+            {
+                double time = s * .5;
+                armillary.Pose(time);
+                for (int k = 0; k < g.Length; k++)
+                    for (int r = 0; r < g[k].lies.Length; r++)
+                        for (int a = 0; a < 64; a++)
+                        {
+                            float angle = a * Mathf.PI * 2f / 64f;
+                            var world = g[k].pivot.TransformPoint(g[k].lies[r] * new Vector3(Mathf.Cos(angle) * g[k].radii[r], 0f, Mathf.Sin(angle) * g[k].radii[r]));
+                            samples++;
+                            // 0.6 m clear of the model, which reaches this far past a ring's middle line (ro-hall 11-19: A's tube and
+                            // balls 0.49, B's band edge and its beads 0.51 and pin balls 0.39, C's 0.45)
+                            int n = Physics.OverlapSphereNonAlloc(world, .6f + ModelReach[k], buffer, ~0, QueryTriggerInteraction.Ignore);
+                            for (int i = 0; i < n; i++)
+                            {
+                                if (buffer[i].transform.IsChildOf(armillary.transform)) continue;
+                                // The tilted floor is inside the glass: no pawn can come between it and a ring outside,
+                                // so there the model must only not cut into it.
+                                if (buffer[i].name == "Ecliptic floor" && (buffer[i].ClosestPoint(world) - world).magnitude > ModelReach[k] + .05f) continue;
+                                hits[k]++;
+                                if (first[k] == null) first[k] = $"at {time:0.0} s touches {buffer[i].name} at {Local(world)}";
+                            }
+                        }
+            }
+            armillary.Pose(ObstacleClock.Now);
+            for (int k = 0; k < g.Length; k++)
+                Check(hits[k] == 0, $"{g[k].pivot.name} (swing {g[k].swing:0} deg, {g[k].period:0} s, {g[k].lies.Length} rings) clears every solid thing over 270 s: {hits[k]} of its points too close"
+                                    + (first[k] != null ? " - first " + first[k] : ""));
+            Log($"  armillary sweep: {samples} ring points");
+        }
+
         static void Moved()
         {
             if (section == null) return;
             float watched = (float)(ObstacleClock.Now - watchedFrom);
             Log($"  watched {watched:0.0} s of the obstacle clock");
+            ArmillarySweep();
 
             int folded = 0, petals = 0;
             float least = 180f, most = 0f;
@@ -544,6 +616,8 @@ namespace ChessFight.PawnRush.Editor
                 if (ranges.TryGetValue("shade " + i, out var track) && ranges.TryGetValue("shade size " + i, out var size))
                     tracks += (tracks.Length > 0 ? ", " : "") + $"{track.y:0.0} m out / {size.y:0.00} m";
             Check(shadeMisses == 0 && shadeReach < .6f, $"the seven planets each threw a shadow on the floor the whole time ({shadeMisses} missing; track / radius: {tracks})");
+            Check(ellipseTried > 0 && ellipseMisses == 0,
+                  $"the shelter is the planets' real shadow from the lamp, as drawn: {ellipseTried - ellipseMisses} of {ellipseTried} points of the ellipses agreed with SolarFlare.ShelteredBy");
 
             foreach (var shower in section.GetComponentsInChildren<MeteorShower>(true))
             {

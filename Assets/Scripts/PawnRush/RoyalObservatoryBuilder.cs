@@ -19,7 +19,7 @@ namespace ChessFight.PawnRush
     //     lines (MeteorShower). Its bowl, from star 4 to star 7, is two ways (R723): the long one round the west on
     //     three crossing orbits of turning platforms, the short one straight across on one planet that rolls as it goes to and fro (R724)
     //   2 the great globe: in by the west gate (y 4), across the tilted floor inside the glass - the plane of its
-    //     solar system - and out by the east gate (y 12). Two moons on the ecliptic ring cross the gates in turn;
+    //     solar system - and out by the east gate (y 12). (R725: no moons; the globe's rings cross like the lobby's armillary)
     //     the sun lamp flares and only the planets' moving shadows shelter (SolarFlare)
     //   3 Cassiopeia: one star that stands and four that turn - a train of meshed gears, each ridden round its rim
     //     from the gear before to the gear after, meteors on the arcs ridden
@@ -85,7 +85,10 @@ namespace ChessFight.PawnRush
         // 2: the great globe. Its floor is the plane through the two gates: 17 degrees, west low.
         static readonly Vector3 Globe = new Vector3(0f, 10f, 64f);
         static readonly Vector3 WestGate = new Vector3(-12.65f, 4f, 64f), EastGate = new Vector3(13.86f, 12f, 64f);
-        const float GlobeRadius = 14f, EclipticRadius = 15.6f, MoonRadius = 3.4f, MoonPeriod = 12f;
+        const float GlobeRadius = 14f, EclipticRadius = 15.6f;
+        // R725: how far the globe's three gimbals (A, B, C) swing either way, in degrees - as far as keeps every ring
+        // clear of the walkways (RoyalObservatoryValidation.ArmillarySweep).
+        static readonly float[] ArmillarySwing = { 40f, 10f, 15f };
         // The sun lamp's height over the floor's middle.
         const float SunHeight = 8f;
 
@@ -167,6 +170,8 @@ namespace ChessFight.PawnRush
             if (section != null)
                 section.Describe(RoyalObservatorySection.Id, RoyalObservatorySection.DisplayName, PawnRushSection.SlotKind.Obstacle,
                                  Entry, Exit, 0f, Beats());
+            if (Application.isPlaying) root.AddComponent<RoyalObservatoryDressing>();   // R725: the Blender models over the graybox
+            if (Application.isPlaying) root.AddComponent<RoyalObservatorySky>();        // R725: the night sky, only while the camera is in here
             root.SetActive(true);
             return root;
         }
@@ -315,12 +320,45 @@ namespace ChessFight.PawnRush
         }
 
         // A constellation line: a bridge `width` across, its top from one point to the other.
+        // R725 (the user, on the modelled bridge: "일자로 말고 아래에서 위로 곡선", "판정도 곡선으로 맞춰주고 … c(오른쪽으로 90도
+        // 회전 되게)로 해줘", then on a convex arch "아치 반대야"): the top is a sag (U) - its ends where they were, its
+        // middle ArchRise BELOW the straight line (a parabola, ArchPoint): out level from the lower star, curving up into
+        // the higher one. The walked top is ArchPieces sloped boxes under one group named `name`; their tops meet edge to
+        // edge at every joint, so there is no gap and no lip.
+        const int ArchPieces = 8;
+
+        // How far the middle sags: a quarter of the height between the ends - then the top is exactly
+        // y = lower end + |dy| t^2 (t from the lower end), level where it leaves the lower star and never below it - but
+        // not past a tenth of the run, nor so far that the steep end passes ArchSteepest (the globe's floor is 17 degrees,
+        // the telescope's deck 18; the steep end is the line's own slope plus 4 x sag / run). Handle lines 1-2, 2-3, 3-4:
+        // 0.20, 0.25, 0.15 m (steep ends about 20, 21, 11 degrees); the pointer line about 0.19 m (25 degrees).
+        const float ArchSteepest = 25f;
+
+        static float ArchRise(Vector3 from, Vector3 to)
+        {
+            float run = Flat(to - from).magnitude, dy = Mathf.Abs(to.y - from.y);
+            float room = (Mathf.Tan(ArchSteepest * Mathf.Deg2Rad) * run - dy) * .25f;
+            return Mathf.Max(0f, Mathf.Min(Mathf.Min(.1f * run, dy * .25f), room));
+        }
+
+        static Vector3 ArchPoint(Vector3 from, Vector3 to, float sag, float t) =>
+            Vector3.Lerp(from, to, t) - Vector3.up * (sag * 4f * t * (1f - t));
+
         static GameObject Line(CourseBuilder b, string name, Vector3 from, Vector3 to, float width = LineWidth)
         {
-            var go = b.SlopeBetween(name, from, to, width, .4f, 0f, b.kit.boardLight);
-            go.AddComponent<CourseFloor>().sloped = Mathf.Abs(to.y - from.y) > .01f;
-            Bar(b, name + " mark", from + Vector3.up * .012f, to + Vector3.up * .012f, .14f, .02f, b.kit.rankGold);
-            return go;
+            float rise = ArchRise(from, to);
+            var line = b.Group(name);
+            Under(b, line, () =>
+            {
+                for (int i = 0; i < ArchPieces; i++)
+                {
+                    Vector3 p = ArchPoint(from, to, rise, (float)i / ArchPieces), q = ArchPoint(from, to, rise, (i + 1f) / ArchPieces);
+                    var piece = b.SlopeBetween(name + " arch " + (i + 1), p, q, width, .4f, 0f, b.kit.boardLight);
+                    piece.AddComponent<CourseFloor>().sloped = Mathf.Abs(q.y - p.y) > .01f;
+                    Bar(b, name + " mark " + (i + 1), p + Vector3.up * .012f, q + Vector3.up * .012f, .14f, .02f, b.kit.rankGold);
+                }
+            });
+            return line.gameObject;
         }
 
         // The ends of the line between two round platforms: on each one's rim, a little inside it.
@@ -405,9 +443,11 @@ namespace ChessFight.PawnRush
             {
                 Ends(Dipper[i].at, Reach(i), Dipper[i + 1].at, Reach(i + 1), out var from, out var to);
                 Line(b, "Dipper line " + (i + 1) + "-" + (i + 2), from, to);
-                lines[i] = new MeteorShower.Line(from, to);
+                float rise = ArchRise(from, to);
+                lines[i] = new MeteorShower.Line(from, to, -rise);
                 route.Add((Dipper[i].at, "1"));
                 route.Add((from, "1"));
+                route.Add((ArchPoint(from, to, rise, .5f), "1"));
                 route.Add((to, "1"));
             }
             route.Add((Dipper[3].at, "1"));
@@ -429,6 +469,7 @@ namespace ChessFight.PawnRush
             pointerTo.y = WestGate.y;
             Line(b, "Pointer line 7-west gate", pointerFrom, pointerTo);
             route.Add((pointerFrom, "2"));
+            route.Add((ArchPoint(pointerFrom, pointerTo, ArchRise(pointerFrom, pointerTo), .5f), "2"));
             route.Add((pointerTo, "3"));
 
             // Falls go back to the star before: stars 1, 4 and 7.
@@ -689,29 +730,60 @@ namespace ChessFight.PawnRush
             floor.gameObject.AddComponent<SolarFlare>().Configure(floorRadius - .35f, V(0f, SunHeight, 0f), 3.2f, 1.3f, .5f, 0f,
                                                                   planets.ToArray(), sizes.ToArray(), lamp);
 
-            // The eclipse gates: two moons, discs 6.8 m across, ride the ecliptic ring opposite each other, once
-            // round in 12 s (30 deg/s) - a gate is covered every 6 s, about a second and a half each time (R721: a
-            // second moon; R720's one covered a gate every 12 s). The ring lies in the floor's plane, so a moon
-            // crosses the west threshold low and the east one high. They are thin: what one meets on a threshold it
-            // turns aside along the way, toward the gate or back.
-            var moons = Mover(b, "Device_EclipseMoon", middle, MotionKind.Rotate, Vector3.up);
-            moons.transform.localRotation = facing;
-            moons.degreesPerSecond = 360f / MoonPeriod;
-            Under(b, moons.transform, () =>
-            {
-                for (int side = -1; side <= 1; side += 2)
-                {
-                    var disc = b.Cylinder(side < 0 ? "Moon A" : "Moon B", V(side * EclipticRadius, -.2f, 0f), MoonRadius * 2f, .4f, k.boardLight, true, true);
-                    disc.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);   // its faces look along the ring's radius
-                }
-            });
+            // R725: the eclipse gates (two moons riding the ecliptic ring across the thresholds, R720 / R721) are gone -
+            // the user, on the modelled moon: "달 지워주고". The gates are open now.
 
-            // What the globe looks like (drawn only): the glass, its three rings, the stepped base, the two gates'
-            // brass frames.
+            // What the globe looks like (drawn only): the glass, its rings, the stepped base, the two gates' brass frames.
             b.Sphere("Great globe glass", Globe, GlobeRadius * 2f, k.glass != null ? k.glass : k.boardLight, false);
-            Hoop(b, "Meridian ring", Globe, Quaternion.Euler(0f, 0f, -90f), 16.5f, .5f, .5f, k.rankGold, 36);
+            // R725 ("로비 화면처럼 교차로 움직이게", "사진에 보이는 고리를 로비처럼"): the rings are an armillary sphere like
+            // the lobby's (GlobeArmillary): the fixed frame - the meridian standing north-south and the horizon - and
+            // three gimbals nested in it, each pinned to the one outside and swinging to and fro on the shared clock:
+            //   A  pinned to the meridian top and bottom: two meridians crossing at 60 degrees, swinging about the vertical
+            //   B  pinned to A north and south: the broad ecliptic band, leaning 30 degrees (west up), swinging about that line
+            //   C  pinned to B north and south too: two narrow rings crossing at 60 degrees, swinging about the same line
+            // The graybox draws thin hoops; the models (ro-hall) hang on the pivots "Globe gimbal A / B / C". Names of the
+            // fixed ones are as before ("Meridian ring", "Horizon ring"). The ecliptic ring in the floor's plane stays
+            // where it was (it is the floor's).
+            var upright = Quaternion.Euler(0f, 0f, -90f);   // a ring standing north-south: its axis east-west
+            Hoop(b, "Meridian ring", Globe, upright, 16.5f, .5f, .5f, k.rankGold, 36);
             Hoop(b, "Horizon ring", Globe, Quaternion.identity, 18f, 2f, .3f, k.rankGold, 36);
             Hoop(b, "Ecliptic ring", middle, facing, EclipticRadius, .35f, .35f, k.rankGold, 36);
+            var rings = b.Group("Globe rings");
+            rings.localPosition = Globe;
+            var gimbals = new List<GlobeArmillary.Gimbal>();
+            Transform parent = rings;
+            void Gimbal(string name, Vector3 axis, float swing, float period, float phase, (string name, Quaternion lie, float radius, float width, float depth)[] carried)
+            {
+                Transform pivot = null;
+                Under(b, parent, () => pivot = b.Group("Globe gimbal " + name));
+                Under(b, pivot, () =>
+                {
+                    foreach (var c in carried) Hoop(b, c.name, Vector3.zero, c.lie, c.radius, c.width, c.depth, k.rankGold, 36);
+                });
+                gimbals.Add(new GlobeArmillary.Gimbal
+                {
+                    pivot = pivot, axis = axis, swing = swing, period = period, phase = phase,
+                    lies = Array.ConvertAll(carried, c => c.lie), radii = Array.ConvertAll(carried, c => c.radius),
+                });
+                parent = pivot;
+            }
+            Gimbal("A", Vector3.up, ArmillarySwing[0], 20f, 0f, new[]
+            {
+                ("A ring 1", Quaternion.Euler(0f, 30f, 0f) * upright, 16f, .3f, .3f),
+                ("A ring 2", Quaternion.Euler(0f, -30f, 0f) * upright, 16f, .3f, .3f),
+            });
+            Gimbal("B", Vector3.forward, ArmillarySwing[1], 13f, .25f, new[]
+            {
+                ("B ecliptic band", Quaternion.Euler(0f, 0f, -30f), 15.5f, .12f, 1f),
+                // the lobby's thin colure across the band, through its two pins (it stands square to the band)
+                ("B colure", Quaternion.Euler(0f, 0f, -30f) * upright, 15.5f, .14f, .14f),
+            });
+            Gimbal("C", Vector3.forward, ArmillarySwing[2], 9f, .6f, new[]
+            {
+                ("C ring 1", upright, 15.15f, .22f, .22f),
+                ("C ring 2", Quaternion.Euler(0f, 0f, 60f) * upright, 15.15f, .22f, .22f),
+            });
+            rings.gameObject.AddComponent<GlobeArmillary>().Configure(gimbals.ToArray());
             float[] radii = { 13f, 10.5f, 7f, 4.5f }, tops = { -14f, -10f, -6.5f, Globe.y - GlobeRadius };
             float bottom = HallFloor;
             for (int i = 0; i < radii.Length; i++)

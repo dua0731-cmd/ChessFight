@@ -23,6 +23,12 @@ namespace ChessFight.PawnRush
         // When in the cycle this petal starts to fold, and when they all start to come up.
         public float FoldsAt => level + warn + stagger * order;
         public float RisesAt => cycle - rise;
+        // Read-only, for the effects that follow it (RoyalObservatoryVfxPetals): its fold, its seconds and this petal's
+        // own clock (the shared obstacle clock and its phase) - nothing here changes how it moves.
+        public float Angle => angle;
+        public float FoldSeconds => fold;
+        public float RiseSeconds => rise;
+        public double Now => ObstacleClock.Now + phase;
 
         // Call it on an inactive object (the builder's root is switched on at the end).
         public void Configure(int order, float level, float warn, float stagger, float fold, float rise, float cycle, float angle,

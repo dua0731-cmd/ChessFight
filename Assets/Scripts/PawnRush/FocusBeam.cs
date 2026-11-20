@@ -40,6 +40,12 @@ namespace ChessFight.PawnRush
         readonly Collider[] overlaps = new Collider[64];
 
         public float Radius => radius;
+        // R725 ro-vfx: read only, for the light column drawn from the same clock (RoyalObservatoryVfxBeam).
+        public Vector3 Lens => lens;
+        // R725 ro-vfx: the throw's rule, read only, so every PC can show a pawn being struck (RoyalObservatoryVfxBeam):
+        // who stays in the spot longer than Dwell is thrown, then left alone for Rest.
+        public float Dwell => dwell;
+        public float Rest => rest;
         // How many pawns it has thrown (the authority's count).
         public int Thrown { get; private set; }
 

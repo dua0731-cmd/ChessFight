@@ -1,0 +1,8 @@
+view,renderers_in_view,triangles_in_view,cpu_ms_median,gpu_done_ms_median,gpu_done_ms_worst
+"tunnel mouth",304,1193609,8.988,38.128,336.275
+"dipper handle (player height)",155,798066,5.642,28.669,29.909
+"dipper bowl",214,948365,5.834,30.484,44.933
+"inside the globe",128,685778,4.75,23.85,28.031
+"cassiopeia",142,703569,5.032,23.047,26.901
+"up the tube",48,310729,3.466,23.34,25.547
+"whole hall (worst case)",304,1104827,5.74,30.792,35.871
