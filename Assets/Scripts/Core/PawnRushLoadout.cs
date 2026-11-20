@@ -50,12 +50,16 @@ namespace ChessFight.Network
         // changed to that version's (RagdollPawn.KitTwo.cs). And the bishop's long diagonal snipe as its high skill (B-상: the
         // same shot as 82 on a high skill's cooldown; 82 stays the pool's mid one).
         public const int QueenGlide = 99, EightLines = 100, WallCharge = 101, SnipeHigh = 102;
+        // ...and its new ultimate: the rook's 7th rank (R-궁, a wall across the way that the rook pushes on). Its other five
+        // are the pool's (93..95, 97, 98) with its warnings and numbers.
+        public const int SeventhRank = 103;
 
         /// <summary>The long diagonal snipe, the pool's mid one or the kits' second version's high one.</summary>
         public static bool Snipe(int id) => id == LongSnipe || id == SnipeHigh;
 
-        /// <summary>One of the pool's ultimates: its cooldown is a gauge that starts empty.</summary>
-        public static bool Ultimate(int id) => id >= Promote && id <= KingMarch;
+        /// <summary>An ultimate: the pool's (its cooldown a gauge that starts empty) or the kits' second version's (on the
+        /// ultimate gauge).</summary>
+        public static bool Ultimate(int id) => (id >= Promote && id <= KingMarch) || id == SeventhRank;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -328,7 +332,7 @@ namespace ChessFight.Network
                 // mid and a high one, the queen all three (R her third key); the ultimate on Q.
                 int[] f = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.QueenGlide, PawnRushSkillIds.KingStep };
                 int[] e = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.SnipeHigh, PawnRushSkillIds.WallCharge, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon };
-                int[] q = { PawnRushSkillIds.Promote, PawnRushSkillIds.Smother, PawnRushSkillIds.LongDiagonal, PawnRushSkillIds.Chariot, PawnRushSkillIds.QueenSac, PawnRushSkillIds.KingMarch };
+                int[] q = { PawnRushSkillIds.Promote, PawnRushSkillIds.Smother, PawnRushSkillIds.LongDiagonal, PawnRushSkillIds.SeventhRank, PawnRushSkillIds.QueenSac, PawnRushSkillIds.KingMarch };
                 for (int row = 0; row < Rows; row++)
                 {
                     p.slots[row * Slots] = f[row];

@@ -101,6 +101,7 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.QueenGlide: DrawGlide(pawn); break;
                     case PawnRushSkillIds.EightLines: DrawEightLines(pawn); break;
                     case PawnRushSkillIds.WallCharge: DrawWallCharge(pawn); break;
+                    case PawnRushSkillIds.SeventhRank: DrawSeventhRank(pawn); break;
                 }
                 // The smothered mate's chance, for the knight played here: a ring over the crowd it could fall on.
                 if (pawn == me && pawn.PlanSkill != PawnRushSkillIds.Smother && pawn.HasSkill(PawnRushSkillIds.Smother)) DrawSmotherChance(pawn);
@@ -606,9 +607,12 @@ namespace ChessFight.RagdollLab
         /// <summary>The pool's promotion (P-궁1): the last rank ahead while the pawn steps to it.</summary>
         void DrawPromote(RagdollPawn pawn)
         {
-            if (pawn.PlanPhaseNow != PlanPhase.Active) return;
+            // (The kits' second version: the last rank shows through the 1 s warning too, blinking.)
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Active && phase != PlanPhase.Windup) return;
             Vector3 c = pawn.PlanPoint, w = Vector3.Cross(Vector3.up, pawn.PlanDir) * 1.2f, lift = Vector3.up * 0.05f;
-            SkillMarks.Segment(Next(), c - w + lift, c + w + lift, Fade(Gold, 1f), 0.12f, false);
+            float a = phase == PlanPhase.Windup ? 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 14f)) : 1f;
+            SkillMarks.Segment(Next(), c - w + lift, c + w + lift, Fade(Gold, a), 0.12f, false);
         }
 
         /// <summary>The pool's smothered mate (N-궁1): where it falls - its shadow and the crowd's ring - for everyone.</summary>
@@ -617,7 +621,7 @@ namespace ChessFight.RagdollLab
             if (pawn.PlanPhaseNow != PlanPhase.Active) return;
             var s = pawn.PawnRushSkills;
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 10f);
-            SkillMarks.Circle(Next(), pawn.PlanPoint, s.smotherCluster, Fade(Red, 0.5f + 0.4f * pulse), 0.08f, 36);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, s.smotherRound, Fade(Red, 0.5f + 0.4f * pulse), 0.08f, 36);
             SkillMarks.Circle(Next(), pawn.PlanPoint, s.smotherHit, Fade(Grey, 0.9f), 0.12f, 28);
         }
 
@@ -710,6 +714,7 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             DrawPops();   // the kits' second version: "+5", "체크 탈출" over heads, for every PC (PawnRushPlanMarks.KitTwo.cs)
+            DrawUltNotice();   // ...and an ultimate's warning, told to everyone
             var me = Viewer != null ? Viewer() : null;
             if (me == null || me.PawnRushSkills == null) return;
             string line = null, sub = null;
@@ -835,14 +840,14 @@ namespace ChessFight.RagdollLab
             }
             else if (me.PromoteLeft > 0f && me.PawnRushSkills != null)
             {
-                line = "승격!  퀸";
-                sub = $"퀸의 스킬을 써요 · {me.PromoteLeft:0}초";
+                line = $"승격!  {ChessPieces.Name(me.Piece)}";
+                sub = $"{ChessPieces.Name(me.Piece)}의 스킬을 써요 · {me.PromoteLeft:0}초";
                 share = Mathf.Clamp01(me.PromoteLeft / Mathf.Max(0.1f, me.PawnRushSkills.promoteSeconds));
             }
             else if (me.PlanSkill == PawnRushSkillIds.KingMarch && me.PlanPhaseNow == PlanPhase.Active && me.PawnRushSkills != null)
             {
                 line = "킹 행진!  키 = 행진 걸음";
-                sub = $"곁의 팀원이 많을수록 빨라요 · {Mathf.Max(0f, me.PawnRushSkills.marchSeconds - me.PlanTime):0}초";
+                sub = $"넘어지지 않고 1.5배로 걸어요 · 행진 걸음은 {me.PawnRushSkills.marchStepEvery:0.#}초에 한 번 · {Mathf.Max(0f, me.PawnRushSkills.marchSeconds - me.PlanTime):0}초";
                 share = 1f - Mathf.Clamp01(me.PlanTime / Mathf.Max(0.1f, me.PawnRushSkills.marchSeconds));
             }
             else if (me.RoyalFork)

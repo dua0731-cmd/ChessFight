@@ -261,6 +261,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.QueenGlide: UpdateQueenGlide(s, press, dt); break;
                 case PawnRushSkillIds.EightLines: UpdateEightLines(s, press, dt); break;
                 case PawnRushSkillIds.WallCharge: UpdateWallCharge(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.SeventhRank: UpdateSeventhRank(s, press, dt); break;   // (RagdollPawn.KitTwoUlts.cs)
             }
         }
 

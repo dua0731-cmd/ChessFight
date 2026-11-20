@@ -118,17 +118,19 @@ namespace ChessFight.RagdollLab
                 "키 = 조준 (10 m) · 좌클릭 = 체크 · 적 발밑에 퀸 쪽으로 길쭉한 빨간 칸 (2 × 3.5 m, 하얀 먼 끝이 나갈 곳), 0.9초 뒤 터짐\n비켜 나가면 1초 안에 키 = 퀸이 빈 칸으로 미끄러져 다음 칸 (나갈 곳은 카메라 쪽, 0.7 → 0.5초, 세 번까지)\n맞으면 2초 넘어지며 날아감 · 셋째가 맞으면 '최선수' · 쿨 24초 (퀸 1.5배, 후보 문서 Q-중5 + 2판)"),
             // The pool's plan 3, its ultimates on a gauge (RagdollPawn.PoolUltimates.cs).
             Made(PawnRushSkillIds.Promote, "승격", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Buff | SkillTag.Move,
-                "궁극기 (게이지 3분) · 키 = 앞 3 m 끝줄로 마지막 한 칸을 내딛음\n줄에 닿는 순간 멈칫, 둘레 3 m의 적이 밀리고 15초 동안 퀸이 됨 (퀸 줄의 스킬) · 끝나면 원래 기물로 (후보 문서 P-궁1)"),
+                "궁극기 (게이지) · 키 = 1초 예고 (모두에게 알림, 앞 3 m에 금색 끝줄) · 예고 중 키 = 카드 바꾸기 (퀸 → 나이트 → 비숍 → 룩)\n끝줄로 뛰어들어 닿는 순간 멈칫, 둘레 3 m의 적이 밀리고 15초 동안 고른 기물이 됨 (그 기물 줄의 스킬) · 끝나면 원래 기물로 (후보 문서 P-궁1 + 2판)"),
             Made(PawnRushSkillIds.Smother, "스머더드 메이트", PieceKind.Knight, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
-                "궁극기 (게이지 3분) · 18 m 안의 적 하나를 그 팀원 둘 이상이 둘러쌌을 때만 (그 무리에 금색 고리)\n키 = 높이 솟아 그 적 위로 떨어짐 (이동 키로 3 m 쫓기) · 가운데 적 납작 3초, 둘레는 날아감 · 닿기 직전 좌클릭 = 납작 +1초 · 헛치면 머리부터 박힘 (후보 문서 N-궁1)"),
+                "궁극기 (게이지) · 18 m 안의 적 하나를 그 팀원 둘 이상이 둘러쌌을 때만 (그 무리에 금색 고리)\n키 = 높이 솟아 그 적 위로 떨어짐 (이동 키로 3 m 쫓기, 모두에게 그림자) · 가운데 적 납작 2.5초, 둘레 4 m는 날아감 · 닿기 직전 좌클릭 = 납작 +0.5초 · 헛치면 머리부터 박힘 (후보 문서 N-궁1 + 2판)"),
             Made(PawnRushSkillIds.LongDiagonal, "긴 대각선", PieceKind.Bishop, SkillOrigin.Pool, SkillTag.Block | SkillTag.Place,
-                "궁극기 (게이지 3분) · 키 = 조준 · 좌클릭 = 구간 끝까지 (60 m, 사람은 뚫고 벽에서 멈춤) 빛의 줄\n1.5초 뒤 8초 동안 줄 위에 있거나 줄을 밟는 적은 2.5초 발이 박힘 (후보 문서 B-궁1, 검토 칸의 체스 안)"),
+                "궁극기 (게이지) · 키 = 조준 · 좌클릭 = 구간 끝까지 (60 m, 사람은 뚫고 벽에서 멈춤) 빛의 줄 (1.5초 예고, 모두에게 알림)\n8초 동안 줄 위에 있거나 줄을 밟는 적은 1.5초씩 발이 박힘 (한 사람에 두 번까지) (후보 문서 B-궁1 + 2판)"),
             Made(PawnRushSkillIds.Chariot, "활발한 룩 (전차)", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block,
                 "궁극기 (게이지 3분) · 키 = 10초 동안 전차: 6 m/s로 곧게만 · A · D = 직각 꺾기 · S = 한 번 1초 멈춤 · 키 한 번 더 = 끝\n부딪힌 적은 옆으로 튕겨 넘어짐, 룩은 안 넘어짐 · 벽에 박으면 1초 휘청하고 끝 (후보 문서 R-궁6)"),
             Made(PawnRushSkillIds.QueenSac, "퀸 희생", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block,
-                "궁극기 (게이지 3분) · 키 = 떨어질 곳 겨눔 (12 m) · 좌클릭 = 1.2초 몸을 던짐 (이동 키로 3 m 옮김)\n떨어지며 둘레 9 m의 적이 모두 넘어지며 날아감 (넷 이상 '탁월한 수 !!', 없으면 '블런더 ??') · 퀸은 잡혀서 돌아감 (후보 문서 Q-궁1)"),
+                "궁극기 (게이지) · 키 = 떨어질 곳 겨눔 (12 m) · 좌클릭 = 1.2초 몸을 던짐 (이동 키로 3 m 옮김, 모두에게 알림)\n떨어지며 둘레 9 m의 적이 모두 넘어지며 날아감 (넷 이상 '탁월한 수 !!', 없으면 '블런더 ??') · 퀸은 잡혀서 돌아감 (후보 문서 Q-궁1)"),
             Made(PawnRushSkillIds.KingMarch, "킹 행진", PieceKind.King, SkillOrigin.Pool, SkillTag.Ally | SkillTag.Buff,
-                "궁극기 (게이지 3분) · 키 = 10초 동안 행진: 곁(4 m)의 팀원 수에 따라 1.3 · 1.5 · 1.7배로 걸음\n킹과 곁의 팀원은 넘어지지 않음 · 2 m 안으로 적이 못 들어옴 · 키 다시 = 행진 걸음 (앞 2.5 m 적을 밀어냄) (후보 문서 K-궁1)"),
+                "궁극기 (게이지) · 키 = 나팔 1초 (모두에게 알림) 뒤 10초 동안 행진: 1.5배로 걷고 넘어지지 않음\n곁(4 m)의 팀원도 넘어지지 않음 · 2 m 안으로 적이 못 들어옴 · 키 다시 = 행진 걸음 (앞 2.5 m 적을 밀어냄, 0.9초에 한 번) (후보 문서 K-궁1 + 2판)"),
+            Made(PawnRushSkillIds.SeventhRank, "7번째 줄", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
+                "궁극기 (게이지) · 키 = 내가 보는 쪽 앞에 길 폭 전체 (8 m, 옆 벽에서 멈춤)를 막는 2.5 m 성벽이 1초 동안 솟음 (모두에게 알림)\n8초 동안 벽 뒤에서 달리면 벽이 내 빠르기로 나아감 (20 m까지, 뒤로는 안 감) · 벽 앞의 적은 계속 떠밀림 · 우리 팀은 벽을 지나감\n좌클릭 누르고 있다 떼기 = 모아 치기: 벽이 한 번에 3 m까지 튀어 나가며 앞의 적을 날림 (2판 R-궁)"),
 
             // The pool's plan 2, the three the others did not make (RagdollPawn.PoolPlan2.cs).
             Made(PawnRushSkillIds.BackRank, "뒷줄 한 수", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block,
@@ -326,6 +328,7 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.EightLines, "여덟 방향 빛줄을 터뜨린다. 줄 사이에 선 적은 멀쩡하다" },
             { PawnRushSkillIds.WallCharge, "곧게 달리며 뒤에 가슴 높이 성벽을 세운다" },
             { PawnRushSkillIds.SnipeHigh, "멀리서 길게 모아 쏜다. 멀수록 세게 맞는다" },
+            { PawnRushSkillIds.SeventhRank, "길을 통째로 막는 벽을 세워 밀고 간다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

@@ -44,6 +44,14 @@ namespace ChessFight.RagdollLab
                     PawnRushKitWall.Raise(e.count, e.by, e.at, e.normal, s != null ? s.wallHeight : 1.2f, s != null ? s.wallThick : 0.45f,
                         Mathf.Max(0.1f, e.size), s != null ? s.wallRise : 0.2f, false);
                     break;
+                case SkillFxKind.KitRankWall:
+                {
+                    if (e.by == null || !e.by.NetworkPuppet) break;
+                    var rs = e.by.PawnRushSkills;
+                    PawnRushKitWall.Raise(e.count, e.by, e.at, e.normal, rs != null ? rs.rankHeight : 2.5f, rs != null ? rs.rankThick : 0.5f,
+                        Mathf.Max(0.1f, e.size), rs != null ? rs.ultWarn : 1f, false);
+                    break;
+                }
                 case SkillFxKind.KitWallBreak:
                     if (e.by != null && e.by.NetworkPuppet) PawnRushKitWall.Find(e.count)?.Break();
                     break;
@@ -149,6 +157,58 @@ namespace ChessFight.RagdollLab
                     break;
                 }
             }
+        }
+
+        /// <summary>The 7th rank: on another PC its wall's picture follows the rook's state; on every PC, its top edge (gold,
+        /// blinking while it rises).</summary>
+        void DrawSeventhRank(RagdollPawn pawn)
+        {
+            var s = pawn.PawnRushSkills;
+            if (s == null) return;
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
+            pawn.RankEnds(out var l, out var r);
+            if (pawn.NetworkPuppet)
+            {
+                var w = PawnRushKitWall.OwnedBy(pawn);
+                if (w != null && !w.Solid) w.SetLine(l, r);
+            }
+            Vector3 up = Vector3.up * s.rankHeight;
+            float a = phase == PlanPhase.Windup ? 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 16f)) : 0.8f;
+            SkillMarks.Segment(Next(), l + up, r + up, Fade(Gold, a), 0.1f, false);
+        }
+
+        GUIStyle noticeStyle;
+
+        /// <summary>"모두에게 알림": while any piece's ultimate is in its warning (or the first moment of a leap that is its
+        /// warning), a line at the top of every screen - whose and which.</summary>
+        void DrawUltNotice()
+        {
+            string line = null;
+            foreach (var p in RagdollPawn.All)
+            {
+                if (p == null || p.PawnRushSkills == null) continue;
+                int id = p.PlanSkill;
+                if (!PawnRushSkillIds.Ultimate(id)) continue;
+                var phase = p.PlanPhaseNow;
+                bool leap = id == PawnRushSkillIds.Smother || id == PawnRushSkillIds.QueenSac;
+                if (phase != PlanPhase.Windup && !(leap && phase == PlanPhase.Active && p.PlanTime < 1.2f)) continue;
+                line = $"{ChessFight.Gameplay.Teams.Name(p.Team)} {ChessPieces.Name(p.Piece)} — {PawnRushSkillBook.Name(id)}!";
+                break;
+            }
+            if (line == null || Event.current.type != EventType.Repaint) return;
+            if (noticeStyle == null)
+            {
+                var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI" }, 32);
+                noticeStyle = new GUIStyle(GUI.skin.label) { font = font, fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            }
+            float w = 520f, h = 46f, x = (Screen.width - w) * 0.5f, y = 70f;
+            GUI.color = new Color(0.08f, 0.05f, 0.02f, 0.78f);
+            GUI.DrawTexture(new Rect(x, y, w, h), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            float blink = 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 10f));
+            noticeStyle.normal.textColor = new Color(Gold.r, Gold.g, Gold.b, blink);
+            GUI.Label(new Rect(x, y, w, h), line, noticeStyle);
         }
 
         /// <summary>The words over heads, rising and fading (OnGUI).</summary>

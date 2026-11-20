@@ -134,6 +134,28 @@ namespace ChessFight.RagdollLab
             if (planPhase == PlanPhase.None) return;
             switch (activeSkill)
             {
+                case PawnRushSkillIds.Promote:
+                case PawnRushSkillIds.KingMarch:
+                    // The ultimates' warning (the kits' second version): the piece stands while everyone is told.
+                    if (planPhase != PlanPhase.Windup) break;
+                    input.move = Vector3.zero;
+                    input.jump = false;
+                    input.sprint = false;
+                    input.shove = false;
+                    input.shoveHeld = false;
+                    break;
+                case PawnRushSkillIds.SeventhRank:
+                    // The wall rising: the rook stands. Pushing it: the left click held gathers a blow (not a dive).
+                    if (planPhase == PlanPhase.Windup)
+                    {
+                        input.move = Vector3.zero;
+                        input.jump = false;
+                        input.sprint = false;
+                    }
+                    rankHeld = input.shoveHeld;
+                    input.shove = false;
+                    input.shoveHeld = false;
+                    break;
                 case PawnRushSkillIds.EightLines:
                     // Planting the staff: she stands; the move keys only turn the star (read from skillMoveRaw).
                     input.move = Vector3.zero;
@@ -555,6 +577,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The wall under way goes with the skill if it ends early (a knockdown): what stood stays its time.</summary>
         void ClearKitTwoSkill()
         {
+            ClearSeventhRank();   // the 7th rank's wall goes down with it (RagdollPawn.KitTwoUlts.cs)
             if (wallUp != null)
             {
                 var s = PawnRushSkills;

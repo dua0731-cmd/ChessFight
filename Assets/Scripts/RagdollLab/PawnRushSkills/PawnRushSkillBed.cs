@@ -624,6 +624,15 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.WallCharge:
                         use = running && me.PlanPhaseNow == PlanPhase.Active ? $"{click} = 여기서 끊기" : $"{key} 겨눔 → {click} 출발";
                         break;
+                    case PawnRushSkillIds.SeventhRank:
+                        use = running ? $"벽 뒤에서 달리기 · {click} 모아 치기" : $"{key} 벽 세우기";
+                        break;
+                    case PawnRushSkillIds.Promote:
+                        use = running && me.PlanPhaseNow == PlanPhase.Windup ? $"{key} = 카드 바꾸기" : $"{key} 승격";
+                        break;
+                    case PawnRushSkillIds.KingMarch:
+                        use = running ? $"{key} = 행진 걸음" : $"{key} 행진";
+                        break;
                     default:
                         use = $"{key} 조준 → {click}";
                         break;

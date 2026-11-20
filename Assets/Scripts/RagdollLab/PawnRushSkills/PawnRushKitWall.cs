@@ -33,7 +33,28 @@ namespace ChessFight.RagdollLab
         Vector3 from, to;
         float height, thick, left, rise, risen;
         BoxCollider box;
+        Rigidbody body;
         Transform picture;
+
+        /// <summary>The solid wall's collider (null for a picture).</summary>
+        public Collider Collider => box;
+
+        /// <summary>The wall of <paramref name="owner"/>'s that is still standing (the newest), or null.</summary>
+        public static PawnRushKitWall OwnedBy(RagdollPawn owner)
+        {
+            for (int i = All.Count - 1; i >= 0; i--)
+                if (All[i] != null && All[i].Owner == owner && All[i].Standing) return All[i];
+            return null;
+        }
+
+        /// <summary>A wall that moves (the 7th rank): on the host a kinematic body, so it pushes what it meets as it goes.</summary>
+        public void MakeMoving()
+        {
+            if (!Solid || body != null) return;
+            body = gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.interpolation = RigidbodyInterpolation.None;
+        }
 
         /// <summary>A number for a new wall (1..250, then round again).</summary>
         public static int NextId()
@@ -116,8 +137,15 @@ namespace ChessFight.RagdollLab
             Vector3 d = to - from;
             d.y = 0f;
             float length = Mathf.Max(0.3f, d.magnitude);
-            transform.SetPositionAndRotation((from + to) * 0.5f,
-                Quaternion.LookRotation(d.sqrMagnitude > 1e-4f ? d.normalized : Vector3.forward, Vector3.up));
+            Vector3 at = (from + to) * 0.5f;
+            var turn = Quaternion.LookRotation(d.sqrMagnitude > 1e-4f ? d.normalized : Vector3.forward, Vector3.up);
+            if (body != null)
+            {
+                // (A moving wall: through its kinematic body, so the physics sees it sweep, not jump.)
+                body.MovePosition(at);
+                body.MoveRotation(turn);
+            }
+            else transform.SetPositionAndRotation(at, turn);
             // Risen this much: its top at risen * height above the floor (the rest still under it).
             float top = height * Mathf.Clamp01(risen);
             if (picture != null)

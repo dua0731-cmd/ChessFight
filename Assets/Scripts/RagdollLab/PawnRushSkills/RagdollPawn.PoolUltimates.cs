@@ -98,15 +98,32 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (!press || !CanStartSkill() || promoteLeft > 0f) break;
                     SkillUses++;
-                    planNote = 0;
+                    // The kits' second version: a 1 s warning everyone is told of, and the promotion card - a queen
+                    // unless the key again picks a knight, a bishop or a rook (the small number is the piece).
+                    planNote = (byte)PieceKind.Queen;
                     skillDir = AimFlat();
                     planDir = skillDir;
                     planPoint = FeetPoint + skillDir * s.promoteStep;   // the last rank, ahead
                     skillHitSet.Clear();
+                    HaltDash();
+                    planPhase = PlanPhase.Windup;
+                    planTime = 0f;
+                    SkillDetail = "승격 예고 (키 = 카드 바꾸기: 퀸 → 나이트 → 비숍 → 룩)";
+                    Fx(SkillFxKind.RookSlam, null, FeetPoint, skillDir, 0);   // (the announcement: a heavy thud, borrowed)
+                    Log($"{DisplayName}: 승격 예고 — {s.ultWarn:0.#}초 뒤 끝줄로");
+                    break;
+                case PlanPhase.Windup:
+                    planTime += dt;
+                    if (press)
+                    {
+                        planNote = (byte)NextPromotion((PieceKind)planNote);
+                        Log($"승격 카드: {ChessPieces.Name((PieceKind)planNote)}");
+                    }
+                    if (planTime < s.ultWarn) break;
                     StartDash(s.promoteStep / Mathf.Max(0.05f, s.promoteStepTime), s.promoteStepTime);
                     planPhase = PlanPhase.Active;
                     planTime = 0f;
-                    SkillDetail = "승격: 마지막 한 칸";
+                    SkillDetail = $"승격: 마지막 한 칸 ({ChessPieces.Name((PieceKind)planNote)})";
                     break;
                 case PlanPhase.Active:
                     planTime += dt;
@@ -144,11 +161,22 @@ namespace ChessFight.RagdollLab
             }
             FeelHit(null, c, planDir, FeelUltimate, Mathf.Max(1, n), false, s.promoteStop);
             Fx(SkillFxKind.QueenBlast, null, c, planDir, n, s.promoteShoveRadius);
+            var card = (PieceKind)planNote;
+            if (card != PieceKind.Knight && card != PieceKind.Bishop && card != PieceKind.Rook) card = PieceKind.Queen;
             promoteFrom = piece;
-            SetPiece(PieceKind.Queen);
+            SetPiece(card);
             promoteLeft = s.promoteSeconds;
-            Log($"{DisplayName}: 승격! {s.promoteSeconds:0}초 동안 퀸 (둘레 적 {n}명 밀림)");
+            Log($"{DisplayName}: 승격! {s.promoteSeconds:0}초 동안 {ChessPieces.Name(card)} (둘레 적 {n}명 밀림)");
         }
+
+        /// <summary>The promotion card's next piece: a queen, a knight, a bishop, a rook, round again.</summary>
+        static PieceKind NextPromotion(PieceKind now) => now switch
+        {
+            PieceKind.Queen => PieceKind.Knight,
+            PieceKind.Knight => PieceKind.Bishop,
+            PieceKind.Bishop => PieceKind.Rook,
+            _ => PieceKind.Queen,
+        };
 
         /// <summary>Every step (UpdatePoolStates): the promotion runs out and the piece is what it was again.</summary>
         void UpdatePromotion(float dt)
@@ -302,7 +330,7 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || other == center || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
                 Vector3 d = Flat(other.bodies[0].position - feet);
-                if (d.magnitude > s.smotherCluster + 0.5f) continue;
+                if (d.magnitude > s.smotherRound) continue;   // the kits' second version: 4 m round (was the crowd's 2.5 + 0.5)
                 Vector3 away = d.sqrMagnitude > 1e-4f ? d.normalized : planDir;
                 SkillHit(other, away * s.smotherPush + Vector3.up * s.smotherLift, true, "스머더드 메이트");
                 n++;
@@ -310,14 +338,15 @@ namespace ChessFight.RagdollLab
             if (sharp) planNote |= SmotherSharpBit;
             FeelHit(center, feet, planDir, FeelUltimate, n, true, sharp ? s.smotherClickStop : 0f);
             Fx(SkillFxKind.KnightStomp, center, feet, planDir);
-            Fx(SkillFxKind.KnightLand, null, feet, planDir, n, s.smotherCluster);
+            Fx(SkillFxKind.KnightLand, null, feet, planDir, n, s.smotherRound);
             Launch(Vector3.up * s.smotherBounce);
             Log($"스머더드 메이트 → {center.DisplayName}: 납작 {flat:0.#}초, 둘레 {n - 1}명 날아감" + (sharp ? " (때 맞춘 좌클릭)" : ""));
         }
 
         // ---------------------------------------------------------------- B-궁1: the long diagonal
 
-        readonly HashSet<RagdollPawn> diagNailed = new HashSet<RagdollPawn>();
+        // How many times each piece has been nailed this use (the kits' second version: twice at most).
+        readonly Dictionary<RagdollPawn, int> diagNailed = new Dictionary<RagdollPawn, int>();
 
         /// <summary>Where the long diagonal starts (any PC): its end less its length (the small number, metres) back.</summary>
         public Vector3 DiagStart => planPoint - planDir * planNote;
@@ -398,12 +427,14 @@ namespace ChessFight.RagdollLab
             float len = planNote;
             foreach (var e in All)
             {
-                if (e == null || e == this || !IsEnemyOf(e) || e.State != PawnState.Active || e.SkillUntargetable || diagNailed.Contains(e)) continue;
+                if (e == null || e == this || !IsEnemyOf(e) || e.State != PawnState.Active || e.SkillUntargetable || e.bindLeft > 0f) continue;
+                diagNailed.TryGetValue(e, out int times);
+                if (times >= Mathf.Max(1, s.diagNailMax)) continue;
                 Vector3 p = e.LassoBelly;
                 Vector3 flat = Flat(p - a);
                 float t = Vector3.Dot(flat, u);
                 if (t < 0f || t > len || (flat - u * t).magnitude > s.diagRadius || Mathf.Abs(p.y - a.y) > 1.5f) continue;
-                diagNailed.Add(e);
+                diagNailed[e] = times + 1;
                 string result = SkillBind(e, s.diagNail, "긴 대각선");
                 FeelHit(e, p, u, FeelWeak);
                 Fx(SkillFxKind.PawnHit, e, p, u, 0);
@@ -621,7 +652,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- K-궁1: the king's march
 
-        float marchScale = 1f, marchShoveAt;
+        float marchScale = 1f, marchShoveAt, marchStepAt = -10f;
 
         /// <summary>The king's march's speed on the run now (RagdollPawn.TopSpeed, through SkillMoveScale).</summary>
         float MarchScale => PlanSkill == PawnRushSkillIds.KingMarch && planPhase == PlanPhase.Active ? marchScale : 1f;
@@ -635,15 +666,30 @@ namespace ChessFight.RagdollLab
                     SkillUses++;
                     planNote = 0;
                     marchShoveAt = 0f;
+                    // The kits' second version: the trumpet first, a 1 s warning everyone is told of.
+                    planPhase = PlanPhase.Windup;
+                    planTime = 0f;
+                    HaltDash();
+                    Fx(SkillFxKind.RookSlam, null, FeetPoint, FlatDir(facing), 0);   // (the horn: a heavy thud, borrowed)
+                    SkillDetail = "킹 행진: 나팔";
+                    Log($"{DisplayName}: 킹 행진 — 나팔 {s.ultWarn:0.#}초 뒤 {s.marchSeconds:0}초");
+                    break;
+                case PlanPhase.Windup:
+                    planTime += dt;
+                    if (planTime < s.ultWarn) break;
                     planPhase = PlanPhase.Active;
                     planTime = 0f;
-                    Fx(SkillFxKind.RookSlam, null, FeetPoint, FlatDir(facing), 0);   // (the horn: a heavy thud, borrowed)
+                    marchStepAt = -10f;
                     SkillDetail = "킹 행진 (키 = 행진 걸음)";
-                    Log($"{DisplayName}: 킹 행진 — {s.marchSeconds:0}초");
                     break;
                 case PlanPhase.Active:
                     planTime += dt;
-                    if (press) MarchStep(s);
+                    // A march step at most every marchStepEvery (the kits' second version: the drum's beat).
+                    if (press && Time.time - marchStepAt >= s.marchStepEvery)
+                    {
+                        marchStepAt = Time.time;
+                        MarchStep(s);
+                    }
                     MarchAura(s, dt);
                     if (planTime >= s.marchSeconds)
                     {

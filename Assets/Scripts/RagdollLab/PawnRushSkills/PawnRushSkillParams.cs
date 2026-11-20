@@ -749,14 +749,14 @@ namespace ChessFight.RagdollLab
         [Tooltip("솟아 떨어지는 시간 (초), 높이 (m); 떨어지며 이동 키로 쫓는 거리 (m), 빠르기 (m/s)")]
         public float smotherFlight = 1.3f, smotherHeight = 6f, smotherChase = 3f, smotherChaseSpeed = 5f;
         [Tooltip("가운데 적에게서 이 거리 (m) 안에 떨어지면: 가운데 납작 (초), 둘레 팀원들은 날아감 (미는 빠르기 · 위로 m/s), 나이트는 다시 튐 (m/s)")]
-        public float smotherHit = 1.8f, smotherSquash = 3f, smotherPush = 7f, smotherLift = 3f, smotherBounce = 7f;
+        public float smotherHit = 1.8f, smotherSquash = 2.5f, smotherPush = 7f, smotherLift = 3f, smotherBounce = 7f;   // the kits' second version: squash 2.5 (was 3)
         [Tooltip("닿기 직전 좌클릭: 땅에 닿기 이만큼 (초) 전부터, 납작 더하기 (초), 멈칫 (초)")]
-        public float smotherClickEarly = 0.15f, smotherClickBonus = 1f, smotherClickStop = 0.15f;
+        public float smotherClickEarly = 0.15f, smotherClickBonus = 0.5f, smotherClickStop = 0.15f;   // the kits' second version: +0.5 (was +1)
         public float smotherRecovery = 0.3f;
 
         [Header("후보 문서 3안 궁극기 · 비숍 긴 대각선 (B-궁1, 검토 칸의 체스 안: 줄이 남아 꿴다)")]
         [Tooltip("줄 길이 (m, 벽에서 멈춤, 사람은 뚫음), 터지기까지 (초), 줄이 남는 시간 (초), 줄의 반지름 (m), 꿰인 적이 발이 박히는 시간 (초), 비숍 반동 (m)")]
-        public float diagRange = 60f, diagWarn = 1.5f, diagSeconds = 8f, diagRadius = 0.6f, diagNail = 2.5f, diagRecoil = 1f;
+        public float diagRange = 60f, diagWarn = 1.5f, diagSeconds = 8f, diagRadius = 0.6f, diagNail = 1.5f, diagRecoil = 1f;   // the kits' second version: nailed 1.5 s (was 2.5)
 
         [Header("후보 문서 3안 궁극기 · 룩 활발한 룩 (R-궁6, 전차)")]
         [Tooltip("전차인 시간 (초), 빠르기 (m/s), S로 한 번 멈추는 시간 (초), 벽에 박으면 휘청 (초)")]
@@ -776,7 +776,7 @@ namespace ChessFight.RagdollLab
         [Tooltip("행진 시간 (초); 넘어지지 않는 팀원의 반경 (m); 적이 못 들어오는 반경 (m)")]
         public float marchSeconds = 10f, marchGuard = 4f, marchKeep = 2f;
         [Tooltip("걷는 빠르기 배수: 둘레 팀원 없음 · 한 명 · 둘 이상")]
-        public float marchAlone = 1.3f, marchOne = 1.5f, marchMany = 1.7f;
+        public float marchAlone = 1.5f, marchOne = 1.5f, marchMany = 1.5f;   // the kits' second version: 1.5 always (was 1.3, 1.5, 1.7)
         [Tooltip("행진 걸음 (키 다시): 앞 이 거리 (m)의 적을 이만큼 (m) 밀어냄")]
         public float marchStepReach = 2.5f, marchStepShove = 2f;
 
@@ -802,6 +802,20 @@ namespace ChessFight.RagdollLab
         public float gaugeKnock = 0.04f, gaugeKnockWindow = 10f, gaugeKnockCap = 0.12f;
         [Tooltip("예고 중에 넘어져 끊긴 궁극기가 남기는 게이지")]
         public float gaugeCutKeep = 0.5f;
+
+        [Header("기물별 한 벌 2판 · 궁극기 (KITS 6장의 궁극 칸)")]
+        [Tooltip("예고 (초): 승격 · 킹 행진 · 7번째 줄 (모두에게 알림)")]
+        public float ultWarn = 1f;
+        [Tooltip("스머더드 메이트: 둘레 이 반경 (m)의 적이 날아감")]
+        public float smotherRound = 4f;
+        [Tooltip("긴 대각선: 한 사람이 꿰이는 횟수")]
+        public int diagNailMax = 2;
+        [Tooltip("킹 행진: 행진 걸음 사이 (초)")]
+        public float marchStepEvery = 0.9f;
+        [Tooltip("7번째 줄: 벽 높이 · 두께 (m), 길 폭 (m, 옆 벽에서 멈춤), 룩 앞 거리 (m), 시간 (초), 가장 멀리 (m)")]
+        public float rankHeight = 2.5f, rankThick = 0.5f, rankWidth = 8f, rankGap = 1.1f, rankSeconds = 8f, rankMax = 20f;
+        [Tooltip("7번째 줄: 벽 앞의 적을 벽보다 이만큼 (m/s) 빠르게 밂; 좌클릭 모아 치기: 다 모으는 시간 (초), 튀어 나가는 거리 (m)")]
+        public float rankPushOver = 1.5f, rankCharge = 0.6f, rankJump = 3f;
 
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]

@@ -53,6 +53,9 @@ namespace ChessFight.RagdollLab
         // ...and a map crown taken for the ultimate gauge (by: who; at: where; count: the crown's number; size: the seconds
         // until it comes back: RagdollPawn.UltGauge.cs, PawnRushGaugeCrown).
         KitCrown,
+        // ...and the 7th rank's wall risen (as KitWall, the rank's height; it moves with the rook's state:
+        // RagdollPawn.KitTwoUlts.cs).
+        KitRankWall,
     }
 
     public struct SkillFxEvent
