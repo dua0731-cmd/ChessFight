@@ -791,17 +791,19 @@ namespace ChessFight.RagdollLab
         [Tooltip("머리 위에 튀는 글자 (+5, 체크 탈출)가 보이는 시간 (초)")]
         public float popSeconds = 1.2f;
 
-        [Header("기물별 한 벌 2판 · 궁극기 게이지 (체계 7.4 · 7.5)")]
-        [Tooltip("켜면 궁극기는 쿨 대신 이 게이지로 나간다: 맵의 왕관, 시간, 적의 스킬에 넘어짐으로 찬다 (끄면 3안의 3분 쿨). 시험용 쿨이 켜져 있으면 늘 가득")]
+        [Header("기물별 한 벌 2판 · 궁극기 팀 게이지 (체계 7.3 · 7.5, 11-21 팀 하나로)")]
+        [Tooltip("켜면 궁극 칸(Q)의 스킬은 쿨 대신 팀 게이지로 나간다: 맵의 왕관, 시간, 팀원이 적의 스킬에 넘어짐으로 찬다 (끄면 3안의 3분 쿨). 시험용 쿨이 켜져 있으면 늘 가득")]
         public bool realGauge = true;
-        [Tooltip("시간: 1초에 차는 양 (0.0015 = 0.15%), 지는 팀의 배수")]
-        public float gaugeTime = 0.0015f, gaugeLosing = 1.5f;
-        [Tooltip("왕관 하나에 차는 양, 주운 왕관이 다시 생기는 시간 (초), 왕관을 줍는 거리 (m)")]
-        public float gaugeCrown = 0.1f, crownRespawn = 30f, crownReach = 0.9f;
-        [Tooltip("적의 스킬에 넘어지거나 납작해질 때마다 차는 양; 이 시간 (초) 안에 이만큼까지")]
-        public float gaugeKnock = 0.04f, gaugeKnockWindow = 10f, gaugeKnockCap = 0.12f;
+        [Tooltip("시간: 1초에 차는 양 (0.001 = 0.1%), 지는 팀 (넷째 주자가 뒤진 팀)의 배수")]
+        public float gaugeTime = 0.001f, gaugeLosing = 2f;
+        [Tooltip("팀원 누구든 왕관 하나를 주우면 차는 양, 주운 왕관이 다시 생기는 시간 (초), 왕관을 줍는 거리 (m)")]
+        public float gaugeCrown = 0.04f, crownRespawn = 30f, crownReach = 0.9f;
+        [Tooltip("팀원이 적의 스킬에 넘어지거나 납작해질 때마다 차는 양; 한 사람이 이 시간 (초) 안에 이만큼까지")]
+        public float gaugeKnock = 0.015f, gaugeKnockWindow = 10f, gaugeKnockCap = 0.06f;
         [Tooltip("예고 중에 넘어져 끊긴 궁극기가 남기는 게이지")]
         public float gaugeCutKeep = 0.5f;
+        [Tooltip("상급기 후보가 된 2판 처음의 궁극기 여섯 (와 전차)을 궁극 칸 밖에 넣었을 때의 쿨 (초)")]
+        public float highUltCooldown = 60f;
 
         [Header("기물별 한 벌 2판 · 궁극기 (KITS 6장의 궁극 칸)")]
         [Tooltip("예고 (초): 승격 · 킹 행진 · 7번째 줄 (모두에게 알림)")]
@@ -816,6 +818,24 @@ namespace ChessFight.RagdollLab
         public float rankHeight = 2.5f, rankThick = 0.5f, rankWidth = 8f, rankGap = 1.1f, rankSeconds = 8f, rankMax = 20f;
         [Tooltip("7번째 줄: 벽 앞의 적을 벽보다 이만큼 (m/s) 빠르게 밂; 좌클릭 모아 치기: 다 모으는 시간 (초), 튀어 나가는 거리 (m)")]
         public float rankPushOver = 1.5f, rankCharge = 0.6f, rankJump = 3f;
+
+        [Header("궁극기 · 팀을 역전시키는 한 수 (11-21, 체계 7.4: ×1 값 → ×2 값, ×0.5는 ×1의 절반)")]
+        [Tooltip("예고 (초): 모든 화면에 알림, 쓰는 사람이 넘어지면 끊기고 게이지 절반")]
+        public float teamUltWarn = 2f;
+        [Tooltip("앙파상 !!: 되돌리는 시간 창 (초) ×1 · ×2; 끌어오는 적의 수; 날아 돌아오는 빠르기 (m/s); 엎어지는 시간 (초)")]
+        public float passantWindow1 = 20f, passantWindow2 = 40f;
+        public int passantMax = 4;
+        public float passantSpeed = 18f, passantKnock = 1.5f;
+        [Tooltip("나이트 투어: 밟는 수 ×1 · ×2; 다음 적까지 (m); 한 번 건너뛰는 시간 (초); 납작 (초); 그 뒤 뒤로 미끄러지는 거리 (m)")]
+        public float tourHops1 = 4f, tourHops2 = 6f, tourReach = 12f, tourHop = 0.5f, tourSquash = 2f, tourSlide = 5f;
+        [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
+        public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
+        [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]
+        public float teamWallAhead = 5f, teamWallHeight = 3f, teamWallThick = 0.6f, teamWallWidth = 16f, teamWallStand1 = 4f, teamWallStand2 = 12f, teamWallBack = 1f;
+        [Tooltip("퀸 희생: 둘레 ×1 · ×2 (m); 날리는 빠르기 · 위로 (m/s, 10 m쯤); 넘어짐 (초); 떨어지는 높이 (m)")]
+        public float dropRadius1 = 10f, dropRadius2 = 20f, dropPush = 11f, dropLift = 5f, dropHold = 2.5f, dropHeight = 0.3f;
+        [Tooltip("총동원: 불러오는 팀원 ×1 · ×2; 모인 팀이 넘어지지 않는 시간 (초); 모인 자리 둘레 밀기 (m); 1등 곁 거리 (m)")]
+        public float callCount1 = 2f, callCount2 = 4f, callGuard = 5f, callShove = 3f, callSide = 1.5f;
 
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]

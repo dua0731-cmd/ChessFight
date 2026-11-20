@@ -208,7 +208,9 @@ namespace ChessFight.Network
         // skilllab11: the kits' second version - four slots a row (F, E, R, Q: the loadout's bytes and change numbers), a
         // ninth loadout that comes with the game, and new skills that can sit in a slot (99..).
         // skilllab12: its ultimate gauge, map crowns and the 7th rank (103: one more skill for a slot, new moments).
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab12";
+        // skilllab13: the team's comeback ultimates (104..109, a team gauge) and the room's fifth rule (the crown
+        // platform held 1.5 s: a bit more in the room's rules number).
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab13";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

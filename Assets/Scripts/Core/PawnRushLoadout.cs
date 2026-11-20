@@ -53,13 +53,24 @@ namespace ChessFight.Network
         // ...and its new ultimate: the rook's 7th rank (R-궁, a wall across the way that the rook pushes on). Its other five
         // are the pool's (93..95, 97, 98) with its warnings and numbers.
         public const int SeventhRank = 103;
+        // The ultimates remade as the team's comeback move (Docs/Skills/PAWN_RUSH_SKILL_SYSTEM.md 7.4, the user 11-21: "훨씬훨씬
+        // 더 강력하고, 체스 모티브도 살아 있고 아예 팀이 역전할 수 있는"): the pawn's en passant !!, the knight's tour, the
+        // bishop's Greek gift, the rook's 7th rank, the queen's sacrifice, the king's general call (RagdollPawn.TeamUlts.cs).
+        // The six above (93..98 less the chariot, and 103) are the high tier's candidates now.
+        public const int PassantBang = 104, KnightTour = 105, GreekGift = 106, RankWall = 107, QueenDrop = 108, GeneralCall = 109;
 
         /// <summary>The long diagonal snipe, the pool's mid one or the kits' second version's high one.</summary>
         public static bool Snipe(int id) => id == LongSnipe || id == SnipeHigh;
 
-        /// <summary>An ultimate: the pool's (its cooldown a gauge that starts empty) or the kits' second version's (on the
-        /// ultimate gauge).</summary>
-        public static bool Ultimate(int id) => (id >= Promote && id <= KingMarch) || id == SeventhRank;
+        /// <summary>Made as an ultimate: the first six (and the pool's chariot), the high tier's candidates now, or the team's
+        /// comeback six.</summary>
+        public static bool Ultimate(int id) => HighCandidate(id) || TeamUltimate(id);
+
+        /// <summary>One of the first ultimates (the pool's six, the kits' 7th rank), the high tier's candidates since 11-21.</summary>
+        public static bool HighCandidate(int id) => (id >= Promote && id <= KingMarch) || id == SeventhRank;
+
+        /// <summary>One of the team's comeback ultimates (104..109).</summary>
+        public static bool TeamUltimate(int id) => id >= PassantBang && id <= GeneralCall;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -332,7 +343,8 @@ namespace ChessFight.Network
                 // mid and a high one, the queen all three (R her third key); the ultimate on Q.
                 int[] f = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.QueenGlide, PawnRushSkillIds.KingStep };
                 int[] e = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.SnipeHigh, PawnRushSkillIds.WallCharge, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon };
-                int[] q = { PawnRushSkillIds.Promote, PawnRushSkillIds.Smother, PawnRushSkillIds.LongDiagonal, PawnRushSkillIds.SeventhRank, PawnRushSkillIds.QueenSac, PawnRushSkillIds.KingMarch };
+                // (The team's comeback six since 11-21; the first six are high-tier candidates in the skill tree.)
+                int[] q = { PawnRushSkillIds.PassantBang, PawnRushSkillIds.KnightTour, PawnRushSkillIds.GreekGift, PawnRushSkillIds.RankWall, PawnRushSkillIds.QueenDrop, PawnRushSkillIds.GeneralCall };
                 for (int row = 0; row < Rows; row++)
                 {
                     p.slots[row * Slots] = f[row];

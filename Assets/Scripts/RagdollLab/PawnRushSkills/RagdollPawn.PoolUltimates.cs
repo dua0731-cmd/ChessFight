@@ -53,7 +53,7 @@ namespace ChessFight.RagdollLab
             {
                 if (!PawnRushSkillIds.Ultimate(lo.Skill(piece, k))) continue;
                 cdSlot = k;
-                StartCooldown(s.ultGauge);
+                StartCooldown(UltCooldown(activeSkill, s));
             }
             cdSlot = was;
         }
@@ -137,7 +137,7 @@ namespace ChessFight.RagdollLab
                     EndDash();
                     Promote(s);
                     EndPlanSkill();
-                    StartCooldown(s.ultGauge);
+                    StartCooldown(UltCooldown(activeSkill, s));
                     break;
                 default:
                     EndPlanSkill();
@@ -266,7 +266,7 @@ namespace ChessFight.RagdollLab
                     if (Climbing || rope != null || planTime > s.smotherFlight + 2f)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.ultGauge);
+                        StartCooldown(UltCooldown(activeSkill, s));
                     }
                     else if (planTime > 0.3f && Grounded)
                     {
@@ -280,7 +280,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.smotherRecovery)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.ultGauge);
+                        StartCooldown(UltCooldown(activeSkill, s));
                     }
                     break;
                 default:
@@ -400,7 +400,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.diagSeconds)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.ultGauge);
+                        StartCooldown(UltCooldown(activeSkill, s));
                     }
                     break;
                 default:
@@ -545,7 +545,7 @@ namespace ChessFight.RagdollLab
             if (dashing) EndDash();
             getUpGuardLeft = Mathf.Min(getUpGuardLeft, 0.3f);
             EndPlanSkill();
-            StartCooldown(s.ultGauge);
+            StartCooldown(UltCooldown(activeSkill, s));
             Log($"{DisplayName}: 활발한 룩 끝 ({why}, 꺾기 {planNote}번)");
         }
 
@@ -607,7 +607,7 @@ namespace ChessFight.RagdollLab
                     planTime += dt;
                     if (planTime < s.sacShow) break;
                     EndPlanSkill();
-                    StartCooldown(s.ultGauge);
+                    StartCooldown(UltCooldown(activeSkill, s));
                     if (SkillSendBack != null) SkillSendBack(this);
                     else Knockdown("퀸 희생 (잡힘)");
                     Log($"{DisplayName}: 퀸 희생 — 잡혀서 돌아감");
@@ -694,7 +694,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.marchSeconds)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.ultGauge);
+                        StartCooldown(UltCooldown(activeSkill, s));
                         Log($"{DisplayName}: 킹 행진 끝 (행진 걸음 {planNote}번)");
                     }
                     break;

@@ -163,7 +163,7 @@ namespace ChessFight.RagdollLab
             }
             float went = rankAlong;
             EndPlanSkill();
-            StartCooldown(s.ultGauge);
+            StartCooldown(UltCooldown(activeSkill, s));
             Log($"{DisplayName}: 7번째 줄 끝 ({why}, {went:0.#} m 밀고 감)");
         }
 

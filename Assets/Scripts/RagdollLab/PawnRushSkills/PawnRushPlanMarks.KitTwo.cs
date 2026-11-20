@@ -52,6 +52,14 @@ namespace ChessFight.RagdollLab
                         Mathf.Max(0.1f, e.size), rs != null ? rs.ultWarn : 1f, false);
                     break;
                 }
+                case SkillFxKind.KitTeamWall:
+                {
+                    if (e.by == null || !e.by.NetworkPuppet) break;
+                    var ts = e.by.PawnRushSkills;
+                    PawnRushKitWall.Raise(e.count, e.by, e.at, e.normal, ts != null ? ts.teamWallHeight : 3f, ts != null ? ts.teamWallThick : 0.6f,
+                        Mathf.Max(0.1f, e.size), 0.3f, false);
+                    break;
+                }
                 case SkillFxKind.KitWallBreak:
                     if (e.by != null && e.by.NetworkPuppet) PawnRushKitWall.Find(e.count)?.Break();
                     break;
@@ -178,6 +186,49 @@ namespace ChessFight.RagdollLab
             SkillMarks.Segment(Next(), l + up, r + up, Fade(Gold, a), 0.1f, false);
         }
 
+        /// <summary>The team's comeback ultimates (RagdollPawn.TeamUlts.cs): the knight's first head, the bishop's light, the
+        /// rook's floor line before the first runner, the crown's shadow growing where the queen will fall.</summary>
+        void DrawTeamUlt(RagdollPawn pawn)
+        {
+            var s = pawn.PawnRushSkills;
+            if (s == null) return;
+            var phase = pawn.PlanPhaseNow;
+            float blink = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 12f));
+            switch (pawn.PlanSkill)
+            {
+                case PawnRushSkillIds.KnightTour:
+                    if (pawn.PlanTarget != null && phase != PlanPhase.Recovery)
+                        SkillMarks.Circle(Next(), pawn.PlanTarget.Hips.position + Vector3.up * 0.65f, 0.35f, Fade(Red, blink), 0.06f, 18);
+                    break;
+                case PawnRushSkillIds.GreekGift:
+                    if (phase == PlanPhase.Active && pawn.PlanTarget != null)
+                        SkillMarks.Segment(Next(), pawn.PlanPoint + Vector3.up * 1f, pawn.PlanTarget.LassoBelly, Fade(Gold, 0.95f), 0.1f, false);
+                    break;
+                case PawnRushSkillIds.RankWall:
+                    if (phase == PlanPhase.Windup)
+                    {
+                        Vector3 way = pawn.PlanDir;
+                        way.y = 0f;
+                        if (way.sqrMagnitude < 1e-4f) break;
+                        Vector3 side = Vector3.Cross(Vector3.up, way.normalized) * (pawn.PlanNote * 0.05f), lift = Vector3.up * 0.06f;
+                        SkillMarks.Segment(Next(), pawn.PlanPoint - side + lift, pawn.PlanPoint + side + lift, Fade(SkillMarks.Orange, blink), 0.35f);
+                    }
+                    break;
+                case PawnRushSkillIds.QueenDrop:
+                    if (phase == PlanPhase.Windup)
+                    {
+                        float grow = Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.1f, s.teamUltWarn));
+                        SkillMarks.Circle(Next(), pawn.PlanPoint, Mathf.Max(0.5f, pawn.PlanNote * grow), Fade(Grey, 0.55f + 0.4f * grow), 0.12f, 48);
+                        SkillMarks.Circle(Next(), pawn.PlanPoint, pawn.PlanNote, Fade(Red, 0.35f + 0.4f * blink), 0.05f, 48);
+                    }
+                    break;
+                case PawnRushSkillIds.GeneralCall:
+                    if (phase == PlanPhase.Windup)
+                        SkillMarks.Circle(Next(), pawn.FeetPoint, 1.2f + 0.3f * blink, Fade(Gold, 0.8f), 0.08f, 28);
+                    break;
+            }
+        }
+
         GUIStyle noticeStyle;
 
         /// <summary>"모두에게 알림": while any piece's ultimate is in its warning (or the first moment of a leap that is its
@@ -189,11 +240,14 @@ namespace ChessFight.RagdollLab
             {
                 if (p == null || p.PawnRushSkills == null) continue;
                 int id = p.PlanSkill;
-                if (!PawnRushSkillIds.Ultimate(id)) continue;
+                // (What runs from the ultimate slot, Q: since 11-21 the team gauge's.)
+                if (id == 0 || p.ActiveSlot != PawnRushLoadout.UltSlot) continue;
                 var phase = p.PlanPhaseNow;
                 bool leap = id == PawnRushSkillIds.Smother || id == PawnRushSkillIds.QueenSac;
                 if (phase != PlanPhase.Windup && !(leap && phase == PlanPhase.Active && p.PlanTime < 1.2f)) continue;
-                line = $"{ChessFight.Gameplay.Teams.Name(p.Team)} {ChessPieces.Name(p.Piece)} — {PawnRushSkillBook.Name(id)}!";
+                float f = RagdollPawn.Comeback(p.Team);
+                line = $"{ChessFight.Gameplay.Teams.Name(p.Team)} {ChessPieces.Name(p.Piece)} — {PawnRushSkillBook.Name(id)}!"
+                       + (PawnRushSkillIds.TeamUltimate(id) && Mathf.Abs(f - 1f) > 0.01f ? $"  ×{f:0.#}" : "");
                 break;
             }
             if (line == null || Event.current.type != EventType.Repaint) return;
@@ -211,17 +265,23 @@ namespace ChessFight.RagdollLab
             GUI.Label(new Rect(x, y, w, h), line, noticeStyle);
         }
 
+        /// <summary>How long a word stays: the ultimates' warnings their 2 s, the rest popSeconds.</summary>
+        static float PopLife(Pop p)
+        {
+            if (p.code == RagdollPawn.PopHook || p.code == RagdollPawn.PopPassant || p.code == RagdollPawn.PopCall)
+                return p.over != null && p.over.PawnRushSkills != null ? p.over.PawnRushSkills.teamUltWarn + 0.2f : 2.2f;
+            return p.over != null && p.over.PawnRushSkills != null ? p.over.PawnRushSkills.popSeconds : 1.2f;
+        }
+
         /// <summary>The words over heads, rising and fading (OnGUI).</summary>
         void DrawPops()
         {
             if (pops.Count == 0) return;
             var cam = Camera.main;
-            float life = 1.2f;
             for (int i = pops.Count - 1; i >= 0; i--)
             {
                 var p = pops[i];
-                if (p.over != null && p.over.PawnRushSkills != null) life = p.over.PawnRushSkills.popSeconds;
-                if (p.over == null || Time.time - p.at > life) pops.RemoveAt(i);
+                if (p.over == null || Time.time - p.at > PopLife(p)) pops.RemoveAt(i);
             }
             if (cam == null || Event.current.type != EventType.Repaint) return;
             if (popStyle == null)
@@ -231,7 +291,7 @@ namespace ChessFight.RagdollLab
             }
             foreach (var p in pops)
             {
-                float age = Time.time - p.at, t = Mathf.Clamp01(age / life);
+                float life = PopLife(p), age = Time.time - p.at, t = Mathf.Clamp01(age / life);
                 Vector3 world = p.over.Hips.position + Vector3.up * (0.9f + 0.6f * t);
                 Vector3 sp = cam.WorldToScreenPoint(world);
                 if (sp.z <= 0f) continue;
@@ -240,8 +300,11 @@ namespace ChessFight.RagdollLab
                     : p.code == RagdollPawn.PopDefended ? "받쳐진 말"
                     : p.code == RagdollPawn.PopLight ? "가볍게!"
                     : p.code == RagdollPawn.PopHeavy ? "무겁게!"
-                    : p.code == RagdollPawn.PopCrown ? $"왕관 +{(p.over.PawnRushSkills != null ? p.over.PawnRushSkills.gaugeCrown * 100f : 10f):0}%"
+                    : p.code == RagdollPawn.PopCrown ? $"왕관 +{(p.over.PawnRushSkills != null ? p.over.PawnRushSkills.gaugeCrown * 100f : 4f):0}%"
                     : p.code == RagdollPawn.PopUltCut ? "끊김! 게이지 절반"
+                    : p.code == RagdollPawn.PopPassant ? "앙파상!"
+                    : p.code == RagdollPawn.PopHook ? "갈고리!"
+                    : p.code == RagdollPawn.PopCall ? "총동원!"
                     : "";
                 if (text.Length == 0) continue;
                 Color c = p.code < 100 || p.code == RagdollPawn.PopCrown ? Gold : p.code == RagdollPawn.PopCheckEscape ? new Color(0.5f, 1f, 0.6f)

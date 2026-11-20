@@ -56,6 +56,9 @@ namespace ChessFight.RagdollLab
         // ...and the 7th rank's wall risen (as KitWall, the rank's height; it moves with the rook's state:
         // RagdollPawn.KitTwoUlts.cs).
         KitRankWall,
+        // ...and the team ultimate's 7th rank across the way (as KitWall, its height; target: the first runner it stands
+        // before: RagdollPawn.TeamUlts.cs).
+        KitTeamWall,
     }
 
     public struct SkillFxEvent

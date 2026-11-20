@@ -87,13 +87,16 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillLog -= OnSkill;
             RagdollPawn.SkillSendBack = null;
             RagdollPawn.TeamLosing = null;
+            RagdollPawn.TeamComeback = null;
             PawnRushGaugeCrown.ClearAll();
         }
 
         // ---------------------------------------------------------------- the ultimate gauge's test (the kits' second version)
 
-        // The test's "my team is losing" (time fills the gauge 1.5 times as fast for it).
+        // The test's "my team is losing" (time fills the gauge faster for it), and my team's comeback multiplier.
         bool losingTest;
+        static readonly float[] ComebackBands = { 1f, 0.5f, 1.5f, 2f };
+        int comebackTest;
 
         /// <summary>Six crowns round the start, the same on every PC (the network test places them alike).</summary>
         void PlaceStartCrowns()
@@ -131,9 +134,12 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<LabGame>();
             // The pool's queen sacrifice sends the queen back: here, the lab's own respawn (JY-skill-lab 11-20).
             RagdollPawn.SkillSendBack = p => { if (game != null) game.Respawn(p); };
-            // The kits' second version's ultimate gauge: map crowns round the start, and the test's losing team.
+            // The kits' second version's ultimate gauge: map crowns round the start, and the test's losing team and comeback
+            // multiplier (the scene has no race to measure them by).
+            RagdollPawn.ResetTeamGauges();
             if (game == null || !game.AutoTest) PlaceStartCrowns();
             RagdollPawn.TeamLosing = t => losingTest && Me != null && t == Me.Team;
+            RagdollPawn.TeamComeback = t => Me != null && t == Me.Team ? ComebackBands[comebackTest] : 1f;
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
             // The skills' sounds (R114, 승규 님's picks on the R107 page).
@@ -633,6 +639,17 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.KingMarch:
                         use = running ? $"{key} = 행진 걸음" : $"{key} 행진";
                         break;
+                    // The team's comeback ultimates (RagdollPawn.TeamUlts.cs).
+                    case PawnRushSkillIds.PassantBang:
+                    case PawnRushSkillIds.KnightTour:
+                    case PawnRushSkillIds.GreekGift:
+                    case PawnRushSkillIds.RankWall:
+                    case PawnRushSkillIds.GeneralCall:
+                        use = $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
+                        break;
+                    case PawnRushSkillIds.QueenDrop:
+                        use = running ? $"{click} = 다음 무리" : $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
+                        break;
                     default:
                         use = $"{key} 조준 → {click}";
                         break;
@@ -750,7 +767,7 @@ namespace ChessFight.RagdollLab
                     // is its own: RagdollPawn.UltGauge.cs.)
                     string wait = p1.UltOnGauge(k)
                         ? (p1.UltReady ? "   <color=#fc4>!! 게이지 가득</color>" : $"   게이지 {p1.UltGauge * 100f:0}%")
-                        : PawnRushSkillIds.Ultimate(id)
+                        : PawnRushSkillIds.Ultimate(id) && !skills.realGauge
                         ? (p1.SlotCooldown(k) > 0f ? $"   게이지 {100f * (1f - p1.SlotCooldown(k) / Mathf.Max(0.01f, p1.SlotCooldownTotal(k))):0}%" : "   <color=#fc4>!!</color>")
                         : p1.SlotCooldown(k) > 0f ? $"   쿨 {p1.SlotCooldown(k):0.0}초" : "";
                     GUILayout.Label($"<b>{SlotKey(k)} · {PawnRushSkillBook.Name(id)}</b>" + wait
@@ -778,10 +795,12 @@ namespace ChessFight.RagdollLab
                 GUILayout.BeginHorizontal();
                 if (!Online && GUILayout.Button("게이지 가득", button)) p1.FillGauge();
                 if (!Online && GUILayout.Button($"왕관 다시 놓기 ({crownKey})", button)) PlaceCrownsRound(p1);
-                if (GUILayout.Button(losingTest ? "지는 팀: 시간 1.5배" : "지는 팀: 아님", losingTest ? selected : button)) losingTest = !losingTest;
+                if (GUILayout.Button(losingTest ? "지는 팀: 시간 2배" : "지는 팀: 아님", losingTest ? selected : button)) losingTest = !losingTest;
+                if (GUILayout.Button($"역전 배율 ×{ComebackBands[comebackTest]:0.#}", comebackTest != 0 ? selected : button))
+                    comebackTest = (comebackTest + 1) % ComebackBands.Length;
                 GUILayout.EndHorizontal();
-                GUILayout.Label(skills.testCooldown > 0f ? "게이지: 시험용 쿨이 켜져 있어 늘 가득 (쿨: 기획 쿨로 바꾸면 왕관 · 시간 · 당해서 넘어짐으로 참)"
-                    : $"게이지 {p1.UltGauge * 100f:0}% · 왕관 10% · 시간 1초 0.15% · 적 스킬에 넘어짐 4% (10초에 12%까지)", small);
+                GUILayout.Label(skills.testCooldown > 0f ? "팀 게이지: 시험용 쿨이 켜져 있어 늘 가득 (쿨: 기획 쿨로 바꾸면 왕관 · 시간 · 팀원이 당해서 넘어짐으로 참)"
+                    : $"{Teams.Name(p1.Team)}팀 게이지 {p1.UltGauge * 100f:0}% · 왕관 4% · 시간 1초 0.1% · 팀원이 적 스킬에 넘어짐 1.5% (한 사람 10초에 6%까지)", small);
             }
             if (fx != null)
             {

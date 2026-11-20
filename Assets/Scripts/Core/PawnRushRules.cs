@@ -28,23 +28,26 @@ namespace ChessFight.Network
         public const int AfterStraight = 0, AfterGather = 1, AfterDelay = 2;
         public const int EndingCrown = 0, EndingThrone = 1;
         public const int SkillsNow = 0, SkillsChessMoves = 1, SkillsTree = 2;
+        // JY-skill-lab (2026-11-21, the skill system's X-판17, a must with the team's comeback ultimates): the crown
+        // platform's majority wins at once (as before), or only after holding it PawnRushFinish.HoldSeconds.
+        public const int HoldOff = 0, HoldOn = 1;
 
         // Option 4: how long after one team's clear the other team's gate opens.
         public const double GateDelay = 20;
 
-        public int Relief, After, Ending, Skills;
+        public int Relief, After, Ending, Skills, Hold;
 
         // What the running round plays by: the match link sets it from the room before the round is built; offline it
         // stays as it is (a test may set it).
         public static PawnRushRules Current;
 
-        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16 + Clamp(Skills, 2) * 32;
+        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16 + Clamp(Skills, 2) * 32 + Clamp(Hold, 1) * 128;
 
         public static PawnRushRules Decode(int packed)
         {
             if (packed < 0) packed = 0;
             return new PawnRushRules { Relief = Clamp(packed & 3, 2), After = Clamp((packed >> 2) & 3, 2), Ending = Clamp((packed >> 4) & 1, 1),
-                                       Skills = Clamp((packed >> 5) & 3, 2) };
+                                       Skills = Clamp((packed >> 5) & 3, 2), Hold = Clamp((packed >> 7) & 1, 1) };
         }
 
         static int Clamp(int value, int max) => value < 0 ? 0 : value > max ? 0 : value;
@@ -54,28 +57,30 @@ namespace ChessFight.Network
         public static bool Ready(int setting, int choice) => true;
 
         // The room's panel: the settings' names and their choices' short names.
-        public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩", "스킬 기획안" };
+        public static readonly string[] Settings = { "낙오자 구제", "미니게임을 깬 뒤", "엔딩", "스킬 기획안", "왕관 발판" };
         public static readonly string[][] Choices =
         {
             new[] { "끔", "한 팀이 깨면", "두 팀이 깨면" },
             new[] { "바로 통과", "모여서 발판", "상대 문 20초 뒤" },
             new[] { "왕관 발판", "왕좌 차지전" },
             new[] { "1-가 지금", "1-나 체스 수", "스킬트리" },
+            new[] { "서면 바로 승리", "1.5초 버티기" },
         };
 
-        public int Of(int setting) => setting == 0 ? Relief : setting == 1 ? After : setting == 2 ? Ending : Skills;
+        public int Of(int setting) => setting == 0 ? Relief : setting == 1 ? After : setting == 2 ? Ending : setting == 3 ? Skills : Hold;
 
         public PawnRushRules With(int setting, int choice)
         {
             var r = this;
-            if (setting == 0) r.Relief = choice; else if (setting == 1) r.After = choice; else if (setting == 2) r.Ending = choice; else r.Skills = choice;
+            if (setting == 0) r.Relief = choice; else if (setting == 1) r.After = choice; else if (setting == 2) r.Ending = choice;
+            else if (setting == 3) r.Skills = choice; else r.Hold = choice;
             return Decode(r.Encode());
         }
 
         // One line for the log and the match's first banner.
         public override string ToString() =>
             Settings[0] + " " + Choices[0][Relief] + " · " + Settings[1] + " " + Choices[1][After] + " · " + Settings[2] + " " + Choices[2][Ending]
-            + " · " + Settings[3] + " " + Choices[3][Skills];
+            + " · " + Settings[3] + " " + Choices[3][Skills] + " · " + Settings[4] + " " + Choices[4][Hold];
     }
 
     // R707 (option 5, PawnRushRules.EndingThrone - the user 2026-11-17: "과반수 이상이 발판 위에 일정 시간 올라와 있어야

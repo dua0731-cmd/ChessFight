@@ -185,6 +185,8 @@ namespace ChessFight.PawnRush
             Winner = PawnRushFinish.None;
             decidedAt = -1f;
             shown = false;
+            holdTeam = PawnRushFinish.None;
+            holdTime = 0f;
             if (Contest != null) Contest.ResetContest();
             foreach (var r in runners) { r.FirstOn = -1f; r.On = false; }
         }
@@ -210,8 +212,16 @@ namespace ChessFight.PawnRush
             }
             if (!Authority || Winner != PawnRushFinish.None || contest) return;
             int winner = PawnRushFinish.Winner(whiteOn, whitePlayers, blackOn, blackPlayers);
+            // JY-skill-lab (X-판17, the room's rule): the majority must hold the platform HoldSeconds, so one ultimate that
+            // brings a team onto it, or throws the other off it, does not end the round at once.
+            if (PawnRushRules.Current.Hold == PawnRushRules.HoldOn)
+                winner = PawnRushFinish.StepHold(ref holdTeam, ref holdTime, winner, Time.fixedDeltaTime, PawnRushFinish.HoldSeconds);
             if (winner != PawnRushFinish.None) Decide(winner, Clock);
         }
+
+        // JY-skill-lab (X-판17): the team holding the platform's majority now, and for how long.
+        int holdTeam = PawnRushFinish.None;
+        float holdTime;
 
         // R707: the throne contest's word (where it is judged): this team filled its time.
         public void Win(int team)
@@ -339,8 +349,13 @@ namespace ChessFight.PawnRush
                 line = new GUIStyle(banner) { fontSize = 15 };
             }
             int w = Players(Teams.White), b = Players(Teams.Black);
+            bool hold = Contest == null && PawnRushRules.Current.Hold == PawnRushRules.HoldOn;
             string count = $"왕관 발판  백 {OnPlatform(Teams.White)}/{PawnRushFinish.Needed(w)}  ·  흑 {OnPlatform(Teams.Black)}/{PawnRushFinish.Needed(b)}  "
-                           + (Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)" : "(팀 과반이 동시에 올라가면 승리)");
+                           + (Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)"
+                              : hold ? (holdTeam != PawnRushFinish.None && Winner == PawnRushFinish.None
+                                        ? $"({Teams.Name(holdTeam)}팀 버티는 중 {holdTime:0.0}/{PawnRushFinish.HoldSeconds:0.#}초)"
+                                        : $"(팀 과반이 {PawnRushFinish.HoldSeconds:0.#}초 버티면 승리)")
+                              : "(팀 과반이 동시에 올라가면 승리)");
             // R682: the standings strip (PawnRushStandingsHud) stands in this place and carries the count; this box is
             // drawn only where there is no strip, and the note goes under whichever is there.
             bool strip = PawnRushStandingsHud.Showing;

@@ -262,6 +262,13 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.EightLines: UpdateEightLines(s, press, dt); break;
                 case PawnRushSkillIds.WallCharge: UpdateWallCharge(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.SeventhRank: UpdateSeventhRank(s, press, dt); break;   // (RagdollPawn.KitTwoUlts.cs)
+                // The team's comeback ultimates (RagdollPawn.TeamUlts.cs).
+                case PawnRushSkillIds.PassantBang: UpdatePassantBang(s, press, dt); break;
+                case PawnRushSkillIds.KnightTour: UpdateKnightTour(s, press, dt); break;
+                case PawnRushSkillIds.GreekGift: UpdateGreekGift(s, press, dt); break;
+                case PawnRushSkillIds.RankWall: UpdateRankWall(s, press, dt); break;
+                case PawnRushSkillIds.QueenDrop: UpdateQueenDrop(s, press, confirm, dt); break;
+                case PawnRushSkillIds.GeneralCall: UpdateGeneralCall(s, press, dt); break;
             }
         }
 
@@ -302,7 +309,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.QueenGlide: return s.glideCooldown;
                 case PawnRushSkillIds.EightLines: return s.eightCooldown;
                 case PawnRushSkillIds.WallCharge: return s.wallCooldown;
-                default: return PawnRushSkillIds.Ultimate(id) ? s.ultGauge : 0f;
+                default: return PawnRushSkillIds.Ultimate(id) ? UltCooldown(id, s) : 0f;
             }
         }
 
@@ -933,6 +940,7 @@ namespace ChessFight.RagdollLab
             if (!arrived)
             {
                 EndFlight(bodies[0].linearVelocity * 0.5f);
+                LandTeamCarry(false);
                 return;
             }
             EndFlight(Vector3.zero);
@@ -942,6 +950,7 @@ namespace ChessFight.RagdollLab
                 Stagger(PawnRushSkills.castleEnemyStagger);
                 LastSkillHit = "캐슬링: 자리가 바뀜 → 휘청";
             }
+            LandTeamCarry(true);   // a team ultimate's flight: what it leaves on landing (RagdollPawn.TeamUlts.cs)
         }
 
         // ---------------------------------------------------------------- check

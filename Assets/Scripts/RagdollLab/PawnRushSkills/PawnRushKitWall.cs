@@ -47,6 +47,42 @@ namespace ChessFight.RagdollLab
             return null;
         }
 
+        // A wall that pushes the other team back off its face (the team ultimate's 7th rank): whose, which way its face
+        // looks (the way they run), how fast.
+        bool pushing;
+        int pushTeam;
+        Vector3 pushWay;
+        float pushSpeed;
+
+        /// <summary>Host: the pieces of the team that is not <paramref name="ownerTeam"/>'s, just before the wall's face
+        /// (coming along <paramref name="way"/>), are pushed back at <paramref name="speed"/> m/s while it stands.</summary>
+        public void PushBack(int ownerTeam, Vector3 way, float speed)
+        {
+            way.y = 0f;
+            if (!Solid || way.sqrMagnitude < 1e-4f) return;
+            pushing = true;
+            pushTeam = ownerTeam;
+            pushWay = way.normalized;
+            pushSpeed = speed;
+        }
+
+        void FixedUpdate()
+        {
+            if (!pushing || !Standing || box == null || !box.enabled) return;
+            Vector3 mid = (from + to) * 0.5f, side = Vector3.Cross(Vector3.up, pushWay);
+            float half = new Vector3(to.x - from.x, 0f, to.z - from.z).magnitude * 0.5f + 0.3f;
+            foreach (var p in RagdollPawn.All)
+            {
+                if (p == null || p.NetworkPuppet || !Teams.AreEnemies(p.Team, pushTeam) || p.State != PawnState.Active) continue;
+                Vector3 d = p.Hips.position - mid;
+                float along = Vector3.Dot(new Vector3(d.x, 0f, d.z), pushWay), across = Vector3.Dot(new Vector3(d.x, 0f, d.z), side);
+                if (Mathf.Abs(across) > half || along > 0.2f || along < -(thick * 0.5f + 2f) || Mathf.Abs(d.y) > height + 1f) continue;
+                Vector3 v = p.Hips.linearVelocity;   // (the hips' body: what the run drives)
+                float back = -Vector3.Dot(new Vector3(v.x, 0f, v.z), pushWay);
+                if (back < pushSpeed) p.AddVelocity(-pushWay * (pushSpeed - back));
+            }
+        }
+
         /// <summary>A wall that moves (the 7th rank): on the host a kinematic body, so it pushes what it meets as it goes.</summary>
         public void MakeMoving()
         {

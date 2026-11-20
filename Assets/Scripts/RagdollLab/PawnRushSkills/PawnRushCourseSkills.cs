@@ -143,6 +143,7 @@ namespace ChessFight.RagdollLab
         void Awake()
         {
             Current = this;
+            RagdollPawn.ResetTeamGauges();   // JY-skill-lab: the teams' ultimate gauges start empty with the round
             fx = gameObject.AddComponent<PawnRushSkillFx>();
             fx.ParamsOverride = skills;
             fx.ViewerOverride = () => Viewer;
@@ -176,9 +177,11 @@ namespace ChessFight.RagdollLab
             PawnRushPromotion.NameNow = PawnRushPromotion.LineNow = null;
         }
 
-        /// <summary>The key of a slot as the settings bind it: 기물 스킬 (Use), then the two ability keys (Skill, Skill2).</summary>
+        /// <summary>The key of a slot as the settings bind it: 기물 스킬 (Use), then the two ability keys (Skill, Skill2). The
+        /// third slot (the queen's R, JY-skill-lab's kits' second version) has no key on the course yet.</summary>
         static string CourseKey(int slot) =>
-            ChessFight.Game.GameSettings.KeyCap(slot == 0 ? ChessFight.Game.GameKey.Use : slot == 1 ? ChessFight.Game.GameKey.Skill : ChessFight.Game.GameKey.Skill2);
+            slot == 2 ? "R (아직 코스 없음)"
+            : ChessFight.Game.GameSettings.KeyCap(slot == 0 ? ChessFight.Game.GameKey.Use : slot == 1 ? ChessFight.Game.GameKey.Skill : ChessFight.Game.GameKey.Skill2);
 
         RagdollPawn Viewer
         {

@@ -111,6 +111,24 @@ namespace ChessFight.Network
 
         public static bool Reached(int onPlatform, int teamPlayers) => teamPlayers > 0 && onPlatform >= Needed(teamPlayers);
 
+        // JY-skill-lab (2026-11-21, X-판17; PawnRushRules.HoldOn): the majority must hold the platform this long.
+        public const float HoldSeconds = 1.5f;
+
+        /// <summary>One step of holding the platform: <paramref name="now"/> is this step's Winner. The same team on it
+        /// adds the step to <paramref name="held"/>; another, or nobody, starts the count again. The winner once it has held
+        /// <paramref name="need"/> seconds, None until then.</summary>
+        public static int StepHold(ref int holder, ref float held, int now, float dt, float need)
+        {
+            if (now == None || now != holder)
+            {
+                holder = now;
+                held = 0f;
+                return None;
+            }
+            held += Math.Max(0f, dt);
+            return held >= need ? holder : None;
+        }
+
         // 0 white, 1 black, None while nobody has it. Both at once (the same physics step): the one with more on
         // the platform; still level, nobody yet.
         public static int Winner(int whiteOn, int whitePlayers, int blackOn, int blackPlayers)

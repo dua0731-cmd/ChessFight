@@ -102,6 +102,13 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.EightLines: DrawEightLines(pawn); break;
                     case PawnRushSkillIds.WallCharge: DrawWallCharge(pawn); break;
                     case PawnRushSkillIds.SeventhRank: DrawSeventhRank(pawn); break;
+                    // The team's comeback ultimates (PawnRushPlanMarks.KitTwo.cs).
+                    case PawnRushSkillIds.PassantBang:
+                    case PawnRushSkillIds.KnightTour:
+                    case PawnRushSkillIds.GreekGift:
+                    case PawnRushSkillIds.RankWall:
+                    case PawnRushSkillIds.QueenDrop:
+                    case PawnRushSkillIds.GeneralCall: DrawTeamUlt(pawn); break;
                 }
                 // The smothered mate's chance, for the knight played here: a ring over the crowd it could fall on.
                 if (pawn == me && pawn.PlanSkill != PawnRushSkillIds.Smother && pawn.HasSkill(PawnRushSkillIds.Smother)) DrawSmotherChance(pawn);

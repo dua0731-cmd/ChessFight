@@ -56,7 +56,8 @@ namespace ChessFight.RagdollLab
         float SkillJumpScale => heavyLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.heavyJump, 0.2f, 1f) : 1f;
 
         // The words over a head (SkillFxKind.KitPop's count; under 100 a value shown as "+N").
-        public const int PopCheckEscape = 100, PopDefended = 101, PopLight = 102, PopHeavy = 103, PopCrown = 104, PopUltCut = 105;
+        public const int PopCheckEscape = 100, PopDefended = 101, PopLight = 102, PopHeavy = 103, PopCrown = 104, PopUltCut = 105,
+                         PopPassant = 106, PopHook = 107, PopCall = 108;
 
         void MakeLight(RagdollPawn other, PawnRushSkillParams s)
         {
@@ -95,6 +96,8 @@ namespace ChessFight.RagdollLab
             if (heavyLeft > 0f) heavyLeft = gone ? 0f : heavyLeft - dt;
             if (chainWheelLeft > 0f) chainWheelLeft -= dt;
             UpdateGauge(s, dt);   // the ultimate gauge (RagdollPawn.UltGauge.cs)
+            UpdateSlideBack();    // the knight's tour: sliding back after the squash (RagdollPawn.TeamUlts.cs)
+            if (HasSkill(PawnRushSkillIds.PassantBang)) TrackOvertakes();   // who overtakes the pawn, for en passant !!
         }
 
         void ClearKitTwoStates()
@@ -132,6 +135,7 @@ namespace ChessFight.RagdollLab
         void KitTwoKeys()
         {
             if (planPhase == PlanPhase.None) return;
+            TeamUltKeys();   // the queen's sacrifice: the left click picks the next crowd (RagdollPawn.TeamUlts.cs)
             switch (activeSkill)
             {
                 case PawnRushSkillIds.Promote:
@@ -578,6 +582,7 @@ namespace ChessFight.RagdollLab
         void ClearKitTwoSkill()
         {
             ClearSeventhRank();   // the 7th rank's wall goes down with it (RagdollPawn.KitTwoUlts.cs)
+            ClearTeamUlts();      // the team ultimates' sequence (RagdollPawn.TeamUlts.cs)
             if (wallUp != null)
             {
                 var s = PawnRushSkills;
