@@ -62,11 +62,13 @@ namespace ChessFight.RagdollLab
         /// <summary>This piece's skill hit <paramref name="target"/> (and <paramref name="pieces"/> - 1 more with it): the hit
         /// stop and the "탁". The pieces' values count only for a <paramref name="capture"/> (not a teammate held with it, as
         /// in a castling).</summary>
-        void FeelHit(RagdollPawn target, Vector3 at, Vector3 dir, int grade, int pieces = 1, bool capture = true)
+        void FeelHit(RagdollPawn target, Vector3 at, Vector3 dir, int grade, int pieces = 1, bool capture = true, float baseStop = 0f)
         {
             var s = FeelParams;
             if (s == null) return;
-            float stop = grade >= FeelUltimate ? s.feelStopUltimate : grade == FeelHard ? s.feelStopHard : s.feelStopWeak;
+            // (A skill may name its own hit stop, as the pool writes some: the knight's stomp, the queen's check.)
+            float stop = baseStop > 0f ? baseStop
+                : grade >= FeelUltimate ? s.feelStopUltimate : grade == FeelHard ? s.feelStopHard : s.feelStopWeak;
             if (capture && target != null && piece != PieceKind.King && target.piece != PieceKind.King)
                 stop += Mathf.Max(0, PieceValue(target.piece) - PieceValue(piece)) * s.feelStopPerValue;
             stop += Mathf.Clamp(pieces - 1, 0, 3) * s.feelStopPerExtra;
@@ -144,21 +146,34 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- 반동
 
-        /// <summary>Push this piece <paramref name="metres"/> along <paramref name="dir"/> over feelKickTime, dying out so it
-        /// ends standing, and stopping feelKickEdge short of an edge. One given in a dash waits for that dash to end.</summary>
+        /// <summary>The hand feel's recoil, bounce or lurch: a <see cref="Kick"/> of feelKickTime that stops short of an edge
+        /// (only while the hand feel is on).</summary>
         void FeelKick(Vector3 dir, float metres)
         {
             var s = FeelParams;
+            if (s != null) Kick(dir, metres, s.feelKickTime, true);
+        }
+
+        /// <summary>Push this piece <paramref name="metres"/> along <paramref name="dir"/> over <paramref name="seconds"/>,
+        /// dying out so it ends standing; <paramref name="edgeSafe"/> stops it feelKickEdge short of an edge (a basic's),
+        /// otherwise over it goes (a mid skill's, the pool's 1.3 #4). One given in a dash waits for that dash to end. The
+        /// skills' own pushes use it too (the queen's lunge, the bishop's recoil), the hand feel on or off.</summary>
+        void Kick(Vector3 dir, float metres, float seconds, bool edgeSafe)
+        {
+            var s = PawnRushSkills;
             dir.y = 0f;
             if (s == null || NetworkPuppet || metres <= 0.01f || dir.sqrMagnitude < 1e-4f) return;
             dir.Normalize();
-            // Short of an edge: the farthest point, in 0.1 m steps back, with a floor feelKickEdge beyond it.
             float room = metres;
-            Vector3 feet = FeetPoint;
-            while (room > 0.05f && !FloorUnder(feet + dir * (room + s.feelKickEdge))) room -= 0.1f;
-            if (room <= 0.05f) return;
+            if (edgeSafe)
+            {
+                // Short of an edge: the farthest point, in 0.1 m steps back, with a floor feelKickEdge beyond it.
+                Vector3 feet = FeetPoint;
+                while (room > 0.05f && !FloorUnder(feet + dir * (room + s.feelKickEdge))) room -= 0.1f;
+                if (room <= 0.05f) return;
+            }
             kickDir = dir;
-            kickTime = Mathf.Max(0.05f, s.feelKickTime);
+            kickTime = Mathf.Max(0.05f, seconds);
             kickLeft = kickTime;
             kickSpeed = 2f * room / kickTime;   // dying out evenly from this to nothing covers the room
             kickAfterDash = dashing;
@@ -190,10 +205,11 @@ namespace ChessFight.RagdollLab
             anchor.MovePosition(anchorPos);
         }
 
-        /// <summary>Something to stand on under this point (from 0.5 m above it to 1.2 m below): not a piece, not a trigger.</summary>
-        bool FloorUnder(Vector3 point)
+        /// <summary>Something to stand on under this point (from 0.5 m above it to <paramref name="depth"/> below): not a piece,
+        /// not a trigger.</summary>
+        bool FloorUnder(Vector3 point, float depth = 1.2f)
         {
-            int n = Physics.RaycastNonAlloc(point + Vector3.up * 0.5f, Vector3.down, hits, 1.7f, ~0, QueryTriggerInteraction.Ignore);
+            int n = Physics.RaycastNonAlloc(point + Vector3.up * 0.5f, Vector3.down, hits, depth + 0.5f, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var c = hits[i].collider;

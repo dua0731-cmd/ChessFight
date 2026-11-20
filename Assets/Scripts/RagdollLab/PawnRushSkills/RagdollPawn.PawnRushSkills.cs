@@ -203,6 +203,7 @@ namespace ChessFight.RagdollLab
             bindLeft = 0f;
             EndPin();
             ClearFeel();
+            ClearPoolStates();
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);
@@ -632,7 +633,7 @@ namespace ChessFight.RagdollLab
                     if (pawnStep == 1)
                     {
                         if (press) pawnBuffered = true;
-                        pawnTarget = SeekTarget(s);
+                        pawnTarget = pawnSteer ? null : SeekTarget(s);
                     }
                     else SteerToTarget();
                     if (WallAhead(dashBase * dt + 0.25f, out _)) dashLeft = 0f;   // a wall ends the step, no stagger
@@ -666,6 +667,16 @@ namespace ChessFight.RagdollLab
                     break;
                 case SkillStage.Link:
                     stageTime += dt;
+                    if (pawnSteer)
+                    {
+                        // The skill pool's P-기1 (RagdollPawn.PoolSkills.cs): the second step goes for nobody; the move keys bend
+                        // it, and it must come sooner.
+                        SkillDetail = "연결 (F 한 번 더 · 이동 키로 꺾기)";
+                        if (press) pawnBuffered = true;
+                        if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing) PawnStep(s, 2);
+                        else if (stageTime > s.steerLinkMax) FinishPawn(s, false);
+                        break;
+                    }
                     // R153 (plan v0.3 §3): the second step only goes for someone: a downed teammate or a standing enemy in front.
                     pawnTarget = SeekTarget(s);
                     SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
@@ -733,6 +744,7 @@ namespace ChessFight.RagdollLab
                 skillDir = d.sqrMagnitude > 0.01f ? d.normalized : MoveOrAim();
                 distance = Mathf.Min(s.pawnSeekStep, d.magnitude + 0.3f);
             }
+            else if (n == 2 && pawnSteer) skillDir = SteeredSecond(s);   // the pool's: bent by the move keys
             else skillDir = MoveOrAim();
             StartDash(s.pawnStepSpeed, distance / Mathf.Max(0.1f, s.pawnStepSpeed));
             skillStage = SkillStage.Active;
@@ -745,7 +757,7 @@ namespace ChessFight.RagdollLab
         {
             skillStage = SkillStage.None;
             SkillDetail = "";
-            float cooldown = bothSteps ? s.pawnCooldown : s.pawnCooldownOneStep;
+            float cooldown = bothSteps ? s.pawnCooldown : pawnSteer ? s.steerOneStepCooldown : s.pawnCooldownOneStep;
             if (pawnHelped) cooldown -= s.helpCooldownCut;
             StartCooldown(cooldown);
         }

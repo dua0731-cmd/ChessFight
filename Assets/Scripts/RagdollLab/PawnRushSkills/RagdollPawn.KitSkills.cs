@@ -33,9 +33,11 @@ namespace ChessFight.RagdollLab
 
         // What a fianchettoed bishop's line leaves on a piece: heavy feet.
         float slowLeft;
-        // The bent leap's own: its time in the air, its one turn used, no second head right after one.
-        float leapAir, leapBounceWait;
+        // The bent leap's own: its time in the air, its one turn used, no second head right after one; the pool's N-기1: when
+        // the jump key was last pressed coming down and when it landed (a roll), and its small number's bits.
+        float leapAir, leapBounceWait, leapJumpAt = -10f, leapLandAt;
         bool leapTurned;
+        const byte LeapRolled = 1, LeapBlunderBit = 2;
         // How long this piece has lain knocked down (the king's key gets him up only after a moment).
         float downFor;
         // The castling under way is the king's and the rook's.
@@ -48,6 +50,8 @@ namespace ChessFight.RagdollLab
         public bool KingPlaysSlots => piece == PieceKind.King && Loadout != null && Loadout.KingSlots;
         /// <summary>The bent leap is in the air and its one turn is still there.</summary>
         public bool LeapCanTurn => planPhase == PlanPhase.Active && activeSkill == PawnRushSkillIds.BentLeap && !leapTurned;
+        /// <summary>The bent leap is in the air with no floor where it will come down (the pool's "블런더"; any PC).</summary>
+        public bool LeapBlunder => PlanSkill == PawnRushSkillIds.BentLeap && planPhase == PlanPhase.Active && (planNote & LeapBlunderBit) != 0;
 
         /// <summary>The run's top speed under these skills (RagdollPawn.TopSpeed): heavy feet.</summary>
         float SkillMoveScale => slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.fianSlow, 0.2f, 1f) : 1f;
@@ -89,6 +93,13 @@ namespace ChessFight.RagdollLab
                     input.shoveHeld = false;
                     break;
                 case PawnRushSkillIds.BentLeap:
+                    // The pool's N-기1: a jump pressed coming down (or just after landing) rolls the knight on
+                    // (UpdateBentLeap); taken here so it does not jump as well.
+                    if (input.jump && ((planPhase == PlanPhase.Active && bodies[0].linearVelocity.y < 0f) || planPhase == PlanPhase.Recovery))
+                    {
+                        leapJumpAt = Time.time;
+                        input.jump = false;
+                    }
                     // (Rearing up it still runs; in the air the keys only say which way the turn goes.)
                     if (planPhase != PlanPhase.Recovery) break;
                     input.move = Vector3.zero;
@@ -101,6 +112,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Every step (UpdateSkills): what these skills leave on a piece runs out.</summary>
         void UpdateKitStates(PawnRushSkillParams s, float dt)
         {
+            UpdatePoolStates(s, dt);   // the skill pool's: the moment to check again (RagdollPawn.PoolSkills.cs)
             downFor = State == PawnState.Ragdoll && !Diving ? downFor + dt : 0f;
             if (slowLeft <= 0f) return;
             // (In the water, or just back from a respawn: nothing of it is left.)
@@ -123,6 +135,7 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (!press || !CanStartSkill(true)) break;
                     SkillUses++;
+                    planNote = 0;
                     planDir = AimFlat();
                     facing = planDir;
                     if (!OnFloor)
@@ -161,12 +174,39 @@ namespace ChessFight.RagdollLab
                         planPoint = FeetPoint;
                         planPhase = PlanPhase.Recovery;
                         planTime = 0f;
+                        planNote = (byte)(planNote & ~LeapBlunderBit);
+                        leapLandAt = Time.time;
                         SkillDetail = "착지 후딜";
                         Fx(SkillFxKind.KnightLand, null, FeetPoint, planDir, 0, 0.5f);
+                        // The pool's N-기1: the jump pressed just before touching down rolls it on.
+                        if (Time.time - leapJumpAt <= s.leapRollEarly) BeginLeapRoll(s);
                     }
                     break;
                 case PlanPhase.Recovery:
                     planTime += dt;
+                    if ((planNote & LeapRolled) != 0)
+                    {
+                        // Rolling on, with no stop after it: the roll runs out (or meets a wall) and the leap is over.
+                        if (WallAhead(dashBase * dt + 0.22f, out _))
+                        {
+                            dashLeft = 0f;
+                            HaltDash();
+                        }
+                        else
+                        {
+                            DriveDash(dt);
+                            dashLeft -= dt;
+                        }
+                        if (dashLeft <= 0f)
+                        {
+                            EndDash();
+                            EndPlanSkill();
+                            StartCooldown(s.leapCooldown);
+                        }
+                        break;
+                    }
+                    // ...or pressed just after.
+                    if (leapJumpAt >= leapLandAt && planTime <= s.leapRollLate && BeginLeapRoll(s)) break;
                     if (planTime >= s.leapRecovery)
                     {
                         EndPlanSkill();
@@ -199,6 +239,7 @@ namespace ChessFight.RagdollLab
             planPhase = PlanPhase.Active;
             planTime = 0f;
             planPoint = PredictLanding(bodies[0].position, bodies[0].linearVelocity, g);
+            MarkLeapBlunder(s);
             SkillDetail = "도약 (공중에서 한 번 더 = 꺾어 차고 나감)";
             Fx(SkillFxKind.KnightLeap, null, bodies[0].position - Vector3.up * standHeight, planDir, fromFloor ? 0 : 1);
             Log($"{DisplayName}: ㄱ자 도약 ({s.leapDistance:0.#} m, 높이 {s.leapHeight:0.#} m)");
@@ -222,6 +263,7 @@ namespace ChessFight.RagdollLab
             planDir = turned;
             leapTurned = true;
             planPoint = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
+            MarkLeapBlunder(s);
             Fx(SkillFxKind.KnightTurn, null, bodies[0].position, turned, Mathf.RoundToInt(angle));
             SkillDetail = angle > 5f ? "꺾어 차고 나감" : "앞으로 차고 나감";
             Log($"{DisplayName}: 공중에서 다시 차고 나감 {angle:0}°");
@@ -250,11 +292,13 @@ namespace ChessFight.RagdollLab
                 bool swayed = other.Stagger(s.leapStompStagger);
                 other.LastSkillHit = swayed ? $"ㄱ자 도약: 머리를 밟힘 → 휘청 {s.leapStompStagger:0.#}초" : "ㄱ자 도약: 머리를 밟힘 (휘청 안 걸림)";
                 Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
-                FeelHit(other, new Vector3(head.x, top, head.z), Flat(facing), FeelWeak);   // the hand feel (a stagger: weak)
+                // The hand feel's hit stop, the pool's N-기1 length (a stagger otherwise holds 0.06 s).
+                FeelHit(other, new Vector3(head.x, top, head.z), Flat(facing), FeelWeak, baseStop: s.leapStompStop);
                 // Up off the head: what it had along the ground stays, the fall becomes a rise.
                 Launch(Flat(bodies[0].linearVelocity) + Vector3.up * s.leapStompBounce);
                 leapBounceWait = 0.25f;
                 planPoint = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
+                MarkLeapBlunder(s);
                 SkillDetail = "머리 밟고 다시 튐";
                 Log($"ㄱ자 도약 → {other.DisplayName}: 머리 밟기 → {(swayed ? "휘청" : "휘청 안 걸림")}, 다시 튀어 오름");
                 return;
@@ -267,17 +311,23 @@ namespace ChessFight.RagdollLab
         /// used); an enemy within fianAssist of that way seen from above, in reach and in sight, is aimed at wherever it
         /// stands up or down a slope (fianTall), and the line then goes straight to it. The line's end goes into planPoint
         /// (short of a wall).</summary>
-        Vector3 FianAim(PawnRushSkillParams s, float reach)
+        Vector3 FianAim(PawnRushSkillParams s, float reach) => LineAim(reach, s.fianAssist, s.fianTall);
+
+        /// <summary>A line from the hands, aimed (the fianchetto, the pool's long snipe): flat along the aim; an enemy within
+        /// <paramref name="assist"/>° of that way seen from above, in reach and in sight, is aimed at wherever it stands up
+        /// or down a slope (<paramref name="tall"/>), and the line then goes straight to it (planTarget). The line's end goes
+        /// into planPoint (short of a wall).</summary>
+        Vector3 LineAim(float reach, float assist, float tall)
         {
             Vector3 from = LassoHands;
             Vector3 flat = AimFlat();
             planTarget = null;
-            float best = s.fianAssist;
+            float best = assist;
             foreach (var other in All)
             {
                 if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
                 Vector3 to = other.LassoBelly - from;
-                if (Flat(to).magnitude < 0.6f || to.magnitude > reach || Mathf.Abs(to.y) > s.fianTall) continue;
+                if (Flat(to).magnitude < 0.6f || to.magnitude > reach || Mathf.Abs(to.y) > tall) continue;
                 float angle = Vector3.Angle(flat, Flat(to));
                 if (angle > best || !ClearSight(from, other.LassoBelly)) continue;
                 planTarget = other;
@@ -288,6 +338,27 @@ namespace ChessFight.RagdollLab
             if (SolidRay(from, dir, reach, out var wall)) open = wall.distance;
             planPoint = from + dir * open;
             return dir;
+        }
+
+        /// <summary>The first standing piece on a line from <paramref name="from"/>, within <paramref name="radius"/> of it and
+        /// short of <paramref name="along"/> (which comes back as how far along it is): an enemy, or a teammate when
+        /// <paramref name="alliesBlock"/>. Pieces being carried by a skill are not on it.</summary>
+        RagdollPawn FirstOnLine(Vector3 from, Vector3 dir, ref float along, float radius, bool alliesBlock)
+        {
+            RagdollPawn first = null;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || other.State != PawnState.Active || other.chainCarry || other.kingCarry || other.castleCarry) continue;
+                bool enemy = IsEnemyOf(other);
+                if (enemy ? other.SkillUntargetable : !(alliesBlock && IsAllyOf(other))) continue;
+                Vector3 to = other.LassoBelly - from;
+                float at = Vector3.Dot(to, dir);
+                if (at < 0.5f || at > along) continue;
+                if ((to - dir * at).magnitude > radius) continue;
+                first = other;
+                along = at;
+            }
+            return first;
         }
 
         void UpdateFianchetto(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
@@ -346,20 +417,8 @@ namespace ChessFight.RagdollLab
             Vector3 from = LassoHands, dir = planDir.sqrMagnitude > 0.5f ? planDir.normalized : FlatDir(facing);
             if (SolidRay(from, dir, reach, out var wall)) reach = wall.distance;
             FeelKick(-dir, s.feelKickShot);   // the hand feel: the shot slides the seated bishop back (RagdollPawn.HandFeel.cs)
-            RagdollPawn first = null;
             float firstAlong = reach;
-            foreach (var other in All)
-            {
-                if (other == null || other == this || other.State != PawnState.Active || other.chainCarry || other.kingCarry || other.castleCarry) continue;
-                bool enemy = IsEnemyOf(other);
-                if (enemy ? other.SkillUntargetable : !(s.fianAlliesBlock && IsAllyOf(other))) continue;
-                Vector3 to = other.LassoBelly - from;
-                float along = Vector3.Dot(to, dir);
-                if (along < 0.5f || along > firstAlong) continue;
-                if ((to - dir * along).magnitude > s.fianRadius) continue;
-                first = other;
-                firstAlong = along;
-            }
+            var first = FirstOnLine(from, dir, ref firstAlong, s.fianRadius, s.fianAlliesBlock);
             planTarget = first;
             planPoint = from + dir * firstAlong;
             if (first == null)
@@ -519,14 +578,16 @@ namespace ChessFight.RagdollLab
 
         // One of the first byte's free bits (RagdollPawn.SkillNet.cs: 2 and 16 were free; 64 is the queen's elastic): heavy
         // feet. The skills themselves go as every new skill does (its phase, time, point, way and target).
-        const byte NetSlowed = 2;
+        // And 16, the last free one: the queen may check once more (the skill pool's Q-기1, RagdollPawn.PoolSkills.cs).
+        const byte NetSlowed = 2, NetCheckAgain = 16;
 
-        bool KitNetBusy => slowLeft > 0f;
+        bool KitNetBusy => slowLeft > 0f || checkAgainLeft > 0f;
 
         /// <summary>Host: what these skills have left on this piece.</summary>
         void CaptureKitNet(ref SkillWireState s)
         {
             if (slowLeft > 0f) s.Flags |= NetSlowed;
+            if (checkAgainLeft > 0f) s.Flags |= NetCheckAgain;
         }
 
         /// <summary>Client: the same on a puppet. (The time left is this screen's own count from when it first saw it.)</summary>
@@ -534,16 +595,19 @@ namespace ChessFight.RagdollLab
         {
             var k = PawnRushSkills;
             SeeState(ref slowLeft, (s.Flags & NetSlowed) != 0, k != null ? k.fianSlowSeconds : 2f);
+            SeeState(ref checkAgainLeft, (s.Flags & NetCheckAgain) != 0, k != null ? k.checkAgainWindow : 2f);
         }
 
         void ClearKitNet()
         {
             slowLeft = 0f;
+            checkAgainLeft = 0f;
         }
 
         void AdvanceKitView(float dt)
         {
             if (slowLeft > 0f) slowLeft = Mathf.Max(0.05f, slowLeft - dt);
+            if (checkAgainLeft > 0f) checkAgainLeft = Mathf.Max(0.05f, checkAgainLeft - dt);
         }
     }
 }

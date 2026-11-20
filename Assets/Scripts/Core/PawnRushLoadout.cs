@@ -25,12 +25,18 @@ namespace ChessFight.Network
         // fianchetto, the king's step (RagdollPawn.KitSkills.cs). The pawn's, the rook's and the queen's basics are skills
         // that were there already (the two steps, castling, check).
         public const int BentLeap = 43, Fianchetto = 71, KingStep = 72;
+        // The skill pool's plan 1 (Docs/Skills/PAWN_RUSH_SKILL_POOL.md, one skill a piece; the user 2026-11-20: "1안부터"),
+        // the skills as the pool writes them: the pawn's two steps with a second step the move keys bend (P-기1, the old
+        // two steps' code), the bishop's long diagonal snipe (B-중7). The knight's bent leap and the queen's check are
+        // the ones above, changed to the pool's (N-기1, Q-기1).
+        public const int SteeredSteps = 81, LongSnipe = 82;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
 
-        /// <summary>One of the skills as they are: made for one piece, with that piece's effects and sounds.</summary>
-        public static bool Old(int id) => id >= TwoSteps && id <= RingShove;
+        /// <summary>One of the skills as they are: made for one piece, with that piece's effects and sounds. (The pool's
+        /// two steps run on the old two steps' code, as the pawn.)</summary>
+        public static bool Old(int id) => (id >= TwoSteps && id <= RingShove) || id == SteeredSteps;
 
         /// <summary>The piece an old skill was made for.</summary>
         public static PieceKind OldPiece(int id)
@@ -256,16 +262,20 @@ namespace ChessFight.Network
         }
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 5;
+        public const int Presets = 6;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
-        /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md). The king's row is empty (his call) in all but the last.</summary>
+        /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece). The king's row is empty
+        /// (his call) in all but 4.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
-            int[] first = which == 1
+            int[] first = which == 5
+                // (The rook's and the king's are the chain and the call as they are until the pool's are made.)
+                ? new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.ChainPull, PawnRushSkillIds.Check, 0 }
+                : which == 1
                 ? new[] { PawnRushSkillIds.EnPassant, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.Castling, PawnRushSkillIds.Check, 0 }
                 : which == 3
                 ? new[] { PawnRushSkillIds.TouchMove, PawnRushSkillIds.BackKick, PawnRushSkillIds.Ghost, PawnRushSkillIds.BackPush, PawnRushSkillIds.TwoHares, 0 }

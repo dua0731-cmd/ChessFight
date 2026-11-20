@@ -75,6 +75,8 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.BentLeap: DrawBentLeap(pawn); break;
                     case PawnRushSkillIds.Fianchetto: DrawFianchetto(pawn); break;
                     case PawnRushSkillIds.KingStep: DrawKingStep(pawn); break;
+                    // The skill pool's plan 1 (RagdollPawn.PoolSkills.cs).
+                    case PawnRushSkillIds.LongSnipe: DrawLongSnipe(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -395,8 +397,49 @@ namespace ChessFight.RagdollLab
             var phase = pawn.PlanPhaseNow;
             if (phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
             bool air = phase == PlanPhase.Active;
+            if (pawn.LeapBlunder)
+            {
+                // The pool's N-기1: it will come down on nothing - a red ring with a cross in it.
+                Vector3 c = pawn.PlanPoint;
+                float blink = 0.6f + 0.4f * Mathf.Sin(Time.time * 18f);
+                SkillMarks.Circle(Next(), c, 0.5f, Fade(Red, blink), 0.08f, 28);
+                SkillMarks.Segment(Next(), c + new Vector3(-0.35f, 0f, -0.35f), c + new Vector3(0.35f, 0f, 0.35f), Fade(Red, blink), 0.07f, false);
+                SkillMarks.Segment(Next(), c + new Vector3(-0.35f, 0f, 0.35f), c + new Vector3(0.35f, 0f, -0.35f), Fade(Red, blink), 0.07f, false);
+                return;
+            }
             SkillMarks.Circle(Next(), pawn.PlanPoint, 0.5f, Fade(SkillMarks.Target, air ? 0.95f : 0.6f), air ? 0.08f : 0.05f, 28);
             if (air) SkillMarks.Circle(Next(), pawn.PlanPoint, 0.2f, Fade(White, 0.8f), 0.05f, 16);
+        }
+
+        /// <summary>The pool's long diagonal snipe (B-중7): kneeling, the line as far as it reaches; drawing, the line grows and
+        /// thins (violet to gold), and from snipeWarnAfter a light blinks at the target's feet; shot, the line it took for a
+        /// moment (gold for a "최선수").</summary>
+        void DrawLongSnipe(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            var s = pawn.PawnRushSkills;
+            Vector3 hands = pawn.LassoHands;
+            var target = pawn.PlanTarget;
+            if (phase == PlanPhase.Aim || phase == PlanPhase.Windup)
+            {
+                bool drawing = phase == PlanPhase.Windup;
+                float full = drawing ? Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.snipeCharge)) : 0f;
+                Color line = Color.Lerp(Violet, Gold, full);
+                SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(line, drawing ? 0.6f + 0.35f * full : 0.4f), Mathf.Lerp(0.07f, 0.02f, full), false);
+                SkillMarks.Circle(Next(), pawn.FeetPoint, 0.55f, Fade(line, 0.8f), 0.06f, 28);
+                if (target == null) return;
+                SkillMarks.Circle(Next(), target.FeetPoint, 0.5f, Fade(line, 0.9f), 0.06f, 24);
+                if (drawing && pawn.PlanTime >= s.snipeWarnAfter)
+                {
+                    float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 16f);
+                    SkillMarks.Circle(Next(), target.FeetPoint, 0.16f + 0.1f * pulse, Fade(White, 0.95f), 0.12f, 16);
+                }
+            }
+            else if (phase == PlanPhase.Recovery)
+            {
+                float a = 1f - Mathf.Clamp01(pawn.PlanTime / 0.35f);
+                if (a > 0f) SkillMarks.Segment(Next(), hands, pawn.PlanPoint, Fade(pawn.SnipeBest ? Gold : White, 0.3f + 0.7f * a), 0.12f, false);
+            }
         }
 
         /// <summary>The bishop's fianchetto: seated, its line as far as it reaches now (it grows while it aims) with a tick
@@ -442,6 +485,7 @@ namespace ChessFight.RagdollLab
             var rook = me.CastleOfferingMe();
             var queen = me.CheckedBy();
             var pusher = me.PushedBy();
+            var sniper = me.SnipedBy();
             if (rook != null && rook.PawnRushSkills != null)
             {
                 float window = Mathf.Max(0.1f, rook.CastleWindow);
@@ -462,6 +506,13 @@ namespace ChessFight.RagdollLab
                 line = "체크!  빨간 칸 밖으로";
                 sub = $"{queen.DisplayName} · {queen.CheckLeft:0.0}초";
                 share = Mathf.Clamp01(queen.CheckLeft / window);
+            }
+            else if (sniper != null && sniper.PawnRushSkills != null)
+            {
+                // The pool's long diagonal snipe: the light at my feet.
+                line = "저격!  비숍이 노려요";
+                sub = $"{sniper.DisplayName} · 갈지자로, 기둥 뒤로, 비숍에게 붙어요";
+                share = Mathf.Clamp01(sniper.PlanTime / Mathf.Max(0.05f, sniper.PawnRushSkills.snipeCharge));
             }
             else if (me.Touched && me.PawnRushSkills != null)
             {
@@ -506,6 +557,25 @@ namespace ChessFight.RagdollLab
                 line = "호위!  넘어지지 않아요";
                 sub = $"밀림도 조금만 · {me.WardLeft:0.0}초";
                 share = Mathf.Clamp01(me.WardLeft / Mathf.Max(0.1f, me.PawnRushSkills.wardTime));
+            }
+            // The skill pool's plan 1: what my own skill just did (RagdollPawn.PoolSkills.cs).
+            else if (me.LeapBlunder)
+            {
+                line = "블런더?!";
+                sub = "내려설 곳이 없어요";
+                share = 1f;
+            }
+            else if (me.SnipeBest)
+            {
+                line = "최선수!";
+                sub = "멀리서 맞혀 넘어뜨렸어요";
+                share = 1f - Mathf.Clamp01(me.PlanTime / 0.7f);
+            }
+            else if (me.CheckAgainLeft > 0f && me.PawnRushSkills != null)
+            {
+                line = "체크를 이어요!";
+                sub = $"비켜 나갔어요 · 스킬 키로 한 번 더 · {me.CheckAgainLeft:0.0}초";
+                share = Mathf.Clamp01(me.CheckAgainLeft / Mathf.Max(0.1f, me.PawnRushSkills.checkAgainWindow));
             }
             if (line == null) return;
             if (big == null)

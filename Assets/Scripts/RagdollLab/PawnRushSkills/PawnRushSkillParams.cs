@@ -383,8 +383,8 @@ namespace ChessFight.RagdollLab
         public float castleRefusedCooldown = 4f;
 
         [Header("1-나 퀸 — 체크!")]
-        [Tooltip("적까지 거리 (m, 6칸), 조준 도움 각도 (도)")]
-        public float checkRange = 9f;
+        [Tooltip("적까지 거리 (m, 8칸. 후보 문서 Q-기1: 9 → 12), 조준 도움 각도 (도)")]
+        public float checkRange = 12f;
         public float checkAssist = 20f;
         [Tooltip("칸의 반경 (m): 체크 순간 적이 서 있던 자리. 이 시간 (초) 안에 벗어나지 않으면 맞는다")]
         public float checkSquare = 1.5f;
@@ -396,6 +396,12 @@ namespace ChessFight.RagdollLab
         public float checkBlock = 0.6f;
         public float checkRecovery = 0.3f;
         public float checkCooldown = 8f;
+        [Tooltip("후보 문서 Q-기1: 확정하는 순간 퀸이 적 쪽으로 미끄러지는 거리 (m), 시간 (초)")]
+        public float checkLunge = 1.5f, checkLungeTime = 0.25f;
+        [Tooltip("후보 문서 Q-기1: 칸이 터질 때 멈칫 (초), 퀸이 튕겨 물러나는 거리 (m)")]
+        public float checkStop = 0.08f, checkBounce = 0.6f;
+        [Tooltip("후보 문서 Q-기1: 적이 칸을 비켜 나가면 이 시간 (초) 안에 쿨 없이 한 번 더 걸 수 있다 (체크를 잇는다, 한 번만)")]
+        public float checkAgainWindow = 2f;
 
         [Header("기획서 A 묶음 폰 — 터치 무브 · 자두브 (P5)")]
         [Tooltip("손을 내밀기까지 (초), 손이 닿는 거리 (m), 조준에서 좌우 각도 (도)")]
@@ -496,6 +502,14 @@ namespace ChessFight.RagdollLab
         [Tooltip("착지 후딜 (초), 쿨타임 (초)")]
         public float leapRecovery = 0.35f;
         public float leapCooldown = 7f;
+        [Tooltip("후보 문서 N-기1: 머리를 밟을 때 멈칫 (초)")]
+        public float leapStompStop = 0.08f;
+        [Tooltip("후보 문서 N-기1: 착지 구르기 - 내려오다 땅에 닿기 이만큼 (초) 전부터, 닿은 뒤 이만큼 (초)까지 점프를 누르면 후딜 없이 구른다")]
+        public float leapRollEarly = 0.15f, leapRollLate = 0.12f;
+        [Tooltip("착지 구르기 거리 (m), 빠르기 (m/s). 앞에 바닥이 없으면 그만큼 짧게")]
+        public float leapRollDistance = 2f, leapRollSpeed = 7f;
+        [Tooltip("후보 문서 N-기1: 착지할 곳 아래 이 깊이 (m) 안에 바닥이 없으면 '블런더'")]
+        public float leapBlunderDepth = 6f;
 
         [Header("기물별 한 벌 · 기본기 — 비숍 피앙케토")]
         [Tooltip("자리를 잡자마자의 사거리 (m), 다 겨눴을 때의 사거리 (m), 다 겨누는 데 걸리는 시간 (초)")]
@@ -560,5 +574,28 @@ namespace ChessFight.RagdollLab
         public float feelBuffer = 0.4f;
         [Tooltip("미리 누르기: 넘어져 있거나 일어나는 중에 누른 키를 기다려 주는 시간 (초)")]
         public float feelBufferDown = 2f;
+
+        [Header("후보 문서 1안 · 폰 첫 두 걸음 (꺾기, P-기1)")]
+        [Tooltip("첫 걸음 뒤 둘째 걸음을 받는 시간 (초), 이동 키로 꺾는 최대 각도 (도), 한 걸음만 쓰면 쿨 (초). 거리 · 빠르기 · 밀기는 위의 폰 첫 두 걸음 수치")]
+        public float steerLinkMax = 0.5f, steerTurn = 45f, steerOneStepCooldown = 3f;
+
+        [Header("후보 문서 1안 · 비숍 긴 대각선 저격 (B-중7)")]
+        [Tooltip("줄 길이: 모으기 전 (m), 다 모으면 (m), 다 모으는 시간 (초)")]
+        public float snipeNear = 10f, snipeFar = 30f, snipeCharge = 1f;
+        [Tooltip("이만큼 (초) 안 쏘면 스스로 일어남 (모으는 중이면 쏨)")]
+        public float snipeHold = 5f;
+        [Tooltip("조준 도움 각도 (도, 위에서 봄), 위아래로 노릴 수 있는 높이 (m), 줄의 반지름 (m)")]
+        public float snipeAssist = 6f, snipeTall = 8f, snipeRadius = 0.45f;
+        [Tooltip("멀수록 세다: 이 거리 (m) 안은 휘청, 이 거리 (m)까지는 넘어짐, 그 너머는 넘어지며 날아감")]
+        public float snipeStaggerUpTo = 12f, snipeKnockUpTo = 22f;
+        [Tooltip("휘청 (초); 넘어뜨릴 때 미는 빠르기 · 위로 (m/s); 멀리서 날릴 때 미는 빠르기 · 위로 (m/s, 약 2 m)")]
+        public float snipeStagger = 0.4f, snipePush = 4.5f, snipeLift = 1.5f, snipeFlyPush = 7f, snipeFlyLift = 3.5f;
+        [Tooltip("쏜 반동: 비숍이 뒤로 미끄러지는 거리 (m), 시간 (초), 그 뒤 엉덩방아 (초, 못 움직임). 중급기라 가장자리에서 안 멈춘다")]
+        public float snipeRecoil = 2f, snipeRecoilTime = 0.3f, snipeSit = 0.4f;
+        [Tooltip("모은 지 이만큼 (초)부터 표적 발밑에 빛점이 보인다 (표적에게 알림)")]
+        public float snipeWarnAfter = 0.6f;
+        public float snipeCooldown = 18f;
+        [Tooltip("팀원이 줄을 막는다")]
+        public bool snipeAlliesBlock = true;
     }
 }

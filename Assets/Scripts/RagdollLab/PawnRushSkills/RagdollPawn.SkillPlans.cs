@@ -181,7 +181,8 @@ namespace ChessFight.RagdollLab
             oldHome = (int)PawnRushSkillIds.OldPiece(id);
             switch (id)
             {
-                case PawnRushSkillIds.TwoSteps: UpdatePawnSkill(s, press, dt); break;
+                case PawnRushSkillIds.TwoSteps: pawnSteer = false; UpdatePawnSkill(s, press, dt); break;
+                case PawnRushSkillIds.SteeredSteps: pawnSteer = true; UpdatePawnSkill(s, press, dt); break;   // the pool's P-기1
                 case PawnRushSkillIds.TurnLeap: UpdateKnightSkill(s, press, dt); break;
                 case PawnRushSkillIds.CrossRope: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.ChainPull: UpdateRookChain(s, press, confirm, cancel, dt); break;
@@ -215,6 +216,8 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.BentLeap: UpdateBentLeap(s, press, dt); break;
                 case PawnRushSkillIds.Fianchetto: UpdateFianchetto(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.KingStep: UpdateKingStep(s, press, dt); break;
+                // The skill pool's plan 1 (RagdollPawn.PoolSkills.cs).
+                case PawnRushSkillIds.LongSnipe: UpdateLongSnipe(s, press, confirm, cancel, dt); break;
             }
         }
 
@@ -241,6 +244,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.BentLeap: return s.leapCooldown;
                 case PawnRushSkillIds.Fianchetto: return s.fianCooldown;
                 case PawnRushSkillIds.KingStep: return s.stepCooldown;
+                case PawnRushSkillIds.LongSnipe: return s.snipeCooldown;
                 default: return 0f;
             }
         }
@@ -266,6 +270,7 @@ namespace ChessFight.RagdollLab
             HillKeys();   // Queen of the Hill's six: what each lets the keys do in its phase
             BookKeys();   // the idea book's bundle A: a touched piece's feet, numb hands, and the same for its five
             KitKeys();    // the kits' basic row: heavy feet, a seated bishop, a stepping king
+            PoolKeys();   // the skill pool's plan 1: the kneeling, drawing bishop (RagdollPawn.PoolSkills.cs)
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -1139,11 +1144,15 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (press && CanStartSkill())
                     {
+                        // The pool's Q-기1: one more check is free within a moment of a dodged one (RagdollPawn.PoolSkills.cs).
+                        checkFollowUp = checkAgainLeft > 0f;
+                        checkAgainLeft = 0f;
+                        checkAgainNext = false;
                         planPhase = PlanPhase.Aim;
                         planTime = 0f;
                         skillGrabLatch = skillGrabRaw;
                         planTarget = FindCheckTarget(s);
-                        SkillDetail = "체크 조준 (적을 보고 좌클릭 · 우클릭/스킬 키 취소)";
+                        SkillDetail = checkFollowUp ? "체크를 잇는다 (적을 보고 좌클릭)" : "체크 조준 (적을 보고 좌클릭 · 우클릭/스킬 키 취소)";
                     }
                     break;
                 case PlanPhase.Aim:
@@ -1153,6 +1162,9 @@ namespace ChessFight.RagdollLab
                     {
                         if (cancel) skillGrabLatch = true;
                         EndPlanSkill();
+                        // (The free one called off: its cooldown runs, so it cannot be held back.)
+                        if (checkFollowUp) StartCooldown(s.checkCooldown);
+                        checkFollowUp = false;
                         Log("체크: 조준 취소");
                         break;
                     }
@@ -1168,7 +1180,8 @@ namespace ChessFight.RagdollLab
                     planTime = 0f;
                     planPoint = planTarget.FeetPoint;   // the square: where it stands now
                     facing = FlatDir(planTarget.bodies[0].position - bodies[0].position);
-                    FeelKick(-facing, s.feelKickShot);   // the hand feel: the check goes out like a shot (RagdollPawn.HandFeel.cs)
+                    // The pool's Q-기1: she thrusts her sceptre and slides that way (RagdollPawn.HandFeel.cs, Kick).
+                    Kick(facing, s.checkLunge, s.checkLungeTime, true);
                     SkillDetail = $"체크! → {planTarget.DisplayName}";
                     Log($"체크! → {planTarget.DisplayName} ({s.checkSeconds:0.#}초 안에 칸 밖으로)");
                     break;
@@ -1201,8 +1214,12 @@ namespace ChessFight.RagdollLab
                     planTime += dt;
                     if (planTime >= s.checkRecovery)
                     {
+                        bool again = checkAgainNext;
+                        checkAgainNext = checkFollowUp = false;
                         EndPlanSkill();
-                        StartCooldown(s.checkCooldown);
+                        // The pool's Q-기1: dodged, the check may be played once more for a moment, no cooldown yet.
+                        if (again) OpenCheckAgain(s);
+                        else StartCooldown(s.checkCooldown);
                     }
                     break;
                 default:
@@ -1220,7 +1237,8 @@ namespace ChessFight.RagdollLab
             if (!onSquare)
             {
                 FeelMiss(planPoint, FlatDir(feet - planPoint));   // the hand feel: the queen's miss
-                Log($"체크: {t.DisplayName}가 칸을 벗어남 (피함)");
+                checkAgainNext = !checkFollowUp;   // the pool's Q-기1: once more (not after the free one)
+                Log($"체크: {t.DisplayName}가 칸을 벗어남 (피함)" + (checkAgainNext ? $" → {s.checkAgainWindow:0.#}초 안에 한 번 더" : ""));
                 return;
             }
             var blocker = CheckBlocker(s, t);
@@ -1228,7 +1246,9 @@ namespace ChessFight.RagdollLab
             Vector3 away = FlatDir(hit.bodies[0].position - bodies[0].position);
             string result = SkillHit(hit, away * s.checkPush + Vector3.up * s.checkLift, true, blocker != null ? "체크 (대신 막음)" : "체크");
             Fx(SkillFxKind.QueenHit, hit, hit.bodies[0].position, away, 1);
-            FeelHit(hit, hit.bodies[0].position, away, FeelHard);   // knocked flying: a hard hit stop
+            // The pool's Q-기1: the blow holds 0.08 s, and the queen bounces a step back with it.
+            FeelHit(hit, hit.bodies[0].position, away, FeelHard, baseStop: s.checkStop);
+            Kick(-away, s.checkBounce, 0.15f, true);
             Log(blocker != null
                 ? $"체크: {blocker.DisplayName}가 몸으로 막음 → {result}"
                 : $"체크 → {t.DisplayName}: 칸에 남아 있음 → {result}");
