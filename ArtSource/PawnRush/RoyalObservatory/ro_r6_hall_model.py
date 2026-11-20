@@ -1448,7 +1448,11 @@ def part_dome(col):
 # it glow, as the lamp globes). The outer wall face under the dome (r 53, Unity y -18 .. 14) closes the hall seen from
 # outside, left open where the entry tunnel runs.
 OUTER = DOME["R"] + 1.6
-MOON = dict(h=DOME["slit"] + 9.0, e=24.0, dist=230.0, r=9.0)
+# The night itself is the scene's skybox while the camera is in the observatory (RoyalObservatorySky, the plan session,
+# 11-20: the 260 m shell's edge showed against the scene's blue sky from the balcony, and in a round the sections lie
+# about 300 m apart) - night_backdrop is no longer exported. The moon stays a model so it is always in the slit
+# wherever a round turns the section: the same direction, 75 m off, its radius cut to keep its size (9 x 75 / 230).
+MOON = dict(h=DOME["slit"] + 9.0, e=24.0, dist=75.0, r=9.0 * 75.0 / 230.0)
 
 
 def dome_outer():
@@ -1632,14 +1636,13 @@ def part_slit(col):
     add(bm, mb)
     ob = k.new_object("RoHall dome outside", bm, col, SLOT_ORDER)
     k.surface_uvs(ob)
-    night = night_backdrop()
-    col.objects.link(night)
+    night = None                         # the night is the scene's skybox now (RoyalObservatorySky)
     # the dome's inside as built (preview only), so the slit is seen in its frame
     inner = k.new_object("Preview dome", dome_chart(), col, SLOT_ORDER)
     shell = dome_shell()
     col.objects.link(shell)
-    print("   slit + outside", k.tris([ob]), "tris, night", k.tris([night]))
-    return [ob, night], [inner, shell], [Vector(DOME["middle"]) + dome_dir(MOON["h"], MOON["e"]) * (MOON["dist"] - 12)]
+    print("   slit + outside", k.tris([ob]), "tris")
+    return [ob], [inner, shell], [Vector(DOME["middle"]) + dome_dir(MOON["h"], MOON["e"]) * (MOON["dist"] - 12)]
 
 
 # ---------------------------------------------------------------- the abyss: the hall's floor opened onto deep space
@@ -1964,7 +1967,7 @@ def assemble(col):
     add(out, mb)
     outside = k.new_object("RoHall dome outside", out, col, SLOT_ORDER)
     k.surface_uvs(outside)
-    col.objects.link(night_backdrop())
+    pass                                 # (the night: the scene's skybox in Unity, RoyalObservatorySky)
     for o in abyss_layers():
         col.objects.link(o)
     roots = k.new_object("RoHall abyss roots", abyss_roots(), col, SLOT_ORDER)
@@ -2302,7 +2305,7 @@ def export_hall(bays_only=False, with_dome=False):
     add(out, mb)
     outside = k.new_object("RoHall dome outside", out, None, SLOT_ORDER)
     k.surface_uvs(outside)
-    _export_objects([outside, night_backdrop()], "RoHallOutside")
+    _export_objects([outside], "RoHallOutside")
 
 
 # ---------------------------------------------------------------- LOD pictures (one part at a time, before and after)
@@ -2893,6 +2896,17 @@ if __name__ == "__main__":
     k.motif_reset()
     if "--part-arcade-statues" in args:
         arcade_statue_stills()
+        sys.exit(0)
+    if "--export-outside" in args:         # the slit's edges, the dome's outside, the outer wall, the moon
+        _out = dome_outer()
+        add(_out, slit_returns())
+        add(_out, outer_wall())
+        _mb = bmesh.new()
+        add(_mb, parts.bead(MOON["r"], PEARL, 32, 20), Matrix.Translation(Vector(DOME["middle"]) + dome_dir(MOON["h"], MOON["e"]) * MOON["dist"]))
+        add(_out, _mb)
+        _o = k.new_object("RoHall dome outside", _out, None, SLOT_ORDER)
+        k.surface_uvs(_o)
+        _export_objects([_o], "RoHallOutside")
         sys.exit(0)
     if "--export-dome" in args:            # the dome alone (star chart, ribs, sky shell)
         sky_texture()
