@@ -189,7 +189,9 @@ namespace ChessFight.Network
         // v60 (R727): the Royal Observatory (Late_3-2_RoyalObservatory) is a round's late obstacle option beside the war
         //      room and the Royal Library - it was a draft the rounds never drew. A v59 PC would draw another section from
         //      the same seed. The observatory sends nothing (its devices run on the shared clock).
-        public const string Protocol = "chessfight.dua0731.network.v60";
+        // v61 (R733): the royal water garden's and the grand stair hall's checkpoint triggers cover the floor each stands on
+        //      (they were 2 m strips a runner could pass beside). A v60 PC would reach other checkpoints on the same run.
+        public const string Protocol = "chessfight.dua0731.network.v61";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

@@ -224,9 +224,12 @@ namespace ChessFight.PawnRush
         // built with the spiral and the dais.
         static void Checkpoints(CourseBuilder b)
         {
-            b.Checkpoint(0, V(0f, 0f, -6f), 0f, 10f);
-            b.Checkpoint(1, V(0f, 8f, 53.5f), 0f, 12f);
-            b.Checkpoint(7, V(0f, 16f, 149.3f), 0f, 10f);
+            // R733: each over its floor's whole width (CourseBuilder.CoverFloor), its spots where they were. CP1's strip
+            // (x -6..6) let a runner off the upper flight's east side (x 6..8) cut across the landing to the spiral's
+            // foot without it, and a fall off the curving stair went back to the porch.
+            CourseBuilder.CoverFloor(b.Checkpoint(0, V(0f, 0f, -6f), 0f, 10f), -6f, 6f, -12f, 0f);
+            CourseBuilder.CoverFloor(b.Checkpoint(1, V(0f, 8f, 53.5f), 0f, 12f), -14f, 14f, 51f, 56f);
+            CourseBuilder.CoverFloor(b.Checkpoint(7, V(0f, 16f, 149.3f), 0f, 10f), -6f, 6f, 146.3f, 152.3f);
         }
 
         // The one route (R303: no wings), given as both teams' route: the grand stair, the landing, the spiral's
