@@ -29,6 +29,9 @@ namespace ChessFight.Game
         // The screen is drawn at least this long before the scene may switch on,
         // since switching on freezes the frame.
         const float MinimumShow = .4f;
+        // R732: the longest the warm-up waits on what the scene draws behind the screen (LoadWarmup) - a guard; the
+        // round's own tour gives up sooner (RoundPrewarm).
+        const float WarmupHoldLimit = 40f;
         // R548: Pawn Rush's course reveal seen to its end already (a player coming back into a running match), and how
         // long before this PC's own start the host's start time may lie before it counts as left from an earlier round.
         const float RevealSkipped = 1e5f;
@@ -449,9 +452,12 @@ namespace ChessFight.Game
                     if (session.Match == 0) { Finish(); return; }
                     if (skipFrame) skipFrame = false;
                     else warmup.Add(Time.unscaledDeltaTime * 1000.0);
-                    percent = LoadProgress.Percent(LoadStage.WarmingUp, warmup.Fraction);
-                    step = "캐릭터를 준비하는 중";
-                    if (warmup.Done)
+                    // R732: and whatever the scene draws behind the screen first (the Pawn Rush round's tour of its
+                    // sections, RoundPrewarm), for WarmupHoldLimit at most.
+                    bool drawing = LoadWarmup.Busy && now - warmFrom < WarmupHoldLimit;
+                    percent = LoadProgress.Percent(LoadStage.WarmingUp, Math.Min(warmup.Fraction, drawing ? LoadWarmup.Fraction : 1.0));
+                    step = drawing ? "코스를 미리 그리는 중" : "캐릭터를 준비하는 중";
+                    if (warmup.Done && !drawing)
                     {
                         phase = Phase.Waiting; readyAt = now; percent = MatchStart.Ready;
                         // R596: where this PC's load went, against the reveal (the scene may switch on from

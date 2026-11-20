@@ -210,6 +210,8 @@ namespace ChessFight.PawnRush
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();
             Built?.Invoke(this);
+            // R732: behind a match's loading screen, every section the round built is drawn once before the start.
+            RoundPrewarm.Begin(this);
         }
 
         // R548: a match's entrance screen revealed this round from the course table (Resources/Loading/PawnRushCourse.txt)
