@@ -686,8 +686,7 @@ namespace ChessFight.RagdollLab
                 if (sfx != null && GUILayout.Button(sfx.sound ? "소리 켜짐" : "소리 꺼짐", sfx.sound ? selected : button)) sfx.sound = !sfx.sound;
                 GUILayout.EndHorizontal();
             }
-            // JY-skill-lab 11-20: the hand feel's devices on and off, and the cooldown its refund needs (the test's flat 2 s
-            // is under the refund's 3 s floor, so nothing comes back there).
+            // JY-skill-lab 11-20: the hand feel's devices on and off, and the test's flat cooldown or the design's own.
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(skills.feel ? "손맛 장치 켜짐" : "손맛 장치 꺼짐", skills.feel ? selected : button)) skills.feel = !skills.feel;
             if (GUILayout.Button(skills.testCooldown > 0f ? $"쿨: 시험용 {skills.testCooldown:0.#}초" : "쿨: 기획 쿨", button))

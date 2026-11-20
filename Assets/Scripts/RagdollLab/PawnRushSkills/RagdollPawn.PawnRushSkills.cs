@@ -434,7 +434,6 @@ namespace ChessFight.RagdollLab
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
             seconds *= StageCooldown;   // the growing system's stage (the skill window)
-            seconds = FeelRefund(seconds);   // the hand feel: a use that hit gives some back (RagdollPawn.HandFeel.cs)
             cooldownTotal = Mathf.Max(0f, seconds);
             skillCooldownLeft = cooldownTotal;
         }

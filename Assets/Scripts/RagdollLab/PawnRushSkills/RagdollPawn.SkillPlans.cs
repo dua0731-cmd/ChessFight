@@ -981,7 +981,7 @@ namespace ChessFight.RagdollLab
             mate.BeginCastleCarry(new Vector3(a.x, aFloor + mate.standHeight, a.z), s, forced, false, c);
             BeginCastleCarry(new Vector3(b.x, bFloor + standHeight, b.z), s, false, true, c);
             MarkRoyalCastle(mate, forced);   // the king and the rook: the real thing (RagdollPawn.KitSkills.cs)
-            // The hand feel: the two hold a moment as they go (an enemy swapped without asking counts as a hit).
+            // The hand feel: the two hold a moment as they go (the values count only for an enemy swapped without asking).
             FeelHit(mate, SkillContact(mate), FlatDir(b - a), FeelWeak, 1, forced);
             planPhase = PlanPhase.Active;
             planTime = 0f;

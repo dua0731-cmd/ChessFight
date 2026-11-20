@@ -4,9 +4,11 @@ using UnityEngine;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// The hand feel's shared devices (JY-skill-lab, 2026-11-20; Docs/Skills/PAWN_RUSH_SKILL_POOL.md 1.3, its numbers 2, 4, 5,
-    /// 6 and 8, the pool's chapter 12 step 1). The user, after playing the kits' basic row: the direction is right, but "스킬을
+    /// The hand feel's shared devices (JY-skill-lab, 2026-11-20; Docs/Skills/PAWN_RUSH_SKILL_POOL.md 1.3, its numbers 2, 4, 6
+    /// and 8, the pool's chapter 12 step 1). The user, after playing the kits' basic row: the direction is right, but "스킬을
     /// 쓰는 손맛이 약해". These sit under the skills instead of being made for each one; the skills' own rules are not changed.
+    /// Number 5, a cooldown given back for a hit, was here and is gone: "맞히면 쿨 감소는 밸런스를 너무 파괴해 빼는게 맞고"
+    /// (the user, the same evening).
     ///
     ///   멈칫 (hit stop)   a hit holds the hitter and the hit piece a moment: a weak CC 0.06 s, a hard one 0.10 s, an ultimate
     ///                     0.15 s; +0.01 s for each point a cheaper piece takes off a dearer one (the king left out), +0.02 s
@@ -16,7 +18,6 @@ namespace ChessFight.RagdollLab
     ///   반동 (recoil)     a shot pushes the shooter back 0.4 m; a pawn that hits with its body bounces back 0.5 m (the knight
     ///                     already bounces off a head); a body skill that went for someone and missed lurches on 1 m. A
     ///                     basic's push stops 0.3 m short of an edge.
-    ///   맞히면 보상        a use that hits one enemy gives 25% of its cooldown back, two or more 50%, never under 3 s.
     ///   소리 자리 셋        the press, the hit (a piece set down on a wooden board, with the hit stop) and the miss (a swish,
     ///                     then a funny sound 0.3 s later): SkillFeel moments, played by PawnRushSkillSfx.
     ///   미리 누르기        a key pressed in the last 0.4 s of its cooldown, or while down, getting up or staggered, goes the
@@ -31,8 +32,7 @@ namespace ChessFight.RagdollLab
         // How hard a hit holds: a weak CC (a shove, a stagger, heavy feet), a hard one (floored), an ultimate.
         const int FeelWeak = 0, FeelHard = 1, FeelUltimate = 2;
 
-        // The hits of the use under way (the cooldown it ends with gives some back), and when this piece last hit.
-        int feelHits;
+        // When this piece last hit (a hit soon after holds half as long).
         float feelLastHitAt = -10f;
         // A key pressed a moment early, per slot: how long it is still kept; and whether this step's press is one of those.
         readonly float[] feelKept = new float[PawnRushLoadout.Slots];
@@ -60,16 +60,14 @@ namespace ChessFight.RagdollLab
         };
 
         /// <summary>This piece's skill hit <paramref name="target"/> (and <paramref name="pieces"/> - 1 more with it): the hit
-        /// stop and the "탁", and the hit counted toward the cooldown the use gives back unless <paramref name="counts"/> is
-        /// false.</summary>
-        void FeelHit(RagdollPawn target, Vector3 at, Vector3 dir, int grade, int pieces = 1, bool counts = true)
+        /// stop and the "탁". The pieces' values count only for a <paramref name="capture"/> (not a teammate held with it, as
+        /// in a castling).</summary>
+        void FeelHit(RagdollPawn target, Vector3 at, Vector3 dir, int grade, int pieces = 1, bool capture = true)
         {
             var s = FeelParams;
             if (s == null) return;
-            if (counts) feelHits += Mathf.Max(1, pieces);
             float stop = grade >= FeelUltimate ? s.feelStopUltimate : grade == FeelHard ? s.feelStopHard : s.feelStopWeak;
-            // (A teammate held with it - the castling - is not a capture: no value in it.)
-            if (counts && target != null && piece != PieceKind.King && target.piece != PieceKind.King)
+            if (capture && target != null && piece != PieceKind.King && target.piece != PieceKind.King)
                 stop += Mathf.Max(0, PieceValue(target.piece) - PieceValue(piece)) * s.feelStopPerValue;
             stop += Mathf.Clamp(pieces - 1, 0, 3) * s.feelStopPerExtra;
             stop = Mathf.Min(stop, s.feelStopMax);
@@ -83,21 +81,6 @@ namespace ChessFight.RagdollLab
         {
             if (FeelParams == null) return;
             Fx(SkillFxKind.SkillFeel, null, at, dir, FeelMissMoment);
-        }
-
-        // ---------------------------------------------------------------- 맞히면 보상
-
-        /// <summary>The cooldown a use ends with (StartCooldown), less what its hits give back. The hits are spent here.</summary>
-        float FeelRefund(float seconds)
-        {
-            int hits = feelHits;
-            feelHits = 0;
-            var s = FeelParams;
-            if (s == null || hits <= 0 || seconds <= 0f) return seconds;
-            float back = hits >= 2 ? s.feelRefundMany : s.feelRefundOne;
-            float cut = Mathf.Max(Mathf.Min(seconds, s.feelCooldownFloor), seconds * (1f - back));
-            if (cut < seconds - 0.01f) Log($"{DisplayName}: {hits}명 맞힘 → 쿨 {seconds:0.#}초 → {cut:0.#}초");
-            return cut;
         }
 
         // ---------------------------------------------------------------- 미리 누르기 and the press
@@ -151,12 +134,10 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>A slot's key started a use (a skill under way, or a cooldown begun at once): the press sound, and the new
-        /// use's hits counted from nothing.</summary>
+        /// <summary>A slot's key started a use (a skill under way, or a cooldown begun at once): the press sound.</summary>
         void FeelUsed(int k)
         {
             if (k >= 0 && k < feelKept.Length) feelKept[k] = 0f;
-            feelHits = 0;
             if (FeelParams == null) return;
             Fx(SkillFxKind.SkillFeel, null, FeetPoint, FlatDir(facing), FeelPressMoment);
         }
@@ -224,7 +205,6 @@ namespace ChessFight.RagdollLab
 
         void ClearFeel()
         {
-            feelHits = 0;
             kickLeft = 0f;
             for (int k = 0; k < feelKept.Length; k++) feelKept[k] = 0f;
         }

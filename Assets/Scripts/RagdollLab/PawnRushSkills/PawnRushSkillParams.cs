@@ -537,7 +537,7 @@ namespace ChessFight.RagdollLab
         [Tooltip("킹과 룩이 자리를 바꾸면 내려앉은 뒤 둘 다 이만큼 (초) 넘어지지 않는다 (기상 보호와 같은 효과)")]
         public float castleRoyalGuard = 2f;
 
-        [Header("손맛 공통 장치 (후보 문서 1.3의 2 · 4 · 5 · 6 · 8번, 11-20)")]
+        [Header("손맛 공통 장치 (후보 문서 1.3의 2 · 4 · 6 · 8번, 11-20. 5번 맞히면 쿨 돌려받기는 뺐다)")]
         [Tooltip("끄면 아래 장치가 모두 꺼진다 (켜고 끄며 비교). 스킬 시험 창의 '손맛 장치' 버튼과 같다")]
         public bool feel = true;
         [Tooltip("멈칫 (초): 약한 CC (밀침 · 휘청 · 발 무거움) · 하드 CC (넘어뜨림) · 궁극기. 맞힌 기물과 맞은 기물의 화면에서만")]
@@ -556,10 +556,6 @@ namespace ChessFight.RagdollLab
         public float feelKickMiss = 1f;
         [Tooltip("반동이 걸리는 시간 (초, 처음이 빠르고 점점 멎는다), 가장자리 몇 m 앞에서 멈추는지")]
         public float feelKickTime = 0.15f, feelKickEdge = 0.3f;
-        [Tooltip("맞히면 보상: 한 번 쓸 때 적 하나를 맞히면 쿨을 이만큼 돌려받는다 (비율), 둘 이상이면")]
-        public float feelRefundOne = 0.25f, feelRefundMany = 0.5f;
-        [Tooltip("돌려받아도 쿨이 이 아래로 안 내려간다 (초). 시험용 쿨 2초에서는 돌려받기가 안 보인다 (스킬 시험 창의 쿨 버튼)")]
-        public float feelCooldownFloor = 3f;
         [Tooltip("미리 누르기: 쿨이 끝나기 이만큼 안에, 또는 휘청이는 중에 누른 키는 쓸 수 있게 되는 첫 순간에 나간다 (초)")]
         public float feelBuffer = 0.4f;
         [Tooltip("미리 누르기: 넘어져 있거나 일어나는 중에 누른 키를 기다려 주는 시간 (초)")]
