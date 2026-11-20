@@ -96,6 +96,7 @@ namespace ChessFight.RagdollLab
             bool broke = first.dashing;
             if (broke) first.dashLeft = 0f;
             first.Kick(push, s.flankPush, s.flankPushTime, false);
+            first.SlowFeet(s.flankSlowSeconds, s.flankSlow);   // the kits' second version, B-초: heavy feet 1.5 s (KitTwo)
             first.LastSkillHit = helped ? "옆구리 사격: 등 뒤에서 맞아 앞으로 밀림" : $"옆구리 사격: {s.flankPush:0.#} m 밀림" + (broke ? " (돌진 끊김)" : "");
             Fx(SkillFxKind.PawnHit, first, first.LassoBelly, push, 0);
             FeelHit(first, first.LassoBelly, push, FeelWeak);

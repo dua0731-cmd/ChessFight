@@ -15,7 +15,7 @@ namespace ChessFight.RagdollLab
     /// Added by the skill test bed and by the course's skills.
     /// </summary>
     [DefaultExecutionOrder(250)]
-    public class PawnRushPlanMarks : MonoBehaviour
+    public partial class PawnRushPlanMarks : MonoBehaviour
     {
         /// <summary>The pawn played at this PC.</summary>
         public Func<RagdollPawn> Viewer;
@@ -52,7 +52,8 @@ namespace ChessFight.RagdollLab
                 DrawBookStates(pawn);
                 DrawKitStates(pawn);
                 // By the skill, not the piece: the loadout (the skill window) may put any skill on any piece.
-                if (pawn.HasSkill(PawnRushSkillIds.EnPassant)) DrawPass(pawn, me);
+                if (pawn.HasSkill(PawnRushSkillIds.EnPassant) || pawn.HasSkill(PawnRushSkillIds.SteeredSteps)) DrawPass(pawn, me);
+                DrawKitTwoStates(pawn);   // the kits' second version: light, heavy (PawnRushPlanMarks.KitTwo.cs)
                 switch (pawn.PlanSkill)
                 {
                     case PawnRushSkillIds.Fork: DrawFork(pawn); break;
@@ -76,7 +77,8 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.Fianchetto: DrawFianchetto(pawn); break;
                     case PawnRushSkillIds.KingStep: DrawKingStep(pawn); break;
                     // The skill pool's plan 1 (RagdollPawn.PoolSkills.cs).
-                    case PawnRushSkillIds.LongSnipe: DrawLongSnipe(pawn); break;
+                    case PawnRushSkillIds.LongSnipe:
+                    case PawnRushSkillIds.SnipeHigh: DrawLongSnipe(pawn); break;
                     // The pool's plan 3, the basic row (RagdollPawn.PoolBasics.cs).
                     case PawnRushSkillIds.FlankShot: DrawFlankShot(pawn); break;
                     case PawnRushSkillIds.CastleOver: DrawCastleOver(pawn); break;
@@ -95,6 +97,10 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.Chariot: DrawChariot(pawn); break;
                     case PawnRushSkillIds.QueenSac: DrawQueenSac(pawn); break;
                     case PawnRushSkillIds.KingMarch: DrawMarch(pawn); break;
+                    // The kits' second version's new ones (PawnRushPlanMarks.KitTwo.cs).
+                    case PawnRushSkillIds.QueenGlide: DrawGlide(pawn); break;
+                    case PawnRushSkillIds.EightLines: DrawEightLines(pawn); break;
+                    case PawnRushSkillIds.WallCharge: DrawWallCharge(pawn); break;
                 }
                 // The smothered mate's chance, for the knight played here: a ring over the crowd it could fall on.
                 if (pawn == me && pawn.PlanSkill != PawnRushSkillIds.Smother && pawn.HasSkill(PawnRushSkillIds.Smother)) DrawSmotherChance(pawn);
@@ -134,9 +140,13 @@ namespace ChessFight.RagdollLab
         {
             var phase = pawn.PlanPhaseNow;
             var s = pawn.PawnRushSkills;
+            // (The kits' second version: the landing point, and the two spots ahead left and right its hind legs kick.)
+            pawn.ForkSpots(pawn.PlanPoint, pawn.PlanDir, out var spotL, out var spotR);
             if (phase == PlanPhase.Aim)
             {
-                SkillMarks.Circle(Next(), pawn.PlanPoint, s.forkKickRadius, Fade(SkillMarks.Target, 0.75f), 0.06f, 32);
+                SkillMarks.Circle(Next(), pawn.PlanPoint, 0.4f, Fade(SkillMarks.Target, 0.75f), 0.06f, 24);
+                SkillMarks.Circle(Next(), spotL, s.forkSpotRadius, Fade(SkillMarks.Target, 0.6f), 0.05f, 28);
+                SkillMarks.Circle(Next(), spotR, s.forkSpotRadius, Fade(SkillMarks.Target, 0.6f), 0.05f, 28);
                 SkillMarks.Segment(Next(), Chest(pawn), pawn.PlanPoint + Vector3.up * 0.05f, Fade(SkillMarks.Target, 0.4f), 0.03f, false);
                 pawn.ForkHelpTargets(forkHelp);
                 foreach (var t in forkHelp)
@@ -144,8 +154,10 @@ namespace ChessFight.RagdollLab
             }
             else if (phase == PlanPhase.Active)
             {
-                SkillMarks.Circle(Next(), pawn.PlanPoint, s.forkKickRadius, Fade(SkillMarks.Target, 1f), 0.08f, 32);
-                SkillMarks.Circle(Next(), pawn.PlanPoint, 0.35f, Fade(White, 0.8f), 0.05f, 20);
+                // Coming down: the landing point is shown to everyone (the counter is to scatter).
+                SkillMarks.Circle(Next(), pawn.PlanPoint, 0.4f, Fade(White, 0.8f), 0.05f, 20);
+                SkillMarks.Circle(Next(), spotL, s.forkSpotRadius, Fade(SkillMarks.Target, 1f), 0.08f, 28);
+                SkillMarks.Circle(Next(), spotR, s.forkSpotRadius, Fade(SkillMarks.Target, 1f), 0.08f, 28);
             }
         }
 
@@ -697,6 +709,7 @@ namespace ChessFight.RagdollLab
 
         void OnGUI()
         {
+            DrawPops();   // the kits' second version: "+5", "체크 탈출" over heads, for every PC (PawnRushPlanMarks.KitTwo.cs)
             var me = Viewer != null ? Viewer() : null;
             if (me == null || me.PawnRushSkills == null) return;
             string line = null, sub = null;
@@ -790,7 +803,8 @@ namespace ChessFight.RagdollLab
             }
             else if (me.Slowed && me.PawnRushSkills != null)
             {
-                line = "피앙케토!  발이 무거워요";
+                // (A fianchetto's, or since the kits' second version a flank shot's.)
+                line = "발이 무거워요!";
                 sub = $"전력질주가 안 돼요 · {me.SlowLeft:0.0}초";
                 share = Mathf.Clamp01(me.SlowLeft / Mathf.Max(0.1f, me.PawnRushSkills.fianSlowSeconds));
             }

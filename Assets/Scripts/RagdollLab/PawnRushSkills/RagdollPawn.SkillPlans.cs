@@ -54,9 +54,9 @@ namespace ChessFight.RagdollLab
         readonly float[] slotCd = new float[PawnRushLoadout.Slots], slotCdTotal = new float[PawnRushLoadout.Slots];
         readonly bool[] slotPress = new bool[PawnRushLoadout.Slots];
         int cdSlot;
-        // The slot and the skill under way, and the two ability keys taken this step for the second and third slots.
+        // The slot and the skill under way, and the ability keys taken this step for the slots after the first (E, R, Q).
         int activeSlot = -1, activeSkill;
-        bool slotKey1, slotKey2;
+        readonly bool[] slotKeys = new bool[PawnRushLoadout.Slots];
         // The piece whose old skill is being run or was last looked at (-1: this pawn's own piece).
         int oldHome = -1;
 
@@ -109,7 +109,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The skills of this piece's slots this step (the host's): the one under way gets its key and the clicks
         /// and the others wait; with none under way each sees its own key and the first to start takes the step.</summary>
-        void RunSlots(PawnRushSkillParams s, bool press, bool key1, bool key2, bool confirm, bool cancel, float dt)
+        void RunSlots(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
         {
             if (piece == PieceKind.King && (s.loadout == null || !s.loadout.KingSlots))
             {
@@ -122,9 +122,8 @@ namespace ChessFight.RagdollLab
                 return;
             }
             var lo = s.loadout;
+            // (The other slots' keys are in slotPress already: UpdateSkills put them there.)
             slotPress[0] = press;
-            slotPress[1] = key1;
-            slotPress[2] = key2;
             FeelSendKept(s, lo, dt);   // the hand feel: a key pressed a moment early goes now (RagdollPawn.HandFeel.cs)
 
             if (planPhase != PlanPhase.None && (State == PawnState.Ragdoll || Floating))
@@ -183,7 +182,11 @@ namespace ChessFight.RagdollLab
             switch (id)
             {
                 case PawnRushSkillIds.TwoSteps: pawnSteer = false; UpdatePawnSkill(s, press, dt); break;
-                case PawnRushSkillIds.SteeredSteps: pawnSteer = true; UpdatePawnSkill(s, press, dt); break;   // the pool's P-기1
+                case PawnRushSkillIds.SteeredSteps:
+                    // The pool's P-기1, and the kits' second version's en passant on the same key (RagdollPawn.KitTwo.cs).
+                    pawnSteer = true;
+                    if (!StartStepsPassant(s, press, dt)) UpdatePawnSkill(s, press, dt);
+                    break;
                 case PawnRushSkillIds.TurnLeap: UpdateKnightSkill(s, press, dt); break;
                 case PawnRushSkillIds.CrossRope: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.ChainPull: chainPool = false; UpdateRookChain(s, press, confirm, cancel, dt); break;
@@ -245,6 +248,13 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Chariot: UpdateChariot(s, press, dt); break;
                 case PawnRushSkillIds.QueenSac: UpdateQueenSac(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.KingMarch: UpdateKingMarch(s, press, dt); break;
+                // The kits' second version (RagdollPawn.KitTwo.cs): the high snipe is the pool's shot; the pawn's steps
+                // are old code, but their en passant lunge is a new skill's phase.
+                case PawnRushSkillIds.SnipeHigh: UpdateLongSnipe(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.SteeredSteps: UpdateStepsPassant(s, dt); break;
+                case PawnRushSkillIds.QueenGlide: UpdateQueenGlide(s, press, dt); break;
+                case PawnRushSkillIds.EightLines: UpdateEightLines(s, press, dt); break;
+                case PawnRushSkillIds.WallCharge: UpdateWallCharge(s, press, confirm, cancel, dt); break;
             }
         }
 
@@ -280,12 +290,18 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.BackRank: return s.rankCooldown;
                 case PawnRushSkillIds.FileCharge: return s.fileCooldown;
                 case PawnRushSkillIds.KingRun: return s.runCooldown;
+                case PawnRushSkillIds.SnipeHigh: return s.snipeHighCooldown;
+                case PawnRushSkillIds.SteeredSteps: return s.pawnCooldown;
+                case PawnRushSkillIds.QueenGlide: return s.glideCooldown;
+                case PawnRushSkillIds.EightLines: return s.eightCooldown;
+                case PawnRushSkillIds.WallCharge: return s.wallCooldown;
                 default: return PawnRushSkillIds.Ultimate(id) ? s.ultGauge : 0f;
             }
         }
 
-        /// <summary>Before the run: the second and third slots' keys are the two ability keys (E, Q), theirs when a skill
-        /// sits there (the pawn's hook and the like do not get them then); a piece in a castling's flight has no keys.</summary>
+        /// <summary>Before the run: the other slots' keys are the ability keys (E the second, R the third, Q the
+        /// ultimate's), theirs when a skill sits there (the pawn's hook and the like do not get them then); a piece in a
+        /// castling's flight has no keys.</summary>
         void PlanKeys()
         {
             var lo = Loadout;
@@ -293,19 +309,22 @@ namespace ChessFight.RagdollLab
             {
                 if (input.ability && lo.Skill(piece, 1) != 0)
                 {
-                    slotKey1 = true;
+                    slotKeys[1] = true;
                     input.ability = false;
                 }
-                if (input.ability2 && lo.Skill(piece, 2) != 0)
+                if (input.ability3 && lo.Skill(piece, 2) != 0) slotKeys[2] = true;
+                if (input.ability2 && lo.Skill(piece, PawnRushLoadout.UltSlot) != 0)
                 {
-                    slotKey2 = true;
+                    slotKeys[PawnRushLoadout.UltSlot] = true;
                     input.ability2 = false;
                 }
             }
+            input.ability3 = false;
             HillKeys();   // Queen of the Hill's six: what each lets the keys do in its phase
             BookKeys();   // the idea book's bundle A: a touched piece's feet, numb hands, and the same for its five
             KitKeys();    // the kits' basic row: heavy feet, a seated bishop, a stepping king
             PoolKeys();   // the skill pool's plan 1: the kneeling, drawing bishop (RagdollPawn.PoolSkills.cs)
+            KitTwoKeys(); // the kits' second version: a queen planting her staff, a rook charging (RagdollPawn.KitTwo.cs)
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -379,9 +398,11 @@ namespace ChessFight.RagdollLab
         /// <summary>Watches every enemy go by: the moment one stops coming nearer and starts going away (the closest point of
         /// their passing) within passRange, the two passing each other at passSpeed or more and the enemy the faster of the
         /// two, it can be tripped for passWindow seconds. Speeds are taken from the places seen a step ago, so a client can
-        /// run it on what it is shown (its own pawn's ring) as the host runs it on the bodies.</summary>
-        void TrackPasses(PawnRushSkillParams s, float dt)
+        /// run it on what it is shown (its own pawn's ring) as the host runs it on the bodies. <paramref name="dashOnly"/>:
+        /// the kits' second version's, on the pawn's two steps - only an enemy on a skill's dash, closer, for less long.</summary>
+        void TrackPasses(PawnRushSkillParams s, float dt, bool dashOnly = false)
         {
+            float range = dashOnly ? s.stepPassRange : s.passRange, window = dashOnly ? s.stepPassWindow : s.passWindow;
             if (dt <= 1e-5f) return;
             Vector3 me = bodies[0].position;
             Vector3 myVel = passSelfSeen ? Flat(me - passSelfPos) / dt : Vector3.zero;
@@ -411,11 +432,12 @@ namespace ChessFight.RagdollLab
                 bool passed = seen.closing < 0f && closing >= 0f;
                 passSeen[other] = new PassTrack { pos = op, closing = closing };
                 if (!passed || other.State != PawnState.Active || other.SkillUntargetable) continue;
-                if (r.magnitude > s.passRange || Mathf.Abs(op.y - me.y) > 1.2f) continue;
+                if (r.magnitude > range || Mathf.Abs(op.y - me.y) > 1.2f) continue;
+                if (dashOnly && !other.dashing && !other.TestDashing) continue;
                 // (Over 20 m/s is no run: a respawn, a teleport of the test bed.)
                 if (v.magnitude < s.passSpeed || ov.magnitude > 20f || ov.magnitude < myVel.magnitude + 0.2f) continue;
                 passTarget = other;
-                passLeft = s.passWindow;
+                passLeft = window;
             }
         }
 
@@ -485,12 +507,12 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The trip: the piece goes down the way it was running, at passTripSpeed at least (the faster it ran the
         /// further it slides).</summary>
-        void TripEnPassant(PawnRushSkillParams s, RagdollPawn t)
+        void TripEnPassant(PawnRushSkillParams s, RagdollPawn t, float hold = 0f)
         {
             Vector3 tv = Flat(t.bodies[0].linearVelocity);
             Vector3 way = tv.sqrMagnitude > 0.25f ? tv.normalized : skillDir;
             float extra = Mathf.Max(1f, s.passTripSpeed - tv.magnitude);
-            string result = SkillHit(t, way * extra + Vector3.up * s.passTripLift, true, "앙파상");
+            string result = SkillHit(t, way * extra + Vector3.up * s.passTripLift, true, "앙파상", false, hold);
             Fx(SkillFxKind.PawnHit, t, SkillContact(t), skillDir, 1);
             Log($"앙파상 → {t.DisplayName}: 발 걸기 (달리던 속도 {tv.magnitude:0.0} m/s) → {result}");
         }
@@ -1105,8 +1127,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Something of the slots' beyond the first slot's cooldown is worth sending: a new skill under way, a pin on
         /// this piece, another slot's cooldown.</summary>
-        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || BookNetBusy
-                            || KitNetBusy;
+        bool SlotNetBusy => planPhase != PlanPhase.None || pinLeft > 0f || wardLeft > 0f || slotCd[1] > 0f || slotCd[2] > 0f || slotCd[3] > 0f
+                            || BookNetBusy || KitNetBusy;
 
         /// <summary>Host: the slots' part of this piece's skill state - the skill under way and each slot's cooldown.</summary>
         void CaptureSlotNet(ref SkillWireState s)
@@ -1116,6 +1138,8 @@ namespace ChessFight.RagdollLab
             s.CooldownTotal = Mathf.Max(0f, slotCdTotal[0]);
             s.Cooldown2 = Mathf.Max(0f, slotCd[1]);
             s.Cooldown3 = Mathf.Max(0f, slotCd[2]);
+            s.Cooldown4 = Mathf.Max(0f, slotCd[3]);
+            CaptureGaugeNet(ref s);   // the kits' second version: the ultimate gauge (RagdollPawn.KitTwo.cs)
         }
 
         /// <summary>Host: a new skill's part of the state. D its phase, A its time, P its point, the direction its way,
@@ -1155,6 +1179,8 @@ namespace ChessFight.RagdollLab
             oldHome = PawnRushSkillIds.Old(s.Skill) ? (int)PawnRushSkillIds.OldPiece(s.Skill) : -1;
             SeeSlotCooldown(1, s.Cooldown2);
             SeeSlotCooldown(2, s.Cooldown3);
+            SeeSlotCooldown(3, s.Cooldown4);
+            ApplyGaugeNet(in s);
         }
 
         void SeeSlotCooldown(int slot, float left)

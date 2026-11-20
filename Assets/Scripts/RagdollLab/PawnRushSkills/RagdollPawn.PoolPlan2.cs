@@ -175,6 +175,8 @@ namespace ChessFight.RagdollLab
                     break;
                 case PlanPhase.Active:
                     planTime += dt;
+                    // The kits' second version: an enemy rook's wall ahead breaks under the charge (PawnRushKitWall).
+                    PawnRushKitWall.BreakAhead(this, bodies[(int)BodyId.Chest].position, FlatDir(skillDir), dashBase * dt + 0.6f);
                     if (WallAhead(dashBase * dt + 0.25f, out _))
                     {
                         // Into a wall: the rook staggers.

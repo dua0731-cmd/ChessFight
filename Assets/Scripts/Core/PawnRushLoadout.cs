@@ -45,6 +45,14 @@ namespace ChessFight.Network
         // (N-궁1), the bishop's long diagonal (B-궁1), the rook's chariot (R-궁6), the queen's sacrifice (Q-궁1), the king's
         // march (K-궁1).
         public const int Promote = 93, Smother = 94, LongDiagonal = 95, Chariot = 96, QueenSac = 97, KingMarch = 98;
+        // The kits' second version (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6, "기물별 한 벌 2판"), the ones no plan had made:
+        // the queen's glide (Q-초), her eight lines (Q-상), the rook's wall charge (R-상). The others are the skills above,
+        // changed to that version's (RagdollPawn.KitTwo.cs). And the bishop's long diagonal snipe as its high skill (B-상: the
+        // same shot as 82 on a high skill's cooldown; 82 stays the pool's mid one).
+        public const int QueenGlide = 99, EightLines = 100, WallCharge = 101, SnipeHigh = 102;
+
+        /// <summary>The long diagonal snipe, the pool's mid one or the kits' second version's high one.</summary>
+        public static bool Snipe(int id) => id == LongSnipe || id == SnipeHigh;
 
         /// <summary>One of the pool's ultimates: its cooldown is a gauge that starts empty.</summary>
         public static bool Ultimate(int id) => id >= Promote && id <= KingMarch;
@@ -82,18 +90,22 @@ namespace ChessFight.Network
     [Serializable]
     public sealed class PawnRushLoadout
     {
-        public const int Rows = 6, Slots = 3;
+        public const int Rows = 6, Slots = 4;
         public const int One = 1, Grow = 2, Many = 3;
+        /// <summary>The slots' keys (the kits' second version, Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6: "키는 첫째 칸 F, 둘째 칸 E,
+        /// 퀸의 셋째 칸 R, 궁극기 Q"): 0 the skill key (F), 1 E, 2 R (only the queen has a third), 3 Q, the ultimate's.
+        /// (Three slots, F, E and Q, until 2026-11-20: a text from then has its Q slot read into this one.)</summary>
+        public const int UltSlot = 3;
 
         /// <summary>The pieces that have slots, in the window's order. The king's row is the last (2026-11-20: a team has
         /// one of each piece); while it is empty the king plays his call as he always did (<see cref="KingSlots"/>).</summary>
         public static readonly PieceKind[] RowPieces = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
 
-        // A change's first number: 0..17 a slot (row * Slots + slot, its value the skill), then these.
-        public const int OpStage = Rows * Slots;          // 18..23: a row's stage (its value 1..3)
-        public const int OpSystem = OpStage + Rows;       // 24: the system (1..3)
-        public const int OpPreset = OpSystem + 1;         // 25: one of the loadouts that come with the game (Preset)
-        public const int OpHostOnly = OpPreset + 1;       // 26: only the manager changes it (1) or everyone (0)
+        // A change's first number: 0..23 a slot (row * Slots + slot, its value the skill), then these.
+        public const int OpStage = Rows * Slots;          // 24..29: a row's stage (its value 1..3)
+        public const int OpSystem = OpStage + Rows;       // 30: the system (1..3)
+        public const int OpPreset = OpSystem + 1;         // 31: one of the loadouts that come with the game (Preset)
+        public const int OpHostOnly = OpPreset + 1;       // 32: only the manager changes it (1) or everyone (0)
 
         public int system = One;
         public int[] slots = new int[Rows * Slots];
@@ -108,7 +120,7 @@ namespace ChessFight.Network
             return -1;
         }
 
-        /// <summary>How many slots a piece has under this system: three with several skills a piece, one otherwise.</summary>
+        /// <summary>How many slots a piece has under this system: four with several skills a piece, one otherwise.</summary>
         public int SlotCount => system == Many ? Slots : 1;
 
         void Mend()
@@ -255,7 +267,7 @@ namespace ChessFight.Network
 
         public bool Same(PawnRushLoadout other) => other != null && Encode() == other.Encode();
 
-        /// <summary>As one line of text: the system, the eighteen slots, the six stages, and whether only the manager
+        /// <summary>As one line of text: the system, the twenty-four slots, the six stages, and whether only the manager
         /// changes it.</summary>
         public string Encode()
         {
@@ -273,14 +285,20 @@ namespace ChessFight.Network
             if ((parts.Length != 3 && parts.Length != 4) || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
             var slotTexts = parts[1].Split(',');
             var stageTexts = parts[2].Split(',');
-            // (Five rows: a text from before the king had a row. His row stays empty.)
-            bool old = slotTexts.Length == (Rows - 1) * Slots && stageTexts.Length == Rows - 1;
-            if (!old && (slotTexts.Length != Rows * Slots || stageTexts.Length != Rows)) return result;
+            // Older texts: three slots a row (F, E, Q: before the queen's third key, R), and before that five rows (before
+            // the king had one; his row stays empty). A three-slot row's Q slot is the ultimate's now, so a skill keeps its
+            // key; R stays empty.
+            int perRow = slotTexts.Length == Rows * Slots && stageTexts.Length == Rows ? Slots
+                : (slotTexts.Length == Rows * 3 && stageTexts.Length == Rows) || (slotTexts.Length == (Rows - 1) * 3 && stageTexts.Length == Rows - 1) ? 3
+                : 0;
+            if (perRow == 0) return result;
             var read = new PawnRushLoadout { system = system, hostOnly = parts.Length == 4 && parts[3] == "1" };
             for (int i = 0; i < slotTexts.Length; i++)
             {
                 if (!int.TryParse(slotTexts[i], out int id) || id < 0 || id > 255) return result;
-                read.slots[i] = id;
+                int slot = i % perRow;
+                if (perRow == 3 && slot == 2) slot = UltSlot;
+                read.slots[i / perRow * Slots + slot] = id;
             }
             for (int i = 0; i < stageTexts.Length; i++)
             {
@@ -291,18 +309,35 @@ namespace ChessFight.Network
         }
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 8;
+        public const int Presets = 9;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
         /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece), 6 the pool's plan 3 (basic,
-        /// mid, ultimate: its basic row in the first slots, its mid row in the second), 7 the pool's plan 2 (the first skill
-        /// in the first slots, what each grows into in the second: the growing system plays it from stage 2). The king's row
-        /// is empty (his call) in all but 4 to 7.</summary>
+        /// mid, ultimate: its basic row in the first slots, its mid row in the second, the ultimates in Q's), 7 the pool's
+        /// plan 2 (the first skill in the first slots, what each grows into in the second: the growing system plays it from
+        /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each).
+        /// The king's row is empty (his call) in all but 4 to 8.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 8)
+            {
+                // KITS 6.0: the pawn, the knight and the king a basic and a mid, the bishop a basic and a high one, the rook a
+                // mid and a high one, the queen all three (R her third key); the ultimate on Q.
+                int[] f = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.QueenGlide, PawnRushSkillIds.KingStep };
+                int[] e = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.SnipeHigh, PawnRushSkillIds.WallCharge, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon };
+                int[] q = { PawnRushSkillIds.Promote, PawnRushSkillIds.Smother, PawnRushSkillIds.LongDiagonal, PawnRushSkillIds.Chariot, PawnRushSkillIds.QueenSac, PawnRushSkillIds.KingMarch };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                    p.slots[row * Slots + UltSlot] = q[row];
+                }
+                p.slots[Row(PieceKind.Queen) * Slots + 2] = PawnRushSkillIds.EightLines;
+                return p;
+            }
             if (which == 6 || which == 7)
             {
                 int[] first2 = which == 6
@@ -318,7 +353,7 @@ namespace ChessFight.Network
                 {
                     p.slots[row * Slots] = first2[row];
                     p.slots[row * Slots + 1] = second[row];
-                    p.slots[row * Slots + 2] = third[row];
+                    p.slots[row * Slots + UltSlot] = third[row];
                 }
                 return p;
             }

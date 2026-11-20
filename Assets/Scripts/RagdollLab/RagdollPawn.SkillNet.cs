@@ -306,6 +306,8 @@ namespace ChessFight.RagdollLab
             // below are for an old skill in the first slot, the skill key's.
             float now = Time.unscaledTime;
             if (HasSkill(PawnRushSkillIds.EnPassant) && now > passViewAt) TrackPasses(PawnRushSkills, Mathf.Min(0.1f, now - passViewAt));
+            // (The kits' second version: the pawn's steps trip one that dashes past, JY-skill-lab.)
+            else if (HasSkill(PawnRushSkillIds.SteeredSteps) && now > passViewAt) TrackPasses(PawnRushSkills, Mathf.Min(0.1f, now - passViewAt), true);
             passViewAt = now;
             int first = SlotSkill(0);
             if (!PawnRushSkillIds.Old(first)) return;

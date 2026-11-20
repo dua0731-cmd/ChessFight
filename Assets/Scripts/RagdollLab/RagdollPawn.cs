@@ -27,6 +27,9 @@ namespace ChessFight.RagdollLab
         public bool sprint;
         /// <summary>Pressed: the piece's main ability (E) / its second one (Q, queen and king).</summary>
         public bool ability, ability2;
+        /// <summary>Pressed: the third ability key (R, LabGame.Ability3Key: the Pawn Rush skill slots' third, the queen's;
+        /// JY-skill-lab 2026-11-20). Offline only for now: it does not travel over a network.</summary>
+        public bool ability3;
         /// <summary>Held, not an edge: a bell takes the press, en passant needs a 0.4 s hold.</summary>
         public bool interact;
         /// <summary>World-space unit vector the player aims along (the camera's forward); zero for none.</summary>
@@ -613,6 +616,7 @@ namespace ChessFight.RagdollLab
             input.shove |= next.shove;
             input.ability |= next.ability;
             input.ability2 |= next.ability2;
+            input.ability3 |= next.ability3;
             if (next.interact && !input.interact) interactPressed = true;
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
@@ -806,6 +810,7 @@ namespace ChessFight.RagdollLab
             input.shove = false;
             input.ability = false;
             input.ability2 = false;
+            input.ability3 = false;
             interactPressed = false;
         }
 
@@ -1462,6 +1467,7 @@ namespace ChessFight.RagdollLab
             if (fromGround && Grounded && groundCollider != null &&
                 groundCollider.GetComponentInParent<IJumpSpringSurface>() is IJumpSpringSurface spring)
                 up += Mathf.Clamp(spring.TakeJumpBonus(Hips.position), 0f, 2f);
+            up *= SkillJumpScale;   // JY-skill-lab: a rook's chain wound round it jumps lower (RagdollPawn.KitTwo.cs)
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {
@@ -3470,7 +3476,7 @@ namespace ChessFight.RagdollLab
             legs[0].ready = legs[1].ready = false;
             swingingLeg = -1;
             strideDrop = landDip = 0f;
-            input.jump = input.shove = input.ability = input.ability2 = false;
+            input.jump = input.shove = input.ability = input.ability2 = input.ability3 = false;
             interactPressed = false;
         }
 

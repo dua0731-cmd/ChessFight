@@ -46,6 +46,11 @@ namespace ChessFight.Network
         // of the piece's second and third slots (Cooldown is the first's), s, 0..25.5.
         public byte Skill;
         public float Cooldown2, Cooldown3;
+        // JY-skill-lab, the kits' second version: the fourth slot's cooldown (Q, s, 0..25.5), what its skills leave on a
+        // piece (Flags3: light, heavy), and the piece's ultimate gauge (0..1, a byte).
+        public float Cooldown4;
+        public byte Flags3;
+        public float Gauge;
     }
 
     /// <summary>A skill's moment (a hit, a blast, a landing) for the effects on every screen
@@ -126,7 +131,7 @@ namespace ChessFight.Network
         // Points (R541): WirePoint, 8 bytes - x and z over +-8388 m, y over +-320 m. They were 16 bits over +-320 m (+-80 m
         // until R125), short of the Pawn Rush section round's z 580 m, as the ragdoll snapshot (PITFALLS 38).
         const int Point = WirePoint.Bytes;
-        public const int StateBytes = 1 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + Point + Point + 1 + 1 + 1 + 1 + 1 + 1 + 3;   // 36 (JY-skill-lab: + the skill, two more cooldowns)
+        public const int StateBytes = 1 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + Point + Point + 1 + 1 + 1 + 1 + 1 + 1 + 3 + 3;   // 39 (JY-skill-lab: + the skill, two more cooldowns; + a fourth, Flags3, the gauge)
         public const int WireBytes = 2 + 1 + Point + 1 + 2 + 1 + 1 + 1 + 1 + 1 + 1;   // 20
         public const int BarricadeBytes = 1 + 1 + 1;
         public const int EventBytes = 2 + 2 + 1 + 1 + 1 + 1 + Point + 3 + Point + 1 + 2 + 2;   // 32
@@ -209,6 +214,9 @@ namespace ChessFight.Network
                 w.Write(s.Skill);
                 w.Write(Tenth(s.Cooldown2));
                 w.Write(Tenth(s.Cooldown3));
+                w.Write(Tenth(s.Cooldown4));
+                w.Write(s.Flags3);
+                w.Write(Unit(s.Gauge));
             }
             for (int i = 0; i < wires; i++)
             {
@@ -286,6 +294,9 @@ namespace ChessFight.Network
                 s.Skill = r.ReadByte();
                 s.Cooldown2 = r.ReadByte() / 10f;
                 s.Cooldown3 = r.ReadByte() / 10f;
+                s.Cooldown4 = r.ReadByte() / 10f;
+                s.Flags3 = r.ReadByte();
+                s.Gauge = r.ReadByte() / 255f;
                 if (s.Pawn == None || s.Stage > 4) return false;
                 p.States.Add(s);
             }

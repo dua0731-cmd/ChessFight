@@ -56,7 +56,8 @@ namespace ChessFight.RagdollLab
         public RagdollPawn LassoedBy => lassoBy;
         /// <summary>The mouse wheel works the rope now, not the camera: from the aim until the rope is back (the camera
         /// zoomed whenever the rope was not held, and the view ended up inside the bishop's back).</summary>
-        public bool WheelOnSkill => skillPiece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope && skillStage != SkillStage.None;
+        public bool WheelOnSkill => (skillPiece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope && skillStage != SkillStage.None)
+                                    || (chainPool && skillPiece == PieceKind.Rook && skillStage == SkillStage.Active);   // the rook's chain, reeling (KitTwo)
 
         /// <summary>Between the bishop's hands, where the two ropes leave from.</summary>
         public Vector3 LassoHands => (bodies[(int)BodyId.HandL].position + bodies[(int)BodyId.HandR].position) * 0.5f;

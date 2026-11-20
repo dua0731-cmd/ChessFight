@@ -54,8 +54,8 @@ namespace ChessFight.RagdollLab
         public bool LeapBlunder => PlanSkill == PawnRushSkillIds.BentLeap && planPhase == PlanPhase.Active && (planNote & LeapBlunderBit) != 0;
 
         /// <summary>The run's top speed under these skills (RagdollPawn.TopSpeed): heavy feet.</summary>
-        float SkillMoveScale => (slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.fianSlow, 0.2f, 1f) : 1f)
-                                * MarchScale;   // the pool's king's march (RagdollPawn.PoolUltimates.cs)
+        float SkillMoveScale => (slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(slowScaleNow > 0f ? slowScaleNow : PawnRushSkills.fianSlow, 0.2f, 1f) : 1f)
+                                * MarchScale;   // the pool's king's march (RagdollPawn.PoolUltimates.cs); a flank shot's own slow (KitTwo)
 
         /// <summary>How far the seated bishop's line reaches now: fianNear at the key, fianFar once it has aimed for
         /// fianCharge seconds (any PC: the time comes with the host's skill state).</summary>
@@ -133,9 +133,11 @@ namespace ChessFight.RagdollLab
                 Log($"{DisplayName}: 왕의 한 걸음에 이어 점프 · 다이빙 → 더 멀리");
             }
             downFor = State == PawnState.Ragdoll && !Diving ? downFor + dt : 0f;
+            UpdateKitTwoStates(s, dt);   // the kits' second version: light, heavy (RagdollPawn.KitTwo.cs)
             if (slowLeft <= 0f) return;
             // (In the water, or just back from a respawn: nothing of it is left.)
             slowLeft = Floating || skillGuardLeft > 0f ? 0f : slowLeft - dt;
+            if (slowLeft <= 0f) slowScaleNow = 0f;
         }
 
         /// <summary>What these skills leave running on the piece that casts them, when its skill ends.</summary>
@@ -143,6 +145,7 @@ namespace ChessFight.RagdollLab
         {
             leapAir = leapBounceWait = 0f;
             leapTurned = false;
+            ClearKitTwoSkill();   // the kits' second version: a wall half raised stands what it is (RagdollPawn.KitTwo.cs)
         }
 
         // ---------------------------------------------------------------- ㄱ자 도약 (the knight's bent leap)
@@ -310,6 +313,8 @@ namespace ChessFight.RagdollLab
                 skillHitSet.Add(other);
                 bool swayed = other.Stagger(s.leapStompStagger);
                 other.LastSkillHit = swayed ? $"ㄱ자 도약: 머리를 밟힘 → 휘청 {s.leapStompStagger:0.#}초" : "ㄱ자 도약: 머리를 밟힘 (휘청 안 걸림)";
+                // The kits' second version (가벼운 발굽): light for a while - pushed and thrown twice as far (KitTwo).
+                MakeLight(other, s);
                 Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
                 // The hand feel's hit stop, the pool's N-기1 length (a stagger otherwise holds 0.06 s).
                 FeelHit(other, new Vector3(head.x, top, head.z), Flat(facing), FeelWeak, baseStop: s.leapStompStop);
@@ -523,6 +528,7 @@ namespace ChessFight.RagdollLab
                     planPhase = PlanPhase.Windup;
                     planTime = 0f;
                     planPoint = FeetPoint + skillDir * s.stepDistance;
+                    stepFromWarning = InWarning();   // the kits' second version: walking out of one is "체크 탈출" (KitTwo)
                     SkillDetail = held ? "뿌리치고 한 걸음" : "왕의 한 걸음";
                     if (held) Log($"{DisplayName}: 왕의 한 걸음 — 잡은 손을 뿌리침");
                     break;
@@ -565,6 +571,12 @@ namespace ChessFight.RagdollLab
                         stepEndAt = Time.time;
                         stepEndDir = skillDir;
                         FeelHit(null, FeetPoint, skillDir, FeelWeak, 1, false, s.stepStompStop);
+                        if (stepFromWarning && !InWarning())
+                        {
+                            PopOver(this, PopCheckEscape);
+                            Log($"{DisplayName}: 왕의 한 걸음 — 체크 탈출!");
+                        }
+                        stepFromWarning = false;
                     }
                     break;
                 case PlanPhase.Recovery:
@@ -602,9 +614,19 @@ namespace ChessFight.RagdollLab
                 if (!ColliderOwner.TryGetValue(skillOverlap[i], out var other) || other == null || other == this || skillHitSet.Contains(other)) continue;
                 if (!IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
                 skillHitSet.Add(other);
+                Vector3 contact = SkillContact(other);
+                // The kits' second version (한 칸 잡기): a piece with a teammate of its at its side is defended - the king
+                // cannot take it, and stops where he is (RagdollPawn.KitTwo.cs).
+                if (Defended(other, s))
+                {
+                    other.LastSkillHit = "왕의 한 걸음: 받쳐진 말이라 안 밀림";
+                    PopOver(other, PopDefended);
+                    FeelHit(other, contact, dir, FeelWeak, 1, false);
+                    Log($"왕의 한 걸음 → {other.DisplayName}: 받쳐진 말 (곁에 그 팀원) → 못 밀고 섬");
+                    return true;
+                }
                 other.Kick(dir, s.stepShove, 0.3f, false);
                 other.LastSkillHit = $"왕의 한 걸음: {s.stepShove:0.#} m 밀림";
-                Vector3 contact = SkillContact(other);
                 Fx(SkillFxKind.PawnHit, other, contact, dir, 0);
                 FeelHit(other, contact, dir, FeelWeak);
                 Log($"왕의 한 걸음 → {other.DisplayName}: 닿아서 {s.stepShove:0.#} m 밀어냄, 킹은 그 자리에 섬");
@@ -643,13 +665,14 @@ namespace ChessFight.RagdollLab
         // And 16, the last free one: the queen may check once more (the skill pool's Q-기1, RagdollPawn.PoolSkills.cs).
         const byte NetSlowed = 2, NetCheckAgain = 16;
 
-        bool KitNetBusy => slowLeft > 0f || checkAgainLeft > 0f;
+        bool KitNetBusy => slowLeft > 0f || checkAgainLeft > 0f || KitTwoNetBusy;
 
         /// <summary>Host: what these skills have left on this piece.</summary>
         void CaptureKitNet(ref SkillWireState s)
         {
             if (slowLeft > 0f) s.Flags |= NetSlowed;
             if (checkAgainLeft > 0f) s.Flags |= NetCheckAgain;
+            CaptureKitTwoNet(ref s);   // the kits' second version: light, heavy (RagdollPawn.KitTwo.cs)
         }
 
         /// <summary>Client: the same on a puppet. (The time left is this screen's own count from when it first saw it.)</summary>
@@ -658,18 +681,21 @@ namespace ChessFight.RagdollLab
             var k = PawnRushSkills;
             SeeState(ref slowLeft, (s.Flags & NetSlowed) != 0, k != null ? k.fianSlowSeconds : 2f);
             SeeState(ref checkAgainLeft, (s.Flags & NetCheckAgain) != 0, k != null ? k.checkAgainWindow : 2f);
+            ApplyKitTwoNet(in s);
         }
 
         void ClearKitNet()
         {
             slowLeft = 0f;
             checkAgainLeft = 0f;
+            ClearKitTwoNet();
         }
 
         void AdvanceKitView(float dt)
         {
             if (slowLeft > 0f) slowLeft = Mathf.Max(0.05f, slowLeft - dt);
             if (checkAgainLeft > 0f) checkAgainLeft = Mathf.Max(0.05f, checkAgainLeft - dt);
+            AdvanceKitTwoView(dt);
         }
     }
 }

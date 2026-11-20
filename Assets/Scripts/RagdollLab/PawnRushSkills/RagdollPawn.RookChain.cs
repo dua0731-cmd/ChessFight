@@ -126,8 +126,9 @@ namespace ChessFight.RagdollLab
                     break;
                 case SkillStage.Active:
                     stageTime += dt;
-                    // The pool's R-중2: the left click held reels it in faster (RagdollPawn.PoolSkills.cs).
-                    chainReel = chainPool && input.shoveHeld;
+                    // The pool's R-중2: the left click held reels it in faster (RagdollPawn.PoolSkills.cs); the kits' second
+                    // version, the wheel too (each notch a moment of it: KitTwo).
+                    chainReel = chainPool && (input.shoveHeld || ChainWheelReel(s, dt));
                     if (Staggered || bindLeft > 0f)
                     {
                         // Hit mid-throw (a knockdown ends every skill on its own): the chain breaks, its piece drops.
@@ -588,6 +589,8 @@ namespace ChessFight.RagdollLab
             {
                 Stagger(s.rookPullStagger);
                 LastSkillHit = $"룩 사슬: 끌려와 휘청 {s.rookPullStagger:0.0}초";
+                // The kits' second version (R-중): the chain wound round it, heavy for a while - it jumps lower (KitTwo).
+                if (rook != null && rook.chainPool) MakeHeavy(s);
             }
             if (rook != null) rook.Fx(SkillFxKind.RookPullEnd, this, FeetPoint, Flat(bodies[0].position - rook.bodies[0].position), chainCarryAlly ? 1 : 0);
             Log($"{DisplayName}: 룩 {(chainCarryAlly ? "옆에 착지" : "앞에 놓임 → 휘청")} ({chainCarryT:0.00}초)");

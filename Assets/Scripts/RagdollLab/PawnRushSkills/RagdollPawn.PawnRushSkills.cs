@@ -46,6 +46,10 @@ namespace ChessFight.RagdollLab
         // JY-skill-lab 11-20: the hand feel's moment (RagdollPawn.HandFeel.cs; count: 0 a key started a use, 1 a hit, 2 a
         // miss; size: a hit's hit stop in seconds). After CourseHit, so no kind's number moves; an older PC skips it.
         SkillFeel,
+        // JY-skill-lab, the kits' second version (RagdollPawn.KitTwo.cs): a word over a piece's head (target; count: a value
+        // to show as "+N" under 100, or one of the words, RagdollPawn.Pop*); a rook's wall risen (at: one end on the floor,
+        // normal: the other, dir: its face's way, size: the seconds it stands, count: its number) and broken (count).
+        KitPop, KitWall, KitWallBreak,
     }
 
     public struct SkillFxEvent
@@ -344,10 +348,13 @@ namespace ChessFight.RagdollLab
             if (s == null) return;
             bool press = skillPressed, confirm = skillConfirm, cancel = skillCancel;
             skillPressed = skillConfirm = skillCancel = false;
-            // The loadout (the skill window): the second and third slots' keys, every slot's cooldown, and the slot whose
-            // cooldown the old skills' code reads and writes - the skill's under way.
-            bool key1 = slotKey1, key2 = slotKey2;
-            slotKey1 = slotKey2 = false;
+            // The loadout (the skill window): the other slots' keys, every slot's cooldown, and the slot whose cooldown the
+            // old skills' code reads and writes - the skill's under way.
+            for (int k = 1; k < slotKeys.Length; k++)
+            {
+                slotPress[k] = slotKeys[k];
+                slotKeys[k] = false;
+            }
             for (int k = 0; k < slotCd.Length; k++) slotCd[k] -= dt;
             cdSlot = SkillRunning && activeSlot >= 0 ? activeSlot : 0;
             getUpGuardLeft -= dt;
@@ -394,7 +401,7 @@ namespace ChessFight.RagdollLab
             }
 
             // Each slot's skill, the old ones and the new, on whatever piece the loadout put it (RagdollPawn.SkillPlans.cs).
-            RunSlots(s, press, key1, key2, confirm, cancel, dt);
+            RunSlots(s, press, confirm, cancel, dt);
             UpdateFeelKick(dt);   // the hand feel's recoil, bounce or lurch (RagdollPawn.HandFeel.cs)
             DrawSkillMarks(s);
         }
@@ -493,8 +500,9 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>What a skill does to the piece it hits (DESIGN §2.3-2.4): a knockdown is the skill's to
-        /// give, not the impact's; a piece that is down is only pushed, one just up only staggers.</summary>
-        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false)
+        /// give, not the impact's; a piece that is down is only pushed, one just up only staggers. <paramref name="hold"/>:
+        /// how long a knockdown keeps it down (0: getUpDelay).</summary>
+        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false, float hold = 0f)
         {
             if (target == null || target.NetworkPuppet) return "-";
             if (target.SkillUntargetable)
@@ -511,7 +519,7 @@ namespace ChessFight.RagdollLab
             if (cover != null)
             {
                 target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
-                SkillHit(cover, push, knockdown, cause, true);
+                SkillHit(cover, push, knockdown, cause, true, hold);
                 return $"{cover.DisplayName}이(가) 대신 막음";
             }
             if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
@@ -535,7 +543,7 @@ namespace ChessFight.RagdollLab
             }
             else if (knockdown)
             {
-                target.Knockdown(cause);
+                target.Knockdown(cause, hold);
                 target.AddVelocity(push * target.PushScale);
                 result = "넘어짐";
             }
@@ -786,7 +794,7 @@ namespace ChessFight.RagdollLab
                 float angle = AxisAngle(other, skillDir);
                 bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
                 string result = diagonal
-                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각")
+                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? s.stepKnockHold : 0f)
                     : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);

@@ -118,6 +118,7 @@ namespace ChessFight.RagdollLab
             summonPushLeft = 0f;
             summonArrived[0] = summonArrived[1] = null;
             promoteLeft = 0f;   // (a reset keeps the piece it is given: no going back)
+            ClearKitTwoStates();   // the kits' second version: light, heavy (RagdollPawn.KitTwo.cs)
         }
 
         // ---------------------------------------------------------------- B-중7: the long diagonal snipe
@@ -141,13 +142,13 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The shot just fired took someone from beyond snipeKnockUpTo: "최선수" (any PC).</summary>
-        public bool SnipeBest => PlanSkill == PawnRushSkillIds.LongSnipe && planPhase == PlanPhase.Recovery && (planNote & SnipeBestBit) != 0;
+        public bool SnipeBest => PawnRushSkillIds.Snipe(PlanSkill) && planPhase == PlanPhase.Recovery && (planNote & SnipeBestBit) != 0;
 
         /// <summary>A bishop that has drawn on this piece long enough for the light at its feet to show (any PC).</summary>
         public RagdollPawn SnipedBy()
         {
             foreach (var p in All)
-                if (p != null && p != this && p.PlanSkill == PawnRushSkillIds.LongSnipe && p.planPhase == PlanPhase.Windup && p.planTarget == this
+                if (p != null && p != this && PawnRushSkillIds.Snipe(p.PlanSkill) && p.planPhase == PlanPhase.Windup && p.planTarget == this
                     && p.PawnRushSkills != null && p.planTime >= p.PawnRushSkills.snipeWarnAfter) return p;
             return null;
         }
@@ -166,7 +167,7 @@ namespace ChessFight.RagdollLab
                 ForkKeys();
                 return;
             }
-            bool snipe = activeSkill == PawnRushSkillIds.LongSnipe;
+            bool snipe = PawnRushSkillIds.Snipe(activeSkill);
             if (!snipe && activeSkill != PawnRushSkillIds.ChaseAway && activeSkill != PawnRushSkillIds.Pin
                 && activeSkill != PawnRushSkillIds.FileCharge) return;
             if (snipe)
@@ -238,8 +239,10 @@ namespace ChessFight.RagdollLab
                     planTime += dt;
                     if (planTime >= s.snipeRecoilTime + s.snipeSit)
                     {
+                        // (The kits' second version's high snipe is the same shot on a high skill's cooldown.)
+                        float cooldown = activeSkill == PawnRushSkillIds.SnipeHigh ? s.snipeHighCooldown : s.snipeCooldown;
                         EndPlanSkill();
-                        StartCooldown(s.snipeCooldown);
+                        StartCooldown(cooldown);
                     }
                     break;
                 default:
@@ -292,7 +295,7 @@ namespace ChessFight.RagdollLab
             {
                 bool far = along > s.snipeKnockUpTo;
                 Vector3 push = far ? dir * s.snipeFlyPush + Vector3.up * s.snipeFlyLift : dir * s.snipePush + Vector3.up * s.snipeLift;
-                result = SkillHit(first, push, true, far ? "긴 대각선 저격 (멀리서)" : "긴 대각선 저격");
+                result = SkillHit(first, push, true, far ? "긴 대각선 저격 (멀리서)" : "긴 대각선 저격", false, far ? s.snipeFlyHold : s.snipeKnockHold);
                 Fx(SkillFxKind.QueenHit, first, at, dir, 1);
                 FeelHit(first, at, dir, FeelHard);
                 if (far) planNote |= SnipeBestBit;

@@ -98,24 +98,24 @@ namespace ChessFight.RagdollLab
         {
             // The skill pool's plan 1, one skill a piece (Docs/Skills/PAWN_RUSH_SKILL_POOL.md; RagdollPawn.PoolSkills.cs). The
             // knight's and the queen's are the bent leap and the check below, changed to the pool's.
-            Made(PawnRushSkillIds.SteeredSteps, "첫 두 걸음 (꺾기)", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block | SkillTag.Ally,
-                "키 = 첫 걸음 (1.5 m) · 0.5초 안에 키 한 번 더 = 둘째 걸음, 이동 키 쪽으로 45°까지 꺾임\n곧게 부딪히면 밀고 비스듬히 부딪히면 넘어뜨림 · 넘어진 팀원에 닿으면 일으킴 · 쿨 5초 (한 걸음만 3초)\n(후보 문서 P-기1: 지금 스킬과 달리 둘째 걸음이 대상을 찾아가지 않고 내가 꺾음)"),
+            Made(PawnRushSkillIds.SteeredSteps, "첫 두 걸음 (꺾기 · 앙파상)", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block | SkillTag.Ally,
+                "키 = 첫 걸음 (1.5 m) · 0.5초 안에 키 한 번 더 = 둘째 걸음, 이동 키 쪽으로 45°까지 꺾임\n곧게 부딪히면 밀고 비스듬히 부딪히면 1.2초 넘어뜨림 · 넘어진 팀원에 닿으면 일으킴 · 쿨 5초 (한 걸음만 3초)\n적이 돌진 스킬로 내 옆 2 m를 지나치면 발밑에 주황 고리 0.4초 → 그때 키 = 앙파상 (발 걸기, 1.2초) (후보 문서 P-기1 + 2판)"),
             Made(PawnRushSkillIds.LongSnipe, "긴 대각선 저격", PieceKind.Bishop, SkillOrigin.Pool, SkillTag.Block,
                 "키 = 무릎 꿇고 겨눔 (못 걸음) · 좌클릭 누르고 있기 = 모으기 (1초 동안 10 m → 30 m) · 떼기 = 쏘기 · 우클릭/키 = 일어남\n처음 닿은 적이 맞음: 12 m 안 휘청, 22 m까지 넘어짐, 그 너머는 넘어지며 날아감 · 쏘면 2 m 뒤로 미끄러져 엉덩방아\n모은 지 0.6초부터 표적 발밑에 빛점 · 팀원과 벽에서 막힘 · 쿨 18초 (후보 문서 B-중7)"),
             Made(PawnRushSkillIds.ChainBehind, "뒤에서 잡기", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
-                "키 = 조준 · 좌클릭 = 사슬 던지기 (10.5 m, 처음 닿은 것에 걸림)\n나보다 가벼운 적(폰 · 나이트 · 비숍)은 내 앞 0.9 m로 끌려와 휘청 (우클릭으로 바로 붙잡기) · 무거운 적(퀸 · 킹)과 벽 · 기둥 · 턱에는 내가 날아감\n걸린 뒤 좌클릭 누르고 있기 = 빨리 감기 (기획은 휠) · 끌려가는 적은 좌클릭 3번이면 절반에서 털어냄 · 팀원에게는 손잡이 · 쿨 16초 (후보 문서 R-중2)"),
+                "키 = 조준 · 좌클릭 = 사슬 던지기 (10.5 m, 처음 닿은 것에 걸림)\n나보다 가벼운 적(폰 · 나이트 · 비숍)은 내 앞 0.9 m로 끌려와 휘청, 2초 동안 무거움 (점프가 낮음) · 무거운 적(퀸 · 킹)과 벽 · 기둥 · 턱에는 내가 날아감\n걸린 뒤 휠 감기 또는 좌클릭 누르고 있기 = 빨리 감기 · 끌려가는 적은 좌클릭 3번이면 절반에서 털어냄 · 팀원에게는 손잡이 · 쿨 16초 (후보 문서 R-중2 + 2판)"),
             // The pool's plan 3, its basic row's new ones (RagdollPawn.PoolBasics.cs).
             Made(PawnRushSkillIds.FlankShot, "옆구리 사격", PieceKind.Bishop, SkillOrigin.Pool, SkillTag.Block,
-                "키 = 달리면서 0.15초 뒤 카메라 쪽으로 12 m 빛줄기 (멈추지 않음)\n처음 닿은 적은 줄 방향으로 2 m 밀림, 비숍은 1 m 뒤로 밀림 · 등 뒤에서 쏘면 앞으로 밀어 줌 (블런더) · 돌진 중인 적은 돌진이 끊김\n팀원 · 기둥에서 막힘 · 쿨 7초 (후보 문서 B-기6)"),
+                "키 = 달리면서 0.15초 뒤 카메라 쪽으로 12 m 빛줄기 (멈추지 않음)\n처음 닿은 적은 줄 방향으로 2 m 밀리고 1.5초 발이 무거움 (0.7배), 비숍은 0.4 m 뒤로 밀림 · 등 뒤에서 쏘면 앞으로 밀어 줌 (블런더) · 돌진 중인 적은 돌진이 끊김\n팀원 · 기둥에서 막힘 · 쿨 6초 (후보 문서 B-기6 + 2판)"),
             Made(PawnRushSkillIds.CastleOver, "넘어오는 캐슬링", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Ally | SkillTag.Block,
                 "키 = 앞쪽 6 m 안의 가장 가까운 팀원을 0.15초 웅크렸다 낮게 넘어 1.5 m 앞에 쿵\n내려선 둘레 2 m의 적이 밀림 (내려서는 순간 키 = 3 m까지) · 넘어간 팀원은 1.5초 동안 넘어지지 않음\n사이에 적이 있으면 그 등에 박고 멈춤 · 체크 중에는 못 씀 · 쿨 10초 (후보 문서 R-기2)"),
             Made(PawnRushSkillIds.ScholarThrust, "스콜라 찌르기", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
                 "옆 이동 키 + 키 = 비스듬히 옆으로 2.5 m 미끄러짐 · 0.6초 안에 키(또는 좌클릭) 한 번 더 = 카메라 쪽으로 5 m 찌르기\n등 · 옆을 찔린 적은 3 m 밀리고 휘청 0.5초 (서 있었고 4 m 안에 그 팀원이 없으면 넘어짐)\n마주 보던 적은 밀리기만 하고 퀸이 튕겨 휘청 0.6초 · 쿨 9초 (옆걸음만 4초, 후보 문서 Q-기2)"),
             // ...and its mid row's new ones (RagdollPawn.PoolMids.cs; the knight's and the bishop's are the fork and the pin).
             Made(PawnRushSkillIds.ChaseAway, "쫓아내기", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Block | SkillTag.Move,
-                "키 = 창 겨눔 (달리면서) · 좌클릭 누르고 있기 = 모으기 (0.2 → 0.8초: 3 → 5 m) · 떼기 = 찌르며 돌진 · 우클릭/키 = 취소\n처음 찔린 적은 자기 값만큼 날아감: 폰 1 m, 나이트 · 비숍 3 m, 킹 4 m, 룩 5 m, 퀸 6 m (룩 · 퀸은 넘어짐)\n폰은 반동으로 튕김 · 헛치면 앞으로 엎어짐 · 쿨 15초 (후보 문서 P-중4)"),
+                "키 = 창 겨눔 (달리면서) · 좌클릭 누르고 있기 = 모으기 (0.2 → 0.8초: 3 → 5 m) · 떼기 = 찌르며 돌진 · 우클릭/키 = 취소\n처음 찔린 적은 자기 값만큼 날아감: 폰 1 m, 나이트 · 비숍 3 m, 킹 4 m, 룩 5 m, 퀸 6 m (룩 · 퀸은 2초 넘어지고 머리 위에 '+5' · '+9')\n폰은 반동으로 0.5 m 튕김 · 헛치면 앞으로 엎어짐 · 쿨 15초 (후보 문서 P-중4 + 2판)"),
             Made(PawnRushSkillIds.CheckSeries, "연속 체크", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block,
-                "키 = 조준 (10 m) · 좌클릭 = 체크 · 적 발밑에 퀸 쪽으로 길쭉한 빨간 칸 (2 × 3.5 m, 하얀 먼 끝이 나갈 곳), 0.9초 뒤 터짐\n비켜 나가면 1초 안에 키 = 퀸이 빈 칸으로 미끄러져 다음 칸 (나갈 곳은 카메라 쪽, 0.7 → 0.5초, 세 번까지)\n맞으면 넘어지며 날아감 · 셋째가 맞으면 '최선수' · 쿨 18초 (후보 문서 Q-중5)"),
+                "키 = 조준 (10 m) · 좌클릭 = 체크 · 적 발밑에 퀸 쪽으로 길쭉한 빨간 칸 (2 × 3.5 m, 하얀 먼 끝이 나갈 곳), 0.9초 뒤 터짐\n비켜 나가면 1초 안에 키 = 퀸이 빈 칸으로 미끄러져 다음 칸 (나갈 곳은 카메라 쪽, 0.7 → 0.5초, 세 번까지)\n맞으면 2초 넘어지며 날아감 · 셋째가 맞으면 '최선수' · 쿨 24초 (퀸 1.5배, 후보 문서 Q-중5 + 2판)"),
             // The pool's plan 3, its ultimates on a gauge (RagdollPawn.PoolUltimates.cs).
             Made(PawnRushSkillIds.Promote, "승격", PieceKind.Pawn, SkillOrigin.Pool, SkillTag.Buff | SkillTag.Move,
                 "궁극기 (게이지 3분) · 키 = 앞 3 m 끝줄로 마지막 한 칸을 내딛음\n줄에 닿는 순간 멈칫, 둘레 3 m의 적이 밀리고 15초 동안 퀸이 됨 (퀸 줄의 스킬) · 끝나면 원래 기물로 (후보 문서 P-궁1)"),
@@ -155,7 +155,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.EnPassant, "앙파상", PieceKind.Pawn, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Counter,
                 "적이 내 옆 2 m 안을 나보다 빠르게 스쳐 지나가면 그 적 발밑에 주황 고리가 1초 뜸 → 그동안 키 = 뛰어들어 발 걸기\n걸린 적은 달리던 쪽으로 넘어져 미끄러짐 · 스쳐 지나간 적이 없으면 무시\n혼자 시험: 왼쪽 창 \"앙파상 시험\" (M)"),
             Made(PawnRushSkillIds.Fork, "포크", PieceKind.Knight, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Move,
-                "키 = 내릴 곳 겨눔 (9 m, 차일 적 머리에 고리) · 좌클릭 = 도약 · 우클릭/키 = 취소\n내려서며 둘레 1.6 m의 적을 양발로 참: 둘 이상이면 넘어지며 날아감 (나이트는 다시 튀어 오름, 킹과 퀸이면 '로열 포크')\n한 명만이면 밀기만 하고 나이트가 기우뚱 · 헛치면 주저앉음 · 내리꽂는 순간 좌클릭 = 1.5배 멀리 · 쿨 20초 (후보 문서 N-중1)"),
+                "키 = 내릴 점 겨눔 (9 m, 앞 좌우 두 자리와 차일 적 머리에 고리) · 좌클릭 = 도약 · 우클릭/키 = 취소\n내린 점 앞 좌우 두 자리 (ㄱ자로 2.5 m)를 양발로 참: 두 자리에 다 적이면 둘 다 2초 넘어지며 날아감 (킹과 퀸이면 '로열 포크')\n한 명만이면 밀기만 하고 나이트가 기우뚱 · 헛치면 주저앉음 · 내리꽂는 순간 좌클릭 = 1.5배 멀리 · 쿨 16초 (후보 문서 N-중1 + 2판)"),
             Made(PawnRushSkillIds.Pin, "핀", PieceKind.Bishop, SkillOrigin.Plan2, SkillTag.Block | SkillTag.Buff,
                 "키 = 조준 · 좌클릭 누르고 있기 = 모으기 (10 → 18 m) · 떼기 = 쏘기 (비숍 1 m 반동) · 우클릭/키 = 취소\n맞은 적 뒤 4 m 안에 그 팀원이 있으면 3초 안에 움직일 때 뒤의 팀원이 넘어짐 · 뒤가 벽 · 기둥이면 거기에 3초 꿰임 · 비면 2초 발 무거움\n꿴 뒤 3초 안에 키 한 번 더 = 줄을 타고 6 m까지 다가감 · 쿨 16초 (후보 문서 B-중1)"),
             Made(PawnRushSkillIds.Castling, "캐슬링", PieceKind.Rook, SkillOrigin.Plan2, SkillTag.Ally | SkillTag.Move,
@@ -179,11 +179,21 @@ namespace ChessFight.RagdollLab
             // RagdollPawn.KitSkills.cs). The other three basics are above: the pawn's two steps, the rook's castling, the
             // queen's check.
             Made(PawnRushSkillIds.BentLeap, "ㄱ자 도약", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Move | SkillTag.Block,
-                "키 = 0.15초 준비 뒤 높이 1.6 m로 4.5 m 도약 (공중에서도 됨) · 공중에서 한 번 더 = 이동 키 쪽으로 90°까지 꺾어 다시 차고 나감\n적의 머리를 밟으면 그 적은 휘청 0.4초, 나는 다시 튀어 오름 · 착지 순간 점프 = 2 m 구르기 (후딜 없음) · 내려설 곳이 없으면 '블런더' · 쿨 7초\n(승규 님의 10-07 첫 모양을 칸에서 돌게 다시 만든 것, 후보 문서 N-기1의 고침. 머리로 저절로 날아가지는 않음)"),
+                "키 = 0.15초 준비 뒤 높이 1.6 m로 4.5 m 도약 (공중에서도 됨) · 공중에서 한 번 더 = 이동 키 쪽으로 90°까지 꺾어 다시 차고 나감\n적의 머리를 밟으면 그 적은 휘청 0.4초에 3초 동안 가벼움 (밀림 · 날림 두 배), 나는 다시 튀어 오름 · 착지 순간 점프 = 2 m 구르기 (후딜 없음) · 내려설 곳이 없으면 '블런더' · 쿨 6초\n(승규 님의 10-07 첫 모양을 칸에서 돌게 다시 만든 것, 후보 문서 N-기1의 고침 + 2판의 가벼운 발굽. 머리로 저절로 날아가지는 않음)"),
             Made(PawnRushSkillIds.Fianchetto, "피앙케토", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block | SkillTag.Buff,
                 "키 = 자리를 잡고 겨눔 (못 걸음 · 줄이 1초 동안 8 m에서 25 m로 자람) · 좌클릭 = 쏘기 · 우클릭/키 = 일어남\n줄에 처음 닿은 적은 2초 동안 발이 무거움 (0.6배, 전력질주 안 됨) · 팀원이나 벽에 먼저 닿으면 거기서 막힘 · 쿨 6초"),
             Made(PawnRushSkillIds.KingStep, "왕의 한 걸음", PieceKind.King, SkillOrigin.Kits, SkillTag.Move | SkillTag.Counter,
-                "키 = 이동 키 쪽으로 한 칸 (1.5 m) 비킴, 디딜 때 쿵 · 공중에서도 됨 (쿨 +1초) · 걸음에 닿은 적은 3 m 밀림, 킹은 그 자리에 섬\n잡혀 있으면 손을 뿌리치고 비킴 · 넘어져 있으면 이동 키 쪽으로 굴러 바로 일어남 (둘 다 쿨 +1.5초)\n걸음 끝 0.3초 안의 점프 · 다이빙은 더 멀리 · 쿨 4초 (후보 문서 K-기1의 고침)"),
+                "키 = 이동 키 쪽으로 한 칸 (1.5 m) 비킴, 디딜 때 쿵 · 공중에서도 됨 (쿨 +1초) · 걸음에 닿은 적은 3 m 밀림, 킹은 그 자리에 섬 (한 칸 잡기)\n곁 1.5 m에 그 팀원이 선 적은 받쳐진 말이라 안 밀림 · 체크 칸 · 저격 빛점에서 걸어 나오면 '체크 탈출'\n잡혀 있으면 손을 뿌리치고 비킴 · 넘어져 있으면 이동 키 쪽으로 굴러 바로 일어남 (둘 다 쿨 +1.5초) · 걸음 끝 0.3초 안의 점프 · 다이빙은 더 멀리 · 쿨 4초 (후보 문서 K-기1 + 2판)"),
+
+            // The kits' second version, its new ones (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6; RagdollPawn.KitTwo.cs).
+            Made(PawnRushSkillIds.QueenGlide, "여왕의 활주", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Move,
+                "이동 키 + 키 = 여덟 방향 가운데 그쪽으로 1초에 7 m 빠르기로 곧게 미끄러짐 (이동 키가 없으면 카메라 쪽)\n키 한 번 더 = 그 자리에 딱 섬 (가장 멀리 7 m) · 사람이나 벽에 닿으면 거기서 멈추고, 닿은 적은 1.5 m 밀림 · 쿨 9초 (2판 Q-초)"),
+            Made(PawnRushSkillIds.EightLines, "여덟 줄", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
+                "키 (퀸의 셋째 칸 R) = 홀을 찍어 여덟 방향으로 7 m 빛줄 · 0.5초 동안 이동 키(좌우)로 줄 전체를 22.5°까지 돌림\n그 뒤 한꺼번에 터짐: 줄마다 처음 닿은 적이 줄을 따라 날아가 2.5초 넘어짐 · 줄 사이에 선 적은 멀쩡 · 셋 넘게 맞히면 0.15초 멈칫 · 쿨 60초 (2판 Q-상)"),
+            Made(PawnRushSkillIds.WallCharge, "성벽 돌진", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
+                "키 = 겨눔 (바닥 줄 9 m) · 좌클릭 = 0.4초 바닥 줄이 깜박인 뒤 곧게 돌진 · 우클릭/키 = 취소\n지나간 자리에 가슴 높이 (1.2 m) 성벽이 솟아 5초 섬 · 돌진 중 좌클릭 = 거기서 끊기 · 부딪힌 적은 옆으로 2 m 밀림\n상대 룩의 돌진이 성벽을 부숨 · 쿨 40초 (2판 R-상)"),
+            Made(PawnRushSkillIds.SnipeHigh, "긴 대각선 저격 (상급)", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
+                "후보 문서의 긴 대각선 저격과 같은 한 방, 상급 수치: 쿨 40초\n키 = 무릎 꿇고 겨눔 · 좌클릭 누르고 있기 = 모으기 (1초 동안 10 m → 30 m) · 떼기 = 쏘기 · 우클릭/키 = 일어남\n12 m 안 휘청 0.4초, 22 m까지 넘어짐 2초, 그 너머는 넘어지며 날아감 2.5초 ('최선수') · 쏘면 2 m 미끄러져 엉덩방아 (2판 B-상)"),
 
             // 승규 님's Pawn Rush skills that are not the five above: the king's, and the earlier forms of three pieces'.
             Idea(41, "왕의 부름", PieceKind.King, SkillOrigin.PawnRush, SkillTag.Ally | SkillTag.Move,
@@ -312,6 +322,10 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.Chariot, "10초 동안 전차가 되어 곧게 달리며 들이받는다" },
             { PawnRushSkillIds.QueenSac, "몸을 던져 둘레를 모두 날리고 퀸은 잡힌다" },
             { PawnRushSkillIds.KingMarch, "행진하며 곁의 팀원을 지키고 앞을 밀어낸다" },
+            { PawnRushSkillIds.QueenGlide, "여덟 방향 가운데 하나로 미끄러져 원하는 자리에 딱 선다" },
+            { PawnRushSkillIds.EightLines, "여덟 방향 빛줄을 터뜨린다. 줄 사이에 선 적은 멀쩡하다" },
+            { PawnRushSkillIds.WallCharge, "곧게 달리며 뒤에 가슴 높이 성벽을 세운다" },
+            { PawnRushSkillIds.SnipeHigh, "멀리서 길게 모아 쏜다. 멀수록 세게 맞는다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

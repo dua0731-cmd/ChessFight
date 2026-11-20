@@ -138,11 +138,17 @@ namespace ChessFight.RagdollLab
             foreach (var d in game.dummies)
                 if (d != null) d.SkillBot = true;
             if (game.SkillKey != skillKey) game.SkillKey = skillKey;
+            // R is the third slot's key (the queen's) while the piece played has a skill there; the lab's "everyone back"
+            // otherwise (JY-skill-lab, the kits' second version).
+            var played = Me;
+            game.Ability3Key = played != null && played.SlotSkill(2) != 0 ? KeyCode.R : KeyCode.None;
             // JY-skill-lab: the dummy sent running past (RunPast) keeps its keys down until its time is up.
             if (passRunner != null)
             {
                 bool run = Time.time < passRunUntil;
                 passRunner.SetInput(run ? new PawnInput { move = passRunDir, aim = passRunDir, sprint = true } : new PawnInput());
+                // (The kits' second version trips only a piece on a skill's dash: this run counts as one.)
+                passRunner.TestDashing = run;
                 if (!run) passRunner = null;
             }
 
@@ -202,13 +208,13 @@ namespace ChessFight.RagdollLab
             passRunner = d;
             passRunDir = ahead;
             passRunUntil = Time.time + 3.2f;
-            Report($"앙파상 시험: {d.DisplayName}가 뒤에서 내 오른쪽을 달려 지나감 — 지나친 뒤 1초 안에 {skillKey} ({passRunKey}로 다시)");
+            Report($"앙파상 시험: {d.DisplayName}가 뒤에서 내 오른쪽을 달려 지나감 (돌진으로 침) — 지나친 뒤 고리가 뜬 동안 {skillKey} ({passRunKey}로 다시)");
         }
 
         PawnRushSkillWindow window;
 
         /// <summary>The key of a slot in this scene: the bed's skill key, then the lab's two ability keys.</summary>
-        string SlotKey(int slot) => slot == 0 ? skillKey.ToString() : slot == 1 ? "E" : "Q";
+        string SlotKey(int slot) => slot == 0 ? skillKey.ToString() : slot == 1 ? "E" : slot == 2 ? "R" : "Q";
 
         /// <summary>The skill window changed the loadout: every skill under way and every cooldown starts over.</summary>
         void OnLoadoutChanged()
@@ -525,7 +531,7 @@ namespace ChessFight.RagdollLab
                 bool running = me.ActiveSlot == k;
                 float cd = me.SlotCooldown(k), total = me.SlotCooldownTotal(k);
                 bool can = !me.SkillRunning && cd <= 0f;
-                string key = keyName != null ? keyName(k) : k == 0 ? "F" : k == 1 ? "E" : "Q";
+                string key = keyName != null ? keyName(k) : k == 0 ? "F" : k == 1 ? "E" : k == 2 ? "R" : "Q";
                 string use;
                 switch (id)
                 {
@@ -560,6 +566,22 @@ namespace ChessFight.RagdollLab
                         break;
                     case PawnRushSkillIds.AirVolley:
                         use = running ? $"{click} 발사 ({me.VolleyShotsLeft}발) · {key} 내려옴" : $"{key} 떠오름 → {click} 발사";
+                        break;
+                    // The kits' second version (RagdollPawn.KitTwo.cs).
+                    case PawnRushSkillIds.SteeredSteps:
+                    {
+                        var passing = me.PassTarget;
+                        use = passing != null ? (lab ? $"{key} → {passing.DisplayName} 앙파상" : $"{key} 앙파상") : $"{key} 사용 (0.5초 안에 한 번 더)";
+                        break;
+                    }
+                    case PawnRushSkillIds.QueenGlide:
+                        use = running ? $"{key} = 딱 서기" : $"이동 키 + {key}";
+                        break;
+                    case PawnRushSkillIds.EightLines:
+                        use = running ? "이동 키 (좌우) = 줄 돌리기" : $"{key} 홀 찍기";
+                        break;
+                    case PawnRushSkillIds.WallCharge:
+                        use = running && me.PlanPhaseNow == PlanPhase.Active ? $"{click} = 여기서 끊기" : $"{key} 겨눔 → {click} 출발";
                         break;
                     default:
                         use = $"{key} 조준 → {click}";

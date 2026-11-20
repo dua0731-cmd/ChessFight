@@ -171,9 +171,11 @@ namespace ChessFight.RagdollLab
             if (value >= s.chaseKnockValue)
             {
                 float k = metres / Mathf.Max(1f, s.chaseMaxThrow);
-                result = SkillHit(other, dir * (s.chaseKnockPush * Mathf.Lerp(0.7f, 1f, k)) + Vector3.up * s.chaseKnockLift, true, "쫓아내기");
+                result = SkillHit(other, dir * (s.chaseKnockPush * Mathf.Lerp(0.7f, 1f, k)) + Vector3.up * s.chaseKnockLift, true, "쫓아내기", false, s.chaseKnockHold);
                 Fx(SkillFxKind.QueenHit, other, contact, dir, 1);
                 FeelHit(other, contact, dir, FeelHard);
+                // The kits' second version: its value pops up over its head, "+5", "+9" (RagdollPawn.KitTwo.cs).
+                PopOver(other, value);
             }
             else
             {
@@ -204,12 +206,12 @@ namespace ChessFight.RagdollLab
             into.Clear();
             var s = PawnRushSkills;
             if (s == null) return;
-            foreach (var other in All)
-            {
-                if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active) continue;
-                Vector3 d = other.FeetPoint - planPoint;
-                if (Mathf.Abs(d.y) <= 1.2f && Flat(d).magnitude <= s.forkKickRadius) into.Add(other);
-            }
+            // (The kits' second version: the two spots ahead left and right, ForkKick's.)
+            ForkSpots(planPoint, planDir, out var spotL, out var spotR);
+            var onL = ForkSpotEnemy(s, spotL, null);
+            var onR = ForkSpotEnemy(s, spotR, onL);
+            if (onL != null) into.Add(onL);
+            if (onR != null) into.Add(onR);
         }
 
         /// <summary>Before the run (PoolKeys): in the air the left click is the kick's timing (not a dive); sat down after
@@ -307,21 +309,51 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>Both hind legs, from where it really came down: two or more enemies go down and fly apart, one alone
-        /// is shoved (and the knight wobbles), none and the knight sits down. <paramref name="timed"/>: the left click met
-        /// the landing, they fly farther.</summary>
+        /// <summary>The two spots both hind legs kick, from a landing point along the leap (the kits' second version, N-중:
+        /// ahead left and right of it in the knight's L, about 2.5 m off).</summary>
+        public void ForkSpots(Vector3 landing, Vector3 way, out Vector3 left, out Vector3 right)
+        {
+            var s = PawnRushSkills;
+            Vector3 f = FlatDir(way), side = Vector3.Cross(Vector3.up, f);
+            float ahead = s != null ? s.forkSpotAhead : 2.25f, off = s != null ? s.forkSpotSide : 1.1f;
+            left = landing + f * ahead - side * off;
+            right = landing + f * ahead + side * off;
+        }
+
+        /// <summary>The enemy standing on a fork spot (the nearest within forkSpotRadius), or null.</summary>
+        RagdollPawn ForkSpotEnemy(PawnRushSkillParams s, Vector3 spot, RagdollPawn not)
+        {
+            RagdollPawn best = null;
+            float bestD = s.forkSpotRadius;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || other == not || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
+                Vector3 d = other.FeetPoint - spot;
+                float flat = Flat(d).magnitude;
+                if (Mathf.Abs(d.y) > 1.2f || flat > bestD) continue;
+                best = other;
+                bestD = flat;
+            }
+            return best;
+        }
+
+        /// <summary>Both hind legs, from where it really came down, at the two spots ahead left and right (the kits' second
+        /// version; the skill pool's N-중1 kicked all round): an enemy on each and both go down and fly apart, one alone is
+        /// shoved (and the knight wobbles), none and the knight sits down. <paramref name="timed"/>: the left click met the
+        /// landing, they fly farther.</summary>
         void ForkKick(PawnRushSkillParams s, bool timed)
         {
             Vector3 feet = FeetPoint;
             planPoint = feet;
             forkScratch.Clear();
+            ForkSpots(feet, planDir, out var spotL, out var spotR);
+            var onL = ForkSpotEnemy(s, spotL, null);
+            var onR = ForkSpotEnemy(s, spotR, onL);
+            if (onL != null) forkScratch.Add(onL);
+            if (onR != null) forkScratch.Add(onR);
             bool king = false, queen = false;
-            foreach (var other in All)
+            foreach (var other in forkScratch)
             {
-                if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable) continue;
-                Vector3 d = other.FeetPoint - feet;
-                if (Mathf.Abs(d.y) > 1.2f || Flat(d).magnitude > s.forkKickRadius) continue;
-                forkScratch.Add(other);
                 king |= other.piece == PieceKind.King;
                 queen |= other.piece == PieceKind.Queen;
             }
@@ -332,7 +364,7 @@ namespace ChessFight.RagdollLab
                 foreach (var other in forkScratch)
                 {
                     Vector3 away = FlatDir(other.bodies[0].position - bodies[0].position);
-                    string result = SkillHit(other, away * s.forkPush * boost + Vector3.up * s.forkLift, true, "포크");
+                    string result = SkillHit(other, away * s.forkPush * boost + Vector3.up * s.forkLift, true, "포크", false, s.forkKnockHold);
                     Log($"포크 → {other.DisplayName}: {result}");
                 }
                 planNote |= ForkDoubleBit;
@@ -714,7 +746,7 @@ namespace ChessFight.RagdollLab
             var blocker = CheckBlocker(s, t);
             var hit = blocker != null ? blocker : t;
             Vector3 away = FlatDir(hit.bodies[0].position - bodies[0].position);
-            string result = SkillHit(hit, away * s.seriesPush + Vector3.up * s.seriesLift, true, blocker != null ? "연속 체크 (대신 막음)" : "연속 체크");
+            string result = SkillHit(hit, away * s.seriesPush + Vector3.up * s.seriesLift, true, blocker != null ? "연속 체크 (대신 막음)" : "연속 체크", false, s.seriesKnockHold);
             Fx(SkillFxKind.QueenHit, hit, hit.bodies[0].position, away, 1);
             bool best = count >= 3;
             FeelHit(hit, hit.bodies[0].position, away, FeelHard, 1, true, best ? s.seriesFinalStop : 0f);

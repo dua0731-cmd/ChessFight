@@ -597,7 +597,7 @@ namespace ChessFight.RagdollLab
                     ApplyPieceAsk(mine, game.NetPieceAsk);
                 }
             }
-            if (Input.GetKeyDown(KeyCode.R) && !game.SuppressInput)
+            if (Input.GetKeyDown(KeyCode.R) && !game.SuppressInput && game.Ability3Key != KeyCode.R)
                 foreach (var pair in pawns)
                 {
                     var seat = NetRoster.TryGetValue(pair.Key, out var s) ? s : default;

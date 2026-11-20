@@ -164,7 +164,7 @@ namespace ChessFight.RagdollLab
             dir.y = 0f;
             if (s == null || NetworkPuppet || metres <= 0.01f || dir.sqrMagnitude < 1e-4f) return;
             dir.Normalize();
-            float room = metres;
+            float room = metres * KitPushMul;   // light after a knight's stomp: twice as far (RagdollPawn.KitTwo.cs)
             if (edgeSafe)
             {
                 // Short of an edge: the farthest point, in 0.1 m steps back, with a floor feelKickEdge beyond it.
