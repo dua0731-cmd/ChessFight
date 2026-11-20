@@ -84,6 +84,10 @@ namespace ChessFight.RagdollLab
                     // ...and its mid row (RagdollPawn.PoolMids.cs; the fork's and the pin's are above).
                     case PawnRushSkillIds.ChaseAway: DrawChase(pawn); break;
                     case PawnRushSkillIds.CheckSeries: DrawSeries(pawn); break;
+                    // The pool's plan 2 (RagdollPawn.PoolPlan2.cs).
+                    case PawnRushSkillIds.BackRank: DrawBackRank(pawn); break;
+                    case PawnRushSkillIds.FileCharge: DrawFileCharge(pawn); break;
+                    case PawnRushSkillIds.KingRun: DrawKingRun(pawn); break;
                 }
             }
             for (int i = used; i < pool.Count; i++) SkillMarks.Hide(pool[i]);
@@ -576,6 +580,34 @@ namespace ChessFight.RagdollLab
             Vector3 from = Chest(pawn);
             Vector3 to = new Vector3(pawn.PlanPoint.x, from.y, pawn.PlanPoint.z);
             SkillMarks.Segment(Next(), from, to, Fade(Red, phase == PlanPhase.Active ? 0.9f : 0.55f), phase == PlanPhase.Active ? 0.07f : 0.04f, false);
+        }
+
+        /// <summary>The pool's back-rank move (R-기5): the straight line it slides along.</summary>
+        void DrawBackRank(RagdollPawn pawn)
+        {
+            if (pawn.PlanPhaseNow != PlanPhase.Active) return;
+            Vector3 lift = Vector3.up * 0.05f;
+            SkillMarks.Segment(Next(), pawn.FeetPoint + lift, pawn.PlanPoint + lift, Fade(SkillMarks.Target, 0.8f), 0.08f, false);
+        }
+
+        /// <summary>The pool's straight charge (R-중1): the line on the floor, growing while drawn (the warning), then the
+        /// line it charges down.</summary>
+        void DrawFileCharge(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Aim && phase != PlanPhase.Windup && phase != PlanPhase.Active) return;
+            Vector3 lift = Vector3.up * 0.05f;
+            Color c = phase == PlanPhase.Aim ? Fade(White, 0.5f) : Fade(Red, phase == PlanPhase.Active ? 0.9f : 0.75f);
+            SkillMarks.Segment(Next(), pawn.FeetPoint + lift, pawn.PlanPoint + lift, c, phase == PlanPhase.Windup ? 0.14f : 0.1f, false);
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.35f, c, 0.06f, 16);
+        }
+
+        /// <summary>The pool's king's run (K-중7): where the step under way comes down.</summary>
+        void DrawKingRun(RagdollPawn pawn)
+        {
+            var phase = pawn.PlanPhaseNow;
+            if (phase != PlanPhase.Active && phase != PlanPhase.Windup) return;
+            SkillMarks.Circle(Next(), pawn.PlanPoint, 0.45f, Fade(Gold, phase == PlanPhase.Active ? 0.9f : 0.5f), 0.06f, 24);
         }
 
         /// <summary>The king's step: the square he steps to, for the moment it takes.</summary>

@@ -331,8 +331,14 @@ namespace ChessFight.RagdollLab
             }
             x += 10f;
             // (In the order shown; each one's number is PawnRushLoadout.Preset's.)
-            string[] presets = { "지금 스킬", "1-나", "A 묶음", "기본기", "1안", "3안", "비우기" };
-            int[] presetIds = { 0, 1, 3, 4, 5, 6, 2 };
+            string[] presets = { "지금 스킬", "1-나", "A 묶음", "기본기", "1안", "2안", "3안", "비우기" };
+            int[] presetIds = { 0, 1, 3, 4, 5, 7, 6, 2 };
+            // Too many for the rest of this line (a narrow window): onto the next one, under the systems.
+            if (x + presets.Length * 62f > right - 140f)
+            {
+                y += 30f;
+                x = x0 + 68f;
+            }
             for (int i = 0; i < presets.Length; i++)
             {
                 if (Chip(new Rect(x, y, 58f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
@@ -340,6 +346,7 @@ namespace ChessFight.RagdollLab
                         : presetIds[i] == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
                         : presetIds[i] == 5 ? "첫 칸을 후보 문서의 1안(기물당 하나)으로 채웠어요. 킹도 왕의 부름(앞으로)을 받아요"
                         : presetIds[i] == 6 ? "후보 문서 3안: 첫 칸은 기본기, 둘째 칸은 중급기. 스킬 방식 3안이면 E가 중급기예요"
+                        : presetIds[i] == 7 ? "후보 문서 2안: 스킬 방식 2안에서 단계 1은 첫 칸, 단계 2 · 3은 둘째 칸(자란 스킬)을 써요"
                         : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
                 x += 62f;
             }

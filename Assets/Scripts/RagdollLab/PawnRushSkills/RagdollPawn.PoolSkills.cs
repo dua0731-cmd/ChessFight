@@ -156,6 +156,7 @@ namespace ChessFight.RagdollLab
         void PoolKeys()
         {
             PoolBasicKeys();   // plan 3's basics (RagdollPawn.PoolBasics.cs)
+            Plan2Keys();       // plan 2's (RagdollPawn.PoolPlan2.cs)
             if (planPhase == PlanPhase.None) return;
             if (activeSkill == PawnRushSkillIds.Fork)
             {
@@ -163,7 +164,8 @@ namespace ChessFight.RagdollLab
                 return;
             }
             bool snipe = activeSkill == PawnRushSkillIds.LongSnipe;
-            if (!snipe && activeSkill != PawnRushSkillIds.ChaseAway && activeSkill != PawnRushSkillIds.Pin) return;
+            if (!snipe && activeSkill != PawnRushSkillIds.ChaseAway && activeSkill != PawnRushSkillIds.Pin
+                && activeSkill != PawnRushSkillIds.FileCharge) return;
             if (snipe)
             {
                 input.move = Vector3.zero;

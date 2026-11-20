@@ -234,6 +234,10 @@ namespace ChessFight.RagdollLab
                 // ...and its mid row's new ones (RagdollPawn.PoolMids.cs).
                 case PawnRushSkillIds.ChaseAway: UpdateChaseAway(s, press, confirm, cancel, dt); break;
                 case PawnRushSkillIds.CheckSeries: UpdateCheckSeries(s, press, confirm, cancel, dt); break;
+                // The pool's plan 2, the three the others did not make (RagdollPawn.PoolPlan2.cs).
+                case PawnRushSkillIds.BackRank: UpdateBackRank(s, press, dt); break;
+                case PawnRushSkillIds.FileCharge: UpdateFileCharge(s, press, confirm, cancel, dt); break;
+                case PawnRushSkillIds.KingRun: UpdateKingRun(s, press, dt); break;
             }
         }
 
@@ -266,6 +270,9 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.ScholarThrust: return s.scholarCooldown;
                 case PawnRushSkillIds.ChaseAway: return s.chaseCooldown;
                 case PawnRushSkillIds.CheckSeries: return s.seriesCooldown;
+                case PawnRushSkillIds.BackRank: return s.rankCooldown;
+                case PawnRushSkillIds.FileCharge: return s.fileCooldown;
+                case PawnRushSkillIds.KingRun: return s.runCooldown;
                 default: return 0f;
             }
         }

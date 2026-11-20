@@ -706,5 +706,31 @@ namespace ChessFight.RagdollLab
         public float seriesPush = 7.5f, seriesLift = 2.5f, seriesFinalStop = 0.15f;
         [Tooltip("후딜 (초), 쿨 (초)")]
         public float seriesRecovery = 0.3f, seriesCooldown = 18f;
+
+        [Header("후보 문서 2안 · 룩 뒷줄 한 수 (R-기5)")]
+        [Tooltip("옆 · 뒤로 곧게 미끄러지는 거리 (m), 시간 (초, 처음이 빠르고 점점 멎음; 가장자리에서 안 멈춤); 닿은 적을 미는 거리 (m)")]
+        public float rankSlide = 3.5f, rankSlideTime = 0.35f, rankShove = 3f;
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float rankRecovery = 0.15f, rankCooldown = 6f;
+
+        [Header("후보 문서 2안 · 룩 직선 돌파 (R-중1)")]
+        [Tooltip("좌클릭 모으기: 바닥 줄 길이 (m) 처음 · 다 모으면, 다 모으는 시간 (초), 쥔 채 이만큼 (초) 넘으면 저절로 출발")]
+        public float fileNear = 4f, fileFar = 9f, fileCharge = 1f, fileHold = 3f;
+        [Tooltip("돌진 빠르기 (m/s), 부딪는 반지름 (m), 넘어뜨리는 적 수; 한 명 칠 때마다 더 나가는 거리 (m), 멈칫 (초)")]
+        public float fileSpeed = 12f, fileRadius = 0.6f;
+        public int fileMaxHits = 3;
+        public float fileExtra = 1f, fileStop = 0.06f;
+        [Tooltip("튕겨 넘어뜨림: 옆으로 · 앞으로 · 위로 미는 빠르기 (m/s); 벽에 박으면 룩 휘청 (초)")]
+        public float fileSideways = 5f, fileForward = 2.5f, fileLift = 2f, fileWallStagger = 0.6f;
+        public float fileCooldown = 16f;
+
+        [Header("후보 문서 2안 · 킹 런 (K-중7)")]
+        [Tooltip("걸음 수, 전체 시간 (초), 걸음 빠르기 (m/s); 박자: 앞 걸음 시작에서 이만큼 (초) 뒤가 딱 맞음, 이 차이 (초) 안이면 긴 걸음, 이 차이 (초) 안이면 보통")]
+        public int runSteps = 5;
+        public float runTime = 2.5f, runSpeed = 9f, runBeat = 0.45f, runBeatTight = 0.1f, runBeatLoose = 0.25f;
+        [Tooltip("걸음 길이 (m): 박자 맞춤 · 보통 · 어긋남")]
+        public float runLong = 2.2f, runStep = 1.8f, runShort = 1.4f;
+        [Tooltip("다섯 걸음 뒤 숨 고르기 (초), 쿨 (초)")]
+        public float runBreath = 0.5f, runCooldown = 18f;
     }
 }

@@ -1156,8 +1156,15 @@ public static class NetworkCoreTests
                 Check(plan3.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.FlankShot&&plan3.Skill(PieceKind.Rook,0)==PawnRushSkillIds.CastleOver&&plan3.Skill(PieceKind.Queen,0)==PawnRushSkillIds.ScholarThrust&&plan3.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep
                       &&plan3.Raw(3,1)==PawnRushSkillIds.ChainBehind&&plan3.Raw(5,1)==PawnRushSkillIds.KingSummon&&plan3.Raw(0,1)==PawnRushSkillIds.ChaseAway&&plan3.Raw(1,1)==PawnRushSkillIds.Fork
                       &&plan3.Raw(2,1)==PawnRushSkillIds.Pin&&plan3.Raw(4,1)==PawnRushSkillIds.CheckSeries&&plan3.Raw(0,2)==0&&!PawnRushSkillIds.Old(PawnRushSkillIds.FlankShot)&&!PawnRushSkillIds.Old(PawnRushSkillIds.CheckSeries),"the skill pool's plan 3: its basic row in the first slots, its mid row in the second");
+                var plan2=PawnRushLoadout.Preset(7);
+                Check(plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackRank&&plan2.Raw(3,1)==PawnRushSkillIds.FileCharge&&plan2.Raw(5,1)==PawnRushSkillIds.KingRun&&plan2.Raw(2,0)==PawnRushSkillIds.Fianchetto,"the skill pool's plan 2: the first skills, and what each grows into in the second slots");
+                plan2.system=PawnRushLoadout.Grow;
+                Check(plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackRank&&plan2.Skill(PieceKind.Rook,1)==0&&plan2.Apply(PawnRushLoadout.OpStage+3,2)&&plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.FileCharge
+                      &&plan2.SlotOf(PieceKind.Rook,PawnRushSkillIds.FileCharge)==0&&plan2.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check,"the growing system: from stage 2 a row plays what its second slot holds, the others stay at stage 1");
+                plan2.Set(4,1,0); plan2.Apply(PawnRushLoadout.OpStage+4,3);
+                Check(plan2.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check,"the growing system: an empty second slot leaves the first skill at every stage");
                 var plan1=PawnRushLoadout.Preset(5);
-                Check(PawnRushLoadout.Presets==7&&plan1.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&plan1.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&plan1.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.LongSnipe&&plan1.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check
+                Check(PawnRushLoadout.Presets==8&&plan1.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&plan1.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&plan1.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.LongSnipe&&plan1.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check
                       &&plan1.Skill(PieceKind.Rook,0)==PawnRushSkillIds.ChainBehind&&plan1.Skill(PieceKind.King,0)==PawnRushSkillIds.KingSummon&&plan1.KingSlots
                       &&PawnRushSkillIds.Old(PawnRushSkillIds.SteeredSteps)&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.SteeredSteps)==PieceKind.Pawn&&!PawnRushSkillIds.Old(PawnRushSkillIds.LongSnipe)
                       &&PawnRushSkillIds.OldPiece(PawnRushSkillIds.ChainBehind)==PieceKind.Rook&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.KingSummon)==PieceKind.King,"the skill pool's plan 1: the pawn's steps, the rook's chain and the king's call run on the old ones' code, the snipe is a new skill");

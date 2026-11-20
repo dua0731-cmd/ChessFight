@@ -116,6 +116,13 @@ namespace ChessFight.RagdollLab
                 "키 = 창 겨눔 (달리면서) · 좌클릭 누르고 있기 = 모으기 (0.2 → 0.8초: 3 → 5 m) · 떼기 = 찌르며 돌진 · 우클릭/키 = 취소\n처음 찔린 적은 자기 값만큼 날아감: 폰 1 m, 나이트 · 비숍 3 m, 킹 4 m, 룩 5 m, 퀸 6 m (룩 · 퀸은 넘어짐)\n폰은 반동으로 튕김 · 헛치면 앞으로 엎어짐 · 쿨 15초 (후보 문서 P-중4)"),
             Made(PawnRushSkillIds.CheckSeries, "연속 체크", PieceKind.Queen, SkillOrigin.Pool, SkillTag.Block,
                 "키 = 조준 (10 m) · 좌클릭 = 체크 · 적 발밑에 퀸 쪽으로 길쭉한 빨간 칸 (2 × 3.5 m, 하얀 먼 끝이 나갈 곳), 0.9초 뒤 터짐\n비켜 나가면 1초 안에 키 = 퀸이 빈 칸으로 미끄러져 다음 칸 (나갈 곳은 카메라 쪽, 0.7 → 0.5초, 세 번까지)\n맞으면 넘어지며 날아감 · 셋째가 맞으면 '최선수' · 쿨 18초 (후보 문서 Q-중5)"),
+            // The pool's plan 2, the three the others did not make (RagdollPawn.PoolPlan2.cs).
+            Made(PawnRushSkillIds.BackRank, "뒷줄 한 수", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block,
+                "옆 · 뒤 이동 키 + 키 = 그쪽으로 3.5 m 곧게 미끄러짐 (앞으로는 안 됨, 가장자리에서 안 멈춤)\n처음 닿은 것에서 딱 멈춤: 적이면 3 m 밀어내고 룩은 그 자리에 섬 · 쿨 6초 (후보 문서 R-기5)"),
+            Made(PawnRushSkillIds.FileCharge, "직선 돌파", PieceKind.Rook, SkillOrigin.Pool, SkillTag.Move | SkillTag.Block,
+                "키 = 자세 · 좌클릭 누르고 있기 = 바닥 줄 4 → 9 m · 떼기 = 곧게 돌진 · 우클릭/키 = 취소\n길 위의 적 셋까지 양옆으로 튕겨 넘어짐 (칠 때마다 멈칫, 1 m 더) · 벽에 박으면 룩 휘청 · 끝나면 바로 다이빙 가능 · 쿨 16초 (후보 문서 R-중1)"),
+            Made(PawnRushSkillIds.KingRun, "킹 런", PieceKind.King, SkillOrigin.Pool, SkillTag.Move | SkillTag.Counter,
+                "키 = 한 걸음, 박자 맞춰 키 = 다음 걸음 (2.5초 동안 다섯 걸음, 걸음마다 이동 키 쪽)\n박자에 맞으면 2.2 m, 어긋나면 짧게 · 딛을 때마다 잡은 손 · 묶임 · 핀 · 발 무거움이 떨어짐 · 체크 중의 걸음은 하나 더 · 쿨 18초 (후보 문서 K-중7)"),
             Made(PawnRushSkillIds.KingSummon, "왕의 부름 (앞으로)", PieceKind.King, SkillOrigin.Pool, SkillTag.Ally | SkillTag.Move | SkillTag.Block,
                 "키 = 같은 구간 팀원 목록 · 2명까지 골라 키로 부름 (나팔 반동으로 킹이 반 걸음 물러남) · 팀원은 3초 안에 자기 키로 받음\n불린 팀원은 킹 앞 좌우(부를 때 보던 쪽)에 내려서고, 내려서는 순간 둘레 2 m의 적이 밀려남\n그때 0.6초 안에 키 한 번 더 = 킹과 팀원이 함께 3 m 밀고 나감 · 킹만 씀 · 쿨 20초 (후보 문서 K-중1)"),
 
@@ -282,6 +289,9 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.ScholarThrust, "옆으로 비켜 나왔다가 등을 찔러 넘어뜨린다" },
             { PawnRushSkillIds.ChaseAway, "창으로 찔러 쫓아낸다. 비싼 기물일수록 멀리 날아간다" },
             { PawnRushSkillIds.CheckSeries, "체크를 이어 가며 적을 원하는 쪽으로 몰아간다" },
+            { PawnRushSkillIds.BackRank, "옆이나 뒤로 곧게 미끄러져 닿은 적을 밀어낸다" },
+            { PawnRushSkillIds.FileCharge, "줄을 그어 곧게 돌진한다. 길 위의 적을 양옆으로 튕긴다" },
+            { PawnRushSkillIds.KingRun, "박자 맞춰 다섯 걸음. 딛을 때마다 붙잡힌 것을 떨친다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

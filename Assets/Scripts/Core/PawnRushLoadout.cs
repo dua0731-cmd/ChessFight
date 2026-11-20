@@ -38,6 +38,9 @@ namespace ChessFight.Network
         // and the bishop's mids are plan 1-나's fork and pin, made the pool's (N-중1, B-중1); the rook's and the king's are
         // 83 and 84.
         public const int ChaseAway = 88, CheckSeries = 89;
+        // The pool's plan 2 (a skill that grows into another), the three not made for the others: the rook's back-rank
+        // move (R-기5) and its straight charge (R-중1), the king's run (K-중7).
+        public const int BackRank = 90, FileCharge = 91, KingRun = 92;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -133,10 +136,19 @@ namespace ChessFight.Network
             slots[row * Slots + slot] = id < 0 ? 0 : id;
         }
 
-        /// <summary>The skill a piece plays in a slot now (none past the system's slots, none for a piece without a row).</summary>
+        /// <summary>The skill a piece plays in a slot now (none past the system's slots, none for a piece without a row). With
+        /// the growing system a skill in the row's second slot is what the first grows into from stage 2 (the skill pool's
+        /// plan 2: "처음 → 나중"); with none there the first one plays at every stage, as before.</summary>
         public int Skill(PieceKind piece, int slot)
         {
-            return slot < 0 || slot >= SlotCount ? 0 : Raw(Row(piece), slot);
+            if (slot < 0 || slot >= SlotCount) return 0;
+            int row = Row(piece);
+            if (system == Grow && slot == 0 && Stage(piece) >= 2)
+            {
+                int grown = Raw(row, 1);
+                if (grown != 0) return grown;
+            }
+            return Raw(row, slot);
         }
 
         /// <summary>The king's row holds a skill in a slot he plays now: he plays his slots. Empty: his call, as it was.</summary>
@@ -272,25 +284,30 @@ namespace ChessFight.Network
         }
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 7;
+        public const int Presets = 8;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
         /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece), 6 the pool's plan 3 (basic,
-        /// mid, ultimate: its basic row in the first slots, its mid row in the second). The king's row is empty (his call)
-        /// in all but 4, 5 and 6.</summary>
+        /// mid, ultimate: its basic row in the first slots, its mid row in the second), 7 the pool's plan 2 (the first skill
+        /// in the first slots, what each grows into in the second: the growing system plays it from stage 2). The king's row
+        /// is empty (his call) in all but 4 to 7.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
-            if (which == 6)
+            if (which == 6 || which == 7)
             {
-                int[] basic = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.CastleOver, PawnRushSkillIds.ScholarThrust, PawnRushSkillIds.KingStep };
-                int[] mid = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon };
+                int[] first2 = which == 6
+                    ? new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.CastleOver, PawnRushSkillIds.ScholarThrust, PawnRushSkillIds.KingStep }
+                    : new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.Fianchetto, PawnRushSkillIds.BackRank, PawnRushSkillIds.Check, PawnRushSkillIds.KingStep };
+                int[] second = which == 6
+                    ? new[] { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.Pin, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingSummon }
+                    : new[] { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.FileCharge, PawnRushSkillIds.CheckSeries, PawnRushSkillIds.KingRun };
                 for (int row = 0; row < Rows; row++)
                 {
-                    p.slots[row * Slots] = basic[row];
-                    p.slots[row * Slots + 1] = mid[row];
+                    p.slots[row * Slots] = first2[row];
+                    p.slots[row * Slots + 1] = second[row];
                 }
                 return p;
             }
