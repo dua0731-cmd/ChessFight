@@ -155,7 +155,13 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.PassantBang, "앙파상 !!", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, 역전 배율) · Q = 2초 외침 (걸을 수 있음, 모두에게 알림)\n지난 20초 (×2면 40초) 동안 폰을 앞질러 간 적 전부 (넷까지, 앞선 쪽부터)가 폰을 지나친 자리로 날아 돌아와 1.5초 엎어짐\n외치는 2초 안에 폰이 넘어지면 끊기고 게이지 절반이 남음"),
             Made(PawnRushSkillIds.KnightTour, "나이트 투어", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
-                "궁극기 (팀 게이지, 역전 배율) · Q = 2초 예고 (12 m 안 가장 가까운 적 머리에 빨간 고리) 뒤 그 머리로 뛰어오름\n적에서 적으로 0.5초마다 건너뜀 (다음 적은 12 m 안: 이동 키로 고르거나, 안 고르면 가장 앞선 적) · 밟힌 적은 납작 2초 뒤 5 m 뒤로 미끄러짐\n밟는 수 넷 (×2면 여섯) · 나이트는 마지막 머리의 자리에 섬 · 서로 12 m 넘게 흩어지면 끊김"),
+                "궁극기 (팀 게이지, 역전 배율) · Q = 언제든 시전: 2.1초 모으기 (서서 카메라로 첫 머리 고르기, 모두에게 알림) + 0.3초 정적" + "\n" +
+                "26 m 안 겨눈 쪽의 적 머리로, 다음은 12 m 안 가장 앞선 적의 머리로 0.42초마다 건너뜀 · 밟힌 적은 3초 납작 뒤 4 m 미끄러짐 · 다섯 (×2 일곱)" + "\n" +
+                "끝으로 적 선두 10 m 앞으로 크게 도약 (30 m까지) · 적이 없으면 앞으로 18 m 도약만 (RagdollPawn.KnightUlts.cs)"),
+            Made(PawnRushSkillIds.FamilyFork, "패밀리 포크", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "궁극기 (팀 게이지, 역전 배율) · Q = 언제든 시전: 2.1초 모으기 (서서 카메라로 착지할 무리 고르기, 모두에게 알림) + 0.3초 정적" + "\n" +
+                "32 m 안 적이 가장 몰린 곳으로 16 m 높이 도약 · 착지 둘레 14 m (×0.5 7 m, ×2 20 m) 적 전원이 하늘로 솟아 20 m 뒤 (지나온 바닥)로, 2초 엎어짐" + "\n" +
+                "적이 없으면 보는 쪽으로 16 m 도약만 (RagdollPawn.KnightUlts.cs)"),
             Made(PawnRushSkillIds.GreekGift, "그리스 선물", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, 역전 배율) · Q = 상대 팀 가장 앞선 하나 (×2면 셋)의 머리 위에 '갈고리!' 2초\n그 뒤 빛이 차례로 날아가 (한 사람에 0.4초) 갈고리를 검: 처음 닿은 몸이 대신 걸리고 벽에서 막힘\n걸린 적은 비숍이 떠난 자리로 끌려와 2초 해롱 · 비숍은 잡혀 체크포인트로 (시험 씬은 리스폰)"),
             Made(PawnRushSkillIds.RankWall, "7번째 줄", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
@@ -364,6 +370,7 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.SeventhRank, "길을 통째로 막는 벽을 세워 밀고 간다" },
             { PawnRushSkillIds.PassantBang, "나를 앞질러 간 적들을 지나친 자리로 되돌린다" },
             { PawnRushSkillIds.KnightTour, "적의 머리에서 머리로 건너뛰며 납작하게 만든다" },
+            { PawnRushSkillIds.FamilyFork, "적이 몰린 곳에 하늘에서 내려 둘레의 적을 모두 뒤로 날린다" },
             { PawnRushSkillIds.GreekGift, "상대 맨 앞을 갈고리로 끌어오고 비숍은 잡힌다" },
             { PawnRushSkillIds.RankWall, "상대 1등 앞에 상대만 막는 성벽을 세운다" },
             { PawnRushSkillIds.QueenDrop, "적이 가장 많이 모인 곳에 떨어져 다 날린다" },

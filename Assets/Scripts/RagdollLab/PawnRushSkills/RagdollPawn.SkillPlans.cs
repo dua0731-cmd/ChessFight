@@ -137,6 +137,7 @@ namespace ChessFight.RagdollLab
                 bool spent = planPhase != PlanPhase.Aim || activeSkill == PawnRushSkillIds.AirVolley;
                 float cooldown = NewSkillCooldown(activeSkill, s);
                 UltCut(s);   // an ultimate floored in its warning leaves half its gauge (RagdollPawn.UltGauge.cs)
+                if (PawnRushSkillIds.TeamUltimate(activeSkill)) Fx(SkillFxKind.UltEnd, null, FeetPoint, planDir, 1);   // the screens' show ends
                 EndPlanSkill();
                 if (spent) StartCooldown(cooldown);
             }
@@ -268,7 +269,8 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.SeventhRank: UpdateSeventhRank(s, press, dt); break;   // (RagdollPawn.KitTwoUlts.cs)
                 // The team's comeback ultimates (RagdollPawn.TeamUlts.cs).
                 case PawnRushSkillIds.PassantBang: UpdatePassantBang(s, press, dt); break;
-                case PawnRushSkillIds.KnightTour: UpdateKnightTour(s, press, dt); break;
+                case PawnRushSkillIds.KnightTour: UpdateTourUlt(s, press, dt); break;      // (RagdollPawn.KnightUlts.cs)
+                case PawnRushSkillIds.FamilyFork: UpdateFamilyFork(s, press, dt); break;
                 case PawnRushSkillIds.GreekGift: UpdateGreekGift(s, press, dt); break;
                 case PawnRushSkillIds.RankWall: UpdateRankWall(s, press, dt); break;
                 case PawnRushSkillIds.QueenDrop: UpdateQueenDrop(s, press, confirm, dt); break;

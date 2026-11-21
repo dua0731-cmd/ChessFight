@@ -97,6 +97,7 @@ namespace ChessFight.RagdollLab
             if (chainWheelLeft > 0f) chainWheelLeft -= dt;
             UpdateGauge(s, dt);   // the ultimate gauge (RagdollPawn.UltGauge.cs)
             UpdateSlideBack();    // the knight's tour: sliding back after the squash (RagdollPawn.TeamUlts.cs)
+            TrackCrumbs(dt);      // where it ran, for the family fork's throw back (RagdollPawn.KnightUlts.cs)
             if (HasSkill(PawnRushSkillIds.PassantBang)) TrackOvertakes();   // who overtakes the pawn, for en passant !!
         }
 
@@ -140,6 +141,9 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.Promote:
                 case PawnRushSkillIds.KingMarch:
+                // The knight's ultimates (RagdollPawn.KnightUlts.cs): it stands while it gathers; the camera aims.
+                case PawnRushSkillIds.FamilyFork:
+                case PawnRushSkillIds.KnightTour:
                     // The ultimates' warning (the kits' second version): the piece stands while everyone is told.
                     if (planPhase != PlanPhase.Windup) break;
                     input.move = Vector3.zero;

@@ -129,6 +129,7 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillFx -= OnSkillFx;
             if (stopping) Time.timeScale = stopResume;
             DestroyDesignA();
+            DestroyUlt();
             foreach (var a in anims) a.Destroy();
             foreach (var s in tileSets.Values) s.Destroy();
             foreach (var s in ghosts.Values) s.Destroy();
@@ -181,6 +182,13 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.BishopRopeSnap: BishopRopeSnapFx(e); break;
                 // JY-skill-lab 11-20: the hand feel (RagdollPawn.HandFeel.cs).
                 case SkillFxKind.SkillFeel: FeelFx(e); break;
+                // JY-skill-lab 11-21: the ultimates' shared cast (PawnRushSkillFx.Ult.cs, PawnRushSkillFx.UltScreen.cs).
+                case SkillFxKind.UltCast: UltCast(e); break;
+                case SkillFxKind.UltMark: UltMark(e); break;
+                case SkillFxKind.UltGo: UltGo(e); break;
+                case SkillFxKind.UltStrike: UltStrike(e); break;
+                case SkillFxKind.UltHit: UltHit(e); break;
+                case SkillFxKind.UltEnd: UltEnd(e); break;
             }
         }
 
@@ -1185,6 +1193,7 @@ namespace ChessFight.RagdollLab
             else GhostSquares(dt, cam);
             air?.Step(dt);
             arc?.Step(dt, cam);
+            UltStep(dt, cam);   // the ultimates' cast: its marks, the grade, the caster's camera (PawnRushSkillFx.Ult.cs)
 
             if (shakeLeft > 0f && cam != null)
             {

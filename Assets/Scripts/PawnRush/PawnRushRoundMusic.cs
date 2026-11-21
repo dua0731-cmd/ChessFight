@@ -72,7 +72,7 @@ namespace ChessFight.PawnRush
                 loop.PlayScheduled(at + (double)opening.clip.samples / opening.clip.frequency);
             }
             fade = Mathf.MoveTowards(fade, racing ? 1f : 0f, Time.unscaledDeltaTime / (racing ? FadeIn : FadeOut));
-            opening.volume = loop.volume = GameSettings.Music * Gain * fade;
+            opening.volume = loop.volume = GameSettings.Music * Gain * fade * MusicDuck.Level;
             if (!racing && started && fade <= 0f)
             {
                 opening.Stop();

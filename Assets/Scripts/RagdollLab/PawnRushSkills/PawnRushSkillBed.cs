@@ -642,6 +642,7 @@ namespace ChessFight.RagdollLab
                     // The team's comeback ultimates (RagdollPawn.TeamUlts.cs).
                     case PawnRushSkillIds.PassantBang:
                     case PawnRushSkillIds.KnightTour:
+                    case PawnRushSkillIds.FamilyFork:
                     case PawnRushSkillIds.GreekGift:
                     case PawnRushSkillIds.RankWall:
                     case PawnRushSkillIds.GeneralCall:

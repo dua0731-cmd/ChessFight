@@ -15,9 +15,7 @@ namespace ChessFight.RagdollLab
     ///   앙파상 !!   the pawn shouts (2 s, it walks on). Every enemy that overtook it in the last 20 s (40 s at x2; four at
     ///               most, the farthest ahead first) is pulled back through the air to where it passed the pawn, and lies
     ///               1.5 s.
-    ///   나이트 투어 onto the nearest enemy's head within 12 m, then from enemy to enemy (a hop each 0.5 s, the next within
-    ///               12 m: the move keys pick it, or the one farthest ahead): each squashed 2 s, then sliding 5 m back. Four
-    ///               hops (six at x2); the knight stands where the last one stood.
+    ///   나이트 투어 (and the knight's family fork) since 11-21: RagdollPawn.KnightUlts.cs, on the shared cast.
     ///   그리스 선물 hooks over the other team's front 1 (3 at x2) for 2 s; then the bishop's light goes to each in turn
     ///               (0.4 s each: the first body on the way takes it, a wall stops it) and the hooked are pulled back to
     ///               where the bishop stood, dazed 2 s. The bishop is taken (back to its checkpoint).
@@ -207,138 +205,7 @@ namespace ChessFight.RagdollLab
             else Log($"앙파상 !!: {n}명 (지난 {window:0}초, ×{ultF:0.#})");
         }
 
-        // ---------------------------------------------------------------- N-궁: the knight's tour
-
-        /// <summary>The tour's next head from here: within tourReach, not stomped yet; the one the move keys point at, or the
-        /// one farthest ahead.</summary>
-        RagdollPawn TourNext(PawnRushSkillParams s, Vector3 from)
-        {
-            Vector3 want = Flat(skillMoveRaw);
-            bool keyed = want.sqrMagnitude > 0.04f;
-            RagdollPawn best = null;
-            float bestScore = float.NegativeInfinity;
-            foreach (var e in All)
-            {
-                if (e == null || e == this || !IsEnemyOf(e) || e.State != PawnState.Active || e.SkillUntargetable || ultTaken.Contains(e)) continue;
-                Vector3 d = Flat(e.bodies[0].position - from);
-                if (d.magnitude > s.tourReach || Mathf.Abs(e.bodies[0].position.y - from.y) > 4f) continue;
-                float score = keyed ? Vector3.Dot(d.normalized, want.normalized) : Progress(e);
-                if (score <= bestScore) continue;
-                best = e;
-                bestScore = score;
-            }
-            return best;
-        }
-
-        RagdollPawn TourNearest(PawnRushSkillParams s)
-        {
-            RagdollPawn best = null;
-            float bestD = s.tourReach;
-            foreach (var e in All)
-            {
-                if (e == null || e == this || !IsEnemyOf(e) || e.State != PawnState.Active || e.SkillUntargetable) continue;
-                float d = Flat(e.bodies[0].position - bodies[0].position).magnitude;
-                if (d > bestD) continue;
-                best = e;
-                bestD = d;
-            }
-            return best;
-        }
-
-        void UpdateKnightTour(PawnRushSkillParams s, bool press, float dt)
-        {
-            switch (planPhase)
-            {
-                case PlanPhase.None:
-                {
-                    if (!press || !CanStartSkill(true)) break;
-                    var first = TourNearest(s);
-                    if (first == null)
-                    {
-                        Fx(SkillFxKind.SkillFail, null, FeetPoint, FlatDir(facing), (int)PieceKind.Knight);
-                        Log($"나이트 투어: {s.tourReach:0} m 안에 적이 없음");
-                        break;
-                    }
-                    pressedSkill = PawnRushSkillIds.KnightTour;
-                    BeginTeamUlt(s, "나이트 투어 (말 울음)");
-                    planTarget = first;
-                    Fx(SkillFxKind.KnightLeap, null, FeetPoint, FlatDir(facing), 1);
-                    break;
-                }
-                case PlanPhase.Windup:
-                    planTime += dt;
-                    // The first head: the nearest still, while the neigh lasts.
-                    if (planTarget == null || planTarget.State != PawnState.Active) planTarget = TourNearest(s);
-                    if (planTime < s.teamUltWarn) break;
-                    if (planTarget == null || Flat(planTarget.bodies[0].position - bodies[0].position).magnitude > s.tourReach)
-                    {
-                        planTarget = TourNearest(s);
-                        if (planTarget == null)
-                        {
-                            FeelMiss(FeetPoint, FlatDir(facing));
-                            Log("나이트 투어: 첫 머리가 12 m 밖으로 흩어짐 — 끊김");
-                            planPhase = PlanPhase.Recovery;
-                            planTime = 0f;
-                            break;
-                        }
-                    }
-                    planPhase = PlanPhase.Active;
-                    planTime = 0f;
-                    TourHop(s, planTarget);
-                    break;
-                case PlanPhase.Active:
-                {
-                    // (Between hops: the flight onto a head has just ended - UpdatePlanCarry ran it.)
-                    planTime += dt;
-                    var landed = planTarget;
-                    if (landed != null && !ultTaken.Contains(landed)) TourStomp(s, landed);
-                    int hops = Mathf.RoundToInt(ByComeback(ultF, s.tourHops1, s.tourHops2));
-                    var next = ultTaken.Count < Mathf.Max(1, hops) ? TourNext(s, bodies[0].position) : null;
-                    if (next == null)
-                    {
-                        planPhase = PlanPhase.Recovery;
-                        planTime = 0f;
-                        Log($"나이트 투어: {ultTaken.Count}명 밟음 (×{ultF:0.#})");
-                        break;
-                    }
-                    TourHop(s, next);
-                    break;
-                }
-                case PlanPhase.Recovery:
-                    planTime += dt;
-                    if (planTime >= 0.3f) EndTeamUlt(s);
-                    break;
-                default:
-                    EndPlanSkill();
-                    break;
-            }
-        }
-
-        /// <summary>A hop onto <paramref name="head"/>'s head (the carried flight, following it).</summary>
-        void TourHop(PawnRushSkillParams s, RagdollPawn head)
-        {
-            planTarget = head;
-            planDir = FlatDir(head.bodies[0].position - bodies[0].position);
-            Vector3 top = head.bodies[(int)BodyId.Head].position + Vector3.up * 0.35f;
-            BeginArcCarry(top, s.tourHop, Mathf.Max(bodies[0].position.y, top.y) + 2f, head);
-            Fx(SkillFxKind.KnightLeap, null, FeetPoint, planDir, 0);
-        }
-
-        /// <summary>On a head: squashed, and sliding back a moment later.</summary>
-        void TourStomp(PawnRushSkillParams s, RagdollPawn e)
-        {
-            ultTaken.Add(e);
-            if (e.State != PawnState.Active) return;
-            if (e.Squash(s.tourSquash, 0f)) e.GaugeKnocked(this);
-            e.slideAt = Time.time + s.tourSquash;
-            e.slideDir = -RunWay(e);
-            e.slideMetres = s.tourSlide;
-            e.LastSkillHit = $"나이트 투어: 납작 {s.tourSquash:0.#}초, 뒤로 {s.tourSlide:0} m";
-            Vector3 head = e.bodies[(int)BodyId.Head].position;
-            Fx(SkillFxKind.KnightStomp, e, head, planDir);
-            FeelHit(e, head, planDir, FeelHard, ultTaken.Count, true);
-            Log($"나이트 투어 → {e.DisplayName}: {ultTaken.Count}번째 머리");
-        }
+        // (N-궁, the knight's tour: RagdollPawn.KnightUlts.cs, with the family fork, since 11-21.)
 
         // ---------------------------------------------------------------- B-궁: the Greek gift
 

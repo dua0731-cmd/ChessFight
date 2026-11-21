@@ -196,10 +196,6 @@ namespace ChessFight.RagdollLab
             float blink = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 12f));
             switch (pawn.PlanSkill)
             {
-                case PawnRushSkillIds.KnightTour:
-                    if (pawn.PlanTarget != null && phase != PlanPhase.Recovery)
-                        SkillMarks.Circle(Next(), pawn.PlanTarget.Hips.position + Vector3.up * 0.65f, 0.35f, Fade(Red, blink), 0.06f, 18);
-                    break;
                 case PawnRushSkillIds.GreekGift:
                     if (phase == PlanPhase.Active && pawn.PlanTarget != null)
                         SkillMarks.Segment(Next(), pawn.PlanPoint + Vector3.up * 1f, pawn.PlanTarget.LassoBelly, Fade(Gold, 0.95f), 0.1f, false);

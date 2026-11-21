@@ -59,6 +59,12 @@ namespace ChessFight.RagdollLab
         // ...and the team ultimate's 7th rank across the way (as KitWall, its height; target: the first runner it stands
         // before: RagdollPawn.TeamUlts.cs).
         KitTeamWall,
+        // ...and the ultimates' shared cast (11-21; RagdollPawn.KnightUlts.cs, PawnRushSkillFx.Ult.cs): the key (by; at: its feet;
+        // dir: the camera's way; count: the skill; size: the cast's seconds), an enemy named (target; count: its place in line),
+        // the call (target: what it goes at; at: where it goes; count: the skill; size 1: the tour's last leap), an enemy struck
+        // (target; count: its place), the landing (at; count: the pieces struck; size: the round, m) and the end (count 1: cut
+        // short). Last, so no kind's number moves.
+        UltCast, UltMark, UltGo, UltStrike, UltHit, UltEnd,
     }
 
     public struct SkillFxEvent

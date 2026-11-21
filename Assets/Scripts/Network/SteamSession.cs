@@ -212,7 +212,8 @@ namespace ChessFight.Network
         // platform held 1.5 s: a bit more in the room's rules number).
         // skilllab14: the sets 1안-a and 2안-a - eight more skills for a slot (110..117), two more loadouts that come with
         // the game, and the ultimate slot played under every system.
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab14";
+        // skilllab15: the knight's family fork (118: one more skill for a slot) and the ultimates' shared cast's moments.
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab15";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

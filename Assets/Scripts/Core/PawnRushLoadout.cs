@@ -66,6 +66,9 @@ namespace ChessFight.Network
         // taking two teammates with him (RagdollPawn.SetSkills.cs).
         public const int StepsMid = 110, SnipeMid = 111, WallMid = 112, SeriesQuick = 113, SummonQuick = 114, LeapFork = 115, PassedPawn = 116,
                          KingEscort = 117;
+        // The knight's second ultimate, picked from the previz (the user 11-21: "나이트의 궁극기 2개만 먼저 만들어줘"): the family
+        // fork, Nf7+!! (RagdollPawn.KnightUlts.cs; the knight's tour, 105, is played the new way there too).
+        public const int FamilyFork = 118;
 
         /// <summary>The skill whose code a variant runs on (itself for any other).</summary>
         public static int BaseOf(int id)
@@ -94,8 +97,8 @@ namespace ChessFight.Network
         /// <summary>One of the first ultimates (the pool's six, the kits' 7th rank), the high tier's candidates since 11-21.</summary>
         public static bool HighCandidate(int id) => (id >= Promote && id <= KingMarch) || id == SeventhRank;
 
-        /// <summary>One of the team's comeback ultimates (104..109).</summary>
-        public static bool TeamUltimate(int id) => id >= PassantBang && id <= GeneralCall;
+        /// <summary>One of the team's comeback ultimates (104..109, and the knight's family fork, 118).</summary>
+        public static bool TeamUltimate(int id) => (id >= PassantBang && id <= GeneralCall) || id == FamilyFork;
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;

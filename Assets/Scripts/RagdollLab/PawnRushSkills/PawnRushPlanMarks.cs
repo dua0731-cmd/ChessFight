@@ -104,7 +104,6 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.SeventhRank: DrawSeventhRank(pawn); break;
                     // The team's comeback ultimates (PawnRushPlanMarks.KitTwo.cs).
                     case PawnRushSkillIds.PassantBang:
-                    case PawnRushSkillIds.KnightTour:
                     case PawnRushSkillIds.GreekGift:
                     case PawnRushSkillIds.RankWall:
                     case PawnRushSkillIds.QueenDrop:
