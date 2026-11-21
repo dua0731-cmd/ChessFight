@@ -59,6 +59,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.PromotionRun: PrCast(u); break;
                 case PawnRushSkillIds.RookRoll: RrCast(u); break;
                 case PawnRushSkillIds.QueenDescent: QdCast(u); break;
+                case PawnRushSkillIds.KingWalk: KwCast(u); break;
             }
         }
 
@@ -71,6 +72,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.PromotionRun: PrStep(u, dt, cam); break;
                 case PawnRushSkillIds.RookRoll: RrStep(u, dt, cam); break;
                 case PawnRushSkillIds.QueenDescent: QdStep(u, dt, cam); break;
+                case PawnRushSkillIds.KingWalk: KwStep(u, dt, cam); break;
             }
         }
 
@@ -91,6 +93,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.PromotionRun: PrStrikeFx(u, e); break;
                 case PawnRushSkillIds.RookRoll: RrStrikeFx(u, e); break;
                 case PawnRushSkillIds.QueenDescent: QdStrikeFx(u, e); break;
+                case PawnRushSkillIds.KingWalk: KwStrikeFx(u, e); break;
             }
         }
 
@@ -114,6 +117,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.GreatDiagonal: GdLineFx(u, e); break;
                 case PawnRushSkillIds.PromotionRun: PrLineFx(u, e); break;
+                case PawnRushSkillIds.KingWalk: KwLineFx(u, e); break;
             }
         }
 
@@ -125,6 +129,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.PromotionRun: PrWarnFx(u, e); break;
                 case PawnRushSkillIds.QueenDescent: QdWarnFx(u, e); break;
+                case PawnRushSkillIds.KingWalk: KwWarnFx(u, e); break;
             }
         }
 
@@ -137,6 +142,27 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.PromotionRun: PrStateFx(u, e); break;
                 case PawnRushSkillIds.RookRoll: RrStateFx(u, e); break;
                 case PawnRushSkillIds.QueenDescent: QdStateFx(u, e); break;
+                case PawnRushSkillIds.KingWalk: KwStateFx(u, e); break;
+            }
+        }
+
+        /// <summary>A show going: what it made for itself goes with it.</summary>
+        void UltDriveGone(UltShow u)
+        {
+            switch (u.state)
+            {
+                case KwFx kw:
+                    if (kw.carpetObject != null) Destroy(kw.carpetObject);
+                    if (kw.carpetMesh != null) Destroy(kw.carpetMesh);
+                    kw.carpetObject = null;
+                    kw.carpetMesh = null;
+                    break;
+                case RrFx rr:
+                    if (rr.baked != null) Destroy(rr.baked);
+                    if (rr.loop != null) Destroy(rr.loop);
+                    rr.baked = null;
+                    rr.loop = null;
+                    break;
             }
         }
 
@@ -148,6 +174,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.PromotionRun => PrHint(u),
             PawnRushSkillIds.RookRoll => RrHint(u),
             PawnRushSkillIds.QueenDescent => QdHint(u),
+            PawnRushSkillIds.KingWalk => KwHint(u),
             _ => null,
         };
 
@@ -159,6 +186,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.PromotionRun => PrLine(u),
             PawnRushSkillIds.RookRoll => RrLine(u),
             PawnRushSkillIds.QueenDescent => QdLine(u),
+            PawnRushSkillIds.KingWalk => KwLine(u),
             _ => $"맞힌 적 {u.struckSet.Count}",
         };
 
@@ -170,6 +198,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.PromotionRun => PrWarning(u, me),
             PawnRushSkillIds.RookRoll => RrWarning(u, me),
             PawnRushSkillIds.QueenDescent => QdWarning(u, me),
+            PawnRushSkillIds.KingWalk => KwWarning(u, me),
             _ => null,
         };
 

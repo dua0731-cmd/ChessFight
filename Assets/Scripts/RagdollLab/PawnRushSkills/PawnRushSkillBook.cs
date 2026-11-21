@@ -187,7 +187,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.KingWalk, "킹 워크", PieceKind.King, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 18 · 24초) · 12초 동안 1.5배 커져 1.8배로 행진 (아무것도 못 넘어뜨림, 앞길의 적은 옆으로)" + "\n" +
                 "뒤로 레드카펫 100 m · 카펫을 밟은 우리 팀은 킹 뒤로 빨려 와 행렬 · 행렬 넷이면 한 번 더 커지고 2.2배" + "\n" +
-                "좌클릭 = 왕관 충격파 ×3 (앞 30 m 부채꼴의 적 15 m 날아가 2초 넘어짐) · 아직 만드는 중"),
+                "좌클릭 = 왕관 충격파 ×3 (0.4초 예고 뒤 앞 30 m 부채꼴의 적 15 m 날아가 2초 넘어짐) · 판정은 날린 적 + 데려온 팀원"),
             // The set 3안-b's queen (11-22): her two skills without the 1.5x of her three.
             Made(PawnRushSkillIds.SeriesB, "연속 체크 (3안-b)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
                 "3안-b세트의 수치 · 연속 체크와 같고 쿨 16초 (퀸 칸이 둘이라 1.5배를 풂)"),

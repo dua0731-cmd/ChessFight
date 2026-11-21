@@ -108,10 +108,11 @@ namespace ChessFight.RagdollLab
         /// about 3 s of control to one ultimate).</summary>
         bool DriveFoe(RagdollPawn e) => UltFoe(e) && !driveHit.Contains(e);
 
-        /// <summary>Its time is out: the judgement, then a moment to see it.</summary>
-        void FinishDrive(PawnRushSkillParams s)
+        /// <summary>Its time is out: the judgement, then a moment to see it. <paramref name="bonus"/> counts with the enemies
+        /// hit (the king's teammates brought).</summary>
+        void FinishDrive(PawnRushSkillParams s, int bonus = 0)
         {
-            int hit = driveHit.Count, grade = DriveGrade(s, hit);
+            int hit = driveHit.Count + bonus, grade = DriveGrade(s, hit);
             Fx(SkillFxKind.UltHit, null, FeetPoint, planDir, hit, grade);
             Log($"{PawnRushSkillBook.Name(activeSkill)}: 적 {hit}명 → {GradeName(grade)}");
             planPhase = PlanPhase.Recovery;
@@ -154,6 +155,7 @@ namespace ChessFight.RagdollLab
             ClearPromotionRun();   // (a queen again a pawn)
             ClearRookRoll();
             ClearQueenDescent();
+            ClearKingWalk();
         }
 
         // ---------------------------------------------------------------- where the camera looks

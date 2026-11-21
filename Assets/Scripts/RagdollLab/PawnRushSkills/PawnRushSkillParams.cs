@@ -891,6 +891,13 @@ namespace ChessFight.RagdollLab
         public float qdHigh = 20f, qdSpeed = 30f, qdAccel = 60f, qdClimb = 12f, qdRiseTime = 0.8f, qdReach = 60f;
         [Tooltip("여왕 강림: 내리꽂는 시간 = 그림자 (초); 둘레 (m)와 희생의 둘레 (m); 날리는 거리 (m), 넘어짐 (초); 끝에 내려서는 시간 (초); 희생 뒤 잡히기까지 (초)")]
         public float qdDiveTime = 1f, qdRadius = 8f, qdSacRadius = 16f, qdThrow = 25f, qdKnock = 2.5f, qdDownTime = 0.8f, qdTakenShow = 0.8f;
+        [Tooltip("킹 워크: 시간 (초); 충격파 수 (×1.5 넷, ×2 여섯); 빠르기 배율 처음 · 과반 뒤; 그려지는 크기 처음 · 과반 뒤; 카펫 길이 (m), 반폭 (m); 행렬의 사이 (m), 카펫으로 끌려오는 빠르기 (m/s), 제자리에서 이만큼 (m) 밀리면 떨어짐; 과반이 되는 행렬 수 (킹 빼고)")]
+        public float kwSeconds = 12f;
+        public int kwWaves = 3;
+        public float kwSpeed = 1.8f, kwSpeedBig = 2.2f, kwGrow = 1.5f, kwGrowBig = 1.8f, kwCarpet = 100f, kwHalfWidth = 1.6f, kwGap = 2.5f, kwPullSpeed = 40f, kwFallOff = 3f;
+        public int kwMajority = 3;
+        [Tooltip("킹 워크: 앞길의 적을 비키게 하는 거리 (m, 크기만큼 더); 충격파의 예고 (초), 거리 (m), 반각 (°), 사이 (초), 날리는 거리 (m), 넘어짐 (초)")]
+        public float kwKeep = 2f, kwWarn = 0.4f, kwWaveReach = 30f, kwWaveHalf = 35f, kwWaveGap = 1f, kwThrow = 15f, kwKnock = 2f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

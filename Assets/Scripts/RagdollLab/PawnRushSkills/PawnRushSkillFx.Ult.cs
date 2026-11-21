@@ -56,6 +56,8 @@ namespace ChessFight.RagdollLab
             public object state;
             /// <summary>How far the caster's camera has eased into a wider view (0..1, its own screen).</summary>
             public float camK;
+            /// <summary>Where the cast happened and the way the caster faced (the king's carpet is laid from them).</summary>
+            public Vector3 castAt, castDir;
             public bool Fork => skill == PawnRushSkillIds.FamilyFork;
             public bool Tour => skill == PawnRushSkillIds.KnightTour;
             /// <summary>One of the six driven ultimates (air is then its whole time).</summary>
@@ -114,6 +116,7 @@ namespace ChessFight.RagdollLab
             DestroyOutlines();
             DestroyGiants();
             DestroyRolls();
+            DestroyCarpets();
             foreach (var o in new Object[] { texFrame, texStars, meshCube }) if (o != null) Destroy(o);
         }
 
@@ -135,7 +138,7 @@ namespace ChessFight.RagdollLab
             var old = ShowOf(e.by);
             if (old != null) old.gone = true;
             BuildUltParts();
-            var u = new UltShow { by = e.by, skill = e.count, t0 = Clock, air = e.size > 0.1f ? e.size : 1.6f, lastSeen = Clock };
+            var u = new UltShow { by = e.by, skill = e.count, t0 = Clock, air = e.size > 0.1f ? e.size : 1.6f, lastSeen = Clock, castAt = e.at, castDir = e.dir };
             ults.Add(u);
             UltTakeOff(u, e.at);
             UltAura(u);
@@ -732,6 +735,7 @@ namespace ChessFight.RagdollLab
                 if (u.endAt >= 0f && u.Life(Clock) <= 0f) u.gone = true;
                 if (u.gone)
                 {
+                    if (u.Driven) UltDriveGone(u);   // what a driven one made for itself (a carpet, a rolled tower)
                     ults.RemoveAt(i);
                     continue;
                 }

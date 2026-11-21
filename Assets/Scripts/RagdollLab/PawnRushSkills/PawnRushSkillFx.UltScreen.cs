@@ -47,7 +47,7 @@ namespace ChessFight.RagdollLab
         RenderTexture pipTex;
         UltShow pipShow;
         AudioSource ultAudio, ultLoop;
-        AudioClip sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack, sfxWhistle;
+        AudioClip sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack, sfxWhistle, sfxFanfare;
         readonly AudioClip[] sfxChime = new AudioClip[8];
         readonly AudioClip[] sfxGrade = new AudioClip[5];
         AudioClip clipLeap, clipStomp, clipLand, clipWall;
@@ -104,7 +104,7 @@ namespace ChessFight.RagdollLab
 #endif
             if (pipCam != null) Destroy(pipCam.gameObject);
             if (pipTex != null) { pipTex.Release(); Destroy(pipTex); }
-            foreach (var c in new[] { sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack, sfxWhistle }) if (c != null) Destroy(c);
+            foreach (var c in new[] { sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack, sfxWhistle, sfxFanfare }) if (c != null) Destroy(c);
             foreach (var c in sfxChime) if (c != null) Destroy(c);
             foreach (var c in sfxGrade) if (c != null) Destroy(c);
             foreach (var t in new[] { ultGradTeal, ultGradRed }) if (t != null) Destroy(t);
@@ -640,6 +640,14 @@ namespace ChessFight.RagdollLab
             return (h & 0xffff) / 32767.5f - 1f;
         }
 
+        /// <summary>A brass note: a bright tone with its first harmonics, a quick start and a slow fall.</summary>
+        static float Brass(float f, float t)
+        {
+            const float Tau = Mathf.PI * 2f;
+            return (Mathf.Sin(Tau * f * t) + 0.5f * Mathf.Sin(Tau * 2f * f * t) + 0.33f * Mathf.Sin(Tau * 3f * f * t) + 0.2f * Mathf.Sin(Tau * 4f * f * t))
+                   * Mathf.Clamp01(t * 25f) * Mathf.Exp(-t * 1.6f);
+        }
+
         static float Chime(float f, float t)
         {
             const float Tau = Mathf.PI * 2f;
@@ -671,6 +679,8 @@ namespace ChessFight.RagdollLab
             sfxRumble = Synth("Ult rumble", 2f, t => 0.28f * Noise(t) * (0.6f + 0.4f * Mathf.Sin(Tau * 7f * t)) + 0.45f * Mathf.Sin(Tau * 48f * t) * (0.7f + 0.3f * Mathf.Sin(Tau * 3f * t)));
             // The queen's dive: a whistle falling for its second (the phase of a sweep from 1400 to 500 Hz).
             sfxWhistle = Synth("Ult whistle", 1.05f, t => 0.35f * Mathf.Sin(Tau * (1400f * t - 450f * t * t)) * Mathf.Clamp01(t * 8f) * Mathf.Clamp01((1.05f - t) * 10f) + 0.08f * Noise(t) * t);
+            // The king's walk: a brass fanfare climbing G, C, E, G.
+            sfxFanfare = Synth("Ult fanfare", 1.7f, t => 0.2f * (Brass(392f, t) + (t > 0.12f ? Brass(523.25f, t - 0.12f) : 0f) + (t > 0.24f ? Brass(659.25f, t - 0.24f) : 0f) + (t > 0.36f ? Brass(784f, t - 0.36f) * 1.3f : 0f)));
             sfxClack = Synth("Ult clack", 0.3f, t => 0.55f * (Mathf.Sin(Tau * 950f * t) + 0.6f * Mathf.Sin(Tau * 1430f * t)) * Mathf.Exp(-t * 38f) + 0.4f * Noise(t) * Mathf.Exp(-t * 90f));
             int[] steps = { 0, 2, 4, 7, 9, 12, 14, 16 };
             for (int i = 0; i < sfxChime.Length; i++)

@@ -281,6 +281,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.PromotionRun: UpdatePromotionRun(s, press, dt); break;
                 case PawnRushSkillIds.RookRoll: UpdateRookRoll(s, press, dt); break;
                 case PawnRushSkillIds.QueenDescent: UpdateQueenDescent(s, press, dt); break;
+                case PawnRushSkillIds.KingWalk: UpdateKingWalk(s, press, dt); break;
             }
         }
 
