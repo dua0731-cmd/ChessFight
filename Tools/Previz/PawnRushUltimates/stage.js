@@ -139,7 +139,7 @@ function knightHead() {
   return (GEO.head = g);
 }
 /** A chess piece; its base sits at y = 0. team 'ally' (white, blue ring), 'enemy' (black, orange ring) or null (no ring). */
-export function makePiece(kind, team, mat) {
+export function makePiece(kind, team, mat, o = {}) {
   const g = new THREE.Group();
   const m = mat ?? (team === 'enemy' ? MAT.black : MAT.white);
   const acc = mat ?? MAT.gold;
@@ -157,6 +157,15 @@ export function makePiece(kind, team, mat) {
   if (kind === 'king') {
     const v = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, 0.06), acc); v.position.y = 1.55;
     const h = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.06), acc); h.position.y = 1.58; g.add(v, h);
+  }
+  if (o.cute) {   // the game's look: googly eyes and little ball hands
+    const EYE = { pawn: [0.74, 0.16, 0.065], rook: [0.8, 0.235, 0.07], knight: [0.98, 0.1, 0.06], bishop: [0.93, 0.165, 0.06], queen: [1.03, 0.15, 0.06], king: [1.07, 0.16, 0.06] }[kind];
+    const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), black = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.3 });
+    for (const sx of [-1, 1]) {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(EYE[2], 14, 10), white); e.position.set(sx * (kind === 'knight' ? 0.15 : EYE[2] * 1.15), EYE[0], EYE[1]); g.add(e);
+      const p = new THREE.Mesh(new THREE.SphereGeometry(EYE[2] * 0.52, 10, 8), black); p.position.set(e.position.x, EYE[0] - EYE[2] * 0.1, EYE[1] + EYE[2] * 0.62); g.add(p);
+      const h = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: 0.4 })); h.position.set(sx * 0.37, 0.3 + 0.12 * (HEIGHT[kind] - 0.9), 0.04); g.add(h);
+    }
   }
   if (team) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.385, 0.035, 10, 48), team === 'ally' ? MAT.ringAlly : MAT.ringEnemy);
@@ -234,7 +243,7 @@ let seq = 0;
 export class Actor {
   constructor(st, kind, team, x, z, o = {}) {
     this.st = st; this.kind = kind; this.team = team; this.h = HEIGHT[kind]; this.strip = o.strip ?? !!team;
-    this.pivot = new THREE.Group(); this.body = makePiece(kind, team, o.mat); this.body.position.y = -this.h / 2; this.pivot.add(this.body);
+    this.pivot = new THREE.Group(); this.body = makePiece(kind, team, o.mat, { cute: o.cute ?? st.cute }); this.body.position.y = -this.h / 2; this.pivot.add(this.body);
     st.dyn.add(this.pivot);
     this.meshes = []; this.body.traverse(m => { if (m.isMesh && !m.userData.ring) this.meshes.push([m, m.material]); });
     this.speed = o.speed ?? 6;
@@ -337,7 +346,7 @@ export class Stage {
     this.camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 4000);
     makeTextures(); makeMaterials(); this.course = new THREE.Group(); sc.add(this.course); buildCourse(this.course);
     this.sky = makeSky(); sc.add(this.sky);
-    sc.add(new THREE.HemisphereLight(0xe8f0ff, 0x7a6450, 1.15));
+    this.hemi = new THREE.HemisphereLight(0xe8f0ff, 0x7a6450, 1.15); sc.add(this.hemi);
     const sun = this.sun = new THREE.DirectionalLight(0xfff0dc, 2.7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
     sc.add(sun, sun.target);
@@ -354,9 +363,9 @@ export class Stage {
   }
   load(clip) {
     this.scene.remove(this.dyn); this.dyn = new THREE.Group(); this.scene.add(this.dyn);
-    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, cracks: [], evalOn: false, evalKick: null, camMods: [], pieceHide: null, feed: [], typing: [], clip });
+    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, cracks: [], evalOn: false, evalKick: null, camMods: [], pieceHide: null, feed: [], typing: [], lightFn: null, banners: [], voices: [], music: [], cute: false, clip });
     this.knots = clip.warp ?? [[0, 0], [3.6, 3.6], [4.6, 3.7], [64.6, 63.7]]; this.dur = clip.dur;
-    this.sky.material.uniforms.darkCol.value.set(0x3a0806); this.course.visible = true;
+    this.sky.material.uniforms.darkCol.value.set(0x3a0806); this.course.visible = true; this.scene.fog.color.set(0xd2deec);
     clip.build(this);
     this.shots.sort((a, b) => a.c0 - b.c0);
   }
@@ -481,6 +490,7 @@ export class Stage {
     this.camera.fov = fov; this.camera.updateProjectionMatrix();
     this.sky.position.copy(this.camera.position);
     this.sun.position.set(cam.l.x - 24, cam.l.y + 52, cam.l.z - 22); this.sun.target.position.copy(cam.l);
+    const L = this.lightFn ? this.lightFn(s, c) : null; this.sun.intensity = 2.7 * (L?.sun ?? 1); this.hemi.intensity = 1.15 * (L?.hemi ?? 1);
     const gr = this.gradeFn ? this.gradeFn(s, c) : {};
     const u = this.grade.uniforms;
     u.sat.value = gr.sat ?? 1; u.tint.value.set(...(gr.tint ?? [1, 1, 1])); u.vig.value = gr.vig ?? 0.2; u.vigCol.value.set(...(gr.vigCol ?? [0, 0, 0]));

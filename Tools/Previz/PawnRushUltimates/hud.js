@@ -209,6 +209,45 @@ function evalBar(g, st, c, s) {
   g.font = `16px ${DISP}`; g.fillStyle = e >= 0 ? '#1d1a17' : '#f4efe6'; g.fillText(txt, x + w / 2, e >= 0 ? y + h - 14 : y + 14);
   g.restore();
 }
+/** The big moment told to everyone: a banner under the top bar, the voice line, the music chip, whose screen this is. */
+function moment(g, st, c) {
+  for (const q of st.banners) {
+    if (c < q.c0 || c > q.c1) continue;
+    const a = fade(c, q.c0, q.c1, 0.12, 0.35), dx = (1 - easeOut(prog(c, q.c0, q.c0 + 0.3))) * -60;
+    g.save(); g.globalAlpha = a; g.translate(dx, 0);
+    g.font = `40px ${DISP}`; const tw = g.measureText(q.text).width; g.font = `600 19px ${BODY}`; const sw = q.sub ? g.measureText(q.sub).width : 0;
+    const w = Math.max(tw, sw) + 150, x = (W - w) / 2, y = 74;
+    const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, q.color); gr.addColorStop(1, q.color2 ?? q.color);
+    g.fillStyle = gr; rrect(g, x, y, w, q.sub ? 92 : 66, 16); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 2.5; rrect(g, x, y, w, q.sub ? 92 : 66, 16); g.stroke();
+    g.font = `52px ${SYM}`; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(q.glyph ?? '', x + 50, y + (q.sub ? 46 : 33));
+    g.textAlign = 'left'; g.font = `40px ${DISP}`; outlined(g, q.text, x + 96, y + 36, '#ffffff', 'rgba(0,0,0,0.45)', 6);
+    if (q.sub) { g.font = `600 19px ${BODY}`; g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillText(q.sub, x + 98, y + 70); }
+    g.restore();
+  }
+  for (const q of st.voices) {
+    if (c < q.c0 || c > q.c1) continue;
+    const a = fade(c, q.c0, q.c1, 0.06, 0.25), k = 1 + 0.25 * (1 - easeOut(prog(c, q.c0, q.c0 + 0.15)));
+    g.save(); g.globalAlpha = a; g.translate(W / 2, q.y ?? 430); g.scale(k, k);
+    g.font = `${q.size ?? 64}px ${DISP}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    outlined(g, q.text, 0, 0, q.color ?? '#ffffff', 'rgba(10,8,6,0.85)', 12);
+    g.font = `700 18px ${BODY}`; g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillText('🔊 모두에게 들리는 목소리', 0, -(q.size ?? 64) * 0.75);
+    g.restore();
+  }
+  for (const q of st.music) {
+    if (c < q.c0 || c > q.c1) continue;
+    const a = fade(c, q.c0, q.c1, 0.1, 0.3);
+    g.save(); g.globalAlpha = a; g.font = `700 18px ${BODY}`; const w = g.measureText(q.text).width + 58;
+    g.fillStyle = q.bg ?? 'rgba(20,16,32,0.8)'; rrect(g, W - 24 - w, 120, w, 40, 20); g.fill();
+    g.font = `22px ${SYM}`; g.fillStyle = C.gold; g.textBaseline = 'middle'; g.fillText('♪', W - 24 - w + 16, 141 + 2 * Math.sin(c * 12));
+    g.font = `700 18px ${BODY}`; g.fillStyle = '#ffffff'; g.fillText(q.text, W - 24 - w + 40, 141);
+    g.restore();
+  }
+  if (st.clip.view) {
+    g.save(); g.font = `700 17px ${BODY}`; const t = `화면: ${st.clip.view}`, w = g.measureText(t).width + 30;
+    g.fillStyle = 'rgba(8,10,16,0.7)'; rrect(g, 24, H - 150, w, 36, 18); g.fill(); g.fillStyle = '#ffffff'; g.textBaseline = 'middle'; g.fillText(t, 39, H - 132); g.restore();
+  }
+}
 /** The move list beside the picture (the kill feed as a chess score sheet). */
 function feed(g, st, c) {
   const rows = st.feed.filter(q => c >= q.c0).slice(-5); if (!rows.length) return;
@@ -260,7 +299,7 @@ function cracks(g, st, c) {
 export function drawHud(st, c, s) {
   const g = st.g; g.clearRect(0, 0, W, H);
   labels(g, st, c, s); stamps(g, st, c);
-  strip(g, st, c); corner(g, st, c); evalBar(g, st, c, s); feed(g, st, c); typing(g, st, c); captions(g, st, c); cracks(g, st, c);
+  strip(g, st, c); corner(g, st, c); evalBar(g, st, c, s); feed(g, st, c); typing(g, st, c); moment(g, st, c); captions(g, st, c); cracks(g, st, c);
   title(g, st, c); cutin(g, st, c); spec(g, st, c);
 }
 
@@ -268,6 +307,6 @@ export function drawHud(st, c, s) {
 export function clipText(st) {
   const T = st.clip;
   return [T.name, T.nota, T.line, T.tag, NAME[T.kind], '궁극기 안 의 팀 게이지 Q 준비 % 출발 왕관 선두 차 m + − ♪ 0123456789',
-    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text), ...st.feed.map(q => q.text), ...st.typing.map(q => q.text), '기보',
+    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text), ...st.feed.map(q => q.text), ...st.typing.map(q => q.text), '기보', ...st.banners.flatMap(q => [q.text, q.sub || '']), ...st.voices.map(q => q.text), ...st.music.map(q => q.text), '모두에게 들리는 목소리 화면:', T.view || '',
     ...T.spec.flat()].join(' ');
 }

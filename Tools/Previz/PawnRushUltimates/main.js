@@ -4,7 +4,8 @@ import { clipText, DISP, BODY } from './hud.js';
 import { CLIPS as ULTS } from './ults.js';
 import { CASTS } from './casts.js';
 import { EDITS } from './edits.js';
-const CLIPS = { ...ULTS, ...CASTS, ...EDITS };
+import { HEROES } from './hero.js';
+const CLIPS = { ...ULTS, ...CASTS, ...EDITS, ...HEROES };
 
 const st = new Stage(document.getElementById('gl'), document.getElementById('hud'));
 async function fonts() {

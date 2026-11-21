@@ -158,7 +158,7 @@ function queenScene(st, o) {
     if (s < sImp) { const k = o.giantPre(s); big.visible = !!k; if (!k) return; big.position.set(k.x, k.y, k.z); big.scale.setScalar(k.k ?? 8); big.rotation.set(0, k.ry ?? s * 0.6, 0); return; }
     big.visible = s < sImp + 1.3; if (!big.visible) return; big.position.set(tx, -14 * easeIn(prog(s, sImp + 0.4, sImp + 1.3)), tz); big.scale.setScalar(8);
   });
-  st.flash(V(tx, 3, tz), sImp, 0.9, 60); st.screen(sImp, 0.45, [1, 1, 1], 0.95); st.shake(sImp, 1.4, 1.1);
+  st.flash(V(tx, 3, tz), sImp, o.soft ? 0.35 : 0.9, o.soft ? 34 : 60); st.screen(sImp, o.soft ? 0.12 : 0.45, [1, 1, 1], o.soft ? 0.7 : 0.95); st.shake(sImp, 1.4, 1.1);
   st.ring(tx, tz, sImp, 1.2, 2, 34, 0xffd090, { w: 0.06 }); st.ring(tx, tz, sImp + 0.05, 1.6, 2, 46, 0xffffff, { w: 0.03, op: 0.5 });
   st.dust(tx, tz, sImp, { n: 22, r: 16, size: 6, life: 2.2, color: 0xc9a98a }); st.sparks(V(tx, 2, tz), sImp, 140, { color: 0xffa040, speed: 18, up: 0.4, life: 1.6 });
   const crater = new THREE.Mesh(new THREE.RingGeometry(1.5, 7.5, 48), basic(0x1a0c06, 0.85)); crater.rotation.x = -Math.PI / 2; crater.position.set(tx, 0.04, tz);
