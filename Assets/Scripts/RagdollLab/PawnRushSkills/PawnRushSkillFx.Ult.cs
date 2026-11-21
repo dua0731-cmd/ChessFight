@@ -112,6 +112,7 @@ namespace ChessFight.RagdollLab
         {
             UltScreenDestroy();
             DestroyOutlines();
+            DestroyGiants();
             foreach (var o in new Object[] { texFrame, texStars, meshCube }) if (o != null) Destroy(o);
         }
 
@@ -707,6 +708,7 @@ namespace ChessFight.RagdollLab
         {
             UltTourPreview(cam);
             UltDrivePreview(cam);   // the six driven ones' aim before their key (PawnRushSkillFx.Drive.cs)
+            UltGiants(dt);          // ...the pieces drawn bigger than they are (PawnRushSkillFx.PromotionRun.cs)
             UltOutlines(dt);        // ...and the caster's red outlines on every enemy
             if (ults.Count == 0)
             {

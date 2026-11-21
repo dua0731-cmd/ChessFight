@@ -78,15 +78,15 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The key: the ultimate starts at once. <paramref name="seconds"/> and <paramref name="uses"/> at ×1; the
-        /// team's comeback scales both.</summary>
-        void BeginDrive(PawnRushSkillParams s, int id, float seconds, int uses, string detail)
+        /// team's comeback scales both (<paramref name="fixedSeconds"/>, a part that does not scale, is added: the pawn's run).</summary>
+        void BeginDrive(PawnRushSkillParams s, int id, float seconds, int uses, string detail, float fixedSeconds = 0f)
         {
             pressedSkill = id;
             SkillUses++;
             ultF = Comeback(team);
             ultTaken.Clear();
             driveHit.Clear();
-            driveSeconds = Mathf.Clamp(ByComeback(ultF, seconds, seconds * 2f), 2f, 25f);
+            driveSeconds = Mathf.Clamp(fixedSeconds + ByComeback(ultF, seconds, seconds * 2f), 2f, 25f);
             driveUses = uses > 0 ? Mathf.Clamp(Mathf.RoundToInt(ByComeback(ultF, uses, uses * 2f)), 1, 15) : 0;
             driveClick = driveRight = driveJump = false;
             driveRightWas = input.grab;
@@ -151,6 +151,7 @@ namespace ChessFight.RagdollLab
                 EndFlight();
             }
             ClearNightmare();
+            ClearPromotionRun();   // (a queen again a pawn)
         }
 
         // ---------------------------------------------------------------- where the camera looks

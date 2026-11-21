@@ -56,6 +56,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.Nightmare: NmCast(u); break;
                 case PawnRushSkillIds.GreatDiagonal: GdCast(u); break;
+                case PawnRushSkillIds.PromotionRun: PrCast(u); break;
             }
         }
 
@@ -65,6 +66,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.Nightmare: NmStep(u, dt, cam); break;
                 case PawnRushSkillIds.GreatDiagonal: GdStep(u, dt, cam); break;
+                case PawnRushSkillIds.PromotionRun: PrStep(u, dt, cam); break;
             }
         }
 
@@ -82,6 +84,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.Nightmare: NmStrikeFx(u, e); break;
                 case PawnRushSkillIds.GreatDiagonal: GdStrikeFx(u, e); break;
+                case PawnRushSkillIds.PromotionRun: PrStrikeFx(u, e); break;
             }
         }
 
@@ -92,6 +95,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.Nightmare: NmLandFx(u, e); break;
+                case PawnRushSkillIds.PromotionRun: PrLandFx(u, e); break;
             }
         }
 
@@ -102,6 +106,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.GreatDiagonal: GdLineFx(u, e); break;
+                case PawnRushSkillIds.PromotionRun: PrLineFx(u, e); break;
             }
         }
 
@@ -109,12 +114,20 @@ namespace ChessFight.RagdollLab
         {
             var u = ShowOf(e.by);
             if (u == null || !u.Driven) return;
+            switch (u.skill)
+            {
+                case PawnRushSkillIds.PromotionRun: PrWarnFx(u, e); break;
+            }
         }
 
         void DriveStateFx(SkillFxEvent e)
         {
             var u = ShowOf(e.by);
             if (u == null || !u.Driven) return;
+            switch (u.skill)
+            {
+                case PawnRushSkillIds.PromotionRun: PrStateFx(u, e); break;
+            }
         }
 
         /// <summary>What the caster's keys do now (its own screen).</summary>
@@ -122,6 +135,7 @@ namespace ChessFight.RagdollLab
         {
             PawnRushSkillIds.Nightmare => NmHint(u),
             PawnRushSkillIds.GreatDiagonal => GdHint(u),
+            PawnRushSkillIds.PromotionRun => PrHint(u),
             _ => null,
         };
 
@@ -130,6 +144,7 @@ namespace ChessFight.RagdollLab
         {
             PawnRushSkillIds.Nightmare => NmLine(u),
             PawnRushSkillIds.GreatDiagonal => GdLine(u),
+            PawnRushSkillIds.PromotionRun => PrLine(u),
             _ => $"맞힌 적 {u.struckSet.Count}",
         };
 
@@ -138,6 +153,7 @@ namespace ChessFight.RagdollLab
         {
             PawnRushSkillIds.Nightmare => NmWarning(u, me),
             PawnRushSkillIds.GreatDiagonal => GdWarning(u, me),
+            PawnRushSkillIds.PromotionRun => PrWarning(u, me),
             _ => null,
         };
 

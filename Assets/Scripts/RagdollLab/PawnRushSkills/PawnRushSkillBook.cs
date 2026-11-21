@@ -167,7 +167,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.PromotionRun, "승격 (e8=Q!!)", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 퀸 13.5 · 18초, 돌진 6 · 8번) · Q = 3초 못 막는 질주 (초속 25 m, 이동 키로 방향, 앞길의 적은 옆으로 튕김)" + "\n" +
                 "질주 끝에서 키 6 m 퀸으로 쿵 (둘레 10 m 날림) · 9초 동안 좌클릭 = 카메라 쪽 30 m 꿰뚫는 돌진 ×4 (0.6초 사이, 줄 0.3초 예고)" + "\n" +
-                "돌진에 맞으면 20 m 날아가 2초 넘어짐 · 맞힐 때마다 퀸이 10% 커짐 (1.5배까지) · 낮은 지붕 밑은 못 들어감 · 끝나면 폰으로 · 아직 만드는 중"),
+                "돌진에 맞으면 20 m 날아가 2초 넘어짐 · 맞힐 때마다 퀸이 10% 커짐 (1.5배까지) · 낮은 지붕 밑은 못 들어감 · 끝나면 폰으로 · 판정 !!~??"),
             Made(PawnRushSkillIds.Nightmare, "나이트메어", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 15 · 20초) · 10초 동안 좌클릭 = 카메라가 보는 착지점으로 높이 도약 (빨간 표식 가까이면 그 적에게 붙음)" + "\n" +
                 "첫 도약 40 m, 적을 밟으면 다음이 60 → 80 m · 빈 땅에 내리면 40 m로 · 3 m 안에 둘 넘게면 포크 (모두 밟음) · 공중에서 이동 키로 조금 고침" + "\n" +

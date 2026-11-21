@@ -872,6 +872,14 @@ namespace ChessFight.RagdollLab
         public float gdCharge = 0.5f, gdLength = 300f, gdWidth = 1f, gdWiden = 0.5f, gdUpDown = 2.5f;
         [Tooltip("롱 다이애거널: 꿰인 적이 줄을 따라 끌려오는 거리 (m), 비숍 앞에 남기는 거리 (m), 끌려오는 시간 (초)과 높이 (m), 넘어짐 (초); 쏠 때 비숍이 밀리는 거리 (m)")]
         public float gdPull = 25f, gdKeep = 2.5f, gdPullTime = 0.7f, gdPullTop = 1.5f, gdKnock = 2f, gdRecoil = 0.6f;
+        [Tooltip("승격: 질주 (초), 빠르기 (m/s), 꺾는 빠르기 (°/s), 앞길의 적을 튕기는 거리 (m)와 그 적과의 거리 (m); 퀸으로 뛰는 시간 (초), 앞으로 (m), 높이 (m)")]
+        public float prRun = 3f, prSpeed = 25f, prTurn = 150f, prShove = 5f, prShoveReach = 1.8f, prLeap = 0.55f, prLeapAhead = 6f, prLeapTop = 4f;
+        [Tooltip("승격: 내려선 둘레 (m), 날리는 거리 (m), 넘어짐 (초); 퀸의 시간 (초, ×1.5 13.5 · ×2 18), 돌진 수 (×1.5 여섯, ×2 여덟), 예고 (초), 거리 (m), 걸리는 시간 (초), 사이 (초)")]
+        public float prLand = 10f, prLandThrow = 12f, prLandKnock = 1f, prQueen = 9f;
+        public int prDashes = 4;
+        public float prWarn = 0.3f, prDash = 30f, prDashTime = 0.4f, prDashGap = 0.6f;
+        [Tooltip("승격: 돌진이 닿는 반폭 (m), 날리는 거리 (m), 넘어짐 (초); 하나 맞힐 때마다 커지는 몫, 가장 크게; 퀸의 키 (m)")]
+        public float prRadius = 2.2f, prDashThrow = 20f, prDashKnock = 2f, prGrow = 0.1f, prGrowMax = 1.5f, prTall = 6f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

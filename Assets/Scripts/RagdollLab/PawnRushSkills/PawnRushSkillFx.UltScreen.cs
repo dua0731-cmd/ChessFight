@@ -288,6 +288,14 @@ namespace ChessFight.RagdollLab
             back += 2.2f * wk;
             up += 1f * wk;
             fov += 5f * wk;
+            // A giant (the pawn's queen, the king): back and up with its size, so the camera is not inside it.
+            float giant = GiantScaleOf(u.by);
+            if (giant > 1.02f)
+            {
+                back += (giant - 1f) * 1.2f;
+                up += (giant - 1f) * 0.55f;
+                fov += Mathf.Min(8f, (giant - 1f) * 2f);
+            }
             if (u.Fork && u.Playing)
             {
                 float air = Smooth01((Clock - u.t0) / 0.4f);
