@@ -128,12 +128,12 @@ namespace ChessFight.Gameplay
         {
             switch (piece)
             {
-                case PieceKind.King: return "킹";
-                case PieceKind.Queen: return "퀸";
-                case PieceKind.Rook: return "룩";
-                case PieceKind.Bishop: return "비숍";
-                case PieceKind.Knight: return "나이트";
-                default: return "폰";
+                case PieceKind.King: return Loc.T("킹");
+                case PieceKind.Queen: return Loc.T("퀸");
+                case PieceKind.Rook: return Loc.T("룩");
+                case PieceKind.Bishop: return Loc.T("비숍");
+                case PieceKind.Knight: return Loc.T("나이트");
+                default: return Loc.T("폰");
             }
         }
     }

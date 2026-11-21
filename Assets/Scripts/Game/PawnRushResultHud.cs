@@ -133,7 +133,7 @@ namespace ChessFight.Game
             BuildMini(result);
             if (preview)
             {
-                keys = Text("미리보기 · R 다시 재생 · H 결과판 숨기기", 12f, Hex(0xC9B79F, .8f));
+                keys = Text(Loc.T("미리보기 · R 다시 재생 · H 결과판 숨기기"), 12f, Hex(0xC9B79F, .8f));
                 Abs(keys, 22, 96, 400, 18);
                 screen.Add(keys);
             }
@@ -172,8 +172,8 @@ namespace ChessFight.Game
                 Paint.Fill(p, shape, Paint.Linear(135f, w, h, (0, Hex(0x7A5420)), (.35f, Hex(0xE9C57A)), (.5f, Hex(0xFFF0C2)), (.65f, Hex(0xC99A4A)), (1, Hex(0x8A6224))));
             });
             Abs(label, 0, 16, 72, 60);
-            var l1 = Display("결승", 18f, Hex(0x2A1A00));
-            var l2 = Display("순서", 18f, Hex(0x2A1A00));
+            var l1 = Display(Loc.T("결승"), 18f, Hex(0x2A1A00));
+            var l2 = Display(Loc.T("순서"), 18f, Hex(0x2A1A00));
             Abs(l1, 0, 9, 72, 20);
             Abs(l2, 0, 31, 72, 20);
             l1.style.unityTextAlign = l2.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -260,10 +260,10 @@ namespace ChessFight.Game
             bottom.style.marginTop = 5;
             Color em = dec ? Hex(0x6B4A10) : Hex(0xCDBBA2);
             bottom.Add(Mono(MatchResult.Clock(player.FinishSeconds), 12.5f, em));
-            if (!counts) bottom.Add(Text(" · " + (player.Team == 0 ? "백팀" : "흑팀"), 11.5f, em));
+            if (!counts) bottom.Add(Text(" · " + (player.Team == 0 ? Loc.T("백팀") : Loc.T("흑팀")), 11.5f, em));
             who.Add(bottom);
             chip.Add(who);
-            if (counts) chip.Add(Tab(dec ? "승리 확정" : "승리 " + line.TeamPlace + "/" + need, dec));
+            if (counts) chip.Add(Tab(dec ? Loc.T("승리 확정") : Loc.F("승리 {0}/{1}", line.TeamPlace, need), dec));
             return chip;
         }
 
@@ -316,8 +316,8 @@ namespace ChessFight.Game
             Abs(plate, 150, 0, 500, 84);
             sb.Add(plate);
             string winName = winner == 0 ? "백팀" : "흑팀";
-            sub = Display(winner < 0 ? "두 팀 모두 결승 인원을 채우지 못했어요"
-                          : win ? winName + " " + need + "명이 먼저 결승선을 넘었어요" : winName + "이 먼저 " + need + "명 결승선을 넘었어요", 17f, Hex(0xFFE7B8));
+            sub = Display(winner < 0 ? Loc.T("두 팀 모두 결승 인원을 채우지 못했어요")
+                          : win ? Loc.F("{0} {1}명이 먼저 결승선을 넘었어요", Loc.T(winName), need) : Loc.F("{0}이 먼저 {1}명 결승선을 넘었어요", Loc.T(winName), need), 17f, Hex(0xFFE7B8));
             Abs(sub, 0, 52, 500, 22);
             sub.style.unityTextAlign = TextAnchor.MiddleCenter;
             sub.style.opacity = 0;
@@ -368,8 +368,13 @@ namespace ChessFight.Game
                 bar.Add(half);
                 var teamBox = new VisualElement { pickingMode = PickingMode.Ignore };
                 Abs(teamBox, left ? 22 : 252, 12, 70, 40);
-                var tn = Display(left ? "백팀" : "흑팀", 22f, left ? Hex(0xBFEFFF) : Hex(0xFFC2CA));
-                var ts = Text(mine ? "우리 팀" : "상대 팀", 10.5f, mine ? Hex(0x9BE8FF) : Hex(0xB9A58C), true);
+                // R750: the box is 70 px wide - a translated team name longer than 4 letters ("White team") gives way to
+                // the colour's own name ("White"), a little smaller; Korean keeps 백팀 / 흑팀 at full size.
+                string teamName = left ? Loc.T("백팀") : Loc.T("흑팀");
+                bool shortName = teamName.Length > 4;
+                if (shortName) teamName = left ? Loc.T("백") : Loc.T("흑");
+                var tn = Display(teamName, shortName ? 17f : 22f, left ? Hex(0xBFEFFF) : Hex(0xFFC2CA));
+                var ts = Text(mine ? Loc.T("우리 팀") : Loc.T("상대 팀"), 10.5f, mine ? Hex(0x9BE8FF) : Hex(0xB9A58C), true);
                 ts.style.letterSpacing = 1f;
                 ts.style.marginTop = 6;
                 tn.style.unityTextAlign = ts.style.unityTextAlign = left ? TextAnchor.UpperLeft : TextAnchor.UpperRight;
@@ -490,7 +495,7 @@ namespace ChessFight.Game
                 Paint.Fill(p, Paint.Rect(0, 13, 1, h - 26), Rgba(217, 174, 98, .45f));
                 Paint.Fill(p, Paint.Rect(w - 1, 13, 1, h - 26), Rgba(217, 174, 98, .45f));
             }));
-            var ml = Text("경기 시간", 10.5f, Hex(0xC9B79F), true);
+            var ml = Text(Loc.T("경기 시간"), 10.5f, Hex(0xC9B79F), true);
             ml.style.letterSpacing = 1.5f;
             Abs(ml, 0, 12, 112, 14);
             ml.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -534,7 +539,7 @@ namespace ChessFight.Game
 
             crawl = Row();
             Abs(crawl, 234, 0, 660, 64);
-            var lbl = Text("미도착", 11f, Hex(0xE9D7B8), true);
+            var lbl = Text(Loc.T("미도착"), 11f, Hex(0xE9D7B8), true);
             lbl.style.letterSpacing = 1.5f;
             lbl.style.paddingTop = lbl.style.paddingBottom = 6;
             lbl.style.paddingLeft = lbl.style.paddingRight = 9;
@@ -544,11 +549,11 @@ namespace ChessFight.Game
             {
                 var group = Row();
                 group.style.marginLeft = 18;
-                var tn = Display(team == 0 ? "백팀" : "흑팀", 15f, team == 0 ? Hex(0x7FDFFF) : Hex(0xFF8A98));
+                var tn = Display(team == 0 ? Loc.T("백팀") : Loc.T("흑팀"), 15f, team == 0 ? Hex(0x7FDFFF) : Hex(0xFF8A98));
                 tn.style.marginRight = 9;
                 group.Add(tn);
                 var missing = result.NotFinished(team);
-                if (missing.Count == 0) group.Add(Text("없음", 14f, Hex(0xE9DCC9)));
+                if (missing.Count == 0) group.Add(Text(Loc.T("없음"), 14f, Hex(0xE9DCC9)));
                 for (int i = 0; i < missing.Count; i++)
                 {
                     if (i > 0)
@@ -571,13 +576,22 @@ namespace ChessFight.Game
             act.style.top = 0;
             act.style.height = 64;
             foot.Add(act);
+            // R750: the crawl ends where the countdown and the buttons begin (they are wider in English), and a name
+            // that does not fit is cut there instead of running under them.
+            crawl.style.overflow = Overflow.Hidden;
+            crawl.Query<VisualElement>().ForEach(e => { if (e != crawl) e.style.flexShrink = 0f; });
+            act.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                float room = act.layout.x - 234f - 12f;
+                if (room > 0f) crawl.style.width = Mathf.Min(660f, room);
+            });
             countText = Text("", 13f, Hex(0xE3D2BA));
             countText.style.marginRight = 18;
             act.Add(countText);
-            var again = Slab("다시 매칭", false, 20f, () => Requeue?.Invoke());
+            var again = Slab(Loc.T("다시 매칭"), false, 20f, () => Requeue?.Invoke());
             again.style.marginRight = 12;
             act.Add(again);
-            act.Add(Slab("로비로", true, 20f, () => Lobby?.Invoke()));
+            act.Add(Slab(Loc.T("로비로"), true, 20f, () => Lobby?.Invoke()));
         }
 
         // The menus' slab button (ChunkyButtons): gold for the main action, walnut otherwise.
@@ -617,7 +631,7 @@ namespace ChessFight.Game
             eye.style.width = 18;
             eye.style.height = 18;
             hide.Add(eye);
-            hideText = Display("결과판 숨기기", 16f, Hex(0xF6ECDF));
+            hideText = Display(Loc.T("결과판 숨기기"), 16f, Hex(0xF6ECDF));
             hideText.style.marginLeft = 9;
             hide.Add(hideText);
             var key = Mono("H", 11f, Hex(0xF6ECDF));
@@ -654,7 +668,7 @@ namespace ChessFight.Game
             });
             Abs(plate, 0, 0, 37, 36);
             metag.Add(plate);
-            var t = Display("나", 17f, Hex(0x06253A));
+            var t = Display(Loc.T("나"), 17f, Hex(0x06253A));
             Abs(t, 0, 4, 37, 20);
             t.style.unityTextAlign = TextAnchor.MiddleCenter;
             metag.Add(t);
@@ -728,7 +742,7 @@ namespace ChessFight.Game
             Abs(ttlIn, 0, 0, 600, 80);
             ttlIn.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             ttl.Add(ttlIn);
-            string text = winner < 0 ? "무승부" : win ? "승리!" : "패배";
+            string text = winner < 0 ? Loc.T("무승부") : win ? Loc.T("승리!") : Loc.T("패배");
             var stops = win ? new[] { (0f, Hex(0xFFFFFF)), (.38f, Hex(0xFFF2CF)), (.52f, Hex(0xF7D58A)), (1f, Hex(0xD2922A)) }
                             : new[] { (0f, Hex(0xF4F1EC)), (.46f, Hex(0xCFC9C1)), (.54f, Hex(0xA49D94)), (1f, Hex(0x6F6963)) };
             word = GoldText(text, 80f, 600, 80, stops, 32, true);
@@ -762,15 +776,15 @@ namespace ChessFight.Game
             badge.style.alignSelf = Align.Stretch;
             badge.style.justifyContent = Justify.Center;
             badge.style.paddingLeft = badge.style.paddingRight = 13;
-            badge.Add(Display(win ? "승리!" : "패배", 21f, win ? Hex(0x2A1A00) : Hex(0x1E1A16)));
+            badge.Add(Display(win ? Loc.T("승리!") : Loc.T("패배"), 21f, win ? Hex(0x2A1A00) : Hex(0x1E1A16)));
             mini.Add(badge);
-            var w1 = Display("백팀", 16f, Hex(0x9BE8FF));
+            var w1 = Display(Loc.T("백팀"), 16f, Hex(0x9BE8FF));
             w1.style.marginLeft = 10;
             mini.Add(w1);
             var score = Mono(result.GoalCount(0) + " : " + result.GoalCount(1), 19f, Hex(0xFFF1D6));
             score.style.marginLeft = 10;
             mini.Add(score);
-            var k1 = Display("흑팀", 16f, Hex(0xFF9AA6));
+            var k1 = Display(Loc.T("흑팀"), 16f, Hex(0xFF9AA6));
             k1.style.marginLeft = 10;
             mini.Add(k1);
             mini.style.opacity = 0;
@@ -782,7 +796,7 @@ namespace ChessFight.Game
         public void SetBoard(bool on)
         {
             boardOn = on;
-            if (hideText != null) hideText.text = on ? "결과판 숨기기" : "결과판 보기";
+            if (hideText != null) hideText.text = on ? Loc.T("결과판 숨기기") : Loc.T("결과판 보기");
         }
 
         public void Toast(string text)
@@ -965,7 +979,7 @@ namespace ChessFight.Game
             // the countdown, from p3
             float left = Mathf.Clamp(LobbySeconds - Mathf.Max(0f, tp - times[2]), 0f, LobbySeconds);
             countFill.style.width = 1280f * left / LobbySeconds;
-            countText.text = left > 0 ? Mathf.CeilToInt(left) + "초 뒤 자동으로 로비로" : preview ? "미리보기라 여기서 멈춰요" : "로비로 가는 중";
+            countText.text = left > 0 ? Loc.F("{0}초 뒤 자동으로 로비로", Mathf.CeilToInt(left)) : (preview ? Loc.T("미리보기라 여기서 멈춰요") : Loc.T("로비로 가는 중"));
 
             if (toast != null)
             {
@@ -1115,7 +1129,7 @@ namespace ChessFight.Game
             chip.style.paddingTop = 3;
             chip.style.paddingBottom = 4;
             chip.style.flexShrink = 0;
-            chip.Add(Display("나", 13f, Hex(0x06253A)));
+            chip.Add(Display(Loc.T("나"), 13f, Hex(0x06253A)));
             return chip;
         }
 

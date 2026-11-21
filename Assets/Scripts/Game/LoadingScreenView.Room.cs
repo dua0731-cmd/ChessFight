@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -64,10 +65,10 @@ namespace ChessFight.Game
             if (sideWhite != null) { washWhite = sideWhite.style.backgroundImage; roomWashWhite = new StyleBackground(Wash(MenuArt.Hex(0xF2E6CC), false, .75f)); }
             if (sideBlack != null) { washBlack = sideBlack.style.backgroundImage; roomWashBlack = new StyleBackground(Wash(Color.black, true, 1.9f)); }
             roomHead = Box("load-room-head");
-            roomHead.Add(Text("방 번호", "load-room-label"));
+            roomHead.Add(Text(Loc.T("방 번호"), "load-room-label"));
             roomCode = Text("", "load-room-code");
             roomHead.Add(roomCode);
-            var copy = Small("복사", "load-room-copy");
+            var copy = Small(Loc.T("복사"), "load-room-copy");
             copy.clicked += () => CopyRoomRequested?.Invoke();
             roomHead.Add(copy);
             screen.Add(roomHead);
@@ -84,7 +85,7 @@ namespace ChessFight.Game
             var gap = new VisualElement { pickingMode = PickingMode.Ignore };
             gap.AddToClassList("grow");
             head.Add(gap);
-            head.Add(Text("팀이 꽉 찼으면 여기로 잠시 옮겼다가 조율해요", "load-spec-hint"));
+            head.Add(Text(Loc.T("팀이 꽉 찼으면 여기로 잠시 옮겼다가 조율해요"), "load-spec-hint"));
             specBox.Add(head);
             var row = Box("load-spec-row");
             for (int i = 0; i < SpectatorCards; i++) row.Add(NewSpecCard().Root);
@@ -100,9 +101,9 @@ namespace ChessFight.Game
                 var rosterHead = rosters[team]?.Q<VisualElement>(className: "load-roster-head");
                 if (rosterHead == null) continue;
                 int side = team;
-                botLess[team] = Small("봇 −", "load-team-bot");
+                botLess[team] = Small(Loc.T("봇 −"), "load-team-bot");
                 botLess[team].clicked += () => TeamBotRequested?.Invoke(side, -1);
-                botMore[team] = Small("봇 +", "load-team-bot");
+                botMore[team] = Small(Loc.T("봇 +"), "load-team-bot");
                 botMore[team].clicked += () => TeamBotRequested?.Invoke(side, 1);
                 // White's head reads team, (room), count; black's count, (room), team: the buttons go next to the team's name.
                 int at = team == 0 ? 1 : rosterHead.childCount - 1;
@@ -117,7 +118,7 @@ namespace ChessFight.Game
         {
             rulesBox = Box("load-rules");
             var head = Box("load-rules-head");
-            head.Add(Text("게임 규칙", "load-rules-title"));
+            head.Add(Text(Loc.T("게임 규칙"), "load-rules-title"));
             var gap = new VisualElement { pickingMode = PickingMode.Ignore };
             gap.AddToClassList("grow");
             head.Add(gap);
@@ -126,7 +127,8 @@ namespace ChessFight.Game
             rulesBox.Add(head);
             for (int setting = 0; setting < Network.PawnRushRules.Settings.Length; setting++)
             {
-                rulesBox.Add(Text(Network.PawnRushRules.Settings[setting], "load-rules-label"));
+                // R750: the settings' and choices' names are Core data, translated here where they are shown.
+                rulesBox.Add(Text(Loc.T(Network.PawnRushRules.Settings[setting]), "load-rules-label"));
                 var row = Box("load-rules-row");
                 var names = Network.PawnRushRules.Choices[setting];
                 var buttons = new Button[names.Length];
@@ -134,7 +136,7 @@ namespace ChessFight.Game
                 {
                     int s = setting, c = choice;
                     rulesUnready |= !Network.PawnRushRules.Ready(setting, choice);
-                    var button = Small(names[choice], "load-rule-btn");
+                    var button = Small(Loc.T(names[choice]), "load-rule-btn");
                     button.style.display = DisplayStyle.Flex;
                     button.clicked += () =>
                     {
@@ -154,7 +156,7 @@ namespace ChessFight.Game
         {
             if (rulesBox == null) return;
             var rules = Network.PawnRushRules.Decode(State.Rules);
-            string note = !State.CanSetRules ? "방장이 정해요" : rulesUnready ? "눌러서 바꾸기 · 흐린 칸은 준비 중" : "눌러서 바꾸기";
+            string note = !State.CanSetRules ? Loc.T("방장이 정해요") : rulesUnready ? Loc.T("눌러서 바꾸기 · 흐린 칸은 준비 중") : Loc.T("눌러서 바꾸기");
             if (rulesNote.text != note) rulesNote.text = note;
             for (int setting = 0; setting < ruleButtons.Count; setting++)
                 for (int choice = 0; choice < ruleButtons[setting].Length; choice++)
@@ -173,15 +175,15 @@ namespace ChessFight.Game
             var card = new SpecCard { Root = Box("load-spec-card") };
             card.Plate = GlassPlate.On(card.Root, 10f);
             card.Plate.Set(false, true);
-            card.Name = Text("빈 관전석", "load-spec-name");
+            card.Name = Text(Loc.T("빈 관전석"), "load-spec-name");
             card.Root.Add(card.Name);
             var gap = new VisualElement { pickingMode = PickingMode.Ignore };
             gap.AddToClassList("grow");
             card.Root.Add(gap);
-            card.Move = Small("옮기기", "load-card-btn");
+            card.Move = Small(Loc.T("옮기기"), "load-card-btn");
             card.Move.clicked += () => { if (card.Key != 0) MoveRequested?.Invoke(card.Key); };
             card.Root.Add(card.Move);
-            card.Kick = Small("강퇴", "load-card-btn");
+            card.Kick = Small(Loc.T("강퇴"), "load-card-btn");
             card.Kick.AddToClassList("a-danger");
             card.Kick.clicked += () =>
             {
@@ -250,7 +252,7 @@ namespace ChessFight.Game
             }
             if (cancel != null)
             {
-                string leave = State.Room && State.Matching ? "방 나가기" : "매칭 취소";
+                string leave = State.Room && State.Matching ? Loc.T("방 나가기") : Loc.T("매칭 취소");
                 if (cancel.text != leave) cancel.text = leave;
             }
             Shown(roomHead.Q<Button>(className: "load-room-copy"), room);
@@ -267,7 +269,7 @@ namespace ChessFight.Game
             if (roomCode.text != State.RoomCode) roomCode.text = State.RoomCode;
             if (roomNote.text != State.RoomNote) roomNote.text = State.RoomNote;
             int seated = Mathf.Min(State.SpecNames.Count, specCards.Count);
-            string count = "관전석 " + seated + " / " + specCards.Count;
+            string count = Loc.F("관전석 {0} / {1}", seated, specCards.Count);
             if (specCount.text != count) specCount.text = count;
             for (int i = 0; i < specCards.Count; i++)
             {
@@ -276,7 +278,7 @@ namespace ChessFight.Game
                 ulong key = present && i < State.SpecKeys.Count ? State.SpecKeys[i] : 0;
                 if (card.Key != key) card.KickArmedAt = -10;
                 card.Key = key;
-                string name = present ? State.SpecNames[i] : State.CanSit[SpectatorSeat] ? "빈 관전석 · 눌러서 이동" : "빈 관전석";
+                string name = present ? State.SpecNames[i] : State.CanSit[SpectatorSeat] ? Loc.T("빈 관전석 · 눌러서 이동") : Loc.T("빈 관전석");
                 if (card.Name.text != name) card.Name.text = name;
                 bool me = present && i == State.SpecMe;
                 card.Root.EnableInClassList("load-spec-on", present);
@@ -287,7 +289,7 @@ namespace ChessFight.Game
                 bool kick = present && i < State.SpecCanKick.Count && State.SpecCanKick[i];
                 Shown(card.Kick, kick);
                 if (!kick) card.KickArmedAt = -10;
-                Arm(card.Kick, kick && now - card.KickArmedAt < ArmSeconds, "강퇴", "load-card-kick-armed");
+                Arm(card.Kick, kick && now - card.KickArmedAt < ArmSeconds, Loc.T("강퇴"), "load-card-kick-armed");
             }
         }
 
@@ -299,7 +301,7 @@ namespace ChessFight.Game
             card.Plate.Show(!room);
             bool can = room && empty && State.CanSit[card.Team];
             Shown(card.Sit, can);
-            if (room && empty) card.Status.text = can ? "눌러서 이동" : "";
+            if (room && empty) card.Status.text = can ? Loc.T("눌러서 이동") : "";
         }
     }
 }

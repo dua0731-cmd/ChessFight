@@ -85,7 +85,7 @@ namespace ChessFight.Game
             hud.JoinMatch += id => session.JoinPrivateMatch(id);
             hud.PickMode += key =>
             {
-                if (session.SetMode(key)) hud.ShowToast("게임 모드: " + GameModes.Resolve(key).Name);
+                if (session.SetMode(key)) hud.ShowToast(Loc.F("게임 모드: {0}", Loc.T(GameModes.Resolve(key).Name)));
             };
 
             // The in-game picker replaces the Steam overlay, which renders at its
@@ -94,8 +94,8 @@ namespace ChessFight.Game
             hud.RefreshFriends += () => refreshFriendsAt = 0;
             hud.InviteFriend += id =>
             {
-                if (session.InviteToParty(id)) hud.ShowToast(session.Name(id) + "님에게 초대를 보냈어요");
-                else hud.ShowToast("지금은 초대할 수 없습니다.", true);
+                if (session.InviteToParty(id)) hud.ShowToast(Loc.F("{0}님에게 초대를 보냈어요", session.Name(id)));
+                else hud.ShowToast(Loc.T("지금은 초대할 수 없습니다."), true);
             };
             hud.SteamOverlayInvite += () => session.Invite();
             // R529: an invite this PC received, answered on the lobby's card.
@@ -110,11 +110,11 @@ namespace ChessFight.Game
             hud.Rename += () =>
             {
                 if (NameScreen.Showing || SceneTransition.Busy) return;
-                if (Matching) { hud.ShowToast("매칭 중에는 이름을 바꿀 수 없어요", true); return; }
-                NameChange.Begin(hud.ProfileAt, () => stage != null ? stage.SelfOnScreen() : new Vector2(.5f, .62f), "로비");
+                if (Matching) { hud.ShowToast(Loc.T("매칭 중에는 이름을 바꿀 수 없어요"), true); return; }
+                NameChange.Begin(hud.ProfileAt, () => stage != null ? stage.SelfOnScreen() : new Vector2(.5f, .62f), Loc.T("로비"));
             };
-            hud.CopyParty += () => Copy(session.Party, "파티 코드를 복사했어요");
-            hud.CopyMatch += () => Copy(session.Match, "방 번호를 복사했어요");
+            hud.CopyParty += () => Copy(session.Party, Loc.T("파티 코드를 복사했어요"));
+            hud.CopyMatch += () => Copy(session.Match, Loc.T("방 번호를 복사했어요"));
             hud.AddBot += () => session.SetPartyBots(session.PartyBots + 1);
             hud.RemoveBot += () => session.SetPartyBots(session.PartyBots - 1);
             hud.FillRoom += () => session.FillRoomWithBots();
@@ -159,7 +159,7 @@ namespace ChessFight.Game
             if (NetworkRuntime.TestRules && session.Online && LegacyKeys.Down(KeyCode.F9) && !ChatBox.KeysHeld)
             {
                 session.ClearLeavePenalty();
-                hud.ShowToast("시험 규칙: 탈주 기록을 지웠어요");
+                hud.ShowToast(Loc.T("시험 규칙: 탈주 기록을 지웠어요"));
                 refreshAt = 0;
             }
             if (now < refreshAt) return;
@@ -197,11 +197,11 @@ namespace ChessFight.Game
             string mode = session.PartyMode.Key;
             if (primed && session.Party == lastParty && session.Party != 0)
             {
-                foreach (ulong id in members.Except(lastMembers)) hud.ShowToast(session.Name(id) + "님이 파티에 참가했어요");
-                foreach (ulong id in lastMembers.Except(members)) hud.ShowToast(session.Name(id) + "님이 파티를 나갔어요");
-                if (mode != lastMode && !session.IsLeader) hud.ShowToast("파티장이 모드를 " + session.PartyMode.Name + "(으)로 바꿨어요");
+                foreach (ulong id in members.Except(lastMembers)) hud.ShowToast(Loc.F("{0}님이 파티에 참가했어요", session.Name(id)));
+                foreach (ulong id in lastMembers.Except(members)) hud.ShowToast(Loc.F("{0}님이 파티를 나갔어요", session.Name(id)));
+                if (mode != lastMode && !session.IsLeader) hud.ShowToast(Loc.F("파티장이 모드를 {0}(으)로 바꿨어요", Loc.T(session.PartyMode.Name)));
             }
-            else if (primed && session.Party != 0 && lastParty != 0 && members.Length > 1) hud.ShowToast("파티에 참가했어요");
+            else if (primed && session.Party != 0 && lastParty != 0 && members.Length > 1) hud.ShowToast(Loc.T("파티에 참가했어요"));
             if (session.Error != lastError && !string.IsNullOrEmpty(session.Error)) hud.ShowToast(session.Error, true);
 
             primed = session.Online;
@@ -218,7 +218,7 @@ namespace ChessFight.Game
             lineup.Clear();
             if (!session.Online || session.Party == 0)
             {
-                lineup.Add(new LineupEntry { Id = session.Self, Name = session.Online ? session.Name(session.Self) : OfflineName("나"), Tag = session.Online ? "파티 준비 중" : "오프라인", Me = true });
+                lineup.Add(new LineupEntry { Id = session.Self, Name = session.Online ? session.Name(session.Self) : OfflineName(Loc.T("나")), Tag = session.Online ? Loc.T("파티 준비 중") : Loc.T("오프라인"), Me = true });
                 return;
             }
             ulong leader = session.PartyLeader;
@@ -230,7 +230,7 @@ namespace ChessFight.Game
                 lineup.Add(new LineupEntry
                 {
                     Id = id, Name = session.Name(id), Leader = id == leader, Me = id == session.Self,
-                    Tag = id == leader ? $"파티장 · {size}/6" : "대기 중"
+                    Tag = id == leader ? Loc.F("파티장 · {0}/6", size) : Loc.T("대기 중")
                 });
             }
             for (int i = 1; i <= session.PartyBots && lineup.Count < LobbyStage.Spots; i++)
@@ -279,26 +279,26 @@ namespace ChessFight.Game
             {
                 Online = session.Online,
                 CanRetry = !session.Online,
-                PlayerName = session.Online ? session.Name(session.Self) : OfflineName("오프라인"),
+                PlayerName = session.Online ? session.Name(session.Self) : OfflineName(Loc.T("오프라인")),
                 Status = session.Online ? session.Status : (string.IsNullOrEmpty(session.Error) ? session.Status : session.Error),
-                Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
+                Details = "Steam: " + (session.Online ? Loc.T("연결됨") : Loc.T("연결 안 됨 - Steam 실행 후 다시 연결")) + "\n" +
                           Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
-                          $"입력: {runtime.Controls?.DisplayName}\n버전 {session.Build}" +
-                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터 · F9 탈주 기록 지우기" : NetworkRuntime.TestRules ? "\nF9 탈주 기록 지우기" : ""),
+                          Loc.F("입력: {0}", runtime.Controls?.DisplayName) + "\n" + Loc.F("버전 {0}", session.Build) +
+                          (Debug.isDebugBuild ? "\n" + Loc.T("F8 지연 시뮬레이터 · F9 탈주 기록 지우기") : NetworkRuntime.TestRules ? "\n" + Loc.T("F9 탈주 기록 지우기") : ""),
                 Version = $"v{session.Build} · STEAM",
                 FriendsOnline = friendsOnline,
 
                 ModeKey = mode.Key,
                 CanChangeMode = idleLeader && !session.CanRejoin,
-                ModeHint = session.CanRejoin ? "진행 중인 경기가 끝나기 전에는 모드를 바꿀 수 없습니다."
-                         : !session.IsLeader ? "파티장만 모드를 바꿀 수 있습니다."
-                         : session.Busy ? "매칭 중에는 모드를 바꿀 수 없습니다."
-                         : "모드마다 따로 매칭합니다. 준비 중인 모드는 아직 고를 수 없습니다.",
+                ModeHint = session.CanRejoin ? Loc.T("진행 중인 경기가 끝나기 전에는 모드를 바꿀 수 없습니다.")
+                         : !session.IsLeader ? Loc.T("파티장만 모드를 바꿀 수 있습니다.")
+                         : session.Busy ? Loc.T("매칭 중에는 모드를 바꿀 수 없습니다.")
+                         : Loc.T("모드마다 따로 매칭합니다. 준비 중인 모드는 아직 고를 수 없습니다."),
 
                 PartySize = session.Online ? party : 0,
                 PartyCode = Spaced(session.Party),
                 Bots = session.PartyBots.ToString(),
-                BotsNote = session.BotsBlockPublicMatch ? "봇 포함 시 비공개 방 전용" : "",
+                BotsNote = session.BotsBlockPublicMatch ? Loc.T("봇 포함 시 비공개 방 전용") : "",
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
                 CanLeaveParty = session.Online && (!session.Busy || waiting),
@@ -309,14 +309,14 @@ namespace ChessFight.Game
                 // room still takes them.
                 CanPlay = canQueue && !session.CanRejoin && !session.BotsBlockPublicMatch && partyMode.Playable && stop == "",
                 // 11-11: while the left match runs, "게임 시작" stays shut and says why (the green button goes back in).
-                PlayNote = stop != "" ? stop : session.CanRejoin && !session.Busy ? "진행 중인 경기가 끝나기 전에는 새 경기를 시작할 수 없어요" : "",
-                RejoinNote = session.CanRejoin ? $"{session.RejoinMode.Name} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요" : "",
-                BusyTitle = waiting ? "파티원 경기 중"
-                          : following ? "파티장을 따라가는 중"
-                          : inRoom && session.Started ? (session.PrivateRoom ? "경기 시작!" : "상대를 찾았습니다")
-                          : session.JoiningLive ? "경기로 돌아가는 중"
-                          : inRoom && session.PrivateRoom ? "비공개 방"
-                          : "상대를 찾는 중",
+                PlayNote = stop != "" ? stop : session.CanRejoin && !session.Busy ? Loc.T("진행 중인 경기가 끝나기 전에는 새 경기를 시작할 수 없어요") : "",
+                RejoinNote = session.CanRejoin ? Loc.F("{0} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요", Loc.T(session.RejoinMode.Name)) : "",
+                BusyTitle = waiting ? Loc.T("파티원 경기 중")
+                          : following ? Loc.T("파티장을 따라가는 중")
+                          : inRoom && session.Started ? (session.PrivateRoom ? Loc.T("경기 시작!") : Loc.T("상대를 찾았습니다"))
+                          : session.JoiningLive ? Loc.T("경기로 돌아가는 중")
+                          : inRoom && session.PrivateRoom ? Loc.T("비공개 방")
+                          : Loc.T("상대를 찾는 중"),
                 BusySub = quick ? Clock(now) : $"{Clock(now)} · {(inRoom ? roomCount : party)}/12",
                 CanCancel = session.Busy && !waiting,
                 ShowStart = inRoom && session.PrivateRoom && session.IsManager,
@@ -326,20 +326,20 @@ namespace ChessFight.Game
                 // R693: a public search shows the card over the start button only; the banner is for private rooms,
                 // for a member waiting for the party, and for the moment a match is found (the party walks out).
                 ShowMatch = busy && (session.PrivateRoom || waiting || session.Started),
-                MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
-                MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
-                           : session.Started ? (session.PrivateRoom ? "경기를 시작합니다!" : "상대를 찾았습니다")
-                           : session.JoiningLive ? "나갔던 경기로 돌아가는 중..."
-                           : dummyRoom && session.IsManager ? "더미를 추가하고 시작하세요"
-                           : session.PrivateRoom ? (session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
-                           : "상대 팀 찾는 중",
+                MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + Loc.T(mode.Name),
+                MatchTitle = !inRoom ? (waiting ? Loc.T("파티원들이 경기를 마치기를 기다리는 중") : following ? Loc.T("파티장이 방을 찾는 중...") : Loc.T("상대 팀 찾는 중"))
+                           : session.Started ? (session.PrivateRoom ? Loc.T("경기를 시작합니다!") : Loc.T("상대를 찾았습니다"))
+                           : session.JoiningLive ? Loc.T("나갔던 경기로 돌아가는 중...")
+                           : dummyRoom && session.IsManager ? Loc.T("더미를 추가하고 시작하세요")
+                           : session.PrivateRoom ? (session.IsManager ? Loc.T("방 번호를 친구에게 알려 주세요") : Loc.T("방장이 시작하기를 기다리는 중"))
+                           : Loc.T("상대 팀 찾는 중"),
                 MatchTimer = Clock(now),
-                MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
-                          : session.JoiningLive ? "내 자리와 체크포인트로 돌아가요"
-                          : dummyRoom ? "12명 없이 시작 가능" : session.AllowPublicBots ? "시험 규칙 · 1 대 1부터 · 봇 허용" : "",
+                MatchNote = waiting ? Loc.T("먼저 나왔어요 · 혼자 하려면 파티 나가기")
+                          : session.JoiningLive ? Loc.T("내 자리와 체크포인트로 돌아가요")
+                          : dummyRoom ? Loc.T("12명 없이 시작 가능") : session.AllowPublicBots ? Loc.T("시험 규칙 · 1 대 1부터 · 봇 허용") : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
-                RoomCode = "방 번호  " + Spaced(session.Match),
+                RoomCode = Loc.F("방 번호  {0}", Spaced(session.Match)),
                 CanFillRoom = session.CanUseRoomBots && session.Roster.ContainsKey(session.Self) && roomCount < 12,
                 CanClearRoomBots = session.CanClearRoomBots,
                 ShowTestBots = dummyRoom,
@@ -349,11 +349,11 @@ namespace ChessFight.Game
                 CanAddEnemy = dummyRoom && session.CanAddTestBot(1 - ourTeam),
                 CanRemoveAlly = dummyRoom && session.CanEditTestBots && session.TestBots(ourTeam) > 0,
                 CanRemoveEnemy = dummyRoom && session.CanEditTestBots && session.TestBots(1 - ourTeam) > 0,
-                TestHint = !session.IsManager ? "방장만 더미 수를 변경하고 시작할 수 있어요."
-                    : "이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)\n" +
-                      (roomCount < 2 ? "아군이나 적군 더미를 1명 이상 추가하세요."
-                       : session.PartyBots > 0 ? "파티 더미는 유지됩니다. −는 이 방에서 추가한 더미만 제거해요."
-                       : "준비되면 오른쪽 아래 테스트 시작을 누르세요."),
+                TestHint = !session.IsManager ? Loc.T("방장만 더미 수를 변경하고 시작할 수 있어요.")
+                    : Loc.T("이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)") + "\n" +
+                      (roomCount < 2 ? Loc.T("아군이나 적군 더미를 1명 이상 추가하세요.")
+                       : session.PartyBots > 0 ? Loc.T("파티 더미는 유지됩니다. −는 이 방에서 추가한 더미만 제거해요.")
+                       : Loc.T("준비되면 오른쪽 아래 테스트 시작을 누르세요.")),
 
                 CanInvite = session.Online && !session.Busy && session.Party != 0 && humans < 6,
                 CanJoinParty = session.Online && !session.Busy,

@@ -78,7 +78,7 @@ namespace ChessFight.RagdollLab
                         stageTime = 0f;
                         skillGrabLatch = skillGrabRaw;
                         lassoDir = LassoAim(s);
-                        SkillDetail = "조준 (마우스로 방향 · 좌클릭 밧줄 던지기 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 방향 · 좌클릭 밧줄 던지기 · 우클릭/F 취소)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -150,7 +150,7 @@ namespace ChessFight.RagdollLab
             lassoOn = null;
             lassoHoming = lassoAim;
             facing = FlatDir(lassoDir);
-            SkillDetail = "밧줄이 날아감";
+            SkillDetail = Loc.T("밧줄이 날아감");
             Fx(SkillFxKind.BishopRopeThrow, lassoHoming, lassoFrom, lassoDir, 0, s.bishopRopeRange);
             Log($"비숍: 밧줄 던짐{(lassoHoming != null ? $" → {lassoHoming.DisplayName}" : "")}");
         }
@@ -255,7 +255,7 @@ namespace ChessFight.RagdollLab
             lassoStretch = 0f;
             lassoWheel = 0f;
             lassoTip = target.LassoBelly;
-            SkillDetail = "밧줄 걸림 — WASD로 끌고 다니기 · 휠↑ 느슨하게 · 휠↓ 팽팽하게 · F/우클릭 놓기";
+            SkillDetail = Loc.T("밧줄 걸림 — WASD로 끌고 다니기 · 휠↑ 느슨하게 · 휠↓ 팽팽하게 · F/우클릭 놓기");
             Fx(SkillFxKind.BishopRopeHook, target, target.LassoBelly, Flat(target.bodies[0].position - bodies[0].position), 0, lassoRest);
             Log($"비숍 밧줄 → {target.DisplayName}: 허리에 걸림 (길이 {lassoRest:0.0} m, {s.bishopRopeHold:0.#}초)");
         }
@@ -374,7 +374,7 @@ namespace ChessFight.RagdollLab
             lassoRewindFrom = lassoTip;
             lassoOn = null;
             lassoHoming = null;
-            SkillDetail = "밧줄 거둠";
+            SkillDetail = Loc.T("밧줄 거둠");
             Fx(SkillFxKind.BishopRopeMiss, null, lassoTip, lassoDir);
             Log($"비숍 밧줄: {why} → 거둠");
         }
@@ -410,7 +410,7 @@ namespace ChessFight.RagdollLab
             lassoOn = null;
             lassoHoming = null;
             lassoStretch = 0f;
-            SkillDetail = "밧줄 거둠";
+            SkillDetail = Loc.T("밧줄 거둠");
         }
 
         void SnapLasso(PawnRushSkillParams s)
@@ -425,7 +425,7 @@ namespace ChessFight.RagdollLab
             lassoT = 0f;
             lassoOn = null;
             lassoHoming = null;
-            SkillDetail = "밧줄 끊어짐";
+            SkillDetail = Loc.T("밧줄 끊어짐");
         }
 
         /// <summary>
@@ -493,7 +493,7 @@ namespace ChessFight.RagdollLab
             lassoStretch = 0f;
             skillStage = SkillStage.None;
             stageTime = 0f;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             StartCooldown(s.bishopCooldown);
         }
 

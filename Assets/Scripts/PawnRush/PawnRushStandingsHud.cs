@@ -132,7 +132,7 @@ namespace ChessFight.PawnRush
                         s.Length[team] = s.Path[team] != null ? ProgressPath.Length(s.Path[team]) : 0f;
                     }
                     bool mini = s.Mini != null || (section != null && section.Kind == PawnRushSection.SlotKind.MiniGame);
-                    s.Label = mini ? "미니게임" : section != null ? section.DisplayName : "";
+                    s.Label = mini ? Loc.T("미니게임") : section != null ? Loc.T(section.DisplayName) : "";
                     weights[i] = PawnRushStandings.Weight(mini, s.Length[0]);
                     segments.Add(s);
                 }
@@ -234,13 +234,13 @@ namespace ChessFight.PawnRush
             if (self >= 0)
             {
                 Text(S(244, 13, 33, 42), ranks[self].ToString(), 28f, Ivory, TextAnchor.MiddleRight, true);
-                Text(S(278, 23, 16, 24), "위", 15f, Ivory, TextAnchor.MiddleLeft, true);
+                Text(S(278, 23, 16, 24), Ordinal(ranks[self]), 15f, Ivory, TextAnchor.MiddleLeft, true);
             }
-            else Text(S(246, 13, 50, 42), "관전", 15f, Ivory, TextAnchor.MiddleCenter, true);
+            else Text(S(246, 13, 50, 42), Loc.T("관전"), 15f, Ivory, TextAnchor.MiddleCenter, true);
             Text(S(299, 25, 25, 20), "/ " + racers.Count, 10.5f, Muted, TextAnchor.MiddleLeft, false);
             // the two lanes
-            Text(S(322, 17, 18, 13), "백", 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
-            Text(S(322, 30, 18, 13), "흑", 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 17, 18, 13), Loc.T("백"), 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 30, 18, 13), Loc.T("흑"), 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
             for (int i = 0; i < segments.Count; i++)
             {
                 var s = segments[i];
@@ -266,9 +266,9 @@ namespace ChessFight.PawnRush
             if (finish != null)
             {
                 for (int team = 0; team < 2; team++)
-                    Text(S(928, team == 0 ? 17 : 31, 62, 14), (team == 0 ? "백 " : "흑 ") + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team)),
+                    Text(S(928, team == 0 ? 17 : 31, 62, 14), Loc.T(team == 0 ? "백" : "흑") + " " + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team)),
                          11f, Arena.TeamColor(team, true), TextAnchor.MiddleLeft, true);
-                Text(S(980, 28, 58, 14), "왕관 발판", 8.5f, Muted, TextAnchor.MiddleCenter, false);
+                Text(S(980, 28, 58, 14), Loc.T("왕관 발판"), 8.5f, Muted, TextAnchor.MiddleCenter, false);
             }
         }
 
@@ -295,7 +295,7 @@ namespace ChessFight.PawnRush
             if (lineCount <= 0) return;
             float height = 34f + lineCount * 23f - 2f;
             Box(L(1062, 6, 206, height), Panel, new Color(Brass.r, Brass.g, Brass.b, .6f));
-            Text(L(1074, 10, 180, 18), "실시간 순위", 11f, Brass, TextAnchor.MiddleLeft, true);
+            Text(L(1074, 10, 180, 18), Loc.T("실시간 순위"), 11f, Brass, TextAnchor.MiddleLeft, true);
             for (int i = 0; i < lineCount; i++)
             {
                 int racer = lines[i];
@@ -313,8 +313,18 @@ namespace ChessFight.PawnRush
 
         static string Name(CrownFinish.Runner runner, bool own)
         {
-            string name = string.IsNullOrEmpty(runner.Name) ? (own ? "나" : "플레이어") : runner.Name;
+            string name = string.IsNullOrEmpty(runner.Name) ? Loc.T(own ? "나" : "플레이어") : runner.Name;
             return name.Length > 10 ? name.Substring(0, 9) + "…" : name;
+        }
+
+        // R751: the small word after the big rank number - "위" in Korean, the table's word elsewhere ("名"), and
+        // English's own ordinal ending (1st, 2nd, 3rd, 11th), which no single table cell can say.
+        static string Ordinal(int rank)
+        {
+            if (Loc.Lang != "en") return Loc.T("위");
+            int tens = rank % 100, ones = rank % 10;
+            if (tens >= 11 && tens <= 13) return "th";
+            return ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th";
         }
 
         // A section's name under its segment: whole if it fits, else its last word ("왕실 수로 정원" -> "정원"). A

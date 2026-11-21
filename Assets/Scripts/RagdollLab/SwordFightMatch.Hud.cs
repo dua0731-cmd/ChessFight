@@ -50,7 +50,10 @@ namespace ChessFight.RagdollLab
         readonly List<(float at, string title, string sub, float len)> stampQueue = new List<(float, string, string, float)>();
         bool endStamped;
 
-        static string Team(int team) => team == 0 ? "흰" : "검은";
+        // The team words live inside whole Loc keys ("흰 팀 승리", "{0} · 흰 팀 +1"), so each language words them its own way.
+        static bool IsWhite(int team) => team == 0;
+        // The feed's cause as shown (CauseName stays Korean: the match record stores it).
+        static string CauseShown(SwordFeed e) => Loc.T(CauseName(e));
 
         string NameOf(ulong id) => id != 0 && game.Fighters.TryGetValue(id, out var f) && f != null ? f.Pawn.DisplayName : "?";
 
@@ -118,11 +121,11 @@ namespace ChessFight.RagdollLab
                     Credit = e.Credit == 0 ? "" : NameOf(e.Credit),
                     Cause = e.Credit == 0 ? "스스로" : CauseName(e),
                 });
-                string who = e.Credit == 0 ? $"{NameOf(e.Victim)} — 스스로" : $"{NameOf(e.Victim)} ← {NameOf(e.Credit)}의 {CauseName(e)}";
-                Stamp("장외!", $"{who} · {Team(1 - e.VictimTeam)} 팀 +1", 1.1f);
+                string who = e.Credit == 0 ? Loc.F("{0} — 스스로", NameOf(e.Victim)) : Loc.F("{0} ← {1}의 {2}", NameOf(e.Victim), NameOf(e.Credit), CauseShown(e));
+                Stamp(Loc.T("장외!"), IsWhite(1 - e.VictimTeam) ? Loc.F("{0} · 흰 팀 +1", who) : Loc.F("{0} · 검은 팀 +1", who), 1.1f);
                 if (e.Stolen != 255 && e.Credit != 0)
                 {
-                    Stamp("빼앗음!", $"{NameOf(e.Credit)} → {ChessPieces.Name((PieceKind)e.Stolen)}", 1.2f, 0.25f);
+                    Stamp(Loc.T("빼앗음!"), $"{NameOf(e.Credit)} → {Loc.T(ChessPieces.Name((PieceKind)e.Stolen))}", 1.2f, 0.25f);
                     game.Fighters.TryGetValue(e.Credit, out var credit);
                     StealPillar(credit);
                 }
@@ -131,8 +134,8 @@ namespace ChessFight.RagdollLab
             if (view.Phase == SwordPhase.Result && !endStamped)
             {
                 endStamped = true;
-                string how = view.Phase == SwordPhase.Result && view.Clock < settings.Duration - 0.01 ? $"먼저 {settings.Target}점" : view.Clock > settings.Duration + 0.01 ? "서든데스" : "4:00 종료";
-                Stamp(view.Winner < 0 ? "무승부" : $"{Team(view.Winner)} 팀 승리", $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
+                string how = view.Phase == SwordPhase.Result && view.Clock < settings.Duration - 0.01 ? Loc.F("먼저 {0}점", settings.Target) : view.Clock > settings.Duration + 0.01 ? Loc.T("서든데스") : Loc.T("4:00 종료");
+                Stamp(view.Winner < 0 ? Loc.T("무승부") : IsWhite(view.Winner) ? Loc.T("흰 팀 승리") : Loc.T("검은 팀 승리"), $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
                 // R679: the winners' or the losers' music from the result on (a draw has none; nothing until its file exists)
                 var self = game.Local;
                 if (view.Winner >= 0 && self != null && self.Pawn != null)
@@ -179,11 +182,11 @@ namespace ChessFight.RagdollLab
         {
             switch (e.kind)
             {
-                case SfFxKind.KingParry: Stamp("반격!", "칼을 받아냄", 0.9f); break;
-                case SfFxKind.KingStab: Stamp("귀환!", "칼을 박고 매달림", 0.9f); break;
-                case SfFxKind.KnightFlip: Stamp("역전!", "나이트가 머리를 넘는다", 0.9f); break;
-                case SfFxKind.BishopSlide: Stamp("탈출!", "비숍이 대각선으로 빠져나간다", 0.9f); break;   // R236, was the rescue's "구원!"
-                case SfFxKind.RookBreak: Stamp("성벽 붕괴!", "바닥째 무너진다", 0.9f); break;
+                case SfFxKind.KingParry: Stamp(Loc.T("반격!"), Loc.T("칼을 받아냄"), 0.9f); break;
+                case SfFxKind.KingStab: Stamp(Loc.T("귀환!"), Loc.T("칼을 박고 매달림"), 0.9f); break;
+                case SfFxKind.KnightFlip: Stamp(Loc.T("역전!"), Loc.T("나이트가 머리를 넘는다"), 0.9f); break;
+                case SfFxKind.BishopSlide: Stamp(Loc.T("탈출!"), Loc.T("비숍이 대각선으로 빠져나간다"), 0.9f); break;   // R236, was the rescue's "구원!"
+                case SfFxKind.RookBreak: Stamp(Loc.T("성벽 붕괴!"), Loc.T("바닥째 무너진다"), 0.9f); break;
             }
         }
 
@@ -303,7 +306,7 @@ namespace ChessFight.RagdollLab
                     if (count >= 0) BigStamp(w, h, Mathf.Clamp(3 - (int)count, 1, 3).ToString(), null, (float)(count % 1.0), 1f);
                     break;
                 case SwordPhase.Playing:
-                    if (view.Clock < 1.0 && PhaseTime < 1.0) BigStamp(w, h, "시작!", null, (float)PhaseTime, 1f);
+                    if (view.Clock < 1.0 && PhaseTime < 1.0) BigStamp(w, h, Loc.T("시작!"), null, (float)PhaseTime, 1f);
                     break;
             }
             if (Time.time - stampAt < stampLen) BigStamp(w, h, stampTitle, stampSub, (Time.time - stampAt) / stampLen, ui);
@@ -328,7 +331,7 @@ namespace ChessFight.RagdollLab
             float clockX = w * 0.5f - clockW / 2f;
             Text(new Rect(clockX, r.y + 3f * ui, clockW, 26f * ui), $"{view.White} : {view.Black}", displayStyle, Mathf.RoundToInt(22 * ui), Ink);
             string small;
-            if (view.Phase == SwordPhase.SuddenDeath) small = "서든데스";
+            if (view.Phase == SwordPhase.SuddenDeath) small = Loc.T("서든데스");
             else { int g = Mathf.Clamp(Mathf.FloorToInt((float)(view.Phase == SwordPhase.Pick || view.Phase == SwordPhase.Countdown ? 0 : Clock)), 0, (int)settings.Duration); small = $"{g / 60}:{g % 60:00} / 4:00"; }
             Color c = view.Phase == SwordPhase.Playing && Remaining <= 30f ? SwordFightShapes.Hex("#c0392b") : InkSoft;
             Text(new Rect(clockX - 10f, r.y + 27f * ui, clockW + 20f, 16f * ui), small, bodyStyle, Mathf.RoundToInt(11 * ui), c);
@@ -416,18 +419,18 @@ namespace ChessFight.RagdollLab
             {
                 float left = info.HasValue ? Mathf.Max(0f, LeftFor(info.Value)) : me.RespawnSeconds;
                 // R640: back as the piece it picked (no pawn, no steal), its cooldowns going on.
-                main = $"{left:0.0}초 뒤 돌아온다";
-                sub = $"{ChessPieces.Name(me.Pawn.Piece)} 그대로 돌아온다. 스킬 쿨타임도 이어진다";
+                main = Loc.F("{0:0.0}초 뒤 돌아온다", left);
+                sub = Loc.F("{0} 그대로 돌아온다. 스킬 쿨타임도 이어진다", Loc.T(ChessPieces.Name(me.Pawn.Piece)));
             }
             else
             {
                 var sk = me.Skills;
                 var piece = me.Pawn.Piece;
-                string f = piece == PieceKind.Pawn ? "F 첫 두 걸음" : $"F {SwordFightSkills.Name(piece)}";
-                if (sk != null) f += sk.Cooldown > 0f ? $" {sk.Cooldown:0.0}초" : " 준비";
-                string e = piece == PieceKind.Pawn ? "E 없음" : $"E {SwordFightSkills.EdgeName(piece)}" + (sk != null && sk.EdgeCooldown > 0f ? $" {sk.EdgeCooldown:0.0}초" : " 준비");
-                main = $"{ChessPieces.Name(piece)} · {f} · {e}";
-                sub = piece == PieceKind.Pawn ? "대각선으로 부딪히면 넘어뜨린다. 둘째 걸음은 방향을 바꿀 수 있다" : "좌클릭 베기 · F 조준 뒤 F 발동, 좌·우클릭 취소 · E는 떨어지기 시작할 때";
+                string f = piece == PieceKind.Pawn ? "F " + Loc.T("첫 두 걸음") : "F " + Loc.T(SwordFightSkills.Name(piece));
+                if (sk != null) f += sk.Cooldown > 0f ? " " + Loc.F("{0:0.0}초", sk.Cooldown) : " " + Loc.T("준비");
+                string e = piece == PieceKind.Pawn ? Loc.T("E 없음") : "E " + Loc.T(SwordFightSkills.EdgeName(piece)) + (sk != null && sk.EdgeCooldown > 0f ? " " + Loc.F("{0:0.0}초", sk.EdgeCooldown) : " " + Loc.T("준비"));
+                main = $"{Loc.T(ChessPieces.Name(piece))} · {f} · {e}";
+                sub = piece == PieceKind.Pawn ? Loc.T("대각선으로 부딪히면 넘어뜨린다. 둘째 걸음은 방향을 바꿀 수 있다") : Loc.T("좌클릭 베기 · F 조준 뒤 F 발동, 좌·우클릭 취소 · E는 떨어지기 시작할 때");
             }
             float pw = Mathf.Min(760f * ui, w - 24f), ph = 58f * ui;
             var r = new Rect(w * 0.5f - pw / 2f, h - ph - 14f * ui, pw, ph);
@@ -449,8 +452,8 @@ namespace ChessFight.RagdollLab
             Panel(r, pickPanelTex, 16);
 
             float x = r.x + pad, iw = pw - 2f * pad, y = r.y + 22f * ui;
-            Text(new Rect(x, y, iw, 38f * ui), "시작 기물 고르기", displayStyle, Mathf.RoundToInt(30 * ui), Amber, TextAnchor.MiddleLeft);
-            Text(new Rect(x, y + 40f * ui, iw, 20f * ui), "같은 팀 안에서는 겹치지 않아요", bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleLeft);
+            Text(new Rect(x, y, iw, 38f * ui), Loc.T("시작 기물 고르기"), displayStyle, Mathf.RoundToInt(30 * ui), Amber, TextAnchor.MiddleLeft);
+            Text(new Rect(x, y + 40f * ui, iw, 20f * ui), Loc.T("같은 팀 안에서는 겹치지 않아요"), bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleLeft);
             float ring = 60f * ui;
             var rr = new Rect(r.xMax - pad - ring, y, ring, ring);
             Panel(rr, ringTex, 30);
@@ -490,11 +493,11 @@ namespace ChessFight.RagdollLab
                 var icon = MatchNameplate.Icon(p, false);
                 float ih = 78f * ui, icw = ih * icon.width / icon.height;
                 GUI.DrawTexture(new Rect(cr.center.x - icw / 2f, cr.y + 22f * ui, icw, ih), icon);
-                Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), ChessPieces.Name(p), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);
+                Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), Loc.T(ChessPieces.Name(p)), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);
                 // R674: the keys as bound in the settings window (F and E unless rebound).
-                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Use), SwordFightSkills.Name(p), chosen, ui);
-                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Skill), SwordFightSkills.EdgeName(p), chosen, ui);
-                string foot = takenBy != 0 ? NameOf(takenBy) + " 고름" : mineNow ? "골랐어요" : chosen ? "Space · 더블클릭으로 확정" : hot ? "클릭해서 선택" : "";
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Use), Loc.T(SwordFightSkills.Name(p)), chosen, ui);
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), GameSettings.KeyCap(GameKey.Skill), Loc.T(SwordFightSkills.EdgeName(p)), chosen, ui);
+                string foot = takenBy != 0 ? Loc.F("{0} 고름", NameOf(takenBy)) : mineNow ? Loc.T("골랐어요") : chosen ? Loc.T("Space · 더블클릭으로 확정") : hot ? Loc.T("클릭해서 선택") : "";
                 if (foot != "") Text(new Rect(cr.x, cr.yMax - 34f * ui, cw, 22f * ui), foot, bodyStyle, Mathf.RoundToInt(12 * ui), takenBy != 0 ? Muted : Amber);
                 GUI.color = old;
                 // One click marks the card, a double click sends it (Enter sends the marked one: PickKeys).
@@ -512,16 +515,16 @@ namespace ChessFight.RagdollLab
             GUI.color = new Color(1f, 1f, 1f, 0.08f);
             GUI.DrawTexture(new Rect(x, ly - 10f * ui, iw, 1f), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            Text(new Rect(x, ly, 70f * ui, 32f * ui), "우리 팀", bodyStyle, Mathf.RoundToInt(13 * ui), Amber, TextAnchor.MiddleLeft);
+            Text(new Rect(x, ly, 70f * ui, 32f * ui), Loc.T("우리 팀"), bodyStyle, Mathf.RoundToInt(13 * ui), Amber, TextAnchor.MiddleLeft);
             float cx = x + 74f * ui;
-            if (mine.HasValue) cx = TeamChip(cx, ly, mine.Value.Picked ? $"나 · {ChessPieces.Name(mine.Value.Piece)}" : "나 · 고르는 중", true, ui);
+            if (mine.HasValue) cx = TeamChip(cx, ly, mine.Value.Picked ? Loc.F("나 · {0}", Loc.T(ChessPieces.Name(mine.Value.Piece))) : Loc.T("나 · 고르는 중"), true, ui);
             foreach (var f in view.Fighters)
             {
                 if (f.Id == game.LocalId || !game.Fighters.TryGetValue(f.Id, out var o) || o == null || o.Pawn.Team != myTeam) continue;
                 if (cx > x + iw * 0.5f) break;   // leave room for the hint on the right
-                cx = TeamChip(cx, ly, f.Picked ? $"{NameOf(f.Id)} · {ChessPieces.Name(f.Piece)}" : $"{NameOf(f.Id)} · 고르는 중", false, ui);
+                cx = TeamChip(cx, ly, f.Picked ? $"{NameOf(f.Id)} · {Loc.T(ChessPieces.Name(f.Piece))}" : Loc.F("{0} · 고르는 중", NameOf(f.Id)), false, ui);
             }
-            string waiting = picked ? "골랐어요. 다른 사람을 기다리는 중" : pickAsked.HasValue ? "방장에게 보내는 중" : pickChosen.HasValue ? $"{ChessPieces.Name(pickChosen.Value)} 선택 · Space나 더블클릭으로 확정" : "클릭 · 1~5로 선택, Space나 더블클릭으로 확정";
+            string waiting = picked ? Loc.T("골랐어요. 다른 사람을 기다리는 중") : pickAsked.HasValue ? Loc.T("방장에게 보내는 중") : pickChosen.HasValue ? Loc.F("{0} 선택 · Space나 더블클릭으로 확정", Loc.T(ChessPieces.Name(pickChosen.Value))) : Loc.T("클릭 · 1~5로 선택, Space나 더블클릭으로 확정");
             Text(new Rect(x, ly, iw, 32f * ui), waiting, bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleRight);
         }
 
@@ -554,20 +557,21 @@ namespace ChessFight.RagdollLab
             float pw = Mathf.Min(560f * ui, w - 40f), ph = 300f * ui;
             var r = new Rect(w * 0.5f - pw / 2f, h * 0.5f - ph / 2f, pw, ph);
             Panel(r, panelTex);
-            string how = view.Clock > settings.Duration + 0.01 ? "서든데스" : view.Clock < settings.Duration - 0.01 ? $"{settings.Target}점" : "4:00 종료";
-            string title = view.Winner < 0 ? $"{how} — 무승부 {view.White} : {view.Black}" : $"{how} — {Team(view.Winner)} 팀 승리 {view.White} : {view.Black}";
+            string how = view.Clock > settings.Duration + 0.01 ? Loc.T("서든데스") : view.Clock < settings.Duration - 0.01 ? Loc.F("{0}점", settings.Target) : Loc.T("4:00 종료");
+            string title = view.Winner < 0 ? Loc.F("{0} — 무승부 {1} : {2}", how, view.White, view.Black)
+                : IsWhite(view.Winner) ? Loc.F("{0} — 흰 팀 승리 {1} : {2}", how, view.White, view.Black) : Loc.F("{0} — 검은 팀 승리 {1} : {2}", how, view.White, view.Black);
             float x = r.x + 24f * ui, iw = pw - 48f * ui, y = r.y + 22f * ui;
             Text(new Rect(x, y, iw, 38f * ui), title, displayStyle, Mathf.RoundToInt(28 * ui), Ink, TextAnchor.MiddleLeft);
             y += 42f * ui;
-            string mine = view.Winner < 0 ? "비겼다." : view.Winner == myTeam ? "우리 팀이 이겼다." : "우리 팀이 졌다.";
+            string mine = view.Winner < 0 ? Loc.T("비겼다.") : view.Winner == myTeam ? Loc.T("우리 팀이 이겼다.") : Loc.T("우리 팀이 졌다.");
             // R640: no steals any more (the line and the rows say only the falls).
-            Text(new Rect(x, y, iw, 22f * ui), mine + " 떨어뜨린 수가 점수.", bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft, TextAnchor.MiddleLeft);
+            Text(new Rect(x, y, iw, 22f * ui), mine + " " + Loc.T("떨어뜨린 수가 점수."), bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft, TextAnchor.MiddleLeft);
             y += 34f * ui;
-            Row(x, ref y, iw, ui, "흰 팀", $"장외로 얻은 점수 {view.OutsWhite}");
-            Row(x, ref y, iw, ui, "검은 팀", $"장외로 얻은 점수 {view.OutsBlack}");
+            Row(x, ref y, iw, ui, Loc.T("흰 팀"), Loc.F("장외로 얻은 점수 {0}", view.OutsWhite));
+            Row(x, ref y, iw, ui, Loc.T("검은 팀"), Loc.F("장외로 얻은 점수 {0}", view.OutsBlack));
             var br = new Rect(x, r.yMax - 64f * ui, 200f * ui, 42f * ui);
             Panel(br, brassTex, 7);
-            Text(br, "로비로 돌아가기", bodyStyle, Mathf.RoundToInt(14 * ui), Ink);
+            Text(br, Loc.T("로비로 돌아가기"), bodyStyle, Mathf.RoundToInt(14 * ui), Ink);
             if (GUI.Button(br, GUIContent.none, GUIStyle.none)) game.Exit();
         }
 

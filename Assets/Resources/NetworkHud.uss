@@ -109,9 +109,9 @@
 .a-logo { width: 76px; height: 53px; margin-right: 30px; flex-shrink: 0; background-image: resource("Menu/LobbyLogo");
           -unity-background-scale-mode: scale-to-fit; }
 .a-tab { height: 64px; margin-right: 30px; font-size: 16px; -unity-font-style: bold-and-italic; color: rgb(185, 166, 138);
-         -unity-text-align: middle-left; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); }
+         -unity-text-align: middle-left; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); white-space: nowrap; }
 .a-tab-on { color: rgb(243, 235, 221); }
-.a-tab-box { height: 64px; margin-right: 30px; }
+.a-tab-box { height: 64px; margin-right: 30px; flex-shrink: 0; } /* R750: never narrower than its word (English "History" broke in two at 1280 x 720) */
 .a-tab-box .a-tab { margin-right: 0; }
 .a-tab-rule { position: absolute; left: 0; bottom: 14px; }
 /* 10-17 ("글자만"): no boxes at the top right - icon, word and a gold number over the top shade;

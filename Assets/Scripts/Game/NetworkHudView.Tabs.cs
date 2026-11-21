@@ -195,18 +195,18 @@ namespace ChessFight.Game
                 var button = Pressable("", "cx-item", list, () => PickCodex(index));
                 var icon = Element("cx-icon", button);
                 var texts = Element("cx-texts", button);
-                Text(ChessPieces.Name(CodexOrder[i]), "cx-item-name", texts);
+                Text(Loc.T(ChessPieces.Name(CodexOrder[i])), "cx-item-name", texts);
                 var sub = Text(Availability(CodexOrder[i]).short_, "cx-item-sub", texts);
                 codexItems.Add((button, icon, sub));
             }
-            Text("팀 색으로 보기", "a-label cx-team-label", list);
+            Text(Loc.T("팀 색으로 보기"), "a-label cx-team-label", list);
             var seg = Element("row", list);
-            codexWhite = Pressable("백", "cx-seg", seg, () => SetCodexTeam(0));
-            codexBlack = Pressable("흑", "cx-seg", seg, () => SetCodexTeam(1));
+            codexWhite = Pressable(Loc.T("백"), "cx-seg", seg, () => SetCodexTeam(0));
+            codexBlack = Pressable(Loc.T("흑"), "cx-seg", seg, () => SetCodexTeam(1));
 
             // The stage: the board shows through; a drag across it turns the piece.
             var stage = Element("cx-stage", codexPage, PickingMode.Position);
-            Text("끌어서 돌려 보기", "cx-hint", stage);
+            Text(Loc.T("끌어서 돌려 보기"), "cx-hint", stage);
             stage.RegisterCallback<PointerDownEvent>(e =>
             {
                 spinning = true;
@@ -236,8 +236,8 @@ namespace ChessFight.Game
             cxWhere = Text("", "cx-where", panel);
 
             var stats = Element("cx-section", panel);
-            Text("능력치", "a-label", stats);
-            foreach (var label in new[] { "무게", "이동", "오르기" })
+            Text(Loc.T("능력치"), "a-label", stats);
+            foreach (var label in new[] { Loc.T("무게"), Loc.T("이동"), Loc.T("오르기") })
             {
                 var row = Element("cx-bar-row", stats);
                 Text(label, "cx-bar-label", row);
@@ -247,37 +247,37 @@ namespace ChessFight.Game
                 cxBars.Add((fill, value));
             }
             var tags = Element("cx-tags", stats);
-            Text("질주 가능", "cx-tag", tags);
-            cxImmune = Text("눌림 · 비틀거림 면역", "cx-tag cx-tag-gold", tags);
+            Text(Loc.T("질주 가능"), "cx-tag", tags);
+            cxImmune = Text(Loc.T("눌림 · 비틀거림 면역"), "cx-tag cx-tag-gold", tags);
 
             Element("cx-rule", panel);
 
             var pr = Element("cx-section", panel);
             var prHead = Element("cx-mode-head", pr);
             Element("cx-dot cx-dot-pr", prHead);
-            Text("폰 러쉬", "a-label cx-mode-label", prHead);
+            Text(Loc.T("폰 러쉬"), "a-label cx-mode-label", prHead);
             cxPrSkill = Element("cx-skill", pr);
             Text("F", "cx-key", cxPrSkill);
             cxPrName = Text("", "cx-skill-name", cxPrSkill);
             cxPrLine = Text("", "cx-skill-line", pr);
-            cxPrNone = Text("이 모드에는 나오지 않아요", "cx-none", pr);
+            cxPrNone = Text(Loc.T("이 모드에는 나오지 않아요"), "cx-none", pr);
 
             var sf = Element("cx-section", panel);
             var sfHead = Element("cx-mode-head", sf);
             Element("cx-dot cx-dot-sf", sfHead);
-            Text("소드 파이트", "a-label cx-mode-label", sfHead);
+            Text(Loc.T("소드 파이트"), "a-label cx-mode-label", sfHead);
             cxSfSkillF = Element("cx-skill", sf);
             Text("F", "cx-key", cxSfSkillF);
             cxSfF = Text("", "cx-skill-name", cxSfSkillF);
             cxSfSkillE = Element("cx-skill", sf);
             Text("E", "cx-key", cxSfSkillE);
             cxSfE = Text("", "cx-skill-name", cxSfSkillE);
-            cxSfNone = Text("고를 수 없는 기물이에요", "cx-none", sf);
+            cxSfNone = Text(Loc.T("고를 수 없는 기물이에요"), "cx-none", sf);
 
             Element("cx-grow", panel);
             var record = Pressable("", "cx-record", panel, () => SetTab(LobbyTab.Record));
             cxRecord = Text("", "cx-record-text", record);
-            Text("전적 보기 ›", "cx-record-go", record);
+            Text(Loc.T("전적 보기 ›"), "cx-record-go", record);
         }
 
         // Where a piece comes from in each mode: the list's short line and the panel's longer one.
@@ -285,10 +285,10 @@ namespace ChessFight.Game
         {
             bool rush = kind == PieceKind.Pawn || PawnRushPromotion.Pieces.Contains(kind);
             bool sword = SwordMatchRules.Pickable.Contains(kind);
-            if (kind == PieceKind.Pawn) return ("폰 러쉬 시작 기물", "폰 러쉬에서 모두가 폰으로 출발 · 소드 파이트에서는 못 고름");
-            if (rush && sword) return ("두 모드", "폰 러쉬 승격 발판 · 소드 파이트 고르기");
-            if (sword) return ("소드 파이트 전용", "소드 파이트 고르기 · 폰 러쉬에는 나오지 않음");
-            return ("폰 러쉬 전용", "폰 러쉬 승격 발판 · 소드 파이트에서는 못 고름");
+            if (kind == PieceKind.Pawn) return (Loc.T("폰 러쉬 시작 기물"), Loc.T("폰 러쉬에서 모두가 폰으로 출발 · 소드 파이트에서는 못 고름"));
+            if (rush && sword) return (Loc.T("두 모드"), Loc.T("폰 러쉬 승격 발판 · 소드 파이트 고르기"));
+            if (sword) return (Loc.T("소드 파이트 전용"), Loc.T("소드 파이트 고르기 · 폰 러쉬에는 나오지 않음"));
+            return (Loc.T("폰 러쉬 전용"), Loc.T("폰 러쉬 승격 발판 · 소드 파이트에서는 못 고름"));
         }
 
         // The codex's piece and team, as a click on the list and the 백 / 흑 buttons would choose them.
@@ -336,7 +336,7 @@ namespace ChessFight.Game
             var kind = CodexKind;
             var stats = ChessPieces.Stats(kind);
             cxEn.text = kind.ToString().ToUpperInvariant();
-            cxName.text = ChessPieces.Name(kind);
+            cxName.text = Loc.T(ChessPieces.Name(kind));
             cxWhere.text = Availability(kind).long_;
             Bar(0, stats.Weight, 3f);
             Bar(1, stats.Move, 1f);
@@ -347,19 +347,19 @@ namespace ChessFight.Game
             Show(cxPrSkill, rush);
             Show(cxPrLine, rush);
             Show(cxPrNone, !rush);
-            cxPrName.text = rush ? PawnRushPromotion.SkillName(kind) : "";
-            cxPrLine.text = rush ? PawnRushPromotion.SkillLine(kind) : "";
+            cxPrName.text = rush ? Loc.T(PawnRushPromotion.SkillName(kind)) : "";
+            cxPrLine.text = rush ? Loc.T(PawnRushPromotion.SkillLine(kind)) : "";
 
             bool sword = SwordMatchRules.Pickable.Contains(kind);
             Show(cxSfSkillF, sword);
             Show(cxSfSkillE, sword);
             Show(cxSfNone, !sword);
-            cxSfF.text = sword ? SwordSkillNames.Skill(kind) : "";
-            cxSfE.text = sword ? SwordSkillNames.Edge(kind) : "";
+            cxSfF.text = sword ? Loc.T(SwordSkillNames.Skill(kind)) : "";
+            cxSfE.text = sword ? Loc.T(SwordSkillNames.Edge(kind)) : "";
 
             var book = MatchRecords.Book;
             int games = book.PieceGames[(int)kind], wins = book.PieceWins[(int)kind];
-            cxRecord.text = games > 0 ? $"내 기록 · 이 기물로 <color=#E2B866>{games}판 {wins}승</color>" : "내 기록 · 아직 이 기물로 한 판도 안 했어요";
+            cxRecord.text = games > 0 ? Loc.F("내 기록 · 이 기물로 <color=#E2B866>{0}판 {1}승</color>", games, wins) : Loc.T("내 기록 · 아직 이 기물로 한 판도 안 했어요");
         }
 
         void Bar(int i, float value, float max)
@@ -381,17 +381,17 @@ namespace ChessFight.Game
             var rateRow = Element("rc-rate-row", summary);
             rcRate = Text("—", "rc-rate", rateRow, true);
             var rateTexts = Element("rc-rate-texts", rateRow);
-            Text("전체 승률", "rc-rate-cap", rateTexts);
+            Text(Loc.T("전체 승률"), "rc-rate-cap", rateTexts);
             rcTotals = Text("", "rc-rate-sum", rateTexts);
 
-            string[,] captions = { { "가장 빠른 도착", "1위 도착", "도착 못 함" }, { "내가 떨어뜨림", "떨어짐", "한 판 최다 떨어뜨림" } };
+            string[,] captions = { { Loc.T("가장 빠른 도착"), Loc.T("1위 도착"), Loc.T("도착 못 함") }, { Loc.T("내가 떨어뜨림"), Loc.T("떨어짐"), Loc.T("한 판 최다 떨어뜨림") } };
             for (int m = 0; m < 2; m++)
             {
                 var card = Element("lt-card rc-mode", left);
                 var head = Element("rc-mode-head", card);
                 var name = Element("row", head);
                 Element(m == 0 ? "cx-dot cx-dot-pr" : "cx-dot cx-dot-sf", name);
-                Text(m == 0 ? GameModes.KingRush.Name : GameModes.SwordFight.Name, "rc-mode-name", name);
+                Text(Loc.T(m == 0 ? GameModes.KingRush.Name : GameModes.SwordFight.Name), "rc-mode-name", name);
                 rcModeSum[m] = Text("", "rc-mode-sum", head);
                 var bar = Element("rc-bar", card);
                 rcModeFill[m] = Element("rc-bar-fill", bar);
@@ -404,7 +404,7 @@ namespace ChessFight.Game
                 }
             }
             // R745: the totals are backed up on Steam (the progress board); the list of recent matches is this PC's own.
-            Text("온라인 경기만 셈 · 판수는 Steam에 보관, 최근 경기 목록은 이 PC에만", "rc-note", left);
+            Text(Loc.T("온라인 경기만 셈 · 판수는 Steam에 보관, 최근 경기 목록은 이 PC에만"), "rc-note", left);
 
             var list = Element("lt-card rc-list", recordPage, PickingMode.Position);
             var head2 = Element("rc-list-head", list);
@@ -436,10 +436,10 @@ namespace ChessFight.Game
                 // R745: the sides, and under them a small mark on a match that counted for the 순위 boards.
                 var size = Element("rc-size-cell", row.Root);
                 row.Size = Text("", "rc-size", size);
-                row.Ranked = Text("순위", "rc-ranked", size);
+                row.Ranked = Text(Loc.T("순위"), "rc-ranked", size);
                 row.When = Text("", "rc-when", row.Root);
                 // R742: a double click opens the match's detail in the list's place (NetworkHudView.RecordDetail.cs).
-                Text("더블 클릭 · 자세히", "rc-hint", row.Root);
+                Text(Loc.T("더블 클릭 · 자세히"), "rc-hint", row.Root);
                 row.Root.pickingMode = PickingMode.Position;
                 int slot = i;
                 row.Root.RegisterCallback<ClickEvent>(e =>
@@ -450,9 +450,9 @@ namespace ChessFight.Game
                 });
                 rcRows.Add(row);
             }
-            rcEmpty = Text("아직 기록이 없어요", "rc-empty", rows);
-            rcEmptySub = Text("온라인 경기를 끝까지 하면 여기에 쌓여요", "rc-empty-sub", rows);
-            Text("최근 " + RecordBook.Kept + "판까지 보관", "rc-foot", list);
+            rcEmpty = Text(Loc.T("아직 기록이 없어요"), "rc-empty", rows);
+            rcEmptySub = Text(Loc.T("온라인 경기를 끝까지 하면 여기에 쌓여요"), "rc-empty-sub", rows);
+            Text(Loc.F("최근 {0}판까지 보관", RecordBook.Kept), "rc-foot", list);
             BuildRecordDetail(list);
         }
 
@@ -462,18 +462,18 @@ namespace ChessFight.Game
             var book = MatchRecords.Book;
             var all = book.All;
             rcRate.text = RecordText.Rate(all.Wins, all.Games);
-            rcTotals.text = $"{all.Games}판 · {all.Wins}승 {all.AllLosses}패" + (all.Draws > 0 ? $" {all.Draws}무" : "");
+            rcTotals.text = Loc.F("{0}판 · {1}승 {2}패", all.Games, all.Wins, all.AllLosses) + (all.Draws > 0 ? " " + Loc.F("{0}무", all.Draws) : "");
 
             for (int m = 0; m < 2; m++)
             {
                 var t = book.Mode(m == 0 ? GameModes.KingRush.Key : GameModes.SwordFight.Key);
-                rcModeSum[m].text = $"{t.Games}판 · {t.Wins}승 {t.AllLosses}패 · <color=#E2B866>{RecordText.Rate(t.Wins, t.Games)}</color>";
+                rcModeSum[m].text = Loc.F("{0}판 · {1}승 {2}패", t.Games, t.Wins, t.AllLosses) + $" · <color=#E2B866>{RecordText.Rate(t.Wins, t.Games)}</color>";
                 rcModeFill[m].style.width = Length.Percent(t.Games > 0 ? 100f * t.Wins / t.Games : 0f);
                 if (m == 0)
                 {
                     rcStat[0, 0].text = t.BestFinish >= 0 ? MatchResult.Clock(t.BestFinish) : "—";
-                    rcStat[0, 1].text = t.Firsts + "번";
-                    rcStat[0, 2].text = t.NotFinished + "번";
+                    rcStat[0, 1].text = Loc.F("{0}번", t.Firsts);
+                    rcStat[0, 2].text = Loc.F("{0}번", t.NotFinished);
                 }
                 else
                 {
@@ -483,7 +483,7 @@ namespace ChessFight.Game
                 }
             }
 
-            string[] names = { "전체", GameModes.KingRush.Name, GameModes.SwordFight.Name };
+            string[] names = { Loc.T("전체"), Loc.T(GameModes.KingRush.Name), Loc.T(GameModes.SwordFight.Name) };
             for (int f = 0; f < 3; f++)
             {
                 int games = f == 0 ? all.Games : book.Mode(FilterModes[f]).Games;
@@ -511,16 +511,16 @@ namespace ChessFight.Game
                 if (!has) continue;
                 var r = shown[at];
                 rcShown.Add(r);
-                row.Badge.text = RecordText.Badge(r.Result);
+                row.Badge.text = Loc.T(RecordText.Badge(r.Result));
                 foreach (var c in new[] { "rc-badge-win", "rc-badge-loss", "rc-badge-left", "rc-badge-draw" }) row.Badge.RemoveFromClassList(c);
                 row.Badge.AddToClassList(r.Result == RecordResult.Win ? "rc-badge-win" : r.Result == RecordResult.Loss ? "rc-badge-loss"
                                          : r.Result == RecordResult.Left ? "rc-badge-left" : "rc-badge-draw");
                 bool sword = r.Mode == GameModes.SwordFight.Key;
                 row.Dot.EnableInClassList("cx-dot-pr", !sword);
                 row.Dot.EnableInClassList("cx-dot-sf", sword);
-                row.Mode.text = RecordText.ModeName(r.Mode);
+                row.Mode.text = Loc.T(RecordText.ModeName(r.Mode));
                 SetIcon(row.Icon, r.Piece, 0);
-                row.Piece.text = ChessPieces.Name(r.Piece);
+                row.Piece.text = Loc.T(ChessPieces.Name(r.Piece));
                 row.Main.text = RecordText.Headline(r);
                 row.Sub.text = RecordText.Sub(r);
                 row.Size.text = RecordText.Size(r);

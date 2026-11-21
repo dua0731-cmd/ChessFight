@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Game
@@ -274,18 +275,18 @@ namespace ChessFight.Game
             switch (key)
             {
                 case KeyCode.None: return "—";
-                case KeyCode.Mouse0: return "좌클릭";
-                case KeyCode.Mouse1: return "우클릭";
-                case KeyCode.Mouse2: return "휠 클릭";
-                case KeyCode.Mouse3: return "마우스 4";
-                case KeyCode.Mouse4: return "마우스 5";
+                case KeyCode.Mouse0: return Loc.T("좌클릭");
+                case KeyCode.Mouse1: return Loc.T("우클릭");
+                case KeyCode.Mouse2: return Loc.T("휠 클릭");
+                case KeyCode.Mouse3: return Loc.T("마우스 4");
+                case KeyCode.Mouse4: return Loc.T("마우스 5");
                 case KeyCode.Space: return "Space";
-                case KeyCode.LeftShift: return "왼쪽 Shift";
-                case KeyCode.RightShift: return "오른쪽 Shift";
-                case KeyCode.LeftControl: return "왼쪽 Ctrl";
-                case KeyCode.RightControl: return "오른쪽 Ctrl";
-                case KeyCode.LeftAlt: return "왼쪽 Alt";
-                case KeyCode.RightAlt: return "오른쪽 Alt";
+                case KeyCode.LeftShift: return Loc.T("왼쪽 Shift");
+                case KeyCode.RightShift: return Loc.T("오른쪽 Shift");
+                case KeyCode.LeftControl: return Loc.T("왼쪽 Ctrl");
+                case KeyCode.RightControl: return Loc.T("오른쪽 Ctrl");
+                case KeyCode.LeftAlt: return Loc.T("왼쪽 Alt");
+                case KeyCode.RightAlt: return Loc.T("오른쪽 Alt");
                 case KeyCode.Return: return "Enter";
                 case KeyCode.UpArrow: return "↑";
                 case KeyCode.DownArrow: return "↓";
@@ -294,7 +295,7 @@ namespace ChessFight.Game
                 case KeyCode.BackQuote: return "`";
             }
             if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9) return ((int)(key - KeyCode.Alpha0)).ToString();
-            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return "숫자판 " + (int)(key - KeyCode.Keypad0);
+            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return Loc.F("숫자판 {0}", (int)(key - KeyCode.Keypad0));
             return key.ToString();
         }
 
@@ -309,7 +310,7 @@ namespace ChessFight.Game
                 case KeyCode.LeftShift: case KeyCode.RightShift: return "Shift";
                 case KeyCode.LeftControl: case KeyCode.RightControl: return "Ctrl";
                 case KeyCode.LeftAlt: case KeyCode.RightAlt: return "Alt";
-                case KeyCode.Mouse2: return "휠";
+                case KeyCode.Mouse2: return Loc.T("휠");
                 case KeyCode.Mouse3: return "M4";
                 case KeyCode.Mouse4: return "M5";
             }
@@ -409,8 +410,8 @@ namespace ChessFight.Game
                 try { Screen.GetDisplayLayout(layout); } catch (Exception) { }
                 for (int i = 0; i < layout.Count; i++)
                     // Windows names them like \\.\DISPLAY1: only a real model name is worth showing.
-                    list.Add($"모니터 {i + 1}" + (string.IsNullOrEmpty(layout[i].name) || layout[i].name.StartsWith("\\") ? "" : $" ({layout[i].name})"));
-                if (list.Count == 0) list.Add("모니터 1");
+                    list.Add(Loc.F("모니터 {0}", i + 1) + (string.IsNullOrEmpty(layout[i].name) || layout[i].name.StartsWith("\\") ? "" : $" ({layout[i].name})"));
+                if (list.Count == 0) list.Add(Loc.F("모니터 {0}", 1));
                 return list;
             }
         }

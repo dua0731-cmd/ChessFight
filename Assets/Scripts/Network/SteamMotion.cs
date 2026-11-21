@@ -75,14 +75,15 @@ namespace ChessFight.Network
         {
             get
             {
-                if (session.Match == 0) return Simulation.Active ? "지연 시뮬 " + Simulation : "";
+                // R750: shown as it is built, so each part goes through the string table here.
+                if (session.Match == 0) return Simulation.Active ? Loc.F("지연 시뮬 {0}", Simulation) : "";
                 string ping = PingMs < 0 ? "—" : PingMs + "ms";
                 string route = RelayedPeers + DirectPeers == 0 ? ""
-                             : session.IsHost ? $" · 직접 {DirectPeers} · 릴레이 {RelayedPeers}"
-                             : RelayedPeers > 0 ? " · 릴레이" : " · 직접";
-                string line = session.IsHost ? $"물리 담당 · 최대 핑 {ping}{route}"
-                            : $"핑 {ping} · 응답 {(ResponseMs < 0 ? "—" : Math.Round(ResponseMs) + "ms")}{route}";
-                return Simulation.Active ? line + " · 지연 시뮬 " + Simulation : line;
+                             : session.IsHost ? " · " + Loc.F("직접 {0} · 릴레이 {1}", DirectPeers, RelayedPeers)
+                             : RelayedPeers > 0 ? " · " + Loc.T("릴레이") : " · " + Loc.T("직접");
+                string line = session.IsHost ? Loc.F("물리 담당 · 최대 핑 {0}", ping) + route
+                            : Loc.F("핑 {0} · 응답 {1}", ping, ResponseMs < 0 ? "—" : Math.Round(ResponseMs) + "ms") + route;
+                return Simulation.Active ? line + " · " + Loc.F("지연 시뮬 {0}", Simulation) : line;
             }
         }
         public SteamMotion(SteamSession session)
@@ -104,7 +105,7 @@ namespace ChessFight.Network
                 // player to do ("취소 후 다시 시도하세요" was the only way out before). A player who has left the room
                 // is not sent to again: their session ending is no news for the screen.
                 bool inRoom = session.IsPeer(peer);
-                if (inRoom) { ConnectionStatus = Reconnecting; reconnectingWith = peer; }
+                if (inRoom) { ConnectionStatus = Loc.T(Reconnecting); reconnectingWith = peer; }
                 // R525: and why, for Player.log (Steam's end reason and its own words). R683: and which of the two it was.
                 Debug.LogWarning($"[ChessFight] Steam P2P 연결 실패: {session.Name(peer)} ({peer}) · 이유 {c.m_info.m_eEndReason} {c.m_info.m_szEndDebug}" +
                                  (inRoom ? " · 같은 방 → 다시 연결함" : " · 방에 없는 사람(나간 뒤 정리)"));
@@ -216,7 +217,7 @@ namespace ChessFight.Network
                 if (session.Started)
                 {
                     session.Cancel($"물리 담당 PC의 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않아 경기에서 나감" + (heardHost ? "" : "(이 PC에게서 한 번도 받지 못함)"));
-                    ConnectionStatus = "물리 담당 PC의 응답이 끊겨 파티로 돌아왔습니다.";
+                    ConnectionStatus = Loc.T("물리 담당 PC의 응답이 끊겨 파티로 돌아왔습니다.");
                     return;
                 }
                 if (!lostNoted)
@@ -239,14 +240,14 @@ namespace ChessFight.Network
             Silence = now - lastReceive;
             var previous = Health;
             Health = LinkMonitor.Classify(Silence);
-            if (Health == LinkHealth.Unstable) ConnectionStatus = "물리 담당 PC와의 연결이 불안정합니다...";
+            if (Health == LinkHealth.Unstable) ConnectionStatus = Loc.T("물리 담당 PC와의 연결이 불안정합니다...");
             else if (Health >= LinkHealth.Frozen)
                 // A started match hands the host role on after a few seconds (HOST.md);
                 // the return to the party is only the last resort. A waiting room waits (R525).
                 ConnectionStatus = session.Started
-                    ? $"물리 담당 PC 응답 없음 - 멈춤. 다음 PC로 넘기는 중... ({Math.Max(0, Math.Ceiling(LinkMonitor.LostAfter - Silence))}초 안에 안 되면 파티로 복귀)"
-                    : "물리 담당 PC의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중";
-            else if (previous != LinkHealth.Ok) ConnectionStatus = "Steam으로 연결됨";
+                    ? Loc.F("물리 담당 PC 응답 없음 - 멈춤. 다음 PC로 넘기는 중... ({0}초 안에 안 되면 파티로 복귀)", Math.Max(0, Math.Ceiling(LinkMonitor.LostAfter - Silence)))
+                    : Loc.T("물리 담당 PC의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중");
+            else if (previous != LinkHealth.Ok) ConnectionStatus = Loc.T("Steam으로 연결됨");
         }
 
         int PollPing()
@@ -282,7 +283,7 @@ namespace ChessFight.Network
             {
                 var result = SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
                     SteamSend.Unreliable, Channel);
-                if (result != EResult.k_EResultOK) ConnectionStatus = "Steam 전송 오류: " + result;
+                if (result != EResult.k_EResultOK) ConnectionStatus = Loc.F("Steam 전송 오류: {0}", result);
                 connected.Add(id);
             }
             finally { handle.Free(); }
@@ -321,7 +322,7 @@ namespace ChessFight.Network
             if (sender == reconnectingWith)
             {
                 reconnectingWith = 0;
-                if (ConnectionStatus == Reconnecting) ConnectionStatus = "Steam으로 연결됨";
+                if (ConnectionStatus == Loc.T(Reconnecting)) ConnectionStatus = Loc.T("Steam으로 연결됨");
             }
             float now = Time.realtimeSinceStartup;
             if (session.IsHost)
@@ -336,7 +337,7 @@ namespace ChessFight.Network
             else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, arriving) && MotionProtocol.Newer(receivedTick, lastSnapshot))
             {
                 lastSnapshot = receivedTick; lastReceive = now; heardHost = true;
-                if (Health != LinkHealth.Ok || ConnectionStatus == "") ConnectionStatus = "Steam으로 연결됨";
+                if (Health != LinkHealth.Ok || ConnectionStatus == "") ConnectionStatus = Loc.T("Steam으로 연결됨");
                 Health = LinkHealth.Ok;
                 foreach (var pawn in arriving)
                 {
@@ -407,13 +408,13 @@ namespace ChessFight.Network
                 consumedJumps.Clear();
                 consumedJumps[session.Self] = jumps;
                 foreach (ulong id in session.Roster.Keys) if (id != session.Self && !BotIdentity.IsBot(id)) jumpBaseline.Add(id);
-                ConnectionStatus = "이 PC가 물리 계산을 맡았습니다.";
+                ConnectionStatus = Loc.T("이 PC가 물리 계산을 맡았습니다.");
             }
             else
             {
                 consumedJumps.Clear();
                 lastSnapshot = 0;
-                ConnectionStatus = "물리 담당 PC가 바뀌었습니다.";
+                ConnectionStatus = Loc.T("물리 담당 PC가 바뀌었습니다.");
             }
         }
 

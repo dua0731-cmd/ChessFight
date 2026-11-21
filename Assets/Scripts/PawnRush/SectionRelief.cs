@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using ChessFight.ProtectKing;
 using UnityEngine;
 
@@ -170,7 +171,7 @@ namespace ChessFight.PawnRush
                 var go = new GameObject("Section relief notice");
                 current = go.AddComponent<SectionReliefNotice>();
             }
-            current.line = sectionName + " · 쉬운 길이 열리고 장애물이 꺼졌습니다";
+            current.line = Loc.F("{0} · 쉬운 길이 열리고 장애물이 꺼졌습니다", Loc.T(sectionName));
             current.until = Time.unscaledTime + Seconds;
         }
 

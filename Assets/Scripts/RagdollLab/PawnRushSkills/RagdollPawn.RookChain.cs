@@ -93,7 +93,7 @@ namespace ChessFight.RagdollLab
                         aimLocked = false;
                         skillGrabLatch = skillGrabRaw;
                         skillDir = ChainAim(s);
-                        SkillDetail = "조준 (마우스로 방향 · 좌클릭 던지기 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 방향 · 좌클릭 던지기 · 우클릭/F 취소)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -116,7 +116,7 @@ namespace ChessFight.RagdollLab
                             aimLocked = true;
                             stageTime = 0f;
                             facing = FlatDir(skillDir);
-                            SkillDetail = "팔 휘두르기";
+                            SkillDetail = Loc.T("팔 휘두르기");
                         }
                         break;
                     }
@@ -203,7 +203,7 @@ namespace ChessFight.RagdollLab
             chainFrom = ChainOrigin;
             chainTip = chainFrom;
             chainOn = null;
-            SkillDetail = "사슬이 날아감";
+            SkillDetail = Loc.T("사슬이 날아감");
             Fx(SkillFxKind.RookThrow, null, chainFrom, skillDir, 0, s.rookChainRange);
         }
 
@@ -295,7 +295,7 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             rewindFrom = chainTip;
             chainOn = null;
-            SkillDetail = "사슬 되감기";
+            SkillDetail = Loc.T("사슬 되감기");
             Log($"룩 사슬: {why} → 되감기");
         }
 
@@ -308,7 +308,7 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             skillStage = SkillStage.None;
             stageTime = 0f;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             StartCooldown(cooldown);
         }
 
@@ -360,7 +360,7 @@ namespace ChessFight.RagdollLab
             chainOn = ally;
             ally.chainOfferBy = this;
             ally.chainGrabEdge = false;
-            SkillDetail = "팀원에게 손잡이 (우클릭으로 잡기)";
+            SkillDetail = Loc.T("팀원에게 손잡이 (우클릭으로 잡기)");
             Fx(SkillFxKind.RookHook, ally, chainTip, skillDir, 1, s.rookAllyWindow);
             Log($"룩 사슬 → {ally.DisplayName}(팀원): 손잡이 {s.rookAllyWindow:0.#}초 — 우클릭으로 잡기");
         }
@@ -373,7 +373,7 @@ namespace ChessFight.RagdollLab
             Vector3 to = ChainSpot(s, target, ally);
             float time = ally ? s.rookAllyPull : s.rookPullTime * (target.Weight >= s.rookHeavyWeight - 0.01f ? s.rookHeavySlow : 1f);
             target.StartChainCarry(this, ally, to, time);
-            SkillDetail = ally ? "팀원 끌어올림" : "적 끌어옴";
+            SkillDetail = Loc.T(ally ? "팀원 끌어올림" : "적 끌어옴");
             Fx(SkillFxKind.RookHook, target, chainTip, skillDir, ally ? 2 : 0, time);
             Log($"룩 사슬 → {target.DisplayName}{(ally ? "(팀원): 잡음" : ": 걸림")} → {time:0.00}초 동안 {Flat(to - target.bodies[0].position).magnitude:0.0} m 끌려옴");
         }
@@ -417,7 +417,7 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             chainCooldown = -1f;
             skillStage = SkillStage.None;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
         }
 
         /// <summary>Everything the chain leaves running when the skills are cleared (a knockdown, a piece switch).</summary>

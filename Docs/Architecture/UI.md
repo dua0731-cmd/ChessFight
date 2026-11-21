@@ -11,7 +11,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 | 방식 | UI Toolkit 런타임 패널. `RuntimePanels.Create`가 `PanelSettings`를 만들어(또는 `GameSceneConfig`의 것을 써서) `UIDocument`에 붙인다 |
 | 테마 | `Resources/NetworkTheme.tss` = `@import url("NetworkHud.uss")` 한 줄. **Unity 기본 테마 없음** → ScrollView·Dropdown 등 복합 컨트롤 금지 |
 | 해상도 | 참조 1280×720, ScaleWithScreenSize |
-| 폰트 | `RuntimePanels.KoreanFont`: OS 폰트 맑은 고딕 → 나눔고딕 → Noto Sans KR → 굴림 → 돋움 → Arial Unicode MS. 실패하면 LegacyRuntime(한글 없음). Console에 `[ChessFight] HUD 폰트:` 로그 |
+| 폰트 | `RuntimePanels.KoreanFont`(R747부터 `BodyFont`와 같음 — 보이는 언어의 본문 글꼴): OS 폰트 맑은 고딕 → 나눔고딕 → Noto Sans KR → 굴림 → 돋움 → (라틴 · 키릴 문자 언어는 Segoe UI) → Arial Unicode MS. 중국어 · 일본어는 그 언어의 Windows 글꼴이 맨 앞(아래 "언어 · 번역"). 실패하면 LegacyRuntime(한글 없음). Console에 `[ChessFight] HUD 폰트(문자 종류):` 로그 |
 | 입력 | Active Input Handling = Old. uGUI·EventSystem 없음. UI Toolkit이 자체 이벤트 시스템으로 받는다 |
 | 파일 | `NetworkHud.uxml`(로비), `NetworkHud.uss`(모든 HUD 공용), `IntroHud.uxml`, `MatchHud.uxml`(모드 공용 경기 화면), `ChatHud.uxml`(채팅, 모든 씬 위에 패널 하나, §9) |
 | 뷰 코드 | `Game/NetworkHudView.cs`(Steam을 모름, `HudModel`만 받는다). 채우는 쪽은 `Bootstrap/LobbyBootstrap.BuildModel()` |
@@ -352,7 +352,7 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 | 화면 | 화면 모드(전체 화면·테두리 없는 창·창 모드), 해상도(모니터가 주는 크기), 그래픽 품질(Quality 단계: 낮음=Mobile, 높음=PC), 수직 동기화, 프레임 제한(30·60·120·144·240·제한 없음) | `Screen.SetResolution`, `QualitySettings`, `Application.targetFrameRate`. 에디터 게임 뷰에서는 화면 모드·해상도가 안 바뀐다(빌드에서 적용). 한 번도 안 바꾼 PC는 프로젝트 기본값 그대로 |
 | 조작 | 마우스 감도(0.1~3.0배), 상하 반전, 키 설정 7개(앞·뒤·왼쪽·오른쪽·점프·질주·채팅 열기) | `GameSettings.Move/Pressed/Held/LookX/LookY`를 `LegacyMoveInputSource`(로비·경기 캡슐), `KingRushOpening`·`KingRushPrototype`·`SwordFightGame`(이동·점프·질주), `LabCamera`·`OrbitCamera`·소드 파이트 시점(마우스)이 읽는다. 키 칸을 누르면 금색 "키를 누르세요…", 다음 키가 들어간다. 이미 다른 동작에 쓰는 키면 둘이 서로 바뀐다. Esc는 취소, 마우스·패드 버튼은 안 받는다 |
 | 채팅 | 채팅 켜기/끄기, 욕설 가리기, 글자 크기(작게·보통·크게) + 미리 보기 | `ChatBox`: 끄면 숨고 열리지 않는다. 가리기는 흔한 욕(한글·초성·영어 짧은 목록)을 `*`로(`GameSettings.Filter`, 남이 보낸 줄도 내 화면에서만). 크기는 `.chat-size-0/2`. 닫힌 채팅의 키 표시도 바뀐 키로 |
-| 기타 | 핑 보이기, 화면 흔들림 줄이기, 언어(한국어, 다른 언어는 준비 중) | 핑 = `MatchSceneView`의 핑·응답 줄(끊김 경고 배너는 그대로). 흔들림 = 결과 화면 카메라 흔들림과 질주할 때 시야가 넓어지는 효과를 끈다(`GameSettings.ShakeScale`) |
+| 기타 | 핑 보이기, 화면 흔들림 줄이기, 언어(R747부터 문자열 표에 있는 언어, 아래 "언어 · 번역") | 핑 = `MatchSceneView`의 핑·응답 줄(끊김 경고 배너는 그대로). 흔들림 = 결과 화면 카메라 흔들림과 질주할 때 시야가 넓어지는 효과를 끈다(`GameSettings.ShakeScale`) |
 | 아래 | 빨간 **게임 종료**(한 번 누르면 "한 번 더 누르면 종료", 3초 안에 다시 누르면 종료), **이 탭 기본값**, **닫기 Esc** | 에디터에서는 플레이를 멈춘다 |
 
 - 값은 바꾸는 즉시 이 PC의 `PlayerPrefs`(`cf.settings.*`)에 저장되고, 게임 시작 때(첫 씬 전) 불러온다. `Game/GameSettings.cs`.
@@ -391,7 +391,7 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 | 조작 → 키 설정 | 이동 6개, **다이빙 · 칼 베기**(좌클릭), **잡기 · 조준 취소**(우클릭), **기물 스킬**(F, `GameKey.Use`: 폰 러쉬 스킬, R674부터 소드 파이트 F 스킬도 — 전에는 `KeyCode.F` 고정), **두 번째 스킬**(E, `GameKey.Skill`: 소드 파이트 E 스킬, 폰 러쉬 폰의 갈고리), 채팅 열기, 경기 명단, 누르고 말하기. 폰 러쉬 스킬 칸 · 소드 파이트 기물 카드의 키 글자는 바꾼 키(`GameSettings.KeyCap`, 긴 이름이면 글씨가 작아짐). 스킬 시험 씬(`LabGame` · 시험대)은 자기 키 | 보조 스킬(Q, 쓰는 모드 없음), 구간 처음으로(R, 지금 경기에 없음) |
 | 조작 → 컨트롤러 | | 스틱 감도, 데드존, 진동, 버튼 그림 |
 | 게임플레이 → 카메라 | 카메라 거리(소드 파이트는 늘, **폰 러쉬는 R674부터 한 번이라도 바꾼 PC만** — 안 바꾸면 장면의 6 m), 질주 시야 넓어짐(소드 파이트 카메라만, 폰 러쉬 카메라에는 그 효과가 없음), 카메라 흔들림 | |
-| 게임플레이 → 화면 표시 | **팀원 이름 · 상대 이름**(항상 / 가까울 때만: 15 m까지 또렷, 22 m에서 사라짐 / 끔), **내 이름**(R674, `MatchNameplate`, 기본 = 팀원 항상 · 상대 가까울 때만 · 내 것 끔으로 전과 같음), 언어(한국어만) | 조작 도움말, HUD 크기, 결과 화면 건너뛰기 |
+| 게임플레이 → 화면 표시 | **팀원 이름 · 상대 이름**(항상 / 가까울 때만: 15 m까지 또렷, 22 m에서 사라짐 / 끔), **내 이름**(R674, `MatchNameplate`, 기본 = 팀원 항상 · 상대 가까울 때만 · 내 것 끔으로 전과 같음), 언어(R747: 표에 있는 언어를 제 이름으로, 덜 된 언어는 "· 번역 중", 고르면 창을 그 언어로 다시 지음 · 이 페이지 기본값 복원 = Steam 언어 따르기) | 조작 도움말, HUD 크기, 결과 화면 건너뛰기 |
 | 소셜 → 채팅 | 채팅 켜기, 욕설 가리기, 글자 크기, **채팅 배경 진하기**(경기 채팅 펼친 판 · 닫힌 줄 뒤 까만 바탕 0 ~ 75 %), **채팅 받기**(다른 사람이 보낸 줄을 모두 / 파티와 팀만 / 파티만, 내 줄 · 알림은 늘, 보내기는 그대로, 안 보이는 채널은 안 읽음 숫자도 0) | |
 | 소셜 → 초대와 개인정보 | **파티 초대 받기**(모두 / Steam 친구만 / 받지 않기: `SteamSession.TakesInviteFrom`이 게임 안 수락 칸 · 채팅 알림을 거름, Steam 자체 알림은 그대로) | 초대 알림음, 스트리머 모드 · 이름 가리기 · 코드 가리기 |
 | 접근성 → 보기 편하게 | 메뉴 크기, 화면 흔들림 줄이기, 번쩍임 줄이기 | 색약 모드 · 세기, 팀 테두리, 소리 알림 글자 |
@@ -494,7 +494,7 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 | 시작 로고 | 시안 1번 로고(왕관 타이틀)의 움직임. 글자가 크게 날아와 **쾅 박힌다**(흰 번쩍·충격 고리·화면 흔들림), 리듬은 **팍!(C) 팍팍(H·E) 파파파파파파팍(S·S·F·I·G·H, 마지막 T는 크게)**. 다 들어오면 가운데 체크무늬 띠가 왼쪽부터 빛을 끌며 **레이스 트랙처럼** 펼쳐지고 칸이 흐르다 멈춘다. 마지막에 왕관이 C 위로 떨어져 **"띵"**(고리·빛·보석 반짝·광택), 이어 "체스 파이트". 소리는 고른 **샘플 A "아케이드 팡"**(글자마다 음이 오르는 팡·트랙의 쭈욱과 따다닥·동전 같은 띵). 시안 페이지를 그대로 찍은 영상 `StreamingAssets/LogoIntro.mp4`(1920×1080, 60fps, H.264 + AAC 소리, 6.2초)를 인트로 위(정렬 순서 300)에서 `VideoPlayer`로 **게임을 켤 때 한 번** 재생. 5.5초부터 0.6초 동안 인트로로 사라짐. 0.25초 뒤부터 클릭이나 아무 키면 0.3초 만에 건너뜀(그 클릭으로 인트로가 시작되지는 않는다). 소리 크기 = 설정의 효과음(× 전체 소리). 영상이 없거나 4초 안에 시작하지 못하면 바로 인트로 | `Game/LogoIntro.cs`, `Resources/LogoHud.uxml` |
 | 이름 설정 | 배경은 시안의 나무색 말 무늬를 찍은 그림(`StreamingAssets/NameBackdrop.jpg`: 갈색 나무·가는 결·기울인 작은 체스 말 무늬·빛·흐린 빛망울·왼쪽 어둡게). 오른쪽 **유리 폰이 24초에 한 바퀴** 세로축으로 돈다(두께 있는 금 테두리 15겹, 정면일 땐 시안과 같음, 유리 너머 테두리는 흐리게, 왼쪽 앞에서 빛이 비칠 때 잠깐 반짝) + 금색 고리 두 개. 왼쪽: `PLAYER NAME · 처음 한 번만 정하면 돼요`, 은색 그라데이션 제목 "이름을 정해 주세요"(Black Han Sans), 금·은 선, "내 이름", 밑줄 입력칸(30px, 12자까지, 한국어 입력기). 입력칸 오른쪽 끝에 **글자 수 "4 / 12"와 그 옆 "추천 이름"**(주사위 아이콘이 돈다). 추천 이름을 누르면 **추천된 이름이 입력칸 위(오른쪽 끝)에 말풍선으로 뜨고**, 말풍선을 누르면 칸에 들어간다(다시 누르면 다른 추천, 직접 치면 말풍선은 사라짐). 쓸 수 없는 이름이면 글자 수 자리에 짧은 이유(산호색)와 밑줄 산호색, 시작 버튼 흐림. 아이보리 두꺼운 버튼 "이 이름으로 시작 →" 또는 Enter(한국어 입력기가 글자를 조립 중이면 끝난 뒤) → "좋아요! 로비로 가는 중" → 전환. 아래 `ENTER 시작 · ESC 설정`(Esc는 설정 창). 처음 값은 Steam 이름(규칙에 맞을 때만), 아니면 빈칸("이름을 입력하세요"). 버튼은 다른 메뉴처럼 마우스를 직접 읽어 포인터 이벤트가 안 오는 PC에서도 눌린다(글 입력은 안 됨, §2) | `Game/NameScreen.cs`(화면·키·클릭), `Game/GlassPawn.cs`(폰), `Resources/NameHud.uxml`, `Resources/IntroFlow.uss` |
 | 이름 바꾸기 (R85) | 승규 님: "이름은 바꿀 수 있게, 로비 말고 인트로에서도(아직 테스트라 한 번 보고 안 보이면 테스트가 안 됨)". 두 곳에서 연다: **인트로의 "클릭해서 시작" 오른쪽 "👑 이름 바꾸기"**(Steam 칩과 같은 나무 판), **로비 오른쪽 위 내 이름**(R83의 테두리 칸이 버튼이 됨). 누른 곳에서 킹 구멍이 닫히고 카드 "이름 바꾸기" → 같은 이름 화면이 **바꾸기 모드**로 열린다: 제목 "이름 바꾸기", 위에 "지금 이름 · ○○", 칸에 지금 이름, 버튼 "이 이름으로 바꾸기 →", 그 아래 **"← 돌아가기"**, 아래 안내 `ENTER 바꾸기 · ESC 돌아가기`. 바꾸면 "바꿨어요! 돌아가는 중" → 폰에서 닫히고 카드 "시작 화면"/"로비" → 인트로는 누른 버튼, 로비는 내 나이트에서 열린다. 돌아가기·Esc는 이름 그대로. 그 화면은 밑에 그대로 있어서 열리면 이미 새 이름(인트로의 Steam 칩, 로비 이름표·버튼). 바꾸기 화면이 떠 있는 동안 로비 단축키(Enter·F·M·Esc)·대체 클릭은 쉬고 채팅 칸은 숨는다. 매칭 중(찾기·방 안·파티장 따라가기)에는 로비 버튼이 "매칭 중에는 이름을 바꿀 수 없어요"를 띄우고, 바꾸는 중에 파티장이 매칭을 시작하면 바꾸기 화면은 그냥 닫힌다(이름 그대로). 처음 화면의 안내는 "나중에 언제든 바꿀 수 있어요"로 바뀌었고 Shift+클릭은 없앴다. 오프라인 로비도 이름표·버튼에 고른 이름(없으면 예전처럼 "나"·"오프라인") | `Game/NameChange.cs`(열고 닫기), `Game/NameScreen.cs`(`Build(이름, renaming)`, `Cancelled`, `Showing`), `Bootstrap/IntroController.cs`, `Bootstrap/LobbyBootstrap.cs`(`Rename`, `Matching`), `Game/NetworkHudView.cs`(`profile-open`, `ProfileAt`), `Game/LobbyStage.cs`(`SelfOnScreen`) |
-| 이름 규칙 | 2~12자, 한글·영어·숫자·띄어쓰기 한 칸. 이유 글: "2자 이상", "12자까지", "한글·영어·숫자만", "다 쓰지 않은 글자"(입력칸을 떠났는데 ㄱ·ㅏ 같은 낱자가 남음), "띄어쓰기는 한 칸", "쓸 수 없는 말"(바보·멍청·운영자·관리자·admin, gm은 낱말일 때만). 추천 이름 12개(날쌘 나이트·철벽 룩·번개 폰 …) | `Core/PlayerNames.cs`(Core 테스트 5개) |
+| 이름 규칙 | 2~12자, 한글·한자(R749, 간체 · 번체 — CJK 통합 한자 U+4E00 ~ U+9FFF · 확장 A U+3400 ~ U+4DBF, 일본 가나는 안 됨)·영어·숫자·띄어쓰기 한 칸. 이유 글: "2자 이상", "12자까지", "한글·한자·영어·숫자만"(R749 전 "한글·영어·숫자만"), "다 쓰지 않은 글자"(입력칸을 떠났는데 ㄱ·ㅏ 같은 낱자가 남음), "띄어쓰기는 한 칸", "쓸 수 없는 말"(바보·멍청·운영자·관리자·admin · 傻瓜·笨蛋·运营·管理员, gm은 낱말일 때만). 한자 글꼴: 본문 글꼴 목록 끝에 Microsoft YaHei(모든 언어), 제목 글꼴 Black Han Sans의 가져오기 설정 `fontNames`에 맑은 고딕 · Microsoft YaHei를 대체 글꼴로 — 사본 캡처에서 한국어 · 영어 · 중국어 로비 모두 한자 이름이 보임. R749 전 버전은 한자 이름을 받으면 보여 주지 않고 Steam 이름을 씀(`Showable`). 추천 이름 12개(날쌘 나이트·철벽 룩·번개 폰 …) | `Core/PlayerNames.cs`(Core 테스트 5개) |
 | 이름 저장·보이기 | 이 PC의 `PlayerPrefs` `cf.name`(`PlayerProfile`). `NetworkRuntime`이 `SteamSession.LocalName`에 넘기고, 세션이 파티·경기 방 멤버 데이터 **`nick`**으로 올린다. 화면의 이름(`SteamSession.Name`: 로비 이름표·채팅·입장 화면·인트로의 Steam 칩·설정 창 위)은 고른 이름 → 없으면 Steam 이름. 옛 빌드는 `nick`을 무시하고 Steam 이름을 보여 준다(프로토콜 그대로) → [SESSION](../Network/SESSION.md) 표 `nick` | `Game/PlayerProfile.cs`, `Network/SteamSession.cs`(`Name`·`LocalName`·`PublishNick`), 모의 세션 테스트 1개 |
 | 장면 전환 | 시안 "A 광택 체스판 + C 움직임". 램프 아래 광택 나는 나무 체스판 그림(`StreamingAssets/TransitionBoard.jpg`, 시안이 쓴 그림 그대로)이 **킹 모양 구멍**으로 화면을 덮는다: 구멍이 60배 → 14 → 5 → 2.2 → 1.1 → 1.22 → 1.1로 줄었다가 점으로 닫힘(0.63초, 시안 키프레임 그대로). 닫히는 곳: 인트로에서는 누른 시작 판, 이름 화면에서는 폰. 덮인 동안 가운데 호두나무 카드(왕관·"다음 화면"·**이름 설정 / 로비**·금색 막대)와 빛줄기가 한 번 지나가고, 다음 화면을 뒤에서 준비(로비는 비동기 로드, 이름 화면은 생성). 준비되고 최소 0.78초가 지나면 **나이트 모양 구멍**이 다음 화면의 자리에서 점부터 커지며 열린다(0.63초): 이름 화면은 폰, 로비는 **내 나이트**(`LobbyStage` 0번 자리). 구멍 가장자리는 금색 두 겹 선. 덮인 동안·여닫는 동안 아래 화면 클릭은 막힌다. 씬이 바뀌어도 살아 있는 패널 하나(정렬 순서 250: 설정 창 200 위, 시작 로고 300 아래) | `Game/SceneTransition.cs`(`ChessOutlines` 킹·나이트 모양), `Resources/TransitionHud.uxml` |
 
@@ -936,3 +936,100 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 ### 왕좌 차지전의 화면 (R707, 2026-11-18)
 
 방 화면 '게임 규칙' 패널에 흐린 칸이 없어졌다(머리말도 "눌러서 바꾸기"만). 경기 화면(`ThroneContest.OnGUI`, 차지전이 시작된 뒤 승패가 날 때까지): 위쪽 가운데, 순위 띠(`PawnRushStandingsHud`)가 있으면 그 아래에 폭 860 · 높이 78(1080 기준)의 짙은 판 — 왼쪽에 백팀 줄("백팀 14.2 / 20초 · 발판 3/4")과 왼쪽에서 차오르는 막대, 오른쪽에 흑팀 줄과 오른쪽에서 차오르는 막대, 가운데에 '왕좌 차지전'과 지금 상태(백팀 점유 중 / 흑팀 점유 중 / 동시 점유 · 멈춤 / 발판이 비었습니다). 점유 중인 팀의 막대는 금색 테두리. 시작 5초 동안은 화면 가운데에 띠("왕좌 차지전!" · 설명 한 줄 · 두 팀의 목표 시간). 승리 인원이 바뀌었다는 `CrownFinish`의 안내 줄은 이 판 아래로 내려간다. **이 화면들은 OnGUI라 복사본 확인에서 그림으로 찍지 못했다 — 사용자 확인 전.**
+
+## 언어 · 번역 (R747, 2026-11-21)
+
+요청: 사용자 "현재 언어가 한국어만 있는데 어느 나라가 스팀 이용자 수가 많은지 조사하고 필요한 언어 알려줘" → 조사 결과(2026 Steam 설문: 영어 약 38 ~ 40 %, 간체 중국어 22 ~ 31 %, 러시아어 약 10 %, 스페인어 · 브라질 포르투갈어 각 4 ~ 5 %, 독일어 · 일본어 · 프랑스어 각 2 ~ 3 %, 한국어 1.5 ~ 2 %) → 출시 최소 = **영어 · 간체 중국어**, 다음 러시아어 · 브라질 포르투갈어 · 스페인어 · 일본어 → "네, 기반부터". 이번에는 **기반만** 만들었다. 나머지 문자열은 아직 한국어로 코드에 박혀 있다(플레이어가 보는 것 약 1,300줄, 534개 파일 중).
+
+| 부분 | 내용 |
+|---|---|
+| 키 | **한국어 원문이 키**(gettext 방식). 부르는 곳은 한국어를 그대로 두고 감싼다: `Loc.T("언어")`. 값이 든 문장은 `Loc.F("낙하 {0} · 맞음 {1}", falls, hits)` — 번역은 `{0}` `{1}` 순서를 바꿔도 되지만 다 있어야 한다(안 맞으면 한국어 틀로 보임). 표에 없는 줄 · 빈 칸은 한국어로 보인다. 한국어 원문을 고치면 그 줄의 번역이 끊긴다(표의 첫 칸도 같이 고칠 것) |
+| 표 | `Assets/Resources/Localization/Strings.txt`. 탭 구분 UTF-8, `#` 줄은 주석, 첫 줄 = 언어 코드(`ko`가 맨 앞), `@ready` 줄 = 언어마다 1/0, 칸 안의 `\n` · `\t` · `\`. 지금 열은 `ko` · `en`, 영어는 **설정 창의 틀 · 탭 · 페이지 · 절 이름과 언어 칸만**(49줄), `@ready 0`. Core 검사 "localization: the shipped table"이 표를 읽어 문제가 없는지 본다 |
+| 코드 | Core `Localization.cs`: `Loc`(지금 언어 · 표 · `T` · `F` · `Changed`), `StringTable`(읽기 · 대체), `Languages`(13개 언어: ko · en · zh-Hans · ru · es · es-419 · pt-BR · de · ja · fr · zh-Hant · pl · tr, 각각 Steam API 이름 · Unity `SystemLanguage` 이름 · 문자 종류). Game `GameLanguage`: 첫 장면 전에(`RuntimeInitializeOnLoadMethod`) 표를 읽고 언어를 고른다. Bootstrap `NetworkRuntime`: Steam이 켜지면 `SteamApps.GetCurrentGameLanguage()`를 `GameLanguage.UseSteam`에 넘긴다 |
+| 언어 고르기 | ① 설정에서 고른 언어(PlayerPrefs `cf.s2.language`, 표에 그 열이 있으면 반만 됐어도) → ② Steam이 이 게임에 정한 언어 → ③ Windows 언어 → ④ 한국어. ②③은 **표가 `@ready 1`로 표시한 언어만** — 번역이 덜 된 언어로 팀원 화면이 저절로 바뀌지 않게. 예전 설정 값 `lang`(늘 0)은 이제 안 읽는다 |
+| 설정 창 | 게임플레이 → 화면 표시 → 일반 → **언어**: 표에 있는 언어를 제 이름으로(`English`), 덜 된 언어는 "· 번역 중". 고르면 `Update`가 언어가 바뀐 것을 보고 창을 그 언어로 다시 짓는다(같은 탭 · 페이지, 열고 닫는 소리 없음). 페이지 기본값 복원 = 고른 언어를 잊고 Steam을 따름. 창은 탭 · 페이지 · 절 이름 · 줄 이름 · 설명 · 선택지 · "준비 중"을 **그릴 때 `Loc.T`를 거친다** — 표에 줄만 더하면 창 전체가 번역된다(값이 든 설명은 `Loc.F`로 옮겨야 함) |
+| UXML 글자 | `RuntimePanels.Create`가 레이아웃을 만들 때 모든 `TextElement`의 글자를 `Loc.T`로 바꾼다(한국어일 때는 건너뜀). 코드가 나중에 넣는 글자는 그 자리에서 `Loc.T` |
+| 본문 글꼴 | `RuntimePanels.BodyFont`(= `KoreanFont`): 문자 종류마다 따로 만들어 둔다. 한국어 · 라틴 · 키릴은 맑은 고딕이 맨 앞(플레이어 이름 · 채팅의 한글이 그대로), 그 뒤 Segoe UI. 간체 중국어 = Microsoft YaHei → DengXian → SimHei, 번체 = Microsoft JhengHei → PMingLiU, 일본어 = Yu Gothic UI → Yu Gothic → Meiryo → MS Gothic, 그 뒤 한국어 글꼴들. **UI Toolkit이 이 목록을 따라 글자 하나씩 대체하는지(중국어 화면에서 한글 이름이 보이는지)는 Unity에서 확인 전** |
+| 제목 글꼴 | Black Han Sans는 한글 · 기본 라틴뿐 → `RuntimePanels.DisplayFace`가 한국어 · 라틴 언어(en · es · es-419 · pt-BR · de · fr)에서만 그 글꼴, 나머지(ru · pl · tr · 중국어 · 일본어)는 null이라 제목도 본문 글꼴. 언어별 제목 글꼴(OFL)은 다음 일 |
+| 언어가 바뀔 때 | `Loc.Changed` → `RuntimePanels`가 만든 패널들의 본문 · 제목 글꼴을 바꾼다. **이미 보이는 글자는 그 화면이 다시 그릴 때 바뀐다**(설정 창은 스스로 다시 지음). IMGUI 화면 · 3D 글씨가 들고 있는 글꼴은 다음 실행부터 |
+
+다음 할 일(순서): ① 로비 · 설정 · 결과 · 로딩 화면 문자열을 `Loc.T` / `Loc.F`로 → 영어 채우기 → ② 경기 안내 · 미션 · 기물 설명 → ③ 경기장 3D 표지판 · 미니게임 방 이름 → ④ 간체 중국어 열, 언어별 제목 글꼴 → ⑤ 각 언어 `@ready 1`. 디버그 로그 · 검사 도구 · 래그돌 시험 도구 글자는 한국어로 둔다. Steamworks 앱 설정의 지원 언어(상점 페이지 · `GetCurrentGameLanguage`가 고를 수 있는 언어)도 함께 늘려야 한다.
+
+### 로비 영어 (R748, 2026-11-21)
+
+로비에 보이는 글자를 옮겼다: `LobbyBootstrap`(알림 · 명단 표시 · 연결 정보 · 모드 카드 · 매칭 카드 · 시험 방), `NetworkHudView`(친구 · 파티 · 초대 · 모드 고르기) · `.Tabs`(기물 도감 · 전적) · `.Ranking`(순위 탭) · `.RecordDetail`(판 상세), Core `RankText` · `RecordText`. 규칙:
+
+- **보여 줄 때만 번역한다.** 전적 책(`RecordBook`)에 적는 결과 · 구간 이름 · 떨어진 까닭, Steam 순위표 이름 · `RankDetails`, 비교에 쓰는 글자는 한국어 그대로 두고, 화면에 넣는 자리에서 `Loc.T(leg.Name)`처럼 감싼다. Core의 데이터 이름(`GameModes`의 이름 · 소개, `ChessPieces.Name`, 스킬 이름)도 그 자리에서.
+- **같은 한국어 = 같은 번역.** 키에 문맥이 없어서 두 뜻이면 둘 다에 맞는 말을 고른다: "초대" Invite(친구 줄 버튼 · 설정 절 이름), "순위" Rank(탭 · 순위 판 표시), "친구" Friends, "전체" All. 정말 다른 말이 필요하면 한국어 쪽을 다르게 쓴다.
+- 서식 태그(`<color>`)는 되도록 키 밖에(`Loc.T("친구") + " <color…>" + n + "</color>"`). 문장 안에 색이 들어가는 것만 키 안에 둔다(`내 기록 · 이 기물로 <color=#E2B866>{0}판 {1}승</color>`).
+- 한국어를 `Replace`로 고치는 코드는 다른 언어에서 아무 일도 안 한다 → 줄바꿈이 다른 문장은 따로 키로(`순위 판 {0}판 더 하면\n순위에 올라가요`).
+
+**검사 두 가지.** ① 표를 읽을 때 번역의 `{N}`이 한국어와 다르면 문제로 적는다(`StringTable.Slots`, Core 검사 "the shipped table"이 실패시킴). ② `Tools/Localization/Find-Untranslated.ps1` — 코드의 `Loc.T("…")` · `Loc.F("…")` 첫 글자(주석 안 예시는 뺌)와 `Assets/Resources/*.uxml`의 한국어 `text`를 모아, 언어마다 표에 줄이 없거나 칸이 빈 것을 파일 · 줄과 함께 보여 준다. `-Language en`, `-AddMissing`(줄이 없는 키를 빈 칸으로 표 끝에 더함), `-ShowUnused`(표에는 있는데 코드에서 못 찾은 줄 — 설정 창처럼 변수로 넘기는 글자는 여기 나와도 정상). R748 끝에 영어 305 / 305.
+
+아직 한국어(다음 차례): `SteamSession`의 상태 · 오류 줄(로비 위 상태 줄 · 오류 알림 — 값이 섞인 문장이라 그 파일에서 `Loc.F`로), `SteamMotion` 연결 줄 · `QualityLine`, 입력 장치 이름(`MoveInputSource`), 결과 · 로딩 · 경기 화면 · 채팅 · 음성 코드. 친구의 Steam 상태 글(rich presence)은 Steam이 주는 그대로.
+
+**영어 말 맞춤(R748, Unity MCP 캡처로 확인).** 한 낱말은 한 번역으로: 판 = match(es)(games 아님), 떨어뜨림 = Knockouts, 떨어짐 = Falls, 매칭 = matchmaking, 랜덤 매칭 = Quick match, 왕관 발판 = crown pad, 전적 탭 = History, 순위 탭 = Rank, 승 · 패 · 무 숫자 = `{0} W` · `{0} L` · `{0} D`. 칸이 좁은 곳은 짧게: 플레이 "New room"(방 생성), 도감 능력치 "Move"(이동), 도감 아래 "History ›" · "My record · none yet", 순위 카드 "{0} more ranked\nmatches to go". 새 영어 줄은 Unity에서 English로 놓고 그 화면을 찍어 넘치지 않는지 본다.
+
+### 간체 중국어 열 (R749, 2026-11-21)
+
+사용자 "작업 속도를 위해 중국어 시작" — 영어로 옮기는 일과 따로, 표에 이미 있는 줄부터 중국어를 채운다. 표 머리 `ko` · `en` · `zh-Hans`, `@ready` 0 · 0(중국어도 Steam · Windows가 저절로 고르지 않음, 설정에서 简体中文을 고르면 보임). R749 끝에 표의 372줄 모두 중국어 칸이 있다(설정 창 틀 48 · 로비 297 · 다른 화면 UXML 27). `{N}` · `\n` · `<color>`는 한국어 줄과 같은 수(Core 검사 "the shipped table" 통과). 새로 생기는 영어 줄의 중국어는 `Find-Untranslated.ps1 -Language zh-Hans`로 찾는다.
+
+**중국어 말 맞춤.** 파티 = 小队(파티장 = 队长, 파티 코드 = 小队代码), 팀 = 队伍 · 우리 팀 / 상대 팀 = 我方 / 对方 · 백팀 / 흑팀 = 白队 / 黑队, 방장 = 房主, 비공개 방 = 私人房间, 랜덤 매칭 = 随机匹配, 매칭 = 匹配, 판 = 场, 승 · 패 · 무 = 胜 · 负 · 平, 순위 판 = 排位赛, 순위표 = 排行榜, 순위 탭 = 排名, 전적 = 战绩, 기물 도감 = 棋子图鉴, 더미 = 假人, 봇 = 机器人, 떨어뜨림 / 떨어짐 = 击落 / 坠落, 승격 = 升变, 왕관 발판 = 王冠踏板, 체크포인트 = 检查点, 다이빙 = 飞扑, 잡기 = 抓取. 기물은 국제 장기 말: 폰 兵 · 나이트 马 · 비숍 象 · 룩 车 · 퀸 后 · 킹 王. 모드: 폰 러쉬 = 兵卒冲锋, 소드 파이트 = 剑斗, 킹 러시 = 国王冲锋, 팀 레이스 = 团队竞速, 대난투 = 大乱斗. **AI 사본 캡처(같은 날, 사용자 "네, 찍어 봐").** `Tools/Run-LobbyTabsCapture.ps1 -Language zh-Hans`(R749에 더한 옵션 — `LobbyTabsCapture`가 `-captureLanguage`를 받아 `Loc.Use`만 부름, PlayerPrefs는 안 건드림)로 프로젝트 사본에서 로비 20장을 찍음, 오류 0. 로그 `HUD 폰트(SimplifiedChinese): Microsoft YaHei`, 중국어 화면에서 플레이어의 한글 이름이 그대로 보임(글자 하나씩 대체됨), 중국어가 칸을 넘는 곳 없음. 사진에서 보고 고친 것: 판 상세의 기물 이름(`폰 출발 → 나이트`, `승격: 나이트`)과 소드 파이트 F · E 스킬 이름이 `Loc.T`를 안 거치던 것(`NetworkHudView.RecordDetail` 네 곳 — 영어도 같이 고쳐짐), 장외 원인 "칼" · "폰 걸음" 줄 없던 것(표에 더함), 인원 "6 比 6" → "6 对 6"(比는 점수), 승리 결정 줄 "{0} 于 {1} 到达，锁定胜局". 설정 창의 줄 이름 · 선택지는 아직 한국어(영어도 아직). 사진 `Temp/Captures/lobby_zh_*.png`. 사람의 Unity 확인은 아님.
+
+**이어서(같은 날, 사용자 "네, 이어서").** ① 판 상세의 구간 이름: 코드는 이미 `Loc.T(leg.Name)`이라 표에 줄만 더함 — "# --- Pawn Rush course sections" 묶음 20줄(ko · en · zh): 미니게임 방 10개(`MiniGameSectionBuilder.Names`), 장애물 구간(`DisplayName` 상수 · 프리팹에 저장된 이름 — 왕의 서재는 둘 다), 임시 구간 둘. 캡처 예시도 실제 이름으로 바꿔 다시 찍음(구간 목록 · 승격 표시 모두 중국어, 넘침 없음). 코스 이름을 바꾸면 이 줄도 같이 고칠 것. ② 다국어 설정 세션이 같은 시각 더한 상태 줄 · 로딩 · 결과 · 음성 · Esc 메뉴 · 이름 화면 261줄의 중국어를 채움(키로 찾아 세 번째 칸만). 끝에 `Find-Untranslated.ps1` 영어 549 / 549 · 중국어 549 / 549, Core 226 통과. 두 세션이 같은 표를 고칠 때는 통째로 다시 쓰지 않고 줄 단위로 고친다(서로 알림). **알릴 것:** 이름 규칙 "한글·영어·숫자만"(仅限韩文、英文、数字)이라 중국 플레이어는 한자 이름을 못 씀 — 이름 검사(Core `PlayerNames`)를 넓힐지는 사용자 결정(→ 같은 날 넓힘, 위 "이름 규칙" 줄).
+
+**설정 창(같은 날, 사용자 "네, 설정 창도").** 창은 이름 · 설명 · 선택지 · 절 메모를 그릴 때 이미 `Loc.T`를 거쳐서 표에 "# ===== settings window rows (R749)" 묶음 206줄(ko · en · zh)을 더함 — 항목 이름 · 설명 · 선택지, 화면 모드 · 프레임 · 품질 단계 이름(`GameSettings.ModeNames` · `FrameNames` · `Presets`). 코드에서 번역을 안 거치던 것을 감쌈: 나가기 확인 창(제목 · 글 · 취소 · 게임 나가기), 키 칸 "키를 누르세요…", 마이크 확인 줄(들어 보기 · 그만 듣기 · Steam 필요 · 마이크가 없어요), 감도 값 `Loc.F("{0}배")`. **키 이름은 `GameSettings.KeyName` · `KeyCap` 안에서 번역**(좌클릭 · 왼쪽 Shift · 휠 · `Loc.F("숫자판 {0}")`) — 채팅 닫힘 칸 · 기보지 키 · HUD 키 칸도 같이 번역됨. 모니터 이름 `Loc.F("모니터 {0}")`. 욕설 목록(`Swears`)은 데이터라 그대로. 끝에 `Find-Untranslated.ps1` 영어 · 중국어 570 / 570, Core 226 통과. 사본 캡처(`Temp/Captures/settings_zh.png` · `settings_zh_quit.png` · `settings_en.png`): 화면 → 디스플레이 쪽과 나가기 확인 창은 두 언어 모두 번역 · 넘침 없음. 다른 페이지(소리 · 조작 키 칸 · 소셜 등)는 사진으로 안 봄 — 영어 키 이름("Right Shift")이 키 칸에 들어가는지 확인 전. 두 세션이 나눠 맡음: 설정 창 · `GameSettings`는 이 세션, 상태 줄 · 로딩 · 결과 · 메뉴 · 이름 화면은 다국어 설정 세션.
+
+### 상태 줄 · 로딩 · 결과 · 음성 · Esc 메뉴 · 이름 화면 (R750, 2026-11-21)
+
+옮긴 곳: `SteamSession`(로비 위 상태 줄 · 오류 알림 · 탈주 경고 · 벌칙 · 방장 바뀜 알림 — 이 PC만 보는 줄만; 친구 목록 상태 글(rich presence)은 다른 사람에게 가므로 한국어), `MatchLoader` · `LoadingScreenView*` · `LoadingContent` · `SteamMotion`, `PawnRushResultHud` · `VoiceHud` · `GameMenu` · `SwordFightHud` · `NameScreen` · `IntroController` · `ChatBox` · Core `PlayerNames`. 시험이 비교하는 `SteamSession`의 const 문구 6개는 한국어 const로 두고 화면에 넣는 자리에서 `Loc.T(Const)`. 물리 담당 PC = physics host(방장 = host와 구분).
+
+**영어 길이 맞춤(Unity MCP 캡처로 본 것).** 결과 화면 점수판의 팀 이름 칸은 70 px — 번역이 4글자를 넘으면 색 이름 키("백"/"흑" = White/Black)를 17 px로. 결과 화면 아래 미도착 줄은 오른쪽 카운트다운 · 버튼 줄이 시작하는 곳에서 끝나고(`GeometryChangedEvent`로 폭을 맞춤) 넘치는 이름은 잘린다(안쪽 글자는 `flexShrink 0`). 입장 화면 팀 수 판의 글자는 줄어들지 않게(`flexShrink 0`), 봇 줄 글자는 색 이름이 2글자를 넘으면 "BOT"만. 로비 상단 탭은 줄바꿈 없음(`.a-tab` `white-space: nowrap`, `.a-tab-box` `flex-shrink: 0`).
+
+**두 세션이 같은 표를 고칠 때(R750).** 다른 세션 "중국어 시작"이 `zh-Hans` 열을 채우고 설정 창 · 폰 러쉬 경기 안을 맡았다. 표는 각자 끝에 `# =====` 묶음을 줄 단위로 더하고, 남의 줄은 영어 칸(둘째 칸)만 고친다 — 표를 통째로 다시 쓰는 스크립트는 셋째 칸(중국어)을 지우지 않게 칸 단위로. 에디터 PlayerPrefs(`cf.s2.language`)는 프로젝트 사본과 같이 쓰이므로(제품 이름이 같음) 확인용으로 en을 넣었으면 끝나고 ko로 되돌린다.
+
+**캡처 도구 메모.** `Run-LobbyTabsCapture.ps1 -Language en`(사본 · 배치, 1280×720)은 안정적. 열린 에디터의 "Versus Scene Capture (Play)" 메뉴는 에디터 창 상태에 따라 검은 그림(27 KB)이나 멈춘 첫 장면만 찍을 때가 있다 — 그림 크기가 모두 같으면 다시 찍는다. 결과 화면은 `Assets/Scenes/PawnRushVictory.unity`(미리보기)를 열고 Play한 뒤 `ScreenCapture.CaptureScreenshot`.
+
+### 폰 러쉬 경기 안 (R751, 2026-11-21)
+
+사용자 "다음"(설정 창 뒤). 다국어 설정 세션과 나눔: 폰 러쉬 경기 안은 이 세션, 소드 파이트 경기 안은 그쪽이 사용자에게 묻고 정함(그 전엔 소드 파이트 파일은 둘 다 안 건드림). `Loc.T` / `Loc.F`로 옮긴 곳: 왕관 발판 줄 · 승리 배너 · 승리 인원 바뀜 알림(`CrownFinish`), 떨어짐 · 상대 진영 알림(`PawnRushFallNotice`), 승격 고르기 화면 · 기물 카드(`PromotionChooser`), 승격 발판 글(`StationPromotion`), 미니게임 안내 카드 · 한 줄 규칙 · 진영 칩 · 방향 안내(`MiniGameSection.Guidance`), 모이기 · 문 열림 줄(`.Rules`), 킹 몰이 · 앙파상 · 나이트 발판 글(`MgCheckmate` · `MgEnPassant` · `MgKnightPads`), 미니게임 스테이션 제목(`ArenaDressing`), 낙오자 구제 알림(`SectionRelief`), 순위 줄(`PawnRushStandingsHud` — 구간 이름 · 관전 · 실시간 순위, 등수 뒤 글자는 영어만 1st · 2nd · 3rd · 11th를 코드가 만듦), 스킬 카드(`PawnRushCourseSkills` · `SkillKeyCard.Line` 쿨타임 · `PawnRushSkillBed.StageName`), 스킬 진행 글(`RagdollPawn.*`의 `SkillDetail` — 스킬 카드에 그대로 나옴), 룩 사슬 잡기 안내(`PawnRushChainPrompt`), 왕의 부름 화면(`PawnRushKingCallUi`). Core 데이터(`PawnRushMissions.Names` · `HowTo`, 미니게임 방 이름, 스킬 이름)는 보여 줄 때 감쌈 — `HowTo` 번역은 " · " 두 마디를 그대로 지켜야 한다(안내 카드가 그걸로 나눔), 미션 이름은 앞 글자 "A " 등을 지켜야 한다(`Substring(2)`). 표에 "# ===== Pawn Rush in the match (R751)" 121줄(ko · en · zh). 이 화면들의 IMGUI 글꼴 목록(스킬 카드 · 사슬 안내 · 왕의 부름 · 스킬 효과 3D 글자)에 Microsoft YaHei를 더함.
+
+**남겨 둔 것**: 경기장 3D 표지판 · 이름판(`RoyalCarriageYard.Sections` 표지판, `PushGate` 글, `MiniGamePalaceArt` 팀 출구 글 등 — 빌더가 만들 때 글자를 박아 넣어 실행 중 번역 구조가 따로 필요, 다음 단계), 로그 · 시험 도구 · 래그돌 시험대 글(`Log(...)`, `LastSkillHit`, `*Bed` · `*Probe` · `*Film`), 코스 01 그림 카드(`PawnRushMissions.Hints`). 끝에 `Find-Untranslated.ps1` 영어 · 중국어 640 / 640, Core 226 · 세션 115 · `Test-NetworkCompile` 통과. **경기 화면은 사진으로도 안 봄**(로비 캡처 도구가 경기를 띄우지 않음) — 영어 · 중국어 글이 칸을 넘는지 확인 전.
+
+### 경기장 표지판 · 3D 글자 (R753, 2026-11-21)
+
+사용자 "네, 표지판". 코스의 3D 글자(`TextMesh` — 표지판, 성문 글, 미니게임 팀 출구 · 진영 패, 스테이션 이름, 타자기 계단 쪽지)는 빌더가 프리팹을 만들 때나 구간이 깨어날 때 한국어로 써 넣어서, 쓰는 자리마다 `Loc.T`를 넣는 대신 **판이 지은 것을 훑어 번역**한다: Game `SignText.TranslateUnder(root)` — 한글이 든 `TextMesh`마다 작은 `SignText`를 붙여 그 한국어를 키로 기억하고 `Loc.T(키)`를 보인다(표에 없으면 한국어 그대로). 한 번 더 두 프레임 뒤에 훑는다(`SignTextLateSweep` — Start · 첫 Update에서 글자를 쓰는 것들). 경기 중에 언어를 바꾸면 따라 바뀌되, 그 사이 코드가 다른 글을 써 넣은 글자(진행 숫자, 상태 따라 바뀌는 글)는 건드리지 않는다. 부르는 곳: `PawnRushRound`이 판의 구간을 다 지어 켠 직후(`holder`). 표에 "# ===== course signs and 3D words (R753)" 21줄(ko · en · zh): 마차뜰 구역 표지판 · 하역 창고 안내 · 입고/분류, "우클릭을 누른 채로 밀기"(`PushGate`), 미니게임 팀 패(`MiniGamePalaceArt` — `Teams.Name` + "팀 출구" 등으로 만든 글 전체가 키), 타자기 계단 쪽지. 이미 표에 있던 미니게임 방 이름 · "왕실 마차뜰" · "결승"도 이제 3D 글자에서 번역된다. 덤으로 경기 안 잡기 HUD(`GripHudGui`)와 스태미나 줄의 기물 이름(`StaminaBarGui`)을 감쌈.
+
+**남겨 둔 것**: 시험대 · 시험 코스(`CarriageYardObstacleBench`, `Assets/Prototype/PawnRush/Prefabs/OpeningCourse`)의 글, 단독 구간 시험(`SectionPlaytest` — 판을 거치지 않음), 소드 파이트 경기장(다국어 설정 세션 R752 쪽). 경기장 글자는 사진으로도 안 봄 — 영어 · 중국어 표지판이 판 크기 안에 들어가는지 확인 전(`YardKit.Label`은 글자 크기가 고정이라 긴 영어는 판보다 넓어질 수 있음).
+
+**사본 캡처(같은 날, 사용자 "네, 찍어 봐").** 새 `Tools/Run-SignTextCapture.ps1 -Language <코드>`(PawnRushEditor `SignTextCapture` — 코스 프리팹 시험 장면에서 마차뜰을 짓고 `SignText.TranslateUnder`로 판처럼 훑은 뒤, 표지판마다 정면에서 한 장 · 폭을 `report.txt`에, 결과 `<사본>/Logs/SignText/<코드>`). 중국어: 13개 모두 YaHei로 정상. 영어: 6줄이 한국어보다 1.5 ~ 2배 넓어(최대 18.5 m, 물레방아 앞은 연못 폭을 거의 가로지름) 영어 칸을 줄임 → 한국어 폭과 비슷(최대 12.8 m, 한국어 12.6 m). 입구 위 "Royal Carriage Yard"(6.4 m)는 상인방 폭 안. 이 표지판들은 판 없이 떠 있는 글이라 잘리지는 않는다. 미니게임 방(팀 패 · 방 이름)은 코스 프리팹 시험 장면 목록에 없어 못 찍음(`NOT RUN`). 사진 `Temp/Captures/signs_<코드>_yard_*.png`. 같은 날 소드 파이트 53줄(R752, 다국어 설정 세션)의 중국어 칸도 채움 → 영어 · 중국어 702 / 702. 사람의 Unity 확인은 아님.
+
+### 소드 파이트 경기 안 (R752, 2026-11-21)
+
+`SwordFightMatch.Hud.cs`(도장 · 시계 · 아래 캡션 · 기물 고르기 · 끝 카드)만 옮기면 실제 경기 글자가 다 된다 — 스킬 파일의 한국어(`Say` 줄, 단계 상세, `EdgeWhy`)는 시험대 로그이거나 통신 코드 표 · 비교에 쓰는 데이터라 그대로다. 팀 낱말("흰"/"검은")은 문장 통째로 키("흰 팀 승리", "{0} · 흰 팀 +1"). 기물 고르기 카드는 폭이 좁아 영어 스킬 이름을 짧게 잡았다: File Barrage(열린 파일 포격) · King's Return(왕의 귀환) · Mate Strike(체크메이트 일섬) · Cliff Save(벼랑 끝 역전) — 로비 도감 · HUD도 같은 이름. Unity MCP로 확인할 때 SwordFight 장면을 바로 Play하면 `NetworkRuntime`이 없어 `Application.runInBackground`가 꺼져 있다 — 에디터가 뒤에 있으면 프레임이 1에서 멈추니 Play 뒤 `execute_code`로 켠다. 캡처는 `ScreenCapture.CaptureScreenshot` 뒤 `EditorApplication.QueuePlayerLoopUpdate()` · `InternalEditorUtility.RepaintAllViews()`를 불러야 새 그림이 찍힌다.
+
+### 남은 화면 글자 훑기 (R754, 2026-11-21)
+
+사용자 "다음". 번역을 안 거치는 한국어를 코드 전체에서 다시 훑음(시험 도구 · 로그 · 래그돌 시험대 제외). 옮긴 것: 대기실 시작 안내 줄(`MatchLoader` StartNote 6개 — "{0} 대 {1} · 지금 시작할 수 있어요 …"), 감정표현 휠(`EmoteWheel` — 기분 이름 넷 · `PieceEmotes.Name` · "준비 중", 글꼴에 YaHei; 지금은 `SkillNetTest`만 붙임). 표에 "# ===== waiting room start notes and the emote wheel (R754)" 34줄. 끝에 영어 · 중국어 708 / 708. 그대로 둔 것: `LoadingContent`의 Kicker · Rule · Note(로딩 화면이 읽지 않음 — 지울지 따로), `SteamRagdollLink`의 시험 패널, `GameSettings` 욕설 목록(데이터), `MatchResult`의 미리보기용 가짜 이름.
+
+**다음에 정할 것**: ① 영어 · 중국어 `@ready 1` — 켜면 Steam · Windows 언어가 영어 · 중국어인 사람은 설정을 안 건드려도 그 언어로 시작(지금은 설정에서 골라야 함). ② 중국어 제목 글꼴(지금 제목도 YaHei 본문 글꼴) — OFL 중국어 제목 글꼴을 넣을지. ③ Steamworks 앱 설정의 지원 언어(사용자가 Steamworks 사이트에서).
+
+### 영어 · 간체 중국어 저절로 고르기 (R755, 2026-11-21)
+
+사용자 "네, 둘 다 켜". 표의 `@ready`를 `en` · `zh-Hans` 모두 1로. 고르는 순서는 R747 그대로: ① 설정에서 고른 언어 → ② Steam이 이 게임에 정한 언어(`GetCurrentGameLanguage`) → ③ Windows 언어 → ④ 한국어. 이제 ②③에서 영어 · 중국어도 잡힌다 — 예: Steam이 영어인 한국 사용자는 영어로 시작(설정에서 한국어를 고르면 그 뒤로 한국어). 러시아어처럼 표에 열이 없는 언어는 한국어. Core 검사 "localization: the shipped table"이 실제 표로 이 여섯 경우를 본다. **Steamworks**: Steam은 앱 설정의 지원 언어에 있는 언어만 넘겨주므로, Steamworks → 앱 → 지원 언어에 English · Simplified Chinese를 더해야 ②가 동작한다(사용자 작업, 상점 페이지의 언어 표에도 쓰임). 남은 것: 중국어 제목 글꼴(지금은 본문 글꼴 YaHei가 제목도 그림), 다른 언어(러시아어 · 포르투갈어 · 스페인어 · 일본어) 열.
+
+### 출시까지의 번역 일정 · 다음 언어 순위 (2026-11-21)
+
+사용자 "문서에 다음 번역 할 나라 순위랑 스팀웤 해야 할 날짜 등등 적어두고"(출시 예상 **2027년 1월 초**). 지금 상태: 게임이 찾는 글자 708줄 영어 · 간체 중국어 모두 채움, 두 언어 `@ready 1`(R755). 날짜는 제안이며 사용자가 바꿀 수 있다.
+
+| 언제까지 | 할 일 | 누가 |
+|---|---|---|
+| 2026-12-05 | 영어 · 중국어로 직접 한 판씩(폰 러쉬 · 소드 파이트) — 글자가 칸을 넘거나 잘리는 곳 찾기. 아직 사진으로도 안 본 곳: 경기 중 HUD(왕관 발판 줄 · 미니게임 안내 카드 · 승격 고르기 · 스킬 카드 · 왕의 부름), 소드 파이트 기물 고르기 카드 · 끝 카드, 미니게임 방 팀 패, 설정 창의 소리 · 조작 · 소셜 쪽 | 사용자(또는 AI가 사본 캡처 도구를 더 만들어 찍기) |
+| 2026-12-10 | 간체 중국어 원어민 검수(번역은 AI가 씀 — 용어: 파티 小队 · 팀 队伍 · 순위 판 排位赛 · 기물 兵 马 象 车 后 王) · 영어 문장 다듬기 | 사용자가 검수자 구함 |
+| 2026-12-15 | **Steamworks** → 앱 → 지원 언어에 English · Simplified Chinese 추가(인터페이스), 상점 페이지 언어 표 맞추기. Steam 언어를 영어 · 중국어로 바꾼 계정으로 게임이 저절로 그 언어로 시작하는지 확인(`[ChessFight] 언어:` 로그) | 사용자 |
+| 2026-12-18 | 출시 빌드를 Steam 검토에 제출(검토 며칠 + 연말 휴가를 고려해 여유를 둠 — 정확한 기간은 Steamworks 안내 기준) | 사용자 |
+| 2027-01 초 | 출시 | |
+
+선택(출시 전이면 좋음): 중국어 제목 글꼴(OFL — 지금은 본문 글꼴 YaHei가 제목도 그림), 텍스처 · 이미지에 그려진 한국어 찾기(코드 · 표로는 못 찾음).
+
+**다음 언어 순위**(R747 조사, 2026 Steam 하드웨어 · 소프트웨어 설문의 언어 비율 기준 — 숫자는 그때 본 대략값): ① **러시아어** `ru`(약 10 %; 키릴 문자 — 본문은 맑은 고딕 · Segoe UI가 그림, 제목 글꼴 Black Han Sans는 키릴이 없어 본문 글꼴로) → ② **브라질 포르투갈어** `pt-BR`(4 ~ 5 %) → ③ **스페인어** `es` · 중남미 `es-419`(합쳐 4 ~ 5 %; 하나로 시작해 나중에 나눌 수 있음) → ④ **일본어** `ja`(2 ~ 3 %; Yu Gothic UI · Meiryo, 이름에 가나를 허용할지 함께 정할 것 — 지금 이름 규칙은 가나를 막음) → 그다음 독일어 `de` · 프랑스어 `fr` · 번체 중국어 `zh-Hant` · 폴란드어 `pl` · 튀르키예어 `tr`. 13개 모두 `Languages`에 이미 있다(열만 더하면 설정 창에 "· 번역 중"으로 나옴). 언어 하나 더하는 법: 표 첫 줄에 코드 열, `@ready` 줄에 0, `Find-Untranslated.ps1 -Language <코드>`로 빈칸 찾아 채움, 사본 캡처(`Run-LobbyTabsCapture.ps1 -Language` · `Run-SignTextCapture.ps1 -Language`)로 넘침 확인, 다 되면 `@ready 1` + Steamworks 지원 언어. 출시 뒤 첫 업데이트에 ①~②를 넣는 것을 제안.

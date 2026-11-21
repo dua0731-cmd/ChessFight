@@ -185,7 +185,7 @@ namespace ChessFight.Game
             revealTitle.style.position = Position.Absolute;
             revealTitle.style.left = 56f;
             revealTitle.style.top = 26f;
-            var title = RLabel(revealTitle, "이번 판 미니게임", 40f, Ebony, true);
+            var title = RLabel(revealTitle, Loc.T("이번 판 미니게임"), 40f, Ebony, true);
             title.style.position = Position.Relative;
             title.style.paddingLeft = 30f;
             title.style.paddingRight = 34f;
@@ -253,7 +253,8 @@ namespace ChessFight.Game
             p.Face.Bar(PanelTall - BandTall, BarTall, Brass);
             p.Root.Add(p.Face);
 
-            var label = RLabel(p.Root, PanelLabels[index], 22f, Ivory, true);
+            // R750: PanelLabels' words, numbered, through the string table
+            var label = RLabel(p.Root, Loc.F("미니게임 {0}", index + 1), 22f, Ivory, true);
             label.style.left = 44f;
             label.style.top = 18f;
             label.style.backgroundColor = LabelBack;
@@ -393,7 +394,8 @@ namespace ChessFight.Game
             p.Face.Picture(shown >= 0 ? p.Pictures[shown] : null, locked ? 1f - dim : UnpickedBright * cut);
             p.Face.BarFill(locked ? Eo3(Ph(age, .02f, .18f)) : 0f);
 
-            string name = locked ? p.Names[p.Pick] : "? ? ?";
+            // R750: the section's name (Resources/Loading/PawnRushCourse.txt) through the string table; no rows for them yet
+            string name = locked ? Loc.T(p.Names[p.Pick]) : "? ? ?";
             if (p.Name.text != name) p.Name.text = name;
             p.Name.style.opacity = locked ? 1f : .4f;
             // R625: "? ? ?" slides in once the versus panels have gathered into this one
@@ -549,8 +551,11 @@ namespace ChessFight.Game
         }
 
         static VisualElement BuildMatchAnnouncement(VisualElement parent, string mode, float top, float size, bool compact = false,
-                                                    string headlineText = "상대를 찾았습니다", string subtitleText = "곧 대결이 시작됩니다")
+                                                    string headlineText = null, string subtitleText = null)
         {
+            // R750: the callers pass their words translated already; null is the default pair.
+            headlineText = headlineText ?? Loc.T("상대를 찾았습니다");
+            subtitleText = subtitleText ?? Loc.T("곧 대결이 시작됩니다");
             var header = RBox(parent, 0f, top, StageWide, compact ? 88f : 104f);
             header.name = "match-announcement";
             var modeLabel = RLabel(header, mode, 15f, Brass, false);

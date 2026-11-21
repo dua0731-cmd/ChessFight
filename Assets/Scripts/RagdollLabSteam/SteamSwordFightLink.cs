@@ -101,7 +101,7 @@ namespace ChessFight.RagdollLab.Net
                     pending.jump = pending.shove = false;
                 }
                 Playback();
-                if (Time.realtimeSinceStartup - receivedAt > 12) session.Abort("소드파이트 호스트 연결이 끊어졌습니다.");
+                if (Time.realtimeSinceStartup - receivedAt > 12) session.Abort(Loc.T("소드파이트 호스트 연결이 끊어졌습니다."));
             }
         }
         void FixedUpdate()

@@ -208,7 +208,7 @@ namespace ChessFight.Game
                 }
             }
             // R693: "게임 시작" is "랜덤 매칭" now ("방 생성" stands beside it).
-            if (playLabel != null) playLabel.text = open ? "랜덤 매칭" : "모드 선택";
+            if (playLabel != null) playLabel.text = open ? Loc.T("랜덤 매칭") : Loc.T("모드 선택");
         }
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
@@ -435,7 +435,7 @@ namespace ChessFight.Game
             });
             // On the tab's box, not the label: a label with children stops measuring its text.
             root.Query<VisualElement>(className: "a-tab-box").ForEach(e => e.Add(Rule(14f, 30f, 2f, "a-tab-rule")));
-            root.Q("rail-title")?.Add(BandText("게임 모드", 27f, 220f, 32f, SilverStops, 24));
+            root.Q("rail-title")?.Add(BandText(Loc.T("게임 모드"), 27f, 220f, 32f, SilverStops, 24));
             root.Q("rail-rule")?.Add(Rule(46f, 170f, 3f));
             var line = root.Q<VisualElement>("match-line");
             if (line != null)
@@ -803,7 +803,7 @@ namespace ChessFight.Game
             var spot = new VisualElement { pickingMode = PickingMode.Ignore };
             spot.AddToClassList("invite-spot");
             // 10-17: one pill button "+ 친구 초대" (was a round "+" with a label under it)
-            var plus = new Button { text = "+  친구 초대", focusable = false };
+            var plus = new Button { text = "+  " + Loc.T("친구 초대"), focusable = false };
             plus.AddToClassList("invite-plus");
             RuntimePanels.Display(plus);
             Action open = OpenFriends;
@@ -879,7 +879,7 @@ namespace ChessFight.Game
             voiceMenuIcon = new ChessGlyphs.SpeakerMark(PieceFigure.Hex(0xEFE4CC), 2.4f);
             voiceMenuIcon.AddToClassList("plate-menu-icon");
             voiceMenuButton.Add(voiceMenuIcon);
-            voiceMenuText = new Label("음소거") { pickingMode = PickingMode.Ignore };
+            voiceMenuText = new Label(Loc.T("음소거")) { pickingMode = PickingMode.Ignore };
             voiceMenuText.AddToClassList("plate-menu-text");
             voiceMenuButton.Add(voiceMenuText);
             Action toggle = () =>
@@ -902,7 +902,7 @@ namespace ChessFight.Game
             var entry = lineup[index];
             bool muted = VoiceBoard.IsMuted(entry.Id);
             voiceMenuName.text = entry.Name;
-            voiceMenuText.text = muted ? "음소거 풀기" : "음소거";
+            voiceMenuText.text = muted ? Loc.T("음소거 풀기") : Loc.T("음소거");
             voiceMenuButton.EnableInClassList("plate-menu-btn-on", muted);
             voiceMenuIcon.Set(muted ? ChessGlyphs.SpeakerMark.Look.Quiet : ChessGlyphs.SpeakerMark.Look.Muted,
                               muted ? PieceFigure.Hex(0x1A1410) : PieceFigure.Hex(0xEFE4CC));
@@ -954,16 +954,16 @@ namespace ChessFight.Game
 
                 var text = new VisualElement { pickingMode = PickingMode.Ignore };
                 text.AddToClassList("grow");
-                var name = new Label(mode.Name) { pickingMode = PickingMode.Ignore };
+                var name = new Label(Loc.T(mode.Name)) { pickingMode = PickingMode.Ignore };
                 name.AddToClassList("mode-name");
-                var tagline = new Label(mode.Tagline) { pickingMode = PickingMode.Ignore };
+                var tagline = new Label(Loc.T(mode.Tagline)) { pickingMode = PickingMode.Ignore };
                 tagline.AddToClassList("mode-tagline");
-                var summary = new Label(mode.Summary) { pickingMode = PickingMode.Ignore };
+                var summary = new Label(Loc.T(mode.Summary)) { pickingMode = PickingMode.Ignore };
                 summary.AddToClassList("mode-summary");
                 text.Add(name); text.Add(tagline); text.Add(summary);
                 option.Add(text);
 
-                var state = new Label(mode.Playable ? "" : "준비 중") { name = "state", pickingMode = PickingMode.Ignore };
+                var state = new Label(mode.Playable ? "" : Loc.T("준비 중")) { name = "state", pickingMode = PickingMode.Ignore };
                 state.AddToClassList("mode-state");
                 option.Add(state);
 
@@ -1002,12 +1002,12 @@ namespace ChessFight.Game
                 text.AddToClassList("rail-text");
                 var state = new Label { name = "state", pickingMode = PickingMode.Ignore };
                 state.AddToClassList("rail-badge");
-                var name = new Label(mode.Name) { pickingMode = PickingMode.Ignore };
+                var name = new Label(Loc.T(mode.Name)) { pickingMode = PickingMode.Ignore };
                 name.AddToClassList("rail-name");
                 RuntimePanels.Display(name);
-                var summary = new Label(WrapWords(mode.Summary, RailLineUnits)) { pickingMode = PickingMode.Ignore };
+                var summary = new Label(WrapWords(Loc.T(mode.Summary), RailLineUnits)) { pickingMode = PickingMode.Ignore };
                 summary.AddToClassList("rail-summary");
-                var tagline = new Label(mode.Tagline) { pickingMode = PickingMode.Ignore };
+                var tagline = new Label(Loc.T(mode.Tagline)) { pickingMode = PickingMode.Ignore };
                 tagline.AddToClassList("rail-tagline");
                 // The line along the bottom: players and kind, then the state badge.
                 var foot = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -1055,7 +1055,7 @@ namespace ChessFight.Game
             if (startRow == null || startRow.parent == null) return;
             rejoin = new Button { name = "rejoin", text = "", focusable = false };
             rejoin.AddToClassList("rejoin-btn");
-            var title = new Label("진행 중인 경기로 돌아가기") { pickingMode = PickingMode.Ignore };
+            var title = new Label(Loc.T("진행 중인 경기로 돌아가기")) { pickingMode = PickingMode.Ignore };
             title.AddToClassList("rejoin-title");
             rejoinSub = new Label { pickingMode = PickingMode.Ignore };
             rejoinSub.AddToClassList("rejoin-sub");
@@ -1071,7 +1071,7 @@ namespace ChessFight.Game
             if (startRow == null || startRow.parent == null) return;
             currentMode = new Button { name = "current-mode", focusable = false };
             currentMode.AddToClassList("current-mode");
-            var kicker = new Label("현재 모드") { pickingMode = PickingMode.Ignore };
+            var kicker = new Label(Loc.T("현재 모드")) { pickingMode = PickingMode.Ignore };
             kicker.AddToClassList("current-mode-kicker");
             currentModeName = new Label { pickingMode = PickingMode.Ignore };
             currentModeName.AddToClassList("current-mode-name");
@@ -1101,11 +1101,11 @@ namespace ChessFight.Game
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("row");
             row.AddToClassList("invite-row");
-            var accept = new Button { text = "수락", focusable = false };
+            var accept = new Button { text = Loc.T("수락"), focusable = false };
             accept.AddToClassList("a-btn");
             accept.AddToClassList("a-sm");
             accept.AddToClassList("invite-accept");
-            var decline = new Button { text = "거절", focusable = false };
+            var decline = new Button { text = Loc.T("거절"), focusable = false };
             decline.AddToClassList("a-btn");
             decline.AddToClassList("a-sm");
             decline.AddToClassList("invite-decline");   // R738: its sound (NetworkHudView.Sound.cs)
@@ -1133,7 +1133,7 @@ namespace ChessFight.Game
             inviteLobby = lobby;
             Show(inviteCard, lobby != 0);
             if (lobby == 0 || inviteText == null) return;
-            inviteText.text = $"{from} 님이 파티에 초대했어요" + (more > 0 ? $"  (초대 {more}개 더)" : "");
+            inviteText.text = Loc.F("{0} 님이 파티에 초대했어요", from) + (more > 0 ? "  " + Loc.F("(초대 {0}개 더)", more) : "");
         }
 
         // UI Toolkit breaks Korean between any two syllables, even mid-word, so
@@ -1218,12 +1218,12 @@ namespace ChessFight.Game
             friendsOnline?.EnableInClassList("seg-on", onlineOnly);
             friendsAll?.EnableInClassList("seg-on", !onlineOnly);
             if (friendsPage != null) friendsPage.text = $"{friendPage + 1} / {pages}";
-            if (friendsInfo != null) friendsInfo.text = friends.Count == 0 ? "" : $"{online} / {friends.Count} 온라인";
+            if (friendsInfo != null) friendsInfo.text = friends.Count == 0 ? "" : Loc.F("{0} / {1} 온라인", online, friends.Count);
 
             if (shown.Count == 0)
             {
-                var empty = new Label(friends.Count == 0 ? "친구 목록을 불러오는 중입니다."
-                                    : onlineOnly ? "접속 중인 친구가 없습니다." : "친구가 없습니다.");
+                var empty = new Label(friends.Count == 0 ? Loc.T("친구 목록을 불러오는 중입니다.")
+                                    : onlineOnly ? Loc.T("접속 중인 친구가 없습니다.") : Loc.T("친구가 없습니다."));
                 empty.AddToClassList("friend-empty");
                 friendsList.Add(empty);
                 return;
@@ -1247,8 +1247,8 @@ namespace ChessFight.Game
         }
 
         static string Describe(FriendPresence presence) =>
-            presence == FriendPresence.InGame ? "이 게임 중" : presence == FriendPresence.Online ? "온라인"
-          : presence == FriendPresence.Away ? "자리 비움" : "오프라인";
+            presence == FriendPresence.InGame ? Loc.T("이 게임 중") : presence == FriendPresence.Online ? Loc.T("온라인")
+          : presence == FriendPresence.Away ? Loc.T("자리 비움") : Loc.T("오프라인");
 
         static VisualElement GroupHeading(FriendPresence presence, int count)
         {
@@ -1280,21 +1280,21 @@ namespace ChessFight.Game
             var name = new Label(friend.Name);
             name.AddToClassList("friend-name");
             var state = new Label(!string.IsNullOrEmpty(friend.Detail) ? friend.Detail
-                                : friend.Presence == FriendPresence.Offline ? "오프라인"
-                                : friend.Presence == FriendPresence.Away ? "자리 비움" : "Steam 온라인");
+                                : friend.Presence == FriendPresence.Offline ? Loc.T("오프라인")
+                                : friend.Presence == FriendPresence.Away ? Loc.T("자리 비움") : Loc.T("Steam 온라인"));
             state.AddToClassList("friend-state");
             text.Add(name); text.Add(state);
             row.Add(text);
 
             if (partyIds.Contains(friend.Id))
             {
-                var member = new Label("내 파티");
+                var member = new Label(Loc.T("내 파티"));
                 member.AddToClassList("friend-member");
                 row.Add(member);
                 return row;
             }
             ulong id = friend.Id;
-            var button = new Button { text = "초대", focusable = false };
+            var button = new Button { text = Loc.T("초대"), focusable = false };
             button.AddToClassList("friend-invite");
             button.SetEnabled(canInvite);
             Action invite = () => InviteFriend?.Invoke(id);
@@ -1328,7 +1328,7 @@ namespace ChessFight.Game
             if (details != null) details.text = model.Details;
             if (profile != null) profile.text = string.IsNullOrEmpty(model.PlayerName) ? "—" : model.PlayerName;
             if (version != null) version.text = model.Version;
-            SetText(friendsOpen, model.Online ? $"친구 <color=#E2B866><b>{model.FriendsOnline}</b></color>" : "친구");
+            SetText(friendsOpen, model.Online ? Loc.T("친구") + $" <color=#E2B866><b>{model.FriendsOnline}</b></color>" : Loc.T("친구"));
 
             Show(offline, !model.Online);
             if (offlineText != null && !string.IsNullOrEmpty(model.Status) && !model.Online) offlineText.text = model.Status;
@@ -1337,7 +1337,7 @@ namespace ChessFight.Game
             RenderMode(model);
 
             if (partyCount != null) partyCount.text = $"{model.PartySize}<color=#E7BE72> / 6</color>";
-            SetText(partyOpen, $"파티 <color=#E9C46A><b>{model.PartySize}</b></color>/6");
+            SetText(partyOpen, Loc.T("파티") + $" <color=#E9C46A><b>{model.PartySize}</b></color>/6");
             if (partyCode != null) partyCode.text = model.PartyCode;
             if (bots != null) bots.text = model.Bots;
             if (botsNote != null) { botsNote.text = model.BotsNote; Show(botsNote, !string.IsNullOrEmpty(model.BotsNote)); }
@@ -1397,9 +1397,9 @@ namespace ChessFight.Game
             if (testHint != null) testHint.text = model.TestHint;
             Enable(allyMore, model.CanAddAlly); Enable(allyLess, model.CanRemoveAlly);
             Enable(enemyMore, model.CanAddEnemy); Enable(enemyLess, model.CanRemoveEnemy);
-            if (partyBotsTitle != null) partyBotsTitle.text = sword ? "파티 더미 (아군)" : "AI 봇";
-            if (clearRoomBots != null) clearRoomBots.text = sword ? "추가 더미 비우기" : "봇 비우기";
-            SetText(start, model.ShowTestBots ? "테스트 시작  Enter" : "경기 시작");
+            if (partyBotsTitle != null) partyBotsTitle.text = sword ? Loc.T("파티 더미 (아군)") : Loc.T("AI 봇");
+            if (clearRoomBots != null) clearRoomBots.text = sword ? Loc.T("추가 더미 비우기") : Loc.T("봇 비우기");
+            SetText(start, model.ShowTestBots ? Loc.T("테스트 시작") + "  Enter" : Loc.T("경기 시작"));
 
             Enable(codeOpen, model.CanJoinParty || model.CanJoinMatch);
             Enable(joinParty, model.CanJoinParty); Enable(joinMatch, model.CanJoinMatch);
@@ -1415,13 +1415,13 @@ namespace ChessFight.Game
         void RenderMode(in HudModel model)
         {
             var mode = GameModes.Resolve(model.ModeKey);
-            if (currentModeName != null) currentModeName.text = mode.Name;
-            if (currentModeTag != null) currentModeTag.text = mode.Tagline;
-            if (modeName != null) modeName.text = mode.Name;
-            if (modeTagline != null) modeTagline.text = mode.Tagline;
+            if (currentModeName != null) currentModeName.text = Loc.T(mode.Name);
+            if (currentModeTag != null) currentModeTag.text = Loc.T(mode.Tagline);
+            if (modeName != null) modeName.text = Loc.T(mode.Name);
+            if (modeTagline != null) modeTagline.text = Loc.T(mode.Tagline);
             if (modeBadge != null) modeBadge.text = mode.Badge;
             if (modeTile != null) modeTile.style.backgroundColor = ModeColor(mode.Key);
-            if (modeChange != null) modeChange.text = model.CanChangeMode ? "변경 >" : "";
+            if (modeChange != null) modeChange.text = model.CanChangeMode ? Loc.T("변경 >") : "";
             if (modeHint != null) modeHint.text = model.ModeHint;
             // Followers may look at the list; only the idle leader's choice counts.
             Enable(modeOpen, model.Online);
@@ -1434,7 +1434,7 @@ namespace ChessFight.Game
                 var state = pair.Value.Q<Label>("state");
                 if (state != null)
                 {
-                    state.text = on ? "선택됨" : info != null && info.Playable ? "" : "준비 중";
+                    state.text = on ? Loc.T("선택됨") : info != null && info.Playable ? "" : Loc.T("준비 중");
                     state.EnableInClassList("mode-state-on", on);
                     Show(state, state.text.Length > 0);
                 }
@@ -1451,16 +1451,16 @@ namespace ChessFight.Game
                 var state = pair.Value.Q<Label>("state");
                 if (state != null)
                 {
-                    state.text = on ? "선택됨" : playable ? "플레이 가능" : "준비 중";
+                    state.text = on ? Loc.T("선택됨") : playable ? Loc.T("플레이 가능") : Loc.T("준비 중");
                     state.EnableInClassList("rail-badge-on", on);
                     state.EnableInClassList("rail-badge-ok", !on && playable);
                 }
             }
             if (railHint != null)
-                railHint.text = !model.Online ? "Steam 연결이 필요해요"
-                              : !string.IsNullOrEmpty(model.RejoinNote) ? "진행 중인 경기가 있어 바꿀 수 없어요"
-                              : model.Busy ? "매칭 중엔 바꿀 수 없어요"
-                              : !model.CanChangeMode ? "파티장만 바꿀 수 있어요"
+                railHint.text = !model.Online ? Loc.T("Steam 연결이 필요해요")
+                              : !string.IsNullOrEmpty(model.RejoinNote) ? Loc.T("진행 중인 경기가 있어 바꿀 수 없어요")
+                              : model.Busy ? Loc.T("매칭 중엔 바꿀 수 없어요")
+                              : !model.CanChangeMode ? Loc.T("파티장만 바꿀 수 있어요")
                               : "";   // 10-27 (승규 님): "모드마다 따로 매칭돼요" taken off
         }
 

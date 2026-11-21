@@ -238,9 +238,9 @@ namespace ChessFight.PawnRush
             slab.sharedMaterial = used ? slabOff : slabOn;
             marker.gameObject.SetActive(!used);
             shownUsed = used;
-            label.text = choosing != null ? "승격 · 기물 고르는 중"
-                       : used ? "승격 발판 · 사용함"
-                       : $"승격 발판 · 원하는 기물 선택\n폰이 {PawnRushPromotion.HoldSeconds:0}초 서 있기";
+            label.text = choosing != null ? Loc.T("승격 · 기물 고르는 중")
+                       : used ? Loc.T("승격 발판 · 사용함")
+                       : Loc.F("승격 발판 · 원하는 기물 선택\n폰이 {0:0}초 서 있기", PawnRushPromotion.HoldSeconds);
             label.color = used ? new Color(.7f, .7f, .7f) : new Color(1f, .9f, .45f);
         }
 

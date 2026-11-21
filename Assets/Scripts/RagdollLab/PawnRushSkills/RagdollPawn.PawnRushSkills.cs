@@ -389,7 +389,7 @@ namespace ChessFight.RagdollLab
             aimLocked = false;
             knightTapped = false;
             knightTarget = knightCandidate = null;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             HideSkillMarks();
             ClearKingCall();
             ClearRookChain();
@@ -608,7 +608,7 @@ namespace ChessFight.RagdollLab
                         {
                             skillStage = SkillStage.Link;
                             stageTime = 0f;
-                            SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                            SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                         }
                         else FinishPawn(s, true);
                     }
@@ -617,7 +617,7 @@ namespace ChessFight.RagdollLab
                     stageTime += dt;
                     // R153 (plan v0.3 §3): the second step only goes for someone: a downed teammate or a standing enemy in front.
                     pawnTarget = SeekTarget(s);
-                    SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                    SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                     if (press) pawnBuffered = true;
                     if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing)
                     {
@@ -686,14 +686,14 @@ namespace ChessFight.RagdollLab
             StartDash(s.pawnStepSpeed, distance / Mathf.Max(0.1f, s.pawnStepSpeed));
             skillStage = SkillStage.Active;
             stageTime = 0f;
-            SkillDetail = n == 1 ? "첫 걸음" : $"두 번째 걸음 → {(pawnTarget != null ? pawnTarget.DisplayName : "?")}";
+            SkillDetail = n == 1 ? Loc.T("첫 걸음") : Loc.F("두 번째 걸음 → {0}", pawnTarget != null ? pawnTarget.DisplayName : "?");
             Fx(SkillFxKind.PawnStep, pawnTarget, FeetPoint, skillDir, n);
         }
 
         void FinishPawn(PawnRushSkillParams s, bool bothSteps)
         {
             skillStage = SkillStage.None;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             float cooldown = bothSteps ? s.pawnCooldown : s.pawnCooldownOneStep;
             if (pawnHelped) cooldown -= s.helpCooldownCut;
             StartCooldown(cooldown);
@@ -770,7 +770,7 @@ namespace ChessFight.RagdollLab
                     }
                     skillStage = SkillStage.Windup;
                     stageTime = 0f;
-                    SkillDetail = $"준비 (뒷발로 섬) → {knightTarget.DisplayName}";
+                    SkillDetail = Loc.F("준비 (뒷발로 섬) → {0}", knightTarget.DisplayName);
                     break;
                 case SkillStage.Windup:
                     // Not rooted: a running knight keeps its speed into the leap (D2).
@@ -787,7 +787,7 @@ namespace ChessFight.RagdollLab
                     {
                         // Caught a ledge on the way: the leap ends there, no landing shock.
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         knightTarget = null;
                         StartCooldown(s.knightCooldown);
                     }
@@ -809,7 +809,7 @@ namespace ChessFight.RagdollLab
                         KnightLand(s);
                         skillStage = SkillStage.Recovery;
                         stageTime = 0f;
-                        SkillDetail = "착지 후딜";
+                        SkillDetail = Loc.T("착지 후딜");
                         knightCandidate = knightTarget = null;
                     }
                     break;
@@ -819,7 +819,7 @@ namespace ChessFight.RagdollLab
                     if (stageTime >= s.knightLandRecovery)
                     {
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         StartCooldown(s.knightCooldown);
                     }
                     break;
@@ -893,7 +893,7 @@ namespace ChessFight.RagdollLab
             skillHitSet.Clear();
             skillStage = SkillStage.Active;
             stageTime = 0f;
-            SkillDetail = target != null ? $"도약 → {target.DisplayName}" : "도약";
+            SkillDetail = target != null ? Loc.F("도약 → {0}", target.DisplayName) : Loc.T("도약");
             Fx(SkillFxKind.KnightLeap, target, p - Vector3.up * standHeight, skillDir, fromFloor ? 0 : 1);
             if (target != null) Fx(SkillFxKind.KnightHome, target, knightSpot, skillDir);
             Log($"나이트: {(target != null ? target.DisplayName : "?")}에게 도약 ({across:0.0} m, 체공 {knightFlight:0.00}초)");
@@ -992,7 +992,7 @@ namespace ChessFight.RagdollLab
                 Launch(Flat(facing) * s.knightStompHop + Vector3.up * s.knightStompBounce);
                 knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
             }
-            SkillDetail = "머리 찍고 착지";
+            SkillDetail = Loc.T("머리 찍고 착지");
             Log($"나이트 → {other.DisplayName}: 머리 찍기 → {result}" + (bounce ? ", 바로 옆에 착지" : " (착지하며)"));
         }
 
@@ -1064,7 +1064,7 @@ namespace ChessFight.RagdollLab
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
                         skillGrabLatch = skillGrabRaw;
-                        SkillDetail = "조준 (마우스로 위치 · 좌클릭 설치 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 위치 · 좌클릭 설치 · 우클릭/F 취소)");
                         BishopAim(s);
                     }
                     break;
@@ -1092,7 +1092,7 @@ namespace ChessFight.RagdollLab
                         bishopFlight = Mathf.Max(0.08f, s.bishopFlight * Mathf.Clamp01(range / Mathf.Max(0.1f, s.bishopRange)));
                         skillStage = SkillStage.Active;
                         stageTime = 0f;
-                        SkillDetail = "실이 날아가는 중";
+                        SkillDetail = Loc.T("실이 날아가는 중");
                     }
                     break;
                 case SkillStage.Active:
@@ -1102,7 +1102,7 @@ namespace ChessFight.RagdollLab
                         SkillTripwire.Spawn(this, bishopPoint, bishopYaw, s);
                         Log($"비숍: X자 밧줄 설치 ({Flat(bishopPoint - bodies[0].position).magnitude:0.0} m) — {s.bishopArm:0.#}초 뒤 무장");
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                     }
                     break;
             }
@@ -1149,7 +1149,7 @@ namespace ChessFight.RagdollLab
                         SkillUses++;
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
-                        SkillDetail = "예고 (빛이 조여듦)";
+                        SkillDetail = Loc.T("예고 (빛이 조여듦)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -1159,7 +1159,7 @@ namespace ChessFight.RagdollLab
                         QueenBlast(s);
                         skillStage = SkillStage.Recovery;
                         stageTime = 0f;
-                        SkillDetail = "후딜 (검에 끌려 돎)";
+                        SkillDetail = Loc.T("후딜 (검에 끌려 돎)");
                     }
                     break;
                 case SkillStage.Recovery:
@@ -1167,7 +1167,7 @@ namespace ChessFight.RagdollLab
                     if (stageTime >= s.queenRecovery)
                     {
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         StartCooldown(s.queenCooldown);
                     }
                     break;

@@ -144,6 +144,23 @@ namespace ChessFight.Game
                 Set = v => GameSettings.SetInt(id, v), Reset = () => GameSettings.Forget(id),
             };
 
+        // R747: the languages the string table has, each by its own name; one not marked ready says it is still being
+        // translated. Picking one rebuilds the window in it (Update sees Loc.Lang move); the page's reset goes back to
+        // following Steam's language.
+        static Choice LanguageChoice()
+        {
+            var offered = GameLanguage.Offered();
+            var names = offered.ConvertAll(l => l.Code == Loc.Source || Loc.Table.Ready(l.Code) ? l.Native : l.Native + " · " + Loc.T("번역 중")).ToArray();
+            return new Choice
+            {
+                Label = "언어", Drop = true, Options = () => names,
+                Desc = "게임 글자의 언어. 고르지 않으면 Steam에서 이 게임에 정한 언어를 따라요(번역이 끝난 언어만). 아직 번역이 없는 글자는 한국어로 보여요.",
+                Get = () => Mathf.Max(0, offered.FindIndex(l => l.Code == Loc.Lang)),
+                Set = v => { if (v >= 0 && v < offered.Count) GameLanguage.Pick(offered[v].Code); },
+                Reset = GameLanguage.Forget,
+            };
+        }
+
         static Choice Switch(string id, string label, bool fallback, string desc, bool soon = false, bool indent = false) =>
             Pick(id, label, OffOn, fallback ? 1 : 0, desc, false, soon, indent);
 
@@ -325,7 +342,7 @@ namespace ChessFight.Game
                 {
                     new Page { Name = "마우스", Sections = new[] { new Section { Title = "마우스", Items = new Item[]
                     {
-                        Number("sens", "마우스 감도", .1f, 3f, .1f, 1f, v => v.ToString("0.0") + "배", "시점이 도는 빠르기."),
+                        Number("sens", "마우스 감도", .1f, 3f, .1f, 1f, v => Loc.F("{0}배", v.ToString("0.0")), "시점이 도는 빠르기."),
                         Switch("invert", "상하 반전", false, "마우스를 올리면 아래를 봐요."),
                         Pick("sprintmode", "질주 방식", new[] { "누르고 있기", "한 번 눌러 켜기" }, 0,
                              "한 번 눌러 켜기는 다시 누르거나 멈출 때까지 달려요.", drop: true),
@@ -357,7 +374,7 @@ namespace ChessFight.Game
                     } },
                     new Page { Name = "컨트롤러", Sections = new[] { new Section { Title = "컨트롤러", Note = "Xbox · PlayStation 패드", Items = new Item[]
                     {
-                        Number("padsens", "스틱 감도", .1f, 3f, .1f, 1f, v => v.ToString("0.0") + "배", "오른쪽 스틱으로 시점이 도는 빠르기.", soon: true),
+                        Number("padsens", "스틱 감도", .1f, 3f, .1f, 1f, v => Loc.F("{0}배", v.ToString("0.0")), "오른쪽 스틱으로 시점이 도는 빠르기.", soon: true),
                         Number("dead", "스틱 데드존", 0f, 30f, 1f, 10f, Percent, "스틱이 이만큼 움직이기 전에는 무시해요.", soon: true),
                         Switch("rumble", "진동", true, "부딪히거나 밀려날 때 패드가 떨려요.", soon: true),
                         Pick("padicons", "버튼 그림", new[] { "자동", "Xbox", "PlayStation" }, 0, "화면에 나오는 버튼 모양.", drop: true, soon: true),
@@ -386,7 +403,7 @@ namespace ChessFight.Game
                         } },
                         new Section { Title = "일반", Items = new Item[]
                         {
-                            Pick("lang", "언어", new[] { "한국어" }, 0, "다른 언어는 준비 중이에요.", drop: true),
+                            LanguageChoice(),
                             Switch("skipresult", "결과 화면 건너뛰기", false, "켜면 결과 연출을 클릭으로 건너뛸 수 있어요.", soon: true),
                         } },
                     } },
@@ -444,8 +461,13 @@ namespace ChessFight.Game
 
         // ---------- building ----------
 
+        // R747: the language the window was built in; when Loc.Lang moves (picked here, or Steam's arriving) Update
+        // builds it again.
+        string builtIn;
+
         void Build()
         {
+            builtIn = Loc.Lang;
             tabs = Schema();
             root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("SettingsHud"),
                                         Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
@@ -486,11 +508,11 @@ namespace ChessFight.Game
             var nameLabel = root.Q<Label>("s2-name");
             var steam = root.Q<Label>("s2-steam");
             var mark = root.Q<Label>(className: "s2-avatar-mark");
-            if (nameLabel != null) nameLabel.text = string.IsNullOrEmpty(name) ? "플레이어" : name;
+            if (nameLabel != null) nameLabel.text = string.IsNullOrEmpty(name) ? Loc.T("플레이어") : name;
             if (mark != null) mark.text = string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1).ToUpperInvariant();
             if (steam != null)
             {
-                steam.text = name != null ? "STEAM 연결됨" : "STEAM 오프라인";
+                steam.text = name != null ? Loc.T("STEAM 연결됨") : Loc.T("STEAM 오프라인");
                 steam.EnableInClassList("s2-steam-off", name == null);
             }
 
@@ -499,7 +521,7 @@ namespace ChessFight.Game
                 int index = i;
                 var tab = new Button { focusable = false };
                 tab.AddToClassList("s2-tab");
-                var text = new Label(tabs[i].Name) { pickingMode = PickingMode.Ignore };
+                var text = new Label(Loc.T(tabs[i].Name)) { pickingMode = PickingMode.Ignore };
                 text.AddToClassList("disp");
                 text.AddToClassList("s2-tab-text");
                 tab.Add(text);
@@ -551,7 +573,7 @@ namespace ChessFight.Game
             for (int i = 0; i < pages.Length; i++)
             {
                 int index = i;
-                var sub = new Button { text = pages[i].Name, focusable = false };
+                var sub = new Button { text = Loc.T(pages[i].Name), focusable = false };
                 sub.AddToClassList("s2-sub");
                 sub.EnableInClassList("s2-sub-on", i == pageIndex);
                 sub.clicked += () => { if (pageIndex != index) { pageIndex = index; ShowTab(); } };
@@ -567,8 +589,10 @@ namespace ChessFight.Game
             content.Clear();
             refreshers.Clear();
             var page = tabs[tabIndex].Pages[pageIndex];
-            if (resetText != null) resetText.text = page.Name + " 기본값 복원";
-            Describe(page.Name, "줄 위에 마우스를 올리면 여기에 설명이 나와요.", false, null);
+            // R747: every name, title and description below goes through Loc.T as it is drawn, so the whole window
+            // follows the string table without each line in Schema being wrapped (the Korean stays the key).
+            if (resetText != null) resetText.text = Loc.F("{0} 기본값 복원", Loc.T(page.Name));
+            Describe(Loc.T(page.Name), Loc.T("줄 위에 마우스를 올리면 여기에 설명이 나와요."), false, null);
             // The voice page keeps the microphone running for its meters: Steam's when the game is
             // online, else Unity's (no one to talk to then, but the meter still shows the microphone).
             VoicePageOpen = page.Name == VoicePage;
@@ -577,8 +601,8 @@ namespace ChessFight.Game
             foreach (var section in page.Sections)
             {
                 var head = Add(content, "s2-section");
-                Add(head, "disp s2-section-title", section.Title);
-                if (!string.IsNullOrEmpty(section.Note)) Add(head, "s2-section-note", section.Note);
+                Add(head, "disp s2-section-title", Loc.T(section.Title));
+                if (!string.IsNullOrEmpty(section.Note)) Add(head, "s2-section-note", Loc.T(section.Note));
                 var group = Add(content, "s2-group");
                 foreach (var item in section.Items) Line(group, item);
             }
@@ -599,7 +623,11 @@ namespace ChessFight.Game
             if (descTitle != null) descTitle.text = title;
             if (descText != null) descText.text = text;
             if (descNote == null) return;
-            if (soon) note = string.IsNullOrEmpty(note) ? "[준비 중] " + Soon : "[준비 중] " + Soon + "\n" + note;
+            if (soon)
+            {
+                string head = "[" + Loc.T("준비 중") + "] " + Loc.T(Soon);
+                note = string.IsNullOrEmpty(note) ? head : head + "\n" + note;
+            }
             descNote.text = note ?? "";
             descNote.style.display = string.IsNullOrEmpty(note) ? DisplayStyle.None : DisplayStyle.Flex;
         }
@@ -611,10 +639,11 @@ namespace ChessFight.Game
             row.pickingMode = PickingMode.Position;
             var lab = Add(row, "s2-lab");
             if (item.Indent) lab.style.paddingLeft = 26;
-            Add(lab, "s2-lab-text", item.Label);
-            if (item.Soon) Add(lab, "s2-soon", "준비 중");
+            Add(lab, "s2-lab-text", Loc.T(item.Label));
+            if (item.Soon) Add(lab, "s2-soon", Loc.T("준비 중"));
             var val = Add(row, "s2-val");
-            row.RegisterCallback<PointerEnterEvent>(_ => Describe(item.Label, string.IsNullOrEmpty(item.Desc) ? "설명이 필요 없는 항목이에요." : item.Desc, item.Soon, item.Note));
+            row.RegisterCallback<PointerEnterEvent>(_ => Describe(Loc.T(item.Label), Loc.T(string.IsNullOrEmpty(item.Desc) ? "설명이 필요 없는 항목이에요." : item.Desc),
+                                                                 item.Soon, string.IsNullOrEmpty(item.Note) ? item.Note : Loc.T(item.Note)));
 
             switch (item)
             {
@@ -713,7 +742,7 @@ namespace ChessFight.Game
             refreshers.Add(() =>
             {
                 var options = c.Options();
-                text.text = options.Length > 0 ? options[Mathf.Clamp(c.Get(), 0, options.Length - 1)] : "";
+                text.text = options.Length > 0 ? Loc.T(options[Mathf.Clamp(c.Get(), 0, options.Length - 1)]) : "";
                 prev.SetEnabled(options.Length > 1);
                 next.SetEnabled(options.Length > 1);
             });
@@ -733,7 +762,7 @@ namespace ChessFight.Game
             refreshers.Add(() =>
             {
                 bool on = c.Get() == 1;
-                text.text = OffOn[on ? 1 : 0];
+                text.text = Loc.T(OffOn[on ? 1 : 0]);
                 button.EnableInClassList("s2-switch-on", on);
                 val.EnableInClassList("s2-on", on);
             });
@@ -750,7 +779,7 @@ namespace ChessFight.Game
             refreshers.Add(() =>
             {
                 var options = c.Options();
-                text.text = options.Length > 0 ? options[Mathf.Clamp(c.Get(), 0, options.Length - 1)] : "";
+                text.text = options.Length > 0 ? Loc.T(options[Mathf.Clamp(c.Get(), 0, options.Length - 1)]) : "";
             });
         }
 
@@ -770,7 +799,7 @@ namespace ChessFight.Game
             for (int i = 0; i < options.Length; i++)
             {
                 int index = i;
-                var option = new Button { text = options[i], focusable = false };
+                var option = new Button { text = Loc.T(options[i]), focusable = false };
                 option.AddToClassList("s2-opt");
                 option.EnableInClassList("s2-opt-on", i == chosen);
                 option.clicked += () => { CloseMenu(); if (c.Get() != index) c.Set(index); Changed(); };
@@ -825,19 +854,19 @@ namespace ChessFight.Game
             catcher.RegisterCallback<PointerDownEvent>(e => { MenuSound.Play(MenuSound.Kind.Close); CloseMenu(); e.StopPropagation(); });
             var card = Add(layer, "s2-ask");
             card.pickingMode = PickingMode.Position;
-            Add(card, "disp s2-ask-title", "게임을 끝낼까요?");
+            Add(card, "disp s2-ask-title", Loc.T("게임을 끝낼까요?"));
             string cost = null;
             try { cost = GameMenu.OnlineCost?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
-            Add(card, "s2-ask-text", "게임 창이 닫혀요.");
+            Add(card, "s2-ask-text", Loc.T("게임 창이 닫혀요."));
             if (!string.IsNullOrEmpty(cost)) Add(card, "s2-ask-warn", cost);
             var row = Add(card, "row s2-ask-row");
-            var stay = new Button { text = "취소", focusable = false };
+            var stay = new Button { text = Loc.T("취소"), focusable = false };
             stay.AddToClassList("s2-ask-btn");
             stay.AddToClassList(MenuSound.SoundClass(MenuSound.Kind.Close));
             stay.clicked += CloseMenu;
             ChunkyButtons.Springy(stay);
             row.Add(stay);
-            var quit = new Button { text = "게임 나가기", focusable = false };
+            var quit = new Button { text = Loc.T("게임 나가기"), focusable = false };
             quit.AddToClassList("s2-ask-btn");
             quit.AddToClassList("s2-ask-quit");
             quit.AddToClassList(MenuSound.SoundClass(MenuSound.Kind.Confirm));
@@ -919,7 +948,7 @@ namespace ChessFight.Game
                     bool asking = waitingKey == k.Key && waitingSlot == s;
                     // Gold while it waits for a key; ivory otherwise.
                     button.EnableInClassList("ch-ivory", !asking);
-                    SetText(button, asking ? "키를 누르세요…" : GameSettings.KeyName(GameSettings.Key(k.Key, s)));
+                    SetText(button, asking ? Loc.T("키를 누르세요…") : GameSettings.KeyName(GameSettings.Key(k.Key, s)));
                     button.MarkDirtyRepaint();
                 });
             }
@@ -933,7 +962,7 @@ namespace ChessFight.Game
             var cells = new VisualElement[16];
             for (int i = 0; i < cells.Length; i++) cells[i] = Add(meter, "s2-meter-cell");
             var note = Add(val, "s2-mic-note", "");
-            var listen = Arrow(val, "들어 보기");
+            var listen = Arrow(val, Loc.T("들어 보기"));
             listen.AddToClassList("s2-test");
             listen.clicked += () => { if (VoiceLevel != null) { VoiceEcho = !VoiceEcho; Refresh(); } };
             refreshers.Add(() =>
@@ -941,12 +970,12 @@ namespace ChessFight.Game
                 bool steam = VoiceLevel != null;
                 string problem = "";
                 try { problem = VoiceProblem?.Invoke() ?? ""; } catch (Exception e) { Debug.LogException(e); }
-                if (problem == "" && !steam && Microphone.devices.Length == 0) problem = "마이크가 없어요";
+                if (problem == "" && !steam && Microphone.devices.Length == 0) problem = Loc.T("마이크가 없어요");
                 note.text = problem;
                 note.style.display = problem != "" ? DisplayStyle.Flex : DisplayStyle.None;
                 meter.style.display = problem == "" ? DisplayStyle.Flex : DisplayStyle.None;
                 listen.SetEnabled(steam);
-                SetText(listen, !steam ? "Steam 필요" : VoiceEcho ? "그만 듣기" : "들어 보기");
+                SetText(listen, Loc.T(!steam ? "Steam 필요" : VoiceEcho ? "그만 듣기" : "들어 보기"));
             });
             meter.schedule.Execute(() =>
             {
@@ -1045,6 +1074,7 @@ namespace ChessFight.Game
 
         void Update()
         {
+            if (builtIn != Loc.Lang) { Rebuild(); return; }
             ReadMic();
             if (waitingKey != null)
             {
@@ -1090,6 +1120,19 @@ namespace ChessFight.Game
             return capturable = list.ToArray();
         }
 
+        // R747: the language changed - a new window in it on the same tab and page (both static), without the open
+        // and close sounds.
+        void Rebuild()
+        {
+            if (current != this) return;
+            // The microphone goes first: the new window starts its own, and this one's OnDestroy comes at the end of
+            // the frame, after it (and leaves the voice page flags to the new window).
+            StopMic();
+            current = new GameObject("Settings Window").AddComponent<SettingsWindow>();
+            current.Build();
+            Destroy(gameObject);
+        }
+
         void ResetPage()
         {
             CloseMenu();
@@ -1131,7 +1174,7 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             StopMic();
-            VoicePageOpen = VoiceEcho = false;
+            if (current == this || current == null) VoicePageOpen = VoiceEcho = false;
             if (current == this) current = null;
             if (ownedPanel != null) Destroy(ownedPanel);
         }

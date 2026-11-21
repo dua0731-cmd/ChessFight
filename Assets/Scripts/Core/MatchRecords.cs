@@ -434,38 +434,38 @@ namespace ChessFight.Network
         {
             switch (result)
             {
-                case RecordResult.Win: return "승";
-                case RecordResult.Loss: return "패";
-                case RecordResult.Left: return "나감";
-                default: return "무";
+                case RecordResult.Win: return Loc.T("승");
+                case RecordResult.Loss: return Loc.T("패");
+                case RecordResult.Left: return Loc.T("나감");
+                default: return Loc.T("무");
             }
         }
 
-        public static string ModeName(string key) => GameModes.Resolve(key).Name;
+        public static string ModeName(string key) => Loc.T(GameModes.Resolve(key).Name);
 
         // "6 대 6".
-        public static string Size(MatchRecord r) => r.Ours + " 대 " + r.Theirs;
+        public static string Size(MatchRecord r) => Loc.F("{0} 대 {1}", r.Ours, r.Theirs);
 
         // The line in big type: "2위 도착 · 4:21", "도착 못 함", "7 : 10 · 시간 종료", "경기 중 나감".
         public static string Headline(MatchRecord r)
         {
-            if (r.Result == RecordResult.Left) return "경기 중 나감";
+            if (r.Result == RecordResult.Left) return Loc.T("경기 중 나감");
             if (r.Mode == GameModes.SwordFight.Key)
             {
                 string score = r.ScoreOurs + " : " + r.ScoreTheirs;
-                return r.End == SwordEnd.TimeUp ? score + " · 시간 종료" : r.End == SwordEnd.SuddenDeath ? score + " · 서든데스" : score;
+                return r.End == SwordEnd.TimeUp ? Loc.F("{0} · 시간 종료", score) : r.End == SwordEnd.SuddenDeath ? Loc.F("{0} · 서든데스", score) : score;
             }
-            return r.Place > 0 ? r.Place + "위 도착 · " + MatchResult.Clock(r.FinishSeconds) : "도착 못 함";
+            return r.Place > 0 ? Loc.F("{0}위 도착 · {1}", r.Place, MatchResult.Clock(r.FinishSeconds)) : Loc.T("도착 못 함");
         }
 
         // The small line under it.
         public static string Sub(MatchRecord r)
         {
-            if (r.Result == RecordResult.Left) return "패로 셈";
-            if (r.Mode == GameModes.SwordFight.Key) return "내가 떨어뜨림 " + r.Knockouts + " · 떨어짐 " + r.Falls;
-            if (r.Place > 0) return r.CountsToWin ? "우리 팀 승리에 들어감" : "왕관 발판 도착";
+            if (r.Result == RecordResult.Left) return Loc.T("패로 셈");
+            if (r.Mode == GameModes.SwordFight.Key) return Loc.F("내가 떨어뜨림 {0} · 떨어짐 {1}", r.Knockouts, r.Falls);
+            if (r.Place > 0) return r.CountsToWin ? Loc.T("우리 팀 승리에 들어감") : Loc.T("왕관 발판 도착");
             // R741 (user 11-21: "거리 몇 미터 이런건 빼"): no distance to the line; MetersLeft stays in the record unshown.
-            return r.Result == RecordResult.Win ? "우리 팀 승리" : "";
+            return r.Result == RecordResult.Win ? Loc.T("우리 팀 승리") : "";
         }
 
         // "오늘 21:40", "어제 22:30", "11-19 21:02", in the PC's own time (`offset` from UTC).
@@ -474,8 +474,8 @@ namespace ChessFight.Network
             if (when <= 0 || double.IsNaN(when) || double.IsInfinity(when)) return "";
             var at = DateTimeOffset.FromUnixTimeSeconds((long)when).ToOffset(offset).DateTime;
             string clock = at.ToString("HH:mm", CultureInfo.InvariantCulture);
-            if (at.Date == nowLocal.Date) return "오늘 " + clock;
-            if (at.Date == nowLocal.Date.AddDays(-1)) return "어제 " + clock;
+            if (at.Date == nowLocal.Date) return Loc.F("오늘 {0}", clock);
+            if (at.Date == nowLocal.Date.AddDays(-1)) return Loc.F("어제 {0}", clock);
             return at.ToString("MM-dd", CultureInfo.InvariantCulture) + " " + clock;
         }
     }

@@ -117,9 +117,9 @@ namespace ChessFight.RagdollLab
             // R674: the keys as the settings window has them bound (F and the left click unless rebound).
             string key = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Use);
             string click = ChessFight.Game.GameSettings.KeyCap(ChessFight.Game.GameKey.Shove);
-            string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? $"{key} 조준 → {click}" : $"{key} 사용";
-            if (me.Piece == PieceKind.Pawn) how += " · 승격 발판에 서서 승격";
-            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), key, $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
+            string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? Loc.F("{0} 조준 → {1}", key, click) : Loc.F("{0} 사용", key);
+            if (me.Piece == PieceKind.Pawn) how += " · " + Loc.T("승격 발판에 서서 승격");
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), key, Loc.T(ChessPieces.Name(me.Piece)) + " · " + Loc.T(RagdollPawn.SkillName(me.Piece)),
                 SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), me.Piece,
                 ready || running, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
         }

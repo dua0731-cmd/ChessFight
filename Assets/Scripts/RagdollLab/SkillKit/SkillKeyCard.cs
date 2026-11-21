@@ -67,7 +67,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The usual second line: what it is doing, the cooldown left, or ready.</summary>
         public static string Line(string running, float cooldown, string ready) =>
-            !string.IsNullOrEmpty(running) ? running : cooldown > 0f ? $"쿨타임 {cooldown:0.0}초" : ready;
+            !string.IsNullOrEmpty(running) ? running : cooldown > 0f ? Loc.F("쿨타임 {0:0.0}초", cooldown) : ready;
 
         static void Styles()
         {
@@ -78,7 +78,7 @@ namespace ChessFight.RagdollLab
                 white.Apply();
             }
             if (keyStyle != null) return;
-            var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 13);
+            var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Microsoft YaHei", "Arial" }, 13);
             nameStyle = new GUIStyle(GUI.skin.label) { font = font, fontSize = 13, richText = true, wordWrap = false, clipping = TextClipping.Clip };
             nameStyle.normal.textColor = Color.white;
             lineStyle = new GUIStyle(nameStyle) { fontSize = 12 };

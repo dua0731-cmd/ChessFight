@@ -335,7 +335,7 @@ namespace ChessFight.PawnRush
 
         void ShowCount()
         {
-            if (counter != null) counter.text = $"잡은 폰 {count} / {field.Count}";
+            if (counter != null) counter.text = Loc.F("잡은 폰 {0} / {1}", count, field.Count);
         }
 
         // The wire (6 bytes): the taken statues (a bit each, up to 32), how many, and the last bounce - a counter with

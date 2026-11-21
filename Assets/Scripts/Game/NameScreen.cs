@@ -90,11 +90,11 @@ namespace ChessFight.Game
             if (backdrop != null && picture != null) backdrop.style.backgroundImage = new StyleBackground(picture);
             root.Q<VisualElement>("name-screen")?.EnableInClassList("name-renaming", renaming);
             string now = PlayerNames.Tidy(prefill ?? "");
-            SetText("name-kicker-note", renaming ? (now != "" ? "지금 이름 · " + now : "") : "나중에 언제든 바꿀 수 있어요");
-            SetText("name-key-enter", renaming ? "바꾸기" : "시작");
-            SetText("name-key-esc", renaming ? "돌아가기" : "설정");
+            SetText("name-kicker-note", renaming ? (now != "" ? Loc.F("지금 이름 · {0}", now) : "") : Loc.T("나중에 언제든 바꿀 수 있어요"));
+            SetText("name-key-enter", renaming ? Loc.T("바꾸기") : Loc.T("시작"));
+            SetText("name-key-esc", renaming ? Loc.T("돌아가기") : Loc.T("설정"));
             var title = root.Q<VisualElement>("name-title");
-            title?.Add(SilverText(renaming ? "이름 바꾸기" : "이름을 정해 주세요", 52f, 560f, 62f));
+            title?.Add(SilverText(renaming ? Loc.T("이름 바꾸기") : Loc.T("이름을 정해 주세요"), 52f, 560f, 62f));
             var rule = root.Q<VisualElement>("name-rule-silver");
             if (rule != null) rule.style.backgroundImage = new StyleBackground(MenuArt.Line(new Color(.863f, .886f, .91f, 1f), new Color(.863f, .886f, .91f, 0f)));
 
@@ -264,8 +264,8 @@ namespace ChessFight.Game
             startButton.SetEnabled(ok);
             startButton.style.opacity = ok ? 1f : .45f;
             if (startText != null)
-                startText.text = renaming ? (confirming ? "바꿨어요! 돌아가는 중" : "이 이름으로 바꾸기")
-                                          : (confirming ? "좋아요! 로비로 가는 중" : "이 이름으로 시작");
+                startText.text = renaming ? (confirming ? Loc.T("바꿨어요! 돌아가는 중") : Loc.T("이 이름으로 바꾸기"))
+                                          : (confirming ? Loc.T("좋아요! 로비로 가는 중") : Loc.T("이 이름으로 시작"));
             if (startArrow != null) startArrow.style.display = confirming ? DisplayStyle.None : DisplayStyle.Flex;
 
             // The suggestion pops in.

@@ -130,6 +130,14 @@ namespace ChessFight.PawnRush.Editor
             Directory.CreateDirectory(Folder);
             Application.logMessageReceived += OnLog;
             lines.Add("R736 lobby tabs capture: the lobby stage and HUD with no Steam, a made-up party and record book.");
+            // R749: `-captureLanguage zh-Hans` (Run-LobbyTabsCapture.ps1 -Language) shows the pictures in that language.
+            // Loc.Use only, never GameLanguage.Pick: nothing goes into PlayerPrefs, which this PC's open Editor shares.
+            string language = CaptureLanguage();
+            if (language.Length > 0)
+            {
+                if (Loc.Use(language)) lines.Add("language " + Loc.Lang);
+                else errors.Add("the string table has no column '" + language + "'");
+            }
             try
             {
                 MatchRecords.Preview(Example());
@@ -171,7 +179,7 @@ namespace ChessFight.PawnRush.Editor
                 var party = new List<LineupEntry>
                 {
                     new LineupEntry { Id = 11, Name = "나이트메어", Tag = "파티장 · 2/6", Leader = true, Me = true },
-                    new LineupEntry { Id = 12, Name = "퀸사이드", Tag = "대기 중" },
+                    new LineupEntry { Id = 12, Name = "龙骑士", Tag = "대기 중" },
                     new LineupEntry { Invite = true },
                 };
                 stage.Show(party);
@@ -191,6 +199,14 @@ namespace ChessFight.PawnRush.Editor
             }
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
+        }
+
+        static string CaptureLanguage()
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; i++)
+                if (args[i] == "-captureLanguage") return args[i + 1].Trim();
+            return "";
         }
 
         // A made-up book: the mock-up's recent matches, newest first.
@@ -368,12 +384,12 @@ namespace ChessFight.PawnRush.Editor
         static MatchDetail RushExample()
         {
             var d = new MatchDetail { Duration = 298, Clincher = "캐슬링", Checkpoints = 11, Skills = 7, Dives = 12, Grabs = 3 };
-            d.Enter("왕실 정원", 0); d.Fall();
-            d.Enter("도개교", 68); d.Promote(PieceKind.Knight, 112);
-            d.Enter("대계단 홀", 140); d.Fall(); d.Fall();
-            d.Enter("나이트의 길", 198);
+            d.Enter("왕실 수로 정원", 0); d.Fall();
+            d.Enter("해자 도개교", 68); d.Promote(PieceKind.Knight, 112);
+            d.Enter("대계단 현관홀", 140); d.Fall(); d.Fall();
+            d.Enter("국왕 체스 홀", 198);
             d.Enter("국왕 작전실", 236);
-            d.Enter("왕관 발판", 254);
+            d.Enter("국왕 알현실 (임시)", 254);
             void P(string name, bool ours, PieceKind piece, int place, double secs, bool self = false) =>
                 d.Add(new DetailPlayer { Name = name, Ours = ours, Piece = piece, Place = place, Seconds = secs, Self = self });
             P("체크메이트", true, PieceKind.Queen, 1, 242); P("나이트메어", true, PieceKind.Knight, 2, 261, true); P("퀸사이드", true, PieceKind.Rook, 3, 275);

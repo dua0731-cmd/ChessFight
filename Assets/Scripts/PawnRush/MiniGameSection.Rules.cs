@@ -130,10 +130,10 @@ namespace ChessFight.PawnRush
         {
             string words = null;
             if (gatherOn >= 0)
-                words = (inRoom ? "미니게임 클리어 · 문 앞 금색 발판에 모이세요" : "우리 팀이 미니게임을 깼습니다 · 문 앞 금색 발판으로 오세요")
-                        + $"  {gatherOn} / {gatherNeed}명";
+                words = Loc.T(inRoom ? "미니게임 클리어 · 문 앞 금색 발판에 모이세요" : "우리 팀이 미니게임을 깼습니다 · 문 앞 금색 발판으로 오세요")
+                        + "  " + Loc.F("{0} / {1}명", gatherOn, gatherNeed);
             else if (inRoom && gateOpensIn >= 0f)
-                words = $"상대 팀이 먼저 통과했습니다 · {Mathf.CeilToInt(gateOpensIn)}초 뒤 우리 문도 열립니다";
+                words = Loc.F("상대 팀이 먼저 통과했습니다 · {0}초 뒤 우리 문도 열립니다", Mathf.CeilToInt(gateOpensIn));
             if (words == null) return;
             float width = Mathf.Min(620f * scale, Screen.width - 8f);
             var rect = new Rect((Screen.width - width) * .5f, Screen.height - 176f * scale, width, 38f * scale);

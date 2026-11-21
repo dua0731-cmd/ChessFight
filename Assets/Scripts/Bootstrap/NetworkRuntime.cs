@@ -126,6 +126,9 @@ namespace ChessFight.Game
             PlayerProfile.Changed += OnNameChanged;
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);
+            // R747: Steam's language for this game (the one the player set in its Properties), followed until the player
+            // picks one in the settings window - only a language the string table marks ready (GameLanguage).
+            if (Session.Online) GameLanguage.UseSteam(SteamApps.GetCurrentGameLanguage());
             // Measures this PC in the background so the host role can go to the
             // machine that simulates fastest (Docs/Network/HOST.md).
             HostFitnessProbe.Start();

@@ -398,25 +398,25 @@ namespace ChessFight.Network
             games <= 0 ? "—" : (RankRules.Permille(wins, games) / 10.0).ToString("0.0", Inv);
 
         // "62판 · 32승".
-        public static string Games(int games, int wins) => games + "판 · " + wins + "승";
+        public static string Games(int games, int wins) => Loc.F("{0}판 · {1}승", games, wins);
 
         // "6/20판": the ranked matches that count toward a board, of the ones it asks for.
-        public static string Progress(int have, int need) => have + "/" + need + "판";
+        public static string Progress(int have, int need) => Loc.F("{0}/{1}판", have, need);
 
         // "오늘", "어제", "3일 전", "쉬는 중 · 35일 전"; "" when unknown.
         public static string Last(int lastDay, int today)
         {
             if (lastDay <= 0) return "";
             int days = RankRules.DaysSince(lastDay, today);
-            if (days >= RankRules.RestDays) return "쉬는 중 · " + days + "일 전";
-            return days == 0 ? "오늘" : days == 1 ? "어제" : days + "일 전";
+            if (days >= RankRules.RestDays) return Loc.F("쉬는 중 · {0}일 전", days);
+            return days == 0 ? Loc.T("오늘") : days == 1 ? Loc.T("어제") : Loc.F("{0}일 전", days);
         }
 
         // "상위 18%" (rounded up, at least 1%); "" without a rank.
         public static string Top(int rank, int total) =>
-            rank <= 0 || total <= 0 ? "" : "상위 " + Math.Max(1, Math.Min(100, (int)Math.Ceiling(100.0 * rank / total))) + "%";
+            rank <= 0 || total <= 0 ? "" : Loc.F("상위 {0}%", Math.Max(1, Math.Min(100, (int)Math.Ceiling(100.0 * rank / total))));
 
         // What a player short of a board still needs: "순위 판 14판 더 하면 순위에 올라가요".
-        public static string Need(RankCount count) => "순위 판 " + Math.Max(1, count.ToGo) + "판 더 하면 순위에 올라가요";
+        public static string Need(RankCount count) => Loc.F("순위 판 {0}판 더 하면 순위에 올라가요", Math.Max(1, count.ToGo));
     }
 }

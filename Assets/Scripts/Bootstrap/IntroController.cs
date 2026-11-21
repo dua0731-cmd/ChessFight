@@ -97,7 +97,7 @@ namespace ChessFight.Game
                 else if (Released(rename))
                 {
                     armed = false;
-                    NameChange.Begin(Fraction(rename), () => Fraction(rename), "시작 화면");
+                    NameChange.Begin(Fraction(rename), () => Fraction(rename), Loc.T("시작 화면"));
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace ChessFight.Game
             leaveAt = -1;
             var from = Fraction(press);
             if (PlayerProfile.HasName) { GoToLobby(from); return; }
-            SceneTransition.Run("이름 설정", from, ShowNameScreen, () => nameScreen != null && nameScreen.Ready,
+            SceneTransition.Run(Loc.T("이름 설정"), from, ShowNameScreen, () => nameScreen != null && nameScreen.Ready,
                                 () => nameScreen != null ? nameScreen.PawnAt : new Vector2(.5f, .5f));
         }
 
@@ -209,7 +209,7 @@ namespace ChessFight.Game
             left = true;
             AsyncOperation load = null;
             int loadedFrame = -1;
-            SceneTransition.Run("로비", from,
+            SceneTransition.Run(Loc.T("로비"), from,
                 () => load = SceneManager.LoadSceneAsync(SceneNames.Lobby),
                 () =>
                 {
@@ -264,9 +264,9 @@ namespace ChessFight.Game
             if (session.Online)
             {
                 string name = session.Name(session.Self);
-                return string.IsNullOrEmpty(name) ? "STEAM 연결됨" : "STEAM 연결됨 · " + name;
+                return string.IsNullOrEmpty(name) ? Loc.T("STEAM 연결됨") : Loc.F("STEAM 연결됨 · {0}", name);
             }
-            return string.IsNullOrEmpty(session.Error) ? "Steam 연결 중..." : session.Error;
+            return string.IsNullOrEmpty(session.Error) ? Loc.T("Steam 연결 중...") : session.Error;
         }
 
         // Walnut fading out left to right: light behind the title, gone by the board. R150: the

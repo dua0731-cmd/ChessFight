@@ -150,7 +150,7 @@ namespace ChessFight.RagdollLab
         void EnsureStyles()
         {
             if (label != null) return;
-            var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 15);
+            var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Microsoft YaHei", "Arial" }, 15);
             label = new GUIStyle(GUI.skin.label) { font = font, fontSize = 15, alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = true };
             label.normal.textColor = Color.white;
             title = new GUIStyle(label) { fontSize = 17, fontStyle = FontStyle.Bold };
@@ -224,8 +224,8 @@ namespace ChessFight.RagdollLab
 
                 var at = centre + SlotDirection(slot) * ((Inner + Outer) * 0.5f);
                 var r = new Rect(at.x - 60f, at.y - 26f, 120f, 52f);
-                string head = $"{slot} {Moods[slot - 1]}";
-                string text = usable ? $"<b>{head}</b>\n<size=13>{PieceEmotes.Name(piece, slot)}</size>" : $"{slot} 준비 중";
+                string head = slot + " " + Loc.T(Moods[slot - 1]);
+                string text = usable ? $"<b>{head}</b>\n<size=13>{Loc.T(PieceEmotes.Name(piece, slot))}</size>" : slot + " " + Loc.T("준비 중");
                 var style = hot ? title : label;
                 style.normal.textColor = !usable ? LockedText : hot ? HotText : NormalText;
                 GUI.Label(r, text, style);

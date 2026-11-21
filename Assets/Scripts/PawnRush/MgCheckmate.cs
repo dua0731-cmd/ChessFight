@@ -76,8 +76,8 @@ namespace ChessFight.PawnRush
             {
                 if (Time.time < noticeUntil) return captureNotice;
                 for (int k = 0; k < hunt.Count; k++)
-                    if (view[k].State == CheckmateHunt.KingState.Frozen) return "금빛 킹에게 다이빙하거나 질주하세요";
-                return "킹의 퇴로를 막아 체크하세요";
+                    if (view[k].State == CheckmateHunt.KingState.Frozen) return Loc.T("금빛 킹에게 다이빙하거나 질주하세요");
+                return Loc.T("킹의 퇴로를 막아 체크하세요");
             }
         }
 
@@ -348,7 +348,7 @@ namespace ChessFight.PawnRush
             bool final = captured == hunt.Count;
             if (final) Sound("sfx_king_sweep", BoardSfx + "sfx_paint_team_complete", at, .82f);
             else Sound("sfx_king_capture", RevealSfx + "RevealSlam", at, .68f, .92f + .04f * captured);
-            captureNotice = $"킹 포획   {captured} / {hunt.Count}";
+            captureNotice = Loc.F("킹 포획   {0} / {1}", captured, hunt.Count);
             noticeUntil = Time.time + 1.2f;
         }
 

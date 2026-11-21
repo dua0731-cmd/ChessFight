@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -199,6 +200,8 @@ namespace ChessFight.PawnRush
             }
             if (startSpots && sections.Count > 0) StartSpots(holder.transform, sections[0]);
             holder.SetActive(true);
+            // R753: the course's 3D words (signs, gate labels, station names) in the game's language.
+            SignText.TranslateUnder(holder.transform);
             if (finishRace) BindFinish();
             // R652: the race music (PawnRushRoundMusic), once per round object
             if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();

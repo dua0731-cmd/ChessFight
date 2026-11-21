@@ -71,33 +71,33 @@ namespace ChessFight.Game
             rkMineNote = Text("", "rk-mine-note", mine);
 
             var modes = Element("lt-card rk-modes", left);
-            Text("모드별 내 순위", "a-label rk-modes-label", modes);
+            Text(Loc.T("모드별 내 순위"), "a-label rk-modes-label", modes);
             for (int i = 0; i < RankRules.Boards.Length; i++)
             {
                 var board = RankRules.Boards[i];
                 rkModeRows[i] = Pressable("", "rk-mode-row", modes, () => SelectRanking(board, rankScope));
                 var name = Element("row", rkModeRows[i]);
                 Element(board == RankBoard.SwordFight ? "cx-dot cx-dot-sf" : "cx-dot cx-dot-pr", name);
-                Text(RankRules.Title(board), "rk-mode-name", name);
+                Text(Loc.T(RankRules.Title(board)), "rk-mode-name", name);
                 rkModeLine[i] = Text("", "rk-mode-line", rkModeRows[i]);
             }
 
             var rules = Element("lt-card rk-rules", left);
-            Text("순위 규칙", "a-label", rules);
-            Text("· 폰 러쉬 · 소드 파이트 순위는 따로 매겨요", "rk-rule", rules);
-            Text($"· 그 모드의 순위 판 {RankRules.MinGames}판 이상이면 순위에 올라가요", "rk-rule", rules);
-            Text($"· 순위 판 = 랜덤 매칭 · 봇 없음 · {RankRules.MinSide} 대 {RankRules.MinSide} 이상", "rk-rule", rules);
-            Text("· 누적 승률 순 · 같으면 판수 많은 쪽이 위", "rk-rule", rules);
-            Text("· 시즌 없이 계속 쌓여요 · 나가거나 튕긴 판은 패", "rk-rule", rules);
-            Text("· " + RankRules.RestDays + "일 안 하면 자리는 그대로, 흐리게 '쉬는 중'", "rk-rule rk-rule-dim", rules);
+            Text(Loc.T("순위 규칙"), "a-label", rules);
+            Text(Loc.T("· 폰 러쉬 · 소드 파이트 순위는 따로 매겨요"), "rk-rule", rules);
+            Text(Loc.F("· 그 모드의 순위 판 {0}판 이상이면 순위에 올라가요", RankRules.MinGames), "rk-rule", rules);
+            Text(Loc.F("· 순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", RankRules.MinSide), "rk-rule", rules);
+            Text(Loc.T("· 누적 승률 순 · 같으면 판수 많은 쪽이 위"), "rk-rule", rules);
+            Text(Loc.T("· 시즌 없이 계속 쌓여요 · 나가거나 튕긴 판은 패"), "rk-rule", rules);
+            Text(Loc.F("· {0}일 안 하면 자리는 그대로, 흐리게 '쉬는 중'", RankRules.RestDays), "rk-rule rk-rule-dim", rules);
 
             var card = Element("lt-card rk-board", rankPage, PickingMode.Position);
             var head = Element("rk-head", card);
-            Text("순위표", "rk-title", head, true);
+            Text(Loc.T("순위표"), "rk-title", head, true);
             for (int i = 0; i < RankRules.Boards.Length; i++)
             {
                 var board = RankRules.Boards[i];
-                rkTabs[i] = Pressable(RankRules.Title(board), "rk-tab", head, () => SelectRanking(board, rankScope));
+                rkTabs[i] = Pressable(Loc.T(RankRules.Title(board)), "rk-tab", head, () => SelectRanking(board, rankScope));
             }
             Element("grow", head);
             // R745: the pages of the list shown (the global list past the tenth place, a long friend list).
@@ -110,16 +110,16 @@ namespace ChessFight.Game
             for (int i = 0; i < 3; i++)
             {
                 var scope = (RankScope)i;
-                rkScopes[i] = Pressable(scopes[i], "rk-scope", seg, () => SelectRanking(rankBoard, scope));
+                rkScopes[i] = Pressable(Loc.T(scopes[i]), "rk-scope", seg, () => SelectRanking(rankBoard, scope));
             }
 
             var cols = Element("rk-cols", card);
-            Text("순위", "rk-col rk-c-rank", cols);
+            Text(Loc.T("순위"), "rk-col rk-c-rank", cols);
             Element("rk-c-icon", cols);
-            Text("플레이어 · 가장 많이 쓴 기물", "rk-col rk-c-name", cols);
-            Text("누적 승률", "rk-col rk-c-rate", cols);
-            Text("순위 판 · 승", "rk-col rk-c-games", cols);
-            Text("마지막 경기", "rk-col rk-c-last", cols);
+            Text(Loc.T("플레이어 · 가장 많이 쓴 기물"), "rk-col rk-c-name", cols);
+            Text(Loc.T("누적 승률"), "rk-col rk-c-rate", cols);
+            Text(Loc.T("순위 판 · 승"), "rk-col rk-c-games", cols);
+            Text(Loc.T("마지막 경기"), "rk-col rk-c-last", cols);
 
             var rows = Element("rk-rows", card);
             for (int i = 0; i < Rankings.PageSize; i++) rkRows.Add(RankLine(rows));
@@ -131,7 +131,7 @@ namespace ChessFight.Game
             rkPin = RankLine(rkPinBox);
             var foot = Element("rk-foot", card);
             rkFootLeft = Text("", "rk-foot-text", foot);
-            Text("Steam 순위표 · 판이 끝날 때마다 갱신", "rk-foot-text", foot);
+            Text(Loc.T("Steam 순위표 · 판이 끝날 때마다 갱신"), "rk-foot-text", foot);
         }
 
         RankRow RankLine(VisualElement parent)
@@ -193,7 +193,7 @@ namespace ChessFight.Game
         // This account's Steam ID (the record book's owner), 0 without Steam.
         static ulong RankSelfId => ulong.TryParse(MatchRecords.Owner, NumberStyles.None, CultureInfo.InvariantCulture, out ulong id) ? id : 0;
 
-        static string Tally(RankCount c) => $"{c.Wins}승 {c.Losses}패" + (c.Draws > 0 ? $" {c.Draws}무" : "");
+        static string Tally(RankCount c) => c.Draws > 0 ? Loc.F("{0}승 {1}패 {2}무", c.Wins, c.Losses, c.Draws) : Loc.F("{0}승 {1}패", c.Wins, c.Losses);
 
         // This player from their own book, for a view their line is not in: no rank, and the ranked matches so far.
         static RankEntry SelfLine(RecordBook book, RankBoard board, RankCount own) => new RankEntry
@@ -233,27 +233,28 @@ namespace ChessFight.Game
             bool ready = shown.Status == Rankings.Status.Ready;
 
             // ---- left: this player ----
-            rkMineKicker.text = "MY RANK · " + RankRules.Title(rankBoard);
+            rkMineKicker.text = "MY RANK · " + Loc.T(RankRules.Title(rankBoard));
             Show(rkMineOf, under);
             Show(rkMineBar, under);
             Show(rkMineGames, !under);
             if (under)
             {
                 rkMineRank.text = own.Have.ToString();
-                rkMineOf.text = " / " + own.Need + "판";
-                // Beside the big number the label is narrow: broken where it reads well, not in the middle of a word.
-                rkMineRate.text = RankText.Need(own).Replace(" 더 하면 ", " 더 하면\n");
+                rkMineOf.text = " / " + Loc.F("{0}판", own.Need);
+                // Beside the big number the label is narrow: broken where it reads well, not in the middle of a word
+                // (RankText.Need's sentence with a line break, a pattern of its own so each language breaks it itself).
+                rkMineRate.text = Loc.F("순위 판 {0}판 더 하면\n순위에 올라가요", Mathf.Max(1, own.ToGo));
                 rkMineFill.style.width = Length.Percent(100f * Mathf.Clamp01((float)own.Have / Mathf.Max(1, own.Need)));
                 rkMineNote.text = own.Games > 0
-                    ? $"지금 승률 {RankText.Rate(own.Wins, own.Games)}% · {Tally(own)}\n{RankRules.MinGames}판이 되면 그때 승률로 순위에 들어가요"
-                    : $"순위 판 = 랜덤 매칭 · 봇 없음 · {RankRules.MinSide} 대 {RankRules.MinSide} 이상인 판";
+                    ? Loc.F("지금 승률 {0}% · {1}\n{2}판이 되면 그때 승률로 순위에 들어가요", RankText.Rate(own.Wins, own.Games), Tally(own), RankRules.MinGames)
+                    : Loc.F("순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상인 판", RankRules.MinSide);
             }
             else
             {
                 var mine = shown.Mine;
                 rkMineRank.text = mine != null ? "#" + mine.Rank : "#-";
-                rkMineRate.text = "승률 <color=#F3EBDD>" + RankText.Rate(own.Wins, own.Games) + "%</color>";
-                rkMineGames.text = $"{own.Games}판 · {Tally(own)}";
+                rkMineRate.text = Loc.F("승률 <color=#F3EBDD>{0}%</color>", RankText.Rate(own.Wins, own.Games));
+                rkMineGames.text = Loc.F("{0}판 · {1}", own.Games, Tally(own));
                 if (mine != null)
                 {
                     string top = RankText.Top(mine.Rank, shown.Total), friends = FriendPlace(shown);
@@ -268,7 +269,7 @@ namespace ChessFight.Game
                 var c = RankCount.Of(book, board);
                 var m = Rankings.Get(board).Mine;
                 rkModeLine[i].text = !c.Ranked ? RankText.Progress(c.Have, c.Need)
-                    : $"{c.Games}판 {RankText.Rate(c.Wins, c.Games)}% · " + (m != null ? "<color=#FABE46>#" + m.Rank + "</color>" : "—");
+                    : Loc.F("{0}판 {1}% · {2}", c.Games, RankText.Rate(c.Wins, c.Games), m != null ? "<color=#FABE46>#" + m.Rank + "</color>" : "—");
                 rkModeRows[i].EnableInClassList("rk-mode-on", board == rankBoard);
                 rkTabs[i].EnableInClassList("rk-tab-on", board == rankBoard);
             }
@@ -344,22 +345,23 @@ namespace ChessFight.Game
             string status = "", sub = "";
             switch (shown.Status)
             {
-                case Rankings.Status.Offline: status = "Steam에 연결되면 순위가 보여요"; break;
-                case Rankings.Status.Loading: status = "순위를 불러오는 중이에요"; break;
-                case Rankings.Status.Failed: status = shown.Error != "" ? shown.Error : "Steam 순위표를 받지 못했어요"; break;
+                case Rankings.Status.Offline: status = Loc.T("Steam에 연결되면 순위가 보여요"); break;
+                case Rankings.Status.Loading: status = Loc.T("순위를 불러오는 중이에요"); break;
+                // The Steam side's reason (SteamLeaderboards' Korean), translated here where it is shown.
+                case Rankings.Status.Failed: status = shown.Error != "" ? Loc.T(shown.Error) : Loc.T("Steam 순위표를 받지 못했어요"); break;
                 default:
                     if (rkLines.Count > 0) break;
                     if (rankScope == RankScope.Around)
                     {
-                        status = under ? "순위에 오르면 내 위아래 " + Rankings.AroundSpan + "명이 보여요" : "곧 순위에 올라가요";
+                        status = under ? Loc.F("순위에 오르면 내 위아래 {0}명이 보여요", Rankings.AroundSpan) : Loc.T("곧 순위에 올라가요");
                         sub = under ? RankText.Need(own) : "";
                     }
-                    else if (pageMissing) status = "순위를 불러오는 중이에요";
-                    else if (rankPageAt > 0) status = "이 쪽에는 순위가 없어요";
+                    else if (pageMissing) status = Loc.T("순위를 불러오는 중이에요");
+                    else if (rankPageAt > 0) status = Loc.T("이 쪽에는 순위가 없어요");
                     else
                     {
-                        status = "아직 순위에 오른 사람이 없어요";
-                        sub = "순위 판 " + RankRules.MinGames + "판 이상이면 순위에 올라가요";
+                        status = Loc.T("아직 순위에 오른 사람이 없어요");
+                        sub = Loc.F("순위 판 {0}판 이상이면 순위에 올라가요", RankRules.MinGames);
                     }
                     break;
             }
@@ -368,12 +370,13 @@ namespace ChessFight.Game
             Show(rkStatus, status != "");
             Show(rkStatusSub, sub != "");
 
-            string title = RankRules.Title(rankBoard);
+            string title = Loc.T(RankRules.Title(rankBoard));
             rkFootLeft.text = !ready ? title
                 : rankScope == RankScope.Friends
-                    ? $"{title} · 순위에 오른 친구 {friendsOn}명" + (shown.Friends.Exists(e => e.Self) ? " (나 포함)" : "") + (friendsShort > 0 ? $" · 아직 {friendsShort}명" : "")
-                : rankScope == RankScope.Around ? $"{title} · 내 위아래 {Rankings.AroundSpan}명씩"
-                : $"{title} · 순위에 오른 {shown.Total}명";
+                    ? Loc.F("{0} · 순위에 오른 친구 {1}명", title, friendsOn) + (shown.Friends.Exists(e => e.Self) ? " (" + Loc.T("나 포함") + ")" : "")
+                      + (friendsShort > 0 ? " · " + Loc.F("아직 {0}명", friendsShort) : "")
+                : rankScope == RankScope.Around ? Loc.F("{0} · 내 위아래 {1}명씩", title, Rankings.AroundSpan)
+                : Loc.F("{0} · 순위에 오른 {1}명", title, shown.Total);
         }
 
         void FillRank(RankRow row, int place, RankEntry e, int today)
@@ -381,14 +384,14 @@ namespace ChessFight.Game
             row.Rank.text = place > 0 ? place.ToString() : "-";
             for (int m = 1; m <= 3; m++) row.Rank.EnableInClassList("rk-medal-" + m, place == m);
             SetIcon(row.Icon, e.Piece, 0);
-            string name = e.Self && PlayerProfile.Name != "" ? PlayerProfile.Name : e.Name != "" ? e.Name : "나";
+            string name = e.Self && PlayerProfile.Name != "" ? PlayerProfile.Name : e.Name != "" ? e.Name : Loc.T("나");
             row.Name.text = name;
             SetFace(row, e.Self && e.Id == 0 ? RankSelfId : e.Id, name);
-            string tag = e.Self ? "나" : e.Friend && rankScope != RankScope.Friends ? "친구" : "";
+            string tag = e.Self ? Loc.T("나") : e.Friend && rankScope != RankScope.Friends ? Loc.T("친구") : "";
             row.Tag.text = tag;
             row.Tag.EnableInClassList("rk-tag-me", e.Self);
             Show(row.Tag, tag != "");
-            row.Sub.text = rankScope == RankScope.Friends && e.Rank > 0 ? "전체 " + e.Rank + "위" : "";
+            row.Sub.text = rankScope == RankScope.Friends && e.Rank > 0 ? Loc.F("전체 {0}위", e.Rank) : "";
             Show(row.Sub, row.Sub.text != "");
             row.Fill.style.width = Length.Percent(RankRules.Permille(e.Wins, e.Games) / 10f);
             row.Rate.text = e.Games > 0 ? RankText.Rate(e.Wins, e.Games) + "%" : "—";
@@ -425,17 +428,17 @@ namespace ChessFight.Game
         static string FriendPlace(Rankings.Board board)
         {
             int at = board.Friends.FindIndex(e => e.Self);
-            return at >= 0 ? "친구 중 " + (at + 1) + "위" : "";
+            return at >= 0 ? Loc.F("친구 중 {0}위", at + 1) : "";
         }
 
         static string Waiting(Rankings.Status status)
         {
             switch (status)
             {
-                case Rankings.Status.Offline: return "Steam에 연결되면 순위가 보여요";
-                case Rankings.Status.Loading: return "순위를 불러오는 중이에요";
-                case Rankings.Status.Failed: return "Steam 순위표를 받지 못했어요";
-                default: return "곧 순위에 올라가요";
+                case Rankings.Status.Offline: return Loc.T("Steam에 연결되면 순위가 보여요");
+                case Rankings.Status.Loading: return Loc.T("순위를 불러오는 중이에요");
+                case Rankings.Status.Failed: return Loc.T("Steam 순위표를 받지 못했어요");
+                default: return Loc.T("곧 순위에 올라가요");
             }
         }
     }

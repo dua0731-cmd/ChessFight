@@ -3333,7 +3333,12 @@ public static class NetworkCoreTests
                 Check(PlayerNames.Check("체스러버", false).Ok && PlayerNames.Check(" Knight 7 ", false).Ok, "plain names");
                 Check(PlayerNames.Check("룩", false).Error == "2자 이상", "too short");
                 Check(PlayerNames.Check("가나다라마바사아자차카타파", false).Error == "12자까지", "too long");
-                Check(PlayerNames.Check("룩!", false).Error == "한글·영어·숫자만" && PlayerNames.Check("<b>퀸</b>", false).Error == "한글·영어·숫자만", "symbols");
+                Check(PlayerNames.Check("룩!", false).Error == "한글·한자·영어·숫자만" && PlayerNames.Check("<b>퀸</b>", false).Error == "한글·한자·영어·숫자만", "symbols");
+                // R749: Chinese characters, simplified and traditional, alone or mixed; kana still refused.
+                Check(PlayerNames.Check("龙骑士", false).Ok && PlayerNames.Check("王小明 7", false).Ok && PlayerNames.Check("國王 Rook", false).Ok, "hanzi names");
+                Check(PlayerNames.Check("龙", false).Error == "2자 이상" && PlayerNames.Check("ナイト", false).Error == "한글·한자·영어·숫자만", "hanzi length, kana");
+                Check(PlayerNames.Check("管理员1", false).Error == "쓸 수 없는 말" && PlayerNames.Check("笨 蛋", false).Error == "쓸 수 없는 말", "Chinese banned words");
+                Check(PlayerNames.Showable("龙骑士"), "a published hanzi name shows");
                 Check(PlayerNames.Check("철벽  룩", false).Error == "띄어쓰기는 한 칸", "double space"); });
             Test("Player name: an unfinished syllable waits while typing, then reads as an error", () => {
                 var typing = PlayerNames.Check("체스ㄹ", true);
@@ -4368,6 +4373,81 @@ public static class NetworkCoreTests
                 Check(LobbyCode.TryRead("4294967295", out id) && id == (LobbyCode.LobbyHigh | 0xFFFFFFFFUL), "the largest short one");
                 Check(!LobbyCode.TryRead("", out id) && !LobbyCode.TryRead(" · ", out id) && !LobbyCode.TryRead("0", out id), "nothing");
                 Check(!LobbyCode.TryRead("4268a906151", out id) && !LobbyCode.TryRead("99999999999999999999999", out id), "letters, too long"); });
+            // R747: the string table - Korean is the key, a missing line or cell shows the Korean.
+            Test("localization: reading the table", () => {
+                var problems = new List<string>();
+                var table = StringTable.Parse("﻿# comment\r\nko\ten\tzh-Hans\r\n@ready\t1\t0\r\n언어\tLanguage\t语言\r\n" +
+                                              "두 줄\\n입니다\tTwo\\nlines\r\n탭\\t칸\tTab\\tcell\t\r\n반만\t\r\n", problems);
+                Check(problems.Count == 0, "no problems: " + string.Join(" / ", problems));
+                Check(table.Codes.Count == 3 && table.Count == 4 && table.Has("en") && table.Has("ZH-HANS") && !table.Has("ru"), "columns and lines");
+                Check(table.Ready("ko") && table.Ready("en") && !table.Ready("zh-Hans") && !table.Ready("ru"), "ready marks");
+                Check(table.Get("언어", "en") == "Language" && table.Get("언어", "zh-Hans") == "语言" && table.Get("언어", "ko") == "언어", "a line");
+                Check(table.Get("두 줄\n입니다", "en") == "Two\nlines" && table.Get("탭\t칸", "en") == "Tab\tcell", "escapes");
+                Check(table.Get("반만", "en") == "반만" && table.Get("탭\t칸", "zh-Hans") == "탭\t칸", "an empty cell shows the Korean");
+                Check(table.Get("없는 줄", "en") == "없는 줄" && table.Get("언어", "ru") == "언어" && table.Get(null, "en") == "", "unknown line, language, null");
+                Check(table.Translated("en") == 3 && table.Translated("zh-Hans") == 1 && table.Translated("ko") == 4 && table.Translated("ru") == 0, "how much is translated");
+                Check(StringTable.Unescape(StringTable.Escape("a\\b\nc\td")) == "a\\b\nc\td" && StringTable.Escape("a\nb") == "a\\nb", "escape round trip");
+                problems.Clear();
+                var bad = StringTable.Parse("en\tko\n언어\tLanguage\n", problems);
+                Check(bad.Count == 0 && problems.Count == 1 && !bad.Has("en"), "a header that does not start with ko");
+                problems.Clear();
+                var twice = StringTable.Parse("ko\ten\txx\n언어\tLanguage\n언어\tTongue\n\t빈 키\n", problems);
+                Check(twice.Get("언어", "en") == "Tongue" && twice.Count == 1 && problems.Count == 3, "unknown code, a line twice, an empty key: " + string.Join(" / ", problems));
+                Check(StringTable.Parse("", null).Count == 0 && StringTable.Parse("# only a comment\n", null).Has("ko"), "nothing");
+                Check(StringTable.Slots("낙하 {0} · 맞음 {1:0.0} {0}") == "0,1" && StringTable.Slots("{{0}} 없음") == "" && StringTable.Slots("{x} {12}") == "12", "slots");
+                problems.Clear();
+                StringTable.Parse("ko\ten\n{0}/{1}판\t{1} of {0}\n{0}명\t{0} players {1}\n{0}승\tWins\n", problems);
+                Check(problems.Count == 2, "a translation that adds or drops a slot: " + string.Join(" / ", problems)); });
+            Test("localization: picking and showing a language", () => {
+                Check(Languages.FromSteam("koreana") == "ko" && Languages.FromSteam("schinese") == "zh-Hans" && Languages.FromSteam("latam") == "es-419" &&
+                      Languages.FromSteam("brazilian") == "pt-BR" && Languages.FromSteam(" English ") == "en" && Languages.FromSteam("klingon") == null && Languages.FromSteam(null) == null, "Steam names");
+                Check(Languages.FromSystem("Korean") == "ko" && Languages.FromSystem("ChineseTraditional") == "zh-Hant" && Languages.FromSystem("Chinese") == "zh-Hans" &&
+                      Languages.FromSystem("Portuguese") == "pt-BR" && Languages.FromSystem("Unknown") == null && Languages.FromSystem("") == null, "Windows names");
+                Check(Languages.All[0].Code == Loc.Source && Languages.All.Select(l => l.Code).Distinct().Count() == Languages.All.Length &&
+                      Languages.All.Select(l => l.Steam).Distinct().Count() == Languages.All.Length, "Korean first, no code or Steam name twice");
+                var table = StringTable.Parse("ko\ten\tru\n@ready\t1\t0\n언어\tLanguage\tЯзык\n낙하 {0} · 맞음 {1}\tHits {1}, falls {0}\n틀린 {0}\tBroken {5}\n", null);
+                Check(Languages.Choose("ru", "en", "Korean", table) == "ru", "the player's own pick, even half done");
+                Check(Languages.Choose("", "en", "ru", table) == "en" && Languages.Choose(null, "ru", "en", table) == "en", "Steam's, else Windows', only when ready");
+                Check(Languages.Choose("ja", "ru", null, table) == "ko" && Languages.Choose(null, null, null, null) == "ko", "else Korean");
+                int changes = 0;
+                Action counted = () => changes++;
+                Loc.Changed += counted;
+                try
+                {
+                    Loc.Load(table);
+                    Check(Loc.Lang == "ko" && Loc.T("언어") == "언어" && changes == 1, "a new table keeps Korean");
+                    Check(Loc.Use("EN") && Loc.Lang == "en" && Loc.T("언어") == "Language" && Loc.Current.Native == "English" && changes == 2, "switched");
+                    Check(Loc.Use("en") && changes == 2 && !Loc.Use("ja") && !Loc.Use("xx") && Loc.Lang == "en", "the same again, a column it lacks");
+                    Check(Loc.F("낙하 {0} · 맞음 {1}", 3, 7) == "Hits 7, falls 3" && Loc.F("없는 {0}", 1.5) == "없는 1.5", "slots in the language's own order");
+                    Check(Loc.F("틀린 {0}", "x") == "틀린 x", "a translation whose slots do not fit shows the Korean");
+                    Loc.Load(StringTable.Parse("ko\tja\n언어\t言語\n", null));
+                    Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "a table without the language shown goes back to Korean");
+                }
+                finally { Loc.Changed -= counted; Loc.Load(StringTable.Empty); }
+                Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "back to nothing"); });
+            // R747: the table the game ships (found up from the test's folder, Temp/...), read with no problems.
+            Test("localization: the shipped table", () => {
+                string path = null;
+                for (var dir = new System.IO.DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); dir != null && path == null; dir = dir.Parent)
+                {
+                    var p = System.IO.Path.Combine(dir.FullName, "Assets", "Resources", "Localization", "Strings.txt");
+                    if (System.IO.File.Exists(p)) path = p;
+                }
+                Check(path != null, "Assets/Resources/Localization/Strings.txt not found");
+                var problems = new List<string>();
+                var table = StringTable.Parse(System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8), problems);
+                Check(problems.Count == 0, "problems: " + string.Join(" / ", problems));
+                Check(table.Codes[0] == "ko" && table.Count > 0 && table.Has("en"), "Korean first, English there");
+                foreach (var code in table.Codes) Check(Languages.Find(code) != null, "a column for a language the game knows: " + code);
+                // R755: English and Simplified Chinese are ready, so Steam's or Windows' language picks them by itself;
+                // a pick in the settings still wins, and Korean stays the fallback.
+                Check(table.Ready("en") && table.Ready("zh-Hans"), "English and Simplified Chinese marked ready");
+                Check(Languages.Choose("", Languages.FromSteam("english"), "", table) == "en", "Steam in English starts in English");
+                Check(Languages.Choose("", Languages.FromSteam("schinese"), "", table) == "zh-Hans", "Steam in Simplified Chinese starts in Chinese");
+                Check(Languages.Choose("", Languages.FromSteam("koreana"), Languages.FromSystem("English"), table) == "ko", "Steam in Korean stays Korean");
+                Check(Languages.Choose("", "", Languages.FromSystem("ChineseSimplified"), table) == "zh-Hans", "no Steam, Windows in Chinese");
+                Check(Languages.Choose("", Languages.FromSteam("russian"), "", table) == "ko", "a language with no column falls back to Korean");
+                Check(Languages.Choose("ko", Languages.FromSteam("english"), "", table) == "ko", "the settings' pick wins over Steam"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
