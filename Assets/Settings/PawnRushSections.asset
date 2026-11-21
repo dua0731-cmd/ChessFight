@@ -49,4 +49,4 @@ MonoBehaviour:
   - name: "\uC5D4\uB529 \uAD6C\uAC04"
     kind: 2
     prefabs:
-    - {fileID: 1000, guid: 127879d25cb8404ec2c73d684fcd98e5, type: 3}
+    - {fileID: 1000, guid: 776a47c49ead81af0bc19f557640b51a, type: 3}

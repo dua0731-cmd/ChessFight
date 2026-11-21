@@ -25,11 +25,17 @@ namespace ChessFight.PawnRush
     // The PC that judges (offline, the host: CrownFinish.Authority) begins it, moves the pawns and counts; the others
     // hear it with the course state (ISectionNetPart, seven bytes: begun and who holds, the two times, the two
     // targets) and draw the same bars. The platform's first-stood times (the result board) count from the beginning.
+    //
+    // An ending section built for the contest (the audience hall, AudienceHallSection; JY 2026-11-21) says where the
+    // teams are stood and for how long after that the platform counts for nobody (IThroneStage). The standoff needs no
+    // bytes: the host sends "nobody holds" through it, and every PC counts it from when it heard the beginning.
     [DefaultExecutionOrder(-40)]   // after CrownFinish (-50) has seen who stands on the platform this step
     public sealed class ThroneContest : MonoBehaviour, ISectionNetPart
     {
-        // Where the teams are stood: this far outside the platform's edge, this far apart along it.
+        // Where the teams are stood: this far outside the platform's edge, this far apart along it (unless the ending
+        // says otherwise, IThroneStage).
         const float SideGap = 2.2f, Along = 1.2f;
+        const float GoSeconds = .8f;
         const float BannerSeconds = 5f, RingEvery = 1f;
 
         public static ThroneContest Current { get; private set; }
@@ -47,9 +53,12 @@ namespace ChessFight.PawnRush
         readonly float[] target = { PawnRushThrone.Seconds, PawnRushThrone.Seconds };
         int holder = PawnRushThrone.Nobody;
         float beganAt = -1f, nextRing;
+        float standGap = SideGap, standoff;
         GUIStyle big, small;
 
         public bool Started { get; private set; }
+        // The first seconds after the teams are stood, while the platform counts for nobody (IThroneStage).
+        public bool Waiting => Started && standoff > 0f && beganAt >= 0f && Time.time < beganAt + standoff;
         public int Holder => holder;
         public float Held(int team) => held[team & 1];
         public float Target(int team) => target[team & 1];
@@ -80,6 +89,9 @@ namespace ChessFight.PawnRush
             round = ofRound;
             finish = ofFinish;
             own = ending;
+            var stage = ending.GetComponent<IThroneStage>();
+            standGap = stage != null ? stage.StandGap : SideGap;
+            standoff = stage != null ? Mathf.Max(0f, stage.StandoffSeconds) : 0f;
             Current = this;
             gate = null;
             foreach (var section in round.Sections)
@@ -120,6 +132,11 @@ namespace ChessFight.PawnRush
             if (!Started)
             {
                 if (Due()) Begin();
+                return;
+            }
+            if (Waiting)
+            {
+                holder = PawnRushThrone.Nobody;
                 return;
             }
             holder = PawnRushThrone.Holder(finish.OnPlatform(Teams.White), finish.Players(Teams.White),
@@ -185,7 +202,7 @@ namespace ChessFight.PawnRush
                 {
                     var r = runners[k];
                     if (r.Team != team || r.Driver == null) continue;
-                    Vector3 at = middle + right * ((team == Teams.White ? -1f : 1f) * (finish.Radius + SideGap))
+                    Vector3 at = middle + right * ((team == Teams.White ? -1f : 1f) * (finish.Radius + standGap))
                                  + forward * ((i - (n - 1) * .5f) * Along);
                     i++;
                     at = Ground(at);
@@ -287,9 +304,12 @@ namespace ChessFight.PawnRush
             Bar(new Rect(box.x + 10f * unit, box.y, side, height), Teams.White, unit);
             Bar(new Rect(box.xMax - 10f * unit - side, box.y, side, height), Teams.Black, unit);
             // Between the bars: who holds the platform now.
-            string state = holder == Teams.White ? "백팀 점유 중" : holder == Teams.Black ? "흑팀 점유 중"
+            bool waiting = Waiting;
+            string state = waiting ? "곧 발판이 켜집니다"
+                         : holder == Teams.White ? "백팀 점유 중" : holder == Teams.Black ? "흑팀 점유 중"
                          : holder == PawnRushThrone.Both ? "동시 점유 · 멈춤" : "발판이 비었습니다";
-            GUI.color = holder == PawnRushThrone.Both ? new Color(1f, .55f, .45f) : holder == PawnRushThrone.Nobody ? new Color(.8f, .76f, .66f) : new Color(1f, .86f, .45f);
+            GUI.color = waiting ? new Color(1f, .7f, .35f)
+                      : holder == PawnRushThrone.Both ? new Color(1f, .55f, .45f) : holder == PawnRushThrone.Nobody ? new Color(.8f, .76f, .66f) : new Color(1f, .86f, .45f);
             small.fontSize = Mathf.RoundToInt(17f * unit);
             GUI.Label(new Rect(box.center.x - mid * .5f, box.y + 30f * unit, mid, 26f * unit), state, small);
             GUI.color = new Color(1f, .9f, .6f);
@@ -315,6 +335,18 @@ namespace ChessFight.PawnRush
                 GUI.Label(new Rect(band.x, band.y + 108f * unit, band.width, 26f * unit),
                           $"백팀 {target[0]:0}초 · 흑팀 {target[1]:0}초   (스스로 깬 미니게임 하나에 {PawnRushThrone.PerClear:0}초 단축)", small);
             }
+            // The standoff (IThroneStage): 3, 2, 1 under the banner, then a moment of "on".
+            if (standoff > 0f && beganAt >= 0f)
+            {
+                float left = beganAt + standoff - Time.time;
+                if (left > -GoSeconds)
+                {
+                    GUI.color = new Color(1f, .86f, .45f, left > 0f ? 1f : Mathf.Clamp01((left + GoSeconds) / GoSeconds));
+                    big.fontSize = Mathf.RoundToInt(80f * unit);
+                    GUI.Label(new Rect(0f, Screen.height * .3f + 160f * unit, Screen.width, 100f * unit),
+                              left > 0f ? Mathf.CeilToInt(left).ToString() : "발판 켜짐!", big);
+                }
+            }
             GUI.color = was;
         }
 
@@ -339,5 +371,15 @@ namespace ChessFight.PawnRush
             float w = track.width * share;
             GUI.DrawTexture(team == Teams.White ? new Rect(track.x, track.y, w, track.height) : new Rect(track.xMax - w, track.y, w, track.height), Texture2D.whiteTexture);
         }
+    }
+
+    // An ending section built for the throne contest (AudienceHallSection): where the teams are stood and how long the
+    // platform waits after that. Every PC builds the same section, so every PC reads the same numbers.
+    public interface IThroneStage
+    {
+        // Metres from the platform's edge to each team's row, across the way in (white left, black right).
+        float StandGap { get; }
+        // Seconds after the teams are stood in which the platform counts for nobody (0: at once).
+        float StandoffSeconds { get; }
     }
 }

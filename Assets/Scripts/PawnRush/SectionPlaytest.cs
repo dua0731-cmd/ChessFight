@@ -130,6 +130,20 @@ namespace ChessFight.PawnRush
                 round.SetTeamSize(round.TeamSize >= 6 ? 3 : round.TeamSize + 1);
                 Log("-", "team size " + round.TeamSize);
             }
+            // JY-audience-hall (11-21): the ending's rule offline - the crown platform or the throne contest (a room's
+            // manager picks it online). The same round is built again so the contest goes on (or off) the ending.
+            if (LegacyKeys.Down(KeyCode.F10))
+            {
+                var rules = ChessFight.Network.PawnRushRules.Current;
+                rules.Ending = rules.Ending == ChessFight.Network.PawnRushRules.EndingThrone
+                    ? ChessFight.Network.PawnRushRules.EndingCrown : ChessFight.Network.PawnRushRules.EndingThrone;
+                ChessFight.Network.PawnRushRules.Current = rules;
+                round.BuildForMatch(round.Seed, ObstacleClock.Now);
+                if (round.Finish != null) round.Finish.Restart();
+                spawner.SetTeam(Mathf.Max(0, spawner.Team));
+                Restarted();
+                Log("-", "ending " + EndingRule);
+            }
             if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
             if (LegacyKeys.Down(KeyCode.LeftBracket)) Jump(-1);
             if (LegacyKeys.Down(KeyCode.RightBracket)) Jump(1);
@@ -195,6 +209,9 @@ namespace ChessFight.PawnRush
             Restarted();
             Log("-", "jump " + (section.Slot + 1) + " " + section.DisplayName);
         }
+
+        static string EndingRule =>
+            ChessFight.Network.PawnRushRules.Current.Ending == ChessFight.Network.PawnRushRules.EndingThrone ? "왕좌 차지전" : "왕관 발판";
 
         void Restarted()
         {
@@ -357,6 +374,7 @@ namespace ChessFight.PawnRush
                   $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
                   $"판 구성: {string.Join(" | ", slots)}\n" +
                   "F 스킬 · F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6\n" +
+                  $"F10 엔딩 규칙 바꾸기 (지금 {EndingRule})\n" +
                   "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간" + cheat;
             // As tall as the text (the round's seven slots can take two lines).
             float height = style.CalcHeight(new GUIContent(text), 540f) + 14f;

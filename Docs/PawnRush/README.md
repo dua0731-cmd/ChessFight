@@ -24,7 +24,7 @@
 | 3 중반 장애물 | 대계단 현관홀 |
 | 4 미니게임 2(둘째 관문 · 윗궁 문) | B 동관 · E 서고 · F 무도회장 · J 세탁장 · G 행차 회랑 · H 체스 홀 · I 침실(R691) |
 | 5 후반 장애물 | 국왕 작전실 · 왕의 서재 → 거인 체스(R706). 초안(회색 상자 — 코스 프리팹 시험과 구간 검사에만 나오고 판은 뽑지 않음, R712): 왕실 천문대 · **왕실 금고실**(R725, [금고실 §1 · §10](PAWN_RUSH_ROYAL_VAULT.md)) |
-| 6 엔딩 | 국왕 알현실 자리의 임시 바닥 |
+| 6 엔딩 | 국왕 알현실 회색 상자(JY-audience-hall 11-21). 그 전의 임시 바닥은 파일만 남음 |
 
 정원·현관홀·작전 회의실의 현재 아트와 빌더는 개편에 계속 사용한다. `Course01v4Builder`라는 클래스 이름을 가진 partial 파일도 이 맵들을 만들므로 구형 전체 코스와 함께 옮기거나 삭제하지 않는다.
 
@@ -41,6 +41,7 @@
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
 | 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
 | 후반 장애물 왕실 천문대 — 레벨 디자인 초안(R711) · 회색 상자(R712 → R720 구조 v0.3으로 다시 지음 → R721 달려 본 뒤 고침: 코스 프리팹 시험 6번, 판에는 아직 없음) | **[구조안 v0.3(R716, 검수 전)](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md)** · **[새 장애물 여덟 종(R717)](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md)** · [PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md) · [배치도](Mockups/R711_RoyalObservatory.svg) · [비트별 의도 · 예상 행동(R713)](PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md) |
+| 엔딩 국왕 알현실 — 레벨디자인 초안 · 회색 상자(JY, 11-21, 브랜치 `JY-audience-hall`, Unity 확인 전) | **[초안 v0.1 · §9 회색 상자](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md)** · [배치도](Mockups/AudienceHall_v0.1.svg) |
 | 후반 장애물 왕실 금고실 — 사용자 기획서 A안의 회색 모형(R725: 코스 프리팹 시험 7번 · 맵 시험, 판에는 아직 없음)·봇 재미 검증 | [PAWN_RUSH_ROYAL_VAULT](PAWN_RUSH_ROYAL_VAULT.md) · [사용자 기획서 v0.1](PAWN_RUSH_ROYAL_VAULT_DESIGN_v0.1.md) · [제작 명세 v2](PAWN_RUSH_ROYAL_VAULT_SPEC_v2.md) |
 | 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
 | **코스·미니게임 3단계 아트 기준(모델링·텍스처)** | [PAWN_RUSH_ART_PHASES](PAWN_RUSH_ART_PHASES.md) |

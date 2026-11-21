@@ -191,7 +191,11 @@ namespace ChessFight.Network
         //      the same seed. The observatory sends nothing (its devices run on the shared clock).
         // v61 (R733): the royal water garden's and the grand stair hall's checkpoint triggers cover the floor each stands on
         //      (they were 2 m strips a runner could pass beside). A v60 PC would reach other checkpoints on the same run.
-        public const string Protocol = "chessfight.dua0731.network.v61";
+        // hall1 (branch JY-audience-hall, 11-21): the round's ending is the king's audience hall graybox (Final_AudienceHall)
+        //      instead of the temporary floor, and under "왕좌 차지전" the teams stand across the hall and the platform waits
+        //      3 s. A v61 PC would build the other ending. The suffix keeps this branch's builds to themselves; it goes
+        //      back to main's numbering when the branch is merged.
+        public const string Protocol = "chessfight.dua0731.network.v61.hall1";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
