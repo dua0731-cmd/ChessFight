@@ -152,6 +152,7 @@ namespace ChessFight.RagdollLab
             }
             ClearNightmare();
             ClearPromotionRun();   // (a queen again a pawn)
+            ClearRookRoll();
         }
 
         // ---------------------------------------------------------------- where the camera looks

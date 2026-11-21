@@ -179,7 +179,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.RookRoll, "룩앤롤", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 15 · 20초) · 룩이 쓰러져 지름 3 m 돌기둥으로 10초 굴러감 · 이동 키로 몰기" + "\n" +
                 "곧게 갈수록 초속 15 → 40 m (3초), 크게 꺾으면 느려짐 · 부딪힌 적은 볼링 핀처럼 25 m 날아가 2초 넘어짐 · 넷 넘게면 '스트라이크!'" + "\n" +
-                "점프 키 한 번 = 크게 튀어 오름 · 올라탄 우리 편은 앞으로 15 m 튕겨 줌 · 아직 만드는 중"),
+                "점프 키 한 번 = 크게 튀어 오름 · 올라탄 우리 편은 앞으로 15 m 튕겨 줌 · 벽엔 튕겨 나옴 (룩의 성벽 · 바리케이드는 부숨) · 판정 !!~??"),
             Made(PawnRushSkillIds.QueenDescent, "여왕 강림", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 4 · 6번) · 10초 동안 코스 위 20 m 높이를 초속 30 m로 날기 (이동 키 · 카메라 쪽)" + "\n" +
                 "좌클릭 = 찍은 곳에 내리꽂았다가 다시 솟기 ×3 (둘레 8 m 적 25 m 날아가 2.5초 넘어짐, 떨어질 곳에 1초 그림자)" + "\n" +

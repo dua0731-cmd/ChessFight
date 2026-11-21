@@ -47,7 +47,7 @@ namespace ChessFight.RagdollLab
         RenderTexture pipTex;
         UltShow pipShow;
         AudioSource ultAudio, ultLoop;
-        AudioClip sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire;
+        AudioClip sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack;
         readonly AudioClip[] sfxChime = new AudioClip[8];
         readonly AudioClip[] sfxGrade = new AudioClip[5];
         AudioClip clipLeap, clipStomp, clipLand, clipWall;
@@ -104,7 +104,7 @@ namespace ChessFight.RagdollLab
 #endif
             if (pipCam != null) Destroy(pipCam.gameObject);
             if (pipTex != null) { pipTex.Release(); Destroy(pipTex); }
-            foreach (var c in new[] { sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire }) if (c != null) Destroy(c);
+            foreach (var c in new[] { sfxBoom, sfxCrackle, sfxPerfect, sfxOff, sfxImpactLow, sfxFire, sfxRumble, sfxClack }) if (c != null) Destroy(c);
             foreach (var c in sfxChime) if (c != null) Destroy(c);
             foreach (var c in sfxGrade) if (c != null) Destroy(c);
             foreach (var t in new[] { ultGradTeal, ultGradRed }) if (t != null) Destroy(t);
@@ -282,7 +282,7 @@ namespace ChessFight.RagdollLab
             float motion = ChessFight.Game.GameSettings.ShakeScale, fov = 0f, back = 0f, up = 0f;
             fov += 7f * motion * Mathf.Exp(-(Clock - u.t0) / 0.3f);
             // The nightmare's leaps: a little further back and higher while it flies (eased in and out), to see where it lands.
-            bool wide = u.Playing && u.skill == PawnRushSkillIds.Nightmare && (u.by.PlanNote & RagdollPawn.NmFlying) != 0;
+            bool wide = u.Playing && (u.skill == PawnRushSkillIds.Nightmare && (u.by.PlanNote & RagdollPawn.NmFlying) != 0 || u.skill == PawnRushSkillIds.RookRoll);
             u.camK = Mathf.MoveTowards(u.camK, wide ? 1f : 0f, Time.unscaledDeltaTime / 0.35f);
             float wk = Smooth01(u.camK);
             back += 2.2f * wk;
@@ -667,6 +667,9 @@ namespace ChessFight.RagdollLab
             sfxOff = Synth("Ult off", 0.25f, t => 0.5f * Mathf.Sin(Tau * 180f * t) * Mathf.Exp(-t * 18f) + 0.15f * Noise(t) * Mathf.Exp(-t * 40f));
             sfxImpactLow = Synth("Ult impact", 1.4f, t => 0.9f * Mathf.Sin(Tau * (38f * t - 4f * t * t)) * Mathf.Exp(-t * 2.4f) + 0.45f * Noise(t) * Mathf.Exp(-t * 14f));
             sfxFire = Synth("Ult fire", 2.4f, t => 0.3f * Noise(t) * (1f - Mathf.Exp(-t * 20f)) * Mathf.Exp(-t * 1.1f) * (0.7f + 0.3f * Mathf.Sin(Tau * 11f * t)));
+            // The rook's roll: a low rumble (loops: whole cycles of every wave in its 2 s) and a bowling pin's clack.
+            sfxRumble = Synth("Ult rumble", 2f, t => 0.28f * Noise(t) * (0.6f + 0.4f * Mathf.Sin(Tau * 7f * t)) + 0.45f * Mathf.Sin(Tau * 48f * t) * (0.7f + 0.3f * Mathf.Sin(Tau * 3f * t)));
+            sfxClack = Synth("Ult clack", 0.3f, t => 0.55f * (Mathf.Sin(Tau * 950f * t) + 0.6f * Mathf.Sin(Tau * 1430f * t)) * Mathf.Exp(-t * 38f) + 0.4f * Noise(t) * Mathf.Exp(-t * 90f));
             int[] steps = { 0, 2, 4, 7, 9, 12, 14, 16 };
             for (int i = 0; i < sfxChime.Length; i++)
             {

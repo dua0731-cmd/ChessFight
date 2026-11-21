@@ -880,6 +880,11 @@ namespace ChessFight.RagdollLab
         public float prWarn = 0.3f, prDash = 30f, prDashTime = 0.4f, prDashGap = 0.6f;
         [Tooltip("승격: 돌진이 닿는 반폭 (m), 날리는 거리 (m), 넘어짐 (초); 하나 맞힐 때마다 커지는 몫, 가장 크게; 퀸의 키 (m)")]
         public float prRadius = 2.2f, prDashThrow = 20f, prDashKnock = 2f, prGrow = 0.1f, prGrowMax = 1.5f, prTall = 6f;
+        [Tooltip("룩앤롤: 시간 (초); 돌기둥 반지름 (m)과 길이 (m, 구르는 쪽을 가로질러); 빠르기 처음 · 가장 빠르게 · 가장 느리게 (m/s), 곧게 갈 때 다 붙는 시간 (초); 꺾는 빠르기 느릴 때 · 빠를 때 (°/s), 1°마다 잃는 빠르기 (m/s)")]
+        public float rrSeconds = 10f, rrRadius = 1.5f, rrLength = 4.5f, rrSpeed0 = 15f, rrSpeed1 = 40f, rrSpeedMin = 10f, rrRamp = 3f, rrTurnSlow = 140f, rrTurnFast = 70f, rrTurnCost = 0.12f;
+        [Tooltip("룩앤롤: 점프로 튀어 오르는 빠르기 (m/s), 떨어지는 빠르기 (m/s²); 적을 날리는 거리 (m), 넘어짐 (초); 스트라이크: 이 시간 (초) 안에 이만큼; 올라탄 우리 편을 앞으로 (m); 부순 바리케이드가 다시 서는 시간 (초)")]
+        public float rrJumpUp = 14f, rrGravity = 28f, rrThrow = 25f, rrKnock = 2f, rrStrikeWindow = 0.6f, rrLift = 15f, rrRegrow = 4f;
+        public int rrStrike = 4;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]
