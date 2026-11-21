@@ -1,7 +1,9 @@
 // Pawn Rush ultimates previz - the page's entry: window.PV for the recorder, and a simple player for a person.
 import { Stage } from './stage.js';
 import { clipText, DISP, BODY } from './hud.js';
-import { CLIPS } from './ults.js';
+import { CLIPS as ULTS } from './ults.js';
+import { CASTS } from './casts.js';
+const CLIPS = { ...ULTS, ...CASTS };
 
 const st = new Stage(document.getElementById('gl'), document.getElementById('hud'));
 async function fonts() {

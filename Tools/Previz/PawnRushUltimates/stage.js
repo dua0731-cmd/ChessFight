@@ -24,6 +24,8 @@ export const fade = (t, t0, t1, fi = 0.1, fo = 0.2) =>
   (t < t0 || t > t1) ? 0 : Math.min(fi > 0 ? prog(t, t0, t0 + fi) : 1, fo > 0 ? 1 - prog(t, t1 - fo, t1) : 1);
 export const lerpAng = (a, b, t) => { const d = ((b - a) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; };
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+/** Puts an object (and all inside it) on layer 1 too: it keeps its colour when the world goes black and white. */
+export const keepColour = o => { o.traverse(m => m.layers.enable(1)); return o; };
 export function rng(seed) {
   let s = (seed * 2654435761) >>> 0 || 1;
   return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
@@ -211,11 +213,12 @@ function makeSky() {
   return s;
 }
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float sat, vig, flashA; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse, mask; uniform float sat, vig, flashA, maskOn, contrast; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
     void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-      c.rgb = mix(vec3(l), c.rgb, sat) * tint;
+      vec3 gray = 0.18 * pow(vec3(l) / 0.18, vec3(contrast));
+      vec3 col = mix(gray, c.rgb, sat) * tint; c.rgb = mix(col, c.rgb, maskOn * texture2D(mask, vUv).r);
       vec2 d = (vUv - 0.5) * vec2(1.5, 1.0); float v = smoothstep(0.32, 0.9, length(d));
       c.rgb = mix(c.rgb, vigCol, clamp(vig * v, 0.0, 1.0));
       c.rgb = mix(c.rgb, flashCol, flashA); gl_FragColor = c; }`,
@@ -343,11 +346,14 @@ export class Stage {
     cp.addPass(new OutputPass());
     this.g = hud.getContext('2d');
     this.dyn = new THREE.Group(); sc.add(this.dyn);
+    // what stays in colour when the world goes black and white: objects on layer 1, drawn white into this mask
+    this.maskRT = new THREE.WebGLRenderTarget(W / 2, H / 2); this.maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   }
   load(clip) {
     this.scene.remove(this.dyn); this.dyn = new THREE.Group(); this.scene.add(this.dyn);
-    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, clip });
+    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, cracks: [], evalOn: false, evalKick: null, clip });
     this.knots = clip.warp ?? [[0, 0], [3.6, 3.6], [4.6, 3.7], [64.6, 63.7]]; this.dur = clip.dur;
+    this.sky.material.uniforms.darkCol.value.set(0x3a0806);
     clip.build(this);
     this.shots.sort((a, b) => a.c0 - b.c0);
   }
@@ -475,6 +481,14 @@ export class Stage {
     let fa = 0, fc = [1, 1, 1];
     for (const f of this.flashes) { if (s < f.s0 || s > f.s0 + f.d) continue; const a = f.a * Math.pow(1 - (s - f.s0) / f.d, 2); if (a > fa) { fa = a; fc = f.color; } }
     u.flashA.value = fa; u.flashCol.value.set(...fc);
+    u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0;
+    if (u.maskOn.value > 0) {
+      const r = this.renderer, sc = this.scene, cam = this.camera, fog = sc.fog;
+      sc.fog = null; sc.overrideMaterial = this.maskMat; cam.layers.set(1);
+      r.setRenderTarget(this.maskRT); r.setClearColor(0x000000, 1); r.clear(); r.render(sc, cam);
+      r.setRenderTarget(null); cam.layers.set(0); sc.overrideMaterial = null; sc.fog = fog;
+      u.mask.value = this.maskRT.texture;
+    }
     this.sky.material.uniforms.dark.value = this.skyFn ? this.skyFn(s, c) : 0;
     this.bloom.strength = gr.bloom ?? 0.55;
     this.composer.render();

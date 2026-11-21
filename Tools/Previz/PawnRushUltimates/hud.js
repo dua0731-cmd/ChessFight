@@ -1,6 +1,6 @@
 // Pawn Rush ultimates previz - what is drawn over the picture: the title card, the cut-in, notation stamps,
 // floating labels, the race strip, the team gauge, captions with sound notes, and the closing spec card.
-import { W, H, LEN, NAME, GLYPH, clamp, prog, smooth, easeOut, easeIn, fade } from './stage.js';
+import { W, H, LEN, NAME, GLYPH, clamp, prog, smooth, easeOut, easeIn, fade, rng } from './stage.js';
 
 export const DISP = '"Black Han Sans", "Malgun Gothic", sans-serif';
 export const BODY = '"IBM Plex Sans KR", "Malgun Gothic", sans-serif';
@@ -31,7 +31,7 @@ function title(g, st, c) {
   const gr = g.createLinearGradient(0, 0, 1000, 0); gr.addColorStop(0, 'rgba(8,10,16,0.82)'); gr.addColorStop(0.65, 'rgba(8,10,16,0.45)'); gr.addColorStop(1, 'rgba(8,10,16,0)');
   g.fillStyle = gr; g.fillRect(0, 160, 1100, 360);
   g.translate((1 - easeOut(prog(c, 0, 0.4))) * -70, 0);
-  const w = chip(g, 72, 196, `${NAME[T.kind]} 궁극기 · ${T.opt}안`, C.gold, '#1c1500', 24);
+  const w = chip(g, 72, 196, T.chip ?? `${NAME[T.kind]} 궁극기 · ${T.opt}안`, C.gold, '#1c1500', 24);
   chip(g, 72 + w + 12, 198, T.tag, 'rgba(255,255,255,0.18)', '#ffffff', 20);
   g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   g.font = `86px ${DISP}`; outlined(g, T.name, 70, 330, '#ffffff', 'rgba(0,0,0,0.6)', 8);
@@ -46,8 +46,9 @@ function corner(g, st, c) {
   g.save(); g.globalAlpha = a;
   g.fillStyle = 'rgba(8,10,16,0.62)'; rrect(g, 18, 14, 300, 44, 12); g.fill();
   g.font = `26px ${SYM}`; g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(GLYPH[T.kind], 28, 37);
-  g.font = `700 19px ${BODY}`; g.fillStyle = C.gold; g.fillText(`${NAME[T.kind]} ${T.opt}안`, 58, 37);
-  g.fillStyle = '#fff'; g.font = `600 19px ${BODY}`; g.fillText(T.name, 58 + g.measureText(`${NAME[T.kind]} ${T.opt}안 `).width + 8, 37);
+  const head = T.cornerHead ?? `${NAME[T.kind]} ${T.opt}안`, tail = T.cornerTail ?? T.name;
+  g.font = `700 19px ${BODY}`; g.fillStyle = C.gold; g.fillText(head, 58, 37);
+  const hw = g.measureText(head + ' ').width; g.fillStyle = '#fff'; g.font = `600 19px ${BODY}`; g.fillText(tail, 58 + hw + 8, 37);
   // the team gauge
   const c0 = T.cut, full = c < c0 ? 1 : 1 - easeIn(prog(c, c0, c0 + 0.6));
   g.fillStyle = 'rgba(8,10,16,0.62)'; rrect(g, 18, 64, 300, 40, 12); g.fill();
@@ -91,7 +92,7 @@ function strip(g, st, c) {
 }
 
 function cutin(g, st, c) {
-  const T = st.clip, c0 = T.cut, d = T.cutLen ?? 1.0; if (c < c0 || c > c0 + d) return;
+  const T = st.clip, c0 = T.cut, d = T.cutLen ?? 1.0; if (T.cutin === false || c < c0 || c > c0 + d) return;
   const u = (c - c0) / d;
   g.save();
   g.fillStyle = `rgba(0,0,0,${0.5 * Math.min(1, u * 8) * (1 - prog(u, 0.85, 1))})`; g.fillRect(0, 0, W, H);
@@ -135,6 +136,7 @@ function labels(g, st, c, s) {
     const a = fade(s, q.s0, q.s1, 0.05, 0.2), rise = (q.rise ?? 18) * prog(s, q.s0, q.s1), pop = 1 + 0.4 * (1 - easeOut(prog(s, q.s0, q.s0 + 0.12)));
     g.save(); g.globalAlpha = a; g.translate(p.x, p.y - 26 - rise); g.scale(pop, pop);
     g.font = `${q.size ?? 26}px ${DISP}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (q.badge) { const r = (q.size ?? 26) * 0.95; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = q.bg; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,0.9)'; g.stroke(); g.fillStyle = '#ffffff'; g.fillText(q.text, 0, 2); g.restore(); continue; }
     const w = g.measureText(q.text).width + 22, h = (q.size ?? 26) + 12;
     g.fillStyle = q.bg ?? 'rgba(10,10,14,0.72)'; rrect(g, -w / 2, -h / 2, w, h, h / 2); g.fill();
     g.fillStyle = q.color ?? '#ffffff'; g.fillText(q.text, 0, 1);
@@ -182,10 +184,49 @@ function spec(g, st, c) {
   g.restore();
 }
 
+/** The engine's evaluation bar, from the two teams' average progress; it jolts when the move lands (st.evalKick). */
+function evalBar(g, st, c, s) {
+  if (!st.evalOn) return;
+  const a = smooth(prog(c, 0.2, 0.5)); if (a <= 0) return;
+  const sum = { ally: 0, enemy: 0 }, n = { ally: 0, enemy: 0 };
+  for (const ac of st.actors) if (ac.strip) { sum[ac.team] += ac.now.z; n[ac.team]++; }
+  let e = clamp((sum.ally / Math.max(1, n.ally) - sum.enemy / Math.max(1, n.enemy)) / 4, -9.9, 9.9);
+  if (st.evalKick !== null && s > st.evalKick) e += 2.6 * Math.sin((s - st.evalKick) * 8) * Math.exp(-(s - st.evalKick) * 2.6);
+  const f = 0.5 + 0.5 * Math.tanh(e / 3.5), x = 1222, y = 130, w = 34, h = 450;
+  g.save(); g.globalAlpha = a;
+  g.fillStyle = 'rgba(8,10,16,0.62)'; rrect(g, x - 10, y - 40, w + 20, h + 58, 12); g.fill();
+  g.font = `600 14px ${BODY}`; g.fillStyle = '#cfd8e3'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('평가', x + w / 2, y - 22);
+  g.fillStyle = '#26221f'; g.fillRect(x, y, w, h); g.fillStyle = '#f4efe6'; g.fillRect(x, y + h * (1 - f), w, h * f);
+  g.fillStyle = 'rgba(255,201,74,0.9)'; g.fillRect(x - 3, y + h / 2 - 1, w + 6, 2);
+  const txt = (e >= 0 ? '+' : '−') + Math.abs(e).toFixed(1);
+  g.font = `16px ${DISP}`; g.fillStyle = e >= 0 ? '#1d1a17' : '#f4efe6'; g.fillText(txt, x + w / 2, e >= 0 ? y + h - 14 : y + 14);
+  g.restore();
+}
+/** Glass cracks over the whole screen (the colour coming back). */
+function cracks(g, st, c) {
+  for (const q of st.cracks) {
+    if (c < q.c0 || c > q.c0 + q.d) continue;
+    const u = (c - q.c0) / q.d, r = rng(17);
+    g.save(); g.globalAlpha = 1 - u; g.lineJoin = 'round';
+    for (let k = 0; k < 18; k++) {
+      let x = W / 2, y = H / 2, ang = (k / 18) * Math.PI * 2 + r() * 0.3; g.beginPath(); g.moveTo(x, y);
+      for (let j = 0; j < 8; j++) { ang += (r() - 0.5) * 0.6; const L = 40 + r() * 80; x += Math.cos(ang) * L; y += Math.sin(ang) * L; g.lineTo(x, y); }
+      g.lineWidth = 6; g.strokeStyle = 'rgba(0,0,0,0.35)'; g.stroke(); g.lineWidth = 2.5; g.strokeStyle = 'rgba(255,255,255,0.95)'; g.stroke();
+    }
+    for (const rad of [90, 210, 360]) {
+      g.beginPath();
+      for (let k = 0; k <= 24; k++) { const an = k / 24 * Math.PI * 2, rr = rad * (0.85 + r() * 0.3); g.lineTo(W / 2 + Math.cos(an) * rr, H / 2 + Math.sin(an) * rr); }
+      g.lineWidth = 2; g.strokeStyle = 'rgba(255,255,255,0.7)'; g.stroke();
+    }
+    g.restore();
+    if (u < 0.12) { g.fillStyle = `rgba(255,255,255,${0.8 * (1 - u / 0.12)})`; g.fillRect(0, 0, W, H); }
+  }
+}
+
 export function drawHud(st, c, s) {
   const g = st.g; g.clearRect(0, 0, W, H);
   labels(g, st, c, s); stamps(g, st, c);
-  strip(g, st, c); corner(g, st, c); captions(g, st, c);
+  strip(g, st, c); corner(g, st, c); evalBar(g, st, c, s); captions(g, st, c); cracks(g, st, c);
   title(g, st, c); cutin(g, st, c); spec(g, st, c);
 }
 

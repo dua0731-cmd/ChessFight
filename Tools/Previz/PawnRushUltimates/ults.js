@@ -736,3 +736,6 @@ const kingB = {
 
 export const CLIPS = { pawnA, pawnB, knightA, knightB, bishopA, bishopB, rookA, rookB, queenA, queenB, kingA, kingB };
 export const PROGRAMS = { pawn: ['pawnA', 'pawnB'], knight: ['knightA', 'knightB'], bishop: ['bishopA', 'bishopB'], rook: ['rookA', 'rookB'], queen: ['queenA', 'queenB'], king: ['kingA', 'kingB'] };
+
+// the building blocks the casting-style clips (casts.js) reuse
+export { ACT, CUT, KINDS, warp, slow, teams, opening, follow, fixed, firstHit, centroid, finish, knockOff, dizzy, PACK, mid };
