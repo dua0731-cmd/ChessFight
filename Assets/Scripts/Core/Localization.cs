@@ -128,6 +128,31 @@ namespace ChessFight.Network
 
         public bool Contains(string ko) => ko != null && rows.ContainsKey(ko);
 
+        // R756: the Korean line whose text in this language is `text`, or null (Korean itself: `text` when the table
+        // has it). Two lines with the same translation give the first. Built once per language, on first use.
+        public string KoreanOf(string text, string code)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            int c = Column(code);
+            if (c < 0) return null;
+            if (c == 0) return rows.ContainsKey(text) ? text : null;
+            if (back == null) back = new Dictionary<string, string>[codes.Length];
+            var map = back[c];
+            if (map == null)
+            {
+                map = back[c] = new Dictionary<string, string>();
+                foreach (var pair in rows)
+                {
+                    var t = pair.Value[c - 1];
+                    if (!string.IsNullOrEmpty(t) && !map.ContainsKey(t)) map[t] = pair.Key;
+                }
+            }
+            string ko;
+            return map.TryGetValue(text, out ko) ? ko : null;
+        }
+
+        Dictionary<string, string>[] back;
+
         // The text in this language, or the Korean when the language has none yet (or the table does not know it).
         public string Get(string ko, string code)
         {
@@ -252,6 +277,8 @@ namespace ChessFight.Network
         // which is also what editor tools and batch captures that never load one get.
         public static string Lang { get; private set; } = Source;
         public static StringTable Table { get; private set; } = StringTable.Empty;
+        // R756: the language shown before the last change (Lang itself after a reload of the table), for Again.
+        public static string Previous { get; private set; } = Source;
         // Bumped on every change of language or table, for views that redraw only when it moves.
         public static int Version { get; private set; }
         public static event Action Changed;
@@ -263,6 +290,7 @@ namespace ChessFight.Network
         public static void Load(StringTable table)
         {
             Table = table ?? StringTable.Empty;
+            Previous = Lang;
             if (!Table.Has(Lang)) Lang = Source;
             Raise();
         }
@@ -273,6 +301,7 @@ namespace ChessFight.Network
             var language = Languages.Find(code);
             if (language == null || !Table.Has(language.Code)) return false;
             if (language.Code == Lang) return true;
+            Previous = Lang;
             Lang = language.Code;
             Raise();
             return true;
@@ -280,6 +309,16 @@ namespace ChessFight.Network
 
         // This Korean text in the language shown.
         public static string T(string ko) => Table.Get(ko, Lang);
+
+        // R756: words already on screen in the language before the last change, in the language now - for a label
+        // built once (a tab, a button, a mode card) that no view draws again. Text the table does not know (a
+        // name, a number, a line with values put in) comes back as it was.
+        public static string Again(string shown)
+        {
+            if (string.IsNullOrEmpty(shown)) return shown;
+            var ko = Table.Contains(shown) ? shown : Table.KoreanOf(shown, Previous);
+            return ko == null ? shown : T(ko);
+        }
 
         // The same with values put into its {0} {1} slots. A translation whose slots do not fit falls back to the
         // Korean pattern, so a typo in the table shows Korean instead of throwing.

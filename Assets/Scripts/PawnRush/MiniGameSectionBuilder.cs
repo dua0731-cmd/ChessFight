@@ -68,6 +68,9 @@ namespace ChessFight.PawnRush
             owner.Built(MiniGameScale.Clamp(section.TeamSize));
             MiniGameModels.Apply(owner);
             RefreshText(owner);
+            // R757: games rebuilt after the round swept its words (online: when the match's shared start arrives,
+            // PawnRushRound.SetStartClock) get new signs and plaques in Korean - sweep them again.
+            if (Application.isPlaying) ChessFight.Game.SignText.TranslateUnder(owner.transform);
         }
 
         // Baked labels in game sockets are replaced with the games. Follow the new renderers, not the

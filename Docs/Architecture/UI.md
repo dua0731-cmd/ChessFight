@@ -951,7 +951,7 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | UXML 글자 | `RuntimePanels.Create`가 레이아웃을 만들 때 모든 `TextElement`의 글자를 `Loc.T`로 바꾼다(한국어일 때는 건너뜀). 코드가 나중에 넣는 글자는 그 자리에서 `Loc.T` |
 | 본문 글꼴 | `RuntimePanels.BodyFont`(= `KoreanFont`): 문자 종류마다 따로 만들어 둔다. 한국어 · 라틴 · 키릴은 맑은 고딕이 맨 앞(플레이어 이름 · 채팅의 한글이 그대로), 그 뒤 Segoe UI. 간체 중국어 = Microsoft YaHei → DengXian → SimHei, 번체 = Microsoft JhengHei → PMingLiU, 일본어 = Yu Gothic UI → Yu Gothic → Meiryo → MS Gothic, 그 뒤 한국어 글꼴들. **UI Toolkit이 이 목록을 따라 글자 하나씩 대체하는지(중국어 화면에서 한글 이름이 보이는지)는 Unity에서 확인 전** |
 | 제목 글꼴 | Black Han Sans는 한글 · 기본 라틴뿐 → `RuntimePanels.DisplayFace`가 한국어 · 라틴 언어(en · es · es-419 · pt-BR · de · fr)에서만 그 글꼴, 나머지(ru · pl · tr · 중국어 · 일본어)는 null이라 제목도 본문 글꼴. 언어별 제목 글꼴(OFL)은 다음 일 |
-| 언어가 바뀔 때 | `Loc.Changed` → `RuntimePanels`가 만든 패널들의 본문 · 제목 글꼴을 바꾼다. **이미 보이는 글자는 그 화면이 다시 그릴 때 바뀐다**(설정 창은 스스로 다시 지음). IMGUI 화면 · 3D 글씨가 들고 있는 글꼴은 다음 실행부터 |
+| 언어가 바뀔 때 | `Loc.Changed` → `RuntimePanels`가 만든 패널들의 본문 · 제목 글꼴을 바꾼다. **이미 보이는 글자도 바로 바꾼다**(R756, `Loc.Again` — 아래). 설정 창은 스스로 다시 짓는다. IMGUI 화면 · 3D 글씨가 들고 있는 글꼴은 다음 실행부터 |
 
 다음 할 일(순서): ① 로비 · 설정 · 결과 · 로딩 화면 문자열을 `Loc.T` / `Loc.F`로 → 영어 채우기 → ② 경기 안내 · 미션 · 기물 설명 → ③ 경기장 3D 표지판 · 미니게임 방 이름 → ④ 간체 중국어 열, 언어별 제목 글꼴 → ⑤ 각 언어 `@ready 1`. 디버그 로그 · 검사 도구 · 래그돌 시험 도구 글자는 한국어로 둔다. Steamworks 앱 설정의 지원 언어(상점 페이지 · `GetCurrentGameLanguage`가 고를 수 있는 언어)도 함께 늘려야 한다.
 
@@ -1017,6 +1017,32 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 ### 영어 · 간체 중국어 저절로 고르기 (R755, 2026-11-21)
 
 사용자 "네, 둘 다 켜". 표의 `@ready`를 `en` · `zh-Hans` 모두 1로. 고르는 순서는 R747 그대로: ① 설정에서 고른 언어 → ② Steam이 이 게임에 정한 언어(`GetCurrentGameLanguage`) → ③ Windows 언어 → ④ 한국어. 이제 ②③에서 영어 · 중국어도 잡힌다 — 예: Steam이 영어인 한국 사용자는 영어로 시작(설정에서 한국어를 고르면 그 뒤로 한국어). 러시아어처럼 표에 열이 없는 언어는 한국어. Core 검사 "localization: the shipped table"이 실제 표로 이 여섯 경우를 본다. **Steamworks**: Steam은 앱 설정의 지원 언어에 있는 언어만 넘겨주므로, Steamworks → 앱 → 지원 언어에 English · Simplified Chinese를 더해야 ②가 동작한다(사용자 작업, 상점 페이지의 언어 표에도 쓰임). 남은 것: 중국어 제목 글꼴(지금은 본문 글꼴 YaHei가 제목도 그림), 다른 언어(러시아어 · 포르투갈어 · 스페인어 · 일본어) 열.
+
+### 언어를 바꾼 순간 이미 보이는 글자 (R756, 2026-11-22)
+
+사용자가 로비에서 English를 고른 사진과 함께 "왜 이런데 안됐어?": 파티 수 · Quick match · Invite friends처럼 화면이 매 프레임 다시 그리는 글자만 영어가 되고, **한 번만 만들어 두는 글자**(위 탭 플레이 · 기물 도감 · 전적 · 순위, 방 생성, 모드 카드 이름 폰 러쉬 · 소드 파이트 · 팀 레이스 · 대난투, 현재 모드)는 한국어로 남았다. 표에는 다 있었다 — R747은 언어가 바뀔 때 글꼴만 바꾸고 글자는 "그 화면이 다시 그릴 때"에 맡겼는데, 다시 그리지 않는 글자가 있었다.
+
+- Core `Loc.Previous`(바로 전 언어) · `Loc.Again(보이는 글자)`: 보이는 글자가 표의 한국어 줄이면 그 줄, 아니면 전 언어 열에서 그 번역을 가진 한국어 줄(`StringTable.KoreanOf`, 언어마다 처음 쓸 때 한 번 역색인)을 찾아 지금 언어로. 표에 없는 글자(이름 · 숫자 · 값이 든 문장)는 그대로.
+- Game `RuntimePanels`: `Loc.Changed` 때 만든 패널 전부의 `TextElement`를 `Loc.Again`으로(글꼴 바꾸기 앞). 플레이어가 치는 칸(`TextField` 안)은 건너뜀.
+- 한계: 값이 든 문장(`Loc.F`)은 거꾸로 못 찾으므로 그 화면이 다시 그려야 바뀐다(대부분 매 프레임 그림). 두 한국어 줄이 같은 번역을 가지면 처음 줄 — 다음 언어 열이 다르면 그 줄 번역이 나옴. 이름이 표의 줄과 똑같은 플레이어(예: "Play")는 언어를 바꾸는 순간 이름이 번역될 수 있음(바꾸는 순간뿐).
+- 확인: Core 검사(한국어 → 영어 → 러시아어 → 한국어, 역색인) · 세션 115 · `Test-NetworkCompile` 통과. Unity MCP로 로비 Play에서 ko → en → zh-Hans → en을 바꿔 가며 화면의 `TextElement` 250개를 훑음: 영어 · 중국어에서 남은 한글은 플레이어 이름("엘리트")과 개발용 상태 줄의 "레거시 입력"뿐. ko → en 직후 사진에서 탭 Play · Codex · History · Rank, Current mode, New room 확인. **사용자 화면 확인 전.**
+
+### 미니게임 표지판 · 깃발, 코스 공개 이름 칸 (R757, 2026-11-22)
+
+사용자 사진 셋과 "영어 때 이번 판 미니게임 글이 많아서 다 안보이고 인게임에서 미니게임 팬말 깃발에 아직 영어로 안돼 아마 중국어도 안되어 있을 거 같은데 다 적용 시켜".
+
+- **표지판 · 깃발이 한국어로 남은 까닭**: 표에는 다 있었다(정문 쇠살문 누각 · 백팀 진영 · 백팀 출구 …). R753의 `SignText` 훑기는 `PawnRushRound`이 구간을 지은 직후 한 번(+ 두 프레임 뒤)뿐인데, 온라인 경기는 로비의 공동 시작 시각이 나중에 와서(`SetStartClock` → 구간 `Configure` → `MiniGameSection.OnSection` → `RebuildGames`) 미니게임을 **다시 짓고**, 새 표지판(`MiniGamePalaceArt.GoalSign`: 게임 이름 · 팀 진영 패 · 팀 출구 패)이 한국어로 다시 생겼다. 오프라인 시험 판에서는 안 보이던 이유.
+- 고침: `MiniGameSectionBuilder.RebuildGames` 끝, `MiniGamePalaceArt.Dress` 끝(경기 중 다시 입히는 `MgCheckBlock` · `MgKingEscort`까지), `PawnRushRound.SetStartClock` · `SetTeamSize` 끝에서 `SignText.TranslateUnder`(Play 중만 — 에디터 빌더가 프리팹에 `SignText`를 넣지 않게).
+- **코스 공개 이름 칸**(`LoadingScreenView.Reveal`): 46 px 한 줄 고정이라 영어 "Portcullis Gatehouse"가 옆 판으로 넘침 → `FitName`: 350 px 칸보다 넓으면 글자를 줄이고, 30 px 밑으로 내려가야 하면 34 px 이하 두 줄로(띠 높이 128 px). 한국어 이름은 예전처럼 46 px.
+- 확인: `Test-NetworkCompile` · Core 226 · 세션 115 통과. Unity MCP: `PawnRush_Round` Play(English)에서 `SetStartClock`으로 미니게임을 다시 지은 뒤 한글 `TextMesh` 0 / 50(팀 패 "White team side" · "Black team exit" …), 중국어로 바꾸고 다시 지어도 0("白队阵地" · "黑队出口"). 로딩 화면을 코스 공개 끝(카운트다운 3)에 세워 찍음: 사진의 조합(seed 10) "Portcullis Gatehouse" 두 줄 · "Palace Archives" 한 줄, 가장 긴 조합(seed 275) "Main Gate Parade Square" · "King's Procession Gallery" 두 줄, 중국어 한 줄 — 모두 칸 안. **실제 온라인 경기 · 사용자 화면 확인 전.**
+
+### 미니게임 안내 줄 · 순위 줄의 팀 이름 (R758, 2026-11-22)
+
+사용자 사진 둘 + "영어로 하게 되면 이 부분 수정 해": ① 미니게임 방의 아래 안내 줄(`MiniGameSection.Guidance` OnGUI) — 팀 칸이 56 px 고정이라 "White team"이 두 줄로 접히고 안내 글도 접혀 겹침. ② 위 순위 띠(`PawnRushStandingsHud`)의 두 줄 표시 칸(18 단위)에 "White" · "Black"이 들어가 "/ 4"를 덮음.
+
+- 안내 줄: 줄바꿈 없이 팀 칸 = max(56 px, 팀 이름 폭 + 14), 줄 = max(390 px, 팀 칸 + 안내 폭 + 24), 화면보다 넓으면 글자를 그만큼 작게. 한국어는 예전 크기 그대로.
+- 순위 띠: `Short(team)` — 팀 말이 두 글자 이하면 그대로(백 · 흑, 白 · 黑), 길면 첫 글자(W · B). 오른쪽 왕관 발판 수("White 0 / 3")는 62 단위에 들어가면 그대로, 아니면 같은 짧은 말.
+- 확인: `Test-NetworkCompile` · Core 226 · 세션 115 통과. Unity MCP `PawnRush_Round` Play(English)에서 말을 정문 쇠살문 누각 입구에 두고 찍음: "White team │ The left exit (from the entrance) is open" 한 줄, 순위 띠 "1st / 1" 옆 W · B 안 겹침; 중국어 순위 띠 白 · 黑. 중국어 안내 줄은 찍지 못함(말 자리), 사진의 "Shared board in the middle · paint the light squares" 줄 자체도 못 찍음 — 같은 계산이라 더 긴 줄은 더 넓어짐. **사용자 화면 확인 전.**
 
 ### 출시까지의 번역 일정 · 다음 언어 순위 (2026-11-21)
 

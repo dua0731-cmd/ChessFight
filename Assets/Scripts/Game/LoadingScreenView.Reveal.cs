@@ -396,7 +396,7 @@ namespace ChessFight.Game
 
             // R750: the section's name (Resources/Loading/PawnRushCourse.txt) through the string table; no rows for them yet
             string name = locked ? Loc.T(p.Names[p.Pick]) : "? ? ?";
-            if (p.Name.text != name) p.Name.text = name;
+            if (p.Name.text != name) { p.Name.text = name; FitName(p.Name, name); }
             p.Name.style.opacity = locked ? 1f : .4f;
             // R625: "? ? ?" slides in once the versus panels have gathered into this one
             p.Name.style.translate = new Translate(locked ? -50f * (1f - EoBack(Ph(age, .02f, .16f)))
@@ -607,6 +607,30 @@ namespace ChessFight.Game
             e.style.top = y;
             e.style.width = w;
             e.style.height = h;
+        }
+
+        // R757 (user 11-22, English: "이번 판 미니게임 글이 많아서 다 안보이고" - "Portcullis Gatehouse" ran into the next
+        // panel): a name wider than its 350 px box shrinks to fit; one that would go under 30 px breaks into two lines
+        // instead (the band is 128 px tall). Korean names fit at the full 46 px as before.
+        const float RevealNameSize = 46f, RevealNameRoom = 340f, RevealNameSmallest = 30f, RevealNameTwoLines = 34f;
+
+        static void FitName(Label label, string text)
+        {
+            float size = RevealNameSize;
+            bool wrap = false;
+            float at = label.resolvedStyle.fontSize;
+            if (label.panel != null && at > 0f && !string.IsNullOrEmpty(text))
+            {
+                float wide = label.MeasureTextSize(text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x * RevealNameSize / at;
+                if (wide > RevealNameRoom) size = RevealNameSize * RevealNameRoom / wide;
+                if (size < RevealNameSmallest)
+                {
+                    wrap = true;
+                    size = Mathf.Clamp(RevealNameSize * 1.8f * RevealNameRoom / wide, 22f, RevealNameTwoLines);
+                }
+            }
+            label.style.fontSize = size;
+            label.style.whiteSpace = wrap ? WhiteSpace.Normal : WhiteSpace.NoWrap;
         }
 
         static void RStretch(VisualElement e, Texture2D image)

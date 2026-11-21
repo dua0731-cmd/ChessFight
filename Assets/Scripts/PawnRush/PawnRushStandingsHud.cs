@@ -239,8 +239,8 @@ namespace ChessFight.PawnRush
             else Text(S(246, 13, 50, 42), Loc.T("관전"), 15f, Ivory, TextAnchor.MiddleCenter, true);
             Text(S(299, 25, 25, 20), "/ " + racers.Count, 10.5f, Muted, TextAnchor.MiddleLeft, false);
             // the two lanes
-            Text(S(322, 17, 18, 13), Loc.T("백"), 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
-            Text(S(322, 30, 18, 13), Loc.T("흑"), 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 17, 18, 13), Short(Teams.White), 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 30, 18, 13), Short(Teams.Black), 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
             for (int i = 0; i < segments.Count; i++)
             {
                 var s = segments[i];
@@ -266,8 +266,12 @@ namespace ChessFight.PawnRush
             if (finish != null)
             {
                 for (int team = 0; team < 2; team++)
-                    Text(S(928, team == 0 ? 17 : 31, 62, 14), Loc.T(team == 0 ? "백" : "흑") + " " + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team)),
-                         11f, Arena.TeamColor(team, true), TextAnchor.MiddleLeft, true);
+                {
+                    string count = " " + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team));
+                    string line = Loc.T(team == 0 ? "백" : "흑") + count;
+                    if (!Fits(line, 11f, 62f)) line = Short(team) + count;   // R758: as the lanes' tags
+                    Text(S(928, team == 0 ? 17 : 31, 62, 14), line, 11f, Arena.TeamColor(team, true), TextAnchor.MiddleLeft, true);
+                }
                 Text(S(980, 28, 58, 14), Loc.T("왕관 발판"), 8.5f, Muted, TextAnchor.MiddleCenter, false);
             }
         }
@@ -365,6 +369,23 @@ namespace ChessFight.PawnRush
         {
             GUI.color = colour;
             GUI.DrawTexture(new Rect(x - radius, y - radius, radius * 2f, radius * 2f), DiscTexture());
+        }
+
+        // R758 (user 11-22, English: the lanes' "White" / "Black" ran over "/ 4"): the 18-unit tags take a team's word
+        // when it is a letter or two (백 · 흑, 白 · 黑) and its first letter otherwise (W · B).
+        static string Short(int team)
+        {
+            string word = Loc.T(team == Teams.White ? "백" : "흑");
+            return word.Length > 2 ? word.Substring(0, 1) : word;
+        }
+
+        // Whether `value` drawn bold at `size` fits `width` (the mock-up's units).
+        bool Fits(string value, float size, float width)
+        {
+            if (text == null) return true;
+            text.fontSize = Mathf.Max(9, Mathf.RoundToInt(size * unit));
+            text.fontStyle = FontStyle.Bold;
+            return text.CalcSize(new GUIContent(value)).x <= width * unit;
         }
 
         void Text(Rect r, string value, float size, Color colour, TextAnchor anchor, bool bold)

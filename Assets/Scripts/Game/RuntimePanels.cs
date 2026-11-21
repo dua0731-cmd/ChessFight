@@ -154,8 +154,10 @@ namespace ChessFight.Game
             root.Query<TextElement>().ForEach(t => { if (!string.IsNullOrEmpty(t.text)) t.text = Loc.T(t.text); });
         }
 
-        // R747: panels made here take the new body and display fonts when the language changes (words already shown
-        // change when their view draws them again; the settings window builds itself again).
+        // R747: panels made here take the new body and display fonts when the language changes; the settings window
+        // builds itself again. R756 (user 11-22, the lobby half Korean after picking English in it: "왜 이런데 안됐어?"):
+        // the words already shown change too (Loc.Again) - before, only text a view draws every frame followed, and
+        // what was built once (the tabs, 방 생성, the mode cards, 현재 모드) kept the old language.
         static readonly List<VisualElement> roots = new List<VisualElement>();
         static bool following;
 
@@ -172,6 +174,7 @@ namespace ChessFight.Game
             var face = DisplayFace;
             foreach (var root in roots)
             {
+                Retranslate(root);
                 root.style.unityFont = BodyFont;
                 root.Query<VisualElement>(className: DisplayClass).ForEach(e =>
                 {
@@ -179,6 +182,17 @@ namespace ChessFight.Game
                     else e.style.unityFont = StyleKeyword.Null;
                 });
             }
+        }
+
+        // Every text on the panel in the new language, except what a player types (a text field's own text).
+        static void Retranslate(VisualElement root)
+        {
+            root.Query<TextElement>().ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.text) || t.GetFirstAncestorOfType<TextField>() != null) return;
+                var again = Loc.Again(t.text);
+                if (again != t.text) t.text = again;
+            });
         }
 
         static readonly List<PanelSettings> scaled = new List<PanelSettings>();

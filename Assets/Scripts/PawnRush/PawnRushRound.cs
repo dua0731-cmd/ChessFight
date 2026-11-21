@@ -279,6 +279,9 @@ namespace ChessFight.PawnRush
             StartClock = clock;
             foreach (var s in sections)
                 if (s != null) s.Configure(s.Slot, s.Seed, teamSize, StartClock);
+            // R757 (user 11-22: the mini-game signs and flags still Korean in an English match): what the sections
+            // rebuilt from the shared start is new and was not in the first sweep.
+            SignText.TranslateUnder(transform);
         }
 
         // Six spots a team in two rows across the first section's entry, facing the way on.
@@ -306,6 +309,7 @@ namespace ChessFight.PawnRush
             teamSize = Mathf.Clamp(size, 1, 6);
             foreach (var s in sections)
                 if (s != null) s.Configure(s.Slot, s.Seed, teamSize, StartClock);
+            SignText.TranslateUnder(transform);   // R757: as SetStartClock
         }
 
         public void Clear()

@@ -4420,6 +4420,11 @@ public static class NetworkCoreTests
                     Check(Loc.Use("en") && changes == 2 && !Loc.Use("ja") && !Loc.Use("xx") && Loc.Lang == "en", "the same again, a column it lacks");
                     Check(Loc.F("낙하 {0} · 맞음 {1}", 3, 7) == "Hits 7, falls 3" && Loc.F("없는 {0}", 1.5) == "없는 1.5", "slots in the language's own order");
                     Check(Loc.F("틀린 {0}", "x") == "틀린 x", "a translation whose slots do not fit shows the Korean");
+                    // R756: words already shown follow a change of language (a label built once).
+                    Check(Loc.Previous == "ko" && Loc.Again("언어") == "Language" && Loc.Again("엘리트") == "엘리트" && Loc.Again("") == "", "Korean on screen to English");
+                    Check(Loc.Use("ru") && Loc.Previous == "en" && Loc.Again("Language") == "Язык" && Loc.Again("Hits 7, falls 3") == "Hits 7, falls 3", "English on screen to Russian");
+                    Check(Loc.Use("ko") && Loc.Again("Язык") == "언어" && Loc.Again("Language") == "Language", "Russian back to Korean; only the language left");
+                    Check(table.KoreanOf("Language", "en") == "언어" && table.KoreanOf("언어", "ko") == "언어" && table.KoreanOf("x", "en") == null && table.KoreanOf("Language", "xx") == null, "the line behind a translation");
                     Loc.Load(StringTable.Parse("ko\tja\n언어\t言語\n", null));
                     Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "a table without the language shown goes back to Korean");
                 }

@@ -92,16 +92,31 @@ namespace ChessFight.PawnRush
             if (showBrief && !teamGateOpen) Briefing(scale);
             if (visibleHint != null)
             {
-                float width = Mathf.Min(390f * scale, Screen.width - 8f);
+                // R758 (user 11-22, English: "White team" folded into two lines in its 56 px box and the hint under it):
+                // the team's box and the bar grow to what the words need, on one line; past the screen the words get
+                // smaller. Korean fits the old 56 px box and 390 px bar, as before.
+                directionStyle.fontSize = Mathf.RoundToInt(17f * scale);
+                directionStyle.wordWrap = false;
+                string teamName = Loc.T(hintTeam == Teams.White ? "백팀" : "흑팀");
+                float tagW = Mathf.Max(56f * scale, directionStyle.CalcSize(new GUIContent(teamName)).x + 14f * scale);
+                float need = tagW + directionStyle.CalcSize(new GUIContent(visibleHint)).x + 24f * scale;
+                float most = Screen.width - 8f;
+                if (need > most)
+                {
+                    float shrink = most / need;
+                    directionStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(directionStyle.fontSize * shrink));
+                    tagW *= shrink;
+                    need = most;
+                }
+                float width = Mathf.Min(Mathf.Max(390f * scale, need), most);
                 var rect = new Rect((Screen.width - width) * .5f, Screen.height - 128f * scale, width, 36f * scale);
                 GUI.color = new Color(.07f, .09f, .13f, .9f);
                 GUI.DrawTexture(rect, Texture2D.whiteTexture);
                 GUI.color = Arena.TeamColor(hintTeam, true);
                 GUI.DrawTexture(new Rect(rect.x, rect.y, 4f * scale, rect.height), Texture2D.whiteTexture);
                 GUI.color = Color.white;
-                directionStyle.fontSize = Mathf.RoundToInt(17f * scale);
-                GUI.Label(new Rect(rect.x, rect.y, 56f * scale, rect.height), Loc.T(hintTeam == Teams.White ? "백팀" : "흑팀"), directionStyle);
-                GUI.Label(new Rect(rect.x + 56f * scale, rect.y, rect.width - 60f * scale, rect.height), visibleHint, directionStyle);
+                GUI.Label(new Rect(rect.x, rect.y, tagW, rect.height), teamName, directionStyle);
+                GUI.Label(new Rect(rect.x + tagW, rect.y, rect.width - tagW - 4f * scale, rect.height), visibleHint, directionStyle);
             }
             // R703: the flow rules' line (the other team is through: this gate opens by itself in so many seconds).
             // R704: or the team's count on its gather pad, shown to its players anywhere on the course.
