@@ -58,6 +58,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.GreatDiagonal: GdCast(u); break;
                 case PawnRushSkillIds.PromotionRun: PrCast(u); break;
                 case PawnRushSkillIds.RookRoll: RrCast(u); break;
+                case PawnRushSkillIds.QueenDescent: QdCast(u); break;
             }
         }
 
@@ -69,6 +70,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.GreatDiagonal: GdStep(u, dt, cam); break;
                 case PawnRushSkillIds.PromotionRun: PrStep(u, dt, cam); break;
                 case PawnRushSkillIds.RookRoll: RrStep(u, dt, cam); break;
+                case PawnRushSkillIds.QueenDescent: QdStep(u, dt, cam); break;
             }
         }
 
@@ -88,6 +90,7 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.GreatDiagonal: GdStrikeFx(u, e); break;
                 case PawnRushSkillIds.PromotionRun: PrStrikeFx(u, e); break;
                 case PawnRushSkillIds.RookRoll: RrStrikeFx(u, e); break;
+                case PawnRushSkillIds.QueenDescent: QdStrikeFx(u, e); break;
             }
         }
 
@@ -99,6 +102,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.Nightmare: NmLandFx(u, e); break;
                 case PawnRushSkillIds.PromotionRun: PrLandFx(u, e); break;
+                case PawnRushSkillIds.QueenDescent: QdLandFx(u, e); break;
             }
         }
 
@@ -120,6 +124,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.PromotionRun: PrWarnFx(u, e); break;
+                case PawnRushSkillIds.QueenDescent: QdWarnFx(u, e); break;
             }
         }
 
@@ -131,6 +136,7 @@ namespace ChessFight.RagdollLab
             {
                 case PawnRushSkillIds.PromotionRun: PrStateFx(u, e); break;
                 case PawnRushSkillIds.RookRoll: RrStateFx(u, e); break;
+                case PawnRushSkillIds.QueenDescent: QdStateFx(u, e); break;
             }
         }
 
@@ -141,6 +147,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.GreatDiagonal => GdHint(u),
             PawnRushSkillIds.PromotionRun => PrHint(u),
             PawnRushSkillIds.RookRoll => RrHint(u),
+            PawnRushSkillIds.QueenDescent => QdHint(u),
             _ => null,
         };
 
@@ -151,6 +158,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.GreatDiagonal => GdLine(u),
             PawnRushSkillIds.PromotionRun => PrLine(u),
             PawnRushSkillIds.RookRoll => RrLine(u),
+            PawnRushSkillIds.QueenDescent => QdLine(u),
             _ => $"맞힌 적 {u.struckSet.Count}",
         };
 
@@ -161,6 +169,7 @@ namespace ChessFight.RagdollLab
             PawnRushSkillIds.GreatDiagonal => GdWarning(u, me),
             PawnRushSkillIds.PromotionRun => PrWarning(u, me),
             PawnRushSkillIds.RookRoll => RrWarning(u, me),
+            PawnRushSkillIds.QueenDescent => QdWarning(u, me),
             _ => null,
         };
 
@@ -180,6 +189,7 @@ namespace ChessFight.RagdollLab
                 if (me.HasSkill(PawnRushSkillIds.Nightmare)) NmPreview(me, s, previewWanted);
                 if (me.HasSkill(PawnRushSkillIds.GreatDiagonal)) GdPreview(me, s, cam, previewWanted);
                 if (me.HasSkill(PawnRushSkillIds.RookRoll)) RrPreview(me, s, cam, previewWanted);
+                if (me.HasSkill(PawnRushSkillIds.QueenDescent)) QdPreview(me, s, previewWanted);
             }
             foreach (var p in previewWanted)
             {

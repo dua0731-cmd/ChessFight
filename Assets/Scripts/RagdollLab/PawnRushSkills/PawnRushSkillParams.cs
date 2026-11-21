@@ -885,6 +885,12 @@ namespace ChessFight.RagdollLab
         [Tooltip("룩앤롤: 점프로 튀어 오르는 빠르기 (m/s), 떨어지는 빠르기 (m/s²); 적을 날리는 거리 (m), 넘어짐 (초); 스트라이크: 이 시간 (초) 안에 이만큼; 올라탄 우리 편을 앞으로 (m); 부순 바리케이드가 다시 서는 시간 (초)")]
         public float rrJumpUp = 14f, rrGravity = 28f, rrThrow = 25f, rrKnock = 2f, rrStrikeWindow = 0.6f, rrLift = 15f, rrRegrow = 4f;
         public int rrStrike = 4;
+        [Tooltip("여왕 강림: 시간 (초); 내리꽂기 수 (×1.5 넷, ×2 여섯); 나는 높이 (m), 빠르기 (m/s), 가속 (m/s²), 높이를 맞추는 빠르기 (m/s); 솟는 시간 (초); 찍을 수 있는 거리 (m)")]
+        public float qdSeconds = 10f;
+        public int qdDives = 3;
+        public float qdHigh = 20f, qdSpeed = 30f, qdAccel = 60f, qdClimb = 12f, qdRiseTime = 0.8f, qdReach = 60f;
+        [Tooltip("여왕 강림: 내리꽂는 시간 = 그림자 (초); 둘레 (m)와 희생의 둘레 (m); 날리는 거리 (m), 넘어짐 (초); 끝에 내려서는 시간 (초); 희생 뒤 잡히기까지 (초)")]
+        public float qdDiveTime = 1f, qdRadius = 8f, qdSacRadius = 16f, qdThrow = 25f, qdKnock = 2.5f, qdDownTime = 0.8f, qdTakenShow = 0.8f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

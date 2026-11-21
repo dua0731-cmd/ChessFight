@@ -183,7 +183,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.QueenDescent, "여왕 강림", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 4 · 6번) · 10초 동안 코스 위 20 m 높이를 초속 30 m로 날기 (이동 키 · 카메라 쪽)" + "\n" +
                 "좌클릭 = 찍은 곳에 내리꽂았다가 다시 솟기 ×3 (둘레 8 m 적 25 m 날아가 2.5초 넘어짐, 떨어질 곳에 1초 그림자)" + "\n" +
-                "마지막 한 번은 우클릭 = 퀸 희생 (둘레 16 m, 퀸은 잡혀 체크포인트로) · 희생 안 하면 끝에 그 자리에 내려섬 · 아직 만드는 중"),
+                "마지막 한 번은 우클릭 = 퀸 희생 (둘레 16 m, 퀸은 잡혀 체크포인트로, 시험 씬은 넘어짐) · 희생 안 하면 끝에 그 자리에 내려섬 · 지붕 밑엔 못 내리꽂음 · 판정 !!~??"),
             Made(PawnRushSkillIds.KingWalk, "킹 워크", PieceKind.King, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 18 · 24초) · 12초 동안 1.5배 커져 1.8배로 행진 (아무것도 못 넘어뜨림, 앞길의 적은 옆으로)" + "\n" +
                 "뒤로 레드카펫 100 m · 카펫을 밟은 우리 팀은 킹 뒤로 빨려 와 행렬 · 행렬 넷이면 한 번 더 커지고 2.2배" + "\n" +
