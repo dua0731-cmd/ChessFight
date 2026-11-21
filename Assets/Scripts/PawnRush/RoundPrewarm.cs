@@ -28,7 +28,7 @@ namespace ChessFight.PawnRush
         const float Inset = 3f;              // metres in from a section's entry and exit
         const float MergeMetres = 10f;       // spots closer than this to the last one kept are left out
         const float WideFov = 100f;          // the tour's vertical field of view (about 130 degrees across at 16:9)
-        const float SettleSeconds = .6f;     // back where it started, for the sections' lights to ease back
+        const float SettleSeconds = .6f;     // back where it started, for the sections' lights to settle there
         const float GiveUpSeconds = 30f;     // the whole tour at most
         const int MaxViews = 140;
         const int MaxSwitchedOffPerSection = 400;
@@ -94,6 +94,9 @@ namespace ChessFight.PawnRush
                 yield break;
             }
             Take(cam);
+            // R734: the sections' lights ease over about two seconds in play; on the tour each spot is one frame, so they
+            // jump to the spot's light (each place drawn whole) and, back at the start, to the light there.
+            ZoneLight.Instant = true;
             drawnPairs.Clear();
             longest.Clear();
             order.Clear();
@@ -233,6 +236,7 @@ namespace ChessFight.PawnRush
 
         void GiveBack()
         {
+            ZoneLight.Instant = false;
             if (taken != null)
             {
                 taken.transform.SetPositionAndRotation(before.position, before.rotation);

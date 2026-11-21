@@ -84,8 +84,10 @@ namespace ChessFight.PawnRush
             [Range(0f, 1f)] public float vignette = .14f;
 
             [Header("Reach and quality")]
+            // R734: 14 -> 24 m, the change spread over the corridor and the next room's first stretch instead of the corridor
+            // alone (with ZoneLight's two-second easing the user's "확 바껴" into the drawbridge room is a slow turn now).
             [Tooltip("Metres round the yard over which its light fades in and out (as a section)")]
-            public float blend = 14f;
+            public float blend = 24f;
             [Tooltip("A reflection probe per zone (medium and high)")]
             public bool probes = true;
             [Tooltip("Point lights in the lamps, the coaches' and the hoists' lamps, and RcyLights.txt's places")]
@@ -107,7 +109,8 @@ namespace ChessFight.PawnRush
         // gate towers' tops. The whole map runs on into the finish court.
         Bounds YardBox()
         {
-            float z1 = asSection ? SectionExit.z + 2f : GateZ + LaterShift + 46f;
+            // R734: as a section the box ends at the exit itself (was 2 m past it), so the fade starts as the camera leaves.
+            float z1 = asSection ? SectionExit.z : GateZ + LaterShift + 46f;
             const float z0 = -20f, half = 30f, y0 = -12f, y1 = 40f;
             return new Bounds(new Vector3(0f, (y0 + y1) * .5f, (z0 + z1) * .5f), new Vector3(half * 2f, y1 - y0, z1 - z0));
         }

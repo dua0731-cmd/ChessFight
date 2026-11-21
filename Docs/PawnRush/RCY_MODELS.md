@@ -236,6 +236,8 @@ QA 도구는 `ArtSource/PawnRush/CarriageYardModels/qa/`(README에 쓰는 법, �
 
 ## 11-16 R683 조명 · 분위기 (세션 "마차뜰 Unity 조명", 커밋 안 함 · 사용자 확인 전)
 
+> **R734 (11-21):** 해 · 주변광 · 안개는 이제 `YardAtmosphere`가 직접 쓰지 않고 `Game/ZoneLight` 혼합기에 넘긴다(서재 · 천문대와 같은 하나). 주변광은 장면 하늘의 구면 조화와 섞여 마차뜰 경계에서 튀지 않고, 구간일 때 상자 끝은 출구 자체(전: 출구 + 2 m), 섞는 거리 `blend` 14 → **24 m**, 시간으로 약 2초(전 0.5초). 색 보정 · 보조광 · 하늘 · 등불은 같은 무게. 사용자 "마차뜰에서 도개교로 넘어갈 때 … 조명이 확 바껴". [구간 §3 구간 조명 이어짐](PAWN_RUSH_SECTIONS.md)
+
 승규 "마차뜰 그래픽 최대치" 중 Unity 쪽(조명 · 그림자 · 하늘 · 안개 · 색 보정 · 코드로 넣는 불빛). 모델 · 재질은 손대지 않음. 기준은 컨셉 프롬프트(R676 PROMPT.md 1 ~ 6번): **맑은 한낮, 파란 하늘에 구름 조금, 짧고 부드러운 그림자, 따뜻한 흰빛, 하늘이 비친 청록 물, 빛나는 신호에만 약한 번짐, 낮에는 마차 · 승강대 등불 말고는 불이 꺼져 있음.** 그래서 가로등 · 곳간 등불의 빛은 유리 둘레만 따뜻하게 밝히는 정도로 약하게 두었다.
 
 **파일:** `RoyalCarriageYard.Lighting.cs`(새 partial: Inspector 'Look: light and air' 설정 · 조립), `YardAtmosphere.cs`(새: 카메라 위치로 섞고 되돌리기 · 등불 관리), `Game/ZoneGrade.cs`(새: URP 지역 색 보정 볼륨, URP 없으면 아무것도 안 함). `RoyalCarriageYard.cs`에는 Awake 끝의 `Lighting();` 한 줄만. 전역 설정(`Assets/Settings/*.asset`, Quality · Graphics)은 안 바꿈.
