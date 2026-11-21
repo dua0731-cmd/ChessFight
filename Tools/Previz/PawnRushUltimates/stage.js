@@ -6,7 +6,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { drawHud } from './hud.js';
+import { Pass } from 'three/addons/postprocessing/Pass.js';
+import { drawHud, pipRect } from './hud.js';
 export { THREE };
 
 export const W = 1280, H = 720;
@@ -225,16 +226,39 @@ const GradeShader = {
   uniforms: { tDiffuse: { value: null }, dimW: { value: 1 }, blur: { value: new THREE.Vector2(0, 0) }, rgb: { value: 0 }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse, mask; uniform vec2 blur; uniform float sat, vig, flashA, maskOn, contrast, rgb, dimW; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
-    void main(){ vec4 c = vec4(0.0);
-      if (blur.x != 0.0 || blur.y != 0.0) { for (int i = 0; i < 11; i++) { c += texture2D(tDiffuse, vUv + blur * (float(i) / 10.0 - 0.5)); } c /= 11.0; } else { c = texture2D(tDiffuse, vUv); }
-      if (rgb > 0.0) { c.r = texture2D(tDiffuse, vUv + vec2(rgb, rgb * 0.3)).r; c.b = texture2D(tDiffuse, vUv - vec2(rgb, rgb * 0.3)).b; }
-      float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    void main(){ vec4 c = vec4(0.0); vec3 e = vec3(0.0);
+      if (blur.x != 0.0 || blur.y != 0.0) { for (int i = 0; i < 11; i++) { vec2 q = vUv + blur * (float(i) / 10.0 - 0.5); c += texture2D(tDiffuse, q); e += texture2D(mask, q).rgb; } c /= 11.0; e /= 11.0; } else { c = texture2D(tDiffuse, vUv); e = texture2D(mask, vUv).rgb; }
+      if (rgb > 0.0) { vec2 o = vec2(rgb, rgb * 0.3); c.r = texture2D(tDiffuse, vUv + o).r; c.b = texture2D(tDiffuse, vUv - o).b; e.r = texture2D(mask, vUv + o).r; e.b = texture2D(mask, vUv - o).b; }
+      e *= maskOn; vec3 w = max(c.rgb - e, vec3(0.0));
+      float l = dot(w, vec3(0.2126, 0.7152, 0.0722));
       vec3 gray = 0.18 * pow(vec3(l) / 0.18, vec3(contrast));
-      vec3 col = mix(gray, c.rgb, sat) * tint * dimW; c.rgb = mix(col, c.rgb, maskOn * texture2D(mask, vUv).r);
+      c.rgb = mix(gray, w, sat) * tint * dimW + e;
       vec2 d = (vUv - 0.5) * vec2(1.5, 1.0); float v = smoothstep(0.32, 0.9, length(d));
       c.rgb = mix(c.rgb, vigCol, clamp(vig * v, 0.0, 1.0));
       c.rgb = mix(c.rgb, flashCol, flashA); gl_FragColor = c; }`,
 };
+
+/** What keeps its colour in a grey world (objects on layer 1), drawn alone in their own colours behind the
+ *  world's depth, so the grade can take exactly their light out of the picture, grey the rest and add it back:
+ *  a teal glow stays teal instead of tinting the sand under it. Runs inside the composer, after the main
+ *  render, so it reuses that render's shadow map. */
+const lightsOn1 = sc => sc.traverse(o => { if (o.isLight) { o.layers.enable(1); o.layers.enable(2); } });
+class KeepPass extends Pass {
+  constructor(st) { super(); this.st = st; this.needsSwap = false; }
+  render(r) {
+    const st = this.st; if (!st.keepOn) return;
+    const sc = st.scene, cam = st.camera, hidden = [];
+    lightsOn1(sc);
+    sc.traverse(o => { if (!o.visible || o.isLight || o === sc) return; const m = o.material, see = m && (Array.isArray(m) ? m.some(x => x.transparent) : m.transparent);
+      if ((o.layers.mask & 2) || see || o.isSprite || o.isPoints) { o.visible = false; hidden.push(o); } });
+    const auto = r.shadowMap.autoUpdate, ac = r.autoClear; r.shadowMap.autoUpdate = false;
+    r.setRenderTarget(st.maskRT); r.setClearColor(0x000000, 1); r.clear();
+    sc.overrideMaterial = st.depthMat; r.autoClear = false; r.render(sc, cam); sc.overrideMaterial = null;
+    for (const o of hidden) o.visible = true;
+    cam.layers.set(1); r.render(sc, cam); cam.layers.set(0);
+    r.autoClear = ac; r.shadowMap.autoUpdate = auto;
+  }
+}
 
 // ---------- actors: a piece and its plan, a chain of steps that each start where the last one ended ----------
 const S0 = () => ({ x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, s: 1, sq: 1, gait: 0, run: 0, stone: 0, hide: 0 });
@@ -352,15 +376,16 @@ export class Stage {
     sc.add(sun, sun.target);
     const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
     const cp = this.composer = new EffectComposer(r, rt);
+    // what keeps its colour when the world goes grey: things on layer 1, in their own colours (see KeepPass)
+    this.maskRT = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 }); this.depthMat = new THREE.MeshBasicMaterial({ colorWrite: false });
     cp.addPass(new RenderPass(sc, this.camera));
+    cp.addPass(new KeepPass(this));
     // grade before bloom: a world drained to grey still glows in the colours of what kept them
-    this.grade = new ShaderPass(GradeShader); cp.addPass(this.grade);
+    this.grade = new ShaderPass(GradeShader); this.grade.uniforms.mask.value = this.maskRT.texture; cp.addPass(this.grade);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.55, 0.86); cp.addPass(this.bloom);
     cp.addPass(new OutputPass());
     this.g = hud.getContext('2d');
     this.dyn = new THREE.Group(); sc.add(this.dyn);
-    // what stays in colour when the world goes black and white: objects on layer 1, drawn white into this mask
-    this.maskRT = new THREE.WebGLRenderTarget(W / 2, H / 2); this.maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   }
   load(clip) {
     this.scene.remove(this.dyn); this.dyn = new THREE.Group(); this.scene.add(this.dyn);
@@ -398,7 +423,7 @@ export class Stage {
       m.scale.set(sp, hh, sp); m.position.y = (o.y ?? 0) + hh / 2; m.material.opacity = (o.op ?? 0.9) * (1 - prog(u, o.hold ?? 0.55, 1)); });
   }
   flash(pos, s0, d, size, color = 0xffffff, o = {}) {
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.flash, color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, depthTest: o.depthTest ?? true }));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: o.tex ?? TEX.flash, color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, depthTest: o.depthTest ?? true }));
     return this.obj(sp, s => { const u = (s - s0) / d; sp.visible = u >= 0 && u <= 1; if (!sp.visible) return; sp.position.copy(at(pos, s));
       const k = size * (0.35 + 0.65 * easeOut(u * 2.5)); sp.scale.set(k, k, k); sp.material.opacity = (o.op ?? 1) * Math.pow(1 - u, 1.6); });
   }
@@ -500,17 +525,25 @@ export class Stage {
     if ((gr.flashA ?? 0) > fa) { fa = gr.flashA; fc = gr.flashCol ?? [1, 1, 1]; }
     u.flashA.value = fa; u.flashCol.value.set(...fc);
     u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0; u.blur.value.set(...(gr.blur ?? [0, 0])); u.rgb.value = gr.rgb ?? 0; u.dimW.value = gr.dimW ?? 1;
-    if (u.maskOn.value > 0) {
-      const r = this.renderer, sc = this.scene, cam = this.camera, fog = sc.fog;
-      sc.fog = null; sc.overrideMaterial = this.maskMat; cam.layers.set(1);
-      r.setRenderTarget(this.maskRT); r.setClearColor(0x000000, 1); r.clear(); r.render(sc, cam);
-      r.setRenderTarget(null); cam.layers.set(0); sc.overrideMaterial = null; sc.fog = fog;
-      u.mask.value = this.maskRT.texture;
-    }
+    this.keepOn = u.maskOn.value > 0;
     this.sky.material.uniforms.dark.value = this.skyFn ? this.skyFn(s, c) : 0;
     this.bloom.strength = gr.bloom ?? 0.55;
     this.composer.render();
+    for (const q of this.banners) if (q.pip && c >= q.c0 && c <= (q.pipEnd ?? q.c1)) this.pipDraw(q, c, s);
     drawHud(this, c, s);
+  }
+  /** A live close-up in a banner's window (everyone's screen): what the clip put on layer 2 - the caster, its
+   *  aura, its square - seen from in front, on a dark ground. Nobody's own camera moves for it. */
+  pipDraw(q, c, s) {
+    const R = pipRect(this, q, c); if (R.h < 2) return;
+    const r = this.renderer, pc = this.pipCam ?? (this.pipCam = new THREE.PerspectiveCamera(30, 1, 0.1, 400)), v = q.pip(s, c), y = H - R.y - R.h;
+    pc.aspect = R.w / R.h; pc.fov = v.fov ?? 30; pc.position.copy(v.p); pc.lookAt(v.l); pc.updateProjectionMatrix(); pc.layers.set(2);
+    lightsOn1(this.scene);
+    r.setRenderTarget(null); r.setViewport(R.x, y, R.w, R.h); r.setScissor(R.x, y, R.w, R.h); r.setScissorTest(true);
+    r.setClearColor(q.pipBg ?? 0x03120f, 1); r.clear();
+    const auto = r.shadowMap.autoUpdate, fog = this.scene.fog; r.shadowMap.autoUpdate = false; this.scene.fog = null;
+    r.render(this.scene, pc);
+    this.scene.fog = fog; r.shadowMap.autoUpdate = auto; r.setScissorTest(false); r.setViewport(0, 0, W, H);
   }
   /** Screen position of a world point, or null behind the camera. */
   project(p) { const v = p.clone().project(this.camera); if (v.z > 1) return null; return { x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H }; }

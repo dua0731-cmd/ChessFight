@@ -145,25 +145,30 @@ const badge = (st, pos, s0, s1, text) => st.label(pos, s0, s1, text, { badge: tr
 
 // ================================================================ the queen sacrifice, the same scene for every way of casting it
 const QPACK = { queen: [0.5, 67], knight: [-2.6, 65.6], rook: [2.8, 64.6], bishop: [-0.6, 63.2], pawn: [3.6, 62], king: [-6.6, 52] };
+/** o.pure: only colours that mean something (the queen's own light teal and white, the hit red); o.noDisc: the
+ *  clip marks the target squares itself; o.giantMat: the falling giant's material */
 function queenScene(st, o) {
   const T = teams(st, 'queen', { enemy: QPACK }), Q = T.me, E = T.E, sImp = o.sImp, sWarn = o.sWarn;
   const C0 = centroid([E.queen, E.knight, E.rook, E.bishop, E.pawn], sImp), tx = clamp(C0.x, -3, 3), tz = C0.z;
   // the straggling king sees the target and stops: he ends just outside it
   if (!o.noDodge) E.king.until(sWarn + 0.25).custom(sImp - sWarn + 0.6, (u, t, a) => ({ ...a, run: 0, z: a.z + 0.6 * easeOut(prog(t, 0, 0.3)), pitch: -0.12 * smooth(prog(t, 0, 0.3)), roll: 0.07 * Math.sin(t * 9) })).run(20);
   const disc = []; for (let i = -10; i <= 10; i++) for (let j = -10; j <= 10; j++) { const x = snap(tx) + i * SQ, z = snap(tz) + j * SQ; if (Math.abs(x) < HALF && Math.hypot(x - tx, z - tz) < 20) disc.push({ x, z, d: Math.hypot(x - tx, z - tz) * 0.01 }); }
-  st.tiles(disc, sWarn, sImp + 0.1, COL.red, { op: 0.45, pulse: 14 });
-  for (const r of [6, 13, 20]) st.ring(tx, tz, sWarn, sImp - sWarn + 0.15, r, r, COL.red, { w: 0.04, op: 1, keep: true });
-  const big = makePiece('queen', null, MAT.fire);
+  if (!o.noDisc) {
+    st.tiles(disc, sWarn, sImp + 0.1, COL.red, { op: 0.45, pulse: 14 });
+    for (const r of [6, 13, 20]) st.ring(tx, tz, sWarn, sImp - sWarn + 0.15, r, r, COL.red, { w: 0.04, op: 1, keep: true });
+  }
+  const big = makePiece('queen', null, o.giantMat ?? MAT.fire); if (o.pure) keepColour(big);
   st.obj(big, s => {
     if (s < sImp) { const k = o.giantPre(s); big.visible = !!k; if (!k) return; big.position.set(k.x, k.y, k.z); big.scale.setScalar(k.k ?? 8); big.rotation.set(0, k.ry ?? s * 0.6, 0); return; }
     big.visible = s < sImp + 1.3; if (!big.visible) return; big.position.set(tx, -14 * easeIn(prog(s, sImp + 0.4, sImp + 1.3)), tz); big.scale.setScalar(8);
   });
-  st.flash(V(tx, 3, tz), sImp, o.soft ? 0.35 : 0.9, o.soft ? 34 : 60); st.screen(sImp, o.soft ? 0.12 : 0.45, [1, 1, 1], o.soft ? 0.7 : 0.95); st.shake(sImp, 1.4, 1.1);
-  st.ring(tx, tz, sImp, 1.2, 2, 34, 0xffd090, { w: 0.06 }); st.ring(tx, tz, sImp + 0.05, 1.6, 2, 46, 0xffffff, { w: 0.03, op: 0.5 });
-  st.dust(tx, tz, sImp, { n: 22, r: 16, size: 6, life: 2.2, color: 0xc9a98a }); st.sparks(V(tx, 2, tz), sImp, 140, { color: 0xffa040, speed: 18, up: 0.4, life: 1.6 });
+  const P = o.pure ? keepColour : x => x;
+  P(st.flash(V(tx, 3, tz), sImp, o.soft ? 0.35 : 0.9, o.pure ? 14 : o.soft ? 34 : 60, 0xffffff, { tex: o.pure ? TEX.dot : undefined, op: o.pure ? 0.6 : 1 })); st.screen(sImp, o.soft ? 0.12 : 0.45, [1, 1, 1], o.pure ? 0.1 : o.soft ? 0.7 : 0.95); st.shake(sImp, 1.4, 1.1);
+  P(st.ring(tx, tz, sImp, 1.2, 2, 34, o.pure ? 0x3fe0bf : 0xffd090, { w: 0.06 })); P(st.ring(tx, tz, sImp + 0.05, 1.6, 2, 46, 0xffffff, { w: 0.03, op: 0.5 }));
+  st.dust(tx, tz, sImp, { n: o.pure ? 12 : 22, r: 16, size: 6, life: 2.2, color: 0xc9a98a, op: o.pure ? 0.35 : 0.75 }); P(st.sparks(V(tx, 2, tz), sImp, 140, { color: o.pure ? 0xc8fff0 : 0xffa040, speed: 18, up: 0.4, life: 1.6 }));
   const crater = new THREE.Mesh(new THREE.RingGeometry(1.5, 7.5, 48), basic(0x1a0c06, 0.85)); crater.rotation.x = -Math.PI / 2; crater.position.set(tx, 0.04, tz);
   st.obj(crater, s => { crater.visible = s >= sImp && s < sImp + 4.4; crater.material.opacity = 0.85 * fade(s, sImp, sImp + 4.4, 0.05, 0.6); });
-  st.tiles(disc.filter(q => Math.hypot(q.x - tx, q.z - tz) < 7), sImp + 0.1, sImp + 4.3, 0xff5a1a, { op: 0.55, pulse: 6 });
+  if (!o.noDisc) st.tiles(disc.filter(q => Math.hypot(q.x - tx, q.z - tz) < 7), sImp + 0.1, sImp + 4.3, 0xff5a1a, { op: 0.55, pulse: 6 });
   const hit = [];
   for (const e of T.enemies) {
     const p = e.pred(sImp), d = Math.hypot(p.x - tx, p.z - tz);

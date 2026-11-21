@@ -7,7 +7,8 @@ import { EDITS } from './edits.js';
 import { HEROES } from './hero.js';
 import { HERO_EDITS } from './heroedit.js';
 import { KNIGHT_EDITS } from './knightedit.js';
-const CLIPS = { ...ULTS, ...CASTS, ...EDITS, ...HEROES, ...HERO_EDITS, ...KNIGHT_EDITS };
+import { ULT_CASTS } from './ultcast.js';
+const CLIPS = { ...ULTS, ...CASTS, ...EDITS, ...HEROES, ...HERO_EDITS, ...KNIGHT_EDITS, ...ULT_CASTS };
 
 const st = new Stage(document.getElementById('gl'), document.getElementById('hud'));
 async function fonts() {

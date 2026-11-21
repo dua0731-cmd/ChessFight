@@ -209,20 +209,31 @@ function evalBar(g, st, c, s) {
   g.font = `16px ${DISP}`; g.fillStyle = e >= 0 ? '#1d1a17' : '#f4efe6'; g.fillText(txt, x + w / 2, e >= 0 ? y + h - 14 : y + 14);
   g.restore();
 }
+/** A banner's box under the top bar; one with a live window (pip) is wider and taller, the window at its left. */
+function bannerBox(g, q, c) {
+  g.save(); g.font = `40px ${DISP}`; const tw = g.measureText(q.text).width; g.font = `600 19px ${BODY}`; const sw = q.sub ? g.measureText(q.sub).width : 0; g.restore();
+  const pw = q.pip ? 150 : 0, w = Math.max(tw, sw) + 150 + pw, h = q.pip ? 112 : q.sub ? 92 : 66;
+  return { x: (W - w) / 2 + (1 - easeOut(prog(c, q.c0, q.c0 + 0.3))) * -60, y: 74, w, h, pw };
+}
+/** Where a banner's live window is on the screen (it opens like a shutter and closes before the banner goes). */
+export function pipRect(st, q, c) {
+  const e = q.pipEnd ?? q.c1, b = bannerBox(st.g, q, c), open = easeOut(prog(c, q.c0 + 0.06, q.c0 + 0.32)) * (1 - smooth(prog(c, e - 0.3, e - 0.05))), H0 = b.h - 16, h = Math.round(H0 * open);
+  return { x: Math.round(b.x + 8), y: Math.round(b.y + 8 + (H0 - h) / 2), w: b.pw - 8, h };
+}
 /** The big moment told to everyone: a banner under the top bar, the voice line, the music chip, whose screen this is. */
 function moment(g, st, c) {
   for (const q of st.banners) {
     if (c < q.c0 || c > q.c1) continue;
-    const a = fade(c, q.c0, q.c1, 0.12, 0.35), dx = (1 - easeOut(prog(c, q.c0, q.c0 + 0.3))) * -60;
-    g.save(); g.globalAlpha = a; g.translate(dx, 0);
-    g.font = `40px ${DISP}`; const tw = g.measureText(q.text).width; g.font = `600 19px ${BODY}`; const sw = q.sub ? g.measureText(q.sub).width : 0;
-    const w = Math.max(tw, sw) + 150, x = (W - w) / 2, y = 74;
-    const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, q.color); gr.addColorStop(1, q.color2 ?? q.color);
-    g.fillStyle = gr; rrect(g, x, y, w, q.sub ? 92 : 66, 16); g.fill();
-    g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 2.5; rrect(g, x, y, w, q.sub ? 92 : 66, 16); g.stroke();
-    g.font = `52px ${SYM}`; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(q.glyph ?? '', x + 50, y + (q.sub ? 46 : 33));
-    g.textAlign = 'left'; g.font = `40px ${DISP}`; outlined(g, q.text, x + 96, y + 36, '#ffffff', 'rgba(0,0,0,0.45)', 6);
-    if (q.sub) { g.font = `600 19px ${BODY}`; g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillText(q.sub, x + 98, y + 70); }
+    const a = fade(c, q.c0, q.c1, 0.12, 0.35), b = bannerBox(g, q, c), x = b.x, y = b.y, ty = y + (b.h - (q.sub ? 92 : 66)) / 2;
+    g.save(); g.globalAlpha = a;
+    const gr = g.createLinearGradient(x, 0, x + b.w, 0); gr.addColorStop(0, q.color); gr.addColorStop(1, q.color2 ?? q.color);
+    g.fillStyle = gr; rrect(g, x, y, b.w, b.h, 16); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 2.5; rrect(g, x, y, b.w, b.h, 16); g.stroke();
+    g.font = `52px ${SYM}`; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(q.glyph ?? '', x + b.pw + 50, ty + (q.sub ? 46 : 33));
+    g.textAlign = 'left'; g.font = `40px ${DISP}`; outlined(g, q.text, x + b.pw + 96, ty + 36, '#ffffff', 'rgba(0,0,0,0.45)', 6);
+    if (q.sub) { g.font = `600 19px ${BODY}`; g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillText(q.sub, x + b.pw + 98, ty + 70); }
+    if (q.pip) { const R = pipRect(st, q, c); if (R.h > 1) { g.clearRect(R.x, R.y, R.w, R.h); g.globalAlpha = 1; g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 2; g.strokeRect(R.x - 1, R.y - 1, R.w + 2, R.h + 2);
+      g.font = `700 13px ${BODY}`; g.fillStyle = 'rgba(255,255,255,0.95)'; g.textBaseline = 'alphabetic'; g.fillText(q.pipTag ?? '실시간', R.x + 6, R.y + R.h - 6); } }
     g.restore();
   }
   for (const q of st.voices) {
@@ -307,6 +318,6 @@ export function drawHud(st, c, s) {
 export function clipText(st) {
   const T = st.clip;
   return [T.name, T.nota, T.line, T.tag, NAME[T.kind], '궁극기 안 의 팀 게이지 Q 준비 % 출발 왕관 선두 차 m + − ♪ 0123456789',
-    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text), ...st.feed.map(q => q.text), ...st.typing.map(q => q.text), '기보', ...st.banners.flatMap(q => [q.text, q.sub || '']), ...st.voices.map(q => q.text), ...st.music.map(q => q.text), '모두에게 들리는 목소리 화면:', T.view || '',
+    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text), ...st.feed.map(q => q.text), ...st.typing.map(q => q.text), '기보', ...st.banners.flatMap(q => [q.text, q.sub || '']), ...st.voices.map(q => q.text), ...st.music.map(q => q.text), '모두에게 들리는 목소리 화면: 실시간', T.view || '', ...st.banners.map(q => q.pipTag || ''),
     ...T.spec.flat()].join(' ');
 }

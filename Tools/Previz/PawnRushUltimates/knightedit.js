@@ -135,3 +135,4 @@ const knightFork = {
 };
 
 export const KNIGHT_EDITS = { knightFork };
+export { sqC, four, followSquare, forkLine, redBeam };
