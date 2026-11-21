@@ -50,3 +50,6 @@ MonoBehaviour:
     kind: 2
     prefabs:
     - {fileID: 1000, guid: 776a47c49ead81af0bc19f557640b51a, type: 3}
+    - {fileID: 1000, guid: 0b71a7e426bbebb3b224b42bb8829bd5, type: 3}
+    - {fileID: 1000, guid: e8852371bd965cf260d5243d45acff29, type: 3}
+    - {fileID: 1000, guid: 81ed28c442322ba48b53ce271cc53b8d, type: 3}

@@ -144,6 +144,19 @@ namespace ChessFight.PawnRush
                 Restarted();
                 Log("-", "ending " + EndingRule);
             }
+            // JY-audience-hall: which audience hall the round ends in, offline (the room's "엔딩 맵" online): drawn from
+            // the seed, A, B, C or D. The same round is built again with it.
+            if (LegacyKeys.Down(KeyCode.F11))
+            {
+                var rules = ChessFight.Network.PawnRushRules.Current;
+                rules.EndingMap = (rules.EndingMap + 1) % (ChessFight.Network.PawnRushRules.MapLast + 1);
+                ChessFight.Network.PawnRushRules.Current = rules;
+                round.BuildForMatch(round.Seed, ObstacleClock.Now);
+                if (round.Finish != null) round.Finish.Restart();
+                spawner.SetTeam(Mathf.Max(0, spawner.Team));
+                Restarted();
+                Log("-", "ending map " + EndingMapName);
+            }
             if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
             if (LegacyKeys.Down(KeyCode.LeftBracket)) Jump(-1);
             if (LegacyKeys.Down(KeyCode.RightBracket)) Jump(1);
@@ -212,6 +225,8 @@ namespace ChessFight.PawnRush
 
         static string EndingRule =>
             ChessFight.Network.PawnRushRules.Current.Ending == ChessFight.Network.PawnRushRules.EndingThrone ? "왕좌 차지전" : "왕관 발판";
+
+        static string EndingMapName => ChessFight.Network.PawnRushRules.Choices[3][ChessFight.Network.PawnRushRules.Current.EndingMap];
 
         void Restarted()
         {
@@ -374,7 +389,7 @@ namespace ChessFight.PawnRush
                   $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
                   $"판 구성: {string.Join(" | ", slots)}\n" +
                   "F 스킬 · F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6\n" +
-                  $"F10 엔딩 규칙 바꾸기 (지금 {EndingRule})\n" +
+                  $"F10 엔딩 규칙 (지금 {EndingRule}) · F11 엔딩 맵 (지금 {EndingMapName})\n" +
                   "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간" + cheat;
             // As tall as the text (the round's seven slots can take two lines).
             float height = style.CalcHeight(new GUIContent(text), 540f) + 14f;

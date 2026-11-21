@@ -26,9 +26,12 @@ namespace ChessFight.PawnRush
     // hear it with the course state (ISectionNetPart, seven bytes: begun and who holds, the two times, the two
     // targets) and draw the same bars. The platform's first-stood times (the result board) count from the beginning.
     //
-    // An ending section built for the contest (the audience hall, AudienceHallSection; JY 2026-11-21) says where the
-    // teams are stood and for how long after that the platform counts for nobody (IThroneStage). The standoff needs no
-    // bytes: the host sends "nobody holds" through it, and every PC counts it from when it heard the beginning.
+    // An ending section built for the contest (the audience halls A to D, JY 2026-11-21) says where each team's row
+    // stands and for how long after that the platform counts for nobody (IThroneStage). The standoff needs no bytes:
+    // the host sends "nobody holds" through it, and every PC counts it from when it heard the beginning. An ending with
+    // a checkpoint of each team's own (hall C's alcoves) is where that team's falls come back from. When a contest is
+    // won, the PC that judged it writes how it went to the log (how long, each team's time on the platform, both at
+    // once, nobody) to compare the halls by.
     [DefaultExecutionOrder(-40)]   // after CrownFinish (-50) has seen who stands on the platform this step
     public sealed class ThroneContest : MonoBehaviour, ISectionNetPart
     {
@@ -49,11 +52,15 @@ namespace ChessFight.PawnRush
         PawnRushSection own;
         PushGate gate;
         Checkpoint checkpoint;
+        readonly Checkpoint[] teamCheckpoint = new Checkpoint[2];
+        IThroneStage stage;
         readonly float[] held = new float[2];
         readonly float[] target = { PawnRushThrone.Seconds, PawnRushThrone.Seconds };
+        // The judging PC's seconds of the contest with white, black, both or nobody holding (the log at the end).
+        readonly float[] spent = new float[4];
         int holder = PawnRushThrone.Nobody;
         float beganAt = -1f, nextRing;
-        float standGap = SideGap, standoff;
+        float standoff;
         GUIStyle big, small;
 
         public bool Started { get; private set; }
@@ -89,8 +96,7 @@ namespace ChessFight.PawnRush
             round = ofRound;
             finish = ofFinish;
             own = ending;
-            var stage = ending.GetComponent<IThroneStage>();
-            standGap = stage != null ? stage.StandGap : SideGap;
+            stage = ending.GetComponent<IThroneStage>();
             standoff = stage != null ? Mathf.Max(0f, stage.StandoffSeconds) : 0f;
             Current = this;
             gate = null;
@@ -100,6 +106,9 @@ namespace ChessFight.PawnRush
             checkpoint = null;
             foreach (var c in ending.GetComponentsInChildren<Checkpoint>(true))
                 if (checkpoint == null || c.Order < checkpoint.Order) checkpoint = c;
+            teamCheckpoint[0] = teamCheckpoint[1] = null;
+            foreach (var c in ending.GetComponentsInChildren<CourseCheckpoint>(true))
+                if (c.Team == Teams.White || c.Team == Teams.Black) teamCheckpoint[c.Team] = c.GetComponent<Checkpoint>();
             ResetContest();
             Debug.Log($"[PawnRush] 왕좌 차지전: {ending.DisplayName}에서 · 시작 신호 {(gate != null ? "앞 구간의 큰 문(" + gate.name + ")" : "엔딩 구간에 들어서는 첫 폰")}");
         }
@@ -110,6 +119,7 @@ namespace ChessFight.PawnRush
             Started = false;
             held[0] = held[1] = 0f;
             target[0] = target[1] = PawnRushThrone.Seconds;
+            for (int i = 0; i < spent.Length; i++) spent[i] = 0f;
             holder = PawnRushThrone.Nobody;
             beganAt = -1f;
         }
@@ -141,8 +151,15 @@ namespace ChessFight.PawnRush
             }
             holder = PawnRushThrone.Holder(finish.OnPlatform(Teams.White), finish.Players(Teams.White),
                                            finish.OnPlatform(Teams.Black), finish.Players(Teams.Black));
+            spent[holder == PawnRushThrone.Both ? 2 : holder == PawnRushThrone.Nobody ? 3 : holder] += Time.fixedDeltaTime;
             int winner = PawnRushThrone.Step(ref held[0], ref held[1], holder, Time.fixedDeltaTime, target[0], target[1]);
-            if (winner != PawnRushThrone.Nobody) finish.Win(winner);
+            if (winner != PawnRushThrone.Nobody)
+            {
+                Debug.Log($"[PawnRush] 왕좌 차지전 끝: {own.DisplayName} · {Teams.Name(winner)}팀 승리 · 시작부터 {Time.time - beganAt:0.0}초 " +
+                          $"(대치 {standoff:0.#}초) · 점유 백 {spent[0]:0.0}초 · 흑 {spent[1]:0.0}초 · 동시 {spent[2]:0.0}초 · 빈 발판 {spent[3]:0.0}초 " +
+                          $"· 목표 백 {target[0]:0} / 흑 {target[1]:0}초");
+                finish.Win(winner);
+            }
         }
 
         // The great gate is open, or somebody is already through it and past the ending's entry (the ending's frame:
@@ -188,11 +205,13 @@ namespace ChessFight.PawnRush
             return n;
         }
 
-        // Everyone beside the platform: white on the left of the way in, black on the right, in a row along it.
+        // Everyone beside the platform: white on the left of the way in, black on the right, in a row along it (or in the
+        // rows the ending's IThroneStage gives).
         void Place()
         {
             var frame = own.EntryWorld;
             Vector3 middle = finish.Middle, right = frame.rotation * Vector3.right, forward = frame.rotation * Vector3.forward;
+            var hall = own.transform;
             var runners = finish.Runners;
             for (int team = 0; team < 2; team++)
             {
@@ -202,8 +221,9 @@ namespace ChessFight.PawnRush
                 {
                     var r = runners[k];
                     if (r.Team != team || r.Driver == null) continue;
-                    Vector3 at = middle + right * ((team == Teams.White ? -1f : 1f) * (finish.Radius + standGap))
-                                 + forward * ((i - (n - 1) * .5f) * Along);
+                    Vector3 row = stage != null ? hall.TransformPoint(stage.StandRow(team))
+                                                : middle + right * ((team == Teams.White ? -1f : 1f) * (finish.Radius + SideGap));
+                    Vector3 at = row + forward * ((i - (n - 1) * .5f) * Along);
                     i++;
                     at = Ground(at);
                     Vector3 look = middle - at;
@@ -233,12 +253,14 @@ namespace ChessFight.PawnRush
         void OnBegan()
         {
             beganAt = Time.time;
-            // From here a pawn that falls comes back at the ending's start, not where it was on the course.
-            if (checkpoint != null)
+            // From here a pawn that falls comes back at the ending's start (or its own team's checkpoint there, hall C's
+            // alcoves), not where it was on the course.
+            var runners = finish.Runners;
+            for (int i = 0; i < runners.Count; i++)
             {
-                var runners = finish.Runners;
-                for (int i = 0; i < runners.Count; i++)
-                    if (runners[i].Driver != null) Checkpoint.Report(runners[i].Driver, checkpoint);
+                var r = runners[i];
+                var back = (r.Team == Teams.White || r.Team == Teams.Black) && teamCheckpoint[r.Team] != null ? teamCheckpoint[r.Team] : checkpoint;
+                if (r.Driver != null && back != null) Checkpoint.Report(r.Driver, back);
             }
             Debug.Log($"[PawnRush] 왕좌 차지전 시작: 백 {target[0]:0}초 · 흑 {target[1]:0}초");
             Began?.Invoke();
@@ -373,12 +395,14 @@ namespace ChessFight.PawnRush
         }
     }
 
-    // An ending section built for the throne contest (AudienceHallSection): where the teams are stood and how long the
-    // platform waits after that. Every PC builds the same section, so every PC reads the same numbers.
+    // An ending section built for the throne contest (the audience halls: AudienceHallSection, CathedralHallSection,
+    // RotundaHallSection, GiantThroneHallSection): where the teams are stood and how long the platform waits after
+    // that. Every PC builds the same section, so every PC reads the same numbers.
     public interface IThroneStage
     {
-        // Metres from the platform's edge to each team's row, across the way in (white left, black right).
-        float StandGap { get; }
+        // The middle of a team's row (white on the left of the way in, black on the right) in the section's own frame,
+        // on the floor; the row runs along the way in, Along apart.
+        Vector3 StandRow(int team);
         // Seconds after the teams are stood in which the platform counts for nobody (0: at once).
         float StandoffSeconds { get; }
     }

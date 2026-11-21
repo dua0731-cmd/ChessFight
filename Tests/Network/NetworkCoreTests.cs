@@ -1836,9 +1836,34 @@ public static class NetworkCoreTests
                 Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
-                Check(PawnRushRules.Settings.Length==3&&PawnRushRules.Choices.Length==3&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2,"the panel's names");
+                Check(PawnRushRules.Settings.Length==4&&PawnRushRules.Choices.Length==4&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==PawnRushRules.MapLast+1,"the panel's names");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
+            Test("JY-audience-hall: the ending map packs beside the other rules (bits 8-10) and pins the last slot alike in the round and the course table", () => {
+                for (int map=0; map<=PawnRushRules.MapLast; map++) for (int ending=0; ending<2; ending++) {
+                    var r=new PawnRushRules{Relief=1,After=2,Ending=ending,EndingMap=map}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.EndingMap==map&&back.Relief==1&&back.After==2&&back.Ending==ending,"map changed on the way: "+map+ending); }
+                Check(PawnRushRules.Decode(7*256).EndingMap==0&&PawnRushRules.Decode(5*256).EndingMap==0,"a map number past the last is drawn");
+                Check(PawnRushRules.Decode(32+64+128).EndingMap==0,"the skill lab's bits 5-7 are not the map");
+                var withMap=new PawnRushRules().With(3,2);
+                Check(withMap.EndingMap==2&&withMap.Of(3)==2&&withMap.Ending==0,"With and Of for the map");
+                var options=new[] { new[] { 0, 1 }, new[] { 2 }, new[] { 3, 4, 5, 6 } };
+                for (int seed=-20; seed<60; seed++) {
+                    var drawn=PawnRushSections.Choose(seed,options);
+                    var kept=(int[])drawn.Clone(); PawnRushSections.PinEnding(kept,options,0);
+                    Check(kept[2]==drawn[2],"map 0 leaves the draw: seed "+seed);
+                    for (int map=1; map<=4; map++) {
+                        var pin=(int[])drawn.Clone(); PawnRushSections.PinEnding(pin,options,map);
+                        Check(pin[2]==options[2][map-1]&&pin[0]==drawn[0]&&pin[1]==drawn[1],"map "+map+" pins only the last slot: seed "+seed); }
+                    var past=(int[])drawn.Clone(); PawnRushSections.PinEnding(past,options,5);
+                    Check(past[2]==drawn[2],"a map past the slot's options leaves the draw"); }
+                var hallRows=new List<PawnRushCourseTable.Row> { new PawnRushCourseTable.Row(0,"S1","garden"), new PawnRushCourseTable.Row(0,"S2","yard"),
+                    new PawnRushCourseTable.Row(5,"HA","hall A"), new PawnRushCourseTable.Row(5,"HB","hall B"),
+                    new PawnRushCourseTable.Row(5,"HC","hall C"), new PawnRushCourseTable.Row(5,"HD","hall D") };
+                var hallTable=PawnRushCourseTable.Parse(PawnRushCourseTable.Format(hallRows,"header"));
+                for (int seed=0; seed<40; seed++)
+                    for (int map=1; map<=4; map++)
+                        Check(hallTable.PickNames(seed,map)[5]==hallTable.Names(5)[map-1]&&hallTable.PickNames(seed,map)[0]==hallTable.PickNames(seed)[0],"the course table pins the same hall: seed "+seed+" map "+map); });
             Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
                 Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
                 Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");

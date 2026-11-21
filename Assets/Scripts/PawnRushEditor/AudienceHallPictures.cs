@@ -12,106 +12,196 @@ using UnityEngine.Rendering;
 
 namespace ChessFight.PawnRush.Editor
 {
-    // Pictures of the king's audience hall graybox (JY-audience-hall), for a project copy in batch mode:
+    // Pictures of the audience halls A to D (JY-audience-hall), for a project copy in batch mode:
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.AudienceHallPictures.Run
-    // (no -quit, no -nographics). A new scene with the hall prefab built as a round builds it, a sun, and still chess
-    // pieces where the throne contest stands each team (its own sums: the platform's middle and radius, the hall's gap,
-    // the floor under each spot). The pieces are pictures, not players. Pictures and notes: Logs/AudienceHall.
+    // (no -quit, no -nographics). For each hall: a new scene with the prefab built as a round builds it, a sun, and still
+    // chess pieces where the throne contest stands each team (its own sums: IThroneStage.StandRow, the floor under each
+    // spot). The pieces are pictures, not players. From above the roof and the dome are left out so the inside shows.
+    // A few numbers the pictures cannot show: the platform as the finish reads it, the walking slopes, the largest rise
+    // along the ways a pawn walks, where the rows stand. Pictures and notes: Logs/AudienceHall.
     public static class AudienceHallPictures
     {
-        const string Prefab = "Assets/Prefabs/PawnRushSections/Final_AudienceHall.prefab";
+        const string Folder = "Assets/Prefabs/PawnRushSections/";
         static readonly PieceKind[] Row = { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
         static readonly float[] Tall = { 1f, 1.1f, 1.15f, 1.1f, 1.2f, 1.25f };
-        static string Folder => Path.Combine(Directory.GetCurrentDirectory(), "Logs", "AudienceHall");
+        static string Output => Path.Combine(Directory.GetCurrentDirectory(), "Logs", "AudienceHall");
         static readonly StringBuilder notes = new StringBuilder();
         static Camera cam;
+        static Transform hallRoot;
+
+        struct Way
+        {
+            public string Name;
+            public Vector3 From, To;
+            public float Limit;
+            public Way(string name, Vector3 from, Vector3 to, float limit) { Name = name; From = from; To = to; Limit = limit; }
+        }
+
+        struct View
+        {
+            public string Name;
+            public Vector3 Eye, Target;
+            public float Field;
+            public bool Plan, Cutaway;
+            public int Width, Height;
+            public static View Look(string name, Vector3 eye, Vector3 target, float fov, bool cutaway = false) =>
+                new View { Name = name, Eye = eye, Target = target, Field = fov, Cutaway = cutaway, Width = 1600, Height = 900 };
+            public static View Above(string name, Vector3 middle, float halfHeight, int width, int height) =>
+                new View { Name = name, Eye = middle + Vector3.up * 80f, Target = middle, Field = halfHeight, Plan = true, Cutaway = true, Width = width, Height = height };
+        }
+
+        struct Hall
+        {
+            public string Letter, Prefab;
+            public Way[] Ways;
+            public View[] Views;
+        }
+
+        static readonly Hall[] Halls =
+        {
+            new Hall { Letter = "A", Prefab = "Final_AudienceHall", Ways = new[]
+                {
+                    new Way("정문 → 발판 (x 0)", new Vector3(0f, 0f, .5f), new Vector3(0f, 0f, 15f), .26f),
+                    new Way("서쪽 바닥 → 발판 (z 15)", new Vector3(-11f, 0f, 15f), new Vector3(-3f, 0f, 15f), .26f),
+                    new Way("동쪽 바닥 → 발판 (z 15)", new Vector3(11f, 0f, 15f), new Vector3(3f, 0f, 15f), .26f),
+                }, Views = new[]
+                {
+                    View.Look("01_overview", new Vector3(-17f, 17f, -9f), new Vector3(0f, 1f, 12.5f), 58f),
+                    View.Above("02_plan", new Vector3(0f, 0f, 11.25f), 12.6f, 1300, 1200),
+                    View.Look("03_from_the_door", new Vector3(0f, 1.7f, -1.5f), new Vector3(0f, 1.9f, 15f), 72f),
+                    View.Look("04_behind_white_row", new Vector3(-11.4f, 2.4f, 15f), new Vector3(0f, 1.4f, 15f), 72f),
+                    View.Look("05_platform", new Vector3(2.5f, 6.2f, 6.2f), new Vector3(0f, 1.3f, 15.2f), 55f),
+                } },
+            new Hall { Letter = "B", Prefab = "Final_AudienceHall_B_Cathedral", Ways = new[]
+                {
+                    new Way("정문 → 발판 (x 0, 큰 계단)", new Vector3(0f, 0f, .5f), new Vector3(0f, 0f, 55.5f), .26f),
+                    new Way("서쪽 회랑 → 발판 (z 55, 팀 계단)", new Vector3(-14f, 0f, 55f), new Vector3(-3f, 0f, 55f), .26f),
+                    new Way("동쪽 회랑 → 발판 (z 55, 팀 계단)", new Vector3(14f, 0f, 55f), new Vector3(3f, 0f, 55f), .26f),
+                }, Views = new[]
+                {
+                    View.Look("01_overview", new Vector3(-30f, 42f, -12f), new Vector3(0f, 2f, 34f), 55f, true),
+                    View.Above("02_plan", new Vector3(0f, 0f, 32f), 33f, 800, 1600),
+                    View.Look("03_from_the_door", new Vector3(0f, 1.7f, -1.5f), new Vector3(0f, 6f, 55f), 70f),
+                    View.Look("04_behind_white_row", new Vector3(-14.2f, 2.4f, 48.5f), new Vector3(0f, 2.5f, 54f), 72f),
+                    View.Look("05_platform", new Vector3(0f, 9f, 43f), new Vector3(0f, 2.5f, 56f), 60f),
+                    View.Look("06_up_the_grand_stair", new Vector3(0f, 1.4f, 40.5f), new Vector3(0f, 3.5f, 56f), 70f),
+                } },
+            new Hall { Letter = "C", Prefab = "Final_AudienceHall_C_Rotunda", Ways = new[]
+                {
+                    new Way("정문 → 섬 (x 0, 남쪽 다리)", new Vector3(0f, 0f, .5f), new Vector3(0f, 0f, 22f), .26f),
+                    new Way("서쪽 바닥 → 섬 (z 22, 서쪽 다리)", new Vector3(-13f, 0f, 22f), new Vector3(-2f, 0f, 22f), .26f),
+                    new Way("동쪽 바닥 → 섬 (z 22, 동쪽 다리)", new Vector3(13f, 0f, 22f), new Vector3(2f, 0f, 22f), .26f),
+                }, Views = new[]
+                {
+                    View.Look("01_overview", new Vector3(-30f, 36f, -10f), new Vector3(0f, 0f, 22f), 55f, true),
+                    View.Above("02_plan", new Vector3(0f, 0f, 22f), 24f, 1500, 1200),
+                    View.Look("03_from_the_door", new Vector3(0f, 1.7f, -1.5f), new Vector3(0f, 5f, 22f), 75f),
+                    View.Look("04_behind_white_row", new Vector3(-15.5f, 2.4f, 22f), new Vector3(0f, 1f, 22f), 72f),
+                    View.Look("05_platform", new Vector3(7f, 7f, 12.5f), new Vector3(0f, .6f, 22f), 55f),
+                    View.Look("06_dome_up", new Vector3(0f, 1.7f, 9f), new Vector3(0f, 30f, 22f), 80f),
+                } },
+            new Hall { Letter = "D", Prefab = "Final_AudienceHall_D_GiantThrone", Ways = new[]
+                {
+                    new Way("정문 → 발받침 (x 0, 책 계단 · 뛰어 오름)", new Vector3(0f, 0f, .5f), new Vector3(0f, 0f, 28f), .55f),
+                    new Way("서쪽 띠 경사 → 팔걸이 (x -5.75)", new Vector3(-5.75f, 0f, 13f), new Vector3(-5.75f, 0f, 33f), .26f),
+                    new Way("동쪽 띠 경사 → 팔걸이 (x 5.75)", new Vector3(5.75f, 0f, 13f), new Vector3(5.75f, 0f, 33f), .26f),
+                }, Views = new[]
+                {
+                    View.Look("01_overview", new Vector3(-30f, 38f, -10f), new Vector3(0f, 3f, 28f), 55f, true),
+                    View.Above("02_plan", new Vector3(0f, 0f, 22f), 23f, 1000, 1300),
+                    View.Look("03_from_the_door", new Vector3(0f, 1.7f, -1.5f), new Vector3(0f, 7f, 33f), 72f),
+                    View.Look("04_behind_white_row", new Vector3(-15.5f, 2.4f, 29f), new Vector3(0f, 3f, 30f), 72f),
+                    View.Look("05_platform", new Vector3(8f, 9f, 22f), new Vector3(0f, 3f, 32f), 55f),
+                    View.Look("06_way_up", new Vector3(-3f, 1.2f, 16.5f), new Vector3(0f, 2.5f, 28f), 70f),
+                } },
+        };
 
         [MenuItem("ChessFight/Pawn Rush/Validate/Audience hall pictures", false, 213)]
         public static void Run()
         {
-            int code = 1;
-            Directory.CreateDirectory(Folder);
+            Directory.CreateDirectory(Output);
             notes.Clear();
-            try { code = Take() ? 0 : 1; }
-            catch (System.Exception e) { Note("FAIL: " + e); }
-            File.WriteAllText(Path.Combine(Folder, "notes.txt"), notes.ToString());
-            if (Application.isBatchMode) EditorApplication.Exit(code);
+            bool ok = true;
+            foreach (var hall in Halls)
+            {
+                try { ok &= Take(hall); }
+                catch (System.Exception e) { ok = false; Note("FAIL " + hall.Letter + ": " + e); }
+            }
+            Note(ok ? "RESULT PASS" : "RESULT FAIL");
+            File.WriteAllText(Path.Combine(Output, "notes.txt"), notes.ToString());
+            if (Application.isBatchMode) EditorApplication.Exit(ok ? 0 : 1);
         }
 
-        static bool Take()
+        static bool Take(Hall hall)
         {
+            Note("== " + hall.Letter + " " + hall.Prefab);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
-            if (asset == null) { Note("FAIL: no prefab at " + Prefab); return false; }
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + hall.Prefab + ".prefab");
+            if (asset == null) { Note("FAIL: no prefab"); return false; }
             var go = (GameObject)PrefabUtility.InstantiatePrefab(asset);
             PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-            var hall = go.GetComponent<AudienceHallSection>();
+            hallRoot = go.transform;
+            var stage = go.GetComponent<IThroneStage>();
+            if (stage == null) { Note("FAIL: no IThroneStage on the prefab"); return false; }
             // A round's section builds itself when it wakes; Awake does not run in the Editor, so call it.
-            typeof(AudienceHallSection).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(hall, null);
+            var builder = (MonoBehaviour)stage;
+            builder.GetType().GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(builder, null);
             Physics.SyncTransforms();
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.25f;
+            sun.intensity = 1.2f;
             sun.color = new Color(1f, .95f, .86f);
             sun.shadows = LightShadows.Soft;
             sun.transform.rotation = Quaternion.Euler(52f, -32f, 0f);
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(.62f, .64f, .7f);
-            RenderSettings.ambientEquatorColor = new Color(.48f, .45f, .42f);
-            RenderSettings.ambientGroundColor = new Color(.25f, .23f, .21f);
+            RenderSettings.ambientSkyColor = new Color(.55f, .57f, .63f);
+            RenderSettings.ambientEquatorColor = new Color(.42f, .4f, .37f);
+            RenderSettings.ambientGroundColor = new Color(.22f, .2f, .18f);
 
-            bool ok = Measure(hall);
-            Stand(hall);
+            bool ok = Measure(hall, stage);
+            Stand(stage);
             Physics.SyncTransforms();
 
             cam = new GameObject("Capture camera").AddComponent<Camera>();
             cam.enabled = false;
             cam.nearClipPlane = .1f;
-            cam.farClipPlane = 400f;
+            cam.farClipPlane = 500f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(.55f, .62f, .72f);
-            var up = Vector3.up;
-            Capture("01_overview", new Vector3(-17f, 17f, -9f), new Vector3(0f, 1f, 12.5f), up, 58f, false, 1600, 900);
-            Capture("02_plan", new Vector3(0f, 60f, 11.25f), new Vector3(0f, 0f, 11.25f), Vector3.forward, 12.6f, true, 1300, 1200);
-            Capture("03_from_the_door", new Vector3(0f, 1.7f, -1.5f), new Vector3(0f, 1.9f, 15f), up, 72f, false, 1600, 900);
-            Capture("04_behind_white_row", new Vector3(-11.4f, 2.4f, 15f), new Vector3(0f, 1.4f, 15f), up, 72f, false, 1600, 900);
-            Capture("05_dais_close", new Vector3(2.5f, 6.2f, 6.2f), new Vector3(0f, 1.3f, 15.2f), up, 55f, false, 1600, 900);
-            Capture("06_behind_the_throne", new Vector3(5.5f, 2.3f, 21.6f), new Vector3(-1.5f, 1f, 16f), up, 72f, false, 1600, 900);
-            Capture("07_west_stairs_low", new Vector3(-10.8f, 1.2f, 8.8f), new Vector3(-5f, .8f, 15f), up, 62f, false, 1600, 900);
+            cam.backgroundColor = new Color(.5f, .57f, .67f);
+            foreach (var view in hall.Views) Capture(hall.Letter + "_" + view.Name, view);
             Object.DestroyImmediate(cam.gameObject);
-            Note(ok ? "RESULT PASS" : "RESULT FAIL");
             return ok;
         }
 
-        // The numbers the pictures cannot show.
-        static bool Measure(AudienceHallSection hall)
+        static bool Measure(Hall hall, IThroneStage stage)
         {
             bool ok = true;
-            var zone = hall.GetComponentInChildren<FinishZone>(true);
+            var zone = hallRoot.GetComponentInChildren<FinishZone>(true);
             ok &= Check(zone != null, "the hall has a finish (FinishZone)");
             if (zone != null && CrownFinish.Platform(zone, out var middle, out var radius))
-                ok &= Check(Mathf.Abs(middle.y - hall.DaisHeight) < .01f && Mathf.Abs(radius - hall.CircleRadius) < .01f,
-                            $"the platform as the finish reads it: middle {middle}, radius {radius:0.00} m (dais {hall.DaisHeight:0.00} m)");
-            foreach (var t in hall.GetComponentsInChildren<Transform>(true))
-                if (t.name.Contains("walking slope"))
+                Note($"the platform as the finish reads it: middle {hallRoot.InverseTransformPoint(middle)}, radius {radius:0.00} m");
+            foreach (var t in hallRoot.GetComponentsInChildren<Transform>(true))
+                if (t.name.Contains("walking slope") || t.name.StartsWith("Sash") || t.name.StartsWith("Bridge"))
                 {
                     float angle = Vector3.Angle(t.up, Vector3.up);
                     ok &= Check(angle <= 19.5f, $"{t.name}: {angle:0.0} degrees");
                 }
-            // Walk the floor's height along the carpet to the circle and across the west flight: the largest rise
-            // between two samples 0.25 m apart (a pawn steps up 0.25 m by itself).
-            ok &= Check(Rise(new Vector3(0f, 0f, .5f), new Vector3(0f, 0f, 15f), out var a) <= .26f, $"door to circle along x = 0: largest rise {a:0.000} m");
-            ok &= Check(Rise(new Vector3(-11f, 0f, 15f), new Vector3(-3f, 0f, 15f), out var w) <= .26f, $"west floor to circle along z = 15: largest rise {w:0.000} m");
-            ok &= Check(Rise(new Vector3(11f, 0f, 15f), new Vector3(3f, 0f, 15f), out var e) <= .26f, $"east floor to circle along z = 15: largest rise {e:0.000} m");
-            float back = Ground(new Vector3(0f, 0f, 18.95f)) - Ground(new Vector3(0f, 0f, 19.3f));
-            Note($"the cliff behind the throne: {back:0.00} m");
+            foreach (var way in hall.Ways)
+            {
+                float worst = Rise(way.From, way.To);
+                ok &= Check(worst <= way.Limit, $"{way.Name}: largest rise {worst:0.00} m (limit {way.Limit:0.00})");
+            }
+            int teamCheckpoints = 0;
+            foreach (var c in hallRoot.GetComponentsInChildren<CourseCheckpoint>(true))
+                if (c.Team == Teams.White || c.Team == Teams.Black) teamCheckpoints++;
+            if (teamCheckpoints > 0) Note("team checkpoints (a team's falls come back there): " + teamCheckpoints);
             return ok;
         }
 
-        static float Rise(Vector3 from, Vector3 to, out float worst)
+        static float Rise(Vector3 from, Vector3 to)
         {
-            worst = 0f;
+            float worst = 0f;
             int n = Mathf.CeilToInt(Vector3.Distance(from, to) / .25f);
             float last = Ground(from);
             for (int i = 1; i <= n; i++)
@@ -123,50 +213,63 @@ namespace ChessFight.PawnRush.Editor
             return worst;
         }
 
-        static float Ground(Vector3 at)
+        static float Ground(Vector3 local)
         {
+            var at = hallRoot.TransformPoint(local);
             float best = float.MaxValue, y = -99f;
-            foreach (var hit in Physics.RaycastAll(at + Vector3.up * 10f, Vector3.down, 20f, ~0, QueryTriggerInteraction.Ignore))
+            foreach (var hit in Physics.RaycastAll(at + Vector3.up * 12f, Vector3.down, 30f, ~0, QueryTriggerInteraction.Ignore))
                 if (hit.distance < best) { best = hit.distance; y = hit.point.y; }
             return y;
         }
 
-        // Each team where ThroneContest.Place stands it (white on the left of the way in, black on the right), on the
-        // floor ThroneContest.Ground finds there.
-        static void Stand(AudienceHallSection hall)
+        // Each team's row where ThroneContest.Place stands it (the ending's StandRow, Along 1.2 m apart along the way in),
+        // on the floor ThroneContest.Ground finds there.
+        static void Stand(IThroneStage stage)
         {
-            var zone = hall.GetComponentInChildren<FinishZone>(true);
-            if (zone == null || !CrownFinish.Platform(zone, out var middle, out var radius)) return;
+            var zone = hallRoot.GetComponentInChildren<FinishZone>(true);
+            if (zone == null || !CrownFinish.Platform(zone, out var middle, out _)) return;
             var root = new GameObject("Stand-in pieces (pictures only)").transform;
             for (int team = 0; team < 2; team++)
             {
                 var body = MiniGameParts.PieceMaterial(team);
+                var row = hallRoot.TransformPoint(stage.StandRow(team));
                 for (int i = 0; i < 6; i++)
                 {
-                    var at = middle + Vector3.right * ((team == Teams.White ? -1f : 1f) * (radius + hall.StandGap)) + Vector3.forward * ((i - 2.5f) * 1.2f);
+                    var at = row + hallRoot.forward * ((i - 2.5f) * 1.2f);
                     string under = "nothing";
                     float best = float.MaxValue, y = at.y;
                     foreach (var hit in Physics.RaycastAll(at + Vector3.up * 2.5f, Vector3.down, 6f, ~0, QueryTriggerInteraction.Ignore))
                         if (hit.distance < best) { best = hit.distance; y = hit.point.y; under = hit.collider.name; }
                     at.y = y;
-                    if (i == 0) Note($"{Teams.Name(team)}팀 row: x {at.x:0.00}, floor y {y:0.00} ({under})");
+                    if (i == 0 || i == 5) Note($"{Teams.Name(team)}팀 row end {i + 1}: {hallRoot.InverseTransformPoint(at)} on {under}");
                     var piece = MiniGameParts.Piece(root, Teams.Name(team) + " " + Row[i], Row[i], Tall[i], body, Arena.TeamColor(team, true), false);
                     piece.transform.position = at;
-                    piece.transform.rotation = Quaternion.LookRotation(new Vector3(middle.x - at.x, 0f, 0f));
+                    var look = middle - at;
+                    look.y = 0f;
+                    if (look.sqrMagnitude > .01f) piece.transform.rotation = Quaternion.LookRotation(look);
                 }
             }
         }
 
-        static void Capture(string name, Vector3 eye, Vector3 target, Vector3 up, float fieldOfView, bool flat, int width, int height)
+        static void Cutaway(bool on)
+        {
+            foreach (var r in hallRoot.GetComponentsInChildren<Renderer>(true))
+                if (r.name.StartsWith("Roof") || r.name.StartsWith("Dome")) r.enabled = !on;
+        }
+
+        static void Capture(string name, View view)
         {
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) { Note("NOT RUN: picture " + name + " (no graphics device)"); return; }
+            Cutaway(view.Cutaway);
+            var eye = hallRoot.TransformPoint(view.Eye);
+            var target = hallRoot.TransformPoint(view.Target);
             cam.transform.position = eye;
-            cam.transform.rotation = Quaternion.LookRotation(target - eye, up);
-            cam.orthographic = flat;
-            if (flat) cam.orthographicSize = fieldOfView;
-            else cam.fieldOfView = fieldOfView;
-            cam.aspect = (float)width / height;
-            var texture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            cam.transform.rotation = Quaternion.LookRotation(target - eye, view.Plan ? hallRoot.forward : Vector3.up);
+            cam.orthographic = view.Plan;
+            if (view.Plan) cam.orthographicSize = view.Field;
+            else cam.fieldOfView = view.Field;
+            cam.aspect = (float)view.Width / view.Height;
+            var texture = new RenderTexture(view.Width, view.Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             var before = RenderTexture.active;
             Texture2D picture = null;
             try
@@ -180,14 +283,15 @@ namespace ChessFight.PawnRush.Editor
                 }
                 else { cam.targetTexture = texture; cam.Render(); cam.targetTexture = null; }
                 RenderTexture.active = texture;
-                picture = new Texture2D(width, height, TextureFormat.RGB24, false);
-                picture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
+                picture = new Texture2D(view.Width, view.Height, TextureFormat.RGB24, false);
+                picture.ReadPixels(new Rect(0f, 0f, view.Width, view.Height), 0, 0);
                 picture.Apply();
-                File.WriteAllBytes(Path.Combine(Folder, name + ".png"), picture.EncodeToPNG());
+                File.WriteAllBytes(Path.Combine(Output, name + ".png"), picture.EncodeToPNG());
                 Note("picture " + name + ".png");
             }
             finally
             {
+                Cutaway(false);
                 RenderTexture.active = before;
                 if (picture != null) Object.DestroyImmediate(picture);
                 texture.Release();

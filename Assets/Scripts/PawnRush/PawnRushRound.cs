@@ -155,7 +155,10 @@ namespace ChessFight.PawnRush
                 return;
             }
             var prefabs = new List<GameObject>();
-            var picks = PawnRushSections.Choose(roundSeed, set.Options(prefabs), fresh ? null : lastPicks);
+            var options = set.Options(prefabs);
+            var picks = PawnRushSections.Choose(roundSeed, options, fresh ? null : lastPicks);
+            // JY-audience-hall: the room's "엔딩 맵" puts one of the audience halls in the last slot.
+            PawnRushSections.PinEnding(picks, options, PawnRushRules.Current.EndingMap);
             if (!fresh) lastPicks = picks;
 
             holder = new GameObject("Round " + roundSeed);
@@ -219,7 +222,7 @@ namespace ChessFight.PawnRush
         // they name the same sections unless the table is older than the set (it is rewritten on every Play and build).
         static void CheckRevealNames(int roundSeed, string[] built)
         {
-            var revealed = ChessFight.Game.PawnRushCourseNames.Table.PickNames(roundSeed);
+            var revealed = ChessFight.Game.PawnRushCourseNames.Table.PickNames(roundSeed, PawnRushRules.Current.EndingMap);
             for (int slot = 0; slot < built.Length && slot < revealed.Length; slot++)
             {
                 if ((built[slot] ?? "") == revealed[slot]) continue;

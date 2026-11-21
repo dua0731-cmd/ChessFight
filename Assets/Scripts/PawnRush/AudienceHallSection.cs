@@ -54,8 +54,8 @@ namespace ChessFight.PawnRush
         // How far the flights reach out past the top's edges.
         public float Run => (risers - 1) * tread;
 
-        // IThroneStage: each team's row StandX from the circle's middle, so this far from its edge.
-        public float StandGap => StandX - CircleRadius;
+        // IThroneStage: each team's row StandX from the circle's middle, across the hall, on the floor.
+        public Vector3 StandRow(int team) => new Vector3(team == Teams.White ? -StandX : StandX, 0f, CircleZ);
         public float StandoffSeconds => standoffSeconds;
 
         void Awake()

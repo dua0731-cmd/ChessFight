@@ -280,7 +280,8 @@ namespace ChessFight.Game
             revealSeedKnown = true;
             revealSeed = seed;
             var table = PawnRushCourseNames.Table;
-            var picks = table.Picks(seed);
+            // JY-audience-hall: the room's "엔딩 맵" pins the last slot, as PawnRushRound does.
+            var picks = table.Picks(seed, Network.PawnRushRules.Decode(State.Rules).EndingMap);
             foreach (var p in revealPanels)
             {
                 var names = table.Names(p.Slot);

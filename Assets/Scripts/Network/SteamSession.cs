@@ -195,7 +195,9 @@ namespace ChessFight.Network
         //      instead of the temporary floor, and under "왕좌 차지전" the teams stand across the hall and the platform waits
         //      3 s. A v61 PC would build the other ending. The suffix keeps this branch's builds to themselves; it goes
         //      back to main's numbering when the branch is merged.
-        public const string Protocol = "chessfight.dua0731.network.v61.hall1";
+        // hall2: the last slot may draw the halls B, C and D too, and the room rule "엔딩 맵" pins one (rules bits 8-10);
+        //      under "왕좌 차지전" each hall says where the rows stand and hall C sends a team's falls to its own alcove.
+        public const string Protocol = "chessfight.dua0731.network.v61.hall2";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

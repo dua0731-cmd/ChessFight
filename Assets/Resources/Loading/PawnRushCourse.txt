@@ -18,3 +18,6 @@
 4	Late_3-1_RoyalLibrary	왕의 서재 · 거인 체스
 4	Late_3-2_RoyalObservatory	왕실 천문대 (회색 상자)
 5	Final_AudienceHall	국왕 알현실
+5	Final_AudienceHall_B_Cathedral	국왕 알현실 B · 대성당
+5	Final_AudienceHall_C_Rotunda	국왕 알현실 C · 원형 돔
+5	Final_AudienceHall_D_GiantThrone	국왕 알현실 D · 거인의 왕좌
