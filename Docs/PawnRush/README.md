@@ -41,7 +41,7 @@
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
 | 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
 | 후반 장애물 왕실 천문대 — 레벨 디자인 초안(R711) · 회색 상자(R712 → R720 구조 v0.3으로 다시 지음 → R721 달려 본 뒤 고침: 코스 프리팹 시험 6번, 판에는 아직 없음) | **[구조안 v0.3(R716, 검수 전)](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md)** · **[새 장애물 여덟 종(R717)](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md)** · [PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md) · [배치도](Mockups/R711_RoyalObservatory.svg) · [비트별 의도 · 예상 행동(R713)](PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md) |
-| 엔딩 국왕 알현실 — 레벨디자인 초안 · 회색 상자(JY, 11-21, 브랜치 `JY-audience-hall`, Unity 확인 전) | **[초안 v0.1 · §9 회색 상자](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md)** · [배치도](Mockups/AudienceHall_v0.1.svg) · [변형안 v0.2 — 여러 판 비교 · 30초 소환 연출](PAWN_RUSH_AUDIENCE_HALL_VARIANTS_v0.2.md) |
+| 엔딩 국왕 알현실 — 레벨디자인 초안 · 회색 상자(JY, 11-21, 브랜치 `JY-audience-hall`, Unity 확인 전) | **[초안 v0.1 · §9 회색 상자](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md)** · [배치도](Mockups/AudienceHall_v0.1.svg) · [변형안 v0.2 — 여러 판 비교 · 30초 소환 연출](PAWN_RUSH_AUDIENCE_HALL_VARIANTS_v0.2.md) · [30초 소환 규칙 · 연출 4안 v0.1](PAWN_RUSH_ENDING_SUMMON_STAGING_v0.1.md) |
 | 후반 장애물 왕실 금고실 — 사용자 기획서 A안의 회색 모형(R725: 코스 프리팹 시험 7번 · 맵 시험, 판에는 아직 없음)·봇 재미 검증 | [PAWN_RUSH_ROYAL_VAULT](PAWN_RUSH_ROYAL_VAULT.md) · [사용자 기획서 v0.1](PAWN_RUSH_ROYAL_VAULT_DESIGN_v0.1.md) · [제작 명세 v2](PAWN_RUSH_ROYAL_VAULT_SPEC_v2.md) |
 | 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
 | **코스·미니게임 3단계 아트 기준(모델링·텍스처)** | [PAWN_RUSH_ART_PHASES](PAWN_RUSH_ART_PHASES.md) |
