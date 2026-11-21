@@ -205,7 +205,7 @@ namespace ChessFight.PawnRush.Editor
                     piece.transform.position = p.spot;
                     piece.transform.rotation = Quaternion.LookRotation(hallRoot.TransformDirection(board.Facing(p.team)));
                 }
-                Vector3 eye = m - board.Rank * (5f * s) - board.File * (3.5f * s) + Vector3.up * (2.2f * s + 1f);
+                Vector3 eye = m - board.Rank * Mathf.Min(5f * s, 12.5f) - board.File * Mathf.Min(3.5f * s, 8f) + Vector3.up * Mathf.Min(2.2f * s + 1f, 6.5f);   // inside the rotunda too
                 var view = name == "S3_rays_to_crown"
                     ? View.Look(name, eye, hallRoot.InverseTransformPoint(show.CrownAt) * .5f + m * .5f, 64f)
                     : View.Look(name, eye, m + board.Rank * s + Vector3.up * .6f, 62f);

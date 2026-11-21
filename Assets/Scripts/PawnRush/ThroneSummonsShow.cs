@@ -385,13 +385,13 @@ namespace ChessFight.PawnRush
                     float a = t - Strike(team);
                     if (a < 0f) continue;
                     float d = Vector3.Distance(p, board.King(team)), e = (d - v * a) / width;
-                    light += 1.3f * Mathf.Exp(-e * e) * Mathf.Max(0f, 1f - a / 1.6f);
+                    light += .9f * Mathf.Exp(-e * e) * Mathf.Max(0f, 1f - a / 1.6f);
                     bool half = team == Teams.White ? r <= 4 : r >= 5;
                     if (half && d < v * a) light += (.05f + .03f * ((f + r) & 1) + .18f * pulse) * keep;
                 }
                 foreach (var c in calls)
                     if (c.File == f && (c.Team == Teams.White ? c.Rank : 9 - c.Rank) == r && t >= c.Rise)
-                        light += c.In < 0f ? .45f * Smooth((t - c.Rise) / .3f) * (.8f + .2f * Mathf.Sin(t * 10f)) : .45f * Mathf.Exp(-(t - c.In) / .25f) + .08f * keep;
+                        light += c.In < 0f ? .3f * Smooth((t - c.Rise) / .3f) * (.8f + .2f * Mathf.Sin(t * 10f)) : .45f * Mathf.Exp(-(t - c.In) / .25f) + .08f * keep;
                 float a2 = t - go;
                 if (a2 >= 0f)
                 {
@@ -427,10 +427,10 @@ namespace ChessFight.PawnRush
                 c.Pillar.gameObject.SetActive(on);
                 if (on)
                 {
-                    float w = (.45f + .2f * flare) * s, hh = h * up;
+                    float w = (.3f + .15f * flare) * s, hh = h * up;
                     c.Pillar.position = c.Spot + Vector3.up * hh * .5f;
                     c.Pillar.localScale = new Vector3(w, hh * .5f, w);
-                    Tint(c.PillarR, Yellow, (.5f + .12f * Mathf.Sin(t * 9f + c.Spot.z)) * keep + .5f * flare);
+                    Tint(c.PillarR, Yellow, (.32f + .08f * Mathf.Sin(t * 9f + c.Spot.z)) * keep + .3f * flare);
                 }
                 bool flash = after >= 0f && after < .35f;
                 c.Flare.gameObject.SetActive(flash);
