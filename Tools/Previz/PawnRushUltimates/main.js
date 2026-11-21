@@ -5,7 +5,8 @@ import { CLIPS as ULTS } from './ults.js';
 import { CASTS } from './casts.js';
 import { EDITS } from './edits.js';
 import { HEROES } from './hero.js';
-const CLIPS = { ...ULTS, ...CASTS, ...EDITS, ...HEROES };
+import { HERO_EDITS } from './heroedit.js';
+const CLIPS = { ...ULTS, ...CASTS, ...EDITS, ...HEROES, ...HERO_EDITS };
 
 const st = new Stage(document.getElementById('gl'), document.getElementById('hud'));
 async function fonts() {

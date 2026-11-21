@@ -167,3 +167,5 @@ const heroFar = {
 };
 
 export const HEROES = { heroCaster, heroVictim, heroFar };
+
+export { buildTown, spotlight, spirit, behind };
