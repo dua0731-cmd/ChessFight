@@ -203,3 +203,5 @@ const heroE3 = {
 };
 
 export const HERO_EDITS = { heroE1, heroE2, heroE3 };
+
+export { glowTiles, emblem, plight, space, ripple, brokenTiles, tileOf, TL, TX0, TZ0 };

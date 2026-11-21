@@ -222,15 +222,15 @@ function makeSky() {
   return s;
 }
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, blur: { value: new THREE.Vector2(0, 0) }, rgb: { value: 0 }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, dimW: { value: 1 }, blur: { value: new THREE.Vector2(0, 0) }, rgb: { value: 0 }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse, mask; uniform vec2 blur; uniform float sat, vig, flashA, maskOn, contrast, rgb; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse, mask; uniform vec2 blur; uniform float sat, vig, flashA, maskOn, contrast, rgb, dimW; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
     void main(){ vec4 c = vec4(0.0);
       if (blur.x != 0.0 || blur.y != 0.0) { for (int i = 0; i < 11; i++) { c += texture2D(tDiffuse, vUv + blur * (float(i) / 10.0 - 0.5)); } c /= 11.0; } else { c = texture2D(tDiffuse, vUv); }
       if (rgb > 0.0) { c.r = texture2D(tDiffuse, vUv + vec2(rgb, rgb * 0.3)).r; c.b = texture2D(tDiffuse, vUv - vec2(rgb, rgb * 0.3)).b; }
       float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
       vec3 gray = 0.18 * pow(vec3(l) / 0.18, vec3(contrast));
-      vec3 col = mix(gray, c.rgb, sat) * tint; c.rgb = mix(col, c.rgb, maskOn * texture2D(mask, vUv).r);
+      vec3 col = mix(gray, c.rgb, sat) * tint * dimW; c.rgb = mix(col, c.rgb, maskOn * texture2D(mask, vUv).r);
       vec2 d = (vUv - 0.5) * vec2(1.5, 1.0); float v = smoothstep(0.32, 0.9, length(d));
       c.rgb = mix(c.rgb, vigCol, clamp(vig * v, 0.0, 1.0));
       c.rgb = mix(c.rgb, flashCol, flashA); gl_FragColor = c; }`,
@@ -353,8 +353,9 @@ export class Stage {
     const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
     const cp = this.composer = new EffectComposer(r, rt);
     cp.addPass(new RenderPass(sc, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.55, 0.86); cp.addPass(this.bloom);
+    // grade before bloom: a world drained to grey still glows in the colours of what kept them
     this.grade = new ShaderPass(GradeShader); cp.addPass(this.grade);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.55, 0.86); cp.addPass(this.bloom);
     cp.addPass(new OutputPass());
     this.g = hud.getContext('2d');
     this.dyn = new THREE.Group(); sc.add(this.dyn);
@@ -498,7 +499,7 @@ export class Stage {
     for (const f of this.flashes) { if (s < f.s0 || s > f.s0 + f.d) continue; const a = f.a * Math.pow(1 - (s - f.s0) / f.d, 2); if (a > fa) { fa = a; fc = f.color; } }
     if ((gr.flashA ?? 0) > fa) { fa = gr.flashA; fc = gr.flashCol ?? [1, 1, 1]; }
     u.flashA.value = fa; u.flashCol.value.set(...fc);
-    u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0; u.blur.value.set(...(gr.blur ?? [0, 0])); u.rgb.value = gr.rgb ?? 0;
+    u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0; u.blur.value.set(...(gr.blur ?? [0, 0])); u.rgb.value = gr.rgb ?? 0; u.dimW.value = gr.dimW ?? 1;
     if (u.maskOn.value > 0) {
       const r = this.renderer, sc = this.scene, cam = this.camera, fog = sc.fog;
       sc.fog = null; sc.overrideMaterial = this.maskMat; cam.layers.set(1);
