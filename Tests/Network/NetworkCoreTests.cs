@@ -9,6 +9,20 @@ public static class NetworkCoreTests
     static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
     static void Test(string name, Action test) { test(); passed++; Console.WriteLine("PASS " + name); }
     static ulong[] Ids(int start, int count) => Enumerable.Range(start, count).Select(x => (ulong)x).ToArray();
+    // R745: a player a match started with (Starters), for the ranked-match rule.
+    static Starters.Seat StartSeat(ulong id, int team, int slot) => new Starters.Seat { Id = id, Team = team, Slot = slot };
+    // R745: a record book's text as an older build wrote it - its totals lines cut to `totals` fields, its records to `records`.
+    static string CutColumns(string text, int totals, int records)
+    {
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var f = lines[i].Split('|');
+            if (f[0] == "M" && f.Length > totals) lines[i] = string.Join("|", f, 0, totals);
+            else if (f[0] == "R" && f.Length > records) lines[i] = string.Join("|", f, 0, records);
+        }
+        return string.Join("\n", lines);
+    }
     // Host election candidates. Class-level rather than local functions: mcs, which runs these
     // tests on Linux (Tools/run-tests-linux.sh), cannot parse local functions.
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
@@ -4073,6 +4087,287 @@ public static class NetworkCoreTests
                 Check(Math.Abs(start2 - (origin + 187.3)) < 1e-9 && GiantChessReplay.Decode(GiantChessReplay.Encode(start2, origin), origin) == start2, "a tenth, both ways");
                 Check(GiantChessReplay.Encode(origin - 5, origin) == 1, "never before the round's start");
                 Check(GiantChessReplay.Encode(origin + 1e6, origin) == 65535, "clamped: 109 minutes"); });
+            Test("R736 match records: totals, one write a match, a left match replaced by its end, the text both ways", () => {
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                // Pawn Rush from a result: second over both teams, one of the winners' heads.
+                var result = new MatchResult { WinningTeam = 0, Needed = 2, MatchSeconds = 300 };
+                result.Players.Add(new ResultPlayer { Name = "a", Team = 1, FinishSeconds = 200 });
+                result.Players.Add(new ResultPlayer { Name = "me", Team = 0, Self = true, Piece = PieceKind.Knight, FinishSeconds = 261.4 });
+                result.Players.Add(new ResultPlayer { Name = "b", Team = 0, FinishSeconds = 280 });
+                result.Players.Add(new ResultPlayer { Name = "c", Team = 1, MetersLeft = 12 });
+                var won = RecordBuild.PawnRush(result);
+                Check(won != null && won.Mode == pr && won.Result == RecordResult.Win && won.Piece == PieceKind.Knight, "a win as the knight");
+                Check(won.Place == 2 && won.CountsToWin && won.Ours == 2 && won.Theirs == 2, "second, counted, 2 a side");
+                Check(RecordText.Headline(won) == "2위 도착 · 4:21" && RecordText.Sub(won) == "우리 팀 승리에 들어감", "its lines: " + RecordText.Headline(won));
+                result.Players[1].FinishSeconds = -1; result.Players[1].MetersLeft = 41.4f; result.WinningTeam = 1;
+                var lost = RecordBuild.PawnRush(result);
+                Check(lost.Result == RecordResult.Loss && lost.Place == 0 && RecordText.Headline(lost) == "도착 못 함" && RecordText.Sub(lost) == "", "a loss off the platform, no distance (R741)");
+                result.Players[1].Self = false;
+                Check(RecordBuild.PawnRush(result) == null, "a spectator has no line");
+                // Sword Fight: the black side's score first for a black player; how it ended.
+                var duel = RecordBuild.SwordFight(1, 7, 10, 1, 180, 240, PieceKind.Rook, 3, 3, 4, 1);
+                Check(duel.Result == RecordResult.Win && duel.ScoreOurs == 10 && duel.ScoreTheirs == 7 && duel.End == SwordEnd.Target, "black won 10 : 7");
+                Check(RecordBuild.SwordFight(0, 8, 9, 1, 240, 240, PieceKind.Queen, 6, 6, 1, 2).End == SwordEnd.TimeUp, "the clock ran out");
+                Check(RecordBuild.SwordFight(0, 5, 5, -1, 300, 240, PieceKind.Queen, 6, 6, 1, 2).Result == RecordResult.Draw, "a draw");
+                Check(RecordText.Headline(RecordBuild.SwordFight(0, 8, 9, 1, 240, 240, PieceKind.Queen, 6, 6, 1, 2)) == "8 : 9 · 시간 종료", "the time-up line");
+                Check(RecordText.Sub(duel) == "내가 떨어뜨림 4 · 떨어짐 1", "falls caused and taken");
+                // The book.
+                var book = new RecordBook();
+                won.Match = 11; won.FinishSeconds = 261.4; won.When = 1000;
+                duel.Match = 12;
+                var left = RecordBuild.Left(pr, PieceKind.Pawn, 6, 6); left.Match = 13;
+                Check(book.Add(won) && book.Add(duel) && book.Add(left), "three matches");
+                Check(!book.Add(won), "the same match is not written twice");
+                Check(book.Recent.Count == 3 && book.Recent[0] == left && book.Recent[2] == won, "newest first");
+                var all = book.All;
+                Check(all.Games == 3 && all.Wins == 2 && all.Left == 1 && all.AllLosses == 1 && RecordText.Rate(all.Wins, all.Games) == "67%", "2 of 3");
+                Check(book.Mode(pr).Games == 2 && book.Mode(pr).Firsts == 0 && Math.Abs(book.Mode(pr).BestFinish - 261.4) < 1e-9 && book.Mode(pr).NotFinished == 0, "Pawn Rush totals");
+                Check(book.Mode(sf).Knockouts == 4 && book.Mode(sf).Falls == 1 && book.Mode(sf).BestKnockouts == 4, "Sword Fight totals");
+                Check(book.PieceGames[(int)PieceKind.Knight] == 1 && book.PieceWins[(int)PieceKind.Knight] == 1 && book.PieceGames[(int)PieceKind.Pawn] == 1 && book.PieceWins[(int)PieceKind.Pawn] == 0, "by piece");
+                Check(RecordText.Headline(left) == "경기 중 나감" && RecordText.Sub(left) == "패로 셈" && RecordText.Badge(left.Result) == "나감", "the left line");
+                // Back into the left match and its end seen: the end takes the "나감"'s place and its count.
+                var back = RecordBuild.PawnRush(new MatchResult { WinningTeam = 0, Needed = 1, Players = { new ResultPlayer { Team = 0, Self = true, Piece = PieceKind.Queen, FinishSeconds = 238 } } });
+                back.Match = 13;
+                Check(book.Add(back) && book.Recent.Count == 3 && book.Recent[0] == back, "the end replaced the left match");
+                all = book.All;
+                Check(all.Games == 3 && all.Wins == 3 && all.Left == 0 && book.Mode(pr).Firsts == 1 && Math.Abs(book.Mode(pr).BestFinish - 238) < 1e-9, "and its count");
+                Check(book.PieceGames[(int)PieceKind.Pawn] == 0 && book.PieceGames[(int)PieceKind.Queen] == 1, "the left match's piece taken back");
+                var leftAgain = RecordBuild.Left(pr, PieceKind.Pawn, 6, 6); leftAgain.Match = 13;
+                Check(!book.Add(leftAgain), "a left match never replaces an end");
+                // The text both ways, and what does not read.
+                var copy = RecordBook.Decode(book.Encode());
+                Check(copy.Encode() == book.Encode(), "the text both ways");
+                Check(copy.Recent.Count == 3 && copy.Recent[0].Match == 13 && copy.Recent[0].Piece == PieceKind.Queen && copy.All.Wins == 3, "the same book");
+                Check(RecordBook.Decode("").Recent.Count == 0 && RecordBook.Decode("CFR0\nR|1").All.Games == 0, "nothing, another version");
+                Check(RecordBook.Decode(book.Encode().Replace("R|12|", "R|x|")).Recent.Count == 2, "a line that does not read is skipped");
+                Check(!book.Add(new MatchRecord { Mode = "a|b" }) && !book.Add(new MatchRecord()), "no mode, no record");
+                // Only the last Kept stay in the list; the totals keep every match.
+                for (int i = 0; i < RecordBook.Kept + 5; i++) book.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = sf, Result = RecordResult.Loss });
+                Check(book.Recent.Count == RecordBook.Kept && book.All.Games == 3 + RecordBook.Kept + 5, "50 kept, all counted");
+                // When.
+                var offset = TimeSpan.FromHours(9);
+                var now = new DateTime(2026, 11, 21, 22, 0, 0);
+                double at = new DateTimeOffset(2026, 11, 21, 21, 40, 0, offset).ToUnixTimeSeconds();
+                Check(RecordText.When(at, now, offset) == "오늘 21:40" && RecordText.When(at - 86400, now, offset) == "어제 21:40" &&
+                      RecordText.When(at - 3 * 86400, now, offset) == "11-18 21:40" && RecordText.When(0, now, offset) == "", "today, yesterday, a date");
+                Check(RecordText.Rate(0, 0) == "—" && RecordText.Rate(1, 2) == "50%" && RecordText.Rate(32, 62) == "52%", "rates"); });
+            Test("R742 match detail: sections as entered, falls in each, promotions, the line-up from the result, kept with its record", () => {
+                var d = new MatchDetail();
+                d.Enter("왕실 정원", 0); d.Fall(); d.Checkpoints += 3;
+                d.Enter("왕실 정원", 10);   // the same section again: no new line
+                d.Enter("도개교", 68); d.Promote(PieceKind.Knight, 112);
+                d.Enter("대계단 홀", 140); d.Fall(); d.Fall(); d.Skills = 7; d.Dives = 12; d.Grabs = 3;
+                Check(d.Legs.Count == 3 && d.Legs[0].Falls == 1 && d.Legs[2].Falls == 2 && d.Falls == 3, "three sections, falls where they happened");
+                Check(d.Promotions.Count == 1 && d.Promotions[0].Leg == "도개교" && d.Promotions[0].Piece == PieceKind.Knight, "promoted in the drawbridge");
+                Check(d.LegEnd(0, 261) == 68 && d.LegEnd(2, 261) == 261, "a section's end is the next one's start");
+                var result = new MatchResult { WinningTeam = 0, Needed = 2, MatchSeconds = 298 };
+                result.Players.Add(new ResultPlayer { Name = "체크메이트", Team = 0, Piece = PieceKind.Queen, FinishSeconds = 242 });
+                result.Players.Add(new ResultPlayer { Name = "나", Team = 0, Self = true, Piece = PieceKind.Knight, FinishSeconds = 261 });
+                result.Players.Add(new ResultPlayer { Name = "룩마스터", Team = 1, Piece = PieceKind.Rook, FinishSeconds = 290 });
+                result.Players.Add(new ResultPlayer { Name = "폰스타", Team = 1, Piece = PieceKind.Pawn });
+                var r = RecordBuild.PawnRush(result, d);
+                Check(r.Detail == d && d.Duration == 298 && d.Clincher == "나", "the result's end and who decided it");
+                Check(d.Players.Count == 4 && d.Players[0].Name == "체크메이트" && d.Players[1].Self && d.Players[1].Place == 2 &&
+                      !d.Players[2].Ours && d.Players[2].Place == 3 && d.Players[3].Place == 0 && d.Players[3].Seconds < 0, "ours first, by crossing; a non-finisher");
+                // Sword Fight: the falls of the match.
+                var s = new MatchDetail { SwordF = 6, SwordE = 1 };
+                s.Score(new DetailFall { At = 38, Ours = true, ByMe = true, Victim = "룩마스터", Credit = "나", Cause = "칼" });
+                s.Score(new DetailFall { At = 107, Ours = false, OfMe = true, Victim = "나", Credit = "비숍\t킹", Cause = "포크 강하" });
+                var sw = RecordBuild.SwordFight(0, 10, 6, 0, 192, 240, PieceKind.Knight, 4, 4, 4, 1, s);
+                Check(sw.Detail == s && s.Duration == 192 && s.Score(true) == 1 && s.Score(false) == 1 && s.Feed[1].Credit == "비숍 킹", "the feed, a tab in a name cleaned");
+                // Both ways, alone and inside the book.
+                var back = MatchDetail.Decode(d.Encode());
+                Check(back != null && back.Encode() == d.Encode(), "the detail's text both ways");
+                Check(MatchDetail.Unpack(s.Pack()).Encode() == s.Encode() && MatchDetail.Unpack("not base64!") == null && MatchDetail.Decode("D0\nT\t1\t") == null, "packed, and what does not read");
+                var book = new RecordBook();
+                r.Match = 5; sw.Match = 6;
+                book.Add(r); book.Add(sw);
+                book.Add(new MatchRecord { Match = 7, Mode = GameModes.KingRush.Key, Result = RecordResult.Loss });   // no detail
+                var copy = RecordBook.Decode(book.Encode());
+                Check(copy.Encode() == book.Encode() && copy.Recent[2].Detail.Legs.Count == 3 && copy.Recent[1].Detail.Feed.Count == 2 && copy.Recent[0].Detail == null, "kept in the book");
+                Check(RecordBook.Decode(book.Encode().Replace("|" + r.Detail.Pack(), "")).Recent.Count == 3, "a line from before R742 (no detail field) still reads"); });
+            // R743: the 순위 tab's rules (Core Ranking).
+            Test("R743 ranking: the score sorts rate then matches, a line's details both ways and checked, this player's line from the book's ranked matches", () => {
+                Check(RankRules.Permille(32, 62) == 516 && RankText.Rate(32, 62) == "51.6" && RankText.Rate(0, 0) == "—", "51.6%");
+                Check(RankRules.Score(30, 18) > RankRules.Score(20, 12) && RankRules.Score(84, 60) > RankRules.Score(125, 85), "an equal rate puts more matches first; a higher rate first");
+                Check(RankRules.Score(100000, 100000) == 1000 * 100000 + 99999, "the cap stays inside an int");
+                Check(!RankRules.Ranked(19) && RankRules.Ranked(20), "from 20 matches (R745: back from R744's 10)");
+                int today = RankRules.Day(1795200000);
+                Check(!RankRules.Resting(today - 29, today) && RankRules.Resting(today - 30, today) && !RankRules.Resting(0, today), "30 days rest; an unknown day never rests");
+                Check(RankText.Last(today, today) == "오늘" && RankText.Last(today - 1, today) == "어제" && RankText.Last(today - 3, today) == "3일 전" &&
+                      RankText.Last(today - 35, today) == "쉬는 중 · 35일 전" && RankText.Last(0, today) == "", "the last match");
+                Check(RankText.Top(128, 712) == "상위 18%" && RankText.Top(1, 712) == "상위 1%" && RankText.Top(0, 712) == "", "the top share");
+                Check(RankText.Games(62, 32) == "62판 · 32승" && RankText.Progress(6, 20) == "6/20판", "matches and wins, matches so far");
+                // A line's details (R745, version 2: the ranked matches of the board's mode).
+                var d = RankDetails.Pack(new RankEntry { Games = 62, Wins = 32, LastDay = today - 2, Piece = PieceKind.Knight }, "나이트메어");
+                var e = RankDetails.Read(7, 128, RankRules.Score(62, 32), d, d.Length);
+                Check(e != null && e.Id == 7 && e.Rank == 128 && e.Games == 62 && e.Wins == 32 && e.LastDay == today - 2 &&
+                      e.Piece == PieceKind.Knight && e.Name == "나이트메어" && !e.Waiting, "the details both ways");
+                Check(RankDetails.Pack(new RankEntry { Games = 62, Wins = 32 }, "가나다라마바사아자차카타").Length <= 15, "twelve Korean letters in 15 ints");
+                var big = new int[RankRules.MaxDetails]; Array.Copy(d, big, d.Length);
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 32), big, d.Length) != null, "read from Steam's larger buffer");
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 33), d, d.Length) == null, "a score its numbers do not give");
+                var few = RankDetails.Pack(new RankEntry { Games = 19, Wins = 19 }, "ab");
+                Check(RankDetails.Read(7, 1, RankRules.Score(19, 19), few, few.Length) == null, "under 20 matches");
+                var odd = (int[])d.Clone(); odd[0] = 1;
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 32), odd, odd.Length) == null, "a version 1 line (R743: every match counted) no longer reads");
+                var broken = (int[])d.Clone(); broken[6] = -1;   // not UTF-8
+                var kept = RankDetails.Read(7, 1, RankRules.Score(62, 32), broken, broken.Length);
+                Check(kept != null && kept.Name == "" && kept.Games == 62, "a broken name drops the name, not the line");
+                // This player's line from the book: only the ranked matches count (R745), nothing below 20 of them, the
+                // newest ranked match's day, the piece played most.
+                var book = new RecordBook();
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                double t0 = 1795200000, last = t0 + 86400 * 3;
+                for (int i = 0; i < 30; i++)
+                    book.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = pr, Result = i % 2 == 0 ? RecordResult.Win : RecordResult.Loss,
+                                               Piece = i < 20 ? PieceKind.Rook : PieceKind.Knight, When = t0 + i * 60, Ranked = i < 19 });
+                Check(book.Mode(pr).Games == 30 && book.Mode(pr).RankedGames == 19 && book.Mode(pr).RankedWins == 10 && book.Mode(pr).Wins == 15, "30 matches, 19 of them ranked");
+                Check(RankUpload.From(book, RankBoard.PawnRush) == null, "19 ranked matches: not yet, however many the others");
+                var short1 = RankCount.Of(book, RankBoard.PawnRush);
+                Check(!short1.Ranked && short1.Have == 19 && short1.Need == 20 && short1.ToGo == 1 &&
+                      RankText.Need(short1) == "순위 판 1판 더 하면 순위에 올라가요", "one to go");
+                book.Add(new MatchRecord { Match = 200, Mode = pr, Result = RecordResult.Left, Piece = PieceKind.Rook, When = last, Ranked = true });
+                var line = RankUpload.From(book, RankBoard.PawnRush);
+                Check(line != null && line.Self && line.Games == 20 && line.Wins == 10 && line.LastDay == RankRules.Day(last) &&
+                      line.Piece == PieceKind.Rook, "20 ranked matches with the left one a loss, the newest day, the rook");
+                var up = RankDetails.Pack(line, "ab");
+                Check(RankDetails.Read(9, 5, line.Score, up, up.Length) != null, "its own line reads");
+                // R746 (user 11-21: "폰 러쉬랑 소드파이트 순위를 구분 지어야 해 … 각각 20판씩 하면 그 후 순위에 찍혀야 돼"): a board
+                // for each mode and none over both; a mode's own 20 ranked matches put a player on its board.
+                Check(RankRules.Boards.Length == 2 && RankUpload.From(book, RankBoard.SwordFight) == null, "two boards; Pawn Rush's 20 put nobody on Sword Fight's");
+                for (int i = 0; i < 20; i++)
+                    book.Add(new MatchRecord { Match = (ulong)(300 + i), Mode = sf, Result = i < 15 ? RecordResult.Win : i < 18 ? RecordResult.Loss : RecordResult.Draw,
+                                               Piece = PieceKind.Queen, When = last + 60 + i, Ranked = true });
+                var sword = RankUpload.From(book, RankBoard.SwordFight);
+                var rushStill = RankUpload.From(book, RankBoard.PawnRush);
+                Check(sword != null && sword.Games == 20 && sword.Wins == 15 && sword.LastDay == RankRules.Day(last + 79) && sword.Piece == PieceKind.Queen &&
+                      rushStill.Games == 20 && rushStill.Wins == 10, "Sword Fight's own 20 on its board; Pawn Rush's line as it was");
+                var drawn = RankCount.Of(book, RankBoard.SwordFight);
+                Check(drawn.Ranked && drawn.ToGo == 0 && drawn.Draws == 2 && drawn.Losses == 3 && RankRules.Permille(drawn.Wins, drawn.Games) == 750, "a draw is not a win (asked 11-21, kept)");
+                var none = RankCount.Of(new RecordBook(), RankBoard.SwordFight);
+                Check(none.Have == 0 && none.Need == 20 && RankText.Need(none) == "순위 판 20판 더 하면 순위에 올라가요", "nothing yet: 20 to go");
+                // The text: the ranked counts and marks are kept; an older book reads, with none of its matches ranked.
+                string text = book.Encode();
+                var copy = RecordBook.Decode(text);
+                Check(copy.Encode() == text && copy.Mode(pr).RankedGames == 20 && copy.Mode(pr).RankedWins == 10 && copy.Mode(sf).RankedDraws == 2 &&
+                      copy.Mode(pr).RankedLast == last && copy.Mode(pr).Last == last && copy.All.Last == last + 79, "the ranked counts and the last times are kept");
+                Check(copy.Recent.Count == RecordBook.Kept && copy.Recent[0].Ranked && copy.Recent.FindAll(r => r.Ranked).Count == 39, "and each record's mark");
+                var before745 = RecordBook.Decode(CutColumns(text, 14, 18));
+                Check(before745.Mode(pr).Games == 31 && before745.Mode(pr).Last == last && before745.Mode(pr).RankedGames == 0 && !before745.Recent.Exists(r => r.Ranked) &&
+                      RankUpload.From(before745, RankBoard.PawnRush) == null, "a book from before R745 reads, and none of its matches is ranked");
+                var before743 = RecordBook.Decode(CutColumns(text, 13, 17));
+                Check(before743.Mode(pr).Games == 31 && before743.Mode(pr).Last == 0 && before743.Recent.Count == RecordBook.Kept, "a totals line from before R743 reads");
+                var wrong = RecordBook.Decode(text.Replace("M|" + pr + "|31|", "M|" + pr + "|5|"));
+                Check(wrong.Mode(pr).Games == 5 && wrong.Mode(pr).RankedGames == 0, "more ranked matches than matches count as none");
+                Check(RankRules.BoardName(RankBoard.SwordFight) == "ChessFight_WinRate_SwordFight_v2" && RankRules.BoardName(RankBoard.PawnRush) == "ChessFight_WinRate_PawnRush_v2" && RankRules.ProgressBoard == "ChessFight_Progress" &&
+                      RankRules.ModeKey(RankBoard.SwordFight) == sf && RankRules.ModeKey(RankBoard.PawnRush) == pr && RankRules.Title(RankBoard.SwordFight) == "소드 파이트", "the boards' names"); });
+            // R745 (user 11-21, the 순위 tab's limits that code alone mends).
+            Test("R745 ranked matches: a room matchmaking made, people only, two a side; a match held as 나감 from its start; Steam's count back into a smaller book", () => {
+                // Which matches count, by what the room wrote at its start.
+                string two = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(2, 0, 1), StartSeat(3, 1, 0), StartSeat(4, 1, 1) });
+                Check(RankRules.MinSide == 2 && RankRules.RankedMatch(true, "2,2", two), "2 v 2 of people from matchmaking counts");
+                Check(!RankRules.RankedMatch(false, "2,2", two), "a room a player made does not");
+                Check(!RankRules.RankedMatch(true, "3,3", two) && !RankRules.RankedMatch(true, "3,2", two), "nor a match with a bot in a seat");
+                string one = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(3, 1, 0) });
+                Check(!RankRules.RankedMatch(true, "1,1", one), "nor 1 v 1");
+                string lone = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(2, 0, 1), StartSeat(5, 0, 2), StartSeat(3, 1, 0) });
+                Check(!RankRules.RankedMatch(true, "3,1", lone), "nor 3 v 1");
+                Check(!RankRules.RankedMatch(true, "", two) && !RankRules.RankedMatch(true, "2,2", "") && !RankRules.RankedMatch(true, "x", two), "nor a room that does not say");
+                var six = new List<Starters.Seat>();
+                for (int k = 0; k < 6; k++) { six.Add(StartSeat((ulong)(10 + k), 0, k)); six.Add(StartSeat((ulong)(20 + k), 1, k)); }
+                Check(RankRules.RankedMatch(true, "6,6", Starters.Encode(six)), "6 v 6 counts");
+                // A match is held as "나감" from its start; its end takes that place.
+                var book = new RecordBook();
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                var held = RecordBuild.Left(pr, PieceKind.Pawn, 0, 0); held.Match = 50; held.Ranked = true; held.When = 1000;
+                Check(book.Hold(held) && book.Recent.Count == 1 && book.Mode(pr).Left == 1 && book.Mode(pr).RankedGames == 1 && book.Mode(pr).RankedWins == 0,
+                      "held from the start: a ranked loss unless the end says otherwise");
+                Check(RecordBook.Decode(book.Encode()).Mode(pr).Left == 1 && RecordBook.Decode(book.Encode()).Recent[0].Result == RecordResult.Left, "and in the text a killed game leaves behind");
+                var later = RecordBuild.Left(pr, PieceKind.Knight, 6, 6); later.Match = 50; later.Ranked = true; later.When = 1100;
+                Check(book.Hold(later) && book.Recent.Count == 1 && book.Recent[0].Piece == PieceKind.Knight && book.Recent[0].Ours == 6 && book.Mode(pr).Games == 1 &&
+                      book.Mode(pr).RankedGames == 1 && book.PieceGames[(int)PieceKind.Pawn] == 0 && book.PieceGames[(int)PieceKind.Knight] == 1,
+                      "held again with the piece and the sides as they are now: still one match");
+                var end = new MatchRecord { Match = 50, Mode = pr, Result = RecordResult.Win, Piece = PieceKind.Queen, Place = 1, FinishSeconds = 200, Ranked = true, When = 1200 };
+                Check(book.Add(end) && book.Recent.Count == 1 && book.Mode(pr).Left == 0 && book.Mode(pr).Wins == 1 && book.Mode(pr).RankedGames == 1 && book.Mode(pr).RankedWins == 1,
+                      "the end takes the held 나감's place");
+                Check(!book.Hold(later) && book.Mode(pr).Wins == 1 && book.Recent[0] == end, "a match whose end is written is not held again");
+                var other = RecordBuild.Left(pr, PieceKind.Pawn, 2, 2); other.Match = 51; other.When = 1300;
+                Check(book.Hold(other) && book.Recent[0] == other && book.Mode(pr).Games == 2 && book.Mode(pr).RankedGames == 1, "a match that does not count is held too, for no board");
+                Check(!book.Hold(new MatchRecord { Match = 52, Mode = pr, Result = RecordResult.Win }) && !book.Hold(RecordBuild.Left(pr, PieceKind.Pawn, 1, 1)) && !book.Hold(null),
+                      "only the 나감 of a match is held");
+                // The whole count as Steam keeps it (the progress board), both ways.
+                var big = new RecordBook();
+                double t0 = 1795200000;
+                for (int i = 0; i < 30; i++)
+                {
+                    bool win = i % 3 != 0;
+                    big.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = pr, Result = win ? RecordResult.Win : RecordResult.Loss, Piece = PieceKind.Rook,
+                                              Place = win ? 1 : 0, FinishSeconds = win ? 250.5 - i : -1, When = t0 + i * 100, Ranked = i < 24 });
+                }
+                for (int i = 0; i < 12; i++)
+                    big.Add(new MatchRecord { Match = (ulong)(200 + i), Mode = sf, Result = i < 6 ? RecordResult.Win : i < 10 ? RecordResult.Loss : RecordResult.Draw,
+                                              Piece = PieceKind.Queen, Knockouts = 3, Falls = 1, When = t0 + 86400 + i * 100, Ranked = true });
+                var mine = RankProgress.From(big);
+                var packed = mine.Pack("나이트메어");
+                Check(packed.Length <= RankRules.MaxDetails && mine.Score == 42, "it fits Steam's 64 ints; its score is the matches");
+                var read = RankProgress.Read(77, mine.Score, packed, packed.Length);
+                Check(read != null && read.Id == 77 && read.Name == "나이트메어" && read.Games == 42 && read.Rush.Games == 30 && read.Rush.Wins == 20 && read.Rush.Losses == 10 &&
+                      read.Rush.RankedGames == 24 && read.Rush.RankedWins == 16 && read.Rush.Firsts == 20 && read.Rush.NotFinished == 10 && Math.Abs(read.Rush.BestFinish - 221.5) < 0.001,
+                      "Pawn Rush's count both ways");
+                Check(read.Sword.Games == 12 && read.Sword.Wins == 6 && read.Sword.Draws == 2 && read.Sword.RankedGames == 12 && read.Sword.RankedDraws == 2 &&
+                      read.Sword.Knockouts == 36 && read.Sword.Falls == 12 && read.Sword.BestKnockouts == 3, "Sword Fight's");
+                Check(read.PieceGames[(int)PieceKind.Rook] == 30 && read.PieceWins[(int)PieceKind.Rook] == 20 && read.PieceGames[(int)PieceKind.Queen] == 12 &&
+                      read.RushPiece == PieceKind.Rook && read.SwordPiece == PieceKind.Queen && read.Piece(RankBoard.PawnRush) == PieceKind.Rook, "the pieces");
+                Check(RankRules.Day(read.Rush.RankedLast) == RankRules.Day(t0 + 2300) && RankRules.Day(read.Sword.Last) == RankRules.Day(t0 + 86400 + 1100), "the last days");
+                Check(RankProgress.Read(77, mine.Score + 1, packed, packed.Length) == null, "a score that is not its matches");
+                var more = (int[])packed.Clone(); more[2]++;
+                Check(RankProgress.Read(77, mine.Score, more, more.Length) == null, "results that do not add up to the matches");
+                var overRanked = (int[])packed.Clone(); overRanked[6] = 31;
+                Check(RankProgress.Read(77, mine.Score, overRanked, overRanked.Length) == null, "more ranked matches than matches");
+                var otherVersion = (int[])packed.Clone(); otherVersion[0] = 9;
+                Check(RankProgress.Read(77, mine.Score, otherVersion, otherVersion.Length) == null && RankProgress.Read(77, mine.Score, packed, 10) == null, "another version, a short line");
+                // A new PC, a reinstall: the empty book takes Steam's count (the list of recent matches cannot come back).
+                var fresh = new RecordBook();
+                Check(read.RestoreInto(fresh) && fresh.All.Games == 42 && fresh.Mode(pr).Wins == 20 && fresh.Mode(pr).RankedGames == 24 && fresh.Mode(sf).RankedDraws == 2 &&
+                      fresh.Recent.Count == 0 && fresh.PieceGames[(int)PieceKind.Rook] == 30, "a new PC gets Steam's count, not the list");
+                var again = RankUpload.From(fresh, RankBoard.PawnRush);
+                var before = RankUpload.From(big, RankBoard.PawnRush);
+                Check(again != null && again.Score == before.Score && again.Games == 24 && again.LastDay == before.LastDay, "and stands on the board as it did");
+                Check(RecordBook.Decode(fresh.Encode()).Mode(pr).RankedGames == 24, "kept in the text");
+                Check(!read.RestoreInto(fresh), "the same count changes nothing");
+                // Never the other way: a book that holds more matches is not written over by Steam's smaller count.
+                fresh.Add(new MatchRecord { Match = 900, Mode = pr, Result = RecordResult.Win, Piece = PieceKind.Rook, Place = 2, FinishSeconds = 300, When = t0 + 5 * 86400 });
+                Check(!read.RestoreInto(fresh) && fresh.Mode(pr).Games == 31 && fresh.Mode(pr).Wins == 21, "a book with more matches stays");
+                // Mode by mode: this PC played more Pawn Rush, Steam kept more Sword Fight.
+                var pc = new RecordBook();
+                for (int i = 0; i < 35; i++) pc.Add(new MatchRecord { Match = (ulong)(500 + i), Mode = pr, Result = RecordResult.Loss, Piece = PieceKind.Pawn, When = t0 + i });
+                for (int i = 0; i < 3; i++) pc.Add(new MatchRecord { Match = (ulong)(600 + i), Mode = sf, Result = RecordResult.Win, Piece = PieceKind.Pawn, When = t0 + 100 + i });
+                Check(read.RestoreInto(pc) && pc.Mode(pr).Games == 35 && pc.Mode(pr).Wins == 0 && pc.Mode(sf).Games == 12 && pc.Mode(sf).Wins == 6 && pc.Recent.Count == 38,
+                      "each mode from where it has more matches; the list stays this PC's");
+                // A friend who is not on a board yet, as the 친구 view shows them.
+                var friend = read.Waiting(RankBoard.SwordFight);
+                Check(friend.Waiting && friend.Rank == 0 && friend.Have == 12 && friend.Need == 20 && friend.Games == 12 && friend.Wins == 6 && friend.Piece == PieceKind.Queen &&
+                      RankText.Progress(friend.Have, friend.Need) == "12/20판", "a friend 12 of Sword Fight's 20 along");
+                var swordOnly = read.Waiting(RankBoard.SwordFight);
+                Check(swordOnly.Have == 12 && swordOnly.Need == 20 && swordOnly.Piece == PieceKind.Queen && read.Count(RankBoard.PawnRush).Ranked, "12 of Sword Fight's 20; on Pawn Rush's board"); });
+            // R737: party codes and room numbers - the lobby ID's lower 10 digits, read back however it is typed.
+            Test("lobby code: the short number", () => {
+                const ulong real = 109775245186061991UL;   // a lobby from the logs: upper half 0x01860000, lower 4268906151
+                Check(LobbyCode.Short(real) == 4268906151UL && LobbyCode.Plain(real) == "4268906151", "the lower half, copied plain");
+                Check(LobbyCode.Format(real) == "42 6890 6151", "fours from the right");
+                Check(LobbyCode.Format(LobbyCode.LobbyHigh | 10235012UL) == "1023 5012" && LobbyCode.Format(LobbyCode.LobbyHigh | 7UL) == "7", "shorter ones");
+                Check(LobbyCode.Format(0) == "—" && LobbyCode.Plain(0) == "", "none");
+                const ulong odd = 0x0170000000001234UL;   // another upper half: shown and copied whole
+                Check(LobbyCode.Plain(odd) == odd.ToString() && LobbyCode.Format(odd).Replace(" ", "") == odd.ToString(), "not a usual lobby");
+                ulong id;
+                Check(LobbyCode.TryRead("42 6890 6151", out id) && id == real, "as shown");
+                Check(LobbyCode.TryRead("4268906151", out id) && id == real && LobbyCode.TryRead("42-6890-6151", out id) && id == real, "copied, dashes");
+                Check(LobbyCode.TryRead("10 9775 2451 8606 1991", out id) && id == real && LobbyCode.TryRead("109775245186061991", out id) && id == real, "the old whole number");
+                Check(LobbyCode.TryRead(odd.ToString(), out id) && id == odd, "an unusual one whole");
+                Check(LobbyCode.TryRead("4294967295", out id) && id == (LobbyCode.LobbyHigh | 0xFFFFFFFFUL), "the largest short one");
+                Check(!LobbyCode.TryRead("", out id) && !LobbyCode.TryRead(" · ", out id) && !LobbyCode.TryRead("0", out id), "nothing");
+                Check(!LobbyCode.TryRead("4268a906151", out id) && !LobbyCode.TryRead("99999999999999999999999", out id), "letters, too long"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

@@ -618,6 +618,25 @@ namespace ChessFight.Network
                 return Math.Max(1, Math.Max(Roster.Values.Count(p => p.Team == 0), Roster.Values.Count(p => p.Team == 1)));
             }
         }
+        // R745 (user 11-21: "각 팀 2명 이상"): whether the started match counts for the 순위 boards - a room matchmaking
+        // made, every seat a person's, RankRules.MinSide a side or more (RankRules.RankedMatch). Read from what the
+        // room wrote at its start ("private", "seats", "starters"), so every PC in the match, a new host and a player
+        // who comes back read the same answer, whoever leaves later. A room whose "private" is not "0" never counts.
+        public bool RankedMatch
+        {
+            get
+            {
+                if (Match == 0 || !Started) return false;
+                if (rankedFor == Match) return rankedIs;
+                string starters = Data(Match, "starters");
+                bool ranked = RankRules.RankedMatch(Data(Match, "private") == "0", Data(Match, "seats"), starters);
+                // Kept for the match once the room says who started it (that never changes; the links ask every frame).
+                if (starters != "") { rankedFor = Match; rankedIs = ranked; }
+                return ranked;
+            }
+        }
+        ulong rankedFor;
+        bool rankedIs;
         // Only a host that owns the room can write it (HOST.md), so a successor
         // still waiting for ownership leaves the start to the next poll.
         public bool CanAnnounceStart => IsHost && Started && Owner(Match) == Self;

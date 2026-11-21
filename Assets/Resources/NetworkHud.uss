@@ -1075,3 +1075,309 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
     color: rgb(34, 24, 12); background-color: rgb(233, 198, 122); border-color: rgb(255, 233, 184); opacity: 1; }
 .load-rule-btn.load-rule-on .a-btn-text { color: rgb(34, 24, 12); }
 .load-rule-btn:disabled { opacity: 0.45; }
+
+/* ---------- R736: the lobby's 기물 도감 and 전적 tabs (NetworkHudView.Tabs.cs; mock-up A, 11-21) ----------
+   The tab names are buttons now; another tab hides the play HUD (.play-only) by visibility, so the view's own
+   show / hide of it carries on underneath. Pages are laid out at the reference 1280 x 720. */
+.a-tab-btn { border-width: 0; border-radius: 0; margin: 0; padding: 0; background-color: rgba(0, 0, 0, 0); }
+.a-tab-btn:hover { color: rgb(243, 235, 221); background-color: rgba(0, 0, 0, 0); }
+.a-tab-btn:active { background-color: rgba(0, 0, 0, 0); }
+.a-tab-btn:disabled { opacity: 0.35; }
+.tab-away .play-only { visibility: hidden; }
+.lt-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(10, 8, 6, 0.28); }
+/* R739 (user 11-21: the hall showed through the record's glass and the words sank into it): the record's cards are
+   solid ebony with a bright gold edge, over a lighter shade, so the hall stays and the page reads. R740: the codex's
+   panel too ("기물 도감도 해"). */
+.lt-card { border-width: 1px; border-radius: 12px; border-color: rgba(232, 178, 76, 0.8); background-color: rgba(19, 13, 8, 0.93); }
+.rc-summary { padding: 14px 18px 14px 18px; }
+.lt-page { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+/* 기물 도감: the list on the left, the stage in the middle, the panel on the right */
+.cx-list { position: absolute; left: 26px; top: 92px; width: 236px; }
+.cx-kicker { margin-bottom: 8px; color: rgb(250, 196, 92); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95); }
+.cx-item { flex-direction: row; align-items: center; flex-shrink: 0; height: 58px; margin: 0 0 8px 0; padding: 0 12px;
+           border-width: 1px; border-radius: 10px; border-color: rgba(232, 178, 76, 0.5); background-color: rgba(19, 13, 8, 0.93);
+           -unity-text-align: middle-left; transition-property: scale, background-color, border-color; transition-duration: 0.12s; }
+.cx-item:hover { border-color: rgba(246, 184, 62, 0.9); background-color: rgb(44, 31, 18); }
+.cx-item:active { scale: 0.97 0.97; }
+.cx-item-on { border-color: rgb(246, 184, 62); background-color: rgb(86, 59, 22); }
+.cx-item-on:hover { border-color: rgb(246, 184, 62); background-color: rgb(86, 59, 22); }
+.cx-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; -unity-background-scale-mode: scale-to-fit; }
+.cx-texts { flex-direction: column; }
+.cx-item-name { font-size: 17px; -unity-font-style: bold; color: rgb(243, 235, 221); margin: 0; padding: 0; }
+.cx-item-sub { font-size: 11px; color: rgb(214, 196, 166); margin: 0; padding: 0; }
+.cx-item-on .cx-item-sub { color: rgb(250, 226, 180); }
+.cx-team-label { margin-top: 10px; color: rgb(240, 226, 202); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95); }
+.cx-seg { width: 72px; height: 34px; margin: 0; padding: 0; border-width: 1px; border-radius: 0; border-color: rgba(232, 178, 76, 0.5);
+          background-color: rgba(19, 13, 8, 0.93); color: rgb(214, 196, 166); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.cx-seg:hover { border-color: rgba(246, 184, 62, 0.9); color: rgb(243, 235, 221); }
+.cx-seg-on { border-color: rgb(246, 184, 62); background-color: rgb(112, 76, 26); color: rgb(255, 248, 232); }
+.cx-stage { position: absolute; left: 280px; top: 80px; width: 500px; bottom: 24px; justify-content: flex-end; align-items: center; }
+.cx-hint { font-size: 12px; -unity-font-style: bold; color: rgb(244, 230, 206); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.cx-panel { position: absolute; left: 812px; top: 92px; width: 442px; height: 600px; padding: 26px 28px 24px 28px; }
+.cx-name { font-size: 44px; color: rgb(243, 235, 221); margin: 2px 0 0 0; padding: 0; }
+.cx-where { font-size: 12px; color: rgb(226, 208, 178); white-space: normal; margin-top: 4px; }
+.cx-section { margin-top: 18px; }
+.cx-bar-row { flex-direction: row; align-items: center; margin-top: 8px; }
+.cx-bar-label { width: 62px; font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.cx-bar-track { flex-grow: 1; height: 8px; background-color: rgba(243, 235, 221, 0.18); }
+.cx-bar-fill { height: 8px; background-color: rgb(246, 184, 62); }
+.cx-bar-value { width: 44px; font-size: 13px; -unity-font-style: bold; color: rgb(250, 190, 70); -unity-text-align: middle-right; }
+.cx-tags { flex-direction: row; margin-top: 12px; }
+.cx-tag { padding: 2px 8px; margin-right: 8px; border-width: 1px; border-color: rgba(246, 184, 62, 0.8); font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.cx-tag-gold { color: rgb(250, 190, 70); }
+.cx-rule { height: 1px; margin-top: 18px; background-color: rgba(232, 178, 76, 0.5); }
+.cx-mode-head { flex-direction: row; align-items: center; }
+.cx-mode-label { margin-bottom: 0; }
+.cx-dot { width: 8px; height: 8px; margin-right: 8px; flex-shrink: 0; }
+.cx-dot-pr { background-color: rgb(104, 212, 104); }
+.cx-dot-sf { background-color: rgb(246, 98, 74); }
+.cx-skill { flex-direction: row; align-items: center; margin-top: 8px; }
+.cx-key { padding: 1px 6px 2px 6px; margin-right: 10px; border-width: 1px; border-color: rgba(246, 184, 62, 0.85); background-color: rgb(21, 17, 14);
+          font-size: 11px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.cx-skill-name { font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.cx-skill-line { font-size: 12px; color: rgb(236, 220, 192); white-space: normal; margin-top: 6px; }
+.cx-none { font-size: 13px; color: rgb(214, 196, 166); margin-top: 8px; }
+.cx-grow { flex-grow: 1; }
+.cx-record { flex-direction: row; justify-content: space-between; align-items: center; flex-shrink: 0; height: 44px; margin: 0; padding: 0 14px;
+             border-width: 1px; border-radius: 8px; border-color: rgba(246, 184, 62, 0.75); background-color: rgb(52, 37, 20); }
+.cx-record:hover { border-color: rgb(246, 184, 62); background-color: rgb(86, 59, 22); }
+.cx-record-text { font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.cx-record-go { font-size: 13px; -unity-font-style: bold; color: rgb(250, 190, 70); }
+
+/* 전적: the totals on the left, the recent matches on the right */
+.rc-left { position: absolute; left: 26px; top: 84px; width: 396px; }
+.rc-rate-row { flex-direction: row; align-items: flex-end; margin-top: 2px; }
+.rc-rate { font-size: 56px; color: rgb(250, 190, 70); margin: 0 14px 0 0; padding: 0; }
+.rc-rate-texts { padding-bottom: 8px; }
+.rc-rate-cap { font-size: 12px; -unity-font-style: bold; color: rgb(226, 206, 174); }
+.rc-rate-sum { font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-mode { margin-top: 14px; padding: 16px 18px; }
+.rc-mode-head { flex-direction: row; justify-content: space-between; align-items: center; }
+.rc-mode-name { font-size: 15px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-mode-sum { font-size: 13px; -unity-font-style: bold; color: rgb(238, 222, 196); }
+.rc-bar { height: 6px; margin-top: 12px; flex-direction: row; background-color: rgba(243, 235, 221, 0.18); }
+.rc-bar-fill { height: 6px; background-color: rgb(246, 184, 62); }
+.rc-stats { flex-direction: row; margin-top: 12px; }
+.rc-stat { flex-grow: 1; flex-basis: 0; }
+.rc-stat-value { font-size: 22px; color: rgb(243, 235, 221); }
+.rc-stat-cap { font-size: 11px; color: rgb(214, 196, 166); }
+.rc-note { font-size: 11px; color: rgb(236, 222, 198); margin-top: 14px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95); }
+.rc-list { position: absolute; left: 448px; top: 92px; width: 806px; height: 600px; }
+.rc-list-head { height: 56px; padding: 0 18px; flex-direction: row; align-items: center; justify-content: space-between;
+                border-bottom-width: 1px; border-color: rgba(201, 154, 69, 0.3); }
+.rc-filter { height: 32px; margin: 0 6px 0 0; padding: 0 14px; border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.3);
+             background-color: rgba(21, 17, 14, 0.6); color: rgb(185, 166, 138); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.rc-filter:hover { border-color: rgba(201, 154, 69, 0.8); color: rgb(243, 235, 221); }
+.rc-filter-on { border-color: rgb(246, 184, 62); background-color: rgb(112, 76, 26); color: rgb(255, 248, 232); }
+.rc-pager { flex-direction: row; align-items: center; }
+.rc-page-btn { width: 32px; height: 32px; margin: 0; padding: 0; border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.6);
+               background-color: rgba(46, 36, 27, 0.94); color: rgb(243, 235, 221); font-size: 15px; -unity-text-align: middle-center; }
+.rc-page-btn:hover { border-color: rgb(201, 154, 69); }
+.rc-page-btn:disabled { opacity: 0.3; }
+.rc-page { min-width: 56px; -unity-text-align: middle-center; font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-rows { padding: 4px 18px 0 18px; }
+.rc-row { height: 62px; flex-direction: row; align-items: center; flex-shrink: 0; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.22); }
+.rc-badge { width: 52px; height: 30px; margin-right: 14px; flex-shrink: 0; border-width: 1px; -unity-text-align: middle-center; font-size: 13px; -unity-font-style: bold; }
+.rc-badge-win { background-color: rgb(246, 184, 62); border-color: rgb(246, 184, 62); color: rgb(26, 19, 12); }
+.rc-badge-loss { border-color: rgba(243, 235, 221, 0.35); color: rgb(243, 235, 221); }
+.rc-badge-left { border-color: rgb(246, 98, 74); color: rgb(255, 160, 140); }
+.rc-badge-draw { border-color: rgba(201, 154, 69, 0.6); color: rgb(226, 184, 101); }
+.rc-mode-cell { width: 96px; flex-direction: row; align-items: center; margin-right: 14px; flex-shrink: 0; }
+.rc-mode-text { font-size: 12px; -unity-font-style: bold; color: rgb(236, 220, 192); }
+.rc-piece-cell { width: 92px; flex-direction: row; align-items: center; margin-right: 14px; flex-shrink: 0; }
+.rc-piece-icon { width: 30px; height: 30px; margin-right: 6px; flex-shrink: 0; -unity-background-scale-mode: scale-to-fit; }
+.rc-piece-name { font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-main-cell { flex-grow: 1; flex-shrink: 1; }
+.rc-main { font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-sub { font-size: 11px; color: rgb(214, 196, 166); }
+.rc-size { width: 54px; flex-shrink: 0; font-size: 12px; -unity-font-style: bold; color: rgb(214, 196, 166); }
+.rc-size-cell { width: 54px; flex-shrink: 0; }
+.rc-ranked { align-self: flex-start; margin-top: 2px; padding: 0 5px; border-width: 1px; border-radius: 4px; border-color: rgba(246, 184, 62, 0.8);
+             font-size: 10px; -unity-font-style: bold; color: rgb(250, 190, 70); }
+.rc-when { width: 90px; flex-shrink: 0; font-size: 12px; color: rgb(214, 196, 166); -unity-text-align: middle-right; }
+.rc-empty { margin-top: 170px; -unity-text-align: middle-center; font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rc-empty-sub { margin-top: 6px; -unity-text-align: middle-center; font-size: 12px; color: rgb(214, 196, 166); }
+.rc-foot { position: absolute; left: 18px; bottom: 14px; font-size: 11px; color: rgb(214, 196, 166); }
+
+/* ---------- R738: the settings window's 게임 나가기 and its question (SettingsWindow.AskQuit) ---------- */
+.s2-quit { height: 36px; margin: 0 0 0 12px; padding: 0 16px; border-width: 1px; border-radius: 8px; border-color: rgba(255, 130, 110, 0.45); }
+.s2-quit:hover { border-color: rgb(255, 140, 120); background-color: rgba(120, 30, 24, 0.35); }
+.s2-foot-btn.s2-quit > Label { color: rgb(255, 186, 170); }
+.s2-foot-btn.s2-quit:hover > Label { color: rgb(255, 224, 216); }
+.s2-ask-dim { background-color: rgba(8, 6, 4, 0.62); }
+.s2-ask { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 440px; padding: 26px 28px 22px 28px;
+          border-width: 1px; border-radius: 12px; border-color: rgba(217, 174, 98, 0.6); background-color: rgb(30, 22, 15); }
+.s2-ask-title { font-size: 26px; color: rgb(255, 244, 220); }
+.s2-ask-text { margin-top: 8px; font-size: 14px; color: rgb(232, 216, 190); white-space: normal; }
+.s2-ask-warn { margin-top: 12px; padding: 8px 10px; font-size: 13px; color: rgb(255, 196, 180); white-space: normal;
+               border-width: 1px; border-radius: 8px; border-color: rgba(255, 130, 110, 0.35); background-color: rgba(120, 30, 24, 0.25); }
+.s2-ask-row { margin-top: 20px; justify-content: flex-end; }
+.s2-ask-btn { height: 40px; min-width: 120px; margin: 0 0 0 10px; padding: 0 18px; border-width: 1px; border-radius: 8px;
+              border-color: rgb(90, 70, 48); background-color: rgb(43, 32, 23); color: rgb(243, 235, 221);
+              font-size: 15px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.s2-ask-btn:hover { border-color: rgba(242, 182, 50, 0.7); background-color: rgb(55, 41, 29); }
+.s2-ask-quit { border-color: rgb(214, 92, 72); background-color: rgb(150, 44, 32); color: rgb(255, 240, 234); }
+.s2-ask-quit:hover { border-color: rgb(255, 130, 110); background-color: rgb(176, 54, 40); }
+
+/* ---------- R742: a match's detail in the record list's place (NetworkHudView.RecordDetail.cs; mock-up A) ---------- */
+.rc-hint { display: none; width: 90px; flex-shrink: 0; font-size: 12px; -unity-font-style: bold; color: rgb(250, 190, 70); -unity-text-align: middle-right; }
+.rc-row:hover { background-color: rgba(246, 184, 62, 0.08); }
+.rc-row:hover .rc-when { display: none; }
+.rc-row:hover .rc-hint { display: flex; }
+.rd-page { position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 12px; background-color: rgb(19, 13, 8); }
+.rd-head { height: 56px; flex-shrink: 0; padding: 0 18px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.35); }
+.rd-back { height: 32px; margin: 0 12px 0 0; padding: 0 12px; border-width: 1px; border-radius: 0; border-color: rgba(246, 184, 62, 0.85);
+           background-color: rgb(52, 37, 20); color: rgb(243, 235, 221); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.rd-back:hover { background-color: rgb(86, 59, 22); border-color: rgb(246, 184, 62); }
+.rd-badge { margin-right: 12px; }
+.rd-mode { flex-direction: row; align-items: center; margin-right: 12px; }
+.rd-mode-name { font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rd-meta { font-size: 13px; color: rgb(214, 196, 166); }
+.rd-esc { font-size: 11px; color: rgb(214, 196, 166); }
+.rd-hero { flex-direction: row; align-items: center; flex-shrink: 0; padding: 14px 22px 12px 22px; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.22); }
+.rd-headline { font-size: 34px; color: rgb(250, 190, 70); }
+.rd-heroline { font-size: 13px; color: rgb(238, 222, 196); }
+.rd-journey { flex-direction: row; align-items: center; }
+.rd-step { align-items: center; margin: 0 4px; }
+.rd-step-icon { width: 40px; height: 40px; -unity-background-scale-mode: scale-to-fit; }
+.rd-step-text { font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rd-arrow { margin: 0 4px; font-size: 11px; -unity-font-style: bold; color: rgb(250, 190, 70); -unity-text-align: middle-center; }
+.rd-none { margin-top: 110px; }
+.rd-middle { flex-direction: row; flex-shrink: 0; padding: 12px 22px 0 22px; }
+.rd-bottom { flex-direction: row; flex-grow: 1; padding: 10px 22px 14px 22px; }
+.rd-col { flex-grow: 1; flex-basis: 0; margin-right: 18px; }
+.rd-col-wide { flex-grow: 1.25; }
+.rd-title { margin-bottom: 6px; font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(226, 206, 174); }
+.rd-leg { flex-direction: row; align-items: center; height: 34px; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.16); }
+.rd-leg-n { width: 22px; height: 22px; margin-right: 8px; flex-shrink: 0; border-width: 1px; border-radius: 11px; border-color: rgba(246, 184, 62, 0.85);
+            font-size: 11px; -unity-font-style: bold; -unity-text-align: middle-center; color: rgb(243, 235, 221); }
+.rd-leg-texts { flex-grow: 1; flex-shrink: 1; overflow: hidden; }
+.rd-leg-name { font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-leg-note { font-size: 11px; color: rgb(214, 196, 166); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-leg-time { width: 104px; flex-shrink: 0; font-size: 12px; -unity-font-style: bold; color: rgb(238, 222, 196); -unity-text-align: middle-right; }
+.rd-stats { flex-direction: row; flex-wrap: wrap; }
+.rd-stat { width: 31%; margin: 0 2% 8px 0; padding: 6px 10px; border-width: 1px; border-radius: 8px; border-color: rgba(232, 178, 76, 0.3); }
+.rd-stats-half .rd-stat { width: 48%; }
+.rd-stat-value { font-size: 22px; color: rgb(243, 235, 221); }
+.rd-stat-label { font-size: 11px; color: rgb(214, 196, 166); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-team-result { margin-top: 2px; padding: 8px 10px; border-width: 1px; border-radius: 8px; border-color: rgba(104, 212, 104, 0.45);
+                  background-color: rgba(104, 212, 104, 0.12); font-size: 12px; color: rgb(243, 235, 221); white-space: normal; }
+.rd-team-lost { border-color: rgba(246, 98, 74, 0.45); background-color: rgba(246, 98, 74, 0.1); }
+.rd-roster { flex-direction: row; flex-wrap: wrap; }
+.rd-player { width: 48%; height: 24px; margin-right: 2%; padding: 0 6px; flex-direction: row; align-items: center; border-radius: 6px; }
+.rd-player-me { background-color: rgba(246, 184, 62, 0.18); border-width: 1px; border-color: rgba(246, 184, 62, 0.7); }
+.rd-player-them { background-color: rgba(246, 98, 74, 0.05); }
+.rd-player-icon { width: 18px; height: 18px; margin-right: 6px; flex-shrink: 0; -unity-background-scale-mode: scale-to-fit; }
+.rd-player-name { flex-grow: 1; flex-shrink: 1; font-size: 12px; -unity-font-style: bold; color: rgb(243, 235, 221); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-player-result { font-size: 11px; color: rgb(214, 196, 166); white-space: nowrap; }
+.rd-chart-head { flex-direction: row; align-items: center; }
+.rd-key { flex-direction: row; align-items: center; margin: 0 0 6px 12px; }
+.rd-key-mark { width: 14px; height: 3px; margin-right: 5px; }
+.rd-key-us { background-color: rgb(243, 235, 221); }
+.rd-key-them { background-color: rgb(138, 122, 102); }
+.rd-key-me { width: 8px; height: 8px; border-radius: 4px; background-color: rgb(246, 184, 62); }
+.rd-key-fell { width: 8px; height: 8px; border-radius: 4px; background-color: rgb(246, 98, 74); }
+.rd-key-text { font-size: 11px; color: rgb(238, 222, 196); }
+.rd-chart { height: 116px; margin: 2px 0 18px 0; }
+.rd-axis { font-size: 10px; color: rgb(214, 196, 166); }
+.rd-event { flex-direction: row; align-items: center; height: 28px; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.16); }
+.rd-event-time { width: 42px; font-size: 12px; -unity-font-style: bold; color: rgb(238, 222, 196); }
+.rd-event-dot { width: 10px; height: 10px; margin-right: 8px; border-radius: 5px; }
+.rd-dot-me { background-color: rgb(246, 184, 62); }
+.rd-dot-fell { background-color: rgb(246, 98, 74); }
+.rd-event-text { flex-grow: 1; flex-shrink: 1; font-size: 13px; -unity-font-style: bold; color: rgb(243, 235, 221); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-event-cause { font-size: 11px; color: rgb(214, 196, 166); white-space: nowrap; }
+.rd-sword-row { height: 24px; padding: 0 6px; flex-direction: row; align-items: center; border-radius: 6px; }
+.rd-sword-head { height: 22px; }
+.rd-sword-who { flex-grow: 1; flex-shrink: 1; flex-direction: row; align-items: center; overflow: hidden; }
+.rd-sword-num { width: 54px; flex-shrink: 0; font-size: 12px; color: rgb(214, 196, 166); -unity-text-align: middle-right; }
+.rd-sword-ko { -unity-font-style: bold; color: rgb(250, 190, 70); }
+
+/* R743 (user 11-21: "A", the mock-up's A board): the 순위 tab (NetworkHudView.Ranking.cs), laid out at the reference
+   1280 x 720 like the record: this player's rank, each board's rank and the rules on the left, the board on the right. */
+.rk-left { position: absolute; left: 26px; top: 84px; width: 396px; }
+.rk-mine { padding: 14px 18px 16px 18px; }
+.rk-mine-row { flex-direction: row; align-items: flex-end; }
+.rk-mine-rank { font-size: 58px; color: rgb(250, 190, 70); margin: 0; padding: 0; flex-shrink: 0; white-space: nowrap; }
+.rk-mine-of { font-size: 26px; color: rgb(214, 196, 166); margin: 0 0 8px 0; padding: 0; flex-shrink: 0; white-space: nowrap; }
+.rk-mine-texts { flex-shrink: 1; margin-left: 16px; padding-bottom: 10px; }
+.rk-mine-rate { font-size: 13px; -unity-font-style: bold; color: rgb(226, 206, 174); white-space: normal; }
+.rk-mine-games { font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-mine-bar { height: 8px; margin-top: 8px; flex-direction: row; background-color: rgba(243, 235, 221, 0.16); }
+.rk-mine-fill { height: 8px; background-color: rgb(246, 184, 62); }
+.rk-mine-note { margin-top: 6px; font-size: 13px; color: rgb(238, 222, 196); white-space: normal; }
+.rk-modes { margin-top: 14px; padding: 12px 10px 8px 10px; }
+.rk-modes-label { margin: 0 8px 6px 8px; }
+.rk-mode-row { height: 38px; margin: 0 0 4px 0; padding: 0 8px; flex-direction: row; align-items: center; justify-content: space-between;
+               border-width: 1px; border-radius: 8px; border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0); }
+.rk-mode-row:hover { border-color: rgba(246, 184, 62, 0.45); background-color: rgba(52, 37, 20, 0.6); }
+.rk-mode-on { border-color: rgba(246, 184, 62, 0.85); background-color: rgb(52, 37, 20); }
+.rk-mode-on:hover { border-color: rgba(246, 184, 62, 0.85); background-color: rgb(52, 37, 20); }
+.rk-mode-name { font-size: 15px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-mode-line { font-size: 13px; -unity-font-style: bold; color: rgb(238, 222, 196); }
+.rk-rules { margin-top: 14px; padding: 14px 18px; }
+.rk-rule { margin-top: 4px; font-size: 13px; color: rgb(243, 235, 221); }
+.rk-rule-dim { color: rgb(214, 196, 166); }
+
+.rk-board { position: absolute; left: 448px; top: 92px; width: 806px; height: 600px; }
+.rk-head { height: 58px; padding: 0 18px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.35); }
+.rk-title { font-size: 22px; color: rgb(250, 190, 70); margin: 0 18px 0 0; padding: 0; }
+.rk-tab { height: 32px; margin: 0 8px 0 0; padding: 0 14px; border-width: 1px; border-radius: 0; border-color: rgba(246, 184, 62, 0.35);
+          background-color: rgba(21, 17, 14, 0.6); color: rgb(214, 196, 166); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.rk-tab:hover { border-color: rgba(246, 184, 62, 0.8); color: rgb(243, 235, 221); }
+.rk-tab-on { border-color: rgb(246, 184, 62); background-color: rgb(64, 46, 24); color: rgb(255, 248, 232); }
+.rk-seg { flex-direction: row; border-width: 1px; border-color: rgba(246, 184, 62, 0.6); }
+.rk-scope { height: 30px; margin: 0; padding: 0 16px; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
+            color: rgb(238, 222, 196); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.rk-scope:hover { background-color: rgba(246, 184, 62, 0.15); color: rgb(255, 248, 232); }
+.rk-scope-on { background-color: rgb(246, 184, 62); color: rgb(26, 19, 12); }
+.rk-scope-on:hover { background-color: rgb(246, 184, 62); color: rgb(26, 19, 12); }
+.rk-cols { height: 30px; padding: 0 18px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.22); }
+.rk-col { font-size: 11px; -unity-font-style: bold; color: rgb(226, 206, 174); }
+.rk-c-rank { width: 46px; margin-right: 10px; flex-shrink: 0; -unity-text-align: middle-center; }
+.rk-c-icon { width: 30px; height: 30px; margin-right: 10px; flex-shrink: 0; }
+.rk-c-name { flex-grow: 1; flex-shrink: 1; margin-right: 10px; }
+.rk-c-rate { width: 212px; margin-right: 10px; flex-shrink: 0; }
+.rk-c-games { width: 104px; margin-right: 10px; flex-shrink: 0; -unity-text-align: middle-right; }
+.rk-c-last { width: 112px; flex-shrink: 0; -unity-text-align: middle-right; }
+.rk-rows { padding: 4px 10px 0 10px; }
+.rk-row { height: 40px; padding: 0 8px; flex-direction: row; align-items: center; flex-shrink: 0; border-radius: 8px;
+          border-bottom-width: 1px; border-color: rgba(232, 178, 76, 0.12); }
+.rk-row-me { border-width: 1px; border-color: rgba(246, 184, 62, 0.75); background-color: rgba(246, 184, 62, 0.18); }
+.rk-row-rest { opacity: 0.42; }
+.rk-rank-cell { height: 40px; align-items: center; justify-content: center; }
+.rk-medal { width: 30px; height: 30px; margin: 0; padding: 0; border-radius: 15px; -unity-text-align: middle-center; font-size: 15px; color: rgb(243, 235, 221); }
+.rk-medal-1 { background-color: rgb(246, 184, 62); color: rgb(26, 19, 12); }
+.rk-medal-2 { background-color: rgb(220, 213, 200); color: rgb(26, 19, 12); }
+.rk-medal-3 { background-color: rgb(201, 138, 78); color: rgb(26, 19, 12); }
+.rk-icon { -unity-background-scale-mode: scale-to-fit; }
+.rk-name-cell { flex-direction: row; align-items: center; overflow: hidden; }
+/* R745: the Steam profile picture next to the name (a coloured initial until it comes), and the list's pager in the head. */
+.rk-face { width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; border-radius: 6px; align-items: center; justify-content: center;
+           overflow: hidden; -unity-background-scale-mode: scale-and-crop; }
+.rk-face-letter { margin: 0; padding: 0; font-size: 12px; -unity-font-style: bold; color: rgb(30, 20, 12); }
+.rk-pager { margin-right: 14px; }
+.rk-name { flex-shrink: 1; margin-right: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+           font-size: 15px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-tag { flex-shrink: 0; margin-right: 8px; padding: 1px 6px; border-width: 1px; border-radius: 4px; border-color: rgba(104, 212, 104, 0.7);
+          font-size: 10px; -unity-font-style: bold; color: rgb(155, 234, 155); }
+.rk-tag-me { border-color: rgb(246, 184, 62); background-color: rgb(246, 184, 62); color: rgb(26, 19, 12); }
+.rk-sub { flex-shrink: 0; font-size: 11px; color: rgb(214, 196, 166); }
+.rk-rate-cell { flex-direction: row; align-items: center; }
+.rk-track { width: 140px; height: 6px; margin-right: 10px; flex-direction: row; background-color: rgba(243, 235, 221, 0.16); }
+.rk-fill { height: 6px; background-color: rgb(246, 184, 62); }
+.rk-rate { width: 56px; -unity-text-align: middle-right; font-size: 15px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-rate-gold { color: rgb(250, 190, 70); }
+.rk-games { font-size: 13px; -unity-font-style: bold; color: rgb(238, 222, 196); }
+.rk-last-cell { flex-direction: row; justify-content: flex-end; align-items: center; }
+.rk-last { font-size: 12px; color: rgb(238, 222, 196); }
+.rk-rest { padding: 2px 8px; border-width: 1px; border-radius: 10px; border-color: rgba(243, 235, 221, 0.5);
+           font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-status { margin-top: 150px; -unity-text-align: middle-center; font-size: 16px; -unity-font-style: bold; color: rgb(243, 235, 221); }
+.rk-status-sub { margin-top: 6px; -unity-text-align: middle-center; font-size: 12px; color: rgb(214, 196, 166); }
+.rk-pin { padding: 0 10px 6px 10px; }
+.rk-dots { height: 18px; -unity-text-align: middle-center; font-size: 13px; letter-spacing: 6px; color: rgb(214, 196, 166); }
+.rk-foot { height: 34px; padding: 0 18px; flex-direction: row; align-items: center; justify-content: space-between;
+           border-top-width: 1px; border-color: rgba(232, 178, 76, 0.22); }
+.rk-foot-text { font-size: 11px; color: rgb(214, 196, 166); }

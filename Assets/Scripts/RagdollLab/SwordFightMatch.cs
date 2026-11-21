@@ -97,6 +97,7 @@ namespace ChessFight.RagdollLab
         {
             SwordFightPawn.Struck += OnStruck;
             SwordFightSkills.Fx += OnSkillFx;
+            SwordFightSkills.Fx += OnRecordSkill;   // R742 (SwordFightMatch.Hud.cs)
             SwordFightEdgeFloor.KnockedLoose += OnKnockedLoose;
         }
 
@@ -104,6 +105,7 @@ namespace ChessFight.RagdollLab
         {
             SwordFightPawn.Struck -= OnStruck;
             SwordFightSkills.Fx -= OnSkillFx;
+            SwordFightSkills.Fx -= OnRecordSkill;
             SwordFightEdgeFloor.KnockedLoose -= OnKnockedLoose;
         }
 

@@ -80,6 +80,8 @@ namespace ChessFight.PawnRush
             Current = this;
             raceStart = Time.time;
             builtAt = Time.time;
+            // R742: this player's sections, falls, checkpoints and promotions for the match record (online matches only).
+            if (GetComponent<PawnRushMatchLog>() == null) gameObject.AddComponent<PawnRushMatchLog>();
         }
 
         void OnDestroy()
@@ -223,13 +225,20 @@ namespace ChessFight.PawnRush
             WinClock = clock;
             decidedAt = Time.time;
             Debug.Log($"[PawnRush] 승리: {Teams.Name(team)}팀 ({(Contest != null ? "왕좌 차지전" : "왕관 발판 과반")}, {MatchResult.Clock(clock)})");
+            // R736: this player's match record (only an online match armed by its link is written).
+            if (MatchRecords.Armed)
+                try { MatchRecords.Finish(RecordBuild.PawnRush(Result(), MatchRecords.Log)); }
+                catch (Exception e) { Debug.LogException(e); }
             Decided?.Invoke(team);
         }
 
         // The host's word (online, not the host): the winner, the race clock and who has stood on the platform when.
         public void ApplyRemote(int winner, float clock, byte[] seats, float[] times, int count)
         {
+            float before = raceStart;
             raceStart = Time.time - clock;
+            // R742: the match record's log was timed on this PC's own clock until now: onto the host's.
+            MatchRecords.Log?.Shift(before - raceStart);
             for (int i = 0; i < count; i++)
             {
                 var r = BySeat(seats[i]);
@@ -270,7 +279,8 @@ namespace ChessFight.PawnRush
             }
         }
 
-        Runner Self
+        // This PC's own runner (none for a spectator). R742: public for the match record's log (PawnRushMatchLog).
+        public Runner Self
         {
             get
             {

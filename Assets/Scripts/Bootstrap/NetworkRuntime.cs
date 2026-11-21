@@ -222,8 +222,18 @@ namespace ChessFight.Game
             return host;
         }
 
+        // R736: whose match records the lobby shows and the matches write (one book for each Steam account on this PC).
+        ulong recordsOwner = ulong.MaxValue;
+        // R743: the 순위 tab's Steam leaderboards (this player's line up, the boards down).
+        SteamLeaderboards leaderboards;
+
         void Update()
         {
+            if (Session.Self != recordsOwner)
+            {
+                recordsOwner = Session.Self;
+                MatchRecords.Owner = recordsOwner.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
             // What the host election reads: this machine's best score so far (the probe
             // sits again while the player waits in the lobby, R294), and every frame's
             // time (a slow host hands the match on).
@@ -243,6 +253,13 @@ namespace ChessFight.Game
             if (Motion == null && Session.Online) Motion = new SteamMotion(Session);
             if (Voice == null && Session.Online) StartVoice();
             try { UpdateVoice(); }
+            catch (Exception e) { Debug.LogException(e); }
+            // A leaderboard that fails must not take the session down with it.
+            try
+            {
+                if (leaderboards == null && Session.Online) leaderboards = new SteamLeaderboards(Session);
+                leaderboards?.Tick();
+            }
             catch (Exception e) { Debug.LogException(e); }
 
             // Read every frame so an edge-triggered jump is never buffered across
@@ -437,6 +454,9 @@ namespace ChessFight.Game
             SettingsWindow.VoiceLevel = null;
             SettingsWindow.VoiceProblem = null;
             GameMenu.OnlineCost = null;
+            // The leaderboards' Steam calls go while Steam is still up.
+            leaderboards?.Dispose();
+            leaderboards = null;
             // Motion must go before the session: it unregisters from SessionChanged.
             Motion?.Dispose();
             Session?.Dispose();

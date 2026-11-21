@@ -57,6 +57,10 @@
                 <ui:Label text="DEL" class="s2-cap" picking-mode="Ignore" />
                 <ui:Label name="s2-reset-text" picking-mode="Ignore" />
             </ui:Button>
+            <!-- R738: closes the game, after asking (SettingsWindow.AskQuit). -->
+            <ui:Button name="s2-quit" class="row s2-foot-btn s2-quit">
+                <ui:Label text="게임 나가기" picking-mode="Ignore" />
+            </ui:Button>
         </ui:VisualElement>
 
         <!-- Open drop-down lists sit here, above everything else. -->

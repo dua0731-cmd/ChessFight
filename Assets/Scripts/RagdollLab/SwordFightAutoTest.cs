@@ -312,9 +312,9 @@ namespace ChessFight.RagdollLab
                 ShowTestBots = true, ShowStart = true, CanStart = true, CanAddAlly = true, CanAddEnemy = true,
                 CanRemoveEnemy = true, EnemyDummies = 1, OursFilled = 1, TheirsFilled = 1, PartySize = 1,
                 MatchTitle = "더미를 추가하고 시작하세요", MatchKicker = "PRIVATE ROOM · 소드 파이트",
-                MatchNote = "12명 없이 시작 가능", MatchTimer = "00:03", RoomCode = "방 번호  10 9775 2430 2300 4055",
+                MatchNote = "12명 없이 시작 가능", MatchTimer = "00:03", RoomCode = "방 번호  42 6890 6151",
                 TestHint = "이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)\n준비되면 오른쪽 아래 테스트 시작을 누르세요.",
-                BusyTitle = "비공개 방", BusySub = "00:03 · 2/12", PartyCode = "10 9775 2430 2300 4055", Bots = "0"
+                BusyTitle = "비공개 방", BusySub = "00:03 · 2/12", PartyCode = "42 6890 6151", Bots = "0"
             });
             yield return null; yield return new WaitForEndOfFrame();
             var root = obj.GetComponent<UIDocument>().rootVisualElement;

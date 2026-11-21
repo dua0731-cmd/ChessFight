@@ -27,6 +27,20 @@ namespace ChessFight.RagdollLab
             ParchBright = SwordFightShapes.Hex("#fff4dc"), Muted = SwordFightShapes.Hex("#a8957c");
         Texture2D pickPanelTex, cardTex, cardHotTex, cardOffTex, capTex, capDimTex, chipTex, chipMeTex, ringTex, railTex, fillTex;
         int feedSeen;
+        // R736: the falls this player caused (the feed's credit) and took this match, for its record.
+        int recordKnockouts, recordFalls;
+        // R742: every fighter's falls caused and taken this match (by id), for the record's line-up.
+        readonly Dictionary<ulong, int> recordBy = new Dictionary<ulong, int>(), recordOf = new Dictionary<ulong, int>();
+
+        // R742: this player's F and E uses, for the record's detail.
+        void OnRecordSkill(SfFxEvent e)
+        {
+            var log = MatchRecords.Log;
+            var me = game != null ? game.Local : null;
+            if (log == null || e.by == null || me == null || me.Pawn == null || e.by.Pawn != me.Pawn) return;
+            if (e.kind == SfFxKind.Cast) log.SwordF++;
+            else if (e.kind == SfFxKind.EdgeCast) log.SwordE++;
+        }
         AudioSource tick;
         int lastTickSecond = -1;
 
@@ -55,15 +69,55 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        // Fighters on this side and on the other (bots too: the record's "6 대 6").
+        void CountSides(int team, out int ours, out int theirs)
+        {
+            ours = theirs = 0;
+            foreach (var f in game.Fighters.Values)
+            {
+                if (f == null || f.Pawn == null) continue;
+                if (f.Pawn.Team == team) ours++; else theirs++;
+            }
+        }
+
+        // R736: what a "나감" of this match would say (the piece, the sides), kept up while the match runs.
+        void NoteRecord()
+        {
+            if (!MatchRecords.Armed) return;
+            var self = game.Local;
+            if (self == null || self.Pawn == null) return;
+            CountSides(self.Pawn.Team, out int ours, out int theirs);
+            MatchRecords.Note(self.Pawn.Piece, ours, theirs);
+        }
+
         void Stamp(string title, string sub, float len, float delay = 0f) => stampQueue.Add((Time.time + delay, title, sub, len));
 
         /// <summary>New lines of the feed: "장외!" with who and how, then "빼앗음!" a quarter second later.</summary>
         void StepFeed()
         {
+            NoteRecord();
+            if (view.FeedSeq < feedSeen) { recordKnockouts = recordFalls = 0; recordBy.Clear(); recordOf.Clear(); }   // a new round
             foreach (var e in view.Feed)
             {
                 if (e.Seq <= feedSeen) continue;
                 feedSeen = e.Seq;
+                // R736: the falls this player caused and took, for the match record.
+                if (e.Credit != 0 && e.Credit == game.LocalId) recordKnockouts++;
+                if (e.Victim == game.LocalId) recordFalls++;
+                // R742: every player's, and the line itself, for the record's detail.
+                if (e.Credit != 0) recordBy[e.Credit] = (recordBy.TryGetValue(e.Credit, out int by) ? by : 0) + 1;
+                recordOf[e.Victim] = (recordOf.TryGetValue(e.Victim, out int of) ? of : 0) + 1;
+                var me = game.Local;
+                MatchRecords.Log?.Score(new DetailFall
+                {
+                    At = view.Clock,
+                    Ours = me != null && me.Pawn != null && e.VictimTeam != me.Pawn.Team,
+                    ByMe = e.Credit != 0 && e.Credit == game.LocalId,
+                    OfMe = e.Victim == game.LocalId,
+                    Victim = NameOf(e.Victim),
+                    Credit = e.Credit == 0 ? "" : NameOf(e.Credit),
+                    Cause = e.Credit == 0 ? "스스로" : CauseName(e),
+                });
                 string who = e.Credit == 0 ? $"{NameOf(e.Victim)} — 스스로" : $"{NameOf(e.Victim)} ← {NameOf(e.Credit)}의 {CauseName(e)}";
                 Stamp("장외!", $"{who} · {Team(1 - e.VictimTeam)} 팀 +1", 1.1f);
                 if (e.Stolen != 255 && e.Credit != 0)
@@ -83,6 +137,32 @@ namespace ChessFight.RagdollLab
                 var self = game.Local;
                 if (view.Winner >= 0 && self != null && self.Pawn != null)
                     ChessFight.Game.ResultMusic.Play(gameObject, view.Winner == self.Pawn.Team);
+                // R736: this player's match record (only an online match armed by its link is written).
+                if (self != null && self.Pawn != null && MatchRecords.Armed)
+                {
+                    CountSides(self.Pawn.Team, out int ours, out int theirs);
+                    // R742: the line-up for the detail: ours first, the most falls caused first.
+                    var log = MatchRecords.Log;
+                    if (log != null)
+                    {
+                        log.Players.Clear();
+                        var lineup = new List<DetailPlayer>();
+                        foreach (var pair in game.Fighters)
+                        {
+                            var f = pair.Value;
+                            if (f == null || f.Pawn == null) continue;
+                            lineup.Add(new DetailPlayer
+                            {
+                                Name = f.Pawn.DisplayName, Ours = f.Pawn.Team == self.Pawn.Team, Self = pair.Key == game.LocalId, Piece = f.Pawn.Piece,
+                                Knockouts = recordBy.TryGetValue(pair.Key, out int k) ? k : 0, Falls = recordOf.TryGetValue(pair.Key, out int fl) ? fl : 0,
+                            });
+                        }
+                        lineup.Sort((a, b) => a.Ours != b.Ours ? (a.Ours ? -1 : 1) : b.Knockouts != a.Knockouts ? b.Knockouts - a.Knockouts : a.Falls - b.Falls);
+                        foreach (var p in lineup) log.Add(p);
+                    }
+                    MatchRecords.Finish(RecordBuild.SwordFight(self.Pawn.Team, view.White, view.Black, view.Winner, view.Clock, settings.Duration,
+                                                               self.Pawn.Piece, ours, theirs, recordKnockouts, recordFalls, log));
+                }
             }
             if (view.Phase != SwordPhase.Result) endStamped = false;
             for (int i = stampQueue.Count - 1; i >= 0; i--)

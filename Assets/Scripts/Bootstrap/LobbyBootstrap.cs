@@ -124,6 +124,10 @@ namespace ChessFight.Game
             hud.AddEnemyDummy += () => ChangeDummy(true, true);
             hud.RemoveEnemyDummy += () => ChangeDummy(true, false);
             hud.RetrySteam += () => session.Retry();
+            // R736: 기물 도감 · 전적 - the party steps off the board, and the codex's piece stands there instead.
+            hud.TabChanged += tab => stage.Showcase(tab != LobbyTab.Play, tab == LobbyTab.Codex ? hud.CodexKind : (PieceKind?)null, hud.CodexTeam);
+            hud.CodexPiece += (kind, team) => { if (hud.Tab == LobbyTab.Codex) stage.Showcase(true, kind, team); };
+            hud.CodexSpin += degrees => stage.SpinShowcase(degrees);
         }
 
         void ChangeDummy(bool enemy, bool add)
@@ -137,7 +141,7 @@ namespace ChessFight.Game
         void Copy(ulong id, string notice)
         {
             if (id == 0) return;
-            GUIUtility.systemCopyBuffer = id.ToString();
+            GUIUtility.systemCopyBuffer = LobbyCode.Plain(id);   // R737: the short number, as shown
             hud.ShowToast(notice);
         }
 
@@ -364,20 +368,8 @@ namespace ChessFight.Game
             return $"{seconds / 60:00}:{seconds % 60:00}";
         }
 
-        // Steam lobby IDs are 17-18 digits; groups of four are far easier to read
-        // aloud. Copy and join always use the plain number.
-        static string Spaced(ulong id)
-        {
-            if (id == 0) return "—";
-            string digits = id.ToString();
-            var text = new StringBuilder();
-            for (int i = 0; i < digits.Length; i++)
-            {
-                if (i > 0 && (digits.Length - i) % 4 == 0) text.Append(' ');
-                text.Append(digits[i]);
-            }
-            return text.ToString();
-        }
+        // Steam lobby IDs are 17-18 digits; only their lower 10 are shown, in fours (LobbyCode, R737).
+        static string Spaced(ulong id) => LobbyCode.Format(id);
 
         static string Line(string text) => string.IsNullOrEmpty(text) ? "" : text + "\n";
 

@@ -179,7 +179,7 @@ namespace ChessFight.Game
                 // R694: a room a player made - an empty seat clicked, the manager's "옮기기", the room's number, a side's bots.
                 screen.SeatRequested += seat => runtime.Session.TakeSeat(seat);
                 screen.MoveRequested += id => runtime.Session.MovePlayer(id);
-                screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = runtime.Session.Match.ToString();
+                screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = LobbyCode.Plain(runtime.Session.Match);
                 // R703: the manager picked a flow rule.
                 screen.RulesRequested += packed => runtime.Session.SetRules(packed);
                 screen.TeamBotRequested += (team, more) => { if (more > 0) runtime.Session.AddTestBot(team); else runtime.Session.RemoveTestBot(team); };
@@ -221,18 +221,8 @@ namespace ChessFight.Game
             session.Online && session.PrivateRoom && session.Match != 0 && !session.Started && !session.WaitingForParty
             && SceneManager.GetActiveScene().name == SceneNames.Lobby;
 
-        // A room's number in fours, as the lobby shows it.
-        static string Spaced(ulong id)
-        {
-            string digits = id.ToString();
-            var text = new System.Text.StringBuilder();
-            for (int i = 0; i < digits.Length; i++)
-            {
-                if (i > 0 && (digits.Length - i) % 4 == 0) text.Append(' ');
-                text.Append(digits[i]);
-            }
-            return text.ToString();
-        }
+        // A room's number in groups, as the lobby shows it (LobbyCode, R737).
+        static string Spaced(ulong id) => LobbyCode.Format(id);
 
         void Matchmaking()
         {

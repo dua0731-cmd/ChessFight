@@ -71,6 +71,7 @@ namespace ChessFight.Game
         public static void Open()
         {
             if (IsOpen) return;
+            MenuSound.Play(MenuSound.Kind.Open);
             current = new GameObject("Settings Window").AddComponent<SettingsWindow>();
             current.Build();
         }
@@ -78,7 +79,7 @@ namespace ChessFight.Game
         public static void Back()
         {
             if (!IsOpen) return;
-            if (current.openMenu != null) { current.CloseMenu(); return; }
+            if (current.openMenu != null) { MenuSound.Play(MenuSound.Kind.Close); current.CloseMenu(); return; }
             if (current.waitingKey != null) { current.waitingKey = null; current.Refresh(); return; }
             Close();
         }
@@ -86,6 +87,7 @@ namespace ChessFight.Game
         public static void Close()
         {
             if (!IsOpen) return;
+            MenuSound.Play(MenuSound.Kind.Close);
             Destroy(current.gameObject);
             current = null;
         }
@@ -297,7 +299,7 @@ namespace ChessFight.Game
                             Volume("master", "전체 소리", 1f, "모든 소리의 크기."),
                             Volume("music", "배경 음악", .7f, "로비, 매칭 화면(코스 공개 · 소드 파이트 입장), 경기 음악.", indent: true),
                             Volume("sfx", "효과음", .8f, "점프 · 다이빙 · 발소리, 스킬, 장애물과 구간 소리, 매칭 화면 소리, 시작 로고 소리.", indent: true),
-                            Volume("ui", "버튼 소리", .6f, "메뉴 버튼 소리. 아직 버튼 소리가 없어요(매칭 화면 소리는 효과음 크기를 따라요).", soon: true, indent: true),
+                            Volume("ui", "버튼 소리", .6f, "로비 · 설정 창의 버튼 · 탭 · 창 열고 닫는 소리(R738). 매칭 화면 소리는 효과음 크기를 따라요.", indent: true),
                             Volume("vc", "음성 채팅", .8f, "다른 사람 목소리 크기. 모두 같은 크기로 들려요.", indent: true),
                         } },
                         new Section { Title = "기타", Items = new Item[]
@@ -509,6 +511,13 @@ namespace ChessFight.Game
 
             Wire(root.Q<Button>("s2-back"), Back);
             Wire(root.Q<Button>("s2-reset"), ResetPage);
+            Wire(root.Q<Button>("s2-quit"), AskQuit);
+            // R738: the window's sounds. 뒤로 and 게임 나가기 sound as the window closes or the question opens.
+            MenuSound.Wire(root, b =>
+                b.ClassListContains("s2-tab") || b.ClassListContains("s2-sub") ? MenuSound.Kind.Tab
+                : b.ClassListContains("s2-switch") || b.ClassListContains("s2-ar") || b.ClassListContains("s2-opt") || b.ClassListContains("s2-dd") ? MenuSound.Kind.Toggle
+                : b.name == "s2-back" || b.name == "s2-quit" ? MenuSound.Kind.None
+                : (MenuSound.Kind?)null);
             view?.RegisterCallback<WheelEvent>(e => { ScrollTo(scroll + Mathf.Sign(e.delta.y) * ScrollStep); e.StopPropagation(); });
             view?.RegisterCallback<GeometryChangedEvent>(_ => ScrollTo(scroll));
             content?.RegisterCallback<GeometryChangedEvent>(_ => ScrollTo(scroll));
@@ -784,6 +793,65 @@ namespace ChessFight.Game
             openMenu = null;
         }
 
+        // ---------- 게임 나가기 (R738) ----------
+
+        // What closing the game does. Leaving a match under way this way is a desertion like the in-game menu's 나가기:
+        // the session counts it as it shuts down (SteamSession.Dispose), and the match record writes "나감".
+        public static Action QuitGame = () =>
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        };
+
+        // The 게임 나가기 question over the open window (as its button asks it; the lobby capture shows it this way).
+        public static void AskQuitNow()
+        {
+            if (IsOpen) current.AskQuit();
+        }
+
+        // R738 (user 11-21, "설정창에 게임 나가기도 넣어주고"): a card over the window that asks first, as the
+        // drop-down lists do (on the layer, Esc or a click beside it closes it).
+        void AskQuit()
+        {
+            CloseMenu();
+            waitingKey = null;
+            if (layer == null) return;
+            MenuSound.Play(MenuSound.Kind.Open);
+            var catcher = Add(layer, "s2-catch s2-ask-dim");
+            catcher.pickingMode = PickingMode.Position;
+            catcher.RegisterCallback<PointerDownEvent>(e => { MenuSound.Play(MenuSound.Kind.Close); CloseMenu(); e.StopPropagation(); });
+            var card = Add(layer, "s2-ask");
+            card.pickingMode = PickingMode.Position;
+            Add(card, "disp s2-ask-title", "게임을 끝낼까요?");
+            string cost = null;
+            try { cost = GameMenu.OnlineCost?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
+            Add(card, "s2-ask-text", "게임 창이 닫혀요.");
+            if (!string.IsNullOrEmpty(cost)) Add(card, "s2-ask-warn", cost);
+            var row = Add(card, "row s2-ask-row");
+            var stay = new Button { text = "취소", focusable = false };
+            stay.AddToClassList("s2-ask-btn");
+            stay.AddToClassList(MenuSound.SoundClass(MenuSound.Kind.Close));
+            stay.clicked += CloseMenu;
+            ChunkyButtons.Springy(stay);
+            row.Add(stay);
+            var quit = new Button { text = "게임 나가기", focusable = false };
+            quit.AddToClassList("s2-ask-btn");
+            quit.AddToClassList("s2-ask-quit");
+            quit.AddToClassList(MenuSound.SoundClass(MenuSound.Kind.Confirm));
+            quit.clicked += () =>
+            {
+                CloseMenu();
+                try { QuitGame?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
+            };
+            ChunkyButtons.Springy(quit);
+            row.Add(quit);
+            RuntimePanels.ApplyDisplay(card);
+            openMenu = layer;
+        }
+
         void SlideLine(VisualElement val, Slide s)
         {
             // the value right of the rail (s2-slide reverses the row)
@@ -808,7 +876,11 @@ namespace ChessFight.Game
                 float width = track.layout.width;
                 if (width <= 0) return;
                 float v = Snap(Mathf.Lerp(s.Min, s.Max, Mathf.Clamp01(local.x / width)));
-                if (Mathf.Abs(v - s.Get()) > 1e-4f) s.Set(v);
+                if (Mathf.Abs(v - s.Get()) > 1e-4f)
+                {
+                    s.Set(v);
+                    MenuSound.Play(MenuSound.Kind.Toggle);   // R738: a tick a step (after the set: 버튼 소리 ticks at its new volume)
+                }
                 Show();
             }
             track.RegisterCallback<PointerDownEvent>(e =>

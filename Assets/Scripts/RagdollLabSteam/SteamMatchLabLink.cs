@@ -60,6 +60,8 @@ namespace ChessFight.RagdollLab.Net
 
         protected override void OnDestroy()
         {
+            // R736: the match going away before its result is this player's "나감" (SwordFightMatch writes the result).
+            MatchRecords.Abandon();
             if (session != null) session.HostChanged -= OnHostChanged;
             sessionRequests?.Dispose();
             // Do not close the peer sessions: the lobby's motion transport shares them.
@@ -72,6 +74,9 @@ namespace ChessFight.RagdollLab.Net
             roster.Clear();
             if (session == null) return;
             foreach (var entry in session.Roster) roster[entry.Key] = new LabSeat { Team = entry.Value.Team, Slot = entry.Value.Slot };
+            // R736: this player's match record, armed from the shared start with this player seated.
+            if (session.Started && session.Match != 0 && NetStarted && session.Roster.ContainsKey(session.Self))
+                MatchRecords.Arm(session.Match, GameModes.SwordFight.Key, session.RankedMatch);   // R745: ranked or not
         }
 
         protected override void NetHostSilence(float seconds) => session.ReportHostSilence(seconds);

@@ -45,7 +45,7 @@ namespace ChessFight.Game
     // Binds NetworkHud.uxml. The element names in the UXML and the Q<T>(name)
     // lookups here are a contract: renaming one without the other fails at run time.
     [DisallowMultipleComponent]
-    public sealed class NetworkHudView : MonoBehaviour
+    public sealed partial class NetworkHudView : MonoBehaviour
     {
         public event Action Play, StartGame, Cancel, LeaveParty, CreateTest, CopyParty, CopyMatch;
         // R538: "경기로 돌아가기" - back into the started match this player left.
@@ -170,6 +170,8 @@ namespace ChessFight.Game
         void SetRail(bool open, bool force = false)
         {
             if (!force && railOpen == open && rail != null && rail.ClassListContains("rail-closed") == !open) return;
+            // R738: the mode cards rising (under the pointer, or Enter's first press) swoosh in.
+            if (open && !railOpen && !force) MenuSound.Play(MenuSound.Kind.Open);
             railOpen = open;
             if (rail != null)
             {
@@ -378,7 +380,11 @@ namespace ChessFight.Game
             BuildInviteCard();
             SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
             BuildVoiceMenu();
+            // R736: 기물 도감 · 전적 (NetworkHudView.Tabs.cs), before Dress so their panels get the glass.
+            BuildTabs();
             Dress();
+            SetTab(LobbyTab.Play, true);
+            WireSounds();   // R738 (NetworkHudView.Sound.cs)
             // The chat (ChatBox, on the runtime) stays shut while the room-number
             // box or a picker is open.
             ChatBox.Blocker = chatBlocker = () => IsTyping || Visible(codeModal) || Visible(modeModal);
@@ -579,25 +585,34 @@ namespace ChessFight.Game
             // entrance screen's "매칭 취소" is click only.
             if (LegacyKeys.Down(KeyCode.Escape))
             {
+                // R738: the key's sounds as a click's would be (the settings window plays its own).
                 if (SettingsWindow.IsOpen) SettingsWindow.Back();
-                else if (voiceMenuIndex >= 0) CloseVoiceMenu();
-                else if (Visible(modeModal)) Close(modeModal);
+                else if (voiceMenuIndex >= 0) { MenuSound.Play(MenuSound.Kind.Close); CloseVoiceMenu(); }
+                else if (Visible(modeModal)) { MenuSound.Play(MenuSound.Kind.Close); Close(modeModal); }
                 else if (railOpen && Usable(play)) SetRail(false);
-                else if (Visible(codeModal)) Close(codeModal);
-                else if (Visible(friendsPanel)) Close(friendsPanel);
-                else if (Visible(detailsPanel)) Close(detailsPanel);
+                else if (Visible(codeModal)) { MenuSound.Play(MenuSound.Kind.Close); Close(codeModal); }
+                else if (Visible(friendsPanel)) { MenuSound.Play(MenuSound.Kind.Close); Close(friendsPanel); }
+                else if (Visible(detailsPanel)) { MenuSound.Play(MenuSound.Kind.Close); Close(detailsPanel); }
+                else if (RecordDetailOpen) { MenuSound.Play(MenuSound.Kind.Close); CloseRecordDetail(); }   // R742: back to the list
+                else if (Tab != LobbyTab.Play) { MenuSound.Play(MenuSound.Kind.Tab); SetTab(LobbyTab.Play); }   // R736: back from 기물 도감 · 전적
                 else SettingsWindow.Open();
                 return;
             }
             if (SettingsWindow.IsOpen) return;
+            // R736: the start keys belong to the play tab.
+            if (Tab != LobbyTab.Play) return;
             bool modal = Visible(modeModal) || Visible(codeModal);
             if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)))
             {
-                if (Usable(start)) StartGame?.Invoke();
-                else if (Usable(play)) PlayPressed();
+                if (Usable(start)) { MenuSound.Play(MenuSound.Kind.Confirm); StartGame?.Invoke(); }
+                else if (Usable(play)) { if (railOpen) MenuSound.Play(MenuSound.Kind.Confirm); PlayPressed(); }
             }
-            if (!modal && LegacyKeys.Down(KeyCode.F)) { if (FriendsOpen) Close(friendsPanel); else if (canInvite) OpenFriends(); }
-            if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) Open(modeModal);
+            if (!modal && LegacyKeys.Down(KeyCode.F))
+            {
+                if (FriendsOpen) { MenuSound.Play(MenuSound.Kind.Close); Close(friendsPanel); }
+                else if (canInvite) { MenuSound.Play(MenuSound.Kind.Open); OpenFriends(); }
+            }
+            if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) { MenuSound.Play(MenuSound.Kind.Open); Open(modeModal); }
         }
 
         // If the panel never receives a real pointer event, drive the buttons from
@@ -641,6 +656,7 @@ namespace ChessFight.Game
             var hit = Resolve(panel, new Vector2(screen.x, Screen.height - screen.y)) ?? Resolve(panel, screen);
             if (hit == null || !hit.Value.button.enabledInHierarchy) return;
             if (hit.Value.button.ClassListContains(ChunkyButtons.ClassName)) ChunkyButtons.Pulse(hit.Value.button);
+            FallbackSound(hit.Value.button);
             hit.Value.action();
         }
 
@@ -1092,6 +1108,7 @@ namespace ChessFight.Game
             var decline = new Button { text = "거절", focusable = false };
             decline.AddToClassList("a-btn");
             decline.AddToClassList("a-sm");
+            decline.AddToClassList("invite-decline");   // R738: its sound (NetworkHudView.Sound.cs)
             Action yes = () => { if (inviteLobby != 0) AcceptInvite?.Invoke(inviteLobby); };
             Action no = () => { if (inviteLobby != 0) DeclineInvite?.Invoke(inviteLobby); };
             accept.clicked += yes;
@@ -1302,6 +1319,11 @@ namespace ChessFight.Game
         {
             if (root == null) return;
 
+            // R736: matching, or waiting in a room, is the play tab's (its card cancels it): the other tabs give way and shut.
+            bool tabsShut = model.Busy || model.ShowMatch;
+            if (tabsShut && Tab != LobbyTab.Play) SetTab(LobbyTab.Play);
+            foreach (var pair in tabButtons) if (pair.Key != LobbyTab.Play) Enable(pair.Value, !tabsShut);
+
             if (status != null) status.text = model.Status;
             if (details != null) details.text = model.Details;
             if (profile != null) profile.text = string.IsNullOrEmpty(model.PlayerName) ? "—" : model.PlayerName;
@@ -1465,7 +1487,8 @@ namespace ChessFight.Game
                       $"버튼 {actions.Count}개 | 실제 포인터 이벤트: {(pointerSeen ? "수신됨" : "아직 없음 → 대체 클릭 사용")}");
         }
 
-        bool TryReadCode(out ulong id) => ulong.TryParse(code != null ? code.value.Replace(" ", "").Trim() : "", out id) && id != 0;
+        // R737: the short number as shown ("42 6890 6151"), with dashes or spaces, or an old whole lobby ID.
+        bool TryReadCode(out ulong id) => LobbyCode.TryRead(code != null ? code.value : "", out id);
 
         Button Bind(VisualElement parent, string name, Action action)
         {
@@ -1494,6 +1517,8 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             if (ChatBox.Blocker == chatBlocker) ChatBox.Blocker = null;
+            MatchRecords.Changed -= OnRecordsChanged;
+            Rankings.Changed -= OnRankingsChanged;
             if (ownedPanel != null) Destroy(ownedPanel);
         }
     }

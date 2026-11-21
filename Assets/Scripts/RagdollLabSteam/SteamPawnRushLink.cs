@@ -342,6 +342,7 @@ namespace ChessFight.RagdollLab.Net
             WaterZone.Entered += OnWater;
             TeamZone.Intruded += OnIntruded;
             RagdollPawn.SkillFx += OnPawnRushFx;
+            RagdollPawn.SkillFx += OnRecordFx;
             // R514: this PC's stamina, the bar the offline playtest shows (the playtest is off in a match); on once the race goes.
             staminaBar = gameObject.AddComponent<MatchStaminaBar>();
             staminaBar.enabled = false;
@@ -381,8 +382,42 @@ namespace ChessFight.RagdollLab.Net
             routeLine = Debug.isDebugBuild ? SteamRoute.Line(session, routes) : "";
         }
 
+        // R736: this player's match record. Armed once the match has started with this player seated (a spectator has
+        // none); the race's end writes it (CrownFinish), and the link going away before that writes "나감".
+        void NoteRecord()
+        {
+            if (Spectating || !Started() || !runners.TryGetValue(session.Self, out var me)) return;
+            // R745: with whether it is a ranked match (the room's word, the same on every PC), and the "나감" held from now.
+            MatchRecords.Arm(session.Match, GameModes.KingRush.Key, session.RankedMatch);
+            int ours = 0, theirs = 0;
+            foreach (var r in runners.Values) { if (r.Team == me.Team) ours++; else theirs++; }
+            MatchRecords.Note(me.Pawn != null ? me.Pawn.Piece : PieceKind.Pawn, ours, theirs);
+        }
+
+        // R742: this player's skill uses, dives and grabs for the match record's detail. Every PC sees each moment once
+        // (the host where it happens, a client as the host's moment is played back to it).
+        void OnRecordFx(SkillFxEvent e)
+        {
+            var log = MatchRecords.Log;
+            if (log == null || e.by == null || !runners.TryGetValue(session.Self, out var me) || me.Pawn != e.by) return;
+            switch (e.kind)
+            {
+                case SkillFxKind.CourseDive: log.Dives++; break;
+                case SkillFxKind.CourseGrab: log.Grabs++; break;
+                case SkillFxKind.QueenBlast:
+                case SkillFxKind.RookThrow:
+                case SkillFxKind.BishopRopeThrow:
+                case SkillFxKind.KnightLeap:
+                case SkillFxKind.PawnStep:
+                case SkillFxKind.KingCall:
+                    log.Skills++;
+                    break;
+            }
+        }
+
         void OnDestroy()
         {
+            MatchRecords.Abandon();
             requests?.Dispose();
             controls?.Disable();
             Checkpoint.Reached -= OnCheckpoint;
@@ -392,6 +427,7 @@ namespace ChessFight.RagdollLab.Net
             WaterZone.Entered -= OnWater;
             TeamZone.Intruded -= OnIntruded;
             RagdollPawn.SkillFx -= OnPawnRushFx;
+            RagdollPawn.SkillFx -= OnRecordFx;
             if (finish != null) finish.Decided -= OnDecided;
             // R704: the room's flow rules end with its match (an offline course after it plays the game as it was).
             PawnRushRules.Current = default;
@@ -664,6 +700,7 @@ namespace ChessFight.RagdollLab.Net
             if (Spectating) Watch();
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
+            NoteRecord();
             // A client's skill timers run before this frame's packets overwrite them.
             if (!authority)
                 foreach (var r in runners.Values)

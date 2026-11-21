@@ -1,7 +1,30 @@
 # 폰 러쉬 왕실 천문대 — 장치 효과음 자리 (R725 ro-vfx, 2026-11-20)
 
-사용자 "온라인에서 아까 모든 pc 테두리 섬광 등등 이런거 사운드 담당자가 편하게 할 수 있도록 적어두고". 천문대 장치 VFX(① 유성우 · ② 태양 플레어 · ③ 초점 광선 · ④ 조리개, 세션 ro-vfx)가 **언제 · 어디서 · 누구 화면에** 나는지와, 소리를 붙일 코드 자리를 적었다. 아직 소리는 하나도 없다(천문대 효과음은 R725에서 하지 않기로 했었음).
+사용자 "온라인에서 아까 모든 pc 테두리 섬광 등등 이런거 사운드 담당자가 편하게 할 수 있도록 적어두고". 천문대 장치 VFX(① 유성우 · ② 태양 플레어 · ③ 초점 광선 · ④ 조리개, 세션 ro-vfx)가 **언제 · 어디서 · 누구 화면에** 나는지와, 소리를 붙일 코드 자리를 적었다. R725 때는 소리가 없었다(천문대 효과음은 R725에서 하지 않기로 했었음). **R742(11-21)에 소리가 들어갔다 — 아래 '-1절'.**
 ⑤ 꽃잎 · ⑥ 톱니 · 궤도 · 구르는 행성 · ⑦ 홀 먼지 · 성운은 세션 ro-vfx2의 것이라 여기 없다(`RoyalObservatoryVfxPetals/Gears/Orbits/Hall*.cs`).
+
+## -1. R742 · 지금 들어간 소리 (2026-11-21, 코드 · 자동 검사까지, 사용자 청취 · Unity 확인 전)
+
+사용자 "천문대 사운드 필요한 곳 확인해" → "네, 만들어". 아래 2절의 자리에 ⑤ 꽃잎 · ⑥ 톱니 · 궤도 · 구르는 행성 · 대천구 고리, 홀 · 발코니 공간 소리를 더해 22종. ElevenLabs(흐름 `3SsTjKFY5rvOHg2svvFA`, 처음 붙인 이름 "R739 …")로 종류마다 2 ~ 4개를 만들고 AI가 파형 숫자로만 골랐다 — [듣기 페이지](https://claude.ai/artifact/KrnWCdo5Qi12kB7fgpKvhd), 원본 · 프롬프트 · 고르는 스크립트 `ArtSource/PawnRush/RoyalObservatory/Sound`(`prompts.md`, `bake.py`, 바꾸려면 `picks.json`).
+
+- **코드:** `RoyalObservatorySound.cs` 하나(빌더가 Content에 붙임, 회색 상자에서도 동작). 장치는 모두 공유 시계의 함수라, 이 PC가 시계를 읽어 "그 순간을 막 지났는지"(주기 안 시각이 표시를 넘었는지, 한 걸음 0.5초 넘으면 아무것도 안 냄 = 늦게 들어온 PC는 지난 일 소리 안 남)로 모든 PC에서 같은 순간에 낸다. 보내는 것 없음. 2절 표의 VFX 코드 자리 대신 장치 값(`MeteorShower.At` · `SolarFlare.CycleTime` · `IrisLeaf.CycleAt` · `StarPetal.Now/FoldsAt/RisesAt` · `RollingPlanet.Now`)을 직접 읽는다. "맞음" 소리만 VFX에서 부른다: `RoyalObservatoryVfxBeamHit.Struck` → `BeamStruck`(모든 PC 3D + 본인 2D), `RoyalObservatoryVfxFlare.CheckCaught` → `FlareCaught`(본인 2D).
+- **들리는 범위:** 모든 소리가 `SectionSoundGate`(천문대 구간 안에서만, 효과음 크기). 발코니는 구간 칸(beat) 밖이라 바람만 게이트 없이 이 코드가 직접 줄인다(발코니에 있을 때만, 효과음 크기, 로딩 화면 중 0).
+- **크기:** `bake.py`가 PAWN_RUSH_AUDIO 0절 기준(보통 한 번 −21 dB · 큰 타격 −18 · 반복음 −30 RMS 등, 종류별 `HEARD`)으로 AudioSource 크기(`vol`)를 계산 → 코드의 `Volume` 표. 몇 개(광선 맞음 · 조리개 맞닿음 · 꽃잎 경고 · 펴짐 · 행성 멈춤)는 테이크가 작아 1로 막혀 목표보다 조금 작다.
+
+| 장치 | 소리 (파일 `Resources/RoyalObservatorySfx/`) | 언제 | 3D 거리 |
+|---|---|---|---|
+| 유성우 2곳 | `RoMeteorWarn` · `RoMeteorFall` · `RoMeteorImpact` | 경고 시작 · 착지 `Streak` 초 전 · 착지 | 4–32 · 4–36 · 5–45 m |
+| 태양 플레어 | `RoFlareCharge`(11-21 "예고음 크게" → 4 dB 크게) · `RoFlareBurst`(11-21 "살짝 크게" → 3 dB 크게), 본인 `RoFlareHitMe`(2D) | 예고 시작(1.3초) · 타오름 시작 · 그림자 밖에서 맞음 | 13–65 · 15–75 m |
+| 초점 광선 2개 | `RoBeamHum`(반복, 두 빛 원 가운데) · `RoBeamStrike`, 본인 `RoBeamHitMe`(2D) | 늘 · 기물이 맞을 때 | 3–22 · 3–28 m |
+| 조리개 4곳 | `RoIrisWarn` · `RoIrisScrape` · `RoIrisClash` | 경고 시작 · 닫히기 시작 · 맞닿음 (서쪽 날개 시계, 두 날개 가운데 1.2 m 위) | 3–26 · 3–28 · 4–34 m |
+| 변광성 2개 | `RoPetalWarn` · `RoPetalFold`(꽃잎마다, 0.75배 · 음높이 조금씩 다르게) · `RoPetalRise` | 경고 시작 · 꽃잎이 떨어질 때마다 · 다 같이 올라올 때 | 2.5–22 · 3–24 m |
+| 궤도 3 · 톱니 4 | `RoOrbitLoop` · `RoGearLoop`(반복, 음높이 조금씩 다르게 — 톱니는 11-21 "장난감 같다"로 묵직한 시계탑 톱니로 다시, 0.84 ~ 0.96배) | 늘 | 3–20 · 3–22 m |
+| 구르는 행성 | `RoPlanetRoll`(반복, 속도만큼 크기 · 음높이 0.8 ~ 1.05) · `RoPlanetDock` | 구를 때 · 양쪽 정거장 도착 | 3–26 · 4–30 m |
+| 대천구 고리 | `RoGlobeCreak`(반복, 작게) | 늘 | 8–32 m |
+| 공간 | `RoHallAmbience`(2D, 발코니에서 30%로) · `RoBalconyWind`(2D) | 천문대 안 · 발코니 | — |
+
+- 콘솔 한 줄 `[천문대 소리] 유성우 2 · 플레어 1 · 초점 광선 2 · 조리개 4 · 변광성 2 · 반복음 N개`.
+- 아래 2 ~ 4절은 R725에 쓴 계획(파일 이름 `ro_*`)이고, 실제 파일 이름은 위 표다. 대천구 유리 · 경통 벽 충돌 소리, 돔 별자리 반짝임 소리는 넣지 않았다.
 
 ## 0. 먼저 알아 둘 것 — 온라인에서 소리가 맞는 이유
 

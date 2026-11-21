@@ -219,7 +219,7 @@ namespace ChessFight.RagdollLab.Net
             GUI.enabled = session.Match != 0;
             if (GUILayout.Button("방 번호 복사", Button))
             {
-                GUIUtility.systemCopyBuffer = session.Match.ToString();
+                GUIUtility.systemCopyBuffer = LobbyCode.Plain(session.Match);
                 message = "방 번호를 복사했어요. 상대에게 보내세요.";
             }
             GUI.enabled = true;
@@ -229,8 +229,8 @@ namespace ChessFight.RagdollLab.Net
             GUILayout.Label("방 번호", Small, GUILayout.Width(52f));
             GUI.SetNextControlName("netRoomCode");
             roomCode = GUILayout.TextField(roomCode, 24, Button);
-            GUI.enabled = canQueue && ulong.TryParse(roomCode, out _);
-            if (GUILayout.Button("참가", Button, GUILayout.Width(60f)) && ulong.TryParse(roomCode, out ulong id)) session.JoinPrivateMatch(id);
+            GUI.enabled = canQueue && LobbyCode.TryRead(roomCode, out _);
+            if (GUILayout.Button("참가", Button, GUILayout.Width(60f)) && LobbyCode.TryRead(roomCode, out ulong id)) session.JoinPrivateMatch(id);
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
@@ -242,7 +242,7 @@ namespace ChessFight.RagdollLab.Net
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
-            GUILayout.Label($"내 방 번호: {session.Match}   {Hint()}", Small);
+            GUILayout.Label($"내 방 번호: {LobbyCode.Format(session.Match)}   {Hint()}", Small);
             // R111: two copies of the game on one PC (or two PCs on one LAN) without Steam.
             GUILayout.Label("Steam 없이 시험 (같은 PC의 두 창, 또는 같은 공유기의 두 PC):", Small);
             GUILayout.BeginHorizontal();

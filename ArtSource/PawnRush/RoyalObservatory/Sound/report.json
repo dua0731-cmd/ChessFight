@@ -1,0 +1,1177 @@
+{
+ "meteor_warn": {
+  "file": "RoMeteorWarn",
+  "picked": "meteor_warn_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.732,
+  "loudness": -14.3,
+  "heard": -24,
+  "vol": 0.411,
+  "takes": [
+   {
+    "peak": -15.096,
+    "rms": -33.862,
+    "length": 0.8,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.012,
+    "tail": 0.567,
+    "take": 1,
+    "score": 0.179
+   },
+   {
+    "peak": -3.343,
+    "rms": -19.612,
+    "length": 0.8,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.005,
+    "tail": 0.665,
+    "take": 2,
+    "score": 0.01
+   },
+   {
+    "peak": -5.816,
+    "rms": -21.923,
+    "length": 0.8,
+    "rings": 3,
+    "onset": 0.0,
+    "hit": 0.176,
+    "tail": 0.476,
+    "take": 3,
+    "score": 5.803
+   },
+   {
+    "peak": -4.901,
+    "rms": -21.389,
+    "length": 0.8,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.023,
+    "tail": 0.627,
+    "take": 4,
+    "score": 0.047
+   }
+  ]
+ },
+ "meteor_fall": {
+  "file": "RoMeteorFall",
+  "picked": "meteor_fall_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.372,
+  "loudness": -16.5,
+  "heard": -24,
+  "vol": 0.525,
+  "takes": [
+   {
+    "peak": -0.379,
+    "rms": -17.891,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.163,
+    "hit": 0.284,
+    "tail": 0.188,
+    "take": 1,
+    "score": 0.529
+   },
+   {
+    "peak": -0.333,
+    "rms": -15.005,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.064,
+    "tail": 0.315,
+    "take": 2,
+    "score": 1.305
+   }
+  ]
+ },
+ "meteor_impact": {
+  "file": "RoMeteorImpact",
+  "picked": "meteor_impact_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.604,
+  "loudness": -11.7,
+  "heard": -18,
+  "vol": 0.609,
+  "takes": [
+   {
+    "peak": -9.823,
+    "rms": -25.627,
+    "length": 1.2,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.012,
+    "tail": 0.369,
+    "take": 1,
+    "score": 0.023
+   },
+   {
+    "peak": -0.914,
+    "rms": -15.309,
+    "length": 1.2,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.064,
+    "tail": 0.415,
+    "take": 2,
+    "score": 1.1
+   },
+   {
+    "peak": -0.656,
+    "rms": -19.013,
+    "length": 1.2,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.013,
+    "tail": 0.436,
+    "take": 3,
+    "score": 0.026
+   },
+   {
+    "peak": -4.777,
+    "rms": -21.314,
+    "length": 1.2,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.055,
+    "tail": 0.304,
+    "take": 4,
+    "score": 0.697
+   }
+  ]
+ },
+ "flare_charge": {
+  "file": "RoFlareCharge",
+  "picked": "flare_charge_4",
+  "by": "numbers",
+  "loop": false,
+  "length": 1.36,
+  "loudness": -11.0,
+  "heard": -22,
+  "vol": 0.352,
+  "takes": [
+   {
+    "peak": -6.021,
+    "rms": -17.688,
+    "length": 1.36,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.603,
+    "tail": 0.712,
+    "take": 1,
+    "score": 0.379
+   },
+   {
+    "peak": -9.903,
+    "rms": -20.967,
+    "length": 1.36,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.591,
+    "tail": 0.72,
+    "take": 2,
+    "score": 0.385
+   },
+   {
+    "peak": -5.54,
+    "rms": -18.984,
+    "length": 1.36,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.469,
+    "tail": 0.763,
+    "take": 3,
+    "score": 6.446
+   },
+   {
+    "peak": -6.042,
+    "rms": -18.07,
+    "length": 1.36,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.825,
+    "tail": 0.489,
+    "take": 4,
+    "score": 0.268
+   }
+  ]
+ },
+ "flare_burst": {
+  "file": "RoFlareBurst",
+  "picked": "flare_burst_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 1.3,
+  "loudness": -5.3,
+  "heard": -18,
+  "vol": 0.29,
+  "takes": [
+   {
+    "peak": -0.246,
+    "rms": -9.949,
+    "length": 1.76,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.005,
+    "tail": 1.028,
+    "take": 1,
+    "score": 0.01
+   },
+   {
+    "peak": -1.642,
+    "rms": -13.936,
+    "length": 1.76,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.288,
+    "tail": 0.805,
+    "take": 2,
+    "score": 10.496
+   }
+  ]
+ },
+ "flare_hit_me": {
+  "file": "RoFlareHitMe",
+  "picked": "flare_hit_me_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.516,
+  "loudness": -16.1,
+  "heard": -20,
+  "vol": 0.799,
+  "takes": [
+   {
+    "peak": -2.416,
+    "rms": -20.683,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.033,
+    "tail": 0.475,
+    "take": 1,
+    "score": 0.065
+   },
+   {
+    "peak": -0.156,
+    "rms": -17.543,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.019,
+    "tail": 0.397,
+    "take": 2,
+    "score": 0.039
+   },
+   {
+    "peak": -0.459,
+    "rms": -16.542,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.034,
+    "tail": 0.561,
+    "take": 3,
+    "score": 1.297
+   },
+   {
+    "peak": -0.0,
+    "rms": -16.37,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.003,
+    "tail": 0.514,
+    "take": 4,
+    "score": 0.289
+   }
+  ]
+ },
+ "beam_hum": {
+  "file": "RoBeamHum",
+  "picked": "beam_hum_2",
+  "by": "numbers",
+  "loop": true,
+  "length": 4.0,
+  "loudness": -20.0,
+  "heard": -30,
+  "vol": 0.395,
+  "takes": [
+   {
+    "peak": -4.165,
+    "rms": -18.676,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 2.726,
+    "seam": 1.967,
+    "jump": 0.007,
+    "centroid": 490.337,
+    "take": 1,
+    "score": 6.579
+   },
+   {
+    "peak": -1.86,
+    "rms": -9.557,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 0.618,
+    "seam": 0.67,
+    "jump": 0.039,
+    "centroid": 364.633,
+    "take": 2,
+    "score": 2.351
+   },
+   {
+    "peak": -1.493,
+    "rms": -6.244,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 0.766,
+    "seam": 1.52,
+    "jump": 0.015,
+    "centroid": 613.595,
+    "take": 3,
+    "score": 2.599
+   }
+  ]
+ },
+ "beam_strike": {
+  "file": "RoBeamStrike",
+  "picked": "beam_strike_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.309,
+  "loudness": -22.2,
+  "heard": -21,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -0.0,
+    "rms": -24.616,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.027,
+    "hit": 0.039,
+    "tail": 0.15,
+    "take": 1,
+    "score": 0.078
+   },
+   {
+    "peak": -0.86,
+    "rms": -25.29,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.243,
+    "hit": 0.252,
+    "tail": 0.116,
+    "take": 2,
+    "score": 8.975
+   },
+   {
+    "peak": -20.336,
+    "rms": -45.041,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.003,
+    "tail": 0.088,
+    "take": 3,
+    "score": 0.422
+   },
+   {
+    "peak": 0.0,
+    "rms": -24.344,
+    "length": 0.68,
+    "rings": 0,
+    "onset": 0.142,
+    "hit": 0.147,
+    "tail": 0.083,
+    "take": 4,
+    "score": 4.584
+   }
+  ]
+ },
+ "beam_hit_me": {
+  "file": "RoBeamHitMe",
+  "picked": "beam_hit_me_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.309,
+  "loudness": -22.7,
+  "heard": -20,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -16.03,
+    "rms": -32.917,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.069,
+    "tail": 0.275,
+    "take": 1,
+    "score": 1.497
+   },
+   {
+    "peak": -10.005,
+    "rms": -34.406,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.016,
+    "tail": 0.162,
+    "take": 2,
+    "score": 0.032
+   }
+  ]
+ },
+ "iris_warn": {
+  "file": "RoIrisWarn",
+  "picked": "iris_warn_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.8,
+  "loudness": -19.2,
+  "heard": -24,
+  "vol": 0.722,
+  "takes": [
+   {
+    "peak": -4.823,
+    "rms": -24.561,
+    "length": 0.8,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.363,
+    "tail": 0.419,
+    "take": 1,
+    "score": 0.0
+   },
+   {
+    "peak": -5.17,
+    "rms": -22.308,
+    "length": 0.8,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.123,
+    "tail": 0.522,
+    "take": 2,
+    "score": 0.0
+   },
+   {
+    "peak": -7.96,
+    "rms": -28.855,
+    "length": 0.8,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.004,
+    "tail": 0.558,
+    "take": 3,
+    "score": 0.0
+   },
+   {
+    "peak": -1.206,
+    "rms": -22.582,
+    "length": 0.8,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.048,
+    "tail": 0.303,
+    "take": 4,
+    "score": 0.0
+   }
+  ]
+ },
+ "iris_scrape": {
+  "file": "RoIrisScrape",
+  "picked": "iris_scrape_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.433,
+  "loudness": -15.8,
+  "heard": -22,
+  "vol": 0.611,
+  "takes": [
+   {
+    "peak": -4.924,
+    "rms": -21.398,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.02,
+    "tail": 0.347,
+    "take": 1,
+    "score": 0.0
+   },
+   {
+    "peak": -10.487,
+    "rms": -27.078,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.096,
+    "tail": 0.252,
+    "take": 2,
+    "score": 0.0
+   },
+   {
+    "peak": -4.57,
+    "rms": -21.766,
+    "length": 0.6,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.094,
+    "tail": 0.269,
+    "take": 3,
+    "score": 12.0
+   }
+  ]
+ },
+ "iris_clash": {
+  "file": "RoIrisClash",
+  "picked": "iris_clash_3",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.691,
+  "loudness": -18.2,
+  "heard": -18,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -0.182,
+    "rms": -19.9,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.007,
+    "tail": 0.4,
+    "take": 1,
+    "score": 0.014
+   },
+   {
+    "peak": -7.311,
+    "rms": -28.846,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.007,
+    "tail": 0.509,
+    "take": 2,
+    "score": 0.014
+   },
+   {
+    "peak": -1.946,
+    "rms": -23.114,
+    "length": 1.0,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.007,
+    "tail": 0.575,
+    "take": 3,
+    "score": 0.013
+   },
+   {
+    "peak": -0.705,
+    "rms": -19.683,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.028,
+    "tail": 0.384,
+    "take": 4,
+    "score": 0.056
+   }
+  ]
+ },
+ "petal_warn": {
+  "file": "RoPetalWarn",
+  "picked": "petal_warn_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.826,
+  "loudness": -26.1,
+  "heard": -25,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -0.095,
+    "rms": -28.517,
+    "length": 0.88,
+    "rings": 0,
+    "onset": 0.057,
+    "hit": 0.226,
+    "tail": 0.028,
+    "take": 1,
+    "score": 0.013
+   },
+   {
+    "peak": -0.464,
+    "rms": -25.225,
+    "length": 0.88,
+    "rings": 0,
+    "onset": 0.476,
+    "hit": 0.483,
+    "tail": 0.091,
+    "take": 2,
+    "score": 0.852
+   },
+   {
+    "peak": -3.422,
+    "rms": -30.75,
+    "length": 0.88,
+    "rings": 1,
+    "onset": 0.007,
+    "hit": 0.484,
+    "tail": 0.038,
+    "take": 3,
+    "score": 6.0
+   },
+   {
+    "peak": -3.65,
+    "rms": -31.395,
+    "length": 0.88,
+    "rings": 1,
+    "onset": 0.146,
+    "hit": 0.397,
+    "tail": 0.038,
+    "take": 4,
+    "score": 6.191
+   }
+  ]
+ },
+ "petal_fold": {
+  "file": "RoPetalFold",
+  "picked": "petal_fold_1",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.153,
+  "loudness": -20.3,
+  "heard": -24,
+  "vol": 0.814,
+  "takes": [
+   {
+    "peak": -2.216,
+    "rms": -27.325,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.01,
+    "tail": 0.093,
+    "take": 1,
+    "score": 0.021
+   },
+   {
+    "peak": -34.051,
+    "rms": -51.272,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.148,
+    "tail": 0.348,
+    "take": 2,
+    "score": 105.723
+   },
+   {
+    "peak": -0.505,
+    "rms": -26.846,
+    "length": 0.6,
+    "rings": 0,
+    "onset": 0.031,
+    "hit": 0.042,
+    "tail": 0.109,
+    "take": 3,
+    "score": 0.165
+   },
+   {
+    "peak": -7.316,
+    "rms": -30.826,
+    "length": 0.6,
+    "rings": 1,
+    "onset": 0.0,
+    "hit": 0.003,
+    "tail": 0.071,
+    "take": 4,
+    "score": 6.005
+   }
+  ]
+ },
+ "petal_rise": {
+  "file": "RoPetalRise",
+  "picked": "petal_rise_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.501,
+  "loudness": -22.3,
+  "heard": -23,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -1.657,
+    "rms": -26.173,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.01,
+    "hit": 0.078,
+    "tail": 0.089,
+    "take": 1,
+    "score": 6.0
+   },
+   {
+    "peak": -4.266,
+    "rms": -27.725,
+    "length": 1.0,
+    "rings": 0,
+    "onset": 0.031,
+    "hit": 0.144,
+    "tail": 0.361,
+    "take": 2,
+    "score": 0.0
+   }
+  ]
+ },
+ "orbit_loop": {
+  "file": "RoOrbitLoop",
+  "picked": "orbit_loop_2",
+  "by": "numbers",
+  "loop": true,
+  "length": 5.0,
+  "loudness": -20.0,
+  "heard": -32,
+  "vol": 0.314,
+  "takes": [
+   {
+    "peak": -14.344,
+    "rms": -24.959,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 0.753,
+    "seam": 1.876,
+    "jump": 0.029,
+    "centroid": 145.436,
+    "take": 1,
+    "score": 3.144
+   },
+   {
+    "peak": -16.015,
+    "rms": -27.421,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 0.429,
+    "seam": 1.659,
+    "jump": 0.005,
+    "centroid": 1824.295,
+    "take": 2,
+    "score": 1.991
+   },
+   {
+    "peak": -9.243,
+    "rms": -20.669,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 0.549,
+    "seam": 6.093,
+    "jump": 0.006,
+    "centroid": 322.724,
+    "take": 3,
+    "score": 4.266
+   },
+   {
+    "peak": -13.786,
+    "rms": -24.226,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 0.649,
+    "seam": 1.766,
+    "jump": 0.021,
+    "centroid": 1181.917,
+    "take": 4,
+    "score": 2.682
+   }
+  ]
+ },
+ "gear_loop": {
+  "file": "RoGearLoop",
+  "picked": "gear_loop_2",
+  "by": "numbers",
+  "loop": true,
+  "length": 5.0,
+  "loudness": -20.0,
+  "heard": -31,
+  "vol": 0.352,
+  "takes": [
+   {
+    "peak": -0.397,
+    "rms": -9.437,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 4.423,
+    "seam": 2.639,
+    "jump": 0.004,
+    "centroid": 194.764,
+    "take": 1,
+    "score": 10.741
+   },
+   {
+    "peak": -2.265,
+    "rms": -12.601,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 1.07,
+    "seam": 0.203,
+    "jump": 0.003,
+    "centroid": 173.43,
+    "take": 2,
+    "score": 2.729
+   },
+   {
+    "peak": -2.088,
+    "rms": -12.232,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 1.226,
+    "seam": 1.865,
+    "jump": 0.01,
+    "centroid": 121.85,
+    "take": 3,
+    "score": 3.888
+   },
+   {
+    "peak": -1.894,
+    "rms": -13.821,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 1.236,
+    "seam": 0.184,
+    "jump": 0.0,
+    "centroid": 183.645,
+    "take": 4,
+    "score": 3.029
+   },
+   {
+    "peak": -4.855,
+    "rms": -18.68,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 2.398,
+    "seam": 1.807,
+    "jump": 0.008,
+    "centroid": 132.591,
+    "take": 5,
+    "score": 6.2
+   },
+   {
+    "peak": -4.55,
+    "rms": -18.257,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 10.25,
+    "seam": 5.418,
+    "jump": 0.002,
+    "centroid": 236.608,
+    "take": 6,
+    "score": 23.836
+   },
+   {
+    "peak": -4.576,
+    "rms": -20.496,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 3.905,
+    "seam": 5.459,
+    "jump": 0.0,
+    "centroid": 177.675,
+    "take": 7,
+    "score": 10.991
+   },
+   {
+    "peak": -0.447,
+    "rms": -14.05,
+    "length": 5.0,
+    "rings": 0,
+    "spread": 8.985,
+    "seam": 1.249,
+    "jump": 0.007,
+    "centroid": 217.825,
+    "take": 8,
+    "score": 19.28
+   }
+  ]
+ },
+ "planet_roll": {
+  "file": "RoPlanetRoll",
+  "picked": "planet_roll_4",
+  "by": "numbers",
+  "loop": true,
+  "length": 4.0,
+  "loudness": -22.7,
+  "heard": -30,
+  "vol": 0.539,
+  "takes": [
+   {
+    "peak": -3.27,
+    "rms": -24.036,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 1.906,
+    "seam": 2.311,
+    "jump": 0.004,
+    "centroid": 930.617,
+    "take": 1,
+    "score": 5.039
+   },
+   {
+    "peak": -9.348,
+    "rms": -25.945,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 1.311,
+    "seam": 3.684,
+    "jump": 0.001,
+    "centroid": 862.837,
+    "take": 2,
+    "score": 4.479
+   },
+   {
+    "peak": -5.081,
+    "rms": -25.87,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 1.403,
+    "seam": 2.692,
+    "jump": 0.004,
+    "centroid": 776.351,
+    "take": 3,
+    "score": 4.226
+   },
+   {
+    "peak": -3.227,
+    "rms": -24.924,
+    "length": 4.0,
+    "rings": 0,
+    "spread": 1.239,
+    "seam": 1.237,
+    "jump": 0.022,
+    "centroid": 1213.666,
+    "take": 4,
+    "score": 3.531
+   }
+  ]
+ },
+ "planet_dock": {
+  "file": "RoPlanetDock",
+  "picked": "planet_dock_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.281,
+  "loudness": -22.3,
+  "heard": -21,
+  "vol": 1.0,
+  "takes": [
+   {
+    "peak": -1.347,
+    "rms": -22.381,
+    "length": 0.8,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.16,
+    "tail": 0.187,
+    "take": 1,
+    "score": 5.131
+   },
+   {
+    "peak": -3.164,
+    "rms": -28.959,
+    "length": 0.8,
+    "rings": 0,
+    "onset": 0.021,
+    "hit": 0.029,
+    "tail": 0.208,
+    "take": 2,
+    "score": 0.058
+   }
+  ]
+ },
+ "globe_creak": {
+  "file": "RoGlobeCreak",
+  "picked": "globe_creak_2",
+  "by": "numbers",
+  "loop": true,
+  "length": 6.0,
+  "loudness": -20.0,
+  "heard": -34,
+  "vol": 0.249,
+  "takes": [
+   {
+    "peak": -7.785,
+    "rms": -29.459,
+    "length": 6.0,
+    "rings": 0,
+    "spread": 9.364,
+    "seam": 1.589,
+    "jump": 0.01,
+    "centroid": 554.88,
+    "take": 1,
+    "score": 19.727
+   },
+   {
+    "peak": -21.235,
+    "rms": -39.998,
+    "length": 6.0,
+    "rings": 0,
+    "spread": 8.172,
+    "seam": 0.256,
+    "jump": 0.002,
+    "centroid": 936.204,
+    "take": 2,
+    "score": 16.976
+   },
+   {
+    "peak": -17.357,
+    "rms": -35.123,
+    "length": 6.0,
+    "rings": 0,
+    "spread": 8.763,
+    "seam": 1.207,
+    "jump": 0.011,
+    "centroid": 657.977,
+    "take": 3,
+    "score": 18.617
+   },
+   {
+    "peak": -8.717,
+    "rms": -26.797,
+    "length": 6.0,
+    "rings": 0,
+    "spread": 11.447,
+    "seam": 0.477,
+    "jump": 0.002,
+    "centroid": 795.947,
+    "take": 4,
+    "score": 23.163
+   }
+  ]
+ },
+ "hall_ambience": {
+  "file": "RoHallAmbience",
+  "picked": "hall_ambience_3",
+  "by": "numbers",
+  "loop": true,
+  "length": 12.0,
+  "loudness": -20.0,
+  "heard": -34,
+  "vol": 0.249,
+  "takes": [
+   {
+    "peak": -31.186,
+    "rms": -42.308,
+    "length": 12.0,
+    "rings": 0,
+    "spread": 0.953,
+    "seam": 2.451,
+    "jump": 0.096,
+    "centroid": 958.655,
+    "take": 1,
+    "score": 6.005
+   },
+   {
+    "peak": -35.153,
+    "rms": -46.696,
+    "length": 12.0,
+    "rings": 0,
+    "spread": 0.827,
+    "seam": 5.425,
+    "jump": 0.009,
+    "centroid": 1250.667,
+    "take": 2,
+    "score": 5.698
+   },
+   {
+    "peak": -31.331,
+    "rms": -42.454,
+    "length": 12.0,
+    "rings": 0,
+    "spread": 1.032,
+    "seam": 0.512,
+    "jump": 0.074,
+    "centroid": 1757.306,
+    "take": 3,
+    "score": 4.771
+   },
+   {
+    "peak": -38.886,
+    "rms": -49.913,
+    "length": 12.0,
+    "rings": 0,
+    "spread": 0.977,
+    "seam": 4.067,
+    "jump": 0.05,
+    "centroid": 1915.701,
+    "take": 4,
+    "score": 6.325
+   }
+  ]
+ },
+ "balcony_wind": {
+  "file": "RoBalconyWind",
+  "picked": "balcony_wind_4",
+  "by": "numbers",
+  "loop": true,
+  "length": 10.0,
+  "loudness": -20.0,
+  "heard": -32,
+  "vol": 0.314,
+  "takes": [
+   {
+    "peak": -21.367,
+    "rms": -32.546,
+    "length": 10.0,
+    "rings": 0,
+    "spread": 1.615,
+    "seam": 8.216,
+    "jump": 0.002,
+    "centroid": 531.229,
+    "take": 1,
+    "score": 7.849
+   },
+   {
+    "peak": -20.137,
+    "rms": -31.601,
+    "length": 10.0,
+    "rings": 0,
+    "spread": 1.315,
+    "seam": 1.241,
+    "jump": 0.037,
+    "centroid": 1019.788,
+    "take": 2,
+    "score": 4.392
+   },
+   {
+    "peak": -24.486,
+    "rms": -37.393,
+    "length": 10.0,
+    "rings": 0,
+    "spread": 1.833,
+    "seam": 2.74,
+    "jump": 0.012,
+    "centroid": 580.914,
+    "take": 3,
+    "score": 5.906
+   },
+   {
+    "peak": -26.525,
+    "rms": -40.869,
+    "length": 10.0,
+    "rings": 0,
+    "spread": 0.834,
+    "seam": 1.25,
+    "jump": 0.038,
+    "centroid": 1327.802,
+    "take": 4,
+    "score": 3.782
+   }
+  ]
+ }
+}

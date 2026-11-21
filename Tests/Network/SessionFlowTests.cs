@@ -1523,6 +1523,31 @@ public static class SessionFlowTests
                 PublicRoom(new[]{500,400});var first=clients[0];
                 Check(!first.CanSetRules,"a public room's manager may set rules");
                 As(first,()=>first.SetRules(rules));Step(20);Check(clients.All(x=>x.RoomRules==0),"a public room took rules");});
+            // R745 (the user 2026-11-21, "각 팀 2명 이상"): which started matches count for the 순위 boards - a room matchmaking
+            // made, people only, two a side or more - as every PC in the match reads it from the room.
+            Test("R745: a match matchmaking made of people, two a side, is a ranked one on every PC and for a player who comes back; one a side, a bot or a room a player made is not",()=>{
+                PublicRoom(new[]{500,400,300,200});var maker=clients[0];ulong room=maker.Match;
+                Check(clients.All(c=>!c.RankedMatch),"a waiting room is no ranked match yet");
+                Check(maker.CanStartGame&&maker.TeamCount(0)==2&&maker.TeamCount(1)==2,"setup: two a side may start: "+maker.TeamCount(0)+" v "+maker.TeamCount(1));
+                As(maker,maker.StartGame);Step(6);
+                Check(clients.All(c=>c.Started&&c.RankedMatch),"2 v 2 of people from matchmaking: private "+RoomData(maker,"private")+" seats "+RoomData(maker,"seats")+" starters "+RoomData(maker,"starters"));
+                foreach(var c in clients.ToArray()){var x=c;As(x,()=>x.ReportLoading(100));}
+                Step(10);Check(maker.StartAt>0,"setup: the shared start");
+                var leaver=clients[3];As(leaver,leaver.Cancel);Step(5);
+                Check(clients.Take(3).All(c=>c.Started&&c.RankedMatch)&&!leaver.RankedMatch,"it stays a ranked match for the ones still in it; the leaver is in none");
+                Check(leaver.CanRejoin&&leaver.RejoinMatch==room,"setup: the leaver may go back: "+leaver.Error);
+                As(leaver,leaver.Rejoin);for(int t=0;t<60&&!leaver.Started;t++)Step(1);
+                Check(leaver.Match==room&&leaver.Started&&leaver.RankedMatch,"the player who came back reads another answer: "+leaver.Error);
+                Setup(2);Duel(clients[0],clients[1]);
+                Check(clients.All(c=>c.Started&&!c.RankedMatch),"1 v 1 counted as a ranked match");
+                PublicRoom(new[]{500,400,300});var first=clients[0];
+                bool ok=false;As(first,()=>ok=first.AddRoomBot());Step(6);
+                Check(ok&&first.TeamCount(0)==2&&first.TeamCount(1)==2,"setup: a bot evens the sides: "+first.TeamCount(0)+" v "+first.TeamCount(1));
+                As(first,first.StartGame);Step(6);
+                Check(clients.All(c=>c.Started&&!c.RankedMatch),"a match with a bot counted as a ranked match: seats "+RoomData(first,"seats")+" starters "+RoomData(first,"starters"));
+                Room(new[]{500,400,300,200});var owner=clients[0];
+                As(owner,owner.StartGame);Step(6);
+                Check(clients.All(c=>c.Started&&c.PrivateRoom&&!c.RankedMatch),"a room a player made counted as a ranked match");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

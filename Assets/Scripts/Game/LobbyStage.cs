@@ -208,7 +208,12 @@ namespace ChessFight.Game
         void Spawn(int index, LineupEntry entry)
         {
             Vector3 at = SpotPosition(index);
-            if (entry.Invite) { bodies[index] = InviteSpot(index, InvitePosition(index)); return; }
+            if (entry.Invite)
+            {
+                bodies[index] = InviteSpot(index, InvitePosition(index));
+                if (partyAway) bodies[index].SetActive(false);   // R736: 기물 도감 · 전적 are up
+                return;
+            }
 
             var kind = PieceKind.Pawn;
             // Everyone faces the camera, a little towards the middle (me straight on).
@@ -218,6 +223,7 @@ namespace ChessFight.Game
             figure.Root.name = "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
             figures[index] = figure;
             bodies[index] = figure.Root;
+            if (partyAway) figure.Root.SetActive(false);   // R736: 기물 도감 · 전적 are up
         }
 
         GameObject InviteSpot(int index, Vector3 at)
@@ -244,6 +250,7 @@ namespace ChessFight.Game
             TickPennants(t, Time.unscaledDeltaTime);
             TickFires(t);
             TickHall(t);
+            TickShowcase(t, Time.unscaledDeltaTime);
             for (int i = 0; i < Spots; i++)
             {
                 if (bodies[i] == null) continue;
