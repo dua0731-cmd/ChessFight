@@ -45,7 +45,7 @@ export class Stage {
     }
     this.hands = [0, 1, 2].map(() => { const h = makeHand({ scale: 1.0 }); h.root.visible = false; sc.add(h.root); return h; });
     this.bigCrown = makeCrown(2.4); this.bigCrown.visible = false; sc.add(this.bigCrown);
-    this.pools = {}; this.used = {}; this.extras = {};
+    this.pools = {}; this.used = {}; this.extras = {}; this.hidden = [];
     // metal needs something to reflect: a soft room for everything golden
     const env = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
     sc.traverse(o => { const m = o.material; if (m && m.metalness > 0.3) { m.envMap = env; m.envMapIntensity = 0.9; m.needsUpdate = true; } });
@@ -67,11 +67,14 @@ export class Stage {
     this.course.archFlash.material.opacity = 0; this.course.shadow.material.opacity = 0;
     this.hemi.intensity = 0.7; this.sun.intensity = 2.6; this.sky.material.uniforms.dark.value = 0; this.sky.material.uniforms.darkCol.value.setHex(0x3a0806);
     for (const k in this.extras) this.extras[k].visible = false;
+    for (const o of this.hidden) o.visible = true; this.hidden.length = 0;
     for (const k in this.pools) for (const o of this.pools[k]) o.visible = false;
     this.used = {};
   }
   /** Something a clip makes once (on first use) and shows when it wants; hidden again at every frame's start. */
   extra(key, make) { let o = this.extras[key]; if (!o) { o = this.extras[key] = make(); this.scene.add(o); } o.visible = true; return o; }
+  /** Hides a part of the hall for this frame only. */
+  hide(o) { if (o.visible) { o.visible = false; this.hidden.push(o); } }
   /** Shows a piece: at (x, y, z), facing yaw (0 = +z), leaning forward and rolling sideways. */
   put(team, kind, x, y, z, yaw = 0, lean = 0, roll = 0) { const p = this.pieces[team][kind]; p.visible = true; p.position.set(x, y, z); p.rotation.set(lean, yaw, roll); return p; }
   /** The roof's two halves, open = 0 (shut) to 1 (slid off the walls). */
