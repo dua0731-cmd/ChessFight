@@ -44,6 +44,9 @@ namespace ChessFight.PawnRush
 
         public Vector3 StandRow(int team) => new Vector3(team == Teams.White ? -StandX : StandX, 0f, StandZ);
         public float StandoffSeconds => standoffSeconds;
+        // The kings' board (ThroneSummonsShow, the previz JY chose 2026-11-22): 2 m squares in the nave before the grand
+        // stair, z 28..44; the nave's columns stop short of it.
+        public ThroneBoard Board => new ThroneBoard(new Vector3(-7f, 0f, 29f), Vector3.forward, Vector3.right, 2f);
 
         void Awake()
         {
@@ -60,6 +63,7 @@ namespace ChessFight.PawnRush
 
             b.In("Hall", () => Hall(b));
             b.In("Altar", () => Altar(b, top));
+            b.In("Board", () => Board.Inlay(b));
             b.In("Throne", () => Throne(b, top));
             b.In("Lights", () => Lights(b, top));
             HallParts.Ends(b, root.transform, HalfWidth, Length, 10f,
@@ -106,7 +110,7 @@ namespace ChessFight.PawnRush
             b.Wall("Door lintel", -DoorHalf, DoorHalf, DoorHeight, Height, 0f, Thick, false);
             b.Box("Roof", new Vector3(-w, Height, 0f), new Vector3(w, Height + .6f, Length + Thick), kit.wallNoClimb, false, false);
 
-            for (int k = 0; k < 7; k++)
+            for (int k = 0; k < 4; k++)   // z 6..24: the board lies from z 28 (JY 2026-11-22)
             {
                 float z = 6f + 6f * k;
                 foreach (float s in new[] { -1f, 1f })

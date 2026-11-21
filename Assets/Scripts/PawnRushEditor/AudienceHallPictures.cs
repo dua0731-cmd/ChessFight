@@ -170,8 +170,50 @@ namespace ChessFight.PawnRush.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(.5f, .57f, .67f);
             foreach (var view in hall.Views) Capture(hall.Letter + "_" + view.Name, view);
+            Summons(hall, stage);
             Object.DestroyImmediate(cam.gameObject);
             return ok;
+        }
+
+        // The kings' summons on a hall with a board (ThroneSummonsShow.Preview): the rows' stand-ins taken away, the show
+        // stopped at three moments - both kings struck (aurora, pillars, the board's light), the pieces coming in, the
+        // rays to the crown - with stand-ins on the squares whose pieces are in by then (rook, knight, bishop, queen and
+        // two pawns a team, the previz's six). Each from behind white's side, looking across the board.
+        static readonly PieceKind[] Six = { PieceKind.Rook, PieceKind.Knight, PieceKind.Bishop, PieceKind.Queen, PieceKind.Pawn, PieceKind.Pawn };
+
+        static void Summons(Hall hall, IThroneStage stage)
+        {
+            var board = stage.Board;
+            var section = hallRoot.GetComponent<PawnRushSection>();
+            if (!board.Exists || section == null) { Note("summons: no board"); return; }
+            var rows = GameObject.Find("Stand-in pieces (pictures only)");
+            if (rows != null) Object.DestroyImmediate(rows);
+            var show = ThroneSummonsShow.Ready(section, board);
+            float s = board.Square;
+            Vector3 m = board.Middle;
+            Note($"summons: board a1 {board.A1}, {s:0.##} m squares; white king e1 {board.King(Teams.White)}, black king e8 {board.King(Teams.Black)}");
+            foreach (var (name, t) in new[] { ("S1_kings_strike", 1.7f), ("S2_coming_in", 3.25f), ("S3_rays_to_crown", 5.2f) })
+            {
+                var standIns = new GameObject("Summons stand-ins (pictures only)").transform;
+                int arrived = 0;
+                foreach (var p in show.Preview(t, Six, Six, cam))
+                {
+                    if (!p.arrived) continue;
+                    arrived++;
+                    var piece = MiniGameParts.Piece(standIns, Teams.Name(p.team) + " " + p.kind, p.kind, Tall[System.Array.IndexOf(Row, p.kind)],
+                                                    MiniGameParts.PieceMaterial(p.team), Arena.TeamColor(p.team, true), false);
+                    piece.transform.position = p.spot;
+                    piece.transform.rotation = Quaternion.LookRotation(hallRoot.TransformDirection(board.Facing(p.team)));
+                }
+                Vector3 eye = m - board.Rank * (5f * s) - board.File * (3.5f * s) + Vector3.up * (2.2f * s + 1f);
+                var view = name == "S3_rays_to_crown"
+                    ? View.Look(name, eye, hallRoot.InverseTransformPoint(show.CrownAt) * .5f + m * .5f, 64f)
+                    : View.Look(name, eye, m + board.Rank * s + Vector3.up * .6f, 62f);
+                Note($"summons {name}: {t:0.00} s, {arrived} of 12 in");
+                Capture(hall.Letter + "_" + name, view);
+                Object.DestroyImmediate(standIns.gameObject);
+            }
+            show.Stop();
         }
 
         static bool Measure(Hall hall, IThroneStage stage)

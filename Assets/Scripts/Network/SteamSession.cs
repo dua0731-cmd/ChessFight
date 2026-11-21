@@ -199,7 +199,9 @@ namespace ChessFight.Network
         //      under "왕좌 차지전" each hall says where the rows stand and hall C sends a team's falls to its own alcove.
         // hall3: the room rule "엔딩 시작" (rules bit 11) - under "30초 뒤 소환" the throne contest's first byte carries the
         //      summons' countdown (bit 3), and the others count its 30 s from when they hear it.
-        public const string Protocol = "chessfight.dua0731.network.v61.hall3";
+        // hall4: the kings' summons onto the chessboard (ThroneSummonsShow, ISummonCarry) - no new bytes, but the halls are
+        // built differently (boards on the floor, hall B's nave columns) and everyone is carried, not stood in rows.
+        public const string Protocol = "chessfight.dua0731.network.v61.hall4";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

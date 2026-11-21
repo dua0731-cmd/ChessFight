@@ -35,6 +35,8 @@ namespace ChessFight.PawnRush
         public float CircleRadius => circleDiameter * .5f;
         public Vector3 StandRow(int team) => new Vector3(team == Teams.White ? -StandX : StandX, 0f, StandZ);
         public float StandoffSeconds => standoffSeconds;
+        // The kings' board (ThroneSummonsShow): 1.75 m squares inside the door, z 0.5..14.5, before the way up.
+        public ThroneBoard Board => new ThroneBoard(new Vector3(-6.125f, 0f, 1.375f), Vector3.forward, Vector3.right, 1.75f);
 
         void Awake()
         {
@@ -50,6 +52,7 @@ namespace ChessFight.PawnRush
 
             b.In("Hall", () => Hall(b));
             b.In("Throne", () => Throne(b));
+            b.In("Board", () => Board.Inlay(b));
             b.In("Way up", () => WayUp(b));
             b.In("Lights", () => Lights(b));
             HallParts.Ends(b, root.transform, HalfWidth, Length, 12f,

@@ -1839,6 +1839,18 @@ public static class NetworkCoreTests
                 Check(PawnRushRules.Settings.Length==5&&PawnRushRules.Choices.Length==5&&PawnRushRules.Choices[4].Length==2&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==PawnRushRules.MapLast+1,"the panel's names");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
+            Test("JY-audience-hall: the kings call each piece to its own chess starting square, the rest to free squares, never e1", () => {
+                var kinds=new[]{PieceKind.Rook,PieceKind.Knight,PieceKind.Bishop,PieceKind.Queen,PieceKind.Pawn,PieceKind.Pawn};
+                var f=new int[6]; var r=new int[6]; ChessSummons.Assign(kinds,f,r);
+                Check(f[0]==1&&r[0]==1&&f[1]==2&&r[1]==1&&f[2]==3&&r[2]==1&&f[3]==4&&r[3]==1&&f[4]==4&&r[4]==2&&f[5]==5&&r[5]==2,"the previz's six: a1 b1 c1 d1 d2 e2");
+                var many=new[]{PieceKind.Queen,PieceKind.Queen,PieceKind.King,PieceKind.Rook,PieceKind.Rook,PieceKind.Rook};
+                var f2=new int[6]; var r2=new int[6]; ChessSummons.Assign(many,f2,r2);
+                var seen=new System.Collections.Generic.HashSet<int>();
+                for (int i=0;i<6;i++) { Check(seen.Add(r2[i]*10+f2[i]),"two on one square"); Check(!(r2[i]==1&&f2[i]==5),"nobody on e1, the hall's king's"); }
+                Check(f2[0]==4&&f2[3]==1&&f2[4]==8&&f2[1]==3&&f2[2]==6&&f2[5]==2,"queen d1, rooks a1 h1, then the back rank's free squares in order d c f b g a h");
+                var pawns=new PieceKind[10]; var f3=new int[10]; var r3=new int[10]; ChessSummons.Assign(pawns,f3,r3);
+                Check(r3[7]==2&&f3[7]==8&&r3[8]==1&&f3[8]==4&&r3[9]==1&&f3[9]==3,"eight pawns fill rank 2, a ninth and tenth go to the back rank");
+            });
             Test("JY-audience-hall: the ending map packs beside the other rules (bits 8-10) and pins the last slot alike in the round and the course table", () => {
                 for (int map=0; map<=PawnRushRules.MapLast; map++) for (int ending=0; ending<2; ending++) {
                     var r=new PawnRushRules{Relief=1,After=2,Ending=ending,EndingMap=map}; var back=PawnRushRules.Decode(r.Encode());

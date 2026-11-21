@@ -35,6 +35,8 @@ namespace ChessFight.PawnRush
 
         public Vector3 StandRow(int team) => new Vector3(team == Teams.White ? -StandX : StandX, 0f, Middle);
         public float StandoffSeconds => standoffSeconds;
+        // The kings' board: the floor's own, 4 m squares (the island its middle four); white's ranks on the west.
+        public ThroneBoard Board => new ThroneBoard(new Vector3(-14f, 0f, 8f), Vector3.forward, Vector3.right, Square);
 
         void Awake()
         {

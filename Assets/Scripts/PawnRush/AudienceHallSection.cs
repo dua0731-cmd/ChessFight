@@ -57,6 +57,8 @@ namespace ChessFight.PawnRush
         // IThroneStage: each team's row StandX from the circle's middle, across the hall, on the floor.
         public Vector3 StandRow(int team) => new Vector3(team == Teams.White ? -StandX : StandX, 0f, CircleZ);
         public float StandoffSeconds => standoffSeconds;
+        // The kings' board (ThroneSummonsShow): a small one of 1 m squares inside the door, in front of the dais.
+        public ThroneBoard Board => new ThroneBoard(new Vector3(-3.5f, 0f, 1f), Vector3.forward, Vector3.right, 1f);
 
         void Awake()
         {
@@ -74,6 +76,7 @@ namespace ChessFight.PawnRush
 
             b.In("Hall", () => Hall(b, footZ));
             b.In("Dais", () => Dais(b, top, footZ, footX));
+            b.In("Board", () => Board.Inlay(b));
             b.In("Throne", () => Throne(b, top));
 
             var cp = b.Checkpoint(0, new Vector3(0f, 0f, 2f), 0f, 2f * DoorHalf);
