@@ -665,6 +665,7 @@ namespace ChessFight.RagdollLab
             ultTaken.Clear();
             ultStep = 0;
             dropShoveNext = false;
+            ClearDrive();   // the six driven ultimates (RagdollPawn.DriveUlts.cs)
         }
     }
 }

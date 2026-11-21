@@ -275,6 +275,8 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.RankWall: UpdateRankWall(s, press, dt); break;
                 case PawnRushSkillIds.QueenDrop: UpdateQueenDrop(s, press, confirm, dt); break;
                 case PawnRushSkillIds.GeneralCall: UpdateGeneralCall(s, press, dt); break;
+                // The six driven ultimates (RagdollPawn.DriveUlts.cs and one file each).
+                case PawnRushSkillIds.Nightmare: UpdateNightmare(s, press, dt); break;
             }
         }
 

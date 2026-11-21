@@ -69,12 +69,25 @@ namespace ChessFight.Network
         // The knight's second ultimate, picked from the previz (the user 11-21: "나이트의 궁극기 2개만 먼저 만들어줘"): the family
         // fork, Nf7+!! (RagdollPawn.KnightUlts.cs; the knight's tour, 105, is played the new way there too).
         public const int FamilyFork = 118;
+        // The six driven ultimates (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.1-6.6, the user 11-22: "걍 쎄고 강하고 적들이 훨씬
+        // 앞서 있다 그래도 뒤엎을 수 있는 강력하고 멋진 글로벌 스킬인데 너무 짧게 끝나거나 뻔하진 않은 그런 거", then "여섯 다
+        // 넘겨"): 10-12 s the caster drives - the pawn's promotion run (e8=Q!!), the knight's nightmare, the bishop's long
+        // diagonal (a1-h8!!), the rook's rock and roll, the queen's descent, the king's walk (RagdollPawn.DriveUlts.cs).
+        public const int PromotionRun = 119, Nightmare = 120, GreatDiagonal = 121, RookRoll = 122, QueenDescent = 123, KingWalk = 124;
+        // The set 3안-b (KITS 6.9, the user 11-22: two normal slots a piece): the queen's two without the 1.5x of her three -
+        // the series of checks on 16 s, the eight lines on 40 s (variants on their skills' code).
+        public const int SeriesB = 125, EightB = 126;
+
+        /// <summary>One of the six driven ultimates (119..124).</summary>
+        public static bool Driven(int id) => id >= PromotionRun && id <= KingWalk;
 
         /// <summary>The skill whose code a variant runs on (itself for any other).</summary>
         public static int BaseOf(int id)
         {
             switch (id)
             {
+                case SeriesB: return CheckSeries;
+                case EightB: return EightLines;
                 case StepsMid: return SteeredSteps;
                 case PassedPawn: return SteeredSteps;
                 case SnipeMid: return LongSnipe;
@@ -97,8 +110,9 @@ namespace ChessFight.Network
         /// <summary>One of the first ultimates (the pool's six, the kits' 7th rank), the high tier's candidates since 11-21.</summary>
         public static bool HighCandidate(int id) => (id >= Promote && id <= KingMarch) || id == SeventhRank;
 
-        /// <summary>One of the team's comeback ultimates (104..109, and the knight's family fork, 118).</summary>
-        public static bool TeamUltimate(int id) => (id >= PassantBang && id <= GeneralCall) || id == FamilyFork;
+        /// <summary>One of the team's comeback ultimates (104..109, the knight's family fork, 118, and the six driven ones,
+        /// 119..124).</summary>
+        public static bool TeamUltimate(int id) => (id >= PassantBang && id <= GeneralCall) || id == FamilyFork || Driven(id);
 
         /// <summary>A swap of places with a teammate that agrees: plan 1-나's castling, or Queen of the Hill's.</summary>
         public static bool Castle(int id) => id == Castling || id == CastleSwap;
@@ -371,10 +385,10 @@ namespace ChessFight.Network
         /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
         /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
         /// 0 for the others (the system stays as it is).</summary>
-        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 ? Many : 0;
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 ? Many : 0;
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 11;
+        public const int Presets = 12;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
@@ -383,12 +397,28 @@ namespace ChessFight.Network
         /// plan 2 (the first skill in the first slots, what each grows into in the second: the growing system plays it from
         /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each:
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
-        /// grows from its middlegame shape to its endgame shape, and the ultimate). The king's row is empty (his call) in all
-        /// but 4 to 10.</summary>
+        /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
+        /// piece, the queen's without her glide; the six driven ultimates). The king's row is empty (his call) in all but 4
+        /// to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 11)
+            {
+                // KITS 6.9 (11-22, the standard now): 3안-a's skills, two a piece - the queen's series of checks (F, 16 s) and
+                // eight lines (E, 40 s) - and the six driven ultimates on Q. 3안-a keeps the team ultimates to compare with.
+                int[] f = { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.ChainBehind, PawnRushSkillIds.SeriesB, PawnRushSkillIds.KingStep };
+                int[] e = { PawnRushSkillIds.ChaseAway, PawnRushSkillIds.Fork, PawnRushSkillIds.SnipeHigh, PawnRushSkillIds.WallCharge, PawnRushSkillIds.EightB, PawnRushSkillIds.KingSummon };
+                int[] q = { PawnRushSkillIds.PromotionRun, PawnRushSkillIds.Nightmare, PawnRushSkillIds.GreatDiagonal, PawnRushSkillIds.RookRoll, PawnRushSkillIds.QueenDescent, PawnRushSkillIds.KingWalk };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                    p.slots[row * Slots + UltSlot] = q[row];
+                }
+                return p;
+            }
             if (which == 9 || which == 10)
             {
                 // KITS 6.9: the sets 1안-a (one normal slot) and 2안-a (the first slot's middlegame shape, the second its

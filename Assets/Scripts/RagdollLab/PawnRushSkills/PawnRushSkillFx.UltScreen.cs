@@ -58,8 +58,8 @@ namespace ChessFight.RagdollLab
 
         void UltScreenStart(UltShow u)
         {
-            u.title = u.Fork ? "패밀리 포크" : u.Tour ? "나이트 투어" : PawnRushSkillBook.Name(u.skill);
-            u.nota = u.Fork ? "Nf7+!!" : u.Tour ? "Nf5-d6-e8!!" : "!!";
+            u.title = u.Fork ? "패밀리 포크" : u.Tour ? "나이트 투어" : u.Driven ? DriveTitle(u.skill) : PawnRushSkillBook.Name(u.skill);
+            u.nota = u.Fork ? "Nf7+!!" : u.Tour ? "Nf5-d6-e8!!" : u.Driven ? DriveNota(u.skill) : "!!";
             UltAudioBuild();
             if (ultLoop != null && sfxCrackle != null)
             {
@@ -281,6 +281,13 @@ namespace ChessFight.RagdollLab
             if (free) return;
             float motion = ChessFight.Game.GameSettings.ShakeScale, fov = 0f, back = 0f, up = 0f;
             fov += 7f * motion * Mathf.Exp(-(Clock - u.t0) / 0.3f);
+            // The nightmare's leaps: a little further back and higher while it flies (eased in and out), to see where it lands.
+            bool wide = u.Playing && u.skill == PawnRushSkillIds.Nightmare && (u.by.PlanNote & RagdollPawn.NmFlying) != 0;
+            u.camK = Mathf.MoveTowards(u.camK, wide ? 1f : 0f, Time.unscaledDeltaTime / 0.35f);
+            float wk = Smooth01(u.camK);
+            back += 2.2f * wk;
+            up += 1f * wk;
+            fov += 5f * wk;
             if (u.Fork && u.Playing)
             {
                 float air = Smooth01((Clock - u.t0) / 0.4f);
@@ -442,8 +449,45 @@ namespace ChessFight.RagdollLab
                 UltWords(u, vw);
             }
             UltHints(vw);
+            UltDriveHud(vw);
             GUI.matrix = keepMatrix;
             GUI.color = keepColor;
+        }
+
+        /// <summary>A driven ultimate's line for the other team's banner.</summary>
+        static string DriveEnemyLine(int id) => id switch
+        {
+            PawnRushSkillIds.Nightmare => "머리 위를 조심해요! 12 m 넘게 흩어져요",
+            PawnRushSkillIds.PromotionRun => "질주 줄에서 비켜요!",
+            PawnRushSkillIds.GreatDiagonal => "빛의 대각선과 나란히 서지 마요!",
+            PawnRushSkillIds.RookRoll => "곧은 길에서 비켜요!",
+            PawnRushSkillIds.QueenDescent => "그림자를 보면 흩어져요!",
+            PawnRushSkillIds.KingWalk => "행렬을 끊어요!",
+            _ => "조심해요!",
+        };
+
+        /// <summary>The caster's time bar: its time left (red and blinking in the last 2 s) and its line (presses left, its
+        /// level, what it has hit).</summary>
+        void UltDriveHud(float vw)
+        {
+            var me = Viewer;
+            if (me == null) return;
+            foreach (var u in ults)
+            {
+                if (!u.Driven || u.by != me || !u.Playing) continue;
+                float total = Mathf.Max(0.5f, u.air), left = Mathf.Clamp(total - (Clock - u.t0), 0f, total), k = left / total;
+                const float w = 440f, h = 12f, y = 560f;
+                float x = (vw - w) * 0.5f;
+                GUI.color = new Color(0f, 0f, 0f, 0.55f);
+                GUI.DrawTexture(new Rect(x - 3f, y - 3f, w + 6f, h + 6f), Texture2D.whiteTexture);
+                bool late = left < 2f && Mathf.Repeat(Clock * 4f, 1f) < 0.5f;
+                GUI.color = late ? new Color(1f, 0.35f, 0.35f) : new Color(0.25f, 1f, 0.85f);
+                GUI.DrawTexture(new Rect(x, y, w * k, h), Texture2D.whiteTexture);
+                var st = new GUIStyle(ultSub) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+                GUI.color = Color.white;
+                Outlined(new Rect(x - 100f, y - 32f, w + 200f, 28f), $"{u.title}  {left:0.0}초  ·  {DriveLine(u)}", st, new Color(0.9f, 1f, 0.97f), 1.5f);
+                return;
+            }
         }
 
         /// <summary>The banner under the top bar; returns its bottom.</summary>
@@ -454,7 +498,7 @@ namespace ChessFight.RagdollLab
             var me = Viewer;
             bool ally = me == null || me.Team == u.by.Team || me == u.by;
             string title = $"{Teams.Name(u.by.Team)}팀 {PieceName(u.by.Piece)}   {u.title}!!";
-            string sub = ally ? $"{u.by.DisplayName} · {u.nota}" : (u.Fork ? "포크 칸에서 벗어나요!" : "머리 위를 조심해요!");
+            string sub = ally ? $"{u.by.DisplayName} · {u.nota}" : u.Driven ? DriveEnemyLine(u.skill) : (u.Fork ? "포크 칸에서 벗어나요!" : "머리 위를 조심해요!");
             bool face = pipShow == u && pipTex != null && pipCam != null && pipCam.enabled;
             const float faceW = 150f;
             var tw = ultTitle.CalcSize(new GUIContent(title)).x;
@@ -530,19 +574,21 @@ namespace ChessFight.RagdollLab
                 Color color = Color.white;
                 if (u.by == me)
                 {
-                    text = u.Fork ? "이동 키 = 착지 칸 옮기기  ·  내려올 때 고리가 청록이면 Q"
+                    text = u.Driven ? DriveHint(u)
+                         : u.Fork ? "이동 키 = 착지 칸 옮기기  ·  내려올 때 고리가 청록이면 Q"
                          : u.finalAt >= 0f ? "이동 키 = 착지 칸 옮기기"
                          : "카메라로 다음 머리 고르기  ·  고리가 청록일 때 Q";
                     color = new Color(0.85f, 1f, 0.97f);
                 }
                 else if (Teams.AreEnemies(me.Team, u.by.Team))
                 {
-                    bool aimed = u.Tour ? u.by.PlanTarget == me : u.Fork && UltOnForkSquare(u, me);
-                    if (aimed)
+                    if (u.Driven) text = DriveWarning(u, me);
+                    else
                     {
-                        text = u.Fork ? "포크 칸이에요 — 비켜요!" : "나이트가 머리를 노려요 — 비켜요!";
-                        color = new Color(1f, 0.35f, 0.35f);
+                        bool aimed = u.Tour ? u.by.PlanTarget == me : u.Fork && UltOnForkSquare(u, me);
+                        if (aimed) text = u.Fork ? "포크 칸이에요 — 비켜요!" : "나이트가 머리를 노려요 — 비켜요!";
                     }
+                    color = new Color(1f, 0.35f, 0.35f);
                 }
                 if (text == null) continue;
                 float blink = 0.75f + 0.25f * Mathf.Abs(Mathf.Sin(Clock * 6f));

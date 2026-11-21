@@ -335,9 +335,9 @@ namespace ChessFight.RagdollLab
             // (In the order shown; each one's number is PawnRushLoadout.Preset's, -1 the "옛 묶음" switch.) The sets
             // (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.9: the user's "1안-a세트") on the line; the earlier loadouts behind it.
             string[] presets = showOld
-                ? new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "비우기", "옛 묶음 ▾", "1-나", "A 묶음", "기본기", "옛 1안", "옛 2안", "옛 3안" }
-                : new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "비우기", "옛 묶음 ▸" };
-            int[] presetIds = showOld ? new[] { 0, 9, 10, 8, 2, -1, 1, 3, 4, 5, 7, 6 } : new[] { 0, 9, 10, 8, 2, -1 };
+                ? new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "3안-b", "비우기", "옛 묶음 ▾", "1-나", "A 묶음", "기본기", "옛 1안", "옛 2안", "옛 3안" }
+                : new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "3안-b", "비우기", "옛 묶음 ▸" };
+            int[] presetIds = showOld ? new[] { 0, 9, 10, 8, 11, 2, -1, 1, 3, 4, 5, 7, 6 } : new[] { 0, 9, 10, 8, 11, 2, -1 };
             // Too many for the rest of this line (a narrow window): onto the next one, under the systems.
             if (x + presets.Length * 62f > right - 140f)
             {
@@ -364,6 +364,7 @@ namespace ChessFight.RagdollLab
                             : id == 9 ? "1안-a세트: 기물마다 일반 칸 하나(F, 중급 세기)와 궁극기(Q, 팀 게이지). 스킬 방식도 1안으로"
                             : id == 10 ? "2안-a세트: F가 미들게임 모양 → 엔드게임 모양(→ 칸)으로 자라요. 시험 씬은 왼쪽 창 '엔드게임 모양'. 궁극기는 Q"
                             : id == 8 ? "3안-a세트: 기물마다 칸 조합이 달라요(퀸은 R까지 셋), 궁극기는 Q. 스킬 방식도 3안으로"
+                            : id == 11 ? "3안-b세트 (지금의 기준): 기물마다 일반 칸 둘(F · E, 퀸은 연속 체크 16초 · 여덟 줄 40초)과 새 궁극기 여섯(Q, 10~12초 동안 직접 몰기)"
                             : id == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
                             : id == 5 ? "옛 1안(후보 문서, 기물당 하나)으로 채웠어요"
                             : id == 6 ? "옛 3안(후보 문서: 기본기 · 중급기 · 처음 궁극기)으로 채웠어요"

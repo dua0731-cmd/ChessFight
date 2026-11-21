@@ -855,6 +855,17 @@ namespace ChessFight.RagdollLab
                      ultTourStart = 22f, ultTourFinal = 10f, ultTourFinalMax = 30f, ultTourEmpty = 18f;
         [Tooltip("나이트 투어: 머리 위에서 다음을 고르는 시간 (초); 박자 창 (내려선 뒤 초 ~ 초); 박자를 맞추면 다음 머리가 더 납작 (초)")]
         public float ultTourWait = 0.8f, ultTourBeat0 = 0.3f, ultTourBeat1 = 0.55f, ultTourBeatSquash = 1f;
+        [Header("궁극기 여섯 · 10~12초 동안 직접 몬다 (11-22, KITS 6.1~6.6, RagdollPawn.DriveUlts.cs)")]
+        [Tooltip("3안-b세트: 퀸의 연속 체크 쿨 (초), 여덟 줄 쿨 (초): 3안-a의 1.5배를 푼 값")]
+        public float seriesBCooldown = 16f, eightBCooldown = 40f;
+        [Tooltip("판정: 이 궁극기에 맞은 적이 상대 팀의 이만큼이면 !! · ! · ★, 그 아래 하나라도 ?!, 없으면 ??")]
+        public float driveBrilliant = 0.84f, driveGreat = 0.6f, driveBest = 0.3f;
+        [Tooltip("나이트메어: 시간 (초, ×1.5 15초 · ×2 20초); 도약 거리 처음 · 한 번 밟은 뒤 · 두 번 넘게 이은 뒤 (m); 빨간 표식에 붙는 거리 (m); 착지점 위 하늘이 막혔는지 보는 높이 (m)")]
+        public float nmSeconds = 10f, nmRange0 = 40f, nmRange1 = 60f, nmRange2 = 80f, nmSnap = 4f, nmSky = 25f;
+        [Tooltip("나이트메어: 공중 시간 = 이만큼 + 100 m에 이만큼 (초); 높이 = 이만큼 + m마다 (m); 공중에서 이동 키로 고치는 빠르기 (m/s), 가장 멀리 (m); 표적을 따라가는 빠르기 (m/s), 내리기 전 고정 (초)")]
+        public float nmAir = 0.85f, nmAirPer100 = 0.6f, nmHigh = 7f, nmHighPer = 0.14f, nmSteer = 7f, nmSteerMax = 7f, nmHome = 14f, nmLock = 0.5f;
+        [Tooltip("나이트메어: 밟히는 반경 (m, 둘 넘게면 포크); 납작 (초); 그 뒤 튕겨 나가는 거리 (m); 밟은 머리 위에 서 있는 가장 긴 시간 (초)")]
+        public float nmStomp = 3f, nmSquash = 2f, nmBounce = 15f, nmRide = 1.2f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

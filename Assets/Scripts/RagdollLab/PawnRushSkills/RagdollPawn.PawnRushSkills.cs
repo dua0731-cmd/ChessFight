@@ -67,6 +67,11 @@ namespace ChessFight.RagdollLab
         UltCast, UltMark, UltGo, UltStrike, UltHit, UltEnd,
         // ...and a press timed in an ultimate (11-22; count 1: on the beat, 0: off it; target: the head it goes to, if any).
         UltTiming,
+        // The six driven ultimates' own moments (11-22, RagdollPawn.DriveUlts.cs; each read by the ultimate under way): a
+        // landing or an impact (at; count: the pieces it hit; size: a level or a radius), a line (at to normal: a beam's
+        // stretch, a dash; count: its part; size: its width), a warning on the floor (at; size: its radius; count: its
+        // kind) and a change of the body (count: the new state; size: a scale).
+        DriveLand, DriveLine, DriveWarn, DriveState,
     }
 
     public struct SkillFxEvent

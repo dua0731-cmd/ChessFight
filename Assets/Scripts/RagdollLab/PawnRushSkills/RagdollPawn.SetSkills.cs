@@ -51,6 +51,8 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.SnipeMid: return s.snipeMidCooldown / Mathf.Max(0.1f, s.snipeCooldown);
                 case PawnRushSkillIds.WallMid: return s.wallMidCooldown / Mathf.Max(0.1f, s.wallCooldown);
                 case PawnRushSkillIds.SeriesQuick: return s.seriesQuickCooldown / Mathf.Max(0.1f, s.seriesCooldown);
+                case PawnRushSkillIds.SeriesB: return s.seriesBCooldown / Mathf.Max(0.1f, s.seriesCooldown);   // (3안-b: the queen's two)
+                case PawnRushSkillIds.EightB: return s.eightBCooldown / Mathf.Max(0.1f, s.eightCooldown);
                 case PawnRushSkillIds.SummonQuick: return s.summonQuickCooldown / Mathf.Max(0.1f, s.summonCooldown);
                 case PawnRushSkillIds.LeapFork: return s.leapForkCooldown / Mathf.Max(0.1f, s.leapCooldown);
                 default: return 1f;

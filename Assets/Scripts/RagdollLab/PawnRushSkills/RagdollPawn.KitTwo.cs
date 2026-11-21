@@ -139,6 +139,15 @@ namespace ChessFight.RagdollLab
             TeamUltKeys();   // the queen's sacrifice: the left click picks the next crowd (RagdollPawn.TeamUlts.cs)
             switch (activeSkill)
             {
+                case PawnRushSkillIds.PromotionRun:
+                case PawnRushSkillIds.Nightmare:
+                case PawnRushSkillIds.GreatDiagonal:
+                case PawnRushSkillIds.RookRoll:
+                case PawnRushSkillIds.QueenDescent:
+                case PawnRushSkillIds.KingWalk:
+                    // The six driven ultimates (RagdollPawn.DriveUlts.cs): the clicks (and the jump) are theirs.
+                    DriveKeys();
+                    break;
                 case PawnRushSkillIds.FamilyFork:
                 case PawnRushSkillIds.KnightTour:
                     // The knight's ultimates (RagdollPawn.KnightUlts.cs): played on the move - the keys steer, the camera

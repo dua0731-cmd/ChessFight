@@ -52,8 +52,16 @@ namespace ChessFight.RagdollLab
             public Vector3 hitPoint, finalPoint;
             public readonly HashSet<RagdollPawn> struckSet = new HashSet<RagdollPawn>();
             public string title = "", nota = "!!";
+            /// <summary>A driven ultimate's own marks and timings (PawnRushSkillFx.Drive*.cs).</summary>
+            public object state;
+            /// <summary>How far the caster's camera has eased into a wider view (0..1, its own screen).</summary>
+            public float camK;
             public bool Fork => skill == PawnRushSkillIds.FamilyFork;
             public bool Tour => skill == PawnRushSkillIds.KnightTour;
+            /// <summary>One of the six driven ultimates (air is then its whole time).</summary>
+            public bool Driven => PawnRushSkillIds.Driven(skill);
+            /// <summary>The knight's (the red eye in its aura).</summary>
+            public bool Knight => Fork || Tour || skill == PawnRushSkillIds.Nightmare;
             /// <summary>How much of the show is on (1 while it plays, falling after its end).</summary>
             public float Life(float clock) => gone ? 0f : endAt < 0f ? 1f : Mathf.Clamp01(1f - (clock - endAt) / (cut ? 0.5f : 1.5f));
             /// <summary>Still in the air or on the heads (before the landing).</summary>
@@ -103,6 +111,7 @@ namespace ChessFight.RagdollLab
         void DestroyUlt()
         {
             UltScreenDestroy();
+            DestroyOutlines();
             foreach (var o in new Object[] { texFrame, texStars, meshCube }) if (o != null) Destroy(o);
         }
 
@@ -130,6 +139,7 @@ namespace ChessFight.RagdollLab
             UltAura(u);
             if (u.Fork) UltForkAim(u);
             if (u.Tour) UltHeadRing(u);
+            if (u.Driven) UltDriveCast(u);
             UltScreenStart(u);
         }
 
@@ -137,6 +147,11 @@ namespace ChessFight.RagdollLab
         {
             var u = ShowOf(e.by);
             if (u == null) return;
+            if (u.Driven)
+            {
+                DriveGo(u, e);
+                return;
+            }
             if (e.size > 0.5f)
             {
                 // The tour's last leap: where it means to come down.
@@ -173,7 +188,8 @@ namespace ChessFight.RagdollLab
             if (u == null || e.target == null) return;
             u.struck++;
             u.struckSet.Add(e.target);
-            if (u.Fork) UltRedBeam(e.target);
+            if (u.Driven) DriveStrike(u, e);
+            else if (u.Fork) UltRedBeam(e.target);
             else UltStomp(u, e);
         }
 
@@ -243,7 +259,7 @@ namespace ChessFight.RagdollLab
                 light.transform.position = chest + Vector3.up * 0.5f;
                 light.intensity = k * (2.2f + 0.8f * Mathf.Sin(Clock * 31f) * Mathf.Sin(Clock * 17f));
                 eye.transform.position = head + fwd * 0.22f + Vector3.up * 0.04f;
-                eye.intensity = k * (1.6f + 0.6f * Mathf.Sin(Clock * 9f));
+                eye.intensity = u.Knight ? k * (1.6f + 0.6f * Mathf.Sin(Clock * 9f)) : 0f;   // the KNIGHTMARE's red eye: the knight's only
                 if (dt <= 0f) return true;
                 nextArc -= dt;
                 if (nextArc <= 0f && arc != null)
@@ -263,7 +279,7 @@ namespace ChessFight.RagdollLab
                                Random.Range(0.45f, 0.8f), Random.Range(0.35f, 0.6f), Tint(Electric, Random.value * 0.5f));
                 motes.Emit(chest + Random.insideUnitSphere * 0.35f, -vel * 0.15f + Random.insideUnitSphere * 0.6f,
                            Random.Range(0.06f, 0.12f), Random.Range(0.5f, 1f), Tint(Random.value < 0.5f ? Electric : Color.white, 0.2f));
-                if (Random.value < 0.35f)
+                if (u.Knight && Random.value < 0.35f)
                     sparks.Emit(eye.transform.position, -vel * 0.2f + Random.insideUnitSphere * 0.4f, 0.035f, 0.35f, Tint(Blood, 0.1f));
                 return true;
             }, () =>
@@ -690,6 +706,8 @@ namespace ChessFight.RagdollLab
         void UltStep(float dt, Camera cam)
         {
             UltTourPreview(cam);
+            UltDrivePreview(cam);   // the six driven ones' aim before their key (PawnRushSkillFx.Drive.cs)
+            UltOutlines(dt);        // ...and the caster's red outlines on every enemy
             if (ults.Count == 0)
             {
                 UltSky(cam, 0f);
@@ -715,6 +733,7 @@ namespace ChessFight.RagdollLab
                 }
                 night = Mathf.Max(night, UltNight(u));
                 UltGlitter(u, dt);
+                if (u.Driven) UltDriveStep(u, dt, cam);
             }
             UltSky(cam, night);
             UltScreenStep(dt, cam, night);
@@ -725,7 +744,10 @@ namespace ChessFight.RagdollLab
         {
             float on = Smooth01((Clock - u.t0) / 0.35f);
             float off = u.hitAt >= 0f ? 1f - Smooth01((Clock - u.hitAt - 0.9f) / 1.5f) : 1f;
-            return on * off * u.Life(Clock);
+            // A driven one runs 10-20 s: after its first second the night eases to a dusk (the race must be seen), and it
+            // falls again for the judgement.
+            float deep = !u.Driven || u.hitAt >= 0f ? 1f : Mathf.Lerp(1f, 0.4f, Smooth01((Clock - u.t0 - 1.1f) / 0.9f));
+            return on * off * deep * u.Life(Clock);
         }
 
         /// <summary>Motes of light drifting in the air round the play while the show lasts (the shorts' glitter).</summary>

@@ -190,6 +190,11 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.UltStrike: UltStrike(e); break;
                 case SkillFxKind.UltHit: UltHit(e); break;
                 case SkillFxKind.UltEnd: UltEnd(e); break;
+                // 11-22: the six driven ultimates' own moments (PawnRushSkillFx.Drive*.cs).
+                case SkillFxKind.DriveLand: DriveLandFx(e); break;
+                case SkillFxKind.DriveLine: DriveLineFx(e); break;
+                case SkillFxKind.DriveWarn: DriveWarnFx(e); break;
+                case SkillFxKind.DriveState: DriveStateFx(e); break;
             }
         }
 

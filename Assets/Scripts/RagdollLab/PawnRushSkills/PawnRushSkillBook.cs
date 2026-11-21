@@ -162,6 +162,37 @@ namespace ChessFight.RagdollLab
                 "궁극기 (팀 게이지, 역전 배율) · Q = 바로 1.6초 높이 도약 (멈추지 않음, 공중에서도) · 착지 칸은 카메라 쪽 가장 많이 포크되는 곳에서 시작" + "\n" +
                 "공중에서 이동 키로 착지 칸 옮김 (30 m까지) · 둘레 나이트 칸 여덟에 선 적 = 빨강 · 내려올 때 고리가 청록이면 Q = 박자 (칸이 넓고 더 멀리)" + "\n" +
                 "포크된 적은 20 m 뒤 (지나온 바닥)로 날아가 2초 엎어짐 · 깔린 적 1.5초 · 판정: 셋 또는 박자+둘 !!, 둘 !, 하나 ★, 없음 ?! / ??"),
+            // The six driven ultimates (11-22, Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.1-6.6; RagdollPawn.DriveUlts.cs): 10-12 s
+            // the caster drives; the set 3안-b's ultimates.
+            Made(PawnRushSkillIds.PromotionRun, "승격 (e8=Q!!)", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 퀸 13.5 · 18초, 돌진 6 · 8번) · Q = 3초 못 막는 질주 (초속 25 m, 이동 키로 방향, 앞길의 적은 옆으로 튕김)" + "\n" +
+                "질주 끝에서 키 6 m 퀸으로 쿵 (둘레 10 m 날림) · 9초 동안 좌클릭 = 카메라 쪽 30 m 꿰뚫는 돌진 ×4 (0.6초 사이, 줄 0.3초 예고)" + "\n" +
+                "돌진에 맞으면 20 m 날아가 2초 넘어짐 · 맞힐 때마다 퀸이 10% 커짐 (1.5배까지) · 낮은 지붕 밑은 못 들어감 · 끝나면 폰으로 · 아직 만드는 중"),
+            Made(PawnRushSkillIds.Nightmare, "나이트메어", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 15 · 20초) · 10초 동안 좌클릭 = 카메라가 보는 착지점으로 높이 도약 (빨간 표식 가까이면 그 적에게 붙음)" + "\n" +
+                "첫 도약 40 m, 적을 밟으면 다음이 60 → 80 m · 빈 땅에 내리면 40 m로 · 3 m 안에 둘 넘게면 포크 (모두 밟음) · 공중에서 이동 키로 조금 고침" + "\n" +
+                "밟힌 적은 2초 납작 뒤 15 m 튕김 · 착지 0.5초 전 붉은 원 (비킬 수 있음) · 지붕 · 다리 밑은 못 내려섬 · 판정 !!~?? (밟은 적 수)"),
+            Made(PawnRushSkillIds.GreatDiagonal, "롱 다이애거널 (a1–h8!!)", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 4 · 6발) · 10초 동안 걸으며 저격 · 쓰는 순간 모든 적이 벽 너머로 빨간 윤곽" + "\n" +
+                "좌클릭 누르고 0.5초 모았다 떼기 = 빛의 대각선 300 m · 벽에 닿으면 대각선으로 꺾여 튕김 (두 번까지, 튕길 때마다 굵어짐) · 세 발" + "\n" +
+                "꿰인 적은 모두 줄을 따라 비숍 쪽으로 25 m 끌려와 2초 넘어짐 · 모으는 동안 맞을 적에게 붉은 조준선 · 아직 만드는 중"),
+            Made(PawnRushSkillIds.RookRoll, "룩앤롤", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 15 · 20초) · 룩이 쓰러져 지름 3 m 돌기둥으로 10초 굴러감 · 이동 키로 몰기" + "\n" +
+                "곧게 갈수록 초속 15 → 40 m (3초), 크게 꺾으면 느려짐 · 부딪힌 적은 볼링 핀처럼 25 m 날아가 2초 넘어짐 · 넷 넘게면 '스트라이크!'" + "\n" +
+                "점프 키 한 번 = 크게 튀어 오름 · 올라탄 우리 편은 앞으로 15 m 튕겨 줌 · 아직 만드는 중"),
+            Made(PawnRushSkillIds.QueenDescent, "여왕 강림", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 4 · 6번) · 10초 동안 코스 위 20 m 높이를 초속 30 m로 날기 (이동 키 · 카메라 쪽)" + "\n" +
+                "좌클릭 = 찍은 곳에 내리꽂았다가 다시 솟기 ×3 (둘레 8 m 적 25 m 날아가 2.5초 넘어짐, 떨어질 곳에 1초 그림자)" + "\n" +
+                "마지막 한 번은 우클릭 = 퀸 희생 (둘레 16 m, 퀸은 잡혀 체크포인트로) · 희생 안 하면 끝에 그 자리에 내려섬 · 아직 만드는 중"),
+            Made(PawnRushSkillIds.KingWalk, "킹 워크", PieceKind.King, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
+                "궁극기 (팀 게이지, ×1.5 · ×2면 18 · 24초) · 12초 동안 1.5배 커져 1.8배로 행진 (아무것도 못 넘어뜨림, 앞길의 적은 옆으로)" + "\n" +
+                "뒤로 레드카펫 100 m · 카펫을 밟은 우리 팀은 킹 뒤로 빨려 와 행렬 · 행렬 넷이면 한 번 더 커지고 2.2배" + "\n" +
+                "좌클릭 = 왕관 충격파 ×3 (앞 30 m 부채꼴의 적 15 m 날아가 2초 넘어짐) · 아직 만드는 중"),
+            // The set 3안-b's queen (11-22): her two skills without the 1.5x of her three.
+            Made(PawnRushSkillIds.SeriesB, "연속 체크 (3안-b)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
+                "3안-b세트의 수치 · 연속 체크와 같고 쿨 16초 (퀸 칸이 둘이라 1.5배를 풂)"),
+            Made(PawnRushSkillIds.EightB, "여덟 줄 (3안-b)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
+                "3안-b세트의 수치 · 여덟 줄과 같고 쿨 40초 (퀸 칸이 둘이라 1.5배를 풂)"),
             Made(PawnRushSkillIds.GreekGift, "그리스 선물", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, 역전 배율) · Q = 상대 팀 가장 앞선 하나 (×2면 셋)의 머리 위에 '갈고리!' 2초\n그 뒤 빛이 차례로 날아가 (한 사람에 0.4초) 갈고리를 검: 처음 닿은 몸이 대신 걸리고 벽에서 막힘\n걸린 적은 비숍이 떠난 자리로 끌려와 2초 해롱 · 비숍은 잡혀 체크포인트로 (시험 씬은 리스폰)"),
             Made(PawnRushSkillIds.RankWall, "7번째 줄", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
@@ -371,6 +402,14 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.PassantBang, "나를 앞질러 간 적들을 지나친 자리로 되돌린다" },
             { PawnRushSkillIds.KnightTour, "고른 적의 머리에서 머리로 박자 맞춰 건너뛰며 납작하게 만든다" },
             { PawnRushSkillIds.FamilyFork, "높이 뛰어 착지 칸을 직접 옮기고, 나이트 칸에 선 적을 모두 포크해 뒤로 날린다" },
+            { PawnRushSkillIds.PromotionRun, "못 막는 질주 끝에 6 m 퀸이 되어 30 m 돌진으로 꿰뚫는다" },
+            { PawnRushSkillIds.Nightmare, "찍은 곳으로 이어 뛰며 머리를 밟는다. 밟을수록 멀리, 둘 사이면 포크" },
+            { PawnRushSkillIds.GreatDiagonal, "걸으며 300 m 빛의 대각선을 쏜다. 벽에서 꺾여 튕기고 꿰인 적을 끌어온다" },
+            { PawnRushSkillIds.RookRoll, "쓰러져 굴러가는 돌기둥이 된다. 곧게 갈수록 빨라지고 적은 볼링 핀이 된다" },
+            { PawnRushSkillIds.QueenDescent, "하늘을 날며 찍은 곳에 내리꽂는다. 마지막은 퀸을 던질 수도 있다" },
+            { PawnRushSkillIds.KingWalk, "커진 킹이 레드카펫을 깔며 행진하고, 카펫을 밟은 팀원이 행렬이 된다" },
+            { PawnRushSkillIds.SeriesB, "연속 체크, 3안-b의 쿨 16초" },
+            { PawnRushSkillIds.EightB, "여덟 줄, 3안-b의 쿨 40초" },
             { PawnRushSkillIds.GreekGift, "상대 맨 앞을 갈고리로 끌어오고 비숍은 잡힌다" },
             { PawnRushSkillIds.RankWall, "상대 1등 앞에 상대만 막는 성벽을 세운다" },
             { PawnRushSkillIds.QueenDrop, "적이 가장 많이 모인 곳에 떨어져 다 날린다" },

@@ -648,6 +648,15 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.GeneralCall:
                         use = $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
                         break;
+                    // The six driven ultimates (RagdollPawn.DriveUlts.cs): what the keys do then is under the time bar.
+                    case PawnRushSkillIds.PromotionRun:
+                    case PawnRushSkillIds.Nightmare:
+                    case PawnRushSkillIds.GreatDiagonal:
+                    case PawnRushSkillIds.RookRoll:
+                    case PawnRushSkillIds.QueenDescent:
+                    case PawnRushSkillIds.KingWalk:
+                        use = running ? "궁극기 중 (화면 가운데 아래 안내)" : $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
+                        break;
                     case PawnRushSkillIds.QueenDrop:
                         use = running ? $"{click} = 다음 무리" : $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
                         break;
