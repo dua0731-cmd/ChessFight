@@ -65,6 +65,8 @@ namespace ChessFight.RagdollLab
         // (target; count: its place), the landing (at; count: the pieces struck; size: the round, m) and the end (count 1: cut
         // short). Last, so no kind's number moves.
         UltCast, UltMark, UltGo, UltStrike, UltHit, UltEnd,
+        // ...and a press timed in an ultimate (11-22; count 1: on the beat, 0: off it; target: the head it goes to, if any).
+        UltTiming,
     }
 
     public struct SkillFxEvent

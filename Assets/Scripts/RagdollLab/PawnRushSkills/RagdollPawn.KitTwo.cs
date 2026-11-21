@@ -139,11 +139,16 @@ namespace ChessFight.RagdollLab
             TeamUltKeys();   // the queen's sacrifice: the left click picks the next crowd (RagdollPawn.TeamUlts.cs)
             switch (activeSkill)
             {
-                case PawnRushSkillIds.Promote:
-                case PawnRushSkillIds.KingMarch:
-                // The knight's ultimates (RagdollPawn.KnightUlts.cs): it stands while it gathers; the camera aims.
                 case PawnRushSkillIds.FamilyFork:
                 case PawnRushSkillIds.KnightTour:
+                    // The knight's ultimates (RagdollPawn.KnightUlts.cs): played on the move - the keys steer, the camera
+                    // picks; no jump or dive while it flies or rides a head.
+                    input.jump = false;
+                    input.shove = false;
+                    input.shoveHeld = false;
+                    break;
+                case PawnRushSkillIds.Promote:
+                case PawnRushSkillIds.KingMarch:
                     // The ultimates' warning (the kits' second version): the piece stands while everyone is told.
                     if (planPhase != PlanPhase.Windup) break;
                     input.move = Vector3.zero;

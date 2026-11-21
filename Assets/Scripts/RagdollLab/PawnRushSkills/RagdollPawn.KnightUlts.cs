@@ -5,60 +5,152 @@ using UnityEngine;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// The knight's two ultimates (JY-skill-lab, 2026-11-21: the user, after the previz "16-공통시전-나이트-퀸": "나이트의
-    /// 궁극기 2개만 먼저 만들어줘 ... 진짜진짜 멋있게 연출해서 유니티에서 구현해줘", and "그냥 키 누르면 발동되도록 해줘"), on the
-    /// team's gauge like the other comeback moves, and the first played on the ultimates' shared cast (PawnRushSkillFx.Ult.cs):
-    /// Q, 2.1 s of gathering while the knight stands and the camera aims (what it aims at and every enemy it will hit is named
-    /// for everyone, one heartbeat at a time), 0.3 s of silence, the call - then the knight's own move. The key always goes:
-    /// with no enemy near, the knight still makes its big leap ahead.
+    /// The knight's two ultimates, played from start to end (JY-skill-lab, 2026-11-22). The first version stood the knight
+    /// still for 2.1 s and picked its targets for it; the user: "이동하다가 스킬을 시전하면 멈추는것도 불편하고, 적 타겟팅이나
+    /// 그런것도 제대로 안되서", and "엄연히 스킬인데 왜 조작이 안되게 하려는거야? 시전 중에도 계속 유저랑 상호작용할 수 있고, 유저의
+    /// 실력에 따라 더 좋은 결과를 낼 수도 있고, 덜 좋은 결과를 낼 수도 있어야지". Now Q goes at once, from a run or from the air;
+    /// the player steers, picks and times every part; the result is judged like a chess move.
     ///
-    ///   패밀리 포크  Nf7+!!  onto where the enemies stand thickest within 32 m (the camera's way counts most), a 1.15 s leap
-    ///                     16 m high, aimed ahead of the crowd's run; every enemy within 14 m (×0.5 7 m, ×2 20 m) is
-    ///                     thrown high and comes down on a floor it ran over 20 m back, lying 2 s. Nobody near: a 16 m leap
-    ///                     the way the camera looks.
-    ///   나이트 투어  Nf5–d6–e8!!  onto the enemy nearest the camera's aim within 26 m, then head to head (a hop each
-    ///                     0.42 s, the next within 12 m, the one furthest ahead first): each squashed 3 s, then sliding 4 m
-    ///                     back. Five heads (×0.5 two, ×2 seven). Then one last leap to 10 m ahead of the enemy leader (30 m
-    ///                     at most). Nobody near: that last leap alone, 18 m ahead.
+    ///   패밀리 포크  Q: the knight leaps high (1.6 s in the air). Its landing square starts where it forks the most enemies
+    ///              the camera looks at (within 60°) and the move keys move it (9 m/s, 30 m from the take-off at most); the eight knight's squares
+    ///              round it show who it would fork. Q again in the last 0.22 s of the fall (the closing ring) is on the
+    ///              beat: the squares catch wider and the forked fly further. On landing every enemy on a knight's square is
+    ///              forked (thrown high, 20 m back onto a floor it ran over, 2 s down); one landed on is floored 1.5 s; the
+    ///              rest within 7 m sway. One press: an early one is spent.
+    ///   나이트 투어  before the key, a red ring shows the head it would take (the enemy nearest the camera's way within
+    ///              22 m). Q: onto that head. On each head (squashed 2.5 s, then sliding back) the knight rides it 0.8 s
+    ///              while the camera picks the next within 12 m; Q hops there, and on the beat (0.3 to
+    ///              0.55 s after it landed) the next is squashed a second longer. No press, or no head: the last leap,
+    ///              aimed 10 m ahead of the enemy leader (30 m at most) and steered like the fork's. Six heads at most
+    ///              (×0.5 three, ×2 eight). Nobody in reach at the key: the last leap alone.
     ///
-    /// Everything the screens show is told by moments (SkillFxKind.Ult*): the cast, each enemy named, the call, each enemy
-    /// struck, the landing and the end; online a client is sent them as any skill's moments. Not seen in Unity yet.
+    /// The judgement (SkillFxKind.UltHit's size): 0 !! brilliant, 1 ! great, 2 ★ best, 3 ?! inaccuracy, 4 ?? blunder.
+    /// What the screens show is told by moments (SkillFxKind.Ult*) and the plan's point (the fork's landing square) and
+    /// target (the tour's next head). Not seen in Unity yet.
     /// </summary>
     public partial class RagdollPawn
     {
-        // The tour's line of heads as named (in order), how many were told, the camera's way kept, the last leap under way.
-        readonly List<RagdollPawn> ultRoute = new List<RagdollPawn>();
-        bool ultTold, ultFinal;
-        Vector3 ultAim = Vector3.forward;
+        public const int GradeBrilliant = 0, GradeGreat = 1, GradeBest = 2, GradeInaccuracy = 3, GradeBlunder = 4;
 
-        /// <summary>The knight's ultimates' cast: gathering, then a beat of silence (the shared cast's seconds).</summary>
-        static float UltCastTime(PawnRushSkillParams s) => Mathf.Max(0.5f, s.ultGather) + Mathf.Max(0f, s.ultHush);
+        /// <summary>The knight's squares from a landing, in squares (the board's own axes).</summary>
+        public static readonly Vector2Int[] KnightMoves =
+        {
+            new Vector2Int(1, 2), new Vector2Int(2, 1), new Vector2Int(2, -1), new Vector2Int(1, -2),
+            new Vector2Int(-1, -2), new Vector2Int(-2, -1), new Vector2Int(-2, 1), new Vector2Int(-1, 2),
+        };
 
-        /// <summary>When the screens start naming the targets (s into the cast, the shared cast's third heartbeat).</summary>
-        static float UltMarkAt(PawnRushSkillParams s) => Mathf.Max(0.3f, s.ultGather) * 0.45f;
+        // The steered flight (the fork's leap, the tour's hops and last leap): where it left, where it comes down (moved by the
+        // keys, or following a head), its time and height.
+        Vector3 ultFrom, ultTo, ultStart;
+        float ultFlightT, ultFlightTime, ultFlightTop, ultStand;
+        RagdollPawn ultHead;
+        bool ultFlying, ultPerfect, ultPressed, ultFinal;
+        int ultPerfects;
 
         /// <summary>An enemy an ultimate may aim at or hit: standing (not down, not shielded).</summary>
         bool UltFoe(RagdollPawn e) =>
             e != null && e != this && IsEnemyOf(e) && e.State == PawnState.Active && !e.SkillUntargetable && !e.Floating;
 
-        /// <summary>The key: the cast begins. It always does; what it goes at is found while it gathers.</summary>
-        void BeginKnightUlt(PawnRushSkillParams s, int id, string detail)
+        /// <summary>The key: it goes at once (no warning: the flight is the play).</summary>
+        void BeginKnightUlt(PawnRushSkillParams s, int id, string detail, float seconds)
         {
             pressedSkill = id;
-            BeginTeamUlt(s, detail);
-            ultRoute.Clear();
-            ultTold = ultFinal = false;
-            ultAim = AimFlat();
-            planDir = ultAim;
-            planPoint = FeetPoint;
+            SkillUses++;
+            ultF = Comeback(team);
+            ultTaken.Clear();
+            ultPerfects = 0;
+            ultFinal = ultPressed = ultPerfect = ultFlying = false;
+            ultHead = null;
+            planPhase = PlanPhase.Active;
+            planTime = 0f;
+            planTarget = null;
             planNote = 0;
-            Fx(SkillFxKind.UltCast, null, FeetPoint, ultAim, id, UltCastTime(s));
+            planDir = AimFlat();
+            ultStart = FeetPoint;
+            SkillDetail = detail;
+            Fx(SkillFxKind.UltCast, null, FeetPoint, planDir, id, seconds);
+            Log($"{DisplayName}: {PawnRushSkillBook.Name(id)} (역전 배율 ×{ultF:0.#})");
         }
 
         void EndKnightUlt(PawnRushSkillParams s)
         {
+            if (ultFlying)
+            {
+                ultFlying = false;
+                EndFlight();
+            }
             Fx(SkillFxKind.UltEnd, null, FeetPoint, planDir, 0);
             EndTeamUlt(s);
+        }
+
+        static int Judge(int score) => Mathf.Clamp(score, GradeBrilliant, GradeBlunder);
+
+        // ---------------------------------------------------------------- the steered flight
+
+        void UltLeap(Vector3 hipsTo, float seconds, float height, RagdollPawn head)
+        {
+            if (!ultFlying)
+            {
+                DropHook();
+                DropRope();
+                EndClimbPose();
+                LetGo(0.3f);
+            }
+            ultFrom = bodies[0].position;
+            ultTo = hipsTo;
+            ultHead = head;
+            ultFlightT = 0f;
+            ultFlightTime = Mathf.Max(0.2f, seconds);
+            ultFlightTop = Mathf.Max(0.3f, height);
+            ultFlying = true;
+            ultPressed = false;
+        }
+
+        Vector3 UltArc(float u)
+        {
+            u = Mathf.Clamp01(u);
+            float e = u * 0.65f + u * u * (3f - 2f * u) * 0.35f;
+            return Vector3.Lerp(ultFrom, ultTo, e) + Vector3.up * (4f * ultFlightTop * u * (1f - u));
+        }
+
+        /// <summary>The flight this step (the hips carried along the arc, its end where it is now); true once it is down.</summary>
+        bool UltFly(float dt)
+        {
+            if (!ultFlying) return true;
+            ultFlightT += dt;
+            grabImmune = Mathf.Max(grabImmune, 0.25f);
+            if (ultHead != null && ultHead.State == PawnState.Active)
+            {
+                Vector3 head = ultHead.bodies[(int)BodyId.Head].position + Vector3.up * 0.35f;
+                ultTo = Vector3.MoveTowards(ultTo, head, 9f * dt);
+            }
+            if (ultFlightT >= ultFlightTime)
+            {
+                ultFlying = false;
+                EndFlight(ultHead != null ? (Vector3?)null : Vector3.zero);
+                if (ultHead == null) KeepSkillLandingSafe();
+                return true;
+            }
+            Vector3 at = bodies[0].position, next = UltArc((ultFlightT + dt) / ultFlightTime);
+            Fly(next, (next - at) / Mathf.Max(1e-4f, dt), 0f, default, 18f);
+            return false;
+        }
+
+        /// <summary>The move keys move a landing point (the camera's way is the keys' way), onto floors only, within
+        /// <paramref name="far"/> of where the ultimate began; the last tenth of a second it holds.</summary>
+        void UltSteer(PawnRushSkillParams s, float dt, float far)
+        {
+            if (ultFlightTime - ultFlightT < 0.12f) return;
+            Vector3 keys = Flat(skillMoveRaw);
+            if (keys.sqrMagnitude < 0.01f) return;
+            if (keys.sqrMagnitude > 1f) keys.Normalize();
+            Vector3 want = planPoint + keys * (s.famSteer * dt);
+            Vector3 off = Flat(want - ultStart);
+            if (off.magnitude > far) want = new Vector3(ultStart.x, want.y, ultStart.z) + off.normalized * far;
+            var floor = UltFloor(want);
+            if (!floor.HasValue || Mathf.Abs(floor.Value.y - planPoint.y) > 3f) return;
+            planPoint = floor.Value;
+            ultTo = planPoint + Vector3.up * standHeight;
         }
 
         // ---------------------------------------------------------------- 패밀리 포크 (Nf7+!!)
@@ -69,31 +161,28 @@ namespace ChessFight.RagdollLab
             {
                 case PlanPhase.None:
                     if (!press || !CanStartSkill(true)) break;
-                    BeginKnightUlt(s, PawnRushSkillIds.FamilyFork, "패밀리 포크 — 모으는 중 (카메라로 착지할 무리 고르기)");
-                    FamAim(s);
-                    break;
-                case PlanPhase.Windup:
-                    planTime += dt;
-                    if (planTime < s.ultGather)
-                    {
-                        ultAim = AimFlat();
-                        planDir = ultAim;
-                        FamAim(s);
-                    }
-                    if (planTime < UltCastTime(s)) break;
-                    FamLeap(s);
+                    BeginKnightUlt(s, PawnRushSkillIds.FamilyFork, "패밀리 포크 — 이동 키로 착지 칸, 내려올 때 Q", s.famAir);
+                    planPoint = FamFirstAim(s);
+                    UltLeap(planPoint + Vector3.up * standHeight, s.famAir, s.famHigh, null);
                     break;
                 case PlanPhase.Active:
-                    // (The leap's carried flight holds the step back: this runs once it has come down.)
                     planTime += dt;
-                    if (castleCarry) break;
+                    UltSteer(s, dt, s.famFar);
+                    if (press && !ultPressed)
+                    {
+                        // One press: in the last moment of the fall it is on the beat; earlier it is spent.
+                        ultPressed = true;
+                        ultPerfect = ultFlightTime - ultFlightT <= s.famBeat;
+                        Fx(SkillFxKind.UltTiming, null, planPoint, planDir, ultPerfect ? 1 : 0);
+                    }
+                    if (!UltFly(dt)) break;
                     FamLand(s);
                     planPhase = PlanPhase.Recovery;
                     planTime = 0f;
                     break;
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    if (planTime >= 0.6f) EndKnightUlt(s);
+                    if (planTime >= 0.5f) EndKnightUlt(s);
                     break;
                 default:
                     EndPlanSkill();
@@ -101,112 +190,91 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        float FamRadius(PawnRushSkillParams s) => ByComeback(ultF, s.famRadius1, s.famRadius2);
-
-        /// <summary>The fork's landing (every step while it gathers): the crowd that is thickest, counting the camera's way
-        /// most, within reach; its middle, on the floor. Nobody in reach: straight ahead. The round goes to every screen as
-        /// the plan's small number (m).</summary>
-        void FamAim(PawnRushSkillParams s)
+        /// <summary>Where the fork first aims: of the squares a knight's move from an enemy (within famAim, inside 60° of
+        /// the camera's way, on a floor), the one that forks the most enemies now, then the one nearest the camera's way;
+        /// nobody there: 14 m straight ahead. The move keys take it from there (they move against the enemies' running).</summary>
+        Vector3 FamFirstAim(PawnRushSkillParams s)
         {
-            float r = FamRadius(s), near = r * 0.7f;
-            planNote = (byte)Mathf.Clamp(Mathf.RoundToInt(r), 1, 255);
-            Vector3 me = FeetPoint;
-            RagdollPawn best = null;
-            float bestScore = 0f;
+            Vector3 me = FeetPoint, way = AimFlat(), best = default;
+            float bestScore = float.NegativeInfinity;
+            bool found = false;
             foreach (var e in All)
             {
                 if (!UltFoe(e)) continue;
-                Vector3 d = Flat(e.FeetPoint - me);
-                float far = d.magnitude;
-                if (far > s.famReach || Mathf.Abs(e.FeetPoint.y - me.y) > 6f) continue;
-                int crowd = 0;
-                foreach (var o in All)
-                    if (UltFoe(o) && Flat(o.FeetPoint - e.FeetPoint).magnitude <= near) crowd++;
-                float way = far > 0.5f ? Vector3.Dot(d / far, ultAim) : 1f;
-                float score = crowd * (1.6f + way);
-                if (score <= bestScore) continue;
-                best = e;
-                bestScore = score;
+                Vector3 at = e.FeetPoint;
+                if (Mathf.Abs(at.y - me.y) > 6f) continue;
+                foreach (var m in KnightMoves)
+                {
+                    Vector3 c = at - new Vector3(m.x * s.famSquare, 0f, m.y * s.famSquare), d = Flat(c - me);
+                    float far = d.magnitude;
+                    if (far > s.famAim || far < 3f) continue;
+                    float look = Vector3.Dot(d / far, way);
+                    if (look < 0.5f) continue;
+                    int forks = 0;
+                    foreach (var o in All)
+                        if (UltFoe(o) && Mathf.Abs(o.FeetPoint.y - at.y) <= 4f && OnKnightSquare(Flat(o.FeetPoint - c), s.famSquare, s.famCatch)) forks++;
+                    float score = forks * 3f + look * 1.5f - far / s.famAim;
+                    if (score <= bestScore) continue;
+                    var floor = UltFloor(c);
+                    if (!floor.HasValue || Mathf.Abs(floor.Value.y - me.y) > 6f) continue;
+                    best = floor.Value;
+                    bestScore = score;
+                    found = true;
+                }
             }
-            planTarget = best;
-            if (best == null)
-            {
-                planPoint = LandAhead(me, ultAim, s.famEmpty);
-                return;
-            }
-            Vector3 sum = Vector3.zero;
-            int n = 0;
-            foreach (var o in All)
-            {
-                if (!UltFoe(o) || Flat(o.FeetPoint - best.FeetPoint).magnitude > near) continue;
-                sum += o.FeetPoint;
-                n++;
-            }
-            Vector3 middle = n > 0 ? sum / n : best.FeetPoint;
-            var floor = UltFloor(middle);
-            planPoint = floor ?? middle;
+            return found ? best : LandAhead(me, way, 14f);
         }
 
-        /// <summary>The call: the leap, aimed where the crowd will be when it comes down.</summary>
-        void FamLeap(PawnRushSkillParams s)
+        /// <summary>Whether a point (flat, from the landing) is on one of the knight's squares.</summary>
+        public static bool OnKnightSquare(Vector3 flatFromLanding, float square, float reach)
         {
-            float r = FamRadius(s);
-            Vector3 to = planPoint;
-            if (planTarget != null)
-            {
-                // Lead the crowd: its middle's run over the flight (what it runs in a second, as the leap is about that).
-                Vector3 run = Vector3.zero;
-                int n = 0;
-                foreach (var o in All)
-                {
-                    if (!UltFoe(o) || Flat(o.FeetPoint - to).magnitude > r) continue;
-                    run += Flat(o.bodies[0].linearVelocity);
-                    n++;
-                }
-                if (n > 0)
-                {
-                    Vector3 ahead = to + run / n * (s.famFlight * 0.85f);
-                    var floor = UltFloor(ahead);
-                    if (floor.HasValue && Mathf.Abs(floor.Value.y - to.y) < 3f) to = floor.Value;
-                }
-            }
-            planPoint = to;
-            planPhase = PlanPhase.Active;
-            planTime = 0f;
-            SkillDetail = "패밀리 포크!!";
-            Fx(SkillFxKind.UltGo, planTarget, to, planDir, PawnRushSkillIds.FamilyFork, 0f);
-            float top = Mathf.Max(bodies[0].position.y, to.y) + s.famTop;
-            BeginArcCarry(to + Vector3.up * standHeight, s.famFlight, top, null);
-            Log($"패밀리 포크: 도약 → {Flat(to - FeetPoint).magnitude:0} m 앞 (둘레 {r:0} m, ×{ultF:0.#})");
+            foreach (var m in KnightMoves)
+                if (new Vector2(flatFromLanding.x - m.x * square, flatFromLanding.z - m.y * square).magnitude <= reach) return true;
+            return false;
         }
 
-        /// <summary>The landing: every enemy within the round is thrown high and comes down on a floor it ran over, about
-        /// forkBack metres back in the race, lying forkKnock seconds.</summary>
         void FamLand(PawnRushSkillParams s)
         {
-            float r = FamRadius(s);
             Vector3 at = FeetPoint;
             planPoint = at;
+            float reach = s.famCatch + (ultPerfect ? s.famCatchBeat : 0f);
+            float back = s.famBack + (ultPerfect ? 5f : 0f);
+            int forked = 0, landed = 0, swayed = 0;
             ultTaken.Clear();
             foreach (var e in All)
             {
                 if (!UltFoe(e)) continue;
-                if (Flat(e.FeetPoint - at).magnitude > r || Mathf.Abs(e.FeetPoint.y - at.y) > 5f) continue;
-                Vector3 back = e.BackAlong(s.famBack, at);
-                ultTaken.Add(e);
-                Fx(SkillFxKind.UltStrike, e, e.bodies[(int)BodyId.Head].position, FlatDir(back - e.FeetPoint), ultTaken.Count);
-                e.UltThrow(back, s.famThrowTime, s.famThrowTop, s.famKnock, this);
-                e.LastSkillHit = $"패밀리 포크: {Flat(back - e.FeetPoint).magnitude:0} m 뒤로";
+                Vector3 d = Flat(e.FeetPoint - at);
+                if (Mathf.Abs(e.FeetPoint.y - at.y) > 4f) continue;
+                if (OnKnightSquare(d, s.famSquare, reach))
+                {
+                    forked++;
+                    ultTaken.Add(e);
+                    Vector3 to = e.BackAlong(back, at);
+                    Fx(SkillFxKind.UltStrike, e, e.bodies[(int)BodyId.Head].position, FlatDir(to - e.FeetPoint), forked);
+                    e.UltThrow(to, s.famThrowTime, s.famThrowTop, s.famKnock, this);
+                    e.LastSkillHit = $"패밀리 포크: 포크! {Flat(to - e.FeetPoint).magnitude:0} m 뒤로";
+                }
+                else if (d.magnitude <= s.famStomp)
+                {
+                    landed++;
+                    e.Knockdown("패밀리 포크", s.famStompKnock);
+                    e.GaugeKnocked(this);
+                    e.LastSkillHit = "패밀리 포크: 깔림";
+                }
+                else if (d.magnitude <= s.famSway)
+                {
+                    swayed++;
+                    e.Stagger(0.6f);
+                }
             }
-            int n = ultTaken.Count;
-            Fx(SkillFxKind.UltHit, null, at, planDir, n, r);
-            FeelHit(null, at, planDir, FeelUltimate, Mathf.Max(1, n), false);
-            if (n == 0)
-            {
-                FeelMiss(at, planDir);
-                Log("패밀리 포크: 착지 둘레에 적이 없음 (앞으로 크게 뛰기만)");
-            }
-            else Log($"패밀리 포크: {n}명 하늘로, {s.famBack:0} m 뒤로 (둘레 {r:0} m, ×{ultF:0.#})");
+            int grade = forked >= 3 || (forked >= 2 && ultPerfect) ? GradeBrilliant
+                      : forked == 2 || (forked == 1 && ultPerfect) ? GradeGreat
+                      : forked == 1 ? GradeBest
+                      : landed + swayed > 0 ? GradeInaccuracy : GradeBlunder;
+            Fx(SkillFxKind.UltHit, null, at, planDir, forked, grade);
+            FeelHit(null, at, planDir, FeelUltimate, Mathf.Max(1, forked + landed), false);
+            Log($"패밀리 포크: 포크 {forked}명, 깔림 {landed}, 흔들림 {swayed}" + (ultPerfect ? " · 박자 맞음" : "") + $" → {GradeName(grade)}");
         }
 
         /// <summary>Carried through the air on a high arc to <paramref name="floor"/>, then lying <paramref name="knock"/> s
@@ -224,6 +292,15 @@ namespace ChessFight.RagdollLab
             carryBy = by;
         }
 
+        public static string GradeName(int grade) => grade switch
+        {
+            GradeBrilliant => "탁월한 수 !!",
+            GradeGreat => "좋은 수 !",
+            GradeBest => "최선의 수 ★",
+            GradeInaccuracy => "부정확한 수 ?!",
+            _ => "블런더 ??",
+        };
+
         // ---------------------------------------------------------------- 나이트 투어 (Nf5–d6–e8!!)
 
         void UpdateTourUlt(PawnRushSkillParams s, bool press, float dt)
@@ -231,47 +308,58 @@ namespace ChessFight.RagdollLab
             switch (planPhase)
             {
                 case PlanPhase.None:
-                    if (!press || !CanStartSkill(true)) break;
-                    BeginKnightUlt(s, PawnRushSkillIds.KnightTour, "나이트 투어 — 모으는 중 (카메라로 첫 머리 고르기)");
-                    TourPlan(s);
-                    break;
-                case PlanPhase.Windup:
-                    planTime += dt;
-                    if (planTime < UltMarkAt(s))
-                    {
-                        ultAim = AimFlat();
-                        planDir = ultAim;
-                        TourPlan(s);
-                    }
-                    else if (!ultTold) TourTell();
-                    if (planTime < UltCastTime(s)) break;
-                    planPhase = PlanPhase.Active;
-                    planTime = 0f;
-                    SkillDetail = "나이트 투어!!";
-                    ultTaken.Clear();
-                    Fx(SkillFxKind.UltGo, planTarget, planTarget != null ? planTarget.FeetPoint : FeetPoint, planDir, PawnRushSkillIds.KnightTour, 0f);
-                    TourNextHop(s);
-                    break;
-                case PlanPhase.Active:
                 {
-                    // (Between hops: the flight onto a head, or the last leap, has just ended - UpdatePlanCarry ran it.)
-                    planTime += dt;
-                    if (castleCarry) break;
-                    if (ultFinal)
-                    {
-                        TourLanded(s);
-                        planPhase = PlanPhase.Recovery;
-                        planTime = 0f;
-                        break;
-                    }
-                    var landed = planTarget;
-                    if (landed != null && !ultTaken.Contains(landed)) TourStompHead(s, landed);
-                    TourNextHop(s);
+                    if (!press || !CanStartSkill(true)) break;
+                    var first = TourAim(s, FeetPoint, s.ultTourStart);
+                    BeginKnightUlt(s, PawnRushSkillIds.KnightTour, "나이트 투어 — 카메라로 다음 머리, Q로 건너뛰기", s.ultTourHop);
+                    if (first == null) TourFinalLeap(s);
+                    else TourHopTo(s, first);
                     break;
                 }
+                case PlanPhase.Active:
+                    planTime += dt;
+                    if (ultFlying)
+                    {
+                        if (ultFinal) UltSteer(s, dt, s.ultTourFinalMax + 10f);
+                        if (!UltFly(dt)) break;
+                        if (ultFinal)
+                        {
+                            TourLanded(s);
+                            planPhase = PlanPhase.Recovery;
+                            planTime = 0f;
+                            break;
+                        }
+                        if (ultHead == null || ultHead.State != PawnState.Active || ultHead.Floating)
+                        {
+                            TourFinalLeap(s);
+                            break;
+                        }
+                        TourStompHead(s, ultHead);
+                        ultStand = 0f;
+                    }
+                    // On a head: ride it while the next is picked.
+                    ultStand += dt;
+                    TourRide(dt);
+                    planTarget = ultTaken.Count < TourHops(s) ? TourAim(s, bodies[0].position, s.ultTourReach) : null;
+                    if (press)
+                    {
+                        if (planTarget == null)
+                        {
+                            TourFinalLeap(s);
+                            break;
+                        }
+                        bool beat = ultStand >= s.ultTourBeat0 && ultStand <= s.ultTourBeat1;
+                        Fx(SkillFxKind.UltTiming, planTarget, planTarget.FeetPoint, planDir, beat ? 1 : 0);
+                        TourHopTo(s, planTarget);
+                        ultPerfect = beat;
+                        if (beat) ultPerfects++;
+                        break;
+                    }
+                    if (ultStand >= s.ultTourWait || planTarget == null && ultStand >= 0.25f) TourFinalLeap(s);
+                    break;
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    if (planTime >= 0.6f) EndKnightUlt(s);
+                    if (planTime >= 0.5f) EndKnightUlt(s);
                     break;
                 default:
                     EndPlanSkill();
@@ -281,126 +369,78 @@ namespace ChessFight.RagdollLab
 
         int TourHops(PawnRushSkillParams s) => Mathf.Max(1, Mathf.RoundToInt(ByComeback(ultF, s.ultTourHops1, s.ultTourHops2)));
 
-        /// <summary>The line of heads (while it gathers, until they are named): the first the enemy nearest the camera's aim
-        /// within ultTourStart, then each next within ultTourReach of the last, the one furthest ahead first.</summary>
-        void TourPlan(PawnRushSkillParams s)
+        /// <summary>The head the camera points at within <paramref name="reach"/>.</summary>
+        RagdollPawn TourAim(PawnRushSkillParams s, Vector3 from, float reach) => TourPick(this, from, AimFlat(), reach, ultTaken);
+
+        /// <summary>The head a knight's tour takes from <paramref name="from"/>: a standing enemy within
+        /// <paramref name="reach"/>, the one most along <paramref name="way"/> (the camera's), then the nearest. The host's
+        /// pick, and the red ring the knight's own screen shows before the key (PawnRushSkillFx.Ult.cs): one rule.</summary>
+        public static RagdollPawn TourPick(RagdollPawn by, Vector3 from, Vector3 way, float reach, ICollection<RagdollPawn> skip)
         {
-            ultRoute.Clear();
-            int hops = TourHops(s);
-            Vector3 me = FeetPoint;
-            RagdollPawn first = null;
+            if (by == null) return null;
+            way = Flat(way);
+            if (way.sqrMagnitude < 1e-4f) return null;
+            way.Normalize();
+            RagdollPawn best = null;
             float bestScore = float.NegativeInfinity;
             foreach (var e in All)
             {
-                if (!UltFoe(e)) continue;
-                Vector3 d = Flat(e.FeetPoint - me);
+                if (!by.UltFoe(e) || skip != null && skip.Contains(e)) continue;
+                Vector3 d = Flat(e.FeetPoint - from);
                 float far = d.magnitude;
-                if (far > s.ultTourStart || Mathf.Abs(e.FeetPoint.y - me.y) > 5f) continue;
-                float score = (far > 0.5f ? Vector3.Dot(d / far, ultAim) : 1f) * 2f - far / s.ultTourStart;
+                if (far > reach || far < 0.5f || Mathf.Abs(e.FeetPoint.y - from.y) > 5f) continue;
+                float score = Vector3.Dot(d / far, way) * 2f - far / reach;
                 if (score <= bestScore) continue;
-                first = e;
-                bestScore = score;
-            }
-            if (first != null)
-            {
-                ultRoute.Add(first);
-                while (ultRoute.Count < hops)
-                {
-                    var next = TourPick(s, ultRoute[ultRoute.Count - 1].FeetPoint, s.ultTourReach);
-                    if (next == null) break;
-                    ultRoute.Add(next);
-                }
-            }
-            planTarget = first;
-            planPoint = first != null ? first.FeetPoint : LandAhead(me, ultAim, s.ultTourEmpty);
-            planNote = (byte)ultRoute.Count;
-        }
-
-        /// <summary>A head not in the line yet within <paramref name="reach"/> of <paramref name="from"/>: the one furthest ahead.</summary>
-        RagdollPawn TourPick(PawnRushSkillParams s, Vector3 from, float reach)
-        {
-            RagdollPawn best = null;
-            float bestAhead = float.NegativeInfinity;
-            foreach (var e in All)
-            {
-                if (!UltFoe(e) || ultRoute.Contains(e) || ultTaken.Contains(e)) continue;
-                if (Flat(e.FeetPoint - from).magnitude > reach || Mathf.Abs(e.FeetPoint.y - from.y) > 4f) continue;
-                float ahead = Progress(e);
-                if (ahead <= bestAhead) continue;
                 best = e;
-                bestAhead = ahead;
+                bestScore = score;
             }
             return best;
         }
 
-        /// <summary>The line is named, every head of it, for every screen (they show them one heartbeat at a time).</summary>
-        void TourTell()
+        void TourHopTo(PawnRushSkillParams s, RagdollPawn head)
         {
-            ultTold = true;
-            for (int i = 0; i < ultRoute.Count; i++)
-            {
-                var e = ultRoute[i];
-                if (e != null) Fx(SkillFxKind.UltMark, e, e.FeetPoint, planDir, i + 1);
-            }
-            if (ultRoute.Count == 0) Log("나이트 투어: 닿는 곳에 적이 없음 (마지막 도약만)");
+            planTarget = head;
+            planDir = FlatDir(head.bodies[0].position - bodies[0].position);
+            Vector3 top = head.bodies[(int)BodyId.Head].position + Vector3.up * 0.35f;
+            UltLeap(top, s.ultTourHop, 2.2f + 0.08f * Flat(top - bodies[0].position).magnitude, head);
+            Fx(SkillFxKind.UltGo, head, head.FeetPoint, planDir, PawnRushSkillIds.KnightTour, 0f);
         }
 
-        /// <summary>The next hop: the next of the line still standing and in reach, or any other in reach (named now), or,
-        /// with none, or the heads all taken, the last leap.</summary>
-        void TourNextHop(PawnRushSkillParams s)
+        /// <summary>Standing on the squashed head: carried with it.</summary>
+        void TourRide(float dt)
         {
-            RagdollPawn next = null;
-            if (ultTaken.Count < TourHops(s))
-            {
-                Vector3 from = bodies[0].position;
-                float reach = ultTaken.Count == 0 ? s.ultTourStart : s.ultTourReach;
-                foreach (var e in ultRoute)
-                {
-                    if (!UltFoe(e) || ultTaken.Contains(e) || Flat(e.bodies[0].position - from).magnitude > reach) continue;
-                    next = e;
-                    break;
-                }
-                if (next == null)
-                {
-                    next = TourPick(s, from, reach);
-                    if (next != null)
-                    {
-                        ultRoute.Add(next);
-                        Fx(SkillFxKind.UltMark, next, next.FeetPoint, planDir, ultRoute.Count);
-                    }
-                }
-            }
-            if (next != null)
-            {
-                planTarget = next;
-                planDir = FlatDir(next.bodies[0].position - bodies[0].position);
-                Vector3 top = next.bodies[(int)BodyId.Head].position + Vector3.up * 0.35f;
-                BeginArcCarry(top, s.ultTourHop, Mathf.Max(bodies[0].position.y, top.y) + 2.2f, next);
-                return;
-            }
-            TourFinalLeap(s);
+            var head = ultHead;
+            if (head == null) return;
+            Vector3 top = head.bodies[(int)BodyId.Head].position + Vector3.up * 0.4f, at = bodies[0].position;
+            Fly(top, (top - at) / Mathf.Max(1e-4f, dt) * 0.5f + Flat(head.bodies[0].linearVelocity), 0f, default, 18f);
+            grabImmune = Mathf.Max(grabImmune, 0.25f);
         }
 
-        /// <summary>On a head: squashed ultTourSquash seconds, then sliding back.</summary>
         void TourStompHead(PawnRushSkillParams s, RagdollPawn e)
         {
             ultTaken.Add(e);
             if (e.State != PawnState.Active) return;
-            if (e.Squash(s.ultTourSquash, 0f)) e.GaugeKnocked(this);
-            e.slideAt = Time.time + s.ultTourSquash;
+            float squash = s.ultTourSquash + (ultPerfect ? s.ultTourBeatSquash : 0f);
+            if (e.Squash(squash, 0f)) e.GaugeKnocked(this);
+            e.slideAt = Time.time + squash;
             e.slideDir = -RunWay(e);
             e.slideMetres = s.ultTourSlide;
-            e.LastSkillHit = $"나이트 투어: 납작 {s.ultTourSquash:0.#}초, 뒤로 {s.ultTourSlide:0} m";
+            e.LastSkillHit = $"나이트 투어: 납작 {squash:0.#}초, 뒤로 {s.ultTourSlide:0} m";
             Vector3 head = e.bodies[(int)BodyId.Head].position;
-            Fx(SkillFxKind.UltStrike, e, head, planDir, ultTaken.Count);
+            Fx(SkillFxKind.UltStrike, e, head, planDir, ultTaken.Count, ultPerfect ? 1f : 0f);
             FeelHit(e, head, planDir, FeelHard, ultTaken.Count, true);
-            Log($"나이트 투어 → {e.DisplayName}: {ultTaken.Count}번째 머리");
+            Log($"나이트 투어 → {e.DisplayName}: {ultTaken.Count}번째 머리" + (ultPerfect ? " (박자)" : ""));
         }
 
-        /// <summary>The last leap: 10 m ahead of the enemy leader (30 m at most from here), or straight ahead with nobody.</summary>
+        /// <summary>The last leap: aimed 10 m ahead of the enemy leader (30 m at most), or straight ahead; steered like the fork.</summary>
         void TourFinalLeap(PawnRushSkillParams s)
         {
             ultFinal = true;
+            if (ultFlying)
+            {
+                ultFlying = false;
+                EndFlight();
+            }
             Vector3 me = FeetPoint;
             RagdollPawn leader = null;
             float lead = float.NegativeInfinity;
@@ -415,28 +455,33 @@ namespace ChessFight.RagdollLab
             Vector3 to;
             if (leader != null && lead > Progress(this) - 2f)
             {
-                Vector3 want = leader.FeetPoint + RunWay(leader) * s.ultTourFinal;
-                Vector3 d = Flat(want - me);
-                float far = Mathf.Min(d.magnitude, s.ultTourFinalMax);
-                to = d.magnitude > s.ultTourFinalMax || !UltFloor(want).HasValue ? LandAhead(me, FlatDir(d), far) : UltFloor(want).Value;
+                Vector3 want = leader.FeetPoint + RunWay(leader) * s.ultTourFinal, d = Flat(want - me);
+                var floor = d.magnitude <= s.ultTourFinalMax ? UltFloor(want) : null;
+                to = floor ?? LandAhead(me, FlatDir(d), Mathf.Min(d.magnitude, s.ultTourFinalMax));
             }
-            else to = LandAhead(me, ultAim, s.ultTourEmpty);
+            else to = LandAhead(me, AimFlat(), s.ultTourEmpty);
+            ultStart = me;
             planPoint = to;
             planTarget = null;
             planDir = FlatDir(to - me);
             float across = Flat(to - me).magnitude;
+            UltLeap(to + Vector3.up * standHeight, Mathf.Clamp(across / 18f, 0.8f, 1.5f), 4f + across * 0.12f, null);
             Fx(SkillFxKind.UltGo, leader, to, planDir, PawnRushSkillIds.KnightTour, 1f);
-            BeginArcCarry(to + Vector3.up * standHeight, Mathf.Clamp(across / 20f, 0.7f, 1.4f), Mathf.Max(bodies[0].position.y, to.y) + 5f + across * 0.15f, null);
-            Log($"나이트 투어: {ultTaken.Count}명 밟고 마지막 도약 {across:0} m" + (leader != null ? $" ({leader.DisplayName} 앞)" : ""));
         }
 
         void TourLanded(PawnRushSkillParams s)
         {
             Vector3 at = FeetPoint;
             planPoint = at;
-            Fx(SkillFxKind.UltHit, null, at, planDir, ultTaken.Count, 0f);
-            FeelHit(null, at, planDir, FeelUltimate, Mathf.Max(1, ultTaken.Count), false);
-            Log($"나이트 투어: {ultTaken.Count}명 (×{ultF:0.#})");
+            // (The first head has no beat before it: h heads carry h - 1 beats at most.)
+            int h = ultTaken.Count, p = ultPerfects;
+            int grade = h >= 4 && p >= h - 1 ? GradeBrilliant
+                      : h >= 3 || (h >= 2 && p >= 1) ? GradeGreat
+                      : h >= 2 ? GradeBest
+                      : h == 1 ? GradeInaccuracy : GradeBlunder;
+            Fx(SkillFxKind.UltHit, null, at, planDir, h, grade);
+            FeelHit(null, at, planDir, FeelUltimate, Mathf.Max(1, h), false);
+            Log($"나이트 투어: {h}명 (박자 {p}) → {GradeName(grade)}");
         }
 
         // ---------------------------------------------------------------- where to come down
@@ -486,7 +531,7 @@ namespace ChessFight.RagdollLab
             crumbClock += dt;
             if (crumbClock < 0.25f) return;
             crumbClock = 0f;
-            if (State != PawnState.Active || !OnFloor || Floating || castleCarry) return;
+            if (State != PawnState.Active || !OnFloor || Floating || castleCarry || OuterFlying) return;
             crumbAt[crumbNext] = FeetPoint;
             crumbProgress[crumbNext] = Progress(this);
             crumbNext = (crumbNext + 1) % CrumbCount;

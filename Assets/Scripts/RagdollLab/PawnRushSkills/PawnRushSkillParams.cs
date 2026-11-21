@@ -844,14 +844,17 @@ namespace ChessFight.RagdollLab
         public int passantMax = 4;
         public float passantSpeed = 18f, passantKnock = 1.5f;
         [Header("궁극기 · 함께 쓰는 시전과 나이트 두 가지 (11-21, RagdollPawn.KnightUlts.cs, PawnRushSkillFx.Ult.cs)")]
-        [Tooltip("함께 쓰는 시전: 모으는 시간 (초, 심장 다섯 번 · 서서 카메라로 겨눔), 한 박 정적 (초)")]
-        public float ultGather = 2.1f, ultHush = 0.3f;
-        [Tooltip("패밀리 포크: 겨눌 수 있는 거리 (m); 착지 둘레 ×1 · ×2 (m); 뒤로 보내는 거리 (m); 엎어짐 (초); 도약 시간 (초)과 높이 (m); 맞은 적이 날아가는 시간 (초)과 높이 (m); 적이 없을 때 앞으로 (m)")]
-        public float famReach = 32f, famRadius1 = 14f, famRadius2 = 20f, famBack = 20f, famKnock = 2f, famFlight = 1.15f, famTop = 16f,
-                     famThrowTime = 1.6f, famThrowTop = 9f, famEmpty = 16f;
+        [Tooltip("패밀리 포크: 공중 시간 (초), 높이 (m), 처음 겨누는 거리 (m), 이동 키로 착지 칸을 옮기는 빠르기 (m/s), 뛴 자리에서 가장 멀리 (m), 박자 창: 내려오기 전 (초)")]
+        public float famAir = 1.6f, famHigh = 9f, famAim = 24f, famSteer = 9f, famFar = 30f, famBeat = 0.22f;
+        [Tooltip("패밀리 포크: 나이트 칸 한 칸 (m), 칸에 선 적을 잡는 반경 (m)과 박자를 맞추면 더 (m); 깔린 반경 (m)과 넘어짐 (초); 흔들리는 반경 (m)")]
+        public float famSquare = 2.2f, famCatch = 1.5f, famCatchBeat = 0.6f, famStomp = 1.8f, famStompKnock = 1.5f, famSway = 7f;
+        [Tooltip("패밀리 포크: 포크된 적을 뒤로 보내는 거리 (m, 박자를 맞추면 +5), 엎어짐 (초), 날아가는 시간 (초)과 높이 (m)")]
+        public float famBack = 20f, famKnock = 2f, famThrowTime = 1.6f, famThrowTop = 9f;
         [Tooltip("나이트 투어: 밟는 수 ×1 · ×2; 다음 머리까지 (m); 한 번 건너뛰는 시간 (초); 납작 (초); 그 뒤 미끄러지는 거리 (m); 첫 머리를 겨눌 수 있는 거리 (m); 마지막 도약: 적 선두 앞 (m), 가장 멀리 (m), 적이 없을 때 (m)")]
-        public float ultTourHops1 = 5f, ultTourHops2 = 7f, ultTourReach = 12f, ultTourHop = 0.42f, ultTourSquash = 3f, ultTourSlide = 4f,
-                     ultTourStart = 26f, ultTourFinal = 10f, ultTourFinalMax = 30f, ultTourEmpty = 18f;
+        public float ultTourHops1 = 6f, ultTourHops2 = 8f, ultTourReach = 12f, ultTourHop = 0.42f, ultTourSquash = 2.5f, ultTourSlide = 4f,
+                     ultTourStart = 22f, ultTourFinal = 10f, ultTourFinalMax = 30f, ultTourEmpty = 18f;
+        [Tooltip("나이트 투어: 머리 위에서 다음을 고르는 시간 (초); 박자 창 (내려선 뒤 초 ~ 초); 박자를 맞추면 다음 머리가 더 납작 (초)")]
+        public float ultTourWait = 0.8f, ultTourBeat0 = 0.3f, ultTourBeat1 = 0.55f, ultTourBeatSquash = 1f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

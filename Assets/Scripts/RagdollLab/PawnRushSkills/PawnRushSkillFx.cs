@@ -182,9 +182,10 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.BishopRopeSnap: BishopRopeSnapFx(e); break;
                 // JY-skill-lab 11-20: the hand feel (RagdollPawn.HandFeel.cs).
                 case SkillFxKind.SkillFeel: FeelFx(e); break;
-                // JY-skill-lab 11-21: the ultimates' shared cast (PawnRushSkillFx.Ult.cs, PawnRushSkillFx.UltScreen.cs).
+                // JY-skill-lab 11-21/22: the knight's ultimates (PawnRushSkillFx.Ult.cs, PawnRushSkillFx.UltScreen.cs).
+                // UltMark is no longer raised (11-22); an old host's mark is skipped.
                 case SkillFxKind.UltCast: UltCast(e); break;
-                case SkillFxKind.UltMark: UltMark(e); break;
+                case SkillFxKind.UltTiming: UltTiming(e); break;
                 case SkillFxKind.UltGo: UltGo(e); break;
                 case SkillFxKind.UltStrike: UltStrike(e); break;
                 case SkillFxKind.UltHit: UltHit(e); break;
