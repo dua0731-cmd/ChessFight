@@ -134,9 +134,11 @@ namespace ChessFight.PawnRush
             // manager picks it online). The same round is built again so the contest goes on (or off) the ending.
             if (LegacyKeys.Down(KeyCode.F10))
             {
+                // The crown platform -> the throne contest (everyone at once) -> the throne contest with the 30 s summons.
                 var rules = ChessFight.Network.PawnRushRules.Current;
-                rules.Ending = rules.Ending == ChessFight.Network.PawnRushRules.EndingThrone
-                    ? ChessFight.Network.PawnRushRules.EndingCrown : ChessFight.Network.PawnRushRules.EndingThrone;
+                if (rules.Ending != ChessFight.Network.PawnRushRules.EndingThrone) { rules.Ending = ChessFight.Network.PawnRushRules.EndingThrone; rules.Summon = 0; }
+                else if (rules.Summon == 0) rules.Summon = ChessFight.Network.PawnRushRules.SummonLater;
+                else { rules.Ending = ChessFight.Network.PawnRushRules.EndingCrown; rules.Summon = 0; }
                 ChessFight.Network.PawnRushRules.Current = rules;
                 round.BuildForMatch(round.Seed, ObstacleClock.Now);
                 if (round.Finish != null) round.Finish.Restart();
@@ -224,7 +226,8 @@ namespace ChessFight.PawnRush
         }
 
         static string EndingRule =>
-            ChessFight.Network.PawnRushRules.Current.Ending == ChessFight.Network.PawnRushRules.EndingThrone ? "왕좌 차지전" : "왕관 발판";
+            ChessFight.Network.PawnRushRules.Current.Ending != ChessFight.Network.PawnRushRules.EndingThrone ? "왕관 발판"
+            : ChessFight.Network.PawnRushRules.Current.Summon == ChessFight.Network.PawnRushRules.SummonLater ? "왕좌 차지전 · 30초 소환" : "왕좌 차지전";
 
         static string EndingMapName => ChessFight.Network.PawnRushRules.Choices[3][ChessFight.Network.PawnRushRules.Current.EndingMap];
 

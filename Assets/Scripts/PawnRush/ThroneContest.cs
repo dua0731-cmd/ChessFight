@@ -32,6 +32,13 @@ namespace ChessFight.PawnRush
     // a checkpoint of each team's own (hall C's alcoves) is where that team's falls come back from. When a contest is
     // won, the PC that judged it writes how it went to the log (how long, each team's time on the platform, both at
     // once, nobody) to compare the halls by.
+    //
+    // The summons (PawnRushRules.SummonLater, JY 2026-11-21: "1등 주자가 엔드게임 코스를 통과하면 30초정도 뒤 텔포로 모든 유저
+    // 전원이 이동"): the first runner past the endgame course's exit (or its great gate, or the hall's door) starts
+    // PawnRushThrone.SummonSeconds in which the platform counts for nobody and anyone may walk in and take a place;
+    // then everyone not in the hall yet is stood in the rows, and the contest begins as before (the standoff, the
+    // platform). Everyone in the hall already ends the wait at once. Bit 3 of the first byte tells the others; they
+    // count the 30 s from when they heard it.
     [DefaultExecutionOrder(-40)]   // after CrownFinish (-50) has seen who stands on the platform this step
     public sealed class ThroneContest : MonoBehaviour, ISectionNetPart
     {
@@ -61,6 +68,10 @@ namespace ChessFight.PawnRush
         int holder = PawnRushThrone.Nobody;
         float beganAt = -1f, nextRing;
         float standoff;
+        // The summons: the rule, the countdown, and where it started (this PC's clock).
+        bool summonRule, summoning;
+        float summonAt = -1f;
+        PawnRushSection previous;
         GUIStyle big, small;
 
         public bool Started { get; private set; }
@@ -70,6 +81,9 @@ namespace ChessFight.PawnRush
         public float Held(int team) => held[team & 1];
         public float Target(int team) => target[team & 1];
         public PushGate Gate => gate;
+        // The summons' countdown is running (PawnRushRules.SummonLater), and how long is left on this PC.
+        public bool Summoning => summoning && !Started;
+        public float SummonLeft => Summoning ? Mathf.Max(0f, summonAt + PawnRushThrone.SummonSeconds - Time.time) : 0f;
 
         // The round's finish under the rule (PawnRushRound.BindFinish, on every PC, each time the round is built).
         public static void Attach(PawnRushRound round, CrownFinish finish)
@@ -99,10 +113,15 @@ namespace ChessFight.PawnRush
             stage = ending.GetComponent<IThroneStage>();
             standoff = stage != null ? Mathf.Max(0f, stage.StandoffSeconds) : 0f;
             Current = this;
+            summonRule = PawnRushRules.Current.Summon == PawnRushRules.SummonLater;
             gate = null;
+            previous = null;
             foreach (var section in round.Sections)
                 if (section != null && section.Slot == ending.Slot - 1)
+                {
+                    previous = section;
                     foreach (var g in section.GetComponentsInChildren<PushGate>(true)) gate = g;
+                }
             checkpoint = null;
             foreach (var c in ending.GetComponentsInChildren<Checkpoint>(true))
                 if (checkpoint == null || c.Order < checkpoint.Order) checkpoint = c;
@@ -110,7 +129,8 @@ namespace ChessFight.PawnRush
             foreach (var c in ending.GetComponentsInChildren<CourseCheckpoint>(true))
                 if (c.Team == Teams.White || c.Team == Teams.Black) teamCheckpoint[c.Team] = c.GetComponent<Checkpoint>();
             ResetContest();
-            Debug.Log($"[PawnRush] 왕좌 차지전: {ending.DisplayName}에서 · 시작 신호 {(gate != null ? "앞 구간의 큰 문(" + gate.name + ")" : "엔딩 구간에 들어서는 첫 폰")}");
+            Debug.Log($"[PawnRush] 왕좌 차지전: {ending.DisplayName}에서 · 시작 신호 {(gate != null ? "앞 구간의 큰 문(" + gate.name + ")" : "엔딩 구간에 들어서는 첫 폰")}"
+                      + (summonRule ? $" · {PawnRushThrone.SummonSeconds:0}초 뒤 소환(엔드게임 코스를 빠져나온 첫 폰부터)" : " · 바로 모두 소환"));
         }
 
         // The race from the start again (CrownFinish.Restart, the offline playtest).
@@ -122,6 +142,8 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < spent.Length; i++) spent[i] = 0f;
             holder = PawnRushThrone.Nobody;
             beganAt = -1f;
+            summoning = false;
+            summonAt = -1f;
         }
 
         void OnDestroy()
@@ -141,7 +163,15 @@ namespace ChessFight.PawnRush
             if (!finish.Authority) return;   // the host's word comes with the course state
             if (!Started)
             {
-                if (Due()) Begin();
+                if (summoning)
+                {
+                    if (Time.time >= summonAt + PawnRushThrone.SummonSeconds || AllInHall()) Begin(true);
+                }
+                else if (Due())
+                {
+                    if (summonRule) StartSummons();
+                    else Begin(false);
+                }
                 return;
             }
             if (Waiting)
@@ -157,34 +187,64 @@ namespace ChessFight.PawnRush
             {
                 Debug.Log($"[PawnRush] 왕좌 차지전 끝: {own.DisplayName} · {Teams.Name(winner)}팀 승리 · 시작부터 {Time.time - beganAt:0.0}초 " +
                           $"(대치 {standoff:0.#}초) · 점유 백 {spent[0]:0.0}초 · 흑 {spent[1]:0.0}초 · 동시 {spent[2]:0.0}초 · 빈 발판 {spent[3]:0.0}초 " +
-                          $"· 목표 백 {target[0]:0} / 흑 {target[1]:0}초");
+                          $"· 목표 백 {target[0]:0} / 흑 {target[1]:0}초 · {(summonRule ? "30초 뒤 소환" : "바로 소환")}");
                 finish.Win(winner);
             }
         }
 
         // The great gate is open, or somebody is already through it and past the ending's entry (the ending's frame:
         // its entry, the way on along +z).
+        // Under the summons also: somebody past the endgame course's exit (the corridor on).
         bool Due()
         {
             if (gate != null && gate.IsOpen) return true;
-            var frame = own.EntryWorld;
-            var back = Quaternion.Inverse(frame.rotation);
             var runners = finish.Runners;
             for (int i = 0; i < runners.Count; i++)
             {
                 var hips = runners[i].Driver != null ? runners[i].Driver.FollowTarget : null;
                 if (hips == null) continue;
-                var p = back * (hips.position - frame.position);
-                if (p.z > .5f && p.z < 80f && Mathf.Abs(p.x) < 20f && Mathf.Abs(p.y) < 12f) return true;
+                if (Within(own.EntryWorld, hips.position, .5f, 20f, 12f)) return true;
+                if (summonRule && previous != null && Within(previous.ExitWorld, hips.position, 0f, 20f, 12f)) return true;
             }
             return false;
         }
 
-        void Begin()
+        // `at` in front of `frame` (its way on, +z): from `from` to 80 m on, `across` either side, `up` above and below.
+        static bool Within(Pose frame, Vector3 at, float from, float across, float up)
+        {
+            var p = Quaternion.Inverse(frame.rotation) * (at - frame.position);
+            return p.z > from && p.z < 80f && Mathf.Abs(p.x) < across && Mathf.Abs(p.y) < up;
+        }
+
+        // In the ending hall already (the widest hall's box: C's alcoves, B's 64 m, D's 32 m).
+        bool InHall(ICharacterDriver driver)
+        {
+            var hips = driver != null ? driver.FollowTarget : null;
+            return hips != null && Within(own.EntryWorld, hips.position, .5f, 32f, 40f);
+        }
+
+        bool AllInHall()
+        {
+            var runners = finish.Runners;
+            for (int i = 0; i < runners.Count; i++)
+                if (runners[i].Driver != null && !InHall(runners[i].Driver)) return false;
+            return true;
+        }
+
+        // The first runner is through the endgame course: SummonSeconds to walk in and take a place, the platform off.
+        void StartSummons()
+        {
+            summoning = true;
+            summonAt = Time.time;
+            Debug.Log($"[PawnRush] 왕좌 차지전 소환 예고: {PawnRushThrone.SummonSeconds:0}초 뒤 모두 {own.DisplayName}으로");
+        }
+
+        // `summoned`: those in the hall already keep their places; only the rest are stood in the rows.
+        void Begin(bool summoned)
         {
             for (int team = 0; team < 2; team++) target[team] = PawnRushThrone.Target(Clears(team));
             Started = true;
-            Place();
+            Place(summoned);
             OnBegan();
         }
 
@@ -207,7 +267,7 @@ namespace ChessFight.PawnRush
 
         // Everyone beside the platform: white on the left of the way in, black on the right, in a row along it (or in the
         // rows the ending's IThroneStage gives).
-        void Place()
+        void Place(bool keepInside)
         {
             var frame = own.EntryWorld;
             Vector3 middle = finish.Middle, right = frame.rotation * Vector3.right, forward = frame.rotation * Vector3.forward;
@@ -216,11 +276,12 @@ namespace ChessFight.PawnRush
             for (int team = 0; team < 2; team++)
             {
                 int n = 0, i = 0;
-                for (int k = 0; k < runners.Count; k++) if (runners[k].Team == team && runners[k].Driver != null) n++;
+                for (int k = 0; k < runners.Count; k++)
+                    if (runners[k].Team == team && runners[k].Driver != null && !(keepInside && InHall(runners[k].Driver))) n++;
                 for (int k = 0; k < runners.Count; k++)
                 {
                     var r = runners[k];
-                    if (r.Team != team || r.Driver == null) continue;
+                    if (r.Team != team || r.Driver == null || (keepInside && InHall(r.Driver))) continue;
                     Vector3 row = stage != null ? hall.TransformPoint(stage.StandRow(team))
                                                 : middle + right * ((team == Teams.White ? -1f : 1f) * (finish.Radius + SideGap));
                     Vector3 at = row + forward * ((i - (n - 1) * .5f) * Along);
@@ -272,7 +333,7 @@ namespace ChessFight.PawnRush
 
         public void WriteNet(ref NetBlock block)
         {
-            block.U8((Started ? 1 : 0) | ((holder + 1) << 1));   // who holds: -1..2 as 0..3
+            block.U8((Started ? 1 : 0) | ((holder + 1) << 1) | (summoning ? 8 : 0));   // who holds: -1..2 as 0..3; the summons
             block.U16(Mathf.Clamp(Mathf.RoundToInt(held[0] * 100f), 0, 65535));
             block.U16(Mathf.Clamp(Mathf.RoundToInt(held[1] * 100f), 0, 65535));
             block.U8(Mathf.Clamp(Mathf.RoundToInt(target[0]), 0, 255));
@@ -284,6 +345,11 @@ namespace ChessFight.PawnRush
             int flags = block.ReadU8();
             float white = block.ReadU16() / 100f, black = block.ReadU16() / 100f;
             int whiteTarget = block.ReadU8(), blackTarget = block.ReadU8();
+            if ((flags & 8) != 0 && !summoning && !Started)
+            {
+                summoning = true;
+                summonAt = Time.time;
+            }
             if ((flags & 1) == 0) return;   // not begun there yet (it never un-begins)
             holder = ((flags >> 1) & 3) - 1;
             held[0] = white;
@@ -309,6 +375,11 @@ namespace ChessFight.PawnRush
         {
             if (Event.current.type != EventType.Repaint) return;
             HudBottom = 0f;
+            if (Summoning && finish != null && finish.Winner == PawnRushFinish.None && !LoadingScreenView.Showing)
+            {
+                SummonBanner();
+                return;
+            }
             if (!Started || finish == null || finish.Winner != PawnRushFinish.None || LoadingScreenView.Showing) return;
             float unit = Mathf.Clamp(Screen.height / 1080f, .6f, 2f);
             if (big == null)
@@ -369,6 +440,33 @@ namespace ChessFight.PawnRush
                               left > 0f ? Mathf.CeilToInt(left).ToString() : "발판 켜짐!", big);
                 }
             }
+            GUI.color = was;
+        }
+
+        // The summons' countdown on every PC: a band at the top, what to do under it.
+        void SummonBanner()
+        {
+            float unit = Mathf.Clamp(Screen.height / 1080f, .6f, 2f);
+            if (big == null)
+            {
+                big = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, richText = false };
+                small = new GUIStyle(big);
+            }
+            var was = GUI.color;
+            float left = SummonLeft, width = Mathf.Min(760f * unit, Screen.width - 16f);
+            float top = PawnRushStandingsHud.Showing ? PawnRushStandingsHud.Bottom + 8f * unit : 46f * unit;
+            var band = new Rect((Screen.width - width) * .5f, top, width, 92f * unit);
+            GUI.color = new Color(.06f, .05f, .04f, .86f);
+            GUI.DrawTexture(band, Texture2D.whiteTexture);
+            GUI.color = left <= 3f ? new Color(1f, .45f, .35f) : new Color(1f, .86f, .45f);
+            big.fontSize = Mathf.RoundToInt(38f * unit);
+            GUI.Label(new Rect(band.x, band.y + 6f * unit, band.width, 50f * unit), $"왕의 부름까지 {Mathf.CeilToInt(left)}", big);
+            GUI.color = new Color(.96f, .92f, .82f);
+            small.fontSize = Mathf.RoundToInt(17f * unit);
+            bool inside = MiniGameBase.LocalDriver != null && InHall(MiniGameBase.LocalDriver);
+            GUI.Label(new Rect(band.x, band.y + 58f * unit, band.width, 26f * unit),
+                      inside ? "먼저 왔다 · 자리를 잡으세요 (발판은 소환 뒤에 켜집니다)" : "알현실로! 시간이 다 되면 남은 사람은 모두 소환됩니다", small);
+            HudBottom = band.yMax;
             GUI.color = was;
         }
 

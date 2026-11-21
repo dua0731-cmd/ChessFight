@@ -1836,7 +1836,7 @@ public static class NetworkCoreTests
                 Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
-                Check(PawnRushRules.Settings.Length==4&&PawnRushRules.Choices.Length==4&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==PawnRushRules.MapLast+1,"the panel's names");
+                Check(PawnRushRules.Settings.Length==5&&PawnRushRules.Choices.Length==5&&PawnRushRules.Choices[4].Length==2&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==PawnRushRules.MapLast+1,"the panel's names");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
             Test("JY-audience-hall: the ending map packs beside the other rules (bits 8-10) and pins the last slot alike in the round and the course table", () => {
@@ -1847,6 +1847,11 @@ public static class NetworkCoreTests
                 Check(PawnRushRules.Decode(32+64+128).EndingMap==0,"the skill lab's bits 5-7 are not the map");
                 var withMap=new PawnRushRules().With(3,2);
                 Check(withMap.EndingMap==2&&withMap.Of(3)==2&&withMap.Ending==0,"With and Of for the map");
+                for (int summon=0; summon<2; summon++) {
+                    var r=new PawnRushRules{Ending=1,EndingMap=3,Summon=summon}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.Summon==summon&&back.EndingMap==3&&back.Ending==1,"the summons changed on the way: "+summon); }
+                Check(PawnRushRules.Decode(2048).Summon==1&&PawnRushRules.Decode(2048).EndingMap==0&&PawnRushRules.Decode(7*256).Summon==0,"the summons is bit 11, apart from the map");
+                Check(new PawnRushRules().With(4,1).Summon==1&&new PawnRushRules().With(4,1).Of(4)==1&&PawnRushThrone.SummonSeconds==30f,"With and Of for the summons; 30 s");
                 var options=new[] { new[] { 0, 1 }, new[] { 2 }, new[] { 3, 4, 5, 6 } };
                 for (int seed=-20; seed<60; seed++) {
                     var drawn=PawnRushSections.Choose(seed,options);
