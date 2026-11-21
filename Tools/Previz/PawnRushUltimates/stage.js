@@ -213,10 +213,13 @@ function makeSky() {
   return s;
 }
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, blur: { value: new THREE.Vector2(0, 0) }, rgb: { value: 0 }, mask: { value: null }, maskOn: { value: 0 }, contrast: { value: 1 }, sat: { value: 1 }, tint: { value: new THREE.Vector3(1, 1, 1) }, vig: { value: 0.18 }, vigCol: { value: new THREE.Vector3(0, 0, 0) }, flashCol: { value: new THREE.Vector3(1, 1, 1) }, flashA: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse, mask; uniform float sat, vig, flashA, maskOn, contrast; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
-    void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+  fragmentShader: `uniform sampler2D tDiffuse, mask; uniform vec2 blur; uniform float sat, vig, flashA, maskOn, contrast, rgb; uniform vec3 tint, vigCol, flashCol; varying vec2 vUv;
+    void main(){ vec4 c = vec4(0.0);
+      if (blur.x != 0.0 || blur.y != 0.0) { for (int i = 0; i < 11; i++) { c += texture2D(tDiffuse, vUv + blur * (float(i) / 10.0 - 0.5)); } c /= 11.0; } else { c = texture2D(tDiffuse, vUv); }
+      if (rgb > 0.0) { c.r = texture2D(tDiffuse, vUv + vec2(rgb, rgb * 0.3)).r; c.b = texture2D(tDiffuse, vUv - vec2(rgb, rgb * 0.3)).b; }
+      float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
       vec3 gray = 0.18 * pow(vec3(l) / 0.18, vec3(contrast));
       vec3 col = mix(gray, c.rgb, sat) * tint; c.rgb = mix(col, c.rgb, maskOn * texture2D(mask, vUv).r);
       vec2 d = (vUv - 0.5) * vec2(1.5, 1.0); float v = smoothstep(0.32, 0.9, length(d));
@@ -311,7 +314,7 @@ export class Actor {
 
   update(s) {
     const a = this.at(s); this.now = a;
-    const p = this.pivot; p.visible = !a.hide; if (a.hide) return;
+    const p = this.pivot; p.visible = !a.hide && !(this.st.pieceHide && this.st.pieceHide(s, this.st.nowC)); if (!p.visible) return;
     let y = a.y, pitch = a.pitch, roll = a.roll;
     if (a.run > 0) { const g = a.gait * 1.55; y += 0.11 * Math.abs(Math.sin(g)) * a.run; roll += 0.09 * Math.sin(g) * a.run; pitch += 0.13 * a.run; }
     const cy = (this.h / 2 * a.sq * Math.abs(Math.cos(pitch)) + 0.33 * Math.abs(Math.sin(pitch))) * a.s;
@@ -332,7 +335,7 @@ export class Stage {
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     const sc = this.scene = new THREE.Scene(); sc.fog = new THREE.Fog(0xd2deec, 120, 560);
     this.camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 4000);
-    makeTextures(); makeMaterials(); buildCourse(sc);
+    makeTextures(); makeMaterials(); this.course = new THREE.Group(); sc.add(this.course); buildCourse(this.course);
     this.sky = makeSky(); sc.add(this.sky);
     sc.add(new THREE.HemisphereLight(0xe8f0ff, 0x7a6450, 1.15));
     const sun = this.sun = new THREE.DirectionalLight(0xfff0dc, 2.7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
@@ -351,9 +354,9 @@ export class Stage {
   }
   load(clip) {
     this.scene.remove(this.dyn); this.dyn = new THREE.Group(); this.scene.add(this.dyn);
-    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, cracks: [], evalOn: false, evalKick: null, clip });
+    Object.assign(this, { actors: [], fx: [], shots: [], caps: [], stamps: [], labels: [], shakes: [], flashes: [], gradeFn: null, skyFn: null, specAt: null, cracks: [], evalOn: false, evalKick: null, camMods: [], pieceHide: null, feed: [], typing: [], clip });
     this.knots = clip.warp ?? [[0, 0], [3.6, 3.6], [4.6, 3.7], [64.6, 63.7]]; this.dur = clip.dur;
-    this.sky.material.uniforms.darkCol.value.set(0x3a0806);
+    this.sky.material.uniforms.darkCol.value.set(0x3a0806); this.course.visible = true;
     clip.build(this);
     this.shots.sort((a, b) => a.c0 - b.c0);
   }
@@ -459,20 +462,23 @@ export class Stage {
     const cur = sh[i].fn(c, s);
     if (i > 0 && sh[i].blend > 0 && c < sh[i].c0 + sh[i].blend) {
       const prev = sh[i - 1].fn(c, s), k = smooth(prog(c, sh[i].c0, sh[i].c0 + sh[i].blend));
-      return { p: prev.p.clone().lerp(cur.p, k), l: prev.l.clone().lerp(cur.l, k), fov: lerp(prev.fov ?? 50, cur.fov ?? 50, k) };
+      return { p: prev.p.clone().lerp(cur.p, k), l: prev.l.clone().lerp(cur.l, k), fov: lerp(prev.fov ?? 50, cur.fov ?? 50, k), roll: lerp(prev.roll ?? 0, cur.roll ?? 0, k) };
     }
     return cur;
   }
   render(c) {
-    const s = this.S(c);
+    const s = this.S(c); this.nowC = c;
     for (const a of this.actors) a.update(s);
     for (const f of this.fx) f.upd(s, c);
     const cam = this.camAt(c, s);
     const off = V();
     for (const q of this.shakes) { if (s < q.s0 || s > q.s0 + q.d) continue; const e = q.amp * Math.pow(1 - (s - q.s0) / q.d, 2);
       off.x += e * (Math.sin(c * 53.1) * 0.6 + Math.sin(c * 31.7 + 1) * 0.4); off.y += e * (Math.sin(c * 47.3 + 2) * 0.6 + Math.sin(c * 29.9) * 0.4); off.z += e * Math.sin(c * 41.9 + 3) * 0.5; }
+    let fov = cam.fov ?? 50, roll = cam.roll ?? 0;
+    for (const m of this.camMods) { if (c < m.c0 || c > m.c0 + m.d) continue; const e = Math.min(1, (c - m.c0) / (m.d * 0.12)) * Math.pow(1 - prog(c, m.c0 + m.d * 0.12, m.c0 + m.d), 2); fov += (m.fov ?? 0) * e; roll += (m.roll ?? 0) * e; }
     this.camera.position.copy(cam.p).add(off); this.camera.lookAt(cam.l.clone().addScaledVector(off, 0.5));
-    this.camera.fov = cam.fov ?? 50; this.camera.updateProjectionMatrix();
+    if (roll) this.camera.rotateZ(roll);
+    this.camera.fov = fov; this.camera.updateProjectionMatrix();
     this.sky.position.copy(this.camera.position);
     this.sun.position.set(cam.l.x - 24, cam.l.y + 52, cam.l.z - 22); this.sun.target.position.copy(cam.l);
     const gr = this.gradeFn ? this.gradeFn(s, c) : {};
@@ -480,8 +486,9 @@ export class Stage {
     u.sat.value = gr.sat ?? 1; u.tint.value.set(...(gr.tint ?? [1, 1, 1])); u.vig.value = gr.vig ?? 0.2; u.vigCol.value.set(...(gr.vigCol ?? [0, 0, 0]));
     let fa = 0, fc = [1, 1, 1];
     for (const f of this.flashes) { if (s < f.s0 || s > f.s0 + f.d) continue; const a = f.a * Math.pow(1 - (s - f.s0) / f.d, 2); if (a > fa) { fa = a; fc = f.color; } }
+    if ((gr.flashA ?? 0) > fa) { fa = gr.flashA; fc = gr.flashCol ?? [1, 1, 1]; }
     u.flashA.value = fa; u.flashCol.value.set(...fc);
-    u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0;
+    u.contrast.value = gr.contrast ?? 1; u.maskOn.value = gr.maskOn ?? 0; u.blur.value.set(...(gr.blur ?? [0, 0])); u.rgb.value = gr.rgb ?? 0;
     if (u.maskOn.value > 0) {
       const r = this.renderer, sc = this.scene, cam = this.camera, fog = sc.fog;
       sc.fog = null; sc.overrideMaterial = this.maskMat; cam.layers.set(1);

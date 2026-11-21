@@ -67,6 +67,28 @@ node record.mjs --clips qCut,qBoard,qWake,qSay --out out/queen-casting.mp4 --rat
 node record.mjs --clips flipBoard,castleHands --out out/board-set.mp4 --profile <빈 폴더>
 ```
 
+## 체스 에디트 문법 (2026-11-21, 세 번째)
+
+사용자가 생각해 둔 연출의 모티브로 유튜브 쇼츠 세 편(체스 에디트: 아난드–크람니크의 나이트 포크, 체스닷컴 블리츠의 탁월한 수, 두다–기리의 11수 메이트)을 주며 "그걸 한번 구체화해줄래?", 이어서 "일반스킬, 중급스킬도 이 영상들을 모티브로 스킬 연출 컨셉을 다시 디자인하고싶어", 그리고 "응, 뽑아줘".
+
+영상에서 가져온 것: 평평한 2D 판 위에서 움직이는 3D 카메라(기울기, 줌, 휙 넘기기), 수 판정 색과 아이콘(청록 !!, 파랑 !, 초록 ★, 주황 정석 📖 / 노랑 ?!, 주황 ?, 빨강 ??), 빛나는 칸, 번쩍임, 우주에 뜬 판 조각과 입체 말, 박자.
+
+등급마다 같은 언어를 세게 쓴다:
+
+| | 초급 📖 | 중급 ! | 상급 ★ | 궁극 !! |
+|---|---|---|---|---|
+| 칸 | 출발·도착 칸만 | + 표적 칸 빨강 | + 그 줄 전체 | 판 전체 |
+| 카메라 | 그대로 | 맞히면 0.1초 멈칫 + 줌인 (내 화면만) | + 기울기, 0.3초 느리게 | 모든 화면 2초 에디트 컷 |
+| 맞은 쪽 | ?! 또는 ? | ? | ?? | ?? (피하면 !) |
+
+`edits.js`의 클립: `pawnSk` `knightSk` `bishopSk` `rookSk` `queenSk` `kingSk` (지금 세트의 초급 · 중급 · 일부 상급), `queenCut` `forkCut` (궁극기 에디트 컷: 0박 멈춤 → 1박 체스판 시점 !! + 기보 타이핑 → 2박 표적 ?? → 3박 우주의 히어로 숏 → 4박 번쩍, 경기로. 그대로의 속도로 한 번, 느리게 한 번 더). 오른쪽 '기보' 목록은 킬 로그 대신이다.
+
+```
+node record.mjs --clips pawnSk,knightSk,bishopSk --out out/edits-1.mp4 --rate 4500k --profile <빈 폴더>
+node record.mjs --clips rookSk,queenSk,kingSk --out out/edits-2.mp4 --rate 4500k --profile <빈 폴더>
+node record.mjs --clips queenCut,forkCut --out out/edits-ult.mp4 --rate 4500k --profile <빈 폴더>
+```
+
 ## 영상 뽑기
 
 이 PC 기준 (헤드리스 Edge + Krita에 든 ffmpeg, libopenh264). 프로젝트 루트가 아니라 이 폴더에서:
@@ -84,4 +106,5 @@ node record.mjs --sheets pawnA,kingB --profile <빈 폴더>      (장면 9장 �
 - `hud.js` — 제목 카드, 컷인, 기보 도장, 딱지, 순위 막대, 팀 게이지, 자막, 끝 카드.
 - `ults.js` — 12안의 장면 대본.
 - `casts.js` — 시전 연출 비교 (시계, 손, 진짜 모습, 3D 기보).
+- `edits.js` — 체스 에디트 문법 (판정 아이콘, 빛나는 칸, 분석 화살표, 기보 목록, 에디트 컷).
 - `main.js`, `index.html` — 페이지. `record.mjs` — 프레임을 찍어 mp4로.

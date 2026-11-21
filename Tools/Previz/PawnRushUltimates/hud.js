@@ -6,6 +6,11 @@ export const DISP = '"Black Han Sans", "Malgun Gothic", sans-serif';
 export const BODY = '"IBM Plex Sans KR", "Malgun Gothic", sans-serif';
 const SYM = '"Segoe UI Symbol", "Malgun Gothic", sans-serif';
 const C = { ally: '#46d2ff', enemy: '#ff8a2a', gold: '#ffc94a', red: '#ff4a4a' };
+/** the move marks: the skill tier on the mover, how bad on the one hit */
+export const BADGE = {
+  book: { t: '📖', bg: '#c9772c' }, great: { t: '!', bg: '#4f86e6' }, best: { t: '★', bg: '#6fae2f' }, brilliant: { t: '!!', bg: '#1fb99a' },
+  inacc: { t: '?!', bg: '#e0b22b' }, mistake: { t: '?', bg: '#ea8a2a' }, blunder: { t: '??', bg: '#e5453a' }, check: { t: '+', bg: '#e5453a' }, mate: { t: '#', bg: '#e5453a' },
+};
 
 function rrect(g, x, y, w, h, r) {
   g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
@@ -50,6 +55,7 @@ function corner(g, st, c) {
   g.font = `700 19px ${BODY}`; g.fillStyle = C.gold; g.fillText(head, 58, 37);
   const hw = g.measureText(head + ' ').width; g.fillStyle = '#fff'; g.font = `600 19px ${BODY}`; g.fillText(tail, 58 + hw + 8, 37);
   // the team gauge
+  if (T.noGauge) { g.restore(); return; }
   const c0 = T.cut, full = c < c0 ? 1 : 1 - easeIn(prog(c, c0, c0 + 0.6));
   g.fillStyle = 'rgba(8,10,16,0.62)'; rrect(g, 18, 64, 300, 40, 12); g.fill();
   g.font = `600 16px ${BODY}`; g.fillStyle = '#dfe6ef'; g.fillText('팀 게이지', 30, 84);
@@ -69,7 +75,7 @@ function corner(g, st, c) {
 }
 
 function strip(g, st, c) {
-  const a = smooth(prog(c, 0.1, 0.4)); if (a <= 0) return;
+  const a = smooth(prog(c, 0.1, 0.4)); if (a <= 0 || st.clip.noStrip) return;
   const x0 = 430, x1 = 930, y = 36;
   g.save(); g.globalAlpha = a;
   g.fillStyle = 'rgba(8,10,16,0.58)'; rrect(g, 362, 12, 680, 50, 14); g.fill();
@@ -131,9 +137,10 @@ function stamps(g, st, c) {
 
 function labels(g, st, c, s) {
   for (const q of st.labels) {
-    if (s < q.s0 || s > q.s1) continue;
+    const t = q.clip ? c : s;
+    if (t < q.s0 || t > q.s1) continue;
     const p = st.project(typeof q.pos === 'function' ? q.pos(s) : q.pos); if (!p) continue;
-    const a = fade(s, q.s0, q.s1, 0.05, 0.2), rise = (q.rise ?? 18) * prog(s, q.s0, q.s1), pop = 1 + 0.4 * (1 - easeOut(prog(s, q.s0, q.s0 + 0.12)));
+    const a = fade(t, q.s0, q.s1, 0.05, 0.2), rise = (q.rise ?? 18) * prog(t, q.s0, q.s1), pop = 1 + 0.4 * (1 - easeOut(prog(t, q.s0, q.s0 + 0.12)));
     g.save(); g.globalAlpha = a; g.translate(p.x, p.y - 26 - rise); g.scale(pop, pop);
     g.font = `${q.size ?? 26}px ${DISP}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     if (q.badge) { const r = (q.size ?? 26) * 0.95; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = q.bg; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,0.9)'; g.stroke(); g.fillStyle = '#ffffff'; g.fillText(q.text, 0, 2); g.restore(); continue; }
@@ -202,6 +209,33 @@ function evalBar(g, st, c, s) {
   g.font = `16px ${DISP}`; g.fillStyle = e >= 0 ? '#1d1a17' : '#f4efe6'; g.fillText(txt, x + w / 2, e >= 0 ? y + h - 14 : y + 14);
   g.restore();
 }
+/** The move list beside the picture (the kill feed as a chess score sheet). */
+function feed(g, st, c) {
+  const rows = st.feed.filter(q => c >= q.c0).slice(-5); if (!rows.length) return;
+  const x = 954, w = 306, y0 = 118, rh = 34;
+  g.save();
+  g.fillStyle = 'rgba(8,10,16,0.66)'; rrect(g, x, y0 - 34, w, 34 + rows.length * rh + 8, 12); g.fill();
+  g.font = `600 14px ${BODY}`; g.fillStyle = '#9aa6b5'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('기보', x + 14, y0 - 16);
+  rows.forEach((q, i) => {
+    const a = smooth(prog(c, q.c0, q.c0 + 0.2)), y = y0 + i * rh + 6;
+    g.globalAlpha = a; g.fillStyle = i % 2 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)'; g.fillRect(x + 6, y, w - 12, rh - 4);
+    g.font = `600 17px ${BODY}`; g.fillStyle = '#eef3fa'; g.fillText(q.text, x + 16, y + rh / 2 - 1);
+    if (q.mark) { const k = BADGE[q.mark]; g.beginPath(); g.arc(x + w - 26, y + rh / 2 - 2, 12, 0, Math.PI * 2); g.fillStyle = k.bg; g.fill(); g.font = `14px ${DISP}`; g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(k.t, x + w - 26, y + rh / 2 - 1); g.textAlign = 'left'; }
+  });
+  g.restore();
+}
+/** A move typed in at the bottom, letter by letter. */
+function typing(g, st, c) {
+  for (const q of st.typing) {
+    if (c < q.c0 || c > q.c0 + q.d) continue;
+    const n = Math.min(q.text.length, Math.floor((c - q.c0) / (q.per ?? 0.05)) + 1), s = q.text.slice(0, n), a = fade(c, q.c0, q.c0 + q.d, 0.02, 0.15);
+    g.save(); g.globalAlpha = a; g.font = `${q.size ?? 64}px ${DISP}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const w = g.measureText(q.text).width + 60;
+    g.fillStyle = 'rgba(6,8,12,0.78)'; rrect(g, (W - w) / 2, (q.y ?? 600) - 46, w, 92, 14); g.fill();
+    g.fillStyle = q.color ?? '#ffffff'; g.fillText(s + (n < q.text.length && Math.floor(c * 8) % 2 ? '|' : ''), W / 2, q.y ?? 600);
+    g.restore();
+  }
+}
 /** Glass cracks over the whole screen (the colour coming back). */
 function cracks(g, st, c) {
   for (const q of st.cracks) {
@@ -226,7 +260,7 @@ function cracks(g, st, c) {
 export function drawHud(st, c, s) {
   const g = st.g; g.clearRect(0, 0, W, H);
   labels(g, st, c, s); stamps(g, st, c);
-  strip(g, st, c); corner(g, st, c); evalBar(g, st, c, s); captions(g, st, c); cracks(g, st, c);
+  strip(g, st, c); corner(g, st, c); evalBar(g, st, c, s); feed(g, st, c); typing(g, st, c); captions(g, st, c); cracks(g, st, c);
   title(g, st, c); cutin(g, st, c); spec(g, st, c);
 }
 
@@ -234,6 +268,6 @@ export function drawHud(st, c, s) {
 export function clipText(st) {
   const T = st.clip;
   return [T.name, T.nota, T.line, T.tag, NAME[T.kind], '궁극기 안 의 팀 게이지 Q 준비 % 출발 왕관 선두 차 m + − ♪ 0123456789',
-    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text),
+    ...st.caps.flatMap(q => [q.text, q.memo || '']), ...st.stamps.flatMap(q => [q.text, q.sub || '']), ...st.labels.map(q => q.text), ...st.feed.map(q => q.text), ...st.typing.map(q => q.text), '기보',
     ...T.spec.flat()].join(' ');
 }

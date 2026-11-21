@@ -149,7 +149,7 @@ function queenScene(st, o) {
   const T = teams(st, 'queen', { enemy: QPACK }), Q = T.me, E = T.E, sImp = o.sImp, sWarn = o.sWarn;
   const C0 = centroid([E.queen, E.knight, E.rook, E.bishop, E.pawn], sImp), tx = clamp(C0.x, -3, 3), tz = C0.z;
   // the straggling king sees the target and stops: he ends just outside it
-  E.king.until(sWarn + 0.25).custom(sImp - sWarn + 0.6, (u, t, a) => ({ ...a, run: 0, z: a.z + 0.6 * easeOut(prog(t, 0, 0.3)), pitch: -0.12 * smooth(prog(t, 0, 0.3)), roll: 0.07 * Math.sin(t * 9) })).run(20);
+  if (!o.noDodge) E.king.until(sWarn + 0.25).custom(sImp - sWarn + 0.6, (u, t, a) => ({ ...a, run: 0, z: a.z + 0.6 * easeOut(prog(t, 0, 0.3)), pitch: -0.12 * smooth(prog(t, 0, 0.3)), roll: 0.07 * Math.sin(t * 9) })).run(20);
   const disc = []; for (let i = -10; i <= 10; i++) for (let j = -10; j <= 10; j++) { const x = snap(tx) + i * SQ, z = snap(tz) + j * SQ; if (Math.abs(x) < HALF && Math.hypot(x - tx, z - tz) < 20) disc.push({ x, z, d: Math.hypot(x - tx, z - tz) * 0.01 }); }
   st.tiles(disc, sWarn, sImp + 0.1, COL.red, { op: 0.45, pulse: 14 });
   for (const r of [6, 13, 20]) st.ring(tx, tz, sWarn, sImp - sWarn + 0.15, r, r, COL.red, { w: 0.04, op: 1, keep: true });
@@ -167,7 +167,7 @@ function queenScene(st, o) {
   const hit = [];
   for (const e of T.enemies) {
     const p = e.pred(sImp), d = Math.hypot(p.x - tx, p.z - tz);
-    if (d > 20) { if (e !== E.king) e.run(20); continue; }
+    if (d > 20) { if (e !== E.king || o.noDodge) e.run(20); continue; }
     hit.push(e);
     const r = rng(Math.round(p.z * 10)), ang = Math.atan2(p.x - tx, p.z - tz);
     e.until(sImp + 0.03).fly(1.9, clamp(p.x + Math.sin(ang) * (3 + r() * 3), -7, 7), p.z - (27 + r() * 7), { h: 12 + r() * 4, spins: 2 + (r() > 0.5 ? 1 : 0), roll: 1.4 }).lie(3.0).getUp(0.5).run(20);
@@ -478,3 +478,4 @@ const castleHands = {
 };
 
 export const CASTS = { qCut, qBoard, qWake, qSay, flipBoard, castleHands };
+export { queenScene, queenAfter, fallFx, QPACK };
