@@ -47,7 +47,11 @@ namespace ChessFight.RagdollLab
             input.shove = false;
             input.shoveHeld = false;
             input.grab = false;
-            if (activeSkill == PawnRushSkillIds.GreatDiagonal) return;
+            if (activeSkill == PawnRushSkillIds.GreatDiagonal)
+            {
+                if (driveHeld) input.sprint = false;   // gathering the light: walking
+                return;
+            }
             driveJump |= input.jump;
             input.jump = false;
         }

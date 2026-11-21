@@ -55,6 +55,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.Nightmare: NmCast(u); break;
+                case PawnRushSkillIds.GreatDiagonal: GdCast(u); break;
             }
         }
 
@@ -63,6 +64,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.Nightmare: NmStep(u, dt, cam); break;
+                case PawnRushSkillIds.GreatDiagonal: GdStep(u, dt, cam); break;
             }
         }
 
@@ -79,6 +81,7 @@ namespace ChessFight.RagdollLab
             switch (u.skill)
             {
                 case PawnRushSkillIds.Nightmare: NmStrikeFx(u, e); break;
+                case PawnRushSkillIds.GreatDiagonal: GdStrikeFx(u, e); break;
             }
         }
 
@@ -96,6 +99,10 @@ namespace ChessFight.RagdollLab
         {
             var u = ShowOf(e.by);
             if (u == null || !u.Driven) return;
+            switch (u.skill)
+            {
+                case PawnRushSkillIds.GreatDiagonal: GdLineFx(u, e); break;
+            }
         }
 
         void DriveWarnFx(SkillFxEvent e)
@@ -114,6 +121,7 @@ namespace ChessFight.RagdollLab
         string DriveHint(UltShow u) => u.skill switch
         {
             PawnRushSkillIds.Nightmare => NmHint(u),
+            PawnRushSkillIds.GreatDiagonal => GdHint(u),
             _ => null,
         };
 
@@ -121,6 +129,7 @@ namespace ChessFight.RagdollLab
         string DriveLine(UltShow u) => u.skill switch
         {
             PawnRushSkillIds.Nightmare => NmLine(u),
+            PawnRushSkillIds.GreatDiagonal => GdLine(u),
             _ => $"맞힌 적 {u.struckSet.Count}",
         };
 
@@ -128,6 +137,7 @@ namespace ChessFight.RagdollLab
         string DriveWarning(UltShow u, RagdollPawn me) => u.skill switch
         {
             PawnRushSkillIds.Nightmare => NmWarning(u, me),
+            PawnRushSkillIds.GreatDiagonal => GdWarning(u, me),
             _ => null,
         };
 
@@ -145,6 +155,7 @@ namespace ChessFight.RagdollLab
             if (me != null && cam != null && s != null && me.PlanSkill == 0 && me.UltReady && me.State == PawnState.Active)
             {
                 if (me.HasSkill(PawnRushSkillIds.Nightmare)) NmPreview(me, s, previewWanted);
+                if (me.HasSkill(PawnRushSkillIds.GreatDiagonal)) GdPreview(me, s, cam, previewWanted);
             }
             foreach (var p in previewWanted)
             {

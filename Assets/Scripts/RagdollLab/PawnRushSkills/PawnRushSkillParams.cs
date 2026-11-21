@@ -866,6 +866,12 @@ namespace ChessFight.RagdollLab
         public float nmAir = 0.85f, nmAirPer100 = 0.6f, nmHigh = 7f, nmHighPer = 0.14f, nmSteer = 7f, nmSteerMax = 7f, nmHome = 14f, nmLock = 0.5f;
         [Tooltip("나이트메어: 밟히는 반경 (m, 둘 넘게면 포크); 납작 (초); 그 뒤 튕겨 나가는 거리 (m); 밟은 머리 위에 서 있는 가장 긴 시간 (초)")]
         public float nmStomp = 3f, nmSquash = 2f, nmBounce = 15f, nmRide = 1.2f;
+        [Tooltip("롱 다이애거널: 시간 (초); 발 수 (×1.5 넷, ×2 여섯); 모으는 시간 (초); 줄 길이 (m); 줄 반폭 (m)과 꺾일 때마다 더 (m); 위아래로 닿는 높이 (m)")]
+        public float gdSeconds = 10f;
+        public int gdShots = 3;
+        public float gdCharge = 0.5f, gdLength = 300f, gdWidth = 1f, gdWiden = 0.5f, gdUpDown = 2.5f;
+        [Tooltip("롱 다이애거널: 꿰인 적이 줄을 따라 끌려오는 거리 (m), 비숍 앞에 남기는 거리 (m), 끌려오는 시간 (초)과 높이 (m), 넘어짐 (초); 쏠 때 비숍이 밀리는 거리 (m)")]
+        public float gdPull = 25f, gdKeep = 2.5f, gdPullTime = 0.7f, gdPullTop = 1.5f, gdKnock = 2f, gdRecoil = 0.6f;
         [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
         public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
         [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]

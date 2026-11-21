@@ -175,7 +175,7 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.GreatDiagonal, "롱 다이애거널 (a1–h8!!)", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 4 · 6발) · 10초 동안 걸으며 저격 · 쓰는 순간 모든 적이 벽 너머로 빨간 윤곽" + "\n" +
                 "좌클릭 누르고 0.5초 모았다 떼기 = 빛의 대각선 300 m · 벽에 닿으면 대각선으로 꺾여 튕김 (두 번까지, 튕길 때마다 굵어짐) · 세 발" + "\n" +
-                "꿰인 적은 모두 줄을 따라 비숍 쪽으로 25 m 끌려와 2초 넘어짐 · 모으는 동안 맞을 적에게 붉은 조준선 · 아직 만드는 중"),
+                "꿰인 적은 모두 줄을 따라 비숍 쪽으로 25 m 끌려와 2초 넘어짐 · 모으는 동안 맞을 적에게 붉은 조준선 · 발을 다 쓰면 1초 뒤 끝 · 판정 !!~??"),
             Made(PawnRushSkillIds.RookRoll, "룩앤롤", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move | SkillTag.Ally,
                 "궁극기 (팀 게이지, ×1.5 · ×2면 15 · 20초) · 룩이 쓰러져 지름 3 m 돌기둥으로 10초 굴러감 · 이동 키로 몰기" + "\n" +
                 "곧게 갈수록 초속 15 → 40 m (3초), 크게 꺾으면 느려짐 · 부딪힌 적은 볼링 핀처럼 25 m 날아가 2초 넘어짐 · 넷 넘게면 '스트라이크!'" + "\n" +
