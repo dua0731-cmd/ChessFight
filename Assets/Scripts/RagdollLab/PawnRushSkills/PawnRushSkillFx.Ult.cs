@@ -886,7 +886,7 @@ namespace ChessFight.RagdollLab
 
         Transform skyBall;
         MeshRenderer skyRenderer;
-        readonly MaterialPropertyBlock skyBlock = new MaterialPropertyBlock();
+        MaterialPropertyBlock skyBlock;   // (made when first used: Unity objects cannot be made in a MonoBehaviour's field initializers)
 
         /// <summary>From the call to a while after the landing the sky turns to stars (the shorts' board in space), on every
         /// screen, behind everything solid.</summary>
@@ -919,6 +919,7 @@ namespace ChessFight.RagdollLab
             float r = Mathf.Min(380f, cam.farClipPlane * 0.8f);
             skyBall.SetPositionAndRotation(cam.transform.position, Quaternion.Euler(0f, Clock * 0.6f, 0f));
             skyBall.localScale = Vector3.one * r * 2f;
+            if (skyBlock == null) skyBlock = new MaterialPropertyBlock();
             skyBlock.SetColor("_Color", new Color(1.4f, 1.45f, 1.6f, 1f));
             skyBlock.SetFloat("_Opacity", k);
             skyRenderer.SetPropertyBlock(skyBlock);

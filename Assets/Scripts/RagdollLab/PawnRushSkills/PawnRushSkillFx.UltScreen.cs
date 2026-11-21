@@ -31,6 +31,9 @@ namespace ChessFight.RagdollLab
     {
         enum UltSfx { Boom, Heart, Tick, Leap, Stomp, Impact, Drop, Bling, Type }
 
+        /// <summary>Every sound the cast starts (clip, volume, pitch, delay s), for a film's sound track (PawnRushUltFilm).</summary>
+        public static event Action<AudioClip, float, float, float> UltSoundPlayed;
+
 #if CF_URP
         GameObject gradeHolder;
         Volume gradeVolume, neonVolume;
@@ -65,6 +68,7 @@ namespace ChessFight.RagdollLab
                 ultRise.clip = sfxRise;
                 ultRise.volume = 0.55f * ChessFight.Game.GameSettings.Effects;
                 ultRise.Play();
+                UltSoundPlayed?.Invoke(sfxRise, ultRise.volume, 1f, 0f);
             }
             whiteKick = Mathf.Max(whiteKick, Viewer == u.by ? 0.12f : 0.05f);
         }
@@ -623,6 +627,7 @@ namespace ChessFight.RagdollLab
         {
             if (clip == null || ultAudio == null) return;
             float v = Mathf.Clamp01(level * ChessFight.Game.GameSettings.Effects);
+            UltSoundPlayed?.Invoke(clip, v, pitch, delay);
             if (delay <= 0f && Mathf.Abs(pitch - 1f) < 0.01f)
             {
                 ultAudio.PlayOneShot(clip, v);
