@@ -9,7 +9,7 @@ import { ACT, finish, teams, centroid, PACK } from './ults.js';
 import { buildTown, behind } from './hero.js';
 import { glowTiles, emblem, plight, TX0, TZ0 } from './heroedit.js';
 
-const NEON = [0x1fb99a, 0x6fae2f, 0x4f86e6, 0x9a5cff, 0xff8a2a, 0xffd23f, 0xff4fa0, 0x3fe0ff];
+const MOVE = 0x1fb99a, REACH = 0x6fae2f, HIT = 0xff2a3a;   // the shorts' meaning: my brilliant move teal, the squares it reaches green, the attacked red
 /** a chess square here = 2 x 2 street tiles on a 3 m grid */
 const sqC = (x, z) => ({ x: TX0 + 0.75 + 3 * Math.round((x - TX0 - 0.75) / 3), z: TZ0 + 0.75 + 3 * Math.round((z - TZ0 - 0.75) / 3) });
 const four = (c, d = 0, w = 1) => [[-0.75, -0.75], [0.75, -0.75], [-0.75, 0.75], [0.75, 0.75]].map(([a, b]) => ({ x: c.x + a, z: c.z + b, d, w }));
@@ -53,10 +53,10 @@ function petals(st, ctr, s0, s1, n = 70) {
 const knightFork = {
   kind: 'knight', opt: '', cut: ACT, cutin: false, nota: 'Nf7+!!', dur: 16, tag: '쇼츠 연출 · 3인칭', chip: '주인공의 순간 · 패밀리 포크', cornerHead: '패밀리 포크', cornerTail: '시전자 화면', view: '시전자 (백 나이트)',
   name: '패밀리 포크 — 긴 호흡',
-  line: '쇼츠처럼: 세상의 색이 빠지고 빛나는 것만 남는다. 나이트의 8칸이 하나씩 네온으로 켜지고, 적들 발밑에 붉은 칸과 포크 선 — 한 박 쉬고, 도약, 쾅',
+  line: '쇼츠처럼: 세상의 색이 빠지고 빛나는 것만 남는다. 내 수는 청록, 나이트가 닿는 8칸은 초록, 공격받는 적은 빨간 칸과 포크 선 — 한 박 쉬고, 도약, 쾅',
   spec: [
     ['호흡', 'Q → 2.4초 차오름 (색이 빠지고, 8칸이 하나씩, 포크 선) → 0.3초 정적 → 도약 → 쾅 → 2초 여운 (색이 천천히 돌아옴)'],
-    ['색', '세상은 회색, 빛나는 것만 제 색 — 여덟 가지 네온 칸, 보라 불꽃, 붉은 칸과 포크 선, 내리꽂히는 붉은 빛, 붉은 꽃잎'],
+    ['색', '세상은 회색, 빛나는 것만 제 색 — 쇼츠의 뜻대로: 내 탁월한 수는 청록 (시작 칸 · 착지 칸 · 빛기둥), 나이트가 닿는 8칸은 초록, 공격받는 적은 빨강 (칸 · 포크 선 · 하늘의 붉은 빛) · 나이트의 보라 불꽃, 붉은 꽃잎'],
     ['시점', '내 3인칭 그대로 — 차오르는 동안 카메라가 앞으로 돌아 나이트를 올려다보고, 도약은 뒤에서 따라가고, 착지는 옆에서'],
     ['소리', '음악 뚝 → 심장 소리 + 속삭임 "나이트…" → 정적 → "패밀리 포크!!" + 드롭 → 쾅 "탁월한 수!!"'],
     ['맞서기', '차오르는 2.4초 동안 빨간 칸에서 벗어나면 피한다 — 포크 선이 예고'],
@@ -88,21 +88,21 @@ const knightFork = {
     st.sky.material.uniforms.darkCol.value.set(0x07070b); st.skyFn = s => 0.88 * gray(s);
     const fogA = new THREE.Color(0xd2deec), fogB = new THREE.Color(0x141418); st.obj(null, s => { st.scene.fog.color.lerpColors(fogA, fogB, gray(s)); });
     // 2. the breath: the knight's square, its flame, its eight squares one by one, the enemies' red squares and fork lines
-    glowTiles(st, four(kc, 0, 1.2), sQ + 0.1, sLeap + 0.3, 0x9a5cff, { pulse: 12 });
+    glowTiles(st, four(kc, 0, 1.2), sQ + 0.1, sLeap + 0.3, MOVE, { pulse: 12 });
     flames(st, s => K.pos(s), sQ + 0.15, sL + 0.3);
     plight(st, s => K.pos(s, 0.6), sQ + 0.15, sL + 0.2, 0x8a5cff, 60, 14);
     keepColour(K.pivot);
     for (let s = sQ + 0.4; s < sLeap; s += 0.16) keepColour(st.sparks(K.pos(s, -0.2), s, 5, { color: s % 0.32 < 0.16 ? 0xb07cff : 0xff9a4a, speed: 2.5, life: 0.9, grav: -3, size: 0.25 }));
     const KM = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
     const beats8 = KM.map((_, i) => sQ + 0.35 + i * 0.25);
-    KM.forEach(([a, b], i) => { const c = { x: kc.x + a * 3, z: kc.z + b * 3 }; glowTiles(st, four(c, 0, 1), beats8[i], sLeap + 0.25, NEON[i], { pulse: 10 }); keepColour(st.pillar(c.x, c.z, beats8[i], 0.5, 0.9, 5.5, NEON[i], { rise: 0.2, op: 0.6 })); });
-    hit.forEach((e, i) => { const s0 = 4.55 + i * 0.18; followSquare(st, e, s0, sL + 0.25, 0xff2a3a); forkLine(st, lc, e, s0 + 0.05, sL + 0.1, 0xff3040); emblem(st, s => e.pos(s, 1.8), s0, sL + 1.9, '??', '#e5453a', 1.3); });
-    glowTiles(st, [...four(lc, 0, 1.4), ...four({ x: lc.x + 3, z: lc.z }, 0.05, 0.5), ...four({ x: lc.x - 3, z: lc.z }, 0.05, 0.5), ...four({ x: lc.x, z: lc.z + 3 }, 0.05, 0.5), ...four({ x: lc.x, z: lc.z - 3 }, 0.05, 0.5)], 4.5, sL + 0.6, 0x3fe0ff, { pulse: 9 });
+    KM.forEach(([a, b], i) => { const c = { x: kc.x + a * 3, z: kc.z + b * 3 }; glowTiles(st, four(c, 0, 0.75), beats8[i], sLeap + 0.25, REACH, { pulse: 10 }); keepColour(st.pillar(c.x, c.z, beats8[i], 0.5, 0.8, 4.5, REACH, { rise: 0.2, op: 0.45 })); });
+    hit.forEach((e, i) => { const s0 = 4.55 + i * 0.18; followSquare(st, e, s0, sL + 0.25, HIT); forkLine(st, lc, e, s0 + 0.05, sL + 0.1, HIT); emblem(st, s => e.pos(s, 1.8), s0, sL + 1.9, '??', '#e5453a', 1.3); });
+    glowTiles(st, [...four(lc, 0, 1.4), ...four({ x: lc.x + 3, z: lc.z }, 0.05, 0.5), ...four({ x: lc.x - 3, z: lc.z }, 0.05, 0.5), ...four({ x: lc.x, z: lc.z + 3 }, 0.05, 0.5), ...four({ x: lc.x, z: lc.z - 3 }, 0.05, 0.5)], 4.5, sL + 0.6, MOVE, { pulse: 9 });
     // 3. the leap: a violet trail; the landing: eight neon pillars, red light from the sky on each enemy, a white flash, !!
     st.trail(K, sLeap, sL, 0xa070ff, { n: 14, dt: 0.025, size: 1.1, op: 0.55 });
     st.flash(V(lc.x, 1.5, lc.z), sL, 0.22, 8, 0xffffff, { op: 0.7 }); st.screen(sL, 0.06, [1, 1, 1], 0.35); st.shake(sL, 1.0, 0.7);
-    keepColour(st.ring(lc.x, lc.z, sL, 1.0, 1, 18, 0x3fe0ff, { w: 0.08 })); keepColour(st.ring(lc.x, lc.z, sL + 0.05, 1.2, 1, 26, 0xffffff, { w: 0.03, op: 0.5 }));
-    KM.forEach(([a, b], i) => keepColour(st.pillar(lc.x + a * 3, lc.z + b * 3, sL + 0.02 + i * 0.03, 1.4, 0.75, 22, NEON[i], { rise: 0.12, op: 0.55 })));
+    keepColour(st.ring(lc.x, lc.z, sL, 1.0, 1, 18, MOVE, { w: 0.08 })); keepColour(st.ring(lc.x, lc.z, sL + 0.05, 1.2, 1, 26, 0xffffff, { w: 0.03, op: 0.5 }));
+    KM.forEach(([a, b], i) => keepColour(st.pillar(lc.x + a * 3, lc.z + b * 3, sL + 0.02 + i * 0.03, 1.4, 0.75, 22, MOVE, { rise: 0.12, op: 0.55 })));
     hit.forEach((e, i) => redBeam(st, s => e.pos(s), sL + 0.05 + i * 0.05));
     st.dust(lc.x, lc.z, sL, { n: 14, r: 9, size: 4, life: 1.6, color: 0x9a9a9a });
     emblem(st, () => V(lc.x, 13, lc.z), sL + 0.04, sL + 1.8, '!!', '#1fb99a', 7, { always: true });
@@ -125,10 +125,10 @@ const knightFork = {
     st.shot(st.C(sL + 1.4), (c, s) => { const p = kp(s), u = smooth(prog(s, sL + 1.4, sL + 3)); return { p: p.clone().add(V(lerp(8, 0, u), lerp(1.3, 3.3, u), lerp(-6, -7, u))), l: p.clone().add(V(0, 1, lerp(1, 6, u))), fov: 60 }; }, { blend: 0.6 });
     st.cap(2.7, ACT, '상대 6명이 몰려 20 m 앞 — 내 나이트, 팀 게이지 가득', '평소 경기 음악');
     st.cap(ACT + 0.05, 4.6, 'Q — 세상의 색이 빠지고, 내 발밑이 보랏빛으로, 나이트에 보라 불꽃', '음악 뚝 → 심장 소리 "쿵…" + 속삭임 "나이트…"');
-    st.cap(4.6, st.C(sHold), '나이트가 가는 8칸이 하나씩 네온으로 — 적들 발밑은 빨갛게, 포크 선이 그어진다', '쿵 · 쿵 · 쿵 — 점점 빨라짐');
+    st.cap(4.6, st.C(sHold), '나이트가 닿는 8칸이 하나씩 초록으로 — 공격받을 적들 발밑은 빨갛게, 포크 선이 그어진다', '쿵 · 쿵 · 쿵 — 점점 빨라짐');
     st.cap(st.C(sHold), st.C(sLeap), '— 한 박 정적 —', '완전한 무음');
     st.cap(st.C(sLeap), st.C(sL), '"패밀리 포크!!" — 보라 불꽃을 두르고 하늘로', '드롭 + 말 울음');
-    st.cap(st.C(sL), st.C(sL + 1.4), '쾅 "탁월한 수!!" — 8칸에서 빛기둥, 붉은 빛이 적들 위로 내리꽂힌다', '쾅!! → 0.5초 정적');
+    st.cap(st.C(sL), st.C(sL + 1.4), '쾅 "탁월한 수!!" — 착지점 둘레에서 청록 빛기둥, 공격받은 적들 위로 붉은 빛', '쾅!! → 0.5초 정적');
     st.cap(st.C(sL + 1.4), st.C(sL + 3.2), '색이 천천히 돌아오고, 붉은 꽃잎과 불씨가 남는다', '나이트의 테마가 잦아들며 경기 음악으로');
     finish(st, st.C(sL + 3.2));
   },
