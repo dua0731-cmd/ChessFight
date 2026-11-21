@@ -1,6 +1,8 @@
 // Ending summons previz - the page's entry: window.PV for the recorder, and a simple player for a person.
 import { Stage } from './stage.js';
-import { CLIPS } from './clips.js';
+import { CLIPS as BASE } from './clips.js';
+import { KING_CLIPS } from './king.js';
+const CLIPS = { ...BASE, ...KING_CLIPS };
 import { DISP, BODY, HUD_TEXT } from './hud.js';
 
 const st = new Stage(document.getElementById('gl'), document.getElementById('hud'));

@@ -18,6 +18,7 @@ function outlined(g, text, x, y, fill, stroke, lw) { g.lineJoin = 'round'; g.lin
 export function drawHud(g, f) {
   g.clearRect(0, 0, W, H);
   if (f.vig > 0) { const gr = g.createRadialGradient(W / 2, H / 2, H * 0.28, W / 2, H / 2, H * 0.9); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(16,0,0,${0.9 * f.vig})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  if (f.tint && f.tint.a > 0) { g.fillStyle = `rgba(${f.tint.c},${f.tint.a})`; g.fillRect(0, 0, W, H); }
   if (f.streaks > 0) streaks(g, f.streaks);
   for (const t of f.tags ?? []) tag(g, t);
   if (f.me) me(g, f.me);
@@ -46,7 +47,7 @@ function tag(g, t) {
   g.font = `700 15px ${BODY}`; const w = g.measureText(t.text).width + 18;
   g.save(); g.globalAlpha = t.a ?? 1; rrect(g, t.x - w / 2, t.y - 26, w, 24, 7);
   g.fillStyle = t.team === 'b' ? 'rgba(30,26,24,0.88)' : 'rgba(246,240,228,0.92)'; g.fill();
-  g.strokeStyle = t.team === 'me' ? C.gold : t.team === 'b' ? C.enemy : C.ally; g.lineWidth = t.team === 'me' ? 3 : 2; g.stroke();
+  g.strokeStyle = t.team === 'me' || t.team === 'k' ? C.gold : t.team === 'b' ? C.enemy : C.ally; g.lineWidth = t.team === 'me' || t.team === 'k' ? 3 : 2; g.stroke();
   g.fillStyle = t.team === 'b' ? '#f4ead8' : '#221d1a'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t.text, t.x, t.y - 13.5); g.restore();
 }
 // My piece and place, top left.

@@ -409,3 +409,5 @@ const CARD = {
 };
 
 export const CLIPS = { call, hand, procession, setup, crown };
+// shared with the other plans' files (king.js)
+export { LOOK, OUTSIDE, INSIDE, ME_R, ME_Q, TEAM_COL, cx, yawTo, cue, runPose, runner, tagOf, chase, mix, shake, land, countdown, bells, lowerCrown, STRIP, endCard };
