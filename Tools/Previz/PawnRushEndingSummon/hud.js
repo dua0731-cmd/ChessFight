@@ -28,7 +28,7 @@ export function drawHud(g, f) {
   if (f.big && f.big.a > 0) {
     g.save(); g.globalAlpha = f.big.a; g.textAlign = 'center'; g.textBaseline = 'middle'; const s = f.big.scale ?? 1;
     g.translate(W / 2, f.big.y ?? H * 0.44); g.scale(s, s); g.font = `${f.big.size ?? 130}px ${DISP}`;
-    outlined(g, f.big.text, 0, 0, f.big.red ? C.red : '#ffd36a', 'rgba(20,10,0,0.85)', 12); g.restore();
+    outlined(g, f.big.text, 0, 0, f.big.color ?? (f.big.red ? C.red : '#ffd36a'), 'rgba(20,10,0,0.85)', 12); g.restore();
   }
   if (f.white > 0) { g.fillStyle = `rgba(255,252,240,${Math.min(1, f.white)})`; g.fillRect(0, 0, W, H); }
   if (f.black > 0) { g.fillStyle = `rgba(0,0,0,${Math.min(1, f.black)})`; g.fillRect(0, 0, W, H); }
