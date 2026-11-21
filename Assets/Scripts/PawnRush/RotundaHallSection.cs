@@ -153,8 +153,11 @@ namespace ChessFight.PawnRush
                     var up = high - low;
                     var normal = Vector3.Cross(across, up).normalized;
                     var center = (left + right + low + high) * .25f;
+                    // As wide as the panel's lower (wider) edge, and over its neighbours above and below: flat panels on a
+                    // curved dome otherwise leave triangles of sky at their corners.
+                    float wide = (Dome(a, t0, p1) - Dome(a, t0, p0)).magnitude;
                     HallParts.Panel(b, $"Dome {tier}.{s}", center, Quaternion.LookRotation(normal, up.normalized),
-                                    new Vector3(across.magnitude * 1.08f, up.magnitude * 1.04f, .4f), kit.wallNoClimb, false);
+                                    new Vector3(wide * 1.06f, up.magnitude * 1.15f, .5f), kit.wallNoClimb, false);
                 }
             }
         }

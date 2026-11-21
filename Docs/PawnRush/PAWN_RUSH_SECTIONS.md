@@ -2,6 +2,8 @@
 
 2026-11-02. 기획: [대계단 현관홀 레벨 디자인 v0.3](PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md)(성한 님, 사용자 첨부 원문), 참고: [4분 장애물 코스 컨셉아트 v2](PAWN_RUSH_CONCEPT_ART_v2.md), [장소별 4분 코스 설계](PAWN_RUSH_PLACES_4MIN.md), [미니게임 경계 설계](PAWN_RUSH_MINIGAME_BOUNDARY.svg). 사용자: "폰 러시는 장애물 구간 3개와 미니게임 구간 3개, 마지막 구간 1개 총 7개의 구간이 한 판을 이룰거야. 따라서 각 구간들은 해당 구간에서 나올 수 있는 프리팹 목록 중 랜덤으로 한 가지 프리팹을 뽑아 등장하고 조합되어 한 판을 이룰거야."
 **R300~R303 자동검사 기록은 컴파일·Core 테스트·좌표 점검 기준이다.** 현재 사용자 확인 목록은 [VALIDATION](../Network/VALIDATION.md)에 모은다.
+**JY-audience-hall(11-21) 엔딩 B · C · D와 방 규칙 '엔딩 맵'.** JY "B·C·D 다 지어줘"(변형안 v0.2). 6번 슬롯 후보 A · B · C · D: B 대성당(30 × 64 m, 2.5 m 계단 제단), C 원형 돔(체스판 가운데 네 칸이 해자 속 섬, 떨어지면 자기 팀 감실로), D 거인의 왕좌(3 m 방석이 발판). 방 규칙 '엔딩 맵'(비트 8 ~ 10)이 판 구성과 입장 화면 코스 공개를 같이 고정, 구간 시험 F11. 왕좌 차지전은 판이 주는 팀 줄(`IThroneStage.StandRow`)에 세우고, 끝날 때 길이 · 점유 시간을 로그에 남긴다. 프로토콜 `v61.hall2`. [변형안 v0.2 §7](PAWN_RUSH_AUDIENCE_HALL_VARIANTS_v0.2.md). 컴파일 · Core 219 · 세션 114 통과, **플레이 전**.
+
 **JY-audience-hall(11-21) 엔딩 = 국왕 알현실 회색 상자.** JY "내가 만들려는 엔딩 구간은 엔드게임 구간 바로 다음에 나오는거야. 알현실을 모티브로 한 공간에, 일정 시간동안 서있는 팀이 이기는 왕좌 발판을 놓고 양 팀 기물들이 서로 밀치고 치고받는." → "회색 상자 지어줘". 슬롯 6의 임시 바닥 자리에 `Final_AudienceHall`(`AudienceHallSection`, 코드로 짓는 회색 상자): 홀 24 × 22 m(벽 8 m, 남쪽 정문 12 m), 높이 1.25 m 단상(남 · 서 · 동 계단 5단 = 그림 + 18.4° 걷는 경사, 뒤는 잡고 오르는 절벽, 앞 모서리 석상 받침), 단상 위 지름 6 m 왕좌 발판(결승), 왕좌 · 닫집 · 왕관 · 기둥 8개. 왕좌 차지전은 엔딩의 `IThroneStage`를 읽어 팀을 홀 양쪽(x ±9)에 세우고 3초 뒤 발판을 켠다(통신 바이트 그대로). 구간 시험 **F10** = 엔딩 규칙 바꾸기(오프라인). 임시 바닥 파일은 남김. 프로토콜 `v61.hall1`(이 브랜치 빌드끼리만). [레벨디자인 초안 v0.1 · §9 회색 상자](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md) · [배치도](Mockups/AudienceHall_v0.1.svg). 컴파일 · Core 218 · 세션 114 통과, **Unity 확인 전**.
 
 **R727(11-20) 왕실 천문대가 슬롯 5의 라운드 후보.** 사용자 "실제 라운드 후보로 넣어야지". `Late_3-2_RoyalObservatory`를 슬롯 5의 `drafts`에서 `prefabs`로(작전 회의실 · 왕의 서재 옆). 프로토콜 v60. 왕실 금고실은 여전히 초안.
@@ -103,7 +105,7 @@
 | 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall** |
 | 4 | 미니게임 2 | **B 보수 중인 동관 · E 왕궁 서고 · F 대무도회장 · J 왕궁 세탁장**(R312,4종) · **G 왕의 행차 회랑 · H 국왕 체스 홀 · I 국왕 침실**(R691: 후반 3종이 이 슬롯으로 — 모두 7종) |
 | 5 | 장애물 3 (후반 · 윗궁 3-x) | **Final_WarRoom** = 국왕 작전실(R688: 엔딩이 아니라 후반 장애물 구간. R493 SeoungTest 구역 E와 같은 코드, 파일 이름은 그대로) · **Late_3-1_RoyalLibrary**(R706, 왕의 서재 → 거인 체스 — seoungtest R687 그래픽 · R689 온라인, [온라인 설계](GIANT_CHESS_ONLINE.md); 판 씨앗이 둘 중 하나). 초안(`drafts` — 코스 프리팹 시험 · 구간 검사에만, 판에는 안 나옴): **Late_3-2_RoyalObservatory**(R712, 왕실 천문대) · **Late_3-3_RoyalVault**(R725, [왕실 금고실](PAWN_RUSH_ROYAL_VAULT.md)) |
-| 6 | 엔딩 구간 | **Final_AudienceHall** = 국왕 알현실 회색 상자(JY-audience-hall 11-21, [초안 v0.1](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md)). 그 전의 임시 바닥 `Final_AudienceHall_Temp`(R688)는 파일만 남음 |
+| 6 | 엔딩 구간 | 국왕 알현실 넷(JY-audience-hall 11-21): **Final_AudienceHall**(A 지금 초안, [초안 v0.1](PAWN_RUSH_AUDIENCE_HALL_DESIGN_v0.1.md)) · **Final_AudienceHall_B_Cathedral** · **Final_AudienceHall_C_Rotunda** · **Final_AudienceHall_D_GiantThrone**([변형안 v0.2](PAWN_RUSH_AUDIENCE_HALL_VARIANTS_v0.2.md)). 씨앗으로 뽑거나 방 규칙 '엔딩 맵'으로 고정. 그 전의 임시 바닥 `Final_AudienceHall_Temp`(R688)는 파일만 남음 |
 
 판에서 빠진 것(R688): 세 번째 미니게임 **슬롯**(거기서 나오던 G · H · I는 R691에서 슬롯 4 후보로 돌아왔다), 임시 후반 바닥 `Late_3-0_TempFloor`(파일은 남음).
 

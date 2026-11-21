@@ -126,7 +126,7 @@ main(R734)에서 딴 브랜치다. 컴파일 · Core 시험 218 · 세션 시험
 | `Assets/Prefabs/PawnRushSections/Final_AudienceHall.prefab` | 위 구간의 프리팹. 인스펙터에서 바꿀 수 있는 값: 발판 지름 · 단 수 · 한 단 높이 · 디딤판 깊이 · 남쪽 계단 켜기 · 대치 초 |
 | `Assets/Settings/PawnRushSections.asset` | 6번 슬롯(엔딩)의 후보를 임시 바닥에서 알현실로 바꿈. 임시 바닥의 프리팹과 코드는 남김 |
 | `Assets/Resources/Loading/PawnRushCourse.txt` | 입장 화면 코스 이름표의 엔딩 줄(Play할 때마다 다시 쓰이는 파일) |
-| `Assets/Scripts/PawnRush/ThroneContest.cs` | 엔딩 구간이 `IThroneStage`를 가지면 그 값을 쓴다. 팀을 원 가장자리에서 `StandGap`(알현실은 6 m) 밖에 세우고, 세운 뒤 `StandoffSeconds`(3초) 동안 발판이 어느 팀에도 시간을 주지 않는다(화면: 3 · 2 · 1 → "발판 켜짐!", 가운데 글 "곧 발판이 켜집니다"). `IThroneStage`가 없는 엔딩(임시 바닥)은 예전 그대로(2.2 m, 대치 없음). 통신 바이트는 그대로 7개 |
+| `Assets/Scripts/PawnRush/ThroneContest.cs` | 엔딩 구간이 `IThroneStage`를 가지면 그 값을 쓴다. 팀 줄을 그 판이 주는 자리(`StandRow`, 알현실 A는 x ±9)에 세우고, 세운 뒤 `StandoffSeconds`(3초) 동안 발판이 어느 팀에도 시간을 주지 않는다(화면: 3 · 2 · 1 → "발판 켜짐!", 가운데 글 "곧 발판이 켜집니다"). `IThroneStage`가 없는 엔딩(임시 바닥)은 예전 그대로(원 가장자리에서 2.2 m, 대치 없음). 통신 바이트는 그대로 7개. (처음엔 `StandGap`이었고 B · C · D를 지으며 `StandRow`로 바뀜 — [변형안 §7](PAWN_RUSH_AUDIENCE_HALL_VARIANTS_v0.2.md)) |
 | `Assets/Scripts/PawnRush/SectionPlaytest.cs` | 구간 시험(오프라인)에서 **F10 = 엔딩 규칙 바꾸기**(왕관 발판 ↔ 왕좌 차지전). 온라인에서는 방장이 방 규칙에서 고른다 |
 | `Assets/Scripts/Network/SteamSession.cs` | 프로토콜 `…v61.hall1`: 이 브랜치로 뽑은 빌드끼리만 만난다(main에 합칠 때 main의 번호로 돌린다) |
 
