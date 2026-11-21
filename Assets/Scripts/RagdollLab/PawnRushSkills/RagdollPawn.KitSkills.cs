@@ -200,6 +200,7 @@ namespace ChessFight.RagdollLab
                         leapLandAt = Time.time;
                         SkillDetail = "착지 후딜";
                         Fx(SkillFxKind.KnightLand, null, FeetPoint, planDir, 0, 0.5f);
+                        if (VariantNow == PawnRushSkillIds.LeapFork) LeapForkLand(s);   // the set 1안-a's leap fork (SetSkills)
                         // The pool's N-기1: the jump pressed just before touching down rolls it on.
                         if (Time.time - leapJumpAt <= s.leapRollEarly) BeginLeapRoll(s);
                     }
@@ -539,6 +540,7 @@ namespace ChessFight.RagdollLab
                     {
                         skillHitSet.Clear();
                         StartDash(s.stepSpeed, s.stepDistance / Mathf.Max(0.5f, s.stepSpeed));
+                        if (VariantNow == PawnRushSkillIds.KingEscort) EscortStep(s);   // the set 2안-a's: two teammates come along
                         planPhase = PlanPhase.Active;
                         planTime = 0f;
                     }

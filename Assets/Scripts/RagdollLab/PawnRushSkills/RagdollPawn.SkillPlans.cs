@@ -73,8 +73,8 @@ namespace ChessFight.RagdollLab
         /// <summary>How many slots this piece has now, and the skill in one (0: empty).</summary>
         public int SlotCount => Loadout != null && PawnRushLoadout.Row(piece) >= 0 && (piece != PieceKind.King || Loadout.KingSlots)
             ? Loadout.SlotCount : 0;
-        public int SlotSkill(int slot) => Loadout != null ? Loadout.Skill(piece, slot) : 0;
-        public bool HasSkill(int id) => Loadout != null && Loadout.SlotOf(piece, id) >= 0;
+        public int SlotSkill(int slot) => Loadout != null ? Loadout.Skill(piece, slot, ShapeStage) : 0;
+        public bool HasSkill(int id) => Loadout != null && Loadout.SlotOf(piece, id, ShapeStage) >= 0;
         public float SlotCooldown(int slot) => slot >= 0 && slot < slotCd.Length ? Mathf.Max(0f, slotCd[slot]) : 0f;
         public float SlotCooldownTotal(int slot) => slot >= 0 && slot < slotCdTotal.Length ? slotCdTotal[slot] : 0f;
 
@@ -87,11 +87,14 @@ namespace ChessFight.RagdollLab
         public int PlanSkill => planPhase != PlanPhase.None ? activeSkill : 0;
 
         /// <summary>The growing system's stage of this piece's skill (1..3; 1 under the other systems).</summary>
-        public int SkillStageLevel => Loadout != null ? Loadout.Stage(piece) : 1;
+        public int SkillStageLevel => ShapeStage > 0 ? ShapeStage : Loadout != null ? Loadout.Stage(piece) : 1;
 
         float StageFactor(float[] table)
         {
             if (table == null || table.Length == 0) return 1f;
+            // (A row that grows into another skill - the set 2안-a's endgame shape - is stronger by that skill, not more.)
+            var lo = Loadout;
+            if (lo != null && lo.system == PawnRushLoadout.Grow && lo.Raw(PawnRushLoadout.Row(piece), 1) != 0) return 1f;
             return table[Mathf.Clamp(SkillStageLevel - 1, 0, table.Length - 1)];
         }
 
@@ -153,7 +156,8 @@ namespace ChessFight.RagdollLab
             bool anyOld = false;
             for (int k = 0; k < lo.SlotCount; k++)
             {
-                int id = lo.Skill(piece, k);
+                // (A variant - a set's own numbers - runs on its skill's code: PawnRushSkillIds.BaseOf, RagdollPawn.SetSkills.cs.)
+                int id = PawnRushSkillIds.BaseOf(SlotSkill(k));
                 if (id == 0) continue;
                 cdSlot = k;
                 // The kits' second version: an ultimate's key goes on a full gauge only, one of a team's at a time.
@@ -321,13 +325,13 @@ namespace ChessFight.RagdollLab
             var lo = Loadout;
             if (lo != null && lo.SlotCount > 1 && (piece != PieceKind.King || lo.KingSlots))
             {
-                if (input.ability && lo.Skill(piece, 1) != 0)
+                if (input.ability && SlotSkill(1) != 0)
                 {
                     slotKeys[1] = true;
                     input.ability = false;
                 }
-                if (input.ability3 && lo.Skill(piece, 2) != 0) slotKeys[2] = true;
-                if (input.ability2 && lo.Skill(piece, PawnRushLoadout.UltSlot) != 0)
+                if (input.ability3 && SlotSkill(2) != 0) slotKeys[2] = true;
+                if (input.ability2 && SlotSkill(PawnRushLoadout.UltSlot) != 0)
                 {
                     slotKeys[PawnRushLoadout.UltSlot] = true;
                     input.ability2 = false;
@@ -1191,7 +1195,7 @@ namespace ChessFight.RagdollLab
         void ApplySlotNet(in SkillWireState s)
         {
             activeSkill = s.Skill;
-            activeSlot = Loadout != null ? Loadout.SlotOf(piece, s.Skill) : -1;
+            activeSlot = Loadout != null ? Loadout.SlotOf(piece, s.Skill, ShapeStage) : -1;
             oldHome = PawnRushSkillIds.Old(s.Skill) ? (int)PawnRushSkillIds.OldPiece(s.Skill) : -1;
             SeeSlotCooldown(1, s.Cooldown2);
             SeeSlotCooldown(2, s.Cooldown3);

@@ -14,7 +14,16 @@ namespace ChessFight.Gameplay
         // opposite-coloured bishop while enemy bodies pass through it) and CrownFinish asks; null: everyone counts.
         public static System.Func<ICharacterDriver, bool> OffTheCount;
 
+        // JY-skill-lab (the set 2안-a): a team has cleared one of its mini-games (its team, where the games are judged and
+        // where a client hears it); the ragdoll side counts them and turns the team's skills to their endgame shapes after
+        // the second.
+        public static System.Action<int> MiniGameDone;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => PawnRush = false;
+        static void ResetStatics()
+        {
+            PawnRush = false;
+            MiniGameDone = null;
+        }
     }
 }

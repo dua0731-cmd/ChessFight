@@ -455,6 +455,7 @@ namespace ChessFight.RagdollLab
                 cooldownTotal = skillCooldownLeft = 0f;
                 return;
             }
+            seconds *= VariantCooldownScale(SlotSkill(cdSlot));   // a set's variant on its own cooldown (RagdollPawn.SetSkills.cs)
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
             seconds *= StageCooldown;   // the growing system's stage (the skill window)
@@ -771,6 +772,17 @@ namespace ChessFight.RagdollLab
             }
             else if (n == 2 && pawnSteer) skillDir = SteeredSecond(s);   // the pool's: bent by the move keys
             else skillDir = MoveOrAim();
+            // The set 2안-a's passed pawn: the second step is a run of passedRun through the way (SetSkills).
+            passedRun = n == 2 && pawnSteer && VariantNow == PawnRushSkillIds.PassedPawn;
+            if (passedRun)
+            {
+                StartDash(s.passedSpeed, s.passedRun / Mathf.Max(0.1f, s.passedSpeed));
+                skillStage = SkillStage.Active;
+                stageTime = 0f;
+                SkillDetail = "통과한 폰: 질주";
+                Fx(SkillFxKind.PawnStep, null, FeetPoint, skillDir, n);
+                return;
+            }
             StartDash(s.pawnStepSpeed, distance / Mathf.Max(0.1f, s.pawnStepSpeed));
             skillStage = SkillStage.Active;
             stageTime = 0f;
@@ -804,13 +816,21 @@ namespace ChessFight.RagdollLab
                     if (pawnStep == 2 && other == pawnTarget) dashLeft = Mathf.Min(dashLeft, 0.02f);
                     continue;
                 }
-                if (pawnStepHit || !IsEnemyOf(other) || other.SkillUntargetable) continue;
+                if (!IsEnemyOf(other) || other.SkillUntargetable) continue;
+                // The set 2안-a's passed pawn: its second step runs through, shoving aside whoever is in the way (SetSkills).
+                if (passedRun)
+                {
+                    skillHitSet.Add(other);
+                    PassedShove(s, other);
+                    continue;
+                }
+                if (pawnStepHit) continue;
                 skillHitSet.Add(other);
                 pawnStepHit = true;
                 float angle = AxisAngle(other, skillDir);
                 bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
                 string result = diagonal
-                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? s.stepKnockHold : 0f)
+                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? StepKnockNow(s) : 0f)
                     : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);

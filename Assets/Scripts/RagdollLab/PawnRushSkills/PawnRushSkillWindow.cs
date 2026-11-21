@@ -60,6 +60,8 @@ namespace ChessFight.RagdollLab
         int originFilter = -1;   // SkillOrigin, or -1 for every one
         int dragId, pickId, hoverId;
         float scroll;
+        // The earlier loadouts' buttons shown (behind "옛 묶음", so the line of the sets stays short).
+        bool showOld;
         string message = "";
         float messageUntil;
         bool cursorTaken, savedVisible;
@@ -330,9 +332,12 @@ namespace ChessFight.RagdollLab
                 x += bw + 6f;
             }
             x += 10f;
-            // (In the order shown; each one's number is PawnRushLoadout.Preset's.)
-            string[] presets = { "지금 스킬", "1-나", "A 묶음", "기본기", "1안", "2안", "3안", "2판", "비우기" };
-            int[] presetIds = { 0, 1, 3, 4, 5, 7, 6, 8, 2 };
+            // (In the order shown; each one's number is PawnRushLoadout.Preset's, -1 the "옛 묶음" switch.) The sets
+            // (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.9: the user's "1안-a세트") on the line; the earlier loadouts behind it.
+            string[] presets = showOld
+                ? new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "비우기", "옛 묶음 ▾", "1-나", "A 묶음", "기본기", "옛 1안", "옛 2안", "옛 3안" }
+                : new[] { "지금 스킬", "1안-a", "2안-a", "3안-a", "비우기", "옛 묶음 ▸" };
+            int[] presetIds = showOld ? new[] { 0, 9, 10, 8, 2, -1, 1, 3, 4, 5, 7, 6 } : new[] { 0, 9, 10, 8, 2, -1 };
             // Too many for the rest of this line (a narrow window): onto the next one, under the systems.
             if (x + presets.Length * 62f > right - 140f)
             {
@@ -341,17 +346,29 @@ namespace ChessFight.RagdollLab
             }
             for (int i = 0; i < presets.Length; i++)
             {
-                if (Chip(new Rect(x, y, 58f, 24f), presets[i], false) && Change(PawnRushLoadout.OpPreset, presetIds[i]))
+                int id = presetIds[i];
+                if (id < 0)
                 {
-                    // The kits' second version is several skills a piece: its system comes with it.
-                    if (presetIds[i] == 8 && lo.system != PawnRushLoadout.Many) Change(PawnRushLoadout.OpSystem, PawnRushLoadout.Many);
-                    Say(presetIds[i] == 2 ? "모든 칸을 비웠어요"
-                        : presetIds[i] == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
-                        : presetIds[i] == 5 ? "첫 칸을 후보 문서의 1안(기물당 하나)으로 채웠어요. 킹도 왕의 부름(앞으로)을 받아요"
-                        : presetIds[i] == 6 ? "후보 문서 3안: 기본기 · 중급기 · 궁극기(게이지). 스킬 방식 3안이면 F · E · Q예요"
-                        : presetIds[i] == 8 ? "기물별 한 벌 2판: 기물마다 칸 조합이 달라요(퀸은 R까지 셋), 궁극기는 Q. 스킬 방식도 3안으로 바꿨어요"
-                        : presetIds[i] == 7 ? "후보 문서 2안: 스킬 방식 2안에서 단계 1은 첫 칸, 단계 2 · 3은 둘째 칸(자란 스킬)을 써요"
-                        : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
+                    if (Chip(new Rect(x, y, 58f, 24f), presets[i], showOld)) showOld = !showOld;
+                    x += 62f;
+                    continue;
+                }
+                if (Chip(new Rect(x, y, 58f, 24f), presets[i], false))
+                {
+                    // A set comes with its system (one skill a piece, the growing one, several).
+                    bool slots = Change(PawnRushLoadout.OpPreset, id);
+                    int system = PawnRushLoadout.SystemOf(id);
+                    bool switched = system != 0 && lo.system != system && Change(PawnRushLoadout.OpSystem, system);
+                    if (slots || switched)
+                        Say(id == 2 ? "모든 칸을 비웠어요"
+                            : id == 9 ? "1안-a세트: 기물마다 일반 칸 하나(F, 중급 세기)와 궁극기(Q, 팀 게이지). 스킬 방식도 1안으로"
+                            : id == 10 ? "2안-a세트: F가 미들게임 모양 → 엔드게임 모양(→ 칸)으로 자라요. 시험 씬은 왼쪽 창 '엔드게임 모양'. 궁극기는 Q"
+                            : id == 8 ? "3안-a세트: 기물마다 칸 조합이 달라요(퀸은 R까지 셋), 궁극기는 Q. 스킬 방식도 3안으로"
+                            : id == 4 ? "첫 칸을 기물별 한 벌의 기본기(오프닝)로 채웠어요. 킹도 한 걸음을 받아요"
+                            : id == 5 ? "옛 1안(후보 문서, 기물당 하나)으로 채웠어요"
+                            : id == 6 ? "옛 3안(후보 문서: 기본기 · 중급기 · 처음 궁극기)으로 채웠어요"
+                            : id == 7 ? "옛 2안(후보 문서): 단계 1은 첫 칸, 단계 2 · 3은 둘째 칸(자란 스킬)"
+                            : $"첫 칸을 '{presets[i]}' 구성으로 채웠어요");
                 }
                 x += 62f;
             }
@@ -496,11 +513,15 @@ namespace ChessFight.RagdollLab
                 float sx = boardX + 50f;
                 for (int k = 0; k < lo.SlotCount; k++)
                 {
+                    // The slots this system plays (every plan has Q since the sets), and the growing system's second: what
+                    // the first grows into (its endgame shape).
+                    bool grown = lo.system == PawnRushLoadout.Grow && k == 1;
+                    if (!lo.Plays(k) && !grown) continue;
                     var r = new Rect(sx, by, sock, sock);
                     int id = lo.Raw(row, k);
                     var entry = PawnRushSkillBook.Find(id);
                     bool over = dragId != 0 && r.Contains(e.mousePosition);
-                    string key = KeyName != null ? KeyName(k) : k == 0 ? "F" : k == 1 ? "E" : k == 2 ? "R" : "Q";
+                    string key = grown ? "→" : KeyName != null ? KeyName(k) : k == 0 ? "F" : k == 1 ? "E" : k == 2 ? "R" : "Q";
                     if (entry != null)
                     {
                         DrawTile(r, entry, over);
@@ -552,8 +573,8 @@ namespace ChessFight.RagdollLab
                 }
                 by += sock + 34f;
             }
-            string note = lo.system == PawnRushLoadout.One ? "1안: 기물마다 스킬 하나 (스킬 키)."
-                : lo.system == PawnRushLoadout.Grow ? "2안: 스킬 하나가 단계마다 강해져요. 지금은 단계를 여기서 직접 올려요 (임시)."
+            string note = lo.system == PawnRushLoadout.One ? "1안: 기물마다 일반 칸 하나(F)와 궁극 칸(Q, 팀 게이지)."
+                : lo.system == PawnRushLoadout.Grow ? "2안: F가 미들게임 모양에서 엔드게임 모양(→)으로 자라요. 단계 2부터 → 칸 (코스: 미니게임 2 뒤). Q는 궁극기."
                 : "3안: 기물마다 네 칸(F · E · R · Q, Q는 궁극기). 한 번에 스킬 하나만 돌고, 쿨타임은 칸마다 따로예요.";
             GUI.Label(new Rect(boardX, by, boardW, 32f), note, small);
             if (ShowLock != null && ShowLock())

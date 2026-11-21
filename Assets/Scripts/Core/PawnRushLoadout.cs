@@ -58,9 +58,34 @@ namespace ChessFight.Network
         // bishop's Greek gift, the rook's 7th rank, the queen's sacrifice, the king's general call (RagdollPawn.TeamUlts.cs).
         // The six above (93..98 less the chariot, and 103) are the high tier's candidates now.
         public const int PassantBang = 104, KnightTour = 105, GreekGift = 106, RankWall = 107, QueenDrop = 108, GeneralCall = 109;
+        // The sets 1안-a and 2안-a (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.9, the user 11-21: "추천안들을 1안-a세트 이런 이름으로").
+        // Variants - a skill above with a set's own numbers, on the same code (BaseOf): the two steps at the mid tier (a
+        // diagonal hit floors 2 s, 8 s), the snipe at the mid tier (20 m, 12 s), the wall charge at the mid tier (a 3 s wall,
+        // 14 s), the series of checks on 12 s, the king's call on 16 s; the knight's leap fork (the bent leap kicking the
+        // two beside where it lands), the passed pawn (the two steps whose second is a 6 m run through), the king's step
+        // taking two teammates with him (RagdollPawn.SetSkills.cs).
+        public const int StepsMid = 110, SnipeMid = 111, WallMid = 112, SeriesQuick = 113, SummonQuick = 114, LeapFork = 115, PassedPawn = 116,
+                         KingEscort = 117;
+
+        /// <summary>The skill whose code a variant runs on (itself for any other).</summary>
+        public static int BaseOf(int id)
+        {
+            switch (id)
+            {
+                case StepsMid: return SteeredSteps;
+                case PassedPawn: return SteeredSteps;
+                case SnipeMid: return LongSnipe;
+                case WallMid: return WallCharge;
+                case SeriesQuick: return CheckSeries;
+                case SummonQuick: return KingSummon;
+                case LeapFork: return BentLeap;
+                case KingEscort: return KingStep;
+                default: return id;
+            }
+        }
 
         /// <summary>The long diagonal snipe, the pool's mid one or the kits' second version's high one.</summary>
-        public static bool Snipe(int id) => id == LongSnipe || id == SnipeHigh;
+        public static bool Snipe(int id) => id == LongSnipe || id == SnipeHigh || id == SnipeMid;
 
         /// <summary>Made as an ultimate: the first six (and the pool's chariot), the high tier's candidates now, or the team's
         /// comeback six.</summary>
@@ -77,12 +102,16 @@ namespace ChessFight.Network
 
         /// <summary>One of the skills as they are: made for one piece, with that piece's effects and sounds. (The pool's
         /// two steps, chain and call run on the old ones' code, as the pawn, the rook and the king.)</summary>
-        public static bool Old(int id) => (id >= TwoSteps && id <= RingShove) || id == SteeredSteps || id == ChainBehind || id == KingSummon;
+        public static bool Old(int id)
+        {
+            id = BaseOf(id);
+            return (id >= TwoSteps && id <= RingShove) || id == SteeredSteps || id == ChainBehind || id == KingSummon;
+        }
 
         /// <summary>The piece an old skill was made for.</summary>
         public static PieceKind OldPiece(int id)
         {
-            switch (id)
+            switch (BaseOf(id))
             {
                 case TurnLeap: return PieceKind.Knight;
                 case CrossRope: return PieceKind.Bishop;
@@ -135,8 +164,16 @@ namespace ChessFight.Network
             return -1;
         }
 
-        /// <summary>How many slots a piece has under this system: four with several skills a piece, one otherwise.</summary>
-        public int SlotCount => system == Many ? Slots : 1;
+        /// <summary>The slots a piece's row has (all four, whatever the system: Plays says which of them play).</summary>
+        public int SlotCount => Slots;
+
+        /// <summary>Whether a slot plays under this system: all four with several skills a piece; with one a piece and with
+        /// the growing one, the first (F) and the ultimate's (Q) - since the sets 1안-a and 2안-a (11-21) every plan has its
+        /// ultimate slot. The growing system's second slot is what the first grows into, not a slot of its own.</summary>
+        public bool Plays(int slot) => slot >= 0 && slot < Slots && (system == Many || slot == 0 || slot == UltSlot);
+
+        /// <summary>How many normal slots play under this system (the ultimate's apart).</summary>
+        public int NormalSlots => system == Many ? Slots - 1 : 1;
 
         void Mend()
         {
@@ -170,14 +207,16 @@ namespace ChessFight.Network
             slots[row * Slots + slot] = id < 0 ? 0 : id;
         }
 
-        /// <summary>The skill a piece plays in a slot now (none past the system's slots, none for a piece without a row). With
-        /// the growing system a skill in the row's second slot is what the first grows into from stage 2 (the skill pool's
-        /// plan 2: "처음 → 나중"); with none there the first one plays at every stage, as before.</summary>
-        public int Skill(PieceKind piece, int slot)
+        /// <summary>The skill a piece plays in a slot now (none in a slot the system does not play, none for a piece without a
+        /// row). With the growing system a skill in the row's second slot is what the first grows into from stage 2 (the
+        /// skill pool's plan 2: "처음 → 나중"; the set 2안-a: the middlegame shape, then the endgame's); with none there the
+        /// first one plays at every stage, as before. <paramref name="stage"/>: a piece's own stage (a team past its second
+        /// mini-game), 0 for the row's.</summary>
+        public int Skill(PieceKind piece, int slot, int stage = 0)
         {
-            if (slot < 0 || slot >= SlotCount) return 0;
+            if (!Plays(slot)) return 0;
             int row = Row(piece);
-            if (system == Grow && slot == 0 && Stage(piece) >= 2)
+            if (system == Grow && slot == 0 && (stage > 0 ? stage : Stage(piece)) >= 2)
             {
                 int grown = Raw(row, 1);
                 if (grown != 0) return grown;
@@ -196,12 +235,15 @@ namespace ChessFight.Network
             }
         }
 
-        /// <summary>The slot a piece plays a skill in now, or -1.</summary>
-        public int SlotOf(PieceKind piece, int id)
+        /// <summary>The slot a piece plays a skill in now (or a variant of it, PawnRushSkillIds.BaseOf), or -1.</summary>
+        public int SlotOf(PieceKind piece, int id, int stage = 0)
         {
             if (id == 0) return -1;
             for (int k = 0; k < SlotCount; k++)
-                if (Skill(piece, k) == id) return k;
+            {
+                int there = Skill(piece, k, stage);
+                if (there == id || (there != 0 && PawnRushSkillIds.BaseOf(there) == id)) return k;
+            }
             return -1;
         }
 
@@ -323,20 +365,45 @@ namespace ChessFight.Network
             return read;
         }
 
+        /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
+        /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
+        /// 0 for the others (the system stays as it is).</summary>
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 ? Many : 0;
+
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 9;
+        public const int Presets = 11;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
         /// Docs/Skills/PAWN_RUSH_SKILL_KITS.md), 5 the skill pool's plan 1 (one skill a piece), 6 the pool's plan 3 (basic,
         /// mid, ultimate: its basic row in the first slots, its mid row in the second, the ultimates in Q's), 7 the pool's
         /// plan 2 (the first skill in the first slots, what each grows into in the second: the growing system plays it from
-        /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each).
-        /// The king's row is empty (his call) in all but 4 to 8.</summary>
+        /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each:
+        /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
+        /// grows from its middlegame shape to its endgame shape, and the ultimate). The king's row is empty (his call) in all
+        /// but 4 to 10.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 9 || which == 10)
+            {
+                // KITS 6.9: the sets 1안-a (one normal slot) and 2안-a (the first slot's middlegame shape, the second its
+                // endgame shape); the same ultimates as 3안-a.
+                int[] mid = which == 9
+                    ? new[] { PawnRushSkillIds.StepsMid, PawnRushSkillIds.LeapFork, PawnRushSkillIds.SnipeMid, PawnRushSkillIds.WallMid, PawnRushSkillIds.SeriesQuick, PawnRushSkillIds.SummonQuick }
+                    : new[] { PawnRushSkillIds.SteeredSteps, PawnRushSkillIds.BentLeap, PawnRushSkillIds.FlankShot, PawnRushSkillIds.FileCharge, PawnRushSkillIds.Check, PawnRushSkillIds.KingStep };
+                int[] end = which == 9 ? new int[Rows]
+                    : new[] { PawnRushSkillIds.PassedPawn, PawnRushSkillIds.LeapFork, PawnRushSkillIds.LongSnipe, PawnRushSkillIds.WallCharge, PawnRushSkillIds.SeriesQuick, PawnRushSkillIds.KingEscort };
+                int[] ult = { PawnRushSkillIds.PassantBang, PawnRushSkillIds.KnightTour, PawnRushSkillIds.GreekGift, PawnRushSkillIds.RankWall, PawnRushSkillIds.QueenDrop, PawnRushSkillIds.GeneralCall };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = mid[row];
+                    p.slots[row * Slots + 1] = end[row];
+                    p.slots[row * Slots + UltSlot] = ult[row];
+                }
+                return p;
+            }
             if (which == 8)
             {
                 // KITS 6.0: the pawn, the knight and the king a basic and a mid, the bishop a basic and a high one, the rook a

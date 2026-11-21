@@ -137,7 +137,9 @@ namespace ChessFight.RagdollLab
                 var s = PawnRushSkills;
                 if (s == null) return 0f;
                 if (planPhase != PlanPhase.Windup) return s.snipeNear;
-                return Mathf.Lerp(s.snipeNear, s.snipeFar, Mathf.Clamp01(planTime / Mathf.Max(0.05f, s.snipeCharge)));
+                // (The set 1안-a's mid snipe reaches less far: snipeMidFar. Any PC: the slot under way says which.)
+                float far = ActiveVariant == PawnRushSkillIds.SnipeMid ? s.snipeMidFar : s.snipeFar;
+                return Mathf.Lerp(s.snipeNear, far, Mathf.Clamp01(planTime / Mathf.Max(0.05f, s.snipeCharge)));
             }
         }
 

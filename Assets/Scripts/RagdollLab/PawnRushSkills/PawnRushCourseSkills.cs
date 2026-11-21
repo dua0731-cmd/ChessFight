@@ -144,6 +144,7 @@ namespace ChessFight.RagdollLab
         {
             Current = this;
             RagdollPawn.ResetTeamGauges();   // JY-skill-lab: the teams' ultimate gauges start empty with the round
+            ChessFight.Gameplay.CourseSkills.MiniGameDone += OnMiniGameDone;   // the set 2안-a's endgame shapes
             fx = gameObject.AddComponent<PawnRushSkillFx>();
             fx.ParamsOverride = skills;
             fx.ViewerOverride = () => Viewer;
@@ -170,8 +171,23 @@ namespace ChessFight.RagdollLab
             spawner = FindFirstObjectByType<PlaytestSpawner>(FindObjectsInactive.Include);
         }
 
+        // JY-skill-lab (the set 2안-a, Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.9: "미니게임 2가 끝나면 엔드게임 모양"): how many
+        // mini-games each team has cleared; at its second, every piece of the team plays its endgame shapes.
+        readonly int[] gamesDone = new int[2];
+
+        void OnMiniGameDone(int team)
+        {
+            if (team < 0 || team > 1) return;
+            gamesDone[team]++;
+            if (gamesDone[team] != 2) return;
+            foreach (var pawn in RagdollPawn.All)
+                if (pawn != null && pawn.Team == team) pawn.ShapeStage = 2;
+            Debug.Log($"[PawnRush] {ChessFight.Gameplay.Teams.Name(team)}팀 미니게임 2 끝 — 2안 스킬이 엔드게임 모양으로");
+        }
+
         void OnDestroy()
         {
+            ChessFight.Gameplay.CourseSkills.MiniGameDone -= OnMiniGameDone;
             if (Current != this) return;
             Current = null;
             PawnRushPromotion.NameNow = PawnRushPromotion.LineNow = null;

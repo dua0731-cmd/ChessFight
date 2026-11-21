@@ -788,7 +788,20 @@ namespace ChessFight.RagdollLab
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
             GUILayout.Label(skills.loadout.system == PawnRushLoadout.Many
                 ? "3안: 스킬을 넣은 둘째 · 셋째 · 넷째 칸은 E · R · Q가 스킬 키 (빈 칸이면 랩의 원래 기능, R은 모두 리스폰)"
-                : "E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
+                : "1안 · 2안: F는 일반 칸, Q는 궁극 칸 (넣었을 때). E와 마우스는 랩의 원래 기능 그대로", small);
+            if (skills.loadout.system == PawnRushLoadout.Grow)
+            {
+                // The set 2안-a: the middlegame shapes, or (after the second mini-game on the course) the endgame shapes.
+                bool end = true;
+                for (int row = 0; row < PawnRushLoadout.Rows; row++)
+                    if (skills.loadout.stages[row] < 2) end = false;
+                if (!Online && GUILayout.Button(end ? "모양: 엔드게임 (누르면 미들게임으로)" : "모양: 미들게임 (누르면 엔드게임으로)", end ? selected : button))
+                {
+                    for (int row = 0; row < PawnRushLoadout.Rows; row++) skills.loadout.SetStage(row, end ? 1 : 2);
+                    OnLoadoutChanged();
+                    Report(end ? "모든 기물이 미들게임 모양으로" : "모든 기물이 엔드게임 모양으로 (코스에서는 팀이 미니게임 2를 끝냈을 때)");
+                }
+            }
             if (p1.HasUltimate)
             {
                 // The kits' second version's ultimate gauge (RagdollPawn.UltGauge.cs).

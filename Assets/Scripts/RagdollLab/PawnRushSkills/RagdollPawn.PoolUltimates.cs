@@ -51,7 +51,7 @@ namespace ChessFight.RagdollLab
             int was = cdSlot;
             for (int k = 0; k < lo.SlotCount && k < slotCd.Length; k++)
             {
-                if (!PawnRushSkillIds.Ultimate(lo.Skill(piece, k))) continue;
+                if (!PawnRushSkillIds.Ultimate(SlotSkill(k))) continue;
                 cdSlot = k;
                 StartCooldown(UltCooldown(activeSkill, s));
             }

@@ -132,6 +132,25 @@ namespace ChessFight.RagdollLab
             Made(PawnRushSkillIds.SeventhRank, "작은 7번째 줄", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
                 "상급기 후보 (2판 처음의 궁극기: Q 칸이면 팀 게이지, 다른 칸이면 쿨 60초) · 키 = 내가 보는 쪽 앞에 길 폭 전체 (8 m, 옆 벽에서 멈춤)를 막는 2.5 m 성벽이 1초 동안 솟음 (모두에게 알림)\n8초 동안 벽 뒤에서 달리면 벽이 내 빠르기로 나아감 (20 m까지, 뒤로는 안 감) · 벽 앞의 적은 계속 떠밀림 · 우리 팀은 벽을 지나감\n좌클릭 누르고 있다 떼기 = 모아 치기: 벽이 한 번에 3 m까지 튀어 나가며 앞의 적을 날림 (2판 R-궁)"),
 
+            // The sets 1안-a and 2안-a (11-21, Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6.9; RagdollPawn.SetSkills.cs): the skills
+            // above with a set's own numbers, and the three new ones.
+            Made(PawnRushSkillIds.StepsMid, "첫 두 걸음 (중급)", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Move | SkillTag.Block | SkillTag.Ally,
+                "1안-a세트의 수치 · 첫 두 걸음 (꺾기 · 앙파상)과 같고, 비스듬히 맞히면 2초 넘어짐 · 쿨 8초 (한 걸음만 4.8초)"),
+            Made(PawnRushSkillIds.LeapFork, "도약 포크", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Move | SkillTag.Block,
+                "키 = ㄱ자 도약 (공중에서 한 번 꺾기, 머리를 밟으면 가볍게) · 내린 자리 둘레 2.2 m에 적이 둘이면 둘 다 2초 넘어지며 날아감\n하나뿐이면 그 적을 밟아 휘청 + 3초 가볍게 · 쿨 10초 (1안-a, 2안-a의 엔드게임 모양)"),
+            Made(PawnRushSkillIds.SnipeMid, "긴 대각선 저격 (중급)", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
+                "1안-a세트의 수치 · 긴 대각선 저격과 같고, 가장 멀리 20 m (12 m 안 휘청 0.4초, 그 너머 넘어짐 2초) · 쿨 12초"),
+            Made(PawnRushSkillIds.WallMid, "성벽 돌진 (중급)", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
+                "1안-a세트의 수치 · 성벽 돌진과 같고, 성벽이 3초 섬 · 쿨 14초"),
+            Made(PawnRushSkillIds.SeriesQuick, "연속 체크 (쿨 12초)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
+                "1안-a, 2안-a세트의 수치 · 연속 체크와 같고 쿨 12초"),
+            Made(PawnRushSkillIds.SummonQuick, "왕의 부름 (쿨 16초)", PieceKind.King, SkillOrigin.Kits, SkillTag.Ally | SkillTag.Move | SkillTag.Block,
+                "1안-a세트의 수치 · 왕의 부름 (앞으로)과 같고 쿨 16초"),
+            Made(PawnRushSkillIds.PassedPawn, "통과한 폰", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Move | SkillTag.Block,
+                "첫 두 걸음과 같고, 둘째 걸음이 6 m 질주: 길을 막은 적은 옆으로 1.5 m 밀고 지나감 (2안-a의 엔드게임 모양)"),
+            Made(PawnRushSkillIds.KingEscort, "데리고 걷기", PieceKind.King, SkillOrigin.Kits, SkillTag.Move | SkillTag.Ally,
+                "왕의 한 걸음과 같고, 걸을 때마다 곁 4 m의 팀원 둘이 같이 한 걸음 옮겨 오고 1초 넘어지지 않음 (2안-a의 엔드게임 모양)"),
+
             // The ultimates as the team's comeback move (11-21, Docs/Skills/PAWN_RUSH_SKILL_SYSTEM.md 7.4; RagdollPawn.TeamUlts.cs).
             Made(PawnRushSkillIds.PassantBang, "앙파상 !!", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, 역전 배율) · Q = 2초 외침 (걸을 수 있음, 모두에게 알림)\n지난 20초 (×2면 40초) 동안 폰을 앞질러 간 적 전부 (넷까지, 앞선 쪽부터)가 폰을 지나친 자리로 날아 돌아와 1.5초 엎어짐\n외치는 2초 안에 폰이 넘어지면 끊기고 게이지 절반이 남음"),
@@ -349,6 +368,14 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.RankWall, "상대 1등 앞에 상대만 막는 성벽을 세운다" },
             { PawnRushSkillIds.QueenDrop, "적이 가장 많이 모인 곳에 떨어져 다 날린다" },
             { PawnRushSkillIds.GeneralCall, "킹이 1등 곁으로 가고 뒤의 팀원들을 불러 모은다" },
+            { PawnRushSkillIds.StepsMid, "두 걸음을 끊어 달린다. 비스듬히 부딪히면 넘어뜨린다" },
+            { PawnRushSkillIds.LeapFork, "ㄱ자로 뛰어 내린 자리 양옆의 둘을 함께 찬다" },
+            { PawnRushSkillIds.SnipeMid, "멀리서 모아 쏜다. 멀수록 세게 맞는다" },
+            { PawnRushSkillIds.WallMid, "곧게 달리며 뒤에 성벽을 세운다" },
+            { PawnRushSkillIds.SeriesQuick, "체크를 이어 가며 적을 원하는 쪽으로 몰아간다" },
+            { PawnRushSkillIds.SummonQuick, "팀원을 내 앞 좌우로 불러 세우고 함께 밀고 나간다" },
+            { PawnRushSkillIds.PassedPawn, "둘째 걸음이 질주가 되어 막는 적을 밀고 지나간다" },
+            { PawnRushSkillIds.KingEscort, "한 걸음마다 곁의 팀원 둘을 데리고 간다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

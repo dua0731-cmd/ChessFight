@@ -819,6 +819,23 @@ namespace ChessFight.RagdollLab
         [Tooltip("7번째 줄: 벽 앞의 적을 벽보다 이만큼 (m/s) 빠르게 밂; 좌클릭 모아 치기: 다 모으는 시간 (초), 튀어 나가는 거리 (m)")]
         public float rankPushOver = 1.5f, rankCharge = 0.6f, rankJump = 3f;
 
+        [Header("세트 1안-a · 2안-a (KITS 6.9): 같은 스킬의 세트 수치와 새 셋")]
+        [Tooltip("첫 두 걸음 (중급): 비스듬히 맞히면 넘어짐 (초), 쿨 (초, 한 걸음만이면 그만큼 비율로)")]
+        public float stepMidKnock = 2f, stepMidCooldown = 8f;
+        [Tooltip("긴 대각선 저격 (중급): 가장 멀리 (m), 쿨 (초)")]
+        public float snipeMidFar = 20f, snipeMidCooldown = 12f;
+        [Tooltip("성벽 돌진 (중급): 벽이 서 있는 시간 (초), 쿨 (초)")]
+        public float wallMidSeconds = 3f, wallMidCooldown = 14f;
+        [Tooltip("연속 체크 (1안-a · 2안-a), 왕의 부름 (1안-a)의 쿨 (초)")]
+        public float seriesQuickCooldown = 12f, summonQuickCooldown = 16f;
+        [Tooltip("도약 포크: 쿨 (초), 내린 자리에서 찰 적을 찾는 거리 (m)")]
+        public float leapForkCooldown = 10f, leapForkReach = 2.2f;
+        [Tooltip("통과한 폰: 둘째 걸음의 질주 거리 (m) · 빠르기 (m/s), 막은 적을 옆으로 미는 거리 (m)")]
+        public float passedRun = 6f, passedSpeed = 10f, passedShove = 1.5f;
+        [Tooltip("데리고 걷기: 같이 옮겨 오는 팀원을 찾는 거리 (m), 넘어지지 않는 시간 (초), 몇 명")]
+        public float escortReach = 4f, escortGuard = 1f;
+        public int escortCount = 2;
+
         [Header("궁극기 · 팀을 역전시키는 한 수 (11-21, 체계 7.4: ×1 값 → ×2 값, ×0.5는 ×1의 절반)")]
         [Tooltip("예고 (초): 모든 화면에 알림, 쓰는 사람이 넘어지면 끊기고 게이지 절반")]
         public float teamUltWarn = 2f;

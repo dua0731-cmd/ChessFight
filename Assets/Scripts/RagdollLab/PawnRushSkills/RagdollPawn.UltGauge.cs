@@ -95,7 +95,7 @@ namespace ChessFight.RagdollLab
             var s = PawnRushSkills;
             var lo = Loadout;
             return s != null && s.realGauge && lo != null && slot == PawnRushLoadout.UltSlot && lo.SlotCount > PawnRushLoadout.UltSlot
-                   && lo.Skill(piece, slot) != 0;
+                   && SlotSkill(slot) != 0;
         }
 
         public bool UltOnGauge(int slot) => UltSlotOnGauge(slot);

@@ -97,7 +97,7 @@ namespace ChessFight.RagdollLab
                 feelSent[k] = false;
                 if (feelKept[k] <= 0f) continue;
                 feelKept[k] -= dt;
-                int id = k < lo.SlotCount ? lo.Skill(piece, k) : 0;
+                int id = k < lo.SlotCount ? PawnRushSkillIds.BaseOf(SlotSkill(k)) : 0;
                 if (id == 0 || !s.feel)
                 {
                     feelKept[k] = 0f;
@@ -126,7 +126,7 @@ namespace ChessFight.RagdollLab
             if (!s.feel) return;
             for (int k = 0; k < lo.SlotCount && k < feelKept.Length; k++)
             {
-                if (!slotPress[k] || feelSent[k] || lo.Skill(piece, k) == 0) continue;
+                if (!slotPress[k] || feelSent[k] || SlotSkill(k) == 0) continue;
                 float cd = slotCd[k];
                 if (cd > s.feelBuffer) continue;   // too early in its cooldown: the key is just not taken
                 float keep = cd > 0f ? cd + 0.1f : 0f;

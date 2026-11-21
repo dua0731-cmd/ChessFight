@@ -231,7 +231,7 @@ namespace ChessFight.RagdollLab
                 if (Flat(d).magnitude <= s.passReach && Mathf.Abs(d.y) <= 1.2f)
                 {
                     skillHitSet.Add(t);
-                    TripEnPassant(s, t, s.stepKnockHold);
+                    TripEnPassant(s, t, StepKnockNow(s));
                     FeelHit(t, SkillContact(t), skillDir, FeelHard);
                     dashLeft = 0f;
                 }
@@ -509,7 +509,7 @@ namespace ChessFight.RagdollLab
                     GrowWall(s, true);
                     planPhase = PlanPhase.Recovery;
                     planTime = 0f;
-                    Log($"{DisplayName}: 성벽 돌진 — {Flat(FeetPoint - wallFrom).magnitude:0.0} m, 성벽 {s.wallSeconds:0}초" + (wallCut || confirm ? " (좌클릭으로 끊음)" : ""));
+                    Log($"{DisplayName}: 성벽 돌진 — {Flat(FeetPoint - wallFrom).magnitude:0.0} m, 성벽 {WallSecondsNow(s):0}초" + (wallCut || confirm ? " (좌클릭으로 끊음)" : ""));
                     wallCut = false;
                     break;
                 }
@@ -539,7 +539,7 @@ namespace ChessFight.RagdollLab
             planPhase = PlanPhase.Active;
             planTime = 0f;
             SkillDetail = "성벽 돌진 (좌클릭 = 여기서 끊기)";
-            wallUp = PawnRushKitWall.Raise(PawnRushKitWall.NextId(), this, wallFrom, wallFrom + skillDir * 0.3f, s.wallHeight, s.wallThick, s.wallSeconds, s.wallRise, true);
+            wallUp = PawnRushKitWall.Raise(PawnRushKitWall.NextId(), this, wallFrom, wallFrom + skillDir * 0.3f, s.wallHeight, s.wallThick, WallSecondsNow(s), s.wallRise, true);
             Fx(SkillFxKind.RookThrow, null, FeetPoint, skillDir, 0);   // (the chain's throw sound, borrowed: the start)
         }
 
@@ -552,8 +552,9 @@ namespace ChessFight.RagdollLab
             if (Vector3.Dot(end - wallFrom, skillDir) < 0.3f) end = wallFrom + FlatDir(skillDir) * 0.3f;
             wallUp.SetLine(wallFrom, end);
             if (!done) return;
-            wallUp.Stand(s.wallSeconds);
-            Fx(SkillFxKind.KitWall, null, wallFrom, FlatDir(skillDir), wallUp.Id, s.wallSeconds, end);
+            float stands = WallSecondsNow(s);
+            wallUp.Stand(stands);
+            Fx(SkillFxKind.KitWall, null, wallFrom, FlatDir(skillDir), wallUp.Id, stands, end);
             wallUp = null;
         }
 
