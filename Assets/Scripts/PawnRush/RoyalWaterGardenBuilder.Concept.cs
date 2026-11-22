@@ -35,6 +35,11 @@ namespace ChessFight.PawnRush
     //                   GardenLakeBoat sails round the lake's wide waters (R487: four, two on each of two routes)
     //   GardenTrees     trees off the course (R491, trees_sample.py: 승규's two Tripo trees painted by tree_asset.py), in
     //                   groves on the reservoir terraces (3.8) and the waterside banks (0.6)
+    //   GardenFinish    the last two graybox spots (2026-11-22, island_lock_sample_v2.py, after Codex pictures in
+    //                   Docs/PawnRush/ConceptArt/GardenFinish): the island in the north-west lake (stone ring, tiles, lawn,
+    //                   bushes, two cypresses, a two-tier fountain with a bell of water and four streams) and the east
+    //                   lock's running water ("Water lock" in PR_GardenLockWater, its rollers' and walls' whitewater, the
+    //                   inflow sill and the drain grate)
     public static partial class RoyalWaterGardenBuilder
     {
         const string ConceptFolder = "PawnRushGardenConcept/";
@@ -179,6 +184,18 @@ namespace ChessFight.PawnRush
             // R491: 승규's two trees (tree_asset.py, trees_sample.py) in groves on the reservoir terraces and the
             // waterside banks, off the course. Out of reach: nothing covers or collides.
             new ConceptPiece { model = "GardenTrees" },
+            // 2026-11-22 (승규 "여기만 하면 돼" over pictures of the grey island and the lock's white arrows; "좋아, Unity에
+            // 붙여"): the island (its cylinder still collides) and the lock's water (the current still carries pawns; the
+            // glass sheet and the arrows only drew). The fountain's bell and streams are fall-shader sheets ("Fall ...").
+            new ConceptPiece
+            {
+                model = "GardenFinish",
+                covered = new[]
+                {
+                    ("Garden", "Garden island"), ("Garden", "Island fountain"),
+                    ("B4_EastLock", "Lock water"), ("B4_EastLock", "Current arrow"),
+                },
+            },
         };
 
         // R440: Blender materials drawn with the garden's own shaders rather than a GC_ material of the same name.
@@ -187,7 +204,8 @@ namespace ChessFight.PawnRush
             { "GC_basin_water", "PR_GardenWaterShallow" },   // R426: the fountains' basins (the mosaic shows through)
             { "GC_tier_water", "PR_GardenWater" },            // R440: the pools
             { "GC_fall_upper", "PR_GardenFallUpper" },        // R440: the spillway's falls (R441: 3.45 m)
-            { "GC_fall_lower", "PR_GardenFallLower" },        // R440: the weirs' falls (R441: 1.31 m)
+            { "GC_fall_lower", "PR_GardenFallLower" },        // R440: the weirs' falls (R441: 1.31 m); the island fountain's
+            { "GC_lock_water", "PR_GardenLockWater" },        // 2026-11-22: the lock's running water (Garden Flow Water)
         };
 
         static void ConceptDressing(Transform content)

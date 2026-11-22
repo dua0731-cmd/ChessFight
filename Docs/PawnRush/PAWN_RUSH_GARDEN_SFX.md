@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 효과음 조사 (2026-11-09)
 
+> **R766 · 2026-11-22 · 갑문 물 발소리(main 커밋 · 푸시, 사용자 Unity 확인 11-22).** 사용자 "갑문 물 기물이랑 물이랑 걸을 때 사운드 넣어줘" → 첨벙 소리는 아니고 "잔잔한 물 헤치는 소리". ElevenLabs flow `정원 갑문 물 발소리`(`ytTF5NjpcfoEtHEH1uKR`, WadeWalk 4 s · WadeRun 3 s × 2) → `ArtSource/PawnRush/Sfx/takes_wade/` → `ArtSource/PawnRush/Sfx/bake_wade.py`(걸음 하나씩 잘라 6개씩) → `Resources/PawnRushStepSfx/WadeWalk0..5` · `WadeRun0..5`. 갑문 바닥(`Lock floor`)에 `Gameplay.WetFloor`, `PawnRushStepSfx`가 엉덩이 아래 바닥이 `WetFloor`면 마른 발소리 대신 이 소리(`WadeGain` 0.4, 마른 걷기와 비슷한 크기). 네트워크로 안 보냄(각 PC가 보이는 폰마다 냄, 원래 발소리와 같음).
+
 정원(구역 G, `RoyalWaterGardenBuilder` v31 + 컨셉 아트 꾸밈)에서 소리가 필요한 곳을 비트 순서로 모두 적었다.
 시간은 모두 공유 장애물 시계(`ObstacleClock`)의 함수라 소리도 같은 시간표에 맞춰 낼 수 있다.
 좌표는 구간 좌표(x 동쪽, z 북쪽, y 높이).

@@ -185,11 +185,17 @@ MonoBehaviour:
 """
 
 done = set()
+# 2026-11-22 (the island and lock finish): GC_NEW_MATERIALS_ONLY=1 writes only the materials Unity does not have yet,
+# so a sample that redefines a shared name (GC_bark, GC_lawn, ...) does not repaint the other beats' dressing.
+NEW_ONLY = os.environ.get("GC_NEW_MATERIALS_ONLY") == "1"
 for ob in dress.objects:
     for m in ob.data.materials:
         if m is None or m.name in done:
             continue
         done.add(m.name)
+        if NEW_ONLY and os.path.exists(os.path.join(ROOT, OUT_REL, "Materials", unity_name(m.name) + ".mat")):
+            print("MAT kept", unity_name(m.name))
+            continue
         p = m.node_tree.nodes["Principled BSDF"]
         textured = "gc_texture" in m
         r, g, b = list(m["gc_tint"]) if textured else to_srgb(list(p.inputs["Base Color"].default_value)[:3])

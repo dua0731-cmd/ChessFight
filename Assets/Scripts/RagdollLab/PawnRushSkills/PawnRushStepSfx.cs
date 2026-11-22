@@ -52,6 +52,10 @@ namespace ChessFight.RagdollLab
         }
 
         readonly List<AudioClip> walk = new List<AudioClip>(), run = new List<AudioClip>();
+        // 2026-11-22 (승규 "잔잔한 물 헤치는 소리"): on a WetFloor (the garden's lock) the steps are soft water parting,
+        // WadeWalk* / WadeRun* (ArtSource/PawnRush/Sfx/bake_moves.py, the ElevenLabs flow "정원 갑문 물 발소리").
+        readonly List<AudioClip> wadeWalk = new List<AudioClip>(), wadeRun = new List<AudioClip>();
+        const float WadeGain = .4f;   // about the dry walk step's level (bake_wade.py: -18 dB, x0.4)
         readonly Dictionary<RagdollPawn, Feet> feet = new Dictionary<RagdollPawn, Feet>();
         readonly List<RagdollPawn> pawns = new List<RagdollPawn>();
         readonly RaycastHit[] hits = new RaycastHit[8];
@@ -68,9 +72,11 @@ namespace ChessFight.RagdollLab
             {
                 if (clip.name.StartsWith("Walk")) walk.Add(clip);
                 else if (clip.name.StartsWith("Run")) run.Add(clip);
+                else if (clip.name.StartsWith("WadeWalk")) wadeWalk.Add(clip);
+                else if (clip.name.StartsWith("WadeRun")) wadeRun.Add(clip);
             }
-            walk.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-            run.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            foreach (var list in new[] { walk, run, wadeWalk, wadeRun })
+                list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
             var holder = new GameObject("Pawn Rush footsteps").transform;
             holder.SetParent(transform, false);
             voices = new AudioSource[Voices];
@@ -113,7 +119,8 @@ namespace ChessFight.RagdollLab
                 if (raw.sqrMagnitude > 400f) { f.phase = .55f; f.half = -1; continue; }
                 f.velocity = Vector3.Lerp(f.velocity, raw, 1f - Mathf.Exp(-dt / .08f));
                 Vector3 floorVel;
-                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel)) { f.phase = .55f; f.half = -1; continue; }
+                bool wet;
+                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel, out wet)) { f.phase = .55f; f.half = -1; continue; }
                 Vector3 over = f.velocity - floorVel;
                 float speed = new Vector2(over.x, over.z).magnitude;
                 bool sprint = pawn.NetworkPuppet ? speed > RunFrom : pawn.Sprinting || speed > RunFrom;
@@ -133,7 +140,7 @@ namespace ChessFight.RagdollLab
                     if (f.phase < 1f) continue;
                     f.phase = Mathf.Repeat(f.phase, 1f);
                 }
-                Step(f, sprint, hips, speed, cam);
+                Step(f, sprint, wet, hips, speed, cam);
             }
         }
 
@@ -151,9 +158,10 @@ namespace ChessFight.RagdollLab
             return 2f * cycles;
         }
 
-        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel)
+        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel, out bool wet)
         {
             floorVel = Vector3.zero;
+            wet = false;
             if (!pawn.NetworkPuppet)
             {
                 if (!pawn.Grounded || pawn.State != PawnState.Active || pawn.Diving || pawn.Climbing || pawn.Floating || pawn.OnRope)
@@ -173,19 +181,32 @@ namespace ChessFight.RagdollLab
                 var body = h.rigidbody;
                 var surface = h.collider.GetComponentInParent<IMovingSurface>();
                 floorVel = surface != null ? surface.PointVelocity(h.point) : body != null ? body.GetPointVelocity(h.point) : Vector3.zero;
+                wet = h.collider.GetComponent<ChessFight.Gameplay.WetFloor>() != null;
             }
             if (!pawn.NetworkPuppet) return true;
             // Upright: the hips stand about standHeight over the floor (lying down they are much lower).
             return found && best - .05f > pawn.standHeight * .6f;
         }
 
-        void Step(Feet f, bool sprint, Vector3 at, float speed, Camera cam)
+        void Step(Feet f, bool sprint, bool wet, Vector3 at, float speed, Camera cam)
         {
-            var set = sprint && run.Count > 0 ? run : walk.Count > 0 ? walk : run;
+            List<AudioClip> set;
+            float level;
+            if (wet && (wadeWalk.Count > 0 || wadeRun.Count > 0))
+            {
+                set = sprint && wadeRun.Count > 0 ? wadeRun : wadeWalk.Count > 0 ? wadeWalk : wadeRun;
+                level = WadeGain;
+            }
+            else
+            {
+                set = sprint && run.Count > 0 ? run : walk.Count > 0 ? walk : run;
+                level = set == run ? RunGain : WalkGain;
+            }
+            if (set.Count == 0) return;
             int pick = Random.Range(0, set.Count);
             if (set.Count > 1 && pick == f.lastClip) pick = (pick + 1 + Random.Range(0, set.Count - 1)) % set.Count;
             f.lastClip = pick;
-            float gain = (set == run ? RunGain : WalkGain) * Mathf.Lerp(.75f, 1f, Mathf.InverseLerp(MinSpeed, 2.5f, speed));
+            float gain = level * Mathf.Lerp(.75f, 1f, Mathf.InverseLerp(MinSpeed, 2.5f, speed));
             gain *= ChessFight.Game.GameSettings.Effects * ChessFight.Gameplay.CourseSoundPlace.Gain(at);
             float pan = 0f;
             if (cam != null)

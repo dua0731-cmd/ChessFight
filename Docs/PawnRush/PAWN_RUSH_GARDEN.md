@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R765 · 2026-11-22 · 섬 · 갑문 물 마감(main 커밋 · 푸시, 사용자 Unity 확인 11-22).** 남은 회색 상자 조사: 섬(`Garden island`) · 섬 분수 유리 기둥, 갑문 유리 물판(`Lock water`) · 흰 화살표(`Current arrow`), 보트 터널 유리 폭포(`Boat tunnel falls`), R653 철책 · 터널 뒷벽(`Reservoir fences`). 사용자 지시로 섬과 갑문 물만 함. 참고 그림 Codex(`Docs/PawnRush/ConceptArt/GardenFinish`). 순서: `island_lock_sample_v2.py` → `handmade_pass.py --step 3`, `--step 4`(2단계는 안 함: 이미 무작위) → `GC_NEW_MATERIALS_ONLY=1 … export_concept.py -- IslandLockSample_v2.blend "Finish dressing" GardenFinish`. 물 메시 이름은 `Water …` · `Fall …`(손작업 4단계가 흐름 데이터를 덮지 않고, Unity가 그림자를 안 그림). 분수 물막 · 물줄기 = `PR_GardenFallLower`(종 물막은 정점 색 r 0.5: 폭포 셰이더가 r 0 · 1을 해지게 그려서), 갑문 물 = 새 셰이더 `ChessFight/Garden Flow Water`(UV = m(u 가로, v 하류), 정점 색 r 거품 · g 가로 · b 씨앗). 84,062 삼각형(섬 돌 2.4만 · 나무 2.3만 · 분수 · 물 1.6만 · 갑문 1.9만). 갑문 줄무늬는 Unity에서 넓은 흰 띠로 보여 가는 물결선(노이즈 등고선 하나)으로 고침. 물 발소리는 R766([효과음](PAWN_RUSH_GARDEN_SFX.md)). 사용자 Unity 확인(11-22).
+
 > **R680 · 2026-11-16 · 장애물 숫자 바뀜.** 회전 막대 105 · 95°/초(높은 막대 67.5), 간헐천 4초마다 · 예고 0.6초, 수문 4.5초 주기(0.75초씩 어긋남), 로봇 팔 4.5초 주기(예고 · 휩쓸기는 그대로, 쉼 0.65초), 보트 2.0 / 2.5 / 3.0 m/s. 아래 본문의 옛 숫자(80 · 72°/초, 5초, 6초, 1.6 ~ 2.4 m/s)는 이 값으로 읽는다. 표와 이유는 [구간 문서](PAWN_RUSH_SECTIONS.md)의 R680.
 
 > **R653 · 2026-11-14.** 네 번째 북 발판에서 로봇 둑으로 건너던 기둥 4개와 연잎 2개를 제거했다. 여덟 북 → 동쪽 수문 → 로봇 둑 → 승선장 → 네 보트 레인 순서로 간다. 저수지 양쪽은 승선장 끝부터 성벽까지 철제 울타리로 막고, 보트 터널 지붕에는 난간, 터널 뒤에는 벽을 뒀다. 기존에 구운 구간도 시작할 때 같은 변경을 적용한다. 체크포인트 0~7은 같은 자리에 있다. [구간과 시험 방법](PAWN_RUSH_SECTIONS.md)

@@ -206,7 +206,8 @@ namespace ChessFight.PawnRush
             // The lock (x 27..35, z 10..24), walled both sides: water runs south over its floor at 1.5 m/s, and three
             // sluice gates rise and drop every 4.5 s (R680: was 6 s), each three quarters of a second after the one
             // before (was a second: the same sixth of the cycle).
-            Mass(b, "Lock floor", 27f, 35f, 10f, 24f, Upper);
+            // 2026-11-22: under the running water (GardenFinish's "Water lock"): steps on it are soft water parting.
+            Mass(b, "Lock floor", 27f, 35f, 10f, 24f, Upper).AddComponent<WetFloor>();
             Solid(b, "Lock wall W", V(26.4f, Deep, 10f), V(27f, Upper + 1.8f, 24f));
             Solid(b, "Lock wall E", V(35f, Deep, -.3f), V(35.6f, Upper + 1.8f, 32.6f));
             float[] gateZ = { 13f, 17.5f, 22f };
