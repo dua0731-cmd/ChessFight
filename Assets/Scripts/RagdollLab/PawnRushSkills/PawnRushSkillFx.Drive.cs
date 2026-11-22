@@ -157,7 +157,21 @@ namespace ChessFight.RagdollLab
                     kw.carpetObject = null;
                     kw.carpetMesh = null;
                     break;
+                case NmFx nm:
+                    NmClear(nm);
+                    break;
+                case GdFx gd:
+                    GdClear(gd);
+                    break;
+                case PrFx pr:
+                    PrLaneOff(pr);
+                    break;
+                case QdFx qd:
+                    QdClear(qd);
+                    qdPending.Remove(u);
+                    break;
                 case RrFx rr:
+                    RrFileOff(rr);
                     if (rr.baked != null) Destroy(rr.baked);
                     if (rr.loop != null) Destroy(rr.loop);
                     rr.baked = null;

@@ -7,14 +7,22 @@ using Random = UnityEngine.Random;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// 룩앤롤 on the screens (JY-skill-lab, 2026-11-22; the rules in RagdollPawn.RookRoll.cs): the rook's own tower, toppled
-    /// and rolling.
+    /// 룩앤롤 on the screens (JY-skill-lab, 2026-11-22; the rules in RagdollPawn.RookRoll.cs; the "!!" restyle after the
+    /// spec's per-ultimate file): the rook on the open file, sweeping the seventh rank.
     ///
     ///   the column   the rook's model as it was at the key, baked once and drawn on its side, 3 m across and 4.5 m long,
-    ///                turning with its speed (its own skin hidden meanwhile); dust and grit off the ground behind it, the
-    ///                ground shaking under whoever it passes, a rumble growing with its speed
-    ///   the pins     a red flash and a clack for each enemy; four in a moment: "스트라이크!" with the pins' clatter
-    ///   the rest     a crash into a wall (grit, a boom), the big jump and its landing, a teammate thrown ahead ("슝!")
+    ///                turning with its speed (its own skin hidden meanwhile), teal neon rims on its round ends and a white line
+    ///                flickering on its leading edge when it is fast; dust and grit off the ground behind it, the ground
+    ///                shaking under whoever it passes, a rumble growing with its speed
+    ///   the topple   its file and rank lit faintly for 1.5 s (the rook's lines), grey dust
+    ///   the file     THE OPEN FILE ahead of it on the board, 2 squares wide and as long as 0.6 s of its run, bending with it:
+    ///                teal on its side's screens, red with a red floor on the other side's, a red pool of light 6 m ahead;
+    ///                on its own screen the edge speed lines
+    ///   the pins     each capture a move of the rook on the seventh rank (R×a7, R×b7 … R×h7); four in a moment is the
+    ///                STRIKE, its signature: the blow, the rook's own slow motion after it, "스트라이크!!", the pins' clatter
+    ///   the rest     the rook lift (its jump: "룩 리프트!", a white square wave, a teal one where it lands), a crash into a
+    ///                wall (grey: grit, a grey square wave, a boom, a punch on its own screen), a teammate launched ahead is
+    ///                castling ("O-O!", a teal trail on it), standing up on a teal square with a tock
     /// </summary>
     public partial class PawnRushSkillFx
     {
@@ -23,10 +31,15 @@ namespace ChessFight.RagdollLab
             public Mesh baked;
             public Material[] mats;
             public Matrix4x4 canon = Matrix4x4.identity;
-            public float angle, width = 1f, length = 1f, nextRumble, nextDust;
-            public bool rolling, stood;
+            public float angle, width = 1f, length = 1f, nextRumble, nextDust, rimFlareAt = -10f;
+            public bool rolling, stood, wasAir, pooled;
             public AudioSource loop;
+            public CellMesh file, fileFill;
         }
+
+        static readonly Vector2Int[] RrLines = { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
+
+        string RrNota(UltShow u, string nota) => u.black ? Mirror(nota) : nota;
 
         readonly HashSet<RagdollPawn> rollHidden = new HashSet<RagdollPawn>();
 
@@ -67,10 +80,11 @@ namespace ChessFight.RagdollLab
             f.mats = skin.sharedMaterials;
             f.rolling = true;
             Vector3 floor = Ground(e.at);
-            DustRing(floor, 18, 1.2f, 6f, new Color(0.55f, 0.52f, 0.48f), 1f, 1f);
-            UltSquareWave(floor, FamSquare * 0.5f, 9f, 0.6f, Teal, 2.4f);
-            UltPopWord(floor + Vector3.up * 4f, "Rook'n'Roll!", HdrA(Teal, 1.4f), 0.9f, 1.4f);
+            DustRing(floor, 12, 1.2f, 6f, new Color(0.58f, 0.58f, 0.6f), 1f, 1f);
+            UltSquareWave(floor, FamSquare * 0.5f, 9f, 0.6f, Teal, 3f);
+            BoardLines(u, Cell(floor), RrLines, 10, Teal, 1.2f, 1.5f);   // its file and rank: the rook's lines
             UltSound(UltSfx.Boom, floor);
+            RrRims(u, f);
             UltAudioBuild();
             if (sfxRumble != null)
             {
@@ -93,6 +107,7 @@ namespace ChessFight.RagdollLab
             {
                 if (f.loop != null) { Destroy(f.loop); f.loop = null; }
                 if (f.baked != null && (f.stood || !u.Playing)) { Destroy(f.baked); f.baked = null; }
+                RrFileOff(f);
                 return;
             }
             var skin = u.by.skin;
@@ -118,6 +133,7 @@ namespace ChessFight.RagdollLab
                     shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
                     receiveShadows = true,
                     layer = skin != null ? skin.gameObject.layer : 0,
+                    renderingLayerMask = skin != null ? skin.renderingLayerMask : 1u,   // (the stage's rim light on the column)
                     worldBounds = bounds,
                 };
                 Graphics.RenderMesh(rp, f.baked, i, m);
@@ -131,7 +147,7 @@ namespace ChessFight.RagdollLab
                 Vector3 right = new Vector3(dir.z, 0f, -dir.x);
                 Vector3 at = ground + right * Random.Range(-s.rrLength, s.rrLength) * 0.45f - dir * s.rrRadius * 0.6f;
                 smoke.Emit(at, -dir * speed * 0.15f + Vector3.up * Random.Range(0.6f, 1.6f), Random.Range(0.6f, 1.2f), Random.Range(0.6f, 1f), Tint(new Color(0.58f, 0.55f, 0.5f), 0.1f));
-                if (fast > 0.5f) sparks.Emit(at, -dir * speed * 0.3f + Vector3.up * 2f + Random.insideUnitSphere, 0.04f, 0.4f, Tint(Ember, 0.2f));
+                if (fast > 0.5f) sparks.Emit(at, -dir * speed * 0.3f + Vector3.up * 2f + Random.insideUnitSphere, 0.04f, 0.4f, Tint(Random.value < 0.5f ? Color.white : TealPale, 0.2f));
             }
             if (cam != null && !air && Clock >= f.nextRumble)
             {
@@ -143,8 +159,114 @@ namespace ChessFight.RagdollLab
             {
                 float d = cam != null ? Vector3.Distance(cam.transform.position, center) : 10f;
                 f.loop.volume = (air ? 0.15f : 0.75f) * (0.35f + 0.65f * fast) * Mathf.Clamp01(1.2f - d / 60f) * ChessFight.Game.GameSettings.Effects;
-                f.loop.pitch = 0.7f + 0.6f * fast;
+                f.loop.pitch = (0.8f + 0.6f * fast) * UltSfxPitch;
             }
+            // The rook lift's touchdown: a teal square wave, dust and a tock.
+            if (f.wasAir && !air)
+            {
+                UltSquareWave(ground, FamSquare * 0.5f, 7f, 0.5f, Teal, 3f);
+                DustRing(ground, 12, 1f, 5f, new Color(0.58f, 0.58f, 0.6f), 0.9f, 0.9f);
+                UltClip(UltClipId.Tock, 0.6f * UltAudience(u, ground));
+            }
+            f.wasAir = air;
+            RrDrawFile(u, f, s, center, dir, speed, cam);
+            if (Viewer == u.by) UltEdgeLines(0.10f + 0.25f * Mathf.Clamp01((speed - 15f) / 25f));
+        }
+
+        /// <summary>The column's neon: a teal ring (1.5 m, ×3) on each round end turning with it, flaring brighter for 0.2 s at
+        /// the rook lift; a white line flickering on its leading edge above 30 m/s.</summary>
+        void RrRims(UltShow u, RrFx f)
+        {
+            var s = Params;
+            if (s == null) return;
+            BrdBuild();
+            bool Rolling() => u.Playing && f.rolling && !f.stood && u.by != null && f.baked != null;
+            Vector3 Dir() => Flat(u.by.PlanDir).sqrMagnitude > 1e-4f ? Flat(u.by.PlanDir).normalized : Vector3.forward;
+            for (int i = 0; i < 2; i++)
+            {
+                float side = i == 0 ? -1f : 1f;
+                Add(new Shape(root, "Rr rim", meshQuad, matRing)
+                {
+                    life = 1e9f,
+                    animate = (sh, t) =>
+                    {
+                        if (!u.Playing || f.stood) { sh.life = 0f; return; }
+                        if (!Rolling()) { sh.bright = 0f; return; }
+                        Vector3 dir = Dir(), right = new Vector3(dir.z, 0f, -dir.x);
+                        sh.at = u.by.Hips.position + right * (side * s.rrLength * 0.5f);
+                        sh.rotation = Quaternion.LookRotation(right, Vector3.up) * Quaternion.Euler(0f, 0f, f.angle);
+                        float r = s.rrRadius / 0.86f * 2f;
+                        sh.scale = new Vector3(r, r, 1f);
+                        sh.color = HdrA(Teal, Clock - f.rimFlareAt < 0.2f ? 4f : 3f);
+                        sh.bright = 1f;
+                    },
+                });
+            }
+            Add(new Shape(root, "Rr leading edge", meshCylinder, matBrdLine)
+            {
+                life = 1e9f,
+                animate = (sh, t) =>
+                {
+                    if (!u.Playing || f.stood) { sh.life = 0f; return; }
+                    if (!Rolling() || RrSpeedOf(u.by, s) < 30f) { sh.bright = 0f; return; }
+                    Vector3 dir = Dir(), right = new Vector3(dir.z, 0f, -dir.x);
+                    sh.at = u.by.Hips.position + dir * (s.rrRadius * 0.98f) - right * (s.rrLength * 0.5f);
+                    sh.rotation = Quaternion.FromToRotation(Vector3.up, right);
+                    sh.scale = new Vector3(0.03f, s.rrLength, 0.03f);
+                    sh.color = HdrA(Color.white, 3f);
+                    sh.bright = 0.6f + 0.4f * Mathf.Sin(Clock * 47f);
+                },
+            });
+        }
+
+        /// <summary>THE OPEN FILE ahead (every screen): the board squares 2 wide (4.4 m) along its heading for 0.6 s of its run
+        /// (9-24 m), snapped to the board and bending with it - teal ×1.6 on its side's screens, red ×2 with a red floor (0.3)
+        /// on the other side's - and a red pool of light 6 m ahead (half on its side's screens).</summary>
+        void RrDrawFile(UltShow u, RrFx f, PawnRushSkillParams s, Vector3 center, Vector3 dir, float speed, Camera cam)
+        {
+            var me = Viewer;
+            bool ours = me == null || !Teams.AreEnemies(me.Team, u.by.Team);
+            if (f.file == null) f.file = BrdMesh("Rr open file", ours ? matFrame : matBrdFrameRed);
+            if (f.fileFill == null && !ours) f.fileFill = BrdMesh("Rr open file floor", matBrdFillRed);
+            if (!f.pooled)
+            {
+                f.pooled = true;
+                UltWarnPool(u, () => u.by != null ? u.by.Hips.position + Flat(u.by.PlanDir).normalized * 6f - Vector3.up * s.rrRadius : center, 3.3f, 0.3f, 60f,
+                            () => u.Playing && f.rolling && !f.stood, 8f, 0.5f);
+            }
+            float floorY = center.y - s.rrRadius, len = Mathf.Clamp(Mathf.Max(speed, 15f) * 0.6f, 9f, 24f);
+            Vector3 right = new Vector3(dir.z, 0f, -dir.x);
+            f.file.Begin(cam);
+            f.fileFill?.Begin(cam);
+            rrSeen.Clear();
+            for (float x = s.rrRadius; x <= len + s.rrRadius; x += 1f)
+                for (float across = -FamSquare; across <= FamSquare + 0.01f; across += FamSquare)
+                {
+                    var c = Cell(center + dir * x + right * across);
+                    if (!rrSeen.Add(c)) continue;
+                    float fy = BoardFloor(u, c, floorY);
+                    if (float.IsNaN(fy)) continue;
+                    Vector3 p = CellFlat(c);
+                    p.y = fy;
+                    float k = 1f - Smooth01((x - len * 0.7f) / (len * 0.3f + 1f));
+                    f.file.Quad(p + Vector3.up * 0.05f, FamSquare * 0.96f, BrdTimes(ours ? Teal : Blood, ours ? 1.6f : 2f), k);
+                    if (f.fileFill != null)
+                    {
+                        BrdFillColour(Blood, 0.9f, 0.3f, k, out var rgb, out var alpha);
+                        f.fileFill.Quad(p + Vector3.up * 0.035f, FamSquare * 0.96f, rgb, alpha);
+                    }
+                }
+            f.file.End();
+            f.fileFill?.End();
+        }
+
+        readonly HashSet<Vector2Int> rrSeen = new HashSet<Vector2Int>();
+
+        void RrFileOff(RrFx f)
+        {
+            BrdKill(f.file);
+            BrdKill(f.fileFill);
+            f.file = f.fileFill = null;
         }
 
         /// <summary>Every frame: a rook whose roll is over shows its own skin again.</summary>
@@ -188,15 +310,22 @@ namespace ChessFight.RagdollLab
                     RrTopple(u, f, e);
                     break;
                 case RagdollPawn.RrJump:
-                    DustRing(floor, 16, 1f, 5f, new Color(0.55f, 0.52f, 0.48f), 0.9f, 0.9f);
-                    Flare(e.at, Electric, 2.5f, 7f, 0.3f);
+                    // The rook lift: its rims flare, a white square wave where it takes off.
+                    f.rimFlareAt = Clock;
+                    DustRing(floor, 12, 1f, 5f, new Color(0.58f, 0.58f, 0.6f), 0.9f, 0.9f);
+                    UltSquareWave(floor, FamSquare * 0.5f, 7f, 0.5f, Color.white, 1.2f);
+                    UltPopWord(e.at + Vector3.up * 3f, "룩 리프트!", HdrA(Teal, 1.3f), 0.7f, 0.9f);
                     UltSound(UltSfx.Leap, e.at, 4);
                     break;
                 case RagdollPawn.RrCrash:
-                    DustRing(floor, 20, 1.4f, 7f, new Color(0.55f, 0.52f, 0.48f), 1f, 1.1f);
-                    SparkBurst(e.at + Vector3.up, 40, Ember, -e.dir, 70f, 4f, 12f, 0.7f, 0.06f);
+                    // Grey, never red: grit, a grey square wave, the boom; a punch on its own screen.
+                    DustRing(floor, 20, 1.4f, 7f, new Color(0.58f, 0.58f, 0.6f), 1f, 1.1f);
+                    SparkBurst(e.at + Vector3.up, 20, Color.white, -e.dir, 70f, 4f, 12f, 0.7f, 0.04f);
+                    SparkBurst(e.at + Vector3.up, 20, new Color(0.7f, 0.7f, 0.72f), -e.dir, 70f, 4f, 12f, 0.7f, 0.04f);
+                    UltSquareWave(floor, FamSquare * 0.5f, 8f, 0.5f, new Color(0.6f, 0.6f, 0.62f), 1f);
                     UltPlay(sfxImpactLow, 0.9f, 0f, 1.2f);
                     UltPlay(clipWall, 0.8f);
+                    UltFrames(ImpactSeq.Best, e.at, u);
                     {
                         var cam = ViewCamera;
                         float near = cam != null ? Mathf.Clamp01(1f - Vector3.Distance(cam.transform.position, e.at) / 30f) : 0.5f;
@@ -204,32 +333,46 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 case RagdollPawn.RrLift:
-                    Flare(e.at, Teal, 2.5f, 6f, 0.3f);
-                    if (e.target != null) UltPopWord(HeadOf(e.target) + Vector3.up * 1.2f, "슝!", HdrA(Teal, 1.4f), 0.6f, 1f);
-                    UltPlay(sfxChime[5], 0.8f);
+                    // A teammate launched ahead: castling.
+                    if (e.target != null)
+                    {
+                        var mate = e.target;
+                        UltPopWord(HeadOf(mate) + Vector3.up * 1.2f, "O-O!", HdrA(Teal, 1.4f), 0.8f, 0.9f);
+                        float until = Clock + 0.6f;
+                        anims.Add(new Streak(root, matTrail, HdrA(Teal, 2.2f), 0.45f, 0.6f, () => mate != null && Clock < until ? mate.Hips.position : (Vector3?)null));
+                    }
+                    UltMove(u, "O-O!", e.at);
+                    UltClip(UltClipId.Castle, 0.8f * UltAudience(u, e.at));
                     break;
                 case RagdollPawn.RrStrike:
-                    Flare(e.at + Vector3.up * 2f, Color.white, 5f, 16f, 0.4f);
-                    UltPopWord(e.at + Vector3.up * 5f, "스트라이크!", HdrA(GradeColors[0], 1.6f), 1.4f, 1.8f);
+                    // THE STRIKE, the signature: four pins in a moment.
+                    UltBlow(u, ImpactSeq.Blow, e.at + Vector3.up * 1.5f);
+                    UltSlow(u, UltSlowKind.SigAftermath);
+                    UltTopWord("스트라이크!!", HdrA(Teal, 1.2f), 56);
+                    UltBlowLight(e.at + Vector3.up * 3f);
                     for (int i = 0; i < 6; i++) UltPlay(sfxClack, 0.8f, i * 0.045f, 0.85f + i * 0.07f);
-                    UltPlay(sfxGrade[0], 0.9f, 0.25f);
-                    UltSquareWave(floor, FamSquare * 0.5f, 16f, 0.9f, GradeColors[0], 2.6f);
-                    HitStop(0.1f);
+                    UltSquareWave(floor, FamSquare * 0.5f, 16f, 0.9f, Teal, 3f);
                     break;
                 case RagdollPawn.RrStand:
                     f.stood = true;
-                    DustRing(floor, 18, 1f, 5f, new Color(0.55f, 0.52f, 0.48f), 0.9f, 0.9f);
-                    UltSquareWave(floor, FamSquare * 0.5f, 6f, 0.5f, Teal, 2f);
+                    RrFileOff(f);
+                    DustRing(floor, 12, 1f, 5f, new Color(0.58f, 0.58f, 0.6f), 0.9f, 0.9f);
+                    UltSquareWave(floor, FamSquare * 0.5f, 6f, 0.5f, Teal, 3f);
+                    SquareMark(u, Cell(floor), Teal, 1.15f, 0.42f, TealPale, 3.2f, null, 0.9f, null, floor.y);
+                    UltClip(UltClipId.Tock, 0.6f * UltAudience(u, floor));
                     break;
             }
         }
 
+        /// <summary>A pin, on every screen: the rook's capture on the seventh rank (R×a7, R×b7 … by how many it has bowled),
+        /// a burst of white sparks, the pin's clack. The capture itself is the common one.</summary>
         void RrStrikeFx(UltShow u, SkillFxEvent e)
         {
             if (e.target == null) return;
             Vector3 at = ChestOf(e.target);
-            Flare(at, Blood, 3f, 7f, 0.3f);
-            SparkBurst(at, 26, Color.white, e.dir, 70f, 4f, 12f, 0.5f, 0.05f);
+            SparkBurst(at, 16, Color.white, e.dir, 70f, 4f, 12f, 0.5f, 0.04f);
+            int pin = Mathf.Max(1, e.count);
+            UltMove(u, RrNota(u, $"R×{(char)('a' + (pin - 1) % 8)}7"), at);
             UltPlay(sfxClack, 0.9f, 0f, Random.Range(0.9f, 1.15f));
             UltPlay(clipStomp, 0.6f);
             UltScreenStrike(u, e);

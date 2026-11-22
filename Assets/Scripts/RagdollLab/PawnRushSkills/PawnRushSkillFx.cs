@@ -175,7 +175,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KnightLeap: KnightTakeOff(e); break;
                 case SkillFxKind.RookSlam: RookSlam(e); break;
                 case SkillFxKind.PawnStep: PawnStepStamp(e); break;
-                case SkillFxKind.PawnHit: PawnHit(e); break;
+                case SkillFxKind.PawnHit: PrRunHit(e); PawnHit(e); break;   // (the pawn's run writes its shoves as captures first)
                 case SkillFxKind.PawnHelp: PawnHelp(e); break;
                 // R146: the king's call (PawnRushSkillFx.KingCall.cs).
                 case SkillFxKind.KingCall: KingCallFx(e); break;

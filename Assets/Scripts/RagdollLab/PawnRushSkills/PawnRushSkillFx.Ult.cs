@@ -243,8 +243,7 @@ namespace ChessFight.RagdollLab
             u.burstAt = e.at;
             UltBrilliantStrike(u, e);  // the capture as chess.com draws it, on every screen (PawnRushSkillFx.UltFlow.cs)
             if (u.Driven) DriveStrike(u, e);
-            else if (u.Fork) UltRedBeam(e.target);
-            else UltStomp(u, e);
+            else if (!u.Fork) UltStomp(u, e);   // (the fork's red light from the sky is the common capture's now)
         }
 
         void UltHit(SkillFxEvent e)
@@ -256,8 +255,24 @@ namespace ChessFight.RagdollLab
             u.hitPoint = e.at;
             u.hitCount = e.count;
             u.grade = Mathf.Clamp(Mathf.RoundToInt(e.size), 0, GradeBadges.Length - 1);
-            UltBrilliantJudge(u, e);   // the review: the squares, the one arrow, the badge, the ignition (PawnRushSkillFx.UltFlow.cs)
             UltScreenHit(u, e);
+            if (QdJudgeLater(u))
+            {
+                // The queen sacrifice: its judgement 0.6 s after the blast, the reply seen first (the world's way out counts
+                // from then).
+                u.hitReal += 0.6f;
+                var late = e;
+                float when = RealClock + 0.6f;
+                anims.Add(new Ongoing((age, dt) =>
+                {
+                    if (RealClock < when) return !u.gone;
+                    UltBrilliantJudge(u, late);
+                    UltJudgeFrames(u, late.at);
+                    return false;
+                }) { tick = UltTick.Real });
+                return;
+            }
+            UltBrilliantJudge(u, e);   // the review: the squares, the one arrow, the badge, the ignition (PawnRushSkillFx.UltFlow.cs)
             UltJudgeFrames(u, e.at);   // the judgement's slow motion, frames and (at !!) stars (PawnRushSkillFx.Impact.cs)
         }
 
