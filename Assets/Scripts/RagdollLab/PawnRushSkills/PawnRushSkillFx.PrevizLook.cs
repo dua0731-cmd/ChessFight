@@ -6,14 +6,13 @@ using Random = UnityEngine.Random;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// The ultimates' look as the previz has it (JY-skill-lab, 2026-11-22; the user, after the night-and-lightning version:
-    /// "스킬들은 다 괜찮은데, 연출이 별로야. 그냥 이 프리비즈 만들때 연출 컨셉이랑 이펙트로 가자" - the previz 16, common cast with
-    /// the knight and the queen). Daylight, the world's colour drained to grey but teal (the caster's move) and red (what it
-    /// attacks); the caster's square bursting teal into a light curtain, the board's squares lighting in rings; a teal
-    /// aurora - two curtains of light turning round the caster - for as long as it runs; the move and the skill's name in
-    /// big teal letters; red light from the sky on whoever it hits; at a good judgement the floor breaks into floating
-    /// tiles round it, eight teal pillars and "탁월한 수!!"; then the colour comes back slowly. (The grade itself is in
-    /// PawnRushSkillFx.UltScreen.cs; the call's letters in its OnGUI.)
+    /// The key's burst, as the previz has it (JY-skill-lab, 2026-11-22; the user: "스킬들은 다 괜찮은데, 연출이 별로야. 그냥 이
+    /// 프리비즈 만들때 연출 컨셉이랑 이펙트로 가자", then: "내가 원하는 연출 컨셉은 이번에 가까운데, 더 강력해보이는건 이전이였어.
+    /// 근데 그건 너무 이펙트가 강해서 화면이 안보이는 경우도 있었지"). Now the burst of the key only, thin and short, so the screen
+    /// stays readable: a curtain of teal light rising on the from-square's edges and sinking; the aurora's two rim-only
+    /// curtains turning round the caster for a moment with lightning crawling over it; then the cage (the stage file) carries
+    /// the aura while it drives. At a good judgement the floor round it breaks into floating tiles, their edges flickering
+    /// teal. Decor: it runs on the show clock (the online picture slow slows it, nothing it times is gameplay).
     /// </summary>
     public partial class PawnRushSkillFx
     {
@@ -32,27 +31,38 @@ namespace ChessFight.RagdollLab
             materials.Add(matStone);
         }
 
-        /// <summary>The cast's burst on the caster's square: a curtain of light on its edges rising and falling, the board's
-        /// squares lighting in three rings round it.</summary>
+        /// <summary>The key's curtain on the from-square (the board cell the caster stands on): teal walls on its edges rising
+        /// from 0.2 to 3.2 m in 0.25 s and sinking to 1 m over 0.8 s, a bright line along their top, fading from 0.5 s (life
+        /// 1.1 s on the show clock). The board itself unfolds round it (PawnRushSkillFx.Brilliant.cs).</summary>
         void UltPrevizCast(UltShow u, Vector3 feet)
         {
             BuildPrevizParts();
-            Vector3 sq = Ground(feet);
+            Vector2Int cell = Cell(feet);
+            Vector3 sq = CellFlat(cell);
+            sq.y = Ground(feet).y;
             float size = FamSquare;
-            Add(new Shape(root, "Ult curtain", meshBox, matCurtain)
+            float Height(float a) => a < 0.25f ? Mathf.Lerp(0.2f, 3.2f, Smooth01(a / 0.25f)) : Mathf.Lerp(3.2f, 1f, Smooth01((a - 0.25f) / 0.8f));
+            float Fade(float a) => 1f - Mathf.Clamp01((a - 0.5f) / 0.6f);
+            anims.Add(new Shape(root, "Ult curtain", meshBox, matCurtain)
             {
-                life = 1.3f, at = sq, scale = new Vector3(size, 1f, size),
+                tick = UltTick.Show, life = 1.1f, at = sq, scale = new Vector3(size, 1f, size),
                 animate = (s, t) =>
                 {
-                    float a = s.Age;
-                    float h = a < 0.25f ? Mathf.Lerp(0.2f, 4.5f, Smooth01(a / 0.25f)) : Mathf.Lerp(4.5f, 1f, Smooth01((a - 0.25f) / 1f));
-                    s.scale = new Vector3(size, h, size);
-                    s.color = HdrA(Teal, 1.3f);
-                    s.bright = 1f - Mathf.Clamp01((a - 0.5f) / 0.8f);
+                    s.scale = new Vector3(size, Height(s.Age), size);
+                    s.color = HdrA(Teal, 0.9f);
+                    s.bright = Fade(s.Age);
                 },
             });
-            for (int ring = 1; ring <= 3; ring++) UltBoardRing(sq, ring, (ring - 1) * 0.07f);
-            Flare(sq + Vector3.up * 1.2f, TealPale, 2.5f, 7f, 0.5f);
+            anims.Add(new Shape(root, "Ult curtain top", meshQuad, matFrame)
+            {
+                tick = UltTick.Show, life = 1.1f, rotation = FlatOnFloor(), scale = new Vector3(size, size, 1f),
+                animate = (s, t) =>
+                {
+                    s.at = sq + Vector3.up * Height(s.Age);
+                    s.color = HdrA(TealPale, 3.5f);
+                    s.bright = Fade(s.Age);
+                },
+            });
         }
 
         /// <summary>The squares of ring <paramref name="ring"/> round a square light for a moment.</summary>
@@ -77,9 +87,10 @@ namespace ChessFight.RagdollLab
                 }
         }
 
-        /// <summary>The aurora: two curtains of light turning round the caster (bright at their edges, clear in front of it), a
-        /// teal light on it, teal flames and motes rising off its feet; strong at the key, softer as it drives, gone after the
-        /// judgement.</summary>
+        /// <summary>The key's aurora burst: the previz's two rim-only curtains (0.75 and 1.05 m) turning round the caster at
+        /// x1.8 until 0.6 s, gone by 1.2 s; lightning crawling over it for the first 0.6 s (one arc every 0.03 s, at most two
+        /// alive); teal motes off its feet. All on the show clock. No light of its own (the stage's key spot and rim light it),
+        /// no smoke, no trail (the stage's two-layer trail follows it).</summary>
         void UltAurora(UltShow u)
         {
             BuildPrevizParts();
@@ -88,62 +99,56 @@ namespace ChessFight.RagdollLab
             {
                 float r = i == 0 ? 0.75f : 1.05f, h = i == 0 ? 2.6f : 3.3f, spin = i == 0 ? 70f : -45f;
                 Color c = i == 0 ? Teal : TealPale;
-                Add(new Shape(root, "Ult aurora", meshCylinder, matAurora)
+                int ring = i;
+                anims.Add(new Shape(root, "Ult aurora", meshCylinder, matAurora)
                 {
-                    life = 1e9f,
+                    tick = UltTick.Show, life = 1.2f,
                     animate = (s, t) =>
                     {
-                        float k = AuroraK(u);
-                        if (k <= 0f || by == null) { s.life = 0f; return; }
-                        float a = Clock - u.t0, grow = Smooth01(a / 0.35f), burst = 1f + 0.8f * Mathf.Exp(-a / 0.4f);
-                        float sc = GiantScaleOf(by);
+                        if (by == null) { s.bright = 0f; return; }
+                        float a = s.Age, grow = Smooth01(a / 0.2f), sc = GiantScaleOf(by);
                         s.at = FloorUnder(by) + Vector3.up * 0.02f;
                         s.rotation = Quaternion.Euler(0f, a * spin, 0f);
                         s.scale = new Vector3(r * sc, h * grow * sc, r * sc);
-                        s.color = HdrA(c, 1.7f);
-                        s.bright = k * burst * (0.85f + 0.15f * Mathf.Sin(Clock * 6f + i));
+                        s.color = HdrA(c, 1.8f);
+                        s.bright = (1f - Smooth01((a - 0.6f) / 0.6f)) * (0.85f + 0.15f * Mathf.Sin(a * 6f + ring));
                     },
                 });
             }
-            var light = new GameObject("Ult light").AddComponent<Light>();
-            light.transform.SetParent(root, false);
-            light.type = LightType.Point;
-            light.color = Teal;
-            light.range = 8f;
-            light.shadows = LightShadows.None;
-            light.renderMode = LightRenderMode.ForcePixel;
+            float nextArc = 0f;
+            var arcsAt = new float[2];
             anims.Add(new Ongoing((age, dt) =>
             {
-                float k = AuroraK(u);
-                if (k <= 0f || by == null) return false;
-                light.transform.position = ChestOf(by) + Vector3.up * 0.9f;
-                light.intensity = k * (1.6f + 1.4f * Mathf.Exp(-(Clock - u.t0) / 0.3f));
+                if (by == null || age > 0.6f) return false;
                 if (dt <= 0f) return true;
-                Vector3 feet = FloorUnder(by);
-                if (Random.value < 0.5f * k)
+                nextArc -= dt;
+                if (nextArc <= 0f && arc != null)
                 {
-                    var off = Random.insideUnitCircle * 0.55f;
-                    smoke.Emit(feet + new Vector3(off.x, 0.2f, off.y), Vector3.up * Random.Range(1.4f, 2.4f), Random.Range(0.5f, 0.9f), Random.Range(0.6f, 0.9f), Tint(Teal, Random.value * 0.3f));
+                    nextArc = 0.03f;
+                    // At most two arcs alive on it (each lives 0.06 s).
+                    int slot = arcsAt[0] <= arcsAt[1] ? 0 : 1;
+                    if (age - arcsAt[slot] >= 0.06f || arcsAt[slot] == 0f)
+                    {
+                        arcsAt[slot] = Mathf.Max(age, 1e-4f);
+                        Vector3 a = Part(by, AuraParts[Random.Range(0, AuraParts.Length)]) + Random.insideUnitSphere * 0.05f;
+                        Vector3 b = Part(by, AuraParts[Random.Range(0, AuraParts.Length)]) + Random.insideUnitSphere * 0.25f;
+                        if ((b - a).sqrMagnitude < 0.02f) b = a + Random.onUnitSphere * 0.35f;
+                        arc.Strike(a, b, HdrA(Electric, 2.2f), Random.Range(0.05f, 0.08f), 0.06f, 1f, 0.3f, 1);
+                    }
                 }
-                var m = Random.insideUnitCircle * 1.1f;
-                motes.Emit(feet + new Vector3(m.x, 0.1f, m.y), new Vector3(0f, Random.Range(1f, 2.6f), 0f), Random.Range(0.06f, 0.12f), Random.Range(0.7f, 1.3f), Tint(Random.value < 0.5f ? Teal : TealPale, 0.2f));
+                if (Random.value < 0.6f)
+                {
+                    var m = Random.insideUnitCircle * 1.1f;
+                    motes.Emit(FloorUnder(by) + new Vector3(m.x, 0.1f, m.y), new Vector3(0f, Random.Range(1f, 2.6f), 0f), 0.05f, Random.Range(0.7f, 1.3f), Tint(Random.value < 0.5f ? Teal : TealPale, 0.2f));
+                }
                 return true;
-            }, () => { if (light != null) Object.Destroy(light.gameObject); }));
-            // A teal trail behind it.
-            anims.Add(new Streak(root, matTrail, HdrA(Teal, 2.2f), 0.6f, 0.45f, () => by != null && u.Playing ? by.Hips.position : (Vector3?)null));
-        }
-
-        /// <summary>How strong the aurora is: full at the key, 0.7 while it drives, gone 0.6 s after the judgement or the end.</summary>
-        float AuroraK(UltShow u)
-        {
-            float k = u.Life(Clock) * (u.hitAt >= 0f ? Mathf.Clamp01(1f - (Clock - u.hitAt) / 0.6f) : 1f);
-            if (u.Driven) k *= Mathf.Lerp(1f, 0.7f, Smooth01((Clock - u.t0 - 1f) / 1f));
-            return k;
+            }) { tick = UltTick.Show });
         }
 
         /// <summary>The floor round a blow breaks into tiles that rise and float, edges lit teal, the holes dark under them,
-        /// and settle back.</summary>
-        void UltShatter(Vector3 at, float radius)
+        /// and settle back (on the show clock). With <paramref name="ember"/> each tile's edges flicker x1.4-2.0 at 7-11 Hz
+        /// (the burning board, in the brilliant colour).</summary>
+        void UltShatter(Vector3 at, float radius, bool ember = false)
         {
             BuildPrevizParts();
             var mesh = meshCube;
@@ -171,10 +176,17 @@ namespace ChessFight.RagdollLab
                     Vector3 home = floor + Vector3.up * 0.12f;
                     tf.position = home;
                     tf.localScale = Vector3.zero;
+                    MaterialPropertyBlock glow = ember ? new MaterialPropertyBlock() : null;
+                    float hz = Random.Range(7f, 11f), phase = Random.Range(0f, Mathf.PI * 2f);
                     anims.Add(new Ongoing((age, dt) =>
                     {
                         float a = age - wave;
                         if (a < 0f) { tf.localScale = Vector3.zero; return true; }
+                        if (glow != null)
+                        {
+                            glow.SetColor("_EmissionColor", HdrA(Teal, 2.2f * Mathf.Lerp(1.4f, 2f, 0.5f + 0.5f * Mathf.Sin(age * hz * Mathf.PI * 2f + phase)) / 1.7f));
+                            mr.SetPropertyBlock(glow);
+                        }
                         float lift, tilt, k = 1f;
                         if (a < 0.25f) { lift = Mathf.Sin(a / 0.25f * Mathf.PI) * 0.5f; tilt = 0f; }
                         else if (a < 0.25f + stay)
@@ -194,10 +206,10 @@ namespace ChessFight.RagdollLab
                         tf.SetPositionAndRotation(home + Vector3.up * lift, Quaternion.AngleAxis(tilt, axis));
                         tf.localScale = new Vector3(size * 0.94f * k, 0.24f * k, size * 0.94f * k);
                         return true;
-                    }, () => { if (go != null) Object.Destroy(go); }));
-                    Add(new Shape(root, "Ult hole", meshQuad, matHole)
+                    }, () => { if (go != null) Object.Destroy(go); }) { tick = UltTick.Show });
+                    anims.Add(new Shape(root, "Ult hole", meshQuad, matHole)
                     {
-                        life = wave + 0.25f + stay + 0.9f, at = floor + Vector3.up * 0.02f, rotation = FlatOnFloor(), scale = new Vector3(size * 0.94f, size * 0.94f, 1f),
+                        tick = UltTick.Show, life = wave + 0.25f + stay + 0.9f, at = floor + Vector3.up * 0.02f, rotation = FlatOnFloor(), scale = new Vector3(size * 0.94f, size * 0.94f, 1f),
                         animate = (s, t) =>
                         {
                             float a = s.Age - wave - 0.05f;

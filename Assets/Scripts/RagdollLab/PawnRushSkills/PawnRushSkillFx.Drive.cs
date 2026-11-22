@@ -248,6 +248,10 @@ namespace ChessFight.RagdollLab
             public RagdollPawn p;
             public SkinnedMeshRenderer r;
             public float k, want;
+            /// <summary>An impact frame's red fill (PawnRushSkillFx.Impact.cs): on until this real time, and for at least
+            /// one rendered frame.</summary>
+            public float fillUntil = -1f;
+            public int fillFrames;
         }
 
         readonly Dictionary<RagdollPawn, EnemyOutline> outlines = new Dictionary<RagdollPawn, EnemyOutline>();
@@ -293,7 +297,9 @@ namespace ChessFight.RagdollLab
                     continue;
                 }
                 o.k = Mathf.MoveTowards(o.k, o.want, dt / 0.25f);
-                if (o.k <= 0f && o.want <= 0f)
+                bool filled = o.fillFrames > 0 || RealClock < o.fillUntil;
+                if (o.fillFrames > 0) o.fillFrames--;
+                if (o.k <= 0f && o.want <= 0f && !filled)
                 {
                     Destroy(o.r.gameObject);
                     outlinesGone.Add(kv.Key);
@@ -307,7 +313,11 @@ namespace ChessFight.RagdollLab
                 }
                 o.r.forceRenderingOff = !skin.enabled || skin.forceRenderingOff || !skin.gameObject.activeInHierarchy;
                 if (outlineBlock == null) outlineBlock = new MaterialPropertyBlock();
-                outlineBlock.SetFloat("_Alpha", o.k * (0.85f + 0.15f * Mathf.Sin(Clock * 5f + o.p.GetInstanceID())));
+                outlineBlock.SetFloat("_Alpha", filled ? 1f : o.k * (0.85f + 0.15f * Mathf.Sin(Clock * 5f + o.p.GetInstanceID())));
+                // An impact frame's red fill: the whole body in hot red light for that frame, seen or behind a wall.
+                outlineBlock.SetColor("_Color", filled ? new Color(6f, 0.3f, 0.35f, 1f) : new Color(2.4f, 0.16f, 0.22f, 1f));
+                outlineBlock.SetFloat("_Fill", filled ? 1f : 0.3f);
+                outlineBlock.SetFloat("_FillSeen", filled ? 1f : 0f);
                 o.r.SetPropertyBlock(outlineBlock);
             }
             foreach (var p in outlinesGone) outlines.Remove(p);
@@ -345,6 +355,21 @@ namespace ChessFight.RagdollLab
             r.skinnedMotionVectors = false;
             r.allowOcclusionWhenDynamic = false;   // behind a wall is the point
             return new EnemyOutline { p = p, r = r };
+        }
+
+        /// <summary>The piece filled with red light for one impact frame (1/60 s real, at least one rendered frame), on this
+        /// screen; its outline is made for it if it has none.</summary>
+        void FlashFill(RagdollPawn p)
+        {
+            if (p == null || p.skin == null || outlineShaderMissing) return;
+            if (!outlines.TryGetValue(p, out var o) || o == null || o.r == null)
+            {
+                o = MakeOutline(p);
+                if (o == null) return;
+                outlines[p] = o;
+            }
+            o.fillUntil = RealClock + 1f / 60f;
+            o.fillFrames = 1;
         }
 
         void DestroyOutlines()

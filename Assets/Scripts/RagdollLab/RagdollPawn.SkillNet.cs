@@ -34,12 +34,13 @@ namespace ChessFight.RagdollLab
         /// stops, on each screen by itself; the bodies go on and the skin catches up when it lets go.</summary>
         public bool VisualHeld => Time.unscaledTime < visualHoldUntil;
 
-        public void HoldVisual(float seconds)
+        public void HoldVisual(float seconds, bool count = true)
         {
             if (seconds <= 0f) return;
             visualHoldUntil = Mathf.Max(visualHoldUntil, Time.unscaledTime + seconds);
-            // One hit stop holds two pieces in the same frame: count it once (the test screen, R112).
-            if (Time.frameCount != lastHoldFrame)
+            // One hit stop holds two pieces in the same frame: count it once (the test screen, R112). (The ultimates'
+            // online slow motion holds pictures too, uncounted: count false.)
+            if (count && Time.frameCount != lastHoldFrame)
             {
                 lastHoldFrame = Time.frameCount;
                 NetStats.HitStops++;

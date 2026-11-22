@@ -84,6 +84,16 @@ namespace ChessFight.RagdollLab
         float Dt => fxDt;
         float clock;
         float Clock => clock;
+        // ...and this screen's show time and real time (11-22, the ultimates' slow motion; see Update).
+        float realDt, showDt, realClock, showClock;
+        float RealClock => realClock;
+        float ShowClock => showClock;
+
+        /// <summary>Which clock steps an effect: the game's (default), this screen's show (slowed by the online picture slow
+        /// motion) or real time (never slowed).</summary>
+        public enum UltTick { Game, Show, Real }
+
+        float DtOf(UltTick tick) => tick == UltTick.Show ? showDt : tick == UltTick.Real ? realDt : fxDt;
 
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.labCamera != null ? game.labCamera.Cam : Camera.main;
 
@@ -1144,13 +1154,21 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             float real = Time.captureDeltaTime > 0f ? Time.captureDeltaTime : Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+            realDt = real;
+            realClock += real;
+            UltSlowStep(real);   // the caster's slow motion (PawnRushSkillFx.Impact.cs): the game's time offline, this screen's online
             if (Time.timeScale > 0f && !stopping) rate = Time.timeScale;
+            // Three clocks (11-22): the game's (Clock: every mark that times gameplay - a landing's lock, a dive's shadow),
+            // this screen's show (decor that the online picture slow motion slows) and real time (the HUD, the slow
+            // motion's own curve, a hit stop's length, the shake).
             fxDt = real * rate;
+            showDt = fxDt * presentRate;
+            showClock += showDt;
             float dt = Dt;
             clock += dt;
             if (stopping)
             {
-                stopLeft -= dt;
+                stopLeft -= real;
                 if (stopLeft <= 0f)
                 {
                     stopping = false;
@@ -1172,17 +1190,18 @@ namespace ChessFight.RagdollLab
             {
                 var bloom = cam.GetComponent<PawnRushSkillBloom>();
                 if (bloom != null) bloom.enabled = effects;
+                viewBloom = bloom;
             }
 
             ShineToon();
             WatchPieces();
 
-            sparks.Step(dt);
-            motes.Step(dt);
-            smoke.Step(dt);
+            sparks.Step(showDt);
+            motes.Step(showDt);
+            smoke.Step(showDt);
 
             for (int i = anims.Count - 1; i >= 0; i--)
-                if (!anims[i].Step(dt, cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
+                if (!anims[i].Step(DtOf(anims[i].tick), cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
 
             var gone = new List<Object>();
             foreach (var kv in tileSets)
@@ -1203,8 +1222,8 @@ namespace ChessFight.RagdollLab
 
             if (shakeLeft > 0f && cam != null)
             {
-                shakeLeft -= dt;
-                shakeClock += dt;
+                shakeLeft -= realDt;
+                shakeClock += realDt;
                 bool free = ViewOverride == null && game != null && game.labCamera != null && game.labCamera.freeMode;
                 if (!free)
                 {
@@ -1321,6 +1340,8 @@ namespace ChessFight.RagdollLab
         abstract class Anim
         {
             protected float age;
+            /// <summary>The clock that steps it (11-22; the game's by default).</summary>
+            public UltTick tick;
             /// <summary>False once it is over.</summary>
             public abstract bool Step(float dt, Camera cam);
             public abstract void Destroy();

@@ -906,6 +906,9 @@ namespace ChessFight.RagdollLab
         public float dropRadius1 = 10f, dropRadius2 = 20f, dropPush = 11f, dropLift = 5f, dropHold = 2.5f, dropHeight = 0.3f;
         [Tooltip("총동원: 불러오는 팀원 ×1 · ×2; 모인 팀이 넘어지지 않는 시간 (초); 모인 자리 둘레 밀기 (m); 1등 곁 거리 (m)")]
         public float callCount1 = 2f, callCount2 = 4f, callGuard = 5f, callShove = 3f, callSide = 1.5f;
+        [Header("궁극기 연출 · !! 탁월한 수 (11-22, PawnRushSkillFx.Impact.cs)")]
+        [Tooltip("시전자 화면에서 그 기물의 한 수(승격 · 포크 · 꼬챙이 · 7번째 줄 · 퀸 희생)를 슬로우로 보여 준다: 1 켬, 0이면 시전과 판정의 슬로우만")]
+        public float ultSigSlow = 1f;
 
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]

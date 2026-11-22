@@ -59,6 +59,26 @@ namespace ChessFight.RagdollLab
             public float camK;
             /// <summary>Where the cast happened and the way the caster faced (the king's carpet is laid from them).</summary>
             public Vector3 castAt, castDir;
+            /// <summary>The same moments on the real clock (the slow motion, the impact frames and the envelope run on it), and
+            /// what this show has spent of the slow motion: seconds slowed (3.3 at most) and its one signature.</summary>
+            public float t0Real, hitReal = -1f, endReal = -1f, slowSpent;
+            public bool sigUsed;
+            /// <summary>The key's stamp played (0.70 s real after the key); a !! judgement's stars (real time, -1 none).</summary>
+            public bool stamped;
+            public float starsAt = -1f;
+            /// <summary>This frame's captures (strikes in one frame are one burst), what the ultimate's own code made of them
+            /// (a blow, its signature: UltBlow) and whether it has captured before (PawnRushSkillFx.Impact.cs).</summary>
+            public int burstFrame = -1;
+            public readonly List<RagdollPawn> burst = new List<RagdollPawn>();
+            public Vector3 burstAt, claimAt;
+            public bool burstClaimed, burstDone, captured;
+            public ImpactSeq claimSeq;
+            /// <summary>The show's chess frame (PawnRushSkillFx.UltContract.cs): its from-square, the way up the board (a world
+            /// axis), its to-square (set at the judgement), the side; and the per-show state of the stage lights, the board
+            /// and the HUD (each file its own object).</summary>
+            public Vector2Int fromCell, toCell, up = new Vector2Int(0, 1);
+            public bool black;
+            public object stage, brill, hud;
             public bool Fork => skill == PawnRushSkillIds.FamilyFork;
             public bool Tour => skill == PawnRushSkillIds.KnightTour;
             /// <summary>One of the six driven ultimates (air is then its whole time).</summary>
@@ -72,8 +92,8 @@ namespace ChessFight.RagdollLab
         }
 
         readonly List<UltShow> ults = new List<UltShow>();
-        Material matFrame, matSky;
-        Texture2D texFrame, texStars;
+        Material matFrame, matSky, matDome;
+        Texture2D texFrame, texStars, texDome;
         Mesh meshCube;
         bool ultBuilt;
 
@@ -104,7 +124,16 @@ namespace ChessFight.RagdollLab
             texStars.Apply(true, true);
             matFrame = Glow(texFrame);
             matSky = Glow(texStars, opacity: 1f);
-            matSky.renderQueue = 2900;   // after the sky, before every effect: it shows only where nothing solid is in front
+            matSky.renderQueue = 2901;   // after the sky and its dome, before every effect: only where nothing solid is in front
+            // The grey dome over the sky while a show is on (11-22, the spec's sky): dark overhead, lighter at the horizon.
+            texDome = Tex(4, 256, TextureWrapMode.Clamp, (u, v) =>
+            {
+                float up = Mathf.Pow(Mathf.Clamp01((v - 0.5f) / 0.45f), 0.7f);   // (a sphere's v: 0.5 at the horizon, 1 overhead)
+                Color c = Color.Lerp(new Color(0.17f, 0.18f, 0.20f), new Color(0.06f, 0.065f, 0.075f), up);
+                return new Color32((byte)(c.r * 255f), (byte)(c.g * 255f), (byte)(c.b * 255f), 255);
+            });
+            matDome = Glow(texDome, opacity: 1f);
+            matDome.renderQueue = 2900;
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
             meshCube = Instantiate(tmp.GetComponent<MeshFilter>().sharedMesh);
             meshCube.hideFlags = HideFlags.HideAndDontSave;
@@ -113,12 +142,17 @@ namespace ChessFight.RagdollLab
 
         void DestroyUlt()
         {
+            DestroyImpact();   // (the game's time given back if a slow motion was under way)
             UltScreenDestroy();
             DestroyOutlines();
             DestroyGiants();
             DestroyRolls();
             DestroyCarpets();
-            foreach (var o in new Object[] { texFrame, texStars, meshCube }) if (o != null) Destroy(o);
+            DestroyStage();      // the stage lights and the light shapes (PawnRushSkillFx.Stage.cs)
+            DestroyBrilliant();  // the board's patches (PawnRushSkillFx.Brilliant.cs)
+            DestroyHud();        // the HUD's words and pop words (PawnRushSkillFx.Hud.cs)
+            UltSoundsDestroy();  // the new clips and the beds (PawnRushSkillFx.Sounds.cs)
+            foreach (var o in new Object[] { texFrame, texStars, texDome, meshCube }) if (o != null) Destroy(o);
         }
 
         UltShow ShowOf(RagdollPawn by)
@@ -139,7 +173,8 @@ namespace ChessFight.RagdollLab
             var old = ShowOf(e.by);
             if (old != null) old.gone = true;
             BuildUltParts();
-            var u = new UltShow { by = e.by, skill = e.count, t0 = Clock, air = e.size > 0.1f ? e.size : 1.6f, lastSeen = Clock, castAt = e.at, castDir = e.dir };
+            var u = new UltShow { by = e.by, skill = e.count, t0 = Clock, t0Real = RealClock, air = e.size > 0.1f ? e.size : 1.6f, lastSeen = Clock, castAt = e.at, castDir = e.dir };
+            UltFrameSet(u);
             ults.Add(u);
             UltTakeOff(u, e.at);
             UltAurora(u);              // the previz's teal aurora (PawnRushSkillFx.PrevizLook.cs)
@@ -148,6 +183,14 @@ namespace ChessFight.RagdollLab
             if (u.Tour) UltHeadRing(u);
             if (u.Driven) UltDriveCast(u);
             UltScreenStart(u);
+            UltBrilliantCast(u);       // the stage, the board, the giant, the call and the eval bar (PawnRushSkillFx.UltFlow.cs)
+            // The key: on the caster's own screen time freezes, floats and is stamped !! (PawnRushSkillFx.Impact.cs), and
+            // its first frames go hard; an ally or an enemy who sees the caster gets one soft frame.
+            Vector3 chest = ChestOf(e.by);
+            UltSlow(u, UltSlowKind.Key);
+            UltFrames(ImpactSeq.Key, chest, u);
+            UltFrames(ImpactSeq.Ally, chest, u);
+            UltFrames(ImpactSeq.Enemy, chest, u);
         }
 
         void UltGo(SkillFxEvent e)
@@ -186,7 +229,6 @@ namespace ChessFight.RagdollLab
             }
             else UltPopWord(at + Vector3.up * 0.6f, "빗나감", new Color(0.75f, 0.75f, 0.78f), 0.4f, 0.7f);
             UltSound(u.timingPerfect ? UltSfx.Perfect : UltSfx.Off, at);
-            UltScreenTiming(u);
         }
 
         void UltStrike(SkillFxEvent e)
@@ -195,6 +237,11 @@ namespace ChessFight.RagdollLab
             if (u == null || e.target == null) return;
             u.struck++;
             u.struckSet.Add(e.target);
+            // (One burst a frame: its impact frames are played once all of the frame's strikes are in, UltStep.)
+            if (u.burstFrame != Time.frameCount) UltBurstOpen(u);
+            u.burst.Add(e.target);
+            u.burstAt = e.at;
+            UltBrilliantStrike(u, e);  // the capture as chess.com draws it, on every screen (PawnRushSkillFx.UltFlow.cs)
             if (u.Driven) DriveStrike(u, e);
             else if (u.Fork) UltRedBeam(e.target);
             else UltStomp(u, e);
@@ -205,11 +252,13 @@ namespace ChessFight.RagdollLab
             var u = ShowOf(e.by);
             if (u == null) return;
             u.hitAt = Clock;
+            u.hitReal = RealClock;
             u.hitPoint = e.at;
             u.hitCount = e.count;
             u.grade = Mathf.Clamp(Mathf.RoundToInt(e.size), 0, GradeBadges.Length - 1);
-            UltImpact(u, e);
+            UltBrilliantJudge(u, e);   // the review: the squares, the one arrow, the badge, the ignition (PawnRushSkillFx.UltFlow.cs)
             UltScreenHit(u, e);
+            UltJudgeFrames(u, e.at);   // the judgement's slow motion, frames and (at !!) stars (PawnRushSkillFx.Impact.cs)
         }
 
         void UltEnd(SkillFxEvent e)
@@ -217,6 +266,7 @@ namespace ChessFight.RagdollLab
             var u = ShowOf(e.by);
             if (u == null || u.endAt >= 0f) return;
             u.endAt = Clock;
+            u.endReal = RealClock;
             u.cut = e.count == 1 && u.hitAt < 0f;
         }
 
@@ -230,11 +280,11 @@ namespace ChessFight.RagdollLab
                 life = 0.8f, at = floor + Vector3.up * 0.04f, rotation = FlatOnFloor(), scale = new Vector3(FamSquare, FamSquare, 1f), paint = 0.35f,
                 animate = (s, t) => { s.color = HdrA(Teal, 1.6f); s.bright = (1f + 1.5f * Mathf.Exp(-s.Age / 0.1f)) * (1f - t); },
             });
-            UltSquareWave(floor, FamSquare * 0.5f, 14f, 0.7f, Teal, 2.2f);
-            Flare(floor + Vector3.up, Electric, 3f, 8f, 0.4f);
-            SparkBurst(floor + Vector3.up * 0.2f, 40, Electric, Vector3.up, 40f, 4f, 10f, 0.6f, 0.06f);
+            UltSquareWave(floor, FamSquare * 0.5f, 14f, 0.7f, Teal, 3f);
+            SparkBurst(floor + Vector3.up * 0.2f, 12, Color.white, Vector3.up, 40f, 4f, 10f, 0.6f, 0.04f);
+            SparkBurst(floor + Vector3.up * 0.2f, 12, TealPale, Vector3.up, 40f, 4f, 10f, 0.6f, 0.04f);
             DustRing(floor, 12, 0.6f, 5f, new Color(0.6f, 0.6f, 0.62f), 0.8f, 0.8f);
-            UltSound(UltSfx.Boom, floor);
+            if (!u.Driven) UltSound(UltSfx.Boom, floor);   // (a driven one's key sounds are UltBrilliantCast's)
         }
 
         static readonly BodyId[] AuraParts = { BodyId.Head, BodyId.Chest, BodyId.Hips, BodyId.HandL, BodyId.HandR, BodyId.FootL, BodyId.FootR };
@@ -553,8 +603,14 @@ namespace ChessFight.RagdollLab
             UltScreenStrike(u, e);
         }
 
-        /// <summary>The fork's red light falling from the sky onto an enemy it throws.</summary>
+        /// <summary>The fork's red light falling from the sky onto an enemy it throws: the thin sky beam now (the spec's N9).</summary>
         void UltRedBeam(RagdollPawn target)
+        {
+            if (target != null) SkyBeam(target.Hips.position, Blood);
+        }
+
+        /// <summary>(The old thick red column, kept for comparison only; nothing calls it.)</summary>
+        void UltRedColumn(RagdollPawn target)
         {
             Vector3 at = target.Hips.position;
             Add(new Shape(root, "Ult red beam", meshCylinder, matPillar)
@@ -716,14 +772,7 @@ namespace ChessFight.RagdollLab
             UltDrivePreview(cam);   // the six driven ones' aim before their key (PawnRushSkillFx.Drive.cs)
             UltGiants(dt);          // ...the pieces drawn bigger than they are (PawnRushSkillFx.PromotionRun.cs)
             UltRollRestore();       // ...a rook's own skin back after its roll (PawnRushSkillFx.RookRoll.cs)
-            UltOutlines(dt);        // ...and the caster's red outlines on every enemy
-            if (ults.Count == 0)
-            {
-                UltSky(cam, 0f);
-                UltScreenIdle(dt, cam);
-                return;
-            }
-            float night = 0f;
+            float kv = 0f, stars = 0f;
             for (int i = ults.Count - 1; i >= 0; i--)
             {
                 var u = ults[i];
@@ -732,30 +781,85 @@ namespace ChessFight.RagdollLab
                 if (u.endAt < 0f && Clock - u.lastSeen > 1f)
                 {
                     u.endAt = Clock;
+                    u.endReal = RealClock;
                     u.cut = u.hitAt < 0f;
                 }
-                if (u.endAt >= 0f && u.Life(Clock) <= 0f) u.gone = true;
+                // (It stays while its world and its stars are still going out: after a !! that is 3.2 s real.)
+                if (u.endAt >= 0f && u.Life(Clock) <= 0f && UltEnvelope(u) <= 0f && UltStars(u) <= 0f) u.gone = true;
                 if (u.gone)
                 {
                     if (u.Driven) UltDriveGone(u);   // what a driven one made for itself (a carpet, a rolled tower)
                     ults.RemoveAt(i);
                     continue;
                 }
-                night = Mathf.Max(night, UltNight(u));
+                kv = Mathf.Max(kv, UltEnvelope(u) * UltDarkness(u));
+                stars = Mathf.Max(stars, UltStars(u));
+                if (!u.stamped && RealClock - u.t0Real >= 0.70f)
+                {
+                    u.stamped = true;
+                    UltKeyStamp(u);   // the !! stamped on the move (PawnRushSkillFx.Impact.cs)
+                }
+                if (u.burstFrame == Time.frameCount && !u.burstDone) UltBurstResolve(u);   // this frame's captures, all in now
                 UltGlitter(u, dt);
                 if (u.Driven) UltDriveStep(u, dt, cam);
+                UltBrilliantStep(u, cam);   // the board's window under the caster (PawnRushSkillFx.UltFlow.cs)
             }
-            UltSky(cam, 0f);   // (no starry sky: the previz keeps the day, its colour drained)
-            UltScreenStep(dt, cam, night);
+            UltImpactStep();        // this frame's impact frame, if one is queued (PawnRushSkillFx.Impact.cs)...
+            UltOutlines(dt);        // ...the caster's red outlines on every enemy (and an impact frame's red fill)...
+            UltLightBudget(cam);    // ...the stage lights within their caps (PawnRushSkillFx.Stage.cs)...
+            UltHudStep();           // ...and the HUD's clock, bar and badges (PawnRushSkillFx.Hud.cs)
+            if (ults.Count == 0)
+            {
+                UltSky(cam, 0f, 0f);
+                UltScreenIdle(dt, cam);
+                UltBloomRefresh(0f);
+                return;
+            }
+            UltSky(cam, kv, stars);
+            UltScreenStep(dt, cam, kv);
+            UltBloomRefresh(kv);
         }
 
-        /// <summary>How dark the world is for a show: night falls in 0.35 s at the key, lifts over 1.5 s after the landing.</summary>
-        float UltNight(UltShow u)
+        /// <summary>How much of a show's world is on now (0..1, real time). At the key the caster's screen cuts in at 0.05 s
+        /// (the house lights go at the end of the freeze), every other screen eases in over 0.3 s; after the judgement it
+        /// goes by the grade (!! from +1.6 s over 1.6 s, ! and ★ from +1.3 s, ?! from +0.5 s over 0.8 s, ?? from +0.2 s over
+        /// 0.5 s); a show cut short goes over 0.5 s.</summary>
+        float UltEnvelope(UltShow u)
         {
-            float on = Smooth01((Clock - u.t0) / 0.35f);
-            float off = u.hitAt >= 0f ? 1f - Smooth01((Clock - u.hitAt - 1.3f) / 1.6f) : 1f;
-            // (The previz: the colour drains at the key and stays drained while it runs; it comes back after the judgement.)
-            return on * off * u.Life(Clock);
+            if (u.gone) return 0f;
+            float since = RealClock - u.t0Real;
+            float on = Viewer != null && Viewer == u.by ? (since >= 0.05f ? 1f : 0f) : Smooth01(since / 0.3f);
+            float off = 1f;
+            if (u.hitReal >= 0f)
+            {
+                float from = 1.3f, over = 1.6f;
+                switch (u.grade)
+                {
+                    case RagdollPawn.GradeBrilliant: from = 1.6f; break;
+                    case RagdollPawn.GradeInaccuracy: from = 0.5f; over = 0.8f; break;
+                    case RagdollPawn.GradeBlunder: from = 0.2f; over = 0.5f; break;
+                }
+                off = 1f - Smooth01((RealClock - u.hitReal - from) / over);
+            }
+            else if (u.endReal >= 0f) off = 1f - Smooth01((RealClock - u.endReal) / (u.cut ? 0.5f : 1.5f));
+            return on * off;
+        }
+
+        /// <summary>How dark a show makes this screen at full: the caster's 1, its allies' 0.85, its enemies' 0.7 (they are
+        /// still racing).</summary>
+        float UltDarkness(UltShow u)
+        {
+            var me = Viewer;
+            if (me == null || u.by == null) return 0.85f;
+            return me == u.by ? 1f : Teams.AreEnemies(me.Team, u.by.Team) ? 0.7f : 0.85f;
+        }
+
+        /// <summary>A !! judgement's stars: up in 0.3 s, held 1.6 s, out over 0.5 s (0.85 at most; real time).</summary>
+        float UltStars(UltShow u)
+        {
+            if (u.starsAt < 0f) return 0f;
+            float a = RealClock - u.starsAt;
+            return 0.85f * Smooth01(a / 0.3f) * (1f - Smooth01((a - 1.9f) / 0.5f));
         }
 
         /// <summary>Motes of light drifting in the air round the play while the show lasts (the shorts' glitter).</summary>
@@ -763,46 +867,65 @@ namespace ChessFight.RagdollLab
         {
             if (dt <= 0f || u.by == null) return;
             float k = u.Life(Clock);
-            if (k <= 0f || Random.value > 0.5f * k) return;
+            if (k <= 0f || Random.value > 0.25f * k) return;
             Vector3 c = u.hitAt >= 0f ? u.hitPoint : u.by.Hips.position;
             var off = Random.insideUnitSphere * 10f;
             off.y = Mathf.Abs(off.y) * 0.5f + 0.3f;
-            motes.Emit(c + off, Random.insideUnitSphere * 0.25f + Vector3.up * 0.15f, Random.Range(0.04f, 0.09f), Random.Range(1.2f, 2.2f), Tint(Random.value < 0.6f ? Color.white : Electric, 0.3f));
+            motes.Emit(c + off, Random.insideUnitSphere * 0.25f + Vector3.up * 0.15f, 0.05f, Random.Range(1.2f, 2.2f), Tint(Random.value < 0.6f ? Color.white : TealPale, 0.3f));
         }
 
         // ---------------------------------------------------------------- the starry sky
 
-        Transform skyBall;
-        MeshRenderer skyRenderer;
+        Transform skyBall, starBall;
+        MeshRenderer skyRenderer, starRenderer;
         MaterialPropertyBlock skyBlock;   // (made when first used: no Unity object may be made in a MonoBehaviour's field initializers)
 
-        /// <summary>While night falls the sky turns to stars, on every screen, behind everything solid.</summary>
-        void UltSky(Camera cam, float k)
+        /// <summary>While a show is on, on every screen, behind everything solid: a grey dome over the sky (0.7 of it at full,
+        /// still, no spin); at a !! judgement only, the stars come out over it (light added, never blooming).</summary>
+        void UltSky(Camera cam, float k, float stars)
         {
-            if (k <= 0.001f || cam == null)
-            {
-                if (skyRenderer != null) skyRenderer.enabled = false;
-                return;
-            }
-            if (skyBall == null)
-            {
-                var go = new GameObject("Ult starry sky");
-                go.transform.SetParent(root, false);
-                go.AddComponent<MeshFilter>().sharedMesh = meshSphere;
-                skyRenderer = go.AddComponent<MeshRenderer>();
-                skyRenderer.sharedMaterial = matSky;
-                skyRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                skyRenderer.receiveShadows = false;
-                skyBall = go.transform;
-            }
+            bool dome = k > 0.001f && cam != null, starsOn = stars > 0.001f && cam != null;
+            if (!dome && skyRenderer != null) skyRenderer.enabled = false;
+            if (!starsOn && starRenderer != null) starRenderer.enabled = false;
+            if (!dome && !starsOn) return;
+            BuildUltParts();
             if (skyBlock == null) skyBlock = new MaterialPropertyBlock();
             float r = Mathf.Min(380f, cam.farClipPlane * 0.8f);
-            skyBall.SetPositionAndRotation(cam.transform.position, Quaternion.Euler(0f, Clock * 0.6f, 0f));
-            skyBall.localScale = Vector3.one * r * 2f;
-            skyBlock.SetColor("_Color", new Color(1.4f, 1.45f, 1.6f, 1f));
-            skyBlock.SetFloat("_Opacity", k * 0.97f);
-            skyRenderer.SetPropertyBlock(skyBlock);
-            skyRenderer.enabled = true;
+            if (dome)
+            {
+                if (skyRenderer == null) skyRenderer = SkyShell("Ult sky dome", matDome, out skyBall);
+                skyBall.SetPositionAndRotation(cam.transform.position, Quaternion.identity);
+                skyBall.localScale = Vector3.one * r * 2f;
+                float a = 0.7f * Mathf.Clamp01(k);
+                skyBlock.SetColor("_Color", new Color(a, a, a, 1f));   // (premultiplied: the colour scaled with its cover)
+                skyBlock.SetFloat("_Opacity", a);
+                skyRenderer.SetPropertyBlock(skyBlock);
+                skyRenderer.enabled = true;
+            }
+            if (starsOn)
+            {
+                if (starRenderer == null) starRenderer = SkyShell("Ult stars", matSky, out starBall);
+                starBall.SetPositionAndRotation(cam.transform.position, Quaternion.identity);
+                starBall.localScale = Vector3.one * r * 1.98f;
+                float s = Mathf.Clamp01(stars);
+                skyBlock.SetColor("_Color", new Color(s, s, s, 1f));
+                skyBlock.SetFloat("_Opacity", 0f);
+                starRenderer.SetPropertyBlock(skyBlock);
+                starRenderer.enabled = true;
+            }
+        }
+
+        MeshRenderer SkyShell(string name, Material material, out Transform shell)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = meshSphere;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            shell = go.transform;
+            return r;
         }
     }
 }

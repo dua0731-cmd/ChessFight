@@ -11,6 +11,7 @@ Shader "ChessFight/Ult Outline"
         _Alpha ("Strength", Range(0, 1)) = 1
         _Fill ("Fill behind walls", Range(0, 1)) = 0.3
         _RimPower ("Edge power", Range(0.5, 8)) = 2.2
+        _FillSeen ("Fill in sight (an impact frame)", Range(0, 2)) = 0
     }
     SubShader
     {
@@ -23,7 +24,7 @@ Shader "ChessFight/Ult Outline"
         #include "UnityCG.cginc"
 
         float4 _Color;
-        float _Alpha, _Fill, _RimPower;
+        float _Alpha, _Fill, _RimPower, _FillSeen;
 
         struct appdata
         {
@@ -61,7 +62,7 @@ Shader "ChessFight/Ult Outline"
 
         float4 fragSeen (v2f i) : SV_Target
         {
-            return float4(_Color.rgb * Edge(i, _RimPower + 1.5) * 0.9 * _Alpha, 1);
+            return float4(_Color.rgb * (Edge(i, _RimPower + 1.5) * 0.9 + _FillSeen) * _Alpha, 1);
         }
         ENDCG
 

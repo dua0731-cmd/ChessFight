@@ -44,7 +44,7 @@ namespace ChessFight.RagdollLab
         Vignette ultVignette;
         ChromaticAberration ultAberration;
 #endif
-        float punchKick, whiteKick, redKick, beatKick;
+        float redKick, musicLevel = 1f;
         Camera pipCam;
         RenderTexture pipTex;
         UltShow pipShow;
@@ -71,35 +71,21 @@ namespace ChessFight.RagdollLab
                 ultLoop.volume = 0.35f * ChessFight.Game.GameSettings.Effects;
                 ultLoop.Play();
             }
-            punchKick = Mathf.Max(punchKick, 0.5f);
-            whiteKick = Mathf.Max(whiteKick, Viewer == u.by ? 0.18f : 0.06f);
-        }
-
-        void UltScreenTiming(UltShow u)
-        {
-            beatKick = 1f;
-            if (u.timingPerfect && Viewer == u.by) whiteKick = Mathf.Max(whiteKick, 0.12f);
         }
 
         void UltScreenStrike(UltShow u, SkillFxEvent e)
         {
-            beatKick = 1f;
-            if (Viewer == e.target) redKick = 1f;
+            if (Viewer == e.target) redKick = 1f;   // the struck piece's own screen: a red vignette for 0.35 s
         }
 
         void UltScreenHit(UltShow u, SkillFxEvent e)
         {
             if (ultLoop != null) ultLoop.Stop();
-            punchKick = 1f;
-            var cam = ViewCamera;
-            float near = cam != null ? Mathf.Clamp01(1f - Vector3.Distance(cam.transform.position, e.at) / 40f) : 0.5f;
-            bool good = u.grade <= RagdollPawn.GradeGreat;
-            whiteKick = Mathf.Max(whiteKick, (Viewer == u.by ? 0.3f : 0.08f + 0.15f * near) * (good ? 1f : 0.5f));
         }
 
         void UltScreenDestroy()
         {
-            UltNightApply(0f);
+            UltWorldDim(0f);
 #if CF_URP
             if (gradeHolder != null) Destroy(gradeHolder);
             if (gradeProfile != null) Destroy(gradeProfile);
@@ -118,22 +104,27 @@ namespace ChessFight.RagdollLab
 
         float ultAudioCheck;
 
+        bool ultSoundsMade;
+
         /// <summary>No show: what the shows set goes back. The sounds are made here, before the first cast (making them at
-        /// the key would stall that frame), once a piece in the game has a knight's ultimate.</summary>
+        /// the key would stall that frame), once a piece in the game has a team ultimate.</summary>
         void UltScreenIdle(float dt, Camera cam)
         {
-            if (ultAudio == null && Clock >= ultAudioCheck)
+            if (!ultSoundsMade && Clock >= ultAudioCheck)
             {
                 ultAudioCheck = Clock + 1f;
                 foreach (var p in RagdollPawn.All)
-                    if (p != null && (p.HasSkill(PawnRushSkillIds.FamilyFork) || p.HasSkill(PawnRushSkillIds.KnightTour)))
+                    if (p != null && UltHolder(p))
                     {
                         UltAudioBuild();
+                        UltSoundsBuild();   // the presentation's new clips (PawnRushSkillFx.Sounds.cs)
+                        ultSoundsMade = true;
                         break;
                     }
             }
-            punchKick = whiteKick = redKick = beatKick = 0f;
-            UltNightApply(0f);
+            redKick = 0f;
+            musicLevel = 1f;
+            UltWorldDim(0f);
 #if CF_URP
             if (gradeVolume != null && gradeVolume.weight > 0f) gradeVolume.weight = 0f;
             if (neonVolume != null && neonVolume.weight > 0f) neonVolume.weight = 0f;
@@ -143,48 +134,58 @@ namespace ChessFight.RagdollLab
             if (ChessFight.Game.MusicDuck.Level != 1f) ChessFight.Game.MusicDuck.Level = 1f;
         }
 
-        void UltScreenStep(float dt, Camera cam, float night)
+        /// <summary>Every frame of a show: the scene's light down by <paramref name="kv"/> (the strongest show's world on
+        /// this screen, times how dark it makes this viewer's), the music down, the caster's camera, the grade.</summary>
+        void UltScreenStep(float dt, Camera cam, float kv)
         {
-            punchKick = Mathf.Max(0f, punchKick - dt / 0.16f);
-            whiteKick = Mathf.Max(0f, whiteKick - dt * 1.6f);
-            redKick = Mathf.Max(0f, redKick - dt / 0.35f);
-            beatKick = Mathf.Max(0f, beatKick - dt / 0.22f);
-            UltNightApply(0f);   // (the previz keeps the day's light: only the colour drains)
+            redKick = Mathf.Max(0f, redKick - realDt / 0.35f);
+            UltWorldDim(kv);
             UltShow face = null;
-            float duck = 1f;
+            bool caster = false;
             foreach (var u in ults)
             {
                 if (u.Playing && Clock - u.t0 < 1.6f && u.by != null) face = u;
-                duck = Mathf.Min(duck, Mathf.Lerp(1f, 0.35f, night));
+                if (u.by != null && u.by == Viewer) caster = true;
                 UltCameraMods(u, cam);
             }
-            ChessFight.Game.MusicDuck.Level = duck;
-            if (ultLoop != null && ultLoop.isPlaying) ultLoop.volume = 0.35f * ChessFight.Game.GameSettings.Effects * night;
+            // The music: 0.35 while a show is on, 0.15 while the caster's own time is held (eased over 0.08 s real).
+            float duck = Mathf.Lerp(1f, 0.35f, kv);
+            if (UltSlowNow < 0.5f) duck = Mathf.Min(duck, 0.15f);
+            musicLevel = Mathf.MoveTowards(musicLevel, duck, realDt / 0.08f);
+            ChessFight.Game.MusicDuck.Level = musicLevel;
+            if (ultLoop != null && ultLoop.isPlaying) ultLoop.volume = 0.35f * ChessFight.Game.GameSettings.Effects * kv;
             UltPipStep(face);
 #if CF_URP
             UltGradeBuild();
             if (gradeVolume == null) return;
-            bool on = night > 0.001f || punchKick > 0f || beatKick > 0f || redKick > 0f;
-            // Taken from what the scene's own volumes give at the moment it starts (this one still off), so the night is
+            bool on = kv > 0.001f || redKick > 0f;
+            // Taken from what the scene's own volumes give at the moment it starts (this one still off), so the grade is
             // added to the scene's look instead of replacing it.
             if (on && gradeVolume.weight <= 0f) UltGradeBase();
             gradeVolume.weight = on ? 1f : 0f;
-            if (!on) return;
-            // The previz's grey world: the colour drained (the neon curve then keeps teal and red only), a little darker
-            // and harder.
-            neonVolume.weight = night > 0.5f ? 1f : 0f;
-            ultAdjust.postExposure.value = baseExposure - 0.3f * night;
-            ultAdjust.contrast.value = Mathf.Clamp(baseContrast + 16f * night + 40f * punchKick, -100f, 100f);
-            ultAdjust.saturation.value = Mathf.Clamp(baseSaturation - 72f * night * (night > 0.5f ? 0f : 1f), -100f, 100f);
-            ultVignette.intensity.value = Mathf.Clamp01(Mathf.Max(baseVignette, 0.2f * night) + 0.3f * night + 0.1f * beatKick + 0.3f * redKick);
+            if (!on)
+            {
+                neonVolume.weight = 0f;
+                return;
+            }
+            // The grey world: a little darker (the darkness is the lights', so the neon is not pushed into the bloom) and
+            // harder, a cool tint, the colour drained - past half, the neon curve keeps teal and red only. No washes: the
+            // hard moments are the impact frames' (PawnRushSkillFx.Impact.cs).
+            neonVolume.weight = kv > 0.5f ? 1f : 0f;
+            ultAdjust.postExposure.value = baseExposure - 0.10f * kv;
+            ultAdjust.contrast.value = Mathf.Clamp(baseContrast + 18f * kv, -100f, 100f);
+            ultAdjust.colorFilter.value = baseColorFilter * Color.Lerp(Color.white, new Color(0.95f, 0.98f, 1f), kv);
+            ultAdjust.saturation.value = Mathf.Clamp(baseSaturation - 60f * kv * (kv > 0.5f ? 0f : 1f), -100f, 100f);
+            ultVignette.intensity.value = Mathf.Clamp01(Mathf.Max(baseVignette, (caster ? 0.30f : 0.20f) * kv) + 0.30f * redKick);
+            ultVignette.smoothness.value = Mathf.Lerp(baseVignetteSmooth, 0.4f, kv);
             ultVignette.color.value = Color.Lerp(baseVignetteColor, new Color(0.7f, 0f, 0.03f), Mathf.Clamp01(redKick * 1.5f));
-            ultAberration.intensity.value = Mathf.Clamp01(baseAberration + 0.35f * beatKick + punchKick);
+            ultAberration.intensity.value = baseAberration;
 #endif
         }
 
 #if CF_URP
-        float baseExposure, baseContrast, baseSaturation, baseVignette, baseAberration;
-        Color baseVignetteColor = Color.black;
+        float baseExposure, baseContrast, baseSaturation, baseVignette, baseVignetteSmooth = 0.2f, baseAberration;
+        Color baseVignetteColor = Color.black, baseColorFilter = Color.white;
 
         void UltGradeBuild()
         {
@@ -196,8 +197,9 @@ namespace ChessFight.RagdollLab
             // Only what the night changes is overridden; the scene keeps its own colour filter, hue, vignette shape.
             ultAdjust = gradeProfile.Add<ColorAdjustments>(false);
             ultAdjust.postExposure.overrideState = ultAdjust.contrast.overrideState = ultAdjust.saturation.overrideState = true;
+            ultAdjust.colorFilter.overrideState = true;
             ultVignette = gradeProfile.Add<Vignette>(false);
-            ultVignette.intensity.overrideState = ultVignette.color.overrideState = true;
+            ultVignette.intensity.overrideState = ultVignette.color.overrideState = ultVignette.smoothness.overrideState = true;
             ultAberration = gradeProfile.Add<ChromaticAberration>(false);
             ultAberration.intensity.overrideState = true;
             gradeVolume = gradeHolder.AddComponent<Volume>();
@@ -206,15 +208,15 @@ namespace ChessFight.RagdollLab
             gradeVolume.sharedProfile = gradeProfile;
             gradeVolume.weight = 0f;
             // The neon: every hue loses its colour but teal's (the caster's move) and red's (what it attacks), a little
-            // stronger (the curve's 0.5 keeps a hue as it is, 0 greys it).
+            // stronger (the curve's 0.5 keeps a hue as it is, 0 greys it). The red band is narrow, so orange roofs go grey.
             neonProfile = ScriptableObject.CreateInstance<VolumeProfile>();
             neonProfile.hideFlags = HideFlags.HideAndDontSave;
             var curves = neonProfile.Add<ColorCurves>(true);
             var keys = new[]
             {
-                new Keyframe(0f, 0.62f), new Keyframe(0.035f, 0.62f), new Keyframe(0.085f, 0f), new Keyframe(0.385f, 0f),
-                new Keyframe(0.425f, 0.62f), new Keyframe(0.525f, 0.62f), new Keyframe(0.565f, 0f), new Keyframe(0.915f, 0f),
-                new Keyframe(0.965f, 0.62f),
+                new Keyframe(0f, 0.62f), new Keyframe(0.015f, 0.62f), new Keyframe(0.05f, 0f), new Keyframe(0.385f, 0f),
+                new Keyframe(0.425f, 0.62f), new Keyframe(0.525f, 0.62f), new Keyframe(0.565f, 0f), new Keyframe(0.93f, 0f),
+                new Keyframe(0.955f, 0.62f),
             };
             curves.hueVsSat.Override(new TextureCurve(keys, 0.5f, true, new Vector2(0f, 1f)));
             var holder = new GameObject("Ult neon (volume)");
@@ -237,91 +239,108 @@ namespace ChessFight.RagdollLab
             baseSaturation = adjust != null ? adjust.saturation.value : 0f;
             baseVignette = vignette != null ? vignette.intensity.value : 0f;
             baseVignetteColor = vignette != null ? vignette.color.value : Color.black;
+            baseVignetteSmooth = vignette != null ? vignette.smoothness.value : 0.2f;
+            baseColorFilter = adjust != null ? adjust.colorFilter.value : Color.white;
             baseAberration = aberration != null ? aberration.intensity.value : 0f;
         }
 #endif
 
-        // ---------------------------------------------------------------- night: the scene's lights down
+        // ---------------------------------------------------------------- the world dimmed: the scene's lights down
 
-        // What the scene had before the first show darkened it (put back exactly when the last one is over).
-        readonly List<(Light light, float intensity)> nightLights = new List<(Light, float)>();
-        bool nightOn;
-        float nightAmbient, nightReflection;
-        Color nightAmbientLight, nightSky, nightEquator, nightGround, nightFog;
+        // What the scene had before the first show dimmed it (put back exactly when the last one is over).
+        readonly List<(Light light, float intensity, bool sun)> dimLights = new List<(Light, float, bool)>();
+        bool dimOn, dimFogAdded;
+        float dimAmbient, dimReflection, dimFogDensity;
+        FogMode dimFogMode;
+        Color dimAmbientLight, dimSky, dimEquator, dimGround, dimFog;
         // The ambient probe itself as well: a change of the ambient colours at run time does not always reach it.
-        UnityEngine.Rendering.SphericalHarmonicsL2 nightProbe;
+        UnityEngine.Rendering.SphericalHarmonicsL2 dimProbe;
 
-        void UltNightApply(float k)
+        /// <summary>The scene's own light down by <paramref name="kv"/> (11-22, the user: "맵 전체 채도 낮추기 + 시전자랑
+        /// 공격받는 범위 등에만 강한 조명"): the sun to 38 %, every other scene light (not the effects' own) to 30 %, ambient and
+        /// reflections to 45 %, the fog toward a dark grey (a scene without fog gets a thin one while it lasts). About 38 % of
+        /// the day's light at full on the caster's screen, never below 35 %; the light that is left falls where the stage
+        /// lights put it. Put back exactly at 0.</summary>
+        void UltWorldDim(float kv)
         {
-            if (k <= 0.001f)
+            if (kv <= 0.001f)
             {
-                if (!nightOn) return;
-                foreach (var (light, intensity) in nightLights) if (light != null) light.intensity = intensity;
-                RenderSettings.ambientIntensity = nightAmbient;
-                RenderSettings.reflectionIntensity = nightReflection;
-                RenderSettings.ambientLight = nightAmbientLight;
-                RenderSettings.ambientSkyColor = nightSky;
-                RenderSettings.ambientEquatorColor = nightEquator;
-                RenderSettings.ambientGroundColor = nightGround;
-                RenderSettings.fogColor = nightFog;
-                RenderSettings.ambientProbe = nightProbe;
-                nightLights.Clear();
-                nightOn = false;
+                if (!dimOn) return;
+                foreach (var (light, intensity, _) in dimLights) if (light != null) light.intensity = intensity;
+                RenderSettings.ambientIntensity = dimAmbient;
+                RenderSettings.reflectionIntensity = dimReflection;
+                RenderSettings.ambientLight = dimAmbientLight;
+                RenderSettings.ambientSkyColor = dimSky;
+                RenderSettings.ambientEquatorColor = dimEquator;
+                RenderSettings.ambientGroundColor = dimGround;
+                RenderSettings.fogColor = dimFog;
+                if (dimFogAdded)
+                {
+                    RenderSettings.fog = false;
+                    RenderSettings.fogMode = dimFogMode;
+                    RenderSettings.fogDensity = dimFogDensity;
+                }
+                RenderSettings.ambientProbe = dimProbe;
+                dimLights.Clear();
+                dimOn = dimFogAdded = false;
                 return;
             }
-            if (!nightOn)
+            if (!dimOn)
             {
-                nightOn = true;
-                nightLights.Clear();
+                dimOn = true;
+                dimLights.Clear();
                 foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None))
-                    if (l != null && l.type == LightType.Directional && l.enabled) nightLights.Add((l, l.intensity));
-                nightAmbient = RenderSettings.ambientIntensity;
-                nightReflection = RenderSettings.reflectionIntensity;
-                nightAmbientLight = RenderSettings.ambientLight;
-                nightSky = RenderSettings.ambientSkyColor;
-                nightEquator = RenderSettings.ambientEquatorColor;
-                nightGround = RenderSettings.ambientGroundColor;
-                nightFog = RenderSettings.fogColor;
-                nightProbe = RenderSettings.ambientProbe;
+                    if (l != null && l.enabled && (root == null || !l.transform.IsChildOf(root))) dimLights.Add((l, l.intensity, l.type == LightType.Directional));
+                dimAmbient = RenderSettings.ambientIntensity;
+                dimReflection = RenderSettings.reflectionIntensity;
+                dimAmbientLight = RenderSettings.ambientLight;
+                dimSky = RenderSettings.ambientSkyColor;
+                dimEquator = RenderSettings.ambientEquatorColor;
+                dimGround = RenderSettings.ambientGroundColor;
+                dimFog = RenderSettings.fogColor;
+                dimProbe = RenderSettings.ambientProbe;
+                dimFogMode = RenderSettings.fogMode;
+                dimFogDensity = RenderSettings.fogDensity;
+                dimFogAdded = !RenderSettings.fog;
+                if (dimFogAdded)
+                {
+                    RenderSettings.fog = true;
+                    RenderSettings.fogMode = FogMode.ExponentialSquared;
+                }
             }
-            float keep = 1f - 0.86f * k;
-            foreach (var (light, intensity) in nightLights) if (light != null) light.intensity = intensity * keep;
-            RenderSettings.ambientIntensity = nightAmbient * (1f - 0.78f * k);
-            RenderSettings.reflectionIntensity = nightReflection * (1f - 0.85f * k);
-            RenderSettings.ambientLight = nightAmbientLight * (1f - 0.78f * k);
-            RenderSettings.ambientSkyColor = nightSky * (1f - 0.78f * k);
-            RenderSettings.ambientEquatorColor = nightEquator * (1f - 0.78f * k);
-            RenderSettings.ambientGroundColor = nightGround * (1f - 0.78f * k);
-            RenderSettings.fogColor = Color.Lerp(nightFog, new Color(0.015f, 0.018f, 0.03f), k);
-            RenderSettings.ambientProbe = nightProbe * (1f - 0.78f * k);
+            foreach (var (light, intensity, sun) in dimLights) if (light != null) light.intensity = intensity * (1f - (sun ? 0.62f : 0.70f) * kv);
+            float keep = 1f - 0.55f * kv;
+            RenderSettings.ambientIntensity = dimAmbient * keep;
+            RenderSettings.reflectionIntensity = dimReflection * keep;
+            RenderSettings.ambientLight = dimAmbientLight * keep;
+            RenderSettings.ambientSkyColor = dimSky * keep;
+            RenderSettings.ambientEquatorColor = dimEquator * keep;
+            RenderSettings.ambientGroundColor = dimGround * keep;
+            RenderSettings.fogColor = Color.Lerp(dimFog, new Color(0.07f, 0.075f, 0.085f), 0.6f * kv);
+            if (dimFogAdded) RenderSettings.fogDensity = 0.006f * kv;
+            RenderSettings.ambientProbe = dimProbe * keep;
         }
 
         // ---------------------------------------------------------------- the caster's own camera
 
-        /// <summary>On the caster's own screen only: field-of-view kicks at the take-off, the beat and the landing, and a
-        /// little further back and higher while the fork flies. Its direction is never touched.</summary>
+        /// <summary>On the caster's own screen only: the slow motion's dolly zoom, roll and kicks (the key, a signature, the
+        /// judgement: PawnRushSkillFx.Impact.cs), a little further back and higher while it flies or rolls, and kicks at the
+        /// beat and the landing; within limits (field of view ±12°, back 2.5 m, up 1.5 m, roll 6°; a giant's pull-back on
+        /// top). Its direction is never touched: the roll turns it about its own line of sight.</summary>
         void UltCameraMods(UltShow u, Camera cam)
         {
             if (cam == null || u.by == null || Viewer != u.by || u.Life(Clock) <= 0f) return;
             bool free = ViewOverride == null && game != null && game.labCamera != null && game.labCamera.freeMode;
             if (free) return;
-            float motion = ChessFight.Game.GameSettings.ShakeScale, fov = 0f, back = 0f, up = 0f;
-            fov += 7f * motion * Mathf.Exp(-(Clock - u.t0) / 0.3f);
+            float motion = ChessFight.Game.GameSettings.ShakeScale, fov = 0f, back = 0f, up = 0f, roll = 0f;
+            UltSlowCamera(u, ref fov, ref back, ref up, ref roll);
             // The nightmare's leaps: a little further back and higher while it flies (eased in and out), to see where it lands.
             bool wide = u.Playing && (u.skill == PawnRushSkillIds.Nightmare && (u.by.PlanNote & RagdollPawn.NmFlying) != 0 || u.skill == PawnRushSkillIds.RookRoll || u.skill == PawnRushSkillIds.QueenDescent);
-            u.camK = Mathf.MoveTowards(u.camK, wide ? 1f : 0f, Time.unscaledDeltaTime / 0.35f);
+            u.camK = Mathf.MoveTowards(u.camK, wide ? 1f : 0f, realDt / 0.35f);
             float wk = Smooth01(u.camK);
             back += 2.2f * wk;
             up += 1f * wk;
             fov += 5f * wk;
-            // A giant (the pawn's queen, the king): back and up with its size, so the camera is not inside it.
-            float giant = GiantScaleOf(u.by);
-            if (giant > 1.02f)
-            {
-                back += (giant - 1f) * 1.2f;
-                up += (giant - 1f) * 0.55f;
-                fov += Mathf.Min(8f, (giant - 1f) * 2f);
-            }
             if (u.Fork && u.Playing)
             {
                 float air = Smooth01((Clock - u.t0) / 0.4f);
@@ -333,11 +352,25 @@ namespace ChessFight.RagdollLab
             if (u.hitAt >= 0f)
             {
                 float h = Clock - u.hitAt;
-                fov += 8f * motion * Mathf.Exp(-h / 0.3f);
+                // The judgement's kick when its time is let go (a !!'s hold is 0.52 s real).
+                float release = RealClock - u.hitReal - (u.grade == RagdollPawn.GradeBrilliant ? 0.52f : 0f);
+                if (release >= 0f) fov += 6f * (ChessFight.Game.GameSettings.ReduceShake ? 0.5f : 1f) * Mathf.Exp(-release / 0.3f);
                 float settle = 1f - Smooth01(h / 0.6f);
                 back *= settle;
                 up *= settle;
                 if (u.Fork && h < 0.6f) { back = 2.6f * settle; up = 1.2f * settle; fov += 6f * settle; }
+            }
+            fov = Mathf.Clamp(fov, -12f, 12f);
+            back = Mathf.Clamp(back, 0f, 2.5f);
+            up = Mathf.Clamp(up, 0f, 1.5f);
+            roll = Mathf.Clamp(roll, -6f, 6f);
+            // A giant (the pawn's queen): back and up with its size, so the camera is not inside it (past the limits).
+            float giant = GiantScaleOf(u.by);
+            if (giant > 1.02f)
+            {
+                back += (giant - 1f) * 1.2f;
+                up += (giant - 1f) * 0.55f;
+                fov += Mathf.Min(8f, (giant - 1f) * 2f);
             }
             var t = cam.transform;
             Vector3 pos = t.position;
@@ -350,6 +383,12 @@ namespace ChessFight.RagdollLab
             }
             pos += Vector3.up * up;
             t.position = pos;
+            // The roll, about the camera's own line of sight (a camera that does not set its turn every frame keeps no old roll).
+            if (cam == ultRollCam && Quaternion.Angle(t.rotation, ultRollWritten) < 0.01f) t.rotation *= Quaternion.Euler(0f, 0f, -ultRollAdded);
+            if (Mathf.Abs(roll) > 0.001f) t.rotation *= Quaternion.Euler(0f, 0f, roll);
+            ultRollCam = cam;
+            ultRollWritten = t.rotation;
+            ultRollAdded = roll;
             // The cameras set their field of view every frame (LabCamera, OrbitCamera), so this is added on top; a frame one
             // skips must not pile one kick on the last.
             float baseFov = cam.fieldOfView;
@@ -360,8 +399,9 @@ namespace ChessFight.RagdollLab
             ultFovAdded = ultFovWritten - baseFov;
         }
 
-        Camera ultFovCam;
-        float ultFovWritten = -1f, ultFovAdded;
+        Camera ultFovCam, ultRollCam;
+        float ultFovWritten = -1f, ultFovAdded, ultRollAdded;
+        Quaternion ultRollWritten = Quaternion.identity;
 
         // ---------------------------------------------------------------- the face in the banner's window
 
@@ -464,17 +504,6 @@ namespace ChessFight.RagdollLab
             var keepMatrix = GUI.matrix;
             var keepColor = GUI.color;
             GUI.matrix = Matrix4x4.Scale(new Vector3(ui, ui, 1f));
-            if (whiteKick > 0.001f)
-            {
-                GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(whiteKick));
-                GUI.DrawTexture(new Rect(0f, 0f, vw, 720f), Texture2D.whiteTexture);
-            }
-            if (redKick > 0.001f)
-            {
-                GUI.color = new Color(1f, 0.05f, 0.08f, 0.16f * redKick);
-                GUI.DrawTexture(new Rect(0f, 0f, vw, 720f), Texture2D.whiteTexture);
-            }
-            GUI.color = keepColor;
             float y = 74f;
             foreach (var u in ults)
             {
@@ -483,9 +512,19 @@ namespace ChessFight.RagdollLab
                 UltWords(u, vw);
             }
             UltHints(vw);
-            UltDriveHud(vw);
+            UltHudGui(vw);   // the call, the top band, the eval bar and move card, the chess clock, the badges (PawnRushSkillFx.Hud.cs)
             GUI.matrix = keepMatrix;
             GUI.color = keepColor;
+            UltImpactGui();   // an impact frame's speed lines and badge over everything (PawnRushSkillFx.Impact.cs)
+        }
+
+        /// <summary>Whether a piece holds a team ultimate (the knight's two or one of the driven ones): its sounds are made ahead.</summary>
+        static bool UltHolder(RagdollPawn p)
+        {
+            if (p.HasSkill(PawnRushSkillIds.FamilyFork) || p.HasSkill(PawnRushSkillIds.KnightTour)) return true;
+            for (int id = PawnRushSkillIds.PromotionRun; id <= PawnRushSkillIds.KingWalk; id++)
+                if (PawnRushSkillIds.Driven(id) && p.HasSkill(id)) return true;
+            return false;
         }
 
         /// <summary>A driven ultimate's line for the other team's banner.</summary>
@@ -509,7 +548,7 @@ namespace ChessFight.RagdollLab
             foreach (var u in ults)
             {
                 if (!u.Driven || u.by != me || !u.Playing) continue;
-                float total = Mathf.Max(0.5f, u.air), left = Mathf.Clamp(total - (Clock - u.t0), 0f, total), k = left / total;
+                float total = Mathf.Max(0.5f, u.air), left = Mathf.Clamp(total - u.by.PlanTime, 0f, total), k = left / total;
                 const float w = 440f, h = 12f, y = 560f;
                 float x = (vw - w) * 0.5f;
                 GUI.color = new Color(0f, 0f, 0f, 0.55f);
@@ -532,12 +571,12 @@ namespace ChessFight.RagdollLab
             var me = Viewer;
             bool ally = me == null || me.Team == u.by.Team || me == u.by;
             string title = $"{Teams.Name(u.by.Team)}팀 {PieceName(u.by.Piece)}   {u.title}!!";
-            string sub = ally ? $"{u.by.DisplayName} · {u.nota}" : u.Driven ? DriveEnemyLine(u.skill) : (u.Fork ? "포크 칸에서 벗어나요!" : "머리 위를 조심해요!");
+            string sub = ally ? $"{u.by.DisplayName} · {UltBannerNota(u)}" : u.Driven ? DriveEnemyLine(u.skill) : (u.Fork ? "포크 칸에서 벗어나요!" : "머리 위를 조심해요!");
             bool face = pipShow == u && pipTex != null && pipCam != null && pipCam.enabled;
             const float faceW = 150f;
             var tw = ultTitle.CalcSize(new GUIContent(title)).x;
             var sw = ultSub.CalcSize(new GUIContent(sub)).x;
-            float w = Mathf.Max(tw, sw) + 120f + faceW, h = 104f;
+            float w = Mathf.Max(tw, sw) + 120f + faceW, h = 84f;
             float x = (vw - w) * 0.5f + (1f - Smooth01(a / 0.3f)) * -60f;
             GUI.color = new Color(1f, 1f, 1f, k);
             GUI.DrawTexture(new Rect(x, y, w, h), ally ? ultGradTeal : ultGradRed);
@@ -558,34 +597,16 @@ namespace ChessFight.RagdollLab
             }
             GUI.color = new Color(1f, 1f, 1f, k);
             Outlined(new Rect(x + faceW, y, 90f, h), PieceGlyph(u.by.Piece), ultGlyph, Color.white, 1.5f);
-            Outlined(new Rect(x + faceW + 88f, y + 10f, tw + 20f, 50f), title, ultTitle, Color.white, 2.5f);
-            Outlined(new Rect(x + faceW + 90f, y + 58f, sw + 20f, 32f), sub, ultSub, ally ? new Color(0.9f, 1f, 0.97f) : new Color(1f, 0.9f, 0.9f), 1.2f);
+            Outlined(new Rect(x + faceW + 88f, y + 4f, tw + 20f, 46f), title, ultTitle, Color.white, 2.5f);
+            Outlined(new Rect(x + faceW + 90f, y + 46f, sw + 20f, 30f), sub, ultSub, ally ? new Color(0.9f, 1f, 0.97f) : new Color(1f, 0.9f, 0.9f), 1.2f);
             GUI.color = Color.white;
             return y + h;
         }
 
-        /// <summary>The judgement at the landing, in the middle of every screen, in chess.com's colour.</summary>
+        /// <summary>(11-22: the big words in the middle of the screen are gone - the centre stays clear for the play; the call
+        /// and the grade word are the HUD's, in the top band: PawnRushSkillFx.Hud.cs.)</summary>
         void UltWords(UltShow u, float vw)
         {
-            // The call (the previz's): the move in huge teal letters, the skill's name under it, on every screen.
-            if (u.Driven)
-            {
-                float c = Clock - u.t0 - 0.15f;
-                if (c >= 0f && c < 1.9f) Word(u.nota, new Vector2(vw * 0.5f, 290f), 104, Teal, c, 1.9f);
-                if (c >= 0.25f && c < 2.15f) Word(u.title + "!!", new Vector2(vw * 0.5f, 400f), 78, Teal, c - 0.25f, 1.9f);
-            }
-            if (u.hitAt < 0f || u.grade < 0) return;
-            float a = Clock - u.hitAt - 0.1f;
-            if (a < 0f || a > 1.8f) return;
-            Word(RagdollPawn.GradeName(u.grade), new Vector2(vw * 0.5f, 380f), u.grade <= RagdollPawn.GradeGreat ? 96 : 70, GradeColors[u.grade] * 1.25f, a, 1.8f);
-            if (u.hitCount > 0)
-            {
-                string what = u.Fork ? $"포크 {u.hitCount}명" : $"머리 {u.hitCount}개";
-                var st = new GUIStyle(ultSub) { fontSize = 24, alignment = TextAnchor.MiddleCenter };
-                GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01((1.6f - a) / 0.3f));
-                Outlined(new Rect(vw * 0.5f - 200f, 460f, 400f, 40f), what, st, Color.white, 2f);
-                GUI.color = Color.white;
-            }
         }
 
         void Word(string text, Vector2 center, int size, Color color, float age, float life)
@@ -736,6 +757,7 @@ namespace ChessFight.RagdollLab
         void UltPlay(AudioClip clip, float level, float delay = 0f, float pitch = 1f)
         {
             if (clip == null || ultAudio == null) return;
+            pitch *= UltSfxPitch;
             float v = Mathf.Clamp01(level * ChessFight.Game.GameSettings.Effects);
             UltSoundPlayed?.Invoke(clip, v, pitch, delay);
             if (delay <= 0f && Mathf.Abs(pitch - 1f) < 0.01f)

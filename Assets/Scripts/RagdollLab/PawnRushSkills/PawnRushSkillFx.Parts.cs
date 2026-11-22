@@ -478,7 +478,7 @@ namespace ChessFight.RagdollLab
         /// <summary>A point light that flares up and dies away: it really lights the floor and the pieces.</summary>
         class LightFlash : Anim
         {
-            readonly Light light;
+            public readonly Light light;
             readonly float peak, rise, life;
             readonly Func<Vector3> follow;
 
@@ -515,7 +515,10 @@ namespace ChessFight.RagdollLab
 
         void Flare(Vector3 at, Color color, float peak, float range, float life, Func<Vector3> follow = null)
         {
-            anims.Add(new LightFlash(root, at, color, peak, range, life, 0.03f, follow));
+            UltFlareClamp(at, ref peak, ref range, ref life);   // the stage's flare budget (PawnRushSkillFx.Stage.cs)
+            var flash = new LightFlash(root, at, color, peak, range, life, 0.03f, follow);
+            anims.Add(flash);
+            UltFlareTrack(flash.light);
         }
 
         /// <summary>A ribbon of light behind a body part while <see cref="Active"/> holds; it fades after.</summary>
