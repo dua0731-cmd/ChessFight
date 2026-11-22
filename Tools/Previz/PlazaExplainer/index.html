@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>광장과 꾸미기 - 설명 영상</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@500;600;700&display=block" rel="stylesheet">
+<style>
+  :root { --paper: #f3eadb; --card: #fffaf0; --ink: #2b2522; --soft: #6b5f57; --line: rgba(43,37,34,.16); --wine: #9a2f3f; --brass: #c99a2e; --teal: #1e8c86; --green: #3e9b4f; --red: #d4472f; }
+  html, body { margin: 0; background: #111; overflow: hidden; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; color: var(--ink);
+    background: radial-gradient(ellipse at 50% 38%, #faf4e8 0%, #f3eadb 55%, #e7d9c2 100%);
+    font-family: 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif; font-weight: 600; font-size: 34px; line-height: 1.3; word-break: keep-all; }
+  #gl { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #layer, .scene, #chrome { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .scene { display: none; }
+  .scene * { box-sizing: border-box; }
+  .abs, .scene > * { position: absolute; }
+  .disp { font-family: 'Black Han Sans', 'IBM Plex Sans KR', sans-serif; font-weight: 400; letter-spacing: .01em; }
+  .h1 { font-size: 168px; line-height: 1; }
+  .h2 { font-size: 84px; line-height: 1.1; }
+  .h3 { font-size: 54px; line-height: 1.15; }
+  .soft { color: var(--soft); } .wine { color: var(--wine); } .teal { color: var(--teal); } .red { color: var(--red); }
+  .small { font-size: 28px; font-weight: 500; }
+  .veil { left: 0; top: 0; width: 1920px; height: 1080px; background: #f3eadb; }
+  .card { background: var(--card); border: 3px solid var(--line); border-radius: 26px; padding: 22px 32px; box-shadow: 0 10px 28px rgba(60,40,20,.10); }
+  .card.hot { border-color: var(--wine); box-shadow: 0 10px 34px rgba(154,47,63,.22); }
+  .card.dim { opacity: .4; }
+  .chip { background: var(--card); border: 3px solid var(--ink); border-radius: 999px; padding: 12px 30px; font-weight: 700; white-space: nowrap; text-align: center; }
+  .chip.fill { background: var(--ink); color: #fff8ea; }
+  .chip.wine { border-color: var(--wine); color: var(--wine); } .chip.winefill { background: var(--wine); border-color: var(--wine); color: #fff8ea; }
+  .chip.teal { border-color: var(--teal); color: var(--teal); } .chip.tealfill { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .chip.grey { border-color: #b9ab97; color: #9a8c7a; background: #efe5d4; }
+  .tag { background: var(--ink); color: #fff8ea; border-radius: 16px; padding: 8px 22px; font-size: 32px; font-weight: 700; white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,.22); }
+  .tag::after { content: ''; position: absolute; left: 50%; bottom: -13px; margin-left: -11px; border: 11px solid transparent; border-top: 14px solid var(--ink); border-bottom: 0; }
+  .tag.wine { background: var(--wine); } .tag.wine::after { border-top-color: var(--wine); }
+  .tag.teal { background: var(--teal); } .tag.teal::after { border-top-color: var(--teal); }
+  .tag.plain::after { display: none; }
+  .bubble { background: #fff; border: 5px solid var(--ink); border-radius: 34px; min-width: 120px; height: 120px; padding: 0 22px; display: flex; align-items: center; justify-content: center; font-size: 76px; font-weight: 700; line-height: 1; box-shadow: 0 8px 18px rgba(0,0,0,.18); white-space: nowrap; }
+  .bubble::after { content: ''; position: absolute; left: 50%; bottom: -24px; margin-left: -16px; border: 16px solid transparent; border-top: 22px solid var(--ink); border-bottom: 0; }
+  .bubble.sym { font-family: 'Black Han Sans', sans-serif; font-weight: 400; color: var(--wine); font-size: 84px; }
+  .bubble.notail::after { display: none; }
+  .who { font-size: 26px; font-weight: 700; color: #fff8ea; background: var(--wine); border-radius: 10px; padding: 2px 12px; white-space: nowrap; }
+  .key { display: inline-block; min-width: 54px; padding: 4px 14px; margin: 0 4px; border: 3px solid var(--ink); border-bottom-width: 7px; border-radius: 12px; background: #fffaf0; font-weight: 700; font-size: 30px; text-align: center; }
+  .key.on { background: var(--brass); }
+  .row { display: flex; align-items: center; gap: 18px; }
+  .arrow { color: var(--soft); font-size: 44px; font-weight: 700; }
+  .num { display: inline-flex; width: 58px; height: 58px; border-radius: 50%; background: var(--ink); color: #fff8ea; align-items: center; justify-content: center; font-family: 'Black Han Sans', sans-serif; font-weight: 400; font-size: 34px; flex: none; }
+  .strike { text-decoration: line-through; text-decoration-thickness: 4px; text-decoration-color: var(--red); }
+  /* the lobby HUD, drawn roughly */
+  .hud { font-size: 30px; }
+  .hud-btn { background: var(--green); color: #fff; border-radius: 20px; padding: 20px 54px; font-size: 46px; font-weight: 700; box-shadow: 0 8px 0 #2b7438, 0 14px 24px rgba(0,0,0,.25); white-space: nowrap; }
+  .hud-btn.off { background: #8d8478; box-shadow: 0 8px 0 #6d655b, 0 14px 24px rgba(0,0,0,.2); }
+  .hud-card { background: rgba(43,37,34,.88); color: #fff8ea; border-radius: 20px; padding: 16px 28px; white-space: nowrap; }
+  .hud-chip { background: rgba(43,37,34,.92); color: #fff8ea; border-radius: 999px; padding: 14px 30px; font-size: 36px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+  .hud-chip b { color: #ffd66b; font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #ffd66b; margin-right: 14px; vertical-align: middle; }
+  .cursor { width: 0; height: 0; border-left: 30px solid var(--ink); border-top: 20px solid transparent; border-bottom: 20px solid transparent; transform-origin: 0 50%; filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff); }
+  .ring { border: 6px solid var(--brass); border-radius: 50%; }
+  .frame { left: 0; top: 0; width: 1920px; height: 1080px; border: 22px solid var(--ink); border-radius: 0; box-shadow: inset 0 0 0 6px #fff8ea; }
+  .glow { left: 0; top: 0; width: 1920px; height: 1080px; box-shadow: inset 0 0 120px 40px rgba(255,200,60,.85); }
+  svg.over { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+  /* chrome */
+  #chapter { position: absolute; left: 56px; top: 40px; display: flex; align-items: center; gap: 16px; font-family: 'Black Han Sans', sans-serif; font-weight: 400; font-size: 46px; color: var(--ink); }
+  #chapter::before { content: ''; width: 14px; height: 46px; background: var(--wine); border-radius: 4px; }
+  #note { position: absolute; right: 56px; top: 50px; font-size: 26px; font-weight: 500; color: var(--soft); background: rgba(255,250,240,.8); padding: 4px 16px; border-radius: 10px; }
+  #cap { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); max-width: 1640px; background: rgba(43,37,34,.92); color: #fff8ea; border-radius: 22px; padding: 16px 44px; font-size: 44px; font-weight: 600; line-height: 1.32; text-align: center; white-space: nowrap; }
+  #bar { position: absolute; left: 0; bottom: 0; height: 9px; background: var(--brass); }
+  #fade { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #f3eadb; opacity: 0; pointer-events: none; }
+  #ui { position: fixed; left: 8px; top: 1086px; font: 13px sans-serif; color: #aaa; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <div id="layer"></div>
+  <div id="chrome"><div id="chapter"></div><div id="note">개념 프리비즈 · 실제 그래픽이 아닙니다</div><div id="cap"></div><div id="bar"></div></div>
+  <div id="fade"></div>
+</div>
+<div id="ui"></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
