@@ -1,0 +1,40 @@
+{
+  "id": "CR05_KingsAntechamber",
+  "height": 7.5,
+  "z_from": 0.0,
+  "z_to": 9.2,
+  "bay_span_authored": 1.9,
+  "pier_depth": 0.9,
+  "modules": [
+    "Bay",
+    "BayMid",
+    "CeilingBay",
+    "CeilingBeam",
+    "FloorInlay",
+    "Header",
+    "Pier",
+    "Portal"
+  ],
+  "ornaments": [
+    {
+      "name": "CR05_GlobeSconce",
+      "per": "pier",
+      "index": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "offset": [
+        0.0,
+        3.3,
+        0.0
+      ]
+    }
+  ],
+  "banner": {
+    "width": 1.1,
+    "height": 3.6,
+    "fabric": "PR_Cor_VelvetPurple"
+  }
+}

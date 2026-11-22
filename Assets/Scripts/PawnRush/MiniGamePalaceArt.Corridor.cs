@@ -15,16 +15,20 @@ namespace ChessFight.PawnRush
         // them 0.25 m further back; only the lamps (over 3 m up) and the plinths' 4 cm lips come forward. The floor's
         // picture is the mini-games' paving, 2.4 cm proud of the floor body (R547, CorridorFloor).
         public static void Corridor(Transform root, int style, float length, float from, float to, float height, float endHalf,
-                                    bool portalStart, bool portalEnd)
+                                    bool portalStart, bool portalEnd, CorridorKit kit = null)
         {
             bool early = style == 0, late = style == 2;
             var art = Group(root, "ENV_Corridor");
-            CorridorFloor(art, length, from, to, endHalf > 0f, early, late);
-            foreach (float side in new[] { -1f, 1f }) CorridorWall(art, side, from, to, height, early, late);
-            if (!early) CorridorCeiling(art, length, from, to, height, late);
-            if (portalStart) CorridorPortal(art, 0f, 1f, height, early, late);
-            if (portalEnd) CorridorPortal(art, length, -1f, height, early, late);
-            if (endHalf > 0f) CorridorEndWall(art, length, endHalf, height, early);
+            // 2026-11-22: a modelled kit replaces the code picture part by part (MiniGamePalaceArt.CorridorModels.cs);
+            // whatever the kit has no model for is drawn here as before.
+            if (kit != null) CorridorModels(art, kit, length, from, to, endHalf, portalStart, portalEnd, early);
+            bool floor = kit != null && kit.Has("Floor"), walls = kit != null && kit.Walls, ceiling = kit != null && kit.Ceiling;
+            if (!floor) CorridorFloor(art, length, from, to, endHalf > 0f, early, late, !(kit != null && kit.Has("FloorInlay")));
+            if (!walls) foreach (float side in new[] { -1f, 1f }) CorridorWall(art, side, from, to, height, early, late);
+            if (!early && !ceiling) CorridorCeiling(art, length, from, to, height, late);
+            if (portalStart && !(kit != null && kit.Has("Portal"))) CorridorPortal(art, 0f, 1f, height, early, late);
+            if (portalEnd && !(kit != null && kit.Has("Portal"))) CorridorPortal(art, length, -1f, height, early, late);
+            if (endHalf > 0f && !(kit != null && kit.Has("EndWall"))) CorridorEndWall(art, length, endHalf, height, early);
         }
 
         // Three bays a wall between four piers (a lamp, a banner, a lamp); the ceiling's cross beams rest on the piers.
@@ -39,7 +43,7 @@ namespace ChessFight.PawnRush
         // mini-game's: leaving one (`from` > 0) the first row continues its exit row, else the last row leads into its
         // entry row. The late runner is the mini-games' too and runs on to the arch; the mid mini-games have none, so
         // neither has a mid corridor. Over the ballroom's arch floor (top -0.004) the slabs stand 2.8 cm clear.
-        static void CorridorFloor(Transform art, float length, float from, float to, bool closedEnd, bool early, bool late)
+        static void CorridorFloor(Transform art, float length, float from, float to, bool closedEnd, bool early, bool late, bool runner = true)
         {
             var floor = Group(art, "Corridor floor");
             // The bed under the paving, out to the walls' outer faces: the joints show it, not the sky.
@@ -59,7 +63,7 @@ namespace ChessFight.PawnRush
                     Box(floor, "Paving module", new Vector3(x * 2f - 5f, .012f, (z0 + z1) * .5f), new Vector3(1.97f, .024f, z1 - z0 - .03f),
                         other ? dark : light, false);
                 }
-            if (!late) return;
+            if (!late || !runner) return;
             // Stopped only at the war room's line; at a mini-game it meets that room's own runner.
             float a = 0f, b = closedEnd ? length - .6f : length;
             float mid = (a + b) * .5f, run = b - a;

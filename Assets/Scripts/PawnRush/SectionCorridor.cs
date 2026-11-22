@@ -87,9 +87,12 @@ namespace ChessFight.PawnRush
             box.isTrigger = true;
             kill.AddComponent<KillVolume>();
 
+            // 2026-11-22: the modelled look of the place it leads into, where there is one (pictures only: the bodies above
+            // stay as they are for every look, so every PC builds the same physics whatever models it has)
+            var kit = MiniGamePalaceArt.LoadCorridorKit(MiniGamePalaceArt.CorridorKitId(before, after));
             MiniGamePalaceArt.Corridor(root, (int)style, Length, from, to, height, endHalf,
                                        before.Kind == PawnRushSection.SlotKind.Obstacle && !FramesItsEnd(before, true),
-                                       after.Kind == PawnRushSection.SlotKind.Obstacle && !FramesItsEnd(after, false));
+                                       after.Kind == PawnRushSection.SlotKind.Obstacle && !FramesItsEnd(after, false), kit);
             return root;
         }
 
