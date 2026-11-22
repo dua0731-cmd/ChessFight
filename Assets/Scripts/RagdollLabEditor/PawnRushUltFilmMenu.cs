@@ -23,7 +23,7 @@ namespace ChessFight.RagdollLab.Editor
         const string Pending = "ChessFight.UltFilm.Pending", Quit = "ChessFight.UltFilm.Quit", Leaving = "ChessFight.UltFilm.Leaving";
         const int Rate = 44100, Fps = 30;
 
-        public static string OutPath => Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Temp", "UltFilm", "knight-ultimates.mp4");
+        public static string OutPath => Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Temp", "UltFilm", "drive-ultimates.mp4");
 
         static double startAt = -1d;
         static bool filming;
@@ -45,7 +45,7 @@ namespace ChessFight.RagdollLab.Editor
             }
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Film Knight Ultimates (game view)", false, 41)]
+        [MenuItem("ChessFight/Pawn Rush/Film Driven Ultimates (game view)", false, 41)]
         static void FilmFromMenu() => Start(false);
 
         public static void FilmAndQuit() => Start(true);
@@ -59,7 +59,12 @@ namespace ChessFight.RagdollLab.Editor
                 startAt = EditorApplication.timeSinceStartup + 1.0;
                 return;
             }
-            EditorSceneManager.OpenScene(Scene);
+            // The scene open already (an editor someone is working in): as it is. Another one: theirs to save first.
+            if (EditorSceneManager.GetActiveScene().path != Scene)
+            {
+                if (!quit && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+                EditorSceneManager.OpenScene(Scene);
+            }
             PlayModeWindow.SetViewType(PlayModeWindow.PlayModeViewTypes.GameView);
             PlayModeWindow.SetCustomRenderingResolution(1280, 720, "Ult film 1280x720");
             EditorApplication.EnterPlaymode();
@@ -76,14 +81,37 @@ namespace ChessFight.RagdollLab.Editor
             }
         }
 
+        static double filmBegan = -1d;
+
+        /// <summary>A film asked for from outside an open editor: this file under the project's Temp (deleted on start).</summary>
+        static string AskFile => Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Temp", "UltFilm", "film-now.txt");
+
         static void Watch()
         {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && File.Exists(AskFile))
+            {
+                File.Delete(AskFile);
+                Start(false);
+                return;
+            }
+            // (Entering play mode reloads the scripts: the start time set before it is gone, the pending mark is not.)
+            if (startAt < 0d && !filming && EditorApplication.isPlaying && SessionState.GetBool(Pending, false))
+                startAt = EditorApplication.timeSinceStartup + 2.5;
             if (startAt > 0d && EditorApplication.isPlaying && EditorApplication.timeSinceStartup >= startAt)
             {
                 startAt = -1d;
                 SessionState.SetBool(Pending, false);
                 Debug.Log("[UltFilm] " + PawnRushUltFilm.Run(OutPath, 1280, 720, Fps));
                 filming = true;
+                filmBegan = EditorApplication.timeSinceStartup;
+            }
+            // A film that has not ended in 15 minutes is given up (what was written stays).
+            if (filming && filmBegan > 0d && EditorApplication.timeSinceStartup - filmBegan > 900d && !PawnRushUltFilm.Status.StartsWith("done"))
+            {
+                Debug.Log("[UltFilm] given up: " + PawnRushUltFilm.Status);
+                End();
+                filming = false;
+                if (SessionState.GetBool(Quit, false)) { SessionState.SetBool(Quit, false); SessionState.SetBool(Leaving, true); EditorApplication.ExitPlaymode(); }
             }
             if (filming && PawnRushUltFilm.Status.StartsWith("done"))
             {

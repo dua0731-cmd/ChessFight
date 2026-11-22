@@ -39,6 +39,8 @@ namespace ChessFight.RagdollLab
         Volume gradeVolume;
         VolumeProfile gradeProfile;
         ColorAdjustments ultAdjust;
+        Volume neonVolume;
+        VolumeProfile neonProfile;
         Vignette ultVignette;
         ChromaticAberration ultAberration;
 #endif
@@ -101,6 +103,7 @@ namespace ChessFight.RagdollLab
 #if CF_URP
             if (gradeHolder != null) Destroy(gradeHolder);
             if (gradeProfile != null) Destroy(gradeProfile);
+            if (neonProfile != null) Destroy(neonProfile);
 #endif
             if (pipCam != null) Destroy(pipCam.gameObject);
             if (pipTex != null) { pipTex.Release(); Destroy(pipTex); }
@@ -133,6 +136,7 @@ namespace ChessFight.RagdollLab
             UltNightApply(0f);
 #if CF_URP
             if (gradeVolume != null && gradeVolume.weight > 0f) gradeVolume.weight = 0f;
+            if (neonVolume != null && neonVolume.weight > 0f) neonVolume.weight = 0f;
 #endif
             if (pipCam != null && pipCam.enabled) pipCam.enabled = false;
             if (ultLoop != null && ultLoop.isPlaying) ultLoop.Stop();
@@ -145,7 +149,7 @@ namespace ChessFight.RagdollLab
             whiteKick = Mathf.Max(0f, whiteKick - dt * 1.6f);
             redKick = Mathf.Max(0f, redKick - dt / 0.35f);
             beatKick = Mathf.Max(0f, beatKick - dt / 0.22f);
-            UltNightApply(night);
+            UltNightApply(0f);   // (the previz keeps the day's light: only the colour drains)
             UltShow face = null;
             float duck = 1f;
             foreach (var u in ults)
@@ -166,9 +170,12 @@ namespace ChessFight.RagdollLab
             if (on && gradeVolume.weight <= 0f) UltGradeBase();
             gradeVolume.weight = on ? 1f : 0f;
             if (!on) return;
-            ultAdjust.postExposure.value = baseExposure - 0.45f * night;
-            ultAdjust.contrast.value = Mathf.Clamp(baseContrast + 22f * night + 40f * punchKick, -100f, 100f);
-            ultAdjust.saturation.value = Mathf.Clamp(baseSaturation - 30f * night, -100f, 100f);
+            // The previz's grey world: the colour drained (the neon curve then keeps teal and red only), a little darker
+            // and harder.
+            neonVolume.weight = night > 0.5f ? 1f : 0f;
+            ultAdjust.postExposure.value = baseExposure - 0.3f * night;
+            ultAdjust.contrast.value = Mathf.Clamp(baseContrast + 16f * night + 40f * punchKick, -100f, 100f);
+            ultAdjust.saturation.value = Mathf.Clamp(baseSaturation - 72f * night * (night > 0.5f ? 0f : 1f), -100f, 100f);
             ultVignette.intensity.value = Mathf.Clamp01(Mathf.Max(baseVignette, 0.2f * night) + 0.3f * night + 0.1f * beatKick + 0.3f * redKick);
             ultVignette.color.value = Color.Lerp(baseVignetteColor, new Color(0.7f, 0f, 0.03f), Mathf.Clamp01(redKick * 1.5f));
             ultAberration.intensity.value = Mathf.Clamp01(baseAberration + 0.35f * beatKick + punchKick);
@@ -198,6 +205,25 @@ namespace ChessFight.RagdollLab
             gradeVolume.priority = 120f;
             gradeVolume.sharedProfile = gradeProfile;
             gradeVolume.weight = 0f;
+            // The neon: every hue loses its colour but teal's (the caster's move) and red's (what it attacks), a little
+            // stronger (the curve's 0.5 keeps a hue as it is, 0 greys it).
+            neonProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+            neonProfile.hideFlags = HideFlags.HideAndDontSave;
+            var curves = neonProfile.Add<ColorCurves>(true);
+            var keys = new[]
+            {
+                new Keyframe(0f, 0.62f), new Keyframe(0.035f, 0.62f), new Keyframe(0.085f, 0f), new Keyframe(0.385f, 0f),
+                new Keyframe(0.425f, 0.62f), new Keyframe(0.525f, 0.62f), new Keyframe(0.565f, 0f), new Keyframe(0.915f, 0f),
+                new Keyframe(0.965f, 0.62f),
+            };
+            curves.hueVsSat.Override(new TextureCurve(keys, 0.5f, true, new Vector2(0f, 1f)));
+            var holder = new GameObject("Ult neon (volume)");
+            holder.transform.SetParent(gradeHolder.transform, false);
+            neonVolume = holder.AddComponent<Volume>();
+            neonVolume.isGlobal = true;
+            neonVolume.priority = 121f;
+            neonVolume.sharedProfile = neonProfile;
+            neonVolume.weight = 0f;
         }
 
         void UltGradeBase()
@@ -541,10 +567,17 @@ namespace ChessFight.RagdollLab
         /// <summary>The judgement at the landing, in the middle of every screen, in chess.com's colour.</summary>
         void UltWords(UltShow u, float vw)
         {
+            // The call (the previz's): the move in huge teal letters, the skill's name under it, on every screen.
+            if (u.Driven)
+            {
+                float c = Clock - u.t0 - 0.15f;
+                if (c >= 0f && c < 1.9f) Word(u.nota, new Vector2(vw * 0.5f, 290f), 104, Teal, c, 1.9f);
+                if (c >= 0.25f && c < 2.15f) Word(u.title + "!!", new Vector2(vw * 0.5f, 400f), 78, Teal, c - 0.25f, 1.9f);
+            }
             if (u.hitAt < 0f || u.grade < 0) return;
             float a = Clock - u.hitAt - 0.1f;
-            if (a < 0f || a > 1.6f) return;
-            Word(RagdollPawn.GradeName(u.grade), new Vector2(vw * 0.5f, 400f), u.grade <= RagdollPawn.GradeGreat ? 76 : 62, GradeColors[u.grade] * 1.25f, a, 1.6f);
+            if (a < 0f || a > 1.8f) return;
+            Word(RagdollPawn.GradeName(u.grade), new Vector2(vw * 0.5f, 380f), u.grade <= RagdollPawn.GradeGreat ? 96 : 70, GradeColors[u.grade] * 1.25f, a, 1.8f);
             if (u.hitCount > 0)
             {
                 string what = u.Fork ? $"포크 {u.hitCount}명" : $"머리 {u.hitCount}개";

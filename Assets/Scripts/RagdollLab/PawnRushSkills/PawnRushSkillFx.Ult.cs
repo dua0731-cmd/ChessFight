@@ -30,7 +30,8 @@ namespace ChessFight.RagdollLab
         static readonly Color Teal = new Color(0.12f, 1f, 0.8f);
         static readonly Color TealPale = new Color(0.72f, 1f, 0.94f);
         static readonly Color Blood = new Color(1f, 0.1f, 0.14f);
-        static readonly Color Electric = new Color(0.6f, 0.88f, 1f);
+        // (11-22, the previz look: what was white-blue lightning is pale teal light now.)
+        static readonly Color Electric = new Color(0.55f, 1f, 0.9f);
         static readonly Color Ember = new Color(1f, 0.42f, 0.08f);
         /// <summary>chess.com's colours for the judgements: brilliant, great, best, inaccuracy, blunder.</summary>
         static readonly Color[] GradeColors =
@@ -141,7 +142,8 @@ namespace ChessFight.RagdollLab
             var u = new UltShow { by = e.by, skill = e.count, t0 = Clock, air = e.size > 0.1f ? e.size : 1.6f, lastSeen = Clock, castAt = e.at, castDir = e.dir };
             ults.Add(u);
             UltTakeOff(u, e.at);
-            UltAura(u);
+            UltAurora(u);              // the previz's teal aurora (PawnRushSkillFx.PrevizLook.cs)
+            UltPrevizCast(u, e.at);
             if (u.Fork) UltForkAim(u);
             if (u.Tour) UltHeadRing(u);
             if (u.Driven) UltDriveCast(u);
@@ -604,7 +606,7 @@ namespace ChessFight.RagdollLab
                 }
             DustRing(at, 18, 1.6f, 7f, new Color(0.45f, 0.45f, 0.47f), 1f, 1.1f);
             SparkBurst(at + Vector3.up * 0.4f, good ? 80 : 30, good ? Ember : Color.white, Vector3.up, 55f, 6f, 15f, 0.9f, 0.07f);
-            if (good) UltFireBoard(at, grade == RagdollPawn.GradeBrilliant ? 10f : 5.5f);
+            if (good) UltShatter(at, grade == RagdollPawn.GradeBrilliant ? 11f : 7f);   // the floor breaking into floating tiles
             // The judgement over the landing: a huge badge.
             var words = new Text3D(root, font, GradeBadges[grade], HdrA(gc, 1.25f), 2.2f);
             Vector3 over = at + Vector3.up * 6f;
@@ -743,7 +745,7 @@ namespace ChessFight.RagdollLab
                 UltGlitter(u, dt);
                 if (u.Driven) UltDriveStep(u, dt, cam);
             }
-            UltSky(cam, night);
+            UltSky(cam, 0f);   // (no starry sky: the previz keeps the day, its colour drained)
             UltScreenStep(dt, cam, night);
         }
 
@@ -751,11 +753,9 @@ namespace ChessFight.RagdollLab
         float UltNight(UltShow u)
         {
             float on = Smooth01((Clock - u.t0) / 0.35f);
-            float off = u.hitAt >= 0f ? 1f - Smooth01((Clock - u.hitAt - 0.9f) / 1.5f) : 1f;
-            // A driven one runs 10-20 s: after its first second the night eases to a dusk (the race must be seen), and it
-            // falls again for the judgement.
-            float deep = !u.Driven || u.hitAt >= 0f ? 1f : Mathf.Lerp(1f, 0.4f, Smooth01((Clock - u.t0 - 1.1f) / 0.9f));
-            return on * off * deep * u.Life(Clock);
+            float off = u.hitAt >= 0f ? 1f - Smooth01((Clock - u.hitAt - 1.3f) / 1.6f) : 1f;
+            // (The previz: the colour drains at the key and stays drained while it runs; it comes back after the judgement.)
+            return on * off * u.Life(Clock);
         }
 
         /// <summary>Motes of light drifting in the air round the play while the show lasts (the shorts' glitter).</summary>

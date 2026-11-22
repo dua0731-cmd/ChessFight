@@ -133,7 +133,7 @@ namespace ChessFight.RagdollLab
             SparkBurst(floor + Vector3.up * 0.5f, sac ? 110 : 60, sac ? Ember : Color.white, Vector3.up, 60f, 6f, 16f, 0.9f, 0.07f);
             if (sac)
             {
-                UltFireBoard(floor, r * 0.75f);
+                UltShatter(floor, r * 0.8f);
                 UltPopWord(floor + Vector3.up * 6f, "Q×f7+!!", HdrA(GradeColors[0], 1.6f), 1.4f, 1.8f);
                 Add(new Shape(root, "Qd sacrifice pillar", meshCylinder, matPillar)
                 {
