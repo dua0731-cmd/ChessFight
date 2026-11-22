@@ -190,6 +190,9 @@ namespace ChessFight.PawnRush.Editor
                     // R725: so is the royal vault (a root-only prefab; its Awake builds it in Play).
                     var vault = go.GetComponent<RoyalVaultSection>();
                     if (vault != null && !vault.HasContent) RoyalVaultBuilder.Build(vault);
+                    // R775: and the royal clock tower (a draft of the middle obstacle slot).
+                    var clockTower = go.GetComponent<RoyalClockTowerSection>();
+                    if (clockTower != null && !clockTower.HasContent) RoyalClockTowerBuilder.Build(clockTower);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

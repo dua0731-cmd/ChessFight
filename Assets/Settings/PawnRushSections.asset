@@ -28,6 +28,8 @@ MonoBehaviour:
     kind: 0
     prefabs:
     - {fileID: 1000, guid: e572d026a1c6be428f9716d3217c5699, type: 3}
+    drafts:
+    - {fileID: 1000, guid: cc4989f80ab61caf66108e6bb21194bd, type: 3}
   - name: "\uBBF8\uB2C8\uAC8C\uC784 2"
     kind: 1
     prefabs:

@@ -391,6 +391,7 @@ Esc 목록으로	Esc: back to list	Esc 返回列表
 왕의 서재와 거대 체스판	King's Library and Giant Chessboard	国王书房与巨型棋盘
 왕실 천문대 (회색 상자)	Royal Observatory (graybox)	王室天文台（灰盒）
 왕실 금고실	Royal Vault	王室金库
+왕실 시계탑	Royal Clock Tower	王室钟楼
 국왕 작전실	King's War Room	国王作战室
 국왕 알현실 (임시)	Throne Room (temp)	国王谒见厅（临时）
 후반 장애물 (임시 바닥)	Late Obstacles (temp floor)	后段障碍（临时地面）
