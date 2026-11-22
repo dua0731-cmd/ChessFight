@@ -45,7 +45,9 @@ namespace ChessFight.PawnRush
             var station = b.parent.GetComponentInParent<MissionStation>(true);
             floor.GetComponent<Renderer>().sharedMaterial = station != null && station.PalaceStyle
                 ? MiniGamePalaceArt.DaisMaterial(station.GameIndex) : Arena.DaisMaterial;
-            Arena.Rim(b, u0, u1);
+            // 11-22 (user, a photo of the dais edge: "미니게임에 이런 노란 테두리는 다 지워"): the palace mini-game rooms
+            // have no gold rim round the dais; course 01 keeps it.
+            if (station == null || !station.PalaceStyle) Arena.Rim(b, u0, u1);
             return floor;
         }
 

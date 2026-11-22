@@ -102,6 +102,9 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 | `sfx_mg_complete` | 미니게임 완료(우리 팀 크게, 상대 작게, 2D) | A short bright royal success flourish: a quick rising three-note brass and glockenspiel sting ending on a warm major chord, cheerful and playful, about 1.2 seconds, clean and close, no voice. |
 | `sfx_gate_open` | 완료 뒤 팀 문이 열림 | A heavy ornate palace door unlocking and swinging open: one solid iron latch clunk, then a deep wooden door groan and a soft stone rumble, about 1.5 seconds, a little hall reverb, no voice, no music. |
 | `sfx_mg_quarter` | 승격 발판(기물 고르기)이 열림(코드가 1.5배 높게 재생) | A soft magical pedestal waking up: a gentle rising shimmer with one soft chime, about 0.5 seconds, clean, no voice, no music. |
+| `sfx_promo_charge` | 승격 발판에 2초 서 있는 동안(11-22, 3D, 내려서면 끊김) | 테이크 없이 합성: `ArtSource/PawnRush/Sfx/bake_promotion.py`(v2 — 사용자 "청량하게 우리 게임 컨셉에 맞는걸로": 글로켄슈필 · 첼레스타 같은 맑은 종이 장조 펜타토닉으로 C5 → E7, 램프 두 개마다 한 음씩 12음 · 사이사이 작은 반짝임 · 가벼운 숨결 · 짧은 밝은 울림, 2.0초, 0.7 음량에 −23 dB. v1의 낮게 오르는 화음은 버림. **v3**(사용자 "저 소리보다는 좀 더 청량하지 않게"): 같은 펜타토닉을 한 옥타브 낮게 C4 → E6, 금속 배음을 줄인 부드러운 말렛 · 오르골 소리, 반짝임은 끝에 몇 개만, 숨결 없음, 어두운 짧은 울림, 전체 약 4.5 kHz 저역 통과) |
+| `sfx_promo_ready` | 충전이 끝나 승격 카드가 뜸(11-22, 2D, `PromotionChooser`; 전에는 `sfx_mg_quarter` 1.5배) | 같은 스크립트로 합성: 충전과 같은 말렛 음색, C5 · E5 · G5 · C6를 25 ms씩 굴린 화음, 1.0초, −24 dB |
+| `sfx_promo_change` | 기물을 골라 바뀜(11-22, 2D, `PromotionChooser`; 전에는 `sfx_mg_complete` 0.6) | 같은 스크립트로 합성: 펜타토닉 8음을 0.24초에 쓸어 올라 C4 · E4 · G4 · C5 화음과 낮은 울림에 착지, 1.3초, −21 dB |
 
 ### 7.2 F 대무도회장 — 태엽 인형 무용수 석상 · 쪽마루 레인 (`MgEnPassant`)
 

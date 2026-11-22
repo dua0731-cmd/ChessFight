@@ -54,7 +54,8 @@ namespace ChessFight.PawnRush
             {
                 pad = now;
                 openedAt = Time.time;
-                if (pad != null) ArenaFx.Sfx("sfx_mg_quarter", pad.transform.position, twoD: true, pitch: 1.5f);
+                // 11-22: the charge resolving (sfx_promo_ready, the charge's mallet voice) in place of the coin-like sfx_mg_quarter
+                if (pad != null) ArenaFx.Sfx("sfx_promo_ready", pad.transform.position, twoD: true);
             }
             if (pad == null) { GiveCursorBack(); return; }
             TakeCursor();
@@ -72,7 +73,8 @@ namespace ChessFight.PawnRush
                 asked = piece;
             }
             else StationPromotion.Choose(MiniGameBase.LocalDriver, piece);
-            ArenaFx.Sfx("sfx_mg_complete", pad.transform.position, twoD: true, volume: .6f);
+            // 11-22 (user "기물 바뀌는 소리도 지금 차오르는 소리랑 맞춰 동전 소리 말고"): the change, in the charge's voice
+            ArenaFx.Sfx("sfx_promo_change", pad.transform.position, twoD: true);
             pad = null;
             GiveCursorBack();
         }

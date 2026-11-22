@@ -157,8 +157,14 @@ namespace ChessFight.PawnRush
         }
 
         // The table's boxes under the frame the model hangs in (the parent of its 180-degree pivot), once.
+        // 11-22 (user, a photo of the repair wing's entry band: "보이지 않는 벽에 막히는 문제"): B's (and E's, J's)
+        // FBX keeps its mesh object under the name of the file, so the search met "B_StationEnv" twice - the model and
+        // its mesh - and laid the table a second time in the turned pivot's frame: boxes where no prop stands, one on
+        // each entry band beside the aisle, the hall's out past the entry. Only the model itself (hung by its pivot,
+        // not a child of a same-named model) gets them.
         static int TableBoxes(Transform model, float[] table)
         {
+            if (model.parent != null && model.parent.name == model.name) return 0;
             var pivot = model.parent;
             var frame = pivot != null ? pivot.parent : null;
             if (frame == null || frame.Find(PropColliderName + " " + model.name) != null) return 0;
