@@ -405,7 +405,8 @@ namespace ChessFight.PawnRush
         }
 
         // "GC | cream stone" (as the FBX names it) -> Resources/PawnRushGardenConcept/Materials/GC_cream_stone.
-        static Material ConceptMaterial(Material imported, Dictionary<string, Material> cache)
+        // R769: also GardenBirds' (its FBX is drawn with the same GC_ materials).
+        internal static Material ConceptMaterial(Material imported, Dictionary<string, Material> cache)
         {
             // R420: Unity imports "GC | cream stone" as "GC _ cream stone" (the | becomes _), so every run of characters
             // that are not letters or digits becomes one underscore: both spellings give GC_cream_stone.

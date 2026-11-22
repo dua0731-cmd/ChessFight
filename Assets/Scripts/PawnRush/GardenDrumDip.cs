@@ -42,6 +42,9 @@ namespace ChessFight.PawnRush
         Vector2 shift;                                       // the pivot's way still to go to the pieces' feet
         int lastKey;                                         // who stood on it last frame (GardenDrumDip.Online riderKey)
 
+        // R767: a piece came down on it, falling at this many m/s (1.5 .. 9) - GardenFloatSound's hollow 통.
+        public event System.Action<float> Landed;
+
         void Start()
         {
             var drum = transform.Find("Drum");
@@ -153,6 +156,7 @@ namespace ChessFight.PawnRush
         {
             if (tilt.sqrMagnitude < .25f) pivot = offset;                // a level drum tips about where it was hit
             fall = Mathf.Clamp(fall, 1.5f, 9f);
+            Landed?.Invoke(fall);
             tiltSpeed += Vector2.ClampMagnitude(offset + walk * .5f, 1f) * (TiltKick * fall);
         }
     }

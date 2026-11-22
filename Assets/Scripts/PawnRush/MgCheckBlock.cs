@@ -408,6 +408,8 @@ namespace ChessFight.PawnRush
             var king = KingAt(kingShown) + Vector3.up * BeamHeight;
             var list = layout.Situations;
             bool rolling = false;
+            // R774: the roll follows the cart that moves (it was left at the king, where the rails never are)
+            var rollAt = king;
             for (int i = 0; i < list.Count && i < MaxSituations; i++)
             {
                 var s = list[i];
@@ -441,6 +443,7 @@ namespace ChessFight.PawnRush
                     bool moving = !solved && Mathf.Abs(shown[i] - lastShown[i]) > 1e-5f;
                     lastShown[i] = shown[i];
                     rolling |= moving;
+                    if (moving) rollAt = MoverAt(i, shown[i]);
                     moverLooks[i].localPosition = moving ? new Vector3(0f, .02f * Mathf.Sin(t * 30f), 0f) : Vector3.zero;
                     float settle = (t - solvedAt[i]) / .25f;
                     if (solved && settle < 1f) moverLooks[i].localPosition = new Vector3(0f, .08f * (1f - settle), 0f);
@@ -469,7 +472,8 @@ namespace ChessFight.PawnRush
             lastSolved = solvedBits;
             if (rolling)
             {
-                if (roll == null || !roll.isPlaying) roll = ArenaFx.Hold("sfx_cart_roll", World(king), 1f, .6f, loop: true);
+                if (roll == null || !roll.isPlaying) roll = ArenaFx.Hold("sfx_cart_roll", World(rollAt), 1f, .6f, loop: true);
+                if (roll != null) roll.transform.position = World(rollAt);
             }
             else { ArenaFx.Cut(roll); roll = null; }
 

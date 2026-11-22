@@ -188,7 +188,104 @@ R646(11-14, "폰러시 테스트 후속")이 다이빙 · 잡기 소리와 코�
 - **크기:** §0(R654)의 기준에 부르는 곳의 volume과 기본 효과음 0.8을 넣어 맞춤(괄호의 ×값이 volume). 짧게 '딱' 하는 소리는 400 ms 대부분이 조용해서 400 ms 기준에 맞추려면 피크를 15 ~ 25 dB 눌러야 해 소리가 뭉개진다 → 피크 누름은 8 dB(쓰러뜨림 · 캐슬링 12 dB)까지만 하고 100 ms 크기를 같이 적었다(다른 효과음은 100 ms가 400 ms보다 4 ~ 6 dB 큼). 그래서 쓰러뜨림(`sfx_ep_capture`) · 걸쇠 · 딸깍이 400 ms 표보다 2 ~ 8 dB 작다. 들어 보고 작으면 그 줄의 `most`(누름 한도)를 올린다.
 - **반복음이 끊김 없이 돎 (코드):** `ArenaFx.Hold`에 `loop`를 더함 — 전에는 클립이 끝나면 다음 프레임에 처음부터 다시 틀어 이음새마다 한 프레임 비었다. 행차 회랑 세 반복음과, 파일은 아직 없는 I 침실의 `sfx_cart_roll` · `sfx_beam_hum`이 `loop: true`. 반복음은 잘라야 멈추므로 두 게임이 꺼질 때(`OnDisable`) 자른다. 모래 · 룩 반복음도 썰매 · 움직이는 룩을 따라간다(전엔 처음 튼 자리에 남았다). 굽고 나서 잰 이음새의 샘플 튐은 평소 파형 변화보다 작다(썰매 0.0009 / 0.012, 모래 0.008 / 0.033, 룩 0.005 / 0.005).
 - **같은 파일이 나는 다른 곳:** `sfx_ep_capture`는 I 침실(공격 기물 잡기)과 J 세탁장(나이트 도약대 발판, 진행에 따라 높아짐)에서도 난다 — 이번에 처음 소리가 난다. `sfx_mg_complete`는 승격 발판을 고를 때도 0.6으로 난다.
-- **아직 없음:** `sfx_gate_open`(팀 문 열림), §7.4 ~ 7.7.
+- **아직 없음:** `sfx_gate_open`(팀 문 열림), §7.4 ~ 7.7. (R771에 `sfx_ep_tray`가 들어옴 — §8-1)
+
+## 8-1. 미니게임 빈 소리 정리 · F 대무도회장 (R771, 2026-11-22)
+
+사용자 "거인 체스 제외 하고 코스 구간 사운드 빈 곳 알려줘" → "그럼 미니게임 부터 다시 정리 해봐" → "무도회장 부터 시작". 코드가 부르는 소리 이름을 모두 `Resources` 파일과 대조한 결과(11-22 main `cd57ea3b` + 작업 트리):
+
+| 게임 | 상태 |
+|---|---|
+| A · B · C · D · E | 빈 곳 없음(문 열림도 각 방 전용) |
+| F 대무도회장 | **R771에 채움**: 쟁반 착지 · 거울 문(아래) |
+| G 왕의 행차 회랑 | 문 열림 무음(공용 `sfx_gate_open` 없음) |
+| H 국왕 체스 홀 | 문 열림 무음, 8개 대체음(§7.4). 쟁반 `sfx_ep_tray`는 R771부터 진짜 파일 |
+| I 국왕 침실 | 7곳 무음(§7.5 여섯 + 문 열림) |
+| J 왕궁 세탁장 | 문 열림은 소리 코드 자체가 없음(`MiniGameLaundryFx.Opened`), 도약대 · 빠짐은 정원 물 튐 대체음(§7.6) |
+
+25 · 50 · 75 % 진행 소리는 빈 곳이 아니다(11-07 사용자가 뺌).
+
+**F에 넣은 것.** ElevenLabs flow `F 대무도회장 빈 소리`(`xHQF1q4D6Ks0S9PfZ3jX`, eleven_text_to_sound_v2, influence 0.6, 2가지 × 4). 받은 테이크는 `ArtSource/PawnRush/Sfx/raw/MiniGame/takes_R771/`, 고른 것을 `raw/MiniGame/<이름>.wav`로 풀어 `bake_minigame.py` 표에 더함(기존 파일은 다시 구워도 바이트 그대로). 테이크는 숫자로만 골랐다(귀로 들은 것 아님).
+
+| 파일 | 나는 때 | 프롬프트 | 고른 테이크 · 결과 |
+|---|---|---|---|
+| `sfx_ep_tray` | 잡은 석상이 날아가 쟁반 벤치에 떨어짐(`MgEnPassant`, 1.0). H 쟁반(`MgCheckmate`, .34)도 이 파일 — 전에는 래칫 대체음 | A small wooden clockwork dancer doll tossed through the air lands flat across a wooden bench: one light hollow wooden clatter as it drops onto the boards, a quick tiny rattle of loose brass gears inside it, then still. Close and dry, playful, no reverb tail. No music, no voice. (1 s) | 1번: 0.05 s의 '탁' 하나와 0.35 s까지 달그락, 넷 중 가장 덜 쉿쉿거림(중심 3.3 kHz, 나머지 5 ~ 6 kHz). 0.4 s, 들리는 크기 −22 / −17.7 dB(400 / 100 ms), 피크 누름 3.5 dB |
+| `sfx_ballroom_gate` | F 거울 문이 오름(4.6 m를 1.2 s, `MiniGameDoorGateFx.GateSound` — F만. I는 공용 `sfx_gate_open`) | A tall mirrored ballroom door in a brass frame sliding straight up in its grooves: a smooth quick rising brass rail glide with a soft clockwork counterweight whir and a faint glassy shimmer, ending at the top in one soft solid brass clunk. About 1.5 seconds, light hall reverb. No music, no voice. (1.8 s) | 3번: 몸통이 1.0 s 이어지고 높은 대역이 차츰 올라감(다른 셋은 0.5 ~ 0.75 s에 끝남) — 문 움직임과 길이가 가장 맞음. 1.6 s(끝 0.4 s 페이드), −21 dB |
+
+코드: `MiniGameGateMoment.GateSound`(가상, 기본 `sfx_gate_open`). 방 전용 소리 파일이 없으면 공용으로 넘어간다(`fallbackPath`). 사용자 확인(11-22 "확인").
+
+## 8-2. G 왕의 행차 회랑 문 · H 국왕 체스 홀 (R772, 2026-11-22)
+
+사용자 "확인 G랑 H 시작". ElevenLabs flow `G · H 미니게임 빈 소리`(`4D8axxzwyD2J4mVnWgVN`, eleven_text_to_sound_v2, influence 0.6, 11가지 × 4). 테이크는 `ArtSource/PawnRush/Sfx/raw/MiniGame/takes_R772/`, 숫자로만 골랐다(크기 · 쉿 소리 비율 · 타격 시각 · 음높이; 귀로 들은 것 아님). 넷 중 셋이 12 dB 넘게 조용하거나 쉿 소리뿐인 종류도 있어 그런 것은 뺐다.
+
+**문 소리 — 방마다 따로, 연출 박자에 맞춰 합침.** 문 하나를 통째로 만들면 연출과 박자가 어긋나므로 조각 넷을 만들어 `ArtSource/PawnRush/Sfx/compose_gates.py`가 연출 코드의 시각에 놓는다(→ `raw/MiniGame/<이름>.wav` → `bake_minigame.py`, 0부터 자름). 각 조각은 가장 큰 100 ms로 맞춘 뒤 상대 크기로 섞는다.
+
+| 조각 | 프롬프트 | 고른 테이크 |
+|---|---|---|
+| `gate_wood_rise` | A tall carved wooden palace door hauled straight up into the wall by hidden counterweights: a smooth heavy wooden slide with a soft low rumble and a faint chain rattle, about one second, ending in a soft muffled wooden thud at the top. Light stone hall reverb. No music, no voice. (1.8 s) | 1(가장 낮고 매끄러움) |
+| `g_banner_drop` | A ceremonial brass banner rod snapping up into place with a bright metallic clack, and a heavy embroidered cloth banner instantly unfurling and dropping open with one sharp full whoosh-flap, then a little settling flutter. About 0.8 seconds, close and dry. No music, no voice. (1.2 s) | 3(펄럭임이 0.12 s에 가장 큼 — G 천이 펼쳐지는 때) |
+| `h_square_flip` | One flat wooden chessboard square flipping over quickly and slapping down onto a wooden floor: a short airy flick then one crisp hollow wooden clack. About 0.25 seconds, close and dry. No music, no voice. (0.6 s) | 3(나무 '탁' 하나, 넷 중 가장 나무다움) |
+| `h_brass_edge` | A long brass edging strip slamming down flat onto a wooden floor all at once: one bright solid brass clang-thud with a short metallic ring. About 0.5 seconds, close, light room. No music, no voice. (0.8 s) | 3(유일하게 밝음, 나머지는 20 dB 작은 둔탁음) |
+
+| 파일 | 붙는 곳 | 합친 시각 | 결과 |
+|---|---|---|---|
+| `sfx_procession_gate` | `MiniGameProcessionGateFx.GateSound` | 문 0 s(−3 dB) + 깃발 가장 큰 곳 0.12 s(막대는 0.09 s까지 솟고 천은 0.04 ~ 0.2 s에 떨어짐) | 1.8 s, −21 dB |
+| `sfx_chesshall_gate` | `MiniGameChessHallGateFx.GateSound` | 문 0 s(−5 dB) + 칸 네 줄 '탁' 0.25 · 0.35 · 0.45 · 0.55 s(`FirstRow` .08 + 줄 × `RowGap` .1 + `Flip` .17; 가장자리 칸은 25 ms 뒤 작게) + 놋쇠 테두리 0.62 s(`edgeAt` .59부터 `Slam`) | 1.8 s, −21 dB. 잰 시작점 0.24 · 0.34 · 0.44 · 0.54 s |
+
+**H 대체음 7개 → 진짜 파일**(프롬프트는 R653 [미니게임 구간](PAWN_RUSH_MINIGAME_SECTIONS.md) 표 + "No music, no voice", 0.5 s 미만은 0.5 s로 만들어 자름. 쟁반 `sfx_ep_tray`는 R771):
+
+| 파일 | 고른 테이크 | 결과(들리는 크기 400 / 100 ms) |
+|---|---|---|
+| `sfx_check` | 3: '틱' 하나(나머지는 둘 · 셋) | 0.22 s, −24.8 / −21.4 |
+| `sfx_mate` | ~~4의 첫 두 음(A → E 말렛)~~ → **R776**: 사용자에게 '뿡'으로 들려 새 노드 `sfx_mate v2`("A small polished ivory chess king snapping still and locking in place: one crisp bright wooden click with a short clear brass ting on top, tight and dry, about 0.3 seconds, no low thump, no boom. No music, no voice.", influence 0.7)의 3(`takes_R776/`): 딸깍 뒤 2.45 kHz 띵, 넷 중 쉿 소리가 가장 적음. 볼륨 .65 → 1 | 0.25 s, −23.2 / −19.3 |
+| `sfx_king_capture` | 2: 쉿 소리가 가장 적음 | 0.38 s, −22.7 / −16.9 |
+| `sfx_king_sweep` | 2: E · G · B · E로 오르는 아르페지오 | 0.9 s, −19 / −16.8 |
+| `sfx_rescue` | 2: 0.28 s 간격 '딸깍' 둘 | 0.45 s, −26.9 / −21.9 |
+| `sfx_stalemate` | 1: 바람 '휙' 하나 | 0.41 s, −24 / −21.5 |
+| `sfx_king_hop` | 1: 유일하게 12 dB 넘게 조용하지 않은 '톡' | 0.15 s, −26.5 / −24.8 |
+
+**`MgCheckmate` 호출 바꿈:** 대체음을 휘던 음높이(메이트 .85 · 구출 1.18 · 탈출 1.12 · 이동 .82)를 1로. 체크(.90 + .14 × 체크 수)와 잡기(.92 + .04 × 잡은 수)의 오름은 그대로. 볼륨은 대체음을 줄이던 값이라 짧은 '딸깍'에는 너무 작아(파일을 피크까지 올려도 −31 ~ −35 dB) 잡기 .68 · 구출 .38 · 탈출 .31 → 1, 이동 .24 → .5로 올림. 체크 .48 · 메이트 .65 · 마무리 .82 · 쟁반 .34는 그대로.
+
+남은 미니게임 빈 곳: I 7곳(§7.5 여섯 + 문), J 문(`MiniGameLaundryFx.Opened`에 소리 코드 없음) · 도약대 · 빠짐 대체음.
+
+## 8-3. H 공격 칸 판이 켜지는 소리 (R773, 2026-11-22)
+
+사용자가 H의 파란 공격 칸 판(우리 폰 주위 3 × 3) 그림과 함께 "여기 움직일 때 나는 소리도 해". 판에는 소리가 없었다.
+
+- **나는 때:** `MgCheckmate.PlateStep` — 우리 팀 서 있는 폰(판이 세는 폰과 같음)이 새 칸에 서거나 판 밖 · 쓰러짐에서 다시 칸에 서면 그 칸 위에서 `sfx_attack_squares`(볼륨 .5, 3D). 판처럼 각 PC가 그리는 폰에서 계산하고 보내는 것은 없다. 여러 폰이 같이 옮겨도 0.06 s에 한 번.
+- **소리:** ElevenLabs flow `G · H 미니게임 빈 소리`. 첫 프롬프트 "A few squares of soft blue light switching on across a polished wooden chessboard … airy swish with a faint clean glassy hum …"의 넷은 250 Hz 아래 웅웅거림이거나 30 dB 넘게 조용해 버림. 두 번째 "A quick soft brush of fingertips across a small row of tiny glass wind chimes, a light airy shimmer that swells in and fades fast, gentle and clean, close, about 0.3 seconds. No music, no voice."(influence 0.7)의 3번: 넷 중 유일하게 커졌다 작아지는 모양(0.45 s에 끝남). 0 ~ 0.42 s, 끝 0.15 s 페이드, 들리는 크기 −28 / −24.9 dB(400 / 100 ms) — 걸을 때마다 나므로 발소리(−26) 아래.
+- **바꾸는 법:** 시끄러우면 `bake_minigame.py`의 `sfx_attack_squares` `heard`를 낮추거나 `PlateStep`의 .5를 줄인다. 다른 테이크는 `raw/MiniGame/takes_R773/`.
+
+## 8-4. I 국왕 침실 (R774, 2026-11-22)
+
+사용자 "확인 다음"(R772 · R773 확인). ElevenLabs flow `I 국왕 침실 빈 소리`(`3PGmVTsMBVB9HcMuDFOw`, eleven_text_to_sound_v2, influence 0.6, 6가지 × 4). 프롬프트는 §7.5 그대로(반복음은 Loop 켜기 6 s). 테이크 `raw/MiniGame/takes_R774/`, 숫자로만 골랐다.
+
+| 파일 | 나는 때(`MgCheckBlock`, 볼륨) | 고른 테이크 | 결과 |
+|---|---|---|---|
+| `sfx_shield_lock` | 방패 카트가 막는 칸에 들어감(1) | 3: 0.03 s 미끄러짐 · 0.24 s '철컥', 쉿 소리가 가장 적음 | 0.52 s, −21.2 / −18.2 dB |
+| `sfx_piece_fall` | 나이트를 끌어내 쓰러뜨림(1) | 1: 흔들림 뒤 나무 와르르, 넷 중 가장 낮음 | 0.7 s, −21.5 / −15.9 |
+| `sfx_double_check` | 숨은 이중 체크가 솟음(1) | 2: 종 두 번(0.12 · 0.38 s), 1027 / 987 Hz로 맥놀이 | 0.75 s, −20 / −18.4 |
+| `sfx_resolve` | 킹을 안전한 칸으로 옮겨 이중 체크를 풂(1) | 1: D6 → F6 두 음(넷 다 −40 dB대로 작게 나와 가장 많이 키움) | 0.6 s, −22 / −19.1 |
+| `sfx_cart_roll` 🔁 | 방패 카트를 미는 동안(.6) | 3: 넷 중 덜컥임이 가장 적음 | 6 s 통째, RMS −30 |
+| `sfx_beam_hum` 🔁 | 체크 빛줄기가 살아 있는 동안 줄마다(.35, 이중 체크까지 7개) | 2: 유일하게 250 Hz 위에 소리가 있음(나머지는 노트북이 못 내는 초저음) | 6 s 통째, RMS −33 |
+| `sfx_gate_open` | I 문 열림(`MiniGameDoorGateFx` 공용) · 전용 IGateFx가 없는 방의 대체 | R772 `gate_wood_rise` 1(I 문도 G · H와 같은 `G_TeamGateDoor`) | 1.7 s, −21 |
+
+- **반복음 통째로:** ElevenLabs 반복 모드 테이크는 끝이 처음으로 이어지게 나온다. `loop()`는 앞뒤 1.5 s 여유가 필요해 6 s 테이크에서 구간을 못 찾으므로 `LOOPS`에 `whole`을 더해 그대로 쓴다. 구운 파일 이음새 튐: 카트 0.0004 · 빛줄기 0.0003(평소 0.0039 · 0.0030), 앞뒤 50 ms 크기 차 1 dB 이하.
+- **코드:** 카트 굴림 반복음이 킹 자리(레일이 없는 곳)에서 나던 것을 움직이는 카트 위치로, 매 프레임 따라감.
+
+남은 미니게임 빈 곳: J 문(`MiniGameLaundryFx.Opened`에 소리 코드 없음) · 도약대 · 빠짐 대체음.
+
+## 8-5. J 왕궁 세탁장 — 미니게임 빈 소리 끝 (R777, 2026-11-22)
+
+사용자 "확인 j 세탁장"(R776 확인). ElevenLabs flow `J 왕궁 세탁장 빈 소리`(`nIjEy6DLNDaqpXbkTc6R`, influence 0.6, 3가지 × 4), 테이크 `raw/MiniGame/takes_R777/`, 숫자로만 골랐다.
+
+| 파일 | 나는 때(볼륨) | 프롬프트 | 고른 테이크 · 결과 |
+|---|---|---|---|
+| `sfx_laundry_gate` | 완료 뒤 수문이 오르고 비눗물이 2.5 s 쏟아짐(`MiniGameLaundryFx.Opened`, 1, 수문 자리 — **새 코드**: J는 자기 IGateFx라 공용 문소리가 닿지 않아 무음이었다) | A heavy wooden sluice gate in a palace laundry hauled up with a short wooden creak and a chain rattle, then soapy water gushing out from under it in a strong foaming rush that slowly calms with fizzing suds, about 2.5 seconds, close, light room. No music, no voice. (3 s) | 4: 조용히 시작해 0.5 ~ 0.9 s에 가장 크고 3 s까지 잦아듦. 2.9 s(끝 0.8 s 페이드), −21 dB |
+| `sfx_pad_launch` | 도약대 노즐이 폰을 튕김(`MgKnightPads`, .8) — 전에는 정원 `PadSplash` | A brass nozzle suddenly shooting a short powerful jet of soapy water straight up, flinging a small wooden toy figure into the air: a quick pressurized water spurt with a light springy whoosh, playful, about 0.5 seconds, close and dry. No music, no voice. (0.8 s) | 3: 넷 중 가장 꽉 차고 덜 날카로움(중심 1.8 kHz). **뺌** — 사용자 "세탁장 전에 있던 점프 했을 때 물방울 소리가 더 나아": 파일을 지워 정원 `PadSplash`가 그대로 난다(테이크는 `takes_R777/`에 남김) |
+| `sfx_splash` | 비눗물에 빠짐(`MgWaterReturn` 1 · 기물 `MgKnightPads` .6) — 전에는 정원 `GardenSplash` 셋 중 하나 | §7.6 그대로(1.2 s) | 1: 밝은 넷 중 쉿 소리가 가장 적음. 1.04 s, −20 / −18.3 |
+
+**미니게임 A ~ J 끝:** 코드가 부르는 미니게임 소리 중 파일이 없거나 대체음으로 나는 곳은 J 도약대(사용자가 정원 물방울 소리를 고름)뿐이다. 남은 공용 빈 곳은 미니게임 밖: 낙하 `sfx_fall` · 복귀 `sfx_respawn`(대체음), 승리 · 패배 결과 음악(§9).
 
 ## 9. 낙하 · 복귀 소리와 승리 · 패배 음악 (R679)
 
@@ -211,6 +308,11 @@ ElevenLabs 프롬프트:
 - **Defeat** (Music v2.5, 10초): `Gentle comedic "better luck next time" brass band sting, slow, F minor resolving to a warm major chord, a muted trumpet wah-wah falling phrase answered by tuba, soft brushed snare, light-hearted and not sad, about 10 seconds, a clear ending, instrumental only`
 
 귀로 들은 것 없음 — 임시 대체음(스킬 실패음 · 승격 차임)이 어울리는지도 사용자 확인 전.
+
+**R778(11-22) 낙하 · 복귀 파일 들어감.** 사용자 "낙하 · 복귀 시작". ElevenLabs flow `공용 낙하 · 복귀 소리`(`DRKko7Y2IUGNbouzEKmz`, 2가지 × 4), 테이크 `ArtSource/PawnRush/Sfx/raw/MiniGame/takes_R778/`, `bake_minigame.py`로 굽기. 숫자로만 골랐다.
+- `sfx_fall`: 위 프롬프트에서 끝의 "ending in a soft muffled thud"를 "fading away downward … no thud at the end"로(물에 빠질 때도 같은 소리라). 넷 다 깨끗한 미끄럼 휘슬, 4번 = 가장 빨리 내려감(1.8 → 0.83 kHz, 0.5 s). 0.62 s, 들리는 크기 −21 dB(볼륨 .8).
+- `sfx_respawn`: 위 프롬프트 그대로. 4번 = 유일하게 두 번 오르는 차임(1.5 → 1.7 → 2.0 kHz), 34 dB 작게 나와 가장 많이 키움. 0.45 s, −22 / −16.1 dB(볼륨 .7).
+- 남은 것: 승리 · 패배 결과 음악(`ResultMusic/Victory` · `Defeat`).
 
 ## 10. 마차뜰 말 마차 소리 (R686 소리 1, 2026-11-17, seoungtest)
 

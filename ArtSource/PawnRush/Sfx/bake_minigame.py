@@ -43,6 +43,60 @@ ONE_SHOTS = {
     'sfx_ep_clank': dict(hit_from=.9, end=1.18, fade=.04, vol=1., heard=-21),  # the take's loudest three ratchet clicks
     # the capture's clack and the castling thud open on a spike 20 dB over their body: limited harder (`most`)
     'sfx_ep_capture': dict(hit_from=0, end=.45, fade=.05, vol=1., heard=-20, most=12.),
+    # R770 (user 11-22, "무도회장 부터 시작"; ElevenLabs flow "F 대무도회장 빈 소리" xHQF1q4D6Ks0S9PfZ3jX, takes in
+    # raw/MiniGame/takes_R771/): a taken doll landing on the tray bench (take 1: one wooden clack and a short gear
+    # rattle, gone by 0.35 s; also H's tray at .34) and F's mirror door rising 4.6 m in 1.2 s (take 3: a 1 s rising
+    # glide, the one whose body lasts as long as the door moves; MiniGameDoorGateFx.GateSound)
+    'sfx_ep_tray': dict(hit_from=0, end=.45, fade=.08, vol=1., heard=-22, most=12.),
+    'sfx_ballroom_gate': dict(hit_from=0, end=1.6, fade=.4, vol=1., heard=-21),
+    # R772 (user 11-22, "G랑 H 시작"; flow "G · H 미니게임 빈 소리" 4D8axxzwyD2J4mVnWgVN, takes in raw/MiniGame/takes_R772/):
+    # G's and H's doors, composed in their moments' time by compose_gates.py, so cut from 0 (a found hit would shift
+    # them off the picture)
+    'sfx_procession_gate': dict(start=0, end=1.8, fade=.5, vol=1., heard=-21),
+    'sfx_chesshall_gate': dict(start=0, end=1.8, fade=.5, vol=1., heard=-21),
+    # H checkmate (MgCheckmate, the volume each call passes): a check (.48, pitch rising with the checks; take 3, one
+    # tick), a king frozen (1 since R776; R776: takes_R776 v2_3, a wooden click and a short brass ting at 2.45 kHz - R772's take 4, two low mallet notes at 216 / 435 Hz, sounded like a "뿡" to the user), a capture (1; take 2, the least hiss),
+    # the last capture (.82; take 2, a rising E-G-B-E arpeggio), a rescue (1; take 2, two clicks 0.28 s apart),
+    # a stalemate jump (1; take 1, the one airy flick), a hop (.5; take 1, the only tap not 12 dB down)
+    'sfx_check': dict(hit_from=0, end=.25, fade=.05, vol=.48, heard=-24, most=12.),
+    'sfx_mate': dict(hit_from=0, end=.35, fade=.1, vol=1., heard=-22, most=12.),   # R776: take v2_3 (see above)
+    'sfx_king_capture': dict(hit_from=0, end=.45, fade=.1, vol=1., heard=-21, most=12.),
+    'sfx_king_sweep': dict(hit_from=0, end=.9, fade=.3, vol=.82, heard=-19),
+    'sfx_rescue': dict(hit_from=0, end=.48, fade=.06, vol=1., heard=-24, most=12.),
+    'sfx_stalemate': dict(hit_from=0, end=.45, fade=.1, vol=1., heard=-24),
+    'sfx_king_hop': dict(hit_from=0, end=.15, fade=.04, vol=.5, heard=-26, most=12.),
+    # R773 (user 11-22, "여기 움직일 때 나는 소리도 해"): one of our pawns steps onto a new square and its attacked-square
+    # plates light (MgCheckmate.PlateStep, .5). Takes in raw/MiniGame/takes_R773/: the first prompt (light switching on)
+    # gave four rumbles or near-silence; the second (fingertips over tiny glass chimes) take 3, the only one that swells
+    # in and is gone by 0.45 s. Heard about as a footstep, since it plays at every step
+    'sfx_attack_squares': dict(start=0, end=.42, fade=.15, vol=.5, heard=-28),
+    # R774 (user 11-22, "확인 다음" -> I; flow "I 국왕 침실 빈 소리" 3PGmVTsMBVB9HcMuDFOw, takes in raw/MiniGame/takes_R774/):
+    # I check block (MgCheckBlock). A shield cart locked on its square (take 3: a short slide at 0.03, the clunk at
+    # 0.24, the least hiss), a knight toppled (take 1: wobble then wooden clatter, the deepest), the double check rising
+    # (take 2: two bell strikes 0.26 s apart at 1027 / 987 Hz, beating), the double check solved (take 1: D6 then F6,
+    # the only two-note one; all four came 40 dB down, so this one is raised the most)
+    'sfx_shield_lock': dict(hit_from=0, end=.6, fade=.12, vol=1., heard=-21, most=12.),
+    'sfx_piece_fall': dict(hit_from=0, end=.7, fade=.15, vol=1., heard=-21, most=12.),
+    'sfx_double_check': dict(hit_from=0, end=.75, fade=.15, vol=1., heard=-20),
+    'sfx_resolve': dict(hit_from=0, end=.6, fade=.12, vol=1., heard=-22),
+    # the shared team door (MiniGameDoorGateFx for I, ArenaDressing's fallback): G's and H's own wooden door rising,
+    # gate_wood_rise take 1 (R772) on its own - I's door is the same G_TeamGateDoor
+    'sfx_gate_open': dict(start=0, end=1.7, fade=.4, vol=1., heard=-21),
+    # R777 (user 11-22, "확인 j 세탁장"; flow "J 왕궁 세탁장 빈 소리" nIjEy6DLNDaqpXbkTc6R, takes in raw/MiniGame/takes_R777/):
+    # J laundry. The sluice gate hauled up and the soapy gush under it (MiniGameLaundryFx.Opened, 1; take 4: swells from
+    # quiet to its loudest at 0.5 - 0.9 s and calms over the rest, as the 2.5 s gush does) and a fall into the soapy water
+    # (MgKnightPads .6 / MgWaterReturn 1; take 1: the least hiss of four bright splashes; was a garden splash). The pad's
+    # jet (sfx_pad_launch) was made too (takes_R777 sfx_pad_launch_*) and taken out again: the user liked the garden's
+    # droplet splash it stands in for better ("세탁장 전에 있던 점프 했을 때 물방울 소리가 더 나아"), so PadSplash plays
+    'sfx_laundry_gate': dict(start=0, end=2.9, fade=.8, vol=1., heard=-21),
+    'sfx_splash': dict(hit_from=0, end=1.05, fade=.25, vol=1., heard=-20),
+    # R778 (user 11-22, "낙하 · 복귀 시작"; flow "공용 낙하 · 복귀 소리" DRKko7Y2IUGNbouzEKmz, takes in raw/MiniGame/takes_R778/):
+    # every course section's own-pawn fall and return (PawnRushFallNotice, 2D, the stand-ins SkillFail / sfx_mg_quarter
+    # until now). The fall's prompt drops section 9's closing thud, since the same sound plays for a fall into water.
+    # Fall: take 4, a slide whistle gliding 1.8 -> 0.83 kHz in 0.5 s (the quickest of four clean glides); return: take 4,
+    # a chime stepping up 1.5 -> 1.7 -> 2.0 kHz (the only two-step rise; it came 34 dB down and is raised the most)
+    'sfx_fall': dict(hit_from=0, end=.62, fade=.15, vol=.8, heard=-21),
+    'sfx_respawn': dict(hit_from=0, end=.45, fade=.12, vol=.7, heard=-22),
     # G procession (MgKingEscort): the sled stopped by a rook, a rook latched in its garage, the sled home (castling)
     'sfx_sled_blocked': dict(hit_from=.4, end=.95, fade=.1, vol=1., heard=-21),
     'sfx_latch': dict(hit_from=0, end=.25, fade=.03, vol=1., heard=-22),
@@ -53,6 +107,11 @@ LOOPS = {
     'sfx_sled_drag': dict(shortest=6., longest=10., vol=.6, heard=-30),
     'sfx_sand_crunch': dict(shortest=6., longest=10., vol=.6, heard=-31),   # on top of the drag
     'sfx_stone_drag': dict(shortest=6., longest=10., vol=.6, heard=-30),
+    # R774, I: a shield cart pushed along its rail (.6; take 3, the fewest knocks in it) and a check line live (.35 each,
+    # up to seven at once, so lower; take 2, the only one with a hum above 250 Hz - the others are sub-bass a laptop
+    # cannot play). 6 s ElevenLabs loop-mode takes, kept whole (too short for loop()'s 1.5 s of context either side)
+    'sfx_cart_roll': dict(whole=True, vol=.6, heard=-30),
+    'sfx_beam_hum': dict(whole=True, vol=.35, heard=-33),
 }
 CEILING = 10 ** (-1 / 20)
 MOST_LIMIT = 8.   # dB the peak limiter may take off a clip
@@ -258,7 +317,13 @@ for name, c in ONE_SHOTS.items():
 for name, c in LOOPS.items():
     x, sr = load(name)
     m, how = mono(x)
-    y, (a, n, spec, env) = loop(m, sr, c['shortest'], c['longest'])
+    if c.get('whole'):
+        # R774: an ElevenLabs loop-mode take already runs end into start; kept whole. Its seam is reported as the
+        # step from the last sample to the first against the usual step inside it (as R675 measured the escort's).
+        y, a, n = m.copy(), 0., len(m) / sr
+        spec, env = abs(m[-1] - m[0]), float(np.mean(np.abs(np.diff(m))))
+    else:
+        y, (a, n, spec, env) = loop(m, sr, c['shortest'], c['longest'])
     y, took = level(y, sr, gain_for(c), lambda v, s: rms(v))
     write(os.path.join(OUT, name + '.wav'), y, sr)
     print(f'{name}\t{how}\t{a:.3f}+{n:.3f} (ends alike: spectrum {spec:.1f} dB, loudness {env:.1f} dB)\t{len(y) / sr:.3f}'

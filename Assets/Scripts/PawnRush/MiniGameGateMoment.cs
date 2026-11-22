@@ -31,6 +31,9 @@ namespace ChessFight.PawnRush
         protected MissionStation Station { get; private set; }
         float age = -1f;
 
+        protected const string SharedGateSound = "sfx_gate_open";
+        /// <summary>The clip (Resources/PawnRushMiniGameSfx) played as the door opens.</summary>
+        protected virtual string GateSound => SharedGateSound;
         /// <summary>How long the moment lasts (s); its parts go after it.</summary>
         protected abstract float Length { get; }
         /// <summary>Makes the parts (Root is placed and empty).</summary>
@@ -51,8 +54,10 @@ namespace ChessFight.PawnRush
         {
             Station = GetComponent<MissionStation>();
             if (Station == null) return;
-            // the gate's own sound, as before (inside MiniGameEar, which ArenaDressing set for this moment)
-            ArenaFx.Sfx("sfx_gate_open", Station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f)));
+            // the gate's own sound, as before (inside MiniGameEar, which ArenaDressing set for this moment); a room with
+            // its own door sound (GateSound) falls back to the shared one while its file is missing
+            ArenaFx.Sfx(GateSound, Station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f)),
+                fallbackPath: GateSound == SharedGateSound ? null : "PawnRushMiniGameSfx/" + SharedGateSound);
             if (!Application.isPlaying || Length <= 0f) return;   // a door-only moment (MiniGameDoorGateFx) builds nothing
             Clear();
             if (Root == null) Root = new GameObject(GetType().Name + " moment").transform;

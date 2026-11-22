@@ -1,5 +1,36 @@
 # 폰 러쉬 왕실 수로 정원 — 효과음 조사 (2026-11-09)
 
+> **R771 · 2026-11-22 · 섬 분수(사용자 Unity 확인(11-22 "확인 여기 사운드 작업은 완료"), 커밋 · 푸시 안 함(사용자 지시)).** 정원 소리 작업은 여기서 완료. 사용자 "섬 분수만 하자". ElevenLabs flow `정원 분위기 · 새 소리`에 노드 하나(IslandFountain × 4; 길이가 2 · 16 · 3 · 3초로 나와 16초짜리 2번을 반복음으로) → `sfx_takes/R767/IslandFountain_*.mp3` → `waterworks_sounds.py`(RMS −22, 먼 판) → `Resources/PawnRushGardenSfx/IslandFountain` (+ `Far`) → `GardenWaterworksSound`이 섬 분수 자리(정원 좌표 (−18, 1.6, 16))에 반복음 하나(크기 0.25, 3 ~ 18 m, 먼 판 35 m까지). 같이 고침: R769에서 분위기 소리의 먼 판을 건너뛰게 한 뒤 스크립트를 다시 돌리면 난수 순서가 바뀌어 WingFlutterFar가 달라지던 것 → 먼 판은 늘 만들고 분위기만 쓰지 않음. 앞서 확인받은 파일은 모두 바이트까지 그대로(md5).
+
+> **R769 · 2026-11-22 · 정원 분위기 · 새 날갯짓(커밋 안 함, 사용자 Unity 확인 전).** 사용자 "확인 정원 전체 분위기 소리 넣어줘 …". 분위기: ElevenLabs flow `정원 분위기 · 새 소리`(`YCQ6aj7FTOuP5v5ga1VF`, GardenAmbience 20 s 반복 · WingFlutter 5 s 반복 × 4) → `sfx_takes/R767/` → `waterworks_sounds.py`(GardenAmbience는 지저귐을 살리려 RMS −28, 먼 판 없음) → 새 `GardenAmbience`(정원 어디서나 같은 크기의 2D 반복음: 바람 · 잎 · 먼 새 · 먼 비둘기 · 먼 분수, `SectionSoundGate`로 정원 밖에서는 꺼짐, 2초 페이드 인). 새: Blender `ArtSource/PawnRush/GardenConcept/birds_sample_v1.py`(gc_kit 그림체, 흰 비둘기 · 남색 제비, 종마다 몸 + 어깨에 원점이 있는 날개 두 장, 렌더 `render_birds_v1_*.png`) → `export_concept.py`(GC_NEW_MATERIALS_ONLY=1) → `Resources/PawnRushGardenConcept/GardenBirds.fbx`(삼각형 1,642) · `GC_bird_*` 재질 6개 → 새 `GardenBirds`: 네 무리(광장 비둘기 6 원 · 호수 비둘기 5 8자 · 저수지 제비 4 리사주 · 높은 비둘기 3 큰 타원), 위치 · 방향 · 기울기 · 날갯짓 모두 `ObstacleClock`의 순수 함수(모든 PC 같은 하늘), 날개는 어깨 피벗을 몸 앞축으로 돌림(뼈대 없음), 날갯짓은 무리마다 몰아서 치고 사이사이 활공 · 오를 때 더 침, 충돌체 · 그림자 없음, 무리마다 날갯짓 소리(WingFlutter) 작게. `RoyalWaterGardenBuilder.ConceptMaterial` internal. `GardenPlazaSound`가 둘 다 붙임. 보내는 데이터 없음, 프로토콜 · 장면 그대로. 크기: 분위기 `GardenAmbience.Gain` 0.45(파일 RMS −28), 날갯짓 `GardenBirds.WingGain` 0.35.
+
+> **R768 · 2026-11-22 · 비트 5 · 6 소리(코드 · 소리 · 자동 검사, 커밋 안 함, 사용자 Unity 확인(11-22 "확인")).** 사용자 "다 확인 했고 5 6 시작". ElevenLabs flow `정원 비트 5 · 6 소리`(`PHUoNyTlxNN5ykJEPuUS`, 8가지 × 4) → `sfx_takes/R767/` → `waterworks_sounds.py`(KINDS 뒤에 붙임, 앞의 파일은 그대로 나옴) → RobotWind · RobotSwoosh · RobotStop · RobotHit · ReservoirBoat · DeckLand · TunnelFall · SpillwayFall (+ 각 `Far`).
+>
+> | 비트 | 소리 | 코드 · 때 |
+> |---|---|---|
+> | 5 | 감기(1 s) · 멈춤(0.8 s) | `GardenRobotSound`(로봇 팔마다, 축에서): 주기 시작 · 휘두름 끝(1.85 s) · 되돌아옴 끝(3.85 s, 작게), 로봇 자기 시간(`RobotSweep.Now`) |
+> | 5 | 후웅(0.85 s) | 쇠공에서: 0.19 s 뒤 팔 각도가 0(가장 낮음)을 지나면, 휘두름 0.7 · 되돌아옴 0.45(0.88배 음높이) |
+> | 5 | 쇠공 맞음(0.8 s) | 휘두름 · 되돌아옴 중 각도 40° 안에서 `RobotSweep`과 같은 구 안의 폰, 한 번 지날 때 폰당 한 번, 각 PC가 직접 |
+> | 6 | 저수지 배 반복 | `GardenReservoirSound`: 배 8척마다, `BoatDrop` 0.5 m에서 무음, 레인 속도로 크기 · 음높이 |
+> | 6 | 갑판 착지(0.47 s) | 선체 위 폰을 `GardenDrumDip.Online`처럼 따라가 내려선 순간(떨어진 속도 1 m/s 넘을 때), 배마다 0.15 s에 한 번 |
+> | 6 | 터널 폭포 반복(x ±18.75, z 33.6 ~ 48) · 여수로 반복(x −26 ~ −10.4, z 33) | 줄을 따라 듣는 사람과 가장 가까운 점 |
+> | 6 | 저수지 물결 | `MoatLap` 재사용, 해자와 같은 크기 |
+>
+> 아직 없는 곳: 비트 7 출구 · 체크포인트 통과 · 정원 분위기(새 · 바람) · 나무 잎 · R765 섬 분수.
+
+> **R767 · 2026-11-22 · 비트 2 ~ 4 빠진 소리(코드 · 소리 · 자동 검사, 커밋 안 함, 사용자 Unity 확인(11-22 "다 확인 했고")).** 사용자 "코스 정원 사운드 없는 곳 확인해" → "1 2 3 4 해봐". ElevenLabs flow `정원 비트 2 ~ 4 소리`(`1uaf81nd0hcmIOSdTdDm`, eleven_text_to_sound_v2, 9가지 × 4 테이크) → `ArtSource/PawnRush/GardenConcept/sfx_takes/R767/` → `waterworks_sounds.py`(광장의 검사 · 반복 이음 · 먼 판, 테이크 고르기와 프롬프트는 맨 위) → `Resources/PawnRushGardenSfx/` GeyserWarn · GeyserFall · GeyserHit · WeirFall · DrumLand · LakeBoat · SluiceRise · SluiceSlam · LockFlow (+ 각 `Far`).
+>
+> | 비트 | 소리 | 코드 · 때 |
+> |---|---|---|
+> | 2 | 물기둥 경고 보글(0.75 s) · 무너짐(1.2 s) · 맞음(0.8 s) | `GardenGeyserSound`: 경고 시작에, 물기둥 마지막 0.25 s 시작에(공유 시계), 맞음은 각 PC가 `GardenGeyser`와 같은 캡슐 안 폰을 직접 찾아 한 물기둥에 폰당 한 번 |
+> | 2 | 둑 폭포 반복(동 x 7.35 ~ 46.5 · 서 x −46.5 ~ −35.6, z −15.5) | `GardenWaterworksSound`: 둑마다 하나, 듣는 사람과 가장 가까운 둑 위 점으로 움직임 |
+> | 3 | 북 착지 통(0.8 s) | `GardenFloatSound` ← `GardenDrumDip.Landed`(떨어진 속도로 크기 · 음높이, 북마다 0.15 s에 한 번) |
+> | 3 | 호수 배 반복 | `GardenWaterworksSound`: `GardenLakeBoat.All` 4척에 하나씩, 속도로 크기 |
+> | 4 | 갑문 물살 반복(x 27 ~ 35, z 10 ~ 24) | `GardenWaterworksSound`: 듣는 사람과 가장 가까운 갑문 바닥 점 |
+> | 4 | 수문 올라감(1.3 s) · 쾅(1.3 s) · 밀림 | 수문 높이를 `ObstacleMotion` Gate 식으로 공유 시계에서 계산: 올라감은 바닥을 떠나기 0.3 s 전(덜컹이 맨 위에 오게), 쾅은 바닥에 닿기 0.03 s 전, 밀림은 내려오는 동안 수문 충돌체에 닿은 폰에 `SpinHitTall`(0.82배 음높이) |
+>
+> 붙는 곳: `GardenPlazaSound.Start`가 `GardenWaterworksSound`를 붙임(장면을 다시 지을 필요 없음). 보내는 데이터 없음. 반복음 파일 RMS −22, 코드 크기 0.2 ~ 0.3(광장 물처럼 작게). 아직 없는 곳: 비트 5 로봇 둑 · 비트 6 보트 건너기(배 · 터널 폭포 · 여수로) · 비트 7 출구 · 체크포인트 통과 · 정원 분위기 · R765 섬 분수.
+
 > **R766 · 2026-11-22 · 갑문 물 발소리(main 커밋 · 푸시, 사용자 Unity 확인 11-22).** 사용자 "갑문 물 기물이랑 물이랑 걸을 때 사운드 넣어줘" → 첨벙 소리는 아니고 "잔잔한 물 헤치는 소리". ElevenLabs flow `정원 갑문 물 발소리`(`ytTF5NjpcfoEtHEH1uKR`, WadeWalk 4 s · WadeRun 3 s × 2) → `ArtSource/PawnRush/Sfx/takes_wade/` → `ArtSource/PawnRush/Sfx/bake_wade.py`(걸음 하나씩 잘라 6개씩) → `Resources/PawnRushStepSfx/WadeWalk0..5` · `WadeRun0..5`. 갑문 바닥(`Lock floor`)에 `Gameplay.WetFloor`, `PawnRushStepSfx`가 엉덩이 아래 바닥이 `WetFloor`면 마른 발소리 대신 이 소리(`WadeGain` 0.4, 마른 걷기와 비슷한 크기). 네트워크로 안 보냄(각 PC가 보이는 폰마다 냄, 원래 발소리와 같음).
 
 정원(구역 G, `RoyalWaterGardenBuilder` v31 + 컨셉 아트 꾸밈)에서 소리가 필요한 곳을 비트 순서로 모두 적었다.
@@ -22,7 +53,10 @@
 | 비트 | 상태 |
 |---|---|
 | 1 분수 광장 | **R530 넣음**(아래), Unity 컴파일 · 소리 사람 확인 전 |
-| 2 ~ 8 | 아직 |
+| 2 · 3 · 4 | **R767 넣음**(맨 위), 지름길 기둥 · K4 · 연잎은 코스에서 빠져 없음. 사용자 Unity 확인(11-22 "다 확인 했고") |
+| 5 · 6 | **R768 넣음**(맨 위). 사용자 Unity 확인(11-22 "확인") |
+| 7 | 하지 않음(11-22 정원 소리 작업 완료) |
+| 8 정원 전체 | 분위기 · 새 날갯짓 **R769 넣음**, 섬 분수 **R771 넣음**(맨 위). 체크포인트 통과는 하지 않음(11-22 완료) |
 
 ### R530 분수 광장 (11-09)
 

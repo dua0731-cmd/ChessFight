@@ -439,6 +439,11 @@ namespace ChessFight.PawnRush
 
         public void Opened()
         {
+            // R777 (user 11-22, "확인 j 세탁장"): the sluice's own sound - hauled up, the soapy gush under it - which the
+            // shared gate sound never reached (an IGateFx stands in for all of ArenaDressing's moment). Played before
+            // the pictures' checks so a missing look never silences it; inside MiniGameEar as every gate sound.
+            var s = station != null ? station : GetComponent<MissionStation>();
+            if (s != null && s.Gate != null) ArenaFx.Sfx("sfx_laundry_gate", s.Gate.transform.position);
             if (!Ready() || station == null || station.Gate == null) return;
             gushUntil = Time.time + 2.5f;
             gushNext = Time.time;
