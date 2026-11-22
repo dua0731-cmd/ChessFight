@@ -626,6 +626,11 @@ namespace ChessFight.RagdollLab
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
+            // 11-22: the support key (G) and the skill key (F) held (RagdollPawn.Support.cs); a G tap between two physics
+            // steps is kept for the next one.
+            input.supportHeld = next.supportHeld;
+            input.skillHeld = next.skillHeld;
+            if (next.supportHeld) supTap = true;
             if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
             if (next.reel != 0f) AddSkillWheel(next.reel);   // the wheel's notches, kept until the next physics step
             if (next.emote != 0) PlayEmote(next.emote);

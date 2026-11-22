@@ -44,7 +44,9 @@ namespace ChessFight.RagdollLab
 
         readonly List<SupFx> sups = new List<SupFx>();
         readonly List<(RagdollPawn a, RagdollPawn b, float until)> supTethers = new List<(RagdollPawn, RagdollPawn, float)>();
-        readonly MaterialPropertyBlock supBlock = new MaterialPropertyBlock();
+        // (Made on first use: Unity allows no MaterialPropertyBlock in a component's field initializers - one here once
+        // cut the whole effects component's construction short, and every ultimate's effects with it.)
+        MaterialPropertyBlock supBlock;
         Material matSupRim;
         float supSavedReal = -10f;
         string supSavedLine = "";
@@ -286,6 +288,7 @@ namespace ChessFight.RagdollLab
             Matrix4x4 m = Matrix4x4.TRS(feet, turn, Vector3.one * scale) * f.canon;
             var mat = stone ? matStone : matSupRim;
             if (mat == null) return;
+            if (supBlock == null) supBlock = new MaterialPropertyBlock();
             supBlock.Clear();
             if (!stone) supBlock.SetColor("_Color", HdrA(Teal, 1.6f) * k);
             var rp = new RenderParams(mat)

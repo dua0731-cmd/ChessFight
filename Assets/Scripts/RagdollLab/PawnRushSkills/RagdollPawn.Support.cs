@@ -87,7 +87,7 @@ namespace ChessFight.RagdollLab
         // G key's last state and its press, where it stands holding, the drone and its drive keys.
         RagdollPawn supMate;
         float supStandLeft, supDriveLeft, supSlipNext;
-        bool supHeldWas, supPress;
+        bool supHeldWas, supPress, supTap;
         Vector3 supHoldAt, supDrone, supDriveMove, supDriveAim;
         // The carried one's: the leader, the leader's piece at the call, the answer's time, since the call (then since it
         // went), when what comes is there, metres carried, how long the body has been off the carry point, F let go for how
@@ -179,7 +179,8 @@ namespace ChessFight.RagdollLab
         /// one's keys taken (its steering, its jump and its grip kept for the horse).</summary>
         void SupportKeys()
         {
-            bool held = input.supportHeld;
+            bool held = input.supportHeld || supTap;   // (a tap since the last step counts)
+            supTap = false;
             if (held && !supHeldWas) supPress = true;
             supHeldWas = held;
             if (supMate != null && SupportStanding)
