@@ -787,6 +787,7 @@ namespace ChessFight.RagdollLab
             UltDrivePreview(cam);   // the six driven ones' aim before their key (PawnRushSkillFx.Drive.cs)
             UltGiants(dt);          // ...the pieces drawn bigger than they are (PawnRushSkillFx.PromotionRun.cs)
             UltRollRestore();       // ...a rook's own skin back after its roll (PawnRushSkillFx.RookRoll.cs)
+            SupportStepFx(cam);     // the support slot's horse, bridge, rope, drone and chain (PawnRushSkillFx.Support.cs)
             float kv = 0f, stars = 0f;
             for (int i = ults.Count - 1; i >= 0; i--)
             {

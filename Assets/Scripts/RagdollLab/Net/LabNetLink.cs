@@ -143,6 +143,8 @@ namespace ChessFight.RagdollLab
             public byte jumps, shoves, abilities, abilities2, skills, pieceSeq, emoteSeq;   // counts already taken
             public int jump, shove, ability, ability2, skill;                    // presses waiting for a physics step
             public bool interactLatch, interactNow;
+            // JY-skill-lab 11-22: the support key (G) and the skill key (F) held, latched like interact.
+            public bool supportLatch, supportNow, skillHeldLatch, skillHeldNow;
             public ushort eventAck;
             public bool ackSet;
             // R112, the test screen: the link as the client reports it, and what the host heard.
@@ -543,6 +545,9 @@ namespace ChessFight.RagdollLab
                 var input = r.input.Held();
                 input.interact = r.interactLatch || r.interactNow;
                 r.interactLatch = false;
+                input.supportHeld = r.supportLatch || r.supportNow;
+                input.skillHeld = r.skillHeldLatch || r.skillHeldNow;
+                r.supportLatch = r.skillHeldLatch = false;
                 input.jump = Take(ref r.jump);
                 input.shove = Take(ref r.shove);
                 input.ability = Take(ref r.ability);
@@ -794,6 +799,10 @@ namespace ChessFight.RagdollLab
             r.skillsTaken += skillsNow;
             r.interactLatch |= fresh.interact;
             r.interactNow = fresh.interact;
+            r.supportLatch |= fresh.supportHeld;
+            r.supportNow = fresh.supportHeld;
+            r.skillHeldLatch |= fresh.skillHeld;
+            r.skillHeldNow = fresh.skillHeld;
             r.input = fresh;
             r.sequence = seq;
             r.clientTimeMs = clientTime;
@@ -841,6 +850,8 @@ namespace ChessFight.RagdollLab
             pending.Hold(local);
             // Held, but latched until sent: a tap shorter than one send interval still reaches the host.
             pending.interact |= local.interact;
+            pending.supportHeld |= local.supportHeld;
+            pending.skillHeld |= local.skillHeld;
 
             if (pawns.TryGetValue(NetSelf, out var me) && me != null)
             {
@@ -897,6 +908,7 @@ namespace ChessFight.RagdollLab
                 SendKingCall();
                 lastSent = pending;
                 pending.interact = false;
+                pending.supportHeld = pending.skillHeld = false;
             }
 
             Playback();

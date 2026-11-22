@@ -498,7 +498,9 @@ namespace ChessFight.RagdollLab
 
         void OnGUI()
         {
-            if (!effects || ults.Count == 0 || Event.current.type != EventType.Repaint) return;
+            if (!effects || Event.current.type != EventType.Repaint) return;
+            SupportGuiFrame();   // the support slot's words, with or without an ultimate (PawnRushSkillFx.Support.cs)
+            if (ults.Count == 0) return;
             UltStyles();
             float ui = Screen.height / 720f, vw = Screen.width / ui;
             var keepMatrix = GUI.matrix;

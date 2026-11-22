@@ -129,6 +129,9 @@ namespace ChessFight.RagdollLab
         /// <summary>R236: the edge skill's key (E) is held (the Sword Fight bishop picks his diagonal while it is). It rides in
         /// the grab bit, which a Sword Fight packet never uses (its right click travels as the cancel press).</summary>
         public bool edgeHeld;
+        /// <summary>JY-skill-lab 11-22: the Pawn Rush support key (G) and the skill key (F) held (the lab input's held bits 16
+        /// and 32; latched until sent like interact, so a tap shorter than a send still reaches the host).</summary>
+        public bool supportHeld, skillHeld;
 
         /// <summary>The held part of a pawn's input (the presses are counted separately).</summary>
         public void Hold(PawnInput input)
@@ -138,12 +141,15 @@ namespace ChessFight.RagdollLab
             sprint = input.sprint;
             shoveHeld = input.shoveHeld;
             aim = input.aim;
+            supportHeld = input.supportHeld;
+            skillHeld = input.skillHeld;
         }
 
         /// <summary>The held part as a pawn's input; the host adds the presses as edges, one per physics step.</summary>
         public PawnInput Held() => new PawnInput
         {
             move = new Vector3(move.x, 0f, move.y), grab = grab, sprint = sprint, interact = interact, aim = aim, shoveHeld = shoveHeld,
+            supportHeld = supportHeld, skillHeld = skillHeld,
         };
 
         /// <summary>R306 [2]: whether this input should go now rather than on its next slot (InputSendGate): a press counted,
@@ -152,6 +158,7 @@ namespace ChessFight.RagdollLab
         public bool DiffersFrom(in RagdollLabInput sent) =>
             jumps != sent.jumps || shoves != sent.shoves || abilities != sent.abilities || abilities2 != sent.abilities2 || skills != sent.skills
             || grab != sent.grab || sprint != sent.sprint || shoveHeld != sent.shoveHeld || interact != sent.interact || edgeHeld != sent.edgeHeld
+            || supportHeld != sent.supportHeld || skillHeld != sent.skillHeld
             || pieceSeq != sent.pieceSeq || emoteSeq != sent.emoteSeq
             || InputChange.Moved(sent.move.x, sent.move.y, move.x, move.y);
     }
@@ -331,7 +338,8 @@ namespace ChessFight.RagdollLab
             w.Write(Signed(input.move.x));
             w.Write(Signed(input.move.y));
             w.Write((byte)(((sword ? input.edgeHeld : input.grab) ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0)
-                           | (input.shoveHeld ? 8 : 0) | (sword && input.aimPointSet ? 16 : 0)));
+                           | (input.shoveHeld ? 8 : 0) | (sword && input.aimPointSet ? 16 : 0)
+                           | (!sword && input.supportHeld ? 16 : 0) | (!sword && input.skillHeld ? 32 : 0)));
             Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
             w.Write(Signed(aim.x));
             w.Write(Signed(aim.y));
@@ -372,13 +380,15 @@ namespace ChessFight.RagdollLab
             clientTimeMs = r.ReadUInt32();
             input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
             byte held = r.ReadByte();
-            if (held > (sword ? 31 : 15)) return false;
+            if (held > (sword ? 31 : 63)) return false;
             input.grab = !sword && (held & 1) != 0;
             input.edgeHeld = sword && (held & 1) != 0;
             input.sprint = (held & 2) != 0;
             input.interact = (held & 4) != 0;
             input.shoveHeld = (held & 8) != 0;
-            input.aimPointSet = (held & 16) != 0;
+            input.aimPointSet = sword && (held & 16) != 0;
+            input.supportHeld = !sword && (held & 16) != 0;
+            input.skillHeld = !sword && (held & 32) != 0;
             if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
             var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
             float length = aim.magnitude;

@@ -38,6 +38,12 @@ namespace ChessFight.RagdollLab
         public KeyCode passRunKey = KeyCode.M;
         [Tooltip("궁극기 게이지 시험 (JY-skill-lab, 2판): 맵의 왕관 여섯을 내 둘레에 다시 놓는다")]
         public KeyCode crownKey = KeyCode.C;
+        [Tooltip("지원 칸 (JY-skill-lab 11-22, 선두만): 팀 꼴찌를 부르는 키. 이 씬의 이모트 휠은 Y로 옮김")]
+        public KeyCode supportKey = KeyCode.G;
+        [Tooltip("지원 시험: 아군 더미 하나를 내 뒤 한 구간 너머에 팀 꼴찌로 세운다 (부르면 더미가 F를 대신 눌러 받음)")]
+        public KeyCode supportTestKey = KeyCode.L;
+        [Tooltip("지원 시험: 이 씬엔 코스가 없어 앞뒤(z)를 이 길이(m)로 끊어 구간으로 친다")]
+        public float supportTestSection = 10f;
 
         [Header("시험 장치")]
         [Tooltip("룩만 부수는 바리케이드 (바닥 가운데)")]
@@ -88,6 +94,7 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillSendBack = null;
             RagdollPawn.TeamLosing = null;
             RagdollPawn.TeamComeback = null;
+            RagdollPawn.RaceSection = null;
             PawnRushGaugeCrown.ClearAll();
         }
 
@@ -165,6 +172,12 @@ namespace ChessFight.RagdollLab
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
             if (game != null) game.SkillKey = skillKey;
+            // 11-22: the support slot. G is the team leader's key here (the emote wheel the net test adds moves to Y in this
+            // scene), and with no course to cut it, the scene's sections are bands of z supportTestSection long.
+            if (game != null) game.SupportKey = supportKey;
+            MoveEmoteWheel();
+            RagdollPawn.RaceSection = p => Mathf.FloorToInt(p.Hips.position.z / Mathf.Max(1f, supportTestSection));
+            RagdollPawn.ResetSupport();
             Report($"폰 러쉬 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 {skillKey}");
         }
 
@@ -184,6 +197,8 @@ namespace ChessFight.RagdollLab
             foreach (var d in game.dummies)
                 if (d != null) d.SkillBot = true;
             if (game.SkillKey != skillKey) game.SkillKey = skillKey;
+            if (game.SupportKey != supportKey) game.SupportKey = supportKey;
+            MoveEmoteWheel();
             // R is the third slot's key (the queen's) while the piece played has a skill there; the lab's "everyone back"
             // otherwise (JY-skill-lab, the kits' second version).
             var played = Me;
@@ -209,6 +224,7 @@ namespace ChessFight.RagdollLab
             if (!Online && Input.GetKeyDown(rookLedgeKey)) RookGround(me, true);
             if (!Online && Input.GetKeyDown(passRunKey)) RunPast(me);
             if (!Online && Input.GetKeyDown(crownKey)) PlaceCrownsRound(me);
+            if (!Online && Input.GetKeyDown(supportTestKey)) SupportTest(me);
             // The skill key itself: LabGame.ReadInput puts it into P1's input (R111).
         }
 
@@ -257,6 +273,76 @@ namespace ChessFight.RagdollLab
             passRunUntil = Time.time + 3.2f;
             Report($"앙파상 시험: {d.DisplayName}가 뒤에서 내 오른쪽을 달려 지나감 (돌진으로 침) — 지나친 뒤 고리가 뜬 동안 {skillKey} ({passRunKey}로 다시)");
         }
+
+        EmoteWheel emoteWheel;
+
+        /// <summary>11-22: the emote wheel (G, added by the net test) moves to Y in this scene: G is the support's key.</summary>
+        void MoveEmoteWheel()
+        {
+            if (game == null) return;
+            if (emoteWheel == null) emoteWheel = game.GetComponent<EmoteWheel>();
+            if (emoteWheel != null && supportKey != KeyCode.None && emoteWheel.key == supportKey) emoteWheel.key = KeyCode.Y;
+        }
+
+        RagdollPawn supportDummy;
+
+        /// <summary>
+        /// 11-22: the support slot's test alone (the planning session's ask: "더미 팀원 하나를 한 구간 뒤 꼴찌로 두고 받기(F)를
+        /// 대신 눌러 주는 시험 키"). An ally dummy stands a section and a bit behind the piece played here as its team's last
+        /// runner, facing the way ahead (+z); G calls it and the dummy answers by itself (RagdollPawn.SupportBotsAnswer, the other
+        /// PC's F). With no room behind (the floor is 30 m), the piece played steps forward instead. Every section's use is
+        /// given back, so it can be tried again and again. A piece with no team joins White (a support is a team's).
+        /// </summary>
+        public void SupportTest(RagdollPawn me)
+        {
+            if (game == null || me == null) return;
+            if (me.Team == Teams.None)
+            {
+                me.Team = Teams.White;
+                if (me.skin != null) me.skin.sharedMaterial = game.TeamMaterial(me.Team);
+            }
+            var d = supportDummy != null && game.dummies.Contains(supportDummy) ? supportDummy : null;
+            if (d == null)
+            {
+                int before = game.dummies.Count;
+                game.AddDummy();
+                d = game.dummies.Count > before ? game.dummies[game.dummies.Count - 1]
+                  : game.dummies.Count > 0 ? game.dummies[game.dummies.Count - 1] : null;
+            }
+            if (d == null) return;
+            supportDummy = d;
+            float band = Mathf.Max(1f, supportTestSection), half = LabLayout.MainHalfSize - 1.5f, gap = band + 3f;
+            Vector3 feet = new Vector3(me.Hips.position.x, me.FeetPoint.y, me.Hips.position.z);
+            float back = Mathf.Max(-half, feet.z - gap);
+            if (Mathf.FloorToInt(back / band) >= Mathf.FloorToInt(feet.z / band))
+            {
+                // No room behind: the piece played steps forward, a section and a bit ahead of where the dummy can stand.
+                float ahead = Mathf.Min(half, back + gap);
+                Vector3 to = FloorAt(new Vector3(feet.x, feet.y, ahead));
+                me.Teleport(to + Vector3.up * (me.standHeight + 0.02f), Vector3.forward);
+                feet = to;
+            }
+            Vector3 ground = FloorAt(new Vector3(feet.x, feet.y, back));
+            d.Team = me.Team;
+            if (d.skin != null) d.skin.sharedMaterial = game.TeamMaterial(me.Team);
+            d.SkillBot = true;
+            d.ResetSkill();
+            d.SetInput(new PawnInput());
+            d.Teleport(ground + Vector3.up * (d.standHeight + 0.02f), Vector3.forward);
+            RagdollPawn.ResetSupport();
+            Report($"지원 시험: {d.DisplayName}가 {feet.z - back:0} m 뒤 팀 꼴찌 — {supportKey}로 부르면 더미가 {skillKey}를 대신 눌러 받아요 ({supportTestKey}로 다시)");
+        }
+
+        /// <summary>11-22: what a piece's support does, for the panel.</summary>
+        static string SupportHowTo(PieceKind kind, KeyCode g, KeyCode f) => kind switch
+        {
+            PieceKind.Knight => $"휘파람 1초 → 빈 말이 꼴찌에게 달려가요. 꼴찌는 {f}로 올라타 {f}를 누르고 있어요 (점프 = 뛰어넘기, 이동 키 = 몰기)",
+            PieceKind.Rook => $"{g}를 누르고 있는 동안 꼴찌 발밑에서 나에게로 도개교 (폭 3 m, 35 m/s). 위에 선 팀원도 같이 타요. 놓거나 밀려나면 끊겨요",
+            PieceKind.Queen => $"{g}를 누르고 있는 동안 꼴찌 15 m 위에서 나에게로 빛의 줄 · 왕관 도르래로 45 m/s. 적이 줄을 치면 끊겨요",
+            PieceKind.Bishop => $"드론이 꼴찌에게 날아가요. 꼴찌가 {f}로 매달리면 이동 키 · 카메라로 몰아요 (6초, {g} = 내려놓기)",
+            PieceKind.Pawn => $"{g}를 누르고 있는 동안 돌 폰이 10 m마다 솟아 꼴찌를 다음 폰으로 던져요. 적이 넘어뜨린 폰은 틈",
+            _ => "",
+        };
 
         PawnRushSkillWindow window;
 
@@ -561,6 +647,26 @@ namespace ChessFight.RagdollLab
                 return;
             }
             SlotCards(p1, SlotKey, "좌클릭", true, null, null);
+            SupportCard(p1);
+        }
+
+        /// <summary>11-22: the support key's card over the skills' (KITS 6.10): lit while G can call the team's last runner,
+        /// with "데려오면 게이지 +15%" then; otherwise why not, or the support under way. The rescues so far after it.</summary>
+        void SupportCard(RagdollPawn me)
+        {
+            if (!RagdollPawn.HasSupport(me.Piece)) return;
+            int row = 0;
+            for (int k = 0; k < me.SlotCount; k++)
+                if (me.SlotSkill(k) != 0) row++;
+            string why = me.SupportWhyNot(out var last);
+            bool busy = me.SupportMate != null || (fx != null && fx.SupportBusy(me.Team));
+            bool lit = why == null && !busy;
+            string g = supportKey.ToString();
+            string line = busy ? (me.SupportMate != null ? $"{me.SupportMate.DisplayName} 데려오는 중" : "팀이 지원 중")
+                        : lit ? $"{g} → {last.DisplayName} · 데려오면 게이지 +{skills.supGauge * 100f:0}%"
+                        : why;
+            if (me.Rescues > 0) line += $" · 구조 {me.Rescues}";
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(row), g, "지원 · " + RagdollPawn.SupportName(me.Piece), line, me.Piece, lit || busy, 0f);
         }
 
         /// <summary>JY-skill-lab: the key cards at the bottom right, one for each of the piece's slots that holds a skill,
@@ -785,6 +891,17 @@ namespace ChessFight.RagdollLab
                     GUILayout.Label(PawnRushSkillBook.How(id), small);
                 }
                 if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬트리({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
+            }
+            if (RagdollPawn.HasSupport(p1.Piece))
+            {
+                // 11-22: the support slot (leader only).
+                string why = p1.SupportWhyNot(out var lastOne);
+                GUILayout.Label($"<b>{supportKey} · 지원 {RagdollPawn.SupportName(p1.Piece)}</b>   "
+                                + (why == null ? $"<color=#4fd>→ {lastOne.DisplayName}</color>" : why)
+                                + (p1.Rescues > 0 ? $"   구조 {p1.Rescues}" : ""), text);
+                GUILayout.Label(SupportHowTo(p1.Piece, supportKey, skillKey), small);
+                if (!Online)
+                    GUILayout.Label($"선두만 · 꼴찌가 다른 구간 ({supportTestSection:0} m 띠)일 때 · 구간마다 한 번 · {supportTestKey}: 아군 더미를 한 구간 뒤 꼴찌로 (더미가 {skillKey}를 대신 눌러 받아요) · 이모트 휠은 Y", small);
             }
 
             GUILayout.Space(2f);

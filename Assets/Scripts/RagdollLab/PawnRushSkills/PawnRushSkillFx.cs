@@ -140,6 +140,7 @@ namespace ChessFight.RagdollLab
             if (stopping) Time.timeScale = stopResume;
             DestroyDesignA();
             DestroyUlt();
+            DestroySupport();
             foreach (var a in anims) a.Destroy();
             foreach (var s in tileSets.Values) s.Destroy();
             foreach (var s in ghosts.Values) s.Destroy();
@@ -205,6 +206,13 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.DriveLine: DriveLineFx(e); break;
                 case SkillFxKind.DriveWarn: DriveWarnFx(e); break;
                 case SkillFxKind.DriveState: DriveStateFx(e); break;
+                // 11-22: the support slot (PawnRushSkillFx.Support.cs).
+                case SkillFxKind.SupCall:
+                case SkillFxKind.SupGo:
+                case SkillFxKind.SupStep:
+                case SkillFxKind.SupCut:
+                case SkillFxKind.SupCancel:
+                case SkillFxKind.SupSaved: SupportFx(e); break;
             }
         }
 

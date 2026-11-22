@@ -43,6 +43,11 @@ namespace ChessFight.RagdollLab
         /// <summary>The mouse wheel's notches this frame (up positive): the Pawn Rush bishop's rope (10-26). The local
         /// player's only (not sent online yet: a client works the rope with W/S).</summary>
         public float reel;
+        /// <summary>Held: the Pawn Rush support key (G, LabGame.SupportKey; JY-skill-lab 11-22): the team leader's call and its
+        /// hold (the chain, the rope, the drawbridge); its press is the edge the pawn sees.</summary>
+        public bool supportHeld;
+        /// <summary>Held: the skill key (F) - a teammate carried by a support keeps its grip with it (the horse, the drone).</summary>
+        public bool skillHeld;
     }
 
     /// <summary>

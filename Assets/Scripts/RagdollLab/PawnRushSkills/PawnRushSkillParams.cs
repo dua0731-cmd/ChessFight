@@ -909,6 +909,22 @@ namespace ChessFight.RagdollLab
         [Header("궁극기 연출 · !! 탁월한 수 (11-22, PawnRushSkillFx.Impact.cs)")]
         [Tooltip("시전자 화면에서 그 기물의 한 수(승격 · 포크 · 꼬챙이 · 7번째 줄 · 퀸 희생)를 슬로우로 보여 준다: 1 켬, 0이면 시전과 판정의 슬로우만")]
         public float ultSigSlow = 1f;
+        [Header("지원 칸 · 선두만 G (11-22, KITS 6.1~6.5의 지원 줄 · 6.10, RagdollPawn.Support.cs)")]
+        [Tooltip("구간의 길이 (m, 코스가 구간을 안 알려 줄 때: 시험 씬은 10 m); 꼴찌가 받는 시간 (초); 데려오는 거리 (m, 선두를 넘지 않음)")]
+        public float supSection = 100f, supAnswer = 5f, supReach = 150f;
+        [Tooltip("성공: 둘이 빨라지는 시간 (초)과 배율; 곁 (m)이면 함께 튀어 나가는 거리 (m); 팀 궁극 게이지 (몫)")]
+        public float supBoost = 4f, supBoostScale = 1.4f, supNear = 4f, supDash = 12f, supGauge = 0.15f;
+        [Tooltip("나이트 말 보내기: 휘파람 (초); 빈 말이 가는 빠르기 · 타고 오는 빠르기 (m/s); 점프로 뛰어넘는 거리 (m) · 높이 (m) · 시간 (초); F를 놓아도 버티는 시간 (초)")]
+        public float supWhistle = 1f, supHorseGo = 60f, supHorseRide = 30f, supHorseJump = 10f, supHorseJumpTop = 4f, supHorseJumpTime = 0.45f, supGripGrace = 0.3f;
+        [Tooltip("룩 도개교: 펼쳐지는 시간 (초); 바닥이 움직이는 빠르기 (m/s); 폭 (m); 선두가 밀려 떨어지는 거리 (m)")]
+        public float supBridgeOpen = 1f, supBridgeSpeed = 35f, supBridgeWidth = 3f, supHoldSlip = 2.5f;
+        [Tooltip("퀸 퀸의 줄: 꼴찌 위 높이 (m); 쏘는 시간 (초); 도르래까지 오르는 시간 (초); 미끄러지는 빠르기 (m/s); 줄을 끊는 거리 (m)")]
+        public float supRopeHigh = 15f, supRopeShoot = 0.35f, supRopeLift = 0.45f, supRopeSpeed = 45f, supCutReach = 1.2f;
+        [Tooltip("비숍 주교관 드론: 날아가는 빠르기 · 모는 빠르기 (m/s); 모는 시간 (초); 매달린 깊이 (m); 바닥 위 높이 가장 낮게 · 높게 (m); 선두 곁 (m)")]
+        public float supDroneGo = 60f, supDroneDrive = 30f, supDroneTime = 6f, supDroneHang = 2.2f, supDroneLow = 1.5f, supDroneHigh = 25f, supDroneDrop = 6f;
+        [Tooltip("폰 폰 사슬: 폰 사이 (m); 가장 많이; 솟는 시간 (초); 한 번 던지는 시간 (초) · 높이 (m); 좌우로 엇갈림 (m)")]
+        public float supChainGap = 10f, supChainRise = 0.6f, supChainHop = 0.3f, supChainTop = 2.5f, supChainZig = 2f;
+        public int supChainMax = 15;
 
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]

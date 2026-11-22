@@ -23,6 +23,9 @@ namespace ChessFight.RagdollLab
     ///             race's progress is the course's to say (RaceProgress); without it, how far along +Z.
     ///   언제      GaugeAllowed (the course: after the promotion, not in a mini-game); null, always (the skill test scene).
     ///             The test scene's flat test cooldown keeps every gauge full.
+    ///   한 판에 한 번  a team's ultimate goes once a match (11-22, the user: "궁극 빈도는 팀마다 1번"): once it has gone past its
+    ///             warning the team's gauge fills no more until the next round (cut in its warning, it is the team's again).
+    ///             The test cooldown still keeps it full, for trying them over and over.
     ///
     /// The host's; a client is told its team's gauge in the pieces' skill state (a byte, sent when it is full or has just
     /// moved by 5%). Not seen in Unity by anyone yet.
@@ -44,6 +47,24 @@ namespace ChessFight.RagdollLab
         static readonly float[] teamTickAt = { -1f, -1f };
         static readonly float[] teamSendLeft = new float[2];
         static readonly int[] teamSentStep = { -1, -1 };
+        // A team's ultimate gone this match (11-22: once a match; the gauge fills no more).
+        static readonly bool[] teamUltSpent = new bool[2];
+
+        /// <summary>A team's ultimate has gone this match (its gauge fills no more until the next round).</summary>
+        public static bool TeamUltSpent(int t)
+        {
+            int i = TeamIndex(t);
+            return i >= 0 && teamUltSpent[i];
+        }
+
+        bool GaugeSpent
+        {
+            get
+            {
+                int i = TeamIndex(team);
+                return i >= 0 && teamUltSpent[i];
+            }
+        }
 
         // A piece with no team's own gauge; an ultimate under way that has spent it; when the knockdowns that filled it
         // came (the last few).
@@ -64,7 +85,9 @@ namespace ChessFight.RagdollLab
                 teamTickAt[i] = -1f;
                 teamSendLeft[i] = 0f;
                 teamSentStep[i] = -1;
+                teamUltSpent[i] = false;
             }
+            ResetSupport();   // (every section's support usable again: RagdollPawn.Support.cs)
         }
 
         float GaugeNow
@@ -172,7 +195,7 @@ namespace ChessFight.RagdollLab
                 step = now - teamTickAt[i];
                 teamTickAt[i] = now;
             }
-            if (step <= 0f || ultCommitted || GaugeNow >= 1f || (GaugeAllowed != null && !GaugeAllowed(this))) return;
+            if (step <= 0f || ultCommitted || GaugeSpent || GaugeNow >= 1f || (GaugeAllowed != null && !GaugeAllowed(this))) return;
             GaugeNow += s.gaugeTime * (Losing(team) ? s.gaugeLosing : 1f) * step;
             GaugeMoved();
         }
@@ -196,7 +219,7 @@ namespace ChessFight.RagdollLab
         void AddGauge(float amount, string why)
         {
             var s = PawnRushSkills;
-            if (s == null || !s.realGauge || amount <= 0f || GaugeNow >= 1f || ultCommitted) return;
+            if (s == null || !s.realGauge || amount <= 0f || GaugeNow >= 1f || ultCommitted || (GaugeSpent && s.testCooldown <= 0f)) return;
             GaugeNow += amount;
             GaugeMoved();
             Log($"{Teams.Name(team)}팀 게이지 +{amount * 100f:0.#}% ({DisplayName}: {why}) → {UltGauge * 100f:0}%" + (UltReady ? " — 궁극기 준비!" : ""));
@@ -223,7 +246,7 @@ namespace ChessFight.RagdollLab
         public bool TakeCrown(PawnRushGaugeCrown crown)
         {
             var s = PawnRushSkills;
-            if (s == null || !s.realGauge || NetworkPuppet || UltReady || ultCommitted || !HasUltimate) return false;
+            if (s == null || !s.realGauge || NetworkPuppet || UltReady || ultCommitted || !HasUltimate || (GaugeSpent && s.testCooldown <= 0f)) return false;
             if (GaugeAllowed != null && !GaugeAllowed(this)) return false;
             AddGauge(s.gaugeCrown, "왕관");
             Fx(SkillFxKind.KitCrown, null, crown.transform.position, Vector3.up, crown.Index, s.crownRespawn);
@@ -271,6 +294,8 @@ namespace ChessFight.RagdollLab
             ultCommitted = true;
             GaugeNow = 0f;
             GaugeMoved();
+            int spent = TeamIndex(team);
+            if (spent >= 0) teamUltSpent[spent] = true;   // once a match: the team's gauge fills no more
             Log($"{DisplayName}: 궁극기 {PawnRushSkillBook.Name(activeSkill)} — {Teams.Name(team)}팀 게이지를 씀 (역전 배율 ×{Comeback(team):0.#})");
         }
 
@@ -280,6 +305,8 @@ namespace ChessFight.RagdollLab
             if (!ultCommitted || s == null || planPhase != PlanPhase.Windup) return;
             GaugeNow = Mathf.Max(GaugeNow, s.gaugeCutKeep);
             GaugeMoved();
+            int back = TeamIndex(team);
+            if (back >= 0) teamUltSpent[back] = false;   // cut in its warning: not spent, the team's again
             PopOver(this, PopUltCut);
             Log($"{DisplayName}: 궁극기가 예고 중에 끊김 — 게이지 {s.gaugeCutKeep * 100f:0}% 남음");
         }

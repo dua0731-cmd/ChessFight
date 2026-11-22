@@ -72,6 +72,13 @@ namespace ChessFight.RagdollLab
         // stretch, a dash; count: its part; size: its width), a warning on the floor (at; size: its radius; count: its
         // kind) and a change of the body (count: the new state; size: a scale).
         DriveLand, DriveLine, DriveWarn, DriveState,
+        // The support slot (11-22, RagdollPawn.Support.cs; by: the leader, target: the one called): the call (at: where what
+        // comes starts - the leader's feet, the rope's top, the bridge's or the chain's far end; normal: where it ends; dir:
+        // toward the leader; count: the leader's piece; size: the answer's seconds), the answer (count: the section used, -1
+        // a rider along the bridge; size: the piece), a step on the way (count 1 the horse's leap, 2 the drone set down, or
+        // a chain's pawn: count its place, size 1 thrown over, -1 toppled), cut on the way, called off, and arrived (count:
+        // the leader's rescues; size: the gauge it gave). Last, so no kind's number moves.
+        SupCall, SupGo, SupStep, SupCut, SupCancel, SupSaved,
     }
 
     public struct SkillFxEvent
@@ -221,6 +228,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Drop whatever skill is under way and start the cooldown over (the test bed's piece switch).</summary>
         public void ResetSkill()
         {
+            SupportReset();   // (a support it was in ends: RagdollPawn.Support.cs)
             ClearSkills();
             for (int k = 0; k < slotCd.Length; k++) slotCd[k] = slotCdTotal[k] = 0f;
             activeSlot = -1;
@@ -320,6 +328,7 @@ namespace ChessFight.RagdollLab
             skillGrabRaw = input.grab;
             PreLassoDrag();          // 10-26: a bishop's rope's drag of the last step taken off before the run
             HoldKeysForKingCall();   // R146: on its way in to its king
+            SupportKeys();           // 11-22: G's press, the leader standing for its support, the one carried (RagdollPawn.Support.cs)
             ChainGrabKey();          // R153: a rook's chain handle held out to it (the right click), or riding the chain
             PlanKeys();              // plan 1-나: in a castling's flight
             if (Aiming)
@@ -397,6 +406,15 @@ namespace ChessFight.RagdollLab
             TrackGetUp(s);
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
+            // 11-22: the support slot - the leader's G and its stand, the one called answering with its key and carried
+            // (RagdollPawn.Support.cs).
+            press = UpdateSupportLeader(s, press, dt);
+            press = UpdateSupportMate(s, press, dt);
+            if (supCarry)
+            {
+                DrawSkillMarks(s);
+                return;
+            }
             // R153: pulled in on a rook's chain.
             if (kingCarry || UpdateChainCarry(s, dt))
             {
