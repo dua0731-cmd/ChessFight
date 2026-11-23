@@ -1,0 +1,346 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1380" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+<rect width="1180" height="1380" fill="#fbf6ea"/>
+<text x="34.0" y="34.0" font-size="19" text-anchor="start" font-weight="bold" fill="#2b2622">대연회장 레벨 디자인 초안 v0.1 — 부엌에서 왕의 식탁까지, 한 접시가 가는 길</text>
+<text x="34.0" y="56.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">위에서 본 배치(전체와 북쪽 확대)와 길을 펴서 본 높이. 주황 = 타는 면, 보라 = 움직이는 것, 청회색 = 못 잡는 면. 단위 m.</text>
+<text x="34.0" y="86.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">전체</text>
+<clipPath id="whole"><rect x="34.0" y="96.0" width="324.0" height="612.0"/></clipPath>
+<g clip-path="url(#whole)">
+<rect x="34.0" y="96.0" width="324.0" height="612.0" fill="#e9e2d2" stroke="none" stroke-width="0.0" />
+<circle cx="145.6" cy="296.4" r="51.6" fill="#e7a48f" stroke="#c8472f" stroke-width="1.5" />
+<rect x="94.0" y="384.0" width="72.0" height="228.0" fill="#f3e6c8" stroke="#8a5a36" stroke-width="2.0" />
+<rect x="115.0" y="384.0" width="30.0" height="216.0" fill="#6f8a4b" stroke="none" stroke-width="0.0" opacity="0.75"/>
+<rect x="94.0" y="612.0" width="12.0" height="6.0" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="106.0" y="612.0" width="12.0" height="6.0" fill="#b9a2dc" stroke="#2b2622" stroke-width="0.8" />
+<rect x="118.0" y="612.0" width="12.0" height="6.0" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="130.0" y="612.0" width="12.0" height="6.0" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="142.0" y="612.0" width="12.0" height="6.0" fill="#b9a2dc" stroke="#2b2622" stroke-width="0.8" />
+<rect x="154.0" y="612.0" width="12.0" height="6.0" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="166.0" y="570.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="89.2" y="570.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="166.0" y="522.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="89.2" y="522.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="166.0" y="474.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="89.2" y="474.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="166.0" y="426.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="89.2" y="426.0" width="4.8" height="12.0" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="94.0" y="555.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="106.0" cy="558.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="112.6" y1="558.0" x2="127.6" y2="558.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="159.4" y="555.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="154.0" cy="558.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="147.4" y1="558.0" x2="132.4" y2="558.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="94.0" y="507.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="106.0" cy="510.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="112.6" y1="510.0" x2="127.6" y2="510.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="159.4" y="507.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="154.0" cy="510.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="147.4" y1="510.0" x2="132.4" y2="510.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="94.0" y="459.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="106.0" cy="462.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="112.6" y1="462.0" x2="127.6" y2="462.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="159.4" y="459.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="154.0" cy="462.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="147.4" y1="462.0" x2="132.4" y2="462.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="94.0" y="411.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="106.0" cy="414.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="112.6" y1="414.0" x2="127.6" y2="414.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="159.4" y="411.0" width="6.6" height="6.0" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="154.0" cy="414.0" r="7.8" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="147.4" y1="414.0" x2="132.4" y2="414.0" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<circle cx="130.0" cy="357.0" r="25.2" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="130.0" cy="357.0" r="19.2" fill="#f0d9a8" stroke="#e8853a" stroke-width="3.0" />
+<line x1="125.0" y1="338.5" x2="119.7" y2="318.5" stroke="#c9972e" stroke-width="5.0" />
+<circle cx="116.6" cy="306.9" r="12.0" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="116.6" cy="306.9" r="6.0" fill="#fff6dd" stroke="#e8853a" stroke-width="3.0" />
+<line x1="134.0" y1="338.2" x2="135.2" y2="332.4" stroke="#c9972e" stroke-width="5.0" />
+<circle cx="137.7" cy="320.6" r="12.0" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="137.7" cy="320.6" r="6.0" fill="#fff6dd" stroke="#e8853a" stroke-width="3.0" />
+<line x1="142.1" y1="342.1" x2="155.1" y2="326.1" stroke="#c9972e" stroke-width="5.0" />
+<circle cx="162.6" cy="316.7" r="12.0" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="162.6" cy="316.7" r="6.0" fill="#fff6dd" stroke="#e8853a" stroke-width="3.0" />
+<circle cx="214.8" cy="218.6" r="51.6" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="214.8" cy="218.6" r="42.0" fill="#f9d9d2" stroke="none" stroke-width="0.0" />
+<circle cx="214.8" cy="218.6" r="42.0" fill="none" stroke="#8fa0ad" stroke-width="3.0" />
+<path d="M 214.8 176.6 A 42.0 42.0 0 0 1 247.0 191.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 256.8 218.6 A 42.0 42.0 0 0 1 241.8 250.8" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 214.8 260.6 A 42.0 42.0 0 0 1 182.6 245.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 172.8 218.6 A 42.0 42.0 0 0 1 187.8 186.5" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<circle cx="214.8" cy="218.6" r="33.0" fill="#fbe6df" stroke="none" stroke-width="0.0" />
+<circle cx="214.8" cy="218.6" r="33.0" fill="none" stroke="#8fa0ad" stroke-width="3.0" />
+<path d="M 226.1 187.6 A 33.0 33.0 0 0 1 245.8 207.4" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 245.8 229.9 A 33.0 33.0 0 0 1 226.1 249.7" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 203.5 249.7 A 33.0 33.0 0 0 1 183.8 229.9" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 183.8 207.4 A 33.0 33.0 0 0 1 203.5 187.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<circle cx="214.8" cy="218.6" r="24.0" fill="#fdf1ec" stroke="none" stroke-width="0.0" />
+<circle cx="214.8" cy="218.6" r="24.0" fill="none" stroke="#8fa0ad" stroke-width="3.0" />
+<path d="M 230.2 200.3 A 24.0 24.0 0 0 1 238.8 218.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 233.2 234.1 A 24.0 24.0 0 0 1 214.8 242.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 199.4 237.0 A 24.0 24.0 0 0 1 190.8 218.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 196.4 203.2 A 24.0 24.0 0 0 1 214.8 194.6" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<circle cx="214.8" cy="218.6" r="15.6" fill="#fffaf6" stroke="none" stroke-width="0.0" />
+<circle cx="214.8" cy="218.6" r="15.6" fill="none" stroke="#8fa0ad" stroke-width="3.0" />
+<path d="M 228.3 210.8 A 15.6 15.6 0 0 1 226.7 228.7" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 214.8 234.2 A 15.6 15.6 0 0 1 200.1 224.0" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<path d="M 201.3 210.8 A 15.6 15.6 0 0 1 217.5 203.3" fill="none" stroke="#e8853a" stroke-width="3.4"/>
+<circle cx="214.8" cy="218.6" r="6.6" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<circle cx="145.1" cy="286.0" r="15.6" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.0" fill-opacity="0.92"/>
+<circle cx="145.1" cy="286.0" r="3.0" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<circle cx="170.6" cy="249.6" r="15.6" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.0" fill-opacity="0.92"/>
+<circle cx="170.6" cy="249.6" r="3.0" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<line x1="224.9" y1="210.2" x2="276.8" y2="166.6" stroke="#b9c2c9" stroke-width="11.0" />
+<line x1="224.9" y1="210.2" x2="276.8" y2="166.6" stroke="#2b2622" stroke-width="0.8" />
+<rect x="271.0" y="96.0" width="78.0" height="87.0" fill="#efe2bf" stroke="#8a5a36" stroke-width="2.0" />
+<polyline points="130.0,708.0 130.0,614.4 130.0,609.6 130.0,384.0 130.0,378.0 130.0,373.2 136.1,328.2 137.7,320.6 141.9,301.2 154.0,273.2 161.6,262.4 183.3,240.7 195.1,232.4 202.0,227.6 202.0,227.6 224.9,210.2 276.8,166.6 310.0,96.0" fill="none" stroke="#3a3531" stroke-width="1.6" stroke-dasharray="6 4"/>
+<path d="M 144.4 677.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 144.4 596.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 144.4 404.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 144.4 362.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 306.4 158.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+</g>
+<rect x="34.0" y="96.0" width="324.0" height="612.0" fill="none" stroke="#2b2622" stroke-width="1.5"/>
+<rect x="76.0" y="98.0" width="280.0" height="292.0" fill="none" stroke="#6b6258" stroke-width="1.2" stroke-dasharray="5 4"/>
+<path d="M 130.0 696.0 l -6 12 l 12 0 z" fill="#3a3531"/>
+<text x="142.0" y="702.0" font-size="11" text-anchor="start" font-weight="normal" fill="#2b2622">입구 · 부엌 통로 0 m</text>
+<line x1="148.0" y1="615.0" x2="184.0" y2="632.0" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="148.0" cy="615.0" r="2" fill="#6b6258"/>
+<text x="188.0" y="636.0" font-size="12" text-anchor="start" font-weight="bold" fill="#8a5cc2">① 흐르는 식탁보</text>
+<text x="188.0" y="650.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">여섯 줄이 위로 감겼다</text>
+<text x="188.0" y="664.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">아래로 미끄러진다</text>
+<line x1="145.0" y1="486.0" x2="184.0" y2="470.0" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="145.0" cy="486.0" r="2" fill="#6b6258"/>
+<text x="188.0" y="474.0" font-size="12" text-anchor="start" font-weight="bold" fill="#8a5cc2">② 건배하는 식탁 · 4.4</text>
+<text x="188.0" y="488.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">잔 네 쌍이 차례로 부딪친다</text>
+<text x="188.0" y="502.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">그때마다 러너가 뒤로 당겨진다</text>
+<line x1="170.8" y1="528.0" x2="184.0" y2="548.0" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="170.8" cy="528.0" r="2" fill="#6b6258"/>
+<text x="188.0" y="552.0" font-size="12" text-anchor="start" font-weight="bold" fill="#e8853a">옆 식탁보</text>
+<text x="188.0" y="566.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">떨어지면 다시 오르는 곳</text>
+<text x="190.0" y="423.0" font-size="11" text-anchor="start" font-weight="normal" fill="#6b6258">북쪽은 오른쪽에 크게 →</text>
+<text x="40.0" y="684.0" font-size="11" text-anchor="start" font-weight="normal" fill="#6b6258">부엌 바닥 0 m</text>
+<text x="40.0" y="697.0" font-size="10" text-anchor="start" font-weight="normal" fill="#6b6258">(떨어져도 산다)</text>
+<text x="420.0" y="86.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">북쪽 확대 — 촛대 · 샹들리에 · 케이크 · 발코니</text>
+<clipPath id="north"><rect x="420.0" y="96.0" width="545.2" height="568.4"/></clipPath>
+<g clip-path="url(#north)">
+<rect x="338.8" y="96.0" width="626.4" height="1183.2" fill="#e9e2d2" stroke="none" stroke-width="0.0" />
+<circle cx="554.6" cy="483.4" r="99.8" fill="#e7a48f" stroke="#c8472f" stroke-width="1.5" />
+<rect x="454.8" y="652.8" width="139.2" height="440.8" fill="#f3e6c8" stroke="#8a5a36" stroke-width="2.0" />
+<rect x="495.4" y="652.8" width="58.0" height="417.6" fill="#6f8a4b" stroke="none" stroke-width="0.0" opacity="0.75"/>
+<rect x="454.8" y="1093.6" width="23.2" height="11.6" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="478.0" y="1093.6" width="23.2" height="11.6" fill="#b9a2dc" stroke="#2b2622" stroke-width="0.8" />
+<rect x="501.2" y="1093.6" width="23.2" height="11.6" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="524.4" y="1093.6" width="23.2" height="11.6" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="547.6" y="1093.6" width="23.2" height="11.6" fill="#b9a2dc" stroke="#2b2622" stroke-width="0.8" />
+<rect x="570.8" y="1093.6" width="23.2" height="11.6" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.8" />
+<rect x="594.0" y="1012.4" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="445.5" y="1012.4" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="594.0" y="919.6" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="445.5" y="919.6" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="594.0" y="826.8" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="445.5" y="826.8" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="594.0" y="734.0" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="445.5" y="734.0" width="9.3" height="23.2" fill="#e8853a" stroke="#2b2622" stroke-width="0.6" />
+<rect x="454.8" y="983.4" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="478.0" cy="989.2" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="490.8" y1="989.2" x2="519.8" y2="989.2" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="581.2" y="983.4" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="570.8" cy="989.2" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="558.0" y1="989.2" x2="529.0" y2="989.2" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="454.8" y="890.6" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="478.0" cy="896.4" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="490.8" y1="896.4" x2="519.8" y2="896.4" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="581.2" y="890.6" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="570.8" cy="896.4" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="558.0" y1="896.4" x2="529.0" y2="896.4" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="454.8" y="797.8" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="478.0" cy="803.6" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="490.8" y1="803.6" x2="519.8" y2="803.6" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="581.2" y="797.8" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="570.8" cy="803.6" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="558.0" y1="803.6" x2="529.0" y2="803.6" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="454.8" y="705.0" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="478.0" cy="710.8" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="490.8" y1="710.8" x2="519.8" y2="710.8" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<rect x="581.2" y="705.0" width="12.8" height="11.6" fill="#8fa0ad" stroke="none" stroke-width="0.0" />
+<circle cx="570.8" cy="710.8" r="15.1" fill="#d9c6ea" stroke="#8a5cc2" stroke-width="1.4" />
+<line x1="558.0" y1="710.8" x2="529.0" y2="710.8" stroke="#8a5cc2" stroke-width="1.2" stroke-dasharray="3 2"/>
+<circle cx="524.4" cy="600.6" r="48.7" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="524.4" cy="600.6" r="37.1" fill="#f0d9a8" stroke="#e8853a" stroke-width="5.8" />
+<line x1="514.8" y1="564.7" x2="504.4" y2="526.2" stroke="#c9972e" stroke-width="9.7" />
+<circle cx="498.4" cy="503.8" r="23.2" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="498.4" cy="503.8" r="11.6" fill="#fff6dd" stroke="#e8853a" stroke-width="5.8" />
+<line x1="532.1" y1="564.3" x2="534.5" y2="552.9" stroke="#c9972e" stroke-width="9.7" />
+<circle cx="539.4" cy="530.3" r="23.2" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="539.4" cy="530.3" r="11.6" fill="#fff6dd" stroke="#e8853a" stroke-width="5.8" />
+<line x1="547.8" y1="571.8" x2="572.9" y2="540.8" stroke="#c9972e" stroke-width="9.7" />
+<circle cx="587.5" cy="522.8" r="23.2" fill="#f0d9a8" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="587.5" cy="522.8" r="11.6" fill="#fff6dd" stroke="#e8853a" stroke-width="5.8" />
+<circle cx="688.3" cy="333.1" r="99.8" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="688.3" cy="333.1" r="81.2" fill="#f9d9d2" stroke="none" stroke-width="0.0" />
+<circle cx="688.3" cy="333.1" r="81.2" fill="none" stroke="#8fa0ad" stroke-width="5.8" />
+<path d="M 688.3 251.9 A 81.2 81.2 0 0 1 750.5 280.9" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 769.5 333.1 A 81.2 81.2 0 0 1 740.5 395.3" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 688.3 414.3 A 81.2 81.2 0 0 1 626.1 385.3" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 607.1 333.1 A 81.2 81.2 0 0 1 636.1 270.9" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<circle cx="688.3" cy="333.1" r="63.8" fill="#fbe6df" stroke="none" stroke-width="0.0" />
+<circle cx="688.3" cy="333.1" r="63.8" fill="none" stroke="#8fa0ad" stroke-width="5.8" />
+<path d="M 710.2 273.2 A 63.8 63.8 0 0 1 748.3 311.3" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 748.3 354.9 A 63.8 63.8 0 0 1 710.2 393.1" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 666.5 393.1 A 63.8 63.8 0 0 1 628.4 354.9" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 628.4 311.3 A 63.8 63.8 0 0 1 666.5 273.2" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<circle cx="688.3" cy="333.1" r="46.4" fill="#fdf1ec" stroke="none" stroke-width="0.0" />
+<circle cx="688.3" cy="333.1" r="46.4" fill="none" stroke="#8fa0ad" stroke-width="5.8" />
+<path d="M 718.2 297.6 A 46.4 46.4 0 0 1 734.7 333.1" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 723.9 362.9 A 46.4 46.4 0 0 1 688.3 379.5" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 658.5 368.7 A 46.4 46.4 0 0 1 641.9 333.1" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 652.8 303.3 A 46.4 46.4 0 0 1 688.3 286.7" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<circle cx="688.3" cy="333.1" r="30.2" fill="#fffaf6" stroke="none" stroke-width="0.0" />
+<circle cx="688.3" cy="333.1" r="30.2" fill="none" stroke="#8fa0ad" stroke-width="5.8" />
+<path d="M 714.5 318.0 A 30.2 30.2 0 0 1 711.4 352.5" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 688.3 363.3 A 30.2 30.2 0 0 1 660.0 343.4" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<path d="M 662.2 318.0 A 30.2 30.2 0 0 1 693.6 303.4" fill="none" stroke="#e8853a" stroke-width="6.2"/>
+<circle cx="688.3" cy="333.1" r="12.8" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<circle cx="553.6" cy="463.3" r="30.2" fill="#f7e3a6" stroke="#e8853a" stroke-width="5.8" fill-opacity="0.92"/>
+<circle cx="553.6" cy="463.3" r="5.8" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<circle cx="602.8" cy="393.0" r="30.2" fill="#f7e3a6" stroke="#e8853a" stroke-width="5.8" fill-opacity="0.92"/>
+<circle cx="602.8" cy="393.0" r="5.8" fill="#c9972e" stroke="#2b2622" stroke-width="0.8" />
+<line x1="707.9" y1="316.7" x2="808.3" y2="232.4" stroke="#b9c2c9" stroke-width="21.3" />
+<line x1="707.9" y1="316.7" x2="808.3" y2="232.4" stroke="#2b2622" stroke-width="0.8" />
+<rect x="797.0" y="96.0" width="150.8" height="168.2" fill="#efe2bf" stroke="#8a5a36" stroke-width="2.0" />
+<polyline points="524.4,1279.2 524.4,1098.2 524.4,1089.0 524.4,652.8 524.4,641.2 524.4,631.9 536.2,545.0 539.4,530.3 547.3,492.8 570.9,438.6 585.5,417.7 627.5,375.7 650.3,359.7 663.6,350.4 663.6,350.4 707.9,316.7 808.3,232.4 872.4,96.0" fill="none" stroke="#3a3531" stroke-width="1.6" stroke-dasharray="6 4"/>
+<path d="M 552.2 1214.6 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 552.2 1058.0 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 552.2 686.8 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 552.2 605.6 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 865.4 211.2 v -14 l 10 4.5 l -10 4.5" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+</g>
+<rect x="420.0" y="96.0" width="545.2" height="568.4" fill="none" stroke="#2b2622" stroke-width="1.5"/>
+<line x1="561.5" y1="612.2" x2="663.6" y2="619.8" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="561.5" cy="612.2" r="2" fill="#6b6258"/>
+<text x="667.6" y="623.8" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">③ 촛대 받침 · 위 7.4</text>
+<text x="667.6" y="637.8" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">기둥 3.0 m를 오른다 (체크포인트)</text>
+<line x1="599.1" y1="522.8" x2="681.0" y2="550.2" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="599.1" cy="522.8" r="2" fill="#6b6258"/>
+<text x="685.0" y="554.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">초 셋 · 위 10.6</text>
+<text x="685.0" y="568.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">촛농이 흘러내린다 — 옆으로 피하며 3.2 m</text>
+<line x1="583.7" y1="463.3" x2="704.2" y2="486.4" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="583.7" cy="463.3" r="2" fill="#6b6258"/>
+<text x="708.2" y="490.4" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">④ 샹들리에 1 · 위 13.2</text>
+<text x="708.2" y="504.4" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">초 위에서 치마에 뛰어 붙는다</text>
+<text x="708.2" y="518.4" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">앞뒤로 ±0.9 m 흔들린다</text>
+<line x1="572.7" y1="386.0" x2="429.3" y2="318.2" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="572.7" cy="386.0" r="2" fill="#6b6258"/>
+<text x="433.3" y="322.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">샹들리에 2 · 위 10.4</text>
+<text x="433.3" y="336.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">1에서 2.8 m 뛰어내린다</text>
+<line x1="485.0" y1="460.2" x2="429.3" y2="411.0" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="485.0" cy="460.2" r="2" fill="#6b6258"/>
+<text x="433.3" y="415.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">수프 솥</text>
+<text x="433.3" y="429.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">빠지면 끝</text>
+<line x1="769.5" y1="350.5" x2="802.8" y2="364.6" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="769.5" cy="350.5" r="2" fill="#6b6258"/>
+<text x="806.8" y="368.6" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑤ 케이크 4단</text>
+<text x="806.8" y="382.6" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">층 위: 7.4 · 10.2 · 13.0 · 15.8</text>
+<text x="806.8" y="396.6" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">층마다 반대로 돈다</text>
+<text x="806.8" y="410.6" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">주황 = 크림(잡힌다)</text>
+<text x="806.8" y="424.6" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">청회색 = 퐁당(못 잡는다)</text>
+<line x1="763.7" y1="393.4" x2="802.8" y2="440.0" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="763.7" cy="393.4" r="2" fill="#6b6258"/>
+<text x="806.8" y="444.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">케이크 식탁 · 4.4</text>
+<text x="806.8" y="458.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">떨어지면 여기서 다시 오른다</text>
+<line x1="758.1" y1="268.8" x2="588.2" y2="173.2" stroke="#6b6258" stroke-width="0.8"/>
+<circle cx="758.1" cy="268.8" r="2" fill="#6b6258"/>
+<text x="592.2" y="177.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑥ 케이크 칼</text>
+<text x="592.2" y="191.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">칼등을 걸어 발코니로</text>
+<text x="872.4" y="159.8" font-size="12" text-anchor="middle" font-weight="bold" fill="#2b2622">왕의 발코니 · 15.4</text>
+<path d="M 872.4 80.0 l -6 12 l 12 0 z" fill="#3a3531"/>
+<text x="884.4" y="74.0" font-size="11" text-anchor="start" font-weight="normal" fill="#2b2622">출구</text>
+<text x="429.3" y="647.0" font-size="11" text-anchor="start" font-weight="normal" fill="#8a5a36">긴 식탁의 북쪽 끝 · 4.4</text>
+<text x="34.0" y="752.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">길을 펴서 본 높이 — 가로는 걸어간 거리, 세로는 높이. 굵은 주황 = 벽을 타는 곳, 보라 점선 = 뛰는 곳</text>
+<rect x="66.0" y="767.4" width="1018.1" height="252.6" fill="#f4eedf" stroke="#2b2622" stroke-width="1"/>
+<line x1="66.0" y1="1004.0" x2="1084.1" y2="1004.0" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1008.0" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">0.0</text>
+<line x1="66.0" y1="946.8" x2="1084.1" y2="946.8" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="950.8" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">4.4</text>
+<line x1="66.0" y1="907.8" x2="1084.1" y2="907.8" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="911.8" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">7.4</text>
+<line x1="66.0" y1="866.2" x2="1084.1" y2="866.2" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="870.2" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">10.6</text>
+<line x1="66.0" y1="832.4" x2="1084.1" y2="832.4" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="836.4" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">13.2</text>
+<line x1="66.0" y1="798.6" x2="1084.1" y2="798.6" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="802.6" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">15.8</text>
+<line x1="80.0" y1="1004.0" x2="214.2" y2="1004.0" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="214.2" y1="1004.0" x2="221.0" y2="946.8" stroke="#e8853a" stroke-width="5"/>
+<line x1="221.0" y1="946.8" x2="544.4" y2="946.8" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="544.4" y1="946.8" x2="553.0" y2="946.8" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="553.0" y1="946.8" x2="559.9" y2="907.8" stroke="#e8853a" stroke-width="5"/>
+<line x1="559.9" y1="907.8" x2="624.9" y2="907.8" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="624.9" y1="907.8" x2="636.1" y2="866.2" stroke="#e8853a" stroke-width="5"/>
+<path d="M 636.1 866.2 Q 650.3 814.4 664.5 832.4" fill="none" stroke="#8a5cc2" stroke-width="2" stroke-dasharray="5 3"/>
+<line x1="664.5" y1="832.4" x2="708.3" y2="832.4" stroke="#3a3531" stroke-width="2.4"/>
+<path d="M 708.3 832.4 Q 717.8 814.4 727.2 868.8" fill="none" stroke="#8a5cc2" stroke-width="2" stroke-dasharray="5 3"/>
+<line x1="727.2" y1="868.8" x2="771.3" y2="868.8" stroke="#3a3531" stroke-width="2.4"/>
+<path d="M 771.3 868.8 Q 781.6 817.0 791.9 835.0" fill="none" stroke="#8a5cc2" stroke-width="2" stroke-dasharray="5 3"/>
+<line x1="791.9" y1="835.0" x2="803.9" y2="835.0" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="803.9" y1="835.0" x2="803.9" y2="798.6" stroke="#e8853a" stroke-width="5"/>
+<line x1="803.9" y1="798.6" x2="845.2" y2="798.6" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="845.2" y1="798.6" x2="942.4" y2="803.8" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="942.4" y1="803.8" x2="1054.1" y2="803.8" stroke="#3a3531" stroke-width="2.4"/>
+<text x="224.2" y="982.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">① 흐르는 식탁보</text>
+<text x="224.2" y="996.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">+4.4 m</text>
+<text x="281.0" y="934.8" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">② 건배하는 식탁</text>
+<text x="281.0" y="948.8" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">쉬는 구간 38 m</text>
+<text x="475.9" y="873.8" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">③ 촛대</text>
+<text x="475.9" y="887.8" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">+3.0, +3.2 m</text>
+<text x="624.5" y="806.4" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">④ 샹들리에</text>
+<text x="624.5" y="820.4" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">뛰어 붙기 +2.6 · 뛰어내림 −2.8</text>
+<text x="773.9" y="883.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑤ 케이크</text>
+<text x="773.9" y="897.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">뛰어 붙기 +2.6 · 4층 +2.8</text>
+<text x="855.2" y="782.6" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑥ 칼 다리 · 발코니</text>
+<text x="855.2" y="796.6" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">출구 15.4 m</text>
+<text x="1084.1" y="1038.0" font-size="11" text-anchor="end" font-weight="normal" fill="#2b2622">길 약 128 m · 오르는 높이를 다 더하면 19 m</text>
+<text x="34.0" y="1076.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">구간</text>
+<text x="1146.0" y="1076.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">높이 (m)</text>
+<line x1="34" y1="1085.0" x2="1146" y2="1085.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1103.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">①</text>
+<text x="60.0" y="1103.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">흐르는 식탁보</text>
+<text x="214.0" y="1103.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">식탁보 여섯 줄이 위로 감겼다 아래로 미끄러진다. 올라가는 줄에 매달리면 공짜로 오른다</text>
+<text x="1146.0" y="1103.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">0 → 4.4</text>
+<line x1="34" y1="1112.0" x2="1146" y2="1112.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1130.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">②</text>
+<text x="60.0" y="1130.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">건배하는 식탁</text>
+<text x="214.0" y="1130.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">잔 네 쌍이 차례로 '챙' 하고 부딪치고, 그때마다 러너가 뒤로 당겨진다. 벽타기 사이의 쉬는 구간</text>
+<text x="1146.0" y="1130.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">4.4</text>
+<line x1="34" y1="1139.0" x2="1146" y2="1139.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1157.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">③</text>
+<text x="60.0" y="1157.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">큰 촛대</text>
+<text x="214.0" y="1157.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">받침 기둥을 오르고, 촛농이 흘러내리는 초 셋 가운데 하나를 옆으로 피하며 오른다</text>
+<text x="1146.0" y="1157.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">→ 7.4 → 10.6</text>
+<line x1="34" y1="1166.0" x2="1146" y2="1166.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1184.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">④</text>
+<text x="60.0" y="1184.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">샹들리에</text>
+<text x="214.0" y="1184.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">흔들리는 샹들리에의 크리스털 치마에 뛰어 붙어 오르고, 다음 샹들리에로 뛰어내린다</text>
+<text x="1146.0" y="1184.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">→ 13.2 → 10.4</text>
+<line x1="34" y1="1193.0" x2="1146" y2="1193.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1211.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">⑤</text>
+<text x="60.0" y="1211.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">케이크</text>
+<text x="214.0" y="1211.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">층마다 반대로 도는 케이크. 크림 줄만 잡힌다 — 뛰어 붙거나, 줄이 돌아올 때를 기다려 오른다</text>
+<text x="1146.0" y="1211.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">→ 13.0 → 15.8</text>
+<line x1="34" y1="1220.0" x2="1146" y2="1220.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1238.0" font-size="14" text-anchor="start" font-weight="bold" fill="#2b2622">⑥</text>
+<text x="60.0" y="1238.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">케이크 칼과 발코니</text>
+<text x="214.0" y="1238.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">꼭대기 층에 걸친 칼등을 걸어 왕의 발코니로, 출구</text>
+<text x="1146.0" y="1238.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">15.4</text>
+<text x="34.0" y="1274.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">벽타기가 쓰이는 모양 넷 — 실려 가기(①) · 피하며 오르기(③) · 뛰어 붙기(④ ⑤) · 도는 벽 읽기(⑤)</text>
+<text x="34.0" y="1295.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">떨어지면 대개 죽지 않는다: 부엌 바닥에 떨어져 식탁보를 타고 다시 올라온다. 끝나는 곳은 수프 솥 하나뿐이다.</text>
+<text x="34.0" y="1314.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">한 번에 오르는 높이는 폰 스테미나의 46% 이하, 룩의 65% 이하. 매달려 기다리는 동안은 스테미나가 줄지 않는다.</text>
+<rect x="34.0" y="1338.0" width="18" height="11" fill="#e8853a" stroke="#2b2622" stroke-width="0.6"/>
+<text x="59.0" y="1348.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">타는 면</text>
+<rect x="130.0" y="1338.0" width="18" height="11" fill="#8a5cc2" stroke="#2b2622" stroke-width="0.6"/>
+<text x="155.0" y="1348.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">움직이는 것</text>
+<rect x="252.0" y="1338.0" width="18" height="11" fill="#8fa0ad" stroke="#2b2622" stroke-width="0.6"/>
+<text x="277.0" y="1348.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">못 잡는 면</text>
+<rect x="374.0" y="1338.0" width="18" height="11" fill="#e7a48f" stroke="#2b2622" stroke-width="0.6"/>
+<text x="399.0" y="1348.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">수프(끝)</text>
+<rect x="483.0" y="1338.0" width="18" height="11" fill="#3f8f5a" stroke="#2b2622" stroke-width="0.6"/>
+<text x="508.0" y="1348.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">체크포인트</text>
+</svg>

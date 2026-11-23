@@ -21,7 +21,7 @@
 |---|---|
 | 1 초반 장애물 | 왕실 수로 정원 · 왕실 마차뜰(R508 구간 모드) |
 | 2 미니게임 1(첫째 관문 · 성문) | C 해자 도개교 · D 쇠살문 누각 · A 의장 광장 |
-| 3 중반 장애물 | 대계단 현관홀. 초안(회색 상자 — 코스 프리팹 시험 숫자 4와 구간 검사에만 나오고 판은 뽑지 않음, R780): **왕실 시계탑** — 계단 없는 벽타기 구간([설계 · 회색 상자](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)) |
+| 3 중반 장애물 | 대계단 현관홀. 초안(회색 상자 — 코스 프리팹 시험 숫자 4와 구간 검사에만 나오고 판은 뽑지 않음, R780): **왕실 시계탑** — 계단 없는 벽타기 구간([설계 · 회색 상자](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)). 기획 초안(문서 · 그림만, R787): **대연회장** — 식탁보 · 촛대 · 샹들리에 · 케이크를 타고 오르는 구간([설계](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.1.md)) |
 | 4 미니게임 2(둘째 관문 · 윗궁 문) | B 동관 · E 서고 · F 무도회장 · J 세탁장 · G 행차 회랑 · H 체스 홀 · I 침실(R691) |
 | 5 후반 장애물 | 국왕 작전실 · 왕의 서재 → 거인 체스(R706). 초안(회색 상자 — 코스 프리팹 시험과 구간 검사에만 나오고 판은 뽑지 않음, R712): 왕실 천문대 · **왕실 금고실**(R725, [금고실 §1 · §10](PAWN_RUSH_ROYAL_VAULT.md)) |
 | 6 엔딩 | 국왕 알현실 자리의 임시 바닥 |
@@ -41,6 +41,7 @@
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
 | 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
 | 중반 장애물(코스 2) 왕실 시계탑 — 벽타기 구간의 레벨 디자인 초안과 재미 검증(R775) · 회색 상자(R780: 코스 프리팹 시험 숫자 4, 판에는 아직 없음, 사용자 Unity 확인 전) | **[PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)** · 그림 [입체](Mockups/R775_RoyalClockTower_Iso.svg) · [위 · 옆](Mockups/R775_RoyalClockTower.svg) · [장치와 ㄱ자 · 반원](Mockups/R775_RoyalClockTower_Devices.svg) · 스크립트 `Tools/RoyalClockTower/` |
+| 중반 장애물(코스 2) 대연회장 — 벽타기를 쓰는 구간의 레벨 디자인 초안(R787: 문서 · 그림만, Unity에 만든 것 없음, 사용자 검수 전) | **[PAWN_RUSH_BANQUET_HALL_DESIGN_v0.1](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.1.md)** · [배치도 · 높이](Mockups/R787_BanquetHall.svg) · [입체 미리보기](ConceptArt/R787_BanquetHall/banquet_blockout_v1.png) · [컨셉 아트](ConceptArt/R787_BanquetHall/banquet_concept.webp) · 스크립트 `ArtSource/PawnRush/BanquetHall/` |
 | 후반 장애물 왕실 천문대 — 레벨 디자인 초안(R711) · 회색 상자(R712 → R720 구조 v0.3으로 다시 지음 → R721 달려 본 뒤 고침: 코스 프리팹 시험 6번, 판에는 아직 없음) | **[구조안 v0.3(R716, 검수 전)](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md)** · **[새 장애물 여덟 종(R717)](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md)** · [PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md) · [배치도](Mockups/R711_RoyalObservatory.svg) · [비트별 의도 · 예상 행동(R713)](PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md) |
 | 후반 장애물 왕실 금고실 — 사용자 기획서 A안의 회색 모형(R725: 코스 프리팹 시험 7번 · 맵 시험, 판에는 아직 없음)·봇 재미 검증 | [PAWN_RUSH_ROYAL_VAULT](PAWN_RUSH_ROYAL_VAULT.md) · [사용자 기획서 v0.1](PAWN_RUSH_ROYAL_VAULT_DESIGN_v0.1.md) · [제작 명세 v2](PAWN_RUSH_ROYAL_VAULT_SPEC_v2.md) |
 | 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
