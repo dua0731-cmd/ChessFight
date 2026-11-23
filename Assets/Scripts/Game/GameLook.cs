@@ -1,5 +1,6 @@
 #if CF_URP
 using System.Collections;
+using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -28,6 +29,8 @@ namespace ChessFight.Game
             SceneManager.sceneLoaded += Loaded;
             GameSettings.Changed -= BloomSetting;
             GameSettings.Changed += BloomSetting;
+            GameSettings.Changed -= ColourAidSetting;
+            GameSettings.Changed += ColourAidSetting;
         }
 
         // R674, settings → 화면 → 그래픽 품질 → 빛 번짐: off puts one global volume over every other one (the profile's,
@@ -52,6 +55,51 @@ namespace ChessFight.Game
                 noBloom.sharedProfile = profile;
             }
             noBloom.enabled = off;
+        }
+
+        // R792, settings → 접근성 → 색약 모드: one global volume over every other one (priority 1001, above the no-bloom
+        // one) whose channel mixer is Core ColourAid's correction for the kind and strength picked. Made the first time
+        // it is turned on, kept across scenes; off, disabled. Cameras that draw to the screen have post-processing on
+        // (Prepare); the menus and HUD are drawn after the cameras and keep their own colours.
+        static Volume colourAid;
+        static ChannelMixer colourMixer;
+        static int aidKind = -1;
+        static float aidStrength = -1f;
+
+        static void ColourAidSetting()
+        {
+            int kind = GameSettings.ColourAidKind;
+            float strength = GameSettings.ColourAidStrength;
+            bool on = kind != ColourAid.Off && strength > 0f;
+            if (colourAid == null)
+            {
+                if (!on) return;
+                var go = new GameObject("Game Look (colour aid)") { hideFlags = HideFlags.HideInHierarchy };
+                Object.DontDestroyOnLoad(go);
+                colourAid = go.AddComponent<Volume>();
+                colourAid.isGlobal = true;
+                colourAid.priority = 1001f;
+                var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                profile.name = "Game Look (colour aid)";
+                colourMixer = profile.Add<ChannelMixer>(false);
+                colourAid.sharedProfile = profile;
+            }
+            colourAid.enabled = on;
+            if (!on || (kind == aidKind && Mathf.Approximately(strength, aidStrength))) return;
+            aidKind = kind;
+            aidStrength = strength;
+            // URP's mixer takes percentages, -200..200, in the ACES grading's own space (ColourAid.InAces).
+            var m = ColourAid.InAces(ColourAid.Matrix(kind, strength));
+            float P(int i) => Mathf.Clamp(m[i] * 100f, -200f, 200f);
+            colourMixer.redOutRedIn.Override(P(0));
+            colourMixer.redOutGreenIn.Override(P(1));
+            colourMixer.redOutBlueIn.Override(P(2));
+            colourMixer.greenOutRedIn.Override(P(3));
+            colourMixer.greenOutGreenIn.Override(P(4));
+            colourMixer.greenOutBlueIn.Override(P(5));
+            colourMixer.blueOutRedIn.Override(P(6));
+            colourMixer.blueOutGreenIn.Override(P(7));
+            colourMixer.blueOutBlueIn.Override(P(8));
         }
 
         static void Prepare(ScriptableRenderContext context, Camera camera)
@@ -92,6 +140,7 @@ namespace ChessFight.Game
             if (mode != LoadSceneMode.Single) return;
             Soften(scene);
             BloomSetting();
+            ColourAidSetting();
             if (runner == null)
             {
                 var go = new GameObject("Game Look") { hideFlags = HideFlags.HideInHierarchy };

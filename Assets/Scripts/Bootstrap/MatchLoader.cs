@@ -329,7 +329,7 @@ namespace ChessFight.Game
         static void FillRoom(LoadingState state, SteamSession session)
         {
             int white = session.TeamCount(0), black = session.TeamCount(1), watching = session.Spectators.Count;
-            state.RoomCode = Spaced(session.Match);
+            state.RoomCode = StreamerMode.Code(Spaced(session.Match));   // R792: dots in streamer mode
             state.Rules = session.RoomRules;
             state.CanSetRules = session.CanSetRules;
             state.Expected = TeamReservations.TeamSize * 2;

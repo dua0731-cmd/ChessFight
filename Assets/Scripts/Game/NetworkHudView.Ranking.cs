@@ -385,8 +385,11 @@ namespace ChessFight.Game
             for (int m = 1; m <= 3; m++) row.Rank.EnableInClassList("rk-medal-" + m, place == m);
             SetIcon(row.Icon, e.Piece, 0);
             string name = e.Self && PlayerProfile.Name != "" ? PlayerProfile.Name : e.Name != "" ? e.Name : Loc.T("나");
+            // R792: another player as "플레이어 N", and no Steam picture, while streamer mode hides names.
+            bool hidden = !e.Self && StreamerMode.HideNames;
+            if (hidden) name = StreamerMode.Name(e.Id, name, false);
             row.Name.text = name;
-            SetFace(row, e.Self && e.Id == 0 ? RankSelfId : e.Id, name);
+            SetFace(row, e.Self && e.Id == 0 ? RankSelfId : e.Id, name, hidden);
             string tag = e.Self ? Loc.T("나") : e.Friend && rankScope != RankScope.Friends ? Loc.T("친구") : "";
             row.Tag.text = tag;
             row.Tag.EnableInClassList("rk-tag-me", e.Self);
@@ -407,9 +410,9 @@ namespace ChessFight.Game
 
         // R745: the Steam profile picture (Rankings.Face, from the Steam side); until it is there - or with no Steam -
         // a soft colour of the player's own and the name's first letter.
-        static void SetFace(RankRow row, ulong id, string name)
+        static void SetFace(RankRow row, ulong id, string name, bool hidden = false)
         {
-            var picture = Rankings.Face(id);
+            var picture = hidden ? null : Rankings.Face(id);
             if (picture != null)
             {
                 row.Face.style.backgroundImage = new StyleBackground(picture);

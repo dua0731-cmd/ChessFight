@@ -413,8 +413,9 @@ namespace ChessFight.Game
             row.AddToClassList("chat-line-" + Key(e.Channel));
             if (e.Notice) { row.AddToClassList("chat-line-notice"); row.Add(Text(e.Text, "chat-notice")); return row; }
             if (e.Mine) row.AddToClassList("chat-line-me");
-            // The Steam name the line came from.
-            var name = Text(e.Name, "chat-name");
+            // The Steam name the line came from (R792: another player's as "플레이어 N" while streamer mode hides names - a
+            // line kept from before it was turned on too; the view redraws on any settings change).
+            var name = Text(e.Mine || e.Sender == 0 ? e.Name : StreamerMode.Name(e.Sender, e.Name, false), "chat-name");
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);

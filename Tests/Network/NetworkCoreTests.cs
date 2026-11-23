@@ -3887,6 +3887,53 @@ public static class NetworkCoreTests
                 Check(StuckWatch.Back(orders, sections, metres, dist, 4, 0, 1f) == -1, "behind every checkpoint reached: none (the start)");
                 Check(StuckWatch.Back(orders, sections, metres, dist, 4, -1, 0f) == 2, "unmeasured: the nearest one");
                 Check(StuckWatch.Back(orders, new[] { -1, -1, -1, -1 }, metres, dist, 4, 2, 70f) == -1, "checkpoints the course cannot measure are not taken"); });
+            Test("Streamer mode (R792): others' names as a numbered player kept all run, mine and nameless ones stay, codes as dots", () => {
+                StreamerMode.Reset();
+                Check(StreamerMode.Name(5, "갬빗", false) == "갬빗" && StreamerMode.Code("42 6890 6151") == "42 6890 6151", "off: as they are");
+                int before = StreamerMode.Version;
+                StreamerMode.Set(true, true);
+                Check(StreamerMode.Version != before, "a change moves the version");
+                int at = StreamerMode.Version;
+                StreamerMode.Set(true, true);
+                Check(StreamerMode.Version == at, "the same settings again do not");
+                Check(StreamerMode.Number(5) == 1 && StreamerMode.Number(9) == 2 && StreamerMode.Number(5) == 1, "numbers in the order met, kept");
+                Check(StreamerMode.Name(5, "갬빗", false) == StreamerMode.Alias(5) && StreamerMode.Alias(5) != StreamerMode.Alias(9), "another player: a numbered player");
+                Check(StreamerMode.Alias(9).Contains("2"), "the number shows");
+                Check(StreamerMode.Name(9, "폰돌이", true) == "폰돌이" && StreamerMode.Name(0, "BOT 1", false) == "BOT 1", "mine, and one with no id, stay");
+                Check(StreamerMode.Listed(3, "앙파상", false).Contains("3") && StreamerMode.Listed(3, "앙파상", true) == "앙파상", "a stored name by its place, mine stays");
+                Check(StreamerMode.Code("42 6890 6151") == "●● ●●●● ●●●●" && StreamerMode.Code("") == "" && StreamerMode.Code(null) == null, "codes as dots, the gaps kept");
+                StreamerMode.Set(true, false);
+                Check(StreamerMode.Code("42 6890") == "42 6890" && StreamerMode.Name(5, "갬빗", false) != "갬빗", "each hides on its own");
+                StreamerMode.Reset();
+                Check(!StreamerMode.HideNames && !StreamerMode.HideCodes, "reset"); });
+            Test("Colour aid (R792): off is the identity, a grey stays grey, red and green apart for a red-green eye, the strength scales it", () => {
+                Func<float[], float[], float> gap = (a, b) => { float d = 0f; for (int i = 0; i < 9; i++) d = Math.Max(d, Math.Abs(a[i] - b[i])); return d; };
+                var identity = new float[] { 1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f };
+                Check(gap(ColourAid.Matrix(ColourAid.Off, 1f), identity) == 0f && gap(ColourAid.Matrix(ColourAid.Protan, 0f), identity) == 0f
+                      && gap(ColourAid.Matrix(9, 1f), identity) == 0f && gap(ColourAid.Matrix(ColourAid.Deutan, float.NaN), identity) == 0f, "off, no strength, unknown: identity");
+                for (int kind = ColourAid.Protan; kind <= ColourAid.Tritan; kind++)
+                {
+                    var m = ColourAid.Matrix(kind, 1f);
+                    foreach (float v in m) Check(!float.IsNaN(v) && !float.IsInfinity(v) && Math.Abs(v) < 2f, "a matrix URP's channel mixer can take (-200..200 %)");
+                    ColourAid.Apply(m, .5f, .5f, .5f, out float r, out float g, out float b);
+                    Check(Math.Abs(r - .5f) < 1e-3f && Math.Abs(g - .5f) < 1e-3f && Math.Abs(b - .5f) < 1e-3f, "a grey stays grey");
+                    var half = ColourAid.Matrix(kind, .5f);
+                    for (int i = 0; i < 9; i++) Check(Math.Abs(half[i] - (identity[i] + m[i]) * .5f) < 1e-5f, "half strength is halfway");
+                }
+                foreach (int kind in new[] { ColourAid.Protan, ColourAid.Deutan })
+                {
+                    ColourAid.Apply(ColourAid.Matrix(kind, 1f), 1f, 0f, 0f, out _, out float rg, out float rb);
+                    ColourAid.Apply(ColourAid.Matrix(kind, 1f), 0f, 1f, 0f, out _, out float gg, out float gb);
+                    Check(Math.Abs(rb - gb) > .3f, "red and green end up far apart in blue, which a red-green eye sees");
+                }
+                Check(gap(ColourAid.InAces(identity), identity) < 1e-3f, "in ACEScg the identity stays (near) the identity");
+                for (int kind = ColourAid.Protan; kind <= ColourAid.Tritan; kind++)
+                {
+                    var aces = ColourAid.InAces(ColourAid.Matrix(kind, 1f));
+                    ColourAid.Apply(aces, .4f, .4f, .4f, out float r, out float g, out float b);
+                    Check(Math.Abs(r - .4f) < 2e-3f && Math.Abs(g - .4f) < 2e-3f && Math.Abs(b - .4f) < 2e-3f, "and a grey stays grey there too");
+                    foreach (float v in aces) Check(Math.Abs(v) < 2f, "within the mixer's range there too");
+                } });
             Test("Host fitness (R533): the graphics card counts too - a fast one costs nothing, a slow one the square root of how much slower, never under 40%", () => {
                 int cpu = HostFitness.Base(40, 8, 16000, false);
                 Check(cpu == 1000 && HostFitness.Base(40, 8, 16000, false, 0) == cpu && HostFitness.Base(40, 8, 16000, false, -1) == cpu, "an unmeasured card costs nothing");

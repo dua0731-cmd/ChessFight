@@ -80,7 +80,8 @@ namespace ChessFight.Game
             // Nothing here takes input under the logo, the transition or the name
             // screen opened by "이름 바꾸기", or once the player has moved on.
             if (!logoDone || SceneTransition.Busy || NameChange.Showing || left) { armed = false; return; }
-            if (LegacyKeys.Down(KeyCode.Escape)) SettingsWindow.Toggle();
+            // R794 (user 11-23, "인트로에서는 설정창 못하게 막아"): Esc no longer opens the settings window on the title
+            // screen (R64 had it); the lobby's Esc and the in-game menu still do.
             if (nameScreen != null) return;
 
             if (leaveAt >= 0)

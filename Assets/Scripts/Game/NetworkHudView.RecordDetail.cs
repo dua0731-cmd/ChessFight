@@ -171,12 +171,14 @@ namespace ChessFight.Game
             Text(Loc.T("내 플레이"), "rd-title", mine);
             Stats(mine, (d.Falls.ToString(), Loc.T("떨어짐")), (d.Checkpoints.ToString(), Loc.T("체크포인트")), (d.Skills.ToString(), Loc.T("스킬")),
                   (d.Dives.ToString(), Loc.T("다이빙")), (d.Grabs.ToString(), Loc.T("잡기")), (d.Promotions.Count.ToString(), Loc.T("승격")));
+            // R792: while streamer mode hides names, the others by their place in the list ("플레이어 N").
+            string Shown(DetailPlayer p) => StreamerMode.Listed(d.Players.IndexOf(p) + 1, p.Name, p.Self);
             if (d.Players.Count > 0)
             {
                 int ours = d.Players.Count(p => p.Ours && p.Place > 0), theirs = d.Players.Count(p => !p.Ours && p.Place > 0);
                 var clincher = d.Players.FirstOrDefault(p => p.Name == d.Clincher && p.Place > 0);
-                string decided = clincher == null ? "" : r.Result == RecordResult.Win ? " · " + Loc.F("{0}의 {1} 도착으로 승리 결정", clincher.Name, MatchResult.Clock(clincher.Seconds))
-                                                    : " · " + Loc.F("상대 {0}의 {1} 도착으로 결정", clincher.Name, MatchResult.Clock(clincher.Seconds));
+                string decided = clincher == null ? "" : r.Result == RecordResult.Win ? " · " + Loc.F("{0}의 {1} 도착으로 승리 결정", Shown(clincher), MatchResult.Clock(clincher.Seconds))
+                                                    : " · " + Loc.F("상대 {0}의 {1} 도착으로 결정", Shown(clincher), MatchResult.Clock(clincher.Seconds));
                 var box = Text(Loc.F("우리 팀 {0}명 도착 · 상대 팀 {1}명 도착", ours, theirs) + decided, "rd-team-result", mine);
                 box.EnableInClassList("rd-team-lost", r.Result != RecordResult.Win);
             }
@@ -192,7 +194,7 @@ namespace ChessFight.Game
                 {
                     var row = Element("rd-player" + (p.Self ? " rd-player-me" : ""), grid);
                     SetIcon(Element("rd-player-icon", row), p.Piece, ours ? 0 : 1);
-                    Text(p.Name, "rd-player-name", row);
+                    Text(Shown(p), "rd-player-name", row);
                     Text(p.Place > 0 ? Loc.F("{0}위 {1}", p.Place, MatchResult.Clock(p.Seconds)) : Loc.T("도착 못 함"), "rd-player-result", row);
                 }
             }

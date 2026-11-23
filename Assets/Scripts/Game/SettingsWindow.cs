@@ -179,6 +179,13 @@ namespace ChessFight.Game
 
         static string Percent(float v) => Mathf.RoundToInt(v) + "%";
 
+        // R792: a line shown only while `when` holds (the streamer and colour-blind lines under their switch).
+        static T ShownWhen<T>(T item, Func<bool> when) where T : Item
+        {
+            item.When = when;
+            return item;
+        }
+
         static Item[] VoiceItems(out string note)
         {
             note = VoiceLevel == null ? "Steam에 연결되면 들어가요 · 지금은 저장만" : "Steam 음성 · 파티와 팀";
@@ -288,6 +295,13 @@ namespace ChessFight.Game
                     Get = () => GameSettings.Detail, Set = v => GameSettings.SetGraphic("detail", v), Reset = () => GameSettings.SetPreset(2),
                 },
                 Switch("bloom", "빛 번짐", true, "금색 장식과 조명 주위가 은은하게 번져요. 끄면 스킬 번쩍임의 번짐도 함께 꺼져요.", indent: true),
+                // R792: on its own, not part of the presets (GameSettings.RenderScale).
+                new Slide
+                {
+                    Label = "렌더 해상도", Min = GameSettings.MinRenderScale, Max = 1f, Step = .05f, Show = v => Mathf.RoundToInt(v * 100) + "%",
+                    Desc = "경기 화면(3D)을 화면 크기의 이 비율로 그린 뒤 FSR로 늘려요. 낮추면 프레임이 크게 오르고 조금 흐려져요. 메뉴와 글자는 그대로 또렷해요. 바꾸지 않으면 '낮음'은 80 %, 나머지는 100 %.",
+                    Get = () => GameSettings.RenderScale, Set = GameSettings.SetRenderScale, Reset = GameSettings.ResetRenderScale,
+                },
             };
 
             return new List<Tab>
@@ -414,6 +428,17 @@ namespace ChessFight.Game
                                  "누가 보낸 파티 초대를 게임 안(로비 수락 칸 · 채팅 알림)에 띄울지. Steam 자체 알림은 이 설정과 상관없이 와요.", drop: true),
                         } },
                     } },
+                    // R792: what this PC's screens keep off a stream (Core StreamerMode).
+                    new Page { Name = "방송", Sections = new[] { new Section { Title = "방송", Items = new Item[]
+                    {
+                        Switch("streamer", "스트리머 모드", false,
+                               "방송할 때 켜요. 아래에서 고른 것을 내 화면에서만 가려요. 다른 사람 화면은 그대로예요."),
+                        ShownWhen(Switch("hidename", "다른 사람 이름 가리기", true,
+                               "다른 사람 이름이 \"플레이어 3\"처럼 보이고 Steam 프로필 사진도 가려요: 로비 · 친구 목록 · 방 · 경기 이름표 · 순위 · 결과 · 채팅 · 전적 · 순위표. 내 이름은 그대로. 켜 둔 동안 끝난 경기는 전적에도 그렇게 남아요.",
+                               indent: true), () => GameSettings.Streamer),
+                        ShownWhen(Switch("hidecode", "방 번호 · 파티 코드 가리기", true,
+                               "화면에 ●●●●로 보이고, 복사 버튼은 진짜 번호를 그대로 복사해요.", indent: true), () => GameSettings.Streamer),
+                    } } } },
                 } },
                 new Tab { Name = "접근성", Pages = new[]
                 {
@@ -421,6 +446,12 @@ namespace ChessFight.Game
                     {
                         new Section { Title = "보기 편하게", Items = new Item[]
                         {
+                            // R792: GameLook's channel mixer volume, Core ColourAid's correction.
+                            Pick("cb", "색약 모드", new[] { "끔", "적색약", "녹색약", "청색약" }, 0,
+                                 "경기 · 로비 화면의 색을 고쳐, 구분하기 어려운 색(적색약 · 녹색약: 빨강과 초록, 청색약: 파랑과 노랑)이 갈라져 보이게 해요. 상대 팀 스킬의 빨간색과 경고 색이 잘 보여요. 메뉴와 글자는 그대로예요.",
+                                 drop: true),
+                            ShownWhen(Number("cbs", "색 보정 세기", 0f, 100f, 10f, 100f, Percent, "색약 모드의 세기.", indent: true),
+                                      () => GameSettings.ColourAidKind != 0),
                             Number("uiscale", "메뉴 크기", .9f, 1.15f, .05f, 1f, v => Mathf.RoundToInt(v * 100) + "%",
                                    "인트로, 로비, 채팅 같은 메뉴 화면의 크기. 이 설정 화면은 그대로예요."),
                             Switch("reduceshake", "화면 흔들림 줄이기", false, "카메라 흔들림, 매칭 화면의 흔들림, 질주 시야 넓어짐을 한 번에 꺼요."),

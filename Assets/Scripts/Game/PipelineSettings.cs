@@ -37,6 +37,60 @@ namespace ChessFight.Game
 #endif
         }
 
+        /// <summary>R792 (settings → 렌더 해상도): the render scale of the asset in use (1 without URP).</summary>
+        public static float RenderScale
+        {
+            get
+            {
+#if CF_URP
+                var urp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+                if (urp != null) return urp.renderScale;
+#endif
+                return 1f;
+            }
+        }
+
+#if CF_URP
+        // Each asset's own render scale and upscaling filter (by the project asset's name, a play copy's too), taken
+        // before the first change, for RestoreRenderScale.
+        static readonly Dictionary<string, KeyValuePair<float, UpscalingFilterSelection>> scaleOriginals =
+            new Dictionary<string, KeyValuePair<float, UpscalingFilterSelection>>();
+
+        static string AssetKey(Object asset)
+        {
+            const string play = " (play)";
+            string name = asset.name;
+            return name.EndsWith(play) ? name.Substring(0, name.Length - play.Length) : name;
+        }
+#endif
+
+        /// <summary>R792: draw the 3D picture at this share of the screen's pixels and bring it up with FSR (AMD FidelityFX
+        /// Super Resolution 1, URP's own) below 100 %. The UI is drawn after, at the screen's own size.</summary>
+        public static void SetRenderScale(float scale)
+        {
+#if CF_URP
+            var urp = Writable();
+            if (urp == null) return;
+            string key = AssetKey(urp);
+            if (!scaleOriginals.ContainsKey(key))
+                scaleOriginals[key] = new KeyValuePair<float, UpscalingFilterSelection>(urp.renderScale, urp.upscalingFilter);
+            scale = Mathf.Clamp(scale, .1f, 1f);
+            urp.renderScale = scale;
+            urp.upscalingFilter = scale < .999f ? UpscalingFilterSelection.FSR : scaleOriginals[key].Value;
+#endif
+        }
+
+        /// <summary>R792: the asset in use back to its own render scale and filter (the settings' "기본값").</summary>
+        public static void RestoreRenderScale()
+        {
+#if CF_URP
+            var urp = Writable();
+            if (urp == null || !scaleOriginals.TryGetValue(AssetKey(urp), out var own)) return;
+            urp.renderScale = own.Key;
+            urp.upscalingFilter = own.Value;
+#endif
+        }
+
         /// <summary>
         /// The intensity to give a point light of <paramref name="range"/> for it to light what is round it about as the
         /// Built-in pipeline lit it at <paramref name="intensity"/>: the Built-in light faded as 1 / (1 + 25 (d / range)^2),

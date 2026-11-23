@@ -826,7 +826,15 @@ namespace ChessFight.Network
         { Build = build ?? ""; AllowPublicBots = allowPublicBots; }
 
         static CSteamID Id(ulong id) => new CSteamID(id);
+        // R792: the name this PC shows - another player as "플레이어 N" while streamer mode hides names (StreamerMode);
+        // RealName is the one the player chose.
         public string Name(ulong id)
+        {
+            string real = RealName(id);
+            return BotIdentity.IsBot(id) || !Online ? real : StreamerMode.Name(id, real, id == Self);
+        }
+
+        public string RealName(ulong id)
         {
             if (BotIdentity.IsBot(id)) return Roster.TryGetValue(id, out var bot) ? "BOT " + (bot.Slot + 1) : "BOT";
             if (!Online) return id.ToString();
@@ -845,6 +853,7 @@ namespace ChessFight.Network
         public Texture2D Avatar(ulong id)
         {
             if (!Online || id == 0 || BotIdentity.IsBot(id)) return null;
+            if (StreamerMode.HideNames && id != Self) return null;   // R792: streamer mode, no faces of others
             if (avatars.TryGetValue(id, out var kept)) return kept;
             int image = SteamFriends.GetLargeFriendAvatar(Id(id));
             if (image <= 0)
@@ -1411,7 +1420,7 @@ namespace ChessFight.Network
                 list.Add(new FriendInfo
                 {
                     Id = id.m_SteamID,
-                    Name = SteamFriends.GetFriendPersonaName(id),
+                    Name = StreamerMode.Name(id.m_SteamID, SteamFriends.GetFriendPersonaName(id), false),   // R792
                     // Our own Rich Presence line, only meaningful inside this game.
                     Detail = here ? SteamFriends.GetFriendRichPresence(id, "status") : "",
                     Presence = here ? FriendPresence.InGame

@@ -73,6 +73,7 @@ namespace ChessFight.Game
             Version++;
             PlayerPrefs.Save();
             AudioListener.volume = Master;
+            StreamerMode.Set(HideNames, HideCodes);
             try { Changed?.Invoke(); }
             catch (Exception e) { Debug.LogException(e); }
         }
@@ -146,12 +147,24 @@ namespace ChessFight.Game
         // The match-found moment is heard even with the window behind another (ScreenOverlay.MatchFound).
         public static bool ReadyDing => Bool("readyding", true);
 
+        // R792, settings → 소셜 → 방송 → 스트리머 모드: on, it hides what the two lines under it pick (both by default) on
+        // this PC's screens - Core StreamerMode, which the name sources and the codes ask.
+        public static bool Streamer => Bool("streamer", false);
+        public static bool HideNames => Streamer && Bool("hidename", true);
+        public static bool HideCodes => Streamer && Bool("hidecode", true);
+
+        // R792, settings → 접근성 → 색약 모드: Core ColourAid's kind (0 off, 1 적색약, 2 녹색약, 3 청색약) and its strength
+        // 0..1, which GameLook's channel mixer volume applies.
+        public static int ColourAidKind => Mathf.Clamp(Int("cb", 0), 0, 3);
+        public static float ColourAidStrength => Mathf.Clamp01(Float("cbs", 100f) / 100f);
+
         // Loaded before the first scene, so the title screen already has them.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Load()
         {
             LoadKeys();
             AudioListener.volume = Master;
+            StreamerMode.Set(HideNames, HideCodes);
             ApplyDisplay();
             ScreenOverlay.Ensure();
             SettingsBackdrop.Prewarm();
@@ -463,8 +476,8 @@ namespace ChessFight.Game
         }
 
         // ---------- graphics quality ----------
-        // The built-in renderer's own switches: the quality level ("Mobile", "PC"),
-        // shadows, MSAA and LOD bias. Water, effects and glow have no switch yet.
+        // The quality level ("Mobile", "PC"), shadows, MSAA and LOD bias (PipelineSettings: the URP asset's), and the
+        // render scale (R792, on its own). Water and effects have no switch.
 
         public static readonly string[] Presets = { "낮음", "중간", "높음", "사용자 지정" };
         static readonly int[][] PresetValues = { new[] { 0, 0, 0 }, new[] { 2, 1, 1 }, new[] { 3, 2, 2 } };   // shadow, aa, detail
@@ -496,6 +509,24 @@ namespace ChessFight.Game
             ApplyGraphics();
         }
 
+        // R792, settings → 그래픽 품질 → 렌더 해상도: the share of the screen's pixels the 3D picture is drawn at (50..100 %),
+        // upscaled with FSR; the menus and HUD stay sharp. Not part of the presets: never changed, each quality level
+        // keeps its asset's own (PC 100 %, Mobile - the "낮음" preset - 80 %).
+        public const float MinRenderScale = .5f;
+        public static float RenderScale => Has("renderscale") ? Mathf.Clamp(Float("renderscale", 1f), MinRenderScale, 1f) : PipelineSettings.RenderScale;
+
+        public static void SetRenderScale(float scale)
+        {
+            SetFloat("renderscale", Mathf.Clamp(scale, MinRenderScale, 1f));
+            PipelineSettings.SetRenderScale(RenderScale);
+        }
+
+        public static void ResetRenderScale()
+        {
+            Forget("renderscale");
+            PipelineSettings.RestoreRenderScale();
+        }
+
         static void ApplyGraphics()
         {
             int levels = QualitySettings.names.Length;
@@ -504,6 +535,8 @@ namespace ChessFight.Game
             if (Has("shadow")) PipelineSettings.SetShadows(Shadow);
             if (Has("aa")) PipelineSettings.SetMsaa(new[] { 1, 2, 4, 8 }[Mathf.Clamp(Antialias, 0, 3)]);
             if (Has("detail")) QualitySettings.lodBias = new[] { .6f, 1f, 1.6f }[Mathf.Clamp(Detail, 0, 2)];
+            // R792: a quality level carries its own asset, and with it its render scale; keep the player's.
+            if (Has("renderscale")) PipelineSettings.SetRenderScale(RenderScale);
             // A quality level carries its own vsync; keep the player's.
             if (Has("vsync")) QualitySettings.vSyncCount = Bool("vsync", true) ? 1 : 0;
         }

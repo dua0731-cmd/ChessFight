@@ -296,7 +296,7 @@ namespace ChessFight.Game
                          : Loc.T("모드마다 따로 매칭합니다. 준비 중인 모드는 아직 고를 수 없습니다."),
 
                 PartySize = session.Online ? party : 0,
-                PartyCode = Spaced(session.Party),
+                PartyCode = StreamerMode.Code(Spaced(session.Party)),   // R792: dots in streamer mode (the copy button copies the real one)
                 Bots = session.PartyBots.ToString(),
                 BotsNote = session.BotsBlockPublicMatch ? Loc.T("봇 포함 시 비공개 방 전용") : "",
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
@@ -341,7 +341,7 @@ namespace ChessFight.Game
                           : dummyRoom ? Loc.T("12명 없이 시작 가능") : session.AllowPublicBots ? Loc.T("시험 규칙 · 1 대 1부터 · 봇 허용") : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
-                RoomCode = Loc.F("방 번호  {0}", Spaced(session.Match)),
+                RoomCode = Loc.F("방 번호  {0}", StreamerMode.Code(Spaced(session.Match))),   // R792
                 CanFillRoom = session.CanUseRoomBots && session.Roster.ContainsKey(session.Self) && roomCount < 12,
                 CanClearRoomBots = session.CanClearRoomBots,
                 ShowTestBots = dummyRoom,

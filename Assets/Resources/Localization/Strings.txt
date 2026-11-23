@@ -46,6 +46,24 @@ STEAM 오프라인	STEAM OFFLINE	STEAM 离线
 채팅	Chat	聊天
 초대	Invite	邀请
 보기 편하게	Comfort	舒适观看
+# --- settings window: R792 (render scale, streamer mode, colour-blind mode; Core StreamerMode · ColourAid)
+렌더 해상도	Render resolution	渲染分辨率
+경기 화면(3D)을 화면 크기의 이 비율로 그린 뒤 FSR로 늘려요. 낮추면 프레임이 크게 오르고 조금 흐려져요. 메뉴와 글자는 그대로 또렷해요. 바꾸지 않으면 '낮음'은 80 %, 나머지는 100 %.	Draws the 3D picture at this share of the screen size, then scales it up with FSR. Lower raises the frame rate a lot and blurs a little. Menus and text stay sharp. Left alone, 'Low' uses 80 % and the rest 100 %.	以屏幕尺寸的此比例绘制 3D 画面，再用 FSR 放大。调低可大幅提升帧率，画面会稍微变模糊。菜单和文字仍然清晰。未更改时，“低”为 80 %，其余为 100 %。
+방송	Streaming	直播
+스트리머 모드	Streamer mode	主播模式
+방송할 때 켜요. 아래에서 고른 것을 내 화면에서만 가려요. 다른 사람 화면은 그대로예요.	Turn it on while streaming. It hides what you pick below, on your screen only. Nobody else's screen changes.	直播时开启。只在你的画面上隐藏下面选中的内容，其他人的画面不变。
+다른 사람 이름 가리기	Hide other players' names	隐藏其他玩家名称
+다른 사람 이름이 "플레이어 3"처럼 보이고 Steam 프로필 사진도 가려요: 로비 · 친구 목록 · 방 · 경기 이름표 · 순위 · 결과 · 채팅 · 전적 · 순위표. 내 이름은 그대로. 켜 둔 동안 끝난 경기는 전적에도 그렇게 남아요.	Other players show as "Player 3" and their Steam pictures are hidden: lobby · friends list · room · name tags · standings · results · chat · history · leaderboards. Your own name stays. Matches finished while it is on stay that way in your history.	其他玩家显示为“玩家 3”，并隐藏其 Steam 头像：大厅 · 好友列表 · 房间 · 比赛名牌 · 排名 · 结果 · 聊天 · 战绩 · 排行榜。你自己的名称不变。开启期间结束的比赛在战绩中也会这样保存。
+방 번호 · 파티 코드 가리기	Hide room number · party code	隐藏房间号 · 队伍代码
+화면에 ●●●●로 보이고, 복사 버튼은 진짜 번호를 그대로 복사해요.	Shows as ●●●●; the copy button still copies the real number.	画面上显示为 ●●●●，复制按钮仍会复制真实号码。
+색약 모드	Colorblind mode	色弱模式
+적색약	Protanopia	红色弱
+녹색약	Deuteranopia	绿色弱
+청색약	Tritanopia	蓝色弱
+경기 · 로비 화면의 색을 고쳐, 구분하기 어려운 색(적색약 · 녹색약: 빨강과 초록, 청색약: 파랑과 노랑)이 갈라져 보이게 해요. 상대 팀 스킬의 빨간색과 경고 색이 잘 보여요. 메뉴와 글자는 그대로예요.	Corrects the colors of the match and lobby pictures so that colors that are hard to tell apart (protanopia · deuteranopia: red and green, tritanopia: blue and yellow) separate. The enemy team's red skills and the warning colors stand out. Menus and text stay as they are.	校正比赛和大厅画面的颜色，让难以区分的颜色（红色弱 · 绿色弱：红与绿，蓝色弱：蓝与黄）分开显示。对方队伍技能的红色和警告色更容易看清。菜单和文字不变。
+색 보정 세기	Color correction strength	色彩校正强度
+색약 모드의 세기.	How strong the colorblind mode is.	色弱模式的强度。
+플레이어 {0}	Player {0}	玩家 {0}
 # --- settings window: the language line (R747)
 언어	Language	语言
 번역 중	in progress	翻译中
