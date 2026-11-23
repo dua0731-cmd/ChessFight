@@ -1,0 +1,9 @@
+# R813: the [소드 파이트 타격감] block as SwordFightFeelLog printed it at the end of the automated check (Tools/Run-SwordHitFeel.ps1, the copy's Logs/swordhitfeel_unity.log, 2026-11-24).
+# Offline (no network line). '맞힘 표시 시각으로 / 가장 가까운 칼로 / 못 찾음' and the waits come from the check's made-up client frames (HIT_FEEL_ONLINE §8 6); the long frames from its pictures.
+[소드 파이트 타격감] 결과 전에 나감 · 이 PC 혼자(온라인 아님) · 사람 1 + 봇 3 · 잰 시간 0분 33초
+  연결: 이 PC가 물리 계산을 맡아 지연 없음(참가자 PC의 로그에 있음)
+  내 클릭: 24번 · 가만히 있다 누른 10번에서 내 칼이 화면에서 움직이기까지 평균 8 ms (가장 빠름 8 · 가장 느림 8 · 절반이 8 ms 안)
+  내 타격: 맞힘 2 · 보호막에 막힘 1 · 맞음 0 · 내 보호막에 막아 냄 0 · 금색 X 2
+  이 화면의 타격 10개: 때린 사람 = 물리 담당이 앎 3 · 맞힘 표시 시각으로 3 · 가장 가까운 칼로 2 · 못 찾음 2 · 그려지는 몸이 맞는 순간까지 기다림 평균 33 ms (최대 100, 0.1초에서 끊김 1번)
+  화면: 평균 204 fps · 느린 1% 9 ms · 0.1초 넘는 끊김 7번 · 가장 긴 3.24초
+  값: 첫 베기(준비 / 칼날 / 회복 초) 킹 0.14/0.15/0.39 퀸 0.12/0.18/0.38 룩 0.12/0.20/0.36 비숍 0.12/0.18/0.38 나이트 0.10/0.22/0.36 폰 0.10/0.14/0.32 · 칼 걸림 0.10초 × 0.05 · 남은 칼길 2.0배 · 맞은 그림 6프레임 · 맞은 표시 0.3초 · 남의 소리 0.7 → 0.3(3 ~ 12 m) · 보호막 0.85 m

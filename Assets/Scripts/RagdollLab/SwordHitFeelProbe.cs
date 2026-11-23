@@ -250,7 +250,7 @@ namespace ChessFight.RagdollLab
             int marks = Marks(), body = Count("SwordHitBody"), hit = Count("SwordHit");
             cuts.Clear(); sounds.Clear();
             watched = enemyA; heldFrom = heldFor = holdSet = -1f; longestFrame = 0f;
-            float clickAt = Time.time, hitAt = -1f, ageAtHit = 0f;
+            float clickAt = Time.time, hitAt = -1f, ageAtHit = 0f, cutFrom = -1f, cutTo = -1f;
             int marksAtHit = marks;
             var ages = new List<float>();
             Click(me, Vector3.forward);
@@ -259,6 +259,8 @@ namespace ChessFight.RagdollLab
             {
                 yield return new WaitForFixedUpdate();
                 Release(me, Vector3.forward);
+                if (cutFrom < 0f && me.Attacking) cutFrom = Time.fixedTime - Time.fixedDeltaTime;
+                if (cutFrom >= 0f && cutTo < 0f && !me.Attacking) cutTo = Time.fixedTime - Time.fixedDeltaTime;
                 if (hitAt < 0f && me.HitsLanded > hits)
                 {
                     hitAt = Time.fixedTime; ageAtHit = me.SwingAge;
@@ -274,11 +276,19 @@ namespace ChessFight.RagdollLab
             float dt = Time.fixedDeltaTime;
             int steps = Mathf.RoundToInt(SwordFightPawn.BiteTime / dt);
             float pace = ages.Count > steps ? (ages[steps - 1] - ageAtHit) / (steps * dt) : -1f;
-            // Two steps' margin past the bite (its last step can fall either side of BiteTime).
-            float after = ages.Count > steps + 5 ? (ages[steps + 5] - ages[steps + 2]) / (3 * dt) : -1f;
-            Check(pace >= 0f && Mathf.Abs(pace - SwordFightPawn.BitePace) < .02f && after > .9f,
-                  $"the cut goes on at {SwordFightPawn.BitePace:0.00} of its pace for {SwordFightPawn.BiteTime:0.00} s, then at full pace",
-                  $"pace over the {steps} steps after the hit {pace:0.000}, after them {after:0.00}");
+            Check(pace >= 0f && Mathf.Abs(pace - SwordFightPawn.BitePace) < .02f,
+                  $"the cut goes on at {SwordFightPawn.BitePace:0.00} of its pace for {SwordFightPawn.BiteTime:0.00} s",
+                  $"pace over the {steps} steps after the hit {pace:0.000}");
+            // R812: then the rest of the pass snaps through (a step's margin past the catch, three steps), and the recovery
+            // runs slower by the time that saved, so the cut that landed is as long as it was before R812.
+            float snap = ages.Count > steps + 4 ? (ages[steps + 4] - ages[steps + 1]) / (3 * dt) : -1f;
+            float recovery = ages.Count >= 24 ? (ages[23] - ages[20]) / (3 * dt) : -1f;
+            Check(Mathf.Abs(snap - SwordFightPawn.SnapPace) < .05f && recovery > .75f && recovery < .99f,
+                  $"then the rest of the blade's pass at {SwordFightPawn.SnapPace:0.0}× (R812), the recovery slower by the time saved",
+                  $"pace just after the catch {snap:0.00}, in the recovery {recovery:0.000}");
+            float whole = cutTo - cutFrom, before = .68f + SwordFightPawn.BiteTime * (1f - SwordFightPawn.BitePace);
+            Check(cutTo > 0f && Mathf.Abs(whole - before) <= 2f * dt + .001f,
+                  $"a cut that lands is as long as before R812 (0.68 s + its catch = {before:0.000} s)", $"{whole:0.000} s");
             float hold = SwordFightSkillFx.CutHoldFrames / 60f;
             Check(Mathf.Abs(holdSet - hold) < .005f && heldFor > 0f && heldFor <= holdSet + longestFrame + .02f,
                   $"the cut piece's picture is held {SwordFightSkillFx.CutHoldFrames} frames ({hold:0.000} s)",

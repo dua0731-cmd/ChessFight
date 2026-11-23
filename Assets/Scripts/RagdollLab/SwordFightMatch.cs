@@ -84,6 +84,8 @@ namespace ChessFight.RagdollLab
             game = GetComponent<SwordFightGame>();
             if (GetComponent<SwordFightSkillFx>() == null) gameObject.AddComponent<SwordFightSkillFx>();
             if (GetComponent<SwordFightSkillSfx>() == null) gameObject.AddComponent<SwordFightSkillSfx>();
+            // R813: the click cut's feel, one block in Player.log when the match ends (what this PC saw).
+            if (GetComponent<SwordFightFeelLog>() == null) gameObject.AddComponent<SwordFightFeelLog>();
             floor = GetComponent<SwordFightEdgeFloor>();
             if (floor == null) floor = gameObject.AddComponent<SwordFightEdgeFloor>();
             SwordFightSkills.GuardTakesSwordOnly = true;

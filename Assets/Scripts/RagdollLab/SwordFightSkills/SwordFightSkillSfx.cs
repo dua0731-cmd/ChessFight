@@ -274,6 +274,9 @@ namespace ChessFight.RagdollLab
             return fx == null || fx.HearsAsOwn(pawn);
         }
 
+        /// <summary>R813: this screen's own player's piece, null with none (SwordFightFeelLog's counts).</summary>
+        public static RagdollPawn ViewerPawn => Current != null && Current.fx != null ? Current.fx.ViewerPawn : null;
+
         /// <summary>R808 (승규 님 11-23, the online play: "피격을 해도 허공을 가로지르는 것 같음, 피격에 따른 사용자에 피드백이
         /// 있어야함"): how much of a sword sound's level this screen hears. The sounds are flat (2D) and were as loud on every
         /// screen for every piece, so with 9 players one's own cuts and hits were lost among everyone else's. This

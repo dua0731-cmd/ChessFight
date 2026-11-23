@@ -369,6 +369,7 @@ namespace ChessFight.RagdollLab
         {
             if (!HitMarksOn || game == null || victim == null || by == null || by != game.Local) return;
             hitMarks.Add((victim, Time.unscaledTime));
+            if (SwordFeelStats.Measuring) SwordFeelStats.Marks++;   // R813
         }
 
         void DrawHitMarks(float ui)

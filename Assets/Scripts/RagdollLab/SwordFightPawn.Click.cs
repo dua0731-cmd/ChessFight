@@ -49,6 +49,19 @@ namespace ChessFight.RagdollLab
         public const float BlockBiteTime = .06f;
         /// <summary>R808: cuts stopped on a protected piece's shell (the checks).</summary>
         public int Blocks { get; private set; }
+        /// <summary>R812 (승규 님 11-24, after R808's automated check: a quarter of a second after a hit the blade was still
+        /// going down through the cut piece's lower body - "하는 게좋아?" → "넣어줘"): once a catch is over (BiteTime,
+        /// BlockBiteTime) the rest of the blade's pass goes this many times as fast - out of the piece in half the time, as
+        /// a heavy blade that has bitten tears on through - and the recovery takes the time saved back (RecoveryPace), so a
+        /// cut that lands is as long as before (0.68 s and its catch) and a combo's beat is unchanged. The lines it goes
+        /// along are the same (a sweep still cuts a second piece on its way: the samples follow the blade's turn). 1: as
+        /// before R812.</summary>
+        public const float SnapPace = 2f;
+        // R812: the rest of this cut's pass snapping through after a catch, and the time (s) that has saved so far.
+        bool snapping;
+        float snapSaved;
+        /// <summary>R812: the recovery's pace: slower by the time a snap saved, 1 without one.</summary>
+        float RecoveryPace => snapSaved > 0f ? style.Recovery / (style.Recovery + snapSaved) : 1f;
         const float BladeLength = .88f;
         float pull, biteLeft;
         /// <summary>How many hits have caught this fighter's blade (the checks).</summary>
@@ -78,7 +91,7 @@ namespace ChessFight.RagdollLab
         void CancelClickSwing()
         {
             inputBuffer = 0; SwingAge = 99f; sinceSwing = 99f; wasActive = false; hitThisSwing.Clear();
-            Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; biteLeft = 0f;
+            Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; biteLeft = 0f; snapping = false; snapSaved = 0f;
         }
 
         /// <summary>A click while a cut runs waits for its blade to go through (the next cut of the combo) instead of being
@@ -103,7 +116,8 @@ namespace ChessFight.RagdollLab
                 fromArm = BodyLocal(armNow);
                 ChestChannels(out fromLean, out fromTwist, out fromRoll);
                 fromBody = Attacking ? Pawn.BodyTurn : 0f;
-                float carried = through ? CutLength - SwingAge : 0f;
+                // R812: the rest of the recovery as long as it would still take (slower after a snap), not its lines.
+                float carried = through ? (CutLength - SwingAge) / RecoveryPace : 0f;
                 bufferedAim.y = 0;
                 swingDirection = bufferedAim.sqrMagnitude > .01f ? bufferedAim.normalized : Pawn.Facing;
                 var combo = ComboOf(Pawn.Piece);
@@ -112,14 +126,31 @@ namespace ChessFight.RagdollLab
                 style = combo[ComboStep];
                 windup = style.Windup + carried;
                 SwingAge = 0; Swings++; inputBuffer = 0; Protection = 0;
-                hitThisSwing.Clear(); wasActive = false; pull = 0f; biteLeft = 0f;
+                hitThisSwing.Clear(); wasActive = false; pull = 0f; biteLeft = 0f; snapping = false; snapSaved = 0f;
+                BladeSeenMoving();   // R813: where the cut is run, its pose moves from this step
             }
             inputBuffer = Mathf.Max(0, inputBuffer - dt);
             if (!Attacking) { Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; sinceSwing += dt; StepOffArm(dt); return; }
             sinceSwing = 0f;
             // R670: a hit catches the blade for a moment (the cut all but stops in the piece, then goes on through).
             float pace = 1f;
-            if (biteLeft > 0f) { biteLeft -= dt; pace = BitePace; }
+            bool passing = SwingAge < windup + style.Active;
+            if (biteLeft > 0f)
+            {
+                biteLeft -= dt; pace = BitePace;
+                // R812: the catch over, the rest of the pass snaps through.
+                if (biteLeft <= 0f && passing) snapping = true;
+            }
+            else if (snapping && passing)
+            {
+                pace = SnapPace;
+                snapSaved += dt * (SnapPace - 1f);
+            }
+            else
+            {
+                snapping = false;
+                if (!passing) pace = RecoveryPace;
+            }
             SwingAge += dt * pace;
             // R670: until the blade starts, the cut goes where the player looks now, not where they looked at the click
             // (a chained cut's windup is up to half a second: a foe has moved on by then), leaning to the foe that way.
@@ -310,7 +341,7 @@ namespace ChessFight.RagdollLab
             {
                 bool cutting = Quaternion.Angle(lastRemoteTurn, remoteRotation) / dt > 200f;
                 // The swing's whoosh where this fighter's cuts are only seen: as its blade starts moving like one.
-                if (cutting && remoteCut <= 0f && ClassicControls && Alive && Pawn.State == PawnState.Active) SwingSound();
+                if (cutting && remoteCut <= 0f && ClassicControls && Alive && Pawn.State == PawnState.Active) { SwingSound(); BladeSeenMoving(); }
                 remoteCut = cutting ? .2f : Mathf.Max(0f, remoteCut - dt);
                 lastRemoteTurn = remoteRotation;
                 remoteOffArm = Mathf.MoveTowards(remoteOffArm, remoteCut > 0f ? 1f : 0f, dt / (remoteCut > 0f ? .2f : .3f));
@@ -800,6 +831,38 @@ namespace ChessFight.RagdollLab
         static readonly SwingStyle[] PawnCombo = { PawnSwing, PawnLeft, PawnRight, PawnChop };
 
         SwingStyle style = QueenSwing;
+
+        /// <summary>R813: a piece's first cut as the build has it - windup, blade pass, recovery (s); the feel log prints it.</summary>
+        public static (float windup, float active, float recovery) FirstCut(PieceKind piece)
+        {
+            var s = ComboOf(piece)[0];
+            return (s.Windup, s.Active, s.Recovery);
+        }
+
+        // R813 (SwordFightFeelLog): this screen's own player's last click and whether its piece stood idle then (a click
+        // during a cut waits for it, which is not the delay being measured), until its blade is seen to move.
+        float clickedAt = -1f;
+        bool clickIdle;
+
+        /// <summary>R813: this screen's player clicked (where the cut is run: SetInput; on a client: LabNetLink.Sword, which
+        /// sends it). Only this screen's own fighter keeps the time.</summary>
+        internal void NoteClick()
+        {
+            if (!SwordFeelStats.Measuring || Pawn == null || SwordFightSkillSfx.ViewerPawn != Pawn) return;
+            SwordFeelStats.Clicks++;
+            if (clickedAt >= 0f && Time.unscaledTime - clickedAt < 1.5f) return;   // the first of a run of clicks
+            clickedAt = Time.unscaledTime;
+            clickIdle = Authority ? !Attacking : remoteCut <= 0f;
+        }
+
+        /// <summary>R813: this fighter's blade is seen to start a cut on this screen: how long after its player's click.</summary>
+        void BladeSeenMoving()
+        {
+            if (clickedAt < 0f) return;
+            float after = Time.unscaledTime - clickedAt;
+            if (clickIdle && after < 1.5f) SwordFeelStats.ClickToBlade.Add(after * 1000f);
+            clickedAt = -1f;
+        }
 
         static SwingStyle[] ComboOf(PieceKind piece) => piece switch
         {

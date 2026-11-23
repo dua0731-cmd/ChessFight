@@ -162,7 +162,7 @@ namespace ChessFight.RagdollLab
             if (!Alive) return;
             if (!raw.shoveHeld && !raw.shove) waitForRelease = false;
             held = raw.shoveHeld && !waitForRelease;
-            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = ClickBuffer; bufferedAim = raw.aim; }
+            if (ClassicControls && raw.shove && !waitForRelease) { NoteClick(); inputBuffer = ClickBuffer; bufferedAim = raw.aim; }
             // A click waiting for the cut before it to end takes the aim it has when it starts.
             else if (inputBuffer > 0 && Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) bufferedAim = raw.aim;
             if (Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) requestedAim = raw.aim.normalized;
@@ -541,16 +541,29 @@ namespace ChessFight.RagdollLab
         /// cutter where the cut is run; the wire's flashes go through RemoteFlash.</summary>
         void FlashHit(float flash, SwordFightPawn by = null)
         {
-            if (Alive && flash >= .13f && flash > HitFlash + .02f) PlayCut(by);
+            if (Alive && flash >= .13f && flash > HitFlash + .02f) PlayCut(by, by != null ? CutFound.Known : CutFound.None);
             HitFlash = flash;
         }
+
+        /// <summary>R813 (SwordFightFeelLog): how a cut played here knew its cutter.</summary>
+        enum CutFound { Known, Strike, Nearest, None }
 
         /// <summary>R808 (승규 님 11-23: "피격에 따른 사용자에 피드백이 있어야함"): a cut on this piece, on this screen now. The
         /// hit sound is at its own level, with a lower, fuller layer under it, where this screen's player cut or was cut;
         /// everyone else's are under it and quieter further off (SwordFightSkillSfx.Heard) - with 9 players every hit
         /// sounded the same on every screen and one's own was lost among them. Then the hit effect (Cut).</summary>
-        void PlayCut(SwordFightPawn by)
+        void PlayCut(SwordFightPawn by, CutFound found)
         {
+            if (SwordFeelStats.Measuring)
+            {
+                if (found == CutFound.Known) SwordFeelStats.CutsKnown++;
+                else if (found == CutFound.Strike) SwordFeelStats.CutsByStrike++;
+                else if (found == CutFound.Nearest) SwordFeelStats.CutsByNearest++;
+                else SwordFeelStats.CutsWithout++;
+                var viewer = SwordFightSkillSfx.ViewerPawn;
+                if (viewer != null && by != null && by.Pawn == viewer) SwordFeelStats.MyHits++;
+                if (viewer != null && Pawn == viewer) SwordFeelStats.HitsOnMe++;
+            }
             Vector3 chest = Pawn.bodies[(int)BodyId.Chest].position;
             bool mine = SwordFightSkillSfx.Viewer(Pawn) || by != null && SwordFightSkillSfx.Viewer(by.Pawn);
             float pitch = Random.Range(.94f, 1.06f);
@@ -600,7 +613,13 @@ namespace ChessFight.RagdollLab
                 cutWaiting = true;
                 waitingCutMs = timed ? at : double.NaN;
                 // Played in LateUpdate at the soonest: by then every fighter's flash of this frame is in (its cutter's too).
-                waitingCutDue = Time.unscaledTime + (timed ? Mathf.Clamp((float)((at - drawnMs) / 1000d), 0f, MaxCutWait) : 0f);
+                float ahead = timed ? (float)((at - drawnMs) / 1000d) : 0f;
+                waitingCutDue = Time.unscaledTime + Mathf.Clamp(ahead, 0f, MaxCutWait);
+                if (timed && SwordFeelStats.Measuring)
+                {
+                    SwordFeelStats.CutWait.Add(Mathf.Clamp(ahead, 0f, MaxCutWait) * 1000f);
+                    if (ahead > MaxCutWait) SwordFeelStats.CutWaitCapped++;
+                }
             }
             else if (flash > .02f && flash < .13f && flash > HitFlash + .02f)
                 strikeMs = timed ? frameMs - (StrikeFlash - flash) * 1000d : double.NegativeInfinity;
@@ -614,7 +633,9 @@ namespace ChessFight.RagdollLab
             // Its strike not seen (two or three state packets lost in a row, or no times): the nearest foe's blade, the
             // guess SwordFightSkillFx.OnCut made before - so this screen's own hit is still heard and marked as its own.
             var by = double.IsNaN(waitingCutMs) ? null : FindCutter(waitingCutMs);
-            PlayCut(by != null ? by : NearestBlade());
+            if (by != null) { PlayCut(by, CutFound.Strike); return; }
+            var near = NearestBlade();
+            PlayCut(near, near != null ? CutFound.Nearest : CutFound.None);
         }
 
         /// <summary>R808: the foe whose blade is nearest this piece's chest, within 2.5 m (null with none).</summary>

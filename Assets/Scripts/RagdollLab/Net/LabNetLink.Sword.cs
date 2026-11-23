@@ -618,7 +618,7 @@ namespace ChessFight.RagdollLab
         {
             var local = SwordReadLocal(true, out bool skill, out bool edge, out bool cancel, out bool edgeHeld);
             if (local.jump) myJumps = PressCount.Add(myJumps);
-            if (local.shove) myShoves = PressCount.Add(myShoves);
+            if (local.shove) { myShoves = PressCount.Add(myShoves); sword.Local?.NoteClick(); }   // R813: the feel log's click
             if (skill) mySkills = PressCount.Add(mySkills);
             if (edge) myAbilities = PressCount.Add(myAbilities);
             if (cancel) myAbilities2 = PressCount.Add(myAbilities2);
