@@ -1,0 +1,42 @@
+
+== 왕실 수로 정원 (Early_1-1_RoyalWaterGarden)
+log  왕실 수로 정원: 쉬운 길 2곳 · 꺼진 장애물 28개
+ok   a floor under every step: 1017 samples along 251.4 m, 0 without
+ok   no step up (the highest 0.08 m between two samples)
+ok   no slope over 14.5 deg (the steepest 11.6 deg over 1.5 m)
+ok   room for a pawn's body all the way
+ok   nothing moving within 2.5 m of the way
+     2 stretches, 4 deck pieces
+picture garden_1_Drum_causeway
+picture garden_2_Reservoir_bridge
+
+== 왕실 마차뜰 (Early_1-2_RoyalCarriageYard)
+log  왕실 마차뜰: 쉬운 길 3곳 · 꺼진 장애물 12개
+ok   a floor under every step: 803 samples along 199.8 m, 0 without
+ok   no step up (the highest 0.13 m between two samples)
+ok   no slope over 14.5 deg (the steepest 14.3 deg over 1.5 m)
+ok   room for a pawn's body all the way
+ok   nothing moving within 2.5 m of the way
+ok   1 push gate(s) stand open
+     3 stretches, 5 deck pieces
+picture yard_1_Mill_planks_W
+picture yard_2_Mill_planks_E
+picture yard_3_Warehouse_ramp
+
+== 대계단 현관홀 (Mid_2-1_GrandStairHall)
+log  대계단 현관홀: 쉬운 길 6곳 · 꺼진 장애물 17개
+note the grand stair's own Middle landing: 0.18 m up at s 41.5 (as built before)
+note the grand stair's own Central landing: 0.18 m up at s 64.0 (as built before)
+ok   a floor under every step: 1232 samples along 302.9 m, 0 without
+ok   no step up (the highest 0.18 m between two samples)
+ok   no slope over 14.5 deg (the steepest 16.9 deg over 1.5 m)
+ok   room for a pawn's body all the way
+ok   nothing moving within 2.5 m of the way
+     5 stretches, 20 deck pieces
+picture hall_1_Floating_stones_deck
+picture hall_2_Jump_pad_ramp
+picture hall_3_Dive_gap_1
+picture hall_4_Dive_gap_2
+picture hall_5_Glass_stones_deck
+
+RESULT: PASS
