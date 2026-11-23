@@ -169,6 +169,7 @@ namespace ChessFight.PawnRush.Editor
                     Inventory(section, name);
                     // The URP Lit materials on Gfx Lit now (GameSurfaces' watch does it every two seconds anyway).
                     GameSurfaces.Dress(GameSurfaces.LitOn);
+                    GameGrass.Grow();
                     var spots = Spots(section, name);
                     var pawns = Pawns(spots);
                     string only = SessionState.GetString(SpotsKey, "");
@@ -304,6 +305,10 @@ namespace ChessFight.PawnRush.Editor
                 GameGrade.Temperature = F("temp", GameGrade.Temperature);
                 GameGrade.BloomIntensity = F("bloom", GameGrade.BloomIntensity);
                 GameGrade.Vignette = F("vig", GameGrade.Vignette);
+                var st = GameGrade.ShadowTone;
+                GameGrade.ShadowTone = new Color(F("shr", st.r), F("shg", st.g), F("shb", st.b), 1f);
+                var ht = GameGrade.HighlightTone;
+                GameGrade.HighlightTone = new Color(F("hir", ht.r), F("hig", ht.g), F("hib", ht.b), 1f);
                 foreach (var v in FindObjectsByType<Volume>(FindObjectsSortMode.None))
                     if (v.name == "Game grade (JY-gfx)") v.sharedProfile = GameGrade.Profile();
                 RenderSettings.ambientIntensity = F("amb", RenderSettings.ambientIntensity);
@@ -316,6 +321,7 @@ namespace ChessFight.PawnRush.Editor
                 GameSurfaces.Strength = F("surf", GameSurfaces.Strength);
                 GameSurfaces.Apply();
                 probeOn = F("probe", 0f) > .5f;
+                GameGrass.Show(F("grass", 1f) > .5f);
                 GameSurfaces.Macro = F("macro", GameSurfaces.Macro);
                 GameSurfaces.Apply();
                 GameSurfaces.LitOn = F("lit", GameSurfaces.LitOn ? 1f : 0f) > .5f;

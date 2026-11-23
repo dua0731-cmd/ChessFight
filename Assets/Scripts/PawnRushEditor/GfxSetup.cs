@@ -86,6 +86,21 @@ namespace ChessFight.PawnRush.Editor
             material.SetTexture("_Panorama", picture);
             material.SetFloat("_Exposure", 1f);
             EditorUtility.SetDirty(material);
+            // The grass's look (GameGrass makes one per lawn from it; being in Resources keeps its shader in a build).
+            var grassShader = Shader.Find("ChessFight/Gfx Grass");
+            if (grassShader != null)
+            {
+                string grassPath = Root + "/GfxGrass.mat";
+                var grass = AssetDatabase.LoadAssetAtPath<Material>(grassPath);
+                if (grass == null)
+                {
+                    grass = new Material(grassShader) { name = "GfxGrass" };
+                    AssetDatabase.CreateAsset(grass, grassPath);
+                }
+                grass.shader = grassShader;
+                EditorUtility.SetDirty(grass);
+            }
+            else Debug.LogError("[GfxSetup] no ChessFight/Gfx Grass shader");
             AssetDatabase.SaveAssets();
             Debug.Log($"[GfxSetup] sky material {path}: {picture.width}x{picture.height} {picture.format}");
             if (Application.isBatchMode) EditorApplication.Exit(0);
