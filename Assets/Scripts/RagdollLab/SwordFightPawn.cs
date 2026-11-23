@@ -142,8 +142,10 @@ namespace ChessFight.RagdollLab
         public static event System.Action<SwordFightPawn, SwordFightPawn> Struck;
         internal static void RaiseStruck(SwordFightPawn by, SwordFightPawn victim) => Struck?.Invoke(by, victim);
 
-        /// <summary>10-29: a sword cut landed on this piece (every machine, with the hit sound): the hit effect.</summary>
-        public static event System.Action<SwordFightPawn> Cut;
+        /// <summary>10-29: a sword cut landed on this piece (every machine, with the hit sound): the hit effect. R808: with
+        /// the piece that cut it - known where the cut is run, found by its strike's time on a machine that only sees the
+        /// fight (FindCutter) - or null when that is not known.</summary>
+        public static event System.Action<SwordFightPawn, SwordFightPawn> Cut;
 
         /// <summary>R149: the respawn protection ends at once (the piece attacked: a skill, spec §8.4).</summary>
         public void EndProtection() => Protection = 0f;
@@ -333,14 +335,14 @@ namespace ChessFight.RagdollLab
             if (hits.TryGetValue(victim, out var last) && (Time.time - last.Time < RepeatDelay || travel - last.Travel < 35f)) return;
             hits[victim] = new HitRecord { Time = Time.time, Travel = travel };
             // A king in its guard (the skill test scene) takes the cut and answers it.
-            if (victim.Skills != null && victim.Skills.Parry(this, point)) { HitFlash = .1f; return; }
+            if (victim.Skills != null && victim.Skills.Parry(this, point)) { HitFlash = StrikeFlash; return; }
             Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
             Vector3 direction = Vector3.ProjectOnPlane(cut, Vector3.up).normalized * .65f + away.normalized * .35f;
             if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
             float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit((direction.normalized * strength + Vector3.up * .7f) * SameFall(target), .65f, 0, true);
-            victim.StopCombat(); victim.FlashHit(CutFlash); HitFlash = .1f; HitsLanded++;
+            victim.StopCombat(); victim.FlashHit(CutFlash, this); HitFlash = StrikeFlash; HitsLanded++;
             RaiseStruck(this, victim);
         }
 
@@ -383,6 +385,8 @@ namespace ChessFight.RagdollLab
         void LateUpdate()
         {
             if (sword == null || Pawn == null) return;
+            // R808: a cut sent by the host, once the bodies drawn here reach it (RemoteFlash).
+            if (cutWaiting && Time.unscaledTime >= waitingCutDue) PlayWaitingCut();
             sword.gameObject.SetActive(Alive);
             if (!Alive) { SwordAway = false; return; }
             UpdateSwordModel();
@@ -510,6 +514,7 @@ namespace ChessFight.RagdollLab
             Pawn.SetNetworkPuppet(!authority);
             Alive = true; Protection = 1.25f; aim = requestedAim = facing;
             hits.Clear(); travel = 0; HitFlash = 0; waitForRelease = false;
+            cutWaiting = false; strikeMs = double.NegativeInfinity;   // R808: nothing from before the fall plays now
             if (ClassicControls) PoseClickSword(); else PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
@@ -522,27 +527,129 @@ namespace ChessFight.RagdollLab
         /// slowest rate, so one or two lost still leave it seen.</summary>
         public const float CutFlash = .3f;
 
+        /// <summary>R808: the cutter's own flash as its cut lands (or a king's guard takes it), seconds, counted down like
+        /// the cut piece's (below CutFlash's .13 so it is never read as being cut). Its age on the wire tells a machine
+        /// that only sees the fight when that strike was, which is how it finds who cut whom (FindCutter).</summary>
+        public const float StrikeFlash = .1f;
+        /// <summary>R808: the shell of a piece under its respawn protection: a sphere this big about its hips, ShellLift
+        /// over them (SwordFightMatch draws its bubble to it). A click cut that meets it is stopped (HitShells).</summary>
+        public const float ShellRadius = .85f, ShellLift = .15f;
+
         /// <summary>10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): this piece's hit flash set, by the sword that cut it
         /// here or by the wire. A jump up to a hit's flash (CutFlash; the board's ring reads it the same way) is a new hit,
-        /// so every machine plays the one sword-hit sound for every piece at its chest.</summary>
-        void FlashHit(float flash)
+        /// so every machine plays the one sword-hit sound for every piece at its chest. R808: <paramref name="by"/> is the
+        /// cutter where the cut is run; the wire's flashes go through RemoteFlash.</summary>
+        void FlashHit(float flash, SwordFightPawn by = null)
         {
-            if (Alive && flash >= .13f && flash > HitFlash + .02f)
-            {
-                SwordFightSkillSfx.Moment("SwordHit", Pawn.bodies[(int)BodyId.Chest].position, Skills, Random.Range(.94f, 1.06f));
-                Cut?.Invoke(this);
-            }
+            if (Alive && flash >= .13f && flash > HitFlash + .02f) PlayCut(by);
             HitFlash = flash;
         }
 
-        public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash, bool classic = false)
+        /// <summary>R808 (승규 님 11-23: "피격에 따른 사용자에 피드백이 있어야함"): a cut on this piece, on this screen now. The
+        /// hit sound is at its own level, with a lower, fuller layer under it, where this screen's player cut or was cut;
+        /// everyone else's are under it and quieter further off (SwordFightSkillSfx.Heard) - with 9 players every hit
+        /// sounded the same on every screen and one's own was lost among them. Then the hit effect (Cut).</summary>
+        void PlayCut(SwordFightPawn by)
+        {
+            Vector3 chest = Pawn.bodies[(int)BodyId.Chest].position;
+            bool mine = SwordFightSkillSfx.Viewer(Pawn) || by != null && SwordFightSkillSfx.Viewer(by.Pawn);
+            float pitch = Random.Range(.94f, 1.06f);
+            SwordFightSkillSfx.Moment("SwordHit", chest, Skills, pitch, SwordFightSkillSfx.Heard(chest, mine));
+            if (mine) SwordFightSkillSfx.Moment("SwordHitBody", chest, Skills, pitch * .74f);
+            Cut?.Invoke(this, by);
+        }
+
+        public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash,
+            bool classic = false, double frameMs = 0d, double drawnMs = 0d)
         {
             Authority = false; bladeCollider.enabled = false; SwordBody.isKinematic = true;
             gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
             bool changed = Alive != alive;
-            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; FlashHit(flash);
+            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn;
+            RemoteFlash(flash, frameMs, drawnMs);
             remoteOffset = offset; remoteRotation = rotation;
             if (changed) foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
+        }
+
+        // R808, a machine that only sees this fighter: when its own last strike was (the host's clock, ms), and a cut on it
+        // waiting for the bodies drawn here to reach it.
+        double strikeMs = double.NegativeInfinity, waitingCutMs = double.NaN;
+        float waitingCutDue;
+        bool cutWaiting;
+        /// <summary>R808: at most this long (s) a cut waits for the picture to reach it; a strike and a cut this close
+        /// (host ms) are one blow.</summary>
+        const float MaxCutWait = .1f;
+        const double StrikeMatchMs = 30d;
+
+        /// <summary>R808: the flash the host sent, on a machine that only sees this fighter. A jump up into a cut's flash
+        /// (CutFlash) is a cut on it; a jump up into StrikeFlash its own cut landing (or taken by a guard). A flash counts
+        /// down from the moment it was set, so with the host time of the snapshot it came in (<paramref name="frameMs"/>)
+        /// it tells when that was, and with the host time the bodies are drawn at here (<paramref name="drawnMs"/>) how
+        /// long until this screen reaches it. A client reads the flash from the newer of the two snapshots it draws
+        /// between, so it used to sound and show a cut 0 to 33 ms before the blade got there on its screen; now the cut
+        /// waits for that moment (LateUpdate, PlayWaitingCut), and its cutter is the foe whose strike was at the same time
+        /// (FindCutter) instead of the guess by the nearest blade (SwordFightSkillFx.OnCut keeps it for when none is
+        /// found). Without the two times (the old lobby link, a host change) a cut plays this frame, as before.</summary>
+        void RemoteFlash(float flash, double frameMs, double drawnMs)
+        {
+            bool timed = frameMs > 0d && drawnMs > 0d;
+            if (Alive && flash >= .13f && flash > HitFlash + .02f)
+            {
+                if (cutWaiting) PlayWaitingCut();
+                double at = frameMs - (CutFlash - flash) * 1000d;
+                cutWaiting = true;
+                waitingCutMs = timed ? at : double.NaN;
+                // Played in LateUpdate at the soonest: by then every fighter's flash of this frame is in (its cutter's too).
+                waitingCutDue = Time.unscaledTime + (timed ? Mathf.Clamp((float)((at - drawnMs) / 1000d), 0f, MaxCutWait) : 0f);
+            }
+            else if (flash > .02f && flash < .13f && flash > HitFlash + .02f)
+                strikeMs = timed ? frameMs - (StrikeFlash - flash) * 1000d : double.NegativeInfinity;
+            HitFlash = flash;
+        }
+
+        void PlayWaitingCut()
+        {
+            cutWaiting = false;
+            if (!Alive || Pawn == null) return;
+            // Its strike not seen (two or three state packets lost in a row, or no times): the nearest foe's blade, the
+            // guess SwordFightSkillFx.OnCut made before - so this screen's own hit is still heard and marked as its own.
+            var by = double.IsNaN(waitingCutMs) ? null : FindCutter(waitingCutMs);
+            PlayCut(by != null ? by : NearestBlade());
+        }
+
+        /// <summary>R808: the foe whose blade is nearest this piece's chest, within 2.5 m (null with none).</summary>
+        SwordFightPawn NearestBlade()
+        {
+            Vector3 chest = Pawn.bodies[(int)BodyId.Chest].position;
+            SwordFightPawn best = null;
+            float nearest = 2.5f;
+            for (int i = 0; i < everyone.Count; i++)
+            {
+                var f = everyone[i];
+                if (f == null || f == this || f.Pawn == null || f.SwordBody == null || !f.Alive || f.Pawn.Team == Pawn.Team) continue;
+                Vector3 a = f.BladeRoot, ab = f.BladeTip - a;
+                float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(chest - a, ab) / ab.sqrMagnitude) : 0f;
+                float d = (a + ab * t - chest).magnitude;
+                if (d < nearest) { nearest = d; best = f; }
+            }
+            return best;
+        }
+
+        /// <summary>R808: the foe whose own strike was within StrikeMatchMs of a cut on this piece at host time
+        /// <paramref name="atMs"/> (the nearest in time; the cutter's flash and this one's are set in the same physics step),
+        /// or null.</summary>
+        SwordFightPawn FindCutter(double atMs)
+        {
+            SwordFightPawn best = null;
+            double nearest = StrikeMatchMs;
+            for (int i = 0; i < everyone.Count; i++)
+            {
+                var f = everyone[i];
+                if (f == null || f == this || f.Pawn == null || f.Pawn.Team == Pawn.Team) continue;
+                double gap = System.Math.Abs(f.strikeMs - atMs);
+                if (gap <= nearest) { nearest = gap; best = f; }
+            }
+            return best;
         }
         static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x)
             && !float.IsNaN(v.y) && !float.IsInfinity(v.y) && !float.IsNaN(v.z) && !float.IsInfinity(v.z);

@@ -382,7 +382,12 @@ namespace ChessFight.RagdollLab
         readonly Dictionary<SwordFightPawn, float> bubbleFrom = new Dictionary<SwordFightPawn, float>();
         MaterialPropertyBlock bubbleBlock;
         static readonly int FadeId = Shader.PropertyToID("_Fade"), PopId = Shader.PropertyToID("_Pop");
-        const float BubbleSize = 1.7f, BubbleIn = .22f, BubbleOut = .3f;
+        // R808: the bubble is the shell a click cut is stopped on (SwordFightPawn.ShellRadius, 1.7 m across as before).
+        const float BubbleSize = SwordFightPawn.ShellRadius * 2f, BubbleIn = .22f, BubbleOut = .3f;
+        /// <summary>R808: when a cut last rang on each protected piece's shell (SfFxKind.SwordBlocked): the bubble flares
+        /// with its appearing pop's brightness and swells a touch, easing out over ShellRingTime.</summary>
+        readonly Dictionary<SwordFightPawn, float> shellStruck = new Dictionary<SwordFightPawn, float>();
+        const float ShellRingTime = .25f;
 
         void Bubble(SwordFightPawn f, bool on)
         {
@@ -400,11 +405,12 @@ namespace ChessFight.RagdollLab
             }
             if (!bubbleFrom.TryGetValue(f, out float from)) bubbleFrom[f] = from = Time.time;
             b.SetActive(true);
-            b.transform.position = f.Pawn.Hips.position + Vector3.up * 0.15f;
+            b.transform.position = f.Pawn.Hips.position + Vector3.up * SwordFightPawn.ShellLift;
+            float rang = shellStruck.TryGetValue(f, out float struck) ? 1f - Mathf.Clamp01((Time.time - struck) / ShellRingTime) : 0f;
             if (!bubbleShader)
             {
                 var c = bubbleMat.color;
-                c.a = 0.18f + 0.08f * Mathf.Sin(Time.time * 12f);
+                c.a = 0.18f + 0.08f * Mathf.Sin(Time.time * 12f) + 0.3f * rang;
                 bubbleMat.color = c;
                 return;
             }
@@ -413,11 +419,11 @@ namespace ChessFight.RagdollLab
             // out a little past its size and back (easeOutBack), then a slow breath
             float back = 1f + 2.2f * Mathf.Pow(grow - 1f, 3f) + 1.2f * Mathf.Pow(grow - 1f, 2f);
             float leaving = 1f - Mathf.Clamp01(left / BubbleOut);
-            float size = BubbleSize * (.35f + .65f * back) * (1f + .015f * Mathf.Sin(Time.time * 5f)) * (1f + .12f * leaving);
+            float size = BubbleSize * (.35f + .65f * back) * (1f + .015f * Mathf.Sin(Time.time * 5f)) * (1f + .12f * leaving) * (1f + .05f * rang);
             b.transform.localScale = Vector3.one * size;
             bubbleBlock ??= new MaterialPropertyBlock();
             bubbleBlock.SetFloat(FadeId, Mathf.Clamp01(age / .08f) * (1f - leaving * leaving));
-            bubbleBlock.SetFloat(PopId, 1f - Mathf.Clamp01(age / .3f));
+            bubbleBlock.SetFloat(PopId, Mathf.Max(1f - Mathf.Clamp01(age / .3f), rang));
             b.GetComponent<Renderer>().SetPropertyBlock(bubbleBlock);
         }
 

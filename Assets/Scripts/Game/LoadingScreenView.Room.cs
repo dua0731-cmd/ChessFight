@@ -88,7 +88,14 @@ namespace ChessFight.Game
             head.Add(Text(Loc.T("팀이 꽉 찼으면 여기로 잠시 옮겼다가 조율해요"), "load-spec-hint"));
             specBox.Add(head);
             var row = Box("load-spec-row");
-            for (int i = 0; i < SpectatorCards; i++) row.Add(NewSpecCard().Root);
+            for (int i = 0; i < SpectatorCards; i++)
+            {
+                var root = NewSpecCard().Root;
+                // R809: the last card has no gap after it. UI Toolkit has no :last-child (the USS rule was dropped
+                // with a warning in every build), so it is set here.
+                if (i == SpectatorCards - 1) root.style.marginRight = 0;
+                row.Add(root);
+            }
             specBox.Add(row);
             screen.Add(specBox);
 
@@ -144,6 +151,8 @@ namespace ChessFight.Game
                             RulesRequested?.Invoke(Network.PawnRushRules.Decode(State.Rules).With(s, c).Encode());
                     };
                     buttons[choice] = button;
+                    // R809: no gap after the last button (UI Toolkit has no :last-child).
+                    if (choice == names.Length - 1) button.style.marginRight = 0;
                     row.Add(button);
                 }
                 ruleButtons.Add(buttons);

@@ -1024,3 +1024,7 @@ R662 커밋을 Revert하면 R661의 2구역(짐더미 줄 셋, 44 m)으로 돌�
 ## 20. 블록아웃을 Blender 모델로 (seoungtest R677–R680, 2026-11-16, seoungtest 브랜치 — AI 확인만, 사용자 Unity 확인 전)
 
 구역별 모델 · 붙이는 코드(`RoyalCarriageYard.Dressing.cs`, `RoyalCarriageYard.Castle.cs`, `YardHorse.cs`, `YardHorseRig.cs`) · 내보내기 순서 · 남은 일은 [RCY_MODELS](RCY_MODELS.md)에 있다. 콜라이더 · 게임 폭 · 신호는 바꾸지 않았고, 성 키트만 AI 텍스처, 나머지는 회색 클레이다.
+
+## 21. 먼 거리 LOD (R809, 2026-11-23 — 코드 · 사본 측정까지, 사용자 Unity 확인 전)
+
+11-23 빌드 시험에서 마차뜰이 52 fps로 가장 무거웠다(트인 마당이라 거의 전부가 한 화면에 든다 — [빌드 시험 11-23 §9-2 · §12](../Network/BUILD_TEST_2026-11-23.md)). 사용자 "마차뜰 LOD 부터 해줘 너무 많이는 줄이지 말고". 큰 고정 모델 10개(`RcyEntrance` · `RcyCanal` · `RcySorting` · `RcyPlatform` · `RcyFinishCourt` · `RcyScenery` · `RcySceneryOwn` · `RcyCastleOuterGate` · `RcyCastleFinalGate` · `RcyCastleSectionEnd`)에 삼각형 50%짜리 `LOD/<모델>_LOD1.fbx`(`lod_rcy.py`, Blender collapse 0.5 · 30°보다 날카로운 모서리는 각지게)를 두고, `RoyalCarriageYard.Dressing.AttachLods`가 조각마다 LODGroup을 단다 — LOD 배율 1에서 40 m(그래픽 높음 1.6 → 약 64 m)보다 멀면 절반, 지우는 단계 없음, 재질 · 그림자 그대로. **모델을 다시 내보내면 `lod_rcy.py`도 다시 돌린다**(LOD1은 그때의 원본에서 만든 것; 이름이 바뀐 조각은 LOD 없이 그대로 그려짐). 사본 측정: 시점 평균 렌더 35.2 → 29.5 ms, 마당 시점 58.9 → 33.3 ms.

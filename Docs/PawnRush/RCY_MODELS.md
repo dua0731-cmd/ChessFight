@@ -1013,3 +1013,20 @@ Inspected in Blender (temporary scene, removed afterwards). Stills: stills/rcy_a
 - **깜빡임 마무리(11-17 19시):** 소스에서 고친 네 곳(거룻배 끝 블록 +3 cm, 궤짝 가로 쇠띠 +2 cm, 출발 문짝 띠목 9 cm, 승강장 판석을 갓돌 뒤부터) 뒤 4 mm 기준 전체 검사: 보이는 겹침 합 약 17.7 m²(입구 출발 마당 벽 모서리 5.2, 결승 마당 · 구간 바닥 모서리 각 3, 승강장 3, 분류장 2.5, 마차 0.45 — 모두 작은 모서리 면). 뺀 것: 성 키트(AI) · 말, 맵 밖 면, 성문 벽 · 운하 둑에 가려진 입구 바닥 끝면, 절벽 판 뒷면.
 - **확인:** `Test-NetworkCompile.ps1` PASS(Dressing.cs 경고 0). Blender Eevee 견본 렌더(ACES 1.3 · 노출 .6 · 해 1.85, `qa/texture_lookdev.py`)로 컨셉과 비교. **Unity에서 본 것 없음 — 사용자 확인 전.**
 - **판석마다 짙은 돌(11-17, 승규 "판석마다 짙은 돌 섞기 시작"):** `rcy_kit.surface_uvs`가 조각마다 꼭짓점 색 톤(판석 약 17 % 짙은 돌, 벽 10 % 조금 어둡게), Unity 새 셰이더 `ChessFight/RcyTintLit`(URP Lit + 꼭짓점 색 곱하기, 생성기 `textures/rcy_tint_shader.py`)을 RCY_Flag · Stone · Shade가 씀. 입구 다시 냄(248,912 그대로), 다른 구역은 각 세션이 다시 냄. 규칙: textures/PLAN.md 9절.
+
+## R806 최종 성문 문짝 — 낡은 호두나무 (2026-11-23, main, 커밋 안 함 · 사용자 Unity 확인 전)
+
+- 지시: "마차뜰 출구 문 모델링 해줘"(그때까지 `PushGate`가 그리던 코드 상자: 검은 판 · 띠 넷 · 금색 네모 `Crown` · 금색 원판 `Ring`), 이어서 "너무 흠집이 없는 문이야 약간의 스크래치 낡은 문 컨셉으로 해줘".
+- 모델: `movers_model.py`의 `final_gate_leaf(col, side)` · `build_final_gate_leaves()`(`build_movers()`도 부름). 문짝의 경첩 좌표계(경첩 = 원점, W는 +x, E는 −x로 4 m, 높이 7.2, 두께 0.5, 플랫폼 쪽 면 −y). 기둥 · 가로대 셋 · 판자 12장 × 두 칸(폭 · 깊이 · ±0.35° 기울기 · 끝 틈 제각각, 아래 칸에 쪼개진 판 하나 — 씨앗 고정 `2311 + side`), 뒤 덧판(판자 틈으로 하늘이 안 보이게) · 가로대 넷 · 사선대 둘, 앞 경첩띠 넷(z .5 · 2.35 · 4.75 · 6.55, 경첩에서 0.25 ~ 0.7° 처짐, 징 14%가 빠지고 12%가 들뜸, 끝 백합 장식) · 경첩 고리 · 가운데 쇠 띠, 놋쇠 문고리(판 · 꼭지 · 고리, 코드의 `Ring` 콜라이더 x 3.3 · y .95 자리). 왕관 판 없음. W 5,580 · E 5,484 삼각형.
+- 재질: `textures/rcy_worn.py`(Blender로 실행)가 `textures/library`의 `RCY_Walnut` · `RCY_Iron`에서 `RCY_Oldwalnut` · `RCY_Oldiron`을 만들고 `rcy_textures.json`에 더함 → `rcy_unity_materials.py RCY_Oldwalnut,RCY_Oldiron`. 호두나무: 바랜 회갈색 얼룩 30%, 큰 때 얼룩, 결을 가로지르는 긁힘 110개(밝은 새 나무 · 노멀 홈), 깊은 홈 14개, 패임; 쇠: 옅은 녹 꽃(드문드문), 밝은 긁힘, 녹 구멍. 타일 그대로(2 m · 1 m), `RCY_Oldwalnut`는 1024(긁힘이 512에서 뭉개짐).
+- 내보내기: Blender를 열지 않고 `blender -b --factory-startup --python <스크립트>`로 `rcy_kit.py`(RCY_ROOT = 이 저장소) → `entrance_model.py`(RCY_BUILD = False) → `movers_model.py`(RCY_BUILD_MOVERS = False) → `build_final_gate_leaves()` → `export_rcy.export("RCY Final gate leaf W", "RcyFinalGateLeafW")` · E.
+- Unity: `RoyalCarriageYard.Dressing.cs` `DressMovers` — 마차뜰 안의 `PushGate`마다 `Door` 자식이 있는 문짝 Rigidbody의 코드 그림(Door · Iron band · Crown · Ring)을 끄고(`Unpaint`, 콜라이더 그대로) `Door`가 +x면 W, 아니면 E 모델을 문짝에 태움(`Ride`). 진행 막대 · 글씨는 성문 자신의 자식이라 그대로. 작전 회의실의 `PushGate`는 마차뜰 루트 밖이라 대상 아님.
+- 확인한 것: Blender 렌더(닫힌 앞면 · 문고리 가까이 · 뒷면 · 열린 모습)만. 컴파일 · Core 229 · 세션 115 통과. **Unity · 사용자 확인 없음.**
+
+## R807 들어 올리는 물레방아 손잡이 (2026-11-23, main, 커밋 안 함 · 사용자 Unity 확인 전)
+
+- 지시: "마지막 구간 물레방아 손잡이 부분도 노란색 말고 다른 걸로 모델링 해줘"(R686까지 손잡이는 `VerticalWaterwheel`의 금색 `Handle` 막대 · `Handle post`, 모델이 남겨 두던 것).
+- 모델: `sorting_machines_model.py` `lift_handle(col)`을 `lift_wheel`의 노마다 더함 — 노 좌표계(Unity) 중심 (0, 4.65, .32), 굵기 0.16 · 길이 2.5의 호두나무 막대, x ±0.25 ~ 0.85에 밧줄 여덟 바퀴씩(`RCY | rope`), 양 끝 쇠 고리, x ±1.2에 쇠 띠 · 받침 · 노 앞면 판 · 볼트 둘.
+- 내보내기: `rcy_kit` → `entrance_model` · `sorting_model`(RCY_BUILD = False) → `movers_model`(RCY_BUILD_MOVERS = False) → `sorting_machines_model`(RCY_BUILD_MACHINES = False) → `build_sorting_machines(only=["RCY Lift wheel"])` → `export("RCY Lift wheel", "RcyLiftWheel")`, Blender 백그라운드. 모델 전체가 다시 나감(23,752 삼각형); 재질 칸은 전과 같음(`Materials/RcyLiftWheel/RCY_Oak` 그대로).
+- Unity: `DressSortingMachines`가 `Unpaint(wheel)` — 손잡이 · 기둥까지 코드 그림을 끔. 콜라이더(잡기 전용)는 그대로. `RoyalCarriageYard.Fx.cs` `NoGoldEdges`의 `GoldKept`는 그대로(모델이 없을 때를 위해).
+- 확인한 것: Blender 렌더(물레방아 전체 · 손잡이 가까이)만. 컴파일 · Core 229 · 세션 115 통과. **Unity · 사용자 확인 없음.**

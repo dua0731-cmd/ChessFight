@@ -1,0 +1,63 @@
+Section light probe (R809) 2026-11-23 23:58:30
+device: Intel(R) Iris(R) Xe Graphics | Direct3D11 | quality 1 PC
+== RoyalCarriageYard
+  lights: Directional 2, Directional shadowed 1, Point 10
+  shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  WARNING under RoyalCarriageYard: [SectionLightProbe]   shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  renderers 491 · triangles 2,036,404 · shadow casters 284 · materials 80 (transparent 30) · particle systems 11 · reflection probes 4
+  view entry: renderers 482 · triangles 2,010,114 · casters 277 · lights 7 (shadowed 0, maps 0) · 11.24 / 38.11 ms
+  view 1 바깥 성문 · 마당: renderers 442 · triangles 1,832,414 · casters 239 · lights 11 (shadowed 0, maps 0) · 13.42 / 58.91 ms
+  view 2 운하 · 대형 물레방아: renderers 397 · triangles 1,541,500 · casters 204 · lights 4 (shadowed 0, maps 0) · 5.83 / 28.59 ms
+  view 3 왕실 하역 창고 · 물레방아: renderers 136 · triangles 1,019,630 · casters 119 · lights 10 (shadowed 0, maps 0) · 6.70 / 32.59 ms
+  view 4 최종 성문: renderers 4 · triangles 113,422 · casters 4 · lights 0 (shadowed 0, maps 0) · 2.94 / 17.61 ms
+  views: mean 35.16 ms, slowest '1 바깥 성문 · 마당' 58.91 ms
+== GrandStairHall
+  lights: Directional shadowed 1, Point 59
+  shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  WARNING under GrandStairHall: [SectionLightProbe]   shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  renderers 1,167 · triangles 2,827,603 · shadow casters 652 · materials 80 (transparent 15) · particle systems 16 · reflection probes 0
+  view entry: renderers 1158 · triangles 2,931,431 · casters 637 · lights 59 (shadowed 0, maps 0) · 9.67 / 42.21 ms
+  view 1 굴러떨어지는 대계단: renderers 1107 · triangles 2,185,350 · casters 600 · lights 33 (shadowed 0, maps 0) · 7.04 / 35.26 ms
+  view 2 중앙 계단참 샹들리에 낙하: renderers 614 · triangles 1,289,791 · casters 236 · lights 27 (shadowed 0, maps 0) · 6.16 / 32.87 ms
+  view 5 왕실 단과 유리 징검다리: renderers 137 · triangles 702,436 · casters 79 · lights 25 (shadowed 0, maps 0) · 4.10 / 25.75 ms
+  view 5 왕실 단과 유리 징검다리: renderers 47 · triangles 371,315 · casters 15 · lights 2 (shadowed 0, maps 0) · 3.20 / 17.70 ms
+  view 6 왕실 발코니와 대문: renderers 13 · triangles 120,744 · casters 13 · lights 2 (shadowed 0, maps 0) · 2.34 / 15.68 ms
+  view 4 점프대·다이빙·바람·떨어지는 말: renderers 134 · triangles 702,316 · casters 79 · lights 26 (shadowed 0, maps 0) · 4.02 / 26.68 ms
+  view 3 휘어 오르는 계단과 떠 있는 발판: renderers 158 · triangles 419,423 · casters 24 · lights 6 (shadowed 0, maps 0) · 3.99 / 23.49 ms
+  views: mean 27.46 ms, slowest 'entry' 42.21 ms
+== WarRoom
+  lights: Directional shadowed 1, Point 2, Point shadowed 16
+  shadowed punctual lights: 16 (shadow maps 96; the atlas warning comes when one frame needs more than it holds)
+  WARNING under WarRoom: [SectionLightProbe]   shadowed punctual lights: 16 (shadow maps 96; the atlas warning comes when one frame needs more than it holds)
+  renderers 2,975 · triangles 1,760,126 · shadow casters 2,947 · materials 71 (transparent 21) · particle systems 46 · reflection probes 0
+  WARNING under WarRoom: Reduced additional punctual light shadows resolution by 4 to make 96 shadow maps fit in the 4096x4096 shadow atlas. To avoid this, increase shadow atlas size, decrease big shadow resolutions, or reduce the number of shadow maps active in the same frame
+  view entry: renderers 2283 · triangles 1,542,122 · casters 2270 · lights 18 (shadowed 16, maps 96) · 25.67 / 79.11 ms
+  view 1 출발 (작전 지도): renderers 1966 · triangles 1,366,010 · casters 1957 · lights 17 (shadowed 16, maps 96) · 24.55 / 78.01 ms
+  WARNING under WarRoom: Reduced additional punctual light shadows resolution by 2 to make 60 shadow maps fit in the 4096x4096 shadow atlas. To avoid this, increase shadow atlas size, decrease big shadow resolutions, or reduce the number of shadow maps active in the same frame
+  view 2 컨베이어 · 공기 대포 · 포탑: renderers 896 · triangles 779,303 · casters 894 · lights 13 (shadowed 12, maps 72) · 20.56 / 62.89 ms
+  WARNING under WarRoom: Reduced additional punctual light shadows resolution by 2 to make 24 shadow maps fit in the 4096x4096 shadow atlas. To avoid this, increase shadow atlas size, decrease big shadow resolutions, or reduce the number of shadow maps active in the same frame
+  view 3 골 계단 · 출구 문: renderers 82 · triangles 85,083 · casters 82 · lights 7 (shadowed 6, maps 36) · 4.96 / 28.41 ms
+  view 4 문 뒤 통로: renderers 4 · triangles 69,488 · casters 4 · lights 4 (shadowed 4, maps 24) · 7.89 / 28.04 ms
+  WARNING under WarRoom: Reduced additional punctual light shadows resolution by 2 to make 60 shadow maps fit in the 4096x4096 shadow atlas. To avoid this, increase shadow atlas size, decrease big shadow resolutions, or reduce the number of shadow maps active in the same frame
+  view 아래층 · 돌아가는 계단: renderers 786 · triangles 623,065 · casters 783 · lights 13 (shadowed 12, maps 72) · 15.73 / 60.47 ms
+  views: mean 56.15 ms, slowest 'entry' 79.11 ms
+SKIP AudienceHall: not in the course test
+== MoatDrawbridge
+  lights: Directional shadowed 1, Point 8
+  shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  WARNING under MoatDrawbridge: [SectionLightProbe]   shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  renderers 969 · triangles 3,641,556 · shadow casters 946 · materials 50 (transparent 13) · particle systems 2 · reflection probes 0
+  view entry: renderers 753 · triangles 2,757,944 · casters 744 · lights 8 (shadowed 0, maps 0) · 5.08 / 28.80 ms
+  view 해자 도개교: renderers 209 · triangles 1,193,432 · casters 206 · lights 8 (shadowed 0, maps 0) · 3.79 / 24.08 ms
+  view 문 뒤 회랑: renderers 19 · triangles 276,000 · casters 19 · lights 0 (shadowed 0, maps 0) · 2.23 / 12.67 ms
+  views: mean 21.85 ms, slowest 'entry' 28.80 ms
+== PalaceLaundry
+  lights: Directional shadowed 1, Point 17
+  shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  WARNING under PalaceLaundry: [SectionLightProbe]   shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  renderers 559 · triangles 861,512 · shadow casters 335 · materials 62 (transparent 14) · particle systems 2 · reflection probes 0
+  view entry: renderers 198 · triangles 615,980 · casters 114 · lights 15 (shadowed 0, maps 0) · 4.43 / 20.80 ms
+  view 왕궁 세탁장: renderers 17 · triangles 351,390 · casters 15 · lights 9 (shadowed 0, maps 0) · 2.88 / 16.80 ms
+  view 문 뒤 회랑: renderers 3 · triangles 263,068 · casters 3 · lights 0 (shadowed 0, maps 0) · 2.34 / 18.34 ms
+  views: mean 18.65 ms, slowest 'entry' 20.80 ms
+RESULT PASS (probe ran; see the numbers)

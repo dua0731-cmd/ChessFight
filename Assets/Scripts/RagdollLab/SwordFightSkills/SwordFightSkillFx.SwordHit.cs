@@ -30,21 +30,22 @@ namespace ChessFight.RagdollLab
                 if (f != null && f.SwordBody != null) lastTips[f] = f.BladeTip;
         }
 
-        void OnCut(SwordFightPawn victim)
+        void OnCut(SwordFightPawn victim, SwordFightPawn cutter)
         {
             if (!SwordHitVfxOn || !effects || kit == null || victim == null || victim.Pawn == null) return;
             Vector3 chest = victim.Pawn.bodies[(int)BodyId.Chest].position;
-            // Whose blade bit: the other side's sword nearest the chest.
-            SwordFightPawn by = null;
+            // Whose blade bit: R808, the cutter when this machine knows it (where the cut is run; on a client the foe whose
+            // strike was at the same moment, SwordFightPawn.FindCutter). Else, as before, the other side's sword nearest
+            // the chest - which in a crowd could be the wrong one, and the view's kick went to the wrong player.
+            SwordFightPawn by = cutter != null && cutter.Pawn != null && cutter.SwordBody != null ? cutter : null;
             float best = 2.5f;
             Vector3 onBlade = chest;
-            if (game != null)
+            if (by != null) onBlade = NearestOnBlade(by, chest);
+            else if (game != null)
                 foreach (var f in game.Fighters.Values)
                 {
                     if (f == null || f == victim || f.Pawn == null || f.SwordBody == null || f.Pawn.Team == victim.Pawn.Team) continue;
-                    Vector3 a = f.BladeRoot, ab = f.BladeTip - a;
-                    float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(chest - a, ab) / ab.sqrMagnitude) : 0f;
-                    Vector3 p = a + ab * t;
+                    Vector3 p = NearestOnBlade(f, chest);
                     float dist = (p - chest).magnitude;
                     if (dist < best) { best = dist; by = f; onBlade = p; }
                 }
@@ -79,8 +80,32 @@ namespace ChessFight.RagdollLab
             Punch(attacker, victim.Pawn, 2f, 9);
         }
 
-        /// <summary>R670: how many frames (of 60 a second) a cut piece's picture is held as the blade bites.</summary>
-        public const int CutHoldFrames = 4;
+        /// <summary>R670: how many frames (of 60 a second) a cut piece's picture is held as the blade bites. R808: 4 → 6, as
+        /// long as the blade's own catch (SwordFightPawn.BiteTime .10 s), and on a client from the moment the drawn bodies
+        /// reach the cut (it started up to 33 ms early, before the blade got there).</summary>
+        public const int CutHoldFrames = 6;
+
+        /// <summary>R808 (승규 님 11-23: a cut on a piece just back on the board went through it as if nobody stood there):
+        /// a click cut met the shell of a piece under its respawn protection (SwordFightPawn.HitShells; the bubble itself
+        /// flares, SwordFightMatch.Board). Steel on the shell where the blade met it, as the clash of two blades is drawn
+        /// (a white flash and a cold light, no sparks: 승규 님 10-25 "불꽃 말고"), and a small kick of the two pieces' views.</summary>
+        void ShellRing(SfFxEvent e)
+        {
+            if (!SwordHitVfxOn) return;
+            var cutter = e.by.Pawn;
+            Vector3 back = cutter != null ? cutter.Hips.position - e.at : -e.dir;
+            back.y = 0f;
+            SteelClash(e.at, back.sqrMagnitude > 1e-4f ? back.normalized : Vector3.back, 0.6f);
+            Shake(cutter, e.target, 0.02f, 4);
+        }
+
+        /// <summary>The point of <paramref name="f"/>'s blade nearest <paramref name="p"/>.</summary>
+        static Vector3 NearestOnBlade(SwordFightPawn f, Vector3 p)
+        {
+            Vector3 a = f.BladeRoot, ab = f.BladeTip - a;
+            float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+            return a + ab * t;
+        }
 
         /// <summary>The slash a cut leaves for a moment: two thin bright lines across <paramref name="at"/> along
         /// <paramref name="swing"/> as the eye sees it (a long soft one and a sharp core), opening along the cut in two

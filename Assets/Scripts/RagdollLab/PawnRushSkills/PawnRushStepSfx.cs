@@ -49,6 +49,7 @@ namespace ChessFight.RagdollLab
             public int half = -1;   // R657: which half of the legs' cycle it was in (a step when it changes)
             public bool seen;
             public int lastClip = -1;
+            public float offFor;   // seconds off its feet (a landing on glass taps once)
         }
 
         readonly List<AudioClip> walk = new List<AudioClip>(), run = new List<AudioClip>();
@@ -56,6 +57,14 @@ namespace ChessFight.RagdollLab
         // WadeWalk* / WadeRun* (ArtSource/PawnRush/Sfx/bake_moves.py, the ElevenLabs flow "정원 갑문 물 발소리").
         readonly List<AudioClip> wadeWalk = new List<AudioClip>(), wadeRun = new List<AudioClip>();
         const float WadeGain = .4f;   // about the dry walk step's level (bake_wade.py: -18 dB, x0.4)
+        // 2026-11-23 (사용자 "대계단 코스에서 유리 밟을 때 나는 소리 넣어줘"): on a GlassFloor (the grand stair hall's glass
+        // stepping stones) the steps are crisp glassy taps, GlassWalk* / GlassRun* (ArtSource/PawnRush/Sfx/bake_glass.py,
+        // the ElevenLabs flow "대계단 유리 발소리"). The stones stand 1.05 m apart, so most pawns jump them: a landing on
+        // glass after a short flight taps once as well (LandGlassAfter).
+        readonly List<AudioClip> glassWalk = new List<AudioClip>(), glassRun = new List<AudioClip>();
+        // bake_glass.py: walk taps -21 dB, run taps -20 dB (50 ms); x0.6 sets them about the dry steps (-26 / -24 dB),
+        // a landing a little over them.
+        const float GlassGain = .6f, GlassLandGain = .8f, LandGlassAfter = .15f;
         readonly Dictionary<RagdollPawn, Feet> feet = new Dictionary<RagdollPawn, Feet>();
         readonly List<RagdollPawn> pawns = new List<RagdollPawn>();
         readonly RaycastHit[] hits = new RaycastHit[8];
@@ -74,8 +83,10 @@ namespace ChessFight.RagdollLab
                 else if (clip.name.StartsWith("Run")) run.Add(clip);
                 else if (clip.name.StartsWith("WadeWalk")) wadeWalk.Add(clip);
                 else if (clip.name.StartsWith("WadeRun")) wadeRun.Add(clip);
+                else if (clip.name.StartsWith("GlassWalk")) glassWalk.Add(clip);
+                else if (clip.name.StartsWith("GlassRun")) glassRun.Add(clip);
             }
-            foreach (var list in new[] { walk, run, wadeWalk, wadeRun })
+            foreach (var list in new[] { walk, run, wadeWalk, wadeRun, glassWalk, glassRun })
                 list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
             var holder = new GameObject("Pawn Rush footsteps").transform;
             holder.SetParent(transform, false);
@@ -119,11 +130,23 @@ namespace ChessFight.RagdollLab
                 if (raw.sqrMagnitude > 400f) { f.phase = .55f; f.half = -1; continue; }
                 f.velocity = Vector3.Lerp(f.velocity, raw, 1f - Mathf.Exp(-dt / .08f));
                 Vector3 floorVel;
-                bool wet;
-                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel, out wet)) { f.phase = .55f; f.half = -1; continue; }
+                bool wet, glass;
+                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel, out wet, out glass))
+                {
+                    f.phase = .55f; f.half = -1; f.offFor += dt;
+                    continue;
+                }
                 Vector3 over = f.velocity - floorVel;
                 float speed = new Vector2(over.x, over.z).magnitude;
                 bool sprint = pawn.NetworkPuppet ? speed > RunFrom : pawn.Sprinting || speed > RunFrom;
+                bool landed = f.offFor >= LandGlassAfter;
+                f.offFor = 0f;
+                if (landed && glass && glassWalk.Count + glassRun.Count > 0)
+                {
+                    // A landing on glass: one tap now, the next on the legs' own count.
+                    Step(f, sprint, false, true, hips, Mathf.Max(speed, 2.5f), cam, GlassLandGain);
+                    continue;
+                }
                 if (!pawn.NetworkPuppet)
                 {
                     // R657: on the legs' own phase, a step each time a leg reaches the front (twice a cycle). Standing,
@@ -140,7 +163,7 @@ namespace ChessFight.RagdollLab
                     if (f.phase < 1f) continue;
                     f.phase = Mathf.Repeat(f.phase, 1f);
                 }
-                Step(f, sprint, wet, hips, speed, cam);
+                Step(f, sprint, wet, glass, hips, speed, cam, 0f);
             }
         }
 
@@ -158,10 +181,11 @@ namespace ChessFight.RagdollLab
             return 2f * cycles;
         }
 
-        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel, out bool wet)
+        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel, out bool wet, out bool glass)
         {
             floorVel = Vector3.zero;
             wet = false;
+            glass = false;
             if (!pawn.NetworkPuppet)
             {
                 if (!pawn.Grounded || pawn.State != PawnState.Active || pawn.Diving || pawn.Climbing || pawn.Floating || pawn.OnRope)
@@ -182,17 +206,24 @@ namespace ChessFight.RagdollLab
                 var surface = h.collider.GetComponentInParent<IMovingSurface>();
                 floorVel = surface != null ? surface.PointVelocity(h.point) : body != null ? body.GetPointVelocity(h.point) : Vector3.zero;
                 wet = h.collider.GetComponent<ChessFight.Gameplay.WetFloor>() != null;
+                glass = h.collider.GetComponent<ChessFight.Gameplay.GlassFloor>() != null;
             }
             if (!pawn.NetworkPuppet) return true;
             // Upright: the hips stand about standHeight over the floor (lying down they are much lower).
             return found && best - .05f > pawn.standHeight * .6f;
         }
 
-        void Step(Feet f, bool sprint, bool wet, Vector3 at, float speed, Camera cam)
+        // levelOver: the level to use instead of the set's own (0 = the set's).
+        void Step(Feet f, bool sprint, bool wet, bool glass, Vector3 at, float speed, Camera cam, float levelOver)
         {
             List<AudioClip> set;
             float level;
-            if (wet && (wadeWalk.Count > 0 || wadeRun.Count > 0))
+            if (glass && (glassWalk.Count > 0 || glassRun.Count > 0))
+            {
+                set = sprint && glassRun.Count > 0 ? glassRun : glassWalk.Count > 0 ? glassWalk : glassRun;
+                level = GlassGain;
+            }
+            else if (wet && (wadeWalk.Count > 0 || wadeRun.Count > 0))
             {
                 set = sprint && wadeRun.Count > 0 ? wadeRun : wadeWalk.Count > 0 ? wadeWalk : wadeRun;
                 level = WadeGain;
@@ -203,6 +234,7 @@ namespace ChessFight.RagdollLab
                 level = set == run ? RunGain : WalkGain;
             }
             if (set.Count == 0) return;
+            if (levelOver > 0f && set != walk && set != run) level = levelOver;
             int pick = Random.Range(0, set.Count);
             if (set.Count > 1 && pick == f.lastClip) pick = (pick + 1 + Random.Range(0, set.Count - 1)) % set.Count;
             f.lastClip = pick;

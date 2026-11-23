@@ -12,6 +12,8 @@ namespace ChessFight.Game
     {
         // Elements with this class draw in the display font (titles, buttons, big numbers).
         public const string DisplayClass = "disp";
+        // Marks a display element whose text is already being watched (Display), so a second call adds no second watch.
+        const string WatchClass = "disp-watched";
 
         static Font display;
         static bool displayTried;
@@ -94,9 +96,33 @@ namespace ChessFight.Game
         public static void Display(VisualElement element)
         {
             if (element == null || DisplayFace == null) return;
+            bool first = !element.ClassListContains(WatchClass);
             element.AddToClassList(DisplayClass);
-            element.style.unityFont = DisplayFace;
+            element.AddToClassList(WatchClass);
             element.style.unityFontStyleAndWeight = FontStyle.Normal;
+            FaceFor(element);
+            // 11-23 (user, "권등떄이"): a text set later - a player's name - may have a letter Black Han Sans lacks, which
+            // Unity would borrow alone from 맑은 고딕. The label then takes the body font whole; checked a few times a second
+            // because setting Label.text sends no event.
+            if (first && element is TextElement text)
+            {
+                string seen = text.text;
+                element.schedule.Execute(() =>
+                {
+                    if (text.text == seen) return;
+                    seen = text.text;
+                    FaceFor(element);
+                }).Every(150);
+            }
+        }
+
+        // The display face, or the body font when the element's text has a letter the face lacks.
+        static void FaceFor(VisualElement element)
+        {
+            var face = DisplayFace;
+            if (face == null) { element.style.unityFont = StyleKeyword.Null; return; }
+            var text = element as TextElement;
+            element.style.unityFont = text == null || DisplayGlyphs.Covers(text.text) ? face : BodyFont;
         }
 
         // R625: editor captures only (PawnRushEditor/VersusSceneCapture): while set, a panel made here draws into this texture
@@ -171,16 +197,11 @@ namespace ChessFight.Game
         static void Refont()
         {
             roots.RemoveAll(r => r == null || r.panel == null);
-            var face = DisplayFace;
             foreach (var root in roots)
             {
                 Retranslate(root);
                 root.style.unityFont = BodyFont;
-                root.Query<VisualElement>(className: DisplayClass).ForEach(e =>
-                {
-                    if (face != null) e.style.unityFont = face;
-                    else e.style.unityFont = StyleKeyword.Null;
-                });
+                root.Query<VisualElement>(className: DisplayClass).ForEach(FaceFor);
             }
         }
 

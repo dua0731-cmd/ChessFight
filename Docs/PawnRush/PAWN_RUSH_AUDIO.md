@@ -82,6 +82,7 @@ R653("폰러시 플레이테스트 후속")이 넣은 소리다. 유리 파손�
 
 - **대계단 장애물**은 원래 거리 감쇠에 홀 게인 0.55와 효과음 설정을 곱한다. 돌 홀 잔향은 0.4초다. 낙하 기사 착지는 A1 원음의 첫 충격 0.8초만 한 소스로 재생한다. 대리석과 카펫의 착지음, 경고의 박자와 방향은 각각의 기존 클립을 따른다.
 - **유리**는 방장과 각 참가자가 판이 새로 깨지는 순간 재생하고, 중간 입장 때 이미 깨진 판은 조용히 상태만 맞춘다.
+- **유리 발소리(R805, 11-23):** 사용자 "대계단 코스에서 유리 밟을 때 나는 소리 넣어줘". `GuessBridge.OnSection`이 판마다 `Gameplay/GlassFloor` 표시를 붙이고(이미 지은 프리팹을 다시 짓지 않아도 됨), `PawnRushStepSfx`가 엉덩이 밑 바닥이 `GlassFloor`이면 `Resources/PawnRushStepSfx/GlassWalk0~5`(0.1초 안팎) · `GlassRun0~5`를 낸다(크기 `GlassGain` 0.6 — 마른 발소리 −26 / −24 dB쯤). 판 사이가 1.05 m라 대부분 뛰어 건너므로, 0.15초 넘게 떴다가 유리판에 내려앉으면 바로 한 번(`GlassLandGain` 0.8). 소리 원본: ElevenLabs flow "대계단 유리 발소리"(taIwcW5WbzmoZtzcjVbx, eleven_text_to_sound_v2), `ArtSource/PawnRush/Sfx/takes_glass/`, 자르기 `bake_glass.py`(프롬프트는 파일 맨 위; Blender 5.2 `blender.exe -b --factory-startup --python …`). 네트워크로 보내지 않는다(발소리와 같음). 사용자 Unity 확인(11-23 "확인"), 두 PC는 미확인.
 
 Unity에서 대계단 낙하 기사와 예고음을 들은 뒤, 유리판이 깨지는 순간 및 안전한 판 위에 머무를 때를 비교한다. 두 PC에서는 다이빙과 잡기의 위치, 같은 판의 파손음이 한 번씩 들리는지 확인한다. 직접 청취 결과는 아직 기록되지 않았다.
 

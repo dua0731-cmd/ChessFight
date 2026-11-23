@@ -297,6 +297,7 @@ namespace ChessFight.RagdollLab
             int myTeam = me != null ? me.Pawn.Team : 0;
 
             DrawTags();
+            DrawHitMarks(ui);   // R808
             DrawScore(w, ui);
             DrawCaption(w, h, ui, me);
             switch (view.Phase)
@@ -351,6 +352,54 @@ namespace ChessFight.RagdollLab
             float ih = r.height * 0.78f, iw = ih * icon.width / icon.height;
             GUI.DrawTexture(new Rect(r.center.x - iw / 2f, r.center.y - ih / 2f, iw, ih), icon);
             GUI.color = old;
+        }
+
+        // ---------------------------------------------------------------- R808: this player's own hits
+
+        /// <summary>R808 (승규 님 11-23, the online play: "피격을 해도 허공을 가로지르는 것 같음, 피격에 따른 사용자에 피드백이
+        /// 있어야함"): where this player's own cut bit, a mark on its screen only - four short amber strokes in an X round
+        /// the cut piece's chest, leaving its middle clear, popping in a little big and fading out over HitMarkTime. The
+        /// cut and its sound come through SwordFightPawn.Cut (on a client once its bodies reach the cut, with the cutter
+        /// found by its strike), so the mark is on the piece as the blade bites. False: no marks.</summary>
+        public static bool HitMarksOn = true;
+        const float HitMarkTime = .3f;
+        readonly List<(SwordFightPawn victim, float at)> hitMarks = new List<(SwordFightPawn, float)>();
+
+        void OnCutMark(SwordFightPawn victim, SwordFightPawn by)
+        {
+            if (!HitMarksOn || game == null || victim == null || by == null || by != game.Local) return;
+            hitMarks.Add((victim, Time.unscaledTime));
+        }
+
+        void DrawHitMarks(float ui)
+        {
+            if (hitMarks.Count == 0 || Event.current.type != EventType.Repaint) return;
+            float now = Time.unscaledTime;
+            for (int i = hitMarks.Count - 1; i >= 0; i--)
+                if (hitMarks[i].victim == null || now - hitMarks[i].at > HitMarkTime) hitMarks.RemoveAt(i);
+            var cam = game.CameraRig != null ? game.CameraRig.Cam : Camera.main;
+            if (cam == null) return;
+            Matrix4x4 keep = GUI.matrix;
+            Color colour = GUI.color;
+            foreach (var (victim, at) in hitMarks)
+            {
+                if (victim.Pawn == null) continue;
+                Vector3 s = cam.WorldToScreenPoint(victim.Pawn.bodies[(int)BodyId.Chest].position);
+                if (s.z <= 0f) continue;
+                var centre = new Vector2(s.x, Screen.height - s.y);
+                float age = now - at, fade = 1f - Mathf.Clamp01(age / HitMarkTime);
+                float pop = 1f + .35f * (1f - Mathf.Clamp01(age / .06f));
+                float inner = 9f * ui * pop, length = 11f * ui * pop, thick = Mathf.Max(2f, 2.4f * ui);
+                GUI.color = new Color(Amber.r, Amber.g, Amber.b, fade * fade);
+                for (int k = 0; k < 4; k++)
+                {
+                    GUI.matrix = keep;
+                    GUIUtility.RotateAroundPivot(45f + 90f * k, centre);
+                    GUI.DrawTexture(new Rect(centre.x + inner, centre.y - thick / 2f, length, thick), Texture2D.whiteTexture);
+                }
+            }
+            GUI.matrix = keep;
+            GUI.color = colour;
         }
 
         void DrawTags()

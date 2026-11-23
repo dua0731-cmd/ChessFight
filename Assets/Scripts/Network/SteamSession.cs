@@ -1245,7 +1245,10 @@ namespace ChessFight.Network
             if (now - loggedOffSince < LogoffGrace) { Status = Loc.T("Steam 연결이 잠시 끊겼습니다. 다시 연결되기를 기다리는 중..."); return; }
             if (logoffLeft) return;
             logoffLeft = true;
-            Cancel($"Steam 연결이 {LogoffGrace:0}초 넘게 끊겨 나감"); Error = Loc.T("Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요.");
+            // R809 (the 11-23 build test: Steam was still signing in at start, the party came back by itself 35 s later
+            // while the screen said to restart): Tick makes the party again once Steam is back (R695) and that clears
+            // this line, so it says so instead of asking for a restart.
+            Cancel($"Steam 연결이 {LogoffGrace:0}초 넘게 끊겨 나감"); Error = Loc.T("Steam 연결이 끊겼습니다. 다시 연결되면 저절로 이어집니다(Steam 로그인을 확인하세요).");
         }
 
         public void CreateParty()

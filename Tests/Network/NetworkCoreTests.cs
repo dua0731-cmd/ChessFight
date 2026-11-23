@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ChessFight.Network;
@@ -4491,6 +4491,15 @@ public static class NetworkCoreTests
                 problems.Clear();
                 StringTable.Parse("ko\ten\n{0}/{1}판\t{1} of {0}\n{0}명\t{0} players {1}\n{0}승\tWins\n", problems);
                 Check(problems.Count == 2, "a translation that adds or drops a slot: " + string.Join(" / ", problems)); });
+            // 11-23: a name with a syllable Black Han Sans lacks (권등떄이) is drawn all in the body font.
+            Test("localization: the display face's letters", () => {
+                Check(DisplayGlyphs.Covers("권등때이") && DisplayGlyphs.Covers("라무라밍") && DisplayGlyphs.Covers("sixzerotwo") && DisplayGlyphs.Covers("ㅋㅋ ㅏ"), "common names");
+                Check(!DisplayGlyphs.Covers("권등떄이") && !DisplayGlyphs.Covers("쀍") && !DisplayGlyphs.Covers("Ünal") && !DisplayGlyphs.Covers("王"), "a letter the face lacks");
+                Check(DisplayGlyphs.Covers("BLACK · PAWN") && DisplayGlyphs.Covers("") && DisplayGlyphs.Covers(null), "punctuation still falls back per glyph");
+                Check(!DisplayGlyphs.Covers("a\U0001F600"), "an emoji");
+                int hangul = 0;
+                for (int c = 0xAC00; c <= 0xD7A3; c++) if (DisplayGlyphs.Has(c)) hangul++;
+                Check(hangul == 2581, "the syllables the font file has: " + hangul); });
             Test("localization: picking and showing a language", () => {
                 Check(Languages.FromSteam("koreana") == "ko" && Languages.FromSteam("schinese") == "zh-Hans" && Languages.FromSteam("latam") == "es-419" &&
                       Languages.FromSteam("brazilian") == "pt-BR" && Languages.FromSteam(" English ") == "en" && Languages.FromSteam("klingon") == null && Languages.FromSteam(null) == null, "Steam names");

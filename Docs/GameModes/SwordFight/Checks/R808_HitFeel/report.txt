@@ -1,0 +1,51 @@
+# R808 sword hit feel check (2026-11-23 23:23:23)
+Scene: the match played alone. Physics step 8.3 ms.
+Playing. Floor top 0.00 m. Me = 떄이 (team 0), ally 아군 더미, enemies 적군 더미 1 · 적군 더미 2.
+Sounds loaded: 53.
+
+## 1. First cut of every piece, missing (windup = the cut starting → its blade starting)
+PASS King windup 0.14 s · whole cut 0.68 s — table 0.140 s, blade started at a swing age of 0.142 s (0.142 s after the cut started), whole cut 0.675 s, hits 0
+PASS Queen windup 0.12 s · whole cut 0.68 s — table 0.120 s, blade started at a swing age of 0.125 s (0.125 s after the cut started), whole cut 0.675 s, hits 0
+PASS Rook windup 0.12 s · whole cut 0.68 s — table 0.120 s, blade started at a swing age of 0.125 s (0.125 s after the cut started), whole cut 0.675 s, hits 0
+PASS Bishop windup 0.12 s · whole cut 0.68 s — table 0.120 s, blade started at a swing age of 0.125 s (0.125 s after the cut started), whole cut 0.675 s, hits 0
+PASS Knight windup 0.10 s · whole cut 0.68 s — table 0.100 s, blade started at a swing age of 0.100 s (0.100 s after the cut started), whole cut 0.675 s, hits 0
+PASS Pawn windup 0.10 s · whole cut 0.56 s — table 0.100 s, blade started at a swing age of 0.100 s (0.100 s after the cut started), whole cut 0.558 s, hits 0
+
+## 2. A queen's combo: a click every 0.15 s (the beat between the first four blades starting; 0.68 s before and after R808)
+PASS four chained cuts, 0.68 s between their blades — 4 blades, gaps 0.683 · 0.675 · 0.683 s
+
+## 3. My queen cuts an enemy (this screen's own hit)
+PASS the cut lands once — 0.217 s after the click (swing age 0.217 s)
+PASS the blade is caught (a bite) — bites 1
+PASS the cut goes on at 0.05 of its pace for 0.10 s, then at full pace — pace over the 12 steps after the hit 0.050, after them 1.00
+PASS the cut piece's picture is held 6 frames (0.100 s) — asked 0.100 s, seen held 0.098 s, longest frame meanwhile 0.058 s
+PASS the cut's cutter is known where it is run (Cut(victim, by)) — by 떄이
+PASS a hit mark on my screen — marks +1 at the hit
+PASS this screen's own player is me, not the ally — me True, ally False
+PASS my hit: the hit sound with its body layer — SwordHit +1, SwordHitBody +1, gain 0.765
+
+## 4. The ally dummy cuts the other enemy, far from me (someone else's hit)
+PASS the ally's cut lands, its cutter known — by 아군 더미
+PASS no hit mark on my screen for it — marks +0
+PASS someone else's sounds are quieter by how far they are (mine at full level) — 7.7 m away → 0.49 of the level (mine 1.00)
+PASS someone else's hit: no body layer, quieter — SwordHit +1, SwordHitBody +0, gain 0.371 = 0.49 of mine
+
+## 5. My queen cuts an enemy under its respawn protection (the shell)
+PASS the enemy is under its protection — protection 1.00 s
+PASS the cut is stopped on the shell once and the piece is not hit — blocks +1, hits taken +0
+PASS the moment SwordBlocked is raised (sent to clients like a skill's), on the shell — target 적군 더미 1, by 떄이, 0.85 m from the shell's centre now
+PASS the blade is caught 0.06 s on it — pace over 7 steps 0.050
+PASS its bubble flares (SwordFightMatch.Board) — 1 shell(s) struck
+PASS the shell rings — SwordBlocked +1
+
+## 6. A client's side: the ally (cutter) and the second enemy (cut) made puppets, fed made-up host frames
+PASS a cut waits until the bodies drawn here reach it (20 ms on), its cutter found by the strike's time — played 25 ms after its frame came, by 아군 더미
+PASS the cut piece's picture is held from that moment, not from the frame's coming — held when the frame came: False, just after the cut played: True
+PASS a cut without its strike seen falls back to the nearest blade — by 아군 더미
+PASS a cut never waits more than 0.1 s — played 102 ms on, by 아군 더미
+PASS without times a cut plays the same frame — 0 ms on, by 아군 더미
+PASS a cutter 9 m off whose strike was at the cut's moment is found — by 아군 더미
+PASS a strike 60 ms off the cut is not its cutter — by null
+PASS no strike and no blade near: no cutter — by null
+
+RESULT 33 passed · 0 failed · 0 skipped. Pictures: C:\유니티\ChessFight_TestCopy\Logs\SwordHitFeel

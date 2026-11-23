@@ -990,6 +990,7 @@ AI가 Unity 편집 모드에서 판을 직접 렌더해 보고 고친 값: 폰 �
 | UXML 글자 | `RuntimePanels.Create`가 레이아웃을 만들 때 모든 `TextElement`의 글자를 `Loc.T`로 바꾼다(한국어일 때는 건너뜀). 코드가 나중에 넣는 글자는 그 자리에서 `Loc.T` |
 | 본문 글꼴 | `RuntimePanels.BodyFont`(= `KoreanFont`): 문자 종류마다 따로 만들어 둔다. 한국어 · 라틴 · 키릴은 맑은 고딕이 맨 앞(플레이어 이름 · 채팅의 한글이 그대로), 그 뒤 Segoe UI. 간체 중국어 = Microsoft YaHei → DengXian → SimHei, 번체 = Microsoft JhengHei → PMingLiU, 일본어 = Yu Gothic UI → Yu Gothic → Meiryo → MS Gothic, 그 뒤 한국어 글꼴들. **UI Toolkit이 이 목록을 따라 글자 하나씩 대체하는지(중국어 화면에서 한글 이름이 보이는지)는 Unity에서 확인 전** |
 | 제목 글꼴 | Black Han Sans는 한글 · 기본 라틴뿐 → `RuntimePanels.DisplayFace`가 한국어 · 라틴 언어(en · es · es-419 · pt-BR · de · fr)에서만 그 글꼴, 나머지(ru · pl · tr · 중국어 · 일본어)는 null이라 제목도 본문 글꼴. 언어별 제목 글꼴(OFL)은 다음 일 |
+| 글꼴에 없는 이름 글자(11-23) | Black Han Sans는 흔한 한글 2,350자 + 조금(2,581자)만 있어 "권등떄이"의 '떄' 같은 글자는 맑은 고딕에서 한 자만 빌려와 깨져 보였다 → `DisplayGlyphs.Covers`(Core, 글꼴 cmap에서 뽑은 표)로 없는 글자(문장부호 제외)가 있으면 `RuntimePanels.Display` 라벨 전체를 본문 글꼴로. Label.text는 이벤트가 없어 0.15초마다 글이 바뀌었는지 본다. 글꼴 파일을 바꾸면 표를 다시 뽑을 것. 사용자 Unity 확인(11-23) |
 | 언어가 바뀔 때 | `Loc.Changed` → `RuntimePanels`가 만든 패널들의 본문 · 제목 글꼴을 바꾼다. **이미 보이는 글자도 바로 바꾼다**(R756, `Loc.Again` — 아래). 설정 창은 스스로 다시 짓는다. IMGUI 화면 · 3D 글씨가 들고 있는 글꼴은 다음 실행부터 |
 
 다음 할 일(순서): ① 로비 · 설정 · 결과 · 로딩 화면 문자열을 `Loc.T` / `Loc.F`로 → 영어 채우기 → ② 경기 안내 · 미션 · 기물 설명 → ③ 경기장 3D 표지판 · 미니게임 방 이름 → ④ 간체 중국어 열, 언어별 제목 글꼴 → ⑤ 각 언어 `@ready 1`. 디버그 로그 · 검사 도구 · 래그돌 시험 도구 글자는 한국어로 둔다. Steamworks 앱 설정의 지원 언어(상점 페이지 · `GetCurrentGameLanguage`가 고를 수 있는 언어)도 함께 늘려야 한다.
