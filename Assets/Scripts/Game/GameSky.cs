@@ -30,9 +30,56 @@ namespace ChessFight.Game
         const string DefaultSkyName = "Default-Skybox";
         static Material sky;
 
+        /// <summary>Whether scenes get the game's sky, sun and haze (GameGfx turns it off to compare).</summary>
+        public static bool On = true;
+
+        // What Apply changed in the active scene, to put back (Enable(false)).
+        static Material sky0;
+        static Light sun0;
+        static Color sunColour0;
+        static float sunIntensity0, ambientIntensity0;
+        static LightShadows sunShadows0;
+        static AmbientMode ambientMode0;
+        static DefaultReflectionMode reflection0;
+        static bool fog0, saved;
+        static FogMode fogMode0;
+        static Color fogColour0;
+        static float fogStart0, fogEnd0;
+
+        /// <summary>Puts the game's sky, sun and haze in the active scene (on), or what it had before (off).</summary>
+        public static void Enable(bool on)
+        {
+            On = on;
+            if (on)
+            {
+                Apply();
+                return;
+            }
+            if (!saved) return;
+            saved = false;
+            RenderSettings.skybox = sky0;
+            if (sun0 != null)
+            {
+                sun0.color = sunColour0;
+                sun0.intensity = sunIntensity0;
+                sun0.shadows = sunShadows0;
+            }
+            RenderSettings.ambientMode = ambientMode0;
+            RenderSettings.ambientIntensity = ambientIntensity0;
+            RenderSettings.defaultReflectionMode = reflection0;
+            RenderSettings.fog = fog0;
+            RenderSettings.fogMode = fogMode0;
+            RenderSettings.fogColor = fogColour0;
+            RenderSettings.fogStartDistance = fogStart0;
+            RenderSettings.fogEndDistance = fogEnd0;
+            DynamicGI.UpdateEnvironment();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Boot()
         {
+            On = true;
+            saved = false;
             SceneManager.sceneLoaded -= Loaded;
             SceneManager.sceneLoaded += Loaded;
             // Places that note the scene's sky when they come in and put it back when they go (the carriage yard,
@@ -48,7 +95,7 @@ namespace ChessFight.Game
 
             void Update()
             {
-                if (Time.unscaledTime < next) return;
+                if (!On || Time.unscaledTime < next) return;
                 next = Time.unscaledTime + .5f;
                 var current = RenderSettings.skybox;
                 if (current != null && current.name == DefaultSkyName) Apply();
@@ -58,14 +105,37 @@ namespace ChessFight.Game
         static void Loaded(Scene scene, LoadSceneMode mode)
         {
             if (mode != LoadSceneMode.Single && SceneManager.GetActiveScene() != scene) return;
-            Apply();
+            if (mode == LoadSceneMode.Single) saved = false;
+            if (On) Apply();
         }
 
         /// <summary>Puts the game's sky in the active scene if it still has the default one; true if it did.</summary>
         public static bool Apply()
         {
             var current = RenderSettings.skybox;
-            if (current != null && current.name != DefaultSkyName && current != sky) return false;
+            if (!On || (current != null && current.name != DefaultSkyName && current != sky)) return false;
+            var sun = RenderSettings.sun != null ? RenderSettings.sun : FindSun();
+            if (current != sky)
+            {
+                // The scene as it was, to put back.
+                saved = true;
+                sky0 = current;
+                sun0 = sun;
+                if (sun != null)
+                {
+                    sunColour0 = sun.color;
+                    sunIntensity0 = sun.intensity;
+                    sunShadows0 = sun.shadows;
+                }
+                ambientMode0 = RenderSettings.ambientMode;
+                ambientIntensity0 = RenderSettings.ambientIntensity;
+                reflection0 = RenderSettings.defaultReflectionMode;
+                fog0 = RenderSettings.fog;
+                fogMode0 = RenderSettings.fogMode;
+                fogColour0 = RenderSettings.fogColor;
+                fogStart0 = RenderSettings.fogStartDistance;
+                fogEnd0 = RenderSettings.fogEndDistance;
+            }
             if (sky == null)
             {
                 var source = Resources.Load<Material>("Gfx/GfxSky");
@@ -77,7 +147,6 @@ namespace ChessFight.Game
             RenderSettings.ambientMode = AmbientMode.Skybox;
             RenderSettings.ambientIntensity = AmbientIntensity;
             RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
-            var sun = RenderSettings.sun != null ? RenderSettings.sun : FindSun();
             // Only the plain white default sun: a scene that chose its own colour keeps it.
             if (sun != null && sun.color.r > .99f && sun.color.g > .99f && sun.color.b > .99f)
             {

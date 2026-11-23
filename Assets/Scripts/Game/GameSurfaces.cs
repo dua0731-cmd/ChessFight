@@ -49,13 +49,24 @@ namespace ChessFight.Game
             Application.quitting += Off;
             twinOf.Clear();
             originalOf.Clear();
+            enabled = true;
             var watch = new GameObject("Gfx surfaces (JY-gfx)") { hideFlags = HideFlags.HideInHierarchy | HideFlags.NotEditable };
             Object.DontDestroyOnLoad(watch);
             watch.AddComponent<Watch>();
         }
 
         /// <summary>Strength changed: hand it on.</summary>
-        public static void Apply() => Shader.SetGlobalVector(OnId, Ready ? new Vector4(1f, Strength, Macro, 0f) : Vector4.zero);
+        public static void Apply() => Shader.SetGlobalVector(OnId, Ready && enabled ? new Vector4(1f, Strength, Macro, 0f) : Vector4.zero);
+
+        /// <summary>The sets on or off everywhere (GameGfx turns them off to compare): no surface, plain URP Lit.</summary>
+        public static void Enable(bool on)
+        {
+            enabled = on;
+            Apply();
+            Dress(on && LitOn);
+        }
+
+        static bool enabled = true;
 
         // Shader globals and made materials outlive Play in the editor.
         static void Off()
@@ -238,15 +249,15 @@ namespace ChessFight.Game
             IEnumerator Soon()
             {
                 yield return null;
-                Dress(LitOn);
+                Dress(LitOn && enabled);
                 yield return new WaitForSecondsRealtime(.5f);
-                Dress(LitOn);
+                Dress(LitOn && enabled);
             }
             void Update()
             {
                 if (Time.realtimeSinceStartup < next) return;
                 next = Time.realtimeSinceStartup + 2f;
-                Dress(LitOn);
+                Dress(LitOn && enabled);
             }
         }
 

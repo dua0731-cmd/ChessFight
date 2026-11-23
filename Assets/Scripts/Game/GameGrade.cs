@@ -26,13 +26,15 @@ namespace ChessFight.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Boot()
         {
+            On = true;
+            volumes.Clear();
             SceneManager.sceneLoaded -= Loaded;
             SceneManager.sceneLoaded += Loaded;
         }
 
         static void Loaded(Scene scene, LoadSceneMode mode)
         {
-            if (!On || scene.name == SceneNames.Intro) return;
+            if (scene.name == SceneNames.Intro) return;
             if (mode != LoadSceneMode.Single && SceneManager.GetActiveScene() != scene) return;
             var go = new GameObject("Game grade (JY-gfx)");
             SceneManager.MoveGameObjectToScene(go, scene);
@@ -42,9 +44,21 @@ namespace ChessFight.Game
             // One profile for every scene (Profile() makes a new one, for a tool trying other numbers).
             if (shared == null) shared = Profile();
             volume.sharedProfile = shared;
+            volume.enabled = On;
+            volumes.RemoveAll(v => v == null);
+            volumes.Add(volume);
         }
 
         static VolumeProfile shared;
+        static readonly System.Collections.Generic.List<Volume> volumes = new System.Collections.Generic.List<Volume>();
+
+        /// <summary>Turns the grade on or off in the scenes now loaded and the ones to come (GameGfx).</summary>
+        public static void Enable(bool on)
+        {
+            On = on;
+            volumes.RemoveAll(v => v == null);
+            foreach (var v in volumes) v.enabled = on;
+        }
 
         public static VolumeProfile Profile()
         {

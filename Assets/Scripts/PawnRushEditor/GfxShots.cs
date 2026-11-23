@@ -339,6 +339,8 @@ namespace ChessFight.PawnRush.Editor
                     Field(ao, "Radius", F("aor", Field(ao, "Radius")));
                     Field(ao, "DirectLightingStrength", F("aod", Field(ao, "DirectLightingStrength")));
                 }
+                // gfx=0: the whole upgrade off (GameGfx), last so it wins over the keys above.
+                GameGfx.Set(F("gfx", 1f) > .5f);
             }
 
             bool probeOn;
