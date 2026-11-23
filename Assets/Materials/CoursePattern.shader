@@ -51,6 +51,8 @@ Shader "ChessFight/CoursePattern"
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            // JY-gfx: the course boxes wear limestone, a little softer.
+            #define CF_SURFACE_SCALE 0.8
             #include "Assets/Shaders/URP/CFLit.hlsl"
 
             // 1 on a joint line of width w (metres) between blocks of size s, else 0.

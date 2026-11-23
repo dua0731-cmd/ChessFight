@@ -172,7 +172,8 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
                         metal = goldK * _GoldMetallic;
                         gloss = lerp(gloss, _GoldSmoothness, goldK);
                     }
-                    return CFShade(top, albedo, metal, gloss, 1);
+                    // JY-gfx: the polished checker wears only a faint surface.
+                    return CFShadeSet(top, albedo, metal, gloss, 1, CF_SET_PAINT, 0.4);
                 }
                 if (n.y > _EdgeCos)
                     return CFShade(i, _GoldColor.rgb * (0.94 + 0.12 * cloud), _GoldMetallic, _GoldSmoothness, 1);

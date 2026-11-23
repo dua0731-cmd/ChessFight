@@ -53,6 +53,9 @@ Shader "ChessFight/Pawn Rush Veined Marble"
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            // JY-gfx: polished stone wears only a faint surface (the paint set, a third of its strength).
+            #define CF_SURFACE CF_SET_PAINT
+            #define CF_SURFACE_SCALE 0.35
             #include "Assets/Shaders/URP/CFLit.hlsl"
 
             float hash3(float3 p) { p = frac(p * 0.3183099 + 0.1); p *= 17.0; return frac(p.x * p.y * p.z * (p.x + p.y + p.z)); }
