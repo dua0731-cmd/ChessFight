@@ -111,6 +111,7 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (ChessFight.Game.LoadingScreenView.Showing) return;
+            if (ChessFight.Game.SettingsWindow.IsOpen) return;     // OnGUI draws over the settings window's canvas (user 11-23)
             var me = Viewer;
             if (me == null || me.PawnRushSkills == null || me.Piece == PieceKind.King) return;
             bool running = me.SkillStage != SkillStage.None, ready = !running && me.SkillCooldown <= 0f;

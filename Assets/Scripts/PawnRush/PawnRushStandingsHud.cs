@@ -210,6 +210,8 @@ namespace ChessFight.PawnRush
         void OnGUI()
         {
             if (!Showing || Event.current.type != EventType.Repaint || segments.Count == 0) return;
+            // the settings window is uGUI, and OnGUI draws over every canvas: nothing of the standings over it (user 11-23)
+            if (SettingsWindow.IsOpen) return;
             unit = Mathf.Clamp(Screen.height / 720f, .75f, 2.4f);
             if (808f * unit > Screen.width - 16f) unit = (Screen.width - 16f) / 808f;
             stripLeft = Screen.width * .5f - 640f * unit;       // the mock-up's 1280 frame about the middle

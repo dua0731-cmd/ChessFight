@@ -342,6 +342,7 @@ namespace ChessFight.Gameplay
         void OnGUI()
         {
             if (driver == null) return;
+            if (ChessFight.Game.SettingsWindow.IsOpen) return;     // OnGUI draws over the settings window's canvas (user 11-23)
             if (style == null)
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
             // R642: held / holding another piece (this spawner is only in the Pawn Rush scenes), with the help or without.

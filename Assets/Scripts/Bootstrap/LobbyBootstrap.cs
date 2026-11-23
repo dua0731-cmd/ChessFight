@@ -325,7 +325,9 @@ namespace ChessFight.Game
 
                 // R693: a public search shows the card over the start button only; the banner is for private rooms,
                 // for a member waiting for the party, and for the moment a match is found (the party walks out).
-                ShowMatch = busy && (session.PrivateRoom || waiting || session.Started),
+                // R782 (user 11-23: "어짜피 방 들어가는 거잖아"): not over a room either - the room screen (MatchLoader.RoomScreen)
+                // already has the number, the seats and the manager's buttons; a private room keeps it only to rejoin.
+                ShowMatch = busy && (waiting || session.Started || (session.PrivateRoom && session.JoiningLive)),
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + Loc.T(mode.Name),
                 MatchTitle = !inRoom ? (waiting ? Loc.T("파티원들이 경기를 마치기를 기다리는 중") : following ? Loc.T("파티장이 방을 찾는 중...") : Loc.T("상대 팀 찾는 중"))
                            : session.Started ? (session.PrivateRoom ? Loc.T("경기를 시작합니다!") : Loc.T("상대를 찾았습니다"))

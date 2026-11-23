@@ -37,6 +37,7 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (Event.current.type != EventType.Repaint || pawn == null || (fighter != null && !fighter.Alive)) return;
+            if (SettingsWindow.IsOpen) return;     // OnGUI draws over the settings window's canvas (user 11-23)
             // R624: not over the entrance screen (Sword Fight's clash showed "BOT 2", "BOT 3" over its VS once the match
             // scene had switched on under it)
             if (LoadingScreenView.Showing) return;
