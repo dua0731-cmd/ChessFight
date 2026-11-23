@@ -483,7 +483,8 @@ namespace ChessFight.Game
         static Vector2 Shake(float age, float amount, float length, int seed)
         {
             if (age < 0f || age > length) return Vector2.zero;
-            float k = Mathf.Pow(1f - age / length, 2f) * amount;
+            // R786: settings → 카메라 흔들림 (and 접근성 → 화면 흔들림 줄이기) reach the matching screens too.
+            float k = Mathf.Pow(1f - age / length, 2f) * amount * GameSettings.ShakeScale;
             return new Vector2(Mathf.Sin(age * 97f + seed * 3.1f) * k, Mathf.Cos(age * 83f + seed * 1.7f) * k);
         }
 

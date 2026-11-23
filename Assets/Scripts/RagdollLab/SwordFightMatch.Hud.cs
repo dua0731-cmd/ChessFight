@@ -207,6 +207,8 @@ namespace ChessFight.RagdollLab
                     tick.clip = AudioClip.Create("Sword Fight tick", data.Length, 1, rate, false);
                     tick.clip.SetData(data, 0);
                 }
+                // R786: the effects volume (it followed only the master volume).
+                tick.volume = ChessFight.Game.GameSettings.Effects;
                 tick.Play();
             }
             lastTickSecond = s;

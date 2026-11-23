@@ -19,7 +19,9 @@ namespace ChessFight.Game
         // capsule motor and the lobby ignore them.
         public bool Sprint;   // Held (left Shift).
         public bool Ability;  // Edge (E): the piece's main ability.
-        public bool Ability2; // Edge (Q): the queen's and king's second ability.
+        // Edge: the queen's and king's second ability. R786: no key of the match feeds it any more (Q, "보조 스킬",
+        // was bound in the settings but neither mode used it); the ragdoll lab reads its own keys.
+        public bool Ability2;
         public bool Interact; // HELD (F): bells, levers, and en passant's 0.4 s hold.
     }
 
@@ -73,7 +75,6 @@ namespace ChessFight.Game
                     Grab = GameSettings.Held(GameKey.Grab),
                     Sprint = GameSettings.Sprint,
                     Ability = GameSettings.Pressed(GameKey.Skill),
-                    Ability2 = GameSettings.Pressed(GameKey.Skill2),
                     Interact = GameSettings.Held(GameKey.Use)
                 };
             }

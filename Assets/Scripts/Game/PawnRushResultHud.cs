@@ -973,7 +973,7 @@ namespace ChessFight.Game
             if (flash != null)
             {
                 float k = phase >= 3 ? tp - decisiveAt - .1f : -1f;
-                flash.style.opacity = k < 0 || k > 1 ? 0 : k < .14f ? Ease.Out(k / .14f) : 1 - Ease.Out((k - .14f) / .86f);
+                flash.style.opacity = GameSettings.FlashScale * (k < 0 || k > 1 ? 0 : k < .14f ? Ease.Out(k / .14f) : 1 - Ease.Out((k - .14f) / .86f));
             }
 
             // the countdown, from p3

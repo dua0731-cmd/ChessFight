@@ -72,6 +72,16 @@ namespace ChessFight.Network
             return null;
         }
 
+        // R785 (user 11-23: "스팀이 한국어인데 영어로 시작해"): which Steam language name to follow. Steam answers
+        // GetCurrentGameLanguage for the App ID the game runs under; Valve's test app (480, Spacewar) has English
+        // only, so under it every player reads "english" whatever their Steam is in. There the Steam client's own
+        // language (SteamUtils.GetSteamUILanguage) is taken instead; under the game's real App ID, its own.
+        public static string SteamName(bool testApp, string game, string ui)
+        {
+            if (testApp && !string.IsNullOrEmpty(ui)) return ui;
+            return game;
+        }
+
         // UnityEngine.SystemLanguage's name to a code. Plain "Chinese" (old Unity) is taken as Simplified.
         public static string FromSystem(string system)
         {

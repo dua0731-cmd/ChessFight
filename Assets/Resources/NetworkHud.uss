@@ -370,8 +370,6 @@
 .s2-lab { width: 58%; flex-direction: row; align-items: center; padding: 0 14px; border-left-width: 3px;
           border-color: rgba(0, 0, 0, 0); background-color: rgba(52, 34, 21, 0.88); }
 .s2-lab-text { font-size: 14px; color: rgb(241, 228, 210); }
-.s2-soon { margin-left: 10px; padding: 1px 6px; font-size: 10px; -unity-font-style: bold; color: rgb(185, 165, 140);
-           border-width: 1px; border-color: rgba(185, 165, 140, 0.4); }
 .s2-val { flex-grow: 1; flex-direction: row; align-items: center; margin-left: 3px; padding: 0 6px; background-color: rgba(28, 17, 10, 0.9); }
 .s2-row:hover > .s2-lab { background-color: rgba(84, 57, 37, 0.95); border-color: rgb(255, 201, 61); }
 .s2-row:hover > .s2-val { background-color: rgba(44, 28, 16, 0.95); }

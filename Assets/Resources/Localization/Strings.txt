@@ -18,7 +18,6 @@ STEAM 오프라인	STEAM OFFLINE	STEAM 离线
 줄 위에 마우스를 올리면 여기에 설명이 나와요.	Point at a line to see what it does here.	将鼠标移到某一行上，这里会显示说明。
 설명이 필요 없는 항목이에요.	This one explains itself.	此项无需说明。
 준비 중	Coming soon	即将推出
-아직 게임에 이 기능이 없어요. 생기면 여기서 바꿀 수 있어요.	The game does not have this yet. Once it does, you can change it here.	游戏暂时还没有此功能。推出后可在这里更改。
 끔	Off	关
 켬	On	开
 # --- settings window: tabs, pages, sections
@@ -40,18 +39,13 @@ STEAM 오프라인	STEAM OFFLINE	STEAM 离线
 키 설정	Key bindings	按键设置
 이동	Move	移动
 행동	Actions	动作
-컨트롤러	Controller	手柄
 카메라	Camera	镜头
 화면 표시	HUD	界面显示
 이름과 표시	Names and markers	名称与标记
 일반	General	常规
 채팅	Chat	聊天
-초대와 개인정보	Invites and privacy	邀请与隐私
 초대	Invite	邀请
-방송할 때	While streaming	直播时
 보기 편하게	Comfort	舒适观看
-색과 크기	Color and size	颜色与大小
-움직임과 번쩍임	Motion and flashes	动态与闪光
 # --- settings window: the language line (R747)
 언어	Language	语言
 번역 중	in progress	翻译中
@@ -750,13 +744,7 @@ Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	
 말과 체스판 가장자리의 지글거림을 줄여요(MSAA).	Smooths jagged edges on pieces and the chessboard (MSAA).	减少棋子和棋盘边缘的锯齿（MSAA）。
 배경 디테일	Background detail	背景细节
 멀리 있는 성벽과 장식을 얼마나 자세히 그릴지.	How finely distant castle walls and decorations are drawn.	远处城墙和装饰的绘制精细程度。
-물 표현	Water	水面效果
-해자와 물웅덩이의 반사와 물결.	Reflections and ripples on the moat and puddles.	护城河和水洼的反射与波纹。
-효과 양	Effects	特效数量
-적게	Fewer	少
 보통	Normal	普通
-많이	More	多
-폭죽, 불꽃, 먼지 같은 효과의 양.	How many effects like fireworks, sparks and dust.	烟花、火花、灰尘等特效的数量。
 빛 번짐	Bloom	泛光
 금색 장식과 조명 주위가 은은하게 번져요. 끄면 스킬 번쩍임의 번짐도 함께 꺼져요.	Gold trim and lights glow softly. Turning it off also turns off the glow of skill flashes.	金色装饰和灯光周围柔和发光。关闭后技能闪光的光晕也会一并关闭。
 사양이 낮은 PC는 "낮음"부터	Low-end PCs: start from "Low"	配置较低的电脑建议从“低”开始
@@ -765,8 +753,6 @@ Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	
 오른쪽 위에 초당 프레임 수.	Frames per second at the top right.	在右上角显示每秒帧数。
 핑 표시	Show ping	显示延迟
 물리 계산을 맡은 PC와 주고받는 데 걸리는 시간. 끊김 경고는 끄더라도 그대로 떠요.	The round-trip time to the PC running the physics. Connection warnings still show with this off.	与负责物理计算的电脑往返所需的时间。即使关闭，断线警告仍会显示。
-연결 상태 그래프	Connection graph	连接状态图
-핑과 끊김을 작은 그래프로.	Ping and drops as a small graph.	以小图显示延迟和断线。
 전체 소리	Master volume	总音量
 모든 소리의 크기.	How loud everything is.	所有声音的大小。
 배경 음악	Music	背景音乐
@@ -780,8 +766,6 @@ Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	
 다른 창을 보고 있을 때 게임 소리를 꺼요.	Mutes the game while you're looking at another window.	查看其他窗口时关闭游戏声音。
 경기 잡힘 알림음	Match found alert	匹配成功提示音
 매칭이 잡혀 입장 화면이 열리면, 다른 창을 보고 있어도 6초 동안 그 소리가 들려요(위 항목이 켜져 있어도).	When a match is found and the entry screen opens, its sound plays for 6 seconds even if you're in another window (even with the option above on).	匹配成功并打开入场画面时，即使你在看其他窗口，也会播放 6 秒提示音（即使开启了上方选项）。
-음성 채팅 볼륨	Voice chat volume	语音聊天音量
-다른 사람 목소리 크기. 가까이 있든 멀리 있든 모두 같은 크기로 들려요.	How loud other people's voices are. Near or far, everyone is heard at the same volume.	其他人的语音音量。无论远近，所有人听起来音量相同。
 마이크 크기	Mic volume	麦克风音量
 내 목소리가 다른 사람에게 들리는 크기. 100이 원래 크기예요.	How loud your voice is for others. 100 is its normal level.	你的声音传给别人时的大小。100 为原始音量。
 마우스 감도	Mouse sensitivity	鼠标灵敏度
@@ -807,29 +791,19 @@ Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	
 폰 러쉬: 내 기물의 스킬. 소드 파이트: F 스킬. 화면의 스킬 칸에도 이 키가 나와요.	Pawn Rush: your piece's skill. Sword Fight: the F skill. The skill box on screen shows this key too.	兵卒冲锋：你的棋子技能。剑斗：F 技能。画面上的技能格也会显示此按键。
 두 번째 스킬	Second skill	第二技能
 소드 파이트: E 스킬. 폰 러쉬: 폰일 때 갈고리를 꺼내고 넣어요.	Sword Fight: the E skill. Pawn Rush: takes the hook out and puts it away as a pawn.	剑斗：E 技能。兵卒冲锋：作为兵时拿出或收起钩爪。
+끼었을 때 되돌아가기	Back when stuck	卡住时返回
+폰 러쉬: 5초 넘게 이동 키를 눌러도 제자리면 "끼었나요?"가 떠요. 그때 2초 누르고 있으면 지금 자리보다 뒤의 체크포인트로 돌아가요. 30초에 한 번, 잡혀 있을 때와 미니게임 방 안에서는 안 돼요.	Pawn Rush: push the move keys for over 5 s without getting anywhere and "Stuck?" appears. Hold this key for 2 s then to go back to a checkpoint behind where you are. Once every 30 s; not while held, nor inside a mini-game room.	兵卒冲锋：按住移动键超过 5 秒仍在原地时会出现"卡住了吗？"。此时按住此键 2 秒，就会回到当前位置后方的检查点。每 30 秒一次；被抓住时和小游戏房间内不可用。
 보조 스킬	Extra skill	辅助技能
-지금 두 모드에는 쓰는 곳이 없어요.	Neither mode uses it yet.	目前两种模式都用不到。
-구간 처음으로	Back to section start	回到区段起点
-현재 구간 입구에서 다시 시작. 지금 경기에는 이 기능이 없어요.	Restarts at the current section's entrance. Matches don't have this yet.	从当前区段入口重新开始。目前比赛中没有此功能。
 채팅 열기	Open chat	打开聊天
 경기 명단 (기보지)	Match roster (scoresheet)	比赛名单（棋谱）
 경기 중 누르고 있는 동안만 열려요. 우리 팀 음성, 말하는 곳, 음소거.	Open only while held in a match. Our team's voice, who you talk to, mute.	仅在比赛中按住时打开。我方语音、发言对象、静音。
 음성 채팅: 누르는 동안 내 목소리가 나가요.	Voice chat: sends your voice while held.	语音聊天：按住时发送你的声音。
-Xbox · PlayStation 패드	Xbox · PlayStation pads	Xbox · PlayStation 手柄
-스틱 감도	Stick sensitivity	摇杆灵敏度
-오른쪽 스틱으로 시점이 도는 빠르기.	How fast the right stick turns the view.	右摇杆转动视角的速度。
-스틱 데드존	Stick dead zone	摇杆死区
-스틱이 이만큼 움직이기 전에는 무시해요.	Stick movement smaller than this is ignored.	摇杆移动小于此范围时忽略。
-진동	Vibration	震动
-부딪히거나 밀려날 때 패드가 떨려요.	The pad rumbles when you bump or get pushed.	碰撞或被推开时手柄震动。
-버튼 그림	Button icons	按键图标
-화면에 나오는 버튼 모양.	The button shapes shown on screen.	画面上显示的按键样式。
 카메라 거리	Camera distance	镜头距离
 경기를 시작할 때 말과 카메라 사이 거리. 경기 중에는 휠로 바꿔요. 한 번도 안 바꿨으면 폰 러쉬는 원래 거리(6 m)로 시작해요.	Distance between your piece and the camera when a match starts. Change it with the wheel in a match. If never changed, Pawn Rush starts at its usual distance (6 m).	比赛开始时棋子与镜头的距离。比赛中用滚轮调整。如果从未调整过，兵卒冲锋会以默认距离（6 m）开始。
 질주할 때 시야 넓어짐	Wider view when sprinting	冲刺时视野变宽
-소드 파이트에서 달릴 때 화면이 살짝 넓어져 빨라 보여요. 폰 러쉬 카메라에는 이 효과가 없어요.	In Sword Fight the view widens a little while running so it feels faster. The Pawn Rush camera doesn't do this.	剑斗中奔跑时画面稍微变宽，显得更快。兵卒冲锋的镜头没有此效果。
+질주하는 동안 화면이 살짝 넓어져 빨라 보여요. 폰 러쉬와 소드 파이트 모두.	The view widens a little while you sprint so it feels faster. In both Pawn Rush and Sword Fight.	冲刺时画面稍微变宽，显得更快。兵卒冲锋和剑斗都有。
 카메라 흔들림	Camera shake	镜头晃动
-부딪힘, 스킬, 결과 화면의 흔들림 세기.	How strongly bumps, skills and the results screen shake.	碰撞、技能和结果画面的晃动强度。
+부딪힘, 스킬, 매칭 · 결과 화면의 흔들림 세기.	How strongly bumps, skills, the match screens and the results screen shake.	碰撞、技能、匹配画面与结果画面的晃动强度。
 팀원 이름	Teammate names	队友名称
 항상	Always	始终
 가까울 때만	Only when near	仅在附近时
@@ -837,12 +811,6 @@ Xbox · PlayStation 패드	Xbox · PlayStation pads	Xbox · PlayStation 手柄
 상대 이름	Opponent names	对手名称
 상대 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요.	Name tags over opponents. Only when near: sharp up to 15 m, gone at 22 m.	对手头顶的名牌。仅在附近时：15 m 内清晰，22 m 时消失。
 내 머리 위에도 이름표를 띄워요.	A name tag over your own head too.	在自己头顶也显示名牌。
-조작 도움말	Control tips	操作提示
-처음 보는 장애물 옆에 짧은 설명.	Short notes next to obstacles you haven't seen before.	在初次见到的障碍旁显示简短说明。
-HUD 크기	HUD size	界面大小
-점수, 시간, 스태미나 같은 경기 화면 크기.	Size of the match screen's score, time, stamina and so on.	比分、时间、体力等比赛画面元素的大小。
-결과 화면 건너뛰기	Skip results screen	跳过结果画面
-켜면 결과 연출을 클릭으로 건너뛸 수 있어요.	Lets you click through the results scene.	开启后可点击跳过结果演出。
 끄면 채팅이 숨고 열리지 않아요.	Turned off, chat is hidden and won't open.	关闭后聊天会隐藏且无法打开。
 욕설 가리기	Hide swearing	屏蔽脏话
 흔한 욕을 ** 로 가려요. 내 화면에서만.	Covers common swear words with **. On your screen only.	用 ** 遮住常见脏话。仅在你的画面上。
@@ -861,31 +829,12 @@ HUD 크기	HUD size	界面大小
 Steam 친구만	Steam friends only	仅 Steam 好友
 받지 않기	No one	不接收
 누가 보낸 파티 초대를 게임 안(로비 수락 칸 · 채팅 알림)에 띄울지. Steam 자체 알림은 이 설정과 상관없이 와요.	Whose party invites show in the game (the lobby's accept box · chat notices). Steam's own notifications come regardless.	在游戏内（大厅接受栏 · 聊天通知）显示谁发来的小队邀请。Steam 自身的通知不受此设置影响。
-초대 알림음	Invite sound	邀请提示音
-초대가 오면 소리로 알려요.	Plays a sound when an invite arrives.	收到邀请时用声音提醒。
-스트리머 모드	Streamer mode	主播模式
-켜면 아래 둘이 함께 켜져요.	Turns on both below.	开启后会同时开启下方两项。
-다른 사람 Steam 이름 가리기	Hide other players' Steam names	隐藏其他人的 Steam 名称
-"플레이어 3"처럼 보여요.	They show like "Player 3".	显示为“玩家 3”这样的名称。
-방 번호·파티 코드 가리기	Hide room and party codes	隐藏房间号和小队代码
-화면에 ●●●●로 보이고, 복사 버튼은 그대로 돼요.	Shown as ●●●●; the copy buttons still work.	画面上显示为 ●●●●，复制按钮照常可用。
-색약 모드	Colorblind mode	色弱模式
-적색약	Protanopia	红色弱
-녹색약	Deuteranopia	绿色弱
-청색약	Tritanopia	蓝色弱
-백팀·흑팀과 경고 색을 구분하기 쉬운 색으로 바꿔요.	Changes the white team, black team and warning colors to ones easier to tell apart.	将白队、黑队和警告颜色换成更易区分的颜色。
-색 보정 세기	Color correction strength	色彩校正强度
-색약 모드의 세기.	How strong the colorblind mode is.	色弱模式的强度。
 메뉴 크기	Menu size	菜单大小
 인트로, 로비, 채팅 같은 메뉴 화면의 크기. 이 설정 화면은 그대로예요.	Size of menu screens like the intro, lobby and chat. This settings window stays the same.	开场、大厅、聊天等菜单画面的大小。此设置窗口不变。
-팀 테두리	Team outline	队伍描边
-말에 팀 색 테두리를 둘러요.	Outlines pieces in their team color.	给棋子加上队伍颜色的描边。
 화면 흔들림 줄이기	Reduce screen shake	减少画面晃动
-카메라 흔들림과 질주 시야 넓어짐을 한 번에 꺼요.	Turns off camera shake and the sprint view widening in one go.	一次关闭镜头晃动和冲刺时视野变宽。
+카메라 흔들림, 매칭 화면의 흔들림, 질주 시야 넓어짐을 한 번에 꺼요.	Turns off camera shake, the match screens' shake and the sprint view widening in one go.	一次关闭镜头晃动、匹配画面的晃动和冲刺时视野变宽。
 번쩍임 줄이기	Reduce flashes	减少闪光
-버튼을 누를 때의 불꽃과 하얀 번쩍임을 약하게 해요.	Softens the sparks and white flashes when buttons are pressed.	减弱按下按钮时的火花和白色闪光。
-소리 알림 글자	Sound captions	声音字幕
-대포, 종, 경고음 같은 소리가 날 때 화면에 짧게 글자로 알려요.	Shows a short caption when sounds like cannons, bells and alarms play.	大炮、钟声、警报等声音响起时，在画面上短暂显示文字。
+스킬과 칼이 부딪힐 때의 번쩍임, 미니게임의 빛, 매칭 · 결과 화면의 번쩍임, 버튼을 누를 때의 불꽃을 약하게 해요.	Softens the flashes of skills and clashing swords, the mini-games' light flashes, the flashes on the match screens and the results screen, and the sparks when buttons are pressed.	减弱技能和剑相撞时的闪光、小游戏的闪光、匹配画面与结果画面的闪光，以及按下按钮时的火花。
 게임을 끝낼까요?	Quit the game?	要退出游戏吗？
 게임 창이 닫혀요.	The game window will close.	游戏窗口将会关闭。
 취소	Cancel	取消
@@ -1148,3 +1097,9 @@ Space · 더블클릭으로 확정	Space · double-click	Space · 双击确认
 우아한 박수	Graceful applause	优雅鼓掌
 부채로 얼굴 가림	Hides behind a fan	用扇子遮脸
 홀을 겨눔	Scepter pointed	举起权杖
+# --- RagdollLabSteam/SteamPawnRushLink.Unstuck.cs (R786: 끼었을 때 되돌아가기)
+끼었나요?	Stuck?	卡住了吗？
+{0} 길게 누르면 뒤 체크포인트로 되돌아가요	Hold {0} to go back to a checkpoint behind you	长按 {0} 返回身后的检查点
+{0}초 뒤에 다시 되돌아갈 수 있어요	You can go back again in {0} s	{0} 秒后可再次返回
+되돌아가는 중…	Going back…	正在返回…
+지금은 되돌아갈 수 없어요	You can't go back right now	现在无法返回

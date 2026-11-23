@@ -150,7 +150,7 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.F8)) ArrangeFinal(Input.GetKey(KeyCode.LeftShift));
             if (Input.GetKeyDown(KeyCode.F2)) Select(Input.GetKey(KeyCode.LeftShift) ? 11 : 5);
             if (Input.GetKeyDown(KeyCode.F6)) NextCheckpoint();
-            if (GameSettings.Pressed(GameKey.Respawn)) Respawn(Local);
+            if (Input.GetKeyDown(KeyCode.R)) Respawn(Local);   // R786: a fixed key (the settings no longer bind 구간 처음으로)
             if (Final.Ended || eliminated.Contains(Local) || finalFalls.ContainsKey(Local)) { Local.SetInput(default); return; }
             if (!Application.isFocused) { Local.SetInput(default); return; }
             float x = GameSettings.Move.x;

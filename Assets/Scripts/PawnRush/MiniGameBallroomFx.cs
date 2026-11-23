@@ -181,6 +181,7 @@ namespace ChessFight.PawnRush
 
         void Flash(Vector3 at, float peak, float range, float life)
         {
+            peak *= GameSettings.FlashScale;   // R786: 접근성 → 번쩍임 줄이기
             int pick = 0;
             float best = float.MaxValue;
             for (int i = 0; i < lights.Length; i++)

@@ -554,7 +554,7 @@ namespace ChessFight.Game
                 float x = age / CardEnter;
                 float back = 1 + 2.70158f * Mathf.Pow(x - 1, 3) + 1.70158f * Mathf.Pow(x - 1, 2);
                 card.Root.style.translate = new Translate(card.Side * -30f * (1 - back), 0);
-                card.Flash.style.opacity = .55f * (1 - x);
+                card.Flash.style.opacity = .55f * GameSettings.FlashScale * (1 - x);
             }
             else
             {

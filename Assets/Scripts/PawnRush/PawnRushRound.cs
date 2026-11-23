@@ -336,6 +336,41 @@ namespace ChessFight.PawnRush
             return null;
         }
 
+        // R786 (끼었을 때 되돌아가기, StuckWatch.Back): how far along the round a world point is, for one team - the index
+        // of its section and the metres along that section's ProgressPath (else from its entry towards its exit, as the
+        // standings measure it); in the corridor after section i, the end of section i. miniGame: a mini-game's room.
+        // False: outside every section and corridor.
+        public bool TryProgress(Vector3 world, int team, out int section, out float metres, out bool miniGame)
+        {
+            for (int i = 0; i < sections.Count; i++)
+            {
+                var s = sections[i];
+                if (s == null || s.BeatAt(world) == null) continue;
+                section = i;
+                miniGame = s.Kind == PawnRushSection.SlotKind.MiniGame || s.GetComponent<MiniGameSection>() != null;
+                var path = s.GetComponentInChildren<ProgressPath>(true);
+                if (path != null && path.Count >= 2) metres = ProgressPath.Along(path.World(team), world, out _);
+                else
+                {
+                    Vector3 a = s.EntryWorld.position, ab = s.ExitWorld.position - a;
+                    metres = ab.sqrMagnitude > .01f ? Mathf.Max(0f, Vector3.Dot(world - a, ab) / ab.magnitude) : 0f;
+                }
+                return true;
+            }
+            for (int i = 0; i < corridors.Count; i++)
+                if (corridors[i] != null && SectionCorridor.Holds(corridors[i], world))
+                {
+                    section = i;
+                    metres = float.MaxValue;
+                    miniGame = false;
+                    return true;
+                }
+            section = -1;
+            metres = 0f;
+            miniGame = false;
+            return false;
+        }
+
         // Is a world point in one of the corridors between the sections (R517).
         public bool InCorridor(Vector3 world)
         {

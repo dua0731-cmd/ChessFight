@@ -7,7 +7,11 @@ namespace ChessFight.Game
 {
     // The actions the player can bind (settings → 조작 → 키 설정), two keys each. Sheet opens the
     // match sheet (기보지, R131; it was the unused "Score" on ` until then), Talk is push to talk.
-    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Skill2, Use, Respawn, Chat, Sheet, Talk }
+    // R786: Skill2 (Q) and Respawn (R) are gone - nothing in either mode read them, and as hidden bindings they would
+    // still have swapped keys with the shown ones. Saved keys go by name (key.<action>.<slot>), so the order is free.
+    // Unstuck (R, R786) is held to go back when the match says the pawn is stuck (SteamPawnRushLink.Unstuck, StuckWatch);
+    // a new name, so a key once swapped onto the old Respawn does not come back with it.
+    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Use, Unstuck, Chat, Sheet, Talk }
 
     // What the settings window (R64, laid out again in R77) changes, kept on this
     // PC in PlayerPrefs and read by whoever it concerns: the movement code asks
@@ -16,9 +20,9 @@ namespace ChessFight.Game
     // ScreenOverlay for brightness and the frame counter.
     //
     // Every value lives under an id ("master", "fov", ...); the typed properties
-    // below are the ones the game reads. Values the game cannot use yet
-    // (controller, colour-blind modes...) keep their ids, so the feature can read
-    // them when it comes; the window shows those lines dim and locked (R674).
+    // below are the ones the game reads. R786: the window has no line any more for
+    // a feature the game lacks (the "준비 중" lines of R674 are gone); such a value
+    // saved before stays in PlayerPrefs, unread.
     //
     // The display settings are applied at start only once the player has changed
     // them, so a PC that never opens the window keeps the project's defaults.
@@ -96,6 +100,10 @@ namespace ChessFight.Game
         public static float CameraDistance => Float("camdist", 3.6f);
         public static bool ReduceShake => Bool("reduceshake", false);
         public static bool ReduceFlash => Bool("reduceflash", false);
+        // R786 (접근성 → 번쩍임 줄이기, which reached only the lobby buttons' sparks before): bright flashes are drawn at
+        // this share - the skills' and the swords' flash and lens streak, their moment lights, the mini-games' light
+        // flashes, the matching screens' and the result screen's white flash, and the buttons.
+        public static float FlashScale => ReduceFlash ? .3f : 1f;
         // Camera shake is multiplied by this (settings → 게임플레이 → 카메라 흔들림, and 접근성).
         public static float ShakeScale => ReduceShake ? 0f : Mathf.Clamp01(Float("shake", 100f) / 100f);
         // The sprint's field-of-view kick.
@@ -162,9 +170,8 @@ namespace ChessFight.Game
             { GameKey.Shove, new[] { KeyCode.Mouse0, KeyCode.None } },
             { GameKey.Grab, new[] { KeyCode.Mouse1, KeyCode.None } },
             { GameKey.Skill, new[] { KeyCode.E, KeyCode.None } },
-            { GameKey.Skill2, new[] { KeyCode.Q, KeyCode.None } },
             { GameKey.Use, new[] { KeyCode.F, KeyCode.None } },
-            { GameKey.Respawn, new[] { KeyCode.R, KeyCode.None } },
+            { GameKey.Unstuck, new[] { KeyCode.R, KeyCode.None } },
             { GameKey.Chat, new[] { KeyCode.Return, KeyCode.None } },
             { GameKey.Sheet, new[] { KeyCode.Tab, KeyCode.None } },
             { GameKey.Talk, new[] { KeyCode.V, KeyCode.None } },

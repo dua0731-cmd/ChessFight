@@ -219,6 +219,11 @@ namespace ChessFight.RagdollLab
         // R529: a development build's flight cheat (F1): fly or stop, for the sender's own pawn.
         public const byte TypeDevFly = 11;
         public const int DevFlyBytes = 4 + 1 + 8 + 1 + 1;   // 15
+        // R786 (끼었을 때 되돌아가기, StuckWatch): a Pawn Rush client's "I am stuck and held the key", to the host, with a
+        // number that changes with every ask (the host takes a number once and judges for itself). An older host ignores
+        // the type (it reads lab inputs only), so an older build still meets this one.
+        public const byte TypeUnstuck = 12;
+        public const int UnstuckBytes = 4 + 1 + 8 + 1;   // 14
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
@@ -512,6 +517,27 @@ namespace ChessFight.RagdollLab
             w.Write(seq);
             w.Write((byte)(on ? 1 : 0));
             return streams.Finish();
+        }
+
+        // R786: "put me back" (TypeUnstuck), numbered like DevClear.
+        public static byte[] Unstuck(ulong session, byte seq)
+        {
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeUnstuck);
+            w.Write(session);
+            w.Write(seq);
+            return streams.Finish();
+        }
+
+        public static bool ReadUnstuck(byte[] bytes, ulong session, out byte seq)
+        {
+            seq = 0;
+            if (bytes == null || bytes.Length != UnstuckBytes) return false;
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeUnstuck || r.ReadUInt64() != session) return false;
+            seq = r.ReadByte();
+            return seq != 0;
         }
 
         public static bool ReadDevFly(byte[] bytes, ulong session, out byte seq, out bool on)

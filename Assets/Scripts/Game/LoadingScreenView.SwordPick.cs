@@ -673,7 +673,7 @@ namespace ChessFight.Game
                     float a = FoundPlateAt + FoundPlateStep * k, land = a + PlateSlide;
                     card.Root.style.translate = new Translate(0f, -50f * (1f - Eo3(Ph(t, a, PlateSlide))));
                     card.Root.style.opacity = Ph(t, a, .1f);
-                    card.Flash.style.opacity = t < land ? 0f : .08f * (1f - Ph(t, land, .16f));
+                    card.Flash.style.opacity = t < land ? 0f : .08f * GameSettings.FlashScale * (1f - Ph(t, land, .16f));
                     float sweep = Ph(t, land + .05f, .4f);
                     card.Face.SliceAt(-80f + (card.Wide + 160f) * sweep, sweep > 0f && sweep < 1f ? 1f : 0f);
                 }
@@ -923,7 +923,7 @@ namespace ChessFight.Game
             clashCut.Set(tip + 12f / down.y, 1f - Ph(cooled, 0f, .35f));
             clashCut.style.opacity = cooled < .1f ? 1f : Mathf.Lerp(1f, .55f, Ph(cooled, .1f, .5f));
             // R636: the project blends in linear light, where .1 already reads as a light flash (.55 washed the cut out)
-            clashFlash.style.opacity = hit < 0f ? 0f : .1f * (1f - Ph(hit, 0f, .12f));
+            clashFlash.style.opacity = hit < 0f ? 0f : .1f * GameSettings.FlashScale * (1f - Ph(hit, 0f, .12f));
             bool flying = tip > SwingFrom && tip - BladeLong < CutLength + 20f;
             clashSword.style.opacity = flying ? 1f : 0f;
             clashSword.style.translate = new Translate(down.x * tip, down.y * tip);

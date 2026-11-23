@@ -402,6 +402,7 @@ namespace ChessFight.PawnRush
         // A short light flash (the slot that ends first is taken again).
         void Flash(Vector3 at, Color c, float intensity, float range, float seconds)
         {
+            intensity *= GameSettings.FlashScale;   // R786: 접근성 → 번쩍임 줄이기
             int slot = 0;
             for (int i = 1; i < flashes.Length; i++)
                 if (flashAt[i] + flashLen[i] < flashAt[slot] + flashLen[slot]) slot = i;

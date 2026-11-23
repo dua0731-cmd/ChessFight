@@ -505,7 +505,7 @@ namespace ChessFight.RagdollLab
                 age += dt;
                 if (age >= life) return false;
                 float k = age < rise ? age / rise : 1f - (age - rise) / Mathf.Max(0.01f, life - rise);
-                light.intensity = peak * k * k;
+                light.intensity = peak * ChessFight.Game.GameSettings.FlashScale * k * k;   // R786: 번쩍임 줄이기
                 if (follow != null) light.transform.position = follow();
                 return true;
             }

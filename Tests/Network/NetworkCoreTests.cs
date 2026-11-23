@@ -3844,6 +3844,49 @@ public static class NetworkCoreTests
                 Check(PawnRushRunaway.Flung(1800f, 550f, -465f) && PawnRushRunaway.Flung(40f, 0f, 40f) && PawnRushRunaway.Flung(0f, -50.5f, 0f),
                       "a wrapping boat's bat (11-09), fast sideways, a fall past the line");
                 Check(PawnRushRunaway.Flung(float.NaN, 0f, 0f) && PawnRushRunaway.Flung(0f, float.PositiveInfinity, 0f), "broken numbers"); });
+            Test("Unstuck (R786): stuck only after 5 s of pushing within 1 m, barred states start it again, the hold, the cooldown, never forward", () => {
+                var w = new StuckWatch();
+                for (int i = 0; i < 40; i++) w.Step(.1f, 0f, 0f, i * .5f, true, false);
+                Check(!w.Stuck && w.Pushed < 1f, "walking along is never stuck");
+                w.Reset();
+                for (int i = 0; i < 19; i++) w.Step(.25f, (i % 2) * .4f, 0f, 0f, true, false);
+                Check(!w.Stuck && w.StuckWithin(StuckWatch.Slack), "4.75 s flailing within 1 m: not yet, but within the host's slack");
+                w.Step(.25f, 0f, .3f, 0f, true, false);
+                Check(w.Stuck, "5 s of pushing within 1 m is stuck");
+                w.Reset();
+                for (int i = 0; i < 12; i++) w.Step(.25f, 0f, 0f, 0f, true, false);
+                for (int i = 0; i < 40; i++) w.Step(.25f, 0f, 0f, 0f, false, false);
+                Check(w.Pushed == 3f, "letting go of the keys pauses the count");
+                for (int i = 0; i < 8; i++) w.Step(.25f, 0f, 0f, 0f, true, false);
+                Check(w.Stuck, "and pushing again goes on from there");
+                w.Step(.1f, 0f, 0f, 0f, true, true);
+                Check(!w.Stuck && w.Pushed == 0f, "held, carried or a respawn waiting: starts again");
+                for (int i = 0; i < 60; i++) w.Step(.1f, 0f, 0f, 0f, true, false);
+                w.Step(.1f, 0f, 0f, 1.2f, true, false);
+                Check(!w.Stuck && w.Pushed < .2f, "moving past 1 m starts again");
+                w.Step(.1f, float.NaN, 0f, 0f, true, false);
+                Check(!w.Stuck && w.Pushed == 0f, "broken numbers never count");
+                var hold = new UnstuckHold();
+                bool done = false;
+                for (int i = 0; i < 7; i++) done |= hold.Step(.25f, true, true);
+                Check(!done && hold.Share > .85f, "1.75 s held: not yet");
+                Check(hold.Step(.25f, true, true) && !hold.Step(.25f, true, true), "2 s held: done once");
+                hold.Step(.1f, true, false);
+                Check(hold.Held == 0f, "letting go starts the hold again");
+                for (int i = 0; i < 15; i++) hold.Step(.1f, true, true);
+                hold.Step(.1f, false, true);
+                Check(hold.Held == 0f, "no longer stuck: the hold starts again");
+                Check(StuckWatch.Ready(5f, -1f) && !StuckWatch.Ready(40f, 20f) && StuckWatch.Ready(50f, 20f), "never used, 20 s after, 30 s after");
+                Check(StuckWatch.SecondsLeft(40f, 20f) == 10 && StuckWatch.SecondsLeft(50f, 20f) == 0, "seconds left");
+                int[] orders = { 1, 2, 3, 4 }, sections = { 0, 0, 2, 2 };
+                float[] metres = { 5f, 40f, 10f, 60f }, dist = { 90f, 50f, 12f, 30f };
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 70f) == 3, "past every checkpoint: the highest");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 30f) == 2, "knocked back behind checkpoint 4: checkpoint 3, not 4");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 58f) == 3, "a checkpoint 2 m ahead in the same section counts as here");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 1, 999f) == 1, "fallen back into an earlier section: its last checkpoint");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 0, 1f) == -1, "behind every checkpoint reached: none (the start)");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, -1, 0f) == 2, "unmeasured: the nearest one");
+                Check(StuckWatch.Back(orders, new[] { -1, -1, -1, -1 }, metres, dist, 4, 2, 70f) == -1, "checkpoints the course cannot measure are not taken"); });
             Test("Host fitness (R533): the graphics card counts too - a fast one costs nothing, a slow one the square root of how much slower, never under 40%", () => {
                 int cpu = HostFitness.Base(40, 8, 16000, false);
                 Check(cpu == 1000 && HostFitness.Base(40, 8, 16000, false, 0) == cpu && HostFitness.Base(40, 8, 16000, false, -1) == cpu, "an unmeasured card costs nothing");
@@ -4401,6 +4444,9 @@ public static class NetworkCoreTests
             Test("localization: picking and showing a language", () => {
                 Check(Languages.FromSteam("koreana") == "ko" && Languages.FromSteam("schinese") == "zh-Hans" && Languages.FromSteam("latam") == "es-419" &&
                       Languages.FromSteam("brazilian") == "pt-BR" && Languages.FromSteam(" English ") == "en" && Languages.FromSteam("klingon") == null && Languages.FromSteam(null) == null, "Steam names");
+                Check(Languages.SteamName(true, "english", "koreana") == "koreana" && Languages.SteamName(false, "english", "koreana") == "english" &&
+                      Languages.SteamName(true, "english", "") == "english" && Languages.SteamName(true, "english", null) == "english",
+                      "the test App ID (Spacewar, English only) follows Steam's client language; the real one its own");
                 Check(Languages.FromSystem("Korean") == "ko" && Languages.FromSystem("ChineseTraditional") == "zh-Hant" && Languages.FromSystem("Chinese") == "zh-Hans" &&
                       Languages.FromSystem("Portuguese") == "pt-BR" && Languages.FromSystem("Unknown") == null && Languages.FromSystem("") == null, "Windows names");
                 Check(Languages.All[0].Code == Loc.Source && Languages.All.Select(l => l.Code).Distinct().Count() == Languages.All.Length &&
