@@ -39,8 +39,12 @@ namespace ChessFight.Game
             var volume = go.AddComponent<Volume>();
             volume.isGlobal = true;
             volume.priority = Priority;
-            volume.sharedProfile = Profile();
+            // One profile for every scene (Profile() makes a new one, for a tool trying other numbers).
+            if (shared == null) shared = Profile();
+            volume.sharedProfile = shared;
         }
+
+        static VolumeProfile shared;
 
         public static VolumeProfile Profile()
         {

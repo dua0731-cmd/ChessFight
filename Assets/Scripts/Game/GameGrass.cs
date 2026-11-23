@@ -27,6 +27,7 @@ namespace ChessFight.Game
         static readonly HashSet<int> seen = new HashSet<int>();
         static readonly List<(Renderer lawn, GameObject grass)> patches = new List<(Renderer, GameObject)>();
         static readonly Dictionary<Material, Material> looks = new Dictionary<Material, Material>();
+        static readonly List<Mesh> meshes = new List<Mesh>();
         static Material template;
         static int blades;
         static bool shown = true;
@@ -44,6 +45,19 @@ namespace ChessFight.Game
             var go = new GameObject("Gfx grass (JY-gfx)") { hideFlags = HideFlags.HideInHierarchy | HideFlags.NotEditable };
             Object.DontDestroyOnLoad(go);
             go.AddComponent<Watch>();
+            Application.quitting -= Clear;
+            Application.quitting += Clear;
+        }
+
+        // What was made lives outside the scenes (and outlives Play in the editor): gone at the end.
+        static void Clear()
+        {
+            foreach (var mesh in meshes) if (mesh != null) Object.Destroy(mesh);
+            foreach (var look in looks.Values) if (look != null) Object.Destroy(look);
+            meshes.Clear();
+            looks.Clear();
+            patches.Clear();
+            seen.Clear();
         }
 
         static void Loaded(Scene scene, LoadSceneMode mode)
@@ -173,7 +187,9 @@ namespace ChessFight.Game
                 var go = new GameObject("Grass (JY-gfx)");
                 go.layer = r.gameObject.layer;
                 SceneManager.MoveGameObjectToScene(go, r.gameObject.scene);
-                go.AddComponent<MeshFilter>().sharedMesh = cell.Mesh();
+                var cellMesh = cell.Mesh();
+                meshes.Add(cellMesh);
+                go.AddComponent<MeshFilter>().sharedMesh = cellMesh;
                 var mr = go.AddComponent<MeshRenderer>();
                 mr.sharedMaterial = look;
                 mr.shadowCastingMode = ShadowCastingMode.Off;

@@ -64,8 +64,7 @@ namespace ChessFight.Game
             foreach (var twin in originalOf.Keys) Object.Destroy(twin);
             twinOf.Clear();
             originalOf.Clear();
-            dressed.Clear();
-            driven.Clear();
+            looked.Clear();
         }
 
         // ---------------------------------------------------------------- URP Lit -> Gfx Lit
@@ -76,9 +75,9 @@ namespace ChessFight.Game
         static Shader urpLit, gfxLit;
         static readonly Dictionary<Material, Material> twinOf = new Dictionary<Material, Material>();
         static readonly Dictionary<Material, Material> originalOf = new Dictionary<Material, Material>();
-        // Renderers Dress swapped, and those a script then gave a URP Lit material back (a lamp, a signal, a beam that
-        // shows its state by its material and checks it): those are left to their script from then on.
-        static readonly HashSet<int> dressed = new HashSet<int>(), driven = new HashSet<int>();
+        // Renderers Dress has looked at. Each is dressed once, when first seen: a material a script puts on it later (a
+        // lamp, a signal, a beam that shows its state by its material and checks it) stays as the script put it.
+        static readonly HashSet<int> looked = new HashSet<int>();
         static readonly List<Material> slots = new List<Material>(8);
         static readonly int SetId = Shader.PropertyToID("_GfxSet"), SetScaleId = Shader.PropertyToID("_GfxSetScale"),
             BaseMapId = Shader.PropertyToID("_BaseMap"), MetallicId = Shader.PropertyToID("_Metallic"), SurfaceId = Shader.PropertyToID("_Surface");
@@ -94,24 +93,8 @@ namespace ChessFight.Game
             foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (!(r is MeshRenderer) && !(r is SkinnedMeshRenderer)) continue;
-                int id = r.GetInstanceID();
-                if (on && driven.Contains(id)) continue;
+                if (on && !looked.Add(r.GetInstanceID())) continue;
                 r.GetSharedMaterials(slots);
-                if (on && dressed.Contains(id))
-                {
-                    bool back = false;
-                    foreach (var m in slots)
-                        if (m != null && twinOf.TryGetValue(m, out var t) && t != m)
-                        {
-                            back = true;
-                            break;
-                        }
-                    if (back)
-                    {
-                        driven.Add(id);
-                        continue;
-                    }
-                }
                 bool dirty = false;
                 for (int i = 0; i < slots.Count; i++)
                 {
@@ -123,11 +106,10 @@ namespace ChessFight.Game
                     dirty = true;
                     changed++;
                 }
-                if (!dirty) continue;
-                r.sharedMaterials = slots.ToArray();
-                if (on) dressed.Add(id);
-                else dressed.Remove(id);
+                if (dirty) r.sharedMaterials = slots.ToArray();
             }
+            // Undressed: every renderer may be dressed again.
+            if (!on) looked.Clear();
             return changed;
         }
 
@@ -245,8 +227,8 @@ namespace ChessFight.Game
                      "sign", "doll", "soap", "checker", "board" }, 5, .6f),
         };
 
-        // Renderers keep coming (sections are dressed as a round goes): look again just after a scene loads, then
-        // every two seconds.
+        // Renderers keep coming (sections are dressed as a round goes): look just after a scene loads, then every two
+        // seconds (only renderers not seen before are dressed).
         sealed class Watch : MonoBehaviour
         {
             float next;
