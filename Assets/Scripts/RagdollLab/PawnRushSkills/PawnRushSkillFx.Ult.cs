@@ -787,7 +787,10 @@ namespace ChessFight.RagdollLab
             UltDrivePreview(cam);   // the six driven ones' aim before their key (PawnRushSkillFx.Drive.cs)
             UltGiants(dt);          // ...the pieces drawn bigger than they are (PawnRushSkillFx.PromotionRun.cs)
             UltRollRestore();       // ...a rook's own skin back after its roll (PawnRushSkillFx.RookRoll.cs)
-            SupportStepFx(cam);     // the support slot's horse, bridge, rope, drone and chain (PawnRushSkillFx.Support.cs)
+            // The support slot's horse, bridge, rope, drone and chain (PawnRushSkillFx.Support.cs); the set 3판's swords, stones,
+            // puddles, column and tower (PawnRushSkillFx.SetThree.cs). Guarded: one that throws leaves the rest of the frame be.
+            try { SupportStepFx(cam); } catch (System.Exception ex) { FxFault("support frame", ex); }
+            try { SetThreeStepFx(cam); } catch (System.Exception ex) { FxFault("set 3 frame", ex); }
             float kv = 0f, stars = 0f;
             for (int i = ults.Count - 1; i >= 0; i--)
             {

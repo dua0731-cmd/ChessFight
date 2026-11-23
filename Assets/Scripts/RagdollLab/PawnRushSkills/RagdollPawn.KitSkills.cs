@@ -57,7 +57,8 @@ namespace ChessFight.RagdollLab
         float SkillMoveScale => (slowLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(slowScaleNow > 0f ? slowScaleNow : PawnRushSkills.fianSlow, 0.2f, 1f) : 1f)
                                 * MarchScale    // the pool's king's march (RagdollPawn.PoolUltimates.cs); a flank shot's own slow (KitTwo)
                                 * KingWalkScale    // the king's walk, a driven ultimate (RagdollPawn.KingWalk.cs)
-                                * SupportScale;    // a support's reward: both fast for a while (RagdollPawn.Support.cs)
+                                * SupportScale     // a support's reward: both fast for a while (RagdollPawn.Support.cs)
+                                * BolasScale;      // the bolas' pull: the pawn lunges on (RagdollPawn.SetThree.cs)
 
         /// <summary>How far the seated bishop's line reaches now: fianNear at the key, fianFar once it has aimed for
         /// fianCharge seconds (any PC: the time comes with the host's skill state).</summary>

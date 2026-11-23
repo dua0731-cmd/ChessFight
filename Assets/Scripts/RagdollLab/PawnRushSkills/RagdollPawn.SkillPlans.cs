@@ -282,6 +282,16 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.RookRoll: UpdateRookRoll(s, press, dt); break;
                 case PawnRushSkillIds.QueenDescent: UpdateQueenDescent(s, press, dt); break;
                 case PawnRushSkillIds.KingWalk: UpdateKingWalk(s, press, dt); break;
+                // The set 3판, the user's own skills (RagdollPawn.SetThree.cs).
+                case PawnRushSkillIds.Bolas: UpdateBolas(s, press, dt); break;
+                case PawnRushSkillIds.HighStomp: UpdateHighStomp(s, press, dt); break;
+                case PawnRushSkillIds.HolySwords: UpdateHolySwords(s, press, dt); break;
+                case PawnRushSkillIds.StoneThrow: UpdateStoneThrow(s, press, dt); break;
+                case PawnRushSkillIds.HolyWater: UpdateHolyWater(s, press, dt); break;
+                case PawnRushSkillIds.RollShort: UpdateRollShort(s, press, dt); break;
+                case PawnRushSkillIds.TowerTrap: UpdateTowerTrap(s, press, dt); break;
+                case PawnRushSkillIds.QueenStar: UpdateQueenStar(s, press, dt); break;
+                case PawnRushSkillIds.CheckChain: UpdateCheckChain(s, press, dt); break;
             }
         }
 
@@ -322,6 +332,15 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.QueenGlide: return s.glideCooldown;
                 case PawnRushSkillIds.EightLines: return s.eightCooldown;
                 case PawnRushSkillIds.WallCharge: return s.wallCooldown;
+                case PawnRushSkillIds.Bolas: return s.bolasCooldown;
+                case PawnRushSkillIds.HighStomp: return s.hopCooldown;
+                case PawnRushSkillIds.HolySwords: return s.swordCooldown;
+                case PawnRushSkillIds.StoneThrow: return s.stoneCooldown;
+                case PawnRushSkillIds.HolyWater: return s.waterCooldown;
+                case PawnRushSkillIds.RollShort: return s.rollCooldown;
+                case PawnRushSkillIds.TowerTrap: return s.towerCooldown;
+                case PawnRushSkillIds.QueenStar: return s.starCooldown;
+                case PawnRushSkillIds.CheckChain: return s.ccCooldown;
                 default: return PawnRushSkillIds.Ultimate(id) ? UltCooldown(id, s) : 0f;
             }
         }
@@ -352,6 +371,7 @@ namespace ChessFight.RagdollLab
             KitKeys();    // the kits' basic row: heavy feet, a seated bishop, a stepping king
             PoolKeys();   // the skill pool's plan 1: the kneeling, drawing bishop (RagdollPawn.PoolSkills.cs)
             KitTwoKeys(); // the kits' second version: a queen planting her staff, a rook charging (RagdollPawn.KitTwo.cs)
+            SetThreeKeys(); // the set 3판: the bolas' chop, the knight in the air, a rook rolling (RagdollPawn.SetThree.cs)
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -380,6 +400,7 @@ namespace ChessFight.RagdollLab
 
         void EndPlanSkill()
         {
+            ClearSetThreeSkill();   // (first: the bolas lets go of the target it still has)
             var mate = planTarget;
             if (mate != null && mate.castleOfferBy == this) mate.castleOfferBy = null;
             planPhase = PlanPhase.None;

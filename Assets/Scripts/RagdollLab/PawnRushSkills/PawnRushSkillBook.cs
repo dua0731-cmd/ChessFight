@@ -193,6 +193,35 @@ namespace ChessFight.RagdollLab
                 "3안-b세트의 수치 · 연속 체크와 같고 쿨 16초 (퀸 칸이 둘이라 1.5배를 풂)"),
             Made(PawnRushSkillIds.EightB, "여덟 줄 (3안-b)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
                 "3안-b세트의 수치 · 여덟 줄과 같고 쿨 40초 (퀸 칸이 둘이라 1.5배를 풂)"),
+            // The set 3판 (KITS 6.12, 11-23): the skills the user wrote (RagdollPawn.SetThree.cs). All numbers first tries.
+            Made(PawnRushSkillIds.Bolas, "앙파상 (볼라스)", PieceKind.Pawn, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "3판 · F = 조준점 쪽으로 볼라스 (12 m, 초속 25 m) · 맞은 적은 다리가 감겨 비틀하고 1초 동안 끌려옴, 폰은 반동으로 앞으로" + "\n" +
+                "끌려온 적이 1.5 m 안에 오면 머리 위가 0.5초 반짝 · 그때 좌클릭 = 뒷목 치기, 기절 1초 · 놓치면 둘이 부딪혀 휘청 · 쿨 10초"),
+            Made(PawnRushSkillIds.HighStomp, "하이점프 & 내려찍기", PieceKind.Knight, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "3판 · F = 높이 3 m 도약 (공중 조종은 보통의 15%) · 뜨면 아래 둘레 10 m 안에서 조준점에 가장 가까운 적에게 말굽 표시" + "\n" +
+                "공중에서 F 한 번 더 = 그 적에게 0.3초 만에 내리꽂혀 머리를 밟음 (1.5초 엎어짐), 1 m 튀어 오름 · 표시가 없으면 곧장 내려옴 · 쿨 9초"),
+            Made(PawnRushSkillIds.HolySwords, "성검 소환", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
+                "3판 · F = 적 모두의 곁 (대각선 5 m, 허리 높이)에 성검 · 칼이 겨누는 대각선이 바닥에 빛줄로 보임" + "\n" +
+                "1.5초 뒤 그때 적이 있던 자리로 대각선을 따라 날아감 (초속 30 m, 안 따라감) · 맞으면 속박 1초 · 세 번 · 쿨 35초"),
+            Made(PawnRushSkillIds.StoneThrow, "돌멩이 던지기", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
+                "3판 · 누르면 1.5 m 떠올라 0.6초 겨눔 (그동안 무방비) · 그 뒤 조준점 쪽으로 지름 1.2 m 돌 (초속 10 m, 25 m, 살짝 떨어짐)" + "\n" +
+                "길의 적을 다 튕겨 내며 지나감 (4 m, 1.5초 넘어짐) · 벽에 닿으면 부서짐 · 쿨 10초"),
+            Made(PawnRushSkillIds.HolyWater, "성수병 던지기", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
+                "3판 · 앞으로 던져 10 m 앞에서 깨짐 · 지름 4 m 미끄러운 웅덩이 6초" + "\n" +
+                "밟은 적은 두 발이 하늘로 솟으며 꽈당 (1.5초), 웅덩이 밖으로 미끄러져 나감 · 우리 편은 안 미끄러짐 · 쿨 10초"),
+            Made(PawnRushSkillIds.RollShort, "룩앤롤", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "3판 · F = 옆으로 쓰러져 돌기둥으로 1.5초 굴러감 (초속 8 → 14 m, 이동 키로 1초에 30도만 꺾임)" + "\n" +
+                "부딪힌 적은 볼링 핀처럼 6 m 날아가 1.5초 넘어짐 (셋이면 '스트라이크!') · 구르는 중 F = 그 자리에서 쿵 일어서며 둘레 3 m 튕겨 냄" + "\n" +
+                "벽에 박으면 멈추고 0.5초 어질 · 낭떠러지에선 같이 떨어짐 · 쿨 10초"),
+            Made(PawnRushSkillIds.TowerTrap, "탑 가두기", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block,
+                "3판 · E = 쿵 구르고 조준한 쪽으로 땅이 곧게 갈라짐 (초속 25 m, 20 m) · 처음 닿은 적은 룩 모양 돌탑에 1.5초 갇힘 (머리만 빼꼼)" + "\n" +
+                "탑이 무너지면 굴러 나와 1초 넘어짐 · 서 있는 탑은 단단해 뒤따르던 적도 부딪힘 · 그 순간 뛰면 피함 · 쿨 14초"),
+            Made(PawnRushSkillIds.QueenStar, "여왕의 위상", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
+                "3판 · F = 퀸 바닥에 반지름 6 m 팔각별 (퀸을 따라다님) · 0.5초 뒤 별 안의 적마다 가장 가까운 날이 밝아짐" + "\n" +
+                "그 날의 방향 (퀸의 여덟 줄 가운데 하나)으로 5 m 튕겨 나가 1.5초 넘어짐 · 적이 없으면 별만 반짝 · 쿨 10초"),
+            Made(PawnRushSkillIds.CheckChain, "연속 체크 (3판)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
+                "3판 · E = 앞 12 m 안에서 조준점에 가장 가까운 적에게 빨간 체크 표시 0.25초 · 퀸이 곧게 날아들어 (0.25초) 4 m 쳐 냄 '체크!'" + "\n" +
+                "1초 안에 E = 거기서 8 m 안의 다음 적 · 세 번까지 (셋째는 6 m) · 사이에 선 적이 대신 맞음 · 표적이 없으면 쿨을 안 씀 · 쿨 14초"),
             Made(PawnRushSkillIds.GreekGift, "그리스 선물", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
                 "궁극기 (팀 게이지, 역전 배율) · Q = 상대 팀 가장 앞선 하나 (×2면 셋)의 머리 위에 '갈고리!' 2초\n그 뒤 빛이 차례로 날아가 (한 사람에 0.4초) 갈고리를 검: 처음 닿은 몸이 대신 걸리고 벽에서 막힘\n걸린 적은 비숍이 떠난 자리로 끌려와 2초 해롱 · 비숍은 잡혀 체크포인트로 (시험 씬은 리스폰)"),
             Made(PawnRushSkillIds.RankWall, "7번째 줄", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
@@ -422,6 +451,15 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.SummonQuick, "팀원을 내 앞 좌우로 불러 세우고 함께 밀고 나간다" },
             { PawnRushSkillIds.PassedPawn, "둘째 걸음이 질주가 되어 막는 적을 밀고 지나간다" },
             { PawnRushSkillIds.KingEscort, "한 걸음마다 곁의 팀원 둘을 데리고 간다" },
+            { PawnRushSkillIds.Bolas, "볼라스로 적을 끌어와 뒷목을 친다" },
+            { PawnRushSkillIds.HighStomp, "높이 뛰어 표시된 적의 머리를 내려찍는다" },
+            { PawnRushSkillIds.HolySwords, "적 모두의 곁에 성검을 불러 대각선으로 날린다" },
+            { PawnRushSkillIds.StoneThrow, "떠올라 겨누고 크고 느린 돌을 굴려 보낸다" },
+            { PawnRushSkillIds.HolyWater, "미끄러운 성수 웅덩이를 깐다" },
+            { PawnRushSkillIds.RollShort, "쓰러져 굴러가며 적을 볼링 핀처럼 쓰러뜨린다" },
+            { PawnRushSkillIds.TowerTrap, "땅을 가르고 처음 닿은 적을 탑에 가둔다" },
+            { PawnRushSkillIds.QueenStar, "팔각별을 펼쳐 가까운 적을 여덟 줄로 튕겨 낸다" },
+            { PawnRushSkillIds.CheckChain, "체크를 이어 가며 적에서 적으로 날아든다" },
         };
 
         /// <summary>A skill's line for the promotion card.</summary>

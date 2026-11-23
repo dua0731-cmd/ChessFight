@@ -74,11 +74,35 @@ namespace ChessFight.RagdollLab
         DriveLand, DriveLine, DriveWarn, DriveState,
         // The support slot (11-22, RagdollPawn.Support.cs; by: the leader, target: the one called): the call (at: where what
         // comes starts - the leader's feet, the rope's top, the bridge's or the chain's far end; normal: where it ends; dir:
-        // toward the leader; count: the leader's piece; size: the answer's seconds), the answer (count: the section used, -1
-        // a rider along the bridge; size: the piece), a step on the way (count 1 the horse's leap, 2 the drone set down, or
+        // toward the leader; count: the leader's piece; size: the answer's seconds), the answer (count 1 the one called, 0 a
+        // rider along the bridge; size: the section used - a count goes over the wire as a byte), a step on the way (count
+        // 1 the horse's leap, 2 the drone set down, or
         // a chain's pawn: count its place, size 1 thrown over, -1 toppled), cut on the way, called off, and arrived (count:
         // the leader's rescues; size: the gauge it gave). Last, so no kind's number moves.
         SupCall, SupGo, SupStep, SupCut, SupCancel, SupSaved,
+        // The set 3판 (11-23, RagdollPawn.SetThree.cs; drawn by PawnRushSkillFx.SetThree.cs). A count is a byte on the wire
+        // (0..255): anything signed rides in size.
+        //   S3Bolas      the pawn's throw (at: from, dir: the way, size: speed)
+        //   S3BolasCatch caught (target; at: where)        S3BolasEnd  it is over (at; count 0 dropped, 1 let go, 2 the
+        //                                                   chop, 3 the two bumped)
+        //   S3Stun       stunned (target; size: seconds)   S3HopDive   the knight's dive (target, or none: straight down)
+        //   S3Roll       the rook topples to roll (at, dir) S3RollEnd  it stands (count 0 at the end, 1 the slam, 2 a wall)
+        //   S3Crack      the ground splitting (at: from, dir, size: speed; count 1 its end, at: there)
+        //   S3Tower      a tower round target (at: its feet, size: seconds)   S3TowerFall  it crumbles (target, at)
+        //   S3Star       the queen's star (at: her feet, dir: blade 0, size: radius)
+        //   S3StarBlade  a blade lit (target; dir: the blade's way; count: the blade, 255 none hit)
+        //   S3Check      a check (target; count: which, 1..3)
+        //   S3SwordRise  a holy sword beside target (at; dir: where it points; count: the sword's number; size: the fuse)
+        //   S3SwordFly   it flies (at: from, normal: to, dir, size: speed)    S3SwordEnd  it is gone (count; target: hit)
+        //   S3Bound      bound by light (target; size: seconds)
+        //   S3StoneShot  the bishop's stone (at: from, dir: its way, count: its number, size: speed)
+        //   S3StoneBreak it breaks (at; count)
+        //   S3WaterThrow the holy water's bottle (at: from, normal: where it breaks, size: the flight's seconds)
+        //   S3Puddle     the puddle (at; count: the team + 1; size: radius)    S3Slip  a slip in it (target, at, dir)
+        // Last, so no kind's number moves.
+        S3Bolas, S3BolasCatch, S3BolasEnd, S3Stun, S3HopDive, S3Roll, S3RollEnd, S3Crack, S3Tower, S3TowerFall, S3Star,
+        S3StarBlade, S3Check, S3SwordRise, S3SwordFly, S3SwordEnd, S3Bound, S3StoneShot, S3StoneBreak, S3WaterThrow, S3Puddle,
+        S3Slip,
     }
 
     public struct SkillFxEvent

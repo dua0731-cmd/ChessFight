@@ -926,6 +926,37 @@ namespace ChessFight.RagdollLab
         public float supChainGap = 10f, supChainRise = 0.6f, supChainHop = 0.3f, supChainTop = 2.5f, supChainZig = 2f;
         public int supChainMax = 15;
 
+        [Header("3판 (11-23, KITS 6.12: 사용자가 짠 스킬, 궁극 없음; RagdollPawn.SetThree.cs) · 모두 첫 시험값")]
+        [Tooltip("폰 앙파상: 볼라스 거리 (m) · 빠르기 (m/s) · 굵기 (m); 끄는 시간 (초) · 적이 끌려오는 빠르기 (m/s); 폰이 반동으로 더 나가는 빠르기 (m/s) · 그동안의 빠르기 배율")]
+        public float bolasRange = 12f, bolasSpeed = 25f, bolasRadius = 0.35f, bolasPull = 1f, bolasPullSpeed = 8f, bolasRecoil = 4f, bolasRecoilScale = 1.5f;
+        [Tooltip("폰 앙파상: 뒷목 치기가 열리는 거리 (m) · 시간 (초); 기절 (초); 감길 때 비틀 (초); 놓치면 둘이 휘청 (초); 쿨 (초)")]
+        public float bolasChopReach = 1.5f, bolasChopWindow = 0.5f, bolasStun = 1f, bolasTrip = 0.3f, bolasBump = 0.4f, bolasCooldown = 10f;
+        [Tooltip("나이트 하이점프: 높이 (m); 공중 조종 (보통의 몫); 표시 거리 (m, 아래 둘레); 내리꽂는 시간 (초); 머리 딛고 튀는 높이 (m); 표적 없으면 내려오는 빠르기 (m/s)")]
+        public float hopHeight = 3f, hopSteer = 0.15f, hopMarkReach = 10f, hopDiveTime = 0.3f, hopBounce = 1f, hopDropSpeed = 14f;
+        [Tooltip("나이트 내려찍기: 밟힌 적이 엎어져 있는 시간 (초); 착지 뒤 (초); 쿨 (초)")]
+        public float hopKnockHold = 1.5f, hopRecovery = 0.25f, hopCooldown = 9f;
+        [Tooltip("비숍 성검 소환: 적 곁 대각선 거리 (m) · 높이 (m, 바닥 위); 날기까지 (초); 빠르기 (m/s); 쉬는 시간 (초); 맞으면 속박 (초); 닿는 거리 (m); 쿨 (초)")]
+        public float swordSide = 5f, swordHigh = 1f, swordFuse = 1.5f, swordSpeed = 30f, swordRest = 0.4f, swordBind = 1f, swordReach = 0.7f, swordCooldown = 35f;
+        [Tooltip("비숍 성검 소환: 몇 번")]
+        public int swordRounds = 3;
+        [Tooltip("비숍 돌멩이: 떠오르는 높이 (m) · 떠 있는 시간 (초); 돌 지름 (m) · 빠르기 (m/s) · 거리 (m) · 떨어짐 (m/s²); 맞으면 튕겨 나가는 거리 (m) · 넘어짐 (초); 쿨 (초)")]
+        public float stoneRise = 1.5f, stoneHover = 0.6f, stoneSize = 1.2f, stoneSpeed = 10f, stoneRange = 25f, stoneDrop = 1.5f, stonePush = 4f, stoneKnockHold = 1.5f, stoneCooldown = 10f;
+        [Tooltip("비숍 성수병: 깨지는 거리 (m) · 나는 시간 (초); 웅덩이 지름 (m) · 남는 시간 (초); 미끄러져 넘어짐 (초) · 미끄러져 나가는 거리 (m); 쿨 (초)")]
+        public float waterRange = 10f, waterFlight = 0.5f, waterSize = 4f, waterSeconds = 6f, waterKnockHold = 1.5f, waterSlide = 3f, waterCooldown = 10f;
+        [Tooltip("룩 룩앤롤 (일반): 구르는 시간 (초); 빠르기 처음 · 끝 (m/s); 꺾임 (°/초); 기둥 반지름 · 길이 (m); 핀 거리 (m) · 넘어짐 (초); 벽 어질 (초); 쿨 (초)")]
+        public float rollSeconds = 1.5f, rollSpeed0 = 8f, rollSpeed1 = 14f, rollTurn = 30f, rollRadius = 0.9f, rollLength = 2.6f, rollThrow = 6f, rollKnock = 1.5f, rollDizzy = 0.5f, rollCooldown = 10f;
+        [Tooltip("룩 룩앤롤 (일반): 일어서는 쿵 둘레 (m) · 미는 거리 (m) · 넘어짐 (초); 스트라이크 몇 명")]
+        public float rollSlamRadius = 3f, rollSlamPush = 3f, rollSlamHold = 1f;
+        public int rollStrike = 3;
+        [Tooltip("룩 탑 가두기: 땅이 갈라지는 빠르기 (m/s) · 거리 (m) · 폭 (m); 갇힘 (초); 탑 지름 (m); 굴러 나와 넘어짐 (초) · 굴러 나가는 거리 (m); 쿨 (초)")]
+        public float crackSpeed = 25f, crackRange = 20f, crackWidth = 1f, towerSeconds = 1.5f, towerWide = 1.6f, towerKnockHold = 1f, towerRollOut = 1.5f, towerCooldown = 14f;
+        [Tooltip("퀸 여왕의 위상: 별 반지름 (m); 밝아지기까지 (초); 튕겨 내는 거리 (m) · 넘어짐 (초); 뒤 (초); 쿨 (초)")]
+        public float starRadius = 6f, starFuse = 0.5f, starPush = 5f, starKnockHold = 1.5f, starRecovery = 0.25f, starCooldown = 10f;
+        [Tooltip("퀸 연속 체크 (3판): 첫 표적 거리 (m) · 앞 반각 (°); 다음 표적 거리 (m); 표시 (초) · 날아드는 시간 (초); 다음을 기다리는 시간 (초); 날리는 거리 (m) · 셋째 (m); 넘어짐 (초); 쿨 (초, 마지막 체크 뒤)")]
+        public float ccFirst = 12f, ccCone = 60f, ccNext = 8f, ccMark = 0.25f, ccFly = 0.25f, ccWait = 1f, ccPush = 4f, ccLast = 6f, ccKnockHold = 1.5f, ccCooldown = 14f;
+        [Tooltip("퀸 연속 체크 (3판): 몇 번까지")]
+        public int ccMax = 3;
+
         [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
         [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]
         public float stepPassRange = 2f, stepPassWindow = 0.4f;

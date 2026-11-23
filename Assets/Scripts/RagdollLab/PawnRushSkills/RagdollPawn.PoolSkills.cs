@@ -119,6 +119,7 @@ namespace ChessFight.RagdollLab
             summonArrived[0] = summonArrived[1] = null;
             promoteLeft = 0f;   // (a reset keeps the piece it is given: no going back)
             ClearKitTwoStates();   // the kits' second version: light, heavy (RagdollPawn.KitTwo.cs)
+            ClearSetThreeStates(); // the set 3판: swords, stones, a tower (RagdollPawn.SetThree.cs)
         }
 
         // ---------------------------------------------------------------- B-중7: the long diagonal snipe

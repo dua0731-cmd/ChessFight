@@ -663,7 +663,7 @@ namespace ChessFight.RagdollLab
             bool lit = why == null && !busy;
             string g = supportKey.ToString();
             string line = busy ? (me.SupportMate != null ? $"{me.SupportMate.DisplayName} 데려오는 중" : "팀이 지원 중")
-                        : lit ? $"{g} → {last.DisplayName} · 데려오면 게이지 +{skills.supGauge * 100f:0}%"
+                        : lit ? $"{g} → {last.DisplayName} · " + (me.HasUltimate ? $"데려오면 게이지 +{skills.supGauge * 100f:0}%" : "데려오면 둘 다 빨라져요")
                         : why;
             if (me.Rescues > 0) line += $" · 구조 {me.Rescues}";
             PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(row), g, "지원 · " + RagdollPawn.SupportName(me.Piece), line, me.Piece, lit || busy, 0f);
@@ -765,6 +765,36 @@ namespace ChessFight.RagdollLab
                         break;
                     case PawnRushSkillIds.QueenDrop:
                         use = running ? $"{click} = 다음 무리" : $"{key} 궁극기 (×{RagdollPawn.Comeback(me.Team):0.#})";
+                        break;
+                    // The set 3판 (RagdollPawn.SetThree.cs).
+                    case PawnRushSkillIds.Bolas:
+                        use = me.BolasChopOpen ? $"{click} = 뒷목 치기!" : me.BolasPulling ? $"끌어오는 중 · 머리가 반짝이면 {click}" : $"{key} 볼라스 (조준점 쪽)";
+                        break;
+                    case PawnRushSkillIds.HighStomp:
+                        use = !running ? $"{key} 하이점프"
+                            : me.PlanTarget != null ? $"공중에서 {key} = 내려찍기" + (lab ? $" → {me.PlanTarget.DisplayName}" : "")
+                            : $"공중에서 {key} = 곧장 내려오기";
+                        break;
+                    case PawnRushSkillIds.HolySwords:
+                        use = $"{key} 성검 (적 모두의 곁에)";
+                        break;
+                    case PawnRushSkillIds.StoneThrow:
+                        use = running && me.PlanPhaseNow == PlanPhase.Windup ? "카메라로 겨누는 중" : $"{key} 떠올라 돌멩이";
+                        break;
+                    case PawnRushSkillIds.HolyWater:
+                        use = $"{key} 성수병 (10 m 앞)";
+                        break;
+                    case PawnRushSkillIds.RollShort:
+                        use = running && me.RollingShort ? $"{key} = 쿵 일어서기 · 이동 키 = 조금 꺾기" : $"{key} 굴러가기";
+                        break;
+                    case PawnRushSkillIds.TowerTrap:
+                        use = $"{key} 땅 가르기 → 탑";
+                        break;
+                    case PawnRushSkillIds.QueenStar:
+                        use = $"{key} 팔각별";
+                        break;
+                    case PawnRushSkillIds.CheckChain:
+                        use = running && me.PlanPhaseNow == PlanPhase.Recovery ? $"{key} = 다음 체크 ({me.CheckChainDone}/{me.PawnRushSkills.ccMax})" : $"{key} 체크 (앞의 적)";
                         break;
                     default:
                         use = $"{key} 조준 → {click}";

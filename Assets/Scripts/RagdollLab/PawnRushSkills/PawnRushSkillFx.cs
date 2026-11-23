@@ -141,6 +141,7 @@ namespace ChessFight.RagdollLab
             DestroyDesignA();
             DestroyUlt();
             DestroySupport();
+            DestroySetThree();
             foreach (var a in anims) a.Destroy();
             foreach (var s in tileSets.Values) s.Destroy();
             foreach (var s in ghosts.Values) s.Destroy();
@@ -212,7 +213,35 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.SupStep:
                 case SkillFxKind.SupCut:
                 case SkillFxKind.SupCancel:
-                case SkillFxKind.SupSaved: SupportFx(e); break;
+                case SkillFxKind.SupSaved:
+                    // (Guarded: an effect that throws must not stop the host's skill that raised the moment.)
+                    try { SupportFx(e); } catch (System.Exception ex) { FxFault("support moment", ex); }
+                    break;
+                // 11-23: the set 3판 (PawnRushSkillFx.SetThree.cs).
+                case SkillFxKind.S3Bolas:
+                case SkillFxKind.S3BolasCatch:
+                case SkillFxKind.S3BolasEnd:
+                case SkillFxKind.S3Stun:
+                case SkillFxKind.S3HopDive:
+                case SkillFxKind.S3Roll:
+                case SkillFxKind.S3RollEnd:
+                case SkillFxKind.S3Crack:
+                case SkillFxKind.S3Tower:
+                case SkillFxKind.S3TowerFall:
+                case SkillFxKind.S3Star:
+                case SkillFxKind.S3StarBlade:
+                case SkillFxKind.S3Check:
+                case SkillFxKind.S3SwordRise:
+                case SkillFxKind.S3SwordFly:
+                case SkillFxKind.S3SwordEnd:
+                case SkillFxKind.S3Bound:
+                case SkillFxKind.S3StoneShot:
+                case SkillFxKind.S3StoneBreak:
+                case SkillFxKind.S3WaterThrow:
+                case SkillFxKind.S3Puddle:
+                case SkillFxKind.S3Slip:
+                    try { SetThreeFx(e); } catch (System.Exception ex) { FxFault("set 3 moment", ex); }
+                    break;
             }
         }
 

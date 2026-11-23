@@ -1289,7 +1289,8 @@ namespace ChessFight.RagdollLab
 
             // Thrown by a launch pad the pawn flies the pad's arc (carryVel is the throw): it may only nudge
             // itself launchSteer m/s off it, so it comes down on the spot the pad aims at.
-            Vector3 targetVel = move * (launched ? Mathf.Min(top, p.launchSteer) : top);   // over the ground
+            // (The set 3판's knight high jump steers a share of the run in the air: SkillAirSteer, RagdollPawn.SetThree.cs.)
+            Vector3 targetVel = move * (launched ? Mathf.Min(top, Mathf.Max(p.launchSteer, top * SkillAirSteer)) : top);   // over the ground
             Vector3 ownAnchor = anchorVel - frame;
             upSettle = Mathf.Max(0f, upSettle - dt);
             float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl);

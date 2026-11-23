@@ -99,6 +99,7 @@ namespace ChessFight.RagdollLab
             UpdateSlideBack();    // the knight's tour: sliding back after the squash (RagdollPawn.TeamUlts.cs)
             TrackCrumbs(dt);      // where it ran, for the family fork's throw back (RagdollPawn.KnightUlts.cs)
             if (HasSkill(PawnRushSkillIds.PassantBang)) TrackOvertakes();   // who overtakes the pawn, for en passant !!
+            UpdateSetThreeStates(s, dt);   // the set 3판: towers, swords, stones, puddles (RagdollPawn.SetThree.cs)
         }
 
         void ClearKitTwoStates()

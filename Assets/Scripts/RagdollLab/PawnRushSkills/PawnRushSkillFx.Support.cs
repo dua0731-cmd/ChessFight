@@ -157,8 +157,8 @@ namespace ChessFight.RagdollLab
         void SupGo(SkillFxEvent e)
         {
             var f = e.by != null ? SupOf(e.by) : null;
-            if (e.by != null && e.count >= 0) RagdollPawn.NoteSupportUsed(e.by.Team, e.count);
-            if (f == null || e.count < 0) return;   // (a rider along a bridge rides the bridge as drawn)
+            if (e.by != null && e.count == 1) RagdollPawn.NoteSupportUsed(e.by.Team, Mathf.RoundToInt(e.size));
+            if (f == null || e.count != 1) return;   // (count 0: a rider along a bridge rides the bridge as drawn)
             f.going = true;
             f.goReal = RealClock;
             float lvl = SupHeard(f, e.at);
@@ -229,7 +229,7 @@ namespace ChessFight.RagdollLab
             if (!saved || e.by == null || e.target == null) return;
             // Arrived: "구조 !!" on every screen, the two tied by a teal light while their reward lasts.
             supSavedReal = RealClock;
-            supSavedLine = $"{e.by.DisplayName} → {e.target.DisplayName}  ·  팀 궁극 게이지 +{e.size * 100f:0}%  ·  구조 {e.count}";
+            supSavedLine = $"{e.by.DisplayName} → {e.target.DisplayName}" + (e.size > 0f ? $"  ·  팀 궁극 게이지 +{e.size * 100f:0}%" : "  ·  둘 다 빨라짐") + $"  ·  구조 {e.count}";
             supTethers.Add((e.by, e.target, RealClock + (Params != null ? Params.supBoost : 4f)));
             UltSquareWave(Ground(e.at), FamSquare * 0.5f, 10f, 0.7f, Teal, 3f);
             SparkBurst(e.at + Vector3.up, 20, TealPale, Vector3.up, 60f, 4f, 10f, 0.6f, 0.04f);

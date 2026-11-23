@@ -419,7 +419,7 @@ namespace ChessFight.RagdollLab
                     p.SupportRide(by, this);
                 }
             }
-            by.Fx(SkillFxKind.SupGo, this, supPos, supHead, supSection, supKind);
+            by.Fx(SkillFxKind.SupGo, this, supPos, supHead, 1, supSection);   // (the section in size: a count is a byte on the wire)
             Log($"{DisplayName}: {SupportName((PieceKind)supKind)}에 탐 → {by.DisplayName} 쪽으로");
         }
 
@@ -437,7 +437,7 @@ namespace ChessFight.RagdollLab
             supT = supLag = 0f;
             supPos = bodies[0].position;
             supRun = SupportAlong(supFrom, supTo, supPos);
-            by.Fx(SkillFxKind.SupGo, this, supPos, FlatDir(supTo - supFrom), -1, supKind);
+            by.Fx(SkillFxKind.SupGo, this, supPos, FlatDir(supTo - supFrom), 0, 0f);   // (count 0: a rider along the bridge)
         }
 
         static float SupportAlong(Vector3 a, Vector3 b, Vector3 p)
@@ -767,9 +767,11 @@ namespace ChessFight.RagdollLab
                 by.Kick(ahead, s.supDash, 0.5f, true);
                 Kick(ahead, s.supDash, 0.5f, true);
             }
-            by.AddGauge(s.supGauge, $"{DisplayName} 구조");
-            by.Fx(SkillFxKind.SupSaved, this, FeetPoint, FlatDir(by.facing), by.Rescues, s.supGauge);
-            Log($"{by.DisplayName}: {DisplayName} 구조!! ({SupportName((PieceKind)supKind)}, {supT:0.0}초) — 팀 게이지 +{s.supGauge * 100f:0}%");
+            // (No ultimate in the slots - the set 3판 - no team gauge: the rest of the reward stands.)
+            float gauge = by.HasUltimate ? s.supGauge : 0f;
+            if (gauge > 0f) by.AddGauge(gauge, $"{DisplayName} 구조");
+            by.Fx(SkillFxKind.SupSaved, this, FeetPoint, FlatDir(by.facing), by.Rescues, gauge);
+            Log($"{by.DisplayName}: {DisplayName} 구조!! ({SupportName((PieceKind)supKind)}, {supT:0.0}초)" + (gauge > 0f ? $" — 팀 게이지 +{gauge * 100f:0}%" : ""));
             by.EndSupportLeader();
             SupportClear();
         }

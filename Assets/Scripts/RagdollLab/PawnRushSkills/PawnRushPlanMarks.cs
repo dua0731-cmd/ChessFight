@@ -108,6 +108,15 @@ namespace ChessFight.RagdollLab
                     case PawnRushSkillIds.RankWall:
                     case PawnRushSkillIds.QueenDrop:
                     case PawnRushSkillIds.GeneralCall: DrawTeamUlt(pawn); break;
+                    // The set 3판 (PawnRushPlanMarks.SetThree.cs).
+                    case PawnRushSkillIds.Bolas:
+                    case PawnRushSkillIds.HighStomp:
+                    case PawnRushSkillIds.StoneThrow:
+                    case PawnRushSkillIds.HolyWater:
+                    case PawnRushSkillIds.RollShort:
+                    case PawnRushSkillIds.TowerTrap:
+                    case PawnRushSkillIds.QueenStar:
+                    case PawnRushSkillIds.CheckChain: DrawSetThree(pawn, me); break;
                 }
                 // The smothered mate's chance, for the knight played here: a ring over the crowd it could fall on.
                 if (pawn == me && pawn.PlanSkill != PawnRushSkillIds.Smother && pawn.HasSkill(PawnRushSkillIds.Smother)) DrawSmotherChance(pawn);

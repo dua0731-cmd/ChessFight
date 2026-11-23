@@ -88,6 +88,7 @@ namespace ChessFight.RagdollLab
                 teamUltSpent[i] = false;
             }
             ResetSupport();   // (every section's support usable again: RagdollPawn.Support.cs)
+            ResetSetThree();  // (no puddle left: RagdollPawn.SetThree.cs)
         }
 
         float GaugeNow

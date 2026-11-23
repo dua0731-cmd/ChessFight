@@ -301,6 +301,12 @@ namespace ChessFight.RagdollLab
                     : p.code == RagdollPawn.PopPassant ? "앙파상!"
                     : p.code == RagdollPawn.PopHook ? "갈고리!"
                     : p.code == RagdollPawn.PopCall ? "총동원!"
+                    : p.code == RagdollPawn.PopStrike ? "스트라이크!"
+                    : p.code == RagdollPawn.PopCheckWord ? "체크!"
+                    : p.code == RagdollPawn.PopChop ? "뒷목!"
+                    : p.code == RagdollPawn.PopSlip ? "꽈당!"
+                    : p.code == RagdollPawn.PopTrap ? "갇힘!"
+                    : p.code == RagdollPawn.PopBind ? "속박!"
                     : "";
                 if (text.Length == 0) continue;
                 Color c = p.code < 100 || p.code == RagdollPawn.PopCrown ? Gold : p.code == RagdollPawn.PopCheckEscape ? new Color(0.5f, 1f, 0.6f)

@@ -77,6 +77,15 @@ namespace ChessFight.Network
         // The set 3안-b (KITS 6.9, the user 11-22: two normal slots a piece): the queen's two without the 1.5x of her three -
         // the series of checks on 16 s, the eight lines on 40 s (variants on their skills' code).
         public const int SeriesB = 125, EightB = 126;
+        // The set 3판 (KITS 6.12, the user 11-23: "스킬은 1개 아니면 최대 2개에, 궁극기는 빼고 지원스킬만 맨 선두 주자에게"):
+        // the skills the user wrote, one or two a piece and no ultimate (RagdollPawn.SetThree.cs) - the pawn's bolas, the
+        // knight's high jump and stomp, the bishop's three to pick two from (the holy swords, the stone, the holy water),
+        // the rook's short roll and tower, the queen's star and her chain of checks.
+        public const int Bolas = 127, HighStomp = 128, HolySwords = 129, StoneThrow = 130, HolyWater = 131, RollShort = 132,
+                         TowerTrap = 133, QueenStar = 134, CheckChain = 135;
+
+        /// <summary>One of the set 3판's skills (127..135).</summary>
+        public static bool SetThree(int id) => id >= Bolas && id <= CheckChain;
 
         /// <summary>One of the six driven ultimates (119..124).</summary>
         public static bool Driven(int id) => id >= PromotionRun && id <= KingWalk;
@@ -385,10 +394,10 @@ namespace ChessFight.Network
         /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
         /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
         /// 0 for the others (the system stays as it is).</summary>
-        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 ? Many : 0;
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 ? Many : 0;
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 12;
+        public const int Presets = 13;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
@@ -398,12 +407,27 @@ namespace ChessFight.Network
         /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each:
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
         /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
-        /// piece, the queen's without her glide; the six driven ultimates). The king's row is empty (his call) in all but 4
-        /// to 11.</summary>
+        /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, one or two
+        /// a piece, no ultimate). The king's row is empty (his call) in all but 4 to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 12)
+            {
+                // KITS 6.12 (11-23): F and E only, Q empty (no ultimate, so no team gauge); the pawn and the knight one skill;
+                // the king's row empty (no king in Pawn Rush). The bishop's three all sit here to be tried - F, E and R -
+                // the user picks two of them after playing them.
+                int[] f = { PawnRushSkillIds.Bolas, PawnRushSkillIds.HighStomp, PawnRushSkillIds.HolySwords, PawnRushSkillIds.RollShort, PawnRushSkillIds.QueenStar, 0 };
+                int[] e = { 0, 0, PawnRushSkillIds.StoneThrow, PawnRushSkillIds.TowerTrap, PawnRushSkillIds.CheckChain, 0 };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                }
+                p.slots[Row(PieceKind.Bishop) * Slots + 2] = PawnRushSkillIds.HolyWater;
+                return p;
+            }
             if (which == 11)
             {
                 // KITS 6.9 (11-22, the standard now): 3안-a's skills, two a piece - the queen's series of checks (F, 16 s) and
