@@ -323,6 +323,7 @@ namespace ChessFight.PawnRush.Editor
                 probeOn = F("probe", 0f) > .5f;
                 GameGrass.Show(F("grass", 1f) > .5f);
                 GameSurfaces.Macro = F("macro", GameSurfaces.Macro);
+                GameSurfaces.Foliage = F("fol", GameSurfaces.Foliage);
                 GameSurfaces.Apply();
                 GameSurfaces.LitOn = F("lit", GameSurfaces.LitOn ? 1f : 0f) > .5f;
                 GameSurfaces.Dress(GameSurfaces.LitOn);

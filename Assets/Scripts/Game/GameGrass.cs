@@ -25,9 +25,9 @@ namespace ChessFight.Game
 
         const float Cell = 12f;
         static readonly HashSet<int> seen = new HashSet<int>();
-        static readonly List<(Renderer lawn, GameObject grass)> patches = new List<(Renderer, GameObject)>();
+        // Each patch: its lawn, its object, its mesh (made here, freed here) and how many blades it holds.
+        static readonly List<(Renderer lawn, GameObject grass, Mesh mesh, int count)> patches = new List<(Renderer, GameObject, Mesh, int)>();
         static readonly Dictionary<Material, Material> looks = new Dictionary<Material, Material>();
-        static readonly List<Mesh> meshes = new List<Mesh>();
         static Material template;
         static int blades;
         static bool shown = true;
@@ -52,17 +52,19 @@ namespace ChessFight.Game
         // What was made lives outside the scenes (and outlives Play in the editor): gone at the end.
         static void Clear()
         {
-            foreach (var mesh in meshes) if (mesh != null) Object.Destroy(mesh);
+            foreach (var p in patches) if (p.mesh != null) Object.Destroy(p.mesh);
             foreach (var look in looks.Values) if (look != null) Object.Destroy(look);
-            meshes.Clear();
             looks.Clear();
             patches.Clear();
             seen.Clear();
+            blades = 0;
         }
 
         static void Loaded(Scene scene, LoadSceneMode mode)
         {
             if (mode != LoadSceneMode.Single) return;
+            // The patches went with the old scene; their meshes are freed here.
+            foreach (var p in patches) if (p.mesh != null) Object.Destroy(p.mesh);
             seen.Clear();
             patches.Clear();
             blades = 0;
@@ -71,7 +73,7 @@ namespace ChessFight.Game
         /// <summary>Grows grass on every lawn not seen yet; returns how many lawns it grew on.</summary>
         public static int Grow()
         {
-            if (!On) return 0;
+            if (!On || !GameGfx.InScope()) return 0;
             if (template == null) template = Resources.Load<Material>("Gfx/GfxGrass");
             if (template == null || template.shader == null || !template.shader.isSupported) return 0;
             int grown = 0;
@@ -101,15 +103,13 @@ namespace ChessFight.Game
         {
             for (int i = patches.Count - 1; i >= 0; i--)
             {
-                var (lawn, grass) = patches[i];
-                if (grass == null)
+                var (lawn, grass, mesh, count) = patches[i];
+                if (grass == null || lawn == null)
                 {
-                    patches.RemoveAt(i);
-                    continue;
-                }
-                if (lawn == null)
-                {
-                    Object.Destroy(grass);
+                    // Gone with its lawn (or its scene): the mesh and the blades it used are given back.
+                    if (grass != null) Object.Destroy(grass);
+                    if (mesh != null) Object.Destroy(mesh);
+                    blades = Mathf.Max(0, blades - count);
                     patches.RemoveAt(i);
                     continue;
                 }
@@ -188,14 +188,13 @@ namespace ChessFight.Game
                 go.layer = r.gameObject.layer;
                 SceneManager.MoveGameObjectToScene(go, r.gameObject.scene);
                 var cellMesh = cell.Mesh();
-                meshes.Add(cellMesh);
                 go.AddComponent<MeshFilter>().sharedMesh = cellMesh;
                 var mr = go.AddComponent<MeshRenderer>();
                 mr.sharedMaterial = look;
                 mr.shadowCastingMode = ShadowCastingMode.Off;
                 mr.receiveShadows = true;
                 go.SetActive(shown);
-                patches.Add((r, go));
+                patches.Add((r, go, cellMesh, cell.Blades));
             }
             Debug.Log($"[GameGrass] {r.name}: {area:0} m2, {made} blades in {cells.Count} cells ({blades} in the scene)");
             return true;
@@ -237,6 +236,8 @@ namespace ChessFight.Game
                 indices.Add(i + 2); indices.Add(i + 4); indices.Add(i + 3);
             }
 
+            public int Blades => positions.Count / 5;
+
             public Mesh Mesh()
             {
                 var mesh = new Mesh { name = "Grass (JY-gfx)", hideFlags = HideFlags.DontSave };
@@ -255,6 +256,9 @@ namespace ChessFight.Game
         sealed class Watch : MonoBehaviour
         {
             float next;
+
+            // A second after GameSurfaces' own look, so the two scans never share a frame.
+            void Start() => next = Time.realtimeSinceStartup + 1f;
 
             void LateUpdate()
             {

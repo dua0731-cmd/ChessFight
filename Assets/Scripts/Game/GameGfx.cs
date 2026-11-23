@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ChessFight.Game
 {
@@ -7,16 +8,27 @@ namespace ChessFight.Game
     /// ` (back quote) in Play turns it off and on again: off is the scene's own sky, sun and fog (GameSky), no grade
     /// volume (GameGrade), no surface sets and plain URP Lit materials (GameSurfaces), no grass (GameGrass); a small
     /// label says so. The renderer asset's longer shadows stay either way. Players never see the switch.
+    /// The upgrade is for the Pawn Rush round and its sections only (InScope): the lobby, the result halls, Sword Fight
+    /// and the tool scenes keep the look they set themselves.
     /// </summary>
     public static class GameGfx
     {
         public static bool Upgrade { get; private set; } = true;
 
+        /// <summary>The scenes the upgrade dresses: the round (its sections, mini-games and ending hall are built in
+        /// it), the course prototype, and the sections test scene the picture tool plays.</summary>
+        public static bool InScope(Scene scene) => scene.IsValid()
+            && (scene.name == SceneNames.PawnRushRound || scene.name == SceneNames.PawnRushCourse01 || scene.name == "PawnRush_Sections");
+
+        public static bool InScope() => InScope(SceneManager.GetActiveScene());
+
         /// <summary>Turns the upgrade on or off (every part, every time it is called).</summary>
         public static void Set(bool on)
         {
             Upgrade = on;
+#if CF_URP
             GameGrade.Enable(on);
+#endif
             GameSky.Enable(on);
             GameSurfaces.Enable(on);
             GameGrass.Show(on);

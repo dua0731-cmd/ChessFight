@@ -35,6 +35,9 @@ namespace ChessFight.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Boot()
         {
+            // Arrays from an earlier Play (HideAndDontSave outlives it in the editor) go first.
+            foreach (var old in Resources.FindObjectsOfTypeAll<Texture2DArray>())
+                if (old != null && old.name.StartsWith("Gfx surface sets (")) Object.DestroyImmediate(old);
             masks = Build("mask");
             normals = Build("normal");
             if (!Ready)
@@ -56,7 +59,15 @@ namespace ChessFight.Game
         }
 
         /// <summary>Strength changed: hand it on.</summary>
-        public static void Apply() => Shader.SetGlobalVector(OnId, Ready && enabled ? new Vector4(1f, Strength, Macro, 0f) : Vector4.zero);
+        public static void Apply()
+        {
+            Shader.SetGlobalVector(OnId, Ready && enabled ? new Vector4(1f, Strength, Macro, 0f) : Vector4.zero);
+            Shader.SetGlobalFloat(FoliageId, Ready && enabled ? Foliage : 0f);
+        }
+
+        /// <summary>How much sun comes through leaves and grass blades (Gfx Lit's leaf set, Gfx Grass; 0 none).</summary>
+        public static float Foliage = 1f;
+        static readonly int FoliageId = Shader.PropertyToID("_GfxFoliage");
 
         /// <summary>The sets on or off everywhere (GameGfx turns them off to compare): no surface, plain URP Lit.</summary>
         public static void Enable(bool on)
@@ -72,6 +83,10 @@ namespace ChessFight.Game
         static void Off()
         {
             Shader.SetGlobalVector(OnId, Vector4.zero);
+            Shader.SetGlobalFloat(FoliageId, 0f);
+            if (masks != null) Object.Destroy(masks);
+            if (normals != null) Object.Destroy(normals);
+            masks = normals = null;
             foreach (var twin in originalOf.Keys) Object.Destroy(twin);
             twinOf.Clear();
             originalOf.Clear();
@@ -84,6 +99,7 @@ namespace ChessFight.Game
         public static bool LitOn = true;
 
         static Shader urpLit, gfxLit;
+        static bool warned;
         static readonly Dictionary<Material, Material> twinOf = new Dictionary<Material, Material>();
         static readonly Dictionary<Material, Material> originalOf = new Dictionary<Material, Material>();
         // Renderers Dress has looked at. Each is dressed once, when first seen: a material a script puts on it later (a
@@ -99,7 +115,15 @@ namespace ChessFight.Game
         {
             if (urpLit == null) urpLit = Shader.Find("Universal Render Pipeline/Lit");
             if (gfxLit == null) gfxLit = Shader.Find("ChessFight/Gfx Lit");
+            if (gfxLit == null && !Application.isEditor)
+            {
+                if (!warned) Debug.LogWarning("[GameSurfaces] ChessFight/Gfx Lit is not in this build: URP Lit materials keep their plain look (the menu ChessFight/Graphics/URP Lit materials -> Gfx Lit puts it in a build)");
+                warned = true;
+                return 0;
+            }
             if (urpLit == null || gfxLit == null || !gfxLit.isSupported || (on && !Ready)) return 0;
+            // Only the round's scenes (GameGfx.InScope); undressing works anywhere.
+            if (on && !GameGfx.InScope()) return 0;
             int changed = 0;
             foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
@@ -279,6 +303,8 @@ namespace ChessFight.Game
                 anisoLevel = 8,
                 hideFlags = HideFlags.HideAndDontSave,
             };
+            // No copy kept on the CPU: the slices are copied on the GPU below.
+            try { array.Apply(false, true); } catch (System.Exception) { }
             for (int i = 0; i < Sets.Length; i++)
             {
                 var image = i == 0 ? first : Resources.Load<Texture2D>("Gfx/Sets/" + Sets[i] + "_" + kind);

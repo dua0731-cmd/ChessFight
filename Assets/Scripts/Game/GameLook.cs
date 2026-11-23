@@ -66,6 +66,13 @@ namespace ChessFight.Game
         static int aidKind = -1;
         static float aidStrength = -1f;
 
+        /// <summary>JY-gfx: the colour aid worked out again (the grade's tonemapper changed: GameGrade).</summary>
+        public static void RefreshColourAid()
+        {
+            aidKind = -1;
+            ColourAidSetting();
+        }
+
         static void ColourAidSetting()
         {
             int kind = GameSettings.ColourAidKind;
@@ -88,8 +95,9 @@ namespace ChessFight.Game
             if (!on || (kind == aidKind && Mathf.Approximately(strength, aidStrength))) return;
             aidKind = kind;
             aidStrength = strength;
-            // URP's mixer takes percentages, -200..200, in the ACES grading's own space (ColourAid.InAces).
-            var m = ColourAid.InAces(ColourAid.Matrix(kind, strength));
+            // URP's mixer takes percentages, -200..200, in the grading's own space: ACEScg under GameLook.asset's ACES
+            // tonemapper (ColourAid.InAces), linear sRGB under JY-gfx's Neutral one (GameGrade.ReplacesAces).
+            var m = GameGrade.ReplacesAces ? ColourAid.Matrix(kind, strength) : ColourAid.InAces(ColourAid.Matrix(kind, strength));
             float P(int i) => Mathf.Clamp(m[i] * 100f, -200f, 200f);
             colourMixer.redOutRedIn.Override(P(0));
             colourMixer.redOutGreenIn.Override(P(1));

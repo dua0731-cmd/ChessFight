@@ -63,7 +63,7 @@ Shader "ChessFight/Gfx Grass"
             // Far blades sink into the lawn.
             float d = distance(p, _WorldSpaceCameraPos.xyz);
             float sink = saturate((d - _Fade.x) / max(_Fade.y - _Fade.x, 1e-3));
-            p.y -= h * metres * sink;
+            p.y -= (h * metres + 0.03) * sink;
             o.positionWS = p;
             o.normalWS = TransformObjectToWorldNormal(v.normalOS);
             o.positionCS = TransformWorldToHClip(p);
@@ -106,7 +106,11 @@ Shader "ChessFight/Gfx Grass"
                 l.normalWS = i.normalWS;
                 l.uv = i.uv;
                 l.fog = i.fog;
-                return CFShadeSet(l, albedo, 0.0, 0.15, 1.0, 0, 0.0);
+                half4 c = CFShadeSet(l, albedo, 0.0, 0.15, 1.0, 0, 0.0);
+                // Blades let the sun through, the tips most.
+                half3 v = GetWorldSpaceNormalizeViewDir(i.positionWS);
+                c.rgb += CFFoliageLight(NormalizeNormalPerPixel(i.normalWS), v, albedo * h, TransformWorldToShadowCoord(i.positionWS));
+                return c;
             }
             ENDHLSL
         }

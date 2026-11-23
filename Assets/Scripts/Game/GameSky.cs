@@ -6,8 +6,8 @@ namespace ChessFight.Game
 {
     /// <summary>
     /// JY-gfx (2026-11-24, the graphics upgrade): the sky and the sun of every game scene nobody gave its own.
-    /// A scene that still has Unity's default procedural sky (the round, the sections test, the courses, the
-    /// mini-games) gets the game's sky (Resources/Gfx/GfxSky: real volumetric clouds over a storybook blue, see
+    /// A scene of the round (GameGfx.InScope) that still has Unity's default procedural sky (the round, the sections
+    /// test, the courses) gets the game's sky (Resources/Gfx/GfxSky: real volumetric clouds over a storybook blue, see
     /// Shaders/GfxSky.shader) and a warm sun; its ambient light and its reflections are then worked out from that sky
     /// (DynamicGI.UpdateEnvironment). Places with their own light (ZoneLight) still mix their own over it, and scenes
     /// that set their own sky (the lobby, the intro, the carriage yard, the observatory) keep theirs.
@@ -113,7 +113,9 @@ namespace ChessFight.Game
         public static bool Apply()
         {
             var current = RenderSettings.skybox;
-            if (!On || (current != null && current.name != DefaultSkyName && current != sky)) return false;
+            // Only the round's scenes (GameGfx.InScope), and only Unity's default sky (a scene with no sky or its own
+            // keeps it: Sword Fight's study, the lobby, the tool scenes light themselves).
+            if (!On || !GameGfx.InScope() || current == null || (current.name != DefaultSkyName && current != sky)) return false;
             var sun = RenderSettings.sun != null ? RenderSettings.sun : FindSun();
             if (current != sky)
             {

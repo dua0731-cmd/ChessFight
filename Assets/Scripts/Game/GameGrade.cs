@@ -27,6 +27,7 @@ namespace ChessFight.Game
         static void Boot()
         {
             On = true;
+            graded = false;
             volumes.Clear();
             SceneManager.sceneLoaded -= Loaded;
             SceneManager.sceneLoaded += Loaded;
@@ -34,8 +35,14 @@ namespace ChessFight.Game
 
         static void Loaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.name == SceneNames.Intro) return;
             if (mode != LoadSceneMode.Single && SceneManager.GetActiveScene() != scene) return;
+            // Only the round's scenes (GameGfx.InScope); the others keep GameLook's grade.
+            if (!GameGfx.InScope(scene))
+            {
+                if (mode == LoadSceneMode.Single) graded = false;
+                GameLook.RefreshColourAid();
+                return;
+            }
             var go = new GameObject("Game grade (JY-gfx)");
             SceneManager.MoveGameObjectToScene(go, scene);
             var volume = go.AddComponent<Volume>();
@@ -47,7 +54,15 @@ namespace ChessFight.Game
             volume.enabled = On;
             volumes.RemoveAll(v => v == null);
             volumes.Add(volume);
+            graded = true;
+            GameLook.RefreshColourAid();
         }
+
+        static bool graded;
+
+        /// <summary>True while this grade's tonemapper (not ACES) is the one on screen. The colour aid (GameLook, priority
+        /// 1001) must then mix its channels in linear sRGB, the space URP grades in without ACES, not in ACEScg.</summary>
+        public static bool ReplacesAces => On && graded && Tone != TonemappingMode.ACES;
 
         static VolumeProfile shared;
         static readonly System.Collections.Generic.List<Volume> volumes = new System.Collections.Generic.List<Volume>();
@@ -58,6 +73,7 @@ namespace ChessFight.Game
             On = on;
             volumes.RemoveAll(v => v == null);
             foreach (var v in volumes) v.enabled = on;
+            GameLook.RefreshColourAid();
         }
 
         public static VolumeProfile Profile()

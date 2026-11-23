@@ -57,6 +57,9 @@ void GfxLitPassFragment(
     InitializeBakedGIData(input, inputData);
 
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
+    // JY-gfx: leaves let the sun through (the leaf set only).
+    if ((int)(_GfxSet + 0.5) == CF_SET_LEAF && !IsSurfaceTypeTransparent(_Surface))
+        color.rgb += CFFoliageLight(inputData.normalWS, inputData.viewDirectionWS, surfaceData.albedo, inputData.shadowCoord);
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
     color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
 

@@ -10,6 +10,7 @@
 #define CF_SURFACE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
 // The order of the arrays' slices (GameSurfaces.Sets).
 #define CF_SET_LIMESTONE 0
@@ -52,9 +53,26 @@ float CFMacro(float2 p)
     return CFNoise(p) * 0.6 + CFNoise(p * 2.7 + 17.3) * 0.4;
 }
 
+// Broad patches: a big floor or wall a little lighter or darker, drier or glossier over ten-odd metres, so it does not
+// read as one flat colour from the game's distance (a set's fine detail averages out there). Always on the world's
+// planes, so pieces laid side by side share them. k: how much (_GfxSurface.z, GameSurfaces.Macro, times strength).
+void CFPatches(float3 positionWS, half3 normalWS, half k, inout half3 albedo, inout half smoothness)
+{
+    if (k <= 0.0) return;
+    half3 w = abs(normalWS);
+    w = w * w;
+    w = w * w;
+    w /= max(w.x + w.y + w.z, 1e-4);
+    float3 q = positionWS / 13.0;
+    half m = CFMacro(q.zy) * w.x + CFMacro(q.xz + 31.7) * w.y + CFMacro(q.xy + 63.1) * w.z;
+    albedo *= 1.0 + (m - 0.5) * 0.6 * k;
+    smoothness = saturate(smoothness + (0.5 - m) * 0.3 * k);
+}
+
 // The set's detail over a surface: the normal bent by the set's relief, the colour varied and darkened in its
-// hollows, the smoothness varied about the shader's own; then broad patches. Strength scale (0 = none).
-void CFSurface(float3 positionWS, int set, half scale, inout half3 normalWS, inout half3 albedo, inout half smoothness, out half hollow)
+// hollows, the smoothness varied about the shader's own; then broad patches (patches: false leaves them to the
+// caller). Strength scale (0 = none).
+void CFSurfaceCore(float3 positionWS, int set, half scale, inout half3 normalWS, inout half3 albedo, inout half smoothness, out half hollow, bool patches)
 {
     hollow = 1.0;
     half strength = _GfxSurface.y * scale;
@@ -85,25 +103,38 @@ void CFSurface(float3 positionWS, int set, half scale, inout half3 normalWS, ino
     hollow = lerp(1.0, mask.g, 0.55 * saturate(strength));
     albedo *= (1.0 + (mask.a - 0.5) * 0.5 * strength) * hollow;
     smoothness = saturate(smoothness + (CFSetRough[set] - mask.r) * 0.8 * strength);
+    if (patches) CFPatches(positionWS, n, _GfxSurface.z * saturate(strength), albedo, smoothness);
+}
 
-    // Broad patches: a big floor or wall a little lighter or darker, drier or glossier over ten-odd metres, so it
-    // does not read as one flat colour from the game's distance (the fine detail above averages out there).
-    // _GfxSurface.z: how much (GameSurfaces.Macro).
-    half k = _GfxSurface.z * saturate(strength);
-    if (k > 0.0)
-    {
-        float3 q = positionWS / 13.0;
-        half m = CFMacro(q.zy) * w.x + CFMacro(q.xz + 31.7) * w.y + CFMacro(q.xy + 63.1) * w.z;
-        albedo *= 1.0 + (m - 0.5) * 0.6 * k;
-        smoothness = saturate(smoothness + (0.5 - m) * 0.3 * k);
-    }
+// On the world's planes (things that stay put).
+void CFSurface(float3 positionWS, int set, half scale, inout half3 normalWS, inout half3 albedo, inout half smoothness, out half hollow)
+{
+    CFSurfaceCore(positionWS, set, scale, normalWS, albedo, smoothness, hollow, true);
+}
+
+// Light through leaves and blades (JY-gfx, _GfxFoliage = GameSurfaces.Foliage; 0 none): the sun seen through a clump
+// lights it from behind, and light wraps a little past the shaded side, so foliage is soft and alive instead of a
+// dark lump. Added to a lit colour; needs Lighting.hlsl (both users include it first).
+float _GfxFoliage;
+
+half3 CFFoliageLight(half3 normalWS, half3 viewWS, half3 albedo, float4 shadowCoord)
+{
+    if (_GfxFoliage <= 0.0) return half3(0, 0, 0);
+    Light sun = GetMainLight(shadowCoord);
+    half nl = dot(normalWS, sun.direction);
+    half through = pow(saturate(dot(viewWS, -sun.direction)), 4.0) * (1.0 - 0.5 * saturate(nl));
+    half wrap = saturate((nl + 0.6) / 1.6) - saturate(nl);
+    half shade = lerp(0.35, 1.0, sun.shadowAttenuation) * sun.distanceAttenuation;
+    return albedo * sun.color * shade * (through * 0.8 + wrap * 0.45) * _GfxFoliage;
 }
 
 // The same on the object's own planes: its position and normal turned into the object's frame with the scale taken
 // out (a metre stays a metre), so the surface moves with a thing that moves. Static-batched meshes are already in
-// world space (their matrix is the identity) and get the world's planes.
+// world space (their matrix is the identity) and get the world's planes. The broad patches stay on the world's planes
+// (they span pieces laid side by side; on a moving thing, at ten-odd metres, they hardly show).
 void CFSurfaceObject(float3 positionWS, int set, half scale, inout half3 normalWS, inout half3 albedo, inout half smoothness, out half hollow)
 {
+    half3 n0 = normalWS;
     float4x4 m = GetObjectToWorldMatrix();
     float3 c0 = m._m00_m10_m20, c1 = m._m01_m11_m21, c2 = m._m02_m12_m22;
     c0 *= rsqrt(max(dot(c0, c0), 1e-10));
@@ -112,8 +143,10 @@ void CFSurfaceObject(float3 positionWS, int set, half scale, inout half3 normalW
     float3 d = positionWS - m._m03_m13_m23;
     float3 p = float3(dot(d, c0), dot(d, c1), dot(d, c2));
     half3 n = half3(dot(normalWS, c0), dot(normalWS, c1), dot(normalWS, c2));
-    CFSurface(p, set, scale, n, albedo, smoothness, hollow);
+    CFSurfaceCore(p, set, scale, n, albedo, smoothness, hollow, false);
     normalWS = normalize(c0 * n.x + c1 * n.y + c2 * n.z);
+    half strength = _GfxSurface.y * scale;
+    if (_GfxSurface.x >= 0.5 && strength > 0.0) CFPatches(positionWS, n0, _GfxSurface.z * saturate(strength), albedo, smoothness);
 }
 
 #endif
