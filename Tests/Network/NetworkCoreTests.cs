@@ -3333,12 +3333,15 @@ public static class NetworkCoreTests
                 Check(PlayerNames.Check("체스러버", false).Ok && PlayerNames.Check(" Knight 7 ", false).Ok, "plain names");
                 Check(PlayerNames.Check("룩", false).Error == "2자 이상", "too short");
                 Check(PlayerNames.Check("가나다라마바사아자차카타파", false).Error == "12자까지", "too long");
-                Check(PlayerNames.Check("룩!", false).Error == "한글·한자·영어·숫자만" && PlayerNames.Check("<b>퀸</b>", false).Error == "한글·한자·영어·숫자만", "symbols");
+                Check(PlayerNames.Check("룩!", false).Error == "쓸 수 없는 글자" && PlayerNames.Check("<b>퀸</b>", false).Error == "쓸 수 없는 글자", "symbols");
                 // R749: Chinese characters, simplified and traditional, alone or mixed; kana still refused.
                 Check(PlayerNames.Check("龙骑士", false).Ok && PlayerNames.Check("王小明 7", false).Ok && PlayerNames.Check("國王 Rook", false).Ok, "hanzi names");
-                Check(PlayerNames.Check("龙", false).Error == "2자 이상" && PlayerNames.Check("ナイト", false).Error == "한글·한자·영어·숫자만", "hanzi length, kana");
+                Check(PlayerNames.Check("龙", false).Error == "2자 이상" && PlayerNames.Check("ナイト", false).Error == "쓸 수 없는 글자", "hanzi length, kana");
                 Check(PlayerNames.Check("管理员1", false).Error == "쓸 수 없는 말" && PlayerNames.Check("笨 蛋", false).Error == "쓸 수 없는 말", "Chinese banned words");
                 Check(PlayerNames.Showable("龙骑士"), "a published hanzi name shows");
+                // R790: the Russian alphabet too (Ё included); other Cyrillic letters and Russian banned words refused.
+                Check(PlayerNames.Check("Ферзь", false).Ok && PlayerNames.Check("Ёжик 7", false).Ok && PlayerNames.Check("Иван Rook", false).Ok && PlayerNames.Showable("Ферзь"), "Russian names");
+                Check(PlayerNames.Check("Ґава", false).Error == "쓸 수 없는 글자" && PlayerNames.Check("Админ", false).Error == "쓸 수 없는 말", "other Cyrillic, Russian banned words");
                 Check(PlayerNames.Check("철벽  룩", false).Error == "띄어쓰기는 한 칸", "double space"); });
             Test("Player name: an unfinished syllable waits while typing, then reads as an error", () => {
                 var typing = PlayerNames.Check("체스ㄹ", true);
@@ -4193,7 +4196,7 @@ public static class NetworkCoreTests
                 var won = RecordBuild.PawnRush(result);
                 Check(won != null && won.Mode == pr && won.Result == RecordResult.Win && won.Piece == PieceKind.Knight, "a win as the knight");
                 Check(won.Place == 2 && won.CountsToWin && won.Ours == 2 && won.Theirs == 2, "second, counted, 2 a side");
-                Check(RecordText.Headline(won) == "2위 도착 · 4:21" && RecordText.Sub(won) == "우리 팀 승리에 들어감", "its lines: " + RecordText.Headline(won));
+                Check(RecordText.Headline(won) == "2위 · 4:21" && RecordText.Sub(won) == "", "its lines, place and time only (R804): " + RecordText.Headline(won));
                 result.Players[1].FinishSeconds = -1; result.Players[1].MetersLeft = 41.4f; result.WinningTeam = 1;
                 var lost = RecordBuild.PawnRush(result);
                 Check(lost.Result == RecordResult.Loss && lost.Place == 0 && RecordText.Headline(lost) == "도착 못 함" && RecordText.Sub(lost) == "", "a loss off the platform, no distance (R741)");
@@ -4219,7 +4222,7 @@ public static class NetworkCoreTests
                 Check(book.Mode(pr).Games == 2 && book.Mode(pr).Firsts == 0 && Math.Abs(book.Mode(pr).BestFinish - 261.4) < 1e-9 && book.Mode(pr).NotFinished == 0, "Pawn Rush totals");
                 Check(book.Mode(sf).Knockouts == 4 && book.Mode(sf).Falls == 1 && book.Mode(sf).BestKnockouts == 4, "Sword Fight totals");
                 Check(book.PieceGames[(int)PieceKind.Knight] == 1 && book.PieceWins[(int)PieceKind.Knight] == 1 && book.PieceGames[(int)PieceKind.Pawn] == 1 && book.PieceWins[(int)PieceKind.Pawn] == 0, "by piece");
-                Check(RecordText.Headline(left) == "경기 중 나감" && RecordText.Sub(left) == "패로 셈" && RecordText.Badge(left.Result) == "나감", "the left line");
+                Check(RecordText.Headline(left) == "" && RecordText.Sub(left) == "" && RecordText.Badge(left.Result) == "탈주", "the left line: the 탈주 badge, no words (R804)");
                 // Back into the left match and its end seen: the end takes the "나감"'s place and its count.
                 var back = RecordBuild.PawnRush(new MatchResult { WinningTeam = 0, Needed = 1, Players = { new ResultPlayer { Team = 0, Self = true, Piece = PieceKind.Queen, FinishSeconds = 238 } } });
                 back.Match = 13;
@@ -4544,7 +4547,9 @@ public static class NetworkCoreTests
                 Check(Languages.Choose("", Languages.FromSteam("schinese"), "", table) == "zh-Hans", "Steam in Simplified Chinese starts in Chinese");
                 Check(Languages.Choose("", Languages.FromSteam("koreana"), Languages.FromSystem("English"), table) == "ko", "Steam in Korean stays Korean");
                 Check(Languages.Choose("", "", Languages.FromSystem("ChineseSimplified"), table) == "zh-Hans", "no Steam, Windows in Chinese");
-                Check(Languages.Choose("", Languages.FromSteam("russian"), "", table) == "ko", "a language with no column falls back to Korean");
+                // R790: Russian has a column but is not ready yet, so Steam in Russian still starts in Korean.
+                Check(table.Has("ru") && !table.Ready("ru"), "Russian there, not ready yet");
+                Check(Languages.Choose("", Languages.FromSteam("russian"), "", table) == "ko", "a language not ready yet falls back to Korean");
                 Check(Languages.Choose("ko", Languages.FromSteam("english"), "", table) == "ko", "the settings' pick wins over Steam"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }

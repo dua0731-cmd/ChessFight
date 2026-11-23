@@ -335,15 +335,25 @@ namespace ChessFight.PawnRush
 
         // A section's name under its segment: whole if it fits, else its last word ("왕실 수로 정원" -> "정원"). A
         // bracketed part is left off ("국왕 알현실 (임시)" -> "국왕 알현실"; R688).
+        // R790: languages that put the head noun first ("Зал с парадной лестницей") would keep a dependent word
+        // ("лестницей"), so there the name is cut to the room with "…" instead ("Зал с пара…").
         static string Short(string label, float room)
         {
             if (string.IsNullOrEmpty(label)) return "";
             int open = label.IndexOf('(');
             if (open > 0) label = label.Substring(0, open).Trim();
             if (label.Length * 8f <= room + 24f) return label;
+            if (HeadFirst(Loc.Lang))
+            {
+                int fit = Mathf.Max(3, Mathf.FloorToInt((room + 24f) / 8f) - 1);
+                return fit < label.Length ? label.Substring(0, fit).TrimEnd() + "…" : label;
+            }
             int space = label.LastIndexOf(' ');
             return space >= 0 && space + 1 < label.Length ? label.Substring(space + 1) : label;
         }
+
+        static bool HeadFirst(string lang) =>
+            lang == "ru" || lang == "es" || lang == "es-419" || lang == "pt-BR" || lang == "fr" || lang == "pl";
 
         // ------------------------------------------------------------------ drawing
 

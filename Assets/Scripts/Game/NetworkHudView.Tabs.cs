@@ -152,6 +152,15 @@ namespace ChessFight.Game
             return e;
         }
 
+        // R790: the result badge is 52 px wide (.rc-badge). A word longer than five letters (Russian "Победа",
+        // "Поражение") gets a smaller size on one line instead of breaking in two; shorter words keep the sheet's 13 px.
+        static void FitBadge(Label badge)
+        {
+            int n = badge.text?.Length ?? 0;
+            badge.style.whiteSpace = WhiteSpace.NoWrap;
+            badge.style.fontSize = n <= 5 ? new StyleLength(StyleKeyword.Null) : new StyleLength(n <= 6 ? 11f : 9f);
+        }
+
         static Label Text(string text, string classes, VisualElement parent, bool display = false)
         {
             var label = new Label(text) { pickingMode = PickingMode.Ignore };
@@ -277,7 +286,8 @@ namespace ChessFight.Game
             Element("cx-grow", panel);
             var record = Pressable("", "cx-record", panel, () => SetTab(LobbyTab.Record));
             cxRecord = Text("", "cx-record-text", record);
-            Text(Loc.T("전적 보기 ›"), "cx-record-go", record);
+            // R802 (user: "줄이 넘어가서 보기 안좋아 그냥 내 기록, 자세히 보기만 해"): short words that fit one line
+            Text(Loc.T("자세히 보기"), "cx-record-go", record);
         }
 
         // Where a piece comes from in each mode: the list's short line and the panel's longer one.
@@ -359,7 +369,7 @@ namespace ChessFight.Game
 
             var book = MatchRecords.Book;
             int games = book.PieceGames[(int)kind], wins = book.PieceWins[(int)kind];
-            cxRecord.text = games > 0 ? Loc.F("내 기록 · 이 기물로 <color=#E2B866>{0}판 {1}승</color>", games, wins) : Loc.T("내 기록 · 아직 이 기물로 한 판도 안 했어요");
+            cxRecord.text = games > 0 ? Loc.F("내 기록 · <color=#E2B866>{0}판 {1}승</color>", games, wins) : Loc.T("내 기록");
         }
 
         void Bar(int i, float value, float max)
@@ -439,7 +449,7 @@ namespace ChessFight.Game
                 row.Ranked = Text(Loc.T("순위"), "rc-ranked", size);
                 row.When = Text("", "rc-when", row.Root);
                 // R742: a double click opens the match's detail in the list's place (NetworkHudView.RecordDetail.cs).
-                Text(Loc.T("더블 클릭 · 자세히"), "rc-hint", row.Root);
+                Text(Loc.T("자세히 보기"), "rc-hint", row.Root);
                 row.Root.pickingMode = PickingMode.Position;
                 int slot = i;
                 row.Root.RegisterCallback<ClickEvent>(e =>
@@ -512,6 +522,7 @@ namespace ChessFight.Game
                 var r = shown[at];
                 rcShown.Add(r);
                 row.Badge.text = Loc.T(RecordText.Badge(r.Result));
+                FitBadge(row.Badge);
                 foreach (var c in new[] { "rc-badge-win", "rc-badge-loss", "rc-badge-left", "rc-badge-draw" }) row.Badge.RemoveFromClassList(c);
                 row.Badge.AddToClassList(r.Result == RecordResult.Win ? "rc-badge-win" : r.Result == RecordResult.Loss ? "rc-badge-loss"
                                          : r.Result == RecordResult.Left ? "rc-badge-left" : "rc-badge-draw");

@@ -436,7 +436,7 @@ namespace ChessFight.Network
             {
                 case RecordResult.Win: return Loc.T("승");
                 case RecordResult.Loss: return Loc.T("패");
-                case RecordResult.Left: return Loc.T("나감");
+                case RecordResult.Left: return Loc.T("탈주");
                 default: return Loc.T("무");
             }
         }
@@ -446,24 +446,26 @@ namespace ChessFight.Network
         // "6 대 6".
         public static string Size(MatchRecord r) => Loc.F("{0} 대 {1}", r.Ours, r.Theirs);
 
-        // The line in big type: "2위 도착 · 4:21", "도착 못 함", "7 : 10 · 시간 종료", "경기 중 나감".
+        // The line in big type: "2위 · 4:21", "도착 못 함", "7 : 10 · 시간 종료"; nothing for a match left (R804, user
+        // 11-23: "탈주 된 것에는 경기 중 나감 패배로 쓰지마 아무것도 쓰지마" - the badge says 탈주; "시간 표시 하고 내가
+        // 몇등에 들었는 지만 간단하게").
         public static string Headline(MatchRecord r)
         {
-            if (r.Result == RecordResult.Left) return Loc.T("경기 중 나감");
+            if (r.Result == RecordResult.Left) return "";
             if (r.Mode == GameModes.SwordFight.Key)
             {
                 string score = r.ScoreOurs + " : " + r.ScoreTheirs;
                 return r.End == SwordEnd.TimeUp ? Loc.F("{0} · 시간 종료", score) : r.End == SwordEnd.SuddenDeath ? Loc.F("{0} · 서든데스", score) : score;
             }
-            return r.Place > 0 ? Loc.F("{0}위 도착 · {1}", r.Place, MatchResult.Clock(r.FinishSeconds)) : Loc.T("도착 못 함");
+            return r.Place > 0 ? Loc.F("{0}위 · {1}", r.Place, MatchResult.Clock(r.FinishSeconds)) : Loc.T("도착 못 함");
         }
 
-        // The small line under it.
+        // The small line under it: nothing for a match left or a place reached (R804).
         public static string Sub(MatchRecord r)
         {
-            if (r.Result == RecordResult.Left) return Loc.T("패로 셈");
+            if (r.Result == RecordResult.Left) return "";
             if (r.Mode == GameModes.SwordFight.Key) return Loc.F("내가 떨어뜨림 {0} · 떨어짐 {1}", r.Knockouts, r.Falls);
-            if (r.Place > 0) return r.CountsToWin ? Loc.T("우리 팀 승리에 들어감") : Loc.T("왕관 발판 도착");
+            if (r.Place > 0) return "";
             // R741 (user 11-21: "거리 몇 미터 이런건 빼"): no distance to the line; MetersLeft stays in the record unshown.
             return r.Result == RecordResult.Win ? Loc.T("우리 팀 승리") : "";
         }

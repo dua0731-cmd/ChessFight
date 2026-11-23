@@ -20,7 +20,8 @@ namespace ChessFight.Network
         };
 
         // Refused anywhere in the name (spaces and case ignored).
-        static readonly string[] Banned = { "바보", "멍청", "운영자", "관리자", "admin", "傻瓜", "笨蛋", "运营", "管理员" };
+        static readonly string[] Banned = { "바보", "멍청", "운영자", "관리자", "admin", "傻瓜", "笨蛋", "运营", "管理员",
+                                            "админ", "модератор", "дурак", "идиот" };
         // Refused as a whole word only, so a name such as "Sigma" stays allowed.
         static readonly string[] BannedWords = { "gm" };
 
@@ -39,7 +40,7 @@ namespace ChessFight.Network
             string t = (name ?? "").Trim();
             if (t.Length == 0) return new Verdict(false, "");
             foreach (char c in t)
-                if (!Allowed(c)) return new Verdict(false, Loc.T("한글·한자·영어·숫자만"));
+                if (!Allowed(c)) return new Verdict(false, Loc.T("쓸 수 없는 글자"));
             bool jamo = HasJamo(t);
             if (jamo && !typing) return new Verdict(false, Loc.T("다 쓰지 않은 글자"));
             if (t.Length < MinLength) return new Verdict(false, Loc.F("{0}자 이상", MinLength));
@@ -77,11 +78,14 @@ namespace ChessFight.Network
         }
 
         // R749: Chinese characters too (CJK Unified Ideographs and Extension A, simplified and traditional alike),
-        // so players in Chinese can use their own names. Kana, symbols and the rarer ideograph blocks stay out.
+        // so players in Chinese can use their own names. R790: the Russian alphabet too (А-я with Ё ё), for
+        // players in Russian. Kana, symbols, other Cyrillic letters and the rarer ideograph blocks stay out.
         static bool Allowed(char c) =>
-            (c >= '가' && c <= '힣') || IsJamo(c) || IsHanzi(c) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ';
+            (c >= '가' && c <= '힣') || IsJamo(c) || IsHanzi(c) || IsRussian(c) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ';
 
         static bool IsHanzi(char c) => (c >= '一' && c <= '鿿') || (c >= '㐀' && c <= '䶿');
+
+        static bool IsRussian(char c) => (c >= 'А' && c <= 'я') || c == 'Ё' || c == 'ё';
 
         // Hangul compatibility consonants and vowels, ㄱ to ㅣ: what the IME shows before
         // a syllable is complete.

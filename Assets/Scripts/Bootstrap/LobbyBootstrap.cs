@@ -224,13 +224,17 @@ namespace ChessFight.Game
             ulong leader = session.PartyLeader;
             var members = session.PartyMembers;
             int size = members.Length + session.PartyBots;
+            // Alone in my own party lobby is not a party yet: no leader tag or crown
+            // until a friend has joined (R796).
+            bool party = members.Length > 1;
             foreach (ulong id in members.OrderBy(id => id == session.Self ? 0 : 1))
             {
                 if (lineup.Count >= LobbyStage.Spots) break;
+                bool leads = party && id == leader;
                 lineup.Add(new LineupEntry
                 {
-                    Id = id, Name = session.Name(id), Leader = id == leader, Me = id == session.Self,
-                    Tag = id == leader ? Loc.F("파티장 · {0}/6", size) : Loc.T("대기 중")
+                    Id = id, Name = session.Name(id), Leader = leads, Me = id == session.Self,
+                    Tag = leads ? Loc.F("파티장 · {0}/6", size) : Loc.T("대기 중")
                 });
             }
             for (int i = 1; i <= session.PartyBots && lineup.Count < LobbyStage.Spots; i++)

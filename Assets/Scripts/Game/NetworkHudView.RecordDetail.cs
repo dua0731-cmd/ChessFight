@@ -53,7 +53,8 @@ namespace ChessFight.Game
             // header
             var head = Element("rd-head", recordDetail);
             Pressable(Loc.T("‹ 목록으로"), "rd-back " + MenuSound.SoundClass(MenuSound.Kind.Close), head, CloseRecordDetail);
-            var badge = Text(RecordText.Badge(r.Result), "rc-badge rd-badge", head);
+            var badge = Text(Loc.T(RecordText.Badge(r.Result)), "rc-badge rd-badge", head);
+            FitBadge(badge);
             badge.AddToClassList(r.Result == RecordResult.Win ? "rc-badge-win" : r.Result == RecordResult.Loss ? "rc-badge-loss"
                                  : r.Result == RecordResult.Left ? "rc-badge-left" : "rc-badge-draw");
             var modeCell = Element("rd-mode", head);
@@ -97,7 +98,8 @@ namespace ChessFight.Game
 
         static string Headline(MatchRecord r)
         {
-            if (r.Mode != GameModes.SwordFight.Key || r.Result == RecordResult.Left) return RecordText.Headline(r);
+            if (r.Result == RecordResult.Left) return RecordText.Badge(r.Result);   // R804: just "탈주"
+            if (r.Mode != GameModes.SwordFight.Key) return RecordText.Headline(r);
             string how = r.End == SwordEnd.Target ? Loc.T("먼저 10점") : r.End == SwordEnd.TimeUp ? Loc.T("시간 종료") : Loc.T("서든데스");
             return r.ScoreOurs + " : " + r.ScoreTheirs + " · " + how;
         }
@@ -105,7 +107,7 @@ namespace ChessFight.Game
         static string HeroLine(MatchRecord r, MatchDetail d)
         {
             string team = r.Result == RecordResult.Win ? Loc.T("우리 팀 승리") : r.Result == RecordResult.Loss ? Loc.T("우리 팀 패배")
-                        : r.Result == RecordResult.Left ? Loc.T("끝나기 전에 나가서 패로 셈") : Loc.T("무승부");
+                        : r.Result == RecordResult.Left ? "" : Loc.T("무승부");
             if (r.Mode == GameModes.SwordFight.Key)
             {
                 if (r.Result == RecordResult.Left || d == null) return team;

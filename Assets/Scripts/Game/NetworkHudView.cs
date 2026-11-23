@@ -825,8 +825,9 @@ namespace ChessFight.Game
                 plates[i].style.display = front ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!front) continue;
                 Vector2 at = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, lineupCamera);
-                // Fixed widths from the USS, so centring needs no layout pass.
-                plates[i].style.left = at.x - (invite ? 70f : 100f);
+                // Fixed widths from the USS, so centring needs no layout pass. R790: the invite spot is 220 px so a
+                // longer translation ("+ Позвать друзей") widens the pill instead of spilling past its border.
+                plates[i].style.left = at.x - (invite ? 110f : 100f);
                 plates[i].style.top = at.y - (invite ? 18f : 64f);
             }
             for (int i = 0; i < plateVoices.Count && i < lineup.Count; i++) DrawVoice(i);
@@ -976,7 +977,7 @@ namespace ChessFight.Game
             }
         }
 
-        // The right rail: every mode as a card with its piece, always on screen, so
+        // The right rail: every mode as a card, always on screen, so
         // picking a mode is one click. Followers see the leader's choice.
         void BuildModeRail()
         {
@@ -989,11 +990,15 @@ namespace ChessFight.Game
                 // 10-27 (design A, was option B's ebony lacquer): smoked glass with a gold hairline
                 railPlates[mode.Key] = GlassPlate.On(card);
 
-                var art = new VisualElement { pickingMode = PickingMode.Ignore };
-                art.AddToClassList("rail-art");
-                var portrait = ModePortrait(mode.Key);
-                if (portrait != null) art.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(portrait));
-                card.Add(art);
+                // R797: the mode's badge (design B1, ArtSource/Lobby/ModeLogo) where the piece picture was (R795).
+                var logo = ModeLogo(mode.Key);
+                if (logo != null)
+                {
+                    var art = new VisualElement { pickingMode = PickingMode.Ignore };
+                    art.AddToClassList("rail-art");
+                    art.style.backgroundImage = new StyleBackground(logo);
+                    card.Add(art);
+                }
                 var bar = new VisualElement { pickingMode = PickingMode.Ignore };
                 bar.AddToClassList("rail-bar");
                 card.Add(bar);
@@ -1158,19 +1163,14 @@ namespace ChessFight.Game
             return wrapped.ToString();
         }
 
-        // The piece that stars in each mode, posed as on the design sample: a pawn
-        // running, or a rook with its arm up for a fight.
-        static RenderTexture ModePortrait(string key)
+        // R797: each mode's badge picture, or none for a mode without one.
+        static Texture2D ModeLogo(string key)
         {
             switch (key)
             {
-                case "kingrush":
-                    return MenuArt.Portrait("run", PieceKind.Pawn, 0,
-                        new FigurePose { Leg = .7f, ArmLeft = 1.1f, ArmRight = -.1f, Lean = .22f, Jump = .15f }, new Vector2(3, 4), false);
-                case "swordfight":
-                    return MenuArt.Portrait("fight", PieceKind.Rook, 0, new FigurePose { ArmRight = 2f, ArmLeft = .4f, Lean = .08f }, new Vector2(-1.5f, 6), false, 7.2f, 1.35f);
-                default:
-                    return MenuArt.Portrait("stand", PieceKind.Pawn, 0, new FigurePose { Arm = .3f }, new Vector2(.6f, 6), false);
+                case "kingrush": return Resources.Load<Texture2D>("Menu/ModeLogo_PawnRush");
+                case "swordfight": return Resources.Load<Texture2D>("Menu/ModeLogo_SwordFight");
+                default: return null;
             }
         }
 
