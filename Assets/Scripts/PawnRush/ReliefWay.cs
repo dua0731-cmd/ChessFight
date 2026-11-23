@@ -33,7 +33,11 @@ namespace ChessFight.PawnRush
     // A slope a pawn walks is 14 degrees at most (the grand stair's own walking slope; a 0.25 m step is a wall to the
     // ragdoll), so every ramp here is under 13. Decks lie 3 cm over the floors they join. Built on every PC when it
     // gives the relief, like the rest of it; nothing is sent.
-    public static class ReliefWay
+    //
+    // R784: what a span is walked on and held by - its deck's box and its two rail walls - is here and is not
+    // drawn; what it looks like is its map's own (ReliefWay.Look.cs: a stone bridge in the garden, a timber gangway
+    // in the yard, a marble gallery in the hall).
+    public static partial class ReliefWay
     {
         public const string Garden = "Early_1-1_RoyalWaterGarden", Yard = "Early_1-2_RoyalCarriageYard", Hall = "Mid_2-1_GrandStairHall";
         const float Lift = .03f, Thick = .3f, RailHigh = 1f, RailThick = .16f, Overlap = .35f;
@@ -107,20 +111,20 @@ namespace ChessFight.PawnRush
             if (plan.Length == 0) return 0;
             var root = new GameObject("Relief way (easy way)");
             root.transform.SetParent(section.transform, false);
-            Material deck = Arena.Lit("M_ReliefDeck", new Color(.9f, .82f, .62f), 0f, .75f), rail = Arena.TrimGold;
+            var look = LookOf(section.Id);
             foreach (var stretch in plan)
             {
                 var group = new GameObject(stretch.Name);
                 group.transform.SetParent(root.transform, false);
                 for (int i = 0; i + 1 < stretch.Line.Length; i++)
-                    Span(group.transform, i + 1, stretch.Line[i] + Vector3.up * Lift, stretch.Line[i + 1] + Vector3.up * Lift, stretch.Width, stretch.Rails, deck, rail);
+                    Span(group.transform, i + 1, stretch.Line[i] + Vector3.up * Lift, stretch.Line[i + 1] + Vector3.up * Lift, stretch.Width, stretch.Rails, look);
             }
             return plan.Length;
         }
 
         // One straight piece from a to b (its top's middle line), a little longer either end so that pieces meeting
         // at a bend leave no wedge open.
-        static void Span(Transform parent, int number, Vector3 a, Vector3 b, float width, bool rails, Material deck, Material rail)
+        static void Span(Transform parent, int number, Vector3 a, Vector3 b, float width, bool rails, Look look)
         {
             Vector3 along = b - a;
             float length = along.magnitude;
@@ -131,21 +135,23 @@ namespace ChessFight.PawnRush
             piece.transform.localPosition = (a + b) * .5f;
             piece.transform.localRotation = facing;
             bool sloped = Mathf.Abs(b.y - a.y) > .01f;
-            Box(piece.transform, "Deck", new Vector3(0f, -Thick * .5f, 0f), new Vector3(width, Thick, length + Overlap * 2f), deck, true, sloped);
+            float full = length + Overlap * 2f;
+            // What is drawn first: its piers and legs look for the floor under them, and must not find this deck.
+            Dress(piece.transform, look, width, full, rails, !sloped);
+            Solid(piece.transform, "Deck", new Vector3(0f, -Thick * .5f, 0f), new Vector3(width, Thick, full), true, sloped);
             if (!rails) return;
             float side = width * .5f - RailThick * .5f;
-            Box(piece.transform, "Rail L", new Vector3(-side, RailHigh * .5f, 0f), new Vector3(RailThick, RailHigh, length + Overlap * 2f), rail, false, false);
-            Box(piece.transform, "Rail R", new Vector3(side, RailHigh * .5f, 0f), new Vector3(RailThick, RailHigh, length + Overlap * 2f), rail, false, false);
+            Solid(piece.transform, "Rail L", new Vector3(-side, RailHigh * .5f, 0f), new Vector3(RailThick, RailHigh, full), false, false);
+            Solid(piece.transform, "Rail R", new Vector3(side, RailHigh * .5f, 0f), new Vector3(RailThick, RailHigh, full), false, false);
         }
 
-        static void Box(Transform parent, string name, Vector3 at, Vector3 size, Material material, bool floor, bool sloped)
+        // A box that is stood on or leaned against and not drawn.
+        static void Solid(Transform parent, string name, Vector3 at, Vector3 size, bool floor, bool sloped)
         {
-            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            box.name = name;
+            var box = new GameObject(name);
             box.transform.SetParent(parent, false);
             box.transform.localPosition = at;
-            box.transform.localScale = size;
-            if (material != null) box.GetComponent<Renderer>().sharedMaterial = material;
+            box.AddComponent<BoxCollider>().size = size;
             if (floor) box.AddComponent<CourseFloor>().sloped = sloped;
             box.AddComponent<NoClimbSurface>();
         }
