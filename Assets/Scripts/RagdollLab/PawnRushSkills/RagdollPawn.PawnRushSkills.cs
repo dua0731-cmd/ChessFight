@@ -103,6 +103,10 @@ namespace ChessFight.RagdollLab
         S3Bolas, S3BolasCatch, S3BolasEnd, S3Stun, S3HopDive, S3Roll, S3RollEnd, S3Crack, S3Tower, S3TowerFall, S3Star,
         S3StarBlade, S3Check, S3SwordRise, S3SwordFly, S3SwordEnd, S3Bound, S3StoneShot, S3StoneBreak, S3WaterThrow, S3Puddle,
         S3Slip,
+        // 11-24 (KITS 6.13): the knight's back kick, remade as the set 3판's basic (RagdollPawn.BookSkills.cs).
+        //   S3Kick       at: its feet, dir: the way it faces (the kick goes the other way); count 0 the bob, else 1 + how
+        //                many it hit
+        S3Kick,
     }
 
     public struct SkillFxEvent
@@ -573,7 +577,9 @@ namespace ChessFight.RagdollLab
         /// <summary>What a skill does to the piece it hits (DESIGN §2.3-2.4): a knockdown is the skill's to
         /// give, not the impact's; a piece that is down is only pushed, one just up only staggers. <paramref name="hold"/>:
         /// how long a knockdown keeps it down (0: getUpDelay).</summary>
-        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false, float hold = 0f)
+        /// <param name="edgeSafe">A basic's push (11-24, KITS 6.13): the piece hit stops edgeGap short of an edge
+        /// (RagdollPawn.SetThree.cs, the system's safety rule); a mid or high skill's goes over.</param>
+        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false, float hold = 0f, bool edgeSafe = false)
         {
             if (target == null || target.NetworkPuppet) return "-";
             if (target.SkillUntargetable)
@@ -590,9 +596,10 @@ namespace ChessFight.RagdollLab
             if (cover != null)
             {
                 target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
-                SkillHit(cover, push, knockdown, cause, true, hold);
+                SkillHit(cover, push, knockdown, cause, true, hold, edgeSafe);
                 return $"{cover.DisplayName}이(가) 대신 막음";
             }
+            if (edgeSafe) target.GuardEdge();
             if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
             {
                 target.TakeHit(Flat(push), 0f, 0f, false);   // (TakeHit scales a guarded piece's push down)
@@ -731,7 +738,7 @@ namespace ChessFight.RagdollLab
                         {
                             skillStage = SkillStage.Link;
                             stageTime = 0f;
-                            SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                            SkillDetail = pawnTarget != null ? $"연결 (키 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
                         }
                         else
                         {
@@ -752,7 +759,7 @@ namespace ChessFight.RagdollLab
                     {
                         // The skill pool's P-기1 (RagdollPawn.PoolSkills.cs): the second step goes for nobody; the move keys bend
                         // it, and it must come sooner.
-                        SkillDetail = "연결 (F 한 번 더 · 이동 키로 꺾기)";
+                        SkillDetail = "연결 (키 한 번 더 · 이동 키로 꺾기)";
                         if (press) pawnBuffered = true;
                         if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing) PawnStep(s, 2);
                         else if (stageTime > s.steerLinkMax) FinishPawn(s, false);
@@ -760,7 +767,7 @@ namespace ChessFight.RagdollLab
                     }
                     // R153 (plan v0.3 §3): the second step only goes for someone: a downed teammate or a standing enemy in front.
                     pawnTarget = SeekTarget(s);
-                    SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                    SkillDetail = pawnTarget != null ? $"연결 (키 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
                     if (press) pawnBuffered = true;
                     if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing)
                     {
@@ -885,8 +892,8 @@ namespace ChessFight.RagdollLab
                 float angle = AxisAngle(other, skillDir);
                 bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
                 string result = diagonal
-                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? StepKnockNow(s) : 0f)
-                    : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
+                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? StepKnockNow(s) : 0f, true)
+                    : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면", false, 0f, true);
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
                 Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}");

@@ -204,21 +204,21 @@ namespace ChessFight.RagdollLab
                 "3판 · F = 적 모두의 곁 (대각선 5 m, 허리 높이)에 성검 · 칼이 겨누는 대각선이 바닥에 빛줄로 보임" + "\n" +
                 "1.5초 뒤 그때 적이 있던 자리로 대각선을 따라 날아감 (초속 30 m, 안 따라감) · 맞으면 속박 1초 · 세 번 · 쿨 35초"),
             Made(PawnRushSkillIds.StoneThrow, "돌멩이 던지기", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Block,
-                "3판 · 누르면 1.5 m 떠올라 0.6초 겨눔 (그동안 무방비) · 그 뒤 조준점 쪽으로 지름 1.2 m 돌 (초속 10 m, 25 m, 살짝 떨어짐)" + "\n" +
-                "길의 적을 다 튕겨 내며 지나감 (4 m, 1.5초 넘어짐) · 벽에 닿으면 부서짐 · 쿨 10초"),
+                "3판 · 누르면 1.5 m 떠올라 0.6초 겨눔 (그동안 무방비) · 그 뒤 조준점 쪽으로 지름 1.2 m 돌 (초속 10 m, 20 m, 살짝 떨어짐)" + "\n" +
+                "길의 적을 다 튕겨 내며 지나감 (3 m, 1초 꽈당, 낭떠러지 앞에서 멈춤) · 벽에 닿으면 부서짐 · 쿨 6초"),
             Made(PawnRushSkillIds.HolyWater, "성수병 던지기", PieceKind.Bishop, SkillOrigin.Kits, SkillTag.Place | SkillTag.Block,
-                "3판 · 앞으로 던져 10 m 앞에서 깨짐 · 지름 4 m 미끄러운 웅덩이 6초" + "\n" +
-                "밟은 적은 두 발이 하늘로 솟으며 꽈당 (1.5초), 웅덩이 밖으로 미끄러져 나감 · 우리 편은 안 미끄러짐 · 쿨 10초"),
+                "3판 · 앞으로 던져 8 m 앞에서 깨짐 · 지름 3 m 미끄러운 웅덩이 4초" + "\n" +
+                "밟은 적은 두 발이 하늘로 솟으며 꽈당 (1초), 웅덩이 밖으로 미끄러져 나감 (낭떠러지 앞에서 멈춤) · 우리 편은 안 미끄러짐 · 쿨 6초"),
             Made(PawnRushSkillIds.RollShort, "룩앤롤", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
-                "3판 · F = 옆으로 쓰러져 돌기둥으로 1.5초 굴러감 (초속 8 → 14 m, 이동 키로 1초에 30도만 꺾임)" + "\n" +
-                "부딪힌 적은 볼링 핀처럼 6 m 날아가 1.5초 넘어짐 (셋이면 '스트라이크!') · 구르는 중 F = 그 자리에서 쿵 일어서며 둘레 3 m 튕겨 냄" + "\n" +
-                "벽에 박으면 멈추고 0.5초 어질 · 낭떠러지에선 같이 떨어짐 · 쿨 10초"),
+                "3판 · F = 옆으로 쓰러져 돌기둥으로 2.5초 굴러감 (초속 8 → 18 m, 30 m쯤, 이동 키로 1초에 30도만 꺾임)" + "\n" +
+                "부딪힌 적은 볼링 핀처럼 10 m 날아가 2초 넘어짐 (셋이면 '스트라이크!') · 구르는 중 F = 그 자리에서 쿵 일어서며 둘레 4 m 튕겨 냄" + "\n" +
+                "벽에 박으면 멈추고 0.5초 어질 · 낭떠러지에선 같이 떨어짐 · 쿨 30초"),
             Made(PawnRushSkillIds.TowerTrap, "탑 가두기", PieceKind.Rook, SkillOrigin.Kits, SkillTag.Block,
                 "3판 · E = 쿵 구르고 조준한 쪽으로 땅이 곧게 갈라짐 (초속 25 m, 20 m) · 처음 닿은 적은 룩 모양 돌탑에 1.5초 갇힘 (머리만 빼꼼)" + "\n" +
                 "탑이 무너지면 굴러 나와 1초 넘어짐 · 서 있는 탑은 단단해 뒤따르던 적도 부딪힘 · 그 순간 뛰면 피함 · 쿨 14초"),
             Made(PawnRushSkillIds.QueenStar, "여왕의 위상", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block,
-                "3판 · F = 퀸 바닥에 반지름 6 m 팔각별 (퀸을 따라다님) · 0.5초 뒤 별 안의 적마다 가장 가까운 날이 밝아짐" + "\n" +
-                "그 날의 방향 (퀸의 여덟 줄 가운데 하나)으로 5 m 튕겨 나가 1.5초 넘어짐 · 적이 없으면 별만 반짝 · 쿨 10초"),
+                "3판 · F = 퀸 바닥에 반지름 8 m 팔각별 (퀸을 따라다님) · 0.5초 뒤 별 안의 적마다 가장 가까운 날이 밝아짐" + "\n" +
+                "그 날의 방향 (퀸의 여덟 줄 가운데 하나)으로 8 m 튕겨 나가 2초 넘어짐 · 적이 없으면 별만 반짝 · 쿨 30초"),
             Made(PawnRushSkillIds.CheckChain, "연속 체크 (3판)", PieceKind.Queen, SkillOrigin.Kits, SkillTag.Block | SkillTag.Move,
                 "3판 · E = 앞 12 m 안에서 조준점에 가장 가까운 적에게 빨간 체크 표시 0.25초 · 퀸이 곧게 날아들어 (0.25초) 4 m 쳐 냄 '체크!'" + "\n" +
                 "1초 안에 E = 거기서 8 m 안의 다음 적 · 세 번까지 (셋째는 6 m) · 사이에 선 적이 대신 맞음 · 표적이 없으면 쿨을 안 씀 · 쿨 14초"),
@@ -243,7 +243,7 @@ namespace ChessFight.RagdollLab
 
             // The skills as they are.
             Made(PawnRushSkillIds.TwoSteps, "첫 두 걸음", PieceKind.Pawn, SkillOrigin.PawnRush, SkillTag.Block | SkillTag.Ally,
-                "키 = 1.5 m 걸음 · 0.1~0.8초 안에 한 번 더 = 앞 3 m 안의 서 있는 적이나 넘어진 팀원에게 휘어 들어감\n곧게 부딪히면 밀기, 비스듬히 부딪히면 넘어뜨림 · 넘어진 팀원은 일으킴"),
+                "키 = 1.5 m 걸음 · 0.1~0.8초 안에 한 번 더 = 앞 3 m 안의 서 있는 적이나 넘어진 팀원에게 휘어 들어감\n곧게 부딪히면 밀기, 비스듬히 부딪히면 넘어뜨림 · 넘어진 팀원은 일으킴 · 밀림은 낭떠러지 앞에서 멈춤 · 쿨 5초 (한 걸음만이면 3.5초)"),
             Made(PawnRushSkillIds.TurnLeap, "꺾어 도약", PieceKind.Knight, SkillOrigin.PawnRush, SkillTag.Block,
                 "앞쪽 1.5~9 m의 서 있는 적 머리 위에 빨간 고리가 뜨면 키 = 그 적 머리로 도약 (대상이 없으면 무시)\n찍힌 적은 선 채로 2초 해롱해롱 · 착지 1.5 m 안의 다른 적은 휘청"),
             Made(PawnRushSkillIds.CrossRope, "교차 밧줄", PieceKind.Bishop, SkillOrigin.PawnRush, SkillTag.Block | SkillTag.Buff,
@@ -267,8 +267,8 @@ namespace ChessFight.RagdollLab
             // The skill idea book's bundle A (Docs/Skills/PAWN_RUSH_2_SKILL_IDEAS.md 13장; RagdollPawn.BookSkills.cs).
             Made(PawnRushSkillIds.TouchMove, "터치 무브 · 자두브", PieceKind.Pawn, SkillOrigin.IdeaBook, SkillTag.Buff | SkillTag.Ally,
                 "키 = 0.25초 뒤 손바닥을 내밂 (1.5 m) · 맞은 적은 2초 동안 멈출 수 없음 (방향은 틀 수 있고, 벽을 잡으면 멈춤)\n넘어졌거나 휘청이거나 묶인 팀원을 건드리면 바로 서고 기상 보호 1초 · 쿨 6초 (헛치면 2.5초)"),
-            Made(PawnRushSkillIds.BackKick, "뒷발차기", PieceKind.Knight, SkillOrigin.IdeaBook, SkillTag.Block | SkillTag.Buff,
-                "키 = 보는 쪽으로 등을 돌리고 0.35초 뒤 뒷발 (2 m) · 맞은 적은 잡고 있던 것을 놓치고 한 걸음 밀림 (넘어지지 않음)\n3초 동안 손이 저려 아무것도 못 잡음 (매달리기 · 등반 · 밧줄) · 쿨 6초"),
+            Made(PawnRushSkillIds.BackKick, "뒷발차기", PieceKind.Knight, SkillOrigin.IdeaBook, SkillTag.Block | SkillTag.Move,
+                "키 = 엉덩이가 들썩 (0.2초) 하고 나이트가 향한 쪽의 뒤를 뒷발로 뻥 (돌아서지 않음, 달리던 채로)\n뒤쪽 2.5 m 부채꼴 (90°)의 적은 뒤로 3 m 날아가 꽈당 0.6초 (낭떠러지 앞에서 멈춤) · 나이트는 맞히든 못 맞히든 반동으로 앞으로 2 m 튐 · 쿨 5초"),
             Made(PawnRushSkillIds.Ghost, "반대색 비숍", PieceKind.Bishop, SkillOrigin.IdeaBook, SkillTag.Counter,
                 "키 = 3초 동안 적의 몸과 스킬이 나를 통과함 (공중에서도 됨) · 나도 그동안 적을 밀거나 잡지 못하고 스킬도 못 씀\n왕관 발판에 서 있어도 사람 수에 안 들어감 · 적과 겹친 채 풀리면 서로 튕김 · 팀의 스킬도 안 닿음 · 쿨 12초"),
             Made(PawnRushSkillIds.BackPush, "뒤에서 밀기", PieceKind.Rook, SkillOrigin.IdeaBook, SkillTag.Ally | SkillTag.Block,
@@ -398,7 +398,7 @@ namespace ChessFight.RagdollLab
             { PawnRushSkillIds.PressLeap, "조준한 곳으로 뛰어내려 둘레의 적을 납작하게 만든다" },
             { PawnRushSkillIds.Squeeze, "몸을 낮추고 짧게 비집고 나간다. 부딪힌 기물은 옆으로 비킨다" },
             { PawnRushSkillIds.TouchMove, "건드린 적은 잠깐 멈추지 못한다. 넘어진 팀원은 바로 세운다" },
-            { PawnRushSkillIds.BackKick, "뒷발로 차서 잡고 있던 것을 놓치게 한다. 한동안 아무것도 못 잡는다" },
+            { PawnRushSkillIds.BackKick, "쫓아오는 적을 뒷발로 차 날리고 반동으로 앞으로 튄다" },
             { PawnRushSkillIds.Ghost, "잠깐 적의 몸과 스킬이 나를 그냥 통과한다" },
             { PawnRushSkillIds.BackPush, "바로 앞의 팀원을 받쳐 곧게 쏘아 보낸다" },
             { PawnRushSkillIds.TwoHares, "적 둘을 고무줄로 묶는다. 멀어지면 튕겨 서로 부딪힌다" },

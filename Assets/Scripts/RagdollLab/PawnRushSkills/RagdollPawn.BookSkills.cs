@@ -13,9 +13,10 @@ namespace ChessFight.RagdollLab
     ///   터치 무브 · 자두브 (pawn, P5)  the palm out at arm's length. An enemy it touches cannot stand still for a while
     ///                                 (touch-move: a touched piece must move): it may turn, its feet keep going. A
     ///                                 teammate that is down, staggered or tied stands at once ("j'adoube").
-    ///   뒷발차기 (knight, N4)          it turns its back and kicks out behind: whoever is hit lets go of what it holds
-    ///                                 (a wall, a rope, a piece) and its hands hold nothing for a while. A step back,
-    ///                                 no knockdown (removing the guard).
+    ///   뒷발차기 (knight, N4)          remade on 11-24 as the set 3판's basic (KITS 6.13): it no longer turns round - the
+    ///                                 rear bobs up and the hind legs kick out behind the way it faces; an enemy there
+    ///                                 flies back and falls, and the knight springs on ahead. (It was: turn the back, a
+    ///                                 strip, the hit lets go of what it holds and its hands go numb, no knockdown.)
     ///   반대색 비숍 (bishop, B1)        for a while enemy bodies and skills pass through it, and it takes hold of and
     ///                                 pushes no enemy itself; standing on the crown platform it does not count
     ///                                 (bishops of opposite colours never meet). Still in an enemy when it ends: the
@@ -95,6 +96,12 @@ namespace ChessFight.RagdollLab
                     input.sprint = false;   // it walks through its reach
                     break;
                 case PawnRushSkillIds.BackKick:
+                    // It runs on through the bob: only the jump and the dive wait for the kick.
+                    if (planPhase != PlanPhase.Windup) break;
+                    input.jump = false;
+                    input.shove = false;
+                    input.shoveHeld = false;
+                    break;
                 case PawnRushSkillIds.BackPush:
                 case PawnRushSkillIds.TwoHares:
                     input.move = Vector3.zero;
@@ -262,6 +269,11 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- 뒷발차기 (the knight's)
 
+        // 11-24 (KITS 6.13, the set 3판's basic, the user: "추천 둘로"): it does not turn round. Its rear bobs up for
+        // kickWindup (the warning), then the hind legs kick out behind the way it faces: every enemy in the fan there
+        // (kickReach, kickCone) flies back kickThrow metres and falls for kickKnockHold - a basic's push, so short of an
+        // edge - and the knight springs kickBounce metres on ahead, hit or miss. planDir is the way it faces (the kick goes
+        // the other way); the marks draw the fan behind from it.
         void UpdateBackKick(PawnRushSkillParams s, bool press, float dt)
         {
             switch (planPhase)
@@ -269,29 +281,33 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (!press || !CanStartSkill()) break;
                     SkillUses++;
-                    planDir = AimFlat();
-                    planPoint = FeetPoint + planDir * s.kickReach;
+                    planDir = FlatDir(facing);
+                    planPoint = FeetPoint;
+                    planTarget = null;
+                    planNote = 0;
                     planPhase = PlanPhase.Windup;
                     planTime = 0f;
-                    facing = -planDir;   // it turns its back on what it kicks: that is the warning
-                    SkillDetail = "등 돌림 (뒷발 준비)";
+                    KickBob(s);
+                    SkillDetail = "엉덩이 들썩 (뒷발 준비)";
+                    Fx(SkillFxKind.S3Kick, null, FeetPoint, planDir, 0);
                     break;
                 case PlanPhase.Windup:
                     planTime += dt;
-                    facing = -planDir;
-                    planPoint = FeetPoint + planDir * s.kickReach;
+                    // (Its back as it runs on: the kick goes behind whichever way it faces at the moment it kicks.)
+                    planDir = FlatDir(facing);
+                    planPoint = FeetPoint;
                     if (planTime >= s.kickWindup)
                     {
-                        Kick(s);
+                        HindKick(s);
                         planPhase = PlanPhase.Recovery;
                         planTime = 0f;
-                        SkillDetail = "뒷발차기";
+                        SkillDetail = "뒷발차기!";
                     }
                     break;
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    facing = -planDir;
-                    if (planTime >= s.kickRecovery)
+                    // (It waits to come down from the spring, a second at most.)
+                    if (planTime >= s.kickRecovery && (Grounded || planTime >= 1f))
                     {
                         EndPlanSkill();
                         StartCooldown(s.kickCooldown);
@@ -303,28 +319,57 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>The hind legs go out along the plan's way: every enemy in the strip behind it is pushed a step (no
-        /// knockdown), lets go of whatever it holds, and its hands hold nothing for kickNumb seconds.</summary>
-        void Kick(PawnRushSkillParams s)
+        /// <summary>The warning: the rear bobs up and the head dips (a horse about to kick).</summary>
+        void KickBob(PawnRushSkillParams s)
         {
-            Vector3 me = bodies[0].position;
+            bodies[(int)BodyId.Hips].linearVelocity += Vector3.up * s.kickBob;
+            bodies[(int)BodyId.Head].linearVelocity += Vector3.down * (s.kickBob * 0.5f);
+        }
+
+        /// <summary>The hind legs: every enemy standing in the fan behind flies back and falls; the knight springs on ahead
+        /// and its feet shoot out behind.</summary>
+        void HindKick(PawnRushSkillParams s)
+        {
+            Vector3 me = bodies[0].position, back = -planDir;
+            float half = s.kickCone * 0.5f;
             int n = 0;
             foreach (var other in All)
             {
-                if (other == null || other == this || other.NetworkPuppet || !IsEnemyOf(other) || other.SkillUntargetable) continue;
+                if (!UltFoe(other) || other.NetworkPuppet) continue;
                 Vector3 to = other.bodies[0].position - me;
                 if (Mathf.Abs(to.y) > 1.2f) continue;
-                float along = Vector3.Dot(Flat(to), planDir);
-                if (along < 0.1f || along > s.kickReach + 0.3f) continue;
-                if ((Flat(to) - planDir * along).magnitude > s.kickWidth * 0.5f + 0.3f) continue;
+                Vector3 flat = Flat(to);
+                float d = flat.magnitude;
+                if (d > s.kickReach + 0.3f) continue;   // (to its middle: the reach and half a body)
+                if (d > 0.05f && Vector3.Angle(back, flat) > half) continue;
                 n++;
-                bool held = other.HoldsSomething;
-                string result = SkillHit(other, planDir * s.kickPush + Vector3.up * 0.8f, false, "뒷발차기");
-                other.BeNumbed(s.kickNumb);
-                Fx(SkillFxKind.PawnHit, other, SkillContact(other), planDir, 0);
-                Log($"뒷발차기 → {other.DisplayName}: {result}" + (held ? " · 잡고 있던 것을 놓침" : "") + $" · 손 저림 {s.kickNumb:0.#}초");
+                Vector3 away = d > 0.05f ? flat / d : back;
+                string result = SkillHit(other, S3Push(away, s.kickThrow), true, "뒷발차기", false, s.kickKnockHold, true);
+                Fx(SkillFxKind.PawnHit, other, SkillContact(other), away, 1);
+                FeelHit(other, SkillContact(other), away, FeelHard);
+                Log($"뒷발차기 → {other.DisplayName}: {result}");
             }
-            if (n == 0) Log("뒷발차기: 빗나감");
+            if (n == 0) Log("뒷발차기: 빗나감 (반동만)");
+            KickSpring(s);
+            // The pose of the kick: the feet go out behind (after the spring, which sets every body's speed).
+            bodies[(int)BodyId.FootL].linearVelocity += back * s.kickLegs + Vector3.up * 1.5f;
+            bodies[(int)BodyId.FootR].linearVelocity += back * s.kickLegs + Vector3.up * 1.5f;
+            Fx(SkillFxKind.S3Kick, null, FeetPoint, planDir, Mathf.Min(254, n) + 1);
+        }
+
+        /// <summary>The recoil: a low hop that goes kickBounce metres further than the run alone would carry it, short of an
+        /// edge (a basic's push, the system's safety rule; the run itself may still carry it over).</summary>
+        void KickSpring(PawnRushSkillParams s)
+        {
+            float g = Mathf.Max(0.01f, -Physics.gravity.y);
+            float up = Mathf.Max(0.5f, s.kickHop);
+            float air = 2f * up / g;
+            Vector3 run = Flat(bodies[0].linearVelocity);
+            float along = Mathf.Max(0f, Vector3.Dot(run, planDir));
+            Vector3 feet = FeetPoint;
+            float room = s.kickBounce;
+            while (room > 0.05f && !FloorUnder(feet + planDir * (along * air + room + s.edgeGap))) room -= 0.1f;
+            Launch(run + planDir * (Mathf.Max(0f, room) / air) + Vector3.up * up);
         }
 
         void BeNumbed(float seconds)

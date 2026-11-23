@@ -240,6 +240,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S3WaterThrow:
                 case SkillFxKind.S3Puddle:
                 case SkillFxKind.S3Slip:
+                case SkillFxKind.S3Kick:
                     try { SetThreeFx(e); } catch (System.Exception ex) { FxFault("set 3 moment", ex); }
                     break;
             }

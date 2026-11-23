@@ -254,6 +254,24 @@ namespace ChessFight.RagdollLab
                     SparkBurst(e.at + Vector3.up * 0.1f, 14, S3Water, Vector3.up + FlatDir(e.dir), 60f, 2f, 5f, 0.5f, 0.04f);
                     UltClip(UltClipId.Wah, 0.6f * lvl, 1.1f);
                     break;
+                case SkillFxKind.S3Kick:
+                {
+                    Vector3 back = -FlatDir(e.dir);
+                    if (e.count == 0)
+                    {
+                        // The bob: a puff under it.
+                        DustRing(Ground(e.at), 5, 0.2f, 1.2f, S3Dust, 0.3f, 0.4f);
+                        UltClip(UltClipId.Tap, 0.5f * lvl, 1.4f);
+                        break;
+                    }
+                    // The kick: dust thrown up behind it, and a thud when it hit someone.
+                    Vector3 behind = e.at + back * 0.9f;
+                    bool hit = e.count > 1;
+                    DustRing(Ground(behind), 8, 0.3f, 2.5f, S3Dust, 0.5f, 0.6f);
+                    SparkBurst(behind + Vector3.up * 0.4f, hit ? 16 : 8, S3Dust, back + Vector3.up * 0.3f, 35f, 3f, 7f, 0.4f, 0.04f);
+                    UltClip(hit ? UltClipId.Capture : UltClipId.Whoosh, 0.7f * lvl, hit ? 0.9f : 1.2f);
+                    break;
+                }
             }
         }
 

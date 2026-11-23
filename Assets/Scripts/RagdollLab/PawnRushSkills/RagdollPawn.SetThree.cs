@@ -19,21 +19,27 @@ namespace ChessFight.RagdollLab
     ///                           up 1 m. No mark: F drops it straight down.
     ///   비숍 성검 소환 (F)        a holy sword beside every enemy, 5 m off on a diagonal at the waist; 1.5 s later each
     ///                           flies at where its enemy is then (30 m/s, not following); bound 1 s on a hit; three times.
-    ///   비숍 돌멩이 던지기         up 1.5 m and hovering 0.6 s to aim; a 1.2 m stone at 10 m/s, 25 m, falling a little: every
-    ///                           enemy on its way knocked 4 m off it (1.5 s down); a wall breaks it.
-    ///   비숍 성수병 던지기         a bottle that breaks 10 m ahead: a 4 m puddle for 6 s, an enemy stepping in slips (1.5 s
+    ///   비숍 돌멩이 던지기         up 1.5 m and hovering 0.6 s to aim; a 1.2 m stone at 10 m/s, 20 m, falling a little: every
+    ///                           enemy on its way knocked 3 m off it (1 s down); a wall breaks it.
+    ///   비숍 성수병 던지기         a bottle that breaks 8 m ahead: a 3 m puddle for 4 s, an enemy stepping in slips (1 s
     ///                           down) and slides out of it; its own team does not slip.
-    ///   룩 룩앤롤 (F → F)        the driven ultimate's rolling column made a normal skill: 1.5 s, 8 to 14 m/s, 30°/s of
-    ///                           steering; enemies are pins (6 m, 1.5 s, three a strike); F again stands it up with a
-    ///                           thump (3 m round, 1 s); a wall stops it dizzy 0.5 s; off an edge it falls.
+    ///   룩 룩앤롤 (F → F)        the driven ultimate's rolling column made a normal skill: 2.5 s, 8 to 18 m/s, 30°/s of
+    ///                           steering; enemies are pins (10 m, 2 s, three a strike); F again stands it up with a
+    ///                           thump (4 m round, 1 s); a wall stops it dizzy 0.5 s; off an edge it falls.
     ///   룩 탑 가두기 (E)          a stomp, and the ground splits straight at the aim (25 m/s, 20 m): the first enemy on it
     ///                           (on its feet: a jump clears it) is shut in a rook's tower 1.5 s (solid to the others), then
     ///                           rolls out of the ruin, 1 s down.
-    ///   퀸 여왕의 위상 (F)        a 6 m octagram follows her; 0.5 s later, for each enemy in it, the blade nearest it lights
-    ///                           and throws it 5 m along that blade (one of her eight lines), 1.5 s down.
+    ///   퀸 여왕의 위상 (F)        an 8 m octagram follows her; 0.5 s later, for each enemy in it, the blade nearest it lights
+    ///                           and throws it 8 m along that blade (one of her eight lines), 2 s down.
     ///   퀸 연속 체크 (E)          the enemy within 12 m ahead nearest the aim is checked (red, 0.25 s), she flies at it (0.25 s)
     ///                           and knocks it 4 m; E within 1 s: the next within 8 m, three at most (the third 6 m); an
     ///                           enemy standing between takes it. No target at the first press: no cooldown.
+    ///
+    /// 11-24 (KITS 6.13): grades again, as numbers only (no name on the screen, nothing unlocked by section) - two a piece of
+    /// different grades: the pawn and the knight a basic on E (the old two steps; the back kick, RagdollPawn.BookSkills.cs)
+    /// and a mid on F; the bishop the swords (high) and a basic, the stone or the water, to be picked; the rook and the
+    /// queen a mid on E and a high on F (the roll, the star: further, longer down, 30 s). A basic's push stops edgeGap short
+    /// of an edge (the guard below); a mid's or a high's goes over.
     ///
     /// Three new hindrances: stunned (the pawn's chop: a stagger with stars), bound (the bishop's sword: the R138 bind), shut in
     /// (the rook's tower: the bind, a collider, then a fall). The host runs all of it; the marks come from the plan state
@@ -139,6 +145,7 @@ namespace ChessFight.RagdollLab
             if (swordVolley) SwordsStep(s, dt);
             if (stones.Count > 0) StonesStep(s, dt);
             PuddleStep(s);
+            EdgeGuardStep(s, dt);
         }
 
         /// <summary>What these skills leave running when the skill ends (EndPlanSkill, before its target is let go).</summary>
@@ -164,6 +171,7 @@ namespace ChessFight.RagdollLab
             swordVolley = false;
             stones.Clear();
             bolasBoostLeft = 0f;
+            edgeGuardLeft = 0f;
             trapLeft = 0f;
             trapBy = null;
             if (trapTower != null)
@@ -211,6 +219,74 @@ namespace ChessFight.RagdollLab
                 at = h.point;
             }
             return found;
+        }
+
+        // ---------------------------------------------------------------- 초급의 밀림: 낭떠러지 앞에서 멈춤 (6.13)
+
+        // A piece a basic pushed (SkillHit's edgeSafe): for a while each step, the way its hips are going is looked along,
+        // and with a drop edgeGap ahead its speed that way is taken away - every body of it. The system's safety rule
+        // (PAWN_RUSH_SKILL_SYSTEM.md, 낙사): a basic's push stops 0.3 m short of an edge; from the mid grade on, over it goes.
+        float edgeGuardLeft, edgeGuardAge;
+
+        /// <summary>A basic skill just pushed this piece (the host's): it is kept from going over an edge for a while.</summary>
+        void GuardEdge()
+        {
+            if (NetworkPuppet) return;
+            edgeGuardLeft = 3f;
+            edgeGuardAge = 0f;
+        }
+
+        /// <summary>Every step (UpdateSetThreeStates): while guarded, no speed out over a drop. The guard ends once the piece
+        /// is on its feet and its own again (edgeHold after the hit), in the water, on a wall or carried: by itself it may
+        /// still step off.</summary>
+        void EdgeGuardStep(PawnRushSkillParams s, float dt)
+        {
+            if (edgeGuardLeft <= 0f) return;
+            edgeGuardLeft -= dt;
+            edgeGuardAge += dt;
+            if (Floating || Climbing || rope != null || chainCarry || kingCarry || castleCarry || supCarry
+                || (State == PawnState.Active && !Staggered && edgeGuardAge > s.edgeHold))
+            {
+                edgeGuardLeft = 0f;
+                return;
+            }
+            var hips = bodies[0];
+            Vector3 v = Flat(hips.linearVelocity);
+            float speed = v.magnitude;
+            if (speed < 0.3f) return;
+            Vector3 dir = v / speed;
+            float ahead = s.edgeGap + speed * Time.fixedDeltaTime * 2f + 0.15f;
+            if (!EdgeAhead(s, hips.position, dir, ahead)) return;
+            foreach (var rb in bodies)
+            {
+                Vector3 bv = rb.linearVelocity;
+                float outward = bv.x * dir.x + bv.z * dir.z;
+                if (outward > 0f) rb.linearVelocity = bv - dir * outward;
+            }
+            if (launched)
+            {
+                float c = Vector3.Dot(carryVel, dir);
+                if (c > 0f) carryVel -= dir * c;
+            }
+        }
+
+        /// <summary>A drop within <paramref name="ahead"/> along <paramref name="dir"/> from <paramref name="at"/> (the hips),
+        /// looked for in 0.25 m steps: no floor, or one more than edgeDrop below the last at once (stairs going down are no
+        /// edge). Over nothing already: too late, no edge.</summary>
+        bool EdgeAhead(PawnRushSkillParams s, Vector3 at, Vector3 dir, float ahead)
+        {
+            if (!SolidRay(at + Vector3.up * 0.3f, Vector3.down, 6f, out var under)) return false;
+            float floor = under.point.y;
+            for (float d = 0.25f; ; d += 0.25f)
+            {
+                float k = Mathf.Min(d, ahead);
+                Vector3 p = at + dir * k;
+                // (From a little above the last floor down: a step up or a low ledge is floor too.)
+                if (!SolidRay(new Vector3(p.x, floor + 1.2f, p.z), Vector3.down, 1.2f + s.edgeDrop, out var hit) || hit.normal.y < 0.3f)
+                    return true;
+                floor = hit.point.y;
+                if (k >= ahead) return false;
+            }
         }
 
         // ---------------------------------------------------------------- 폰: 앙파상 (the bolas)
@@ -1401,7 +1477,7 @@ namespace ChessFight.RagdollLab
                     st.hit.Add(e);
                     Vector3 side = Flat(e.bodies[0].position - next);
                     Vector3 away = FlatDir(FlatDir(st.vel) + (side.sqrMagnitude > 1e-4f ? side.normalized * 0.8f : Vector3.zero));
-                    string result = SkillHit(e, S3Push(away, s.stonePush), true, "돌멩이", false, s.stoneKnockHold);
+                    string result = SkillHit(e, S3Push(away, s.stonePush), true, "돌멩이", false, s.stoneKnockHold, true);
                     Fx(SkillFxKind.QueenHit, e, e.LassoBelly, away, st.hit.Count);
                     FeelHit(e, e.LassoBelly, away, FeelHard);
                     Log($"돌멩이 → {e.DisplayName}: {result}");
@@ -1517,7 +1593,7 @@ namespace ChessFight.RagdollLab
                 Vector3 run = Flat(bodies[0].linearVelocity);
                 Vector3 way = run.sqrMagnitude > 0.5f ? run.normalized : FlatDir(feet - p.at);
                 var by = p.by != null ? p.by : this;
-                string result = by.SkillHit(this, way * (s.waterSlide * 1.75f) + Vector3.up * 3.5f, true, "성수 웅덩이", false, s.waterKnockHold);
+                string result = by.SkillHit(this, way * (s.waterSlide * 1.75f) + Vector3.up * 3.5f, true, "성수 웅덩이", false, s.waterKnockHold, true);
                 Fx(SkillFxKind.S3Slip, this, feet, way);
                 PopOver(this, PopSlip);
                 Log($"{DisplayName}: 성수 웅덩이에서 꽈당 → {result}");

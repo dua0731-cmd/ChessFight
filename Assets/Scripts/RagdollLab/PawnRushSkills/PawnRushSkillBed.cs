@@ -782,7 +782,10 @@ namespace ChessFight.RagdollLab
                         use = running && me.PlanPhaseNow == PlanPhase.Windup ? "카메라로 겨누는 중" : $"{key} 떠올라 돌멩이";
                         break;
                     case PawnRushSkillIds.HolyWater:
-                        use = $"{key} 성수병 (10 m 앞)";
+                        use = $"{key} 성수병 ({me.PawnRushSkills.waterRange:0} m 앞)";
+                        break;
+                    case PawnRushSkillIds.BackKick:
+                        use = running ? "뒷발차기!" : $"{key} 뒷발차기 (등 뒤)";
                         break;
                     case PawnRushSkillIds.RollShort:
                         use = running && me.RollingShort ? $"{key} = 쿵 일어서기 · 이동 키 = 조금 꺾기" : $"{key} 굴러가기";

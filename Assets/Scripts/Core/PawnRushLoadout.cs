@@ -407,19 +407,20 @@ namespace ChessFight.Network
         /// stage 2), 8 the kits' second version (each piece's own mix of two or three, the queen's three, an ultimate each:
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
         /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
-        /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, one or two
-        /// a piece, no ultimate). The king's row is empty (his call) in all but 4 to 11.</summary>
+        /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, two a
+        /// piece of different grades, no ultimate). The king's row is empty (his call) in all but 4 to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
             if (which == 12)
             {
-                // KITS 6.12 (11-23): F and E only, Q empty (no ultimate, so no team gauge); the pawn and the knight one skill;
-                // the king's row empty (no king in Pawn Rush). The bishop's three all sit here to be tried - F, E and R -
-                // the user picks two of them after playing them.
+                // KITS 6.12 (11-23): F and E only, Q empty (no ultimate, so no team gauge); the king's row empty (no king in
+                // Pawn Rush). 6.13 (11-24): two a piece of different grades (numbers only, nothing on the screen) - the pawn
+                // and the knight get a basic on E (the two steps, the back kick); the bishop has its swords and both its
+                // basics, the stone (E) and the holy water (R), until the user picks one of them after playing them.
                 int[] f = { PawnRushSkillIds.Bolas, PawnRushSkillIds.HighStomp, PawnRushSkillIds.HolySwords, PawnRushSkillIds.RollShort, PawnRushSkillIds.QueenStar, 0 };
-                int[] e = { 0, 0, PawnRushSkillIds.StoneThrow, PawnRushSkillIds.TowerTrap, PawnRushSkillIds.CheckChain, 0 };
+                int[] e = { PawnRushSkillIds.TwoSteps, PawnRushSkillIds.BackKick, PawnRushSkillIds.StoneThrow, PawnRushSkillIds.TowerTrap, PawnRushSkillIds.CheckChain, 0 };
                 for (int row = 0; row < Rows; row++)
                 {
                     p.slots[row * Slots] = f[row];

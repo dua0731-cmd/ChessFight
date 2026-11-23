@@ -417,16 +417,17 @@ namespace ChessFight.RagdollLab
         public float touchCooldown = 6f;
         public float touchMissCooldown = 2.5f;
 
-        [Header("기획서 A 묶음 나이트 — 뒷발차기 (N4)")]
-        [Tooltip("등을 돌리는 예고 (초), 발이 닿는 거리 (m)와 폭 (m)")]
-        public float kickWindup = 0.35f;
-        public float kickReach = 2f;
-        public float kickWidth = 1.2f;
-        [Tooltip("미는 빠르기 (m/s, 넘어뜨리지 않음), 손이 저려 아무것도 못 잡는 시간 (초)")]
-        public float kickPush = 3.5f;
+        [Header("나이트 — 뒷발차기 (3판의 초급, 11-24 KITS 6.13; 처음은 기획서 A 묶음 N4의 손 저림 판)")]
+        [Tooltip("엉덩이 들썩 예고 (초); 나이트가 향한 쪽의 뒤로 닿는 거리 (m) · 부채꼴 (°, 전체)")]
+        public float kickWindup = 0.2f, kickReach = 2.5f, kickCone = 90f;
+        [Tooltip("맞은 적이 뒤로 날아가는 거리 (m) · 꽈당 (초)")]
+        public float kickThrow = 3f, kickKnockHold = 0.6f;
+        [Tooltip("나이트가 반동으로 앞으로 더 튀는 거리 (m, 맞히든 못 맞히든; 낭떠러지 앞에서 멈춤) · 튀어 오르는 빠르기 (m/s); 들썩일 때 엉덩이가 뜨는 빠르기 (m/s) · 찰 때 두 발이 뒤로 뻗는 빠르기 (m/s)")]
+        public float kickBounce = 2f, kickHop = 2.5f, kickBob = 1.6f, kickLegs = 7f;
+        [Tooltip("찬 뒤 (초, 내려서기까지 더 기다림); 쿨 (초)")]
+        public float kickRecovery = 0.3f, kickCooldown = 5f;
+        [Tooltip("옛 판의 손 저림 (초): 지금의 뒷발차기는 쓰지 않는다 (손 저림 상태와 그 표시는 남아 있다)")]
         public float kickNumb = 3f;
-        public float kickRecovery = 0.3f;
-        public float kickCooldown = 6f;
 
         [Header("기획서 A 묶음 비숍 — 반대색 비숍 (B1)")]
         public float ghostWindup = 0.15f;
@@ -926,7 +927,9 @@ namespace ChessFight.RagdollLab
         public float supChainGap = 10f, supChainRise = 0.6f, supChainHop = 0.3f, supChainTop = 2.5f, supChainZig = 2f;
         public int supChainMax = 15;
 
-        [Header("3판 (11-23, KITS 6.12: 사용자가 짠 스킬, 궁극 없음; RagdollPawn.SetThree.cs) · 모두 첫 시험값")]
+        [Header("3판 (11-23, KITS 6.12: 사용자가 짠 스킬, 궁극 없음; RagdollPawn.SetThree.cs) · 모두 첫 시험값 · 11-24 6.13: 기물마다 등급이 다른 둘 (등급은 수치일 뿐)")]
+        [Tooltip("초급의 밀림 (첫 두 걸음 · 뒷발차기 · 돌멩이 · 성수병)이 낭떠러지 앞에서 멈추는 거리 (m, 체계 문서의 안전 규칙); 한 번에 이만큼 (m) 넘게 꺼지면 낭떠러지; 맞고 이만큼 (초) 지나 다시 제 발로 서면 지킴이 끝남")]
+        public float edgeGap = 0.3f, edgeDrop = 1f, edgeHold = 0.5f;
         [Tooltip("폰 앙파상: 볼라스 거리 (m) · 빠르기 (m/s) · 굵기 (m); 끄는 시간 (초) · 적이 끌려오는 빠르기 (m/s); 폰이 반동으로 더 나가는 빠르기 (m/s) · 그동안의 빠르기 배율")]
         public float bolasRange = 12f, bolasSpeed = 25f, bolasRadius = 0.35f, bolasPull = 1f, bolasPullSpeed = 8f, bolasRecoil = 4f, bolasRecoilScale = 1.5f;
         [Tooltip("폰 앙파상: 뒷목 치기가 열리는 거리 (m) · 시간 (초); 기절 (초); 감길 때 비틀 (초); 놓치면 둘이 휘청 (초); 쿨 (초)")]
@@ -939,19 +942,19 @@ namespace ChessFight.RagdollLab
         public float swordSide = 5f, swordHigh = 1f, swordFuse = 1.5f, swordSpeed = 30f, swordRest = 0.4f, swordBind = 1f, swordReach = 0.7f, swordCooldown = 35f;
         [Tooltip("비숍 성검 소환: 몇 번")]
         public int swordRounds = 3;
-        [Tooltip("비숍 돌멩이: 떠오르는 높이 (m) · 떠 있는 시간 (초); 돌 지름 (m) · 빠르기 (m/s) · 거리 (m) · 떨어짐 (m/s²); 맞으면 튕겨 나가는 거리 (m) · 넘어짐 (초); 쿨 (초)")]
-        public float stoneRise = 1.5f, stoneHover = 0.6f, stoneSize = 1.2f, stoneSpeed = 10f, stoneRange = 25f, stoneDrop = 1.5f, stonePush = 4f, stoneKnockHold = 1.5f, stoneCooldown = 10f;
-        [Tooltip("비숍 성수병: 깨지는 거리 (m) · 나는 시간 (초); 웅덩이 지름 (m) · 남는 시간 (초); 미끄러져 넘어짐 (초) · 미끄러져 나가는 거리 (m); 쿨 (초)")]
-        public float waterRange = 10f, waterFlight = 0.5f, waterSize = 4f, waterSeconds = 6f, waterKnockHold = 1.5f, waterSlide = 3f, waterCooldown = 10f;
-        [Tooltip("룩 룩앤롤 (일반): 구르는 시간 (초); 빠르기 처음 · 끝 (m/s); 꺾임 (°/초); 기둥 반지름 · 길이 (m); 핀 거리 (m) · 넘어짐 (초); 벽 어질 (초); 쿨 (초)")]
-        public float rollSeconds = 1.5f, rollSpeed0 = 8f, rollSpeed1 = 14f, rollTurn = 30f, rollRadius = 0.9f, rollLength = 2.6f, rollThrow = 6f, rollKnock = 1.5f, rollDizzy = 0.5f, rollCooldown = 10f;
-        [Tooltip("룩 룩앤롤 (일반): 일어서는 쿵 둘레 (m) · 미는 거리 (m) · 넘어짐 (초); 스트라이크 몇 명")]
-        public float rollSlamRadius = 3f, rollSlamPush = 3f, rollSlamHold = 1f;
+        [Tooltip("비숍 돌멩이 (3판의 초급 후보): 떠오르는 높이 (m) · 떠 있는 시간 (초); 돌 지름 (m) · 빠르기 (m/s) · 거리 (m) · 떨어짐 (m/s²); 맞으면 튕겨 나가는 거리 (m) · 넘어짐 (초); 쿨 (초)")]
+        public float stoneRise = 1.5f, stoneHover = 0.6f, stoneSize = 1.2f, stoneSpeed = 10f, stoneRange = 20f, stoneDrop = 1.5f, stonePush = 3f, stoneKnockHold = 1f, stoneCooldown = 6f;
+        [Tooltip("비숍 성수병 (3판의 초급 후보): 깨지는 거리 (m) · 나는 시간 (초); 웅덩이 지름 (m) · 남는 시간 (초); 미끄러져 넘어짐 (초) · 미끄러져 나가는 거리 (m); 쿨 (초)")]
+        public float waterRange = 8f, waterFlight = 0.5f, waterSize = 3f, waterSeconds = 4f, waterKnockHold = 1f, waterSlide = 3f, waterCooldown = 6f;
+        [Tooltip("룩 룩앤롤 (3판의 상급): 구르는 시간 (초); 빠르기 처음 · 끝 (m/s); 꺾임 (°/초); 기둥 반지름 · 길이 (m); 핀 거리 (m) · 넘어짐 (초); 벽 어질 (초); 쿨 (초)")]
+        public float rollSeconds = 2.5f, rollSpeed0 = 8f, rollSpeed1 = 18f, rollTurn = 30f, rollRadius = 0.9f, rollLength = 2.6f, rollThrow = 10f, rollKnock = 2f, rollDizzy = 0.5f, rollCooldown = 30f;
+        [Tooltip("룩 룩앤롤 (3판의 상급): 일어서는 쿵 둘레 (m) · 미는 거리 (m) · 넘어짐 (초); 스트라이크 몇 명")]
+        public float rollSlamRadius = 4f, rollSlamPush = 3f, rollSlamHold = 1f;
         public int rollStrike = 3;
         [Tooltip("룩 탑 가두기: 땅이 갈라지는 빠르기 (m/s) · 거리 (m) · 폭 (m); 갇힘 (초); 탑 지름 (m); 굴러 나와 넘어짐 (초) · 굴러 나가는 거리 (m); 쿨 (초)")]
         public float crackSpeed = 25f, crackRange = 20f, crackWidth = 1f, towerSeconds = 1.5f, towerWide = 1.6f, towerKnockHold = 1f, towerRollOut = 1.5f, towerCooldown = 14f;
-        [Tooltip("퀸 여왕의 위상: 별 반지름 (m); 밝아지기까지 (초); 튕겨 내는 거리 (m) · 넘어짐 (초); 뒤 (초); 쿨 (초)")]
-        public float starRadius = 6f, starFuse = 0.5f, starPush = 5f, starKnockHold = 1.5f, starRecovery = 0.25f, starCooldown = 10f;
+        [Tooltip("퀸 여왕의 위상 (3판의 상급): 별 반지름 (m); 밝아지기까지 (초); 튕겨 내는 거리 (m) · 넘어짐 (초); 뒤 (초); 쿨 (초)")]
+        public float starRadius = 8f, starFuse = 0.5f, starPush = 8f, starKnockHold = 2f, starRecovery = 0.25f, starCooldown = 30f;
         [Tooltip("퀸 연속 체크 (3판): 첫 표적 거리 (m) · 앞 반각 (°); 다음 표적 거리 (m); 표시 (초) · 날아드는 시간 (초); 다음을 기다리는 시간 (초); 날리는 거리 (m) · 셋째 (m); 넘어짐 (초); 쿨 (초, 마지막 체크 뒤)")]
         public float ccFirst = 12f, ccCone = 60f, ccNext = 8f, ccMark = 0.25f, ccFly = 0.25f, ccWait = 1f, ccPush = 4f, ccLast = 6f, ccKnockHold = 1.5f, ccCooldown = 14f;
         [Tooltip("퀸 연속 체크 (3판): 몇 번까지")]

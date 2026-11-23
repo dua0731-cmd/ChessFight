@@ -425,21 +425,28 @@ namespace ChessFight.RagdollLab
                 SkillMarks.Circle(Next(), target.FeetPoint, 0.45f, Fade(SkillMarks.Orange, 0.9f), 0.06f, 24);
         }
 
-        /// <summary>The knight's back kick: the strip behind it that the hind legs sweep, blinking through the warning.</summary>
+        /// <summary>The knight's back kick (11-24, the set 3판's basic): the fan behind the way it faces that the hind legs
+        /// sweep, blinking through the bob, then fading where it kicked.</summary>
         void DrawKick(RagdollPawn pawn)
         {
             var phase = pawn.PlanPhaseNow;
             if (phase != PlanPhase.Windup && phase != PlanPhase.Recovery) return;
             var s = pawn.PawnRushSkills;
-            Vector3 dir = pawn.PlanDir, from = pawn.FeetPoint + Vector3.up * 0.05f, to = from + dir * s.kickReach;
-            Vector3 side = Vector3.Cross(Vector3.up, dir) * (s.kickWidth * 0.5f);
             float a = phase == PlanPhase.Windup
                 ? 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 22f))
                 : 1f - Mathf.Clamp01(pawn.PlanTime / Mathf.Max(0.05f, s.kickRecovery));
+            Vector3 face = pawn.PlanDir;
+            face.y = 0f;
+            if (a <= 0.01f || face.sqrMagnitude < 1e-4f) return;
+            // (Through the bob it runs on, the fan with it; the kick's stays where it kicked - the plan point.)
+            Vector3 back = -face.normalized, o = (phase == PlanPhase.Windup ? pawn.FeetPoint : pawn.PlanPoint) + Vector3.up * 0.05f;
+            float half = s.kickCone * 0.5f;
+            for (int i = 0; i < arc.Length; i++)
+                arc[i] = o + Quaternion.AngleAxis(Mathf.Lerp(-half, half, i / (float)(arc.Length - 1)), Vector3.up) * back * s.kickReach;
             Color c = Fade(SkillMarks.Target, a);
-            SkillMarks.Segment(Next(), from + side, to + side, c, 0.05f);
-            SkillMarks.Segment(Next(), from - side, to - side, c, 0.05f);
-            SkillMarks.Segment(Next(), to + side, to - side, c, 0.05f);
+            SkillMarks.Polyline(Next(), arc, c, 0.05f, true);
+            SkillMarks.Segment(Next(), o, arc[0], c, 0.05f);
+            SkillMarks.Segment(Next(), o, arc[arc.Length - 1], c, 0.05f);
         }
 
         /// <summary>The bishop changing colour: a ring closing on it through the short warning.</summary>

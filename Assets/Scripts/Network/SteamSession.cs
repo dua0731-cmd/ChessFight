@@ -216,7 +216,7 @@ namespace ChessFight.Network
         // skilllab16: the knight's two ultimates played from start to end (a timed press's moment, no rooted cast).
         // skilllab17: the six driven ultimates (119..124) and the set 3안-b's queen (125, 126): more skills for a slot, the
         // driven ones' moments (DriveLand, DriveLine, DriveWarn, DriveState).
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab19";
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab20";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
