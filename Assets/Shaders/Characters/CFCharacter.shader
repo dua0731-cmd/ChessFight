@@ -14,6 +14,12 @@
 // their round shape (_LimbColor, _LimbGloss) instead of flat black. The defaults are the white team's; CharacterLook
 // sets each team's. The teams are two materials on the same mesh: white (cream body, black eyes, white glints) and
 // black (charcoal body), Resources/PieceModels/Black. Shadows and depth as ChessFight's other URP shaders.
+// JY-gfx (2026-11-24, JY: "캐릭터도 ... 스무스 쉐이딩 ... 캐릭터 쉐이더도 더 잘 어울리게, 예쁘게"): a second light, on while
+// the global _GfxCharacter is 1 (ChessFight.Game.GameCharacters, which also gives the pieces smooth normals): a wide
+// soft shade over the round form, a warm band where light turns to shade, the world's own sky light in the shade (the
+// map's), ambient occlusion, a lacquer highlight, the place's reflections at the edges, and the sun's rim on the
+// silhouette when it is behind the piece (the round's cameras look into the light). _GfxCharacterLook: x sky light,
+// y highlight, z rim, w reflections. 0 keeps Look A as it was.
 Shader "ChessFight/Character"
 {
     Properties
@@ -69,9 +75,12 @@ Shader "ChessFight/Character"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             TEXTURE2D(_BaseMap);
+            float _GfxCharacter;
+            float4 _GfxCharacterLook;
             SAMPLER(sampler_BaseMap);
 
             struct Attributes
@@ -119,6 +128,22 @@ Shader "ChessFight/Character"
                 return (diffuse + spec + rim * _RimColor.rgb) * light.color * light.distanceAttenuation;
             }
 
+            // JY-gfx: one light over the round form. A wide soft step (the smooth normals carry the shape), a warm band
+            // where light turns to shade, a lacquer highlight, and the light's rim on the silhouette when it is behind
+            // the piece (rimK: the main light only).
+            half3 ShadeGfx(Light light, float3 n, float3 v, half3 albedo, half gloss, half size, half rimK)
+            {
+                half nl = dot(n, light.direction);
+                half lit = smoothstep(-0.15, 0.65, nl) * light.shadowAttenuation;
+                half band = saturate(lit * (1.0 - lit) * 4.0);
+                half3 diffuse = albedo * (lit + band * 0.12 * half3(1.0, 0.55, 0.4));
+                float3 h = SafeNormalize(light.direction + v);
+                half spec = pow(saturate(dot(n, h)), size) * gloss * lit;
+                half back = saturate(dot(-v, light.direction));
+                half rim = pow(1.0 - saturate(dot(n, v)), 3.0) * back * rimK * light.shadowAttenuation;
+                return (diffuse + spec + rim * (albedo * 1.2 + 0.4)) * light.color * light.distanceAttenuation;
+            }
+
             half4 frag(Varyings i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
@@ -139,6 +164,52 @@ Shader "ChessFight/Character"
 
                 half4 shadowMask = half4(1, 1, 1, 1);
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(i.positionWS), i.positionWS, shadowMask);
+
+                if (_GfxCharacter > 0.5)
+                {
+                    half4 look = _GfxCharacterLook;
+                    half glossG = lerp(lerp(look.y, _EyeGloss, eye), _LimbGloss, limb);
+                    half sizeG = lerp(40.0, _GlossSize * 4.0, eye);
+                    float2 screenUV = GetNormalizedScreenSpaceUV(i.positionCS);
+                    half3 g = ShadeGfx(mainLight, n, v, albedo, glossG, sizeG, look.z);
+                    #if defined(_ADDITIONAL_LIGHTS)
+                    InputData gi = (InputData)0;
+                    gi.positionWS = i.positionWS;
+                    gi.normalWS = n;
+                    gi.viewDirectionWS = v;
+                    gi.normalizedScreenSpaceUV = screenUV;
+                    uint gCount = GetAdditionalLightsCount();
+                    #if USE_CLUSTER_LIGHT_LOOP
+                    [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
+                    {
+                        CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+                        g += ShadeGfx(GetAdditionalLight(lightIndex, i.positionWS, shadowMask), n, v, albedo, glossG, sizeG, 0);
+                    }
+                    #endif
+                    {
+                        InputData inputData = gi;
+                        uint pixelLightCount = gCount;
+                        LIGHT_LOOP_BEGIN(pixelLightCount)
+                            g += ShadeGfx(GetAdditionalLight(lightIndex, i.positionWS, shadowMask), n, v, albedo, glossG, sizeG, 0);
+                        LIGHT_LOOP_END
+                    }
+                    #endif
+                    half ao = 1.0;
+                    #if defined(_SCREEN_SPACE_OCCLUSION)
+                    ao = GetScreenSpaceAmbientOcclusion(screenUV).indirectAmbientOcclusion;
+                    #endif
+                    // The world's sky light in the shade, a little warmer than the sky (the warm ground and walls bounce
+                    // into it), so a cream piece stays cream on its shaded side.
+                    g += (SampleSH(n) * half3(1.08, 1.0, 0.9) + half3(0.07, 0.06, 0.05)) * albedo * look.x * ao;
+                    // The place's reflections at the edges, as lacquer (less on the hands and feet).
+                    half fresnel = pow(1.0 - saturate(dot(n, v)), 4.0);
+                    half3 env = GlossyEnvironmentReflection(reflect(-v, n), i.positionWS, 0.35, ao, screenUV);
+                    g += env * (0.04 + 0.96 * fresnel) * look.w * (1.0 - 0.5 * limb);
+                    g = lerp(g, albedo, saturate(emit));
+                    g = MixFog(g, i.fog);
+                    return half4(g, 1);
+                }
+
                 half3 c = Shade(mainLight, n, v, albedo, gloss, size, 1);
 
                 #if defined(_ADDITIONAL_LIGHTS)

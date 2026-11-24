@@ -93,6 +93,16 @@ namespace ChessFight.Game
             looked.Clear();
         }
 
+        // A new scene: what earlier scenes dressed is let go, or the twins would keep every material and texture they
+        // used alive for the whole session. Anything still wearing a twin (kept across scenes) gets its own back first.
+        static void Forget()
+        {
+            Dress(false);
+            foreach (var twin in originalOf.Keys) if (twin != null) Object.Destroy(twin);
+            twinOf.Clear();
+            originalOf.Clear();
+        }
+
         // ---------------------------------------------------------------- URP Lit -> Gfx Lit
 
         /// <summary>Whether URP Lit materials wear Gfx Lit (their surface set) in Play.</summary>
@@ -269,7 +279,11 @@ namespace ChessFight.Game
             float next;
             void OnEnable() => SceneManager.sceneLoaded += Loaded;
             void OnDisable() => SceneManager.sceneLoaded -= Loaded;
-            void Loaded(Scene scene, LoadSceneMode mode) => StartCoroutine(Soon());
+            void Loaded(Scene scene, LoadSceneMode mode)
+            {
+                if (mode == LoadSceneMode.Single) Forget();
+                StartCoroutine(Soon());
+            }
             IEnumerator Soon()
             {
                 yield return null;

@@ -8,7 +8,7 @@ namespace ChessFight.Game
     /// JY-gfx (2026-11-24, the graphics upgrade): the sky and the sun of every game scene nobody gave its own.
     /// A scene of the round (GameGfx.InScope) that still has Unity's default procedural sky (the round, the sections
     /// test, the courses) gets the game's sky (Resources/Gfx/GfxSky: real volumetric clouds over a storybook blue, see
-    /// Shaders/GfxSky.shader) and a warm sun; its ambient light and its reflections are then worked out from that sky
+    /// Shaders/GfxSky.shader) and a near-white sun; its ambient light and its reflections are then worked out from that sky
     /// (DynamicGI.UpdateEnvironment). Places with their own light (ZoneLight) still mix their own over it, and scenes
     /// that set their own sky (the lobby, the intro, the carriage yard, the observatory) keep theirs.
     /// The air in between: a scene with no fog of its own (or only the round's far fog, PawnRushRound.FarFog) gets a
@@ -17,8 +17,13 @@ namespace ChessFight.Game
     /// </summary>
     public static class GameSky
     {
-        /// <summary>The sun as the sky was rendered with: warm afternoon light.</summary>
-        public static Color SunColor = new Color(1f, .93f, .82f);
+        /// <summary>The sun: near white (a warm one, with the rest, turned the map and the pieces yellow).</summary>
+        public static Color SunColor = new Color(1f, .98f, .96f);
+        /// <summary>The way the round's sun shines (world): from ahead and a little to the right, about 37 degrees up,
+        /// so the course's cameras (looking along +z) look into the light, as the render lab did for the hall (JY-look):
+        /// beams, shadows and the shafts come toward the player, and the haze glows. Resources/Gfx/Sky/sky.exr was
+        /// rendered with this sun (ArtSource/Gfx/sky.py --sun-dir -0.501,-0.622,-0.602, Blender's axes).</summary>
+        public static Vector3 SunWay = new Vector3(-.5f, -.6f, -.62f);
         public static float SunIntensity = 1.65f;
         /// <summary>The sky's brightness in view and as the scene's ambient light.</summary>
         public static float SkyExposure = .9f, AmbientIntensity = .8f;
@@ -37,6 +42,7 @@ namespace ChessFight.Game
         static Material sky0;
         static Light sun0;
         static Color sunColour0;
+        static Quaternion sunRotation0;
         static float sunIntensity0, ambientIntensity0;
         static LightShadows sunShadows0;
         static AmbientMode ambientMode0;
@@ -61,6 +67,7 @@ namespace ChessFight.Game
             if (sun0 != null)
             {
                 sun0.color = sunColour0;
+                sun0.transform.rotation = sunRotation0;
                 sun0.intensity = sunIntensity0;
                 sun0.shadows = sunShadows0;
             }
@@ -126,6 +133,7 @@ namespace ChessFight.Game
                 if (sun != null)
                 {
                     sunColour0 = sun.color;
+                    sunRotation0 = sun.transform.rotation;
                     sunIntensity0 = sun.intensity;
                     sunShadows0 = sun.shadows;
                 }
@@ -154,6 +162,7 @@ namespace ChessFight.Game
             {
                 sun.color = SunColor;
                 sun.intensity = SunIntensity;
+                sun.transform.rotation = Quaternion.LookRotation(SunWay.normalized);
                 sun.shadows = LightShadows.Soft;
             }
             // The haze, unless the scene has a fog of its own (the far fog is no fog: 3000 m and on).

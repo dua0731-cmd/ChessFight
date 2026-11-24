@@ -10,17 +10,23 @@ namespace ChessFight.Game
     /// JY-gfx (2026-11-24, the graphics upgrade, target Mario Kart World): the game's grade in play. One global volume
     /// in every scene past the title, over the profile (Settings/GameLook.asset) and GameLook's softer one (priority
     /// 10), under the settings' no-bloom and colour-aid ones (1000, 1001): a tonemapper that keeps hues clean and
-    /// saturated (Neutral; ACES turned the sky teal and the cream stone orange), a touch of warmth, cool shadows and
-    /// warm highlights, a broad soft bloom, a light vignette. The scene's light (GameSky) is set for this exposure.
+    /// saturated (Neutral; ACES turned the sky teal and the cream stone orange), a hair cooler than neutral, shadows a
+    /// hair cooler still, a broad soft bloom, a light vignette. No warm tint (JY 11-24: the map and the pieces had gone
+    /// yellowish; a warm sun, a warm grade and warm highlights stacked up, as the render lab found on 11-21). The
+    /// scene's light (GameSky) is set for this exposure.
     /// Numbers are fields so a tool can try others.
     /// </summary>
     public static class GameGrade
     {
         public static bool On = true;
         public static TonemappingMode Tone = TonemappingMode.Neutral;
-        public static float Exposure = -.15f, Contrast = 30f, Saturation = 22f, Temperature = 4f, Tint = 0f;
+        public static float Exposure = -.15f, Contrast = 30f, Saturation = 18f, Temperature = -2f, Tint = 0f;
         public static float BloomThreshold = 1f, BloomIntensity = .45f, BloomScatter = .65f, Vignette = .12f;
-        public static Color ShadowTone = new Color(.44f, .5f, .62f), HighlightTone = new Color(.56f, .52f, .45f);
+        public static Color ShadowTone = new Color(.5f, .5f, .52f), HighlightTone = new Color(.5f, .5f, .5f);
+        /// <summary>The light shafts (GameShafts): how bright, how thick the air, how much they lean toward the sun, how
+        /// far they are marched (m), their tint over the sun's. The render lab's hall had 1.6, .03, .35, 90.</summary>
+        public static float ShaftIntensity = .6f, ShaftDensity = .015f, ShaftAnisotropy = .4f, ShaftDistance = 90f;
+        public static Color ShaftTint = new Color(1f, .97f, .93f);
         public const float Priority = 20f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -98,6 +104,12 @@ namespace ChessFight.Game
             bloom.scatter.Override(BloomScatter);
             bloom.highQualityFiltering.Override(true);
             profile.Add<Vignette>(false).intensity.Override(Vignette);
+            var shafts = profile.Add<GfxLightShafts>(false);
+            shafts.intensity.Override(ShaftIntensity);
+            shafts.density.Override(ShaftDensity);
+            shafts.anisotropy.Override(ShaftAnisotropy);
+            shafts.maxDistance.Override(ShaftDistance);
+            shafts.tint.Override(ShaftTint);
             return profile;
         }
     }

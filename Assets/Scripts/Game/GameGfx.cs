@@ -6,7 +6,8 @@ namespace ChessFight.Game
     /// <summary>
     /// JY-gfx (2026-11-24, the graphics upgrade): the whole upgrade as one switch, to see what it does. In the editor,
     /// ` (back quote) in Play turns it off and on again: off is the scene's own sky, sun and fog (GameSky), no grade
-    /// volume (GameGrade), no surface sets and plain URP Lit materials (GameSurfaces), no grass (GameGrass); a small
+    /// volume (GameGrade), no surface sets and plain URP Lit materials (GameSurfaces), no grass (GameGrass), the pieces
+    /// flat and in Look A (GameCharacters), no light shafts (GameShafts) or place probes (GameProbes); a small
     /// label says so. The renderer asset's longer shadows stay either way. Players never see the switch.
     /// The upgrade is for the Pawn Rush round and its sections only (InScope): the lobby, the result halls, Sword Fight
     /// and the tool scenes keep the look they set themselves.
@@ -32,6 +33,7 @@ namespace ChessFight.Game
             GameSky.Enable(on);
             GameSurfaces.Enable(on);
             GameGrass.Show(on);
+            GameCharacters.Show(on);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

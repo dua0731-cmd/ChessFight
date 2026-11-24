@@ -33,6 +33,18 @@ float4 _GfxSurface;     // x: on (GameSurfaces), y: strength
 static const float CFSetTile[9] = { 2.4, 1.6, 1.0, 0.5, 0.3, 0.8, 0.2, 1.2, 1.0 };
 static const float CFSetRough[9] = { 0.80, 0.93, 0.60, 0.50, 0.28, 0.38, 0.90, 0.50, 0.50 };
 
+#if defined(CF_SURFACE_GRAD)
+// A shader that shades in per-pixel branches defines CF_SURFACE_GRAD and calls CFSurfaceGradients(positionWS) at the
+// top of its fragment, where every pixel of a quad runs: the sets are then read with those derivatives, not with
+// mip guesses made inside the branches (PR_SpiralChecker).
+static float3 cfDdx, cfDdy;
+void CFSurfaceGradients(float3 positionWS)
+{
+    cfDdx = ddx(positionWS);
+    cfDdy = ddy(positionWS);
+}
+#endif
+
 // Smooth value noise, two octaves, 0..1 (the broad patches).
 float CFHash(float2 p)
 {
@@ -78,18 +90,25 @@ void CFSurfaceCore(float3 positionWS, int set, half scale, inout half3 normalWS,
     half strength = _GfxSurface.y * scale;
     if (_GfxSurface.x < 0.5 || strength <= 0.0) return;
     float3 p = positionWS / CFSetTile[set];
+#if defined(CF_SURFACE_GRAD)
+    float3 gx = cfDdx / CFSetTile[set], gy = cfDdy / CFSetTile[set];
+    #define CF_SET_SAMPLE(t, s, uv, d) SAMPLE_TEXTURE2D_ARRAY_GRAD(t, s, uv, set, gx.d, gy.d)
+#else
+    #define CF_SET_SAMPLE(t, s, uv, d) SAMPLE_TEXTURE2D_ARRAY(t, s, uv, set)
+#endif
     half3 n = normalWS;
     half3 w = abs(n);
     w = w * w;
     w = w * w;
     w /= max(w.x + w.y + w.z, 1e-4);
     // Planes: across x (u along z, v along y), across y (u along x, v along z), across z (u along x, v along y).
-    half4 mx = SAMPLE_TEXTURE2D_ARRAY(_GfxSetMask, sampler_GfxSetMask, p.zy, set);
-    half4 my = SAMPLE_TEXTURE2D_ARRAY(_GfxSetMask, sampler_GfxSetMask, p.xz, set);
-    half4 mz = SAMPLE_TEXTURE2D_ARRAY(_GfxSetMask, sampler_GfxSetMask, p.xy, set);
-    half3 tx = SAMPLE_TEXTURE2D_ARRAY(_GfxSetNormal, sampler_GfxSetNormal, p.zy, set).xyz * 2.0 - 1.0;
-    half3 ty = SAMPLE_TEXTURE2D_ARRAY(_GfxSetNormal, sampler_GfxSetNormal, p.xz, set).xyz * 2.0 - 1.0;
-    half3 tz = SAMPLE_TEXTURE2D_ARRAY(_GfxSetNormal, sampler_GfxSetNormal, p.xy, set).xyz * 2.0 - 1.0;
+    half4 mx = CF_SET_SAMPLE(_GfxSetMask, sampler_GfxSetMask, p.zy, zy);
+    half4 my = CF_SET_SAMPLE(_GfxSetMask, sampler_GfxSetMask, p.xz, xz);
+    half4 mz = CF_SET_SAMPLE(_GfxSetMask, sampler_GfxSetMask, p.xy, xy);
+    half3 tx = CF_SET_SAMPLE(_GfxSetNormal, sampler_GfxSetNormal, p.zy, zy).xyz * 2.0 - 1.0;
+    half3 ty = CF_SET_SAMPLE(_GfxSetNormal, sampler_GfxSetNormal, p.xz, xz).xyz * 2.0 - 1.0;
+    half3 tz = CF_SET_SAMPLE(_GfxSetNormal, sampler_GfxSetNormal, p.xy, xy).xyz * 2.0 - 1.0;
+    #undef CF_SET_SAMPLE
     half4 mask = mx * w.x + my * w.y + mz * w.z;
     tx.xy *= strength;
     ty.xy *= strength;

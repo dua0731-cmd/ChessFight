@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush
         bool applied;
         float weight, lastApplied = -1f;
         Material sky0Material, skyInstance;
-        enum SkyKind { None, PawnRush, Procedural }
+        enum SkyKind { None, PawnRush, Procedural, Gfx }
         SkyKind skyKind;
         Vector4 skySunDir0;
         float skyCover0, skyThickness0, skyExposure0;
@@ -240,6 +240,8 @@ namespace ChessFight.PawnRush
                 string shader = sky0Material.shader.name;
                 if (shader == "ChessFight/Pawn Rush Sky") skyKind = SkyKind.PawnRush;
                 else if (shader == "Skybox/Procedural") skyKind = SkyKind.Procedural;
+                // JY-gfx: the round's cloud panorama (GameSky); only its brightness can follow.
+                else if (shader == "ChessFight/Gfx Sky") skyKind = SkyKind.Gfx;
                 if (skyKind != SkyKind.None)
                 {
                     skyInstance = new Material(sky0Material) { name = sky0Material.name + " (yard)" };
@@ -283,6 +285,11 @@ namespace ChessFight.PawnRush
                     // The sun's glow where the sun is.
                     if (skyInstance.HasProperty(SunDirId) && sun != null)
                         skyInstance.SetVector(SunDirId, Vector4.Lerp(skySunDir0, -sun.transform.forward, w));
+                }
+                else if (skyKind == SkyKind.Gfx)
+                {
+                    // JY-gfx: the cloud panorama a little brighter, as the concept's midday (it is already clear and blue).
+                    if (skyInstance.HasProperty(ExposureId)) skyInstance.SetFloat(ExposureId, Mathf.Lerp(skyExposure0, Mathf.Max(skyExposure0, 1.15f), w));
                 }
                 else
                 {

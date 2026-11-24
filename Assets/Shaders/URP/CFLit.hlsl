@@ -75,9 +75,10 @@ half4 CFShadeSet(CFLitVaryings i, half3 albedo, half metallic, half smoothness, 
     half3 normalWS = NormalizeNormalPerPixel(i.normalWS);
     half hollow = 1.0;
 #if !defined(CF_SURFACE_NONE)
-    // See-through surfaces (glass, water) keep their own; metals wear brass.
+    // See-through surfaces (glass, water) keep their own; metals wear brass. Near the switch (a gold trim whose
+    // metallic ramps at its edge) the set fades out, so no seam shows where one set gives way to the other.
     if (alpha > 0.99)
-        CFSurface(i.positionWS, metallic > 0.5 ? CF_SET_BRASS : set, scale, normalWS, albedo, smoothness, hollow);
+        CFSurface(i.positionWS, metallic > 0.5 ? CF_SET_BRASS : set, scale * saturate(abs(metallic - 0.5) * 6.0), normalWS, albedo, smoothness, hollow);
 #endif
 
     InputData d = (InputData)0;

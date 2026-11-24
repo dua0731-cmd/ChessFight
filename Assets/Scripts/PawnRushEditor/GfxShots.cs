@@ -38,7 +38,7 @@ namespace ChessFight.PawnRush.Editor
         };
         const string ActiveKey = "GfxShots.Active", CodeKey = "GfxShots.Code", StartKey = "GfxShots.Start";
         const string OutKey = "GfxShots.Out", TagKey = "GfxShots.Tag", SectionsKey = "GfxShots.Sections", SizeKey = "GfxShots.Size";
-        const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots";
+        const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa";
         const float GiveUpSeconds = 1500f;
 
         static GfxShots()
@@ -67,6 +67,8 @@ namespace ChessFight.PawnRush.Editor
             SessionState.SetString(SizeKey, (Arg("-gfxWidth") ?? "1600") + "x" + (Arg("-gfxHeight") ?? "900"));
             // -gfxTune "a:exp=0.2,con=14;b:tone=aces": looks to compare at every spot (pictures spot_tag_a, spot_tag_b).
             SessionState.SetString(TuneKey, Arg("-gfxTune") ?? "");
+            // -gfxMsaa 4: the pipeline's MSAA for this run (put back at the end), the pictures drawn with it.
+            SessionState.SetInt(MsaaKey, int.TryParse(Arg("-gfxMsaa"), out var msaa) ? msaa : 0);
             // -gfxSpots 1,0wide: only these spots of each section.
             SessionState.SetString(SpotsKey, Arg("-gfxSpots") ?? "");
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -137,6 +139,8 @@ namespace ChessFight.PawnRush.Editor
 
                 cam = new GameObject("Gfx shots camera").AddComponent<Camera>();
                 cam.tag = "MainCamera";
+                // The light shafts are drawn for this camera too, though it draws into a texture (GameShafts).
+                GameShafts.CaptureCamera = cam;
                 cam.nearClipPlane = .1f;
                 cam.farClipPlane = 3000f;
                 cam.fieldOfView = 60f;
@@ -148,7 +152,11 @@ namespace ChessFight.PawnRush.Editor
                 data.antialiasingQuality = AntialiasingQuality.High;
                 data.renderShadows = true;
                 ZoneLight.Instant = true;
-                var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 1 };
+                var pipe = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+                int msaa = SessionState.GetInt(MsaaKey, 0), msaa0 = pipe != null ? pipe.msaaSampleCount : 1;
+                if (pipe != null && msaa > 0) pipe.msaaSampleCount = msaa;
+                // A camera that draws into a texture takes its MSAA from the texture.
+                var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = pipe != null ? pipe.msaaSampleCount : 1 };
                 target.Create();
 
                 foreach (var name in SessionState.GetString(SectionsKey, "").Split(',').Select(s => s.Trim()).Where(s => s.Length > 0))
@@ -183,6 +191,8 @@ namespace ChessFight.PawnRush.Editor
                         {
                             Look(settings);
                             Reflect();
+                            // The place's own reflections where this picture is (GameProbes; probes=0 to compare).
+                            GameProbes.Now(cam);
                             // A few frames at the spot: the zone lights, the shadow cascades, the exposure settle.
                             for (int i = 0; i < 8; i++)
                             {
@@ -214,6 +224,7 @@ namespace ChessFight.PawnRush.Editor
                 ZoneLight.Instant = false;
                 Time.timeScale = 1f;
                 target.Release();
+                if (pipe != null) pipe.msaaSampleCount = msaa0;
                 SessionState.SetInt(CodeKey, failures == 0 && pictures > 0 ? 0 : 1);
                 EditorApplication.isPlaying = false;
             }
@@ -256,6 +267,16 @@ namespace ChessFight.PawnRush.Editor
                         back = Mathf.Max(1.5f, hit.distance - .05f);
                     var eye = pivot - look * Vector3.forward * back;
                     list.Add(new Spot { name = $"{Short(name)}_{i + 1}", at = p, way = way, eye = eye, target = eye + look * Vector3.forward * 10f });
+                }
+                // Close to the first spot's white pawn (the character's look): from behind three quarters, as the game's
+                // camera sees it, and from the front three quarters, as the lobby shows it.
+                if (list.Count > 0)
+                {
+                    var s1 = list[0];
+                    var side = Vector3.Cross(Vector3.up, s1.way).normalized;
+                    var centre = Ground(s1.at + side * .3f + s1.way * .2f) + Vector3.up * .5f;
+                    list.Add(new Spot { name = $"{Short(name)}_pcb", eye = centre - s1.way * 2.2f + side * .9f + Vector3.up * .5f, target = centre, fov = 40f });
+                    list.Add(new Spot { name = $"{Short(name)}_pcf", eye = centre + s1.way * 2.2f + side * .9f + Vector3.up * .4f, target = centre, fov = 40f });
                 }
                 // Over the section: from behind and above its start, along its first stretch.
                 {
@@ -305,6 +326,14 @@ namespace ChessFight.PawnRush.Editor
                 GameGrade.Temperature = F("temp", GameGrade.Temperature);
                 GameGrade.BloomIntensity = F("bloom", GameGrade.BloomIntensity);
                 GameGrade.Vignette = F("vig", GameGrade.Vignette);
+                GameGrade.ShaftIntensity = F("shaft", GameGrade.ShaftIntensity);
+                GameGrade.ShaftDensity = F("shaftd", GameGrade.ShaftDensity);
+                GameGrade.ShaftAnisotropy = F("shaftg", GameGrade.ShaftAnisotropy);
+                GameProbes.On = F("probes", 1f) > .5f;
+                GameCharacters.Ambient = F("cama", GameCharacters.Ambient);
+                GameCharacters.Gloss = F("camg", GameCharacters.Gloss);
+                GameCharacters.Rim = F("camr", GameCharacters.Rim);
+                GameCharacters.Reflection = F("camw", GameCharacters.Reflection);
                 var st = GameGrade.ShadowTone;
                 GameGrade.ShadowTone = new Color(F("shr", st.r), F("shg", st.g), F("shb", st.b), 1f);
                 var ht = GameGrade.HighlightTone;
@@ -313,7 +342,12 @@ namespace ChessFight.PawnRush.Editor
                     if (v.name == "Game grade (JY-gfx)") v.sharedProfile = GameGrade.Profile();
                 RenderSettings.ambientIntensity = F("amb", RenderSettings.ambientIntensity);
                 var sun = RenderSettings.sun;
-                if (sun != null) sun.intensity = F("sun", sun.intensity);
+                if (sun != null)
+                {
+                    sun.intensity = F("sun", sun.intensity);
+                    var sc = sun.color;
+                    sun.color = new Color(F("sunr", sc.r), F("sung", sc.g), F("sunb", sc.b), 1f);
+                }
                 if (RenderSettings.skybox != null && RenderSettings.skybox.HasProperty("_Exposure"))
                     RenderSettings.skybox.SetFloat("_Exposure", F("sky", RenderSettings.skybox.GetFloat("_Exposure")));
                 // The sky's light follows its brightness and the ambient strength.
@@ -342,6 +376,8 @@ namespace ChessFight.PawnRush.Editor
                 }
                 // gfx=0: the whole upgrade off (GameGfx), last so it wins over the keys above.
                 GameGfx.Set(F("gfx", 1f) > .5f);
+                // char=0: the pieces flat and in Look A while the rest stays upgraded (after the switch, which sets them too).
+                if (F("gfx", 1f) > .5f) GameCharacters.Show(F("char", 1f) > .5f);
             }
 
             bool probeOn;
