@@ -210,6 +210,9 @@ namespace ChessFight.PawnRush.Editor
                     GameGrass.Grow();
                     // A palace hall's own light (GfxHallLight's watch looks only every two seconds).
                     GfxHallLight.Find();
+                    // The small things on its paving, now (the watch spreads them over frames).
+                    var rushSection = section.GetComponent<PawnRushSection>();
+                    if (rushSection != null) GfxGround.Now(rushSection);
                     var spots = Spots(section, name);
                     var pawns = Pawns(spots);
                     var lineup = SessionState.GetBool(LineupKey, false) ? Lineup(spots, name) : null;
@@ -405,6 +408,8 @@ namespace ChessFight.PawnRush.Editor
                 GameProbes.On = F("probes", 1f) > .5f;
                 // hall=0: the palace halls without their own light (GfxHallLight); halls=1.3: theirs brighter.
                 GfxHallLight.On = F("hall", 1f) > .5f;
+                // ground=0: the paving without its tufts and pebbles (GfxGround).
+                GfxGround.On = F("ground", 1f) > .5f;
                 GfxHallLight.Scale = F("halls", GfxHallLight.Scale);
                 GameCharacters.Ambient = F("cama", GameCharacters.Ambient);
                 GameCharacters.Gloss = F("camg", GameCharacters.Gloss);

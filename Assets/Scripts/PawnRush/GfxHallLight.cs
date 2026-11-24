@@ -57,6 +57,8 @@ namespace ChessFight.PawnRush
             {
                 if (!looked.Add(section.GetInstanceID())) continue;
                 fresh = true;
+                // The small things on its paving too (GfxGround, over a few frames).
+                GfxGround.Request(section);
                 if (section.GetComponent<GfxHallLight>() != null) continue;
                 Transform ceiling = null;
                 foreach (var t in section.GetComponentsInChildren<Transform>(true))
