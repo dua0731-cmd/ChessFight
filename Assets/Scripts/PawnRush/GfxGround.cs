@@ -42,7 +42,7 @@ namespace ChessFight.PawnRush
             go.AddComponent<Runner>();
         }
 
-        /// <summary>A section to dress (GfxHallLight's watch hands every new one in); spread over a few frames.</summary>
+        /// <summary>A section to dress (GfxSections' watch hands every new one in); spread over a few frames.</summary>
         public static void Request(PawnRushSection section)
         {
             if (section == null || done.Contains(section.GetInstanceID())) return;

@@ -252,7 +252,7 @@ namespace ChessFight.Game
             }
         }
 
-        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): look half a second on and again a
+        /// <summary>Something new came in (a round's sections, GfxSections' watch): look half a second on and again a
         /// second after that (GameSurfaces looks on the frames between).</summary>
         public static void Wake()
         {

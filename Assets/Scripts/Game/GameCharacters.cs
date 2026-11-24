@@ -114,7 +114,7 @@ namespace ChessFight.Game
             }
         }
 
-        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): every piece looked at on the next
+        /// <summary>Something new came in (a round's sections, GfxSections' watch): every piece looked at on the next
         /// frame.</summary>
         public static void Wake() => woken = true;
 

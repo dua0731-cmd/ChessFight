@@ -208,8 +208,9 @@ namespace ChessFight.PawnRush.Editor
                     // The URP Lit materials on Gfx Lit now (GameSurfaces' watch does it every two seconds anyway).
                     GameSurfaces.Dress(GameSurfaces.LitOn);
                     GameGrass.Grow();
-                    // A palace hall's own light (GfxHallLight's watch looks only every two seconds).
-                    GfxHallLight.Find();
+                    // The section's course light and the rest of the upgrade's look at it (GfxSections' watch looks only
+                    // every two seconds).
+                    GfxSections.Find();
                     // The small things on its paving, now (the watch spreads them over frames).
                     var rushSection = section.GetComponent<PawnRushSection>();
                     if (rushSection != null) GfxGround.Now(rushSection);
@@ -406,11 +407,12 @@ namespace ChessFight.PawnRush.Editor
                 GameGrade.ShaftDensity = F("shaftd", GameGrade.ShaftDensity);
                 GameGrade.ShaftAnisotropy = F("shaftg", GameGrade.ShaftAnisotropy);
                 GameProbes.On = F("probes", 1f) > .5f;
-                // hall=0: the palace halls without their own light (GfxHallLight); halls=1.3: theirs brighter.
-                GfxHallLight.On = F("hall", 1f) > .5f;
+                // course=0: courses 2 and 3 without their light (GameCourses); c2.Field=v / c3.Field=v set a look's
+                // number (colours and ways as r|g|b), every other look's numbers as the run found them.
+                GameCourses.On = F("course", 1f) > .5f;
+                CourseKeys(s);
                 // ground=0: the paving without its tufts and pebbles (GfxGround).
                 GfxGround.On = F("ground", 1f) > .5f;
-                GfxHallLight.Scale = F("halls", GfxHallLight.Scale);
                 GameCharacters.Ambient = F("cama", GameCharacters.Ambient);
                 GameCharacters.Gloss = F("camg", GameCharacters.Gloss);
                 GameCharacters.Rim = F("camr", GameCharacters.Rim);
@@ -467,6 +469,36 @@ namespace ChessFight.PawnRush.Editor
                 GameGfx.Set(F("gfx", 1f) > .5f);
                 // char=0: the pieces flat and in Look A while the rest stays upgraded (after the switch, which sets them too).
                 if (F("gfx", 1f) > .5f) GameCharacters.Show(F("char", 1f) > .5f);
+            }
+
+            static Dictionary<string, object> courseBase;
+
+            // c2.SunIntensity=2.4 or c3.SunColor=1|.6|.3: one number of a course's look (GameCourses.Look) for this
+            // look; every number not given goes back to how the run found it.
+            static void CourseKeys(Dictionary<string, string> s)
+            {
+                var fields = typeof(GameCourses.Look).GetFields(BindingFlags.Public | BindingFlags.Instance);
+                var looks = new[] { ("c2.", GameCourses.Course2), ("c3.", GameCourses.Course3) };
+                if (courseBase == null)
+                {
+                    courseBase = new Dictionary<string, object>();
+                    foreach (var (prefix, look) in looks)
+                        foreach (var f in fields) courseBase[prefix + f.Name] = f.GetValue(look);
+                }
+                foreach (var (prefix, look) in looks)
+                    foreach (var f in fields)
+                    {
+                        object value = courseBase[prefix + f.Name];
+                        if (s.TryGetValue(prefix + f.Name, out var text))
+                        {
+                            var parts = text.Split('|').Select(x => float.Parse(x, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
+                            if (f.FieldType == typeof(float)) value = parts[0];
+                            else if (f.FieldType == typeof(Color)) value = new Color(parts[0], parts[1], parts[2], 1f);
+                            else if (f.FieldType == typeof(Vector3)) value = new Vector3(parts[0], parts[1], parts[2]);
+                        }
+                        f.SetValue(look, value);
+                    }
+                GameCourses.Refresh();
             }
 
             bool probeOn;
@@ -966,7 +998,7 @@ namespace ChessFight.PawnRush.Editor
                 string Rgb(Color c) => string.Format(CultureInfo.InvariantCulture, "({0:0.000} {1:0.000} {2:0.000})", c.r, c.g, c.b);
                 notes.AppendLine($"ambient {section} {(look.Length > 0 ? look : "-")}: up {Rgb(cols[0])} side {Rgb(cols[1])} down {Rgb(cols[2])}, "
                     + $"mode {RenderSettings.ambientMode}, intensity {RenderSettings.ambientIntensity:0.00}, sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}"
-                    + $"; camera at {cam.transform.position}; {GfxHallLight.Describe()}");
+                    + $"; camera at {cam.transform.position}; courses {GameCourses.Weight2:0.00} {GameCourses.Weight3:0.00}");
             }
 
             // The sections in at once (as many as a round has, and more), then what the upgrade's look-rounds cost: each
@@ -994,7 +1026,7 @@ namespace ChessFight.PawnRush.Editor
                 Measure(sb, "GameCharacters.Sweep (every 1 s)", GameCharacters.Sweep);
                 Measure(sb, "  of which FindObjectsByType<MeshRenderer>(Include)", () => FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None));
                 Measure(sb, "  of which FindObjectsByType<SkinnedMeshRenderer>(Include)", () => FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None));
-                Measure(sb, "GfxHallLight.Find (every 2 s)", GfxHallLight.Find);
+                Measure(sb, "GfxSections.Find (every 2 s)", GfxSections.Find);
                 Measure(sb, "  of which FindObjectsByType<PawnRushSection>", () => FindObjectsByType<PawnRushSection>(FindObjectsSortMode.None));
                 File.WriteAllText(Path.Combine(folder, $"scan_{tag}.txt"), sb.ToString());
                 notes.Append(sb);

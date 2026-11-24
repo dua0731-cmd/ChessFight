@@ -349,7 +349,7 @@ namespace ChessFight.Game
                      "sign", "doll", "soap", "checker", "board" }, 5, .6f),
         };
 
-        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): look on the next frame and again a
+        /// <summary>Something new came in (a round's sections, GfxSections' watch): look on the next frame and again a
         /// second later.</summary>
         public static void Wake()
         {

@@ -10,6 +10,8 @@ Shader "ChessFight/Gfx Sky"
         [NoScaleOffset] _Panorama ("Sky (equirectangular, Blender's frame)", 2D) = "black" {}
         _Exposure ("Brightness", Float) = 1
         _Turn ("Turn about the vertical (degrees)", Float) = 0
+        // JY-gfx: the course's tint over the roofless halls (GameCourses).
+        _Tint ("Tint", Color) = (1, 1, 1, 1)
     }
     SubShader
     {
@@ -26,6 +28,7 @@ Shader "ChessFight/Gfx Sky"
             TEXTURE2D(_Panorama); SAMPLER(sampler_Panorama);
             CBUFFER_START(UnityPerMaterial)
             half _Exposure, _Turn;
+            half4 _Tint;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; };
@@ -49,7 +52,7 @@ Shader "ChessFight/Gfx Sky"
                 float3 b = float3(d.x, d.z, d.y);
                 float2 uv = float2(0.5 - atan2(b.y, b.x) / (2.0 * PI), atan2(b.z, length(b.xy)) / PI + 0.5);
                 half3 col = SAMPLE_TEXTURE2D_LOD(_Panorama, sampler_Panorama, uv, 0).rgb;
-                return half4(col * _Exposure, 1);
+                return half4(col * _Exposure * _Tint.rgb, 1);
             }
             ENDHLSL
         }
