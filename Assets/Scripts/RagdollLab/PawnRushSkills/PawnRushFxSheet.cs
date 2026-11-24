@@ -8,12 +8,14 @@ using UnityEngine;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// Contact sheets of the skills' effects, to look at them frame by frame with nobody at the keys (2026-11-24; the user:
-    /// "이전에 구현했던 스킬들도 이펙트를 제대로 만들어줘 ... 웃기고 코믹한 느낌이되 너무 허접하진 않고 퀄리티 좋게"). In the
-    /// skill test scene's Play mode each shot puts one skill in a slot of P1's piece, stages P1 and enemy dummies and plays
-    /// a few keys (PawnRushSkillProbe.Perform), and keeps every few frames of game time (30 a second, Time.captureFramerate,
-    /// so the picture is the same however slow the machine) from a fixed camera: one JPG a shot, four frames across, left
-    /// to right and down. Batch: Tools/Film-SkillFx.ps1 (PawnRushFxSheetBatch). In the editor while playing:
+    /// Films the skills' effects to look at them frame by frame with nobody at the keys (2026-11-24; the user:
+    /// "이전에 구현했던 스킬들도 이펙트를 제대로 만들어줘 ... 웃기고 코믹한 느낌이되 너무 허접하진 않고 퀄리티 좋게", then
+    /// "찍은 영상 올려주면 안돼?"). In the skill test scene's Play mode each shot puts one skill in a slot of P1's piece, stages
+    /// P1 and enemy dummies and plays a few keys (PawnRushSkillProbe.Perform), and films game time at 30 frames a second
+    /// (Time.captureFramerate, so the result is the same however slow the machine) from a fixed camera, captioned with the
+    /// skill, its piece and key, and the key as it is pressed: every frame as <c>&lt;folder&gt;/&lt;shot&gt;/f_0000.jpg</c>
+    /// (960 x 540, for a video: Tools/Film-SkillFx.ps1 encodes them) and a contact sheet <c>&lt;folder&gt;/&lt;shot&gt;.jpg</c>
+    /// (24 frames, four across). Batch: Tools/Film-SkillFx.ps1 (PawnRushFxSheetBatch). In the editor while playing:
     /// <c>PawnRushFxSheet.Begin("Logs/FxSheets", "BackKick,StoneThrow", null)</c>.
     /// </summary>
     [DefaultExecutionOrder(300)]   // after the effects shake the camera (210), as PawnRushSkillFilm
@@ -28,14 +30,17 @@ namespace ChessFight.RagdollLab
             public string script;
             /// <summary>The enemies, in P1's frame: x to its right, y ahead (metres).</summary>
             public Vector2[] enemies;
-            /// <summary>Filmed from when the stage has settled.</summary>
+            /// <summary>Filmed from when the stage has settled (after the lead-in).</summary>
             public float seconds;
             /// <summary>The camera, in P1's frame (x right, y up, z ahead).</summary>
             public Vector3 eye, look;
         }
 
         public static string Status { get; private set; } = "idle";
-        const int Cols = 4, MaxFrames = 24, CellW = 480, CellH = 270, Fps = 30;
+        /// <summary>The caption's second line (e.g. which build of the effects this is).</summary>
+        public static string Note = "";
+        const int Cols = 4, MaxFrames = 24, CellW = 480, CellH = 270, FrameW = 960, FrameH = 540, Fps = 30;
+        const float Lead = 0.4f;
         static readonly Vector3 Ground = new Vector3(0f, 0f, 9f), Face = Vector3.back;
 
         static Shot S(string name, int id, PieceKind piece, int slot, string script, float seconds, Vector3 eye, Vector3 look, params Vector2[] enemies) =>
@@ -64,14 +69,20 @@ namespace ChessFight.RagdollLab
         LabGame game;
         PawnRushSkillBed bed;
         Camera cam;
-        RenderTexture rt;
-        Texture2D sheet;
+        RenderTexture rtBig, rtCell;
+        Texture2D sheet, frame;
+        Font font;
+        PawnRushSkillFx.Text3D title, note, key;
+        Transform banner, keyStrip;
+        int keySerial;
+        float keyLeft;
         Vector3 eye, look;
-        bool grab;
-        int cell;
+        bool rolling, grab;
+        int cell, frameNo;
+        string frameDir;
 
         /// <summary>Films <paramref name="names"/> (comma-separated shot names, or "set3") into <paramref name="folder"/>;
-        /// <paramref name="done"/> when the last sheet is written.</summary>
+        /// <paramref name="done"/> when the last shot is written.</summary>
         public static void Begin(string folder, string names, Action done)
         {
             var list = new List<Shot>();
@@ -113,16 +124,24 @@ namespace ChessFight.RagdollLab
             }
             yield return new WaitForSeconds(0.5f);
             Directory.CreateDirectory(folder);
+            // The gauge's crowns turn round the test scene's start, where the shots are staged: out of the way.
+            foreach (var crown in PawnRushGaugeCrown.All) if (crown != null) crown.gameObject.SetActive(false);
 
             cam = new GameObject("Fx sheet camera").AddComponent<Camera>();
             cam.transform.SetParent(transform, false);
             if (game.labCamera != null) cam.CopyFrom(game.labCamera.Cam);
-            cam.fieldOfView = 50f;
+            cam.fieldOfView = 45f;
             cam.rect = new Rect(0f, 0f, 1f, 1f);
             cam.enabled = false;
             PawnRushSkillFx.PrepareCamera(cam);
-            rt = new RenderTexture(CellW, CellH, 24) { antiAliasing = 4 };
+            rtBig = new RenderTexture(FrameW, FrameH, 24) { antiAliasing = 4 };
+            rtCell = new RenderTexture(CellW, CellH, 0);
+            frame = new Texture2D(FrameW, FrameH, TextureFormat.RGB24, false);
             sheet = new Texture2D(Cols * CellW, (MaxFrames / Cols) * CellH, TextureFormat.RGB24, false);
+            font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
+            banner = Banner(cam.transform, 0.345f, 2f, 0.15f);
+            keyStrip = Banner(cam.transform, -0.335f, 0.42f, 0.085f);
+            keyStrip.gameObject.SetActive(false);
             PawnRushSkillFx.ViewOverride = cam;
             game.SuppressInput = true;
             LabCamera.GameTimeClock = true;
@@ -139,7 +158,9 @@ namespace ChessFight.RagdollLab
                 lo.Apply(PawnRushLoadout.OpSystem, PawnRushLoadout.SystemOf(12));   // (a preset leaves the system as it was)
                 int row = Array.IndexOf(PawnRushLoadout.RowPieces, shot.piece);
                 if (row >= 0) lo.Apply(row * PawnRushLoadout.Slots + shot.slot, shot.id);
-                PawnRushSkillProbe.Perform(shot.piece, shot.slot, shot.script, Ground, face, shot.enemies, shot.seconds + 0.5f);
+                string keyName = shot.slot == 0 ? "F" : shot.slot == 1 ? "E" : shot.slot == 2 ? "R" : "Q";
+                SetCaption($"{PawnRushSkillBook.Name(shot.id)}  ·  {ChessPieces.Name(shot.piece)} {keyName}", Note);
+                PawnRushSkillProbe.Perform(shot.piece, shot.slot, $"w{Lead.ToString(System.Globalization.CultureInfo.InvariantCulture)} {shot.script}", Ground, face, shot.enemies, shot.seconds + 0.5f);
                 yield return null;
                 while (!PawnRushSkillProbe.Staged && !PawnRushSkillProbe.Status.StartsWith("done")) yield return null;
                 eye = Ground + right * shot.eye.x + Vector3.up * shot.eye.y + face * shot.eye.z;
@@ -148,19 +169,26 @@ namespace ChessFight.RagdollLab
                 var fill = sheet.GetPixels32();
                 for (int i = 0; i < fill.Length; i++) fill[i] = clear;
                 sheet.SetPixels32(fill);
-                int total = Mathf.Max(1, Mathf.RoundToInt(shot.seconds * Fps));
+                frameDir = Path.Combine(folder, shot.name);
+                Directory.CreateDirectory(frameDir);
+                foreach (var old in Directory.GetFiles(frameDir, "f_*.jpg")) File.Delete(old);
+                frameNo = 0;
+                keySerial = PawnRushSkillProbe.HintSerial;
+                keyLeft = 0f;
+                int total = Mathf.Max(1, Mathf.RoundToInt((shot.seconds + Lead) * Fps));
                 int step = Mathf.Max(1, Mathf.CeilToInt(total / (float)MaxFrames));
                 cell = 0;
-                for (int f = 0; f < total && cell < MaxFrames; f++)
+                rolling = true;
+                for (int f = 0; f < total; f++)
                 {
-                    grab = f % step == 0;
+                    grab = f % step == 0 && cell < MaxFrames;
                     yield return null;
                 }
-                grab = false;
+                rolling = grab = false;
                 sheet.Apply();
                 string path = Path.Combine(folder, shot.name + ".jpg");
                 File.WriteAllBytes(path, sheet.EncodeToJPG(88));
-                Debug.Log($"[FxSheet] {shot.name}: {cell} frames, one each {step / (float)Fps:0.###} s → {path}");
+                Debug.Log($"[FxSheet] {shot.name}: {frameNo} frames in {frameDir}, sheet {cell} frames → {path}");
                 // Let the last shot's things (a puddle, a tower) end before the next is staged.
                 yield return new WaitForSeconds(0.6f);
             }
@@ -173,16 +201,72 @@ namespace ChessFight.RagdollLab
         {
             if (cam == null) return;
             cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
-            if (!grab || cell >= MaxFrames) return;
-            grab = false;
-            cam.targetTexture = rt;
+            if (!rolling) return;
+            title?.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, 1f)), cam, 1f, 1f);
+            note?.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, 1f)), cam, 1f, 1f);
+            ShowKey();
+            cam.targetTexture = rtBig;
             cam.Render();
             cam.targetTexture = null;
-            RenderTexture.active = rt;
-            int col = cell % Cols, rowFromTop = cell / Cols;
-            sheet.ReadPixels(new Rect(0, 0, CellW, CellH), col * CellW, (MaxFrames / Cols - 1 - rowFromTop) * CellH);
+            RenderTexture.active = rtBig;
+            frame.ReadPixels(new Rect(0, 0, FrameW, FrameH), 0, 0);
+            frame.Apply();
+            File.WriteAllBytes(Path.Combine(frameDir, $"f_{frameNo:D4}.jpg"), frame.EncodeToJPG(90));
+            frameNo++;
+            if (grab)
+            {
+                Graphics.Blit(rtBig, rtCell);
+                RenderTexture.active = rtCell;
+                int col = cell % Cols, rowFromTop = cell / Cols;
+                sheet.ReadPixels(new Rect(0, 0, CellW, CellH), col * CellW, (MaxFrames / Cols - 1 - rowFromTop) * CellH);
+                cell++;
+                grab = false;
+            }
             RenderTexture.active = null;
-            cell++;
+        }
+
+        void SetCaption(string a, string b)
+        {
+            title?.Destroy();
+            note?.Destroy();
+            title = new PawnRushSkillFx.Text3D(cam.transform, font, a, Color.white, 0.056f);
+            note = new PawnRushSkillFx.Text3D(cam.transform, font, string.IsNullOrEmpty(b) ? " " : b, new Color(1f, 0.9f, 0.6f), 0.034f);
+        }
+
+        /// <summary>The key the probe has just pressed, for a moment at the bottom of the picture.</summary>
+        void ShowKey()
+        {
+            if (PawnRushSkillProbe.HintSerial != keySerial)
+            {
+                keySerial = PawnRushSkillProbe.HintSerial;
+                key?.Destroy();
+                key = new PawnRushSkillFx.Text3D(cam.transform, font, $"[ {PawnRushSkillProbe.Hint} ]", new Color(1f, 0.85f, 0.3f), 0.05f);
+                keyLeft = 0.8f;
+            }
+            keyLeft -= 1f / Fps;
+            bool on = keyLeft > 0f && key != null;
+            keyStrip.gameObject.SetActive(on);
+            key?.Place(cam.transform.TransformPoint(new Vector3(0f, -0.335f, 1f)), cam, on ? 1f : 0.001f, Mathf.Clamp01(keyLeft / 0.3f));
+        }
+
+        /// <summary>A dark strip across the picture at <paramref name="y"/> (the caption's at the top, the key's at the bottom).</summary>
+        static Transform Banner(Transform parent, float y, float width, float height)
+        {
+            var mesh = new Mesh
+            {
+                vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(0.5f, 0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f) },
+                colors = new[] { Color.white, Color.white, Color.white, Color.white },
+                triangles = new[] { 0, 2, 1, 0, 3, 2 },
+            };
+            var go = new GameObject("Caption strip");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(0f, y, 1.05f);
+            go.transform.localScale = new Vector3(width, height, 1f);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.05f, 0.08f, 0.19f, 0.72f) };
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
         }
 
         void Clean()
@@ -191,8 +275,14 @@ namespace ChessFight.RagdollLab
             LabCamera.GameTimeClock = false;
             if (game != null) game.SuppressInput = false;
             if (PawnRushSkillFx.ViewOverride == cam) PawnRushSkillFx.ViewOverride = null;
-            if (rt != null) Destroy(rt);
+            foreach (var crown in PawnRushGaugeCrown.All) if (crown != null) crown.gameObject.SetActive(true);
+            title?.Destroy();
+            note?.Destroy();
+            key?.Destroy();
+            if (rtBig != null) Destroy(rtBig);
+            if (rtCell != null) Destroy(rtCell);
             if (sheet != null) Destroy(sheet);
+            if (frame != null) Destroy(frame);
         }
 
         void OnDestroy()

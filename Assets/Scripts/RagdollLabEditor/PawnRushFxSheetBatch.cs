@@ -77,6 +77,7 @@ namespace ChessFight.RagdollLab.Editor
                 EditorApplication.update -= Watchdog;
                 EditorApplication.update += Watchdog;
                 string folder = Arg("-fxOut", "Logs/FxSheets");
+                PawnRushFxSheet.Note = Arg("-fxNote", "");
                 PawnRushFxSheet.Begin(folder, Arg("-fxShots", "set3"), () =>
                 {
                     SessionState.SetBool(ExitKey, true);
