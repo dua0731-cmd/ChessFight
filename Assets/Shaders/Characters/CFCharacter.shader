@@ -81,6 +81,7 @@ Shader "ChessFight/Character"
             TEXTURE2D(_BaseMap);
             float _GfxCharacter;
             float4 _GfxCharacterLook;
+            float4 _GfxCharacterTone;
             SAMPLER(sampler_BaseMap);
 
             struct Attributes
@@ -168,6 +169,11 @@ Shader "ChessFight/Character"
                 if (_GfxCharacter > 0.5)
                 {
                     half4 look = _GfxCharacterLook;
+                    // The body's colour as the Tripo-textured pieces had it: part of the way to grey, toward a warm grey
+                    // beige (_GfxCharacterTone: x how far to grey, yzw the tint). Eyes, glints, blush, hands and feet keep theirs.
+                    half toneK = _Stripes > 0.5 ? body : 0.5;
+                    half luma = dot(albedo, half3(0.299, 0.587, 0.114));
+                    albedo = lerp(albedo, lerp(albedo, luma.xxx, _GfxCharacterTone.x) * _GfxCharacterTone.yzw, toneK);
                     half glossG = lerp(lerp(look.y, _EyeGloss, eye), _LimbGloss, limb);
                     half sizeG = lerp(40.0, _GlossSize * 4.0, eye);
                     float2 screenUV = GetNormalizedScreenSpaceUV(i.positionCS);

@@ -38,7 +38,7 @@ namespace ChessFight.PawnRush.Editor
         };
         const string ActiveKey = "GfxShots.Active", CodeKey = "GfxShots.Code", StartKey = "GfxShots.Start";
         const string OutKey = "GfxShots.Out", TagKey = "GfxShots.Tag", SectionsKey = "GfxShots.Sections", SizeKey = "GfxShots.Size";
-        const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa";
+        const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa", LineupKey = "GfxShots.Lineup";
         const float GiveUpSeconds = 1500f;
 
         static GfxShots()
@@ -69,6 +69,8 @@ namespace ChessFight.PawnRush.Editor
             SessionState.SetString(TuneKey, Arg("-gfxTune") ?? "");
             // -gfxMsaa 4: the pipeline's MSAA for this run (put back at the end), the pictures drawn with it.
             SessionState.SetInt(MsaaKey, int.TryParse(Arg("-gfxMsaa"), out var msaa) ? msaa : 0);
+            // -gfxLineup: the six white pieces in a row ahead of the first spot, a picture of them from the front (_lu).
+            SessionState.SetBool(LineupKey, System.Environment.GetCommandLineArgs().Contains("-gfxLineup"));
             // -gfxSpots 1,0wide: only these spots of each section.
             SessionState.SetString(SpotsKey, Arg("-gfxSpots") ?? "");
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -180,6 +182,7 @@ namespace ChessFight.PawnRush.Editor
                     GameGrass.Grow();
                     var spots = Spots(section, name);
                     var pawns = Pawns(spots);
+                    var lineup = SessionState.GetBool(LineupKey, false) ? Lineup(spots, name) : null;
                     string only = SessionState.GetString(SpotsKey, "");
                     var tunes = Tunes(SessionState.GetString(TuneKey, ""));
                     foreach (var spot in spots)
@@ -206,6 +209,7 @@ namespace ChessFight.PawnRush.Editor
                     notes.AppendLine($"{name}: {spots.Count} pictures; sun {(sun != null ? $"{sun.intensity:0.00} ({sun.color.r:0.00}, {sun.color.g:0.00}, {sun.color.b:0.00}) {sun.transform.eulerAngles}" : "none")}, "
                         + $"sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}, ambient {RenderSettings.ambientMode}, fog {RenderSettings.fog} {RenderSettings.fogMode}");
                     if (pawns != null) Destroy(pawns);
+                    if (lineup != null) Destroy(lineup);
                     Destroy(section);
                     yield return null;
                     yield return null;
@@ -334,6 +338,9 @@ namespace ChessFight.PawnRush.Editor
                 GameCharacters.Gloss = F("camg", GameCharacters.Gloss);
                 GameCharacters.Rim = F("camr", GameCharacters.Rim);
                 GameCharacters.Reflection = F("camw", GameCharacters.Reflection);
+                GameCharacters.Desaturate = F("ctd", GameCharacters.Desaturate);
+                var tint = GameCharacters.Tint;
+                GameCharacters.Tint = new Color(F("ctr", tint.r), F("ctg", tint.g), F("ctb", tint.b), 1f);
                 var st = GameGrade.ShadowTone;
                 GameGrade.ShadowTone = new Color(F("shr", st.r), F("shg", st.g), F("shb", st.b), 1f);
                 var ht = GameGrade.HighlightTone;
@@ -490,6 +497,55 @@ namespace ChessFight.PawnRush.Editor
             }
 
             // White and black pawns (the game's Pawn Rush pawn, its mesh as modelled) round each route spot.
+            // The six white pieces in a row in a plain grey studio far from every section (a floor, a wall behind), in
+            // the round's own sun and sky light, seen from the front: the character's look as the design sheet shows it.
+            // Heights as a set's.
+            GameObject Lineup(List<Spot> spots, string name)
+            {
+                var root = new GameObject("Stand-in lineup studio (pictures only)");
+                var centre = new Vector3(3000f, 0f, 3000f);
+                var grey = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "Studio grey" };
+                grey.SetColor("_BaseColor", new Color(.6f, .62f, .66f));
+                grey.SetFloat("_Smoothness", .15f);
+                var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                floor.transform.SetParent(root.transform, false);
+                floor.transform.position = centre;
+                floor.transform.localScale = new Vector3(6f, 1f, 6f);
+                floor.GetComponent<Renderer>().sharedMaterial = grey;
+                var wall = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                wall.transform.SetParent(root.transform, false);
+                wall.transform.SetPositionAndRotation(centre + new Vector3(0f, 6f, -5f), Quaternion.Euler(0f, 180f, 0f));
+                wall.transform.localScale = new Vector3(40f, 12f, 1f);
+                wall.GetComponent<Renderer>().sharedMaterial = grey;
+                // As the design sheet: pawn, rook, knight, bishop from the left.
+                string[] names = { "Pawn", "Rook", "Knight", "Bishop" };
+                float[] heights = { 1f, 1.2f, 1.3f, 1.4f };
+                for (int i = 0; i < names.Length; i++)
+                {
+                    var prefab = Resources.Load<GameObject>("PieceModels/PawnRush/" + names[i]);
+                    var skin = prefab != null ? prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+                    if (skin == null || skin.sharedMesh == null) continue;
+                    var mesh = skin.sharedMesh;
+                    var size = mesh.bounds.size;
+                    var upright = size.z > size.y * 1.3f ? Quaternion.Euler(-90f, 0f, 0f) : Quaternion.identity;
+                    float scale = heights[i] / Mathf.Max(.01f, upright == Quaternion.identity ? size.y : size.z);
+                    var foot = centre + new Vector3((1.5f - i) * 1.45f, 0f, 0f);
+                    var go = new GameObject(names[i]);
+                    go.transform.SetParent(root.transform, false);
+                    // Facing the camera (on +z), so the round's sun, coming from +z, lights their fronts.
+                    go.transform.SetPositionAndRotation(foot, Quaternion.LookRotation(Vector3.forward, Vector3.up) * upright);
+                    go.transform.localScale = Vector3.one * scale;
+                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    var r = go.AddComponent<MeshRenderer>();
+                    r.sharedMaterials = skin.sharedMaterials;
+                    var bb = r.bounds;
+                    go.transform.position += Vector3.up * (foot.y - bb.min.y);
+                }
+                var look = centre + Vector3.up * .75f;
+                spots.Add(new Spot { name = $"{Short(name)}_lu", eye = centre + new Vector3(0f, 1.05f, 5.4f), target = look, fov = 36f });
+                return root;
+            }
+
             GameObject Pawns(List<Spot> spots)
             {
                 var prefab = Resources.Load<GameObject>("PieceModels/PawnRush/Pawn");

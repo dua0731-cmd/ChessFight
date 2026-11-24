@@ -19,14 +19,21 @@ namespace ChessFight.Game
     public static class GameCharacters
     {
         public static bool On = true;
-        /// <summary>Faces meeting at less than this many degrees share a normal.</summary>
-        public static float SmoothAngle = 55f;
+        /// <summary>Faces meeting at less than this many degrees share a normal: a cylinder's facets go smooth, while a
+        /// collar, a crenel, a rim or a bevel stays a crisp edge (JY: "다 부드럽게 하는게 아니라 돌출부들은 확실히 보여야지").</summary>
+        public static float SmoothAngle = 30f;
         /// <summary>The look: how much of the sky light fills the shade, the highlight, the sun's rim behind the piece,
         /// the reflections at the edges.</summary>
-        public static float Ambient = 1f, Gloss = .3f, Rim = .9f, Reflection = .3f;
+        public static float Ambient = .75f, Gloss = .3f, Rim = .9f, Reflection = .3f;
+        /// <summary>The body's colour as the Tripo-textured pieces had it (JY 11-24: "색감은 ... 위쪽처럼"): the cream taken
+        /// part of the way to grey (Desaturate) and toward a warm grey beige (Tint). Eyes, glints, blush, hands and feet
+        /// keep their own.</summary>
+        public static float Desaturate = .5f;
+        public static Color Tint = new Color(.9f, .83f, .75f);
 
         const string ShaderName = "ChessFight/Character";
-        static readonly int LookId = Shader.PropertyToID("_GfxCharacterLook"), OnId = Shader.PropertyToID("_GfxCharacter");
+        static readonly int LookId = Shader.PropertyToID("_GfxCharacterLook"), OnId = Shader.PropertyToID("_GfxCharacter"),
+            ToneId = Shader.PropertyToID("_GfxCharacterTone");
         static readonly Dictionary<Mesh, Mesh> smoothOf = new Dictionary<Mesh, Mesh>();
         static readonly Dictionary<Mesh, Mesh> flatOf = new Dictionary<Mesh, Mesh>();
         static readonly HashSet<int> seen = new HashSet<int>();
@@ -52,6 +59,7 @@ namespace ChessFight.Game
         {
             Shader.SetGlobalFloat(OnId, On && shown ? 1f : 0f);
             Shader.SetGlobalVector(LookId, new Vector4(Ambient, Gloss, Rim, Reflection));
+            Shader.SetGlobalVector(ToneId, new Vector4(Desaturate, Tint.r, Tint.g, Tint.b));
         }
 
         /// <summary>Smooth meshes and the new look on (true) or the flat meshes and Look A back (false).</summary>
