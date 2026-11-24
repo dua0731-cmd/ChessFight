@@ -44,6 +44,10 @@ namespace ChessFight.PawnRush
             public Color HeartColor = new Color(1f, .6f, .32f);
             /// <summary>The floors polished at least this smooth, so they hold the lamps and windows (0 leaves them).</summary>
             public float FloorGloss;
+            /// <summary>A floor to change: the material named FloorFrom (its name without " (Gfx)") becomes FloorTo (a
+            /// material in Resources/PawnRushMiniGames/Materials, the swatch family's; empty keeps it), times FloorTint.</summary>
+            public string FloorFrom = "", FloorTo = "";
+            public Color FloorTint = Color.white;
         }
 
         public sealed class Map
@@ -108,7 +112,7 @@ namespace ChessFight.PawnRush
             new Map
             {
                 Key = "MG_B_RepairWing",
-                Concept = "the royal workshop: daylight pouring in from above as through a skylight, sawdust haze, warm work-lamp pools over the benches and the pit, warm light washing up the columns",
+                Concept = "the royal workshop: daylight pouring in from above as through a skylight, sawdust haze, warm work-lamp pools over the benches and the pit, warm light washing up the columns, walnut planks underfoot instead of the dark slate",
                 Look = new GameCourses.Look
                 {
                     Name = "Repair wing", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.95f, .97f, 1f), SunIntensity = 2.2f,
@@ -116,12 +120,12 @@ namespace ChessFight.PawnRush
                     FogColor = new Color(.7f, .68f, .66f), FogStart = 15f, FogEnd = 200f,
                     Exposure = .1f, Contrast = 28f, Saturation = 16f, ShaftIntensity = 1.6f, ShaftDensity = .045f,
                 },
-                Rig = new Rig { FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
+                Rig = new Rig { FloorTo = "PR_Mid_WalnutFloor", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
             new Map
             {
                 Key = "MG_E_RoyalLibrary",
-                Concept = "the bright reading room: cream daylight from above between the bookshelf towers, warm reading lamps and sconces, warm light up the columns, a polished floor holding the lamps",
+                Concept = "the bright reading room: cream daylight from above between the bookshelf towers, warm reading lamps and sconces, warm light up the columns, a polished herringbone parquet holding the lamps",
                 Look = new GameCourses.Look
                 {
                     Name = "Reading room", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(1f, .95f, .86f), SunIntensity = 2.2f,
@@ -129,12 +133,12 @@ namespace ChessFight.PawnRush
                     FogColor = new Color(.76f, .74f, .72f), FogStart = 12f, FogEnd = 180f,
                     Exposure = .1f, Contrast = 26f, Saturation = 18f, ShaftIntensity = 1.8f, ShaftDensity = .05f, ShaftTint = new Color(1f, .95f, .85f),
                 },
-                Rig = new Rig { FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
+                Rig = new Rig { FloorTo = "PR_Mid_Parquet", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
             new Map
             {
                 Key = "MG_F_ClockworkBallroom",
-                Concept = "the glamour ballroom: the chandeliers are the stars, great warm pools on the dance floor and sparkle, gold columns lit from below, cool daylight from above, a polished floor doubling the lamps",
+                Concept = "the glamour ballroom: the chandeliers are the stars, great warm pools on the dance floor and sparkle, gold columns lit from below, cool daylight from above, polished cream marble doubling the lamps",
                 Look = new GameCourses.Look
                 {
                     Name = "Ballroom", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.92f, .95f, 1f), SunIntensity = 2.2f,
@@ -142,12 +146,12 @@ namespace ChessFight.PawnRush
                     FogColor = new Color(.78f, .78f, .82f), FogStart = 25f, FogEnd = 260f,
                     Exposure = .1f, Contrast = 24f, Saturation = 20f, BloomIntensity = .95f, BloomThreshold = .8f, ShaftIntensity = 1.2f,
                 },
-                Rig = new Rig { FloorGloss = .85f, Lid = false, FixtureBoost = 4f, FixtureReach = 1.6f, LampIntensity = 4f, UplightIntensity = 4f, UplightMax = 20, GoalIntensity = 3f },
+                Rig = new Rig { FloorTo = "PR_Mid_BallroomMarble", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .85f, Lid = false, FixtureBoost = 4f, FixtureReach = 1.6f, LampIntensity = 4f, UplightIntensity = 4f, UplightMax = 20, GoalIntensity = 3f },
             },
             new Map
             {
                 Key = "MG_J_PalaceLaundry",
-                Concept = "the fresh washhouse: clean cool daylight from above into steam over the pools, the water's light on the tiles, warm sconces by the doors",
+                Concept = "the fresh washhouse: clean cool daylight from above into steam over the pools, the water's light on white tiles, warm sconces by the doors",
                 Look = new GameCourses.Look
                 {
                     Name = "Laundry", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.95f, .98f, 1f), SunIntensity = 2.2f,
@@ -155,7 +159,7 @@ namespace ChessFight.PawnRush
                     FogColor = new Color(.86f, .9f, .92f), FogStart = 10f, FogEnd = 160f,
                     Exposure = .1f, Contrast = 20f, Saturation = 18f, ShaftIntensity = 1.4f, ShaftDensity = .04f, ShaftTint = new Color(.95f, .98f, 1f),
                 },
-                Rig = new Rig { FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
+                Rig = new Rig { FloorTo = "PR_Mid_WhiteTile", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
             // ---- course 3: the castle's heart, solemn and grand, each hall its own
             new Map
@@ -277,6 +281,10 @@ namespace ChessFight.PawnRush
         readonly List<(Light light, Kind kind)> ours = new List<(Light, Kind)>();
         // The floors' materials and their own smoothness (put back when the upgrade is off).
         readonly Dictionary<Material, float> floors = new Dictionary<Material, float>();
+        // The floor slots FloorFrom names (renderer, slot, the material the map put there) and what is on them now.
+        readonly List<(Renderer renderer, int slot, Material original)> floorSlots = new List<(Renderer, int, Material)>();
+        string floorKey = "", floorFrom = "";
+        Material floorMade;
         static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
         readonly List<Fixture> fixtures = new List<Fixture>();
         readonly List<(Renderer renderer, ShadowCastingMode mode)> glass = new List<(Renderer, ShadowCastingMode)>();
@@ -398,6 +406,68 @@ namespace ChessFight.PawnRush
             LateUpdate();
         }
 
+        static string Plain(string name) => name.EndsWith(" (Gfx)") ? name.Substring(0, name.Length - 6) : name;
+
+        // The floor FloorFrom names as the rig wants it now: the FloorTo material (dressed as the upgrade dresses it)
+        // or the map's own, times FloorTint (a copy for this section), or the map's own back when the upgrade is off.
+        void Floors(bool on)
+        {
+            var rig = map.Rig;
+            // FloorFrom changed (or first): the earlier floor back, then the slots of the one named now, wherever this
+            // section lays it.
+            if ((rig.FloorFrom ?? "") != floorFrom)
+            {
+                foreach (var (r, slot, original) in floorSlots)
+                {
+                    if (r == null) continue;
+                    var back = r.sharedMaterials;
+                    if (slot < back.Length) back[slot] = original;
+                    r.sharedMaterials = back;
+                }
+                floorSlots.Clear();
+                floorFrom = rig.FloorFrom ?? "";
+                floorKey = "";
+                if (floorFrom.Length > 0)
+                    foreach (var r in GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        var mats = r.sharedMaterials;
+                        for (int i = 0; i < mats.Length; i++)
+                            if (mats[i] != null && Plain(mats[i].name) == floorFrom) floorSlots.Add((r, i, mats[i]));
+                    }
+            }
+            string key = on ? rig.FloorTo + "|" + rig.FloorTint : "";
+            if (key == floorKey || floorSlots.Count == 0) return;
+            floorKey = key;
+            if (floorMade != null) Destroy(floorMade);
+            floorMade = null;
+            Material want = null;
+            if (on)
+            {
+                var source = floorSlots[0].original;
+                if (!string.IsNullOrEmpty(rig.FloorTo))
+                {
+                    var to = Resources.Load<Material>("PawnRushMiniGames/Materials/" + rig.FloorTo);
+                    if (to != null) source = GameSurfaces.Dressed(to);
+                }
+                want = source;
+                if (rig.FloorTint != Color.white && source.HasProperty("_BaseColor"))
+                {
+                    floorMade = new Material(source) { name = source.name + " (" + map.Look.Name + ")", hideFlags = HideFlags.DontSave };
+                    var c = source.GetColor("_BaseColor");
+                    floorMade.SetColor("_BaseColor", new Color(c.r * rig.FloorTint.r, c.g * rig.FloorTint.g, c.b * rig.FloorTint.b, c.a));
+                    want = floorMade;
+                }
+            }
+            foreach (var (r, slot, original) in floorSlots)
+            {
+                if (r == null) continue;
+                var mats = r.sharedMaterials;
+                if (slot >= mats.Length) continue;
+                mats[slot] = on ? want : original;
+                r.sharedMaterials = mats;
+            }
+        }
+
         int Count(Kind kind)
         {
             int n = 0;
@@ -514,6 +584,7 @@ namespace ChessFight.PawnRush
                 else f.light.intensity = f.intensity * (on ? rig.FixtureBoost : 1f);
             }
             if (lid != null) lid.enabled = on && rig.Lid;
+            Floors(on);
             foreach (var kv in floors)
                 if (kv.Key != null) kv.Key.SetFloat(SmoothnessId, on && rig.FloorGloss > 0f ? Mathf.Max(kv.Value, rig.FloorGloss) : kv.Value);
             foreach (var (r, mode) in glass)

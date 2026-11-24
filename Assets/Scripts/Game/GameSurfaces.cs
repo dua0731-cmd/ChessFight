@@ -218,6 +218,18 @@ namespace ChessFight.Game
             return changed;
         }
 
+        /// <summary>A material as the upgrade dresses it in Play: its Gfx Lit twin (its surface set, its relief), or
+        /// itself (not URP Lit, no set or relief, or Gfx Lit missing). For a material a script puts on later (GfxMapLights'
+        /// floors).</summary>
+        public static Material Dressed(Material m)
+        {
+            if (m == null) return null;
+            if (urpLit == null) urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            if (gfxLit == null) gfxLit = Shader.Find("ChessFight/Gfx Lit");
+            if (gfxLit == null || !gfxLit.isSupported || !Ready || !LitOn || m.shader != urpLit) return m;
+            return Twin(m);
+        }
+
         // The material on Gfx Lit with everything else as it was, or the material itself when it wears no set. Only
         // material assets (positive instance ids): a material made at run time (renderer.material, new Material) is
         // one a script holds and changes, and must stay the one on the renderer.
