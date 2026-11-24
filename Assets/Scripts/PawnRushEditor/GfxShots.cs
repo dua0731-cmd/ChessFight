@@ -407,10 +407,10 @@ namespace ChessFight.PawnRush.Editor
                 GameGrade.ShaftDensity = F("shaftd", GameGrade.ShaftDensity);
                 GameGrade.ShaftAnisotropy = F("shaftg", GameGrade.ShaftAnisotropy);
                 GameProbes.On = F("probes", 1f) > .5f;
-                // course=0: courses 2 and 3 without their light (GameCourses); c2.Field=v / c3.Field=v set a look's
-                // number (colours and ways as r|g|b), every other look's numbers as the run found them.
+                // course=0: the indoor maps without their own light (GameCourses, GfxMapLights); <map>.<Field>=v sets
+                // one number of a map's look or rig (colours and ways as r|g|b), every other as the run found it.
                 GameCourses.On = F("course", 1f) > .5f;
-                CourseKeys(s);
+                MapKeys(s);
                 // ground=0: the paving without its tufts and pebbles (GfxGround).
                 GfxGround.On = F("ground", 1f) > .5f;
                 GameCharacters.Ambient = F("cama", GameCharacters.Ambient);
@@ -471,33 +471,40 @@ namespace ChessFight.PawnRush.Editor
                 if (F("gfx", 1f) > .5f) GameCharacters.Show(F("char", 1f) > .5f);
             }
 
-            static Dictionary<string, object> courseBase;
+            static Dictionary<string, object> mapBase;
 
-            // c2.SunIntensity=2.4 or c3.SunColor=1|.6|.3: one number of a course's look (GameCourses.Look) for this
-            // look; every number not given goes back to how the run found it.
-            static void CourseKeys(Dictionary<string, string> s)
+            // MG_F_ClockworkBallroom.SunIntensity=2.4 or WarRoom.GoalColor=1|.8|.5: one number of a map's look
+            // (GameCourses.Look) or rig (GfxMapLights.Rig) for this look; every number not given goes back to how the run
+            // found it. The map is GfxMapLights.Maps' Key (Course2 / Course3 for the defaults).
+            static void MapKeys(Dictionary<string, string> s)
             {
-                var fields = typeof(GameCourses.Look).GetFields(BindingFlags.Public | BindingFlags.Instance);
-                var looks = new[] { ("c2.", GameCourses.Course2), ("c3.", GameCourses.Course3) };
-                if (courseBase == null)
+                var maps = new List<(string key, object look, object rig)> { ("Course2", GfxMapLights.Course2Default.Look, GfxMapLights.Course2Default.Rig), ("Course3", GfxMapLights.Course3Default.Look, GfxMapLights.Course3Default.Rig) };
+                foreach (var m in GfxMapLights.Maps) maps.Add((m.Key, m.Look, m.Rig));
+                if (mapBase == null)
                 {
-                    courseBase = new Dictionary<string, object>();
-                    foreach (var (prefix, look) in looks)
-                        foreach (var f in fields) courseBase[prefix + f.Name] = f.GetValue(look);
+                    mapBase = new Dictionary<string, object>();
+                    foreach (var (key, look, rig) in maps)
+                        foreach (var o in new[] { look, rig })
+                            foreach (var f in o.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance)) mapBase[key + "." + f.Name] = f.GetValue(o);
                 }
-                foreach (var (prefix, look) in looks)
-                    foreach (var f in fields)
-                    {
-                        object value = courseBase[prefix + f.Name];
-                        if (s.TryGetValue(prefix + f.Name, out var text))
+                foreach (var (key, look, rig) in maps)
+                    foreach (var o in new[] { look, rig })
+                        foreach (var f in o.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
                         {
-                            var parts = text.Split('|').Select(x => float.Parse(x, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
-                            if (f.FieldType == typeof(float)) value = parts[0];
-                            else if (f.FieldType == typeof(Color)) value = new Color(parts[0], parts[1], parts[2], 1f);
-                            else if (f.FieldType == typeof(Vector3)) value = new Vector3(parts[0], parts[1], parts[2]);
+                            object value = mapBase[key + "." + f.Name];
+                            if (s.TryGetValue(key + "." + f.Name, out var text))
+                            {
+                                var parts = text.Split('|');
+                                float P(int i) => float.Parse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture);
+                                if (f.FieldType == typeof(float)) value = P(0);
+                                else if (f.FieldType == typeof(int)) value = (int)P(0);
+                                else if (f.FieldType == typeof(bool)) value = P(0) > .5f;
+                                else if (f.FieldType == typeof(Color)) value = new Color(P(0), P(1), P(2), 1f);
+                                else if (f.FieldType == typeof(Vector3)) value = new Vector3(P(0), P(1), P(2));
+                                else if (f.FieldType == typeof(string)) value = text;
+                            }
+                            f.SetValue(o, value);
                         }
-                        f.SetValue(look, value);
-                    }
                 GameCourses.Refresh();
             }
 
@@ -998,7 +1005,7 @@ namespace ChessFight.PawnRush.Editor
                 string Rgb(Color c) => string.Format(CultureInfo.InvariantCulture, "({0:0.000} {1:0.000} {2:0.000})", c.r, c.g, c.b);
                 notes.AppendLine($"ambient {section} {(look.Length > 0 ? look : "-")}: up {Rgb(cols[0])} side {Rgb(cols[1])} down {Rgb(cols[2])}, "
                     + $"mode {RenderSettings.ambientMode}, intensity {RenderSettings.ambientIntensity:0.00}, sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}"
-                    + $"; camera at {cam.transform.position}; courses {GameCourses.Weight2:0.00} {GameCourses.Weight3:0.00}");
+                    + $"; camera at {cam.transform.position}; map light {GameCourses.Current} {GameCourses.Weight:0.00}");
             }
 
             // The sections in at once (as many as a round has, and more), then what the upgrade's look-rounds cost: each

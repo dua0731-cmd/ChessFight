@@ -10,9 +10,8 @@ namespace ChessFight.PawnRush
     /// JY-gfx (2026-11-24): the graphics upgrade's look at a round's sections as they come in. A round lays its
     /// sections out under a switched-off holder and switches them on together; this watch finds each switched-on
     /// section once and:
-    ///   - hands course 2's and course 3's sections to GameCourses (their course's sun, ambient, haze, grade and
-    ///     shafts), the section's box in its own frame with it; the Royal Library and the Observatory keep their own
-    ///     light (RoyalLibraryLighting, RoyalObservatoryLighting);
+    ///   - hands course 2's and course 3's sections to GfxMapLights (each map's own light: its look and its rig); the
+    ///     Royal Library and the Observatory keep their own light (RoyalLibraryLighting, RoyalObservatoryLighting);
     ///   - hands course 1's to GfxGround (tufts and pebbles on the paving);
     ///   - wakes the upgrade's looks over the scene's renderers (GameSurfaces, GameGrass, GameCharacters), which
     ///     otherwise look only every ten seconds.
@@ -55,32 +54,12 @@ namespace ChessFight.PawnRush
                 if (course == 1) GfxGround.Request(section);
                 bool own = false;
                 foreach (var n in OwnLight) own |= section.name.Contains(n);
-                if ((course == 2 || course == 3) && !own && Box(section.transform, out var box)) GameCourses.Add(section.transform, box, course);
+                if ((course == 2 || course == 3) && !own) GfxMapLights.Dress(section, course);
             }
             if (!fresh) return;
             GameSurfaces.Wake();
             GameGrass.Wake();
             GameCharacters.Wake();
-        }
-
-        // The section's drawn parts as a box in its own frame (anything bigger than a hall, a backdrop, left out).
-        static bool Box(Transform frame, out Bounds box)
-        {
-            box = new Bounds();
-            bool any = false;
-            foreach (var r in frame.GetComponentsInChildren<Renderer>(false))
-            {
-                if (!r.enabled || r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) continue;
-                var b = r.bounds;
-                if (b.size.x > 300f || b.size.z > 300f) continue;
-                for (int i = 0; i < 8; i++)
-                {
-                    var corner = frame.InverseTransformPoint(new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z));
-                    if (!any) { box = new Bounds(corner, Vector3.zero); any = true; }
-                    else box.Encapsulate(corner);
-                }
-            }
-            return any;
         }
 
         // Sections come in as a round is laid out: look when a scene loads and every two seconds (only the sections, a
