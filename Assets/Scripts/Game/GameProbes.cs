@@ -7,7 +7,8 @@ namespace ChessFight.Game
     /// <summary>
     /// JY-gfx (2026-11-24): reflections of the place instead of the sky, as the render lab's box probes did for the hall
     /// (JY-look fcb0d582), for every section: a few box-projected reflection probes laid along where the game's camera
-    /// goes, each rendered once when it is laid (its faces over a few frames), the oldest reused. Marble, gold, glass
+    /// goes, each rendered once when it is laid (one face a frame, over 14 frames: laying one at once cost a 7 ms frame in
+    /// the editor, a hitch every 26 m), the oldest reused. Marble, gold, glass
     /// and wet-looking floors then show the hall or the court they are in, not a blue sky indoors. The PC quality level
     /// has realtime probes off, so while the upgrade is on in the round's scenes they are turned on (and back off when
     /// it is off or Play ends). GameLook's one scene-wide probe stays under these (importance 1 against 2).
@@ -54,7 +55,7 @@ namespace ChessFight.Game
             var probe = Lay(Eye(camera));
             probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.NoTimeSlicing;
             probe.RenderProbe();
-            probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.AllFacesAtOnce;
+            probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.IndividualFaces;
         }
 
         static void Use()
@@ -83,7 +84,7 @@ namespace ChessFight.Game
                 probe = go.AddComponent<ReflectionProbe>();
                 probe.mode = ReflectionProbeMode.Realtime;
                 probe.refreshMode = ReflectionProbeRefreshMode.ViaScripting;
-                probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.AllFacesAtOnce;
+                probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.IndividualFaces;
                 probe.resolution = Resolution;
                 probe.hdr = true;
                 probe.boxProjection = true;

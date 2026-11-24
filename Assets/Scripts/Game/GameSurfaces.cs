@@ -272,10 +272,23 @@ namespace ChessFight.Game
                      "sign", "doll", "soap", "checker", "board" }, 5, .6f),
         };
 
-        // Renderers keep coming (sections are dressed as a round goes): look just after a scene loads, then every two
-        // seconds (only renderers not seen before are dressed).
+        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): look on the next frame and again a
+        /// second later.</summary>
+        public static void Wake()
+        {
+            pending = 2;
+            pendingAt = 0f;
+        }
+
+        static int pending;
+        static float pendingAt;
+
+        // Renderers come in when a scene loads and when a round lays out its sections (Wake): look then, and every ten
+        // seconds for anything else (only renderers not seen before are dressed). A look over every renderer of a round
+        // is a few milliseconds, too much for every two seconds.
         sealed class Watch : MonoBehaviour
         {
+            const float Every = 10f;
             float next;
             void OnEnable() => SceneManager.sceneLoaded += Loaded;
             void OnDisable() => SceneManager.sceneLoaded -= Loaded;
@@ -293,8 +306,17 @@ namespace ChessFight.Game
             }
             void Update()
             {
-                if (Time.realtimeSinceStartup < next) return;
-                next = Time.realtimeSinceStartup + 2f;
+                float now = Time.realtimeSinceStartup;
+                if (pending > 0 && now >= pendingAt)
+                {
+                    pending--;
+                    pendingAt = now + 1f;
+                    next = now + Every;
+                    Dress(LitOn && enabled);
+                    return;
+                }
+                if (now < next) return;
+                next = now + Every;
                 Dress(LitOn && enabled);
             }
         }

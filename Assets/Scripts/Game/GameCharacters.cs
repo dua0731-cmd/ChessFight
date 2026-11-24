@@ -90,13 +90,8 @@ namespace ChessFight.Game
         /// <summary>Every piece not seen yet given its smooth mesh (or its flat one back when the look is off).</summary>
         public static void Sweep()
         {
+            SweepSkinned();
             bool smooth = On && shown && GameGfx.Upgrade;
-            foreach (var r in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                if (!seen.Add(r.GetInstanceID()) || !Wears(r)) continue;
-                var mesh = Swap(r.sharedMesh, smooth);
-                if (mesh != null && mesh != r.sharedMesh) r.sharedMesh = mesh;
-            }
             foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (!seen.Add(r.GetInstanceID()) || !Wears(r)) continue;
@@ -106,6 +101,24 @@ namespace ChessFight.Game
                 if (mesh != null && mesh != filter.sharedMesh) filter.sharedMesh = mesh;
             }
         }
+
+        /// <summary>The skinned pieces only (the players, their ragdolls): few, and quick to find.</summary>
+        public static void SweepSkinned()
+        {
+            bool smooth = On && shown && GameGfx.Upgrade;
+            foreach (var r in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (!seen.Add(r.GetInstanceID()) || !Wears(r)) continue;
+                var mesh = Swap(r.sharedMesh, smooth);
+                if (mesh != null && mesh != r.sharedMesh) r.sharedMesh = mesh;
+            }
+        }
+
+        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): every piece looked at on the next
+        /// frame.</summary>
+        public static void Wake() => woken = true;
+
+        static bool woken;
 
         // The mesh to wear: the smooth copy (made once) or the flat original.
         static Mesh Swap(Mesh mesh, bool smooth)
@@ -186,18 +199,37 @@ namespace ChessFight.Game
             return m > 1e-30f ? v / m : Vector3.zero;
         }
 
-        // Pieces keep coming (players, ragdolls, the lobby's line-up): look every second.
+        // Pieces keep coming (players, ragdolls, the lobby's line-up). The skinned ones every second (finding them is
+        // nearly free); the mesh ones (statues, line-ups) when a scene loads, when a round's sections come in (Wake) and
+        // every ten seconds: finding every mesh renderer of a round is a few milliseconds.
         sealed class Watch : MonoBehaviour
         {
-            float next;
+            float next, nextAll;
 
-            void Start() => next = Time.realtimeSinceStartup + .5f;
+            void Start()
+            {
+                next = Time.realtimeSinceStartup + .5f;
+                nextAll = next;
+            }
+
+            void OnEnable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded += Loaded;
+            void OnDisable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Loaded;
+            void Loaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode) => Wake();
 
             void LateUpdate()
             {
-                if (Time.realtimeSinceStartup < next) return;
-                next = Time.realtimeSinceStartup + 1f;
-                Sweep();
+                float now = Time.realtimeSinceStartup;
+                if (woken || now >= nextAll)
+                {
+                    woken = false;
+                    nextAll = now + 10f;
+                    next = now + 1f;
+                    Sweep();
+                    return;
+                }
+                if (now < next) return;
+                next = now + 1f;
+                SweepSkinned();
             }
         }
     }

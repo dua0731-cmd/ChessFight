@@ -252,19 +252,43 @@ namespace ChessFight.Game
             }
         }
 
-        // Lawns keep coming (sections are dressed as a round goes): look every two seconds; follow every frame.
+        /// <summary>Something new came in (a round's sections, GfxHallLight's watch): look half a second on and again a
+        /// second after that (GameSurfaces looks on the frames between).</summary>
+        public static void Wake()
+        {
+            pending = 2;
+            pendingAt = Time.realtimeSinceStartup + .5f;
+        }
+
+        static int pending;
+        static float pendingAt;
+
+        // Lawns come in when a scene loads and when a round lays out its sections (Wake): look then, and every ten
+        // seconds for anything else, five seconds apart from GameSurfaces' own look; follow every frame.
         sealed class Watch : MonoBehaviour
         {
+            const float Every = 10f;
             float next;
 
-            // A second after GameSurfaces' own look, so the two scans never share a frame.
             void Start() => next = Time.realtimeSinceStartup + 1f;
+            void OnEnable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded += Loaded;
+            void OnDisable() => UnityEngine.SceneManagement.SceneManager.sceneLoaded -= Loaded;
+            void Loaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode) => Wake();
 
             void LateUpdate()
             {
                 Follow();
-                if (Time.realtimeSinceStartup < next) return;
-                next = Time.realtimeSinceStartup + 2f;
+                float now = Time.realtimeSinceStartup;
+                if (pending > 0 && now >= pendingAt)
+                {
+                    pending--;
+                    pendingAt = now + 1f;
+                    next = now + Every * .5f;
+                    Grow();
+                    return;
+                }
+                if (now < next) return;
+                next = now + Every;
                 Grow();
             }
         }

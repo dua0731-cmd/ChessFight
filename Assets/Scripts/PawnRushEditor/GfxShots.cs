@@ -39,6 +39,7 @@ namespace ChessFight.PawnRush.Editor
         const string ActiveKey = "GfxShots.Active", CodeKey = "GfxShots.Code", StartKey = "GfxShots.Start";
         const string OutKey = "GfxShots.Out", TagKey = "GfxShots.Tag", SectionsKey = "GfxShots.Sections", SizeKey = "GfxShots.Size";
         const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa", LineupKey = "GfxShots.Lineup";
+        const string TimeKey = "GfxShots.Time", ScanKey = "GfxShots.Scan";
         const float GiveUpSeconds = 1500f;
 
         static GfxShots()
@@ -73,6 +74,12 @@ namespace ChessFight.PawnRush.Editor
             SessionState.SetBool(LineupKey, System.Environment.GetCommandLineArgs().Contains("-gfxLineup"));
             // -gfxSpots 1,0wide: only these spots of each section.
             SessionState.SetString(SpotsKey, Arg("-gfxSpots") ?? "");
+            // -gfxTime 60: the cost instead of pictures. Every spot and look drawn 60 more times, each waited out on the
+            // GPU, in times_tag.csv; and the frame a new GameProbes probe is laid in, where probes are on.
+            SessionState.SetInt(TimeKey, int.TryParse(Arg("-gfxTime"), out var frames) ? frames : 0);
+            // -gfxScan all (or a,b,c): those sections in at once before the pictures, and what the upgrade's runtime
+            // look-rounds over every renderer cost then (scan_tag.txt).
+            SessionState.SetString(ScanKey, Arg("-gfxScan") ?? "");
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             // The scene's own round, playtest and camera off: the sections come in one at a time.
             foreach (var go in scene.GetRootGameObjects())
@@ -115,10 +122,13 @@ namespace ChessFight.PawnRush.Editor
 
         sealed class Runner : MonoBehaviour
         {
-            readonly StringBuilder notes = new StringBuilder();
+            readonly StringBuilder notes = new StringBuilder(), times = new StringBuilder();
+            readonly Dictionary<int, RenderTexture> targets = new Dictionary<int, RenderTexture>();
             Camera cam;
-            int width, height, pictures, failures;
+            int width, height, pictures, failures, runMsaa, timed;
             string folder, tag;
+            RenderTexture tiny;
+            Texture2D tinyRead;
 
             IEnumerator Start()
             {
@@ -160,6 +170,21 @@ namespace ChessFight.PawnRush.Editor
                 // A camera that draws into a texture takes its MSAA from the texture.
                 var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = pipe != null ? pipe.msaaSampleCount : 1 };
                 target.Create();
+                runMsaa = target.antiAliasing;
+                targets[runMsaa] = target;
+                float shadows0 = pipe != null ? pipe.shadowDistance : 0f;
+                int cascades0 = pipe != null ? pipe.shadowCascadeCount : 1;
+                int timeFrames = SessionState.GetInt(TimeKey, 0);
+                if (timeFrames > 0)
+                {
+                    tiny = new RenderTexture(4, 4, 0, RenderTextureFormat.ARGB32);
+                    tiny.Create();
+                    tinyRead = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+                    times.AppendLine("section,spot,look,msaa,shadow_m,cascades,frames,total_median_ms,total_p90_ms,cpu_median_ms");
+                    notes.AppendLine($"timing on {SystemInfo.graphicsDeviceName} ({SystemInfo.graphicsDeviceType}), {width}x{height}, {timeFrames} frames a look, each waited out on the GPU");
+                }
+                string scan = SessionState.GetString(ScanKey, "");
+                if (scan.Length > 0) yield return Scan(scan);
 
                 foreach (var name in SessionState.GetString(SectionsKey, "").Split(',').Select(s => s.Trim()).Where(s => s.Length > 0))
                 {
@@ -180,6 +205,8 @@ namespace ChessFight.PawnRush.Editor
                     // The URP Lit materials on Gfx Lit now (GameSurfaces' watch does it every two seconds anyway).
                     GameSurfaces.Dress(GameSurfaces.LitOn);
                     GameGrass.Grow();
+                    // A palace hall's own light (GfxHallLight's watch looks only every two seconds).
+                    GfxHallLight.Find();
                     var spots = Spots(section, name);
                     var pawns = Pawns(spots);
                     var lineup = SessionState.GetBool(LineupKey, false) ? Lineup(spots, name) : null;
@@ -193,16 +220,32 @@ namespace ChessFight.PawnRush.Editor
                         foreach (var (tuneName, settings) in tunes)
                         {
                             Look(settings);
+                            // msaa=1, shd=40, casc=2: the pipeline's MSAA and shadows for this look (the game before the
+                            // upgrade had MSAA off and 40 m of shadows in 2 cascades; the switch does not touch them).
+                            int samples = settings.TryGetValue("msaa", out var ms) && int.TryParse(ms, out var m) ? Mathf.Max(1, m) : runMsaa;
+                            if (pipe != null)
+                            {
+                                pipe.msaaSampleCount = samples;
+                                pipe.shadowDistance = settings.TryGetValue("shd", out var sd) && float.TryParse(sd, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : shadows0;
+                                pipe.shadowCascadeCount = settings.TryGetValue("casc", out var sc) && int.TryParse(sc, out var c) ? c : cascades0;
+                            }
+                            var rt = Target(samples);
                             Reflect();
                             // The place's own reflections where this picture is (GameProbes; probes=0 to compare).
                             GameProbes.Now(cam);
                             // A few frames at the spot: the zone lights, the shadow cascades, the exposure settle.
                             for (int i = 0; i < 8; i++)
                             {
-                                Draw(target);
+                                Draw(rt);
                                 yield return null;
                             }
-                            Capture(target, tuneName.Length > 0 ? $"{spot.name}_{tag}_{tuneName}" : $"{spot.name}_{tag}");
+                            if (spot == spots[0]) Ambient(name, tuneName);
+                            if (timeFrames > 0)
+                            {
+                                yield return Clock(rt, name, spot.name, tuneName, samples, timeFrames);
+                                if (spot == spots[0] && GameProbes.On && GameGfx.Upgrade) yield return ProbeSpike(rt, name, tuneName);
+                            }
+                            else Capture(rt, tuneName.Length > 0 ? $"{spot.name}_{tag}_{tuneName}" : $"{spot.name}_{tag}");
                         }
                     }
                     var sun = ZoneLight.Sun != null ? ZoneLight.Sun : RenderSettings.sun;
@@ -216,20 +259,27 @@ namespace ChessFight.PawnRush.Editor
                 }
                 // Everything a look changed back as the run found it (the renderer asset above all).
                 Look(new Dictionary<string, string>());
+                if (pipe != null)
+                {
+                    pipe.msaaSampleCount = msaa0;
+                    pipe.shadowDistance = shadows0;
+                    pipe.shadowCascadeCount = cascades0;
+                }
                 var ssao = Ssao();
                 if (ssao != null) notes.AppendLine($"ssao: intensity {Field(ssao, "Intensity"):0.00}, radius {Field(ssao, "Radius"):0.00}, direct {Field(ssao, "DirectLightingStrength"):0.00}");
                 var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
                 if (pipeline != null)
                     notes.AppendLine($"pipeline {pipeline.name}: HDR {pipeline.supportsHDR}, shadows {pipeline.shadowDistance} m in {pipeline.shadowCascadeCount}, "
                         + $"grading {pipeline.colorGradingMode}, MSAA {pipeline.msaaSampleCount}");
-                notes.AppendLine($"pictures {pictures}, failed {failures}");
+                notes.AppendLine($"pictures {pictures}, timed looks {timed}, failed {failures}");
                 File.WriteAllText(Path.Combine(folder, $"notes_{tag}.txt"), notes.ToString());
+                if (timeFrames > 0) File.WriteAllText(Path.Combine(folder, $"times_{tag}.csv"), times.ToString());
                 Debug.Log("[GfxShots]\n" + notes);
                 ZoneLight.Instant = false;
                 Time.timeScale = 1f;
-                target.Release();
-                if (pipe != null) pipe.msaaSampleCount = msaa0;
-                SessionState.SetInt(CodeKey, failures == 0 && pictures > 0 ? 0 : 1);
+                foreach (var rt in targets.Values) if (rt != null) rt.Release();
+                if (tiny != null) tiny.Release();
+                SessionState.SetInt(CodeKey, failures == 0 && pictures + timed > 0 ? 0 : 1);
                 EditorApplication.isPlaying = false;
             }
 
@@ -334,6 +384,9 @@ namespace ChessFight.PawnRush.Editor
                 GameGrade.ShaftDensity = F("shaftd", GameGrade.ShaftDensity);
                 GameGrade.ShaftAnisotropy = F("shaftg", GameGrade.ShaftAnisotropy);
                 GameProbes.On = F("probes", 1f) > .5f;
+                // hall=0: the palace halls without their own light (GfxHallLight); halls=1.3: theirs brighter.
+                GfxHallLight.On = F("hall", 1f) > .5f;
+                GfxHallLight.Scale = F("halls", GfxHallLight.Scale);
                 GameCharacters.Ambient = F("cama", GameCharacters.Ambient);
                 GameCharacters.Gloss = F("camg", GameCharacters.Gloss);
                 GameCharacters.Rim = F("camr", GameCharacters.Rim);
@@ -579,6 +632,164 @@ namespace ChessFight.PawnRush.Editor
                     }
                 }
                 return root;
+            }
+
+            // The texture a look draws into: one per MSAA sample count.
+            RenderTexture Target(int samples)
+            {
+                if (targets.TryGetValue(samples, out var rt) && rt != null) return rt;
+                rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = samples };
+                rt.Create();
+                targets[samples] = rt;
+                return rt;
+            }
+
+            // Waits until the GPU has drawn everything asked of it so far (a tiny read back of the picture).
+            void Sync(RenderTexture rt)
+            {
+                Graphics.Blit(rt, tiny);
+                var active = RenderTexture.active;
+                RenderTexture.active = tiny;
+                tinyRead.ReadPixels(new Rect(0f, 0f, 4f, 4f), 0, 0, false);
+                RenderTexture.active = active;
+            }
+
+            static double Median(List<double> sorted) => sorted.Count > 0 ? sorted[sorted.Count / 2] : 0.0;
+            static double P90(List<double> sorted) => sorted.Count > 0 ? sorted[Mathf.Min(sorted.Count - 1, (int)(sorted.Count * .9f))] : 0.0;
+
+            // What one frame of this look costs at this spot: the camera drawn `frames` times, each waited out (CPU and
+            // GPU one after the other, so more than a game frame that overlaps them; the differences between looks are
+            // what to read). cpu: until the draw was handed to the GPU.
+            IEnumerator Clock(RenderTexture rt, string section, string spot, string look, int samples, int frames)
+            {
+                var total = new List<double>(frames);
+                var cpu = new List<double>(frames);
+                Sync(rt);
+                for (int i = 0; i < frames; i++)
+                {
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    Draw(rt);
+                    cpu.Add(watch.Elapsed.TotalMilliseconds);
+                    Sync(rt);
+                    total.Add(watch.Elapsed.TotalMilliseconds);
+                    yield return null;
+                }
+                total.Sort();
+                cpu.Sort();
+                var pipe = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+                times.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5},{6},{7:0.00},{8:0.00},{9:0.00}", section, spot,
+                    look.Length > 0 ? look : "-", samples, pipe != null ? pipe.shadowDistance : 0f, pipe != null ? pipe.shadowCascadeCount : 0, frames,
+                    Median(total), P90(total), Median(cpu)));
+                timed++;
+            }
+
+            // The frame a new probe is laid in, as GameProbes lays one every 26 m of the camera's way (all six faces in
+            // one frame): the frame times around it, with nothing else drawn, against the frames before.
+            IEnumerator ProbeSpike(RenderTexture rt, string section, string look)
+            {
+                int rate0 = Application.targetFrameRate;
+                Application.targetFrameRate = -1;
+                var before = new List<double>();
+                for (int i = 0; i < 6; i++)
+                {
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    yield return null;
+                    Sync(rt);
+                    before.Add(watch.Elapsed.TotalMilliseconds);
+                }
+                var probe = new GameObject("Gfx shots timed probe").AddComponent<ReflectionProbe>();
+                probe.mode = ReflectionProbeMode.Realtime;
+                probe.refreshMode = ReflectionProbeRefreshMode.ViaScripting;
+                probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.AllFacesAtOnce;
+                probe.resolution = 256;
+                probe.hdr = true;
+                probe.boxProjection = true;
+                probe.size = new Vector3(64f, 36f, 64f);
+                probe.nearClipPlane = .3f;
+                probe.farClipPlane = 400f;
+                probe.importance = 2;
+                var forward = cam.transform.forward;
+                forward.y = 0f;
+                probe.transform.position = cam.transform.position + (forward.sqrMagnitude > 1e-4f ? forward.normalized * 10f : Vector3.zero);
+                probe.RenderProbe();
+                var after = new List<double>();
+                for (int i = 0; i < 6; i++)
+                {
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    yield return null;
+                    Sync(rt);
+                    after.Add(watch.Elapsed.TotalMilliseconds);
+                }
+                Destroy(probe.gameObject);
+                Application.targetFrameRate = rate0;
+                before.Sort();
+                notes.AppendLine(string.Format(CultureInfo.InvariantCulture, "probe {0} {1}: frames before median {2:0.00} ms; after laying one: {3}", section,
+                    look.Length > 0 ? look : "-", Median(before), string.Join(" ", after.Select(a => a.ToString("0.00", CultureInfo.InvariantCulture)))));
+            }
+
+            // The ambient light (the harmonics every unlit side gets) at the first spot: up, sideways, down.
+            void Ambient(string section, string look)
+            {
+                var dirs = new[] { Vector3.up, Vector3.forward, Vector3.down };
+                var cols = new Color[3];
+                RenderSettings.ambientProbe.Evaluate(dirs, cols);
+                string Rgb(Color c) => string.Format(CultureInfo.InvariantCulture, "({0:0.000} {1:0.000} {2:0.000})", c.r, c.g, c.b);
+                notes.AppendLine($"ambient {section} {(look.Length > 0 ? look : "-")}: up {Rgb(cols[0])} side {Rgb(cols[1])} down {Rgb(cols[2])}, "
+                    + $"mode {RenderSettings.ambientMode}, intensity {RenderSettings.ambientIntensity:0.00}, sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}"
+                    + $"; camera at {cam.transform.position}; {GfxHallLight.Describe()}");
+            }
+
+            // The sections in at once (as many as a round has, and more), then what the upgrade's look-rounds cost: each
+            // runs over every renderer of the scene on a timer (GameSurfaces and GameGrass every 2 s, GameCharacters every 1 s).
+            IEnumerator Scan(string which)
+            {
+                var names = which == "all"
+                    ? Directory.GetFiles(PrefabFolder, "*.prefab").Select(p => Path.GetFileNameWithoutExtension(p)).ToList()
+                    : which.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+                var made = new List<GameObject>();
+                Time.timeScale = 1f;
+                foreach (var n in names)
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + n + ".prefab");
+                    if (prefab != null) made.Add(Instantiate(prefab, new Vector3(1200f * (made.Count + 1), 0f, 0f), Quaternion.identity));
+                }
+                for (int i = 0; i < 60; i++) yield return null;
+                Time.timeScale = 0f;
+                var sb = new StringBuilder();
+                int renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
+                int meshRenderers = FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None).Length;
+                sb.AppendLine($"scan: {made.Count} sections in at once, {renderers} renderers ({meshRenderers} active mesh renderers)");
+                Measure(sb, "GameSurfaces.Dress (every 2 s)", () => GameSurfaces.Dress(GameSurfaces.LitOn));
+                Measure(sb, "GameGrass.Grow (every 2 s)", () => GameGrass.Grow());
+                Measure(sb, "GameCharacters.Sweep (every 1 s)", GameCharacters.Sweep);
+                Measure(sb, "  of which FindObjectsByType<MeshRenderer>(Include)", () => FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+                Measure(sb, "  of which FindObjectsByType<SkinnedMeshRenderer>(Include)", () => FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+                Measure(sb, "GfxHallLight.Find (every 2 s)", GfxHallLight.Find);
+                Measure(sb, "  of which FindObjectsByType<PawnRushSection>", () => FindObjectsByType<PawnRushSection>(FindObjectsSortMode.None));
+                File.WriteAllText(Path.Combine(folder, $"scan_{tag}.txt"), sb.ToString());
+                notes.Append(sb);
+                foreach (var go in made) Destroy(go);
+                for (int i = 0; i < 4; i++) yield return null;
+            }
+
+            static void Measure(StringBuilder sb, string what, System.Action act)
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                long a0 = System.GC.GetAllocatedBytesForCurrentThread();
+                act();
+                double first = watch.Elapsed.TotalMilliseconds;
+                long a1 = System.GC.GetAllocatedBytesForCurrentThread();
+                var list = new List<double>();
+                for (int i = 0; i < 10; i++)
+                {
+                    watch.Restart();
+                    act();
+                    list.Add(watch.Elapsed.TotalMilliseconds);
+                }
+                long a2 = System.GC.GetAllocatedBytesForCurrentThread();
+                list.Sort();
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}: first {1:0.00} ms ({2} KB), then median {3:0.00} ms, max {4:0.00} ms, {5} KB a call",
+                    what, first, (a1 - a0) / 1024, Median(list), list[list.Count - 1], (a2 - a1) / 10 / 1024));
             }
 
             void Draw(RenderTexture target)
