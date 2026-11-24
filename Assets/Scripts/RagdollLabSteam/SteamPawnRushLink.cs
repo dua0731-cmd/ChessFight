@@ -774,12 +774,20 @@ namespace ChessFight.RagdollLab.Net
             float now = Time.realtimeSinceStartup;
             foreach (var r in runners.Values)
             {
-                if (r.Id == session.Self) continue;
+                if (r.Id == session.Self)
+                {
+                    if (r.Pawn != null) r.Pawn.SkillViewLag = 0f;
+                    continue;
+                }
                 if (r.Bot || r.InputAt < 0f || now - r.InputAt > InputTimeout)
                 {
+                    r.Pawn.SkillViewLag = 0f;
                     r.Pawn.SetInput(default);
                     continue;
                 }
+                // R819: how old this player's picture of the others is (its round trip and playback delay, as it reports them):
+                // the skills' target searches look that far back too (RagdollPawn.SkillLag.cs).
+                r.Pawn.SkillViewLag = SkillLag.Seconds(r.Input.roundTripMs, r.Input.delayMs);
                 Played(r, now);
                 var input = r.Input.Held();
                 input.interact = false;   // F is the skill key on this course

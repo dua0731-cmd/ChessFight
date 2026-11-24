@@ -2883,6 +2883,30 @@ public static class NetworkCoreTests
                 Check(SwordWire.Size(big)>1011,"over before fitting");
                 SwordWire.Fit(big,1024-13); Check(SwordWire.Size(big)<=1011&&big.Fighters.Count==12&&big.Fighters[0].Skill&&big.Fighters[0].Edge&&big.Fighters[0].Glow,"fitted, the first ones whole: "+SwordWire.Size(big));
                 Check(SwordWire.BaseBytes==17&&SwordWire.SkillBytes==28&&SwordWire.EdgeBytes==29&&SwordWire.GlowBytes==16&&SwordWire.CollapseBytes==26,"sizes as documented"); });
+            Test("R819 skill look-back: a client's round trip and playback delay, capped, none before it reports", () => {
+                Check(SkillLag.Seconds(0,0)==0f,"nothing reported yet: no look-back");
+                Check(Math.Abs(SkillLag.Seconds(40,70)-(40+70+SkillLag.ExtraMs)/1000f)<1e-5f,"a home link: 40 + 70 + the averages");
+                Check(Math.Abs(SkillLag.Seconds(0,70)-(70+SkillLag.ExtraMs)/1000f)<1e-5f,"a loopback link: the playback delay alone");
+                Check(SkillLag.Seconds(300,160)==SkillLag.MostSeconds&&SkillLag.MostSeconds<=0.25f,"a far link stops at the cap (a dodge still counts)");
+                Check(SkillLag.Seconds(-5,-5)==0f,"nonsense is no look-back");
+                // a runner at the sprint speed (9.6 m/s) is this far past the picture a 40 ms / 70 ms client aimed at
+                float gap=9.6f*SkillLag.Seconds(40,70); Check(gap>1.2f&&gap<1.4f,"the gap the look-back closes: "+gap); });
+            Test("R819 skill trail: by time, a straight line between samples, the ends held, the oldest let go", () => {
+                var t=new SkillTrail(48,9); var row=new float[9]; var got=new float[9];
+                Check(!t.At(1,got)&&t.Count==0,"empty: nothing to give");
+                // a piece running along x at 9.6 m/s and jumping (a 0.9 m arc over 0.86 s), 120 steps a second
+                for(int i=0;i<200;i++){double time=i/120.0; for(int k=0;k<9;k++) row[k]=0f; row[0]=(float)(9.6*time); row[1]=(float)Math.Max(0,4.2*time-4.905*time*time); row[2]=k2(i); t.Add(time,row);}
+                Check(t.Count==48&&Math.Abs(t.Newest-199/120.0)<1e-9&&Math.Abs(t.Oldest-152/120.0)<1e-9,"the newest 48 steps kept");
+                double now=199/120.0;
+                Check(t.At(now-0.1,got)&&Math.Abs(got[0]-9.6*(now-0.1))<1e-3,"0.1 s back: 0.96 m behind ("+got[0]+")");
+                Check(t.At(now-0.1-1/240.0,got)&&Math.Abs(got[0]-9.6*(now-0.1-1/240.0))<1e-3,"between two steps: on the line");
+                Check(t.At(now+1,got)&&Math.Abs(got[0]-9.6*now)<1e-3,"after the newest: the newest");
+                Check(t.At(0,got)&&Math.Abs(got[0]-9.6*(152/120.0))<1e-3,"before the oldest: the oldest");
+                t.Add(now,row); t.Add(now-1,row); Check(t.Count==48&&Math.Abs(t.Newest-now)<1e-9,"a step not after the newest is dropped");
+                var u=new SkillTrail(4,1); for(int i=0;i<9;i++) u.Add(i,new float[]{i*2f});
+                Check(u.At(6.5,got)&&Math.Abs(got[0]-13f)<1e-5,"a small ring wrapped twice reads in time order: "+got[0]);
+                bool threw=false; try{new SkillTrail(1,9);}catch(ArgumentOutOfRangeException){threw=true;} Check(threw,"a trail needs two samples");
+                float k2(int i)=>i*0.01f; });
             Test("Playback delay: 70 ms on a steady link, more as the link wobbles, never past 160 ms", () => {
                 var d=new PlaybackDelay(); var rng=new Random(4);
                 for(int i=0;i<300;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*2,(uint)(i*33.3));

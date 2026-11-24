@@ -532,12 +532,20 @@ namespace ChessFight.RagdollLab
             float now = Time.realtimeSinceStartup;
             foreach (var pair in pawns)
             {
-                if (pair.Key == NetSelf || pair.Value == null) continue;
+                if (pair.Value == null) continue;
+                if (pair.Key == NetSelf)
+                {
+                    pair.Value.SkillViewLag = 0f;
+                    continue;
+                }
                 if (!inputs.TryGetValue(pair.Key, out var r) || now - r.received > InputTimeout)
                 {
+                    pair.Value.SkillViewLag = 0f;
                     pair.Value.SetInput(default);
                     continue;
                 }
+                // R819: the skills' target searches look back as far as this player's picture is old (RagdollPawn.SkillLag.cs).
+                pair.Value.SkillViewLag = SkillLag.Seconds(r.reportRtt, r.reportDelay);
                 Played(r, now);
                 // The held buttons as they are; the presses one per physics step, so two quick ones stay two.
                 var input = r.input.Held();
