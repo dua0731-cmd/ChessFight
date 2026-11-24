@@ -18,7 +18,8 @@ namespace ChessFight.PawnRush.Editor
     //         to climb or one that must not be), and the waltz's arithmetic (where couple 0's queen stands still, how close
     //         two couples come).
     //   Play: the hall alone in Play Mode for 14 s: every waiter, cloche, couple, pleat and rope read each frame (how far
-    //         they go), the tablecloth's pulls and the tower's overflows counted, errors logged, and pictures.
+    //         they go), the cloche lifts' hoist lines and the chocolate's ripples (R828) followed, the tablecloth's pulls
+    //         counted, errors logged, and pictures.
     // Nobody runs the course here: whether a pawn can ride a tray, catch a queen or hang on the curtain is for a person.
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.GrandBanquetHallValidation.RunBatch
     //         [-banquetNoCapture] -logFile <file>              (Tools/Run-GrandBanquetHall.ps1 does it on a copy of the project)
@@ -160,15 +161,23 @@ namespace ChessFight.PawnRush.Editor
                 couples = content.GetComponentsInChildren<WaltzCouple>(true).Length, pleats = content.GetComponentsInChildren<CurtainPleat>(true).Length,
                 ropes = content.GetComponentsInChildren<RopeLine>(true).Length, tricks = content.GetComponentsInChildren<TableclothTrick>(true).Length,
                 flows = content.GetComponentsInChildren<ChocolateFlow>(true).Length, lamps = content.GetComponentsInChildren<ClockLamp>(true).Length,
-                ladders = 0,
+                ripples = content.GetComponentsInChildren<ChocolateRipples>(true).Length, hoists = content.GetComponentsInChildren<HoistLine>(true).Length,
+                ladders = 0, posts = 0,
                 great = content.Find("BH great chandelier") != null ? 1 : 0, cps = content.GetComponentsInChildren<CourseCheckpoint>(true).Length,
                 kills = content.GetComponentsInChildren<KillVolume>(true).Length, gaps = content.GetComponentsInChildren<IntendedGap>(true).Length;
-            foreach (Transform t in content) if (t.name.EndsWith(" ladder") || t.name.StartsWith("BH fountain ladder")) ladders++;
+            foreach (Transform t in content)
+            {
+                if (t.name.EndsWith(" ladder") || t.name.StartsWith("BH fountain ladder")) ladders++;
+                if (t.name == "BH dumbwaiter post") posts++;
+            }
+            // R828: the loft's ladder is the only one (the fountain's are gone); the cloche lifts hang from a frame of three posts
+            // on four cables and two chains.
             Check(id + " what is there", waiters == 4 && cloches == 4 && couples == 10 && pleats == 20 && ropes == 10 && great == 1 && tricks == 1 && flows == 3 &&
-                  ladders == 7 && lamps == 4 && cps == 8 && kills == 5 && gaps == 6,
-                  "waiters " + waiters + " (4), cloche lifts' parts " + cloches + " (2 platters + 2 cloches), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes +
-                  " (10) and the great one " + great + " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3), ladders " + ladders +
-                  " (6 on the fountain + the loft's), lamps " + lamps + " (4), checkpoints " + cps + " (8), kill volumes " + kills + " (5), meant gaps " + gaps + " (6); colliders " +
+                  ripples == 3 && ladders == 1 && posts == 3 && hoists == 6 && lamps == 4 && cps == 8 && kills == 5 && gaps == 6,
+                  "waiters " + waiters + " (4), cloche lifts' parts " + cloches + " (2 platters + 2 cloches), their frame's posts " + posts + " (3) and hoist lines " + hoists +
+                  " (4 cables + 2 chains), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes + " (10) and the great one " + great +
+                  " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3) with ripples " + ripples + " (3), ladders " + ladders +
+                  " (the loft's only), lamps " + lamps + " (4), checkpoints " + cps + " (8), kill volumes " + kills + " (5), meant gaps " + gaps + " (6); colliders " +
                   content.GetComponentsInChildren<Collider>(true).Length);
         }
 
@@ -194,7 +203,9 @@ namespace ChessFight.PawnRush.Editor
             Face("the pantry's wall over the table's east edge", false, new Vector3(22f, 6f, 40f), e1);
             Face("the long table's east side", false, new Vector3(28.6f, 2f, 25f), w1);
             Face("the guests' chairs (from the dance floor)", false, new Vector3(10f, 1f, 30f), e1);
-            Face("a cloche's band (not climbed)", false, new Vector3(20f, B.PlatterTop + B.ClocheOpen + .8f, B.ClocheZ), w1);
+            Face("a cloche's band (not climbed)", false, new Vector3(19.6f, B.PlatterTop + B.ClocheOpen + .8f, B.ClocheZ), w1);
+            Face("the dumbwaiter's middle post (not climbed)", false, new Vector3(B.GantryX[1] - .6f, 12f, B.ClocheZ), e1);
+            Face("the dumbwaiter's west post (not climbed)", false, new Vector3(B.GantryX[0] + .6f, 12f, B.ClocheZ), w1);
             Face("the dais's front", false, new Vector3(0f, 5f, 54f), n1);
             Face("the queen's gown (couple 0, from the dais's edge)", true, new Vector3(-4.25f, 6f, 55.9f), s1);
             Face("the king (couple 0)", false, new Vector3(-4.25f, 4f, 46.8f), n1);
@@ -203,12 +214,10 @@ namespace ChessFight.PawnRush.Editor
             Face("a double bass", false, new Vector3(-21.5f, 4f, 19f), w1);
             Face("the buffet's east side", false, new Vector3(-21.5f, 4f, 10f), w1);
             Face("the buffet's north side (from the pit)", false, new Vector3(-28f, 4f, 19.5f), s1);
+            // R828: the chocolate is the way up again, every tier from its north (no ladders on the fountain).
+            Face("chocolate tier 1 (its north side)", true, new Vector3(B.Fountain.x, 9f, B.Fountain.y + B.TierR[0] + 2f), s1);
             Face("chocolate tier 2", true, new Vector3(B.Fountain.x, 11f, B.Fountain.y + B.TierR[1] + 2f), s1);
-            {
-                float a = B.LadderAt[0][1] * Mathf.Deg2Rad;
-                var o = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                Face("a fountain ladder (the first tier's)", true, new Vector3(B.Fountain.x, 9f, B.Fountain.y) + o * (B.TierR[0] + 2f), -o);
-            }
+            Face("chocolate tier 3 (its north side)", true, new Vector3(B.Fountain.x, 15f, B.Fountain.y + B.TierR[2] + 2f), s1);
             Face("the loft's ladder", true, new Vector3(B.Fountain.x, 18.5f, 8f), s1);
             Face("the loft's face beside its ladder", false, new Vector3(-20f, 18.5f, 8f), s1);
             Face("the head table's side", false, new Vector3(12f, 12f, B.TablesZ0 - 2f), n1);
@@ -394,6 +403,18 @@ namespace ChessFight.PawnRush.Editor
                 Note(rope.name, frame.InverseTransformPoint(rope.Point(rope.Length, ObstacleClock.Now)).z);
             foreach (var lamp in content.GetComponentsInChildren<ClockLamp>())
                 if (lamp.Lit(ObstacleClock.Now)) lampLit[lamp.transform.parent.name] = lampLit.TryGetValue(lamp.transform.parent.name, out float f) ? f + 1f : 1f;
+            // R828: how far each hoist line's hook goes and how far the line's ends are from its hook and its pulley (a line
+            // left behind would be metres off; one stretched a frame before this read, a few centimetres); how far down each
+            // tier's ripples run.
+            foreach (var line in content.GetComponentsInChildren<HoistLine>())
+            {
+                var t = line.transform;
+                Vector3 low = t.position - t.up * t.lossyScale.y, high = t.position + t.up * t.lossyScale.y;
+                Note("hoist ends off", Mathf.Max((low - line.HookPoint).magnitude, (high - line.PulleyPoint).magnitude));
+                Note("hoist " + line.name, frame.InverseTransformPoint(line.HookPoint).y);
+            }
+            foreach (var r in content.GetComponentsInChildren<ChocolateRipples>())
+                for (int i = 0; i < r.Count; i++) Note("ripples " + r.name, r.Ring(i).localPosition.y);
             samples++;
         }
 
@@ -460,6 +481,34 @@ namespace ChessFight.PawnRush.Editor
                 lampsOk &= share > .2f && share < .45f;
             }
             Check("P9 the boarding and alighting lamps light as queens stop", lampsOk, lampLit.Count + " of 4 lit at all;" + lit);
+            // R828: the cables' hooks (the platters' lugs) go from the table to the dais, the chains' (the cloches' handles) from
+            // shut on the platter at the table to open over it at the dais, and every line stays on its hook and its pulley.
+            int hoists = 0, hoistsOk = 0;
+            string hoistWorst = "";
+            foreach (var kv in ranges)
+            {
+                if (!kv.Key.StartsWith("hoist BH")) continue;
+                hoists++;
+                bool chain = kv.Key.Contains("chain");
+                float handle = B.ClocheBand + 1.35f, low = B.PlatterTop + (chain ? handle : .07f), high = B.DaisY + (chain ? B.ClocheOpen + handle : .07f);
+                bool ok = Near(kv.Value.x, low, .08f) && Near(kv.Value.y, high, .08f);
+                if (ok) hoistsOk++; else hoistWorst += " " + kv.Key.Substring(6) + " " + F(kv.Value.x) + ".." + F(kv.Value.y);
+            }
+            float off = ranges.TryGetValue("hoist ends off", out var o) ? o.y : float.NaN;
+            Check("P10 the cloche lifts hang from the frame: cables and chains follow them from the table to the dais", hoists == 6 && hoistsOk == 6 && off < .35f,
+                  hoistsOk + " of " + hoists + " lines' hooks over the whole way, the farthest a line's end was from its hook or pulley " + F(off) + " m" + hoistWorst);
+            int tiers = 0, tiersOk = 0;
+            string rippleRuns = "";
+            foreach (var r in content.GetComponentsInChildren<ChocolateRipples>())
+            {
+                tiers++;
+                var run = ranges.TryGetValue("ripples " + r.name, out var v) ? v : new Vector2(float.NaN, float.NaN);
+                float lowest = -ChocolateRipples.Half - .01f;   // a ring's middle: its top 1 cm under the rim, a tier's height on
+                bool ok = Near(run.x, lowest, .1f) && Near(run.y, r.Height + lowest, .1f);
+                if (ok) tiersOk++;
+                rippleRuns += " " + r.name.Substring(3) + " " + F(run.x) + ".." + F(run.y) + " of " + F(r.Height) + " m";
+            }
+            Check("P11 the chocolate's ripples run down the whole of each tier, rim to foot", tiers == 3 && tiersOk == 3, tiersOk + " of " + tiers + ";" + rippleRuns);
             Log("      " + F(samples) + " frames watched");
         }
 
@@ -493,6 +542,7 @@ namespace ChessFight.PawnRush.Editor
             Shot("hall_13_from_the_loft", new Vector3(-2.6f, 21.6f, 4f), new Vector3(0f, 18f, 30f), 66f, false);
             Shot("hall_14_chandelier_close", new Vector3(-8.5f, 21f, 13.5f), new Vector3(-2.6f, 19.8f, B.ScreenZ + B.RopeAlong[1]), 42f, false);
             Shot("hall_15_great_chandelier", new Vector3(10f, 22f, 28f), new Vector3(0f, 18.5f, B.GreatZ), 52f, false);
+            Shot("hall_16_cloche_lifts", new Vector3(20f, 9f, 41.5f), new Vector3(20f, 10.5f, B.ClocheZ), 66f, false);
         }
 
         static void Capture(string name, Vector3 eye, Vector3 target, Vector3 up, float fieldOfView, bool flat, int width, int height, bool hideShell)

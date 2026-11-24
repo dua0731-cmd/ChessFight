@@ -61,8 +61,8 @@ namespace ChessFight.PawnRush
         // One route for both teams, each point with the beat of the leg that starts there: the passage, the counter, the
         // second waiter's tray and stack (off before the pantry door), the runner, the west cloche lift up to the dais, the
         // dais to the boarding place, couple 0's queen from the dais to the stage (its pose on the clock), the curtain's
-        // leading south pleat, the fountain's west ladders, the leap to the loft's ladder, the west line of chandeliers with
-        // the great chandelier between, the balcony.
+        // leading south pleat, the fountain's north side against the flow (R828: no ladders on it), the leap to the loft's
+        // ladder, the west line of chandeliers with the great chandelier between, the balcony.
         static void ProgressRoute(CourseBuilder b)
         {
             var route = new List<Vector3>();
@@ -107,27 +107,22 @@ namespace ChessFight.PawnRush
             P(BeatCurtain, CurtainX + .4f, BassTop + .9f, CurtainZ - .5f);
             P(BeatCurtain, CurtainX + .4f, BassTop + .9f, CurtainOpenS);
             P(BeatCurtain, CurtainX + .4f, BuffetY, CurtainOpenS);
-            // Up the fountain's west ladders (the first tier's north-west one, the second's west, the top's south-west), round
-            // each ring between them, then from the top's south edge onto the loft's ladder.
+            // Up the fountain's north side, the way in from the curtain: onto the bowl, then each tier straight up against the
+            // flow and over its rim onto its ring; round the crown on the top, and from its south edge onto the loft's ladder.
             var f = Fountain;
-            Vector3 On(float degrees, float r, float y) =>
-                V(f.x + r * Mathf.Cos(degrees * Mathf.Deg2Rad), y, f.y + r * Mathf.Sin(degrees * Mathf.Deg2Rad));
-            void At(Vector3 v) => P(BeatFountain, v.x, v.y, v.z);
             P(BeatFountain, f.x, BuffetY, f.y + BowlR + .5f);
-            float below = BowlTop, from = 110f;
-            float[] use = { 110f, 180f, 250f };
+            P(BeatFountain, f.x, BowlTop, f.y + BowlR - .3f);
+            float below = BowlTop;
             for (int k = 0; k < TierR.Length; k++)
             {
-                float a2 = use[k], ring = k == 0 ? BowlR - .3f : (TierR[k - 1] + TierR[k] + LadderOut) * .5f;
-                for (float d = from; d < a2 - 1f; d += 30f) At(On(d, ring, below));
-                At(On(a2, TierR[k] + LadderOut + .25f, below));
-                At(On(a2, TierR[k] + LadderOut + .25f, TierTop[k]));
-                At(On(a2, TierR[k] - .4f, TierTop[k]));
+                P(BeatFountain, f.x, below, f.y + TierR[k] + .25f);
+                P(BeatFountain, f.x, TierTop[k], f.y + TierR[k] + .25f);
+                P(BeatFountain, f.x, TierTop[k], f.y + TierR[k] - .4f);
                 below = TierTop[k];
-                from = a2;
             }
             int last = TierR.Length - 1;
-            At(On(270f, TierR[last] - .2f, TierTop[last]));
+            P(BeatFountain, f.x - .85f, TierTop[last], f.y);
+            P(BeatFountain, f.x, TierTop[last], f.y - TierR[last] + .2f);
             P(BeatFountain, f.x, TierTop[last] + .6f, ScreenZ + LadderOut + .2f);
             P(BeatFountain, f.x, LoftY, ScreenZ + LadderOut + .2f);
             P(BeatChandeliers, f.x, LoftY, ScreenZ - 1f);
@@ -208,7 +203,7 @@ namespace ChessFight.PawnRush
             Look.Sign(at, "초록 등이 켜지면 여왕이 멈춘다 — 난간 틈에서 드레스로 뛰어 붙어(우클릭) 어깨로", V(BanquetWaltz.BoardX + 2.6f, 12.9f, 59.6f), .8f, -90f);
             Look.Sign(at, "무대 앞의 초록 등이 켜질 때 무대로 건너 내린다", V(BanquetWaltz.BoardX, 12.4f, 56.1f), .7f, 180f);
             Look.Sign(at, "5. 무대 막: 콘트라베이스보다 높이(3.5 m) 올라 매달린다 · 막이 열리면 뷔페까지", V(-21.5f, 11.4f, 44f), .9f, -90f);
-            Look.Sign(at, "6. 초콜릿 분수: 초콜릿은 미끄러진다 — 금 사다리로 오른다 · 꼭대기 남쪽에서 회랑의 사다리로 뛰어 붙기", V(-27.7f, 19.8f, 15.5f), .85f, 180f);
+            Look.Sign(at, "6. 초콜릿 분수: 흘러내리는 초콜릿을 거슬러 한 층씩 오른다 · 꼭대기 남쪽에서 회랑의 사다리로 뛰어 붙기", V(-27.7f, 19.8f, 15.5f), .85f, 180f);
             Look.Sign(at, "7. 샹들리에: 끝이 가까이 오면 우클릭 · 이웃 줄이 마주 올 때 옮겨 잡기 · 가운데 큰 샹들리에에서 쉰다", V(-8f, 23.4f, 5.6f), .9f);
             Look.Sign(at, "8. 왕의 발코니: 마지막 샹들리에 끝에서 놓으면 도착", V(0f, BalconyY + 4.6f, BalconyZ0 - 2f), .9f);
         }

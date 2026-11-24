@@ -6,8 +6,9 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The grand banquet hall's devices that are not one moving body (대연회장, R815 design v0.4, R816 grey box): the
-    // magician's tablecloth trick, the chocolate fountain's flow, the lamps and the chandeliers' look. (R825: the champagne
-    // tower's overflow went with the tower - the user: "마지막 샴페인 구간은 빼자. 샹들리에를 넘어가면 끝".)
+    // magician's tablecloth trick, the chocolate fountain's flow and its ripples (R828), the cloche lifts' hoist lines (R828),
+    // the lamps and the chandeliers' look. (R825: the champagne tower's overflow went with the tower - the user: "마지막
+    // 샴페인 구간은 빼자. 샹들리에를 넘어가면 끝".)
     // Every one is timed by the shared obstacle clock; nothing here is sent.
 
     // 2. The magician's tablecloth trick. Every `period` seconds: the cloth lies, the drum rolls (the cloth turns red), the
@@ -133,11 +134,14 @@ namespace ChessFight.PawnRush
     }
 
     // 6. A tier of the chocolate fountain: it does not move, but says it does (IMovingSurface, as ConveyorBeltSurface), so a
-    //    climber on its chocolate is carried down at the flow's speed. R825: the chocolate flows all the way down every tier
-    //    (`stillBand` 0) and faster than a pawn climbs - it is not a way up; the gilded ladders on the fountain are (the
-    //    user: "한 단에서 반은 초코가 흐르고 반은 안흐른다는게 상식선에서 이해가 안 가", "사다리처럼 하든 뭘 하든 인식 가능하게").
-    //    `stillBand` (R817) leaves the last metres under the rim still; `outward` pushes whoever stands on the top off it.
-    //    This object is the tier's cylinder (YardKit.Cylinder: local y -1 .. 1).
+    //    climber on its chocolate is carried down at the flow's speed. R828: the chocolate flows down the whole of every tier
+    //    and is climbed against (0.3 m/s down, a pawn climbs at 1.2), as the design had it; ChocolateRipples shows it. R825
+    //    had made it faster than a climb and put ladders on the fountain (the user: "사다리를 초코분수에 넣으면 어떡해").
+    //    `stillBand` leaves the last bit under the rim still, where the hands are on the lip and the climb over it begins:
+    //    a hanging pawn is carried by its anchor, and the climb over starts with the anchor at most 0.25 m under the top
+    //    (RagdollPawn.TryStartTopOut), so a band of 0.45 m keeps the whole climb over from being carried back down (R817's
+    //    slip at the rim) and shows nothing (R817's 1.3 m pale band did: "반은 초코가 흐르고 반은 안흐른다").
+    //    `outward` pushes whoever stands on the top off it. This object is the tier's cylinder (YardKit.Cylinder: local y -1 .. 1).
     public sealed class ChocolateFlow : MonoBehaviour, IMovingSurface
     {
         [SerializeField] float down = .4f, outward, stillBand = 1.3f;
@@ -168,6 +172,93 @@ namespace ChessFight.PawnRush
         }
 
         public Quaternion DeltaRotation => Quaternion.identity;
+    }
+
+    // 6b. The flow's picture (R828): ripples that well up out of a tier's rim, run down its side at the flow's speed and
+    //     sink into the tier (or the bowl) under it - on the whole of every tier, so the chocolate is seen to flow everywhere
+    //     it is climbed. Only looks, on the clock (the same on every PC); the pull is ChocolateFlow's. This object sits on
+    //     the tier's axis at its foot; its rings are cylinders 0.14 m high (YardKit.Cylinder).
+    public sealed class ChocolateRipples : MonoBehaviour
+    {
+        [SerializeField] float height = 2.8f, radius = 3.3f, speed = .3f;
+        [SerializeField] Transform[] rings = new Transform[0];
+
+        // A ring is 0.14 m high, comes out of the rim over its first 0.3 m and then stands 5 cm proud of the chocolate.
+        public const float Half = .07f;
+        const float Proud = .05f, Swell = .3f;
+
+        public float Height => height;
+        public int Count => rings.Length;
+        public Transform Ring(int i) => rings[i];
+
+        // Call on an INACTIVE object, the rings its children.
+        public void Configure(float tierHeight, float tierRadius, float metresPerSecond, Transform[] ringPictures)
+        {
+            height = tierHeight;
+            radius = tierRadius;
+            speed = metresPerSecond;
+            rings = ringPictures;
+            Pose(ObstacleClock.Now);
+        }
+
+        // How far under the rim ring `i` is at `time`: 0 .. height, the rings evenly apart.
+        public float Below(int i, double time)
+        {
+            double d = (speed * time + (double)i * height / Mathf.Max(1, rings.Length)) % height;
+            return (float)(d < 0.0 ? d + height : d);
+        }
+
+        void LateUpdate() => Pose(ObstacleClock.Now);
+
+        void Pose(double time)
+        {
+            for (int i = 0; i < rings.Length; i++)
+            {
+                if (rings[i] == null) continue;
+                float below = Below(i, time), d = 2f * (radius + Mathf.Lerp(-Proud, Proud, below / Swell));
+                // At 0 under the rim it is inside the tier; a whole tier on, inside the one under it: the wrap is not seen.
+                rings[i].localPosition = new Vector3(0f, height - Half - .01f - below, 0f);
+                rings[i].localScale = new Vector3(d, Half, d);
+            }
+        }
+    }
+
+    // 3b. A hoist line's picture (R828, the user: "은뚜껑을 들어올렸는데 전체가 올라오는건 이상하잖아" - the glove on the
+    //     cloche's handle seemed to lift the whole dish): a cable from a lug on a cloche lift's platter, or the chain from its
+    //     cloche's handle, up to a pulley under the dumbwaiter's beam, stretched every frame - the platter is seen hung from
+    //     the frame and the cloche lifted off it by its own chain. Only looks. This object is the line, a cylinder
+    //     (YardKit.Cylinder) built at its pulley as a child of the section's content.
+    public sealed class HoistLine : MonoBehaviour
+    {
+        [SerializeField] Transform load;
+        [SerializeField] Vector3 hook, pulley;
+        [SerializeField] float thickness = .07f;
+
+        public Vector3 HookPoint => load != null ? load.TransformPoint(hook) : transform.position;
+        public Vector3 PulleyPoint => transform.parent != null ? transform.parent.TransformPoint(pulley) : pulley;
+
+        public void Configure(Transform loadBody, Vector3 hookOnLoad, float lineThickness)
+        {
+            load = loadBody;
+            hook = hookOnLoad;
+            pulley = transform.localPosition;
+            thickness = lineThickness;
+            Stretch();
+        }
+
+        // After the lift's body has moved (and been interpolated) for this frame.
+        void LateUpdate() => Stretch();
+
+        void Stretch()
+        {
+            if (load == null) return;
+            var frame = transform.parent;
+            Vector3 from = frame != null ? frame.InverseTransformPoint(HookPoint) : HookPoint, d = pulley - from;
+            float length = d.magnitude;
+            transform.localPosition = (from + pulley) * .5f;
+            transform.localRotation = length > 1e-4f ? Quaternion.FromToRotation(Vector3.up, d / length) : Quaternion.identity;
+            transform.localScale = new Vector3(thickness, length * .5f, thickness);
+        }
     }
 
     // A lamp lit by the clock (R817): in a window of every `period` seconds, `from` .. `to` seconds round `at`. The

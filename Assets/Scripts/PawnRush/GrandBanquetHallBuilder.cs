@@ -13,12 +13,12 @@ namespace ChessFight.PawnRush
     //   entry, the screens passage and the servery (south)
     //   1 the waiters' parade: ride a tray past the counter, climb its plate stack, step off onto the long table
     //   2 the magician's tablecloth trick: north along the table, on a plate when the drum roll ends
-    //   3 the silver cloches: stand on the rim (or hang on the band) and be lifted to the royal dais
+    //   3 the cloche lifts: board a platter, ride it up inside the shut cloche to the royal dais (R825, R828)
     //   4 the waltz: jump onto a queen standing still in front of the dais, ride the dance round to the stage
     //   5 the stage curtain: climb it over the double basses and ride it open over the pit to the dessert buffet
-    //   6 the chocolate fountain: climb against the flow, four tiers; leap from the top to the lamplighters' loft
-    //   7 the chandeliers: two lines of six from the loft, north over the dance floor to the head table
-    //   8 the champagne tower: between the waves of overflow up to the king's balcony (the exit)
+    //   6 the chocolate fountain: climb against the flow, three tiers; leap from the top to the loft's ladder
+    //   7 the chandeliers: two lines from the loft, north over the dance floor by the great chandelier
+    //   8 the king's balcony, where the last ropes end (the exit; R825: the champagne tower is gone)
     //
     // Section frame: x east, y up, z north (the way in), metres; entry (0, 0, 0) in the middle of the south doorway, exit
     // (0, BalconyY, HallZ1). Every mover is a pure function of the obstacle clock (BanquetMovers, BanquetDevices,
@@ -50,6 +50,12 @@ namespace ChessFight.PawnRush
         public static readonly float[] ClocheX = { 17f, 23f };
         public const float ClocheZ = DaisZ - .1f - 2.2f, ClocheR = 2.2f, PlatterTop = TableY + .12f, ClocheOpen = 2f, ClocheBand = 1.6f;
         public const float ClocheRise = DaisY - PlatterTop;
+        // R828 (the user: "은뚜껑을 들어올렸는데 전체가 올라오는건 이상하잖아" - a glove on the handle seemed to lift the whole
+        // dish): what lifts them is shown. A dumbwaiter's frame stands over the table's north end - three slate posts (the
+        // table's west edge, between the lifts, on the pantry wall) and a beam 16.6 m up - and each platter hangs on two
+        // cables from lugs on its rim, each cloche on its own chain from its handle, over pulleys under the beam.
+        public static readonly float[] GantryX = { TableX0 + .15f, (ClocheX[0] + ClocheX[1]) * .5f, TableX1 - .15f };
+        public const float GantryY = 16.6f, CableX = 2.4f, PantryWallTop = 7.8f;
 
         // 5. The stage and its curtain. CurtainZ is where couple 0's queen stands still on the west straight 8.36 s after
         //    the dais (banquet_layout.py ALIGHT): the curtain's halves meet there.
@@ -63,17 +69,20 @@ namespace ChessFight.PawnRush
         public const float BassX = -23.95f, BassTop = 9.6f;
 
         // 6. The dessert buffet (south-west corner, at the stage's height) and the chocolate fountain on it: three tiers with
-        //    rings a metre deep (R817). R825: the chocolate flows down every tier from rim to foot, faster than a pawn climbs -
-        //    not a way up - and each tier has two gilded ladders up its side, the next tier's a quarter turn round the ring
-        //    (the user: "반은 초코가 흐르고 반은 안흐른다는게 상식선에서 이해가 안 가", "사다리처럼 하든 뭘 하든 인식 가능하게").
+        //    rings a metre deep (R817). R828 (the user: "사다리를 초코분수에 넣으면 어떡해"; R825 had made the chocolate too
+        //    fast to climb and put gilded ladders on the tiers): the chocolate flows down the whole of every tier, rim to foot,
+        //    and is climbed against, as designed - 0.3 m/s down against a 1.2 m/s climb: a pawn takes 3.0 s and 38 % of its
+        //    stamina a tier, a rook (0.7 of the climb speed) 5.0 s and 62 %, about R817's (3.0 s, 36 % · 65 %) that the user
+        //    climbed. Ripples run down the whole of it to show the flow (ChocolateRipples). Only the last 0.45 m under a rim,
+        //    where the hands are on the lip and the climb over it begins, does not pull - R817's slip at the rim stays fixed,
+        //    and nothing of it is seen (R817's 1.3 m pale band was: "한 단에서 반은 초코가 흐르고 반은 안흐른다는게 상식선에서
+        //    이해가 안 가").
         public const float BuffetX1 = -23.5f, BuffetZ0 = 3f, BuffetZ1 = 17f, BuffetY = StageY;
         public static readonly Vector2 Fountain = new Vector2(-27.7f, 9.2f);
-        public const float BowlR = 4.2f, BowlTop = 7.9f, Flow = 1.4f, DomeFlow = 0f, StillBand = 0f, LadderW = 1.2f, LadderOut = .3f;
+        public const float BowlR = 4.2f, BowlTop = 7.9f, Flow = .3f, DomeFlow = 0f, StillBand = .45f;
         public static readonly float[] TierR = { 3.3f, 2.3f, 1.3f };
         public static readonly float[] TierTop = { 10.733f, 13.567f, 16.4f };
-        // Each tier's two ladders, degrees from east toward north (90 = north, the way in from the curtain): the first tier's
-        // face the buffet's north end, the second's east and west, the top's south (toward the loft's ladder).
-        public static readonly float[][] LadderAt = { new[] { 70f, 110f }, new[] { 0f, 180f }, new[] { 250f, 290f } };
+        public const int Ripples = 4;   // on each tier, 0.71 m apart
 
         // 7. The chandeliers. R817 (the user: "샹들리에 코스가 너무 김"): two lines of three from the loft's edge to the
         //    great chandelier in the middle of the hall - a wide still ring to stand on, get the breath back and a
@@ -127,8 +136,9 @@ namespace ChessFight.PawnRush
         static Material Figure => Arena.Lit("M_BanquetFigure", Arena.Hex("#9A9284"), 0f, .85f);
         static Material Cloth => Arena.Lit("M_BanquetCloth", Arena.Hex("#EFE8D6"), 0f, .85f);
         static Material Runner => Arena.Lit("M_BanquetRunner", Arena.Hex("#7F8C42"), 0f, .85f);
-        // R825: the whole tier flows, so all of it is the dark, glossy chocolate.
+        // R825: the whole tier flows, so all of it is the dark, glossy chocolate; R828: with lighter ripples running down it.
         static Material ChocolateFlowing => Arena.Lit("M_BanquetChocolateFlowing", Arena.Hex("#3E2218"), 0f, .15f);
+        static Material ChocolateRipple => Arena.Lit("M_BanquetChocolateRipple", Arena.Hex("#7A4830"), 0f, .35f);
         static Material FallFloor => Arena.Lit("M_BanquetFallFloor", Arena.Hex("#3E3746"), 0f, .7f);
         static Material Brass => Arena.Lit("M_BanquetBrass", Arena.Hex("#C9A240"), .1f, .4f);
         static Material Candle => Arena.Lit("M_BanquetCandle", Arena.Hex("#FFC86A"), 1.4f, .5f);
@@ -286,8 +296,9 @@ namespace ChessFight.PawnRush
 
         // A cloche lift (ClocheLift, R825): the platter (a floor 4.4 m across, 0.12 m over the table; at the top level with
         // the dais and 0.1 m off its front) and over it the cloche - a hollow dome whose band is a ring of slate pieces
-        // reaching down to the platter when shut, open 2 m over it to walk under. Nothing of it is climbed. The glove that
-        // lifts the cloche and its sleeve are pictures.
+        // reaching down to the platter when shut, open 2 m over it to walk under. Nothing of it is climbed. R828: it hangs
+        // from the dumbwaiter's frame (DumbwaiterFrame) - the platter on two cables from brass lugs outside the band, the
+        // cloche on a chain from its handle (HoistLine, pictures); the glove and the sleeve that lifted it are gone.
         static void Cloches(CourseBuilder b)
         {
             const int ring = 20;
@@ -312,10 +323,45 @@ namespace ChessFight.PawnRush
                 YardKit.Ball(c, "BH cloche dome", V(0f, ClocheBand + .2f, 0f), ClocheR * 2f, Look.NoClimb, YardKit.Solid.None).transform.localScale =
                     V(ClocheR * 2f, 1.6f, ClocheR * 2f);
                 YardKit.Ball(c, "BH cloche handle", V(0f, ClocheBand + 1.05f, 0f), .6f, Brass, YardKit.Solid.None);
-                YardKit.Ball(c, "BH glove", V(0f, ClocheBand + 1.45f, 0f), 1f, Cloth, YardKit.Solid.None);
-                YardKit.Slab(c, "BH sleeve", V(0f, ClocheBand + 1.8f, 0f), V(0f, ClocheBand + 9f, -4.5f), .8f, .8f, Figure, YardKit.Solid.None);
                 c.gameObject.AddComponent<ClocheLift>().Configure(ClocheLift.Part.Cloche, ClocheRise, ClocheOpen, delay);
+
+                // What it hangs from: a cable from each lug (east and west, clear of the band) and the chain from the handle's top.
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    YardKit.Box(platter, "BH platter lug", V(s * (ClocheR + .18f), 0f, 0f), V(.36f, .14f, .3f), Brass, YardKit.Solid.None);
+                    Hoist(b, "BH platter cable " + side + (s < 0f ? "1" : "2"), platter, V(s * CableX, .07f, 0f), V(x + s * CableX, GantryY - .2f, ClocheZ),
+                          .07f, YardKit.Iron);
+                }
+                Hoist(b, "BH cloche chain " + side, c, V(0f, ClocheBand + 1.35f, 0f), V(x, GantryY - .2f, ClocheZ), .12f, Brass);
             }
+            DumbwaiterFrame(b);
+        }
+
+        // R828: the dumbwaiter's frame over the table's north end, on the platters' east - west line. Three slate posts, not
+        // climbed (on the table's west edge, between the lifts, on the pantry's wall over the table's east edge), a beam
+        // across them 16.6 m up - over the cloche's handle when it is open at the dais (15.35 m) - and under the beam a brass
+        // pulley over every cable and chain. The posts stand clear of the platters (0.5 m) and of the way on and off them.
+        static void DumbwaiterFrame(CourseBuilder b)
+        {
+            const float post = .3f;
+            foreach (float x in GantryX)
+            {
+                float foot = x > TableX1 - 1f ? PantryWallTop : TableY;
+                Wall(b, "BH dumbwaiter post", x - post * .5f, x + post * .5f, foot, GantryY, ClocheZ - post * .5f, ClocheZ + post * .5f);
+                Paint(b, "BH dumbwaiter post cap", V(x - .25f, GantryY + .35f, ClocheZ - .3f), V(x + .25f, GantryY + .5f, ClocheZ + .3f), Brass);
+            }
+            Wall(b, "BH dumbwaiter beam", TableX0, TableX1, GantryY, GantryY + .35f, ClocheZ - .25f, ClocheZ + .25f);
+            foreach (float cx in ClocheX)
+                foreach (float s in new[] { -1f, 0f, 1f })
+                    YardKit.Cylinder(b.parent, "BH dumbwaiter pulley", V(cx + s * CableX, GantryY - .2f, ClocheZ), Vector3.forward, .42f, .12f,
+                                     Brass, YardKit.Solid.None);
+        }
+
+        // A hoist line (HoistLine): built at its pulley (section frame), stretched every frame down to `hook` on `load`.
+        static void Hoist(CourseBuilder b, string name, Transform load, Vector3 hook, Vector3 pulley, float thickness, Material material)
+        {
+            var line = YardKit.Cylinder(b.parent, name, pulley, Vector3.up, thickness, 1f, material, YardKit.Solid.None);
+            line.AddComponent<HoistLine>().Configure(load, hook, thickness);
         }
 
         // ------------------------------------------------------------------ the royal dais and the head table
@@ -441,8 +487,8 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ 6. the dessert buffet and the chocolate fountain
 
         // The buffet's east edge is 4.1 m from a queen's shoulders at her stop beside it: too far to jump. Its skirts are not
-        // climbed. On it the fountain: a bowl (a 0.5 m step) and three tiers of flowing chocolate (it carries a climber down
-        // faster than it climbs), each with two gilded ladders up to its rim; their tops (rings a metre deep) are still.
+        // climbed. On it the fountain: a bowl (a 0.5 m step) and three tiers of chocolate flowing down from rim to foot, each
+        // climbed against the flow (R828), ripples running down the whole of it; their tops (rings a metre deep) are still.
         static void Buffet(CourseBuilder b)
         {
             Wall(b, "BH dessert buffet", HallX0, BuffetX1, 0f, BuffetY, BuffetZ0, BuffetZ1).AddComponent<CourseFloor>();
@@ -456,12 +502,13 @@ namespace ChessFight.PawnRush
                                             TierR[k] * 2f, TierTop[k] - below, ChocolateFlowing, YardKit.Solid.Solid);
                 tier.AddComponent<CourseFloor>();
                 tier.AddComponent<ChocolateFlow>().Configure(Flow, DomeFlow, StillBand);
-                // Its two ladders: gilded, from the tier below up to its rim.
-                foreach (float at in LadderAt[k])
-                {
-                    var out_ = V(Mathf.Cos(at * Mathf.Deg2Rad), 0f, Mathf.Sin(at * Mathf.Deg2Rad));
-                    Ladder(b, "BH fountain ladder " + (k + 1), V(f.x, 0f, f.y) + out_ * TierR[k], out_, below, TierTop[k], LadderW);
-                }
+                // Its ripples (pictures, ChocolateRipples): on its axis at its foot.
+                var ripples = Root(b, "BH chocolate ripples " + (k + 1), V(f.x, below, f.y));
+                var rings = new Transform[Ripples];
+                for (int i = 0; i < Ripples; i++)
+                    rings[i] = YardKit.Cylinder(ripples, "BH chocolate ripple", Vector3.zero, Vector3.up, TierR[k] * 2f, 2f * ChocolateRipples.Half, ChocolateRipple,
+                                                YardKit.Solid.None).transform;
+                ripples.gameObject.AddComponent<ChocolateRipples>().Configure(TierTop[k] - below, TierR[k], Flow, rings);
                 below = TierTop[k];
             }
             float top = TierTop[TierTop.Length - 1];
@@ -481,8 +528,9 @@ namespace ChessFight.PawnRush
         // Over the screens passage, 20 m up. Its face to the hall is not climbed; a lamplighter's ladder hangs from it in
         // front of the fountain (R825: "벽을 탈 수 있구나라는게 바로 생각이 안나" - the user did not see the face could be
         // climbed): 1.6 m from the fountain's top, its foot 1 m under it. Its rail leaves the ladder and the two rope lanes
-        // open. R817: it ends past the second rope lane (it ran the hall's width, 27 m of it going nowhere).
-        public const float LoftX0 = -31f, LoftX1 = 4.6f;
+        // open. R817: it ends past the second rope lane (it ran the hall's width, 27 m of it going nowhere). R828: it is the
+        // hall's only ladder (the fountain's went: "사다리를 초코분수에 넣으면 어떡해"); its board stands LadderOut proud.
+        public const float LoftX0 = -31f, LoftX1 = 4.6f, LadderOut = .3f;
 
         static void Loft(CourseBuilder b)
         {
@@ -494,9 +542,10 @@ namespace ChessFight.PawnRush
                 Wall(b, "BH loft rail", x.x, x.z, LoftY, LoftY + 1.1f, ScreenZ - .25f, ScreenZ);
         }
 
-        // A ladder up a face (R825): a climbable board LadderOut deep standing out of the face at `foot` (the face's point on
-        // the hall floor's level; x, z), facing `outward`, from y0 to y1, `width` across - orange, as every face to climb - with
-        // gilded rails and rungs on it (pictures). Its top is level with the floor over the face, so the climb ends on it.
+        // A ladder up a face (R825; R828: only the loft's): a climbable board LadderOut deep standing out of the face at
+        // `foot` (the face's point on the hall floor's level; x, z), facing `outward`, from y0 to y1, `width` across - orange,
+        // as every face to climb - with gilded rails and rungs on it (pictures). Its top is level with the floor over the
+        // face, so the climb ends on it.
         static void Ladder(CourseBuilder b, string name, Vector3 foot, Vector3 outward, float y0, float y1, float width)
         {
             var turn = Quaternion.LookRotation(outward, Vector3.up);
