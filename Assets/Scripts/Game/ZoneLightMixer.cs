@@ -47,6 +47,12 @@ namespace ChessFight.Game
         Color fogColor0;
         float fogStart0, fogEnd0, fogDensity0;
         readonly List<float> lastWeights = new List<float>();
+        // JY-gfx: the ambient light Apply wrote last. Anything else in the probe while places are in means the scene's own
+        // changed under the mix (the sky's light made again: DynamicGI.UpdateEnvironment finishes a frame or more after
+        // it is asked, e.g. right after the upgrade's switch while the camera stands in a place): noted as the scene's
+        // then, so a place scales the settled sky's light, not a half-made one.
+        SphericalHarmonicsL2 written;
+        bool wrote;
 
         void LateUpdate()
         {
@@ -59,8 +65,22 @@ namespace ChessFight.Game
                 return;
             }
             if (!captured) Capture();
+            else if (wrote && !Same(RenderSettings.ambientProbe, written))
+            {
+                probe0 = ambient0 = RenderSettings.ambientProbe;
+                ZoneLight.Renotes++;
+                lastWeights.Clear();
+            }
             if (Unchanged()) return;
             Apply(total);
+        }
+
+        static bool Same(SphericalHarmonicsL2 a, SphericalHarmonicsL2 b)
+        {
+            for (int rgb = 0; rgb < 3; rgb++)
+                for (int c = 0; c < 9; c++)
+                    if (Mathf.Abs(a[rgb, c] - b[rgb, c]) > 1e-5f + 1e-4f * Mathf.Abs(b[rgb, c])) return false;
+            return true;
         }
 
         // Standing weights are not applied again in a player (in the Editor they are: the looks may be tuned while
@@ -156,10 +176,19 @@ namespace ChessFight.Game
                 {
                     if (z.weight <= Off) continue;
                     float w = z.weight * share;
+                    soft |= z.SoftShadows;
+                    if (z.KeepSun)
+                    {
+                        // JY-gfx: the scene's own sun for this share, exactly (one time of day everywhere).
+                        colour += sunColor0 * w;
+                        intensity += sunIntensity0 * w;
+                        shadow += shadowStrength0 * w;
+                        keepWay += w;
+                        continue;
+                    }
                     colour += z.SunColor * w;
                     intensity += z.SunIntensity * w;
                     shadow += z.ShadowStrength * w;
-                    soft |= z.SoftShadows;
                     if (z.TurnSun) { way += Aligned(z.SunRotation, sunRotation0) * w; turn = true; }
                     else keepWay += w;
                 }
@@ -184,9 +213,11 @@ namespace ChessFight.Game
             // Ambient: blended as harmonics, so a little of a place is a little of its light and none is the scene's.
             var sh = ambient0 * rest;
             foreach (var z in Zones)
-                if (z.weight > Off) sh += z.AmbientSH() * (z.weight * share);
+                if (z.weight > Off) sh += (z.AmbientScale >= 0f ? Neutral(ambient0, z.AmbientNeutral, z.AmbientTint) * z.AmbientScale : z.AmbientSH()) * (z.weight * share);
             if (RenderSettings.ambientMode != AmbientMode.Skybox) RenderSettings.ambientMode = AmbientMode.Skybox;
             RenderSettings.ambientProbe = sh;
+            written = RenderSettings.ambientProbe;
+            wrote = true;
 
             // Haze: from the scene's linear fog, or from none (pushed past everything) when it had none.
             float fogged = 0f;
@@ -221,6 +252,20 @@ namespace ChessFight.Game
             else RestoreFog();
         }
 
+        // JY-gfx: ambient harmonics `t` of the way to their own grey times `tint` (each coefficient's colour toward its
+        // luminance; harmonics are linear in colour, so this tints the light from every direction alike).
+        static SphericalHarmonicsL2 Neutral(SphericalHarmonicsL2 sh, float t, Color tint)
+        {
+            t = Mathf.Clamp01(t);
+            if (t <= 0f) return sh;
+            for (int c = 0; c < 9; c++)
+            {
+                float l = .2126f * sh[0, c] + .7152f * sh[1, c] + .0722f * sh[2, c];
+                for (int rgb = 0; rgb < 3; rgb++) sh[rgb, c] = Mathf.Lerp(sh[rgb, c], l * tint[rgb], t);
+            }
+            return sh;
+        }
+
         // A rotation as a 4-vector on the same side as `near` (q and -q are the same turn).
         static Vector4 Aligned(Quaternion q, Quaternion near)
         {
@@ -242,6 +287,7 @@ namespace ChessFight.Game
         void Restore()
         {
             captured = false;
+            wrote = false;
             lastWeights.Clear();
             if (SceneManager.GetActiveScene() != scene) return;
             if (sun != null)

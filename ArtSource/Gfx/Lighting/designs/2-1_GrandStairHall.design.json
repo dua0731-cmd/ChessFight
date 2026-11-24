@@ -1,0 +1,426 @@
+{
+ "concept_en": "The grand entrance of light: a roofless stair court that climbs into the gold-lattice rotunda under the one morning sun. The key is the sun through the open nave and the dome's lattice, which casts real lattice patterns on the upper flight, the central landing and the dais. The race camera faces into the sun, so everything it sees face-on is in shade: the east wall, the drum walls and the gate. Hidden neutral daylight washes lift those surfaces until the walls read as bright as the floor, and two uplights make the north lattice glow cream-gold against the sky. Warmth stays in the team's candles, lanterns and chandelier, with their reach halved so the cream walls stay cream. The queen statue crowns the first flight. The gate between its two lanterns crowns the climb and is lit from high behind the player, and beyond it the sunlit runout ends at a lit exit portal.",
+ "concept_ko": "성의 정문다운 '빛의 대계단 궁정'입니다. 지붕이 열린 계단 홀과 금빛 격자 돔의 원형 홀을 아침 해 하나가 주광(키)으로 비추고, 격자 그림자가 위쪽 계단, 중앙 층계참, 왕좌 단 위에 실제 무늬로 떨어집니다. 해를 마주 보는 카메라에게 보이는 면, 곧 동쪽 벽, 원형 드럼 벽, 대문은 모두 그늘입니다. 그래서 숨은 중립 주광색 워시 7개(드럼 벽 4, 동쪽 벽 2, 현관 1)와 북쪽 층계참 바닥 조명 1개로 벽을 바닥만큼 밝히고, 업라이트 2개로 돔 북쪽 격자를 하늘 앞에서 크림·금빛으로 띄웁니다. 주인공은 첫 계단에서는 층계참의 여왕 석상, 그다음부터는 두 랜턴 사이의 대문과 왕실 발코니입니다(그림자 있는 스포트, 장의 약 2~2.5배). 출구 포털과 왕·나이트 석상은 보조 초점입니다. 지금 방식인 '따뜻한 업라이트로 모든 기둥과 벽 칠하기'와 자동 램프는 끄고, 따뜻한 빛은 팀의 촛대·랜턴·샹들리에에만 두되 도달거리를 절반으로 줄여(FixtureReach 0.5) 벽이 노랗게 물들지 않게 합니다. 다만 팀 조명이 이미 59개(샹들리에 전구만 20개)라 예산 60을 지키려면 샹들리에 전구 조명 20개를 꺼야 합니다. 끄면 계획 16개를 포함해 55개입니다.",
+ "survey": "SIZE AND AXIS: The box runs x -38..38, y -5..47.6, z -13..158 (76 x 53 x 172 m). One axis at x 0 runs through the porch, foyer, stair, landing, dais, gate, runout and portal.\n\nPARTS:\n- Porch: z -13..0, walls at x ±7.3, 10.8 m tall, entrance arch at z -13.\n- Foyer: z 0..14 at y 0, walls at x ±20, 13 m tall.\n- Nave: z 10..92 between outer walls at x ±34..38. The walls are 30 m tall from the red pit floor (y -4 to 26). Each carries a band of 14 m lancet windows (y 4.7-18.6, z 17-46 and z 57-86).\n- Main stair: red carpet, x ±8, z 14-51, rising from y 0 to 8. It runs between four 11 m statues on plinths (King at (15,22), Queen at (-15,22), Knight at (16,44), Bishop at (-15,44)) and 8 glowing newel lanterns.\n- Central landing: y 8, z 51-66, with the queen statue on the axis at z 62.\n- Rotunda (drum): centre (0,92), inner wall at r ≈ 32, walls to y 26. Four big window groups (NE, E, NW, W). 14 rib corbels at r 30, y 24-26, about every 22 degrees. Corner columns at (±34.6, 92).\n- Lamella dome: 28 stone ribs with gold edges, from y 25 up to the crown ring and oculus at y 44-47. I estimate it as a sphere with centre (0, 13.2, 92), R 33.2.\n- Dais tower: x ±8.3, z 84-100, rising from the pit to the dais top at y 16.\n- Hub chandelier: hangs from the oculus down to y 23.6 over the dais.\n- Gate recess: the balcony (z 121-128, y 16) sits between piers at x ±7.6-10.6 (up to y 26). The gate facade is at z 127.2, with clocks, transom and a pediment up to y 28.3, the team's two lanterns on top at (±6.15, 26.3, 128.3), and knight alcoves.\n- Beyond the gate: the open runout (z 128-146), the terrace, the step-down, then the portal at z 151.5 (x ±7.5, y 15-24). The corridor starts at z 158 and is closed.\n\nOPENINGS AND THE SUN: There is no roof. The nave is open sky and the drum sits under an open lattice; the oculus glass casts no shadow. Lid stays off: the only lid is a flat plane at y 48, which would kill the lattice pattern and still let the sun in sideways over the walls. ClearGlass stays on.\n- Full sun (from the NE at 37 degrees): the porch and foyer floors, the whole main stair, the west wall, the west half of the pit, and the runout beyond the gate (daylight beyond the goal).\n- Dappled sun through the lattice: the upper flight, the central landing, the dais, the windy way, the dive landings and the W drum wall.\n- Shade: the east nave wall (faces west) and a 20-25 m band of pit floor beside it. Every face the camera looks at, because it faces into the sun: risers, statue fronts, the dais tower's south face, the gate. The E, NE, N and NW drum walls. The route in the NE drum wall's shadow: the curving ramp from z ≈ 72, the floating pads and the north landing.\n\nHIDDEN POSITIONS: The air under the dome, clear of the knights' drop zone (x ±7.8, y 16-26.5, z 80-128) and at least 2 m above the hammer. The corbel ring. The 45-degree lines off the dais corners. The open air over the nave and the runout.\n\nSURFACES: Cream palace wall and stone (about 0.7). White marble treads and landings. Red stair carpet, plus a red 'Hall carpet' pit floor of 76 x 113 m, which is a large, saturated bounce source. Navy and white checker ramps (about 0.4). Gold trims. Stone ribs with gold. Walnut doors and dark red gate panels.\n\nROUTE: porch → foyer → red stair → landing → curving checker ramp (east side, under the swinging hammer) → floating pads → north landing → jump pad → west dive landings → windy way (fan) → last stair → dais → glass steps → balcony and gate (guard knights land and breathe fire) → runout → portal.\n\nEXIT, HERO, LANDMARK:\n- Exit: the gate doors at z 128, then the portal at z 152.\n- Hero: the gate and the royal balcony; on the first flight, the queen statue.\n- Landmark from the entrance: the queen statue on the axis, with the chandelier and the lattice dome beyond.\n\nTEAM LIGHTS: 59 in total.\n- 16 candles and 10 lanterns in the porch and foyer, plus 8 newel lanterns.\n- 20 chandelier bulbs and 1 glow.\n- 2 gate lanterns, the jump pad, the knight fire.",
+ "hierarchy": "MOOD: Course 2, light and grand, morning. D6 pattern: space with focal point, a sunlit court with one focal point per view.\n\nFIELD: F ≈ 1.2 on the route.\n- Sunlit stair ≈ 1.7.\n- Dappled landing and dais ≈ 1.3-1.8.\n- Washed drum route ≈ 0.9-1.6.\n- Balcony ≈ 1.7-2.3.\n\nHERO (from the landing on): the gate facade ≈ 2.5 E (2.1F) and its pediment ≈ 3.0 (2.5F), the brightest framed plane. It is lit from high on the approach side with shadows, and its gold comes from the gilt, not a warm flood.\n\nFIRST-FLIGHT HERO: the queen statue ≈ 2.2 (1.8F).\n\nSECONDARIES (1.4-1.7F):\n- Exit portal ≈ 2.0.\n- King and Knight statues ≈ 1.7, to match the sunlit Queen and Bishop.\n- The chandelier's pool on the dais.\n\nWALLS (at least as bright as the floor):\n- Sunlit west wall ≈ 1.4.\n- Washed east wall ≈ 1.2-1.7.\n- Shaded drum walls ≈ 1.0-1.8 in the band above the route, falling to 0.65-0.85 down in the pit.\n- North half of the dome ≈ 1.4, which keeps it below the hero.\n\nSHADE MINIMUM: ≈ 0.45, in the pit beside the east wall (F/3 = 0.4).\n\nKEY:FILL: ≈ 2.5-3:1 on the sunlit stair (treads 1.7, risers ≈ 0.6; stair contrast under 5:1). About 2:1 in the washed drum.\n\nCOLOUR: Warm only at the team's flames and bulbs and at the chandelier.",
+ "look": {
+  "Indoor": 1,
+  "Bounce": 0.5,
+  "BounceTint": [
+   1,
+   0.95,
+   0.92
+  ],
+  "Exposure": 0,
+  "Contrast": 22,
+  "Saturation": 15,
+  "BloomIntensity": 0.5,
+  "BloomThreshold": 1.4,
+  "Vignette": 0.12,
+  "ShaftIntensity": 1.3,
+  "ShaftDensity": 0.025
+ },
+ "rig": {
+  "Lid": false,
+  "ClearGlass": true,
+  "FixtureBoost": 1.2,
+  "FixtureReach": 0.5,
+  "LampIntensity": 0,
+  "UplightIntensity": 0,
+  "GoalIntensity": 0,
+  "StageIntensity": 0,
+  "HeartIntensity": 0,
+  "FloorGloss": 0
+ },
+ "plan": [
+  {
+   "layer": "accent",
+   "note": "HERO: the gate facade (clocks, transom, pediment), the doors and the royal balcony. Lit from high on the approach side, under the dome behind the player and above the knights' drop zone, through the 15 m mouth between the balcony piers. Shadowed for the pawns and the landing guard knights. Neutral light: the gold comes from the gilt. Sizing: E +1.8 at 22.9 m, cos 0.94, W 0.80 → I 1200.",
+   "type": "Spot",
+   "at": [
+    0,
+    29,
+    106
+   ],
+   "aim": [
+    0,
+    -0.269,
+    0.963
+   ],
+   "intensity": 1200,
+   "range": 40,
+   "angle": 70,
+   "inner": 50,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": true
+  },
+  {
+   "layer": "accent",
+   "note": "FIRST-FLIGHT HERO: the queen statue on the central landing, on the axis at the top of the red stair; the landmark seen from the porch. Narrow beam from high over the upper flight. Shadowed so the beam does not light the landing behind her. Sizing: E +1.4 at 18.6 m, cos 0.81, W 0.83 → I 730.",
+   "type": "Spot",
+   "at": [
+    0,
+    22,
+    48
+   ],
+   "aim": [
+    0,
+    -0.593,
+    0.805
+   ],
+   "intensity": 730,
+   "range": 34,
+   "angle": 32,
+   "inner": 20,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": true
+  },
+  {
+   "layer": "accent",
+   "note": "WAY OUT: the exit portal at the end of the sunlit runout, so its shaded face reads as the door against the closed corridor. Aimed at the frame's upper half so the sunlit floor in front gains only about 0.4-0.9. Range kept short, so only about 0.1 reaches the corridor mouth. Sizing: E +1.5 at 14.6 m, cos 0.93, W 0.81 → I 425.",
+   "type": "Spot",
+   "at": [
+    0,
+    25,
+    138
+   ],
+   "aim": [
+    0,
+    -0.251,
+    0.968
+   ],
+   "intensity": 425,
+   "range": 26,
+   "angle": 70,
+   "inner": 46,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "SECONDARY: the King statue shows its shaded west side to the stair, while the Queen opposite shows a sunlit side. A narrow neutral beam from high over the stair's foot lifts it to match, so the four statues read as a set. Sizing: E +0.8 at 19.1 m, cos 0.80, W 0.85 → I 440.",
+   "type": "Spot",
+   "at": [
+    4,
+    19,
+    12
+   ],
+   "aim": [
+    0.594,
+    -0.602,
+    0.531
+   ],
+   "intensity": 440,
+   "range": 36,
+   "angle": 40,
+   "inner": 26,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "SECONDARY: the Knight statue, the pair to the King line, opposite the sunlit Bishop. Sizing: E +0.8 at 19.4 m → I 440.",
+   "type": "Spot",
+   "at": [
+    4,
+    23,
+    34
+   ],
+   "aim": [
+    0.602,
+    -0.592,
+    0.535
+   ],
+   "intensity": 440,
+   "range": 36,
+   "angle": 40,
+   "inner": 26,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "decorative",
+   "note": "Hub chandelier room light: a soft, barely warm pool on the dais under the chandelier, from 1 m below its bottom, pointing down so the chandelier itself is not lit. The sparkle stays the team's emissive crystals, bulbs and glow. Sizing: E +0.8 at 6.6 m → I 36.",
+   "type": "Spot",
+   "each": "HallV15_Chandelier_6",
+   "anchor": "bottom",
+   "offset": [
+    0,
+    -1,
+    0
+   ],
+   "inward": false,
+   "max": 1,
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 36,
+   "range": 20,
+   "angle": 140,
+   "inner": 100,
+   "color": [
+    1,
+    0.95,
+    0.88
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Drum wall NW, beside the gate (faces SE, shaded all morning). Part of the backdrop from the stair and the north landing. Daylight-family washer 12 m out, near-horizontal. Placed at phi -28 so the jump-pad arc stays outside its cone. Sizing: E 1.1 at the aim point (12.2 m); band mean about 0.7 over y 8-26 → I 170.",
+   "type": "Spot",
+   "at": [
+    -9.39,
+    20,
+    109.66
+   ],
+   "aim": [
+    -0.463,
+    -0.164,
+    0.871
+   ],
+   "intensity": 170,
+   "range": 40,
+   "angle": 150,
+   "inner": 100,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Drum wall NNE, beside the gate (shaded). Also lifts the floating pads below.",
+   "type": "Spot",
+   "at": [
+    10,
+    20,
+    109.32
+   ],
+   "aim": [
+    0.493,
+    -0.164,
+    0.854
+   ],
+   "intensity": 170,
+   "range": 40,
+   "angle": 150,
+   "inner": 100,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Drum wall NE, with its tall lancets showing sky (shaded); the right side of route spot 2. Also lights the end of the ramp and the pads.",
+   "type": "Spot",
+   "at": [
+    19.02,
+    20,
+    98.18
+   ],
+   "aim": [
+    0.938,
+    -0.164,
+    0.305
+   ],
+   "intensity": 170,
+   "range": 40,
+   "angle": 150,
+   "inner": 100,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Drum wall E, over the hammer (4 m above its beam): lights the wall, the hammer and the curving checker ramp, which lie in the drum wall's shadow (z 72-98).",
+   "type": "Spot",
+   "at": [
+    17.22,
+    24,
+    83.97
+   ],
+   "aim": [
+    0.823,
+    -0.419,
+    -0.384
+   ],
+   "intensity": 190,
+   "range": 40,
+   "angle": 150,
+   "inner": 100,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Nave east wall: faces west and is in shade all morning, on the right side of the whole climb. Two washers 16 m out, near-horizontal and clear of the King and Knight statues, so it matches the sunlit west wall. Sizing: E 1.0 at 16.5 m, cos 0.97, W 0.91; band mean about 0.7 → I 300.",
+   "type": "Spot",
+   "at": [
+    18,
+    18,
+    25
+   ],
+   "to": [
+    18,
+    18,
+    50
+   ],
+   "count": 2,
+   "aim": [
+    0.97,
+    -0.243,
+    0
+   ],
+   "intensity": 300,
+   "range": 36,
+   "angle": 130,
+   "inner": 110,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Floor from above: the north landing and the jump pad lie in the gate's shade. A broad soft downlight from the west-south keeps that stretch of route in the field; the jump arc stays in its falloff. Sizing: E +0.6 at 15.9 m, cos 0.81, W 0.91 → I 210.",
+   "type": "Spot",
+   "at": [
+    -9,
+    24,
+    104
+   ],
+   "aim": [
+    0.314,
+    -0.805,
+    0.503
+   ],
+   "intensity": 210,
+   "range": 34,
+   "angle": 90,
+   "inner": 60,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Porch east wall (faces west, shaded) around the team's warm candles, so the vestibule is bright on both sides. Sizing: E +0.6 at 10.7 m, cos 0.96, W 0.84 → I 85.",
+   "type": "Spot",
+   "at": [
+    -3,
+    8,
+    -5
+   ],
+   "aim": [
+    0.96,
+    -0.28,
+    0
+   ],
+   "intensity": 85,
+   "range": 20,
+   "angle": 110,
+   "inner": 70,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "uplight",
+   "note": "Dome lattice, NE half: lifts the ribs' undersides so the north lattice (what the race camera sees from the stair) reads cream-gold against blue sky. The chandelier is 66-72 degrees off-axis, so this light misses it. Sizing: E +0.9 at 20.5 m, cos 0.96, W 0.92 → I 430.",
+   "type": "Spot",
+   "at": [
+    9,
+    23,
+    98
+   ],
+   "aim": [
+    0.1,
+    0.703,
+    0.703
+   ],
+   "intensity": 430,
+   "range": 45,
+   "angle": 120,
+   "inner": 70,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "uplight",
+   "note": "Dome lattice, NW half (mirror of the NE uplight).",
+   "type": "Spot",
+   "at": [
+    -9,
+    23,
+    98
+   ],
+   "aim": [
+    -0.1,
+    0.703,
+    0.703
+   ],
+   "intensity": 430,
+   "range": 45,
+   "angle": 120,
+   "inner": 70,
+   "color": [
+    1,
+    0.97,
+    0.93
+   ],
+   "shadows": false
+  }
+ ],
+ "expected": "SPOT 1 (lower main stair, camera about z 14, looking up the axis):\n- Red carpet and white treads in morning sun, with soft-shaded risers so every step reads.\n- On the left, the west wall and the Queen and Bishop statues in sun. On the right, the east wall washed to the same cream, with the King and Knight lifted to match, so there is no dark right side.\n- The newel lanterns show as small warm glints.\n- At the stair top, the queen statue is the brightest thing on the axis, with the lattice's sun pattern on the landing around her.\n- Beyond: the chandelier sparkling, the gate small but bright between its two lanterns, and at the top of the frame the north half of the lattice in cream-gold against blue sky. No dark far end.\n\nSPOT 2 (end of the curving ramp, about (25,10,95), looking NNW over the floating pads):\n- The checker ramp and the glowing pads at an even mid level (about 1, not deep shade).\n- On the right, the carved NE drum wall washed bright up to the corbels, its tall lancets showing sky.\n- On the left, the dais tower's corner and the chandelier.\n- Below, the red pit dappled by lattice shadows.\n- At the upper left, the gate and balcony as the brightest framed plane, about 2x the walls.\n\nSPOT 3 (upper climb: windy way → last stair → dais → glass steps; I had no picture, so this is assumed):\n- Lattice-dappled sun on the paths and the dais, with a soft pool under the chandelier.\n- The E drum wall and the hammer lit from above.\n- Then the glass steps lead straight at the gate. Its facade is evenly lit from high behind the player, with the pediment brightest, crisp shadows of pawns and of guard knights landing on the balcony, and the knight's orange fire reading against it.\n- Through the doors, the sunlit runout with the lit exit portal at its end.",
+ "light_count": 16,
+ "self_check": "INSIDE THE HALL AND 0.3 m CLEAR: A script tested all 16 positions against the 600+ enabled part boxes in the full anatomy dump. Every light is inside the section box and inside the walls (nave |x| < 34, drum r < 32). The only 'inside' hits were on curved or merged boxes, not real surfaces. Real clearances:\n- Drum washers: about 12 m from the wall, 1.6-2.2 m outside the knights' union box.\n- Hero: about 14 m under the dome and 2.5 m above the knights' box.\n- Dome uplights: 1.2 m outside the knights' box, about 20 m under the ribs.\n- Porch washer: 4.3 m from the nearest candle.\n- East washers: 5.0 m from the King, 2.6 m from the Knight, 0.5 m above the merged Balustrades box (there is no balustrade there).\n- E drum washer: 6.3 m above the hammer beam.\n- Chandelier light: 1.0 m under the chandelier.\n\nEACH-NAME: 'HallV15_Chandelier_6' is the only enabled part with that start (_1 to _5 are disabled). With anchor bottom and offset -1 it sits at (-0.25, 22.6, 92.35).\n\nAIMS: Each spot aims at a named target point. A sampler checked every cone against its target and against the route below it:\n- Highest plan light on a pawn's head anywhere on the route: 3.3, under the hero at the balcony edge; at most 1.9 elsewhere.\n- Jump-pad arc: at most 0.1 from the NW washer.\n- The chandelier and the gate sit 66-72 degrees off the dome uplights' axes.\n\nINTENSITIES: Sized with I = E d²/(cos W) (values are in each note) and cross-checked in the sampler:\n- Gate facade +2.1 (≈ 2.5 with bake), pediment +2.6, balcony floor +1.3-1.8.\n- Queen +1.6, portal +1.5, King/Knight +1.1.\n- Drum wall: 0.5-1.37 over phi -40..130 at y 14-26.\n- East wall: 0.6-1.1 over z 19-54, y 10-26.\n- North dome: 1.1-1.2.\n- Ranges are at least 1.5x the main surface served.\n\nFIXED DURING THE CHECK:\n1. The first drum washers (45 degrees down from r 22) left the upper wall between them at 0.2 and made 2.3 hot spots. I replaced them with near-horizontal washers at r 20, chosen by a search for evenness.\n2. The NW washer sat on the jump-pad arc (12.7 E on a jumping pawn), so I moved it from phi -40 to -28.\n3. The first hero position (0,33,112) made the pediment 1.5x the facade and put a 2.3-3.0 pool on the last glass steps. I moved it to (0,29,106), aimed it higher and lowered it to 1200.\n4. I dropped a curving-ramp downlight (5-7 E on the hammer beam) and a dais-tower wash (8-14 E on pawns on the windy way).\n5. East washers re-placed at x 18 and lowered to I 300, so the wall matches the sunlit west wall instead of out-shining it.\n6. Portal spot aimed higher and kept to R 26, so it no longer adds 1.6 to the sunlit floor and does not light the corridor.\n7. Queen spot given shadows.\n8. Drum washers lowered from 200 to 170, so walls stay below the hero (about 1.5-2.2:1).\n\nBUDGET: FAILS as long as the chandelier's 20 bulb lights stay. The plan has 16 lights and the team has 59, for 75 in the hall. With the 20 'Bulb light's put out, the total is 55 (under 60).\n- Rig: LampIntensity, UplightIntensity, GoalIntensity, StageIntensity and HeartIntensity are all 0, so no automatic lights are added.\n- Shadows: 2 spots (hero, queen), no shadowed points.\n- Overlap: at most 5-9 plan lights in range of any route point. FixtureReach 0.5 also cuts the porch's 6-10 overlapping candle and lantern lights. The chandelier core still sees about 22 lights from the team's bulbs (see open questions).\n\nJY'S RULES:\n- Morning: the shared sun only, no sun per hall.\n- Washes, uplights and accents are neutral (1, .97-.98, .93-.95). Warm light only at the team's flames and bulbs and the chandelier light (1, .95, .88).\n- Warm halos are cut to about 3 m, and the old warm column uplights are off. Haze and grade are neutral; BounceTint is near-neutral.\n- The corridors stay closed.\n- Placement follows the architecture: the gate axis, the drum's corbel ring and 45-degree lines, the statue pairs, the matching lantern pair at the gate.\n\nACCEPTED: the hammer beam's top gets about 3.7 from the E washer (a metallic face, seen edge-on from the route).",
+ "open_questions": "1. BUDGET. The team's lights alone are 59: 20 chandelier 'Bulb light's, 34 candles and lanterns, 2 gate lanterns, the jump pad and the knight fire. My 16 bring the hall to 75. The fix: put out the 20 bulb lights and keep the emissive bulbs and crystals, 'Hub chandelier glow' and the plan's chandelier light. That gives 55 and also fixes the roughly 22-light overlap at the chandelier. It needs Rig.OwnLightsOff = 'Bulb light' to work outside OwnLook maps, or one code line; it is not among the fields I may set. Which do you want?\n\n2. RED BOUNCE. The red 'Hall carpet' pit floor (76 x 113 m, sunlit in its west half) will bleed red into the 3-bounce bake: pinkish lower walls, rib undersides and statue bases. Check the first bake. If it is pink, JY decides: a deeper, desaturated carpet or marble for the pit floor, or a lower bake albedo for that material.\n\n3. DOME SHAPE. I assumed a sphere through the rim (r 30, y 25) and the crown (y 46). The hero and uplight positions are 14-20 m under it on that assumption, and still at least 6 m under it if the dome is conical. Verify in the editor.\n\n4. KNIGHTS. The guard knights drop onto the balcony (z 122-128) and near (10,16,87). The chandelier light sits inside their union box, but under the chandelier where no knight can stand. If a drop path passes there, remove that line.\n\n5. DAIS TOWER. Its south face, the block behind the queen statue, stays at the bake only (about 0.6-0.7). Every wash position from the south put 8-14 E on pawns on the windy way. If it reads dark, lifting its material (PR_DaisTowerTrim) is the safe fix.\n\n6. FLOOR GLOSS. FloorGloss is left at 0. Polishing the marble would add morning sheen to the climb, but it may also gloss the red carpets and put sun glare on the treads, because the camera faces the sun. Test about 0.6 before using it.\n\n7. LOOK SEMANTICS. I treated Contrast and Saturation as the hall's own values, like the other entries, and Exposure as an offset on the global -0.15. I set Indoor 1.0 because the hall is roofless and the baked floor sees nearly the full sky. Compare a pawn against the floor in the first build; BloomThreshold 1.4 assumes URP's gamma-space threshold.\n\n8. SPOT 3. There was no picture for route spot 3; I assumed the upper climb toward the gate.\n\n9. HAMMER. If the hammer beam glints too much from the E drum washer, lower that washer from 190 to about 150."
+}

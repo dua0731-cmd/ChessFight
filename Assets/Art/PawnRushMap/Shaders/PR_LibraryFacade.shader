@@ -44,6 +44,8 @@ Shader "ChessFight/Pawn Rush Library Facade"
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            // JY-gfx: its own picture is the material; no surface set over it.
+            #define CF_SURFACE_NONE
             #include "Assets/Shaders/URP/CFLit.hlsl"
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);

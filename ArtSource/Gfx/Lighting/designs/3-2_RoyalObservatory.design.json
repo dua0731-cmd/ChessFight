@@ -1,0 +1,539 @@
+{
+ "concept_en": "the night observatory (JY's own concept, 11-24): the runners' path lit from above like a stage under the night, the galleries round it as dark as a real night except where their lamps glow, and the starry dome itself the room's sky, its blue light falling over the whole hall",
+ "concept_ko": "JY님 컨셉 그대로입니다. 플레이어가 지나는 길(입구 바닥, 북두칠성 별 발판, 지구본, 동쪽 길, 무대, 발코니)은 돔 높이에서 내려 비추는 스포트라이트 17개로 무대처럼 밝게 하고, 둘레 회랑은 달빛·보조광·주변광을 줄여 실제 밤처럼 어둡게, 램프가 있는 곳만 빛이 번지게 합니다. 천장 돔의 별하늘은 푸른 발광체로 구워 방 전체의 하늘빛이 되게 합니다. 홀 껍데기 그림자를 다시 켜서 달빛은 슬릿으로만 들어옵니다. (2차, JY 피드백: 길과 배경의 대비를 더 극적으로, 안개와 달빛 줄기, 길 조명마다 빛기둥, 돔은 별과 은하수만 빛나게.)",
+ "look": {
+  "Indoor": 1,
+  "Bounce": 0,
+  "BounceTint": [
+   1,
+   1,
+   1
+  ],
+  "Exposure": 0.15,
+  "Contrast": 30,
+  "Saturation": 14,
+  "BloomIntensity": 1.1,
+  "BloomThreshold": 0.75,
+  "Vignette": 0.24,
+  "ShaftIntensity": 0.45,
+  "ShaftDensity": 0.012,
+  "ShaftTint": [
+   0.75,
+   0.85,
+   1.0
+  ],
+  "BloomScatter": 0.78,
+  "BloomTint": [
+   0.78,
+   0.86,
+   1.0
+  ],
+  "Temperature": -18,
+  "Tint": 6,
+  "ShadowsLift": -0.04,
+  "ShadowsTone": [
+   0.86,
+   0.9,
+   1.12
+  ],
+  "HighlightsTone": [
+   1.03,
+   1.0,
+   0.96
+  ]
+ },
+ "rig": {
+  "Lid": false,
+  "ClearGlass": true,
+  "FixtureBoost": 1,
+  "FixtureReach": 0.7,
+  "LampIntensity": 0,
+  "UplightIntensity": 0,
+  "GoalIntensity": 0,
+  "StageIntensity": 0,
+  "HeartIntensity": 0,
+  "FloorGloss": 0,
+  "OwnType": "RoyalObservatoryLighting",
+  "OwnSet": "moonIntensity=1.8;warmFill=0;ambientSky=.025|.03|.08;ambientEquator=.012|.015|.035;ambientGround=.006|.006|.015;hazeStart=30;hazeEnd=320;hazeColor=.01|.015|.04;shaftStrength=.08",
+  "OwnLightsOff": "Warm fill",
+  "ShadowsOn": true,
+  "GlowPart": "RoHall dome sky",
+  "GlowColor": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "GlowIntensity": 2.0,
+  "GlowMap": "Gfx/Glow/RO_DomeSky_Glow",
+  "Moon": true,
+  "MoonDistance": -2,
+  "MoonSize": 9,
+  "MoonIntensity": 2.5,
+  "MoonColor": [
+   0.86,
+   0.92,
+   1.0
+  ]
+ },
+ "plan": [
+  {
+   "layer": "accent",
+   "note": "entry floor, lit from above",
+   "type": "Spot",
+   "at": [
+    0,
+    10,
+    7
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "Dipper star 1",
+   "type": "Spot",
+   "at": [
+    -3,
+    10,
+    19
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "Dipper star 2",
+   "type": "Spot",
+   "at": [
+    -9,
+    11,
+    25
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "Dipper star 3",
+   "type": "Spot",
+   "at": [
+    -16,
+    12,
+    31
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "between stars 3 and 4",
+   "type": "Spot",
+   "at": [
+    -23,
+    12.5,
+    38
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "Dipper star 4",
+   "type": "Spot",
+   "at": [
+    -26.5,
+    12.5,
+    44
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "between stars 4 and 7",
+   "type": "Spot",
+   "at": [
+    -26,
+    13,
+    52
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "Dipper star 7",
+   "type": "Spot",
+   "at": [
+    -23.5,
+    13.5,
+    60.5
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the approach to the globe",
+   "type": "Spot",
+   "at": [
+    -15,
+    14,
+    63
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the crossing through the great globe",
+   "type": "Spot",
+   "at": [
+    0,
+    20,
+    64
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 26,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the east threshold",
+   "type": "Spot",
+   "at": [
+    15,
+    22,
+    65
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the east path, first bend",
+   "type": "Spot",
+   "at": [
+    21,
+    22,
+    73
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the east path, middle",
+   "type": "Spot",
+   "at": [
+    21,
+    22,
+    82
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the east path, last bend",
+   "type": "Spot",
+   "at": [
+    20,
+    22,
+    91
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the stage deck",
+   "type": "Spot",
+   "at": [
+    9,
+    22,
+    91.5
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the ramp up to the balcony",
+   "type": "Spot",
+   "at": [
+    9,
+    27,
+    105
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 24,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "accent",
+   "note": "the balcony and the way out",
+   "type": "Spot",
+   "at": [
+    9,
+    26,
+    124
+   ],
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 380,
+   "range": 22,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "bounce": 0.35
+  },
+  {
+   "layer": "decorative",
+   "note": "display niches (JY: '전시장 위에 조명'): a small warm spot above and in front of each statue, aimed back at it",
+   "type": "Spot",
+   "each": "Statue ",
+   "anchor": "top",
+   "offset": [
+    1.2,
+    1.4,
+    0
+   ],
+   "radial": true,
+   "spacing": 1.0,
+   "max": 96,
+   "aim": [
+    -0.4,
+    -1,
+    0
+   ],
+   "intensity": 15,
+   "range": 7,
+   "angle": 44,
+   "inner": 22,
+   "color": [
+    1.0,
+    0.84,
+    0.64
+   ],
+   "bounce": 0.6
+  }
+ ],
+ "expected": "the route reads as a lit path through a dark night hall; lamps glow in the galleries; the dome glows blue and tints the whole hall",
+ "light_count": 101,
+ "open_questions": "",
+ "own_grade": true
+}

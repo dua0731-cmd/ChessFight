@@ -39,8 +39,24 @@ namespace ChessFight.Game
         public bool SoftShadows;
         /// <summary>In a scene with no directional light, make one (strength 0 outside the place).</summary>
         public bool BringSun;
+        /// <summary>
+        /// JY-gfx (2026-11-24): the scene's own sun for this place's share - its colour, strength, shadows and way - so
+        /// the time of day never changes from place to place (JY: "1코스, 2코스, 3코스 다 시간은 그냥 아침이야. 맵을
+        /// 진행할수록 해 위치가 변하는 기믹은 없어"). SunColor, SunIntensity, ShadowStrength and TurnSun are not read.
+        /// </summary>
+        public bool KeepSun;
         /// <summary>The ambient light as a sky / horizon / ground gradient.</summary>
         public Color Sky = Color.gray, Equator = Color.gray, Ground = Color.gray;
+        /// <summary>
+        /// JY-gfx: at 0 or more, the ambient light is the scene's own (its sky's, as the mixer noted it) times this,
+        /// instead of the gradient: indoors only less of the same sky's light gets in ("실내라 스카이 조명이나 선 라이트
+        /// 영향을 좀 덜받는거지"). AmbientNeutral makes it that much greyer (0 the sky's own colour, 1 grey: light that
+        /// bounced off the walls before it reached anything).
+        /// </summary>
+        public float AmbientScale = -1f, AmbientNeutral;
+        /// <summary>JY-gfx: the colour the bounced light takes from the room (its walls' and floors' own: warm for cream
+        /// stone and wood); AmbientNeutral turns that much of the sky's light into grey times this.</summary>
+        public Color AmbientTint = Color.white;
         /// <summary>A linear haze (off: the scene's fog stays).</summary>
         public bool Fog;
         public Color FogColor = Color.gray;
@@ -51,6 +67,8 @@ namespace ChessFight.Game
         /// <summary>The linear fog a scene with none fades from ("none": past everything, PawnRushRound.FarFog's).</summary>
         public const float NoFogStart = 3000f, NoFogEnd = 6000f;
         internal const float Off = .0005f;
+        /// <summary>JY-gfx: how often the mixer found the scene's ambient light changed under the mix and noted it again.</summary>
+        public static int Renotes;
 
         internal float weight;
         float velocity;
