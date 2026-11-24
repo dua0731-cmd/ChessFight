@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
@@ -23,6 +24,11 @@ namespace ChessFight.RagdollLab
     /// Click a slot, then a skill: it goes in, and the slot stays picked to try the next. Dragging a skill onto a slot, or
     /// clicking a skill and then a slot, still works; the cross on a slot under the mouse empties it. The tags' colours and
     /// the two rows of filters are gone (the tags are words in the description).
+    ///
+    /// Every skill has a picture of what it does (the user, the same day: "스킬 이름만 나오지 말고 이미지도 같이", "스킬이 뭔지
+    /// 한눈에 보여주는 이미지"): on its slot card, in the list and in the description. They are drawn by Tools/SkillIcons
+    /// into Resources/PawnRushSkillIcons, one a PawnRushSkillIds constant's name (a variant shows its base's; a skill that
+    /// is only a plan, a question mark).
     ///
     /// Every change is two numbers (PawnRushLoadout.Apply). Where this PC runs the skills itself (offline, a match's host)
     /// the window makes the change; elsewhere it is asked of the host (<see cref="Send"/>) and shows when the host's
@@ -90,7 +96,7 @@ namespace ChessFight.RagdollLab
         float messageUntil;
         bool cursorTaken, savedVisible;
         CursorLockMode savedLock;
-        GUIStyle label, small, smallOne, smallRight, title, cardName, pieceName, center, emptyText, keyHead, glyph, glyphList;
+        GUIStyle label, small, smallOne, smallRight, title, cardName, cardNameWrap, pieceName, center, emptyText, keyHead, glyph, glyphList;
         GUIContent measure;
         Texture2D white;
         readonly Dictionary<(string, int, int), string> fitted = new Dictionary<(string, int, int), string>();
@@ -108,7 +114,14 @@ namespace ChessFight.RagdollLab
         readonly List<Line> lines = new List<Line>();
         readonly HashSet<int> listed = new HashSet<int>();
 
-        const float HeadH = 24f, SkillH = 42f;
+        const float HeadH = 24f, SkillH = 50f;
+
+        // The skills' pictures (Tools/SkillIcons), by skill number, loaded when first shown.
+        const string IconFolder = "PawnRushSkillIcons/";
+        static readonly Dictionary<int, Texture2D> icons = new Dictionary<int, Texture2D>();
+        static Dictionary<int, string> idNames;
+        static Texture2D unknownIcon;
+        static bool unknownTried;
 
         static readonly Color Panel = new Color(0.05f, 0.07f, 0.12f, 0.96f), Card = new Color(0.14f, 0.17f, 0.25f, 1f),
             CardHover = new Color(0.2f, 0.24f, 0.34f, 1f), CardEdge = new Color(1f, 1f, 1f, 0.2f), Edge = new Color(1f, 1f, 1f, 0.14f),
@@ -242,6 +255,7 @@ namespace ChessFight.RagdollLab
             smallRight = new GUIStyle(smallOne) { alignment = TextAnchor.MiddleRight };
             title = new GUIStyle(label) { fontSize = 17, fontStyle = FontStyle.Bold };
             cardName = new GUIStyle(label) { fontSize = 13, fontStyle = FontStyle.Bold };
+            cardNameWrap = new GUIStyle(cardName) { wordWrap = true, alignment = TextAnchor.UpperLeft };
             pieceName = new GUIStyle(cardName) { fontSize = 14 };
             center = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
             emptyText = new GUIStyle(smallOne) { alignment = TextAnchor.MiddleCenter };
@@ -337,6 +351,48 @@ namespace ChessFight.RagdollLab
         }
 
         string KeyOf(int slot) => KeyName != null ? KeyName(slot) : slot == 0 ? "F" : slot == 1 ? "E" : slot == 2 ? "R" : "Q";
+
+        static Texture2D UnknownIcon()
+        {
+            if (!unknownTried)
+            {
+                unknownTried = true;
+                unknownIcon = Resources.Load<Texture2D>(IconFolder + "Unknown");
+            }
+            return unknownIcon;
+        }
+
+        /// <summary>A skill's picture: the one named after its PawnRushSkillIds constant, else its base skill's (a set's
+        /// variant), else the question mark.</summary>
+        static Texture2D IconOf(int id)
+        {
+            if (icons.TryGetValue(id, out var tex)) return tex;
+            if (idNames == null)
+            {
+                idNames = new Dictionary<int, string>();
+                foreach (var field in typeof(PawnRushSkillIds).GetFields(BindingFlags.Public | BindingFlags.Static))
+                    if (field.IsLiteral && field.FieldType == typeof(int)) idNames[(int)field.GetRawConstantValue()] = field.Name;
+            }
+            if (idNames.TryGetValue(id, out string name)) tex = Resources.Load<Texture2D>(IconFolder + name);
+            int baseId = PawnRushSkillIds.BaseOf(id);
+            if (tex == null && baseId != id && idNames.TryGetValue(baseId, out string baseName))
+                tex = Resources.Load<Texture2D>(IconFolder + baseName);
+            if (tex == null) tex = UnknownIcon();
+            icons[id] = tex;
+            return tex;
+        }
+
+        /// <summary>The skill's picture in <paramref name="r"/> (a skill that is only a plan: the question mark; no
+        /// pictures at all: its piece's glyph).</summary>
+        void DrawIcon(Rect r, SkillEntry entry, float alpha = 1f)
+        {
+            var tex = entry.built ? IconOf(entry.id) : UnknownIcon();
+            var old = GUI.color;
+            GUI.color = new Color(old.r, old.g, old.b, old.a * alpha);
+            if (tex != null) GUI.DrawTexture(r, tex, ScaleMode.ScaleToFit, true);
+            else GUI.Label(r, Glyph(entry.home), r.height > 34f ? glyph : glyphList);
+            GUI.color = old;
+        }
 
         static string TagNames(SkillTag tags)
         {
@@ -546,7 +602,7 @@ namespace ChessFight.RagdollLab
 
             bool room = ShowLock != null && ShowLock();
             float noteH = room ? 42f : 24f;
-            float rowH = Mathf.Clamp((r.yMax - noteH - y) / Mathf.Max(1, rows), 46f, 72f);
+            float rowH = Mathf.Clamp((r.yMax - noteH - y) / Mathf.Max(1, rows), 46f, 78f);
             for (int i = 0; i < rows; i++)
             {
                 int row = rowIndex[i];
@@ -595,17 +651,22 @@ namespace ChessFight.RagdollLab
             if (entry != null)
             {
                 bool cross = mouse && dragId == 0 && pickId == 0;
-                float tx = box.x + 8f, tw = box.width - 16f - (cross ? 18f : 0f);
-                bool two = box.height >= 40f;
-                float top = two ? box.y + Mathf.Max(3f, (box.height - 40f) * 0.5f) : box.y;
-                GUI.Label(new Rect(tx, top, tw, two ? 20f : box.height), Fit(entry.name, cardName, tw), cardName);
-                if (two)
-                {
-                    // Its line: what it does - and, put on another piece, whose it is.
-                    string sub = PawnRushSkillBook.Card(id);
-                    if (entry.home != PawnRushLoadout.RowPieces[row]) sub = $"({ChessPieces.Name(entry.home)} 것) " + sub;
-                    GUI.Label(new Rect(tx, top + 20f, box.width - 16f, 16f), Fit(sub, smallOne, box.width - 16f), smallOne);
-                }
+                // The skill's picture at the left; its name beside it (on two lines if it needs them) and under a one-line
+                // name what it does - or, put on another piece, whose it is.
+                float s = Mathf.Min(box.height - 8f, 56f);
+                DrawIcon(new Rect(box.x + 4f, box.y + (box.height - s) * 0.5f, s, s), entry);
+                float tx = box.x + s + 11f, tw = box.xMax - tx - 5f - (cross ? 18f : 0f), subW = box.xMax - tx - 5f;
+                measure.text = entry.name;
+                bool twoLines = cardNameWrap.CalcHeight(measure, tw) > 22f;
+                const float lineH = 17f, subH = 16f;
+                float nameH = twoLines ? lineH * 2f : lineH;
+                string sub = entry.home != PawnRushLoadout.RowPieces[row] ? $"({ChessPieces.Name(entry.home)} 것)"
+                    : twoLines ? null : PawnRushSkillBook.Card(id);
+                bool withSub = sub != null && box.height >= nameH + subH + 6f;
+                float top = box.y + (box.height - nameH - (withSub ? subH : 0f)) * 0.5f;
+                if (twoLines) GUI.Label(new Rect(tx, top - 1f, tw, nameH + 3f), entry.name, cardNameWrap);
+                else GUI.Label(new Rect(tx, top - 1f, tw, lineH + 3f), Fit(entry.name, cardName, tw), cardName);
+                if (withSub) GUI.Label(new Rect(tx, top + nameH + 1f, subW, subH), Fit(sub, smallOne, subW), smallOne);
                 if (mouse && dragId == 0) hoverNow = id;
                 if (cross)
                 {
@@ -775,10 +836,7 @@ namespace ChessFight.RagdollLab
                 bool picked = pickId == entry.id;
                 Fill(r, picked ? PickFill : mouse ? CardHover : Card);
                 Frame(r, picked ? Lit : mouse ? CardEdge : Edge, picked ? 2f : 1f);
-                var oldGlyph = glyphList.normal.textColor;
-                glyphList.normal.textColor = entry.built ? Ink : Faint;
-                GUI.Label(new Rect(r.x + 2f, r.y, 32f, r.height), Glyph(entry.home), glyphList);
-                glyphList.normal.textColor = oldGlyph;
+                DrawIcon(new Rect(r.x + 3f, r.y + 3f, SkillH - 6f, SkillH - 6f), entry, entry.built ? 1f : 0.55f);
 
                 // A pill at the right: where it sits on the board now, or that it is only a plan.
                 float pillW = 0f;
@@ -797,12 +855,12 @@ namespace ChessFight.RagdollLab
                     smallOne.normal.textColor = oldPill;
                     pillW += 10f;
                 }
-                float tx = r.x + 38f, tw = r.width - 46f;
+                float tx = r.x + SkillH + 6f, tw = r.xMax - tx - 8f;
                 var oldName = cardName.normal.textColor;
                 cardName.normal.textColor = entry.built ? Ink : Faint;
-                GUI.Label(new Rect(tx, r.y + 3f, tw - pillW, 20f), Fit(entry.name, cardName, tw - pillW), cardName);
+                GUI.Label(new Rect(tx, r.y + 6f, tw - pillW, 20f), Fit(entry.name, cardName, tw - pillW), cardName);
                 cardName.normal.textColor = oldName;
-                GUI.Label(new Rect(tx, r.y + 22f, tw, 16f), Fit(PawnRushSkillBook.Card(entry.id), smallOne, tw), smallOne);
+                GUI.Label(new Rect(tx, r.y + 26f, tw, 16f), Fit(PawnRushSkillBook.Card(entry.id), smallOne, tw), smallOne);
 
                 if (!mouse) continue;
                 hoverNow = entry.id;
@@ -840,16 +898,19 @@ namespace ChessFight.RagdollLab
                     "① 왼쪽에서 칸을 누르고  ② 오른쪽에서 스킬을 누르면 들어가요.\n스킬을 끌어다 칸에 놓아도 돼요. 칸에 마우스를 올리면 × 로 비울 수 있어요.\n스킬에 마우스를 올리면 여기에 설명이 나와요.", small);
                 return;
             }
-            GUI.Label(new Rect(r.x + 4f, r.y + 4f, 38f, 38f), Glyph(about.home), glyph);
-            GUI.Label(new Rect(r.x + 46f, r.y + 4f, r.width - 54f, 20f), Fit(about.name, cardName, r.width - 54f), cardName);
+            // Its picture big at the left, and beside it the name, where it comes from and the whole description.
+            float s = Mathf.Min(r.height - 16f, 88f);
+            DrawIcon(new Rect(r.x + 8f, r.y + 8f, s, s), about, about.built ? 1f : 0.55f);
+            float tx = r.x + s + 20f, tw = r.xMax - tx - 10f;
+            GUI.Label(new Rect(tx, r.y + 6f, tw, 20f), Fit(about.name, cardName, tw), cardName);
             string tags = TagNames(about.tags);
             string meta = $"{ChessPieces.Name(about.home)} 스킬 · {PawnRushSkillBook.OriginName(about.origin)}"
                           + (tags.Length > 0 ? " · " + tags : "") + (about.built ? "" : " · 계획만 (아직 못 넣음)")
                           + (placedAt.TryGetValue(about.id, out string at) ? " · 지금 " + at : "");
-            GUI.Label(new Rect(r.x + 46f, r.y + 23f, r.width - 54f, 16f), Fit(meta, smallOne, r.width - 54f), smallOne);
+            GUI.Label(new Rect(tx, r.y + 25f, tw, 16f), Fit(meta, smallOne, tw), smallOne);
             var oldColor = small.normal.textColor;
             small.normal.textColor = new Color(0.82f, 0.85f, 0.9f);
-            GUI.Label(new Rect(r.x + 12f, r.y + 46f, r.width - 24f, r.height - 50f), about.how, small);
+            GUI.Label(new Rect(tx, r.y + 46f, tw, r.height - 50f), about.how, small);
             small.normal.textColor = oldColor;
         }
 
@@ -904,7 +965,7 @@ namespace ChessFight.RagdollLab
 
             // The two halves: every piece's slots, and the skills to put in them. The message line under both.
             float bottom = area.yMax - 32f, gap = 20f;
-            float boardW = Mathf.Round((right - x0 - gap) * 0.58f);
+            float boardW = Mathf.Round((right - x0 - gap) * 0.62f);
             float boardEnd = DrawBoard(lo, new Rect(x0, y, boardW, bottom - y), e);
             // What a skill does: under the board when there is room there (a tall window), else under the list.
             float roomLeft = bottom - boardEnd - 10f;
@@ -926,12 +987,12 @@ namespace ChessFight.RagdollLab
                 var entry = PawnRushSkillBook.Find(dragId);
                 if (entry != null && e.type == EventType.Repaint)
                 {
-                    float dw = TextW(entry.name, cardName) + 52f;
-                    var d = new Rect(e.mousePosition.x + 10f, e.mousePosition.y - 15f, dw, 30f);
+                    float dw = TextW(entry.name, cardName) + 56f;
+                    var d = new Rect(e.mousePosition.x + 10f, e.mousePosition.y - 19f, dw, 38f);
                     Fill(d, new Color(0.2f, 0.18f, 0.08f, 0.95f));
                     Frame(d, Lit, 2f);
-                    GUI.Label(new Rect(d.x + 4f, d.y, 28f, d.height), Glyph(entry.home), glyphList);
-                    GUI.Label(new Rect(d.x + 34f, d.y, d.width - 38f, d.height), entry.name, cardName);
+                    DrawIcon(new Rect(d.x + 4f, d.y + 4f, 30f, 30f), entry);
+                    GUI.Label(new Rect(d.x + 40f, d.y, d.width - 44f, d.height), entry.name, cardName);
                 }
                 if (e.type == EventType.MouseUp) dragId = 0;
             }

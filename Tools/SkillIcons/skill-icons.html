@@ -1,0 +1,467 @@
+<!doctype html>
+<!--
+  Pawn Rush skill pictures for the developers' skill tree (K). The user, 2026-11-24: "스킬트리에서 스킬 이름만 나오지 말고
+  이미지도 같이 보였으면 좋겠는데" and "기물 아이콘을 넣는게 아니라 스킬이 뭔지 한눈에 보여주는 이미지를 넣어야지":
+  each picture shows what the skill does - the stone rolling, the kick behind, the puddle - with the game's own piece
+  pictures (Assets/Resources/Loading/ChessIcons: white = us, black = them) as the actors.
+
+  Each picture is drawn here from a few shapes. To make the PNGs again: Tools/SkillIcons/make-icons.ps1 (headless Edge
+  shoots this page on a clear background, slice_icons.py cuts it into Assets/Resources/PawnRushSkillIcons/<Name>.png,
+  the names being PawnRushSkillIds' constants). ?review shows them big with their small size and names, for a look.
+-->
+<html><head><meta charset="utf-8"><title>Pawn Rush skill icons</title>
+<style>
+html,body{margin:0;background:transparent;font-family:'Malgun Gothic',sans-serif}
+#sheet{display:grid;grid-template-columns:repeat(10,128px);grid-auto-rows:128px}
+#sheet svg{display:block}
+body.review{background:#0d121f;color:#dfe5ef}
+body.review #sheet{grid-template-columns:repeat(5,196px);grid-auto-rows:162px;gap:6px;padding:8px}
+.cell{position:relative}
+.cell .small{position:absolute;left:132px;top:4px}
+.cell .tiny{position:absolute;left:132px;top:52px}
+.cell .name{position:absolute;left:0;top:130px;width:196px;font-size:13px;white-space:nowrap;overflow:hidden}
+</style></head><body>
+<div id="sheet"></div>
+<script>
+const DIR = '../../Assets/Resources/Loading/ChessIcons/';
+const INK = '#231B16', CREAM = '#F4EEDC', GOLD = '#FFCF3A', RED = '#F0473E', WATER = '#5FD0F5', STEEL = '#E3E9F1',
+  ROPE = '#D9A15A', WOOD = '#9A6A3E', BRICK = '#D7C29F', GREYSTONE = '#AEB3BD';
+const PLATES = {
+  Pawn: ['#7DD487', '#2E8A4C'], Knight: ['#FFB65E', '#CF6721'], Bishop: ['#B99AF7', '#6544C2'],
+  Rook: ['#6AB2F7', '#2C61C0'], Queen: ['#FF8AA9', '#C13963'], King: ['#F6D35E', '#BC881C'], None: ['#9AA1B0', '#525A6B'],
+};
+let UID = 0;
+const n1 = v => Math.round(v * 10) / 10;
+const pts = a => a.map(p => n1(p[0]) + ',' + n1(p[1])).join(' ');
+const pd = a => 'M' + a.map(p => n1(p[0]) + ' ' + n1(p[1])).join(' L');
+const rad = d => d * Math.PI / 180;
+
+// ---------------------------------------------------------------- shapes
+
+// One of the game's piece pictures standing on (x, by), s its picture's size; r turns it round its foot, f faces it the
+// other way (the knight looks left as drawn), sx/sy squash it.
+function P(kind, team, x, by, s, o = {}) {
+  let t = `translate(${n1(x)} ${n1(by)})`;
+  if (o.r) t += ` rotate(${o.r})`;
+  const sx = (o.f ? -1 : 1) * (o.sx || 1), sy = o.sy || 1;
+  if (sx !== 1 || sy !== 1) t += ` scale(${sx} ${sy})`;
+  return `<g transform="${t}"${o.op != null ? ` opacity="${o.op}"` : ''}><image href="${DIR}${kind}_${team === 'b' ? 'Black' : 'White'}.png" x="${n1(-s / 2)}" y="${n1(-0.94 * s)}" width="${s}" height="${s}"/></g>`;
+}
+const sh = (x, y, rx, ry, op = 0.25) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry ?? rx * 0.3}" fill="${INK}" opacity="${op}"/>`;
+// A line with an ink edge.
+function ln(a, col, w = 6, extra = '') {
+  const d = typeof a === 'string' ? a : pd(a);
+  return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w + 5}" stroke-linecap="round" stroke-linejoin="round" ${extra}/>` +
+    `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
+}
+// A thick arrow along points, its head at the last.
+function arrow(a, col = GOLD, w = 7, hl, hw) {
+  hl = hl ?? w * 1.8 + 4; hw = hw ?? w * 1.4 + 4;
+  const tip = a[a.length - 1];
+  let i = a.length - 2;
+  while (i > 0 && Math.hypot(a[i][0] - tip[0], a[i][1] - tip[1]) < hl) i--;
+  const from = a[i], L = Math.hypot(tip[0] - from[0], tip[1] - from[1]) || 1;
+  const ux = (tip[0] - from[0]) / L, uy = (tip[1] - from[1]) / L, bx = tip[0] - ux * hl, by = tip[1] - uy * hl;
+  const shaft = a.slice(0, i + 1).concat([[bx + ux * 2, by + uy * 2]]);
+  const head = [tip, [bx - uy * hw, by + ux * hw], [bx + uy * hw, by - ux * hw]];
+  return `<path d="${pd(shaft)}" fill="none" stroke="${INK}" stroke-width="${w + 5}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<polygon points="${pts(head)}" fill="${INK}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>` +
+    `<path d="${pd(shaft)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<polygon points="${pts(head)}" fill="${col}"/>`;
+}
+function q(p0, c, p1, n = 18) {
+  const r = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; r.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]); }
+  return r;
+}
+function arc(cx, cy, rx, ry, a0, a1, n = 28) {
+  const r = [];
+  for (let i = 0; i <= n; i++) { const a = rad(a0 + (a1 - a0) * i / n); r.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+  return r;
+}
+// A dotted trail (a jump's path).
+const trail = (a, col = '#fff', w = 4) => `<path d="${pd(a)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="0.1 ${w * 2.3}" opacity=".95"/>`;
+function burst(x, y, R, r, n = 8, rot = 0, col = GOLD) {
+  const a = [], b = [];
+  for (let i = 0; i < n * 2; i++) { const t = rad(rot + i * 180 / n), k = i % 2 ? r : R; a.push([x + Math.cos(t) * k, y + Math.sin(t) * k]); b.push([x + Math.cos(t) * k * 0.5, y + Math.sin(t) * k * 0.5]); }
+  return `<polygon points="${pts(a)}" fill="${col}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><polygon points="${pts(b)}" fill="#fff"/>`;
+}
+function star(x, y, R, r, n, rot, col, w = 3.5) {
+  const a = [];
+  for (let i = 0; i < n * 2; i++) { const t = rad(rot + i * 180 / n), k = i % 2 ? r : R; a.push([x + Math.cos(t) * k, y + Math.sin(t) * k]); }
+  return `<polygon points="${pts(a)}" fill="${col}" stroke="${INK}" stroke-width="${w}" stroke-linejoin="round"/>`;
+}
+const star5 = (x, y, R, col = GOLD) => star(x, y, R, R * 0.45, 5, -90, col, 2);
+// Speed lines behind something moving at ang (degrees), from (x, y) backwards.
+function speed(x, y, ang, len, n = 3, gap = 9, w = 4, col = '#fff') {
+  const ux = Math.cos(rad(ang)), uy = Math.sin(rad(ang)), px = -uy, py = ux;
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const o = (i - (n - 1) / 2) * gap, l = len * (i % 2 ? 0.62 : 1), x1 = x + px * o, y1 = y + py * o;
+    s += `<line x1="${n1(x1)}" y1="${n1(y1)}" x2="${n1(x1 - ux * l)}" y2="${n1(y1 - uy * l)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" opacity=".92"/>`;
+  }
+  return s;
+}
+const txt = (x, y, s, size = 22, col = GOLD, anchor = 'middle') =>
+  `<text x="${x}" y="${y}" font-family="Arial Black, Segoe UI Black, Arial, Segoe UI Symbol" font-weight="900" font-size="${size}" text-anchor="${anchor}" fill="${col}" stroke="${INK}" stroke-width="${n1(size * 0.2)}" stroke-linejoin="round" paint-order="stroke">${s}</text>`;
+function spark(x, y, r, col = '#fff') {
+  const a = [[x, y - r], [x + r * 0.26, y - r * 0.26], [x + r, y], [x + r * 0.26, y + r * 0.26], [x, y + r], [x - r * 0.26, y + r * 0.26], [x - r, y], [x - r * 0.26, y - r * 0.26]];
+  return `<polygon points="${pts(a)}" fill="${col}"/>`;
+}
+function puffs(list, col = CREAM) {
+  return list.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r + 1.8}" fill="${INK}"/>`).join('') +
+    list.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}"/>`).join('');
+}
+const ring = (x, y, rx, ry, col = GOLD, w = 4, dash = '') =>
+  `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="${INK}" stroke-width="${w + 4}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>` +
+  `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="${col}" stroke-width="${w}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
+// Light: a soft wide band, an inked core, a white heart.
+function beam(a, b, w = 10, col = GOLD) {
+  return `<line x1="${n1(a[0])}" y1="${n1(a[1])}" x2="${n1(b[0])}" y2="${n1(b[1])}" stroke="${col}" stroke-width="${w * 2.2}" stroke-linecap="round" opacity=".35"/>` +
+    ln([a, b], col, w * 0.7) +
+    `<line x1="${n1(a[0])}" y1="${n1(a[1])}" x2="${n1(b[0])}" y2="${n1(b[1])}" stroke="#fff" stroke-width="${n1(w * 0.28)}" stroke-linecap="round"/>`;
+}
+function rays(x, y, n, R, col = '#fff', op = 0.3, rot = 0) {
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const t0 = rad(rot + (i - 0.25) * 360 / n), t1 = rad(rot + (i + 0.25) * 360 / n);
+    s += `<polygon points="${pts([[x, y], [x + Math.cos(t0) * R, y + Math.sin(t0) * R], [x + Math.cos(t1) * R, y + Math.sin(t1) * R]])}" fill="${col}" opacity="${op}"/>`;
+  }
+  return s;
+}
+const tile = (x, y, w, h, col = RED) => `<polygon points="${pts([[x, y - h / 2], [x + w / 2, y], [x, y + h / 2], [x - w / 2, y]])}" fill="${col}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+function blob(a) {
+  const n = a.length;
+  let d = `M${n1(a[0][0])} ${n1(a[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = a[(i - 1 + n) % n], p1 = a[i], p2 = a[(i + 1) % n], p3 = a[(i + 2) % n];
+    d += ` C${n1(p1[0] + (p2[0] - p0[0]) / 6)} ${n1(p1[1] + (p2[1] - p0[1]) / 6)} ${n1(p2[0] - (p3[0] - p1[0]) / 6)} ${n1(p2[1] - (p3[1] - p1[1]) / 6)} ${n1(p2[0])} ${n1(p2[1])}`;
+  }
+  return d + 'Z';
+}
+function stone(x, y, r) {
+  const k = [1, 0.94, 1.03, 0.92, 0.99, 1.05, 0.93, 1.01, 0.96];
+  const a = k.map((v, i) => [x + Math.cos(rad(i * 40 + 10)) * r * v, y + Math.sin(rad(i * 40 + 10)) * r * v]);
+  return `<path d="${blob(a)}" fill="#B9B2A5" stroke="${INK}" stroke-width="3.5"/>` +
+    `<path d="M${x + r * 0.95} ${y + r * 0.1} Q${x + r * 0.7} ${y + r * 0.85} ${x - r * 0.1} ${y + r * 0.98} Q${x + r * 0.55} ${y + r * 0.45} ${x + r * 0.95} ${y + r * 0.1}Z" fill="${INK}" opacity=".22"/>` +
+    `<ellipse cx="${x - r * 0.38}" cy="${y - r * 0.42}" rx="${r * 0.3}" ry="${r * 0.18}" transform="rotate(-30 ${x - r * 0.38} ${y - r * 0.42})" fill="#fff" opacity=".55"/>` +
+    `<path d="M${x + r * 0.1} ${y - r * 0.6} L${x + r * 0.25} ${y - r * 0.2} L${x + r * 0.05} ${y + r * 0.15} M${x + r * 0.25} ${y - r * 0.2} L${x + r * 0.55} ${y - r * 0.05}" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+const ball = (x, y, r, col = '#56504A') => `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" stroke="${INK}" stroke-width="3"/><circle cx="${n1(x - r * 0.35)}" cy="${n1(y - r * 0.35)}" r="${n1(r * 0.3)}" fill="#fff" opacity=".7"/>`;
+function flask(x, y, s = 1, rot = 0) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">` +
+    `<path d="M-5.5 -20 L-5.5 -9 A16 16 0 1 0 5.5 -9 L5.5 -20 Z" fill="#DDF4FC" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M-15.2 4 A16 16 0 0 0 15.2 4 Z" fill="${WATER}"/>` +
+    `<path d="M-15.2 4 A16 16 0 0 0 15.2 4" fill="none" stroke="${INK}" stroke-width="3.5"/>` +
+    `<path d="M-5.5 -9 A16 16 0 1 0 5.5 -9" fill="none" stroke="${INK}" stroke-width="3.5"/>` +
+    `<rect x="-7.5" y="-28" width="15" height="9" rx="2.5" fill="${WOOD}" stroke="${INK}" stroke-width="3"/>` +
+    `<path d="M0 -3 V15 M-7 4 H7" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>` +
+    `<path d="M-10 -3 A10 10 0 0 1 -4 -8" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>`;
+}
+// A sword, its grip at (x, y), pointing at rot (0 = up).
+function sword(x, y, L, rot) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot})">` +
+    `<polygon points="0,${-L} 7,${-L + 12} 7,-8 -7,-8 -7,${-L + 12}" fill="${STEEL}" stroke="${INK}" stroke-width="3.2" stroke-linejoin="round"/>` +
+    `<line x1="0" y1="${-L + 10}" x2="0" y2="-10" stroke="#98A6BB" stroke-width="2.4"/>` +
+    `<rect x="-17" y="-9" width="34" height="8" rx="3.5" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>` +
+    `<rect x="-4" y="-1" width="8" height="15" fill="${WOOD}" stroke="${INK}" stroke-width="3"/>` +
+    `<circle cx="0" cy="18" r="5.5" fill="${GOLD}" stroke="${INK}" stroke-width="3"/></g>`;
+}
+function chain(a, b, link = 11) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), n = Math.max(2, Math.round(L / link)), ang = Math.atan2(dy, dx) * 180 / Math.PI;
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n, tr = `translate(${n1(a[0] + dx * t)} ${n1(a[1] + dy * t)}) rotate(${n1(ang)})`;
+    s += i % 2
+      ? `<rect x="${n1(-link * 0.66)}" y="-2.8" width="${n1(link * 1.32)}" height="5.6" rx="2.8" fill="#AFB8C6" stroke="${INK}" stroke-width="2.4" transform="${tr}"/>`
+      : `<ellipse rx="${n1(link * 0.66)}" ry="${n1(link * 0.4)}" fill="none" stroke="${INK}" stroke-width="7" transform="${tr}"/><ellipse rx="${n1(link * 0.66)}" ry="${n1(link * 0.4)}" fill="none" stroke="#D2D8E2" stroke-width="3.2" transform="${tr}"/>`;
+  }
+  return s;
+}
+const hook = (x, y, rot, s = 1) => `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">${ln('M0 -9 L0 5 A8 8 0 1 1 -14 3', '#D2D8E2', 4.5)}</g>`;
+function wall(x, y, w, h, col = BRICK, bh = 10) {
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${col}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`;
+  let row = 0;
+  for (let yy = y + bh; yy < y + h - 2; yy += bh) s += `<line x1="${x}" y1="${yy}" x2="${x + w}" y2="${yy}" stroke="${INK}" stroke-width="2" opacity=".5"/>`;
+  for (let yy = y; yy < y + h - 2; yy += bh, row++)
+    for (let xx = x + (row % 2 ? 9 : 18); xx < x + w - 3; xx += 18)
+      s += `<line x1="${xx}" y1="${yy}" x2="${xx}" y2="${Math.min(yy + bh, y + h)}" stroke="${INK}" stroke-width="2" opacity=".5"/>`;
+  return s + `<rect x="${x + 2}" y="${y + 2}" width="${w - 4}" height="3" fill="#fff" opacity=".35"/>`;
+}
+function merlons(x, y, w, n, col = BRICK) {
+  let s = '';
+  const mw = w / (n * 2 - 1);
+  for (let i = 0; i < n; i++) s += `<rect x="${n1(x + i * mw * 2)}" y="${y - 10}" width="${n1(mw)}" height="12" fill="${col}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`;
+  return s;
+}
+function wheel(x, y, r) {
+  let s = `<circle cx="${x}" cy="${y}" r="${r}" fill="${WOOD}" stroke="${INK}" stroke-width="3.5"/><circle cx="${x}" cy="${y}" r="${r - 4.5}" fill="#C98F52" stroke="${INK}" stroke-width="2"/>`;
+  for (let i = 0; i < 6; i++) { const t = rad(i * 60 + 15); s += `<line x1="${x}" y1="${y}" x2="${n1(x + Math.cos(t) * (r - 4.5))}" y2="${n1(y + Math.sin(t) * (r - 4.5))}" stroke="${INK}" stroke-width="2.4"/>`; }
+  return s + `<circle cx="${x}" cy="${y}" r="3.5" fill="${GOLD}" stroke="${INK}" stroke-width="2"/>`;
+}
+function foot(x, y, rot, s = 1, col = CREAM) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><ellipse cx="0" cy="-5" rx="7.5" ry="11.5" fill="${col}" stroke="${INK}" stroke-width="3"/><ellipse cx="0" cy="11.5" rx="5.8" ry="5.8" fill="${col}" stroke="${INK}" stroke-width="3"/></g>`;
+}
+function hand(x, y, s = 1) {
+  return `<g transform="translate(${x} ${y}) scale(${s})">` +
+    `<rect x="-33" y="-11" width="12" height="24" rx="3" fill="#E6DCC3" stroke="${INK}" stroke-width="3"/>` +
+    `<rect x="-23" y="-13" width="28" height="28" rx="10" fill="${CREAM}" stroke="${INK}" stroke-width="3.5"/>` +
+    `<rect x="-3" y="-13" width="31" height="11" rx="5.5" fill="${CREAM}" stroke="${INK}" stroke-width="3.5"/>` +
+    `<path d="M-6 2 H3 M-6 8 H2" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+}
+function spear(x1, y1, x2, y2) {
+  const L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, px = -uy, py = ux, b = [x2 - ux * 15, y2 - uy * 15];
+  return ln([[x1, y1], b], WOOD, 4.5) + `<polygon points="${pts([[x2, y2], [b[0] + px * 7, b[1] + py * 7], [b[0] - ux * 3, b[1] - uy * 3], [b[0] - px * 7, b[1] - py * 7]])}" fill="${STEEL}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+}
+function bolas(x, y, rot) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot})">` +
+    `<circle r="24" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 7" opacity=".9"/>` +
+    ln('M-18 7 Q-2 -12 18 -7', ROPE, 3.2) + ball(-18, 7, 8.5) + ball(18, -7, 8.5) + `</g>`;
+}
+function target(x, y, r, col = RED) {
+  let s = `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${INK}" stroke-width="8"/><circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${col}" stroke-width="4"/>`;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) s += ln([[x + dx * (r - 6), y + dy * (r - 6)], [x + dx * (r + 6), y + dy * (r + 6)]], col, 3);
+  return s + `<circle cx="${x}" cy="${y}" r="3" fill="${col}" stroke="${INK}" stroke-width="1.5"/>`;
+}
+function gift(x, y, w, h) {
+  const c = '#E8473F';
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" stroke="${INK}" stroke-width="3.5"/>` +
+    `<rect x="${x - 4}" y="${y - 11}" width="${w + 8}" height="12" rx="2" fill="${c}" stroke="${INK}" stroke-width="3.5"/>` +
+    `<rect x="${x + w / 2 - 5}" y="${y - 11}" width="10" height="${h + 11}" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>` +
+    `<ellipse cx="${x + w / 2 - 9}" cy="${y - 17}" rx="10" ry="6.5" transform="rotate(-25 ${x + w / 2 - 9} ${y - 17})" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>` +
+    `<ellipse cx="${x + w / 2 + 9}" cy="${y - 17}" rx="10" ry="6.5" transform="rotate(25 ${x + w / 2 + 9} ${y - 17})" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>` +
+    `<circle cx="${x + w / 2}" cy="${y - 13}" r="4.5" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>`;
+}
+function trumpet(x, y, rot, s = 1) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">` +
+    `<path d="M-28 -3.5 L5 -3.5 L24 -16 L24 16 L5 3.5 L-28 3.5 Z" fill="${GOLD}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<ellipse cx="24" cy="0" rx="4.5" ry="16" fill="#FFE9A0" stroke="${INK}" stroke-width="3"/>` +
+    `<rect x="-33" y="-5.5" width="7" height="11" rx="2" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>` +
+    `<rect x="-14" y="-11" width="5" height="8" fill="${GOLD}" stroke="${INK}" stroke-width="2.2"/><rect x="-5" y="-11" width="5" height="8" fill="${GOLD}" stroke="${INK}" stroke-width="2.2"/></g>`;
+}
+function shield(x, y, s = 1) {
+  return `<g transform="translate(${x} ${y}) scale(${s})">` +
+    `<path d="M0 -26 L22 -18 L20 4 Q15 19 0 28 Q-15 19 -20 4 L-22 -18 Z" fill="#78B2F2" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M0 -19 L15 -13.5 L13.5 3 Q10.5 13 0 20 Q-10.5 13 -13.5 3 L-15 -13.5 Z" fill="none" stroke="${GOLD}" stroke-width="3"/>` +
+    `<path d="M0 -10 V13 M-8 0 H8" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/></g>`;
+}
+const moon = (x, y, r) => `<path d="M${x} ${y - r} A${r} ${r} 0 1 0 ${x} ${y + r} A${n1(r * 0.78)} ${n1(r * 0.78)} 0 1 1 ${x} ${y - r} Z" fill="${CREAM}" stroke="${INK}" stroke-width="2.5"/>`;
+function crescent(x, y, R, rot, col) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M0 ${-R} A${R} ${R} 0 0 1 0 ${R} A${n1(R * 1.35)} ${n1(R * 1.35)} 0 0 0 0 ${-R} Z" fill="${col}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M0 ${n1(-R * 0.7)} A${n1(R * 0.85)} ${n1(R * 0.85)} 0 0 1 0 ${n1(R * 0.7)}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/></g>`;
+}
+// Two arrows head to head: "this way or that".
+const arrow2 = (a, b, col = GOLD, w = 6) => { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; return arrow([m, a], col, w) + arrow([m, b], col, w); };
+
+// ---------------------------------------------------------------- the plate
+
+function plate(kind, body) {
+  const id = ++UID, [a, b] = PLATES[kind];
+  let chk = '';
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) if ((i + j) % 2) chk += `<rect x="${6 + i * 14.5}" y="${6 + j * 14.5}" width="14.5" height="14.5"/>`;
+  return `<defs><linearGradient id="g${id}" x1="0" y1="0" x2="0.25" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>` +
+    `<radialGradient id="h${id}" cx="0.28" cy="0.16" r="0.8"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>` +
+    `<clipPath id="c${id}"><rect x="6" y="6" width="116" height="116" rx="20"/></clipPath></defs>` +
+    `<rect x="6" y="9" width="116" height="116" rx="20" fill="#000" opacity=".35"/>` +
+    `<g clip-path="url(#c${id})"><rect width="128" height="128" fill="url(#g${id})"/><g fill="#fff" opacity=".06">${chk}</g>` +
+    `<rect width="128" height="128" fill="url(#h${id})"/>${body}</g>` +
+    `<rect x="6" y="6" width="116" height="116" rx="20" fill="none" stroke="${INK}" stroke-width="4"/>`;
+}
+
+// ---------------------------------------------------------------- the pictures (name = PawnRushSkillIds' constant)
+
+const ICONS = [];
+const def = (name, kind, fn) => ICONS.push({ name, kind, fn });
+const alias = (name, of) => { const o = ICONS.find(i => i.name === of); ICONS.push({ name, kind: o.kind, fn: o.fn }); };
+const W = '#fff';
+
+// The pawn's.
+def('TwoSteps', 'Pawn', () => sh(42, 110, 20) + speed(24, 80, 0, 18, 3, 11) + puffs([[26, 106, 5], [16, 110, 4]]) +
+  P('Pawn', 'w', 44, 110, 64, { r: 10 }) + ln([[70, 44], [86, 62], [70, 80]], GOLD, 9) + ln([[93, 44], [109, 62], [93, 80]], GOLD, 9));
+def('SteeredSteps', 'Pawn', () => sh(30, 118, 14) + P('Pawn', 'w', 30, 118, 48) + arrow([[46, 98], [46, 64], [100, 16]], GOLD, 9) +
+  foot(66, 98, 0, 0.8) + foot(90, 64, 45, 0.8));
+def('ChaseAway', 'Pawn', () => sh(30, 112, 16) + P('Pawn', 'w', 30, 112, 54, { r: 6 }) + spear(38, 82, 84, 64) +
+  speed(108, 28, -50, 14, 2, 8, 3.5) + P('Rook', 'b', 92, 72, 40, { r: 40 }) + burst(84, 66, 13, 6, 8, 10) + txt(96, 114, '+5', 26));
+def('Promote', 'Pawn', () => rays(84, 64, 12, 70, W, 0.25) + sh(30, 114, 14) + P('Pawn', 'w', 30, 114, 46) +
+  arrow([[44, 82], [62, 60]], GOLD, 7) + sh(84, 112, 22) + P('Queen', 'w', 84, 112, 72) + spark(114, 20, 9) + spark(56, 26, 6));
+def('PassedPawn', 'Pawn', () => speed(30, 74, 0, 24, 3, 13, 5) + P('Pawn', 'b', 96, 62, 36, { r: 45 }) + P('Pawn', 'b', 90, 120, 36, { r: 65 }) +
+  burst(86, 70, 11, 4, 7) + sh(52, 114, 22) + P('Pawn', 'w', 52, 114, 64, { r: 14 }));
+def('PassantBang', 'Pawn', () => arrow(arc(70, 66, 36, 34, -30, -215, 30), GOLD, 9) + P('Pawn', 'b', 100, 50, 38, { r: -35 }) +
+  sh(70, 116, 14) + P('Pawn', 'w', 70, 116, 44) + txt(106, 116, '!!', 32));
+def('PromotionRun', 'Pawn', () => rays(74, 58, 14, 84, W, 0.25) + speed(30, 56, 0, 24, 4, 12, 5) + sh(76, 118, 30) +
+  P('Queen', 'w', 76, 118, 98, { r: 10 }) + txt(26, 116, '!!', 30));
+def('Bolas', 'Pawn', () => bolas(38, 44, -20) + trail(q([60, 56], [78, 52], [88, 74]), W, 3.5) +
+  sh(92, 114, 16) + P('Pawn', 'b', 92, 114, 54, { r: -14 }) + ln(arc(88, 89, 13, 5, 190, 520, 24), ROPE, 3) + ball(70, 98, 6) + ball(104, 100, 6));
+def('EnPassant', 'Pawn', () => sh(30, 114, 14) + P('Pawn', 'w', 30, 114, 46) + arrow([[44, 74], [68, 50]], GOLD, 7) +
+  sh(90, 112, 18) + P('Pawn', 'b', 84, 112, 54, { r: 40 }) + star5(104, 46, 7) + star5(118, 60, 5) + ln([[66, 112], [100, 112]], W, 3));
+def('TouchMove', 'Pawn', () => hand(38, 62, 1.1) + ln(arc(74, 56, 8, 8, -60, 60, 10), W, 3) + ln(arc(74, 56, 15, 15, -55, 55, 10), W, 3) +
+  speed(80, 96, 0, 12, 2, 10, 3.5) + sh(98, 114, 18) + P('Pawn', 'b', 98, 114, 54, { r: 12 }) + txt(104, 40, '!', 34, RED));
+def('Squeeze', 'Pawn', () => P('Pawn', 'b', 30, 118, 50, { r: -18 }) + P('Pawn', 'b', 98, 118, 50, { r: 18 }) +
+  arrow([[36, 58], [16, 50]], W, 5) + arrow([[92, 58], [112, 50]], W, 5) + sh(64, 118, 14) + P('Pawn', 'w', 64, 118, 60, { sx: 0.72 }) +
+  arrow([[64, 50], [64, 16]], GOLD, 8));
+
+// The knight's.
+def('TurnLeap', 'Knight', () => `<rect x="-4" y="100" width="44" height="40" rx="4" fill="${INK}" opacity=".3"/><rect x="84" y="88" width="50" height="50" rx="4" fill="${INK}" opacity=".3"/>` +
+  trail([[18, 96], [26, 52], [46, 28], [72, 26]].concat(q([72, 26], [92, 30], [96, 52], 8)), W, 4.5) + sh(102, 90, 16) + P('Knight', 'w', 102, 90, 50, { f: 1 }));
+def('BentLeap', 'Knight', () => sh(56, 114, 14) + P('Pawn', 'b', 56, 114, 42) + arrow([[22, 112], [22, 30], [92, 30], [92, 56]], GOLD, 9) +
+  sh(96, 116, 16) + P('Knight', 'w', 96, 116, 50, { f: 1 }));
+def('LeapFork', 'Knight', () => P('Pawn', 'b', 26, 74, 34, { r: -38 }) + P('Pawn', 'b', 102, 74, 34, { r: 38 }) + burst(30, 88, 13, 6, 8) + burst(98, 88, 13, 6, 8, 20) +
+  puffs([[42, 110, 6], [86, 110, 6]]) + sh(64, 114, 22) + P('Knight', 'w', 64, 114, 64) + arrow([[64, 8], [64, 28]], W, 6));
+def('Fork', 'Knight', () => ring(28, 60, 18, 6, RED, 3.5) + P('Pawn', 'b', 28, 60, 38) + ring(100, 60, 18, 6, RED, 3.5) + P('Pawn', 'b', 100, 60, 38) +
+  arrow(q([56, 78], [44, 74], [40, 62]), GOLD, 6) + arrow(q([72, 78], [84, 74], [88, 62]), GOLD, 6) + sh(64, 118, 20) + P('Knight', 'w', 64, 118, 56));
+def('KnightTour', 'Knight', () => [20, 52, 84].map(x => sh(x, 116, 12) + P('Pawn', 'b', x, 116, 36, { sy: 0.8 })).join('') +
+  trail(q([4, 70], [10, 60], [20, 92]).concat(q([20, 92], [36, 46], [52, 92]), q([52, 92], [68, 46], [84, 92]), q([84, 92], [96, 52], [104, 58])), W, 4) +
+  burst(20, 92, 7, 3, 6) + burst(52, 92, 7, 3, 6) + burst(84, 92, 7, 3, 6) + P('Knight', 'w', 108, 66, 42, { f: 1, r: -10 }));
+def('FamilyFork', 'Knight', () => sh(64, 118, 16, 4, 0.18) + ring(22, 114, 16, 5, RED, 3) + ring(64, 120, 16, 5, RED, 3) + ring(106, 114, 16, 5, RED, 3) +
+  P('King', 'b', 22, 114, 42) + P('Queen', 'b', 64, 120, 40) + P('Rook', 'b', 106, 114, 38) +
+  arrow([[52, 52], [28, 76]], GOLD, 5) + arrow([[64, 56], [64, 80]], GOLD, 5) + arrow([[76, 52], [100, 76]], GOLD, 5) + P('Knight', 'w', 64, 52, 46, { f: 1 }));
+def('Nightmare', 'Knight', () => `<rect width="128" height="128" fill="#1B1442" opacity=".62"/>` + spark(24, 26, 4) + spark(44, 16, 3) + spark(18, 58, 3) + moon(98, 30, 15) +
+  `<ellipse cx="62" cy="84" rx="40" ry="42" fill="#A86BFF" opacity=".45"/>` + puffs([[30, 112, 6], [96, 112, 6]], '#8E7FB8') +
+  P('Knight', 'w', 62, 118, 82, { f: 1 }) + `<ellipse cx="76.5" cy="66" rx="5" ry="4" fill="${RED}" stroke="${INK}" stroke-width="1.5"/><circle cx="75.5" cy="65" r="1.4" fill="#fff"/>`);
+def('HighStomp', 'Knight', () => ring(64, 114, 30, 8, RED, 3.5) + sh(64, 114, 18) + P('Pawn', 'b', 64, 114, 44, { sy: 0.45 }) + burst(64, 98, 13, 5, 8) +
+  arrow([[64, 52], [64, 86]], GOLD, 10) + P('Knight', 'w', 64, 52, 48, { f: 1 }) + speed(64, 6, -90, 10, 3, 14, 3));
+def('BackKick', 'Knight', () => burst(24, 80, 19, 8, 9, 5) + P('Pawn', 'b', 36, 44, 34, { r: -48 }) + speed(50, 30, -135, 12, 2, 8, 3.5) +
+  ln([[56, 96], [33, 82]], CREAM, 8) + `<rect x="21" y="73" width="14" height="13" rx="3" transform="rotate(-28 28 79.5)" fill="#3A2C22" stroke="${INK}" stroke-width="3"/>` +
+  sh(80, 114, 26) + P('Knight', 'w', 82, 114, 72, { f: 1 }) + arrow([[92, 20], [120, 20]], W, 6));
+def('Smother', 'Knight', () => ring(64, 114, 46, 11, GOLD, 3) + P('Pawn', 'b', 30, 114, 38, { r: -24 }) + P('Pawn', 'b', 98, 114, 38, { r: 24 }) +
+  sh(64, 116, 18) + P('Pawn', 'b', 64, 116, 44, { sy: 0.42 }) + burst(64, 100, 12, 5, 8) + arrow([[64, 48], [64, 82]], GOLD, 9) + P('Knight', 'w', 64, 48, 44, { f: 1 }));
+def('PressLeap', 'Knight', () => ring(64, 110, 56, 14, GOLD, 3) + ring(64, 110, 38, 9, W, 2.5) + P('Pawn', 'b', 24, 118, 38, { sy: 0.45 }) + P('Pawn', 'b', 104, 118, 38, { sy: 0.45 }) +
+  puffs([[40, 108, 6], [88, 108, 6], [48, 114, 5], [80, 114, 5]]) + sh(64, 110, 20) + P('Knight', 'w', 64, 110, 66, { f: 1 }) + speed(64, 18, 90, 14, 3, 18, 3.5));
+
+// The bishop's.
+def('LongSnipe', 'Bishop', () => beam([44, 74], [104, 26], 10) + target(104, 26, 13) + sh(32, 116, 16) + P('Bishop', 'w', 32, 116, 62, { r: -6 }));
+def('FlankShot', 'Bishop', () => speed(34, 70, -90, -16, 3, 9, 3.5) + sh(34, 104, 15) + P('Bishop', 'w', 34, 104, 56) +
+  beam([50, 56], [90, 56], 9) + burst(94, 56, 13, 5, 8) + speed(118, 108, 0, 10, 2, 8, 3.5) + sh(100, 116, 14) + P('Pawn', 'b', 102, 116, 42, { r: 30 }));
+def('LongDiagonal', 'Bishop', () => `<g fill="${INK}" opacity=".14">` + [...Array(64)].map((_, k) => ((k % 8) + (k >> 3)) % 2 ? `<rect x="${(k % 8) * 16}" y="${(k >> 3) * 16}" width="16" height="16"/>` : '').join('') + `</g>` +
+  beam([-6, 134], [134, -6], 11) + sh(66, 84, 14) + P('Pawn', 'b', 66, 84, 44) +
+  `<polygon points="54,80 60,80 57,92" fill="${GOLD}" stroke="${INK}" stroke-width="2"/><polygon points="72,80 78,80 75,92" fill="${GOLD}" stroke="${INK}" stroke-width="2"/>` + txt(96, 70, '!', 26, RED));
+def('GreatDiagonal', 'Bishop', () => `<rect x="-2" y="0" width="14" height="128" fill="#5B4F8A" stroke="${INK}" stroke-width="3"/><rect x="116" y="0" width="14" height="128" fill="#5B4F8A" stroke="${INK}" stroke-width="3"/>` +
+  beam([12, 124], [116, 64], 12) + beam([116, 64], [12, 4], 12) + burst(114, 64, 12, 5, 8) + P('Pawn', 'b', 56, 108, 30, { r: -30 }) + P('Pawn', 'b', 70, 44, 30, { r: 30 }) + txt(84, 120, '!!', 26));
+def('HolySwords', 'Bishop', () => rays(64, 60, 12, 76, W, 0.26) + `<circle cx="64" cy="58" r="30" fill="${GOLD}" opacity=".4"/>` +
+  sword(36, 100, 70, 38) + sword(92, 100, 70, -38) + spark(64, 18, 9) + spark(20, 34, 6) + spark(108, 34, 6));
+def('StoneThrow', 'Bishop', () => speed(42, 84, 0, 22, 3, 14, 5) + puffs([[54, 114, 6], [44, 118, 4]]) + sh(80, 116, 28) + stone(80, 84, 30) +
+  ln(arc(80, 84, 38, 38, 195, 245, 10), W, 3.5) + ln(arc(80, 84, 38, 38, 15, 65, 10), W, 3.5) + P('Bishop', 'w', 26, 50, 38) + ring(26, 54, 12, 4, W, 2));
+def('HolyWater', 'Bishop', () => `<ellipse cx="70" cy="104" rx="50" ry="15" fill="${WATER}" stroke="${INK}" stroke-width="3.5"/>` +
+  `<ellipse cx="56" cy="100" rx="16" ry="4" fill="#fff" opacity=".7"/><ellipse cx="96" cy="108" rx="9" ry="2.5" fill="#fff" opacity=".7"/>` +
+  speed(76, 92, 20, 12, 2, 8, 3) + P('Pawn', 'b', 92, 104, 46, { r: 38 }) + flask(36, 42, 1.1, -40) +
+  `<circle cx="58" cy="62" r="4" fill="${WATER}" stroke="${INK}" stroke-width="2"/><circle cx="64" cy="76" r="3" fill="${WATER}" stroke="${INK}" stroke-width="2"/>`);
+def('GreekGift', 'Bishop', () => gift(12, 84, 40, 34) + sh(98, 118, 14) + P('Pawn', 'b', 98, 118, 50, { r: -20 }) +
+  ln(q([40, 70], [66, 14], [88, 72]), ROPE, 3) + hook(88, 80, 0, 1.1) + arrow([[84, 104], [60, 104]], GOLD, 6));
+def('Pin', 'Bishop', () => wall(100, -4, 30, 136, '#B7A6E0') + sh(82, 114, 14) + P('Pawn', 'b', 84, 114, 52, { r: 10 }) +
+  beam([4, 66], [100, 66], 10) + burst(100, 66, 13, 5, 8));
+def('CrossRope', 'Bishop', () => ln([[14, 30], [114, 102]], ROPE, 6) + ln([[114, 30], [14, 102]], ROPE, 6) +
+  [[14, 30], [114, 102], [114, 30], [14, 102]].map(([x, y]) => `<rect x="${x - 4}" y="${y - 10}" width="8" height="16" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="2.6"/>`).join('') +
+  sh(70, 92, 12) + P('Pawn', 'b', 66, 92, 40, { r: 42 }) + star5(52, 46, 7) + star5(80, 40, 5));
+def('Ghost', 'Bishop', () => `<ellipse cx="64" cy="70" rx="34" ry="46" fill="#fff" opacity=".25"/>` + arrow([[4, 74], [122, 74]], RED, 8) +
+  P('Bishop', 'w', 64, 120, 88, { op: 0.5 }) + spark(28, 26, 7) + spark(102, 30, 9) + spark(98, 104, 5));
+def('Fianchetto', 'Bishop', () => `<polygon points="4,96 52,96 60,104 60,132 4,132" fill="#E9DCC0" stroke="${INK}" stroke-width="3"/>` +
+  sh(30, 100, 14) + P('Bishop', 'w', 30, 100, 54) + trail([[46, 52], [96, 22]], GOLD, 4) +
+  sh(96, 84, 12) + P('Pawn', 'b', 96, 84, 38) + chain([96, 86], [110, 106], 8) + ball(112, 110, 9, '#3B3633'));
+def('AirVolley', 'Bishop', () => ring(64, 62, 14, 4, W, 2) + P('Bishop', 'w', 64, 58, 44) + trail(q([48, 40], [24, 30], [22, 92]), W, 3.5) + trail(q([80, 40], [104, 30], [106, 92]), W, 3.5) +
+  ball(22, 94, 6) + ball(106, 94, 6) + ln([[30, 98], [98, 122]], GOLD, 7) + ln([[98, 98], [30, 122]], GOLD, 7));
+
+// The rook's.
+def('ChainBehind', 'Rook', () => sh(28, 114, 16) + P('Rook', 'w', 28, 114, 56) + chain([44, 62], [88, 72]) + hook(92, 78, -10) +
+  sh(100, 114, 14) + P('Pawn', 'b', 102, 114, 46, { r: -20 }) + arrow2([44, 104], [80, 104], GOLD, 5));
+def('ChainPull', 'Rook', () => sh(22, 114, 14) + P('Rook', 'w', 22, 114, 50) + chain([34, 58], [102, 58]) + hook(106, 64, 0) +
+  sh(104, 114, 14) + P('Pawn', 'b', 104, 114, 42, { r: -28 }) + arrow(q([94, 90], [70, 104], [44, 92]), GOLD, 6));
+def('CastleOver', 'Rook', () => sh(54, 114, 14) + P('Pawn', 'w', 54, 114, 48) + trail(q([14, 104], [46, -16], [92, 70]), W, 4.5) +
+  ring(98, 116, 28, 7, GOLD, 3) + sh(98, 116, 18) + P('Rook', 'w', 98, 116, 52));
+def('Chariot', 'Rook', () => speed(30, 76, 0, 22, 3, 13, 5) + sh(64, 118, 32) + P('Rook', 'w', 64, 106, 64) + wheel(42, 104, 14) + wheel(86, 104, 14) +
+  arrow([[86, 24], [112, 24], [112, 50]], GOLD, 7));
+def('SeventhRank', 'Rook', () => P('Pawn', 'b', 30, 46, 32, { r: -35 }) + P('Pawn', 'b', 96, 40, 32, { r: 35 }) +
+  arrow([[34, 66], [34, 50]], GOLD, 6) + arrow([[64, 66], [64, 44]], GOLD, 6) + arrow([[94, 66], [94, 50]], GOLD, 6) +
+  merlons(8, 78, 112, 5) + wall(8, 78, 112, 34) + puffs([[16, 118, 6], [112, 118, 6]]));
+def('RankWall', 'Rook', () => merlons(34, 26, 52, 3) + wall(34, 26, 52, 98) + txt(60, 92, '7', 46, W) + burst(94, 72, 11, 4, 7) +
+  sh(108, 116, 14) + P('Pawn', 'b', 110, 116, 46, { r: 22 }) + star5(108, 40, 6) + star5(120, 52, 5));
+def('WallCharge', 'Rook', () => merlons(6, 64, 34, 2) + wall(6, 64, 34, 64) + puffs([[12, 58, 5], [34, 56, 5]]) + arrow([[23, 50], [23, 26]], W, 5) +
+  speed(62, 82, 0, 16, 3, 12, 4.5) + sh(88, 116, 20) + P('Rook', 'w', 90, 116, 60, { r: 8 }));
+def('RookRoll', 'Rook', () => speed(24, 82, 0, 18, 3, 12, 5) + sh(60, 110, 30) + P('Rook', 'w', 88, 82, 62, { r: -90 }) +
+  arrow(arc(58, 82, 34, 30, 200, 290, 16), W, 5) + P('Pawn', 'b', 100, 118, 38, { r: 38 }) + burst(94, 96, 10, 4, 7));
+alias('RollShort', 'RookRoll');
+def('TowerTrap', 'Rook', () => `<path d="M2 122 L16 112 L22 118 L34 106 L40 112" fill="none" stroke="${INK}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>` +
+  merlons(42, 32, 48, 3, GREYSTONE) + wall(42, 32, 48, 90, GREYSTONE) + `<rect x="53" y="54" width="26" height="32" rx="3" fill="#2E2621" stroke="${INK}" stroke-width="3"/>` +
+  `<circle cx="66" cy="72" r="8" fill="#2A221C" stroke="#D6AE5C" stroke-width="2.5"/>` +
+  [59, 66, 73].map(x => `<line x1="${x}" y1="54" x2="${x}" y2="86" stroke="${INK}" stroke-width="5"/><line x1="${x}" y1="54" x2="${x}" y2="86" stroke="#D2D8E2" stroke-width="2.4"/>`).join('') +
+  puffs([[40, 120, 6], [92, 120, 6], [100, 114, 4]]) + speed(110, 40, -90, -12, 3, 8, 3.5));
+def('BackRank', 'Rook', () => [...Array(8)].map((_, i) => `<rect x="${i * 16}" y="104" width="16" height="24" fill="${i % 2 ? '#B58863' : '#F0D9B5'}" stroke="${INK}" stroke-width="2"/>`).join('') +
+  speed(92, 78, 180, 16, 3, 12, 4.5) + sh(66, 106, 18) + P('Rook', 'w', 66, 106, 58) + burst(36, 80, 11, 4, 7) + P('Pawn', 'b', 30, 82, 34, { r: -40 }) +
+  arrow2([28, 24], [100, 24], W, 5));
+def('FileCharge', 'Rook', () => `<line x1="64" y1="124" x2="64" y2="20" stroke="${GOLD}" stroke-width="5" stroke-dasharray="9 8" stroke-linecap="round"/>` +
+  arrow([[64, 34], [64, 8]], GOLD, 7) + P('Pawn', 'b', 32, 72, 36, { r: -40 }) + P('Pawn', 'b', 96, 72, 36, { r: 40 }) + burst(46, 70, 10, 4, 7) + burst(82, 70, 10, 4, 7) +
+  speed(64, 124, 90, -10, 3, 14, 3.5) + sh(64, 116, 18) + P('Rook', 'w', 64, 116, 56));
+def('Castling', 'Rook', () => sh(32, 116, 16) + P('Rook', 'w', 32, 116, 54) + sh(96, 116, 18) + P('King', 'w', 96, 116, 64) +
+  arrow(q([30, 52], [60, 8], [90, 42]), GOLD, 7) + arrow(q([84, 78], [64, 96], [44, 80]), GOLD, 7));
+def('CastleSwap', 'Rook', () => sh(30, 116, 16) + P('Rook', 'w', 30, 116, 54) + sh(98, 116, 14) + P('Pawn', 'w', 98, 116, 48) +
+  arrow([[46, 56], [84, 56]], GOLD, 7) + arrow([[84, 84], [46, 84]], GOLD, 7) + spark(64, 26, 8) + spark(108, 30, 6) + spark(20, 34, 5));
+def('BackPush', 'Rook', () => sh(34, 118, 18) + P('Rook', 'w', 34, 118, 60, { r: 14 }) + burst(60, 76, 11, 4, 7) +
+  speed(80, 70, -35, 20, 3, 10, 4) + P('Pawn', 'w', 90, 80, 46, { r: 32 }) + arrow([[96, 34], [116, 10]], GOLD, 7));
+
+// The queen's.
+def('ScholarThrust', 'Queen', () => P('Queen', 'w', 30, 110, 50, { op: 0.32 }) + arrow([[22, 30], [50, 30]], W, 5) + sh(56, 114, 18) + P('Queen', 'w', 56, 114, 56) +
+  sh(104, 118, 14) + P('Pawn', 'b', 104, 118, 46, { r: 18 }) + ln([[70, 72], [102, 86]], STEEL, 4) +
+  `<circle cx="70" cy="72" r="5.5" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>` + burst(102, 86, 12, 5, 8));
+def('CheckSeries', 'Queen', () => tile(30, 104, 44, 22) + tile(64, 80, 44, 22) + tile(98, 56, 44, 22) +
+  arrow(q([34, 92], [40, 72], [54, 76]), GOLD, 5) + arrow(q([68, 68], [74, 48], [88, 52]), GOLD, 5) + P('Pawn', 'b', 98, 60, 38) + txt(28, 48, '+', 44, RED));
+def('CheckChain', 'Queen', () => P('Pawn', 'b', 22, 116, 38, { r: -26 }) + P('Pawn', 'b', 62, 116, 38, { r: 24 }) + burst(28, 86, 9, 4, 7) + burst(58, 86, 9, 4, 7) +
+  arrow([[8, 100], [30, 70], [50, 96], [80, 58]], GOLD, 6) + P('Queen', 'w', 100, 70, 48, { r: 30 }) + txt(26, 34, '+', 30, RED) + txt(62, 40, '+', 30, RED));
+def('Check', 'Queen', () => tile(60, 104, 92, 32) + sh(60, 106, 16) + P('Pawn', 'b', 60, 106, 52) +
+  ln(arc(100, 32, 21, 21, -90, 180, 24), GOLD, 4) + `<circle cx="100" cy="32" r="15" fill="${RED}" stroke="${INK}" stroke-width="3"/>` + txt(100, 43, '+', 30, W));
+def('QueenSac', 'Queen', () => speed(64, 0, 90, -16, 3, 16, 4) + `<ellipse cx="64" cy="106" rx="56" ry="16" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>` +
+  `<ellipse cx="64" cy="106" rx="34" ry="9" fill="#fff" opacity=".7"/>` + P('Pawn', 'b', 24, 100, 32, { r: -36 }) + P('Pawn', 'b', 104, 100, 32, { r: 36 }) +
+  P('Queen', 'w', 64, 24, 64, { r: 180 }) + burst(64, 98, 16, 7, 10));
+alias('QueenDrop', 'QueenSac');
+def('QueenDescent', 'Queen', () => `<polygon points="-6,-6 70,52 52,70" fill="${GOLD}" opacity=".8"/><polygon points="6,6 64,56 56,64" fill="#fff" opacity=".85"/>` +
+  ring(84, 116, 30, 8, RED, 4) + P('Queen', 'w', 80, 100, 58, { r: 30 }) + spark(108, 30, 8) + spark(24, 92, 6));
+def('EightLines', 'Queen', () => [...Array(8)].map((_, i) => beam([64, 70], [64 + Math.cos(rad(i * 45)) * 90, 70 + Math.sin(rad(i * 45)) * 90], 8)).join('') +
+  sh(64, 112, 20) + P('Queen', 'w', 64, 112, 60));
+def('QueenStar', 'Queen', () => star(64, 62, 58, 26, 8, -90, GOLD) + star(64, 62, 36, 18, 8, -90, '#FFF3C4', 0) +
+  P('Pawn', 'b', 26, 78, 26, { r: -55 }) + P('Pawn', 'b', 102, 78, 26, { r: 55 }) + sh(64, 114, 18) + P('Queen', 'w', 64, 114, 60));
+def('RingShove', 'Queen', () => ring(64, 106, 56, 16, W, 3) + ring(64, 106, 40, 11, W, 3) +
+  arrow([[36, 74], [14, 66]], W, 5) + arrow([[92, 74], [114, 66]], W, 5) + arrow([[40, 46], [24, 28]], W, 5) + arrow([[88, 46], [104, 28]], W, 5) +
+  sh(64, 110, 18) + P('Queen', 'w', 64, 110, 58));
+def('TwoHares', 'Queen', () => ln('M40 90 L48 84 L54 96 L60 84 L66 96 L72 84 L78 96 L84 84 L88 90', '#FF8FBC', 4) +
+  [30, 98].map(x => `<ellipse cx="${x - 6}" cy="60" rx="4.5" ry="12" transform="rotate(-14 ${x - 6} 60)" fill="#2A221C" stroke="#D6AE5C" stroke-width="2.5"/><ellipse cx="${x + 6}" cy="60" rx="4.5" ry="12" transform="rotate(14 ${x + 6} 60)" fill="#2A221C" stroke="#D6AE5C" stroke-width="2.5"/>` +
+    `<ellipse cx="${x - 6}" cy="61" rx="1.8" ry="7" transform="rotate(-14 ${x - 6} 61)" fill="#FF8FBC"/><ellipse cx="${x + 6}" cy="61" rx="1.8" ry="7" transform="rotate(14 ${x + 6} 61)" fill="#FF8FBC"/>` +
+    sh(x, 114, 16) + P('Pawn', 'b', x, 114, 52)).join('') + arrow([[56, 30], [40, 30]], W, 4) + arrow([[72, 30], [88, 30]], W, 4));
+def('QueenGlide', 'Queen', () => [...Array(8)].map((_, i) => `<circle cx="${n1(30 + Math.cos(rad(i * 45)) * 17)}" cy="${n1(34 + Math.sin(rad(i * 45)) * 17)}" r="3.5" fill="#fff" stroke="${INK}" stroke-width="2"/>`).join('') +
+  arrow([[30, 34], [52, 34]], GOLD, 5) + speed(52, 88, 0, 24, 3, 12, 5) + `<rect x="58" y="104" width="44" height="16" rx="2" fill="none" stroke="${INK}" stroke-width="7"/><rect x="58" y="104" width="44" height="16" rx="2" fill="none" stroke="${GOLD}" stroke-width="3.5"/>` +
+  sh(80, 114, 20) + P('Queen', 'w', 80, 114, 60, { r: -6 }));
+def('Slash', 'Queen', () => sh(26, 116, 14) + P('Queen', 'w', 26, 116, 48) + speed(54, 66, 0, 14, 3, 18, 3.5) + crescent(72, 64, 44, 0, GOLD) +
+  sh(104, 118, 12) + P('Pawn', 'b', 104, 118, 40, { r: 26 }));
+
+// The king's.
+def('KingMarch', 'King', () => sh(44, 116, 22) + P('King', 'w', 44, 116, 74) + trumpet(92, 44, -35, 1) + txt(110, 90, '♪', 26, W) + txt(76, 20, '♪', 20, W));
+def('KingSummon', 'King', () => arrow(q([10, 8], [8, 40], [20, 64]), W, 5) + arrow(q([118, 8], [120, 40], [108, 64]), W, 5) +
+  sh(22, 116, 12) + P('Pawn', 'w', 22, 116, 42) + sh(106, 116, 12) + P('Pawn', 'w', 106, 116, 42) + sh(64, 118, 20) + P('King', 'w', 64, 118, 66));
+def('KingEscort', 'King', () => sh(22, 114, 12) + P('Pawn', 'w', 22, 114, 44) + sh(106, 114, 12) + P('Pawn', 'w', 106, 114, 44) +
+  ln([[32, 88], [50, 84]], W, 4) + ln([[78, 84], [96, 88]], W, 4) + sh(64, 118, 20) + P('King', 'w', 64, 118, 66) + arrow([[30, 18], [98, 18]], W, 6));
+def('KingWalk', 'King', () => `<polygon points="44,132 116,132 96,30 78,30" fill="#D8332E" stroke="${INK}" stroke-width="3"/><polygon points="52,132 108,132 92,30 82,30" fill="none" stroke="${GOLD}" stroke-width="3"/>` +
+  P('Pawn', 'w', 86, 46, 20) + P('Pawn', 'w', 92, 62, 24) + sh(50, 120, 24) + P('King', 'w', 50, 120, 84));
+def('GeneralCall', 'King', () => P('Pawn', 'w', 18, 56, 28) + P('Pawn', 'w', 16, 110, 28) + P('Pawn', 'w', 44, 30, 26) +
+  arrow([[28, 52], [56, 68]], W, 4) + arrow([[30, 100], [56, 96]], W, 4) + arrow([[54, 30], [70, 50]], W, 4) +
+  sh(90, 118, 20) + P('King', 'w', 90, 118, 66) + trumpet(104, 30, -30, 0.7));
+def('KingRun', 'King', () => [30, 47, 64, 81, 98].map((x, i) => `<circle cx="${x}" cy="20" r="6" fill="${i < 3 ? '#fff' : 'none'}" stroke="${INK}" stroke-width="3"/>` + (i < 3 ? '' : `<circle cx="${x}" cy="20" r="6" fill="none" stroke="#fff" stroke-width="1.5"/>`)).join('') +
+  speed(34, 88, 0, 20, 3, 12, 5) + sh(66, 118, 22) + P('King', 'w', 66, 118, 74, { r: 12 }));
+def('KingStep', 'King', () => [...Array(9)].map((_, k) => `<rect x="${19 + (k % 3) * 30}" y="${26 + Math.floor(k / 3) * 30}" width="30" height="30" fill="${(k % 2) ? '#B58863' : '#F0D9B5'}" stroke="${INK}" stroke-width="2.5"/>`).join('') +
+  P('King', 'w', 64, 82, 52) + arrow([[76, 58], [96, 40]], GOLD, 7));
+def('Ward', 'King', () => ln(arc(78, 92, 40, 42, 180, 360, 24), W, 3, 'stroke-dasharray="6 7"') + sh(34, 116, 18) + P('King', 'w', 34, 116, 66) +
+  sh(84, 116, 14) + P('Pawn', 'w', 84, 116, 48) + shield(100, 84, 0.95));
+
+// No picture yet (a skill that is only a plan).
+def('Unknown', 'None', () => txt(64, 92, '?', 72, '#E6EAF2'));
+
+// ---------------------------------------------------------------- the page
+
+const qs = new URLSearchParams(location.search), review = qs.has('review');
+const from = +(qs.get('from') || 0), count = +(qs.get('count') || 999);
+const sheet = document.getElementById('sheet');
+if (review) document.body.className = 'review';
+ICONS.slice(from, from + count).forEach(icon => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">${plate(icon.kind, icon.fn())}</svg>`;
+  if (!review) { sheet.insertAdjacentHTML('beforeend', svg); return; }
+  const small = svg.replace('width="128" height="128"', 'width="44" height="44"'), tiny = svg.replace('width="128" height="128"', 'width="60" height="60"');
+  sheet.insertAdjacentHTML('beforeend', `<div class="cell">${svg}<div class="small">${small}</div><div class="tiny">${tiny}</div><div class="name">${icon.name}</div></div>`);
+});
+document.title = 'icons ' + ICONS.length;
+</script></body></html>
