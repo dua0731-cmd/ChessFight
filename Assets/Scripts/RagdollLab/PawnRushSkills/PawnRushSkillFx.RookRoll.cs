@@ -58,7 +58,7 @@ namespace ChessFight.RagdollLab
             var skin = u.by != null ? u.by.skin : null;
             if (skin == null || s == null) return;
             f.baked = new Mesh { name = "Rook roll", hideFlags = HideFlags.HideAndDontSave };
-            skin.BakeMesh(f.baked, true);
+            BakeSkin(skin, f.baked);
             f.baked.RecalculateBounds();
             Bounds b = f.baked.bounds;
             Quaternion skinRot = skin.transform.rotation;

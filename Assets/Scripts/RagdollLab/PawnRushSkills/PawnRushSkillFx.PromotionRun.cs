@@ -611,7 +611,7 @@ namespace ChessFight.RagdollLab
                     continue;
                 }
                 if (g.baked == null) g.baked = new Mesh { name = "Giant look", hideFlags = HideFlags.HideAndDontSave };
-                skin.BakeMesh(g.baked, true);
+                BakeSkin(skin, g.baked);
                 skin.forceRenderingOff = true;
                 Vector3 feet = FloorUnder(g.p);
                 Matrix4x4 world = Matrix4x4.TRS(skin.transform.position, skin.transform.rotation, Vector3.one);

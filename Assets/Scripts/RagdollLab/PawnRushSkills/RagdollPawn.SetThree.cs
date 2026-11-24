@@ -778,7 +778,7 @@ namespace ChessFight.RagdollLab
                 float side = across >= 0f ? 1f : -1f;
                 Vector3 away = FlatDir(planDir + right * side * Random.Range(0.4f, 1f));
                 string result = SkillHit(e, S3Push(away, s.rollThrow), true, "룩앤롤", false, s.rollKnock);
-                Fx(SkillFxKind.QueenHit, e, e.LassoBelly, away, skillHitSet.Count);
+                Fx(SkillFxKind.S3Hit, e, e.LassoBelly, away, skillHitSet.Count);
                 FeelHit(e, p, planDir, FeelHard, skillHitSet.Count, true);
                 Log($"룩앤롤 → {e.DisplayName}: 볼링 핀 → {result}");
                 if (Time.time - rsStrikeAt > 0.6f) rsStrikeRun = 0;
@@ -820,7 +820,7 @@ namespace ChessFight.RagdollLab
                 if (Flat(d).magnitude > s.rollSlamRadius || Mathf.Abs(d.y) > 1.5f) continue;
                 hit++;
                 string result = SkillHit(e, S3Push(Flat(d), s.rollSlamPush), true, "룩앤롤 쿵", false, s.rollSlamHold);
-                Fx(SkillFxKind.QueenHit, e, e.LassoBelly, FlatDir(d), hit);
+                Fx(SkillFxKind.S3Hit, e, e.LassoBelly, FlatDir(d), hit);
                 Log($"룩앤롤 쿵 → {e.DisplayName}: {result}");
             }
             Fx(SkillFxKind.RookSlam, null, c, planDir, hit, 1f);
@@ -1047,7 +1047,7 @@ namespace ChessFight.RagdollLab
                 if (first == null) first = e;
                 string result = SkillHit(e, S3Push(blade, s.starPush), true, "여왕의 위상", false, s.starKnockHold);
                 Fx(SkillFxKind.S3StarBlade, e, c, blade, k);
-                Fx(SkillFxKind.QueenHit, e, e.LassoBelly, blade, hit);
+                Fx(SkillFxKind.S3Hit, e, e.LassoBelly, blade, hit);
                 Log($"여왕의 위상 → {e.DisplayName}: 날 {k} → {result}");
             }
             planNote = lit;
@@ -1204,7 +1204,7 @@ namespace ChessFight.RagdollLab
             string result = SkillHit(t, S3Push(dir, metres), true, "연속 체크", false, s.ccKnockHold);
             EndFlight(dir * 2f);
             Fx(SkillFxKind.S3Check, t, t.Chest, dir, ccDone);
-            Fx(SkillFxKind.QueenHit, t, t.LassoBelly, dir, ccDone);
+            Fx(SkillFxKind.S3Hit, t, t.LassoBelly, dir, ccDone);
             PopOver(t, PopCheckWord);
             FeelHit(t, t.LassoBelly, dir, FeelHard);
             Log($"연속 체크 {ccDone} → {t.DisplayName}: {metres:0} m → {result}");
@@ -1478,7 +1478,7 @@ namespace ChessFight.RagdollLab
                     Vector3 side = Flat(e.bodies[0].position - next);
                     Vector3 away = FlatDir(FlatDir(st.vel) + (side.sqrMagnitude > 1e-4f ? side.normalized * 0.8f : Vector3.zero));
                     string result = SkillHit(e, S3Push(away, s.stonePush), true, "돌멩이", false, s.stoneKnockHold, true);
-                    Fx(SkillFxKind.QueenHit, e, e.LassoBelly, away, st.hit.Count);
+                    Fx(SkillFxKind.S3Hit, e, e.LassoBelly, away, st.hit.Count);
                     FeelHit(e, e.LassoBelly, away, FeelHard);
                     Log($"돌멩이 → {e.DisplayName}: {result}");
                 }

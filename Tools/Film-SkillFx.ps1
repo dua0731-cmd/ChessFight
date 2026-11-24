@@ -12,8 +12,11 @@ param(
 # Refuses while a Unity editor is open (it would hold the project), so close Unity first.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$open = Get-CimInstance Win32_Process -Filter "Name = 'Unity.exe'" -ErrorAction SilentlyContinue
-if ($open) { throw "A Unity editor is running (pid $($open.ProcessId -join ', ')); close it first." }
+# Only a Unity that has this project open is in the way (other projects' batch runs are not).
+$mine = $root.Replace('\', '/').ToLowerInvariant()
+$open = Get-CimInstance Win32_Process -Filter "Name = 'Unity.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -and $_.CommandLine.Replace('\', '/').ToLowerInvariant().Contains($mine) }
+if ($open) { throw "A Unity editor has this project open (pid $($open.ProcessId -join ', ')); close it first." }
 $out = Join-Path $root 'Logs/FxSheets'
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 $log = Join-Path $root 'Logs/fxsheets_unity.log'

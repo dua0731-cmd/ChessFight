@@ -1878,7 +1878,7 @@ namespace ChessFight.RagdollLab
                     mesh = new Mesh { name = "Ult giant avatar", hideFlags = HideFlags.HideAndDontSave };
                     mesh.MarkDynamic();
                 }
-                skin.BakeMesh(mesh, true);
+                BakeSkin(skin, mesh);
                 var verts = fx.stgVerts;
                 mesh.GetVertices(verts);
                 int n = verts.Count;

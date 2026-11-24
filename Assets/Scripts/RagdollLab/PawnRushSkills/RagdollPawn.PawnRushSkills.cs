@@ -107,6 +107,9 @@ namespace ChessFight.RagdollLab
         //   S3Kick       at: its feet, dir: the way it faces (the kick goes the other way); count 0 the bob, else 1 + how
         //                many it hit
         S3Kick,
+        // 11-24 (the comic effects): a 3판 skill's hit (target; at: its belly, dir: the push, count: which hit) - the roll's,
+        // its slam's, the star's, a check's and the stone's (they borrowed the old queen's hit before).
+        S3Hit,
     }
 
     public struct SkillFxEvent

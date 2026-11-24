@@ -128,7 +128,7 @@ namespace ChessFight.RagdollLab
             var skin = f.by != null ? f.by.skin : null;
             if (skin == null) return;
             f.baked = new Mesh { name = "Support piece", hideFlags = HideFlags.HideAndDontSave };
-            skin.BakeMesh(f.baked, true);
+            BakeSkin(skin, f.baked);
             var verts = new List<Vector3>();
             f.baked.GetVertices(verts);
             if (verts.Count == 0) return;

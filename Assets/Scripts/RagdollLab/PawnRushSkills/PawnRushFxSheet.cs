@@ -55,7 +55,7 @@ namespace ChessFight.RagdollLab
             S("TwoSteps", PawnRushSkillIds.TwoSteps, PieceKind.Pawn, 1, "k w0.35 k", 1.8f, new Vector3(3f, 2f, -1.5f), new Vector3(0f, 0.5f, 2f), V(0.6f, 3.2f)),
             S("HighStomp", PawnRushSkillIds.HighStomp, PieceKind.Knight, 0, "k w0.55 k", 2.2f, new Vector3(4f, 2.8f, -1f), new Vector3(0f, 1.2f, 3f), V(0.5f, 5f)),
             S("BackKick", PawnRushSkillIds.BackKick, PieceKind.Knight, 1, "k", 1.6f, new Vector3(4f, 1.8f, 0.3f), new Vector3(0f, 0.6f, 0f), V(0f, -1.6f), V(0.8f, -1.4f)),
-            S("HolySwords", PawnRushSkillIds.HolySwords, PieceKind.Bishop, 0, "k", 3f, new Vector3(0f, 6f, -3f), new Vector3(0f, 0f, 5.5f), V(-2.5f, 6f), V(2.5f, 8f), V(3.5f, 3.5f)),
+            S("HolySwords", PawnRushSkillIds.HolySwords, PieceKind.Bishop, 0, "k", 6f, new Vector3(0f, 6f, -3f), new Vector3(0f, 0f, 5.5f), V(-2.5f, 6f), V(2.5f, 8f), V(3.5f, 3.5f)),
             S("StoneThrow", PawnRushSkillIds.StoneThrow, PieceKind.Bishop, 1, "k", 2.8f, new Vector3(4f, 2.8f, -1.5f), new Vector3(0f, 0.6f, 6f), V(0f, 6f), V(0.7f, 10f)),
             S("HolyWater", PawnRushSkillIds.HolyWater, PieceKind.Bishop, 2, "k", 2.6f, new Vector3(3.5f, 3f, 2f), new Vector3(0f, 0.4f, 7.5f), V(0f, 8f), V(1f, 8.8f)),
             S("RollShort", PawnRushSkillIds.RollShort, PieceKind.Rook, 0, "k", 3f, new Vector3(5f, 3f, 3f), new Vector3(0f, 0.5f, 8f), V(0f, 7f), V(0.6f, 10f), V(-0.6f, 10.5f)),
@@ -189,8 +189,8 @@ namespace ChessFight.RagdollLab
                 string path = Path.Combine(folder, shot.name + ".jpg");
                 File.WriteAllBytes(path, sheet.EncodeToJPG(88));
                 Debug.Log($"[FxSheet] {shot.name}: {frameNo} frames in {frameDir}, sheet {cell} frames → {path}");
-                // Let the last shot's things (a puddle, a tower) end before the next is staged.
-                yield return new WaitForSeconds(0.6f);
+                // Let the last shot's things (a puddle, a tower, the swords' last wave) end before the next is staged.
+                yield return new WaitForSeconds(2.5f);
             }
             Status = "done";
             Clean();

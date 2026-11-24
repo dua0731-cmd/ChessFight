@@ -241,6 +241,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S3Puddle:
                 case SkillFxKind.S3Slip:
                 case SkillFxKind.S3Kick:
+                case SkillFxKind.S3Hit:
                     try { SetThreeFx(e); } catch (System.Exception ex) { FxFault("set 3 moment", ex); }
                     break;
             }
@@ -1299,6 +1300,21 @@ namespace ChessFight.RagdollLab
                     floor = hit.point;
                 }
             return floor;
+        }
+
+        /// <summary>A piece's skin baked at its size in the world, turned as its renderer is (the existing bakes go on from
+        /// there with the renderer's rotation and position). BakeMesh leaves the renderer's own scale out, and the pieces'
+        /// renderers are scaled 100 (a rig imported in centimetres): 11-24 a baked rook - the 3판 roll's column and tower,
+        /// the driven roll, the promotion's giant, the support's piece - came out a hundredth of its size.</summary>
+        static void BakeSkin(SkinnedMeshRenderer skin, Mesh into)
+        {
+            skin.BakeMesh(into, true);
+            Vector3 s = skin.transform.lossyScale;
+            if ((s - Vector3.one).sqrMagnitude < 1e-6f) return;
+            var v = into.vertices;
+            for (int i = 0; i < v.Length; i++) v[i] = Vector3.Scale(v[i], s);
+            into.vertices = v;
+            into.RecalculateBounds();
         }
 
         static Vector3 Ground(Vector3 at)
