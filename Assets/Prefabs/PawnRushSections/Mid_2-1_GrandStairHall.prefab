@@ -8548,6 +8548,7 @@ Transform:
   - {fileID: 1911296027217965133}
   - {fileID: 6400229400344122033}
   - {fileID: 8808354821275872443}
+  - {fileID: 2476784175502656387}
   m_Father: {fileID: 7148094812284446545}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2352973899286412448
@@ -8867,7 +8868,7 @@ GameObject:
   - component: {fileID: 8162253030027607995}
   - component: {fileID: 1008123286310229164}
   m_Layer: 0
-  m_Name: CP7
+  m_Name: CP8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8921,7 +8922,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6552f2d2681e4d068be19bf3ca7a0de9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.Checkpoint
-  order: 7
+  order: 8
 --- !u!114 &1008123286310229164
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8934,7 +8935,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 428e4d4a23deb309071bbedeac59a453, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChessFight.PawnRush::ChessFight.PawnRush.CourseCheckpoint
-  number: 7
+  number: 8
   team: -1
   spots:
   - {x: -4.5, y: -1.5, z: 0}
@@ -8943,6 +8944,95 @@ MonoBehaviour:
   - {x: 0.9, y: -1.5, z: 0}
   - {x: 2.6999998, y: -1.5, z: 0}
   - {x: 4.5, y: -1.5, z: 0}
+--- !u!1 &304417760016899395
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2476784175502656387}
+  - component: {fileID: 4664140451421327162}
+  - component: {fileID: 6255600270407119119}
+  - component: {fileID: 5979052935965965168}
+  m_Layer: 0
+  m_Name: CP7
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2476784175502656387
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304417760016899395}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 17.5, z: 121.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3293186523044834638}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4664140451421327162
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304417760016899395}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 16, y: 3, z: 7.3}
+  m_Center: {x: 0, y: 0, z: 3.05}
+--- !u!114 &6255600270407119119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304417760016899395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6552f2d2681e4d068be19bf3ca7a0de9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.Checkpoint
+  order: 7
+--- !u!114 &5979052935965965168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304417760016899395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 428e4d4a23deb309071bbedeac59a453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.PawnRush::ChessFight.PawnRush.CourseCheckpoint
+  number: 7
+  team: -1
+  spots:
+  - {x: -2, y: -1.5, z: 0}
+  - {x: -1.2, y: -1.5, z: 0}
+  - {x: -0.4, y: -1.5, z: 0}
+  - {x: 0.4, y: -1.5, z: 0}
+  - {x: 1.2, y: -1.5, z: 0}
+  - {x: 2, y: -1.5, z: 0}
 --- !u!1 &2537632480205867507
 GameObject:
   m_ObjectHideFlags: 0

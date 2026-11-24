@@ -456,6 +456,12 @@ namespace ChessFight.PawnRush
             Mass(b, "Mini-game entrance band", -6f, 6f, 154.3f, 158.3f, 15f, 8f);
             Rail(b, "Band rail W", -6.3f, -6f, 152.7f, 158.3f, 15f);
             Rail(b, "Band rail E", 6f, 6.3f, 152.7f, 158.3f, 15f);
+            // R827 (11-24 build test: both runners reached the balcony, were sent off it - a knight's landing pushes out
+            // from 2.3 m behind the front edge - and crossed the glass stones again, 68 s and 63 s): CP7 over the whole
+            // balcony floor, so a fall from here comes back here, not to the dais (CP6) before the glass. Its spots stand
+            // on the front strip between the glass and the west knight's lane (z 122.7 ~ 123.9), 0.8 m apart (x ±2):
+            // out of its landing reach (2 m round (-4, 123.3)) and of both charges. The exit terrace is CP8.
+            CourseBuilder.CoverFloor(b.Checkpoint(7, V(0f, 16f, 121.6f), 0f, 5f), -8f, 8f, 121f, 128.3f);
         }
 
         // A 17 knight whose root is `root` (it lands 2 m behind its root and charges 8 m along its +x), leaping

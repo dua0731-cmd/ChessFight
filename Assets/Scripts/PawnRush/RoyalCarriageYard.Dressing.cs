@@ -161,11 +161,14 @@ namespace ChessFight.PawnRush
         // R809 (the 11-23 build test: the yard drew at 52 fps on an RTX 3060, the grand stair hall at 77 - the yard is open
         // and nearly all of it is in view at once; the user: "마차뜰 LOD 부터 해줘 너무 많이는 줄이지 말고"): a model with a
         // Resources/PawnRushCarriageYard/LOD/<model>_LOD1 (lod_rcy.py: half its triangles, nothing else changed) gets it
-        // hung beside each of its pieces, the two in one LODGroup: the piece as it is nearer than LodSwitch metres (at
-        // LOD bias 1 - the PC "높음" preset's 1.6 makes it about 64 m, "중간" 40, "낮음" 24), its half beyond. Nothing is
-        // culled. Pictures only - the models have no colliders - and the same materials slot for slot.
+        // hung beside each of its pieces, the two in one LODGroup: the piece as it is nearer than LodSwitch metres times
+        // the LOD bias, its half beyond. Nothing is culled. Pictures only - the models have no colliders - and the same
+        // materials slot for slot.
+        // R827 (11-24 build test: both PCs ran at the PC quality level's own LOD bias 2 - nobody had touched the settings'
+        // '세부 묘사', which sets 0.6 / 1 / 1.6 - so the half began only past ~80 m): LodSwitch is given at bias 1 as half
+        // the distance meant at that default, so the default switches at about 40 m (높음 1.6 ~32 m, 중간 20, 낮음 12).
         const string LodFolder = ModelFolder + "LOD/";
-        const float LodSwitch = 40f, LodFov = 60f;
+        const float LodSwitch = 20f, LodFov = 60f;
         readonly List<(string name, Transform pivot, GameObject model)> hung = new List<(string, Transform, GameObject)>();
 
         void AttachLods()
@@ -217,7 +220,7 @@ namespace ChessFight.PawnRush
             }
             if (pieces > 0)
                 Debug.Log($"[RoyalCarriageYard] 먼 거리 LOD: 모델 {models}개 · 조각 {pieces}개, 삼각형 {near:N0} → {far:N0} " +
-                          $"(LOD 배율 1에서 {LodSwitch:0} m 넘어서, 지금 배율 {QualitySettings.lodBias:0.##})");
+                          $"(배율 1에서 {LodSwitch:0} m · 지금 배율 {QualitySettings.lodBias:0.##} → 약 {LodSwitch * QualitySettings.lodBias:0} m 넘어서)");
         }
 
         static long Triangles(Renderer r)

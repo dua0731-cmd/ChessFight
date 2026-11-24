@@ -22,10 +22,10 @@ namespace ChessFight.PawnRush
     //                          (2 falling pieces), CP2 ~ CP5
     //       B5_RoyalDais       the dais, CP6, the glass stones (GuessBridge) and the kill volume under them
     //       B6_RoyalBalcony    the balcony, two knights, the clock gate, the runout, the terrace, the arch, four
-    //                          steps down, the mini-game entrance band
+    //                          steps down, the mini-game entrance band, CP7 over the balcony (R827)
     //       Hall               the round wall, the walls round the stair, the respawn floor (y -4) and its kill
     //                          volume, chandeliers
-    //       Checkpoints        CP0, CP1, CP 끝 (CP7)
+    //       Checkpoints        CP0, CP1, CP 끝 (CP8)
     //       ProgressPath       the one route (given as both "white" and "black"), for the HUD and the validator
     //
     // Everything solid is unclimbable (NoClimbSurface). The grand stair's steps are pictures over an invisible
@@ -220,8 +220,8 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ checkpoints, path, beats
 
         // §8 (R303 numbering): CP0 porch, CP1 central landing, CP2 end of the curving stair, CP3 north landing, CP4
-        // after the dive gaps, CP5 start of the last stair, CP6 the dais, CP7 (CP 끝) the exit terrace. CP2 ~ CP6 are
-        // built with the spiral and the dais.
+        // after the dive gaps, CP5 start of the last stair, CP6 the dais, CP7 the royal balcony (R827), CP8 (CP 끝) the
+        // exit terrace. CP2 ~ CP7 are built with the spiral, the dais and the balcony.
         static void Checkpoints(CourseBuilder b)
         {
             // R733: each over its floor's whole width (CourseBuilder.CoverFloor), its spots where they were. CP1's strip
@@ -229,7 +229,7 @@ namespace ChessFight.PawnRush
             // foot without it, and a fall off the curving stair went back to the porch.
             CourseBuilder.CoverFloor(b.Checkpoint(0, V(0f, 0f, -6f), 0f, 10f), -6f, 6f, -12f, 0f);
             CourseBuilder.CoverFloor(b.Checkpoint(1, V(0f, 8f, 53.5f), 0f, 12f), -14f, 14f, 51f, 56f);
-            CourseBuilder.CoverFloor(b.Checkpoint(7, V(0f, 16f, 149.3f), 0f, 10f), -6f, 6f, 146.3f, 152.3f);
+            CourseBuilder.CoverFloor(b.Checkpoint(8, V(0f, 16f, 149.3f), 0f, 10f), -6f, 6f, 146.3f, 152.3f);
         }
 
         // The one route (R303: no wings), given as both teams' route: the grand stair, the landing, the spiral's

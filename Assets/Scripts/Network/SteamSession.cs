@@ -191,7 +191,9 @@ namespace ChessFight.Network
         //      the same seed. The observatory sends nothing (its devices run on the shared clock).
         // v61 (R733): the royal water garden's and the grand stair hall's checkpoint triggers cover the floor each stands on
         //      (they were 2 m strips a runner could pass beside). A v60 PC would reach other checkpoints on the same run.
-        public const string Protocol = "chessfight.dua0731.network.v61";
+        // v62 (R827): the grand stair hall gets a checkpoint over the royal balcony (CP7) and its exit terrace becomes CP8;
+        //      the seats' checkpoints go over the wire by order (PawnRushNetState), so a v61 PC would read them one off.
+        public const string Protocol = "chessfight.dua0731.network.v62";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

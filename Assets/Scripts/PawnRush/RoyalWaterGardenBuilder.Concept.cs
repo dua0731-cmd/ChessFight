@@ -247,15 +247,15 @@ namespace ChessFight.PawnRush
 
         // R816 (user 11-24 "정원 LOD 진행"; the carriage yard's R809 way, RoyalCarriageYard.AttachLods): a model with a
         // Resources/PawnRushGardenConcept/LOD/<model>_LOD1 (lod_garden.py: half its triangles, nothing else changed) gets
-        // each LOD1 piece hung under its piece, the two in one LODGroup: the piece nearer than LodSwitch metres (at LOD
-        // bias 1 - the PC "높음" preset's 1.6 makes it about 64 m), its half beyond. Nothing is culled. Only a piece still
+        // each LOD1 piece hung under its piece, the two in one LODGroup: the piece nearer than LodSwitch metres times the
+        // LOD bias (R827: 20 m at bias 1, so the PC default bias 2 switches at about 40 m, as the carriage yard's), its half beyond. Nothing is culled. Only a piece still
         // drawn inside its model gets one: what Hang, LakeBoats and the like moved onto obstacles (rotating bars,
         // platforms, boats) or Remove/Cover switched off keeps no LOD, and a name the model has twice keeps none either.
         // Pictures only - the garden's models have no colliders - and the same garden materials (ConceptMaterial). The
         // garden is baked into its prefab, so this runs in Play from RoyalWaterGarden.Awake on the baked "Concept
         // dressing" (its children are named after their models), and is never baked in itself.
         const string LodFolder = ConceptFolder + "LOD/";
-        const float LodSwitch = 40f, LodFov = 60f;
+        const float LodSwitch = 20f, LodFov = 60f;
 
         public static void AttachLods(Transform content)
         {
@@ -310,7 +310,7 @@ namespace ChessFight.PawnRush
             }
             if (pieces > 0)
                 Debug.Log($"[정원] 먼 거리 LOD: 조각 {pieces}개, 삼각형 {near:N0} → {far:N0} " +
-                          $"(LOD 배율 1에서 {LodSwitch:0} m 넘어서, 지금 배율 {QualitySettings.lodBias:0.##})");
+                          $"(배율 1에서 {LodSwitch:0} m · 지금 배율 {QualitySettings.lodBias:0.##} → 약 {LodSwitch * QualitySettings.lodBias:0} m 넘어서)");
         }
 
         static long LodTriangles(Renderer r)
