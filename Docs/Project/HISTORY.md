@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-24 R815 · 대연회장 레벨 디자인 초안 v0.4: R814 아이디어 여섯(웨이터 행렬 · 식탁보 빼기 · 은 뚜껑 · 무대 막 · 초콜릿 분수 · 샴페인 탑) + 샹들리에 + 왈츠를 연회 겸 무도회 홀의 제자리에 넣고 한 줄 길로 홀을 세 번 지나게 했다(2분 40초). 문서 `PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md` · 배치도 `Mockups/R815_BanquetHall.svg` · 그림과 영상 `ConceptArt/R815_BanquetHall/` · 스크립트 `ArtSource/PawnRush/BanquetHall/` v0.4. 구현 안 함, 사용자 검수 대기.
 - 2026-11-24 R814 · 대연회장 장애물 아이디어 여덟 + 설명 영상: 웨이터 행렬 · 일제히 들리는 은 뚜껑 · 마술사의 식탁보 빼기 · 넘쳐흐르는 샴페인 잔 탑 · 흘러내리는 초콜릿 분수 · 걷히는 무대 막 · 굴뚝의 불길 · 팀파니. 문서 `PAWN_RUSH_BANQUET_HALL_OBSTACLE_IDEAS.md` · 영상과 장면 모음 `ConceptArt/R814_BanquetObstacleIdeas/` · 스크립트 `ArtSource/PawnRush/BanquetHall/banquet_ideas_film.py`. 구현 안 함, 사용자 선택 대기.
 - 2026-11-24 R813 · 소드 파이트 타격감 잡기 계획 문서(HIT_FEEL_PLAN.md: 지금 값 · 다음 빌드 시험 방법 · 로그 읽는 법 · 결과별 다음 수) + 판이 끝나면 Player.log에 `[소드 파이트 타격감]` 묶음(`SwordFightFeelLog`). 컴파일 · Core 230 · 세션 115 · AI 자동 시험 35 / 35, main 커밋 · 푸시.
 - 2026-11-24 R812 · 소드 파이트 맞힌 뒤 남은 칼길을 2배로 빨리 지나가고 그만큼 회복을 늦춤(`SnapPace`; 맞힌 베기 0.775초 · 연타 박자 그대로). 컴파일 · Core 230 · 세션 115 · AI 자동 시험 35 / 35, 커밋 안 함, 사람 확인 전.

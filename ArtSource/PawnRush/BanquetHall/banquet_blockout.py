@@ -1,6 +1,7 @@
-# The grand banquet hall's draft (level design v0.3), stacked up from plain shapes: one hall with the musicians'
-# gallery over the entry, a U of banquet tables round a chessboard dance floor (knights hopping, kings and queens
-# waltzing), two lines of chandeliers down the middle, the cake on the head table and the royal balcony over it.
+# The grand banquet hall's draft (level design v0.4), stacked up from plain shapes: the screens passage and the
+# servery, the waiters' lane and the long table with its guests, the magician and the cloches, the royal dais with
+# the head table, the champagne tower and the balcony, the dance floor with ten waltzing couples, the stage with its
+# curtain and the orchestra, the dessert buffet with the chocolate fountain, the loft and two lines of chandeliers.
 # Everything that moves is posed by pose(t), from banquet_layout.py's own functions, so the still below and the film
 # (banquet_flow_video.py) show the same machine.
 # A picture only: nothing here goes into Unity, and it is a blockout, not the concept art.
@@ -20,52 +21,60 @@ L = {"__name__": "banquet_layout"}
 exec(compile(open(os.path.join(_here, "banquet_layout.py"), encoding="utf-8").read(), "banquet_layout.py", "exec"), L)
 D = math.radians
 random.seed(7)
+HIDE = (0.0, -80.0, 0.0)
 
 # ---------------------------------------------------------------- the banquet's colours
-M_CLOTH = principled("MAT_Tablecloth", (0.74, 0.66, 0.48), 0.8)
-M_CLOTH2 = principled("MAT_TableclothShade", (0.58, 0.48, 0.30), 0.8)
+M_CLOTH = principled("MAT_Tablecloth", (0.80, 0.74, 0.60), 0.8)
+M_CLOTH2 = principled("MAT_TableclothShade", (0.62, 0.52, 0.36), 0.8)
+M_LINEN = principled("MAT_Linen", (0.93, 0.91, 0.86), 0.85)
 M_OLIVE = principled("MAT_Runner", (0.10, 0.19, 0.045), 0.75)
-M_HEDGE = principled("MAT_Hedge", (0.07, 0.16, 0.05), 0.8)
 M_WALNUT = principled("MAT_Walnut", (0.20, 0.10, 0.045), 0.45)
 M_WARMSTONE = principled("MAT_WarmStone", (0.42, 0.33, 0.23), 0.7)
+M_MARBLE2 = principled("MAT_DaisMarble", (0.70, 0.64, 0.55), 0.25)
 M_TILE = principled("MAT_KitchenTile", (0.045, 0.035, 0.03), 0.55)
 M_PARQUET = principled("MAT_Parquet", (0.30, 0.17, 0.08), 0.35)
 M_PARQUET2 = principled("MAT_ParquetPale", (0.52, 0.38, 0.22), 0.35)
 M_IRON = principled("MAT_Iron", (0.05, 0.05, 0.055), 0.4, 0.8)
-M_FIRE = principled("MAT_Fire", (0.62, 0.11, 0.02), 0.35, 0.0, (1.0, 0.16, 0.02), 0.55)
-M_WAX = principled("MAT_Wax", (0.84, 0.78, 0.62), 0.45)
-M_DRIP = principled("MAT_WaxDrip", (0.95, 0.90, 0.72), 0.3, 0.0, (1.0, 0.75, 0.4), 0.8)
 M_FLAME = principled("MAT_Flame", (1, 0.8, 0.4), 0.3, 0.0, (1.0, 0.62, 0.22), 30.0)
-M_SPONGE = principled("MAT_Cake", (0.86, 0.74, 0.60), 0.6)
-M_CREAMSTRIPE = principled("MAT_Cream", (0.86, 0.30, 0.10), 0.5)
-M_FONDANT = principled("MAT_Fondant", (0.42, 0.56, 0.68), 0.25)
 M_CRYSTAL = principled("MAT_Crystal", (1.0, 0.86, 0.52), 0.12, 0.6, (1.0, 0.72, 0.36), 0.6)
-M_WINE = principled("MAT_Goblet", (0.34, 0.20, 0.52), 0.1, 0.3)
+M_GLASS = principled("MAT_Glass", (0.70, 0.80, 0.84), 0.05, 0.2)
+M_FULL = principled("MAT_ChampagneStill", (0.86, 0.72, 0.36), 0.15, 0.0, (1.0, 0.8, 0.4), 0.3)
+M_CHAMP = principled("MAT_ChampagneOverflow", (1.0, 0.84, 0.40), 0.15, 0.0, (1.0, 0.80, 0.30), 6.0)
+M_BOTTLE = principled("MAT_Bottle", (0.06, 0.20, 0.09), 0.2, 0.2)
+M_CHOC = principled("MAT_Chocolate", (0.16, 0.07, 0.03), 0.25)
+M_CHOC2 = principled("MAT_ChocolateLight", (0.40, 0.20, 0.09), 0.3)
+M_BERRY = principled("MAT_Strawberry", (0.75, 0.06, 0.05), 0.4)
+M_LEAF = principled("MAT_Leaf", (0.10, 0.35, 0.08), 0.6)
 M_SILVER = principled("MAT_Silver", (0.80, 0.82, 0.84), 0.18, 1.0)
-M_PLATE = principled("MAT_Plate", (0.78, 0.76, 0.70), 0.25)
+M_CLOCHE = principled("MAT_Cloche", (0.86, 0.87, 0.89), 0.3, 0.45)
+M_PLATE = principled("MAT_Plate", (0.85, 0.83, 0.78), 0.25)
+M_VELVET = principled("MAT_Curtain", (0.50, 0.03, 0.05), 0.85)
+M_VELVET2 = principled("MAT_CurtainShade", (0.34, 0.02, 0.04), 0.85)
 M_GOWN = principled("MAT_QueenGown", (0.80, 0.36, 0.16), 0.6)
 M_CAPE = principled("MAT_KingCape", (0.30, 0.34, 0.42), 0.6)
 M_IVORY = principled("MAT_Ivory", (0.80, 0.74, 0.60), 0.35)
 M_EBONY = principled("MAT_Ebony", (0.07, 0.06, 0.06), 0.3)
-M_DRAPE = principled("MAT_KnightDrape", (0.78, 0.40, 0.14), 0.6)
-M_STRING = principled("MAT_HarpString", (0.95, 0.70, 0.25), 0.3, 0.6, (1.0, 0.6, 0.2), 0.6)
-M_WARN = principled("MAT_Warning", (0.55, 0.30, 0.85), 0.4, 0.0, (0.6, 0.3, 1.0), 2.5)
-M_HIT = principled("MAT_Hit", (0.9, 0.12, 0.08), 0.4, 0.0, (1.0, 0.15, 0.08), 4.0)
-M_MARK_UP = principled("MAT_ClothUp", (0.95, 0.62, 0.18), 0.4, 0.0, (1.0, 0.6, 0.15), 1.2)
-M_MARK_DOWN = principled("MAT_ClothDown", (0.25, 0.30, 0.36), 0.6)
+M_COAT = principled("MAT_Coat", (0.10, 0.10, 0.12), 0.5)
+M_SHIRT = principled("MAT_Shirt", (0.90, 0.90, 0.88), 0.5)
+M_GLOVE = principled("MAT_Glove", (0.96, 0.96, 0.94), 0.5)
+M_ROBE = principled("MAT_MagicianRobe", (0.24, 0.07, 0.38), 0.6)
+M_GUEST = principled("MAT_GuestRobe", (0.36, 0.30, 0.46), 0.6)
+M_ROAST = principled("MAT_Roast", (0.45, 0.20, 0.07), 0.5)
+M_STEAM = principled("MAT_Steam", (1, 1, 1), 0.5, 0.0, (1, 1, 1), 0.8)
+M_WAX = principled("MAT_Wax", (0.84, 0.78, 0.62), 0.45)
 M_HERO = principled("MAT_HeroMark", (1.0, 0.9, 0.2), 0.4, 0.0, (1.0, 0.85, 0.1), 6.0)
 
-TABLE, STAGE_Y, LOFT_Y = L["TABLE"], L["STAGE_Y"], L["LOFT_Y"]
-HALL, STAGE, LOFT, FLOOR = L["HALL"], L["STAGE"], L["LOFT"], L["FLOOR"]
-AI, AO, AZ0, AX = L["ARM_IN"], L["ARM_OUT"], L["ARM_Z0"], L["ARM_X"]
-HZ0, HZ1, HEADZ = L["HEAD_Z0"], L["HEAD_Z1"], L["HEAD_Z"]
-CK, TIERS = L["CAKE"], L["TIERS"]
-WALL_N = L["WALL_N"]
-HEAD = L["heading"](L["ROPE_HEAD"])
+for name in ("HALL", "SCREEN_Z", "SCREENS", "LOFT", "LOFT_Y", "DAIS_Z", "DAIS_Y", "HEAD_TOP", "TABLE", "STAGE_Y", "CEILING", "LANE", "TRAY_X", "WAITER_X",
+             "TRAY_R", "TRAY_Y", "STACK_R", "STACK_TOP", "COUNTER", "TABLE_X0", "TABLE_X1", "TABLE_Z0", "TABLE_Z1", "RUNNER_X", "RUNNER", "PLATES",
+             "PLATE_R", "GUESTS", "MAGICIAN", "CLOCHES", "CLOCHE_R", "STAGE_X0", "STAGE_X1", "STAGE_Z0", "STAGE_Z1", "CURTAIN_X", "RAIL_Y", "PLEATS",
+             "BUFFET", "BUFFET_TOP", "BUFFET_HEDGE", "PIT", "BASSES", "BASS_TOP", "CURTAIN_OPEN_S", "FOUNTAIN", "BOWL_R", "BOWL_TOP", "TIER_R",
+             "TIER_Y", "TIER_BASE", "FLOW", "LINES_X", "ROPE_L", "WHEEL_AT", "WHEEL_R", "CHANDELIERS", "LEVELS", "GLASS_PITCH", "LEVEL_H", "TOWER_Z",
+             "PEDESTAL", "HEAD_TABLES", "HEAD_Z", "TOWER_TOP", "BALCONY", "BALCONY_Y", "EXIT", "COUPLES", "GOWN_FOOT", "GOWN_SHOULDER", "SHOULDER_Y",
+             "PAIR", "HEAD_R", "WAITERS"):
+    globals()[name] = L[name]
 
 
 def frustum(name, r0, r1, h, segments=36):
-    # A cone with its point cut off, standing on z = 0.
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=segments, radius1=r0, radius2=r1, depth=h)
     bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0, h / 2))
@@ -86,14 +95,12 @@ def group(name, at=(0.0, 0.0, 0.0)):
 
 
 def into(parent, *made):
-    # What was just made, at its place in the parent's own frame.
     for o in made:
         o.parent = parent
     return parent
 
 
 def panel(name, c, r, az, y0, y1, width, mat, depth=0.08):
-    # A flat piece standing on a circle round c, facing out at heading az.
     x, z = c[0] + r * math.sin(D(az)), c[1] + r * math.cos(D(az))
     return inst(ME_CUBE, name, mat, U(x, (y0 + y1) / 2, z), (width, depth, y1 - y0), (0, 0, -D(az)))
 
@@ -105,8 +112,12 @@ def flame(x, y, z, size=0.5, lit=True):
     return o
 
 
+def candle(x, y, z, h=1.4):
+    cyl("Candle", x, y, y + h, z, 0.34, M_WAX, ME_CYL8)
+    flame(x, y + h, z, 0.28, lit=False)
+
+
 def piece(x, y, z, team, parent=None, scale=1.0):
-    # A pawn (the players): returned as its parts, so it can ride something.
     parts = [cyl("Pawn skirt", x, y, y + 0.55 * scale, z, 0.62 * scale, M_WHITE),
              inst(ME_CONE, "Pawn body", M_WHITE, U(x, y + 0.6 * scale, z), (0.6 * scale, 0.6 * scale, 0.7 * scale)),
              ball("Pawn head", x, y + 0.92 * scale, z, 0.42 * scale, M_WHITE),
@@ -116,158 +127,254 @@ def piece(x, y, z, team, parent=None, scale=1.0):
     return parts
 
 
-# ---------------------------------------------------------------- the hall: its west and north walls standing, the others kerbs
-box("Hall floor", HALL[0] - 2, HALL[1] + 2, -0.6, 0, -4, WALL_N + 2, M_TILE)
-box("Hall wall W", HALL[0] - 1.2, HALL[0], 0, 30, 0, WALL_N, M_WARMSTONE)
-box("Hall wall N w", HALL[0], L["BALCONY"][0], 0, 30, WALL_N, WALL_N + 1.2, M_WARMSTONE)
-box("Hall wall N e", L["BALCONY"][1], HALL[1], 0, 30, WALL_N, WALL_N + 1.2, M_WARMSTONE)
-box("Hall wall N low", L["BALCONY"][0], L["BALCONY"][1], 0, L["BALCONY_Y"] - 0.8, WALL_N, WALL_N + 1.2, M_WARMSTONE)
-box("Hall kerb E", HALL[1], HALL[1] + 0.8, 0, 1.0, 0, WALL_N, M_WARMSTONE)
-box("Hall kerb S w", HALL[0], -8, 0, 1.0, -0.8, 0, M_WARMSTONE)
-box("Hall kerb S e", 8, HALL[1], 0, 1.0, -0.8, 0, M_WARMSTONE)
-for z in range(6, 66, 11):
-    box("Window W", HALL[0], HALL[0] + 0.1, 10, 24, z, z + 4.5, M_DOOR)
-    box("Banner W", HALL[0] + 0.1, HALL[0] + 0.25, 11, 23, z + 6.0, z + 8.8, M_OLIVE)
-    box("Banner W mark", HALL[0] + 0.25, HALL[0] + 0.32, 16, 19.5, z + 6.8, z + 8.0, M_GOLD)
-for x in (-27, -17, 12.5, 22.5):
-    box("Window N", x, x + 4.5, 10, 24, WALL_N - 0.1, WALL_N, M_DOOR)
-for x in (-21.5, 18.2):
-    box("Banner N", x, x + 3.2, 11, 24, WALL_N - 0.25, WALL_N - 0.1, M_OLIVE)
-for z in (22, 44):
-    box("Fireplace", HALL[0], HALL[0] + 1.6, 0, 6.5, z, z + 7, M_WARMSTONE)
-    box("Fireplace fire", HALL[0] + 1.55, HALL[0] + 1.7, 0.4, 3.6, z + 1.4, z + 5.6, M_FIRE)
+def pawn(name, team, marker=False):
+    g = group(name)
+    piece(0.0, 0.0, 0.0, team, g, 1.25)
+    if marker:
+        into(g, inst(ME_CONE, "Hero marker", M_HERO, U(0, 2.5, 0), (0.55, 0.55, 0.9), (math.pi, 0, 0)))
+    g.location = U(*HIDE)
+    return g
 
-# ---------------------------------------------------------------- the gallery over the entry: the servery under it, the stage, the loft
-box("Stage slab", STAGE[0], STAGE[1], L["GALLERY_UNDER"], STAGE_Y, LOFT[2], STAGE[3], M_WARMSTONE)
-box("Stage carpet", STAGE[0] + 1, STAGE[1] - 1, STAGE_Y, STAGE_Y + 0.04, STAGE[2] + 0.4, STAGE[3] - 0.5, M_OLIVE)
-box("Stage front", STAGE[0], STAGE[1], STAGE_Y - 0.6, STAGE_Y + 0.02, STAGE[3], STAGE[3] + 0.12, M_GOLD)
-box("Servery front wall", STAGE[0], STAGE[1], 0, L["GALLERY_UNDER"], STAGE[3] - L["SERVERY_BACK"] - 0.5, STAGE[3] - L["SERVERY_BACK"], M_WARMSTONE)
-box("Loft", LOFT[0], LOFT[1], STAGE_Y, LOFT_Y, LOFT[2], LOFT[3], M_WALNUT)
-box("Loft floor", LOFT[0], LOFT[1], LOFT_Y - 0.1, LOFT_Y, LOFT[2], LOFT[3], M_CLOTH)
-for x in (-11, -4.5, 4.5, 11):
-    for z in (3.0, 11.0):
-        box("Servery pillar", x - 0.5, x + 0.5, 0, L["GALLERY_UNDER"], z - 0.5, z + 0.5, M_WALNUT)
-for (x, z) in ((-10, 13.6), (-3, 14.0), (5.5, 13.4), (10.5, 6.0), (-9.5, 6.4)):
-    box("Cart", x, x + 3, 0, 1.1, z, z + 1.8, M_WALNUT)
-    for k in range(3):
-        ball("Loaf", x + 0.6 + k * 0.9, 1.35, z + 0.9, 0.8, M_WARMSTONE)
-box("Entry carpet", -2, 2, 0, 0.05, -3, 3, M_OLIVE)
-HZ, STRINGS = L["HARP_Z"], L["STRINGS"]
-STRING = []
-for i, (x, top) in enumerate(STRINGS):
-    STRING.append((bar("Harp string", (x, STAGE_Y + 0.3, HZ), (x, top, HZ), 0.12, M_STRING), i))
-n0 = (STRINGS[0][0] - 0.9, STRINGS[0][1] - 0.22 + L["NECK"] / 2, (LOFT[3] + HZ) / 2)
-n1 = (STRINGS[8][0] + 0.9, LOFT_Y - L["NECK"] / 2, (LOFT[3] + HZ) / 2)
-inst(ME_CUBE, "Harp neck", M_GOLD, U((n0[0] + n1[0]) / 2, (n0[1] + n1[1]) / 2, n0[2]), (math.hypot(n1[0] - n0[0], n1[1] - n0[1]), HZ - LOFT[3], L["NECK"]),
-     (0.0, -math.atan2(n1[1] - n0[1], n1[0] - n0[0]), 0.0))
-box("Harp sound box", STRINGS[0][0] - 1.0, STRINGS[8][0] + 1.0, STAGE_Y, STAGE_Y + 0.35, HZ - 0.5, HZ + 0.5, M_WALNUT)
-bar("Harp back", (STRINGS[0][0] - 0.9, STAGE_Y, HZ - 0.6), (n0[0], n0[1], HZ - 0.6), 0.7, M_GOLD)
-cyl("Harpist", STRINGS[0][0] - 2.2, STAGE_Y, STAGE_Y + 3.4, HZ + 1.6, 1.7, M_EBONY)
-ball("Harpist head", STRINGS[0][0] - 2.2, STAGE_Y + 4.0, HZ + 1.6, 1.3, M_EBONY)
-for x in (6.0, 9.5):
-    cyl("Musician", x, STAGE_Y, STAGE_Y + 2.6, 13.2, 1.5, M_IVORY)
-    ball("Musician head", x, STAGE_Y + 3.1, 13.2, 1.1, M_IVORY)
-WAX = []
-for ci, c in enumerate(L["CANDLES"]):
-    cyl("Candle dish", c[0], LOFT_Y, LOFT_Y + 0.2, c[1], L["DISH_R"] * 2, M_GOLD)
-    cyl("Candle", c[0], LOFT_Y + 0.2, L["CANDLE_TOP"], c[1], L["CANDLE_R"] * 2, M_WAX)
-    flame(c[0], L["CANDLE_TOP"] + 0.9, c[1], 0.6)
-    cyl("Candle wick stand", c[0], L["CANDLE_TOP"], L["CANDLE_TOP"] + 0.9, c[1], 0.12, M_IRON, ME_CYL8)
-    WAX.append((ci, c, [inst(ME_CUBE, "Wax drip", M_DRIP, U(0, -40, 0), (0.75, 0.24, 0.6)) for _ in range(3)]))
 
-# ---------------------------------------------------------------- 1, 2: the U of tables, the cloth lanes, the runner, the goblets
-CLOTH, GOBLETS = [], []
-for side in (-1, 1):
-    x0, x1 = sorted((side * AI, side * AO))
-    box("Table arm", x0, x1, TABLE - 0.5, TABLE, AZ0, HZ1, M_CLOTH)
-    box("Table arm skirt in", side * AI - 0.1, side * AI + 0.1, 0, TABLE - 0.5, STAGE[3], HZ0, M_CLOTH2)
-    for z in (AZ0 + 2, 18, 32, 46):
-        box("Table leg", side * (AO - 1.6) - 0.5, side * (AO - 1.6) + 0.5, 0, TABLE - 0.5, z - 0.5, z + 0.5, M_WALNUT)
-    box("Hedge", side * AI - 0.25, side * AI + 0.25, TABLE, TABLE + L["FENCE"], AZ0, HZ0, M_HEDGE)
-    xh0, xh1 = sorted((side * AI, side * 11.4))
-    box("Hedge head", xh0, xh1, TABLE, TABLE + L["FENCE"], HZ0 - 0.25, HZ0 + 0.25, M_HEDGE)
-    xr0, xr1 = sorted((side * (AX - L["RUNNER"]), side * (AX + L["RUNNER"])))
-    box("Runner", xr0, xr1, TABLE, TABLE + 0.04, AZ0 + 1.5, HEADZ + L["RUNNER"], M_OLIVE)
-    xr0, xr1 = sorted((side * (AX - L["RUNNER"]), side * (L["RUN_END"] - 0.6)))
-    box("Runner head", xr0, xr1, TABLE, TABLE + 0.04, HEADZ - L["RUNNER"], HEADZ + L["RUNNER"], M_OLIVE)
-    a = L["KNIGHT_SQUARES"][0]
-    box("Knight square on the table", -side * a[0] - 1.5, -side * a[0] + 1.5, TABLE, TABLE + 0.05, a[2] - 1.5, a[2] + 1.5, M_WARN)
-    for i in range(L["CLOTH_LANES"]):
-        xa, xb = sorted((side * AI + side * i * L["LANE_WIDTH"], side * AI + side * (i + 1) * L["LANE_WIDTH"]))
-        box("Cloth lane", xa + 0.05, xb - 0.05, 0.15, TABLE, AZ0 - 0.14, AZ0, M_CLOTH if i % 2 == 0 else M_CLOTH2)
-        g = group("Cloth marks", ((xa + xb) / 2, 0.0, AZ0 - 0.155))
-        marks = [box("Cloth lane mark", -0.5, 0.5, 0.5 + k * 0.95, 0.66 + k * 0.95, -0.02, 0.02, M_MARK_UP) for k in range(4)]
-        into(g, *marks)
-        CLOTH.append((g, i, marks, (xa + xb) / 2))
-    GT, GR = L["GOBLET_TALL"], L["GOBLET_R"]
-    for pair, (mid, head) in enumerate(L["goblet_spots"](side)):
-        pg = group("Goblet pair", (mid[0], TABLE, mid[1]))
-        pg.rotation_euler = (0.0, 0.0, -D(head))
-        for s in (-1, 1):
-            g = group("Goblet", (s * L["GOBLET_X"], 0.0, 0.0))
-            g.parent = pg
-            into(g, cyl("Goblet foot", 0, 0, 0.15, 0, 1.5, M_WINE), cyl("Goblet stem", 0, 0.15, GT - GR * 0.8, 0, 0.32, M_WINE, ME_CYL8),
-                 ball("Goblet bowl", 0, GT, 0, GR * 2, M_WINE))
-            GOBLETS.append((g, pair, s))
-        for d in (-3.2, 3.2):
-            for s in (-1, 1):
-                into(pg, cyl("Plate", s * 4.6, 0, 0.08, d, 1.9, M_PLATE), cyl("Plate rim", s * 4.6, 0.08, 0.1, d, 1.3, M_GOLD))
-box("Head table", -AO, AO, TABLE - 0.5, TABLE, HZ0, HZ1, M_CLOTH)
-box("Head table skirt", -AI, AI, 0, TABLE - 0.5, HZ0 - 0.1, HZ0 + 0.1, M_CLOTH2)
-for x in (-22, 22):
-    box("Head table leg", x - 0.5, x + 0.5, 0, TABLE - 0.5, HZ1 - 2.0, HZ1 - 1.0, M_WALNUT)
+def place(g, p, tumble=0.0):
+    if p is None:
+        g.location = U(*HIDE)
+        return
+    g.location = U(*p)
+    g.rotation_euler = (D(tumble), 0.0, 0.0)
 
-# ---------------------------------------------------------------- 3, 4: the dance floor, the knights, the dais, the couples
-n = int(round((FLOOR[1] - FLOOR[0]) / L["SQUARE"]))
-wide = (FLOOR[1] - FLOOR[0]) / n
-for i in range(n):
-    for j in range(int((FLOOR[3] - FLOOR[2]) / L["SQUARE"]) + 1):
-        z0 = FLOOR[2] + j * L["SQUARE"]
-        box("Dance square", FLOOR[0] + i * wide, FLOOR[0] + (i + 1) * wide, 0, 0.05, z0, min(z0 + 3.0, FLOOR[3]), M_PARQUET if (i + j) % 2 else M_PARQUET2)
-ISL = L["ISLAND"]
-box("Dais", ISL[0], ISL[1], TABLE - 0.5, TABLE, ISL[2], ISL[3], M_CLOTH)
-box("Dais edge", ISL[0] - 0.1, ISL[1] + 0.1, TABLE - 0.75, TABLE - 0.5, ISL[2] - 0.1, ISL[3] + 0.1, M_GOLD)
-box("Dais post", -4.0, 4.0, 0, TABLE - 0.75, ISL[2] + 1.5, ISL[3] - 1.5, M_WALNUT)
-for sq in L["KNIGHT_SQUARES"]:
-    for s in (-1, 1):
-        box("Knight square", sq[0] * s - 1.5, sq[0] * s + 1.5, sq[1] - (0.4 if sq[1] < 1 else 0.0), sq[1] + 0.04, sq[2] - 1.5, sq[2] + 1.5, M_WARN)
-KR, KD, KT = L["KNIGHT_R"], L["KNIGHT_DRAPE"], L["KNIGHT_TALL"]
-ME_KBODY = frustum("ME_KnightBody", KR + 0.05, KR - 0.25, KD)
-KNIGHTS = []
-for k in range(4):
-    g = group("Knight %d" % k)
-    dark = k % 2 == 1
-    into(g, cyl("Knight base", 0, 0, 0.35, 0, (KR + 0.35) * 2, M_EBONY if dark else M_IVORY),
-         inst(ME_KBODY, "Knight drape", M_DRAPE, U(0, 0.3, 0), (1, 1, 1)),
-         torus("Knight hem", 0, 0.5, 0, KR + 0.06, 0.1, M_GOLD), torus("Knight collar", 0, KD + 0.25, 0, KR - 0.2, 0.14, M_GOLD),
-         inst(ME_CUBE, "Knight neck", M_EBONY if dark else M_IVORY, U(0, KD + 0.9, 0.15), (1.1, 1.3, 1.9), (D(-18), 0, 0)),
-         inst(ME_CUBE, "Knight head", M_EBONY if dark else M_IVORY, U(0, KT - 0.5, 0.75), (0.95, 2.0, 0.95), (D(24), 0, 0)),
-         inst(ME_CUBE, "Knight mane", M_GOLD, U(0, KD + 1.2, -0.52), (0.3, 0.3, 2.0), (D(-18), 0, 0)))
-    if k != 0:
-        piece(0.0, 1.2, -KR - 0.34, k % 2, g)
-    KNIGHTS.append(g)
-GF, GS, SY, PAIR = L["GOWN_FOOT"], L["GOWN_SHOULDER"], L["SHOULDER_Y"], L["PAIR"]
-ME_GOWN = frustum("ME_Gown", GF, GS, SY - 0.25)
-COUPLES = []
-for i in range(L["COUPLES"]):
+
+def set_bar(o, a, b):
+    A, B = U(*a), U(*b)
+    d = B - A
+    o.location = (A + B) / 2
+    o.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
+    o.scale.z = max(1e-3, d.length)
+
+
+def figure(name, x, y, z, height, mat, head=M_IVORY, radius=1.0):
+    me = frustum("ME_" + name, radius, radius * 0.55, height * 0.82)
+    return [inst(me, name + " robe", mat, U(x, y, z), (1, 1, 1)),
+            torus(name + " collar", x, y + height * 0.82, z, radius * 0.5, 0.1, M_GOLD),
+            ball(name + " head", x, y + height * 0.9, z, radius * 1.0, head)]
+
+
+# ---------------------------------------------------------------- the hall
+X0, X1, Z0, Z1 = HALL
+box("Hall floor", X0 - 1, X1 + 1, -0.5, 0, Z0 - 2, Z1 + 1, M_TILE)
+box("Hall wall W", X0 - 1.2, X0, 0, 30, Z0, Z1, M_WARMSTONE)
+box("Hall wall N w", X0, BALCONY[0], 0, 30, Z1, Z1 + 1.2, M_WARMSTONE)
+box("Hall wall N e", BALCONY[1], X1, 0, 30, Z1, Z1 + 1.2, M_WARMSTONE)
+box("Hall wall N low", BALCONY[0], BALCONY[1], 0, BALCONY_Y - 0.6, Z1, Z1 + 1.2, M_WARMSTONE)
+box("Hall wall N high", BALCONY[0], BALCONY[1], BALCONY_Y + 8.0, 30, Z1, Z1 + 1.2, M_WARMSTONE)
+box("Exit arch", EXIT[0] - 3.5, EXIT[0] + 3.5, BALCONY_Y, BALCONY_Y + 7.6, Z1 + 0.4, Z1 + 0.6, M_DOOR)
+box("Hall kerb E", X1, X1 + 1.0, 0, 1.2, Z0, Z1, M_WARMSTONE)
+box("Hall kerb S", X0, X1, 0, 1.2, Z0 - 1.0, Z0, M_WARMSTONE)
+for z in range(10, 66, 11):
+    box("Window W", X0, X0 + 0.1, 11, 26, z, z + 4.5, M_DOOR)
+    box("Banner W", X0 + 0.1, X0 + 0.25, 12, 25, z + 6.0, z + 8.8, M_OLIVE)
+    box("Banner W mark", X0 + 0.25, X0 + 0.32, 17.5, 21, z + 6.8, z + 8.0, M_GOLD)
+for x in (-27.0, -18.0, 11.0, 20.0):
+    box("Window N", x, x + 4.5, 12, 27, Z1 - 0.1, Z1, M_DOOR)
+box("Banner N w", -12.5, -8.5, 13, 27, Z1 - 0.25, Z1 - 0.1, M_OLIVE)
+box("Banner N e", 8.5, 12.5, 13, 27, Z1 - 0.25, Z1 - 0.1, M_OLIVE)
+# the screens and the loft over the passage
+for a, b in zip(SCREENS, SCREENS[1:]):
+    x0, x1 = sorted((a[0], b[0]))
+    z0, z1 = sorted((a[1], b[1]))
+    box("Screen", x0 - 0.2, x1 + 0.2, 0, 6.0, z0 - 0.2, z1 + 0.2, M_WALNUT)
+    box("Screen cap", x0 - 0.3, x1 + 0.3, 6.0, 6.3, z0 - 0.3, z1 + 0.3, M_GOLD)
+box("Loft", LOFT[0], LOFT[1], LOFT_Y - 0.6, LOFT_Y, LOFT[2] + 2.0, LOFT[3], M_WARMSTONE)
+box("Loft face", LOFT[0], LOFT[1], LOFT_Y - 3.0, LOFT_Y - 0.6, LOFT[3] - 0.5, LOFT[3], M_WARMSTONE)
+for x in range(-28, 29, 8):
+    box("Loft pier", x - 0.5, x + 0.5, 0, LOFT_Y - 3.0, LOFT[3] - 1.0, LOFT[3] - 0.2, M_WARMSTONE)
+for x0, x1 in ((LOFT[0], -28.0), (-25.0, -3.6), (-1.6, 1.6), (3.6, LOFT[1])):
+    box("Loft rail", x0, x1, LOFT_Y, LOFT_Y + 1.1, LOFT[3] - 0.25, LOFT[3], M_GOLD)
+
+# ---------------------------------------------------------------- the servery, the counter and the waiters
+box("Counter", COUNTER[0], COUNTER[1], 0, TRAY_Y - 0.1, COUNTER[2], COUNTER[3], M_WALNUT)
+box("Counter top", COUNTER[0] - 0.1, COUNTER[1] + 0.05, TRAY_Y - 0.1, TRAY_Y, COUNTER[2] - 0.1, COUNTER[3] + 0.1, M_CLOTH)
+for i, h in enumerate((0.8, 1.6)):
+    box("Counter step", COUNTER[0] - 1.6 + i * 0.8, COUNTER[0] - 0.8 + i * 0.8, 0, h, COUNTER[2] + 1.0, COUNTER[3] - 1.0, M_WALNUT)
+for x in (22.8, 23.8):
+    cyl("Spare plates", x, TRAY_Y, TRAY_Y + 0.8, 5.0, 1.0, M_PLATE)
+box("Kitchen door", LANE[0] + 0.5, LANE[1] - 0.5, 0, 7.0, Z0 - 0.3, Z0 - 0.1, M_DOOR)
+box("Pantry door", X1 - 0.3, X1 - 0.1, 0, 7.0, L["WAITER_Z1"] - 1.0, L["WAITER_Z1"] + 5.0, M_DOOR)
+box("Pantry frame", X1 - 0.2, X1 + 1.0, 7.0, 9.0, L["WAITER_Z1"] - 1.5, L["WAITER_Z1"] + 5.5, M_WARMSTONE)
+waiter_body = frustum("ME_WaiterCoat", 1.15, 0.6, 5.4)
+WAITER_GROUPS = []
+for k in range(WAITERS):
+    g = group("Waiter")
+    off = WAITER_X - TRAY_X
+    into(g, inst(waiter_body, "Waiter coat", M_COAT, U(off, 0, 0), (1, 1, 1)),
+         torus("Waiter collar", off, 5.45, 0, 0.55, 0.12, M_SHIRT),
+         ball("Waiter head", off, 6.05, 0, 1.2, M_IVORY), ball("Waiter top", off, 6.75, 0, 0.35, M_IVORY),
+         bar("Waiter arm", (off - 0.6, 4.9, 0), (0.2, 2.3, 0), 0.36, M_COAT), ball("Waiter glove", 0.2, 2.2, 0, 0.55, M_GLOVE),
+         cyl("Tray", 0, TRAY_Y - 0.15, TRAY_Y, 0, TRAY_R * 2, M_SILVER), cyl("Plate stack", 0, TRAY_Y, STACK_TOP, 0, STACK_R * 2, M_PLATE))
+    for r in range(10):
+        into(g, torus("Plate rim", 0, TRAY_Y + 0.07 + r * 0.26, 0, STACK_R, 0.035, M_GOLD))
+    WAITER_GROUPS.append((g, k))
+
+# ---------------------------------------------------------------- the long table, its guests, the magician, the cloches
+box("Long table", TABLE_X0, TABLE_X1, TABLE - 0.5, TABLE, TABLE_Z0, TABLE_Z1, M_CLOTH)
+box("Long table skirt W", TABLE_X0 - 0.06, TABLE_X0, 0.0, TABLE, TABLE_Z0, TABLE_Z1, M_CLOTH2)
+box("Long table skirt S", TABLE_X0, TABLE_X1, 0.0, TABLE, TABLE_Z0 - 0.06, TABLE_Z0, M_CLOTH2)
+box("Long table skirt E", TABLE_X1, TABLE_X1 + 0.06, 0.0, TABLE, TABLE_Z0, TABLE_Z1, M_CLOTH2)
+for z in L["PLATES"]:
+    cyl("Plate", RUNNER_X, TABLE + 0.05, TABLE + 0.35, z, PLATE_R * 2, M_PLATE)
+    torus("Plate rim", RUNNER_X, TABLE + 0.36, z, PLATE_R - 0.05, 0.05, M_GOLD)
+    candle(RUNNER_X + 3.6, TABLE + 0.05, z + 2.0)
+    cyl("Goblet stem", RUNNER_X - 3.4, TABLE + 0.05, TABLE + 0.9, z + 1.0, 0.18, M_GLASS, ME_CYL8)
+    cyl("Goblet bowl", RUNNER_X - 3.4, TABLE + 0.9, TABLE + 1.5, z + 1.0, 0.8, M_GLASS)
+guest_me = frustum("ME_Guest", 1.1, 0.6, 4.6)
+for i, z in enumerate(GUESTS):
+    x = TABLE_X0 - 1.2
+    box("Chair back", x - 1.2, x - 0.9, 0.0, 6.0, z - 1.1, z + 1.1, M_WALNUT)
+    inst(guest_me, "Guest", M_GUEST if i % 2 else M_CAPE, U(x, 0.0, z), (1, 1, 1))
+    ball("Guest head", x, 5.3, z, 1.2, M_IVORY)
+    cyl("Guest crown", x, 5.8, 6.3, z, 0.6, M_GOLD, ME_CYL8)
+CLOTH_GROUP = group("Tablecloth")
+into(CLOTH_GROUP, box("Cloth top", TABLE_X0 - 0.15, TABLE_X1 + 0.15, TABLE, TABLE + 0.05, TABLE_Z0 - 0.15, TABLE_Z1 - 0.2, M_LINEN),
+     box("Cloth runner", RUNNER_X - RUNNER, RUNNER_X + RUNNER, TABLE + 0.05, TABLE + 0.07, TABLE_Z0 + 1.0, L["PLATES"][-1] + 2.0, M_OLIVE),
+     box("Cloth hem S", TABLE_X0 - 0.15, TABLE_X1 + 0.15, TABLE - 1.2, TABLE + 0.05, TABLE_Z0 - 0.2, TABLE_Z0 - 0.15, M_LINEN))
+mag = group("Magician", MAGICIAN)
+robe = frustum("ME_MagicianRobe", 1.5, 0.9, 6.4)
+into(mag, inst(robe, "Robe", M_ROBE, U(0, 0, 0), (1, 1, 1)), torus("Collar", 0, 6.4, 0, 0.8, 0.14, M_GOLD), ball("Head", 0, 7.1, 0, 1.4, M_IVORY),
+     cyl("Hat brim", 0, 7.65, 7.8, 0, 2.1, M_EBONY), cyl("Hat", 0, 7.8, 9.3, 0, 1.3, M_EBONY), cyl("Hat band", 0, 7.85, 8.1, 0, 1.33, M_VELVET))
+for s in (-1, 1):
+    into(mag, bar("Arm", (s * 0.9, 5.8, 0.3), (s * 2.6, TABLE + 0.3, TABLE_Z0 - MAGICIAN[2] - 0.1), 0.45, M_ROBE),
+         ball("Hand", s * 2.6, TABLE + 0.25, TABLE_Z0 - MAGICIAN[2] - 0.1, 0.65, M_GLOVE))
+BUNDLE = inst(ME_SPH, "Cloth in the air", M_LINEN, U(*HIDE), (5.0, 1.6, 2.8))
+CLOCHE_GROUPS = []
+for i, (x, z) in enumerate(CLOCHES):
+    cyl("Dish", x, TABLE, TABLE + 0.15, z, 4.2, M_PLATE)
+    inst(ME_SPH, "Roast", M_ROAST, U(x, TABLE + 0.75, z), (2.6, 1.6, 1.5))
+    g = group("Cloche", (x, TABLE, z))
+    into(g, cyl("Cloche band", 0, 0.0, 1.4, 0, CLOCHE_R * 2, M_CLOCHE), inst(ME_SPH, "Cloche dome", M_CLOCHE, U(0, 1.4, 0), (4.4, 4.4, 3.0)),
+         cyl("Cloche stem", 0, 2.85, 3.05, 0, 0.3, M_CLOCHE), torus("Cloche handle", 0, 3.42, 0, 0.42, 0.1, M_CLOCHE, (math.pi / 2, 0, 0)),
+         ball("Glove", 0, 3.5, 0.0, 1.05, M_GLOVE), bar("Sleeve", (0, 3.8, -0.2), (0, 12.0, -4.5), 0.8, M_COAT))
+    steam = [ball("Steam", 0, -80, 0, 0.9, M_STEAM) for _ in range(3)]
+    CLOCHE_GROUPS.append((g, x, z, steam))
+
+# ---------------------------------------------------------------- the royal dais, the head table, the tower, the balcony
+box("Dais", X0, X1, 0, DAIS_Y, DAIS_Z, Z1, M_MARBLE2)
+box("Dais edge", X0, X1, DAIS_Y - 0.4, DAIS_Y + 0.05, DAIS_Z - 0.15, DAIS_Z + 0.2, M_GOLD)
+box("Dais carpet", -2.0, 2.0, DAIS_Y, DAIS_Y + 0.04, DAIS_Z + 0.5, PEDESTAL[2], M_VELVET)
+for x0, x1 in HEAD_TABLES:
+    box("Head table", x0, x1, HEAD_TOP - 0.5, HEAD_TOP, HEAD_Z[0], HEAD_Z[1], M_CLOTH)
+    box("Head table skirt", x0, x1, DAIS_Y, HEAD_TOP - 0.5, HEAD_Z[0], HEAD_Z[0] + 0.1, M_CLOTH2)
+    for x in (x0 + 3, (x0 + x1) / 2, x1 - 3):
+        candle(x, HEAD_TOP, HEAD_Z[0] + 1.2, 1.8)
+        cyl("Head table plate", x + 1.5, HEAD_TOP, HEAD_TOP + 0.08, HEAD_Z[0] + 2.4, 1.6, M_PLATE)
+box("Pedestal", PEDESTAL[0], PEDESTAL[1], HEAD_TOP - 0.5, HEAD_TOP, PEDESTAL[2], PEDESTAL[3], M_LINEN)
+box("Pedestal skirt", PEDESTAL[0], PEDESTAL[1], DAIS_Y, HEAD_TOP - 0.5, PEDESTAL[2], PEDESTAL[2] + 0.1, M_LINEN)
+for x in (PEDESTAL[0], PEDESTAL[1] - 0.1):
+    box("Pedestal skirt side", x, x + 0.1, DAIS_Y, HEAD_TOP - 0.5, PEDESTAL[2], PEDESTAL[3], M_LINEN)
+for x0, x1 in ((PEDESTAL[0], PEDESTAL[0] + 0.15), (PEDESTAL[1] - 0.15, PEDESTAL[1])):
+    box("Pedestal hem", x0, x1, HEAD_TOP - 0.7, HEAD_TOP - 0.5, PEDESTAL[2], PEDESTAL[3], M_GOLD)
+bowl_me = frustum("ME_Coupe", 0.55, 0.95, 0.9)
+TOWER_LEVELS = {}
+for k in range(LEVELS):
+    n, base = LEVELS - k, HEAD_TOP + LEVEL_H * k
+    for i in range(n):
+        for j in range(n):
+            x, z = (i - (n - 1) / 2.0) * GLASS_PITCH, TOWER_Z + (j - (n - 1) / 2.0) * GLASS_PITCH
+            cyl("Glass foot", x, base, base + 0.06, z, 1.1, M_GLASS)
+            cyl("Glass stem", x, base + 0.06, base + 0.6, z, 0.22, M_GLASS, ME_CYL8)
+            TOWER_LEVELS.setdefault(k, []).append(inst(bowl_me, "Glass bowl", M_FULL, U(x, base + 0.6, z), (1, 1, 1)))
+BOTTLE = [bar("Bottle", (0, 0, 0), (0, 1, 0), 1.5, M_BOTTLE), bar("Bottle neck", (0, 0, 0), (0, 1, 0), 0.5, M_BOTTLE),
+          bar("Bottle label", (0, 0, 0), (0, 1, 0), 1.56, M_GOLD), bar("Sommelier sleeve", (0, 0, 0), (0, 1, 0), 0.8, M_COAT),
+          bar("Pour", (0, 0, 0), (0, 1, 0), 0.22, M_CHAMP)]
+BOTTLE_GLOVE = ball("Sommelier glove", 0, -80, 0, 1.0, M_GLOVE)
+box("Balcony", BALCONY[0], BALCONY[1], BALCONY_Y - 0.6, BALCONY_Y, BALCONY[2], BALCONY[3], M_WARMSTONE)
+box("Balcony carpet", -1.8, 1.8, BALCONY_Y, BALCONY_Y + 0.04, BALCONY[2] + 0.4, BALCONY[3], M_VELVET)
+for x in (BALCONY[0], BALCONY[1] - 0.3):
+    box("Balcony rail", x, x + 0.3, BALCONY_Y, BALCONY_Y + 1.1, BALCONY[2], BALCONY[3], M_GOLD)
+for s in (-1, 1):
+    box("Throne", s * 3.6 - 0.9, s * 3.6 + 0.9, BALCONY_Y, BALCONY_Y + 3.6, BALCONY[3] - 2.4, BALCONY[3] - 1.2, M_GOLD)
+    box("Throne seat", s * 3.6 - 0.9, s * 3.6 + 0.9, BALCONY_Y, BALCONY_Y + 1.3, BALCONY[3] - 3.4, BALCONY[3] - 1.2, M_VELVET)
+box("Canopy", -5.0, 5.0, BALCONY_Y + 7.8, BALCONY_Y + 8.6, BALCONY[3] - 3.0, BALCONY[3], M_VELVET)
+
+# ---------------------------------------------------------------- the dance floor and the couples
+for i in range(int((TABLE_X0 - 2.4 - STAGE_X1) // 3.0) + 1):
+    for j in range(int((DAIS_Z - SCREEN_Z) // 3.0) + 1):
+        x0, z0 = STAGE_X1 + i * 3.0, SCREEN_Z + j * 3.0
+        box("Dance square", x0, min(x0 + 3.0, TABLE_X0 - 2.4), 0, 0.05, z0, min(z0 + 3.0, DAIS_Z), M_PARQUET if (i + j) % 2 else M_PARQUET2)
+gown_me = frustum("ME_Gown", GOWN_FOOT, GOWN_SHOULDER, SHOULDER_Y - 0.25)
+COUPLE_GROUPS = []
+for i in range(COUPLES):
     g = group("Couple %d" % i)
-    for who, z, mat in (("Queen", -PAIR, M_GOWN), ("King", PAIR, M_CAPE)):
-        into(g, inst(ME_GOWN, who + " gown", mat, U(0, 0.25, z), (1, 1, 1)), cyl(who + " foot", 0, 0, 0.25, z, GF * 2 + 0.2, M_GOLD),
-             cyl(who + " shoulders", 0, SY - 0.12, SY, z, GS * 2 + 0.1, M_GOLD), ball(who + " head", 0, SY + 0.7, z, L["HEAD_R"] * 2 + 0.3, M_IVORY),
-             cyl(who + " crown", 0, SY + 1.25, SY + (2.3 if who == "King" else 1.75), z, 0.75, M_GOLD, ME_CYL8))
-    into(g, bar("Joined arms", (0, SY - 0.35, -PAIR + GS), (0, SY - 0.35, PAIR - GS), 0.45, M_IVORY))
-    if i != 0:
-        piece(0.0, SY, -PAIR - 0.85, i % 2, g)
-    COUPLES.append(g)
+    for who, z, mat in (("Queen", 0.0, M_GOWN), ("King", 0.0, M_CAPE)):
+        pass
+    for who, xz, mat in (("Queen", (0.0, -PAIR), M_GOWN), ("King", (0.0, PAIR), M_CAPE)):
+        x, z = xz
+        into(g, inst(gown_me, who + " gown", mat, U(x, 0.25, z), (1, 1, 1)), cyl(who + " foot", x, 0, 0.25, z, GOWN_FOOT * 2 + 0.2, M_GOLD),
+             cyl(who + " shoulders", x, SHOULDER_Y - 0.12, SHOULDER_Y, z, GOWN_SHOULDER * 2 + 0.1, M_GOLD),
+             ball(who + " head", x, SHOULDER_Y + 0.7, z, HEAD_R * 2 + 0.3, M_IVORY),
+             cyl(who + " crown", x, SHOULDER_Y + 1.25, SHOULDER_Y + (2.3 if who == "King" else 1.75), z, 0.75, M_GOLD, ME_CYL8))
+    into(g, bar("Joined arms", (0, SHOULDER_Y - 0.35, -PAIR + GOWN_SHOULDER), (0, SHOULDER_Y - 0.35, PAIR - GOWN_SHOULDER), 0.45, M_IVORY))
+    COUPLE_GROUPS.append(g)
 
-# ---------------------------------------------------------------- 7: the two lines of chandeliers down the middle of the hall
-RL, WAT, WR = L["ROPE_L"], L["WHEEL_AT"], L["WHEEL_R"]
-ROPE_AXIS = Vector((HEAD[1], -HEAD[0], 0.0))          # the swing's axle, level, square to the way the lines lead
+# ---------------------------------------------------------------- the stage, the curtain, the orchestra, the pit
+box("Stage", STAGE_X0, STAGE_X1, 0, STAGE_Y, STAGE_Z0, STAGE_Z1, M_WALNUT)
+box("Stage floor", STAGE_X0, STAGE_X1, STAGE_Y - 0.1, STAGE_Y, STAGE_Z0, STAGE_Z1, M_PARQUET2)
+box("Stage front trim", STAGE_X1 - 0.1, STAGE_X1 + 0.05, STAGE_Y - 0.7, STAGE_Y, STAGE_Z0, STAGE_Z1, M_GOLD)
+bar("Curtain rail", (CURTAIN_X, RAIL_Y, CURTAIN_OPEN_S - 3.5), (CURTAIN_X, RAIL_Y, STAGE_Z1 + 1.0), 0.3, M_GOLD)
+box("Pelmet", CURTAIN_X - 0.5, CURTAIN_X + 0.5, RAIL_Y - 0.2, RAIL_Y + 1.6, CURTAIN_OPEN_S - 3.5, STAGE_Z1 + 1.0, M_VELVET2)
+box("Pelmet fringe", CURTAIN_X + 0.5, CURTAIN_X + 0.6, RAIL_Y - 0.4, RAIL_Y - 0.1, CURTAIN_OPEN_S - 3.5, STAGE_Z1 + 1.0, M_GOLD)
+PLEAT_GROUPS = []
+for side in (-1, 1):
+    for k in range(PLEATS):
+        g = group("Pleat")
+        x = CURTAIN_X + (0.12 if k % 2 else -0.12)
+        into(g, box("Pleat cloth", x - 0.12, x + 0.12, STAGE_Y + 0.3, RAIL_Y, -0.55, 0.55, M_VELVET if k % 2 else M_VELVET2),
+             box("Pleat fringe", x - 0.14, x + 0.14, STAGE_Y + 0.15, STAGE_Y + 0.35, -0.55, 0.55, M_GOLD))
+        PLEAT_GROUPS.append((g, side, k))
+for x, z in ((-29.0, STAGE_Z0 + 4.0), (-29.0, STAGE_Z0 + 9.0), (-26.5, STAGE_Z0 + 13.0), (-29.0, STAGE_Z1 - 3.0)):
+    figure("Musician", x, STAGE_Y, z, 4.4, M_COAT, M_IVORY, 0.8)
+    bar("Music stand", (x + 1.4, STAGE_Y, z), (x + 1.4, STAGE_Y + 2.6, z), 0.1, M_IRON)
+cyl("Grand drum", -30.0, STAGE_Y, STAGE_Y + 1.8, STAGE_Z1 - 6.5, 2.6, M_VELVET)
+box("Pit floor", PIT[0], PIT[1], 0.0, 0.08, PIT[2], PIT[3], M_PARQUET2)
+for b in BASSES:
+    g = group("Double bass", (b[0], 0.0, b[1]))
+    into(g, box("Bass body", -0.35, 0.35, 0.0, BASS_TOP - 3.0, -0.8, 0.8, M_WALNUT), bar("Bass neck", (0, BASS_TOP - 3.0, 0), (0, BASS_TOP - 0.3, 0), 0.3, M_EBONY),
+         ball("Bass scroll", 0, BASS_TOP - 0.2, 0, 0.5, M_EBONY))
+    figure("Bassist", b[0] - 1.6, 0.0, b[1], 4.8, M_COAT, M_EBONY, 0.8)
+
+# ---------------------------------------------------------------- the dessert buffet and the chocolate fountain
+box("Buffet", BUFFET[0], BUFFET[1], BUFFET_TOP - 0.5, BUFFET_TOP, BUFFET[2], BUFFET[3], M_CLOTH)
+box("Buffet skirt E", BUFFET[1], BUFFET[1] + 0.08, 0, BUFFET_TOP, BUFFET[2], BUFFET[3], M_CLOTH2)
+box("Buffet skirt N", BUFFET[0], BUFFET[1], 0, BUFFET_TOP, BUFFET[3], BUFFET[3] + 0.08, M_CLOTH2)
+for z in range(int(BUFFET[2]) + 1, int(BUFFET[3]) - 1, 2):
+    cyl("Cake stand", BUFFET[1] - 0.7, BUFFET_TOP, BUFFET_TOP + BUFFET_HEDGE - 0.6, z + 0.5, 0.25, M_GOLD, ME_CYL8)
+    cyl("Stand cake", BUFFET[1] - 0.7, BUFFET_TOP + BUFFET_HEDGE - 0.6, BUFFET_TOP + BUFFET_HEDGE, z + 0.5, 1.2, M_BERRY if z % 4 else M_PLATE)
+F = FOUNTAIN
+cyl("Bowl", F[0], BUFFET_TOP, BOWL_TOP, F[1], BOWL_R * 2, M_SILVER)
+cyl("Pool", F[0], BOWL_TOP - 0.05, BOWL_TOP + 0.02, F[1], BOWL_R * 2 - 0.4, M_CHOC)
+dome_me = [frustum("ME_Tier%d" % i, r, 0.55, 0.6) for i, r in enumerate(TIER_R)]
+FLOW_RINGS = []
+for k in range(4):
+    cyl("Choc curtain", F[0], TIER_BASE[k], TIER_Y[k], F[1], TIER_R[k] * 2, M_CHOC)
+    inst(dome_me[k], "Tier", M_CHOC, U(F[0], TIER_Y[k], F[1]), (1, 1, 1))
+    torus("Tier rim", F[0], TIER_Y[k], F[1], TIER_R[k], 0.08, M_SILVER)
+    for n in range(4):
+        FLOW_RINGS.append((torus("Flow", F[0], -80, F[1], TIER_R[k] + 0.03, 0.07, M_CHOC2), k, n))
+cyl("Fountain column", F[0], TIER_Y[3], TIER_Y[3] + 1.2, F[1], 0.7, M_SILVER)
+inst(ME_CONE, "Fountain crown", M_SILVER, U(F[0], TIER_Y[3] + 1.2, F[1]), (1.4, 1.4, 1.0))
+for i in range(10):
+    a = D(i * 36 + 15)
+    x, z = F[0] + 5.8 * math.sin(a), F[1] + 5.8 * math.cos(a)
+    if BUFFET[0] + 0.5 < x < BUFFET[1] - 1.2 and BUFFET[2] + 0.5 < z < BUFFET[3] - 0.5:
+        ball("Strawberry", x, BUFFET_TOP + 0.45, z, 0.9, M_BERRY)
+        inst(ME_CONE, "Leaf", M_LEAF, U(x, BUFFET_TOP + 0.8, z), (0.6, 0.6, 0.3))
+
+# ---------------------------------------------------------------- the chandeliers
+RL, WAT, WR = ROPE_L, WHEEL_AT, WHEEL_R
 ROPES = []
 for lane in (0, 1):
-    for k in range(5):
+    for k in range(CHANDELIERS):
         px, py, pz = L["rope_pivot"](lane, k)
-        bar("Ceiling chain", (px, py, pz), (px, L["CEILING"], pz), 0.14, M_BRASS)
+        bar("Ceiling chain", (px, py, pz), (px, CEILING, pz), 0.14, M_BRASS)
         g = group("Chandelier %d %d" % (lane, k), (px, py, pz))
         g.rotation_mode = "QUATERNION"
         into(g, bar("Chandelier line", (0, 0, 0), (0, -RL, 0), 0.16, M_BRASS), cyl("Chandelier wheel", 0, -WAT - 0.12, -WAT + 0.12, 0, WR * 2, M_GOLD),
@@ -275,124 +382,70 @@ for lane in (0, 1):
              ball("Chandelier end", 0, -RL, 0, 0.55, M_GOLD))
         for a in range(0, 360, 60):
             into(g, flame((WR - 0.2) * math.sin(D(a)), -WAT + 0.12, (WR - 0.2) * math.cos(D(a)), 0.26, lit=False))
-        if lane == 0 and k % 2 == 0:
-            piece(0.3, -RL - 0.5, 0.0, k // 2 % 2, g)
         ROPES.append((g, lane, k))
-        if lane == 0:
+        if lane == 0 and k % 2 == 0:
             lamps.append((0.0, py - WAT - 1.0, pz))
-
-# ---------------------------------------------------------------- 8: the cake on the head table, every tier on its own turntable
-cyl("Cake table", CK[0], TABLE - 0.5, TABLE, CK[1], L["CAKE_TABLE_R"] * 2, M_CLOTH)
-cyl("Cake table skirt", CK[0], 0, TABLE - 0.5, CK[1], L["CAKE_TABLE_R"] * 2 - 0.3, M_CLOTH2)
-cyl("Cake stand", CK[0], TABLE, TABLE + 0.25, CK[1], TIERS[0][0] * 2 + 1.0, M_GOLD)
-TIER = []
-bottom = TABLE + 0.25
-for i, (r, top, speed) in enumerate(TIERS):
-    g = group("Cake tier %d" % (i + 1), (CK[0], 0.0, CK[1]))
-    into(g, cyl("Cake tier", 0, bottom, top, 0, r * 2, M_SPONGE), torus("Tier piping", 0, top, 0, r - 0.05, 0.11, M_PLATE))
-    count, degrees = L["CREAM"][i]
-    step = 10
-    for a in range(0, 360, step):
-        cream = count > 0 and ((a + step / 2 - 17.0 * i) % (360.0 / count)) < degrees
-        into(g, panel("Cream" if cream else "Fondant", (0.0, 0.0), r + 0.03, a + step / 2, bottom + 0.12, top - 0.12, 2 * r * math.tan(D(step / 2)) + 0.03,
-                      M_CREAMSTRIPE if cream else M_FONDANT))
-    if i == 0:
-        into(g, torus("Ledge rail", 0, top + 1.0, 0, r - 0.15, 0.07, M_GOLD))
-        for a in range(0, 360, 20):
-            into(g, cyl("Ledge rail post", (r - 0.15) * math.sin(D(a)), top, top + 1.0, (r - 0.15) * math.cos(D(a)), 0.1, M_GOLD, ME_CYL8))
-    if 0 < i < 4:
-        piece((r + TIERS[i + 1][0]) / 2 * math.sin(D(200 + 70 * i)), top, (r + TIERS[i + 1][0]) / 2 * math.cos(D(200 + 70 * i)), i % 2, g)
-    TIER.append(g)
-    bottom = top
-cyl("Cake crown", CK[0] - 0.9, bottom, L["TOPPER"][1] - 0.9, CK[1] - 0.6, L["TOPPER"][0] * 2, M_GOLD)
-flame(CK[0] - 0.9, L["TOPPER"][1] - 0.9, CK[1] - 0.6, 0.6)
-
-# ---------------------------------------------------------------- 9: the cake knife and the royal balcony over the head of the hall
-K0, K1 = L["KNIFE"]
-BY, BAL, EXIT = L["BALCONY_Y"], L["BALCONY"], L["EXIT"]
-box("Knife back", K0[0] - L["KNIFE_WIDTH"] / 2, K0[0] + L["KNIFE_WIDTH"] / 2, TIERS[4][1] - 0.15, TIERS[4][1] + 0.06, CK[1] - 1.2, K1[1] - 0.6, M_SILVER)
-box("Knife blade", K0[0] - 0.12, K0[0] + 0.12, TIERS[3][1] + 0.1, TIERS[4][1] - 0.1, CK[1] - 1.0, CK[1] + 7.0, M_SILVER)
-bar("Knife handle", (K0[0], TIERS[4][1] - 0.05, K1[1] - 0.8), (K0[0], BY + 0.3, K1[1] + 2.6), 1.0, M_WALNUT)
-box("Balcony", BAL[0], BAL[1], BY - 0.8, BY, BAL[2], BAL[3], M_WARMSTONE)
-box("Balcony carpet", EXIT[0] - 2, EXIT[0] + 2, BY, BY + 0.04, BAL[2] + 1, BAL[3], M_OLIVE)
-for x in (BAL[0], BAL[1] - 0.3):
-    box("Balcony rail", x, x + 0.3, BY, BY + 1.1, BAL[2], BAL[3], M_WALNUT)
-box("Balcony floor under", BAL[0], BAL[1], 0, BY - 0.8, BAL[2] + 1.2, BAL[3], M_WARMSTONE)
-box("Exit arch", EXIT[0] - 4, EXIT[0] + 4, BY, BY + 7, BAL[3] - 0.1, BAL[3] + 0.2, M_DOOR)
-box("Exit wall", BAL[0], BAL[1], BY + 7, 30, BAL[3], BAL[3] + 1.2, M_WARMSTONE)
-box("Canopy", EXIT[0] - 5, EXIT[0] + 5, BY + 7.2, BY + 8.2, BAL[3] - 3.5, BAL[3], M_OLIVE)
-for s in (-1, 1):
-    box("Throne", EXIT[0] + s * 4.0 - 0.8, EXIT[0] + s * 4.0 + 0.8, BY, BY + 3.4, BAL[2] + 2.0, BAL[2] + 3.2, M_GOLD)
-
-# ---------------------------------------------------------------- the pieces standing about
-A0 = L["KNIGHT_SQUARES"][0]
-for i, (x, y, z) in enumerate(((0.5, 0, 1.5), (-6, 0, 2.2), (9, 0, 2.6), (-17, 0, 2.4), (23, 0, 2.8), (-21, TABLE, 9), (-19.2, TABLE, 16), (-20.6, TABLE, 24), (-19.4, TABLE, 33),
-                               (-20.4, TABLE, 41), (20.5, TABLE, 8), (19.3, TABLE, 15), (20.8, TABLE, 23.5), (19.6, TABLE, 30), (20.4, TABLE, 39), (-17, TABLE, HEADZ + 0.6),
-                               (15.5, TABLE, HEADZ - 0.5), (11.0, TABLE, HEADZ + 0.4), (2.0, TABLE, ISL[2] + 2.4), (-1.5, TABLE, ISL[2] + 4.2), (5.0, STAGE_Y, STAGE[3] - 1.4),
-                               (-3.0, STAGE_Y, STAGE[3] - 2.6), (6.5, LOFT_Y, 4.0), (-9.0, LOFT_Y, 6.5), (EXIT[0] - 1.0, BY, BAL[2] + 4.0), (EXIT[0] + 1.4, BY, BAL[2] + 8.5),
-                               (K0[0], TIERS[4][1] + 0.06, CK[1] + 6.0), (-8.5, 0, 28), (9.0, 0, 31), (-11.5, 0, 43))):
-    piece(x, y, z, i % 2)
+box("Ceiling", X0, X1, CEILING, CEILING + 0.4, Z0, Z1, M_WARMSTONE) if False else None
+lamps.extend([(22.0, 7.0, 30.0), (-26.0, 12.0, 38.0), (-26.0, 12.0, 10.0), (0.0, 14.0, 62.0), (24.0, 4.0, 6.0)])
 
 
 # ---------------------------------------------------------------- where everything is at time t
-def cloth_shift(lane, t):
-    # How far that lane's cloth has run since t = 0, metres up.
-    up, hold, down, hold2 = L["CLOTH_CYCLE"]
-    whole = sum(L["CLOTH_CYCLE"])
-    v = t + lane * whole / 3.0
-    n, u = math.floor(v / whole), v % whole
-    net = up * L["CLOTH_UP"] - down * L["CLOTH_DOWN"]
-    if u < up:
-        d = u * L["CLOTH_UP"]
-    elif u < up + hold:
-        d = up * L["CLOTH_UP"]
-    elif u < up + hold + down:
-        d = up * L["CLOTH_UP"] - (u - up - hold) * L["CLOTH_DOWN"]
-    else:
-        d = net
-    return n * net + d
-
-
 def pose(t):
-    for g, lane, marks, x in CLOTH:
-        g.location = U(x, cloth_shift(lane, t) % 0.95, AZ0 - 0.155)
-        speed = L["cloth_speed"](lane, t)
-        for m in marks:
-            m.material_slots[0].material = M_MARK_UP if speed > 0 else M_MARK_DOWN if speed < 0 else M_CLOTH
-    for g, pair, s in GOBLETS:
-        g.rotation_euler = (0.0, -s * D(L["GOBLET_LEAN"]) * L["goblet_lean"](pair, t), 0.0)
-    for k, g in enumerate(KNIGHTS):
-        x, y, z, yaw, air = L["knight"](k, t)
-        g.location = U(x, y, z)
-        g.rotation_euler = (0.0, 0.0, -D(yaw))
-    for i, g in enumerate(COUPLES):
+    for g, k in WAITER_GROUPS:
+        z = L["waiter_z"](k, t)
+        g.location = U(TRAY_X, 0.06 * abs(math.sin(t * 5.5 + k)), z) if z < L["WAITER_Z1"] - 0.5 else U(*HIDE)
+    cz = L["cloth_shift"](t)
+    CLOTH_GROUP.location = U(*HIDE) if cz is None else U(0.0, 0.0, -cz)
+    roll = L["drum_roll"](t)
+    lean = 6.0 if roll else 0.0
+    mag.rotation_euler = (D(-lean), 0.0, 0.0)
+    BUNDLE.location = U(MAGICIAN[0], 10.6 + 0.3 * math.sin(t * 6.0), MAGICIAN[2]) if cz is None else U(*HIDE)
+    h, jig = L["cloche_lift"](t)
+    for i, (g, x, z, steam) in enumerate(CLOCHE_GROUPS):
+        g.location = U(x, TABLE + h, z)
+        g.rotation_euler = (jig * (1 if i % 2 else -1), 0.0, 0.0)
+        for n, s in enumerate(steam):
+            if h > 0.6:
+                rise = (t * 0.9 + n * 0.33) % 1.0
+                s.location = U(x + (n - 1) * 0.7, TABLE + 1.4 + rise * 3.4, z + (n - 1) * 0.4)
+                s.scale = (0.6 + rise,) * 3
+            else:
+                s.location = U(*HIDE)
+    for i, g in enumerate(COUPLE_GROUPS):
         mid, q, king, turn = L["couple"](i, t)
         g.location = U(mid[0], 0.0, mid[1])
-        g.rotation_euler = (0.0, 0.0, D(turn))
-    for o, i in STRING:
-        u = L["pluck"](i, t)
-        hit, warn = u < L["PLUCK_DEAD"], u > L["PLUCK_EVERY"] - L["PLUCK_WARN"]
-        o.material_slots[0].material = M_HIT if hit else M_WARN if warn else M_STRING
-        o.scale.x = o.scale.y = 0.3 if hit else 0.2 if warn else 0.12
-    order = (0, 3, 1, 4, 2, 5)
-    for ci, c, drips in WAX:
-        n0 = int(math.floor(t / L["WAX_EVERY"]))
-        for o in drips:
-            o.location = U(0, -40, 0)
-        for n in (n0, n0 - 1, n0 - 2):
-            age = t - n * L["WAX_EVERY"]
-            if n < 0 or age > L["WAX_WARN"] + 3.2 / L["WAX_SPEED"]:
-                continue
-            az = order[n % 6] * 60.0 + ci * 30.0
-            y = L["CANDLE_TOP"] - 0.3 - max(0.0, age - L["WAX_WARN"]) * L["WAX_SPEED"]
-            o = drips[n % 3]
-            o.location = U(c[0] + (L["CANDLE_R"] + 0.08) * math.sin(D(az)), y, c[1] + (L["CANDLE_R"] + 0.08) * math.cos(D(az)))
-            o.rotation_euler = (0.0, 0.0, -D(az))
-            o.material_slots[0].material = M_WARN if age < L["WAX_WARN"] else M_DRIP
+        # the queen sits at local (0, -PAIR) (south); turn the couple so she is at angle `turn` (degrees, from +x anticlockwise)
+        g.rotation_euler = (0.0, 0.0, D(turn + 90.0))
+    for g, side, k in PLEAT_GROUPS:
+        g.location = U(0.0, 0.0, L["pleat_z"](side, k, t))
+    for o, k, n in FLOW_RINGS:
+        hgt = TIER_Y[k] - TIER_BASE[k]
+        o.location = U(FOUNTAIN[0], TIER_Y[k] - ((t * FLOW + n * hgt / 4.0) % hgt), FOUNTAIN[1])
     for g, lane, k in ROPES:
-        g.rotation_quaternion = Quaternion(ROPE_AXIS, D(L["rope_angle"](lane, k, t)))
-    for i, g in enumerate(TIER):
-        g.rotation_euler = (0.0, 0.0, -D(L["tier_turn"](i, t)))
+        g.rotation_quaternion = Quaternion(Vector((1.0, 0.0, 0.0)), -D(L["rope_angle"](lane, k, t)))
+    pouring = False
+    u = (t - 1.0) % L["POURS_EVERY"]
+    a = 144.0 if 0.0 <= u < L["POUR_FOR"] else (144.0 * (1.0 - min(1.0, (u - L["POUR_FOR"]) / 0.4)) if u < L["POUR_FOR"] + 0.4 else
+                                                (144.0 * min(1.0, (u - L["POURS_EVERY"] + 0.5) / 0.5) if u > L["POURS_EVERY"] - 0.5 else 0.0))
+    pouring = 0.0 <= u < L["POUR_FOR"]
+    Hn = (0.0, TOWER_TOP + 1.6, TOWER_Z + 1.2)
+    uu = (math.cos(D(a)), -math.sin(D(a)))
+    mouth = (0.0, Hn[1] + 0.9 * uu[0], Hn[2] + 0.9 * uu[1])
+    base = (0.0, Hn[1] - 3.4 * uu[0], Hn[2] - 3.4 * uu[1])
+    set_bar(BOTTLE[0], base, Hn)
+    set_bar(BOTTLE[1], Hn, mouth)
+    set_bar(BOTTLE[2], tuple(p + (q - p) * 0.35 for p, q in zip(base, Hn)), tuple(p + (q - p) * 0.65 for p, q in zip(base, Hn)))
+    mid = tuple((p + q) / 2.0 for p, q in zip(base, Hn))
+    BOTTLE_GLOVE.location = U(mid[0], mid[1] + 0.2, mid[2] + 0.6)
+    set_bar(BOTTLE[3], (mid[0], mid[1] + 0.2, mid[2] + 0.6), (0.0, 30.0, TOWER_Z + 6.0))
+    if pouring:
+        set_bar(BOTTLE[4], mouth, (0.0, TOWER_TOP - 0.1, TOWER_Z))
+    else:
+        BOTTLE[4].location = U(*HIDE)
+    for k, bowls in TOWER_LEVELS.items():
+        m = M_CHAMP if L["overflow"](k, t) else M_FULL
+        for b in bowls:
+            b.material_slots[0].material = m
 
 
 def light(name, kind, loc, energy, color, **kw):
@@ -431,7 +484,7 @@ for look in ("AgX - Medium High Contrast", "Medium High Contrast"):
         pass
 
 # ==== still: everything above is also the film's set (banquet_flow_video.py runs it and stops here)
-pose(2.3)
+pose(3.0)
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.012, 0.008, 0.005, 1)
 key = light("LGT_Key", "SUN", U(70, 90, -30), 1.5, (1.0, 0.86, 0.66), angle=D(14))
 aim(key, U(0, 4, 36))
@@ -439,9 +492,9 @@ fill = light("LGT_Fill", "AREA", U(50, 50, -20), 200000, (0.70, 0.78, 1.0), size
 aim(fill, U(0, 4, 36))
 for (x, y, z) in lamps:
     light("LGT_Candle", "POINT", U(x, y, z), 2600, (1.0, 0.58, 0.24), shadow_soft_size=0.4)
-cam_d.lens = 34
-cam.location = U(50, 86, -24)
-aim(cam, U(-1, 4.0, 37))
+cam_d.lens = 28
+cam.location = U(74, 64, 4)
+aim(cam, U(-7, 3.0, 33))
 scene.render.engine = "CYCLES"
 prefs = bpy.context.preferences.addons["cycles"].preferences
 prefs.compute_device_type = "OPTIX"

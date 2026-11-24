@@ -1,0 +1,636 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1460 2020" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+<rect width="1460" height="2020" fill="#fbf6ea"/>
+<text x="34.0" y="34.0" font-size="19" text-anchor="start" font-weight="bold" fill="#2b2622">대연회장 레벨 디자인 초안 v0.4 — 연회와 무도회가 한창인 홀, 한 줄 길</text>
+<text x="34.0" y="56.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">위에서 본 홀, 가운데를 잘라 서쪽을 본 모습, 길을 펴서 본 높이. 보라 = 움직이는 것, 점선 = 길(갈림 없음). 단위 m.</text>
+<text x="34.0" y="86.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">위에서 본 대연회장 (64 × 72 m, 북쪽이 위)</text>
+<clipPath id="hall"><rect x="34.0" y="96.0" width="652.8" height="748.8"/></clipPath>
+<g clip-path="url(#hall)">
+<rect x="53.2" y="124.8" width="614.4" height="691.2" fill="#e9e2d2" stroke="#8a5a36" stroke-width="3.0" />
+<rect x="168.4" y="729.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="672.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="614.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="556.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="499.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="441.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="384.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="168.4" y="326.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="700.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="643.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="585.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="528.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="470.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="412.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="355.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="197.2" y="297.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="729.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="672.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="614.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="556.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="499.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="441.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="384.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="226.0" y="326.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="700.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="643.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="585.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="528.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="470.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="412.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="355.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="254.8" y="297.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="729.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="672.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="614.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="556.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="499.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="441.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="384.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="283.6" y="326.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="700.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="643.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="585.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="528.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="470.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="412.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="355.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="312.4" y="297.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="729.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="672.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="614.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="556.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="499.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="441.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="384.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="341.2" y="326.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="700.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="643.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="585.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="528.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="470.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="412.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="355.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="370.0" y="297.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="729.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="672.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="614.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="556.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="499.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="441.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="384.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="398.8" y="326.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="700.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="643.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="585.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="528.0" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="470.4" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="412.8" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="355.2" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="427.6" y="297.6" width="28.8" height="28.8" fill="#ddd3bd" stroke="none" stroke-width="0.0" />
+<rect x="149.2" y="758.4" width="518.4" height="57.6" fill="#e0cb98" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="485.2" y="643.2" width="124.8" height="115.2" fill="#e0cb98" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<polyline points="149.2,758.4 485.2,758.4 485.2,643.2" fill="none" stroke="#8a5a36" stroke-width="3.0" />
+<rect x="610.0" y="374.4" width="57.6" height="441.6" fill="#efe6d4" stroke="none" stroke-width="0.0" />
+<rect x="571.6" y="700.8" width="38.4" height="76.8" fill="#c9a27c" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="646.5" cy="844.8" r="10.6" fill="#3a3531" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="627.3" cy="844.8" r="14.4" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="627.3" cy="844.8" r="7.7" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="646.5" cy="750.7" r="10.6" fill="#3a3531" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="627.3" cy="750.7" r="14.4" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="627.3" cy="750.7" r="7.7" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="646.5" cy="656.6" r="10.6" fill="#3a3531" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="627.3" cy="656.6" r="14.4" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="627.3" cy="656.6" r="7.7" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="646.5" cy="562.6" r="10.6" fill="#3a3531" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="627.3" cy="562.6" r="14.4" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="627.3" cy="562.6" r="7.7" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="646.5" cy="468.5" r="10.6" fill="#3a3531" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="627.3" cy="468.5" r="14.4" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="627.3" cy="468.5" r="7.7" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<rect x="494.8" y="278.4" width="115.2" height="364.8" fill="#f3e6c8" stroke="#8a5a36" stroke-width="2.0" />
+<rect x="528.4" y="345.6" width="48.0" height="288.0" fill="#6f8a4b" stroke="none" stroke-width="0.0" opacity="0.7"/>
+<circle cx="552.4" cy="595.2" r="11.5" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="552.4" cy="537.6" r="11.5" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="552.4" cy="480.0" r="11.5" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="552.4" cy="422.4" r="11.5" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="552.4" cy="364.8" r="11.5" fill="#ffffff" stroke="#c9972e" stroke-width="1.5" />
+<circle cx="485.2" cy="614.4" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="576.0" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="537.6" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="499.2" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="460.8" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="422.4" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="384.0" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="345.6" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="485.2" cy="307.2" r="9.6" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="552.4" cy="670.1" r="14.4" fill="#d3b9ea" stroke="#8a5cc2" stroke-width="2.0" />
+<circle cx="523.6" cy="308.2" r="21.1" fill="#e8ebee" stroke="#8fa0ad" stroke-width="2.0" />
+<circle cx="581.2" cy="308.2" r="21.1" fill="#e8ebee" stroke="#8fa0ad" stroke-width="2.0" />
+<rect x="53.2" y="345.1" width="115.2" height="192.0" fill="#efe2bf" stroke="#8a5a36" stroke-width="2.0" />
+<rect x="53.2" y="537.1" width="115.2" height="115.7" fill="#d8cfbc" stroke="#8a5a36" stroke-width="1.0" />
+<circle cx="139.6" cy="633.6" r="6.7" fill="#8a5a36" stroke="#2b2622" stroke-width="1.0" />
+<circle cx="139.6" cy="556.3" r="6.7" fill="#8a5a36" stroke="#2b2622" stroke-width="1.0" />
+<rect x="53.2" y="652.8" width="96.0" height="134.4" fill="#f3e6c8" stroke="#8a5a36" stroke-width="2.0" />
+<circle cx="106.0" cy="729.6" r="48.0" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.5" />
+<circle cx="106.0" cy="729.6" r="38.4" fill="#8a5a36" stroke="#6b3a1f" stroke-width="1.2" />
+<circle cx="106.0" cy="729.6" r="28.8" fill="#8a5a36" stroke="#6b3a1f" stroke-width="1.2" />
+<circle cx="106.0" cy="729.6" r="19.2" fill="#8a5a36" stroke="#6b3a1f" stroke-width="1.2" />
+<circle cx="106.0" cy="729.6" r="10.6" fill="#6b3a1f" stroke="#6b3a1f" stroke-width="1.2" />
+<line x1="139.6" y1="691.2" x2="139.6" y2="340.3" stroke="#c9972e" stroke-width="1.6" />
+<rect x="137.2" y="432.0" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="442.0" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="452.1" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="462.2" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="472.3" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="482.4" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="492.4" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="502.5" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="512.6" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="522.7" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="421.4" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="411.3" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="401.2" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="391.2" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="381.1" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="371.0" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="360.9" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="350.8" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="340.8" width="4.8" height="9.6" fill="#c0394f" stroke="none" stroke-width="0.0" />
+<rect x="137.2" y="330.7" width="4.8" height="9.6" fill="#9b2335" stroke="none" stroke-width="0.0" />
+<rect x="53.2" y="124.8" width="614.4" height="153.6" fill="#e6d3a3" stroke="#8a5a36" stroke-width="2.0" />
+<rect x="130.0" y="172.9" width="172.8" height="57.6" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<rect x="418.0" y="172.9" width="172.8" height="57.6" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<rect x="312.4" y="148.9" width="96.0" height="96.0" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.5" />
+<circle cx="333.0" cy="224.3" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="333.0" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="333.0" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="333.0" cy="169.6" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="224.3" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="169.6" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="224.3" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="169.6" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="387.8" cy="224.3" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="387.8" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="387.8" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="387.8" cy="169.6" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="342.2" cy="215.2" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="342.2" cy="196.9" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="342.2" cy="178.7" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="360.4" cy="215.2" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="360.4" cy="196.9" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="360.4" cy="178.7" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="378.6" cy="215.2" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="378.6" cy="196.9" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="378.6" cy="178.7" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="351.3" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="206.0" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="369.5" cy="187.8" r="9.1" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<circle cx="360.4" cy="196.9" r="9.1" fill="#c9972e" stroke="#c9972e" stroke-width="0.8" />
+<rect x="302.8" y="124.8" width="115.2" height="63.0" fill="#efe2bf" stroke="#8a5a36" stroke-width="2.0" fill-opacity="0.8"/>
+<polyline points="369.7,318.7 364.9,318.7 360.1,318.7 355.3,318.7 350.6,318.7 345.8,318.7 341.0,318.7 336.2,318.7 331.5,318.7 326.7,318.7 321.9,318.7 317.1,318.7 312.4,318.7 307.6,318.7 302.8,318.7 298.0,318.7 293.3,318.7 288.5,318.7 283.7,318.7 278.9,318.7 274.2,318.7 269.4,318.7 264.6,318.8 259.9,319.2 255.1,320.0 250.5,321.1 246.0,322.6 241.5,324.4 237.3,326.5 233.2,329.0 229.3,331.8 225.6,334.8 222.2,338.2 219.1,341.7 216.2,345.5 213.6,349.6 211.3,353.8 209.4,358.1 207.8,362.6 206.5,367.2 205.6,371.9 205.1,376.7 204.9,381.4 204.9,386.2 204.9,391.0 204.9,395.7 204.9,400.5 204.9,405.3 204.9,410.1 204.9,414.8 204.9,419.6 204.9,424.4 204.9,429.2 204.9,433.9 204.9,438.7 204.9,443.5 204.9,448.3 204.9,453.1 204.9,457.8 204.9,462.6 204.9,467.4 204.9,472.2 204.9,476.9 204.9,481.7 204.9,486.5 204.9,491.3 204.9,496.0 204.9,500.8 204.9,505.6 204.9,510.4 204.9,515.1 204.9,519.9 204.9,524.7 204.9,529.5 204.9,534.2 204.9,539.0 204.9,543.8 204.9,548.6 204.9,553.3 204.9,558.1 204.9,562.9 204.9,567.7 204.9,572.4 204.9,577.2 204.9,582.0 204.9,586.8 204.9,591.5 204.9,596.3 204.9,601.1 204.9,605.9 204.9,610.6 204.9,615.4 204.9,620.2 204.9,625.0 204.9,629.7 204.9,634.5 204.9,639.3 204.9,644.1 204.9,648.8 204.9,653.6 205.0,658.4 205.4,663.1 206.1,667.9 207.3,672.5 208.7,677.0 210.6,681.4 212.7,685.7 215.2,689.8 218.0,693.7 221.0,697.3 224.3,700.8 227.9,703.9 231.7,706.8 235.7,709.4 240.0,711.7 244.3,713.6 248.8,715.2 253.4,716.5 258.1,717.4 262.8,717.9 267.6,718.1 272.4,718.1 277.2,718.1 281.9,718.1 286.7,718.1 291.5,718.1 296.3,718.1 301.0,718.1 305.8,718.1 310.6,718.1 315.4,718.1 320.1,718.1 324.9,718.1 329.7,718.1 334.5,718.1 339.2,718.1 344.0,718.1 348.8,718.1 353.6,718.1 358.3,718.1 363.1,718.1 367.9,718.1 372.7,718.0 377.4,717.6 382.1,716.8 386.8,715.7 391.3,714.2 395.7,712.4 400.0,710.3 404.1,707.8 408.0,705.0 411.6,702.0 415.1,698.6 418.2,695.1 421.1,691.3 423.7,687.2 426.0,683.0 427.9,678.7 429.5,674.2 430.8,669.6 431.7,664.9 432.2,660.1 432.4,655.4 432.4,650.6 432.4,645.8 432.4,641.1 432.4,636.3 432.4,631.5 432.4,626.7 432.4,622.0 432.4,617.2 432.4,612.4 432.4,607.6 432.4,602.9 432.4,598.1 432.4,593.3 432.4,588.5 432.4,583.7 432.4,579.0 432.4,574.2 432.4,569.4 432.4,564.6 432.4,559.9 432.4,555.1 432.4,550.3 432.4,545.5 432.4,540.8 432.4,536.0 432.4,531.2 432.4,526.4 432.4,521.7 432.4,516.9 432.4,512.1 432.4,507.3 432.4,502.6 432.4,497.8 432.4,493.0 432.4,488.2 432.4,483.5 432.4,478.7 432.4,473.9 432.4,469.1 432.4,464.4 432.4,459.6 432.4,454.8 432.4,450.0 432.4,445.3 432.4,440.5 432.4,435.7 432.4,430.9 432.4,426.2 432.4,421.4 432.4,416.6 432.4,411.8 432.4,407.1 432.4,402.3 432.4,397.5 432.4,392.7 432.4,388.0 432.4,383.2 432.3,378.4 431.9,373.7 431.1,368.9 430.0,364.3 428.5,359.8 426.7,355.4 424.6,351.1 422.1,347.0 419.3,343.1 416.3,339.5 412.9,336.0 409.4,332.9 405.5,330.0 401.5,327.4 397.3,325.1 393.0,323.2 388.5,321.6 383.9,320.3 379.2,319.4 374.4,318.9 369.7,318.7" fill="none" stroke="#8a5cc2" stroke-width="1.0" stroke-dasharray="3 3"/>
+<line x1="319.6" y1="300.5" x2="319.6" y2="337.0" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="319.6" cy="337.0" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="319.6" cy="300.5" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="214.9" y1="329.2" x2="214.9" y2="365.7" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="214.9" cy="365.7" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="214.9" cy="329.2" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="204.9" y1="441.9" x2="204.9" y2="478.4" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="204.9" cy="478.4" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="204.9" cy="441.9" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="204.9" y1="556.5" x2="204.9" y2="593.0" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="204.9" cy="593.0" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="204.9" cy="556.5" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="213.9" y1="669.5" x2="213.9" y2="705.9" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="213.9" cy="705.9" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="213.9" cy="669.5" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="317.7" y1="699.8" x2="317.7" y2="736.3" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="317.7" cy="736.3" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="317.7" cy="699.8" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="422.4" y1="671.1" x2="422.4" y2="707.6" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="422.4" cy="707.6" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="422.4" cy="671.1" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="432.4" y1="558.4" x2="432.4" y2="594.9" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="432.4" cy="594.9" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="432.4" cy="558.4" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="432.4" y1="443.8" x2="432.4" y2="480.3" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="432.4" cy="480.3" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="432.4" cy="443.8" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="423.4" y1="330.9" x2="423.4" y2="367.3" stroke="#c9972e" stroke-width="3.2" />
+<circle cx="423.4" cy="367.3" r="17.3" fill="#cfd6dc" stroke="#8fa0ad" stroke-width="1.0" />
+<circle cx="423.4" cy="330.9" r="17.3" fill="#f6dcc6" stroke="#e8853a" stroke-width="3.2" />
+<line x1="335.4" y1="758.4" x2="335.4" y2="227.2" stroke="#8a5cc2" stroke-width="1.0" stroke-dasharray="5 3"/>
+<line x1="335.4" y1="755.0" x2="335.4" y2="674.8" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="714.9" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="335.4" y1="667.1" x2="335.4" y2="586.9" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="627.0" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="335.4" y1="581.2" x2="335.4" y2="500.9" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="541.1" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="335.4" y1="493.3" x2="335.4" y2="413.0" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="453.2" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="335.4" y1="397.7" x2="335.4" y2="317.5" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="357.6" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="335.4" y1="309.8" x2="335.4" y2="229.6" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="335.4" cy="269.7" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="758.4" x2="385.4" y2="227.2" stroke="#8a5cc2" stroke-width="1.0" stroke-dasharray="5 3"/>
+<line x1="385.4" y1="755.0" x2="385.4" y2="674.8" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="714.9" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="667.1" x2="385.4" y2="586.9" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="627.0" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="581.2" x2="385.4" y2="500.9" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="541.1" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="493.3" x2="385.4" y2="413.0" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="453.2" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="397.7" x2="385.4" y2="317.5" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="357.6" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<line x1="385.4" y1="309.8" x2="385.4" y2="229.6" stroke="#8a5cc2" stroke-width="4.2" />
+<circle cx="385.4" cy="269.7" r="15.4" fill="#f7e3a6" stroke="#e8853a" stroke-width="3.2" fill-opacity="0.85"/>
+<polyline points="360.4,811.2 552.4,787.2 581.2,739.2 627.3,729.6 627.3,672.0 627.3,614.4 552.4,595.2 552.4,345.6 523.6,284.2 523.6,284.2 523.6,284.2 523.6,270.7 319.6,274.6 319.6,300.5 319.5,301.2 319.1,303.2 318.0,306.3 315.8,310.4 312.4,315.2 307.7,320.2 301.6,325.0 294.2,329.5 285.7,333.1 276.4,335.6 266.5,336.9 256.6,337.3 246.8,336.7 237.8,335.2 229.7,333.1 222.9,330.6 217.6,328.0 213.9,325.8 211.8,324.1 211.1,323.5 211.6,324.1 213.1,326.2 215.2,329.9 217.7,335.1 220.0,341.9 222.0,349.9 223.3,358.9 223.7,368.6 223.2,378.6 221.7,388.4 219.2,397.8 215.5,406.2 211.1,413.6 206.2,419.7 201.3,424.4 196.5,427.7 192.4,429.9 189.3,431.0 187.3,431.4 186.6,431.5 145.4,437.2 142.5,437.2 142.5,662.4 133.8,667.2 125.2,685.4 106.0,688.3 106.0,688.3 106.0,697.9 106.0,697.9 106.0,707.5 106.0,707.5 106.0,716.2 106.0,716.2 106.0,737.3 106.0,763.2 335.4,761.3 335.4,674.8 335.4,586.9 335.4,500.9 335.4,413.0 335.4,317.5 335.4,229.6 339.3,224.3 330.2,227.2 339.3,218.0 330.2,208.9 360.4,183.0 360.4,124.8" fill="none" stroke="#3a3531" stroke-width="1.8" stroke-dasharray="7 4"/>
+<path d="M 371.9 800.8 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 563.9 628.0 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 544.7 263.2 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 141.5 416.3 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 146.3 671.2 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 179.9 791.2 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 329.7 200.9 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+<path d="M 371.9 163.0 v -13 l 9 4 l -9 4" fill="#3f8f5a" stroke="#2b2622" stroke-width="1"/>
+</g>
+<path d="M 360.4 814.0 l -7 13 l 14 0 z" fill="#3a3531"/>
+<text x="370.4" y="833.3" font-size="11" text-anchor="start" font-weight="bold" fill="#2b2622">입구</text>
+<circle cx="654.2" cy="624.0" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="654.2" y="629.0" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">①</text>
+<circle cx="552.4" cy="432.0" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="552.4" y="437.0" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">②</text>
+<circle cx="552.4" cy="345.6" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="552.4" y="350.6" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">③</text>
+<circle cx="274.0" cy="508.8" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="274.0" y="513.8" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">④</text>
+<circle cx="110.8" cy="373.9" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="110.8" y="378.9" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">⑤</text>
+<circle cx="106.0" cy="666.2" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="106.0" y="671.2" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">⑥</text>
+<circle cx="360.4" cy="528.0" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="360.4" y="533.0" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">⑦</text>
+<circle cx="360.4" cy="254.5" r="11" fill="#fbf6ea" stroke="#c8472f" stroke-width="1.2"/>
+<text x="360.4" y="259.5" font-size="16" text-anchor="middle" font-weight="bold" fill="#c8472f">⑧</text>
+<text x="360.4" y="787.2" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">배식실 · 칸막이 통로 0</text>
+<text x="552.4" y="470.4" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">긴 연회 식탁 4.4</text>
+<text x="638.8" y="528.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">웨이터 길</text>
+<text x="110.8" y="489.1" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">무대 7.4</text>
+<text x="110.8" y="594.9" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">악단석(바닥)</text>
+<text x="106.0" y="779.5" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">디저트 뷔페 7.4</text>
+<text x="341.2" y="624.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">무도장 0</text>
+<text x="187.6" y="254.4" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">왕의 단 10.4</text>
+<text x="504.4" y="159.5" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">왕의 식탁 14.8</text>
+<text x="360.4" y="138.2" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">왕의 발코니 20.8</text>
+<text x="552.4" y="695.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">마술사</text>
+<text x="690.0" y="86.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">길의 순서 — 갈림 없이 한 줄</text>
+<text x="690.0" y="110.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">입구 → 배식실</text>
+<text x="810.0" y="110.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">칸막이 통로를 따라 동쪽 배식실로 (무도장은 칸막이로 막혀 있다)</text>
+<text x="690.0" y="139.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">① 웨이터 행렬</text>
+<text x="810.0" y="139.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">카운터에서 쟁반에 올라타 접시 탑을 오르고, 긴 식탁 위로 내린다 · → 4.4</text>
+<text x="690.0" y="168.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">② 식탁보 빼기</text>
+<text x="810.0" y="168.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">긴 식탁을 따라 북쪽으로 38 m · 북이 울리면 접시 위로</text>
+<text x="690.0" y="197.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">③ 은 뚜껑</text>
+<text x="810.0" y="197.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">식탁 북쪽 끝, 단 앞 · 띠에 매달려 들려 왕의 단으로 · → 10.4</text>
+<text x="690.0" y="226.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">④ 왈츠</text>
+<text x="810.0" y="226.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">단 끝에서 여왕의 드레스로 뛰어 붙어 어깨로 · 춤에 실려 서쪽 무대로 · → 7.4</text>
+<text x="690.0" y="255.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">⑤ 무대 막</text>
+<text x="810.0" y="255.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">열리는 막에 매달려 악단석 너머로 · 베이스보다 높이</text>
+<text x="690.0" y="284.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">⑥ 초콜릿 분수</text>
+<text x="810.0" y="284.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">흐름을 거슬러 네 층 · 꼭대기에서 천장 회랑으로 뛰어 붙는다 · → 20.0</text>
+<text x="690.0" y="313.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">⑦ 샹들리에</text>
+<text x="810.0" y="313.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">회랑에서 무도장 위로, 매달려 6개를 건너 왕의 식탁으로</text>
+<text x="690.0" y="342.0" font-size="12" text-anchor="start" font-weight="bold" fill="#c8472f">⑧ 샴페인 탑</text>
+<text x="810.0" y="342.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">넘치는 층을 피해 꼭대기로, 왕의 발코니 · 출구 20.8</text>
+<text x="690.0" y="375.0" font-size="11" text-anchor="start" font-weight="bold" fill="#3a3531">길은 홀을 세 번 지난다: 동쪽 식탁으로 북 → 단 앞에서 서쪽으로, 무대를 따라 남 → 공중으로 다시 북.</text>
+<text x="690.0" y="393.0" font-size="11" text-anchor="start" font-weight="normal" fill="#6b6258">무도장 · 왕의 식탁 · 뷔페는 아래에서 오를 수 없다(칸막이 · 손님 · 대리석 · 식탁보 치마). 지름길이 없다.</text>
+<text x="690.0" y="440.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">가운데(x = 0)에서 잘라 서쪽을 본 모습 — 왼쪽이 남(입구), 오른쪽이 북(왕의 단)</text>
+<rect x="690.0" y="452.0" width="740.0" height="377.8" fill="#f4eedf" stroke="#2b2622" stroke-width="1"/>
+<rect x="730.0" y="817.8" width="676.8" height="4.7" fill="#cfc6b3" stroke="none" stroke-width="0.0" />
+<rect x="730.0" y="498.2" width="676.8" height="3.8" fill="#cfc6b3" stroke="none" stroke-width="0.0" />
+<rect x="730.0" y="629.8" width="56.4" height="5.6" fill="#e0cb98" stroke="#8a5a36" stroke-width="1.5" />
+<rect x="730.0" y="761.4" width="56.4" height="56.4" fill="#efe6d4" stroke="#8a5a36" stroke-width="0.8" fill-opacity="0.6"/>
+<rect x="758.2" y="748.2" width="131.6" height="69.6" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.0" fill-opacity="0.7"/>
+<rect x="767.6" y="742.6" width="94.0" height="5.6" fill="#d9dde0" stroke="#8fa0ad" stroke-width="1.0" />
+<rect x="777.0" y="725.7" width="75.2" height="16.9" fill="#6b3a1f" stroke="#2b2622" stroke-width="0.8" />
+<rect x="786.4" y="703.1" width="56.4" height="20.9" fill="#6b3a1f" stroke="#2b2622" stroke-width="0.8" />
+<rect x="795.8" y="680.6" width="37.6" height="20.3" fill="#6b3a1f" stroke="#2b2622" stroke-width="0.8" />
+<rect x="804.3" y="663.6" width="20.7" height="13.4" fill="#6b3a1f" stroke="#2b2622" stroke-width="0.8" />
+<rect x="889.8" y="815.0" width="113.3" height="2.8" fill="#d8cfbc" stroke="none" stroke-width="0.0" />
+<rect x="903.0" y="723.8" width="11.3" height="94.0" fill="#8a5a36" stroke="#2b2622" stroke-width="0.6" />
+<rect x="978.7" y="723.8" width="11.3" height="94.0" fill="#8a5a36" stroke="#2b2622" stroke-width="0.6" />
+<rect x="1003.1" y="748.2" width="188.0" height="69.6" fill="#efe2bf" stroke="#8a5a36" stroke-width="1.5" fill-opacity="0.7"/>
+<rect x="852.2" y="648.6" width="343.6" height="1.9" fill="#c9972e" stroke="none" stroke-width="0.0" />
+<rect x="1096.6" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1086.8" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1076.9" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1067.0" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1057.2" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1047.3" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1037.4" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1027.5" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1017.7" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1007.8" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1107.0" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1116.8" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1126.7" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1136.6" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1146.5" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1156.3" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1166.2" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1176.1" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1185.9" y="648.6" width="9.4" height="99.6" fill="#c0394f" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<rect x="1195.8" y="648.6" width="9.4" height="99.6" fill="#9b2335" stroke="none" stroke-width="0.0" fill-opacity="0.55"/>
+<polygon points="1217.9,817.8 1222.6,748.2 1247.0,748.2 1251.7,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<polygon points="1189.7,817.8 1194.4,748.2 1218.9,748.2 1223.6,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<polygon points="1079.4,817.8 1084.1,748.2 1108.5,748.2 1113.2,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<polygon points="967.2,817.8 971.9,748.2 996.3,748.2 1001.0,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<polygon points="856.6,817.8 861.3,748.2 885.7,748.2 890.4,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<polygon points="826.8,817.8 831.5,748.2 856.0,748.2 860.7,817.8" fill="#f6dcc6" stroke="#e8853a" stroke-width="1.4" fill-opacity="0.8"/>
+<rect x="1256.4" y="720.0" width="150.4" height="97.8" fill="#e6d3a3" stroke="#8a5a36" stroke-width="1.5" />
+<rect x="1289.2" y="678.7" width="94.0" height="41.4" fill="#f3e6c8" stroke="#8a5a36" stroke-width="1.2" />
+<rect x="1300.5" y="664.6" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1318.3" y="664.6" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1336.2" y="664.6" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1354.0" y="664.6" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1309.4" y="650.5" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1327.3" y="650.5" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1345.1" y="650.5" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1318.3" y="636.4" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1336.2" y="636.4" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1327.3" y="622.3" width="17.9" height="8.5" fill="#f6e7b4" stroke="#c9972e" stroke-width="0.8" />
+<rect x="1345.1" y="622.3" width="61.7" height="5.6" fill="#efe2bf" stroke="#8a5a36" stroke-width="1.5" />
+<rect x="1406.8" y="498.2" width="7.5" height="319.6" fill="#b9ae9a" stroke="none" stroke-width="0.0" />
+<line x1="829.0" y1="577.8" x2="829.0" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="829.0" y1="577.8" x2="789.7" y2="624.6" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="804.8" cy="606.6" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="829.0" y1="577.8" x2="868.2" y2="624.6" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="853.1" cy="606.6" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="829.0" cy="577.8" r="3" fill="#c9972e"/>
+<line x1="915.0" y1="582.5" x2="915.0" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="915.0" y1="582.5" x2="875.8" y2="629.3" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="890.9" cy="611.3" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="915.0" y1="582.5" x2="954.3" y2="629.3" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="939.2" cy="611.3" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="915.0" cy="582.5" r="3" fill="#c9972e"/>
+<line x1="999.2" y1="591.9" x2="999.2" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="999.2" y1="591.9" x2="959.9" y2="638.7" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="975.1" cy="620.7" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="999.2" y1="591.9" x2="1038.5" y2="638.7" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1023.4" cy="620.7" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="999.2" cy="591.9" r="3" fill="#c9972e"/>
+<line x1="1085.3" y1="596.6" x2="1085.3" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="1085.3" y1="596.6" x2="1046.0" y2="643.4" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1061.1" cy="625.4" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="1085.3" y1="596.6" x2="1124.6" y2="643.4" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1109.5" cy="625.4" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="1085.3" cy="596.6" r="3" fill="#c9972e"/>
+<line x1="1178.9" y1="601.3" x2="1178.9" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="1178.9" y1="601.3" x2="1139.6" y2="648.1" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1154.7" cy="630.1" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="1178.9" y1="601.3" x2="1218.2" y2="648.1" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1203.0" cy="630.1" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="1178.9" cy="601.3" r="3" fill="#c9972e"/>
+<line x1="1264.9" y1="606.0" x2="1264.9" y2="498.2" stroke="#6b6258" stroke-width="0.8"/>
+<line x1="1264.9" y1="606.0" x2="1225.7" y2="652.8" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1240.8" cy="634.8" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<line x1="1264.9" y1="606.0" x2="1304.2" y2="652.8" stroke="#e8853a" stroke-width="1.6"/>
+<ellipse cx="1289.1" cy="634.8" rx="12.0" ry="3.5" fill="#f7e3a6" stroke="#c9972e" stroke-width="1"/>
+<circle cx="1264.9" cy="606.0" r="3" fill="#c9972e"/>
+<line x1="786.4" y1="705.0" x2="1306.6" y2="705.0" stroke="#c8472f" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="1304.6" y="700.0" font-size="10" text-anchor="end" font-weight="bold" fill="#c8472f">회랑에서 8 m 아래</text>
+<text x="734.7" y="622.3" font-size="11" text-anchor="start" font-weight="bold" fill="#8a5a36">천장 회랑 20.0</text>
+<text x="734.7" y="795.2" font-size="11" text-anchor="start" font-weight="bold" fill="#8a5a36">배식실 (입구)</text>
+<text x="814.6" y="641.1" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">⑥ 초콜릿 분수</text>
+<text x="885.1" y="763.3" font-size="11" text-anchor="end" font-weight="bold" fill="#8a5a36">뷔페 7.4</text>
+<text x="908.6" y="716.3" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">베이스</text>
+<text x="1097.1" y="643.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">⑤ 무대 · 막</text>
+<text x="955.6" y="733.2" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">④ 왈츠 (어깨 7.4)</text>
+<text x="1262.0" y="735.1" font-size="11" text-anchor="start" font-weight="bold" fill="#8a5a36">왕의 단 10.4</text>
+<text x="1304.2" y="654.2" font-size="11" text-anchor="end" font-weight="bold" fill="#8a5a36">⑧ 샴페인 탑</text>
+<text x="1402.1" y="607.2" font-size="11" text-anchor="end" font-weight="bold" fill="#8a5a36">발코니 · 출구</text>
+<text x="1012.0" y="576.9" font-size="11" text-anchor="middle" font-weight="bold" fill="#8a5a36">⑦ 샹들리에</text>
+<text x="726.0" y="821.8" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">0.0</text>
+<text x="726.0" y="780.4" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">4.4</text>
+<text x="726.0" y="752.2" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">7.4</text>
+<text x="726.0" y="724.0" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">10.4</text>
+<text x="726.0" y="682.7" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">14.8</text>
+<text x="726.0" y="633.8" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">20.0</text>
+<text x="726.0" y="502.2" font-size="10" text-anchor="end" font-weight="normal" fill="#6b6258">34.0</text>
+<text x="698.0" y="839.8" font-size="10" text-anchor="start" font-weight="normal" fill="#6b6258">가까운 쪽(동쪽)의 긴 식탁 · 웨이터 · 은 뚜껑은 이 그림에 없다.</text>
+<text x="34.0" y="1170.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">길을 펴서 본 높이 — 굵은 주황 = 타고 오르는 곳, 보라 = 실려 가는 곳(쟁반 · 뚜껑 · 여왕 · 막 · 샹들리에)</text>
+<rect x="66.0" y="1184.0" width="1364.0" height="292.0" fill="#f4eedf" stroke="#2b2622" stroke-width="1"/>
+<line x1="66.0" y1="1460.0" x2="1430.0" y2="1460.0" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1464.0" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">0.0</text>
+<line x1="66.0" y1="1407.2" x2="1430.0" y2="1407.2" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1411.2" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">4.4</text>
+<line x1="66.0" y1="1371.2" x2="1430.0" y2="1371.2" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1375.2" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">7.4</text>
+<line x1="66.0" y1="1335.2" x2="1430.0" y2="1335.2" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1339.2" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">10.4</text>
+<line x1="66.0" y1="1282.4" x2="1430.0" y2="1282.4" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1286.4" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">14.8</text>
+<line x1="66.0" y1="1220.0" x2="1430.0" y2="1220.0" stroke="#cfc6b3" stroke-width="0.8"/>
+<text x="60.0" y="1224.0" font-size="10" text-anchor="end" font-weight="normal" fill="#2b2622">20.0</text>
+<line x1="80.0" y1="1460.0" x2="178.3" y2="1460.0" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="178.3" y1="1460.0" x2="206.7" y2="1431.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="206.7" y1="1431.2" x2="230.7" y2="1431.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="230.7" y1="1431.2" x2="259.9" y2="1400.0" stroke="#e8853a" stroke-width="5"/>
+<line x1="259.9" y1="1400.0" x2="289.2" y2="1400.0" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="289.2" y1="1400.0" x2="328.5" y2="1407.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="328.5" y1="1407.2" x2="455.3" y2="1407.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="455.3" y1="1407.2" x2="489.7" y2="1407.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="489.7" y1="1407.2" x2="489.7" y2="1395.7" stroke="#e8853a" stroke-width="5"/>
+<line x1="489.7" y1="1395.7" x2="489.7" y2="1328.0" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="489.7" y1="1328.0" x2="496.6" y2="1335.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="496.6" y1="1335.2" x2="600.2" y2="1335.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="600.2" y1="1335.2" x2="613.4" y2="1371.2" stroke="#e8853a" stroke-width="5"/>
+<line x1="613.4" y1="1371.2" x2="613.7" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="613.7" y1="1371.2" x2="614.8" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="614.8" y1="1371.2" x2="616.5" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="616.5" y1="1371.2" x2="618.8" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="618.8" y1="1371.2" x2="621.8" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="621.8" y1="1371.2" x2="625.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="625.3" y1="1371.2" x2="629.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="629.3" y1="1371.2" x2="633.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="633.6" y1="1371.2" x2="638.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="638.3" y1="1371.2" x2="643.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="643.2" y1="1371.2" x2="648.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="648.3" y1="1371.2" x2="653.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="653.3" y1="1371.2" x2="658.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="658.3" y1="1371.2" x2="663.0" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="663.0" y1="1371.2" x2="667.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="667.2" y1="1371.2" x2="670.9" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="670.9" y1="1371.2" x2="673.9" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="673.9" y1="1371.2" x2="676.1" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="676.1" y1="1371.2" x2="677.4" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="677.4" y1="1371.2" x2="677.9" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="677.9" y1="1371.2" x2="678.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="678.3" y1="1371.2" x2="679.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="679.6" y1="1371.2" x2="681.8" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="681.8" y1="1371.2" x2="684.7" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="684.7" y1="1371.2" x2="688.4" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="688.4" y1="1371.2" x2="692.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="692.6" y1="1371.2" x2="697.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="697.2" y1="1371.2" x2="702.1" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="702.1" y1="1371.2" x2="707.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="707.2" y1="1371.2" x2="712.3" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="712.3" y1="1371.2" x2="717.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="717.2" y1="1371.2" x2="721.8" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="721.8" y1="1371.2" x2="726.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="726.2" y1="1371.2" x2="730.2" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="730.2" y1="1371.2" x2="733.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="733.6" y1="1371.2" x2="736.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="736.6" y1="1371.2" x2="738.9" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="738.9" y1="1371.2" x2="740.6" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="740.6" y1="1371.2" x2="741.7" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="741.7" y1="1371.2" x2="742.0" y2="1371.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="742.0" y1="1371.2" x2="763.2" y2="1371.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="763.2" y1="1371.2" x2="764.6" y2="1329.2" stroke="#e8853a" stroke-width="5"/>
+<line x1="764.6" y1="1329.2" x2="879.0" y2="1329.2" stroke="#8a5cc2" stroke-width="2.6"/>
+<line x1="879.0" y1="1329.2" x2="884.1" y2="1371.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="884.1" y1="1371.2" x2="894.3" y2="1364.0" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="894.3" y1="1364.0" x2="904.2" y2="1364.0" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="904.2" y1="1364.0" x2="904.2" y2="1342.4" stroke="#e8853a" stroke-width="5"/>
+<line x1="904.2" y1="1342.4" x2="909.1" y2="1340.3" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="909.1" y1="1340.3" x2="909.1" y2="1313.6" stroke="#e8853a" stroke-width="5"/>
+<line x1="909.1" y1="1313.6" x2="913.9" y2="1310.7" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="913.9" y1="1310.7" x2="913.9" y2="1284.8" stroke="#e8853a" stroke-width="5"/>
+<line x1="913.9" y1="1284.8" x2="918.3" y2="1280.3" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="918.3" y1="1280.3" x2="918.3" y2="1263.2" stroke="#e8853a" stroke-width="5"/>
+<line x1="918.3" y1="1263.2" x2="929.0" y2="1257.2" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="929.0" y1="1257.2" x2="942.2" y2="1220.0" stroke="#e8853a" stroke-width="5"/>
+<line x1="942.2" y1="1220.0" x2="1058.8" y2="1220.0" stroke="#3a3531" stroke-width="2.4"/>
+<path d="M 1058.8 1220.0 Q 1080.7 1241.2 1102.7 1227.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1102.7 1227.2 Q 1125.0 1247.2 1147.4 1233.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1147.4 1233.2 Q 1169.2 1259.2 1191.0 1245.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1191.0 1245.2 Q 1213.4 1265.2 1235.7 1251.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1235.7 1251.2 Q 1260.0 1271.2 1284.3 1257.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1284.3 1257.2 Q 1306.6 1277.2 1328.9 1263.2" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<path d="M 1328.9 1263.2 Q 1330.6 1278.4 1332.2 1264.4" fill="none" stroke="#8a5cc2" stroke-width="2.4"/>
+<line x1="1332.2" y1="1264.4" x2="1337.1" y2="1246.4" stroke="#e8853a" stroke-width="5"/>
+<line x1="1337.1" y1="1246.4" x2="1343.6" y2="1228.4" stroke="#e8853a" stroke-width="5"/>
+<line x1="1343.6" y1="1228.4" x2="1350.2" y2="1210.4" stroke="#e8853a" stroke-width="5"/>
+<line x1="1350.2" y1="1210.4" x2="1370.4" y2="1210.4" stroke="#3a3531" stroke-width="2.4"/>
+<line x1="1370.4" y1="1210.4" x2="1400.0" y2="1210.4" stroke="#3a3531" stroke-width="2.4"/>
+<text x="210.7" y="1391.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">① 웨이터</text>
+<text x="210.7" y="1405.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">쟁반 · 접시 탑</text>
+<text x="338.5" y="1385.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">② 식탁보 빼기</text>
+<text x="338.5" y="1399.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">긴 식탁 38 m</text>
+<text x="459.7" y="1359.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">③ 은 뚜껑</text>
+<text x="459.7" y="1373.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">들려 단으로</text>
+<text x="619.4" y="1347.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">④ 왈츠</text>
+<text x="619.4" y="1361.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">8초 실려 감</text>
+<text x="743.2" y="1323.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑤ 무대 막</text>
+<text x="743.2" y="1337.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">막에 실려 남쪽으로</text>
+<text x="864.3" y="1404.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑥ 초콜릿 분수</text>
+<text x="864.3" y="1418.0" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">네 층 · 회랑으로</text>
+<text x="1151.0" y="1205.2" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑦ 샹들리에</text>
+<text x="1151.0" y="1219.2" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">6개 건너기</text>
+<text x="1292.2" y="1304.4" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">⑧ 샴페인 탑</text>
+<text x="1292.2" y="1318.4" font-size="11" text-anchor="start" font-weight="normal" fill="#4a433c">세 층 · 발코니</text>
+<text x="1430.0" y="1494.0" font-size="11" text-anchor="end" font-weight="normal" fill="#2b2622">길 약 297 m</text>
+<text x="34.0" y="1530.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">구간</text>
+<text x="200.0" y="1530.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">무슨 일이 벌어지고, 폰은 무엇을 하나</text>
+<text x="1000.0" y="1530.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">벽타기</text>
+<text x="1190.0" y="1530.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">길 m</text>
+<text x="1250.0" y="1530.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">이동</text>
+<text x="1310.0" y="1530.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">기다림</text>
+<text x="1370.0" y="1530.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">실패</text>
+<text x="1430.0" y="1530.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">합 (초)</text>
+<line x1="34" y1="1539.0" x2="1430" y2="1539.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1557.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">입구 · 배식실</text>
+<text x="200.0" y="1557.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">칸막이 통로를 지나 배식실의 카운터로</text>
+<text x="1000.0" y="1557.0" font-size="12" text-anchor="start" font-weight="normal" fill="#6b6258">달리기</text>
+<text x="1190.0" y="1557.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">30</text>
+<text x="1250.0" y="1557.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">12</text>
+<text x="1310.0" y="1557.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">0</text>
+<text x="1370.0" y="1557.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">0</text>
+<text x="1430.0" y="1557.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">12</text>
+<line x1="34" y1="1566.0" x2="1430" y2="1566.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1584.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">① 웨이터 행렬</text>
+<text x="200.0" y="1584.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">웨이터는 멈추지 않는다. 쟁반에 올라 접시 탑을 오르고, 문으로 나가기 전에 식탁으로</text>
+<text x="1000.0" y="1584.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">실려 가며 오르기</text>
+<text x="1190.0" y="1584.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">15</text>
+<text x="1250.0" y="1584.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">6</text>
+<text x="1310.0" y="1584.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">2</text>
+<text x="1370.0" y="1584.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">4</text>
+<text x="1430.0" y="1584.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">11</text>
+<line x1="34" y1="1593.0" x2="1430" y2="1593.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1611.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">② 식탁보 빼기</text>
+<text x="200.0" y="1611.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">북이 울리면 접시 위로. 천 위에 있으면 남쪽으로 끌려가 식탁 밖(배식실)으로 날아간다</text>
+<text x="1000.0" y="1611.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">달리기 · 박자</text>
+<text x="1190.0" y="1611.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">33</text>
+<text x="1250.0" y="1611.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">13</text>
+<text x="1310.0" y="1611.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">1</text>
+<text x="1370.0" y="1611.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">6</text>
+<text x="1430.0" y="1611.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">20</text>
+<line x1="34" y1="1620.0" x2="1430" y2="1620.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1638.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">③ 은 뚜껑</text>
+<text x="200.0" y="1638.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">장갑이 손잡이를 쥐면 들린다. 띠에 매달려 단 높이로, 뚜껑 밑에 있으면 갇힌다</text>
+<text x="1000.0" y="1638.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">매달려 들려 가기</text>
+<text x="1190.0" y="1638.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">4</text>
+<text x="1250.0" y="1638.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">3</text>
+<text x="1310.0" y="1638.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">4</text>
+<text x="1370.0" y="1638.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">1</text>
+<text x="1430.0" y="1638.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">8</text>
+<line x1="34" y1="1647.0" x2="1430" y2="1647.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1665.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">④ 왈츠</text>
+<text x="200.0" y="1665.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">여왕이 단 앞에 멈춘 순간 뛰어 붙는다. 어깨에서 춤에 실려 무대 앞에서 내린다</text>
+<text x="1000.0" y="1665.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">뛰어 붙기 · 실려 가기</text>
+<text x="1190.0" y="1665.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">45</text>
+<text x="1250.0" y="1665.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">19</text>
+<text x="1310.0" y="1665.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">2</text>
+<text x="1370.0" y="1665.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">7</text>
+<text x="1430.0" y="1665.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">28</text>
+<line x1="34" y1="1674.0" x2="1430" y2="1674.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1692.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">⑤ 무대 막</text>
+<text x="200.0" y="1692.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">닫힌 막에 매달려 베이스보다 높이 오른다. 막이 열리면 악단석 너머 뷔페 위로</text>
+<text x="1000.0" y="1692.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">매달려 옆으로</text>
+<text x="1190.0" y="1692.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">22</text>
+<text x="1250.0" y="1692.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">9</text>
+<text x="1310.0" y="1692.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">5</text>
+<text x="1370.0" y="1692.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">4</text>
+<text x="1430.0" y="1692.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">18</text>
+<line x1="34" y1="1701.0" x2="1430" y2="1701.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1719.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">⑥ 초콜릿 분수</text>
+<text x="200.0" y="1719.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">흘러내리는 초콜릿을 거슬러 네 층. 꼭대기에서 천장 회랑에 뛰어 붙는다</text>
+<text x="1000.0" y="1719.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">거슬러 오르기</text>
+<text x="1190.0" y="1719.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">14</text>
+<text x="1250.0" y="1719.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">16</text>
+<text x="1310.0" y="1719.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">0</text>
+<text x="1370.0" y="1719.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">3</text>
+<text x="1430.0" y="1719.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">19</text>
+<line x1="34" y1="1728.0" x2="1430" y2="1728.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1746.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">⑦ 샹들리에</text>
+<text x="200.0" y="1746.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">회랑에서 무도장 위로, 끝에서 만나는 다음 샹들리에로. 아래에서 왈츠가 돈다</text>
+<text x="1000.0" y="1746.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">매달려 건너기</text>
+<text x="1190.0" y="1746.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">60</text>
+<text x="1250.0" y="1746.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">23</text>
+<text x="1310.0" y="1746.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">2</text>
+<text x="1370.0" y="1746.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">6</text>
+<text x="1430.0" y="1746.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">31</text>
+<line x1="34" y1="1755.0" x2="1430" y2="1755.0" stroke="#d8cfbc" stroke-width="0.8"/>
+<text x="34.0" y="1773.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">⑧ 샴페인 탑</text>
+<text x="200.0" y="1773.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">왕의 식탁 한가운데. 넘쳐 내려오는 물결을 피해 세 층, 꼭대기에서 왕의 발코니</text>
+<text x="1000.0" y="1773.0" font-size="12" text-anchor="start" font-weight="normal" fill="#e8853a">피하며 오르기</text>
+<text x="1190.0" y="1773.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">16</text>
+<text x="1250.0" y="1773.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">8</text>
+<text x="1310.0" y="1773.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">2</text>
+<text x="1370.0" y="1773.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">2</text>
+<text x="1430.0" y="1773.0" font-size="12" text-anchor="end" font-weight="normal" fill="#2b2622">12</text>
+<line x1="34" y1="1782.0" x2="1430" y2="1782.0" stroke="#2b2622" stroke-width="1.2"/>
+<text x="34.0" y="1800.0" font-size="13" text-anchor="start" font-weight="bold" fill="#2b2622">합계</text>
+<text x="200.0" y="1800.0" font-size="12" text-anchor="start" font-weight="bold" fill="#2b2622">보통 플레이어 한 명 2분 40초 · 열두 명 혼잡 보정(1.12배) 2분 59초 — 대계단 현관홀은 2분 37초 · 2분 56초</text>
+<text x="1190.0" y="1800.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">239</text>
+<text x="1250.0" y="1800.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">108</text>
+<text x="1310.0" y="1800.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">20</text>
+<text x="1370.0" y="1800.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">32</text>
+<text x="1430.0" y="1800.0" font-size="12" text-anchor="end" font-weight="bold" fill="#2b2622">160</text>
+<text x="34.0" y="1832.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">셈법은 대계단 기획서와 같다: 이동 + 장치 기다림 + 실패할 확률 × 한 번의 값. 손계산이고 사람이 달려 본 적이 없다.</text>
+<text x="34.0" y="1851.0" font-size="12" text-anchor="start" font-weight="normal" fill="#2b2622">떨어지면: 8 m 넘게는 체크포인트에서 다시(기존 규칙). 무도장 · 악단석 바닥은 떨어지면 끝나는 곳이다 — 왕의 단(또는 무대)에서 다시.</text>
+</svg>
