@@ -142,7 +142,7 @@ namespace ChessFight.PawnRush.Editor
                       "entry " + V(section.EntryLocal.position) + ", exit " + V(section.ExitLocal.position));
                 Faces();
                 WaltzArithmetic();
-                Log("      the tower at z " + F(B.TowerZ) + ", the chandeliers' landing z " + F(B.LandZ) + ", the great chandelier at z " + F(B.GreatZ) + ", rope pivots z " +
+                Log("      the balcony from z " + F(B.BalconyZ0) + ", the chandeliers' landing z " + F(B.LandZ) + ", the great chandelier at z " + F(B.GreatZ) + ", rope pivots z " +
                     F(B.ScreenZ + B.RopeAlong[0]) + " .. " + F(B.ScreenZ + B.RopeAlong[B.RopeAlong.Length - 1]) + ", ends " + F(B.RopeLow[0]) + " .. " + F(B.RopeLow[B.RopeLow.Length - 1]) + " m");
                 Check("E6 errors logged while building and checking", errors.Count == 0,
                       errors.Count + (errors.Count > 0 ? ", the first: " + errors[0].Split('\n')[0] : ""));
@@ -156,18 +156,19 @@ namespace ChessFight.PawnRush.Editor
 
         static void Inventory(string id)
         {
-            int waiters = content.GetComponentsInChildren<BanquetWaiter>(true).Length, cloches = content.GetComponentsInChildren<BanquetCloche>(true).Length,
+            int waiters = content.GetComponentsInChildren<BanquetWaiter>(true).Length, cloches = content.GetComponentsInChildren<ClocheLift>(true).Length,
                 couples = content.GetComponentsInChildren<WaltzCouple>(true).Length, pleats = content.GetComponentsInChildren<CurtainPleat>(true).Length,
                 ropes = content.GetComponentsInChildren<RopeLine>(true).Length, tricks = content.GetComponentsInChildren<TableclothTrick>(true).Length,
-                flows = content.GetComponentsInChildren<ChocolateFlow>(true).Length, towers = content.GetComponentsInChildren<ChampagneOverflow>(true).Length,
-                levels = content.GetComponentsInChildren<ChampagneLevel>(true).Length, lamps = content.GetComponentsInChildren<ClockLamp>(true).Length,
+                flows = content.GetComponentsInChildren<ChocolateFlow>(true).Length, lamps = content.GetComponentsInChildren<ClockLamp>(true).Length,
+                ladders = 0,
                 great = content.Find("BH great chandelier") != null ? 1 : 0, cps = content.GetComponentsInChildren<CourseCheckpoint>(true).Length,
                 kills = content.GetComponentsInChildren<KillVolume>(true).Length, gaps = content.GetComponentsInChildren<IntendedGap>(true).Length;
-            Check(id + " what is there", waiters == 5 && cloches == 2 && couples == 10 && pleats == 20 && ropes == 10 && great == 1 && tricks == 1 && flows == 3 &&
-                  towers == 1 && levels == 4 && lamps == 4 && cps == 9 && kills == 5 && gaps == 5,
-                  "waiters " + waiters + " (5), cloches " + cloches + " (2), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes +
-                  " (10) and the great one " + great + " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3), towers " + towers + " (1) with washing levels " +
-                  levels + " (4), lamps " + lamps + " (4), checkpoints " + cps + " (9), kill volumes " + kills + " (5), meant gaps " + gaps + " (5); colliders " +
+            foreach (Transform t in content) if (t.name.EndsWith(" ladder") || t.name.StartsWith("BH fountain ladder")) ladders++;
+            Check(id + " what is there", waiters == 4 && cloches == 4 && couples == 10 && pleats == 20 && ropes == 10 && great == 1 && tricks == 1 && flows == 3 &&
+                  ladders == 7 && lamps == 4 && cps == 8 && kills == 5 && gaps == 6,
+                  "waiters " + waiters + " (4), cloche lifts' parts " + cloches + " (2 platters + 2 cloches), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes +
+                  " (10) and the great one " + great + " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3), ladders " + ladders +
+                  " (6 on the fountain + the loft's), lamps " + lamps + " (4), checkpoints " + cps + " (8), kill volumes " + kills + " (5), meant gaps " + gaps + " (6); colliders " +
                   content.GetComponentsInChildren<Collider>(true).Length);
         }
 
@@ -188,12 +189,12 @@ namespace ChessFight.PawnRush.Editor
             Vector3 n1 = Vector3.forward, s1 = Vector3.back, e1 = Vector3.right, w1 = Vector3.left;
             Face("the screens", false, new Vector3(0f, 3f, 3f), n1);
             Face("the counter's side", false, new Vector3(23f, 1.2f, 2.6f), n1);
-            Face("a plate stack (the second waiter's, by the counter)", true, new Vector3(27.4f, 3.7f, 7.8f), n1);
-            Face("a waiter's body", false, new Vector3(32f, 3.5f, 10.3f), w1);
+            Face("a plate stack (the second waiter's, by the counter)", true, new Vector3(27.4f, 3.7f, 5f), n1);
+            Face("a waiter's body", false, new Vector3(32f, 3.5f, B.WaiterZ0 + B.WaiterLane / B.Waiters), w1);
+            Face("the pantry's wall over the table's east edge", false, new Vector3(22f, 6f, 40f), e1);
             Face("the long table's east side", false, new Vector3(28.6f, 2f, 25f), w1);
             Face("the guests' chairs (from the dance floor)", false, new Vector3(10f, 1f, 30f), e1);
-            Face("a cloche's band", true, new Vector3(17f, 5.2f, 55.8f), s1);
-            Face("a cloche's dome (from its rim)", false, new Vector3(17f, 6.6f, 55.1f), s1);
+            Face("a cloche's band (not climbed)", false, new Vector3(20f, B.PlatterTop + B.ClocheOpen + .8f, B.ClocheZ), w1);
             Face("the dais's front", false, new Vector3(0f, 5f, 54f), n1);
             Face("the queen's gown (couple 0, from the dais's edge)", true, new Vector3(-4.25f, 6f, 55.9f), s1);
             Face("the king (couple 0)", false, new Vector3(-4.25f, 4f, 46.8f), n1);
@@ -203,11 +204,15 @@ namespace ChessFight.PawnRush.Editor
             Face("the buffet's east side", false, new Vector3(-21.5f, 4f, 10f), w1);
             Face("the buffet's north side (from the pit)", false, new Vector3(-28f, 4f, 19.5f), s1);
             Face("chocolate tier 2", true, new Vector3(B.Fountain.x, 11f, B.Fountain.y + B.TierR[1] + 2f), s1);
-            Face("the loft's face", true, new Vector3(B.Fountain.x, 18.5f, 8f), s1);
-            Face("the head table's side", false, new Vector3(12f, 12f, B.TowerZ - 5.5f), n1);
-            Face("the pedestal's side", false, new Vector3(0f, 12f, B.TowerZ - 7f), n1);
-            Face("the tower's second level", true, new Vector3(0f, 17f, B.TowerZ - 4f), n1);
-            Face("the balcony's edge (from the dais)", false, new Vector3(4f, 20.5f, B.TowerZ - 1f), n1);
+            {
+                float a = B.LadderAt[0][1] * Mathf.Deg2Rad;
+                var o = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                Face("a fountain ladder (the first tier's)", true, new Vector3(B.Fountain.x, 9f, B.Fountain.y) + o * (B.TierR[0] + 2f), -o);
+            }
+            Face("the loft's ladder", true, new Vector3(B.Fountain.x, 18.5f, 8f), s1);
+            Face("the loft's face beside its ladder", false, new Vector3(-20f, 18.5f, 8f), s1);
+            Face("the head table's side", false, new Vector3(12f, 12f, B.TablesZ0 - 2f), n1);
+            Face("the balcony's front (from the dais)", false, new Vector3(0f, 12f, B.BalconyZ0 - 2f), n1);
             Face("the dais's balustrade", false, new Vector3(5f, 10.9f, 54.5f), n1);
             Face("the dais gallery's west end", false, new Vector3(-9f, 11f, 58f), e1);
             Face("the passage's west end", false, new Vector3(-3f, 2f, 3f), w1);
@@ -375,7 +380,7 @@ namespace ChessFight.PawnRush.Editor
                 if (lastZ.TryGetValue(w.name, out float z) && p.z < z - 10f) wraps++;
                 lastZ[w.name] = p.z;
             }
-            foreach (var c in content.GetComponentsInChildren<BanquetCloche>())
+            foreach (var c in content.GetComponentsInChildren<ClocheLift>())
                 Note(c.name, frame.InverseTransformPoint(c.transform.position).y);
             foreach (var p in content.GetComponentsInChildren<CurtainPleat>())
                 if (p.name.EndsWith("S1") || p.name.EndsWith("N1")) Note(p.name, frame.InverseTransformPoint(p.transform.position).z);
@@ -404,14 +409,18 @@ namespace ChessFight.PawnRush.Editor
                 if (kv.Key.StartsWith("BH waiter"))
                 {
                     waiters++;
-                    // 14 s at 2.2 m/s is 31 m of a 49 m lane: each covers at least 20 m and stays in the lane.
+                    // 14 s at 2.2 m/s is 31 m, more than the 29 m lane: each covers at least 20 m and stays in the lane.
                     bool ok = kv.Value.x >= B.WaiterZ0 - .05f && kv.Value.y <= B.WaiterZ0 + B.WaiterLane + .05f && kv.Value.y - kv.Value.x > 20f;
                     if (ok) waitersOk++; else worst += " " + kv.Key + " " + F(kv.Value.x) + ".." + F(kv.Value.y);
                 }
                 else if (kv.Key.StartsWith("BH cloche"))
                 {
+                    // The platter from the table to the dais; the cloche from shut on the platter at the table to open over it
+                    // at the dais.
                     cloches++;
-                    bool ok = Near(kv.Value.x, B.TableY + .06f, .06f) && Near(kv.Value.y, B.TableY + .06f + B.ClocheLift, .06f);
+                    bool platter = kv.Key.StartsWith("BH cloche platter");
+                    float low = B.PlatterTop, high = B.DaisY + (platter ? 0f : B.ClocheOpen);
+                    bool ok = Near(kv.Value.x, low, .06f) && Near(kv.Value.y, high, .06f);
                     if (ok) clochesOk++; else worst += " " + kv.Key + " " + F(kv.Value.x) + ".." + F(kv.Value.y);
                 }
                 else if (kv.Key.StartsWith("BH chandelier"))
@@ -423,9 +432,10 @@ namespace ChessFight.PawnRush.Editor
                     if (ok) ropesOk++; else worst += " " + kv.Key + " " + F(kv.Value.x) + ".." + F(kv.Value.y);
                 }
             }
-            Check("P2 waiters walk the lane (and are cut back to the kitchen)", waiters == 5 && waitersOk == 5 && wraps >= 3,
+            Check("P2 waiters walk the lane (and are cut back to the kitchen)", waiters == B.Waiters && waitersOk == B.Waiters && wraps >= B.Waiters,
                   waitersOk + " of " + waiters + ", " + wraps + " cuts back to the kitchen" + worst);
-            Check("P3 cloches go from the table to 5.6 m over it", cloches == 2 && clochesOk == 2, clochesOk + " of " + cloches + worst);
+            Check("P3 cloche lifts: platters from the table to the dais, cloches shut on them below and open over them above", cloches == 4 && clochesOk == 4,
+                  clochesOk + " of " + cloches + worst);
             Check("P4 chandeliers' ends swing 4.18 m each way (5.14 m for the second line)", ropes == 10 && ropesOk == 10, ropesOk + " of " + ropes + worst);
             var south = ranges.TryGetValue("BH pleat S1", out var s) ? s : Vector2.zero;
             var north = ranges.TryGetValue("BH pleat N1", out var n) ? n : Vector2.zero;
@@ -438,9 +448,8 @@ namespace ChessFight.PawnRush.Editor
                   Near(cz.x, BanquetWaltz.TrackS, .1f) && Near(cz.y, BanquetWaltz.TrackN, .1f),
                   "middles x " + F(cx.x) + ".." + F(cx.y) + ", z " + F(cz.x) + ".." + F(cz.y));
             var trick = content.GetComponentInChildren<TableclothTrick>();
-            var tower = content.GetComponentInChildren<ChampagneOverflow>();
-            Check("P7 the tablecloth is pulled every 10 s and the tower runs over every 4 s", trick != null && trick.Pulls >= 1 && tower != null && tower.Spills >= 8,
-                  "pulls " + (trick != null ? trick.Pulls : -1) + " (nobody on the cloth: throws " + (trick != null ? trick.Throws : -1) + "), level spills " + (tower != null ? tower.Spills : -1));
+            Check("P7 the tablecloth is pulled every 10 s", trick != null && trick.Pulls >= 1,
+                  "pulls " + (trick != null ? trick.Pulls : -1) + " (nobody on the cloth: throws " + (trick != null ? trick.Throws : -1) + ")");
             // The lamps: lit for 1.6 s of every 4.8 s (a third of the frames, roughly).
             string lit = "";
             bool lampsOk = lampLit.Count == 4;
@@ -478,7 +487,7 @@ namespace ChessFight.PawnRush.Editor
             Shot("hall_07_stage_curtain", new Vector3(-6f, 14f, 30f), new Vector3(-24f, 10f, 30f), 66f, false);
             Shot("hall_08_buffet_fountain", new Vector3(-12f, 16f, 22f), new Vector3(-27f, 11f, 8f), 60f, false);
             Shot("hall_09_chandeliers", new Vector3(18f, 26f, 2f), new Vector3(0f, 19f, 36f), 62f, false);
-            Shot("hall_10_tower_balcony", new Vector3(14f, 22f, 52f), new Vector3(0f, 17f, B.TowerZ + 1f), 55f, false);
+            Shot("hall_10_balcony", new Vector3(14f, 22f, 50f), new Vector3(0f, 16f, B.BalconyZ0 + 3f), 55f, false);
             Shot("hall_11_dais_gallery", new Vector3(16f, 13.5f, 59f), new Vector3(-4.25f, 10.5f, 56.5f), 60f, false);
             Shot("hall_12_fountain_close", new Vector3(-19f, 13.5f, 16f), new Vector3(-27.7f, 12f, 9.2f), 60f, false);
             Shot("hall_13_from_the_loft", new Vector3(-2.6f, 21.6f, 4f), new Vector3(0f, 18f, 30f), 66f, false);

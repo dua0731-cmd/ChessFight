@@ -21,20 +21,24 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ checkpoints and kill volumes
 
-        // One on every floor the way stands on; each trigger covers its floor (R733), the respawn spots stay in a row across
-        // the way on. The round makes them 200 .. 207.
+        // One on every floor the way stands on. R825: each trigger is a box round its respawn point, big enough to be crossed
+        // wherever the way comes onto that floor - offline the respawn is the bottom of the trigger's middle, and with the
+        // triggers over whole floors (R733) that was inside the chocolate fountain (the user: "초코분수 체크포인트가 분수 안에
+        // 있는지 태어나면 분수 속에 박히는 버그"), the great chandelier's column and behind the curtain. The six spots (online)
+        // stay in a row across the way at the same point. The round makes them 200 .. 207.
         static void Checkpoints(CourseBuilder b)
         {
-            CourseBuilder.CoverFloor(b.Checkpoint(0, V(0f, 0f, 2.6f), 90f, 5f), BuffetX1, 12.8f, 0f, ScreenZ - .2f);
-            CourseBuilder.CoverFloor(b.Checkpoint(1, V(RunnerX, TableY, 20f), 0f, 10f), TableX0, TableX1, TableZ0, ClothZ1);
-            CourseBuilder.CoverFloor(b.Checkpoint(2, V(2f, DaisY, 57.8f), 270f, 3.5f), HallX0, HallX1, DaisZ, TowerZ - 5.2f);
-            CourseBuilder.CoverFloor(b.Checkpoint(3, V(-22.2f, StageY, CurtainZ + 2f), 270f, 6f), HallX0, StageX1, StageZ0, StageZ1);
-            CourseBuilder.CoverFloor(b.Checkpoint(4, V(-27.5f, BuffetY, 15f), 180f, 7f), HallX0, BuffetX1, BuffetZ0, BuffetZ1);
-            CourseBuilder.CoverFloor(b.Checkpoint(5, V(-22f, LoftY, 2.8f), 90f, 5f), LoftX0, LoftX1, 0f, ScreenZ);
-            // R817: the great chandelier in the middle of the ropes (its trigger round the ring, from its floor up).
-            CourseBuilder.CoverFloor(b.Checkpoint(6, V(0f, GreatY, GreatZ), 0f, 6f), -GreatR, GreatR, GreatZ - GreatR, GreatZ + GreatR);
-            CourseBuilder.CoverFloor(b.Checkpoint(7, V(-4.4f, HeadY, TowerZ), 90f, 8f), -5f, 5f, TowerZ - 5f, TowerZ + 5f);
-            CourseBuilder.CoverFloor(b.Checkpoint(8, V(0f, BalconyY, HallZ1 - 2.6f), 0f, 6f), -6f, 6f, TowerZ + .95f, HallZ1);
+            // (number, point, yaw = the way on, spots' width, box across x along in the checkpoint's own frame)
+            void Cp(int n, Vector3 at, float yaw, float width, float across, float along) =>
+                CourseBuilder.CheckpointBox(b.Checkpoint(n, at, yaw, width), Vector3.zero, V(across, 3f, along));
+            Cp(0, V(0f, 0f, 2.8f), 90f, 5f, 5.6f, 12f);                                     // the passage, the doorway's half
+            Cp(1, V(RunnerX, TableY, 20.5f), 0f, 10f, TableX1 - TableX0, 7f);               // the table where the trays pass
+            Cp(2, V(9.5f, DaisY, 58.9f), 270f, 3f, 5f, 34f);                                // the dais's gallery, its whole length
+            Cp(3, V(StageX1 - 2.2f, StageY, StageZ0 + 10f), 270f, 6f, StageZ1 - StageZ0, 4.4f); // the stage before the curtain
+            Cp(4, V((HallX0 + BuffetX1) * .5f, BuffetY, 15.3f), 180f, 7f, BuffetX1 - HallX0, 3.4f); // the buffet north of the bowl
+            Cp(5, V(-22f, LoftY, 2.8f), 90f, 5f, 5.6f, 20f);                                 // the loft from its ladder on
+            Cp(6, V(0f, GreatY, GreatZ - 2.2f), 0f, 6f, 2f * GreatR, 4f);                   // the great chandelier's south half
+            Cp(7, V(0f, BalconyY, BalconyZ0 + 2.4f), 0f, 6f, 2f * BalconyX, 4.8f);          // the king's balcony
         }
 
         // The dance floor and the orchestra pit end a run (whoever falls from the dais, a queen, the curtain or the buffet
@@ -48,16 +52,17 @@ namespace ChessFight.PawnRush
             // R817: a fall from the second line of ropes over the dais would land on its gallery (7.4 m: no fall by the 8 m
             // rule) and undo the waltz. A thin box 2.6 - 3.2 m over the gallery under the ropes: over a walker's head
             // (a jump reaches about 2.3 m), under a hanging pawn's feet at the bottom of its swing (about 4 m).
-            b.Trigger<KillVolume>("BH kill volume (falls onto the dais)", V(-6f, DaisY + 2.6f, DaisZ - .5f), V(6f, DaisY + 3.2f, TowerZ - 5.2f));
+            b.Trigger<KillVolume>("BH kill volume (falls onto the dais)", V(-BalconyX, DaisY + 2.6f, DaisZ - .5f), V(BalconyX, DaisY + 3.2f, BalconyZ0 - .05f));
             b.Trigger<KillVolume>("BH kill volume (far below)", V(-60f, -14f, -20f), V(60f, -12f, HallZ1 + 30f));
         }
 
         // ------------------------------------------------------------------ the progress path
 
         // One route for both teams, each point with the beat of the leg that starts there: the passage, the counter, the
-        // second waiter's tray and stack, the runner, the west cloche (round its rim to the north), the dais to the boarding
-        // place, couple 0's queen from the dais to the stage (its pose on the clock), the curtain's leading south pleat, the
-        // fountain's north side, the leap to the loft, the west line of chandeliers, the tower's south-west, the balcony.
+        // second waiter's tray and stack (off before the pantry door), the runner, the west cloche lift up to the dais, the
+        // dais to the boarding place, couple 0's queen from the dais to the stage (its pose on the clock), the curtain's
+        // leading south pleat, the fountain's west ladders, the leap to the loft's ladder, the west line of chandeliers with
+        // the great chandelier between, the balcony.
         static void ProgressRoute(CourseBuilder b)
         {
             var route = new List<Vector3>();
@@ -80,14 +85,10 @@ namespace ChessFight.PawnRush
             P(BeatWaiters, TableX1 - .5f, TableY, 21.2f);
             P(BeatCloth, RunnerX, TableY, 22f);
             P(BeatCloth, RunnerX, TableY, ClothZ1 - .2f);
-            float wx = ClocheX[0], rim = TableY + .06f + ClocheBand;
-            P(BeatCloches, wx, TableY, ClocheZ - ClocheR - .3f);
-            P(BeatCloches, wx, rim, ClocheZ - ClocheR - .3f);
-            P(BeatCloches, wx, rim, ClocheZ - 1.8f);
-            P(BeatCloches, wx - 1.8f, rim, ClocheZ);
-            P(BeatCloches, wx, rim, ClocheZ + 1.8f);
-            P(BeatCloches, wx, rim + ClocheLift, ClocheZ + 1.8f);
-            P(BeatCloches, wx, rim + ClocheLift, ClocheZ + ClocheR - .1f);
+            float wx = ClocheX[0];
+            P(BeatCloches, wx, TableY, ClocheZ - ClocheR - .4f);
+            P(BeatCloches, wx, PlatterTop, ClocheZ - .5f);
+            P(BeatCloches, wx, DaisY, ClocheZ - .5f);
             P(BeatWaltz, wx, DaisY, DaisZ + .6f);
             P(BeatWaltz, BanquetWaltz.BoardX, DaisY, DaisZ + .6f);
             P(BeatWaltz, BanquetWaltz.BoardX, DaisY, DaisZ + .05f);
@@ -106,21 +107,29 @@ namespace ChessFight.PawnRush
             P(BeatCurtain, CurtainX + .4f, BassTop + .9f, CurtainZ - .5f);
             P(BeatCurtain, CurtainX + .4f, BassTop + .9f, CurtainOpenS);
             P(BeatCurtain, CurtainX + .4f, BuffetY, CurtainOpenS);
+            // Up the fountain's west ladders (the first tier's north-west one, the second's west, the top's south-west), round
+            // each ring between them, then from the top's south edge onto the loft's ladder.
             var f = Fountain;
-            P(BeatFountain, f.x, BuffetY, f.y + BowlR + .4f);
-            P(BeatFountain, f.x, BowlTop, f.y + BowlR - .2f);
-            float below = BowlTop;
+            Vector3 On(float degrees, float r, float y) =>
+                V(f.x + r * Mathf.Cos(degrees * Mathf.Deg2Rad), y, f.y + r * Mathf.Sin(degrees * Mathf.Deg2Rad));
+            void At(Vector3 v) => P(BeatFountain, v.x, v.y, v.z);
+            P(BeatFountain, f.x, BuffetY, f.y + BowlR + .5f);
+            float below = BowlTop, from = 110f;
+            float[] use = { 110f, 180f, 250f };
             for (int k = 0; k < TierR.Length; k++)
             {
-                P(BeatFountain, f.x, below, f.y + TierR[k] + .2f);
-                P(BeatFountain, f.x, TierTop[k], f.y + TierR[k] + .2f);
-                P(BeatFountain, f.x, TierTop[k], f.y + TierR[k] - .3f);
+                float a2 = use[k], ring = k == 0 ? BowlR - .3f : (TierR[k - 1] + TierR[k] + LadderOut) * .5f;
+                for (float d = from; d < a2 - 1f; d += 30f) At(On(d, ring, below));
+                At(On(a2, TierR[k] + LadderOut + .25f, below));
+                At(On(a2, TierR[k] + LadderOut + .25f, TierTop[k]));
+                At(On(a2, TierR[k] - .4f, TierTop[k]));
                 below = TierTop[k];
+                from = a2;
             }
             int last = TierR.Length - 1;
-            P(BeatFountain, f.x, TierTop[last], f.y - TierR[last] + .1f);
-            P(BeatFountain, f.x, LoftY - 2.5f, ScreenZ + .15f);
-            P(BeatFountain, f.x, LoftY, ScreenZ + .15f);
+            At(On(270f, TierR[last] - .2f, TierTop[last]));
+            P(BeatFountain, f.x, TierTop[last] + .6f, ScreenZ + LadderOut + .2f);
+            P(BeatFountain, f.x, LoftY, ScreenZ + LadderOut + .2f);
             P(BeatChandeliers, f.x, LoftY, ScreenZ - 1f);
             P(BeatChandeliers, LinesX[0], LoftY, ScreenZ - 1f);
             P(BeatChandeliers, LinesX[0], LoftY, ScreenZ - .1f);
@@ -136,19 +145,10 @@ namespace ChessFight.PawnRush
                 P(BeatChandeliers, LinesX[0], RopeLow[k] - 1.1f, ScreenZ + RopeAlong[k] - RopeEnd(k));
                 P(BeatChandeliers, LinesX[0], RopeLow[k] - 1.1f, ScreenZ + RopeAlong[k] + RopeEnd(k));
             }
-            // Down onto the pedestal in front of the tower, then up its four levels.
-            P(BeatTower, LinesX[0], HeadY, LandZ);
-            P(BeatTower, -1.5f, HeadY, LandZ);
-            for (int k = 0; k < Levels; k++)
-            {
-                float face = TowerZ - (Levels - k) * GlassPitch * .5f, x = -1.5f + .5f * k, y = HeadY + LevelH * k;
-                P(BeatTower, x, y, face - .15f);
-                P(BeatTower, x, y + LevelH, face - .15f);
-                P(BeatTower, x, y + LevelH, face + .4f);
-            }
-            P(BeatTower, 0f, BalconyY, TowerZ + .5f);
-            P(BeatTower, 0f, BalconyY, TowerZ + 2f);
-            P(BeatTower, 0f, BalconyY, HallZ1);
+            // Off the last rope onto the king's balcony, and on to the exit at its back.
+            P(BeatBalcony, LinesX[0], BalconyY, LandZ);
+            P(BeatBalcony, 0f, BalconyY, BalconyZ0 + 2f);
+            P(BeatBalcony, 0f, BalconyY, HallZ1);
 
             var go = new GameObject("ProgressPath");
             go.transform.SetParent(b.parent, false);
@@ -156,11 +156,13 @@ namespace ChessFight.PawnRush
             go.AddComponent<ProgressPath>().Configure(points, (Vector3[])points.Clone(), legs.ToArray());
         }
 
-        // The places with no floor under the way on purpose (IntendedGap): riding a waiter's stack over the lane, a queen
-        // over the dance floor, the curtain over the pit, the leap from the fountain to the loft, the chandeliers.
+        // The places with no floor under the way on purpose (IntendedGap): riding a waiter's stack over the lane, stepping off
+        // a cloche lift at the dais (it is down at the table when the grey box is built), a queen over the dance floor, the
+        // curtain over the pit, the leap from the fountain to the loft's ladder, the chandeliers.
         static void MeantGaps(CourseBuilder b)
         {
             Gap(b, "BH meant gap (a waiter's stack)", V(TrayX - .5f, 5.5f, 15f), V(5f, 4f, 14f), "웨이터의 접시 탑에 실려 감");
+            Gap(b, "BH meant gap (a cloche lift)", V(20f, 10.5f, ClocheZ + 1.2f), V(12f, 3f, 5f), "은 뚜껑 승강기로 단까지 올라감");
             Gap(b, "BH meant gap (a queen)", V(-11.5f, 8.5f, 47.5f), V(20f, 5f, 20f), "춤추는 여왕의 어깨에 실려 감");
             Gap(b, "BH meant gap (the curtain)", V(CurtainX + .4f, 10.5f, 27.5f), V(3f, 5f, 26f), "열리는 막에 매달려 실려 감");
             Gap(b, "BH meant gap (fountain to loft)", V(Fountain.x, 18f, 7f), V(5f, 6f, 3f), "분수 꼭대기에서 회랑 앞면으로 뛰어 붙음");
@@ -174,7 +176,7 @@ namespace ChessFight.PawnRush
 
         const string BeatEntry = "0 입구 · 배식실", BeatWaiters = "1 웨이터 행렬", BeatCloth = "2 식탁보 빼기", BeatCloches = "3 은 뚜껑",
                      BeatWaltz = "4 왈츠", BeatCurtain = "5 무대 막", BeatFountain = "6 초콜릿 분수", BeatChandeliers = "7 샹들리에",
-                     BeatTower = "8 샴페인 탑";
+                     BeatBalcony = "8 왕의 발코니";
 
         // Areas for the HUD, the CSV and the loading camera, in the section frame; the first that holds a pawn wins.
         public static SectionBeat[] Beats() => new[]
@@ -182,8 +184,8 @@ namespace ChessFight.PawnRush
             new SectionBeat(BeatWaiters, V(25.9f, 1.5f, 0f), V(32.5f, 9f, PantryZ0)),
             new SectionBeat(BeatCurtain, V(HallX0 - .5f, 6f, BuffetZ1), V(StageX1 + .5f, 22f, StageZ1 + 2f)),
             new SectionBeat(BeatFountain, V(HallX0 - .5f, 6f, BuffetZ0 - 1f), V(BuffetX1 + .5f, 19.5f, BuffetZ1)),
-            new SectionBeat(BeatTower, V(-7f, HeadY - .5f, TowerZ - 5.5f), V(7f, BalconyY + 4f, HallZ1 + .5f)),
-            new SectionBeat(BeatChandeliers, V(-32f, 14f, -.5f), V(32f, 28f, TowerZ - 4f)),
+            new SectionBeat(BeatBalcony, V(-BalconyX - 1f, BalconyY - .5f, BalconyZ0 - .5f), V(BalconyX + 1f, BalconyY + 4f, HallZ1 + .5f)),
+            new SectionBeat(BeatChandeliers, V(-32f, 14f, -.5f), V(32f, 28f, BalconyZ0 - .5f)),
             new SectionBeat(BeatCloth, V(11f, 3.5f, TableZ0 - .5f), V(26.5f, 9f, ClothZ1)),
             new SectionBeat(BeatCloches, V(13f, 3.5f, ClothZ1), V(26.5f, 14f, DaisZ + .5f)),
             new SectionBeat(BeatWaltz, V(HallX0, -2f, ScreenZ), V(HallX1, 14f, HallZ1)),
@@ -199,16 +201,16 @@ namespace ChessFight.PawnRush
             Look.Sign(at, "대연회장", V(4f, 5.2f, 5.4f), 2.2f);
             Look.Sign(at, "→ 빨간 카펫을 따라 배식실로", V(4f, 3.6f, 5.5f), 1f);
             Look.Sign(at, "배식실: 카운터 끝에서 지나가는 쟁반에 올라탄다", V(24f, 5.2f, 3.9f), .9f);
-            Look.Sign(at, "1. 웨이터 행렬: 쟁반 위에서 접시 탑을 올라 · 서쪽 긴 식탁으로 뛰어내린다 (늦으면 식료품실로)", V(26.2f, 7.6f, 15f), .8f, 90f);
+            Look.Sign(at, "1. 웨이터 행렬: 쟁반 위 접시 탑에 올라 · 식료품실 문 전에 서쪽 긴 식탁으로 뛰어내린다", V(26.2f, 7.6f, 15f), .8f, 90f);
             Look.Sign(at, "2. 식탁보 빼기: 식탁보가 빨개지면 초록 접시 위로 · 천 위에 있으면 배식실로 날아간다", V(20f, 8.6f, 19f), .9f);
-            Look.Sign(at, "3. 은 뚜껑: 보라 띠를 올라 가장자리에 서면 들어 올려 준다 · 위에서 단(난간 틈)으로", V(20f, 13.6f, 50.5f), .9f);
+            Look.Sign(at, "3. 은 뚜껑 승강기: 뚜껑이 열리면 접시에 올라탄다 · 단에서 다시 열리면 내린다", V(20f, 13.6f, 49.5f), .9f);
             Look.Sign(at, "4. 왈츠 ← 카펫 끝의 난간 틈으로", V(10f, 13.2f, 58.4f), 1f, -90f);
             Look.Sign(at, "초록 등이 켜지면 여왕이 멈춘다 — 난간 틈에서 드레스로 뛰어 붙어(우클릭) 어깨로", V(BanquetWaltz.BoardX + 2.6f, 12.9f, 59.6f), .8f, -90f);
             Look.Sign(at, "무대 앞의 초록 등이 켜질 때 무대로 건너 내린다", V(BanquetWaltz.BoardX, 12.4f, 56.1f), .7f, 180f);
             Look.Sign(at, "5. 무대 막: 콘트라베이스보다 높이(3.5 m) 올라 매달린다 · 막이 열리면 뷔페까지", V(-21.5f, 11.4f, 44f), .9f, -90f);
-            Look.Sign(at, "6. 초콜릿 분수: 어두운 아래쪽은 흘러내린다 — 멈추지 말고 밝은 띠까지 · 꼭대기 남쪽 끝에서 회랑 앞면으로 뛰어 붙기", V(-27.7f, 19.8f, 15.5f), .85f, 180f);
+            Look.Sign(at, "6. 초콜릿 분수: 초콜릿은 미끄러진다 — 금 사다리로 오른다 · 꼭대기 남쪽에서 회랑의 사다리로 뛰어 붙기", V(-27.7f, 19.8f, 15.5f), .85f, 180f);
             Look.Sign(at, "7. 샹들리에: 끝이 가까이 오면 우클릭 · 이웃 줄이 마주 올 때 옮겨 잡기 · 가운데 큰 샹들리에에서 쉰다", V(-8f, 23.4f, 5.6f), .9f);
-            Look.Sign(at, "8. 샴페인 탑: 샴페인이 흘러내리는 층에 매달리면 씻겨 내려간다 · 아래 턱에서 기다렸다 오르기", V(0f, 24.4f, TowerZ - 6f), .9f);
+            Look.Sign(at, "8. 왕의 발코니: 마지막 샹들리에 끝에서 놓으면 도착", V(0f, BalconyY + 4.6f, BalconyZ0 - 2f), .9f);
         }
     }
 }

@@ -6,7 +6,8 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The grand banquet hall's devices that are not one moving body (대연회장, R815 design v0.4, R816 grey box): the
-    // magician's tablecloth trick, the chocolate fountain's flow, the champagne tower's overflow and the chandeliers' look.
+    // magician's tablecloth trick, the chocolate fountain's flow, the lamps and the chandeliers' look. (R825: the champagne
+    // tower's overflow went with the tower - the user: "마지막 샴페인 구간은 빼자. 샹들리에를 넘어가면 끝".)
     // Every one is timed by the shared obstacle clock; nothing here is sent.
 
     // 2. The magician's tablecloth trick. Every `period` seconds: the cloth lies, the drum rolls (the cloth turns red), the
@@ -132,12 +133,11 @@ namespace ChessFight.PawnRush
     }
 
     // 6. A tier of the chocolate fountain: it does not move, but says it does (IMovingSurface, as ConveyorBeltSurface), so a
-    //    climber on the flowing part of its side is carried down at the flow's speed (climbing at 1.2 m/s gains 0.8;
-    //    hanging still slides down). The last `stillBand` metres under its rim do not flow (R817): a climber's whole body
-    //    is carried with its wall, the fixed path over the lip too, and a flowing rim pulled every pawn that reached it back
-    //    down the face (the user's first run: "칸을 올라갈 때마다 단에 안올라가지고 계속 미끄러짐"). `outward` pushes
-    //    whoever stands on the top off it; the grey box has it at 0 (with 0.8 m/s on rings under a metre deep the pawns
-    //    that did get up were pushed off). This object is the tier's cylinder (YardKit.Cylinder: local y -1 .. 1).
+    //    climber on its chocolate is carried down at the flow's speed. R825: the chocolate flows all the way down every tier
+    //    (`stillBand` 0) and faster than a pawn climbs - it is not a way up; the gilded ladders on the fountain are (the
+    //    user: "한 단에서 반은 초코가 흐르고 반은 안흐른다는게 상식선에서 이해가 안 가", "사다리처럼 하든 뭘 하든 인식 가능하게").
+    //    `stillBand` (R817) leaves the last metres under the rim still; `outward` pushes whoever stands on the top off it.
+    //    This object is the tier's cylinder (YardKit.Cylinder: local y -1 .. 1).
     public sealed class ChocolateFlow : MonoBehaviour, IMovingSurface
     {
         [SerializeField] float down = .4f, outward, stillBand = 1.3f;
@@ -165,104 +165,6 @@ namespace ChessFight.PawnRush
             Vector3 d = worldPoint - transform.position;
             d -= up * Vector3.Dot(d, up);
             return d.sqrMagnitude < 1e-4f ? Vector3.zero : d.normalized * outward;
-        }
-
-        public Quaternion DeltaRotation => Quaternion.identity;
-    }
-
-    // 8. The champagne tower's overflow. A sommelier pours into the top glass every `every` seconds; the overflow runs down
-    //    one level each `wave` seconds and runs over a level for `spill` seconds. While a level runs over, champagne pours
-    //    down its four sides (the sheets), its glasses shine, and its sides wash down whoever climbs them (ChampagneLevel):
-    //    wait on the rim below, then climb in the gap. R817: the first grey box opened climbers' hands with a ClimbPeel
-    //    trigger round each level, and in the user's run nothing happened ("마지막 샴페인 구간은 아무 일도 일어나지 않음") -
-    //    the sides themselves now carry it, as the chocolate's do, and only what climbs them feels it.
-    public sealed class ChampagneOverflow : MonoBehaviour
-    {
-        [SerializeField] Renderer[] glasses = new Renderer[0];       // one per level, bottom first
-        [SerializeField] Renderer[] sheets = new Renderer[0];        // four per level, bottom first
-        [SerializeField] Renderer pour;
-        [SerializeField] Material full, spilling;
-        [SerializeField] float every = 4f, pourFor = 1f, wave = .5f, spill = 1.6f, first = 1f, start = .2f;
-
-        public int Levels => glasses.Length;
-        public int Spills { get; private set; }
-        public float Every => every;
-        public float Spill => spill;
-
-        bool[] was = new bool[0];
-
-        public void Configure(Renderer[] levelGlasses, Renderer[] levelSheets, Renderer pourPicture, Material fullMaterial, Material spillingMaterial)
-        {
-            glasses = levelGlasses;
-            sheets = levelSheets;
-            pour = pourPicture;
-            full = fullMaterial;
-            spilling = spillingMaterial;
-        }
-
-        // Level k (0 = the bottom) runs over at `time`.
-        public bool Overflowing(int k, double time)
-        {
-            double u = (time - first) % every;
-            if (u < 0.0) u += every;
-            double from = start + wave * (glasses.Length - 1 - k);
-            return u >= from && u < from + spill;
-        }
-
-        public bool Pouring(double time)
-        {
-            double u = (time - first) % every;
-            if (u < 0.0) u += every;
-            return u < pourFor;
-        }
-
-        void FixedUpdate()
-        {
-            double now = ObstacleClock.Now;
-            if (was.Length != glasses.Length) was = new bool[glasses.Length];
-            for (int k = 0; k < glasses.Length; k++)
-            {
-                bool on = Overflowing(k, now);
-                if (on && !was[k]) Spills++;
-                was[k] = on;
-            }
-        }
-
-        void Update()
-        {
-            double now = ObstacleClock.Now;
-            for (int k = 0; k < glasses.Length; k++)
-            {
-                bool on = Overflowing(k, now);
-                if (glasses[k] != null) glasses[k].sharedMaterial = on ? spilling : full;
-                for (int s = 4 * k; s < 4 * k + 4 && s < sheets.Length; s++)
-                    if (sheets[s] != null) sheets[s].enabled = on;
-            }
-            if (pour != null) pour.enabled = Pouring(now);
-        }
-    }
-
-    // A level of the champagne tower: still, but while the overflow runs over it its sides say they flow down fast
-    // (IMovingSurface), so a climber on them is carried down past what climbing gains and lands on the rim below. What
-    // stands on its top is not touched. This object is the level's box (local y -0.5 .. 0.5).
-    public sealed class ChampagneLevel : MonoBehaviour, IMovingSurface
-    {
-        [SerializeField] ChampagneOverflow tower;
-        [SerializeField] int level;
-        [SerializeField] float wash = 2.5f;
-
-        public void Configure(ChampagneOverflow overflow, int index, float washSpeed)
-        {
-            tower = overflow;
-            level = index;
-            wash = washSpeed;
-        }
-
-        public Vector3 PointVelocity(Vector3 worldPoint)
-        {
-            if (tower == null || !tower.Overflowing(level, ObstacleClock.Now)) return Vector3.zero;
-            Vector3 up = transform.up, top = transform.TransformPoint(new Vector3(0f, .5f, 0f));
-            return Vector3.Dot(worldPoint - top, up) < -.05f ? -up * wash : Vector3.zero;
         }
 
         public Quaternion DeltaRotation => Quaternion.identity;

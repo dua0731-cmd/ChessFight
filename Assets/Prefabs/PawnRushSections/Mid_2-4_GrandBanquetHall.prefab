@@ -49,7 +49,7 @@ MonoBehaviour:
   displayName: "대연회장"
   kind: 0
   entry: {x: 0, y: 0, z: 0}
-  exit: {x: 0, y: 20.8, z: 72}
+  exit: {x: 0, y: 16, z: 72}
   exitYaw: 0
   beats: []
   slot: 0

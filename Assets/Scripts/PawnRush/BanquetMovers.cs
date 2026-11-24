@@ -47,51 +47,76 @@ namespace ChessFight.PawnRush
         protected override bool JumpsBetween(double from, double to) => Lap(from) != Lap(to);
     }
 
-    // 3. A silver cloche at the long table's north end: the glove shakes it, lifts it (eased so whoever stands on its rim
-    //    is not thrown off), holds it up level with the dais, puts it down quickly and leaves it covered.
-    //    warning (a jiggle) -> up -> held -> down -> covered.
-    public sealed class BanquetCloche : Obstacle
+    // 3. A cloche lift at the long table's north end (R825, the user's idea after the first grey box: "엘리베이터처럼 닫히고
+    //    접시 째 올리고 뚜껑이 열리고, 뚜껑이 닫히고 내려와서 열리면 다시 플레이어들이 탑승"). The platter is a floor and the
+    //    cloche a hollow dome over it; together they are a dish lift up to the royal dais:
+    //      open at the table (board) -> the cloche comes down over the platter -> both rise to the dais -> the cloche lifts
+    //      off (step out onto the dais) -> it comes down -> both go down -> it lifts off at the table -> board again.
+    //    The first grey box's cloche lifted with pawns on its rim, and the stop threw them up (the user: "슈퍼점프") and over
+    //    the course; inside the shut cloche nobody can be thrown, and nothing is stood on but the platter. Two parts on one
+    //    clock: the platter (the floor that rises) and the cloche (the platter's height plus its own lift).
+    public sealed class ClocheLift : Obstacle
     {
-        [SerializeField] float lift = 5.6f, warning = .8f, up = 1.2f, held = 2.4f, down = .6f, covered = 2.4f, delay = 2.6f;
+        public enum Part { Platter, Cloche }
 
-        public float Lift => lift;
-        public float Period => warning + up + held + down + covered;
+        [SerializeField] Part part;
+        [SerializeField] float rise = 5.9f, open = 2f, delay;
+        [SerializeField] float board = 3f, shut = .6f, up = 2.2f, top = 2.6f;
 
-        public void Configure(float liftMetres, float warningSeconds, float upSeconds, float heldSeconds, float downSeconds,
-                              float coveredSeconds, float delaySeconds)
+        public Part Which => part;
+        public float Rise => rise;
+        public float Open => open;
+        // board -> shut -> up -> open -> top (out) -> shut -> down -> open, back to board.
+        public float Period => board + 3f * shut + 2f * up + top + shut;
+
+        // Call on an INACTIVE object placed where it is with the platter down and the cloche open over it.
+        public void Configure(Part which, float riseMetres, float openMetres, float delaySeconds)
         {
-            lift = liftMetres;
-            warning = warningSeconds;
-            up = upSeconds;
-            held = heldSeconds;
-            down = downSeconds;
-            covered = coveredSeconds;
+            part = which;
+            rise = riseMetres;
+            open = openMetres;
             delay = delaySeconds;
         }
 
-        // Metres over its resting place at `time`.
-        public float Height(double time)
+        // The platter's height over the table, and the cloche's over the platter (0 shut, `open` lifted off), at `time`.
+        public void Heights(double time, out float platter, out float cloche)
         {
             double period = Period, u = (time - delay) % period;
             if (u < 0.0) u += period;
             float t = (float)u;
-            if (t < warning) return .04f * Mathf.Abs(Mathf.Sin(t * 40f));
-            t -= warning;
-            // A cosine ease: it starts and stops no harder than gravity (5.6 m in 1.2 s peaks at 9.6 m/s2), so a pawn on the
-            // rim rides it instead of being thrown up past the dais when it stops.
-            if (t < up) return lift * .5f * (1f - Mathf.Cos(Mathf.PI * t / up));
+            platter = 0f;
+            cloche = open;
+            if (t < board) return;                                                           // open at the table
+            t -= board;
+            if (t < shut) { cloche = open * (1f - Ease(t / shut)); return; }                 // shuts
+            t -= shut;
+            cloche = 0f;
+            // A cosine ease: 5.9 m in 2.2 s starts and stops at 6 m/s2, under gravity, so nobody inside leaves the floor.
+            if (t < up) { platter = rise * Ease(t / up); return; }                           // rises
             t -= up;
-            if (t < held) return lift;
-            t -= held;
-            if (t < down) { float k = t / down; return lift * (1f - k * k); }
-            return 0f;
+            platter = rise;
+            if (t < shut) { cloche = open * Ease(t / shut); return; }                        // lifts off at the dais
+            t -= shut;
+            if (t < top) { cloche = open; return; }                                          // out onto the dais
+            t -= top;
+            if (t < shut) { cloche = open * (1f - Ease(t / shut)); return; }                 // shuts
+            t -= shut;
+            if (t < up) { platter = rise * (1f - Ease(t / up)); return; }                    // goes down
+            t -= up;
+            platter = 0f;
+            cloche = open * Ease(Mathf.Min(1f, t / shut));                                   // lifts off at the table
         }
 
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
+            Heights(time, out float platter, out float cloche);
             rotation = StartRotation;
-            position = StartPosition + StartRotation * new Vector3(0f, Height(time), 0f);
+            // Built with the platter down and the cloche open: the cloche's own lift counts from there.
+            float y = part == Part.Platter ? platter : platter + cloche - open;
+            position = StartPosition + StartRotation * new Vector3(0f, y, 0f);
         }
+
+        static float Ease(float x) => .5f * (1f - Mathf.Cos(Mathf.PI * Mathf.Clamp01(x)));
     }
 
     // 4. The waltz. Ten couples go round the dance floor anticlockwise along a rounded rectangle (the line of dance) and

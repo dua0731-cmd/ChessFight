@@ -29,21 +29,27 @@ namespace ChessFight.PawnRush
         public const float TableY = 4.4f, StageY = 7.4f, DaisY = 10.4f, HeadY = 14.8f, LoftY = 20f;
         public const float HallX0 = -32f, HallX1 = 32f, HallZ1 = 72f, ScreenZ = 6f, DaisZ = 56f, Ceiling = 34f;
 
-        // 1. The waiters' parade. Five waiters 9.8 m apart walk the lane between the long table and the east wall at 2.2 m/s,
-        //    from the kitchen (inside the hall's south-east corner) to the pantry (beside the table's north end).
+        // 1. The waiters' parade. Four waiters 7.25 m apart walk the lane between the long table and the east wall at 2.2 m/s,
+        //    from the kitchen (inside the hall's south-east corner) to the pantry door beside the table's south end. R825 (the
+        //    user: "웨이터 파트에서 무조건 최대한 오래 타있는게 이득이야 … 식탁보 빼기 코스의 이동 경로가 웨이터의 이동 방향과
+        //    동일해서 굳이 위험하게 일찍 내릴 이유가 없어"): the pantry was beside the table's north end, so a rider stayed on past
+        //    the whole tablecloth trick. Now the door is 8 m along the table: step off onto it in those 8 m or be carried in.
+        //    The pantry runs on beside the rest of the table, its wall over the table's east edge.
         public const float TrayX = 27.8f, WaiterBodyX = 29.8f, TrayY = 2.4f, TrayR = 1.5f, StackR = .8f, StackTop = 5f;
-        public const float WaiterZ0 = .5f, WaiterLane = 49f, WaiterSpeed = 2.2f;
-        public const int Waiters = 5;
-        public const float CounterX0 = 22f, CounterX1 = 26f, CounterZ0 = 4f, CounterZ1 = 12f, KitchenZ1 = 4f, PantryZ0 = 43f;
+        public const float WaiterZ0 = .5f, WaiterLane = 29f, WaiterSpeed = 2.2f;
+        public const int Waiters = 4;
+        public const float CounterX0 = 22f, CounterX1 = 26f, CounterZ0 = 4f, CounterZ1 = 12f, KitchenZ1 = 4f, PantryZ0 = 26f;
 
         // 2. The long table and the tablecloth trick (a 10 s cycle: lies 3.5, drum roll 2, pull 0.3, gone 2.2, laid 2).
         public const float TableX0 = 14f, TableX1 = 26f, TableZ0 = 18f, ClothZ1 = 50f, RunnerX = 20f, PlateR = 1.2f, LandingZ = 9f;
         public static readonly float[] PlateZ = { 23f, 29f, 35f, 41f, 47f };
 
-        // 3. The silver cloches over the platters at the table's north end, 0.9 m short of the dais.
+        // 3. The cloche lifts at the table's north end, against the dais (R825, ClocheLift): a platter 0.12 m over the table
+        //    that rises to the dais's height, a hollow cloche that is open 2 m over it while pawns board or step out and shut
+        //    while it rises or comes down. The two run half a cycle (6.2 s) apart: one boards while the other is up.
         public static readonly float[] ClocheX = { 17f, 23f };
-        public const float ClocheZ = 52.9f, ClocheR = 2.2f, ClocheBand = 1.4f, DomeR = 1.4f, ClocheLift = 5.6f;
-        public const float ClocheWarning = .8f, ClocheUp = 1.2f, ClocheHeld = 2.4f, ClocheDown = .6f, ClocheCovered = 2.4f, ClocheDelay = 2.6f;
+        public const float ClocheZ = DaisZ - .1f - 2.2f, ClocheR = 2.2f, PlatterTop = TableY + .12f, ClocheOpen = 2f, ClocheBand = 1.6f;
+        public const float ClocheRise = DaisY - PlatterTop;
 
         // 5. The stage and its curtain. CurtainZ is where couple 0's queen stands still on the west straight 8.36 s after
         //    the dais (banquet_layout.py ALIGHT): the curtain's halves meet there.
@@ -56,17 +62,22 @@ namespace ChessFight.PawnRush
         // 10.0: the basses' scrolls end at 9.6 so that one clears them and one a hand lower does not.
         public const float BassX = -23.95f, BassTop = 9.6f;
 
-        // 6. The dessert buffet (south-west corner, at the stage's height) and the chocolate fountain on it. R817: three tiers
-        //    with rings a metre deep (four with 0.8 m rings before), each tier's last 1.3 m under its rim still.
+        // 6. The dessert buffet (south-west corner, at the stage's height) and the chocolate fountain on it: three tiers with
+        //    rings a metre deep (R817). R825: the chocolate flows down every tier from rim to foot, faster than a pawn climbs -
+        //    not a way up - and each tier has two gilded ladders up its side, the next tier's a quarter turn round the ring
+        //    (the user: "반은 초코가 흐르고 반은 안흐른다는게 상식선에서 이해가 안 가", "사다리처럼 하든 뭘 하든 인식 가능하게").
         public const float BuffetX1 = -23.5f, BuffetZ0 = 3f, BuffetZ1 = 17f, BuffetY = StageY;
         public static readonly Vector2 Fountain = new Vector2(-27.7f, 9.2f);
-        public const float BowlR = 4.2f, BowlTop = 7.9f, Flow = .4f, DomeFlow = 0f, StillBand = 1.3f;
+        public const float BowlR = 4.2f, BowlTop = 7.9f, Flow = 1.4f, DomeFlow = 0f, StillBand = 0f, LadderW = 1.2f, LadderOut = .3f;
         public static readonly float[] TierR = { 3.3f, 2.3f, 1.3f };
         public static readonly float[] TierTop = { 10.733f, 13.567f, 16.4f };
+        // Each tier's two ladders, degrees from east toward north (90 = north, the way in from the curtain): the first tier's
+        // face the buffet's north end, the second's east and west, the top's south (toward the loft's ladder).
+        public static readonly float[][] LadderAt = { new[] { 70f, 110f }, new[] { 0f, 180f }, new[] { 250f, 290f } };
 
         // 7. The chandeliers. R817 (the user: "샹들리에 코스가 너무 김"): two lines of three from the loft's edge to the
         //    great chandelier in the middle of the hall - a wide still ring to stand on, get the breath back and a
-        //    checkpoint - and two lines of two longer ones from it to the tower's pedestal. Each rope swings 40 degrees each
+        //    checkpoint - and two lines of two longer ones from it to the king's balcony (R825: the end). Each rope swings 40 degrees each
         //    way along the hall in 5 s; neighbours are half a swing apart, so their ends meet at the ends of their swings.
         //    Every handover is a plain pass (0.6 - 0.8 m, 0.5 m lower); the flying catch is gone.
         public static readonly float[] LinesX = { -2.6f, 2.6f };
@@ -81,12 +92,13 @@ namespace ChessFight.PawnRush
         public static readonly float[] RopeAlong = Along();
         public static readonly float GreatZ = ScreenZ + RopeAlong[FirstLine - 1] + RopeEnd(FirstLine - 1) + .3f + GreatChord;
 
-        // 8. The champagne tower in the middle of the head table and the king's balcony behind it. R817: the last rope's end
-        //    comes over the pedestal (0.6 m short of the tower), so all four levels are climbed between the overflows.
-        public const int Levels = 4;
-        public const float GlassPitch = 1.9f, LevelH = 1.5f, BalconyY = HeadY + Levels * LevelH;
+        // 8. The king's balcony, the end. R825 (the user: "마지막 샴페인 구간은 빼자. 샹들리에를 넘어가면 끝인거야"): the
+        //    champagne tower is gone; the last ropes' ends come 0.8 m over the balcony's front, 0.95 m over its floor, and the
+        //    exit is at its back. It stands on the dais between the two wings of the head table, its front a sheer face.
         public static readonly float LandZ = ScreenZ + RopeAlong[RopeAlong.Length - 1] + RopeEnd(RopeAlong.Length - 1);
-        public static readonly float TowerZ = LandZ + .6f + Levels * GlassPitch * .5f;
+        public static readonly float BalconyZ0 = LandZ - .8f;
+        public const float BalconyY = 16f, BalconyX = 6f;
+        public static readonly float TablesZ0 = BalconyZ0 + .9f;
 
         // Pivots along the hall from the loft's edge: the first line from 0.35 m off the loft, the second from 0.3 m off the
         // great chandelier's north rim.
@@ -111,13 +123,12 @@ namespace ChessFight.PawnRush
         public static float PivotY(int k) => RopeLow[k] + RopeL[k] * Mathf.Cos(RopeSwing * Mathf.Deg2Rad);
 
         // Grey-box colours over the clock tower's (orange climb, slate no, violet moves, green rest, red cue): people and
-        // things that are only pictures, the cloth, chocolate, champagne running over, and the floors that end a run.
+        // things that are only pictures, the cloth, chocolate, and the floors that end a run.
         static Material Figure => Arena.Lit("M_BanquetFigure", Arena.Hex("#9A9284"), 0f, .85f);
         static Material Cloth => Arena.Lit("M_BanquetCloth", Arena.Hex("#EFE8D6"), 0f, .85f);
         static Material Runner => Arena.Lit("M_BanquetRunner", Arena.Hex("#7F8C42"), 0f, .85f);
-        static Material Chocolate => Arena.Lit("M_BanquetChocolate", Arena.Hex("#6E4430"), 0f, .35f);
+        // R825: the whole tier flows, so all of it is the dark, glossy chocolate.
         static Material ChocolateFlowing => Arena.Lit("M_BanquetChocolateFlowing", Arena.Hex("#3E2218"), 0f, .15f);
-        static Material Champagne => Arena.Lit("M_BanquetChampagne", Arena.Hex("#FFE9A6"), 1f, .3f);
         static Material FallFloor => Arena.Lit("M_BanquetFallFloor", Arena.Hex("#3E3746"), 0f, .7f);
         static Material Brass => Arena.Lit("M_BanquetBrass", Arena.Hex("#C9A240"), .1f, .4f);
         static Material Candle => Arena.Lit("M_BanquetCandle", Arena.Hex("#FFC86A"), 1.4f, .5f);
@@ -143,7 +154,7 @@ namespace ChessFight.PawnRush
             LongTable(b);
             Cloches(b);
             Dais(b);
-            ChampagneTower(b);
+            RoyalBalcony(b);
             Waltz(b);
             StageAndCurtain(b);
             Buffet(b);
@@ -271,44 +282,56 @@ namespace ChessFight.PawnRush
                 YardKit.Slab(mage, "BH magician arm", V(s * .9f, 5.8f, .3f), V(s * 2.6f, TableY + .2f, TableZ0 - 15.3f), .45f, .45f, Figure, YardKit.Solid.None);
         }
 
-        // ------------------------------------------------------------------ 3. the silver cloches
+        // ------------------------------------------------------------------ 3. the cloche lifts
 
-        // A cloche: its band (1.4 m, climbed) with a flat rim 0.8 m wide round the dome (stood on), the dome (not climbed).
-        // Lifted 5.6 m its rim is 1 m over the dais and 0.9 m short of its edge: step off. Under one when it comes down, a
-        // pawn is pushed aside (the grey box has no hollow under it).
+        // A cloche lift (ClocheLift, R825): the platter (a floor 4.4 m across, 0.12 m over the table; at the top level with
+        // the dais and 0.1 m off its front) and over it the cloche - a hollow dome whose band is a ring of slate pieces
+        // reaching down to the platter when shut, open 2 m over it to walk under. Nothing of it is climbed. The glove that
+        // lifts the cloche and its sleeve are pictures.
         static void Cloches(CourseBuilder b)
         {
-            foreach (float x in ClocheX)
+            const int ring = 20;
+            for (int i = 0; i < ClocheX.Length; i++)
             {
-                YardKit.Cylinder(b.parent, "BH platter", V(x, TableY + .03f, ClocheZ), Vector3.up, ClocheR * 2f + .2f, .06f, Brass, YardKit.Solid.Solid);
-                var c = Root(b, "BH cloche " + (x < 20f ? "W" : "E"), V(x, TableY + .06f, ClocheZ));
-                YardKit.Cylinder(c, "BH cloche band", V(0f, ClocheBand * .5f, 0f), Vector3.up, ClocheR * 2f, ClocheBand, Look.Mover, YardKit.Solid.Solid)
+                float x = ClocheX[i], delay = i * .5f * 12.4f;
+                string side = x < 20f ? "W" : "E";
+                var platter = Root(b, "BH cloche platter " + side, V(x, PlatterTop, ClocheZ));
+                YardKit.Cylinder(platter, "BH platter", V(0f, -.06f, 0f), Vector3.up, ClocheR * 2f, .12f, Look.Mover, YardKit.Solid.Solid)
                        .AddComponent<CourseFloor>();
-                YardKit.Cylinder(c, "BH cloche dome", V(0f, ClocheBand + .8f, 0f), Vector3.up, DomeR * 2f, 1.6f, Look.NoClimb, YardKit.Solid.NoClimb);
-                YardKit.Ball(c, "BH cloche top", V(0f, ClocheBand + 1.6f, 0f), DomeR * 2f, Look.NoClimb, YardKit.Solid.None);
-                YardKit.Ball(c, "BH cloche handle", V(0f, ClocheBand + 3.05f, 0f), .6f, Brass, YardKit.Solid.None);
-                YardKit.Ball(c, "BH glove", V(0f, ClocheBand + 3.45f, 0f), 1f, Cloth, YardKit.Solid.None);
-                YardKit.Slab(c, "BH sleeve", V(0f, ClocheBand + 3.8f, 0f), V(0f, 13f, -4.5f), .8f, .8f, Figure, YardKit.Solid.None);
-                c.gameObject.AddComponent<BanquetCloche>().Configure(ClocheLift, ClocheWarning, ClocheUp, ClocheHeld, ClocheDown, ClocheCovered, ClocheDelay);
+                platter.gameObject.AddComponent<ClocheLift>().Configure(ClocheLift.Part.Platter, ClocheRise, ClocheOpen, delay);
+
+                var c = Root(b, "BH cloche " + side, V(x, PlatterTop + ClocheOpen, ClocheZ));
+                float chord = 2f * ClocheR * Mathf.Sin(Mathf.PI / ring) + .08f;
+                for (int k = 0; k < ring; k++)
+                {
+                    var turn = Quaternion.Euler(0f, k * 360f / ring, 0f);
+                    YardKit.Box(c, "BH cloche band", turn * V(0f, 0f, ClocheR - .06f) + V(0f, ClocheBand * .5f, 0f), V(chord, ClocheBand, .12f),
+                                Look.NoClimb, YardKit.Solid.NoClimb, turn);
+                }
+                YardKit.Cylinder(c, "BH cloche lid", V(0f, ClocheBand + .1f, 0f), Vector3.up, ClocheR * 2f + .1f, .2f, Look.NoClimb, YardKit.Solid.NoClimb);
+                YardKit.Ball(c, "BH cloche dome", V(0f, ClocheBand + .2f, 0f), ClocheR * 2f, Look.NoClimb, YardKit.Solid.None).transform.localScale =
+                    V(ClocheR * 2f, 1.6f, ClocheR * 2f);
+                YardKit.Ball(c, "BH cloche handle", V(0f, ClocheBand + 1.05f, 0f), .6f, Brass, YardKit.Solid.None);
+                YardKit.Ball(c, "BH glove", V(0f, ClocheBand + 1.45f, 0f), 1f, Cloth, YardKit.Solid.None);
+                YardKit.Slab(c, "BH sleeve", V(0f, ClocheBand + 1.8f, 0f), V(0f, ClocheBand + 9f, -4.5f), .8f, .8f, Figure, YardKit.Solid.None);
+                c.gameObject.AddComponent<ClocheLift>().Configure(ClocheLift.Part.Cloche, ClocheRise, ClocheOpen, delay);
             }
         }
 
         // ------------------------------------------------------------------ the royal dais and the head table
 
-        // The dais's front is a sheer marble face (its stairs are behind, for the court): the cloches are the way up. The
-        // head table's middle (the pedestal under the tower) and its two wings are skirted to the dais: not climbed.
+        // The dais's front is a sheer marble face (its stairs are behind, for the court): the cloche lifts are the way up.
         // R817 (the user: "쓸데없는 길도 너무 많음", "왈츠를 타기까지 유도가 잘 안됨"): in front of the head table the dais is
-        // a gallery from the cloches to the boarding place and no further - walled at both ends and between the tables -
-        // and its edge has a balustrade with two openings: where the cloches set pawns down, and where a queen stands
-        // still (a lamp on each side of it lights as one is about to).
+        // a gallery from the cloche lifts to the boarding place and no further - walled at both ends - and its edge has a
+        // balustrade with two openings: where the lifts come up, and where a queen stands still (a lamp on each side of it
+        // lights as one is about to). R825: the head table's two wings stand either side of the king's balcony.
         static void Dais(CourseBuilder b)
         {
             Wall(b, "BH royal dais", HallX0, HallX1, 0f, DaisY, DaisZ, HallZ1).AddComponent<CourseFloor>();
             Paint(b, "BH dais edge", V(HallX0, DaisY - .4f, DaisZ - .12f), V(HallX1, DaisY + .02f, DaisZ), Brass);
-            float tables = TowerZ - 3.5f;
-            Wall(b, "BH head table W", -24f, -6f, DaisY, HeadY, tables, TowerZ + 2.5f).AddComponent<CourseFloor>();
-            Wall(b, "BH head table E", 6f, 24f, DaisY, HeadY, tables, TowerZ + 2.5f).AddComponent<CourseFloor>();
-            Wall(b, "BH pedestal", -5f, 5f, DaisY, HeadY, TowerZ - 5f, TowerZ + 5f).AddComponent<CourseFloor>();
+            float tables = TablesZ0;
+            Wall(b, "BH head table W", -24f, -BalconyX, DaisY, HeadY, tables, tables + 6f).AddComponent<CourseFloor>();
+            Wall(b, "BH head table E", BalconyX, 24f, DaisY, HeadY, tables, tables + 6f).AddComponent<CourseFloor>();
 
             float board = BanquetWaltz.BoardX, opening = 1.35f;
             Wall(b, "BH balustrade", HallX0, board - opening, DaisY, DaisY + 1.1f, DaisZ, DaisZ + .3f);
@@ -317,8 +340,6 @@ namespace ChessFight.PawnRush
             Wall(b, "BH gallery end W", board - opening - 1.7f, board - opening - 1.4f, DaisY, DaisY + 2.6f, DaisZ + .3f, tables);
             Wall(b, "BH gallery end E", 26f, 26.3f, DaisY, DaisY + 2.6f, DaisZ + .3f, tables + .3f);
             Wall(b, "BH gallery end NE", 24f, 26f, DaisY, DaisY + 2.6f, tables, tables + .3f);
-            Wall(b, "BH gallery gap W", -6f, -5f, DaisY, DaisY + 2.6f, tables, tables + .3f);
-            Wall(b, "BH gallery gap E", 5f, 6f, DaisY, DaisY + 2.6f, tables, tables + .3f);
             foreach (float s in new[] { -1f, 1f })
             {
                 var post = Root(b, "BH boarding lamp " + (s < 0f ? "W" : "E"), V(board + s * (opening + .15f), DaisY, DaisZ + .15f));
@@ -330,51 +351,24 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < 6; i++)
             {
                 float x = (i < 3 ? -21f : 9f) + 6f * (i % 3);
-                YardKit.Cylinder(b.parent, "BH head table candle", V(x, HeadY + .9f, TowerZ - 2.3f), Vector3.up, .25f, 1.8f, Cloth, YardKit.Solid.None);
-                YardKit.Ball(b.parent, "BH head table flame", V(x, HeadY + 1.95f, TowerZ - 2.3f), .3f, Candle, YardKit.Solid.None);
+                YardKit.Cylinder(b.parent, "BH head table candle", V(x, HeadY + .9f, tables + 1.2f), Vector3.up, .25f, 1.8f, Cloth, YardKit.Solid.None);
+                YardKit.Ball(b.parent, "BH head table flame", V(x, HeadY + 1.95f, tables + 1.2f), .3f, Candle, YardKit.Solid.None);
             }
         }
 
-        // ------------------------------------------------------------------ 8. the champagne tower and the balcony
+        // ------------------------------------------------------------------ 8. the king's balcony (the end)
 
-        // Four levels of coupes, 4 x 4 at the bottom to one at the top, 1.5 m a level; each level's rim round the next is
-        // 0.95 m to stand on. The levels' sides are climbed. A pour every 4 s runs down a level each 0.5 s and over each
-        // for 1.6 s: champagne sheets down its sides, and its sides wash climbers down (ChampagneLevel).
-        static void ChampagneTower(CourseBuilder b)
+        // R825: a block on the dais between the head table's wings, its top 16 m, its front a sheer face 0.8 m inside the
+        // last ropes' reach (a fall short of it is caught over the gallery - Course). The exit is at its back.
+        static void RoyalBalcony(CourseBuilder b)
         {
-            var tower = Root(b, "BH champagne tower", V(0f, 0f, TowerZ));
-            var glasses = new Renderer[Levels];
-            var sheets = new Renderer[4 * Levels];
-            var levels = new ChampagneLevel[Levels];
-            for (int k = 0; k < Levels; k++)
-            {
-                float half = (Levels - k) * GlassPitch * .5f, y0 = HeadY + k * LevelH, y = y0 + LevelH * .5f;
-                var level = YardKit.Box(tower, "BH tower level " + (k + 1), V(0f, y, 0f), V(2f * half, LevelH, 2f * half), Look.Climb);
-                level.AddComponent<CourseFloor>();
-                glasses[k] = level.GetComponent<Renderer>();
-                levels[k] = level.AddComponent<ChampagneLevel>();
-                for (int s = 0; s < 4; s++)
-                {
-                    var turn = Quaternion.Euler(0f, 90f * s, 0f);
-                    var sheet = YardKit.Box(tower, "BH champagne sheet", turn * V(0f, 0f, half + .06f) + V(0f, y - .1f, 0f), V(2f * half + .1f, LevelH + .2f, .05f),
-                                            Champagne, YardKit.Solid.None, turn);
-                    sheets[4 * k + s] = sheet.GetComponent<Renderer>();
-                    sheets[4 * k + s].enabled = false;
-                }
-            }
-            // The sommelier's bottle over the top glass and the pour (pictures).
-            YardKit.Slab(tower, "BH bottle", V(0f, BalconyY + 1.4f, .5f), V(0f, BalconyY + 3.2f, 2.6f), .55f, .55f, Look.Rest, YardKit.Solid.None);
-            var pour = YardKit.Box(tower, "BH pour", V(0f, BalconyY + .6f, .3f), V(.14f, 1.2f, .14f), Champagne, YardKit.Solid.None);
-            var overflow = tower.gameObject.AddComponent<ChampagneOverflow>();
-            overflow.Configure(glasses, sheets, pour.GetComponent<Renderer>(), Look.Climb, Champagne);
-            for (int k = 0; k < Levels; k++) levels[k].Configure(overflow, k, 2.5f);
-
-            // The king's balcony: level with the top glass, from the tower's north side to the north wall.
-            Wall(b, "BH balcony", -6f, 6f, BalconyY - .6f, BalconyY, TowerZ + .95f, HallZ1).AddComponent<CourseFloor>();
-            Wall(b, "BH balcony rail W", -6.3f, -6f, BalconyY, BalconyY + 1.1f, TowerZ + .95f, HallZ1);
-            Wall(b, "BH balcony rail E", 6f, 6.3f, BalconyY, BalconyY + 1.1f, TowerZ + .95f, HallZ1);
+            Wall(b, "BH balcony", -BalconyX, BalconyX, DaisY, BalconyY, BalconyZ0, HallZ1).AddComponent<CourseFloor>();
+            Paint(b, "BH balcony edge", V(-BalconyX, BalconyY - .4f, BalconyZ0 - .12f), V(BalconyX, BalconyY + .02f, BalconyZ0), Brass);
+            Wall(b, "BH balcony rail W", -BalconyX - .3f, -BalconyX, BalconyY, BalconyY + 1.1f, BalconyZ0, HallZ1);
+            Wall(b, "BH balcony rail E", BalconyX, BalconyX + .3f, BalconyY, BalconyY + 1.1f, BalconyZ0, HallZ1);
             foreach (float s in new[] { -1f, 1f })
                 Paint(b, "BH throne", V(s * 4.2f - .9f, BalconyY, HallZ1 - 2.6f), V(s * 4.2f + .9f, BalconyY + 3.6f, HallZ1 - 1.2f), Brass);
+            Paint(b, "BH canopy", V(-5f, BalconyY + 7.8f, HallZ1 - 3f), V(5f, BalconyY + 8.6f, HallZ1), Look.Comb);
         }
 
         // ------------------------------------------------------------------ 4. the waltz
@@ -447,8 +441,8 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ 6. the dessert buffet and the chocolate fountain
 
         // The buffet's east edge is 4.1 m from a queen's shoulders at her stop beside it: too far to jump. Its skirts are not
-        // climbed. On it the fountain: a bowl (a 0.5 m step) and three tiers whose sides flow down but for the last 1.3 m
-        // under each rim; their tops (rings a metre deep) are still.
+        // climbed. On it the fountain: a bowl (a 0.5 m step) and three tiers of flowing chocolate (it carries a climber down
+        // faster than it climbs), each with two gilded ladders up to its rim; their tops (rings a metre deep) are still.
         static void Buffet(CourseBuilder b)
         {
             Wall(b, "BH dessert buffet", HallX0, BuffetX1, 0f, BuffetY, BuffetZ0, BuffetZ1).AddComponent<CourseFloor>();
@@ -459,14 +453,15 @@ namespace ChessFight.PawnRush
             for (int k = 0; k < TierR.Length; k++)
             {
                 var tier = YardKit.Cylinder(b.parent, "BH chocolate tier " + (k + 1), V(f.x, (below + TierTop[k]) * .5f, f.y), Vector3.up,
-                                            TierR[k] * 2f, TierTop[k] - below, Chocolate, YardKit.Solid.Solid);
+                                            TierR[k] * 2f, TierTop[k] - below, ChocolateFlowing, YardKit.Solid.Solid);
                 tier.AddComponent<CourseFloor>();
                 tier.AddComponent<ChocolateFlow>().Configure(Flow, DomeFlow, StillBand);
-                // The flowing part, darker: the still band under the rim is the tier's own colour.
-                float flowTop = TierTop[k] - StillBand;
-                if (flowTop > below + .1f)
-                    YardKit.Cylinder(b.parent, "BH chocolate flowing", V(f.x, (below + flowTop) * .5f, f.y), Vector3.up, TierR[k] * 2f + .04f, flowTop - below,
-                                     ChocolateFlowing, YardKit.Solid.None);
+                // Its two ladders: gilded, from the tier below up to its rim.
+                foreach (float at in LadderAt[k])
+                {
+                    var out_ = V(Mathf.Cos(at * Mathf.Deg2Rad), 0f, Mathf.Sin(at * Mathf.Deg2Rad));
+                    Ladder(b, "BH fountain ladder " + (k + 1), V(f.x, 0f, f.y) + out_ * TierR[k], out_, below, TierTop[k], LadderW);
+                }
                 below = TierTop[k];
             }
             float top = TierTop[TierTop.Length - 1];
@@ -483,18 +478,36 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the lamplighters' loft
 
-        // Over the screens passage, 20 m up. Its face to the hall is climbed (4 m): the leap from the fountain's top is to it.
-        // Its rail leaves the fountain's end and the two rope lanes open. R817: it ends past the second rope lane (it ran the
-        // hall's width, 27 m of it going nowhere).
+        // Over the screens passage, 20 m up. Its face to the hall is not climbed; a lamplighter's ladder hangs from it in
+        // front of the fountain (R825: "벽을 탈 수 있구나라는게 바로 생각이 안나" - the user did not see the face could be
+        // climbed): 1.6 m from the fountain's top, its foot 1 m under it. Its rail leaves the ladder and the two rope lanes
+        // open. R817: it ends past the second rope lane (it ran the hall's width, 27 m of it going nowhere).
         public const float LoftX0 = -31f, LoftX1 = 4.6f;
 
         static void Loft(CourseBuilder b)
         {
             Wall(b, "BH loft", LoftX0, LoftX1, LoftY - .6f, LoftY, 0f, ScreenZ - .4f).AddComponent<CourseFloor>();
-            Skin(b, "BH loft face", V(LoftX0, LoftY - 4f, ScreenZ - .4f), V(LoftX1, LoftY, ScreenZ)).AddComponent<CourseFloor>();
+            Wall(b, "BH loft face", LoftX0, LoftX1, LoftY - 4f, LoftY, ScreenZ - .4f, ScreenZ).AddComponent<CourseFloor>();
+            Ladder(b, "BH loft ladder", V(Fountain.x, 0f, ScreenZ), Vector3.forward, TierTop[TierTop.Length - 1] - 1f, LoftY, 1.6f);
             Wall(b, "BH loft end", LoftX1, LoftX1 + .3f, LoftY - 4f, LoftY + 3f, 0f, ScreenZ);
             foreach (var x in new[] { V(-24f, 0f, -3.6f), V(-1.6f, 0f, 1.6f), V(3.6f, 0f, LoftX1) })
                 Wall(b, "BH loft rail", x.x, x.z, LoftY, LoftY + 1.1f, ScreenZ - .25f, ScreenZ);
+        }
+
+        // A ladder up a face (R825): a climbable board LadderOut deep standing out of the face at `foot` (the face's point on
+        // the hall floor's level; x, z), facing `outward`, from y0 to y1, `width` across - orange, as every face to climb - with
+        // gilded rails and rungs on it (pictures). Its top is level with the floor over the face, so the climb ends on it.
+        static void Ladder(CourseBuilder b, string name, Vector3 foot, Vector3 outward, float y0, float y1, float width)
+        {
+            var turn = Quaternion.LookRotation(outward, Vector3.up);
+            float h = y1 - y0, depth = LadderOut + .1f;
+            var at = Root(b, name, V(foot.x, y0, foot.z) + outward * (depth * .5f - .1f));
+            at.localRotation = turn;
+            YardKit.Box(at, name + " board", V(0f, h * .5f, 0f), V(width, h, depth), Look.Climb);
+            foreach (float s in new[] { -1f, 1f })
+                YardKit.Box(at, name + " rail", V(s * (width * .5f - .06f), h * .5f, depth * .5f + .03f), V(.1f, h, .08f), Brass, YardKit.Solid.None);
+            for (float y = .3f; y < h - .1f; y += .4f)
+                YardKit.Box(at, name + " rung", V(0f, y, depth * .5f + .04f), V(width - .12f, .07f, .08f), Brass, YardKit.Solid.None);
         }
 
         // ------------------------------------------------------------------ 7. the chandeliers
@@ -580,7 +593,7 @@ namespace ChessFight.PawnRush
             Lay(BuffetY, P(CurtainX + .3f, CurtainOpenS - .3f), P(Fountain.x, BuffetZ1 - 1.4f), P(Fountain.x, Fountain.y + BowlR + .9f));
             Lay(LoftY, P(Fountain.x, ScreenZ - 1.2f), P(LinesX[0], ScreenZ - 1.2f), P(LinesX[0], ScreenZ - .9f));
             Lay(GreatY, P(0f, GreatZ - GreatR + 1.2f), P(0f, GreatZ + GreatR - 1.2f));
-            Lay(BalconyY, P(0f, TowerZ + 1.6f), P(0f, HallZ1 - .3f));
+            Lay(BalconyY, P(0f, BalconyZ0 + 1.6f), P(0f, HallZ1 - .3f));
             // The fountain's top: one arrow to the loft.
             Chevron(at, V(Fountain.x, TierTop[TierTop.Length - 1] + .03f, Fountain.y - .3f), Quaternion.LookRotation(Vector3.back));
         }
@@ -609,9 +622,6 @@ namespace ChessFight.PawnRush
         // A solid that cannot be climbed (slate), x0..x1, y0..y1, z0..z1.
         static GameObject Wall(CourseBuilder b, string name, float x0, float x1, float y0, float y1, float z0, float z1) =>
             b.Box(name, V(x0, y0, z0), V(x1, y1, z1), Look.NoClimb, true);
-
-        // A solid to climb (orange).
-        static GameObject Skin(CourseBuilder b, string name, Vector3 min, Vector3 max) => b.Box(name, min, max, Look.Climb);
 
         // A picture: no collider.
         static GameObject Paint(CourseBuilder b, string name, Vector3 min, Vector3 max, Material material) =>
