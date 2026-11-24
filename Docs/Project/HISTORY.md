@@ -329,7 +329,7 @@
 커밋마다 한 줄. 무엇을 왜 바꿨는지는 [REQUIREMENTS](REQUIREMENTS.md)의 같은 번호를 본다.
 `git log --oneline`과 같은 순서(최신이 위)다.
 
-`JY-gpt_gamemode`·`JY-kingrush` 줄의 요청 번호(R44~)는 [REQUIREMENTS §1-b](REQUIREMENTS.md#1-b-jy-gpt_gamemodejy-kingrush-계열-준영-님-채팅-소드파이트킹-러쉬) 표, 나머지는 §1 표다.
+`JY-gpt_gamemode`·`JY-kingrush` 줄의 요청 번호(R44~)는 [REQUIREMENTS §1-b](../Archive/REQUIREMENTS_R1_R809.md#1-b-jy-gpt_gamemodejy-kingrush-계열-준영-님-채팅-소드파이트킹-러쉬) 표, 나머지는 §1 표다.
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
