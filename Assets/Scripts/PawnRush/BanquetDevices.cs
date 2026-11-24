@@ -132,30 +132,36 @@ namespace ChessFight.PawnRush
     }
 
     // 6. A tier of the chocolate fountain: it does not move, but says it does (IMovingSurface, as ConveyorBeltSurface), so a
-    //    climber on its side is carried down at the flow's speed (climbing at 1.2 m/s gains 0.8; hanging still slides down)
-    //    and a pawn standing on its top is carried outward (walking in keeps it in place). This object is the tier's
-    //    cylinder (YardKit.Cylinder: local y -1 .. 1 between its bottom and its top).
+    //    climber on the flowing part of its side is carried down at the flow's speed (climbing at 1.2 m/s gains 0.8;
+    //    hanging still slides down). The last `stillBand` metres under its rim do not flow (R817): a climber's whole body
+    //    is carried with its wall, the fixed path over the lip too, and a flowing rim pulled every pawn that reached it back
+    //    down the face (the user's first run: "칸을 올라갈 때마다 단에 안올라가지고 계속 미끄러짐"). `outward` pushes
+    //    whoever stands on the top off it; the grey box has it at 0 (with 0.8 m/s on rings under a metre deep the pawns
+    //    that did get up were pushed off). This object is the tier's cylinder (YardKit.Cylinder: local y -1 .. 1).
     public sealed class ChocolateFlow : MonoBehaviour, IMovingSurface
     {
-        [SerializeField] float down = .4f, outward = .8f;
+        [SerializeField] float down = .4f, outward, stillBand = 1.3f;
 
-        // The top's flow is for what stands on it: a point this far over the top (a standing pawn's hips, not a climber
-        // about to climb over the edge).
+        // The top's flow is for what stands on it: a point this far over the top (a standing pawn's hips).
         const float StandingAbove = .5f;
 
         public float Down => down;
         public float Outward => outward;
+        public float StillBand => stillBand;
 
-        public void Configure(float downSpeed, float outwardSpeed)
+        public void Configure(float downSpeed, float outwardSpeed, float stillUnderTheRim)
         {
             down = downSpeed;
             outward = outwardSpeed;
+            stillBand = stillUnderTheRim;
         }
 
         public Vector3 PointVelocity(Vector3 worldPoint)
         {
             Vector3 up = transform.up, top = transform.TransformPoint(Vector3.up);
-            if (Vector3.Dot(worldPoint - top, up) < StandingAbove) return -up * down;
+            float over = Vector3.Dot(worldPoint - top, up);
+            if (over < -stillBand) return -up * down;
+            if (over < StandingAbove || outward <= 0f) return Vector3.zero;
             Vector3 d = worldPoint - transform.position;
             d -= up * Vector3.Dot(d, up);
             return d.sqrMagnitude < 1e-4f ? Vector3.zero : d.normalized * outward;
@@ -165,26 +171,30 @@ namespace ChessFight.PawnRush
     }
 
     // 8. The champagne tower's overflow. A sommelier pours into the top glass every `every` seconds; the overflow runs down
-    //    one level each `wave` seconds and runs over a level for `spill` seconds. While a level runs over, its glasses shine
-    //    and its ClimbPeel is on: whoever hangs on that level is washed down (let go, nudged down). Wait on the rim below.
+    //    one level each `wave` seconds and runs over a level for `spill` seconds. While a level runs over, champagne pours
+    //    down its four sides (the sheets), its glasses shine, and its sides wash down whoever climbs them (ChampagneLevel):
+    //    wait on the rim below, then climb in the gap. R817: the first grey box opened climbers' hands with a ClimbPeel
+    //    trigger round each level, and in the user's run nothing happened ("마지막 샴페인 구간은 아무 일도 일어나지 않음") -
+    //    the sides themselves now carry it, as the chocolate's do, and only what climbs them feels it.
     public sealed class ChampagneOverflow : MonoBehaviour
     {
-        [SerializeField] BoxCollider[] peels = new BoxCollider[0];   // one per level, bottom first, each with a ClimbPeel
         [SerializeField] Renderer[] glasses = new Renderer[0];       // one per level, bottom first
+        [SerializeField] Renderer[] sheets = new Renderer[0];        // four per level, bottom first
         [SerializeField] Renderer pour;
         [SerializeField] Material full, spilling;
-        [SerializeField] float every = 5f, pourFor = 1.2f, wave = .45f, spill = 1.4f, first = 1f, start = .2f;
+        [SerializeField] float every = 4f, pourFor = 1f, wave = .5f, spill = 1.6f, first = 1f, start = .2f;
 
-        public int Levels => peels.Length;
+        public int Levels => glasses.Length;
         public int Spills { get; private set; }
+        public float Every => every;
+        public float Spill => spill;
 
         bool[] was = new bool[0];
 
-        public void Configure(BoxCollider[] levelPeels, Renderer[] levelGlasses, Renderer pourPicture, Material fullMaterial,
-                              Material spillingMaterial)
+        public void Configure(Renderer[] levelGlasses, Renderer[] levelSheets, Renderer pourPicture, Material fullMaterial, Material spillingMaterial)
         {
-            peels = levelPeels;
             glasses = levelGlasses;
+            sheets = levelSheets;
             pour = pourPicture;
             full = fullMaterial;
             spilling = spillingMaterial;
@@ -195,7 +205,7 @@ namespace ChessFight.PawnRush
         {
             double u = (time - first) % every;
             if (u < 0.0) u += every;
-            double from = start + wave * (peels.Length - 1 - k);
+            double from = start + wave * (glasses.Length - 1 - k);
             return u >= from && u < from + spill;
         }
 
@@ -209,22 +219,89 @@ namespace ChessFight.PawnRush
         void FixedUpdate()
         {
             double now = ObstacleClock.Now;
-            if (was.Length != peels.Length) was = new bool[peels.Length];
-            for (int k = 0; k < peels.Length; k++)
+            if (was.Length != glasses.Length) was = new bool[glasses.Length];
+            for (int k = 0; k < glasses.Length; k++)
             {
                 bool on = Overflowing(k, now);
                 if (on && !was[k]) Spills++;
                 was[k] = on;
-                if (peels[k] != null && peels[k].enabled != on) peels[k].enabled = on;
             }
         }
 
         void Update()
         {
             double now = ObstacleClock.Now;
-            for (int k = 0; k < glasses.Length && k < peels.Length; k++)
-                if (glasses[k] != null) glasses[k].sharedMaterial = Overflowing(k, now) ? spilling : full;
+            for (int k = 0; k < glasses.Length; k++)
+            {
+                bool on = Overflowing(k, now);
+                if (glasses[k] != null) glasses[k].sharedMaterial = on ? spilling : full;
+                for (int s = 4 * k; s < 4 * k + 4 && s < sheets.Length; s++)
+                    if (sheets[s] != null) sheets[s].enabled = on;
+            }
             if (pour != null) pour.enabled = Pouring(now);
+        }
+    }
+
+    // A level of the champagne tower: still, but while the overflow runs over it its sides say they flow down fast
+    // (IMovingSurface), so a climber on them is carried down past what climbing gains and lands on the rim below. What
+    // stands on its top is not touched. This object is the level's box (local y -0.5 .. 0.5).
+    public sealed class ChampagneLevel : MonoBehaviour, IMovingSurface
+    {
+        [SerializeField] ChampagneOverflow tower;
+        [SerializeField] int level;
+        [SerializeField] float wash = 2.5f;
+
+        public void Configure(ChampagneOverflow overflow, int index, float washSpeed)
+        {
+            tower = overflow;
+            level = index;
+            wash = washSpeed;
+        }
+
+        public Vector3 PointVelocity(Vector3 worldPoint)
+        {
+            if (tower == null || !tower.Overflowing(level, ObstacleClock.Now)) return Vector3.zero;
+            Vector3 up = transform.up, top = transform.TransformPoint(new Vector3(0f, .5f, 0f));
+            return Vector3.Dot(worldPoint - top, up) < -.05f ? -up * wash : Vector3.zero;
+        }
+
+        public Quaternion DeltaRotation => Quaternion.identity;
+    }
+
+    // A lamp lit by the clock (R817): in a window of every `period` seconds, `from` .. `to` seconds round `at`. The
+    // boarding place on the dais lights it when a queen is about to stand still in front of it, the stage's alighting
+    // place when one is about to stop there. Only looks.
+    public sealed class ClockLamp : MonoBehaviour
+    {
+        [SerializeField] float period = 4.775f, at, from = -1f, to = .5f;
+        [SerializeField] Material lit, unlit;
+
+        Renderer[] lamps = new Renderer[0];
+
+        public void Configure(float periodSeconds, float atSeconds, float fromSeconds, float toSeconds, Material litMaterial, Material unlitMaterial)
+        {
+            period = periodSeconds;
+            at = atSeconds;
+            from = fromSeconds;
+            to = toSeconds;
+            lit = litMaterial;
+            unlit = unlitMaterial;
+        }
+
+        public bool Lit(double time)
+        {
+            double u = (time - at) % period;
+            if (u < 0.0) u += period;
+            if (u > period * .5) u -= period;   // -period/2 .. period/2 round the moment
+            return u >= from && u < to;
+        }
+
+        void Awake() => lamps = GetComponentsInChildren<Renderer>(true);
+
+        void Update()
+        {
+            var m = Lit(ObstacleClock.Now) ? lit : unlit;
+            foreach (var r in lamps) if (r != null && m != null) r.sharedMaterial = m;
         }
     }
 

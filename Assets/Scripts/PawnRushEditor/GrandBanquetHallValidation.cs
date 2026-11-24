@@ -142,7 +142,7 @@ namespace ChessFight.PawnRush.Editor
                       "entry " + V(section.EntryLocal.position) + ", exit " + V(section.ExitLocal.position));
                 Faces();
                 WaltzArithmetic();
-                Log("      the tower at z " + F(B.TowerZ) + ", the chandeliers' landing z " + F(B.LandZ) + ", rope pivots z " +
+                Log("      the tower at z " + F(B.TowerZ) + ", the chandeliers' landing z " + F(B.LandZ) + ", the great chandelier at z " + F(B.GreatZ) + ", rope pivots z " +
                     F(B.ScreenZ + B.RopeAlong[0]) + " .. " + F(B.ScreenZ + B.RopeAlong[B.RopeAlong.Length - 1]) + ", ends " + F(B.RopeLow[0]) + " .. " + F(B.RopeLow[B.RopeLow.Length - 1]) + " m");
                 Check("E6 errors logged while building and checking", errors.Count == 0,
                       errors.Count + (errors.Count > 0 ? ", the first: " + errors[0].Split('\n')[0] : ""));
@@ -160,13 +160,15 @@ namespace ChessFight.PawnRush.Editor
                 couples = content.GetComponentsInChildren<WaltzCouple>(true).Length, pleats = content.GetComponentsInChildren<CurtainPleat>(true).Length,
                 ropes = content.GetComponentsInChildren<RopeLine>(true).Length, tricks = content.GetComponentsInChildren<TableclothTrick>(true).Length,
                 flows = content.GetComponentsInChildren<ChocolateFlow>(true).Length, towers = content.GetComponentsInChildren<ChampagneOverflow>(true).Length,
-                peels = content.GetComponentsInChildren<ClimbPeel>(true).Length, cps = content.GetComponentsInChildren<CourseCheckpoint>(true).Length,
+                levels = content.GetComponentsInChildren<ChampagneLevel>(true).Length, lamps = content.GetComponentsInChildren<ClockLamp>(true).Length,
+                great = content.Find("BH great chandelier") != null ? 1 : 0, cps = content.GetComponentsInChildren<CourseCheckpoint>(true).Length,
                 kills = content.GetComponentsInChildren<KillVolume>(true).Length, gaps = content.GetComponentsInChildren<IntendedGap>(true).Length;
-            Check(id + " what is there", waiters == 5 && cloches == 2 && couples == 10 && pleats == 20 && ropes == 12 && tricks == 1 && flows == 4 &&
-                  towers == 1 && peels == 4 && cps == 8 && kills == 4 && gaps == 5,
+            Check(id + " what is there", waiters == 5 && cloches == 2 && couples == 10 && pleats == 20 && ropes == 10 && great == 1 && tricks == 1 && flows == 3 &&
+                  towers == 1 && levels == 4 && lamps == 4 && cps == 9 && kills == 5 && gaps == 5,
                   "waiters " + waiters + " (5), cloches " + cloches + " (2), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes +
-                  " (12), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (4), towers " + towers + " (1) with peels " + peels + " (4), checkpoints " +
-                  cps + " (8), kill volumes " + kills + " (4), meant gaps " + gaps + " (5); colliders " + content.GetComponentsInChildren<Collider>(true).Length);
+                  " (10) and the great one " + great + " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3), towers " + towers + " (1) with washing levels " +
+                  levels + " (4), lamps " + lamps + " (4), checkpoints " + cps + " (9), kill volumes " + kills + " (5), meant gaps " + gaps + " (5); colliders " +
+                  content.GetComponentsInChildren<Collider>(true).Length);
         }
 
         // A ray from a point toward a face: the first solid it meets must be one that can be held, or one that cannot.
@@ -206,7 +208,15 @@ namespace ChessFight.PawnRush.Editor
             Face("the pedestal's side", false, new Vector3(0f, 12f, B.TowerZ - 7f), n1);
             Face("the tower's second level", true, new Vector3(0f, 17f, B.TowerZ - 4f), n1);
             Face("the balcony's edge (from the dais)", false, new Vector3(4f, 20.5f, B.TowerZ - 1f), n1);
+            Face("the dais's balustrade", false, new Vector3(5f, 10.9f, 54.5f), n1);
+            Face("the dais gallery's west end", false, new Vector3(-9f, 11f, 58f), e1);
+            Face("the passage's west end", false, new Vector3(-3f, 2f, 3f), w1);
+            Face("the loft's east end", false, new Vector3(2f, 21f, 3f), e1);
             Check("E4 faces to climb and faces that must not be", bad == 0, n + " rays, " + bad + " wrong");
+            // The openings: nothing in the boarding place's way down to the queen, nor over the cloches' landing.
+            bool Open(Vector3 from, Vector3 dir, float length) => !Physics.Raycast(frame.TransformPoint(from), frame.TransformDirection(dir), length, ~0, QueryTriggerInteraction.Ignore);
+            bool boarding = Open(new Vector3(BanquetWaltz.BoardX, 10.9f, 58f), s1, 2.4f), cloches = Open(new Vector3(B.ClocheX[0], 10.9f, 58f), s1, 2.4f);
+            Check("E7 the balustrade's openings (the boarding place, the cloches)", boarding && cloches, "boarding " + (boarding ? "open" : "shut") + ", cloches " + (cloches ? "open" : "shut"));
         }
 
         // Couple 0's queen must stand still in front of the dais at 0 s (1 m off its face) and in front of the stage at about
@@ -274,7 +284,7 @@ namespace ChessFight.PawnRush.Editor
         {
             if (change == PlayModeStateChange.EnteredPlayMode && SessionState.GetBool(ActiveKey, false))
             {
-                failures.Clear(); errors.Clear(); pictures.Clear(); ranges.Clear(); shell.Clear(); lastZ.Clear();
+                failures.Clear(); errors.Clear(); pictures.Clear(); ranges.Clear(); shell.Clear(); lastZ.Clear(); lampLit.Clear();
                 stopping = judged = false; watchFrom = -1f; samples = 0f; wraps = 0;
                 frame = content = null;
                 beganAt = EditorApplication.timeSinceStartup;
@@ -377,8 +387,12 @@ namespace ChessFight.PawnRush.Editor
             }
             foreach (var rope in content.GetComponentsInChildren<RopeLine>())
                 Note(rope.name, frame.InverseTransformPoint(rope.Point(rope.Length, ObstacleClock.Now)).z);
+            foreach (var lamp in content.GetComponentsInChildren<ClockLamp>())
+                if (lamp.Lit(ObstacleClock.Now)) lampLit[lamp.transform.parent.name] = lampLit.TryGetValue(lamp.transform.parent.name, out float f) ? f + 1f : 1f;
             samples++;
         }
+
+        static readonly Dictionary<string, float> lampLit = new Dictionary<string, float>();
 
         static void Judge()
         {
@@ -405,14 +419,14 @@ namespace ChessFight.PawnRush.Editor
                     ropes++;
                     int k = kv.Key[kv.Key.Length - 1] - '1';
                     float mid = B.ScreenZ + B.RopeAlong[k];
-                    bool ok = Near(kv.Value.x, mid - B.RopeEnd, .2f) && Near(kv.Value.y, mid + B.RopeEnd, .2f);
+                    bool ok = Near(kv.Value.x, mid - B.RopeEnd(k), .2f) && Near(kv.Value.y, mid + B.RopeEnd(k), .2f);
                     if (ok) ropesOk++; else worst += " " + kv.Key + " " + F(kv.Value.x) + ".." + F(kv.Value.y);
                 }
             }
             Check("P2 waiters walk the lane (and are cut back to the kitchen)", waiters == 5 && waitersOk == 5 && wraps >= 3,
                   waitersOk + " of " + waiters + ", " + wraps + " cuts back to the kitchen" + worst);
             Check("P3 cloches go from the table to 5.6 m over it", cloches == 2 && clochesOk == 2, clochesOk + " of " + cloches + worst);
-            Check("P4 chandeliers' ends swing 4.18 m each way", ropes == 12 && ropesOk == 12, ropesOk + " of " + ropes + worst);
+            Check("P4 chandeliers' ends swing 4.18 m each way (5.14 m for the second line)", ropes == 10 && ropesOk == 10, ropesOk + " of " + ropes + worst);
             var south = ranges.TryGetValue("BH pleat S1", out var s) ? s : Vector2.zero;
             var north = ranges.TryGetValue("BH pleat N1", out var n) ? n : Vector2.zero;
             Check("P5 the curtain opens: the south half's leading pleat goes to the buffet, the north one to the stage's end",
@@ -425,8 +439,18 @@ namespace ChessFight.PawnRush.Editor
                   "middles x " + F(cx.x) + ".." + F(cx.y) + ", z " + F(cz.x) + ".." + F(cz.y));
             var trick = content.GetComponentInChildren<TableclothTrick>();
             var tower = content.GetComponentInChildren<ChampagneOverflow>();
-            Check("P7 the tablecloth is pulled every 10 s and the tower runs over every 5 s", trick != null && trick.Pulls >= 1 && tower != null && tower.Spills >= 8,
+            Check("P7 the tablecloth is pulled every 10 s and the tower runs over every 4 s", trick != null && trick.Pulls >= 1 && tower != null && tower.Spills >= 8,
                   "pulls " + (trick != null ? trick.Pulls : -1) + " (nobody on the cloth: throws " + (trick != null ? trick.Throws : -1) + "), level spills " + (tower != null ? tower.Spills : -1));
+            // The lamps: lit for 1.6 s of every 4.8 s (a third of the frames, roughly).
+            string lit = "";
+            bool lampsOk = lampLit.Count == 4;
+            foreach (var kv in lampLit)
+            {
+                float share = kv.Value / Mathf.Max(1f, samples);
+                lit += " " + kv.Key + " " + F(100f * share) + " %";
+                lampsOk &= share > .2f && share < .45f;
+            }
+            Check("P9 the boarding and alighting lamps light as queens stop", lampsOk, lampLit.Count + " of 4 lit at all;" + lit);
             Log("      " + F(samples) + " frames watched");
         }
 
@@ -454,7 +478,10 @@ namespace ChessFight.PawnRush.Editor
             Shot("hall_07_stage_curtain", new Vector3(-6f, 14f, 30f), new Vector3(-24f, 10f, 30f), 66f, false);
             Shot("hall_08_buffet_fountain", new Vector3(-12f, 16f, 22f), new Vector3(-27f, 11f, 8f), 60f, false);
             Shot("hall_09_chandeliers", new Vector3(18f, 26f, 2f), new Vector3(0f, 19f, 36f), 62f, false);
-            Shot("hall_10_tower_balcony", new Vector3(14f, 22f, 52f), new Vector3(0f, 17f, 66f), 55f, false);
+            Shot("hall_10_tower_balcony", new Vector3(14f, 22f, 52f), new Vector3(0f, 17f, B.TowerZ + 1f), 55f, false);
+            Shot("hall_11_dais_gallery", new Vector3(16f, 13.5f, 59f), new Vector3(-4.25f, 10.5f, 56.5f), 60f, false);
+            Shot("hall_12_fountain_close", new Vector3(-19f, 13.5f, 16f), new Vector3(-27.7f, 12f, 9.2f), 60f, false);
+            Shot("hall_13_from_the_loft", new Vector3(-2.6f, 21.6f, 4f), new Vector3(0f, 18f, 30f), 66f, false);
         }
 
         static void Capture(string name, Vector3 eye, Vector3 target, Vector3 up, float fieldOfView, bool flat, int width, int height, bool hideShell)

@@ -47,53 +47,68 @@ namespace ChessFight.PawnRush
 
         // 5. The stage and its curtain. CurtainZ is where couple 0's queen stands still on the west straight 8.36 s after
         //    the dais (banquet_layout.py ALIGHT): the curtain's halves meet there.
-        public const float CurtainZ = 40.05f, StageX1 = -20f, StageZ0 = CurtainZ - 11f, StageZ1 = CurtainZ + 9f;
+        public const float CurtainZ = 40.05f, AlightAt = 8.36f, StageX1 = -20f, StageZ0 = CurtainZ - 11f, StageZ1 = CurtainZ + 9f;
         public const float CurtainX = -24.5f, PleatW = 1.05f, PleatBottom = StageY + .3f, RailY = StageY + 10.6f, CurtainOpenS = 16f;
         public const float CurtainShut = 6f, CurtainOpening = 5f, CurtainOpen = 2f, CurtainClosing = 2f;
         public const int Pleats = 10;
         public static readonly float[] BassZ = { 19f, StageZ0 - 2f };
-        public const float BassX = -23.95f, BassTop = 10f;
+        // R817: a pawn hangs about 0.9 m under its hands, so with its hands at 10.9 m (3.5 m up the curtain) its feet are at
+        // 10.0: the basses' scrolls end at 9.6 so that one clears them and one a hand lower does not.
+        public const float BassX = -23.95f, BassTop = 9.6f;
 
-        // 6. The dessert buffet (south-west corner, at the stage's height) and the chocolate fountain on it.
+        // 6. The dessert buffet (south-west corner, at the stage's height) and the chocolate fountain on it. R817: three tiers
+        //    with rings a metre deep (four with 0.8 m rings before), each tier's last 1.3 m under its rim still.
         public const float BuffetX1 = -23.5f, BuffetZ0 = 3f, BuffetZ1 = 17f, BuffetY = StageY;
-        public static readonly Vector2 Fountain = new Vector2(-27.7f, 8.8f);
-        public const float BowlR = 4f, BowlTop = 7.9f, Flow = .4f, DomeFlow = .8f;
-        public static readonly float[] TierR = { 3.2f, 2.4f, 1.6f, .9f };
-        public static readonly float[] TierTop = { 9.8f, 12.2f, 14.6f, 16.4f };
+        public static readonly Vector2 Fountain = new Vector2(-27.7f, 9.2f);
+        public const float BowlR = 4.2f, BowlTop = 7.9f, Flow = .4f, DomeFlow = 0f, StillBand = 1.3f;
+        public static readonly float[] TierR = { 3.3f, 2.3f, 1.3f };
+        public static readonly float[] TierTop = { 10.733f, 13.567f, 16.4f };
 
-        // 7. The chandeliers: two lines of six from the loft's edge to the head table. Each rope swings 40 degrees each way
-        //    along the hall in 5 s; neighbours are half a swing apart, so their ends meet at the ends of their swings.
-        //    The five handovers (gap, drop): pass, drop and catch, pass, fly and catch, pass.
+        // 7. The chandeliers. R817 (the user: "샹들리에 코스가 너무 김"): two lines of three from the loft's edge to the
+        //    great chandelier in the middle of the hall - a wide still ring to stand on, get the breath back and a
+        //    checkpoint - and two lines of two longer ones from it to the tower's pedestal. Each rope swings 40 degrees each
+        //    way along the hall in 5 s; neighbours are half a swing apart, so their ends meet at the ends of their swings.
+        //    Every handover is a plain pass (0.6 - 0.8 m, 0.5 m lower); the flying catch is gone.
         public static readonly float[] LinesX = { -2.6f, 2.6f };
-        public const float RopeL = 6.5f, RopeSwing = 40f, RopePeriod = 5f;
-        public static readonly float RopeEnd = RopeL * Mathf.Sin(RopeSwing * Mathf.Deg2Rad);
-        static readonly float[] HandoverGap = { .8f, .6f, .8f, 1.6f, .8f }, HandoverDrop = { .5f, 1f, .5f, .5f, .5f };
-        public static readonly float[] RopeAlong = Along(), RopeLow = Low();
+        public const float RopeSwing = 40f, RopePeriod = 5f, GreatR = 4.2f, GreatY = 17.8f;
+        public const int FirstLine = 3;   // the ropes before the great chandelier
+        public static readonly float[] RopeL = { 6.5f, 6.5f, 6.5f, 8f, 8f };
+        public static readonly float[] RopeLow = { LoftY + .55f, LoftY + .05f, LoftY - .45f, GreatY + .55f, GreatY + .05f };
+        // Half a rope's travel along the hall (its end at the end of its swing, from under its pivot).
+        public static float RopeEnd(int k) => RopeL[k] * Mathf.Sin(RopeSwing * Mathf.Deg2Rad);
+        // The great chandelier's ring under each line: from its middle to its rim along a line 2.6 m off the middle.
+        static readonly float GreatChord = Mathf.Sqrt(GreatR * GreatR - 2.6f * 2.6f);
+        public static readonly float[] RopeAlong = Along();
+        public static readonly float GreatZ = ScreenZ + RopeAlong[FirstLine - 1] + RopeEnd(FirstLine - 1) + .3f + GreatChord;
 
-        // 8. The champagne tower in the middle of the head table and the king's balcony behind it.
+        // 8. The champagne tower in the middle of the head table and the king's balcony behind it. R817: the last rope's end
+        //    comes over the pedestal (0.6 m short of the tower), so all four levels are climbed between the overflows.
         public const int Levels = 4;
         public const float GlassPitch = 1.9f, LevelH = 1.5f, BalconyY = HeadY + Levels * LevelH;
-        public static readonly float LandZ = ScreenZ + RopeAlong[RopeAlong.Length - 1] + RopeEnd + .25f;
-        public static readonly float TowerZ = LandZ + .3f + (Levels - 2) * .5f * GlassPitch + .95f;
+        public static readonly float LandZ = ScreenZ + RopeAlong[RopeAlong.Length - 1] + RopeEnd(RopeAlong.Length - 1);
+        public static readonly float TowerZ = LandZ + .6f + Levels * GlassPitch * .5f;
 
+        // Pivots along the hall from the loft's edge: the first line from 0.35 m off the loft, the second from 0.3 m off the
+        // great chandelier's north rim.
         static float[] Along()
         {
-            var a = new float[HandoverGap.Length + 1];
-            a[0] = .35f + RopeEnd;   // from the loft's edge
-            for (int i = 0; i < HandoverGap.Length; i++) a[i + 1] = a[i] + 2f * RopeEnd + HandoverGap[i];
-            return a;
-        }
-
-        static float[] Low()
-        {
-            var a = new float[HandoverDrop.Length + 1];
-            a[0] = LoftY + .55f;     // the first rope's end at its south end, a hand over the loft's floor
-            for (int i = 0; i < HandoverDrop.Length; i++) a[i + 1] = a[i] - HandoverDrop[i];
+            float[] gap = { .8f, .6f, 0f, .8f };
+            var a = new float[RopeL.Length];
+            a[0] = .35f + RopeEnd(0);
+            for (int k = 1; k < RopeL.Length; k++)
+            {
+                if (k == FirstLine)
+                {
+                    float greatZ = ScreenZ + a[k - 1] + RopeEnd(k - 1) + .3f + GreatChord;
+                    a[k] = greatZ + GreatChord + .3f - ScreenZ + RopeEnd(k);
+                }
+                else a[k] = a[k - 1] + RopeEnd(k - 1) + gap[k - 1] + RopeEnd(k);
+            }
             return a;
         }
 
         // A rope's pivot height: its end at the end of its swing is RopeLow.
-        public static float PivotY(int k) => RopeLow[k] + RopeL * Mathf.Cos(RopeSwing * Mathf.Deg2Rad);
+        public static float PivotY(int k) => RopeLow[k] + RopeL[k] * Mathf.Cos(RopeSwing * Mathf.Deg2Rad);
 
         // Grey-box colours over the clock tower's (orange climb, slate no, violet moves, green rest, red cue): people and
         // things that are only pictures, the cloth, chocolate, champagne running over, and the floors that end a run.
@@ -101,10 +116,16 @@ namespace ChessFight.PawnRush
         static Material Cloth => Arena.Lit("M_BanquetCloth", Arena.Hex("#EFE8D6"), 0f, .85f);
         static Material Runner => Arena.Lit("M_BanquetRunner", Arena.Hex("#7F8C42"), 0f, .85f);
         static Material Chocolate => Arena.Lit("M_BanquetChocolate", Arena.Hex("#6E4430"), 0f, .35f);
+        static Material ChocolateFlowing => Arena.Lit("M_BanquetChocolateFlowing", Arena.Hex("#3E2218"), 0f, .15f);
         static Material Champagne => Arena.Lit("M_BanquetChampagne", Arena.Hex("#FFE9A6"), 1f, .3f);
         static Material FallFloor => Arena.Lit("M_BanquetFallFloor", Arena.Hex("#3E3746"), 0f, .7f);
         static Material Brass => Arena.Lit("M_BanquetBrass", Arena.Hex("#C9A240"), .1f, .4f);
         static Material Candle => Arena.Lit("M_BanquetCandle", Arena.Hex("#FFC86A"), 1.4f, .5f);
+        // R817 (the user: "길을 모르겠음"): the way is laid with a red carpet and gold arrows, and two lamps say when to go.
+        static Material Carpet => Arena.Lit("M_BanquetCarpet", Arena.Hex("#B3263A"), 0f, .9f);
+        static Material Arrow => Arena.Lit("M_BanquetArrow", Arena.Hex("#FFD45A"), .7f, .5f);
+        static Material LampOn => Arena.Lit("M_BanquetLampOn", Arena.Hex("#7CFF9A"), 2.2f, .4f);
+        static Material LampOff => Arena.Lit("M_BanquetLampOff", Arena.Hex("#4A4636"), 0f, .6f);
 
         public static void Build(GrandBanquetHallSection hall)
         {
@@ -128,6 +149,8 @@ namespace ChessFight.PawnRush
             Buffet(b);
             Loft(b);
             Chandeliers(b);
+            GreatChandelier(b);
+            TheWay(b);
             Course(b);
 
             hall.GetComponent<PawnRushSection>().Describe(GrandBanquetHallSection.Id, GrandBanquetHallSection.DisplayName,
@@ -155,6 +178,8 @@ namespace ChessFight.PawnRush
             Wall(b, "BH screen S", BuffetX1, 13.2f, 0f, 6f, ScreenZ - .2f, ScreenZ + .2f);
             Wall(b, "BH screen E", 12.8f, 13.2f, 0f, 6f, ScreenZ + .2f, TableZ0);
             Paint(b, "BH screen cap S", V(BuffetX1, 6f, ScreenZ - .3f), V(13.3f, 6.3f, ScreenZ + .3f), Brass);
+            // R817: the passage goes one way, east to the servery; its west end (nothing there) is shut at the doorway.
+            Wall(b, "BH passage end", -6.4f, -6f, 0f, 6f, 0f, ScreenZ - .2f);
 
             var start = new GameObject("Start").transform;   // where the map test drops the pawn
             start.SetParent(b.parent, false);
@@ -272,13 +297,36 @@ namespace ChessFight.PawnRush
 
         // The dais's front is a sheer marble face (its stairs are behind, for the court): the cloches are the way up. The
         // head table's middle (the pedestal under the tower) and its two wings are skirted to the dais: not climbed.
+        // R817 (the user: "쓸데없는 길도 너무 많음", "왈츠를 타기까지 유도가 잘 안됨"): in front of the head table the dais is
+        // a gallery from the cloches to the boarding place and no further - walled at both ends and between the tables -
+        // and its edge has a balustrade with two openings: where the cloches set pawns down, and where a queen stands
+        // still (a lamp on each side of it lights as one is about to).
         static void Dais(CourseBuilder b)
         {
             Wall(b, "BH royal dais", HallX0, HallX1, 0f, DaisY, DaisZ, HallZ1).AddComponent<CourseFloor>();
             Paint(b, "BH dais edge", V(HallX0, DaisY - .4f, DaisZ - .12f), V(HallX1, DaisY + .02f, DaisZ), Brass);
-            Wall(b, "BH head table W", -24f, -6f, DaisY, HeadY, TowerZ - 3.5f, TowerZ + 2.5f).AddComponent<CourseFloor>();
-            Wall(b, "BH head table E", 6f, 24f, DaisY, HeadY, TowerZ - 3.5f, TowerZ + 2.5f).AddComponent<CourseFloor>();
+            float tables = TowerZ - 3.5f;
+            Wall(b, "BH head table W", -24f, -6f, DaisY, HeadY, tables, TowerZ + 2.5f).AddComponent<CourseFloor>();
+            Wall(b, "BH head table E", 6f, 24f, DaisY, HeadY, tables, TowerZ + 2.5f).AddComponent<CourseFloor>();
             Wall(b, "BH pedestal", -5f, 5f, DaisY, HeadY, TowerZ - 5f, TowerZ + 5f).AddComponent<CourseFloor>();
+
+            float board = BanquetWaltz.BoardX, opening = 1.35f;
+            Wall(b, "BH balustrade", HallX0, board - opening, DaisY, DaisY + 1.1f, DaisZ, DaisZ + .3f);
+            Wall(b, "BH balustrade", board + opening, ClocheX[0] - ClocheR - .4f, DaisY, DaisY + 1.1f, DaisZ, DaisZ + .3f);
+            Wall(b, "BH balustrade", ClocheX[1] + ClocheR + .4f, HallX1, DaisY, DaisY + 1.1f, DaisZ, DaisZ + .3f);
+            Wall(b, "BH gallery end W", board - opening - 1.7f, board - opening - 1.4f, DaisY, DaisY + 2.6f, DaisZ + .3f, tables);
+            Wall(b, "BH gallery end E", 26f, 26.3f, DaisY, DaisY + 2.6f, DaisZ + .3f, tables + .3f);
+            Wall(b, "BH gallery end NE", 24f, 26f, DaisY, DaisY + 2.6f, tables, tables + .3f);
+            Wall(b, "BH gallery gap W", -6f, -5f, DaisY, DaisY + 2.6f, tables, tables + .3f);
+            Wall(b, "BH gallery gap E", 5f, 6f, DaisY, DaisY + 2.6f, tables, tables + .3f);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                var post = Root(b, "BH boarding lamp " + (s < 0f ? "W" : "E"), V(board + s * (opening + .15f), DaisY, DaisZ + .15f));
+                YardKit.Box(post, "BH boarding post", V(0f, .9f, 0f), V(.3f, 1.8f, .3f), Brass, YardKit.Solid.NoClimb);
+                YardKit.Ball(post, "BH boarding lamp globe", V(0f, 2.1f, 0f), .6f, LampOff, YardKit.Solid.None);
+                post.Find("BH boarding lamp globe").gameObject.AddComponent<ClockLamp>()
+                    .Configure(BanquetWaltz.Stop / BanquetWaltz.Speed, 0f, -1.2f, .4f, LampOn, LampOff);
+            }
             for (int i = 0; i < 6; i++)
             {
                 float x = (i < 3 ? -21f : 9f) + 6f * (i % 3);
@@ -290,33 +338,36 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ 8. the champagne tower and the balcony
 
         // Four levels of coupes, 4 x 4 at the bottom to one at the top, 1.5 m a level; each level's rim round the next is
-        // 0.95 m to stand on. The levels' sides are climbed. A pour every 5 s; while a level runs over its peel is on.
+        // 0.95 m to stand on. The levels' sides are climbed. A pour every 4 s runs down a level each 0.5 s and over each
+        // for 1.6 s: champagne sheets down its sides, and its sides wash climbers down (ChampagneLevel).
         static void ChampagneTower(CourseBuilder b)
         {
             var tower = Root(b, "BH champagne tower", V(0f, 0f, TowerZ));
-            var peels = new BoxCollider[Levels];
             var glasses = new Renderer[Levels];
+            var sheets = new Renderer[4 * Levels];
+            var levels = new ChampagneLevel[Levels];
             for (int k = 0; k < Levels; k++)
             {
-                float half = (Levels - k) * GlassPitch * .5f, y0 = HeadY + k * LevelH;
-                var level = YardKit.Box(tower, "BH tower level " + (k + 1), V(0f, y0 + LevelH * .5f, 0f), V(2f * half, LevelH, 2f * half), Look.Climb);
+                float half = (Levels - k) * GlassPitch * .5f, y0 = HeadY + k * LevelH, y = y0 + LevelH * .5f;
+                var level = YardKit.Box(tower, "BH tower level " + (k + 1), V(0f, y, 0f), V(2f * half, LevelH, 2f * half), Look.Climb);
                 level.AddComponent<CourseFloor>();
                 glasses[k] = level.GetComponent<Renderer>();
-                // The peel: round the level's sides from half a metre over the rim below to its own rim.
-                var peel = new GameObject("BH overflow " + (k + 1));
-                peel.transform.SetParent(tower, false);
-                peel.transform.localPosition = V(0f, y0 + (.5f + LevelH) * .5f, 0f);
-                var box = peel.AddComponent<BoxCollider>();
-                box.isTrigger = true;
-                box.size = V(2f * half + .7f, LevelH - .5f, 2f * half + .7f);
-                box.enabled = false;
-                peel.AddComponent<ClimbPeel>().Configure(Vector3.down, 1f);
-                peels[k] = box;
+                levels[k] = level.AddComponent<ChampagneLevel>();
+                for (int s = 0; s < 4; s++)
+                {
+                    var turn = Quaternion.Euler(0f, 90f * s, 0f);
+                    var sheet = YardKit.Box(tower, "BH champagne sheet", turn * V(0f, 0f, half + .06f) + V(0f, y - .1f, 0f), V(2f * half + .1f, LevelH + .2f, .05f),
+                                            Champagne, YardKit.Solid.None, turn);
+                    sheets[4 * k + s] = sheet.GetComponent<Renderer>();
+                    sheets[4 * k + s].enabled = false;
+                }
             }
             // The sommelier's bottle over the top glass and the pour (pictures).
             YardKit.Slab(tower, "BH bottle", V(0f, BalconyY + 1.4f, .5f), V(0f, BalconyY + 3.2f, 2.6f), .55f, .55f, Look.Rest, YardKit.Solid.None);
             var pour = YardKit.Box(tower, "BH pour", V(0f, BalconyY + .6f, .3f), V(.14f, 1.2f, .14f), Champagne, YardKit.Solid.None);
-            tower.gameObject.AddComponent<ChampagneOverflow>().Configure(peels, glasses, pour.GetComponent<Renderer>(), Look.Climb, Champagne);
+            var overflow = tower.gameObject.AddComponent<ChampagneOverflow>();
+            overflow.Configure(glasses, sheets, pour.GetComponent<Renderer>(), Look.Climb, Champagne);
+            for (int k = 0; k < Levels; k++) levels[k].Configure(overflow, k, 2.5f);
 
             // The king's balcony: level with the top glass, from the tower's north side to the north wall.
             Wall(b, "BH balcony", -6f, 6f, BalconyY - .6f, BalconyY, TowerZ + .95f, HallZ1).AddComponent<CourseFloor>();
@@ -369,6 +420,15 @@ namespace ChessFight.PawnRush
                     YardKit.Box(p, "BH curtain", V(0f, (PleatBottom + RailY) * .5f, 0f), V(.24f, RailY - PleatBottom, PleatW), Look.Mover);
                     p.gameObject.AddComponent<CurtainPleat>().Configure(open - shut, CurtainShut, CurtainOpening, CurtainOpen, CurtainClosing, 0f);
                 }
+            // R817: the place where a queen sets a pawn down, lit as she is about to stand still in front of it.
+            foreach (float s in new[] { -1f, 1f })
+            {
+                var post = Root(b, "BH alighting lamp " + (s < 0f ? "S" : "N"), V(StageX1 - .2f, StageY, CurtainZ + s * 1.7f));
+                YardKit.Box(post, "BH alighting post", V(0f, .9f, 0f), V(.3f, 1.8f, .3f), Brass, YardKit.Solid.NoClimb);
+                YardKit.Ball(post, "BH alighting lamp globe", V(0f, 2.1f, 0f), .6f, LampOff, YardKit.Solid.None);
+                post.Find("BH alighting lamp globe").gameObject.AddComponent<ClockLamp>()
+                    .Configure(BanquetWaltz.Stop / BanquetWaltz.Speed, AlightAt, -1.2f, .4f, LampOn, LampOff);
+            }
             // The orchestra behind the curtain (pictures).
             foreach (var at in new[] { V(-29f, StageY, StageZ0 + 4f), V(-29f, StageY, StageZ0 + 9f), V(-27f, StageY, StageZ0 + 14f), V(-29f, StageY, StageZ1 - 3f) })
             {
@@ -387,7 +447,8 @@ namespace ChessFight.PawnRush
         // ------------------------------------------------------------------ 6. the dessert buffet and the chocolate fountain
 
         // The buffet's east edge is 4.1 m from a queen's shoulders at her stop beside it: too far to jump. Its skirts are not
-        // climbed. On it the fountain: a bowl (a 0.5 m step) and four tiers whose sides flow down and whose tops flow out.
+        // climbed. On it the fountain: a bowl (a 0.5 m step) and three tiers whose sides flow down but for the last 1.3 m
+        // under each rim; their tops (rings a metre deep) are still.
         static void Buffet(CourseBuilder b)
         {
             Wall(b, "BH dessert buffet", HallX0, BuffetX1, 0f, BuffetY, BuffetZ0, BuffetZ1).AddComponent<CourseFloor>();
@@ -400,11 +461,17 @@ namespace ChessFight.PawnRush
                 var tier = YardKit.Cylinder(b.parent, "BH chocolate tier " + (k + 1), V(f.x, (below + TierTop[k]) * .5f, f.y), Vector3.up,
                                             TierR[k] * 2f, TierTop[k] - below, Chocolate, YardKit.Solid.Solid);
                 tier.AddComponent<CourseFloor>();
-                tier.AddComponent<ChocolateFlow>().Configure(Flow, DomeFlow);
+                tier.AddComponent<ChocolateFlow>().Configure(Flow, DomeFlow, StillBand);
+                // The flowing part, darker: the still band under the rim is the tier's own colour.
+                float flowTop = TierTop[k] - StillBand;
+                if (flowTop > below + .1f)
+                    YardKit.Cylinder(b.parent, "BH chocolate flowing", V(f.x, (below + flowTop) * .5f, f.y), Vector3.up, TierR[k] * 2f + .04f, flowTop - below,
+                                     ChocolateFlowing, YardKit.Solid.None);
                 below = TierTop[k];
             }
-            YardKit.Cylinder(b.parent, "BH fountain crown", V(f.x, TierTop[3] + .6f, f.y), Vector3.up, .7f, 1.2f, Look.NoClimb, YardKit.Solid.NoClimb);
-            YardKit.Cone(b.parent, "BH fountain finial", V(f.x, TierTop[3] + 1.2f, f.y), 1.2f, 1f, Brass);
+            float top = TierTop[TierTop.Length - 1];
+            YardKit.Cylinder(b.parent, "BH fountain crown", V(f.x, top + .6f, f.y), Vector3.up, .7f, 1.2f, Look.NoClimb, YardKit.Solid.NoClimb);
+            YardKit.Cone(b.parent, "BH fountain finial", V(f.x, top + 1.2f, f.y), 1.2f, 1f, Brass);
             for (int i = 0; i < 6; i++)
             {
                 float a = (30f + 60f * i) * Mathf.Deg2Rad;
@@ -416,18 +483,24 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the lamplighters' loft
 
-        // Over the screens passage, 20 m up. Its face to the hall is climbed (3 m): the leap from the fountain's top is to it.
-        // Its rail leaves the fountain's end and the two rope lanes open.
+        // Over the screens passage, 20 m up. Its face to the hall is climbed (4 m): the leap from the fountain's top is to it.
+        // Its rail leaves the fountain's end and the two rope lanes open. R817: it ends past the second rope lane (it ran the
+        // hall's width, 27 m of it going nowhere).
+        public const float LoftX0 = -31f, LoftX1 = 4.6f;
+
         static void Loft(CourseBuilder b)
         {
-            Wall(b, "BH loft", -31f, 31f, LoftY - .6f, LoftY, 0f, ScreenZ - .4f).AddComponent<CourseFloor>();
-            Skin(b, "BH loft face", V(-31f, LoftY - 3f, ScreenZ - .4f), V(31f, LoftY, ScreenZ)).AddComponent<CourseFloor>();
-            foreach (var x in new[] { V(-24f, 0f, -3.6f), V(-1.6f, 0f, 1.6f), V(3.6f, 0f, 31f) })
+            Wall(b, "BH loft", LoftX0, LoftX1, LoftY - .6f, LoftY, 0f, ScreenZ - .4f).AddComponent<CourseFloor>();
+            Skin(b, "BH loft face", V(LoftX0, LoftY - 4f, ScreenZ - .4f), V(LoftX1, LoftY, ScreenZ)).AddComponent<CourseFloor>();
+            Wall(b, "BH loft end", LoftX1, LoftX1 + .3f, LoftY - 4f, LoftY + 3f, 0f, ScreenZ);
+            foreach (var x in new[] { V(-24f, 0f, -3.6f), V(-1.6f, 0f, 1.6f), V(3.6f, 0f, LoftX1) })
                 Wall(b, "BH loft rail", x.x, x.z, LoftY, LoftY + 1.1f, ScreenZ - .25f, ScreenZ);
         }
 
         // ------------------------------------------------------------------ 7. the chandeliers
 
+        // R817: each rope's candle wheel is small and high on the rope (1.6 m under the pivot, 2 m across): the 3.2 m wheels
+        // at hand height hid the next rope from whoever waited on the loft.
         static void Chandeliers(CourseBuilder b)
         {
             for (int lane = 0; lane < LinesX.Length; lane++)
@@ -436,18 +509,81 @@ namespace ChessFight.PawnRush
                     float x = LinesX[lane], z = ScreenZ + RopeAlong[k], y = PivotY(k);
                     var pivot = Root(b, "BH chandelier " + (lane == 0 ? "W" : "E") + (k + 1), V(x, y, z));
                     var rope = pivot.gameObject.AddComponent<RopeLine>();
-                    rope.Configure(RopeL, RopeSwing, RopePeriod, ((k + lane) % 2) * RopePeriod * .5f, .12f, Brass);
+                    rope.Configure(RopeL[k], RopeSwing, RopePeriod, ((k + lane) % 2) * RopePeriod * .5f, .12f, Brass);
                     var look = b.Group("BH chandelier look", pivot);
-                    YardKit.Cylinder(look, "BH chandelier wheel", V(0f, -4f, 0f), Vector3.up, 3.2f, .2f, Brass, YardKit.Solid.None);
-                    YardKit.Ball(look, "BH chandelier drop", V(0f, -RopeL, 0f), .55f, Brass, YardKit.Solid.None);
+                    YardKit.Cylinder(look, "BH chandelier wheel", V(0f, -1.6f, 0f), Vector3.up, 2f, .14f, Brass, YardKit.Solid.None);
+                    YardKit.Ball(look, "BH chandelier drop", V(0f, -RopeL[k], 0f), .55f, Brass, YardKit.Solid.None);
                     for (int c = 0; c < 6; c++)
                     {
                         float a = c * 60f * Mathf.Deg2Rad;
-                        YardKit.Ball(look, "BH chandelier candle", V(1.4f * Mathf.Sin(a), -3.75f, 1.4f * Mathf.Cos(a)), .26f, Candle, YardKit.Solid.None);
+                        YardKit.Ball(look, "BH chandelier candle", V(.85f * Mathf.Sin(a), -1.4f, .85f * Mathf.Cos(a)), .24f, Candle, YardKit.Solid.None);
                     }
                     look.gameObject.AddComponent<ChandelierLook>().Configure(rope);
                     YardKit.Box(b.parent, "BH ceiling chain", V(x, (y + Ceiling) * .5f, z), V(.12f, Ceiling - y, .12f), Brass, YardKit.Solid.None);
                 }
+        }
+
+        // The great chandelier in the middle of the hall, between the two lines of ropes: a still ring of candles 8.4 m
+        // across hung from the ceiling, its top a floor (green: a place to rest) with a checkpoint. The first line's last
+        // ropes swing their ends 0.3 m short of its south rim (1.7 m over it); the second line's first ropes come 0.3 m
+        // off its north rim, 0.55 m over it.
+        static void GreatChandelier(CourseBuilder b)
+        {
+            var g = Root(b, "BH great chandelier", V(0f, GreatY, GreatZ));
+            YardKit.Cylinder(g, "BH great chandelier ring", V(0f, -.15f, 0f), Vector3.up, GreatR * 2f, .3f, Look.Rest, YardKit.Solid.Solid)
+                   .AddComponent<CourseFloor>();
+            YardKit.Cylinder(g, "BH great chandelier tier", V(0f, -1.2f, 0f), Vector3.up, GreatR * 1.4f, .25f, Brass, YardKit.Solid.None);
+            YardKit.Ball(g, "BH great chandelier drop", V(0f, -2.4f, 0f), 1.4f, Brass, YardKit.Solid.None);
+            YardKit.Cylinder(g, "BH great chandelier stem", V(0f, 1.6f, 0f), Vector3.up, .9f, 3.2f, Look.NoClimb, YardKit.Solid.NoClimb);
+            YardKit.Box(g, "BH great chandelier chain", V(0f, (Ceiling - GreatY) * .5f + 1.6f, 0f), V(.2f, Ceiling - GreatY - 3.2f, .2f), Brass, YardKit.Solid.None);
+            for (int c = 0; c < 16; c++)
+            {
+                float a = c * 22.5f * Mathf.Deg2Rad;
+                YardKit.Ball(g, "BH great chandelier candle", V((GreatR - .25f) * Mathf.Sin(a), .25f, (GreatR - .25f) * Mathf.Cos(a)), .3f, Candle, YardKit.Solid.None);
+            }
+        }
+
+        // ------------------------------------------------------------------ the way (R817)
+
+        // A red carpet on every floor the way crosses and gold arrows on it every 3 m, pointing on (pictures, 1 cm over the
+        // floor). The user's first run: "길을 모르겠음 (쓸데없는 길도 너무 많음) - 가장 큰 문제".
+        static void TheWay(CourseBuilder b)
+        {
+            var at = b.Group("BH the way");
+            void Lay(float y, params Vector2[] points)
+            {
+                for (int i = 1; i < points.Length; i++)
+                {
+                    Vector3 from = V(points[i - 1].x, y, points[i - 1].y), to = V(points[i].x, y, points[i].y), d = to - from;
+                    float length = d.magnitude;
+                    if (length < .05f) continue;
+                    var turn = Quaternion.LookRotation(d / length, Vector3.up);
+                    YardKit.Box(at, "BH carpet", (from + to) * .5f + V(0f, .01f, 0f), V(1.6f, .02f, length + 1.6f), Carpet, YardKit.Solid.None, turn);
+                    for (float s = 1.5f; s < length - .5f; s += 3f)
+                        Chevron(at, from + d / length * s + V(0f, .03f, 0f), turn);
+                }
+            }
+            Vector2 P(float x, float z) => new Vector2(x, z);
+            Lay(0f, P(0f, 1.2f), P(0f, 3f), P(15f, 3f), P(15f, 8f));
+            Lay(TrayY, P(CounterX0 + .3f, 8f), P(CounterX1 - .6f, 8f));
+            Lay(DaisY, P((ClocheX[0] + ClocheX[1]) * .5f, DaisZ + 1.3f), P(BanquetWaltz.BoardX, DaisZ + 1.3f), P(BanquetWaltz.BoardX, DaisZ + .9f));
+            Lay(StageY, P(StageX1 - .9f, CurtainZ), P(CurtainX + 1.2f, CurtainZ - .5f));
+            Lay(BuffetY, P(CurtainX + .3f, CurtainOpenS - .3f), P(Fountain.x, BuffetZ1 - 1.4f), P(Fountain.x, Fountain.y + BowlR + .9f));
+            Lay(LoftY, P(Fountain.x, ScreenZ - 1.2f), P(LinesX[0], ScreenZ - 1.2f), P(LinesX[0], ScreenZ - .9f));
+            Lay(GreatY, P(0f, GreatZ - GreatR + 1.2f), P(0f, GreatZ + GreatR - 1.2f));
+            Lay(BalconyY, P(0f, TowerZ + 1.6f), P(0f, HallZ1 - .3f));
+            // The fountain's top: one arrow to the loft.
+            Chevron(at, V(Fountain.x, TierTop[TierTop.Length - 1] + .03f, Fountain.y - .3f), Quaternion.LookRotation(Vector3.back));
+        }
+
+        // An arrow ">" pointing along `turn`: two gold bars.
+        static void Chevron(Transform parent, Vector3 at, Quaternion turn)
+        {
+            foreach (float s in new[] { -1f, 1f })
+            {
+                var arm = turn * Quaternion.Euler(0f, s * 40f, 0f);
+                YardKit.Box(parent, "BH arrow", at - arm * V(0f, 0f, .35f), V(.16f, .02f, .8f), Arrow, YardKit.Solid.None, arm);
+            }
         }
 
         // ------------------------------------------------------------------ the vocabulary
