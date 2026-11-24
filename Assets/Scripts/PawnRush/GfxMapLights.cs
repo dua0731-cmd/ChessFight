@@ -163,13 +163,12 @@ namespace ChessFight.PawnRush
             new Map
             {
                 Key = "2-1_GrandStairHall",
-                Concept = "the grand entrance of light: daylight falling through the dome's lattice onto the red stair, warm uplight washing every column and wall (a great station hall), the hub chandelier glowing, marble gleaming",
+                Concept = "The grand entrance of light: a roofless stair court that climbs into the gold-lattice rotunda under the one morning sun. The key is the sun through the open nave and the dome's lattice, which casts real lattice patterns on the upper flight, the central landing and the dais. The race camera faces into the sun, so everything it sees face-on is in shade: the east wall, the drum walls and the gate. Hidden neutral daylight washes lift those surfaces until the walls read as bright as the floor, and two uplights make the north lattice glow cream-gold against the sky. Warmth stays in the team's candles, lanterns and chandelier, with their reach halved so the cream walls stay cream. The queen statue crowns the first flight. The gate between its two lanterns crowns the climb and is lit from high behind the player, and beyond it the sunlit runout ends at a lit exit portal.",
                 Look = new GameCourses.Look
                 {
-                    Name = "Grand stair hall", Indoor = .85f, Bounce = .6f, Exposure = 0f, Contrast = 24f, Saturation = 18f, BloomIntensity = .8f, BloomThreshold = .9f, Vignette = .14f,
-                    ShaftIntensity = 1.4f, ShaftDensity = .03f,
+                    Name = "Grand stair hall", Indoor = 1f, Bounce = .5f, BounceTint = new Color(1f, .95f, .92f), Exposure = 0f, Contrast = 22f, Saturation = 15f, BloomIntensity = .5f, BloomThreshold = 1.4f, Vignette = .12f, ShaftIntensity = 1.3f, ShaftDensity = .025f,
                 },
-                Rig = new Rig { UplightColor = new Color(1f, .9f, .78f), Lid = false, FixtureBoost = 1.5f, FixtureReach = 1.3f, LampIntensity = 2.5f, UplightIntensity = 2f, UplightMax = 16, GoalIntensity = 0f },
+                Rig = new Rig { UplightColor = new Color(1f, .9f, .78f), Lid = false, FixtureBoost = 1.2f, FixtureReach = .5f, LampIntensity = 0f, UplightIntensity = 0f, UplightMax = 16, GoalIntensity = 0f, ClearGlass = true, StageIntensity = 0f, HeartIntensity = 0f, FloorGloss = 0f },
             },
             new Map
             {
@@ -204,24 +203,23 @@ namespace ChessFight.PawnRush
             new Map
             {
                 Key = "MG_J_PalaceLaundry",
-                Concept = "the fresh washhouse: clean cool daylight from above into steam over the pools, the water's light on white tiles, warm sconces by the doors",
+                Concept = "The palace bathhouse in the morning. It is a white-tiled washhall under a flat timber ceiling, with two storeys of arcaded windows down both long walls. The morning sun comes in only through the east windows. It lays long diagonal stripes across the east pool and slants as shafts through the steam. On the west side, the sky through each arcade window pools on the water in front of it. Each of the seven iron wheel-chandeliers carries a near-daylight room light down onto the tubs below it; the warmth stays in their candles. Hidden daylight washes, hung in mid-air, make the cream walls, the linen on the lines, the balconies and the upper window piers glow evenly. A brass lantern on every arcade pier keeps a small warm halo. The two team gates in the far wall are the brightest framed planes, each under one shadow-casting pool of light. Beyond them, a lit tunnel opens into the rear gallery, whose exit door is the last bright point.",
                 Look = new GameCourses.Look
                 {
-                    Name = "Laundry", Indoor = .85f, Bounce = .6f, Exposure = .1f, Contrast = 20f, Saturation = 18f, ShaftIntensity = 1.4f, ShaftDensity = .04f,
+                    Name = "Laundry", Indoor = .7f, Bounce = .3f, BounceTint = new Color(.97f, 1f, .99f), Exposure = .05f, Contrast = 22f, Saturation = 16f, BloomIntensity = .5f, BloomThreshold = 1.3f, Vignette = .12f, ShaftIntensity = 1.5f, ShaftDensity = .04f,
                 },
-                Rig = new Rig { FloorTo = "PR_Mid_WhiteTile", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
+                Rig = new Rig { FloorTo = "PR_Mid_WhiteTile", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 0f, Lid = false, FixtureBoost = 3f, FixtureReach = .6f, LampIntensity = 0f, GoalIntensity = 0f, ClearGlass = true, StageIntensity = 0f, HeartIntensity = 0f },
             },
             // ---- course 3: the castle's heart, solemn and grand, each hall its own
             new Map
             {
                 Key = "MG_G_RoyalProcession",
-                Concept = "the ceremonial nave: columns of light falling from the high skylights onto the carpet, gold light rising up every column, the side aisles in cool shade, the far doors the brightest",
+                Concept = "Morning procession in a skylit loggia. The two ribbed skylights bring cool-white daylight down both racing lanes and the velvet aisle. That light rises in two steps toward the far wall. The open side arcades frame the sky between washed cream columns, and the column shafts are uplit so the colonnade glows against the sky. The fixed sun slants through the rib grids onto the entrance steps. At the end, the two team gates (the goals) are the brightest planes, beside the centre portal one step lower. Through the gates, an open-topped court in daylight, with four warm lanterns, leads to the exit arch, which the two inner lanterns frame.",
                 Look = new GameCourses.Look
                 {
-                    Name = "Procession nave", Indoor = .45f, Bounce = .6f, Exposure = .15f, Contrast = 28f, Saturation = 16f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .22f,
-                    ShaftIntensity = 2.6f, ShaftDensity = .06f,
+                    Name = "Procession nave", Indoor = .6f, Bounce = .5f, BounceTint = new Color(.97f, .96f, .95f), Exposure = .1f, Contrast = 24f, Saturation = 15f, BloomIntensity = .45f, BloomThreshold = 1.3f, Vignette = .14f, ShaftIntensity = 1.5f, ShaftDensity = .035f,
                 },
-                Rig = new Rig { LampIntensity = 6f, UplightIntensity = 9f, UplightColor = new Color(1f, .75f, .45f), UplightMax = 16, GoalIntensity = 8f },
+                Rig = new Rig { LampIntensity = 0f, UplightIntensity = 0f, UplightColor = new Color(1f, .75f, .45f), UplightMax = 16, GoalIntensity = 0f, Lid = true, ClearGlass = true, FixtureBoost = 1f, FixtureReach = 1f, StageIntensity = 0f, HeartIntensity = 0f, FloorGloss = .65f },
             },
             new Map
             {
