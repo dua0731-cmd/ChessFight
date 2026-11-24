@@ -1,0 +1,513 @@
+{
+ "CastleWall": {
+  "source": "TU_A1_CastleWallTower",
+  "before": {
+   "faces": 9424,
+   "boundary": 1626,
+   "visible_open": 1482,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 1400,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 1400,
+  "size": [
+   4.0,
+   0.96,
+   3.88
+  ],
+  "use": "courtyard wall, 4 m module",
+  "target": 1400
+ },
+ "CastleCorner": {
+  "source": "TU_A1_CastleWallTower",
+  "before": {
+   "faces": 11378,
+   "boundary": 1714,
+   "visible_open": 1470,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 3000,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 3000,
+  "size": [
+   3.36,
+   2.79,
+   3.81
+  ],
+  "use": "spare (towers take the corners)",
+  "target": 3000
+ },
+ "CastleTower": {
+  "source": "TU_A1_CastleWallTower",
+  "before": {
+   "faces": 20868,
+   "boundary": 3214,
+   "visible_open": 2884,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 6000,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 6000,
+  "size": [
+   5.46,
+   5.47,
+   10.0
+  ],
+  "use": "corner and mid-side towers",
+  "target": 6000
+ },
+ "CastlePilaster": {
+  "source": "TU_A1_CastleWallTower",
+  "before": {
+   "faces": 6076,
+   "boundary": 1218,
+   "visible_open": 1198,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 900,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 900,
+  "size": [
+   1.19,
+   1.07,
+   4.92
+  ],
+  "use": "every third wall module",
+  "target": 900
+ },
+ "Gatehouse": {
+  "source": "TU_A2_CastleProps",
+  "before": {
+   "faces": 16674,
+   "boundary": 3522,
+   "visible_open": 3190,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 9000,
+   "boundary": 8,
+   "visible_open": 8,
+   "nonmanifold": 4,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 9000,
+  "size": [
+   10.0,
+   4.69,
+   8.82
+  ],
+  "use": "north gate behind the bar pad",
+  "target": 9000
+ },
+ "WallNiche": {
+  "source": "TU_A2_CastleProps",
+  "before": {
+   "faces": 8052,
+   "boundary": 1108,
+   "visible_open": 936,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 2400,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 2400,
+  "size": [
+   2.46,
+   1.74,
+   3.6
+  ],
+  "use": "east and west walls, statue inside",
+  "target": 2400
+ },
+ "KnightStatue": {
+  "source": "TU_A2_CastleProps",
+  "before": {
+   "faces": 6208,
+   "boundary": 778,
+   "visible_open": 688,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 4500,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 4500,
+  "size": [
+   1.21,
+   1.12,
+   2.6
+  ],
+  "use": "in the niches, flanking the gate",
+  "target": 4500
+ },
+ "BishopStatue": {
+  "source": "TU_A2_CastleProps",
+  "before": {
+   "faces": 4790,
+   "boundary": 828,
+   "visible_open": 726,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 3500,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 3500,
+  "size": [
+   1.22,
+   1.15,
+   2.6
+  ],
+  "use": "in the niches, flanking the gate",
+  "target": 3500
+ },
+ "StoneSteps": {
+  "source": "TU_A2_CastleProps",
+  "before": {
+   "faces": 7971,
+   "boundary": 1921,
+   "visible_open": 1599,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 2399,
+   "boundary": 2,
+   "visible_open": 2,
+   "nonmanifold": 1,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 2399,
+  "size": [
+   6.0,
+   5.19,
+   4.03
+  ],
+  "use": "not placed: no room in front of the gate (the rim ends 1.3 m in front of it)",
+  "target": 2400
+ },
+ "ClimbBlock": {
+  "source": "TU_A3_AssetPack",
+  "before": {
+   "faces": 9814,
+   "boundary": 2812,
+   "visible_open": 2518,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 3000,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 3000,
+  "size": [
+   6.0,
+   3.15,
+   3.5
+  ],
+  "use": "not placed: the 2/3/4 m walls must be 5 x 6 m exactly",
+  "target": 3000
+ },
+ "Ramp": {
+  "source": "TU_A3_AssetPack",
+  "before": {
+   "faces": 14548,
+   "boundary": 1770,
+   "visible_open": 1442,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 3000,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 3000,
+  "size": [
+   6.0,
+   5.28,
+   2.87
+  ],
+  "use": "not placed: slopes are 7-19 m long",
+  "target": 3000
+ },
+ "Tunnel": {
+  "source": "TU_A3_AssetPack",
+  "before": {
+   "faces": 7488,
+   "boundary": 952,
+   "visible_open": 798,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "after": {
+   "faces": 2400,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 2400,
+  "size": [
+   4.6,
+   4.41,
+   2.98
+  ],
+  "use": "not placed: the game's tunnel has a flat 0.65 m ceiling",
+  "target": 2400
+ },
+ "made:TU_TrainingWall_2m": {
+  "source": "Blender",
+  "after": {
+   "faces": 756,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 60
+  },
+  "tris": 1512,
+  "size": [
+   5.14,
+   6.1,
+   2.0
+  ]
+ },
+ "made:TU_TrainingWall_3m": {
+  "source": "Blender",
+  "after": {
+   "faces": 972,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 60
+  },
+  "tris": 1944,
+  "size": [
+   5.14,
+   6.1,
+   3.0
+  ]
+ },
+ "made:TU_TrainingWall_4m": {
+  "source": "Blender",
+  "after": {
+   "faces": 1404,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 60
+  },
+  "tris": 2808,
+  "size": [
+   5.14,
+   6.1,
+   4.0
+  ]
+ },
+ "made:TU_Hurdle": {
+  "source": "Blender",
+  "after": {
+   "faces": 108,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 24
+  },
+  "tris": 216,
+  "size": [
+   0.34,
+   5.04,
+   0.45
+  ]
+ },
+ "made:TU_LimboStation": {
+  "source": "Blender",
+  "after": {
+   "faces": 4488,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 432
+  },
+  "tris": 8920,
+  "size": [
+   4.68,
+   0.68,
+   1.1
+  ]
+ },
+ "made:TU_Tunnel.001": {
+  "source": "Blender",
+  "after": {
+   "faces": 140,
+   "boundary": 272,
+   "visible_open": 272,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 358,
+  "size": [
+   4.76,
+   3.18,
+   1.43
+  ]
+ },
+ "made:TU_Sweeper": {
+  "source": "Blender",
+  "after": {
+   "faces": 1468,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 3716,
+  "size": [
+   13.0,
+   1.1,
+   1.91
+  ]
+ },
+ "made:TU_Beam": {
+  "source": "Blender",
+  "after": {
+   "faces": 162,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 36
+  },
+  "tris": 324,
+  "size": [
+   0.72,
+   16.0,
+   0.56
+  ]
+ },
+ "made:TU_FinishArch": {
+  "source": "Blender",
+  "after": {
+   "faces": 2992,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 48
+  },
+  "tris": 6072,
+  "size": [
+   6.04,
+   1.18,
+   5.77
+  ]
+ },
+ "made:TU_Balustrade": {
+  "source": "Blender",
+  "after": {
+   "faces": 300,
+   "boundary": 576,
+   "visible_open": 576,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 600,
+  "size": [
+   3.0,
+   0.44,
+   1.0
+  ]
+ },
+ "made:TU_BalustradePost": {
+  "source": "Blender",
+  "after": {
+   "faces": 504,
+   "boundary": 0,
+   "visible_open": 0,
+   "nonmanifold": 0,
+   "degenerate": 0,
+   "spikes": 0
+  },
+  "tris": 1000,
+  "size": [
+   0.6,
+   0.6,
+   1.64
+  ]
+ }
+}
