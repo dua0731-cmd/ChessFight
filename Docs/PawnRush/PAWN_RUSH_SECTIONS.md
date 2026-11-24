@@ -98,7 +98,7 @@
 |---|---|---|
 | 1 | 장애물 1 (초반 · 바깥뜰 1-x) | **Early_1-1_RoyalWaterGarden**(R305, [왕실 수로 정원](PAWN_RUSH_ROYAL_GARDEN.md)) · **Early_1-2_RoyalCarriageYard**(R508, 팀원 맵 [왕실 마차뜰](ROYAL_CARRIAGE_YARD.md)의 구간 모드 — 아래) |
 | 2 | 미니게임 1 | **C 해자 도개교 · D 쇠살문 누각 · A 의장 광장**(R312,3종) |
-| 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall**. 초안(`drafts` — 코스 프리팹 시험 숫자 4와 구간 검사에만, 판에는 안 나옴): **Mid_2-2_RoyalClockTower**(R775 설계 · R780 회색 상자, 왕실 시계탑 — 계단 없는 벽타기 구간, [설계 · 재미 검증 · 회색 상자](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)). 이 초안이 들어가 코스 프리팹 시험의 뒤 번호가 하나씩 밀렸다(5 작전 회의실 · 6 왕의 서재 · 7 천문대 · 8 금고실) |
+| 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall**. 초안(`drafts` — 코스 프리팹 시험 숫자 4와 구간 검사에만, 판에는 안 나옴): **Mid_2-2_RoyalClockTower**(R775 설계 · R780 회색 상자, 왕실 시계탑 — 계단 없는 벽타기 구간, [설계 · 재미 검증 · 회색 상자](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)). 이 초안이 들어가 코스 프리팹 시험의 뒤 번호가 하나씩 밀렸다(5 작전 회의실 · 6 왕의 서재 · 7 천문대 · 8 금고실). 둘째 초안: **Mid_2-4_GrandBanquetHall**(R815 설계 v0.4 · R816 회색 상자, 대연회장 — 코스 프리팹 시험 숫자 5, [설계 · 회색 상자](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md)); 번호가 또 하나씩 밀렸다(6 작전 회의실 · 7 왕의 서재 · 8 천문대 · 9 금고실) |
 | 4 | 미니게임 2 | **B 보수 중인 동관 · E 왕궁 서고 · F 대무도회장 · J 왕궁 세탁장**(R312,4종) · **G 왕의 행차 회랑 · H 국왕 체스 홀 · I 국왕 침실**(R691: 후반 3종이 이 슬롯으로 — 모두 7종) |
 | 5 | 장애물 3 (후반 · 윗궁 3-x) | **Final_WarRoom** = 국왕 작전실(R688: 엔딩이 아니라 후반 장애물 구간. R493 SeoungTest 구역 E와 같은 코드, 파일 이름은 그대로) · **Late_3-1_RoyalLibrary**(R706, 왕의 서재 → 거인 체스 — seoungtest R687 그래픽 · R689 온라인, [온라인 설계](GIANT_CHESS_ONLINE.md); 판 씨앗이 둘 중 하나). 초안(`drafts` — 코스 프리팹 시험 · 구간 검사에만, 판에는 안 나옴): **Late_3-2_RoyalObservatory**(R712, 왕실 천문대) · **Late_3-3_RoyalVault**(R725, [왕실 금고실](PAWN_RUSH_ROYAL_VAULT.md)) |
 | 6 | 엔딩 구간 | **Final_AudienceHall_Temp** = 국왕 알현실 자리의 임시 바닥(R688, 결승 원판. 진짜 알현실이 생기면 바꾼다) |

@@ -1,0 +1,65 @@
+R816 grand banquet hall checks (2026-11-24 13:24). Not a play test: no pawn runs it.
+
+== Edit: built in a scratch scene, every mover where it was built (the clock's 0)
+PASS  E1 what is there: waiters 5 (5), cloches 2 (2), couples 10 (10), pleats 20 (20), chandeliers 12 (12), tablecloth tricks 1 (1), chocolate tiers 4 (4), towers 1 (1) with peels 4 (4), checkpoints 8 (8), kill volumes 4 (4), meant gaps 5 (5); colliders 161
+      구간 대연회장 (Mid_2-4_GrandBanquetHall)
+      장애물 덮음 검사 0곳
+      백팀 길 316.7 m, 가장 넓은 틈 0.90 m
+      뜻한 틈 5곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+      체크포인트 8개, 부활 자리 48곳
+      오를 수 없는 면 85개
+      입구 (0.0, 0.0, 0.0) → 출구 (0.0, 20.8, 72.0)
+PASS  E2 section checks (SectionValidator): no errors
+PASS  E3 entry and exit: entry (0, 0, 0), exit (0, 20.8, 72)
+      ok    the screens: BH screen S (cannot) at 2.8 m, wanted a face that cannot be climbed
+      ok    the counter's side: BH counter (cannot) at 1.4 m, wanted a face that cannot be climbed
+      ok    a plate stack (the second waiter's, by the counter): BH plate stack (can be held) at 1.817 m, wanted a face to climb
+      ok    a waiter's body: BH waiter body (cannot) at 1.2 m, wanted a face that cannot be climbed
+      ok    the long table's east side: BH long table (cannot) at 2.6 m, wanted a face that cannot be climbed
+      ok    the guests' chairs (from the dance floor): BH guests' chairs (cannot) at 1.6 m, wanted a face that cannot be climbed
+      ok    a cloche's band: BH cloche band (can be held) at 0.7 m, wanted a face to climb
+      ok    a cloche's dome (from its rim): BH cloche dome (cannot) at 0.8 m, wanted a face that cannot be climbed
+      ok    the dais's front: BH royal dais (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the queen's gown (couple 0, from the dais's edge): BH queen gown (can be held) at 0.9 m, wanted a face to climb
+      ok    the king (couple 0): BH king (cannot) at 1.8 m, wanted a face that cannot be climbed
+      ok    the stage's front: BH stage (cannot) at 1.5 m, wanted a face that cannot be climbed
+      ok    the curtain (shut): BH curtain (can be held) at 1.88 m, wanted a face to climb
+      ok    a double bass: BH double bass (cannot) at 2.1 m, wanted a face that cannot be climbed
+      ok    the buffet's east side: BH dessert buffet (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the buffet's north side (from the pit): BH dessert buffet (cannot) at 2.5 m, wanted a face that cannot be climbed
+      ok    chocolate tier 2: BH chocolate tier 2 (can be held) at 2 m, wanted a face to climb
+      ok    the loft's face: BH loft face (can be held) at 2 m, wanted a face to climb
+      ok    the head table's side: BH head table E (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the pedestal's side: BH pedestal (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the tower's second level: BH tower level 2 (can be held) at 1.15 m, wanted a face to climb
+      ok    the balcony's edge (from the dais): BH balcony (cannot) at 1.95 m, wanted a face that cannot be climbed
+PASS  E4 faces to climb and faces that must not be: 22 rays, 0 wrong
+      queen 0 stands still 11 times a lap of 47.752 s; the corner radius 6.535 m
+PASS  E5 the waltz: queen 0 still at the dais at 0 s, at the stage later; couples apart: at 0 s -4.25, 53.7 (shoulders 1 m off the dais); at the stage at 8.36 s -18.1, 40.054 (0.6 m off it); two partners of different couples never closer than 6.976 m
+      the tower at z 64.487, the chandeliers' landing z 61.337, rope pivots z 10.528 .. 56.909, ends 20.55 .. 17.55 m
+PASS  E6 errors logged while building and checking: 0
+
+== Play: the hall alone, its entry on the origin, watched for 14 s of game time
+PASS  P1 what is there: waiters 5 (5), cloches 2 (2), couples 10 (10), pleats 20 (20), chandeliers 12 (12), tablecloth tricks 1 (1), chocolate tiers 4 (4), towers 1 (1) with peels 4 (4), checkpoints 8 (8), kill volumes 4 (4), meant gaps 5 (5); colliders 161
+PASS  P2 waiters walk the lane (and are cut back to the kitchen): 5 of 5, 3 cuts back to the kitchen
+PASS  P3 cloches go from the table to 5.6 m over it: 2 of 2
+PASS  P4 chandeliers' ends swing 4.18 m each way: 12 of 12
+PASS  P5 the curtain opens: the south half's leading pleat goes to the buffet, the north one to the stage's end: south 16..39.5, north 40.6..49.55
+PASS  P6 the couples go round the whole floor: middles x -16.2..7.5, z 10.2..51.8
+PASS  P7 the tablecloth is pulled every 10 s and the tower runs over every 5 s: pulls 1 (nobody on the cloth: throws 0), level spills 12
+      39894 frames watched
+      at the pictures: the trick 4.003 s into its 10 s, the cloth drawn at z 34, scale z 1
+      picture hall_00_top.png
+      picture hall_01_from_south_east.png
+      picture hall_02_from_east.png
+      picture hall_03_servery_waiters.png
+      picture hall_04_long_table.png
+      picture hall_05_cloches_dais.png
+      picture hall_06_waltz_from_dais.png
+      picture hall_07_stage_curtain.png
+      picture hall_08_buffet_fountain.png
+      picture hall_09_chandeliers.png
+      picture hall_10_tower_balcony.png
+PASS  P8 errors logged in Play: 0
+
+Grand banquet hall result: PASS

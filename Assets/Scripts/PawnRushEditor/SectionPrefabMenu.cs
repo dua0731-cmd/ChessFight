@@ -193,6 +193,9 @@ namespace ChessFight.PawnRush.Editor
                     // R775: and the royal clock tower (a draft of the middle obstacle slot).
                     var clockTower = go.GetComponent<RoyalClockTowerSection>();
                     if (clockTower != null && !clockTower.HasContent) RoyalClockTowerBuilder.Build(clockTower);
+                    // R816: and the grand banquet hall (the slot's second draft).
+                    var banquet = go.GetComponent<GrandBanquetHallSection>();
+                    if (banquet != null && !banquet.HasContent) GrandBanquetHallBuilder.Build(banquet);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {
