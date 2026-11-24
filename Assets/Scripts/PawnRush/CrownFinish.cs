@@ -80,6 +80,8 @@ namespace ChessFight.PawnRush
             Current = this;
             raceStart = Time.time;
             builtAt = Time.time;
+            // R742: this player's sections, falls, checkpoints and promotions for the match record (online matches only).
+            if (GetComponent<PawnRushMatchLog>() == null) gameObject.AddComponent<PawnRushMatchLog>();
         }
 
         void OnDestroy()
@@ -223,13 +225,20 @@ namespace ChessFight.PawnRush
             WinClock = clock;
             decidedAt = Time.time;
             Debug.Log($"[PawnRush] 승리: {Teams.Name(team)}팀 ({(Contest != null ? "왕좌 차지전" : "왕관 발판 과반")}, {MatchResult.Clock(clock)})");
+            // R736: this player's match record (only an online match armed by its link is written).
+            if (MatchRecords.Armed)
+                try { MatchRecords.Finish(RecordBuild.PawnRush(Result(), MatchRecords.Log)); }
+                catch (Exception e) { Debug.LogException(e); }
             Decided?.Invoke(team);
         }
 
         // The host's word (online, not the host): the winner, the race clock and who has stood on the platform when.
         public void ApplyRemote(int winner, float clock, byte[] seats, float[] times, int count)
         {
+            float before = raceStart;
             raceStart = Time.time - clock;
+            // R742: the match record's log was timed on this PC's own clock until now: onto the host's.
+            MatchRecords.Log?.Shift(before - raceStart);
             for (int i = 0; i < count; i++)
             {
                 var r = BySeat(seats[i]);
@@ -270,7 +279,8 @@ namespace ChessFight.PawnRush
             }
         }
 
-        Runner Self
+        // This PC's own runner (none for a spectator). R742: public for the match record's log (PawnRushMatchLog).
+        public Runner Self
         {
             get
             {
@@ -320,13 +330,13 @@ namespace ChessFight.PawnRush
             bool settled = Time.time - builtAt >= NeedQuietSeconds && neededWhite >= 0;
             if (settled && Winner == PawnRushFinish.None && (white != neededWhite || black != neededBlack))
             {
-                needNote = $"승리 인원이 바뀌었어요  ·  백 {Say(neededWhite)} → {Say(white)}  ·  흑 {Say(neededBlack)} → {Say(black)}";
+                needNote = Loc.F("승리 인원이 바뀌었어요  ·  백 {0} → {1}  ·  흑 {2} → {3}", Say(neededWhite), Say(white), Say(neededBlack), Say(black));
                 needNoteUntil = Time.time + NeedNoteSeconds;
             }
             neededWhite = white; neededBlack = black;
         }
 
-        static string Say(int needed) => needed > 0 ? needed + "명" : "없음";
+        static string Say(int needed) => needed > 0 ? Loc.F("{0}명", needed) : Loc.T("없음");
 
         void OnGUI()
         {
@@ -337,8 +347,8 @@ namespace ChessFight.PawnRush
                 line = new GUIStyle(banner) { fontSize = 15 };
             }
             int w = Players(Teams.White), b = Players(Teams.Black);
-            string count = $"왕관 발판  백 {OnPlatform(Teams.White)}/{PawnRushFinish.Needed(w)}  ·  흑 {OnPlatform(Teams.Black)}/{PawnRushFinish.Needed(b)}  "
-                           + (Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)" : "(팀 과반이 동시에 올라가면 승리)");
+            string count = Loc.F("왕관 발판  백 {0}/{1}  ·  흑 {2}/{3}", OnPlatform(Teams.White), PawnRushFinish.Needed(w), OnPlatform(Teams.Black), PawnRushFinish.Needed(b))
+                           + "  " + Loc.T(Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)" : "(팀 과반이 동시에 올라가면 승리)");
             // R682: the standings strip (PawnRushStandingsHud) stands in this place and carries the count; this box is
             // drawn only where there is no strip, and the note goes under whichever is there.
             bool strip = PawnRushStandingsHud.Showing;
@@ -360,12 +370,12 @@ namespace ChessFight.PawnRush
             if (Winner == PawnRushFinish.None) return;
             var self = Self;
             bool won = self != null && self.Team == Winner;
-            string title = $"<b>{Teams.Name(Winner)}팀 승리!</b>";
-            string sub = self == null ? "" : won ? "우리 팀이 왕관 발판을 차지했습니다" : "상대 팀이 왕관 발판을 차지했습니다";
+            string title = "<b>" + Loc.T(Teams.Name(Winner) + "팀 승리!") + "</b>";
+            string sub = self == null ? "" : Loc.T(won ? "우리 팀이 왕관 발판을 차지했습니다" : "상대 팀이 왕관 발판을 차지했습니다");
             var area = new Rect(0, Screen.height * .32f, Screen.width, 120);
             GUI.Box(new Rect(area.x, area.y, area.width, area.height), GUIContent.none);
             GUI.Label(new Rect(area.x, area.y + 8, area.width, 60), title, banner);
-            GUI.Label(new Rect(area.x, area.y + 74, area.width, 30), $"{sub} · 곧 결과 화면", line);
+            GUI.Label(new Rect(area.x, area.y + 74, area.width, 30), Loc.F("{0} · 곧 결과 화면", sub), line);
         }
     }
 }

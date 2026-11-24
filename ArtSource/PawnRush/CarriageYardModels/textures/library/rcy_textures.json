@@ -182,5 +182,21 @@
   "smoothness": 0.20000001788139343,
   "mean": "#F1E5D1",
   "source": "textures/codex/b3/rcy_plume.png"
+ },
+ "RCY_Oldwalnut": {
+  "slot": "RCY | oldwalnut",
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.22021591663360596,
+  "mean": "#723E22",
+  "source": "textures/library/RCY_Walnut (aged by textures/rcy_worn.py)"
+ },
+ "RCY_Oldiron": {
+  "slot": "RCY | oldiron",
+  "tile": 1.0,
+  "metallic": 0.75,
+  "smoothness": 0.3971479833126068,
+  "mean": "#5B4B43",
+  "source": "textures/library/RCY_Iron (aged by textures/rcy_worn.py)"
  }
 }

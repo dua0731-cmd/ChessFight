@@ -1,3 +1,5 @@
+using ChessFight.Network;
+
 namespace ChessFight.PawnRush
 {
     // R643 (revised after 승규 님's 11-14 check), F · 대무도회장 (EnPassant) and I · 국왕 침실 (CheckBlock): the team
@@ -10,5 +12,9 @@ namespace ChessFight.PawnRush
         protected override float Length => 0f;
         protected override void Build() { }
         protected override void Pose(float t) { }
+        // R770 (user 11-22, "무도회장 부터 시작"): F's mirror door rising in its brass frame has its own sound; I keeps
+        // the shared one. Station is set before Opened plays it.
+        protected override string GateSound =>
+            Station != null && Station.GameIndex == PawnRushMissions.EnPassant ? "sfx_ballroom_gate" : SharedGateSound;
     }
 }

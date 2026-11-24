@@ -212,7 +212,10 @@ Shader "ChessFight/Pawn Rush Library Paint"
                     albedo = base * (0.86 + 0.24 * cloud) * (1 + grain * 0.1);
                     smoothness = 0.26;
                 }
-                half4 c = CFShade(l, albedo, metallic, smoothness, 1);
+                // JY-gfx: each kind wears its own material's surface set (glass lit from inside: none).
+                int set = kind == 1 ? CF_SET_WOOD : kind == 2 ? CF_SET_PAINT : kind == 3 ? CF_SET_BRASS : kind == 4 ? CF_SET_IRON
+                    : (kind == 5 || kind == 7) ? CF_SET_CANVAS : CF_SET_LIMESTONE;
+                half4 c = CFShadeSet(l, albedo, metallic, smoothness, 1, set, kind == 6 ? 0.0 : 1.0);
                 c.rgb += glow;
                 return c;
             }

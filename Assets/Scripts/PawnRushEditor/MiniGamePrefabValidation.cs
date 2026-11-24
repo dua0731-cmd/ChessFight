@@ -355,6 +355,7 @@ namespace ChessFight.PawnRush.Editor
                 {
                     CheckRuntimeWiring();
                     CheckPads();   // R516: the promotion pads are back in the palace sections
+                    CheckPropBoxes();
                     CheckDirections();
                     if (current.GameIndex == PawnRushMissions.Checkmate) CheckHuntFeedback();
                     CapturePads(current);
@@ -545,6 +546,23 @@ namespace ChessFight.PawnRush.Editor
                     + string.Join(", ", solid.Select(c => c.name)) + ")");
                 Log($"Promotion pad {station.name}: on {hit.collider.name} ({off:F3} m), nothing solid over it");
             }
+        }
+
+        // 11-22 (the repair wing's invisible wall on its entry band): a prop box group ("PROP_COL <model>",
+        // MiniGameModels.TableBoxes) belongs in the frame the model hangs in, never beside the model under its own turned
+        // pivot - there the table lands mirrored, where no prop stands.
+        static void CheckPropBoxes()
+        {
+            int groups = 0;
+            foreach (var t in current.GetComponentsInChildren<Transform>(true))
+            {
+                if (!t.name.StartsWith("PROP_COL ")) continue;
+                groups++;
+                string model = t.name.Substring("PROP_COL ".Length);
+                Require(t.parent == null || t.parent.Find(model) == null,
+                    "Prop boxes laid in their model's turned frame (boxes where no prop stands): " + t.parent.name + "/" + t.name);
+            }
+            Log("Prop box groups: " + groups + ", none in a model's own frame");
         }
 
         // Each pad from inside the room - over the entry band, halfway to the middle, above a pawn's eye - so a person can

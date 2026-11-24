@@ -56,6 +56,12 @@ namespace ChessFight.Game
         // its own body, so every player sees it; eased in and out. Null: nothing.
         public static System.Func<Vector3, Vector2> Widen;
         Vector2 widened;
+        // R786 (settings → 질주할 때 시야 넓어짐, which reached only Sword Fight's LabCamera before): whether the followed
+        // body sprints (with stamina to spend), 0..1. The ragdoll side sets it (LabCamera.ShareSprint) - this assembly
+        // cannot see the pawn. The view widens by SprintFov, eased like LabCamera's. Null: never.
+        public static System.Func<Transform, float> SprintShare;
+        const float SprintFov = 8f;
+        float sprintKick;
         float fixedBlend, setupDistance = -1f;
         // The key that toggles the free camera (승규 님's test scene flies with F2 itself: None). R529: F4 (the ragdoll lab's
         // free camera key too); F1 flies the pawn itself now (DevCheats, user 11-09 "f1키 자유카메라에서 캐릭터 비행으로").
@@ -105,7 +111,7 @@ namespace ChessFight.Game
         {
             if (view == null && !TryGetComponent(out view)) return;
             if (baseFov < 0f) baseFov = view.fieldOfView;
-            view.fieldOfView = Mathf.Clamp(baseFov + GameSettings.Fov - 60f + widened.x, 20f, 120f);
+            view.fieldOfView = Mathf.Clamp(baseFov + GameSettings.Fov - 60f + widened.x + sprintKick, 20f, 120f);
         }
 
         // A teleport: cut to the new place instead of swooping there.
@@ -148,6 +154,8 @@ namespace ChessFight.Game
             // every player, whatever they had scrolled to before; it eases back to their own after.
             bool fixedDistance = widenTo != Vector2.zero;
             fixedBlend = Mathf.MoveTowards(fixedBlend, fixedDistance ? 1f : 0f, dt / .4f);
+            float sprint = SprintShare != null && target != null && !FreeFly ? Mathf.Clamp01(SprintShare(target)) : 0f;
+            sprintKick = Mathf.Lerp(sprintKick, SprintFov * GameSettings.SprintFovScale * sprint, 1f - Mathf.Exp(-3f * dt));
             ApplyFov();
             bool look = Cursor.lockState == CursorLockMode.Locked;
             if (look)

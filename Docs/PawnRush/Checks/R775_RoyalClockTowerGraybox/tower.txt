@@ -1,0 +1,57 @@
+R775 royal clock tower checks (2026-11-22 23:18). Not a play test: no pawn runs it.
+
+== Edit: built in a scratch scene, every mover in its rest pose
+PASS  E1 what is there: moving platforms 11 (8 weights + the drum + 2 hands = 11), ratchet blocks 11 (11), ropes 5 (5), combs 2 (2), checkpoints 10 (10), kill volumes 3 (3), meant gaps 3 (3); colliders 107
+      구간 왕실 시계탑 (Mid_2-2_RoyalClockTower)
+      장애물 덮음 검사 0곳
+      백팀 길 212.3 m, 가장 넓은 틈 0.85 m
+      뜻한 틈 3곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+      체크포인트 10개, 부활 자리 60곳
+      오를 수 없는 면 58개
+      입구 (0.0, 0.0, 0.0) → 출구 (0.0, 22.0, 120.0)
+PASS  E2 section checks (SectionValidator): no errors
+PASS  E3 entry and exit: entry (0, 0, 0), exit (0, 22, 120)
+      ok    the teaching wall: CT weight yard (can be held) at 0.6 m, wanted a face to climb
+      ok    a low weight's head: CT weight head (can be held) at 0.6 m, wanted a face to climb
+      ok    a high weight's head (from the low one, up): CT weight head (can be held) at 0.3 m, wanted a face to climb
+      ok    the cliff between the weights: CT movement (can be held) at 0.6 m, wanted a face to climb
+      ok    the yard grille: CT yard grille (cannot) at 0.6 m, wanted a face that cannot be climbed
+      ok    the drop's face (the movement's east side): CT movement (can be held) at 1 m, wanted a face to climb
+      ok    a pier's south face: CT corner pier 1 (can be held) at 0.6 m, wanted a face to climb
+      ok    a pier's east face (band): CT corner pier 1 (can be held) at 0.8 m, wanted a face to climb
+      ok    a pier over its band: CT corner pier top 1 (cannot) at 0.8 m, wanted a face that cannot be climbed
+      ok    the island's south side: CT rope island (cannot) at 0.6 m, wanted a face that cannot be climbed
+      ok    the drum: CT drum body (can be held) at 1 m, wanted a face to climb
+      ok    the drum's cap: CT drum cap (cannot) at 1 m, wanted a face that cannot be climbed
+      ok    the ratchet wall: CT ratchet wall (can be held) at 0.56 m, wanted a face to climb
+      ok    the court's south side east of the ratchet wall: CT clock court (cannot) at 0.6 m, wanted a face that cannot be climbed
+      ok    the dial's face (beside the hands): CT dial wall (cannot) at 0.56 m, wanted a face that cannot be climbed
+      ok    the minute hand at six (from the plinth): CT minute hand bar (can be held) at 0.6 m, wanted a face to climb
+      ok    the cornice (from the noon ledge): CT cornice (can be held) at 0.5 m, wanted a face to climb
+      ok    the tower's east side: CT tower (cannot) at 0.8 m, wanted a face that cannot be climbed
+      ok    the tower's north side: CT tower (cannot) at 0.8 m, wanted a face that cannot be climbed
+PASS  E4 faces to climb and faces that must not be: 19 rays, 0 wrong
+PASS  E5 errors logged while building and checking: 0
+
+== Play: the tower alone, its entry on the origin, watched for 14.5 s of game time
+PASS  P1 what is there: moving platforms 11 (8 weights + the drum + 2 hands = 11), ratchet blocks 11 (11), ropes 5 (5), combs 2 (2), checkpoints 10 (10), kill volumes 3 (3), meant gaps 3 (3); colliders 107
+PASS  P2 weights' tops: low 5 .. 7.5, high 9 .. 11.5: 8 of 8
+PASS  P3 ratchet blocks: out 0.9 m, tops from their row's low to high: 11 of 11
+PASS  P5b CT minute hand turns clockwise at 15 deg/s: 14.979 deg/s
+PASS  P5b CT hour hand turns clockwise at 4 deg/s: 3.994 deg/s
+PASS  P4 ropes' ends go z 44.0 .. 52.4: 5 of 5
+PASS  P5 the drum turns east -> north -> west at 15 deg/s: yaw rate -14.979 deg/s over 14.5 s
+      a low weight standing at the bottom in 100 % of 32890 frames
+      picture tower_00_top.png
+      picture tower_01_from_south_east.png
+      picture tower_02_from_the_entry.png
+      picture tower_03_weights.png
+      picture tower_04_drop_piers_ropes.png
+      picture tower_04b_piers_close.png
+      picture tower_05_drum.png
+      picture tower_06_ratchet_wall.png
+      picture tower_07_dial.png
+      picture tower_08_noon_and_roof.png
+PASS  P6 errors logged in Play: 0
+
+Royal clock tower result: PASS

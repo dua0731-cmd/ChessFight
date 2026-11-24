@@ -12,8 +12,12 @@ namespace ChessFight.PawnRush
     // leaves for the next room, and the round's other rooms never see the yard's. The whole map (map test scene) holds
     // weight 1 everywhere.
     //
-    // At weight 0 nothing of the scene's is touched; the first frame over 0 it notes the scene's sun, ambient light, fog
-    // and sky and from then on blends from them; back at 0 (or switched off, or destroyed) they are put back exactly.
+    // At weight 0 nothing of the scene's is touched; the first frame over 0 it notes the scene's sky and from then on
+    // blends from it; back at 0 (or switched off, or destroyed) it is put back exactly.
+    // R734 (the user: "마차뜰에서 도개교로 넘어갈 때 후처리 때문에 조명이 확 바껴"): the sun, the ambient light and the haze go
+    // through the one mixer of every place's light (Game ZoneLight) - the ambient blended as the sky's own harmonics, so
+    // it no longer jumps as the yard's light comes in and goes - and the weight follows the camera smoothly over about
+    // two seconds (ZoneLight.Ease) instead of half a second; the grade, the fills, the sky and the lamps follow that weight.
     // Pictures only: no collider, no physics, nothing synced (every PC fades by its own camera).
     public sealed class YardAtmosphere : MonoBehaviour
     {
@@ -57,31 +61,17 @@ namespace ChessFight.PawnRush
         bool probesWanted, probesBaked;
         int maxTier = 2, tier = -1;
 
-        // The scene's own, noted the moment the yard's light comes in.
+        // The yard's sun, ambient and haze in the mixer of every place's light (R734).
+        ZoneLight zone;
+        // The scene's sky, noted the moment the yard's light comes in.
         bool applied;
         float weight, lastApplied = -1f;
-        Light sun;
-        bool madeSun;
-        Color sunColor0;
-        float sunIntensity0, shadowStrength0;
-        Quaternion sunRotation0;
-        AmbientMode ambientMode0;
-        Color sky0, horizon0, ground0, flat0;
-        SphericalHarmonicsL2 probe0;
-        Color skyFrom, horizonFrom, groundFrom;
-        bool fog0;
-        FogMode fogMode0;
-        Color fogColor0;
-        float fogStart0, fogEnd0, fogDensity0;
         Material sky0Material, skyInstance;
-        enum SkyKind { None, PawnRush, Procedural }
+        enum SkyKind { None, PawnRush, Procedural, Gfx }
         SkyKind skyKind;
         Vector4 skySunDir0;
         float skyCover0, skyThickness0, skyExposure0;
         Color skyTint0;
-
-        Camera view;
-        float lookForView;
 
         static readonly int SunDirId = Shader.PropertyToID("_SunDir"), CoverageId = Shader.PropertyToID("_Coverage"),
             ThicknessId = Shader.PropertyToID("_AtmosphereThickness"), ExposureId = Shader.PropertyToID("_Exposure"),
@@ -105,6 +95,22 @@ namespace ChessFight.PawnRush
             probesWanted = probeMaker != null;
             if (fillSky != null) fillSky.enabled = false;
             if (fillBounce != null) fillBounce.enabled = false;
+            ZoneLight.Own(fillSky);
+            ZoneLight.Own(fillBounce);
+            if (zone == null) zone = ZoneLight.Add("Royal Carriage Yard");
+            zone.TurnSun = to.turnSun;
+            zone.SunRotation = to.sunRotation;
+            zone.SunColor = to.sunColor;
+            zone.SunIntensity = to.sunIntensity;
+            zone.ShadowStrength = to.shadowStrength;
+            zone.BringSun = wholeMap;   // the whole map in a scene with no sun: the yard brings its own
+            zone.Sky = to.sky;
+            zone.Equator = to.horizon;
+            zone.Ground = to.ground;
+            zone.Fog = to.fog;
+            zone.FogColor = to.fogColor;
+            zone.FogStart = to.fogStart;
+            zone.FogEnd = to.fogEnd;
             UpdateTier();
         }
 
@@ -137,13 +143,14 @@ namespace ChessFight.PawnRush
             GameSettings.Changed -= UpdateTier;
             if (applied) Restore();
             weight = 0f;
+            if (zone != null) zone.Weight = 0f;
         }
 
         void OnDestroy()
         {
             if (applied) Restore();
             if (skyInstance != null) Destroy(skyInstance);
-            if (madeSun && sun != null) Destroy(sun.gameObject);
+            zone?.Remove();
         }
 
         // ------------------------------------------------------------------ quality
@@ -194,29 +201,16 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the fade
 
-        float AreaWeight()
-        {
-            if (always) return 1f;
-            if (view == null || !view.isActiveAndEnabled)
-            {
-                if (Time.unscaledTime < lookForView) return weight;
-                lookForView = Time.unscaledTime + 1f;
-                view = Camera.main;
-                if (view == null)
-                    foreach (var c in Camera.allCameras)
-                        if (c.cameraType == CameraType.Game && c.targetTexture == null) { view = c; break; }
-                if (view == null) return 0f;
-            }
-            var p = transform.InverseTransformPoint(view.transform.position);
-            float d = Vector3.Distance(area.ClosestPoint(p), p);
-            return 1f - Mathf.SmoothStep(0f, 1f, d / blend);
-        }
+        // 1 inside the yard's box, 0 `blend` metres out (the whole map: 1 everywhere); -1 with no camera yet (held).
+        float AreaWeight() => always ? 1f : ZoneLight.Inside(transform, area, blend);
 
         void LateUpdate()
         {
-            if (target == null) return;
-            // Eased in time too, so a camera that jumps (a respawn, a spectator switch) does not flick the light.
-            weight = Mathf.MoveTowards(weight, AreaWeight(), Time.unscaledDeltaTime / .5f);
+            if (target == null || zone == null) return;
+            // Eased in time too (ZoneLight.Ease, about two seconds), so a camera that jumps (a respawn, a spectator
+            // switch) or a pawn running through the corridor does not flick the light. The sun, ambient and haze are the
+            // mixer's (it runs after this); the rest is the yard's own.
+            weight = zone.Ease(AreaWeight());
             if (weight <= .0005f)
             {
                 if (applied) Restore();
@@ -224,75 +218,19 @@ namespace ChessFight.PawnRush
             else
             {
                 if (!applied) Capture();
-                if (Mathf.Abs(weight - lastApplied) > .0005f) Apply(weight);
+                var sun = ZoneLight.Sun;
+                var way = sun != null ? sun.transform.rotation : target.sunRotation;
+                if (Mathf.Abs(weight - lastApplied) > .0005f || Quaternion.Angle(way, lastSunWay) > .05f) Apply(weight, sun, way);
             }
             Lamps();
         }
 
-        Light FindSun()
-        {
-            if (RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional && RenderSettings.sun.isActiveAndEnabled)
-                return RenderSettings.sun;
-            Light best = null;
-            foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None))
-            {
-                if (l == fillSky || l == fillBounce || l.type != LightType.Directional || !l.isActiveAndEnabled) continue;
-                if (best == null || l.intensity > best.intensity) best = l;
-            }
-            return best;
-        }
+        Quaternion lastSunWay = Quaternion.identity;
 
         void Capture()
         {
             applied = true;
             lastApplied = -1f;
-            sun = FindSun();
-            if (sun == null && always)
-            {
-                // The whole map in a scene with no sun: the yard brings its own.
-                sun = new GameObject("Yard sun").AddComponent<Light>();
-                sun.transform.SetParent(transform, false);
-                sun.type = LightType.Directional;
-                sun.shadows = LightShadows.Soft;
-                sun.intensity = 0f;
-                sun.color = target.sunColor;
-                sun.transform.rotation = target.sunRotation;
-                madeSun = true;
-            }
-            if (sun != null)
-            {
-                sunColor0 = sun.color;
-                sunIntensity0 = sun.intensity;
-                shadowStrength0 = sun.shadowStrength;
-                sunRotation0 = sun.transform.rotation;
-            }
-
-            ambientMode0 = RenderSettings.ambientMode;
-            sky0 = RenderSettings.ambientSkyColor;
-            horizon0 = RenderSettings.ambientEquatorColor;
-            ground0 = RenderSettings.ambientGroundColor;
-            flat0 = RenderSettings.ambientLight;
-            probe0 = RenderSettings.ambientProbe;
-            switch (ambientMode0)
-            {
-                case AmbientMode.Trilight: skyFrom = sky0; horizonFrom = horizon0; groundFrom = ground0; break;
-                case AmbientMode.Flat: skyFrom = horizonFrom = groundFrom = flat0; break;
-                default:
-                    // The sky's (or a custom) ambient: what it gives straight up, sideways and straight down.
-                    var dirs = new[] { Vector3.up, new Vector3(.7071f, 0f, .7071f), Vector3.down };
-                    var got = new Color[3];
-                    probe0.Evaluate(dirs, got);
-                    skyFrom = got[0]; horizonFrom = got[1]; groundFrom = got[2];
-                    break;
-            }
-
-            fog0 = RenderSettings.fog;
-            fogMode0 = RenderSettings.fogMode;
-            fogColor0 = RenderSettings.fogColor;
-            fogStart0 = RenderSettings.fogStartDistance;
-            fogEnd0 = RenderSettings.fogEndDistance;
-            fogDensity0 = RenderSettings.fogDensity;
-
             sky0Material = RenderSettings.skybox;
             skyKind = SkyKind.None;
             if (skyInstance != null) Destroy(skyInstance);
@@ -302,6 +240,8 @@ namespace ChessFight.PawnRush
                 string shader = sky0Material.shader.name;
                 if (shader == "ChessFight/Pawn Rush Sky") skyKind = SkyKind.PawnRush;
                 else if (shader == "Skybox/Procedural") skyKind = SkyKind.Procedural;
+                // JY-gfx: the round's cloud panorama (GameSky); only its brightness can follow.
+                else if (shader == "ChessFight/Gfx Sky") skyKind = SkyKind.Gfx;
                 if (skyKind != SkyKind.None)
                 {
                     skyInstance = new Material(sky0Material) { name = sky0Material.name + " (yard)" };
@@ -314,22 +254,13 @@ namespace ChessFight.PawnRush
             }
         }
 
-        void Apply(float w)
+        void Apply(float w, Light sun, Quaternion sunNow)
         {
             lastApplied = w;
+            lastSunWay = sunNow;
             var t = target;
-            Quaternion sunNow = sunRotation0;
-            if (sun != null)
-            {
-                sun.color = Color.Lerp(sunColor0, t.sunColor, w);
-                sun.intensity = Mathf.Lerp(madeSun ? 0f : sunIntensity0, t.sunIntensity, w);
-                sun.shadowStrength = Mathf.Lerp(shadowStrength0, t.shadowStrength, w);
-                if (t.turnSun || madeSun) sun.transform.rotation = Quaternion.Slerp(sunRotation0, t.sunRotation, madeSun ? 1f : w);
-                sunNow = sun.transform.rotation;
-            }
-
             // The fills stand opposite the sun as it is now (the round's own sun keeps its way as a section).
-            float sunYaw = (sun != null ? sunNow : t.sunRotation).eulerAngles.y;
+            float sunYaw = sunNow.eulerAngles.y;
             if (fillSky != null)
             {
                 fillSky.transform.rotation = Quaternion.Euler(52f, sunYaw + 180f, 0f);
@@ -346,22 +277,6 @@ namespace ChessFight.PawnRush
                 fillBounce.enabled = tier >= 2 && fillBounce.intensity > .002f;
             }
 
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = Color.Lerp(skyFrom, t.sky, w);
-            RenderSettings.ambientEquatorColor = Color.Lerp(horizonFrom, t.horizon, w);
-            RenderSettings.ambientGroundColor = Color.Lerp(groundFrom, t.ground, w);
-
-            if (t.fog)
-            {
-                // From the scene's own linear fog, or from none (pushed past everything) when it had none.
-                bool fromLinear = fog0 && fogMode0 == FogMode.Linear;
-                RenderSettings.fog = true;
-                RenderSettings.fogMode = FogMode.Linear;
-                RenderSettings.fogColor = Color.Lerp(fog0 ? fogColor0 : t.fogColor, t.fogColor, w);
-                RenderSettings.fogStartDistance = Mathf.Lerp(fromLinear ? fogStart0 : 3000f, t.fogStart, w);
-                RenderSettings.fogEndDistance = Mathf.Lerp(fromLinear ? fogEnd0 : 6000f, t.fogEnd, w);
-            }
-
             if (skyInstance != null)
             {
                 if (skyKind == SkyKind.PawnRush)
@@ -370,6 +285,11 @@ namespace ChessFight.PawnRush
                     // The sun's glow where the sun is.
                     if (skyInstance.HasProperty(SunDirId) && sun != null)
                         skyInstance.SetVector(SunDirId, Vector4.Lerp(skySunDir0, -sun.transform.forward, w));
+                }
+                else if (skyKind == SkyKind.Gfx)
+                {
+                    // JY-gfx: the cloud panorama a little brighter, as the concept's midday (it is already clear and blue).
+                    if (skyInstance.HasProperty(ExposureId)) skyInstance.SetFloat(ExposureId, Mathf.Lerp(skyExposure0, Mathf.Max(skyExposure0, 1.15f), w));
                 }
                 else
                 {
@@ -388,27 +308,8 @@ namespace ChessFight.PawnRush
         {
             applied = false;
             lastApplied = -1f;
-            if (sun != null && !madeSun)
-            {
-                sun.color = sunColor0;
-                sun.intensity = sunIntensity0;
-                sun.shadowStrength = shadowStrength0;
-                sun.transform.rotation = sunRotation0;
-            }
             if (fillSky != null) fillSky.enabled = false;
             if (fillBounce != null) fillBounce.enabled = false;
-            RenderSettings.ambientMode = ambientMode0;
-            RenderSettings.ambientSkyColor = sky0;
-            RenderSettings.ambientEquatorColor = horizon0;
-            RenderSettings.ambientGroundColor = ground0;
-            RenderSettings.ambientLight = flat0;
-            RenderSettings.ambientProbe = probe0;
-            RenderSettings.fog = fog0;
-            RenderSettings.fogMode = fogMode0;
-            RenderSettings.fogColor = fogColor0;
-            RenderSettings.fogStartDistance = fogStart0;
-            RenderSettings.fogEndDistance = fogEnd0;
-            RenderSettings.fogDensity = fogDensity0;
             if (skyInstance != null && RenderSettings.skybox == skyInstance) RenderSettings.skybox = sky0Material;
             if (grade != null) grade.Weight = 0f;
         }
@@ -423,6 +324,7 @@ namespace ChessFight.PawnRush
         {
             if (lamps.Count == 0) return;
             float w = weight;
+            var view = ZoneLight.View();
             Vector3 eye = view != null ? view.transform.position : transform.position;
             float reach = Reach[Mathf.Clamp(tier, 0, 2)], reach2 = reach * reach;
             float time = Time.time;

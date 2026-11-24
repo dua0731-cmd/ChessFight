@@ -148,7 +148,10 @@ namespace ChessFight.PawnRush
             Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f);
             Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
             Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), HammerPhase2);
-            b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
+            // R733: out to the hall wall (r 23.33..31; it stopped at r 27.83, so a runner along the wall passed it).
+            float stairOut = HallRadius - SpiralRadius(368f), stairIn = CurvingStairHalfIn;
+            CourseBuilder.CheckpointBox(b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f),
+                                        new Vector3((stairOut - stairIn) * .5f, 0f, 0f), new Vector3(stairOut + stairIn, 3f, 2f));
 
             // 3b. The floating stones (φ 372 -> 440, y 10 -> 11.5): eight round slabs 2.6 m across, 0.75 m apart, every
             // second one bobbing 0.45 m up and down every 3 s (ObstacleMotion, the shared clock), so some steps want
@@ -375,7 +378,12 @@ namespace ChessFight.PawnRush
             // spiral comes onto it.
             b.Cylinder("Royal dais", V(Hub.x, Deep, Hub.y), DaisRadius * 2f, DaisTop - Deep, k.floorChecker, true, true).AddComponent<CourseFloor>();
             var inward = -Outward(717f);
-            b.Checkpoint(6, Polar(717f, DaisRadius - 1f, DaisTop), Mathf.Atan2(inward.x, inward.z) * Mathf.Rad2Deg, 3.5f);
+            // R733: from the ramp's end across the dais (8 m wide, 16 m on to its far side): a runner could hop onto the
+            // dais from the last stair's inner edge anywhere past φ ~660° (a 1 ~ 2.8 m gap) and miss the 3.5 m strip by the
+            // ramp, so a fall off the glass stones went back to CP5. Every way from the stair's side to the glass stones
+            // crosses the band; its corners (r 8.94) stay clear of the stair's inner edge (r 9.1 and more).
+            CourseBuilder.CheckpointBox(b.Checkpoint(6, Polar(717f, DaisRadius - 1f, DaisTop), Mathf.Atan2(inward.x, inward.z) * Mathf.Rad2Deg, 3.5f),
+                                        new Vector3(0f, 0f, DaisRadius - 1f), new Vector3(DaisRadius, 3f, DaisRadius * 2f));
 
             // The glass stones (R303, "오징어게임 징검다리처럼 옳바른 길은 정해져 있고 직접 밟아 봐야 안다"): seven rows of two
             // 1.8 m squares north from the dais to the balcony, 1.05 m between rows and 1.2 m between the two of a
@@ -448,6 +456,12 @@ namespace ChessFight.PawnRush
             Mass(b, "Mini-game entrance band", -6f, 6f, 154.3f, 158.3f, 15f, 8f);
             Rail(b, "Band rail W", -6.3f, -6f, 152.7f, 158.3f, 15f);
             Rail(b, "Band rail E", 6f, 6.3f, 152.7f, 158.3f, 15f);
+            // R827 (11-24 build test: both runners reached the balcony, were sent off it - a knight's landing pushes out
+            // from 2.3 m behind the front edge - and crossed the glass stones again, 68 s and 63 s): CP7 over the whole
+            // balcony floor, so a fall from here comes back here, not to the dais (CP6) before the glass. Its spots stand
+            // on the front strip between the glass and the west knight's lane (z 122.7 ~ 123.9), 0.8 m apart (x ±2):
+            // out of its landing reach (2 m round (-4, 123.3)) and of both charges. The exit terrace is CP8.
+            CourseBuilder.CoverFloor(b.Checkpoint(7, V(0f, 16f, 121.6f), 0f, 5f), -8f, 8f, 121f, 128.3f);
         }
 
         // A 17 knight whose root is `root` (it lands 2 m behind its root and charges 8 m along its +x), leaping

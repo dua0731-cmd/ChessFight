@@ -95,6 +95,10 @@ namespace ChessFight.RagdollLab
             // take B (a whoosh into a dull wooden thunk). 10-30 (승규 님: "0.9까지 키워"), then
             // "좀 더 굵직하게": SwordHit.wav is B with more low body (Tools/Sfx/SwordFightSwing/sword_hit_thick.py).
             { "SwordHit", 0.9f },
+            // R808 (승규 님 11-23: "피격에 따른 사용자에 피드백이 있어야함"): under this screen's own hits (cut or cut by), the same
+            // clip a fourth lower for more body (SwordFightPawn.PlayCut); a cut stopped on a protected piece's shell rings
+            // as the king's guard does, a little higher (SfFxKind.SwordBlocked).
+            { "SwordHitBody", 0.55f }, { "SwordBlocked", 0.7f },
             // R236 10-29 (승규 님: "알맞는 sfx 넣어줘 일레븐렙스에서"): the bishop's diagonal slide in his edge family (wind
             // energy, R116 E): the aim opening and called off (his own screen, from SwordFightSkillFx.BishopSlide), the
             // glide, an enemy shoved off his way, the stop.
@@ -107,6 +111,7 @@ namespace ChessFight.RagdollLab
         static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
         {
             { "KingLandHit", "KingCounterHit" }, { "KingDrop", "KingWhiff" },
+            { "SwordHitBody", "SwordHit" }, { "SwordBlocked", "KingParry" },   // R808
             // (10-29: the queen's edge cut finding no one has its own QueenMiss now, not her thrust's stop - 승규 님 "퀸 E
             // 스킬 sfx 하나하나 다시".)
         };
@@ -189,6 +194,14 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (e.kind == SfFxKind.EdgeCancel || e.kind == SfFxKind.BishopDrop) { CutEdge(e.by); return; }
+            // R808: a click cut stopped on a protected piece's shell - the swords' sound, at this screen's own level when it
+            // is this player's cut or shell, quieter further off for the others'.
+            if (e.kind == SfFxKind.SwordBlocked)
+            {
+                bool mine = Viewer(e.by != null ? e.by.Pawn : null) || Viewer(e.target);
+                Play("SwordBlocked", e.at, e.by, UnityEngine.Random.Range(1.06f, 1.16f), Heard(e.at, mine));
+                return;
+            }
             // 10-28: the king's sword cut out - the crown's swell stops, then his fall plays.
             if (e.kind == SfFxKind.KingDrop) CutEdge(e.by);
             string name = ClipName(e);
@@ -247,21 +260,65 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A moment that is no <see cref="SfFxKind"/> (the effects see it themselves, like the bishop's second
         /// sword forming): its sound, if a bed's sounds are up.</summary>
-        public static void Moment(string name, Vector3 at, SwordFightSkills by, float pitch = 1f)
+        public static void Moment(string name, Vector3 at, SwordFightSkills by, float pitch = 1f, float share = 1f)
         {
-            if (Current != null) Current.Play(name, at, by, pitch);
+            if (Current != null) Current.Play(name, at, by, pitch, share);
         }
 
-        void Play(string name, Vector3 at, SwordFightSkills by, float pitch = 1f)
+        /// <summary>R808: whether <paramref name="pawn"/> is this screen's own player (the match camera's): its cuts and the
+        /// cuts on it are heard at their own level (Heard). True with no player to tell (the film, a test bed without one),
+        /// so everything is heard as it was.</summary>
+        public static bool Viewer(RagdollPawn pawn)
+        {
+            var fx = Current != null ? Current.fx : null;
+            return fx == null || fx.HearsAsOwn(pawn);
+        }
+
+        /// <summary>R813: this screen's own player's piece, null with none (SwordFightFeelLog's counts).</summary>
+        public static RagdollPawn ViewerPawn => Current != null && Current.fx != null ? Current.fx.ViewerPawn : null;
+
+        /// <summary>R808 (승규 님 11-23, the online play: "피격을 해도 허공을 가로지르는 것 같음, 피격에 따른 사용자에 피드백이
+        /// 있어야함"): how much of a sword sound's level this screen hears. The sounds are flat (2D) and were as loud on every
+        /// screen for every piece, so with 9 players one's own cuts and hits were lost among everyone else's. This
+        /// screen's own (<paramref name="mine"/>) stay at their level; the others' are at OthersNear of it up to
+        /// OthersNearTo metres from this player's piece, falling to OthersFar by OthersFarFrom.</summary>
+        public static float Heard(Vector3 at, bool mine)
+        {
+            if (mine || Current == null || Current.fx == null) return 1f;
+            var me = Current.fx.ViewerPawn;
+            var cam = Current.fx.ViewCamera;
+            Vector3 ear = me != null ? me.Hips.position : cam != null ? cam.transform.position : at;
+            float d = Vector3.Distance(ear, at);
+            return Mathf.Lerp(OthersNear, OthersFar, Mathf.InverseLerp(OthersNearTo, OthersFarFrom, d));
+        }
+
+        public const float OthersNear = 0.7f, OthersFar = 0.3f, OthersNearTo = 3f, OthersFarFrom = 12f;
+
+        // R808: the voice each name started this frame and at what share, so a louder one the same frame (this screen's own
+        // hit after someone else's) takes the voice over instead of being dropped.
+        readonly Dictionary<string, (int voice, float gain)> frameVoice = new Dictionary<string, (int, float)>();
+
+        void Play(string name, Vector3 at, SwordFightSkills by, float pitch = 1f, float share = 1f)
         {
             if (!sound || name == null) return;
             if (!sounds.TryGetValue(Alias.TryGetValue(name, out string other) ? other : name, out var s)) return;
-            if (lastFrame.TryGetValue(name, out int f) && f == Time.frameCount) return;
+            float gain = Mathf.Clamp01(volume * (Level.TryGetValue(name, out float l) ? l : 1f) * ChessFight.Game.GameSettings.Effects * Mathf.Max(0f, share));
+            float pan = Pan(at);
+            if (lastFrame.TryGetValue(name, out int f) && f == Time.frameCount)
+            {
+                // The same moment twice in one frame sounds once - at the louder of the two.
+                if (frameVoice.TryGetValue(name, out var was) && gain > was.gain && voices[was.voice].clip == s.clip)
+                {
+                    voices[was.voice].volume = gain;
+                    voices[was.voice].panStereo = pan;
+                    frameVoice[name] = (was.voice, gain);
+                }
+                return;
+            }
             lastFrame[name] = Time.frameCount;
             Count[name] = Count.TryGetValue(name, out int n) ? n + 1 : 1;
-            float gain = Mathf.Clamp01(volume * (Level.TryGetValue(name, out float l) ? l : 1f) * ChessFight.Game.GameSettings.Effects);
-            float pan = Pan(at);
             int voice = next;
+            frameVoice[name] = (voice, gain);
             var a = voices[voice];
             next = (next + 1) % voices.Length;
             fading[voice] = 0f;

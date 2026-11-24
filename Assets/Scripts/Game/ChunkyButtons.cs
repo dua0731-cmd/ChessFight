@@ -128,8 +128,8 @@ namespace ChessFight.Game
             s.Velocity = -420f;
             // Out of the squash and past the rest: about 6 % bigger at the peak.
             s.ScaleVelocity = s.Flat ? 3.4f : 2.6f;
-            // Settings → 접근성 → 번쩍임 줄이기 (R77): a faint flash.
-            s.Flash = GameSettings.ReduceFlash ? .3f : 1f;
+            // Settings → 접근성 → 번쩍임 줄이기 (R77; R786 one share for every flash): a faint flash.
+            s.Flash = GameSettings.FlashScale;
             Retarget(e, s);
         }
 

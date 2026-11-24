@@ -46,6 +46,10 @@ namespace ChessFight.RagdollLab
         public float pawnKnockPush = 4.5f;
         public float pawnKnockLift = 2.2f;
         public float pawnHitRadius = 0.5f;
+        [Tooltip("R819 온라인 판정 (사용자 \"뛰고 계속 움직이니까 스킬이 안 걸릴 때도 있어\"): 두 번째 걸음 대상의 골반이 내 골반보다 이만큼 위까지 (m, 점프 중인 적 · 예전 1.2 위아래 같음), 걸음 앞이 적의 몸(골반 ~ 머리)에 땅 위로 이 거리 안이면 맞음 (m), 적 골반이 내 골반보다 이만큼 위까지 (m, 점프로 가슴 높이 구를 넘던 적)")]
+        public float pawnSeekUp = 1.4f;
+        public float pawnHitBody = 0.7f;
+        public float pawnHitUp = 1.1f;
         [Tooltip("부축: 일어난 팀원의 기상 보호 (R153: 1.6 → 1.5, 속도 버프는 지움), 폰 쿨 감소")]
         public float helpGuard = 1.5f;
         public float helpCooldownCut = 1.5f;
@@ -110,6 +114,8 @@ namespace ChessFight.RagdollLab
         public float bishopRopeRange = 7f;
         public float bishopRopeSpeed = 16f;
         public float bishopRopeAssist = 12f;
+        [Tooltip("R819 온라인 판정: 던질 때 노린 적은 밧줄 끝이 그 몸(골반 ~ 머리)에 이 거리 안으로 지나가도 걸림 (m; 그 전에는 굵기 0.16 m 구가 몸에 닿아야 했음)")]
+        public float bishopRopeCatch = 0.4f;
         [Tooltip("걸고 있을 수 있는 시간 (초). 그동안 비숍은 WASD로 걸어 다니며 끌고 다닌다 (질주 X)")]
         public float bishopRopeHold = 6f;
         [Tooltip("밧줄 길이 범위 (m): 휠로 이보다 짧게(팽팽하게) 감거나 길게(느슨하게) 풀 수 없다. 1~6 m → 10-26 승규 님 \"상한선과 하안선 범위가 넓어 많이 좁혀야 돼\" 1.5~3.5 m")]
@@ -146,6 +152,11 @@ namespace ChessFight.RagdollLab
         public float rookRewind = 0.2f;
         [Tooltip("사슬 끝이 사람에게 걸리는 굵기 (m)")]
         public float rookChainRadius = 0.2f;   // (the pieces' chests are only 0.32 m up)
+        [Tooltip("R819 온라인 판정: 조준 도움으로 노린 기물(던질 때 정해짐)은 사슬 끝이 그 몸(골반 ~ 머리)에 이 거리 안으로 지나가도 걸림 (m). 날아가는 동안 그 기물 쪽으로 초당 이 각도까지 휨 (도/초, 앞쪽 이 각도 안에 있을 때만), 조준 · 던질 때 그 기물이 가는 쪽으로 이만큼까지 앞을 겨눔 (m, 도착 시간 × 땅 위 속도)")]
+        public float rookChainCatch = 0.45f;
+        public float rookChainTurn = 75f;
+        public float rookChainTurnCone = 35f;
+        public float rookChainLead = 3f;
         [Tooltip("적: 이 시간 동안 룩 앞 이 거리까지, 바닥에서 이만큼 뜬 낮은 길로 (초, m). 놓이면 휘청")]
         public float rookPullTime = 0.35f;
         public float rookPullFront = 1.5f;

@@ -232,6 +232,17 @@ namespace ChessFight.RagdollLab
             return ViewOverride != null || v == null || a == v || b == v;
         }
 
+        /// <summary>R808: this screen's own player's piece (null with none: the film, a bed without one).</summary>
+        public RagdollPawn ViewerPawn => Viewer;
+
+        /// <summary>R808: a sword sound by or on <paramref name="pawn"/> is this screen's own (SwordFightSkillSfx.Heard): it
+        /// is this player's piece, or there is no player to tell (as Sees).</summary>
+        public bool HearsAsOwn(RagdollPawn pawn)
+        {
+            var v = Viewer;
+            return ViewOverride != null || v == null || pawn != null && pawn == v;
+        }
+
         /// <summary>The view zooms in by <paramref name="degrees"/> at once and eases back over <paramref name="frames"/>.</summary>
         void Punch(RagdollPawn a, RagdollPawn b, float degrees, int frames)
         {
@@ -1419,6 +1430,8 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (!effects || kit == null || e.by == null) return;
+            // R808: a click cut stopped on a protected piece's shell is the swords', not a skill's: never a foe's red.
+            if (e.kind == SfFxKind.SwordBlocked) { ShellRing(e); return; }
             // R534: all it draws is the skill's own piece's (a hit on someone else included).
             int from = Owned(e.by.Pawn);
             try { DrawFx(e); }

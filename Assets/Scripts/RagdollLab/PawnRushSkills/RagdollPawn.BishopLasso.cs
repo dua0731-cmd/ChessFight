@@ -78,7 +78,7 @@ namespace ChessFight.RagdollLab
                         stageTime = 0f;
                         skillGrabLatch = skillGrabRaw;
                         lassoDir = LassoAim(s);
-                        SkillDetail = "조준 (마우스로 방향 · 좌클릭 밧줄 던지기 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 방향 · 좌클릭 밧줄 던지기 · 우클릭/F 취소)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -126,17 +126,35 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable
                     || other.chainCarry || other.kingCarry || other.lassoBy != null) continue;
-                Vector3 to = other.LassoBelly - from;
-                float across = Flat(to).magnitude;
-                if (across < 0.6f || across > s.bishopRopeRange) continue;
-                if (Mathf.Abs(to.y) > 2f) continue;
-                float angle = Vector3.Angle(flat, Flat(to));
-                if (angle > best || !ClearSight(from, other.LassoBelly)) continue;
+                // R819: where it is, or (online) where the bishop's player saw it, whichever is nearer the aim.
+                Vector3 belly = other.LassoBelly;
+                float angle = LassoAngle(s, flat, from, belly);
+                if (SeenBy(other, out var seenHips, out _, out _))
+                {
+                    Vector3 seenBelly = seenHips + Vector3.up * 0.02f;
+                    float seen = LassoAngle(s, flat, from, seenBelly);
+                    if (seen < angle && ClearSight(from, seenBelly))
+                    {
+                        angle = seen;
+                        belly = seenBelly;
+                    }
+                }
+                if (angle > best || !ClearSight(from, belly)) continue;
                 lassoAim = other;
                 best = angle;
             }
             if (lassoAim != null) return (lassoAim.LassoBelly - from).normalized;
             return flat;
+        }
+
+        /// <summary>R819: how far off the aim (degrees) a waist at <paramref name="belly"/> is for the rope; out of its reach or
+        /// 2 m up or down, more than any angle.</summary>
+        static float LassoAngle(PawnRushSkillParams s, Vector3 flat, Vector3 from, Vector3 belly)
+        {
+            Vector3 to = belly - from;
+            float across = Flat(to).magnitude;
+            if (across < 0.6f || across > s.bishopRopeRange || Mathf.Abs(to.y) > 2f) return float.MaxValue;
+            return Vector3.Angle(flat, Flat(to));
         }
 
         void ThrowLasso(PawnRushSkillParams s)
@@ -150,7 +168,7 @@ namespace ChessFight.RagdollLab
             lassoOn = null;
             lassoHoming = lassoAim;
             facing = FlatDir(lassoDir);
-            SkillDetail = "밧줄이 날아감";
+            SkillDetail = Loc.T("밧줄이 날아감");
             Fx(SkillFxKind.BishopRopeThrow, lassoHoming, lassoFrom, lassoDir, 0, s.bishopRopeRange);
             Log($"비숍: 밧줄 던짐{(lassoHoming != null ? $" → {lassoHoming.DisplayName}" : "")}");
         }
@@ -173,7 +191,22 @@ namespace ChessFight.RagdollLab
                     float left = s.bishopRopeRange - lassoOut;
                     bool last = step >= left;
                     if (last) step = Mathf.Max(0f, left);
-                    if (LassoSweep(lassoTip, lassoDir, step, out var at, out var other, out bool solid))
+                    bool met = LassoSweep(lassoTip, lassoDir, step, out var at, out var other, out bool solid);
+                    // R819: the enemy it was thrown at is caught when the tip passes within bishopRopeCatch of its body (hips
+                    // to head: a jump lifts the waist off the rope's line), unless something the sweep met comes first.
+                    if ((!met || other == null) && homing != null && homing.State == PawnState.Active && !homing.SkillUntargetable
+                        && !homing.NetworkPuppet && !homing.chainCarry && !homing.kingCarry && homing.lassoBy == null && IsEnemyOf(homing))
+                    {
+                        float before = met ? Vector3.Distance(lassoTip, at) : step;
+                        if (SegmentToBody(lassoTip, lassoTip + lassoDir * step, homing, out var near) <= s.bishopRopeCatch
+                            && Vector3.Distance(lassoTip, near) <= before + 0.01f && ClearSight(lassoTip, homing.LassoBelly))
+                        {
+                            lassoTip = near;
+                            HookLasso(s, homing);
+                            return;
+                        }
+                    }
+                    if (met)
                     {
                         lassoTip = at;
                         if (other != null && IsEnemyOf(other) && other.lassoBy == null) HookLasso(s, other);
@@ -255,7 +288,7 @@ namespace ChessFight.RagdollLab
             lassoStretch = 0f;
             lassoWheel = 0f;
             lassoTip = target.LassoBelly;
-            SkillDetail = "밧줄 걸림 — WASD로 끌고 다니기 · 휠↑ 느슨하게 · 휠↓ 팽팽하게 · F/우클릭 놓기";
+            SkillDetail = Loc.T("밧줄 걸림 — WASD로 끌고 다니기 · 휠↑ 느슨하게 · 휠↓ 팽팽하게 · F/우클릭 놓기");
             Fx(SkillFxKind.BishopRopeHook, target, target.LassoBelly, Flat(target.bodies[0].position - bodies[0].position), 0, lassoRest);
             Log($"비숍 밧줄 → {target.DisplayName}: 허리에 걸림 (길이 {lassoRest:0.0} m, {s.bishopRopeHold:0.#}초)");
         }
@@ -374,7 +407,7 @@ namespace ChessFight.RagdollLab
             lassoRewindFrom = lassoTip;
             lassoOn = null;
             lassoHoming = null;
-            SkillDetail = "밧줄 거둠";
+            SkillDetail = Loc.T("밧줄 거둠");
             Fx(SkillFxKind.BishopRopeMiss, null, lassoTip, lassoDir);
             Log($"비숍 밧줄: {why} → 거둠");
         }
@@ -410,7 +443,7 @@ namespace ChessFight.RagdollLab
             lassoOn = null;
             lassoHoming = null;
             lassoStretch = 0f;
-            SkillDetail = "밧줄 거둠";
+            SkillDetail = Loc.T("밧줄 거둠");
         }
 
         void SnapLasso(PawnRushSkillParams s)
@@ -425,7 +458,7 @@ namespace ChessFight.RagdollLab
             lassoT = 0f;
             lassoOn = null;
             lassoHoming = null;
-            SkillDetail = "밧줄 끊어짐";
+            SkillDetail = Loc.T("밧줄 끊어짐");
         }
 
         /// <summary>
@@ -493,7 +526,7 @@ namespace ChessFight.RagdollLab
             lassoStretch = 0f;
             skillStage = SkillStage.None;
             stageTime = 0f;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             StartCooldown(s.bishopCooldown);
         }
 

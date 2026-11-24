@@ -468,6 +468,7 @@ namespace ChessFight.PawnRush
             if (new Vector2(at.x, at.z).magnitude > flare.Radius || at.y < -1f || at.y > 4f || flare.Sheltered(at)) return;
             caughtFlare = index;
             caughtAt = Time.time;
+            RoyalObservatorySound.For(this)?.FlareCaught(pawn.position);   // R742: the sizzle, this player only
         }
 
         void OnGUI()

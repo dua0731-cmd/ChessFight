@@ -84,6 +84,8 @@ namespace ChessFight.RagdollLab
             game = GetComponent<SwordFightGame>();
             if (GetComponent<SwordFightSkillFx>() == null) gameObject.AddComponent<SwordFightSkillFx>();
             if (GetComponent<SwordFightSkillSfx>() == null) gameObject.AddComponent<SwordFightSkillSfx>();
+            // R813: the click cut's feel, one block in Player.log when the match ends (what this PC saw).
+            if (GetComponent<SwordFightFeelLog>() == null) gameObject.AddComponent<SwordFightFeelLog>();
             floor = GetComponent<SwordFightEdgeFloor>();
             if (floor == null) floor = gameObject.AddComponent<SwordFightEdgeFloor>();
             SwordFightSkills.GuardTakesSwordOnly = true;
@@ -96,14 +98,18 @@ namespace ChessFight.RagdollLab
         void OnEnable()
         {
             SwordFightPawn.Struck += OnStruck;
+            SwordFightPawn.Cut += OnCutMark;   // R808 (SwordFightMatch.Hud.cs)
             SwordFightSkills.Fx += OnSkillFx;
+            SwordFightSkills.Fx += OnRecordSkill;   // R742 (SwordFightMatch.Hud.cs)
             SwordFightEdgeFloor.KnockedLoose += OnKnockedLoose;
         }
 
         void OnDisable()
         {
             SwordFightPawn.Struck -= OnStruck;
+            SwordFightPawn.Cut -= OnCutMark;
             SwordFightSkills.Fx -= OnSkillFx;
+            SwordFightSkills.Fx -= OnRecordSkill;
             SwordFightEdgeFloor.KnockedLoose -= OnKnockedLoose;
         }
 
@@ -404,6 +410,12 @@ namespace ChessFight.RagdollLab
             ShakeFor(e.kind);
             NamedStamp(e);
             if (e.kind == SfFxKind.PawnHit && e.target != null) Ring(e.target.Hips.position, 1f, "#ffffff");
+            // R808: a cut stopped on a protected piece's shell - its bubble flares (SwordFightMatch.Board, Bubble).
+            if (e.kind == SfFxKind.SwordBlocked && e.target != null)
+            {
+                var shielded = e.target.GetComponent<SwordFightPawn>();
+                if (shielded != null) shellStruck[shielded] = Time.time;
+            }
             if (!Authority || e.by == null || e.by.Fighter == null || e.target == null) return;
             var victim = e.target.GetComponent<SwordFightPawn>();
             if (victim == null) return;

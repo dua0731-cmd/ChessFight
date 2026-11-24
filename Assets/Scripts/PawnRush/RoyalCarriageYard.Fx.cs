@@ -34,7 +34,8 @@ namespace ChessFight.PawnRush
         // edges stop drawing everywhere in the yard - the jump lines (gap and landing edges, the loft's edge and lip), the
         // machines' trims and bands (storage beams, the jibs, the hoists' arms and wells, the gantry's beam), the gate and
         // awning trims and lintels, the towers' bands. Only the lifting waterwheel's gold handle and its posts stay (what a
-        // pawn holds on to). Their colliders, if any, stay; nothing else changes. The crowns, hubs and locks are not edges.
+        // pawn holds on to; where the lift wheel's model hangs, 11-23, they stop drawing too and the model's rope-wound
+        // rungs stand in). Their colliders, if any, stay; nothing else changes. The crowns, hubs and locks are not edges.
         static readonly string[] GoldEdgeWords = { "trim", "edge", "lip", "band", "lintel", "door line" };
         static readonly string[] GoldKept = { "Handle", "Handle post" };
 

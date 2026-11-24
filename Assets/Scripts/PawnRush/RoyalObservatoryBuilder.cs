@@ -172,6 +172,7 @@ namespace ChessFight.PawnRush
                                  Entry, Exit, 0f, Beats());
             if (Application.isPlaying) root.AddComponent<RoyalObservatoryDressing>();   // R725: the Blender models over the graybox
             if (Application.isPlaying) root.AddComponent<RoyalObservatorySky>();        // R725: the night sky, only while the camera is in here
+            if (Application.isPlaying) root.AddComponent<RoyalObservatorySound>();      // R742: the devices' and the hall's sounds
             root.SetActive(true);
             return root;
         }

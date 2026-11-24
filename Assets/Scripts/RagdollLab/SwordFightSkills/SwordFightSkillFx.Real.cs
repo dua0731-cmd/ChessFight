@@ -157,12 +157,12 @@ namespace ChessFight.RagdollLab
             l.color = color ?? new Color(1f, 0.78f, 0.5f);
             l.range = range;
             l.shadows = LightShadows.None;
-            l.intensity = intensity;
+            l.intensity = intensity * GameSettings.FlashScale;
             var f = kit.Run(seconds, (fx, d) =>
             {
                 if (l == null) return false;
                 float k = fx.age / fx.life;
-                l.intensity = intensity * (1f - k) * (1f - k);
+                l.intensity = intensity * GameSettings.FlashScale * (1f - k) * (1f - k);
                 return true;
             });
             f.end = () => { if (go != null) Destroy(go); };
@@ -261,7 +261,8 @@ namespace ChessFight.RagdollLab
                         alpha = (1f - k) * (i == 1 ? 0.55f : 1f);
                         c = new Color(0.88f, 0.94f, 1f) * (i == 1 ? 2.2f : 3.6f);
                     }
-                    c.a = alpha;
+                    // R786: 접근성 → 번쩍임 줄이기.
+                    c.a = alpha * GameSettings.FlashScale;
                     b.SetColor(LitMaterials.BaseColorId, c);
                     r.SetPropertyBlock(b);
                 }

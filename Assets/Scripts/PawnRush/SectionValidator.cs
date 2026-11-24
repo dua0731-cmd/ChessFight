@@ -24,6 +24,8 @@ namespace ChessFight.PawnRush
             "Dyke wall", "Robot gantry", "Reservoir wall", "Boat tunnel", "Gate arch", "Exit arch",
             // its castle ring and exit gate since seoungtest R474 (the old garden walls and towers gone)
             "Castle wall", "Castle tower", "Exit gate",
+            // The royal vault (3-3, R725): every solid is "RV ..." and nothing there is climbable.
+            "RV ",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)

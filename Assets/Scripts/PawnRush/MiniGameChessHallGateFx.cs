@@ -17,6 +17,9 @@ namespace ChessFight.PawnRush
         readonly List<Part> edge = new List<Part>();
 
         protected override float Length => 3.2f;
+        // R772 (user 11-22, "G랑 H 시작"): a clack as each row of squares slams down, the brass edge, the door rising,
+        // placed at this moment's times (FirstRow, RowGap, Flip; ArtSource/PawnRush/Sfx/compose_gates.py)
+        protected override string GateSound => "sfx_chesshall_gate";
 
         protected override void Build()
         {

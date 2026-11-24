@@ -279,6 +279,7 @@ namespace ChessFight.RagdollLab
         void PreSkills()
         {
             if (PawnRushSkills == null) return;
+            RecordSkillTrail();      // R819: where this piece is, for the online casters' look-back (RagdollPawn.SkillLag.cs)
             skillMoveRaw = input.move;
             skillGrabRaw = input.grab;
             PreLassoDrag();          // 10-26: a bishop's rope's drag of the last step taken off before the run
@@ -389,7 +390,7 @@ namespace ChessFight.RagdollLab
             aimLocked = false;
             knightTapped = false;
             knightTarget = knightCandidate = null;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             HideSkillMarks();
             ClearKingCall();
             ClearRookChain();
@@ -608,7 +609,7 @@ namespace ChessFight.RagdollLab
                         {
                             skillStage = SkillStage.Link;
                             stageTime = 0f;
-                            SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                            SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                         }
                         else FinishPawn(s, true);
                     }
@@ -617,7 +618,7 @@ namespace ChessFight.RagdollLab
                     stageTime += dt;
                     // R153 (plan v0.3 §3): the second step only goes for someone: a downed teammate or a standing enemy in front.
                     pawnTarget = SeekTarget(s);
-                    SkillDetail = pawnTarget != null ? $"연결 (F 한 번 더 → {pawnTarget.DisplayName})" : "연결 (대상 없음)";
+                    SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                     if (press) pawnBuffered = true;
                     if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing)
                     {
@@ -651,14 +652,24 @@ namespace ChessFight.RagdollLab
                 if (other == null || other == this || other.SkillUntargetable || other.chainCarry) continue;
                 bool ally = IsAllyOf(other);
                 if (ally ? !other.DownedForHelp : !IsEnemyOf(other) || other.State != PawnState.Active) continue;
-                Vector3 d = other.bodies[0].position - me;
-                if (Mathf.Abs(d.y) > 1.2f || Flat(d).magnitude > s.pawnSeekRange) continue;
-                float angle = Vector3.Angle(aim, Flat(d));
+                // R819: where it is, or where this pawn's player saw it (online), whichever is nearer the aim.
+                float angle = SeekAngle(s, aim, me, other.bodies[0].position);
+                if (SeenBy(other, out var seen, out _, out _)) angle = Mathf.Min(angle, SeekAngle(s, aim, me, seen));
                 if (angle > bestAngle) continue;
                 best = other;
                 bestAngle = angle;
             }
             return best;
+        }
+
+        /// <summary>How far off the aim (degrees) a piece at <paramref name="hips"/> is for the pawn's second step; past its reach
+        /// or its height, more than any angle.</summary>
+        static float SeekAngle(PawnRushSkillParams s, Vector3 aim, Vector3 me, Vector3 hips)
+        {
+            Vector3 d = hips - me;
+            // R819: a target up in a jump (its hips about 0.9 m up) is still in front of the pawn (was 1.2 m both ways).
+            if (d.y < -1.2f || d.y > s.pawnSeekUp || Flat(d).magnitude > s.pawnSeekRange) return float.MaxValue;
+            return Vector3.Angle(aim, Flat(d));
         }
 
         /// <summary>The second step bends onto its target as it goes.</summary>
@@ -686,14 +697,14 @@ namespace ChessFight.RagdollLab
             StartDash(s.pawnStepSpeed, distance / Mathf.Max(0.1f, s.pawnStepSpeed));
             skillStage = SkillStage.Active;
             stageTime = 0f;
-            SkillDetail = n == 1 ? "첫 걸음" : $"두 번째 걸음 → {(pawnTarget != null ? pawnTarget.DisplayName : "?")}";
+            SkillDetail = n == 1 ? Loc.T("첫 걸음") : Loc.F("두 번째 걸음 → {0}", pawnTarget != null ? pawnTarget.DisplayName : "?");
             Fx(SkillFxKind.PawnStep, pawnTarget, FeetPoint, skillDir, n);
         }
 
         void FinishPawn(PawnRushSkillParams s, bool bothSteps)
         {
             skillStage = SkillStage.None;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             float cooldown = bothSteps ? s.pawnCooldown : s.pawnCooldownOneStep;
             if (pawnHelped) cooldown -= s.helpCooldownCut;
             StartCooldown(cooldown);
@@ -717,19 +728,54 @@ namespace ChessFight.RagdollLab
                     continue;
                 }
                 if (pawnStepHit || !IsEnemyOf(other) || other.SkillUntargetable) continue;
-                skillHitSet.Add(other);
-                pawnStepHit = true;
-                float angle = AxisAngle(other, skillDir);
-                bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
-                string result = diagonal
-                    ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각")
-                    : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
-                string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
-                Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
-                Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}");
-                // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
-                dashLeft = Mathf.Min(dashLeft, 0.02f);
+                PawnStepHit(s, other, "");
             }
+            if (pawnStepHit) return;
+            // R819 (사용자 "뛰고 계속 움직이니까 스킬이 안 걸릴 때도 있어"): the sphere above sits at chest height (0.5 m), so an
+            // enemy up in a jump went over it, and online the host's enemy was a step past where the pawn's player saw it.
+            // An enemy whose body (hips to head) is within pawnHitBody across the ground of the step's front, from just under
+            // the pawn's hips up to pawnHitUp over them, is hit too - where it is, or (online) where its player saw it.
+            Vector3 me = bodies[0].position;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || skillHitSet.Contains(other) || !IsEnemyOf(other) || other.SkillUntargetable
+                    || other.State == PawnState.Ragdoll || other.chainCarry || other.kingCarry) continue;
+                bool reach = StepReaches(s, at, me, other.bodies[0].position, other.bodies[(int)BodyId.Head].position);
+                string how = "";
+                if (!reach && SeenBy(other, out var seenHips, out _, out var seenHead) && StepReaches(s, at, me, seenHips, seenHead))
+                {
+                    reach = true;
+                    how = " (보인 자리)";
+                }
+                if (!reach) continue;
+                PawnStepHit(s, other, how);
+                return;
+            }
+        }
+
+        /// <summary>R819: the step's front at <paramref name="at"/> meets a piece whose hips and head are here.</summary>
+        static bool StepReaches(PawnRushSkillParams s, Vector3 at, Vector3 me, Vector3 hips, Vector3 head)
+        {
+            float up = hips.y - me.y;
+            if (up < -0.5f || up > s.pawnHitUp) return false;
+            Vector3 body = Vector3.Lerp(hips, head, 0.5f);
+            return Flat(body - at).magnitude <= s.pawnHitBody;
+        }
+
+        void PawnStepHit(PawnRushSkillParams s, RagdollPawn other, string how)
+        {
+            skillHitSet.Add(other);
+            pawnStepHit = true;
+            float angle = AxisAngle(other, skillDir);
+            bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
+            string result = diagonal
+                ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각")
+                : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
+            string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
+            Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
+            Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}{how}");
+            // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
+            dashLeft = Mathf.Min(dashLeft, 0.02f);
         }
 
         void HelpUp(PawnRushSkillParams s, RagdollPawn ally)
@@ -770,7 +816,7 @@ namespace ChessFight.RagdollLab
                     }
                     skillStage = SkillStage.Windup;
                     stageTime = 0f;
-                    SkillDetail = $"준비 (뒷발로 섬) → {knightTarget.DisplayName}";
+                    SkillDetail = Loc.F("준비 (뒷발로 섬) → {0}", knightTarget.DisplayName);
                     break;
                 case SkillStage.Windup:
                     // Not rooted: a running knight keeps its speed into the leap (D2).
@@ -787,7 +833,7 @@ namespace ChessFight.RagdollLab
                     {
                         // Caught a ledge on the way: the leap ends there, no landing shock.
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         knightTarget = null;
                         StartCooldown(s.knightCooldown);
                     }
@@ -809,7 +855,7 @@ namespace ChessFight.RagdollLab
                         KnightLand(s);
                         skillStage = SkillStage.Recovery;
                         stageTime = 0f;
-                        SkillDetail = "착지 후딜";
+                        SkillDetail = Loc.T("착지 후딜");
                         knightCandidate = knightTarget = null;
                     }
                     break;
@@ -819,7 +865,7 @@ namespace ChessFight.RagdollLab
                     if (stageTime >= s.knightLandRecovery)
                     {
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         StartCooldown(s.knightCooldown);
                     }
                     break;
@@ -842,16 +888,35 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || !IsEnemyOf(other) || other.State != PawnState.Active || other.SkillUntargetable
                     || other.chainCarry || other.kingCarry) continue;
-                Vector3 d = other.bodies[0].position - me;
-                float across = Flat(d).magnitude;
-                if (across < s.knightTargetMin || across > s.knightTargetMax || Mathf.Abs(d.y) > s.knightTargetHeight) continue;
-                float angle = Vector3.Angle(flatAim, Flat(d));
+                // R819: where it is, or (online, on the host) where this knight's player saw it - the knight's own screen
+                // lit the target from that picture, and a running enemy was often past the 9 m or the 60° by the press.
+                Vector3 head = other.bodies[(int)BodyId.Head].position;
+                float angle = KnightAngle(s, flatAim, me, other.bodies[0].position);
+                if (SeenBy(other, out var seenHips, out _, out var seenHead))
+                {
+                    float seen = KnightAngle(s, flatAim, me, seenHips);
+                    if (seen < angle && ClearSight(eye, seenHead))
+                    {
+                        angle = seen;
+                        head = seenHead;
+                    }
+                }
                 if (angle > bestAngle) continue;
-                if (!ClearSight(eye, other.bodies[(int)BodyId.Head].position)) continue;
+                if (!ClearSight(eye, head)) continue;
                 best = other;
                 bestAngle = angle;
             }
             return best;
+        }
+
+        /// <summary>How far off the aim (degrees) a piece at <paramref name="hips"/> is for the knight's leap; out of its range or
+        /// its height difference, more than any angle.</summary>
+        static float KnightAngle(PawnRushSkillParams s, Vector3 flatAim, Vector3 me, Vector3 hips)
+        {
+            Vector3 d = hips - me;
+            float across = Flat(d).magnitude;
+            if (across < s.knightTargetMin || across > s.knightTargetMax || Mathf.Abs(d.y) > s.knightTargetHeight) return float.MaxValue;
+            return Vector3.Angle(flatAim, Flat(d));
         }
 
         /// <summary>Nothing solid (pieces and loose things do not count) between two points.</summary>
@@ -893,7 +958,7 @@ namespace ChessFight.RagdollLab
             skillHitSet.Clear();
             skillStage = SkillStage.Active;
             stageTime = 0f;
-            SkillDetail = target != null ? $"도약 → {target.DisplayName}" : "도약";
+            SkillDetail = target != null ? Loc.F("도약 → {0}", target.DisplayName) : Loc.T("도약");
             Fx(SkillFxKind.KnightLeap, target, p - Vector3.up * standHeight, skillDir, fromFloor ? 0 : 1);
             if (target != null) Fx(SkillFxKind.KnightHome, target, knightSpot, skillDir);
             Log($"나이트: {(target != null ? target.DisplayName : "?")}에게 도약 ({across:0.0} m, 체공 {knightFlight:0.00}초)");
@@ -992,7 +1057,7 @@ namespace ChessFight.RagdollLab
                 Launch(Flat(facing) * s.knightStompHop + Vector3.up * s.knightStompBounce);
                 knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
             }
-            SkillDetail = "머리 찍고 착지";
+            SkillDetail = Loc.T("머리 찍고 착지");
             Log($"나이트 → {other.DisplayName}: 머리 찍기 → {result}" + (bounce ? ", 바로 옆에 착지" : " (착지하며)"));
         }
 
@@ -1064,7 +1129,7 @@ namespace ChessFight.RagdollLab
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
                         skillGrabLatch = skillGrabRaw;
-                        SkillDetail = "조준 (마우스로 위치 · 좌클릭 설치 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 위치 · 좌클릭 설치 · 우클릭/F 취소)");
                         BishopAim(s);
                     }
                     break;
@@ -1092,7 +1157,7 @@ namespace ChessFight.RagdollLab
                         bishopFlight = Mathf.Max(0.08f, s.bishopFlight * Mathf.Clamp01(range / Mathf.Max(0.1f, s.bishopRange)));
                         skillStage = SkillStage.Active;
                         stageTime = 0f;
-                        SkillDetail = "실이 날아가는 중";
+                        SkillDetail = Loc.T("실이 날아가는 중");
                     }
                     break;
                 case SkillStage.Active:
@@ -1102,7 +1167,7 @@ namespace ChessFight.RagdollLab
                         SkillTripwire.Spawn(this, bishopPoint, bishopYaw, s);
                         Log($"비숍: X자 밧줄 설치 ({Flat(bishopPoint - bodies[0].position).magnitude:0.0} m) — {s.bishopArm:0.#}초 뒤 무장");
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                     }
                     break;
             }
@@ -1149,7 +1214,7 @@ namespace ChessFight.RagdollLab
                         SkillUses++;
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
-                        SkillDetail = "예고 (빛이 조여듦)";
+                        SkillDetail = Loc.T("예고 (빛이 조여듦)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -1159,7 +1224,7 @@ namespace ChessFight.RagdollLab
                         QueenBlast(s);
                         skillStage = SkillStage.Recovery;
                         stageTime = 0f;
-                        SkillDetail = "후딜 (검에 끌려 돎)";
+                        SkillDetail = Loc.T("후딜 (검에 끌려 돎)");
                     }
                     break;
                 case SkillStage.Recovery:
@@ -1167,7 +1232,7 @@ namespace ChessFight.RagdollLab
                     if (stageTime >= s.queenRecovery)
                     {
                         skillStage = SkillStage.None;
-                        SkillDetail = "";
+                        SkillDetail = Loc.T("");
                         StartCooldown(s.queenCooldown);
                     }
                     break;
@@ -1182,10 +1247,22 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || IsAllyOf(other) || !IsEnemyOf(other) || other.SkillUntargetable) continue;
                 Vector3 d = Flat(other.bodies[0].position - c);
-                float dist = d.magnitude;
-                if (dist > s.queenRadius || Mathf.Abs(other.bodies[0].position.y - c.y) > s.queenHeight) continue;
+                float dist = QueenReach(s, c, other.bodies[0].position);
+                // R819: online the queen's player saw the ring close round an enemy that had stepped out by the host's blast;
+                // where the queen's screen had it counts too (the push still goes from where it is).
+                bool seen = false;
+                if (SeenBy(other, out var seenHips, out _, out _))
+                {
+                    float there = QueenReach(s, c, seenHips);
+                    if (there < dist)
+                    {
+                        dist = there;
+                        seen = true;
+                    }
+                }
+                if (dist > s.queenRadius) continue;
                 freed += ReleaseGripOnAllies(other);
-                Vector3 dir = dist > 0.05f ? d / dist : Flat(facing).normalized;
+                Vector3 dir = d.magnitude > 0.05f ? d.normalized : Flat(facing).normalized;
                 string result;
                 if (dist <= s.queenInner)
                 {
@@ -1198,12 +1275,20 @@ namespace ChessFight.RagdollLab
                     pushed++;
                 }
                 Fx(SkillFxKind.QueenHit, other, other.bodies[0].position, dir, dist <= s.queenInner ? 1 : 0);
-                Log($"퀸 → {other.DisplayName}: {dist:0.0} m ({(dist <= s.queenInner ? "안쪽" : "바깥")}) → {result}");
+                Log($"퀸 → {other.DisplayName}: {dist:0.0} m ({(dist <= s.queenInner ? "안쪽" : "바깥")}{(seen ? ", 보인 자리" : "")}) → {result}");
             }
             int wires = SkillTripwire.BreakNear(c, s.queenRadius, team);
             blastFlash = 0.25f;
             Fx(SkillFxKind.QueenBlast, null, c - Vector3.up * standHeight, Flat(facing), down + pushed, s.queenRadius);
             Log($"퀸: 팔방 밀치기 — 안쪽 {down}명 · 바깥 {pushed}명" + (freed > 0 ? $" · 잡힌 아군 구출 {freed}" : "") + (wires > 0 ? $" · 밧줄 {wires}개 파괴" : ""));
+        }
+
+        /// <summary>R819: how far across the ground (m) a piece at <paramref name="hips"/> is from the queen's blast at
+        /// <paramref name="c"/>; out of its height, more than any reach.</summary>
+        static float QueenReach(PawnRushSkillParams s, Vector3 c, Vector3 hips)
+        {
+            if (Mathf.Abs(hips.y - c.y) > s.queenHeight) return float.MaxValue;
+            return Flat(hips - c).magnitude;
         }
 
         /// <summary>The enemy lets go of any of this queen's allies it holds (the queen's "rescue").</summary>

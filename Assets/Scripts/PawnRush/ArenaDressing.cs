@@ -1,3 +1,4 @@
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
@@ -36,7 +37,7 @@ namespace ChessFight.PawnRush
         {
             this.game = game;
             if (symbol != null) symbol.text = Arena.Symbol(game);
-            if (title != null) title.text = MissionPicker.Name(game);
+            if (title != null) title.text = Loc.T(MissionPicker.Name(game));
             shown = 0f;
             quarter = 0;
             done = false;

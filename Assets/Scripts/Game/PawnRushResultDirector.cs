@@ -90,8 +90,8 @@ namespace ChessFight.Game
             hud = hudHost.AddComponent<PawnRushResultHud>();
             hud.Build(preview);
             hud.ToggleBoard += () => SetBoard(!boardOn);
-            hud.Requeue += () => { RequeueRequested?.Invoke(); if (preview) hud.Toast("미리보기라 다시 매칭하지 않아요. 게임에서는 파티 그대로 다음 경기를 찾아요."); };
-            hud.Lobby += () => { LobbyRequested?.Invoke(); if (preview) hud.Toast("미리보기라 로비로 가지 않아요. 게임에서는 바로 로비로 가요."); };
+            hud.Requeue += () => { RequeueRequested?.Invoke(); if (preview) hud.Toast(Loc.T("미리보기라 다시 매칭하지 않아요. 게임에서는 파티 그대로 다음 경기를 찾아요.")); };
+            hud.Lobby += () => { LobbyRequested?.Invoke(); if (preview) hud.Toast(Loc.T("미리보기라 로비로 가지 않아요. 게임에서는 바로 로비로 가요.")); };
 
             // Nothing passed in: the design sample's match, where white wins.
             if (result == null)
@@ -143,7 +143,7 @@ namespace ChessFight.Game
             {
                 timeUp = true;
                 LobbyRequested?.Invoke();
-                if (preview) hud.Toast("12초가 지나 게임이라면 로비로 가요. 미리보기에서는 여기 머물러요 (R 다시 재생).");
+                if (preview) hud.Toast(Loc.T("12초가 지나 게임이라면 로비로 가요. 미리보기에서는 여기 머물러요 (R 다시 재생)."));
             }
         }
 

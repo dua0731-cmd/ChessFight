@@ -15,7 +15,9 @@ namespace ChessFight.PawnRush.Editor
     // its walls and lid where they belong, nothing solid in its way, and pictures of every corridor (Logs/CorridorValidation):
     // from 5 m before it, from 6 m past it looking back, inside, from 16 m before and 16 m past it, and the war room's
     // end walls. Since R518 also the war room's conveyor: its belt held still on the carriage, the carriage travelling,
-    // the deck carrying a rider only with the carriage. Not a play test: no pawn walks through, nothing goes online.
+    // the deck carrying a rider only with the carriage - since R725 only when slot 5 drew the war room (its other
+    // candidates, the Royal Library since R706 and later the grayboxes now in its drafts, have no conveyor). Not a play
+    // test: no pawn walks through, nothing goes online.
     //
     // Batch (do not pass -quit; it exits after Play Mode):
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.SectionCorridorValidation.RunPlayBatch
@@ -292,16 +294,25 @@ namespace ChessFight.PawnRush.Editor
 
         static void BeltStart(bool picture)
         {
-            belt = round.GetComponentsInChildren<LibraryShuttleDriver>(true).FirstOrDefault();
+            belt = null;
             beltLinks = null;
+            // R725: slot 5 draws the war room or another late obstacle (the Royal Library, R706), which has no conveyor.
+            var room = round.Sections.FirstOrDefault(s => s != null && s.GetComponent<WarRoomSection>() != null);
+            if (room == null)
+            {
+                var late = round.Sections.FirstOrDefault(s => s != null && s.Slot == 4);
+                Log("slot 5 drew " + (late != null ? late.Id : "nothing") + ", no war-room conveyor to check");
+                return;
+            }
+            belt = room.GetComponentsInChildren<LibraryShuttleDriver>(true).FirstOrDefault();
             if (belt == null || belt.Carriage == null) { Check(false, "war room: no conveyor (LibraryShuttleDriver) in the round"); return; }
             beltLinks = belt.Carriage.GetComponentsInChildren<Transform>(true).Where(t => t.name.StartsWith("BELT_LINK_")).ToArray();
             beltLinkAt = beltLinks.Select(t => belt.Carriage.InverseTransformPoint(t.position)).ToArray();
             beltCarriageAt = belt.Carriage.position;
             if (!picture || NoCapture) return;
-            var room = round.Sections.LastOrDefault();
-            if (room != null)
-                pictures.Enqueue(() => CaptureView(room.transform, "warroom_conveyor", new Vector3(-7f, 5f, -20f), new Vector3(0f, -.5f, -3f), 66f));
+            // From the war room itself: the round's last section has been the ending since R688.
+            var frame = room.transform;
+            pictures.Enqueue(() => CaptureView(frame, "warroom_conveyor", new Vector3(-7f, 5f, -20f), new Vector3(0f, -.5f, -3f), 66f));
         }
 
         static void BeltCheck(int seed)

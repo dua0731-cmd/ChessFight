@@ -406,15 +406,15 @@ namespace ChessFight.RagdollLab
 
         public static string StageName(RagdollPawn pawn)
         {
-            if (pawn.SkillStage == SkillStage.None) return pawn.SkillCooldown > 0f ? "쿨타임" : "준비됨";
+            if (pawn.SkillStage == SkillStage.None) return Loc.T(pawn.SkillCooldown > 0f ? "쿨타임" : "준비됨");
             if (!string.IsNullOrEmpty(pawn.SkillDetail)) return pawn.SkillDetail;
             // An online client's puppet has the stage but not the host's wording (R111).
             switch (pawn.SkillStage)
             {
-                case SkillStage.Windup: return pawn.SkillAiming ? "조준" : "예고";
-                case SkillStage.Active: return "발동";
-                case SkillStage.Link: return "연결 (F 한 번 더)";
-                case SkillStage.Recovery: return "후딜";
+                case SkillStage.Windup: return Loc.T(pawn.SkillAiming ? "조준" : "예고");
+                case SkillStage.Active: return Loc.T("발동");
+                case SkillStage.Link: return Loc.T("연결 (F 한 번 더)");
+                case SkillStage.Recovery: return Loc.T("후딜");
                 default: return pawn.SkillStage.ToString();
             }
         }

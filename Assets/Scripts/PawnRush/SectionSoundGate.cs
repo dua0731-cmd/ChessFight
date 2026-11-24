@@ -29,6 +29,24 @@ namespace ChessFight.PawnRush
 
         static readonly List<PawnRushSection> sections = new List<PawnRushSection>();
         static AudioListener ear;
+        // R732: while the round's camera tours the sections behind the loading screen (RoundPrewarm), the listener counts
+        // as where the camera was before - the sections it passes on its way stay quiet.
+        static Vector3? heldEar;
+
+        public static void HoldEar(Vector3 at) => heldEar = at;
+        public static void ReleaseEar() => heldEar = null;
+
+        static bool EarAt(out Vector3 at)
+        {
+            if (heldEar.HasValue)
+            {
+                at = heldEar.Value;
+                return true;
+            }
+            if (ear == null || !ear.isActiveAndEnabled) ear = FindAnyObjectByType<AudioListener>();
+            at = ear != null ? ear.transform.position : default;
+            return ear != null;
+        }
 
         readonly List<AudioSource> sources = new List<AudioSource>();
         readonly List<float> written = new List<float>();
@@ -47,6 +65,7 @@ namespace ChessFight.PawnRush
         {
             sections.Clear();
             ear = null;
+            heldEar = null;
             ChessFight.Gameplay.CourseSoundPlace.Rule = PlaceGain;
         }
 
@@ -57,8 +76,8 @@ namespace ChessFight.PawnRush
             var room = SectionAt(at);
             if (room == null) return 1f;
             float presence = Presence(room);
-            if (presence <= 0f || ear == null) return presence;
-            float d = Vector3.Distance(ear.transform.position, at);
+            if (presence <= 0f || !EarAt(out var listener)) return presence;
+            float d = Vector3.Distance(listener, at);
             return presence * (1f - Mathf.Clamp01((d - SkillNearFull) / (SkillFarEnd - SkillNearFull)));
         }
 
@@ -100,9 +119,8 @@ namespace ChessFight.PawnRush
         public static float Presence(PawnRushSection section)
         {
             if (section == null) return 1f;
-            if (ear == null || !ear.isActiveAndEnabled) ear = FindAnyObjectByType<AudioListener>();
-            if (ear == null) return 1f;
-            float o = Outside(section, ear.transform.position, EarLoose, EarLooseUp);
+            if (!EarAt(out var listener)) return 1f;
+            float o = Outside(section, listener, EarLoose, EarLooseUp);
             return 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(o / Fade));
         }
 

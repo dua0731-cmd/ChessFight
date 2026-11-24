@@ -402,6 +402,7 @@ namespace ChessFight.PawnRush
         // A short light flash (the slot that ends first is taken again).
         void Flash(Vector3 at, Color c, float intensity, float range, float seconds)
         {
+            intensity *= GameSettings.FlashScale;   // R786: 접근성 → 번쩍임 줄이기
             int slot = 0;
             for (int i = 1; i < flashes.Length; i++)
                 if (flashAt[i] + flashLen[i] < flashAt[slot] + flashLen[slot]) slot = i;
@@ -439,6 +440,11 @@ namespace ChessFight.PawnRush
 
         public void Opened()
         {
+            // R777 (user 11-22, "확인 j 세탁장"): the sluice's own sound - hauled up, the soapy gush under it - which the
+            // shared gate sound never reached (an IGateFx stands in for all of ArenaDressing's moment). Played before
+            // the pictures' checks so a missing look never silences it; inside MiniGameEar as every gate sound.
+            var s = station != null ? station : GetComponent<MissionStation>();
+            if (s != null && s.Gate != null) ArenaFx.Sfx("sfx_laundry_gate", s.Gate.transform.position);
             if (!Ready() || station == null || station.Gate == null) return;
             gushUntil = Time.time + 2.5f;
             gushNext = Time.time;

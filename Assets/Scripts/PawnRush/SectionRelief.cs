@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using ChessFight.ProtectKing;
 using UnityEngine;
 
@@ -18,9 +19,16 @@ namespace ChessFight.PawnRush
     //   switches off        hall's rolling statues, falling chandeliers, falling pieces, pendulums, wind vents and
     //                       guard knights; the carriage yard's roaming teams and its slamming chest.
     //
-    // What a pawn rides or walks on stays as it is (boats elsewhere, bobbing platforms, floating stones, jump pads,
-    // hoists, waterwheels, conveyors). Every PC does this for itself when it sees the mini-game cleared (the cleared
-    // flags are the host's), so nothing more is sent; a thing switched off is its object made inactive.
+    // R783 (the user 2026-11-23: the garden's boats went and no bridge was there to cross by, the carriage yard had
+    // no easy way at all - "플레이어가 컨트롤 부담 없이 바로바로 건널 수 있도록 현재 구현된 모든 맵에 길을 기획하고
+    // 만들어줘"): with the relief given a section is WALKED from its entry to its exit. What a pawn had to ride,
+    // jump, time or push goes as well - the yard's two waterwheels, conveyor, storage rows, timber cranes and loft
+    // hoists, the hall's jump pad and clock gate doors; the yard's final gate opens; the garden's drums and the
+    // hall's floating stones come to rest - and ReliefWay lays decks over every gap and up every height that is
+    // left (its plan, section by section, is there).
+    //
+    // Every PC does this for itself when it sees the mini-game cleared (the cleared flags are the host's), so nothing
+    // more is sent; a thing switched off is its object made inactive.
     public static class SectionRelief
     {
         static readonly HashSet<PawnRushSection> done = new HashSet<PawnRushSection>();
@@ -58,11 +66,38 @@ namespace ChessFight.PawnRush
             }
             off += Off<CarriageFleet>(section);
             off += Off<SlamChest>(section);
+            // R783: what a walk through the section still met.
+            off += Off<HorizontalWaterwheel>(section);
+            off += Off<VerticalWaterwheel>(section);
+            off += Off<CargoConveyor>(section);
+            off += Off<StackRow>(section);
+            off += Off<SlewCrane>(section);
+            off += Off<PalletHoist>(section);
+            foreach (var context in section.GetComponentsInChildren<ObstacleContext>(true))
+                if (context.name.Contains("Jump pad") && context.gameObject.activeSelf) { context.gameObject.SetActive(false); off++; }
+            foreach (var motion in section.GetComponentsInChildren<ObstacleMotion>(true))
+            {
+                // The clock gate's two doors (they took turns to shut).
+                if (motion.name == "Left gate" || motion.name == "Right gate")
+                {
+                    if (motion.gameObject.activeSelf) { motion.gameObject.SetActive(false); off++; }
+                }
+                // The garden's floating drums and the hall's floating stones come to rest: a deck lies over them.
+                else if (motion.GetComponent<GardenDrumDip>() != null || motion.name.StartsWith("Floating stone"))
+                {
+                    if (ReliefWay.Still(motion)) off++;
+                }
+            }
+            // A gate that had to be pushed open (the yard's last) swings open by itself.
+            foreach (var gate in section.GetComponentsInChildren<PushGate>(true))
+                if (!gate.IsOpen && gate.GetComponent<ReliefOpen>() == null) { gate.gameObject.AddComponent<ReliefOpen>(); off++; }
 
             // An easy way opens.
             foreach (var stones in section.GetComponentsInChildren<GuessBridge>(true)) { stones.Relieve(); ways++; }
+            // The reservoir's boats go; its bridge is one of ReliefWay's decks.
             foreach (var lanes in section.GetComponentsInChildren<BoatLanes>(true))
-                if (lanes.gameObject.activeSelf && ReliefBridge.Over(lanes)) ways++;
+                if (lanes.gameObject.activeSelf) { lanes.gameObject.SetActive(false); off++; }
+            ways += ReliefWay.Open(section);
 
             string what = $"{section.DisplayName}: 쉬운 길 {ways}곳 · 꺼진 장애물 {off}개";
             Debug.Log("[PawnRush] 낙오자 구제 - " + what);
@@ -76,77 +111,6 @@ namespace ChessFight.PawnRush
             foreach (var part in section.GetComponentsInChildren<T>(true))
                 if (part.gameObject.activeSelf) { part.gameObject.SetActive(false); n++; }
             return n;
-        }
-    }
-
-    // The garden's easy way: a bridge let down across the reservoir where the boats crossed (the boats go). As wide
-    // as two pawns abreast with a rail on either side, its deck at the quay's height, from the quay's edge to the far
-    // bank. Built from boxes when the relief is given, on every PC; it comes down from Drop metres up in Seconds.
-    public sealed class ReliefBridge : MonoBehaviour
-    {
-        const float Half = 2f, Thick = .4f, RailHigh = 1.1f, RailThick = .25f, Drop = 9f, Seconds = 1.4f;
-
-        Vector3 home;
-        float since;
-
-        public static bool Over(BoatLanes lanes)
-        {
-            var beat = lanes.transform.parent;
-            var boats = lanes.GetComponentsInChildren<GardenBoat>(true);
-            if (beat == null || boats.Length == 0) return false;
-            // The water to cross: the reservoir's kill volume (built axis-aligned in the beat's own frame).
-            BoxCollider water = null;
-            foreach (var kill in beat.GetComponentsInChildren<KillVolume>(true))
-                if (kill.name.Contains("reservoir")) water = kill.GetComponent<BoxCollider>();
-            if (water == null) return false;
-            Vector3 middle = beat.InverseTransformPoint(water.transform.TransformPoint(water.center));
-            float z0 = middle.z - water.size.z * .5f + .3f, z1 = middle.z + water.size.z * .5f + .3f;
-            float deck = beat.InverseTransformPoint(boats[0].transform.position).y;
-            float x = 0f;
-            foreach (var gap in beat.GetComponentsInChildren<IntendedGap>(true)) x = beat.InverseTransformPoint(gap.transform.position).x;
-
-            // The boats' own planks and hull for its looks.
-            Material planks = null, hull = null;
-            foreach (var r in boats[0].GetComponentsInChildren<Renderer>(true))
-            {
-                if (r.name == "Deck") planks = r.sharedMaterial;
-                if (r.name == "Hull") hull = r.sharedMaterial;
-            }
-            lanes.gameObject.SetActive(false);
-
-            var root = new GameObject("Relief bridge (easy way)");
-            root.transform.SetParent(beat, false);
-            root.transform.localPosition = new Vector3(x, deck, (z0 + z1) * .5f);
-            float length = z1 - z0;
-            Box(root.transform, "Deck", new Vector3(0f, -Thick * .5f, 0f), new Vector3(Half * 2f, Thick, length), planks ?? hull, true);
-            Box(root.transform, "Rail W", new Vector3(-Half - RailThick * .5f, RailHigh * .5f - Thick, 0f), new Vector3(RailThick, RailHigh + Thick, length), hull ?? planks, false);
-            Box(root.transform, "Rail E", new Vector3(Half + RailThick * .5f, RailHigh * .5f - Thick, 0f), new Vector3(RailThick, RailHigh + Thick, length), hull ?? planks, false);
-            var bridge = root.AddComponent<ReliefBridge>();
-            bridge.home = root.transform.localPosition;
-            root.transform.localPosition = bridge.home + Vector3.up * Drop;
-            return true;
-        }
-
-        static void Box(Transform parent, string name, Vector3 at, Vector3 size, Material material, bool floor)
-        {
-            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            box.name = name;
-            box.transform.SetParent(parent, false);
-            box.transform.localPosition = at;
-            box.transform.localScale = size;
-            if (material != null) box.GetComponent<Renderer>().sharedMaterial = material;
-            if (floor) box.AddComponent<CourseFloor>();
-            box.AddComponent<NoClimbSurface>();
-        }
-
-        void Update()
-        {
-            since += Time.deltaTime;
-            float t = Mathf.Clamp01(since / Seconds);
-            // Eased down, with a little settle at the end.
-            float eased = 1f - (1f - t) * (1f - t);
-            transform.localPosition = home + Vector3.up * (Drop * (1f - eased));
-            if (t >= 1f) enabled = false;
         }
     }
 
@@ -166,7 +130,7 @@ namespace ChessFight.PawnRush
                 var go = new GameObject("Section relief notice");
                 current = go.AddComponent<SectionReliefNotice>();
             }
-            current.line = sectionName + " · 쉬운 길이 열리고 장애물이 꺼졌습니다";
+            current.line = Loc.F("{0} · 쉬운 길이 열리고 장애물이 꺼졌습니다", Loc.T(sectionName));
             current.until = Time.unscaledTime + Seconds;
         }
 

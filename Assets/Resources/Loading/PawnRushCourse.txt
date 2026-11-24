@@ -16,4 +16,5 @@
 3	Late_MG_I_KingsBedchamber	국왕 침실
 4	Final_WarRoom	국왕 작전실
 4	Late_3-1_RoyalLibrary	왕의 서재 · 거인 체스
+4	Late_3-2_RoyalObservatory	왕실 천문대 (회색 상자)
 5	Final_AudienceHall_Temp	국왕 알현실 (임시)

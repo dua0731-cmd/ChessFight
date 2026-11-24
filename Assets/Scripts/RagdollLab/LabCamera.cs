@@ -50,6 +50,26 @@ namespace ChessFight.RagdollLab
         readonly RaycastHit[] hits = new RaycastHit[16];
 
         public Camera Cam => cam != null ? cam : cam = GetComponent<Camera>();
+
+        // R786: the Pawn Rush camera (OrbitCamera, Game assembly, which cannot see the pawn) widens on a sprint as this
+        // one does: it asks here whether the pawn its body belongs to sprints. Sprinting is the pawn's own flag (holding
+        // sprint, moving, stamina to spend), which a client's puppet also gets from the host's pose.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void ShareSprint() => OrbitCamera.SprintShare = SprintOf;
+
+        static Transform sprintBody;
+        static RagdollPawn sprintPawn;
+
+        static float SprintOf(Transform body)
+        {
+            if (body != sprintBody || (sprintPawn == null && body != null))
+            {
+                sprintBody = body;
+                sprintPawn = body != null ? body.GetComponentInParent<RagdollPawn>() : null;
+            }
+            return sprintPawn != null && sprintPawn.Sprinting ? 1f : 0f;
+        }
+
         public Vector3 FlatForward => Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         public Vector3 FlatRight => Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
 

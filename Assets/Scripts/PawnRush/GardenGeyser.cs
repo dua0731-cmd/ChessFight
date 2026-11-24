@@ -30,6 +30,7 @@ namespace ChessFight.PawnRush
         // R426: the concept dressing takes the picture over (GardenJet draws the water, computed); column and bubbles go.
         public int Order => order;
         public float Height => height;
+        public float Radius => radius;
 
         // For the builder: on an inactive object, before it wakes.
         public void Configure(int order, Transform column, Transform bubbles, Vector3 back)

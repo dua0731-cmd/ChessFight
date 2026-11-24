@@ -108,7 +108,7 @@ namespace ChessFight.RagdollLab
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
             root = new GameObject("Pawn Rush skill effects").transform;
-            font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
+            font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Microsoft YaHei", "Arial" }, 64);
             BuildParts();
             var white = Texture2D.whiteTexture;
             matPillar = Glow(texBeam, noise: 0.5f, noiseST: new Vector4(2f, 0.7f, 0f, -2.6f), rim: -0.8f, rimPower: 1.4f, soft: 0.2f);

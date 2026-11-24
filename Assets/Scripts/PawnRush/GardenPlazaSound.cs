@@ -37,6 +37,16 @@ namespace ChessFight.PawnRush
             // R536: the next beat's bobbing drums and lotus pads (GardenFloatSound), added here so the built scene needs
             // nothing new.
             if (GetComponent<GardenFloatSound>() == null) gameObject.AddComponent<GardenFloatSound>();
+            // R767: the weirs, the lake's boats, the lock's running water and its sluice gates.
+            if (GetComponent<GardenWaterworksSound>() == null) gameObject.AddComponent<GardenWaterworksSound>();
+            // R769: the garden's bed of sound and the birds over it (GardenBirds is a picture with its own wing sound).
+            if (GetComponent<GardenAmbience>() == null) gameObject.AddComponent<GardenAmbience>();
+            if (GetComponent<GardenBirds>() == null) gameObject.AddComponent<GardenBirds>();
+            // R768 (beats 5, 6): the dyke's robot arms and the boat crossing.
+            if (GetComponent<GardenReservoirSound>() == null) gameObject.AddComponent<GardenReservoirSound>();
+            var section = GetComponentInParent<PawnRushSection>();
+            foreach (var robot in (section != null ? section.transform : transform.root).GetComponentsInChildren<RobotSweep>(true))
+                if (robot.GetComponent<GardenRobotSound>() == null) robot.gameObject.AddComponent<GardenRobotSound>();
             AudioClip jetNear = Load("FountainJet"), jetFar = Load("FountainJetFar");
             fountains = new NearFarSound[jets.Length];
             for (int i = 0; i < jets.Length; i++)

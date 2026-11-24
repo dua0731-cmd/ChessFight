@@ -139,9 +139,26 @@ namespace ChessFight.PawnRush
         void Start()
         {
             RaiseSocket();
+            if (palaceStyle) DropDaisRims();
             if (Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
             if (Dressing != null && dressing.isActiveAndEnabled) dressing.Installed(gameIndex);
             if (hooked == null) Hook(Game);
+        }
+
+        // 11-22 ("미니게임에 이런 노란 테두리는 다 지워"): a game saved in a mini-game prefab still carries the gold dais rims
+        // (Arena.Rim's "Rim W" ... "Rim N E"); a game built now has none (MissionGames.Floor). Pictures only.
+        void DropDaisRims()
+        {
+            if (gameSocket == null) return;
+            var rims = new System.Collections.Generic.List<GameObject>();
+            foreach (var t in gameSocket.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith("Rim ") && t.GetComponent<Collider>() == null && t.GetComponentInParent<GatherPad>(true) == null)
+                    rims.Add(t.gameObject);
+            foreach (var rim in rims)
+            {
+                rim.SetActive(false);
+                Destroy(rim);
+            }
         }
 
         void Hook(MiniGameBase game)

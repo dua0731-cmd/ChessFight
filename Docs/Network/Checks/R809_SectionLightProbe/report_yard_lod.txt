@@ -1,0 +1,13 @@
+Section light probe (R809) 2026-11-24 00:19:32
+device: Intel(R) Iris(R) Xe Graphics | Direct3D11 | quality 1 PC
+== RoyalCarriageYard
+  lights: Directional 2, Directional shadowed 1, Point 9
+  shadowed punctual lights: 0 (shadow maps 0; the atlas warning comes when one frame needs more than it holds)
+  renderers 515 · triangles 2,533,188 · shadow casters 308 · materials 80 (transparent 30) · particle systems 11 · reflection probes 4
+  view entry: renderers 505 · triangles 2,506,886 · casters 301 · lights 6 (shadowed 0, maps 0) · 7.32 / 38.51 ms
+  view 1 바깥 성문 · 마당: renderers 483 · triangles 2,348,147 · casters 281 · lights 11 (shadowed 0, maps 0) · 6.13 / 33.27 ms
+  view 2 운하 · 대형 물레방아: renderers 412 · triangles 1,883,817 · casters 219 · lights 4 (shadowed 0, maps 0) · 5.91 / 29.88 ms
+  view 3 왕실 하역 창고 · 물레방아: renderers 134 · triangles 1,125,142 · casters 117 · lights 10 (shadowed 0, maps 0) · 4.68 / 29.56 ms
+  view 4 최종 성문: renderers 7 · triangles 162,036 · casters 7 · lights 0 (shadowed 0, maps 0) · 2.39 / 16.31 ms
+  views: mean 29.51 ms, slowest 'entry' 38.51 ms
+RESULT PASS (probe ran; see the numbers)

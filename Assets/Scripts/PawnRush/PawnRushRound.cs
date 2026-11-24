@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -112,6 +113,25 @@ namespace ChessFight.PawnRush
 
         public bool HasBuilt => holder != null;
 
+        // R730 (11-20 build test: the giant chess course stuttered as the pawns went into the library and into its chess
+        // room): the round's scene has no fog, and the sections that bring their own light (the carriage yard, the Royal
+        // Library, the Royal Observatory) turn a linear haze on as the camera comes in. Fog on or off is a shader keyword,
+        // so at that moment every material in view wants another variant, and a Direct3D 12 player makes each one's
+        // pipeline there and then. A linear fog from the round's start, too far out to be seen (3000 to 6000 m - the very
+        // distances those sections fade their haze from when a scene has none), keeps the variants in use the same from
+        // the loading screen on; a section's haze then only moves the distances and the colour. A fog already on is left
+        // as it is.
+        public const float FarFogStart = 3000f, FarFogEnd = 6000f;
+
+        static void FarFog()
+        {
+            if (RenderSettings.fog) return;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogStartDistance = FarFogStart;
+            RenderSettings.fogEndDistance = FarFogEnd;
+            RenderSettings.fog = true;
+        }
+
         void OnDestroy()
         {
             if (Current == this) Current = null;
@@ -127,6 +147,7 @@ namespace ChessFight.PawnRush
         void Build(int roundSeed, double startClock, bool fresh)
         {
             Clear();
+            if (Application.isPlaying) FarFog();
             Seed = roundSeed;
             StartClock = startClock;
             if (set == null)
@@ -179,6 +200,8 @@ namespace ChessFight.PawnRush
             }
             if (startSpots && sections.Count > 0) StartSpots(holder.transform, sections[0]);
             holder.SetActive(true);
+            // R753: the course's 3D words (signs, gate labels, station names) in the game's language.
+            SignText.TranslateUnder(holder.transform);
             if (finishRace) BindFinish();
             // R652: the race music (PawnRushRoundMusic), once per round object
             if (Application.isPlaying && GetComponent<PawnRushRoundMusic>() == null) gameObject.AddComponent<PawnRushRoundMusic>();
@@ -190,6 +213,8 @@ namespace ChessFight.PawnRush
             if (fresh) CheckRevealNames(roundSeed, built);
             CheckWireRange();
             Built?.Invoke(this);
+            // R732: behind a match's loading screen, every section the round built is drawn once before the start.
+            RoundPrewarm.Begin(this);
         }
 
         // R548: a match's entrance screen revealed this round from the course table (Resources/Loading/PawnRushCourse.txt)
@@ -254,6 +279,9 @@ namespace ChessFight.PawnRush
             StartClock = clock;
             foreach (var s in sections)
                 if (s != null) s.Configure(s.Slot, s.Seed, teamSize, StartClock);
+            // R757 (user 11-22: the mini-game signs and flags still Korean in an English match): what the sections
+            // rebuilt from the shared start is new and was not in the first sweep.
+            SignText.TranslateUnder(transform);
         }
 
         // Six spots a team in two rows across the first section's entry, facing the way on.
@@ -281,6 +309,7 @@ namespace ChessFight.PawnRush
             teamSize = Mathf.Clamp(size, 1, 6);
             foreach (var s in sections)
                 if (s != null) s.Configure(s.Slot, s.Seed, teamSize, StartClock);
+            SignText.TranslateUnder(transform);   // R757: as SetStartClock
         }
 
         public void Clear()
@@ -305,6 +334,41 @@ namespace ChessFight.PawnRush
             }
             beat = null;
             return null;
+        }
+
+        // R786 (끼었을 때 되돌아가기, StuckWatch.Back): how far along the round a world point is, for one team - the index
+        // of its section and the metres along that section's ProgressPath (else from its entry towards its exit, as the
+        // standings measure it); in the corridor after section i, the end of section i. miniGame: a mini-game's room.
+        // False: outside every section and corridor.
+        public bool TryProgress(Vector3 world, int team, out int section, out float metres, out bool miniGame)
+        {
+            for (int i = 0; i < sections.Count; i++)
+            {
+                var s = sections[i];
+                if (s == null || s.BeatAt(world) == null) continue;
+                section = i;
+                miniGame = s.Kind == PawnRushSection.SlotKind.MiniGame || s.GetComponent<MiniGameSection>() != null;
+                var path = s.GetComponentInChildren<ProgressPath>(true);
+                if (path != null && path.Count >= 2) metres = ProgressPath.Along(path.World(team), world, out _);
+                else
+                {
+                    Vector3 a = s.EntryWorld.position, ab = s.ExitWorld.position - a;
+                    metres = ab.sqrMagnitude > .01f ? Mathf.Max(0f, Vector3.Dot(world - a, ab) / ab.magnitude) : 0f;
+                }
+                return true;
+            }
+            for (int i = 0; i < corridors.Count; i++)
+                if (corridors[i] != null && SectionCorridor.Holds(corridors[i], world))
+                {
+                    section = i;
+                    metres = float.MaxValue;
+                    miniGame = false;
+                    return true;
+                }
+            section = -1;
+            metres = 0f;
+            miniGame = false;
+            return false;
         }
 
         // Is a world point in one of the corridors between the sections (R517).

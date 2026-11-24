@@ -618,7 +618,7 @@ namespace ChessFight.RagdollLab
         {
             var local = SwordReadLocal(true, out bool skill, out bool edge, out bool cancel, out bool edgeHeld);
             if (local.jump) myJumps = PressCount.Add(myJumps);
-            if (local.shove) myShoves = PressCount.Add(myShoves);
+            if (local.shove) { myShoves = PressCount.Add(myShoves); sword.Local?.NoteClick(); }   // R813: the feel log's click
             if (skill) mySkills = PressCount.Add(mySkills);
             if (edge) myAbilities = PressCount.Add(myAbilities);
             if (cancel) myAbilities2 = PressCount.Add(myAbilities2);
@@ -827,7 +827,9 @@ namespace ChessFight.RagdollLab
                         grip = Vector3.Lerp(a.Grip, b.Grip, playT);
                         turn = Quaternion.Slerp(a.Turn, b.Turn, playT);
                     }
-                    f.ApplyRemote(b.Alive, b.Drawn, b.Protection, grip, turn, b.Respawn, b.Flash, b.Classic);
+                    // R808: with the frame's host time and the time drawn here, so a cut in it plays when the bodies get
+                    // there and finds its cutter by the time of its strike (SwordFightPawn.RemoteFlash).
+                    f.ApplyRemote(b.Alive, b.Drawn, b.Protection, grip, turn, b.Respawn, b.Flash, b.Classic, to.Time, playbackMs);
                 }
             // Frames older than the two drawn go.
             while (weaponFrames.Count > 2 && unchecked((int)(weaponFrames[1].Time - playFrom)) <= 0)

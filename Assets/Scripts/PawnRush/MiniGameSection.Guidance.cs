@@ -25,13 +25,13 @@ namespace ChessFight.PawnRush
             var station = stations[0] != null && stations[0].Team == team ? stations[0] : stations[1];
             if (station == null || station.Team != team) return null;
             bool left = transform.InverseTransformPoint(station.transform.position).x < 0f;
-            if (station.Gate != null && station.Gate.IsOpen) return left ? "입구 기준 왼쪽 출구가 열렸습니다" : "입구 기준 오른쪽 출구가 열렸습니다";
+            if (station.Gate != null && station.Gate.IsOpen) return Loc.T(left ? "입구 기준 왼쪽 출구가 열렸습니다" : "입구 기준 오른쪽 출구가 열렸습니다");
             if (game == PawnRushMissions.Paint)
-                return team == Teams.White ? "중앙 공용 판  ·  밝은 칸을 칠하세요" : "중앙 공용 판  ·  어두운 칸을 칠하세요";
+                return Loc.T(team == Teams.White ? "중앙 공용 판  ·  밝은 칸을 칠하세요" : "중앙 공용 판  ·  어두운 칸을 칠하세요");
             if (p.z < 5.5f || Mathf.Abs(p.x) < 2f)
-                return left ? "입구에서 왼쪽으로  ·  우리 팀 진영" : "입구에서 오른쪽으로  ·  우리 팀 진영";
+                return Loc.T(left ? "입구에서 왼쪽으로  ·  우리 팀 진영" : "입구에서 오른쪽으로  ·  우리 팀 진영");
             if ((p.x < 0f) != left)
-                return left ? "상대 진영  ·  우리 진영은 입구 기준 왼쪽" : "상대 진영  ·  우리 진영은 입구 기준 오른쪽";
+                return Loc.T(left ? "상대 진영  ·  우리 진영은 입구 기준 왼쪽" : "상대 진영  ·  우리 진영은 입구 기준 오른쪽");
             return teamHunts[team] != null ? teamHunts[team].HuntHint : null;
         }
 
@@ -92,16 +92,31 @@ namespace ChessFight.PawnRush
             if (showBrief && !teamGateOpen) Briefing(scale);
             if (visibleHint != null)
             {
-                float width = Mathf.Min(390f * scale, Screen.width - 8f);
+                // R758 (user 11-22, English: "White team" folded into two lines in its 56 px box and the hint under it):
+                // the team's box and the bar grow to what the words need, on one line; past the screen the words get
+                // smaller. Korean fits the old 56 px box and 390 px bar, as before.
+                directionStyle.fontSize = Mathf.RoundToInt(17f * scale);
+                directionStyle.wordWrap = false;
+                string teamName = Loc.T(hintTeam == Teams.White ? "백팀" : "흑팀");
+                float tagW = Mathf.Max(56f * scale, directionStyle.CalcSize(new GUIContent(teamName)).x + 14f * scale);
+                float need = tagW + directionStyle.CalcSize(new GUIContent(visibleHint)).x + 24f * scale;
+                float most = Screen.width - 8f;
+                if (need > most)
+                {
+                    float shrink = most / need;
+                    directionStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(directionStyle.fontSize * shrink));
+                    tagW *= shrink;
+                    need = most;
+                }
+                float width = Mathf.Min(Mathf.Max(390f * scale, need), most);
                 var rect = new Rect((Screen.width - width) * .5f, Screen.height - 128f * scale, width, 36f * scale);
                 GUI.color = new Color(.07f, .09f, .13f, .9f);
                 GUI.DrawTexture(rect, Texture2D.whiteTexture);
                 GUI.color = Arena.TeamColor(hintTeam, true);
                 GUI.DrawTexture(new Rect(rect.x, rect.y, 4f * scale, rect.height), Texture2D.whiteTexture);
                 GUI.color = Color.white;
-                directionStyle.fontSize = Mathf.RoundToInt(17f * scale);
-                GUI.Label(new Rect(rect.x, rect.y, 56f * scale, rect.height), hintTeam == Teams.White ? "백팀" : "흑팀", directionStyle);
-                GUI.Label(new Rect(rect.x + 56f * scale, rect.y, rect.width - 60f * scale, rect.height), visibleHint, directionStyle);
+                GUI.Label(new Rect(rect.x, rect.y, tagW, rect.height), teamName, directionStyle);
+                GUI.Label(new Rect(rect.x + tagW, rect.y, rect.width - tagW - 4f * scale, rect.height), visibleHint, directionStyle);
             }
             // R703: the flow rules' line (the other team is through: this gate opens by itself in so many seconds).
             // R704: or the team's count on its gather pad, shown to its players anywhere on the course.
@@ -122,7 +137,7 @@ namespace ChessFight.PawnRush
         {
             if (game < 0 || game >= PawnRushMissions.Count) return;
             float since = Time.time - briefAt;
-            string[] how = PawnRushMissions.HowTo[game].Split(new[] { " · " }, System.StringSplitOptions.None);
+            string[] how = Loc.T(PawnRushMissions.HowTo[game]).Split(new[] { " · " }, System.StringSplitOptions.None);
             bool full = since < BriefSeconds;
             float alpha = full ? Mathf.Clamp01(since / .25f) * Mathf.Clamp01((BriefSeconds - since) / .5f) : Mathf.Clamp01((since - BriefSeconds) / .4f);
             Color ink = new Color(.96f, .92f, .82f, alpha), brass = new Color(.85f, .7f, .35f, alpha);
@@ -142,7 +157,7 @@ namespace ChessFight.PawnRush
                     foreach (var station in stations)
                         if (station != null && station.Team == hintTeam && station.Game is IProgressCount counted && counted.Total > 0)
                             count = "  ·  " + counted.Done + " / " + counted.Total;
-                GUI.Label(strip, PawnRushMissions.Names[game].Substring(2) + "  ·  " + how[0] + count, briefBody);
+                GUI.Label(strip, Loc.T(PawnRushMissions.Names[game]).Substring(2) + "  ·  " + how[0] + count, briefBody);
                 return;
             }
             float cw = Mathf.Min(640f * scale, Screen.width - 16f), ch = 196f * scale;
@@ -154,10 +169,10 @@ namespace ChessFight.PawnRush
             // the room and the game
             GUI.color = brass;
             briefSmall.fontSize = Mathf.RoundToInt(13f * scale);
-            GUI.Label(new Rect(card.x, card.y + 8f * scale, cw, 20f * scale), MiniGameSectionBuilder.Names[game], briefSmall);
+            GUI.Label(new Rect(card.x, card.y + 8f * scale, cw, 20f * scale), Loc.T(MiniGameSectionBuilder.Names[game]), briefSmall);
             GUI.color = ink;
             briefTitle.fontSize = Mathf.RoundToInt(24f * scale);
-            GUI.Label(new Rect(card.x, card.y + 28f * scale, cw, 34f * scale), PawnRushMissions.Names[game].Substring(2), briefTitle);
+            GUI.Label(new Rect(card.x, card.y + 28f * scale, cw, 34f * scale), Loc.T(PawnRushMissions.Names[game]).Substring(2), briefTitle);
             // what to do
             briefBody.fontSize = Mathf.RoundToInt(15f * scale);
             briefBody.wordWrap = true;
@@ -181,12 +196,12 @@ namespace ChessFight.PawnRush
                 GUI.DrawTexture(new Rect(chip.x + rim, chip.y + rim, chip.width - 2f * rim, chip.height - 2f * rim), Texture2D.whiteTexture);
                 GUI.color = new Color(ink.r, ink.g, ink.b, (mine ? 1f : .7f) * alpha);
                 briefSmall.fontSize = Mathf.RoundToInt(16f * scale);
-                string who = (team == Teams.White ? "백팀" : "흑팀") + (mine ? "  <b>← 우리 팀</b>" : "  (상대 팀)");
+                string who = Loc.T(team == Teams.White ? "백팀" : "흑팀") + (mine ? "  <b>← " + Loc.T("우리 팀") + "</b>" : "  (" + Loc.T("상대 팀") + ")");
                 GUI.Label(new Rect(chip.x, chip.y + 6f * scale, chip.width, 22f * scale), who, briefSmall);
                 briefSmall.fontSize = Mathf.RoundToInt(13f * scale);
                 string where = shared
-                    ? (team == Teams.White ? "가운데 공용 판 · 밝은 칸" : "가운데 공용 판 · 어두운 칸")
-                    : (side == 0 ? "입구에서 왼쪽 진영" : "입구에서 오른쪽 진영") + (team == Teams.White ? " · 청록색" : " · 주황색");
+                    ? Loc.T(team == Teams.White ? "가운데 공용 판 · 밝은 칸" : "가운데 공용 판 · 어두운 칸")
+                    : Loc.T(side == 0 ? "입구에서 왼쪽 진영" : "입구에서 오른쪽 진영") + " · " + Loc.T(team == Teams.White ? "청록색" : "주황색");
                 GUI.Label(new Rect(chip.x, chip.y + 28f * scale, chip.width, 20f * scale), where, briefSmall);
             }
         }

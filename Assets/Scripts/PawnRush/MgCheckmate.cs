@@ -59,6 +59,11 @@ namespace ChessFight.PawnRush
         readonly float[] attackLitAt = new float[64];
         MaterialPropertyBlock attackTint;
         Color attackTeam;
+        // R773 (user 11-22, the attacked-square plates: "여기 움직일 때 나는 소리도 해"): the square each of our standing
+        // pawns attacks from, so a step onto a new square - its plates lighting - plays sfx_attack_squares there.
+        readonly Dictionary<ICharacterDriver, int> plateSquare = new Dictionary<ICharacterDriver, int>();
+        readonly List<ICharacterDriver> plateGone = new List<ICharacterDriver>();
+        float nextPlateSound;
         Material skin, gold, dotOff, dotOn;
 
         // The look of each king's last move: from, to, when (Time.time), a stalemate jump or a hop.
@@ -76,8 +81,8 @@ namespace ChessFight.PawnRush
             {
                 if (Time.time < noticeUntil) return captureNotice;
                 for (int k = 0; k < hunt.Count; k++)
-                    if (view[k].State == CheckmateHunt.KingState.Frozen) return "금빛 킹에게 다이빙하거나 질주하세요";
-                return "킹의 퇴로를 막아 체크하세요";
+                    if (view[k].State == CheckmateHunt.KingState.Frozen) return Loc.T("금빛 킹에게 다이빙하거나 질주하세요");
+                return Loc.T("킹의 퇴로를 막아 체크하세요");
             }
         }
 
@@ -280,7 +285,7 @@ namespace ChessFight.PawnRush
                 {
                     Fx.Vanish(at);
                     Fx.Vanish(World(to[k]));
-                    Sound("sfx_stalemate", RevealSfx + "RevealOpen", at, .31f, 1.12f);
+                    Sound("sfx_stalemate", RevealSfx + "RevealOpen", at, 1f);
                 }
                 landed[k] = false;
             }
@@ -301,13 +306,13 @@ namespace ChessFight.PawnRush
             if (now.State == CheckmateHunt.KingState.Frozen && was.State == CheckmateHunt.KingState.Free)
             {
                 Fx.Freeze(at, PawnRushBoard.Cell, transform.eulerAngles.y);
-                Sound("sfx_mate", RevealSfx + "RevealLock", at, .65f, .85f);
+                Sound("sfx_mate", RevealSfx + "RevealLock", at, 1f);
                 KingChecked?.Invoke(true);
             }
             if (now.State == CheckmateHunt.KingState.Free && was.State == CheckmateHunt.KingState.Frozen)
             {
                 Fx.Rescue(at, station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White));
-                Sound("sfx_rescue", BoardSfx + "sfx_paint_blocked", at, .38f, 1.18f);
+                Sound("sfx_rescue", BoardSfx + "sfx_paint_blocked", at, 1f);
             }
             Copy(now, was);
             Paint(k);
@@ -329,6 +334,11 @@ namespace ChessFight.PawnRush
             halos[k].enabled = false;
         }
 
+        // R772: H's own files are in (ArtSource/PawnRush/Sfx/bake_minigame.py), so the pitches that bent the stand-ins
+        // (mate .85, rescue 1.18, stalemate 1.12, hop .82) are gone; the check rising with its count and the capture
+        // rising with the tally stay. The quiet volumes that tamed them went up too (capture .68, rescue .38 and
+        // stalemate .31 to 1, hop .24 to .5): the new takes are short clicks whose levels need the room. R776: the
+        // mate is a short click and ting now (the user heard R772's low mallet notes as a "뿡"), at 1, not .65.
         static void Sound(string name, string fallback, Vector3 at, float gain, float pitch = 1f) =>
             ArenaFx.Sfx(name, at, volume: gain, pitch: pitch, fallbackPath: fallback);   // R654: the effects volume is the gate's
 
@@ -347,8 +357,8 @@ namespace ChessFight.PawnRush
             Fx.Capture(World(from[k]), PawnRushBoard.Cell, transform.eulerAngles.y, station.Accent(station.Team));
             bool final = captured == hunt.Count;
             if (final) Sound("sfx_king_sweep", BoardSfx + "sfx_paint_team_complete", at, .82f);
-            else Sound("sfx_king_capture", RevealSfx + "RevealSlam", at, .68f, .92f + .04f * captured);
-            captureNotice = $"킹 포획   {captured} / {hunt.Count}";
+            else Sound("sfx_king_capture", RevealSfx + "RevealSlam", at, 1f, .92f + .04f * captured);
+            captureNotice = Loc.F("킹 포획   {0} / {1}", captured, hunt.Count);
             noticeUntil = Time.time + 1.2f;
         }
 
@@ -408,7 +418,7 @@ namespace ChessFight.PawnRush
                         Fx.Land(at);
                         if (Time.time >= nextHopSound)
                         {
-                            Sound("sfx_king_hop", RevealSfx + "RevealDot", at, .24f, .82f);
+                            Sound("sfx_king_hop", RevealSfx + "RevealDot", at, .5f);
                             nextHopSound = Time.time + .12f;
                         }
                     }
@@ -429,19 +439,39 @@ namespace ChessFight.PawnRush
             Attacks();
         }
 
+        // R773: one of our standing pawns on square (f, r): a new square (or back on the board) lights its plates, with a
+        // soft swish there. Every PC plays it from the pawns it draws, as it draws the plates; nothing is sent. Several
+        // pawns stepping in the same moment play it once (0.06 s apart at most).
+        void PlateStep(ICharacterDriver pawn, int f, int r)
+        {
+            int square = PawnRushBoard.Index(f, r);
+            plateGone.Remove(pawn);
+            if (plateSquare.TryGetValue(pawn, out int was) && was == square) return;
+            plateSquare[pawn] = square;
+            float t = Time.time;
+            if (t < nextPlateSound) return;
+            nextPlateSound = t + .06f;
+            Sound("sfx_attack_squares", null, World(Square(f, r, .05f)), .5f);
+        }
+
         // The squares our standing pawns attack, from the pawns this PC draws (§6.6), each plate showing or going
         // in 0.1 s.
         void Attacks()
         {
             for (int s = 0; s < 64; s++) attacked[s] = false;
+            plateGone.Clear();
+            plateGone.AddRange(plateSquare.Keys);
             foreach (var p in station.Pawns())
             {
                 if (!p.Own || p.Driver is IMiniGamePawn mg && mg.Down && !Remote) continue;
                 if (!PawnRushBoard.SquareAt(MiniGameParts.Board(station, p.Local), out int f, out int r)) continue;
+                PlateStep(p.Driver, f, r);
                 for (int df = -1; df <= 1; df++)
                     for (int dr = -1; dr <= 1; dr++)
                         if (PawnRushBoard.OnBoard(f + df, r + dr)) attacked[PawnRushBoard.Index(f + df, r + dr)] = true;
             }
+            // a pawn off the board (or down) forgets its square: stepping back on lights the plates again
+            foreach (var gone in plateGone) plateSquare.Remove(gone);
             float step = Time.deltaTime / .1f;
             float size = PawnRushBoard.Cell * .92f;
             // R688: the light's seams sit on the square's own edges (the texture's seam is at FrameEdge of the plate).

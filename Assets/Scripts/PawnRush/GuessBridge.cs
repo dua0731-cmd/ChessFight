@@ -60,7 +60,14 @@ namespace ChessFight.PawnRush
             Tint(false);
             relieved = false;
             if (breakClip == null) breakClip = Resources.Load<AudioClip>("PawnRushHallSfx/BridgeGlassBreak");
-            for (int i = 0; i < rows * 2; i++) Mend(i);
+            for (int i = 0; i < rows * 2; i++)
+            {
+                Mend(i);
+                // 2026-11-23 (사용자 "유리 밟을 때 나는 소리"): footsteps and landings on a square are glass taps
+                // (PawnRushStepSfx). Added here so the prefab already built needs no rebuild.
+                var square = Square(i);
+                if (square != null && square.GetComponent<GlassFloor>() == null) square.AddComponent<GlassFloor>();
+            }
         }
 
         GameObject Square(int i) => i < Rows ? left[i] : right[i - Rows];

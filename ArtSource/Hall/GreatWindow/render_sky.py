@@ -1,12 +1,25 @@
 # The sunset seen through the title hall's great window (10-17, 승규 님: "노을 빛이랑 구름만 블랜더로"):
 # a wide sunset sky (gold at the horizon, peach, rose, lavender blue above) with real volumetric clouds
 # lit from behind by the low sun, rendered in Cycles to one wide image that Unity lays on a far card.
-# Image 3:1, covering 60 m x 20 m on the card. Usage: blender -b --factory-startup --python render_sky.py -- <out.png> [samples]
-import bpy, math, sys
+# Image 3:1, covering 60 m x 20 m on the card. Usage: blender -b --factory-startup --python render_sky.py -- <out.png> [samples] [pct] [mode]
+# Modes (11-23, 승규 님: "인트로 화면에 구름 실제로 움직이게"):
+#   full  the old single image, sky and clouds together (perspective, 3072 x 1024)
+#   sky   the same sky and sun with no clouds: Resources/Intro/SunsetSkyClear.png, the intro's still back card
+#   far | mid | near  one drifting cloud layer: Resources/Intro/SunsetClouds{Far,Mid,Near}.png. Transparent, seen
+#         by an orthographic camera, and the clouds repeat every PERIOD units across (each cloud also
+#         stands one period to either side), so the image tiles seamlessly left to right and Unity
+#         scrolls it round (IntroStage.Vista.cs). The sun is a directional light, so every cloud is lit
+#         the same wherever it drifts. 4:1, one period = 80 m on the card (the card shows 60 m of it).
+import bpy, math, sys, random
 from mathutils import Vector
 
 args = sys.argv[sys.argv.index("--") + 1:]
 OUT = args[0]; SAMPLES = int(args[1]) if len(args) > 1 else 64; PCT = int(args[2]) if len(args) > 2 else 100
+MODE = args[3] if len(args) > 3 else "full"
+LAYER = MODE in ("far", "mid", "near")
+# One period of a layer in Blender units: the old camera saw 60 card metres as ~358 units at the
+# clouds' distance (150, 100 degree view), so 80 card metres ~ 480 units keeps the clouds their old size.
+PERIOD, LAYER_HEIGHT = 480.0, 120.0
 for o in list(bpy.data.objects): bpy.data.objects.remove(o, do_unlink=True)
 sc = bpy.context.scene
 
@@ -68,6 +81,13 @@ def cloud_material(name, seed, dens=2.4):
     th = nt.nodes.new('ShaderNodeMapRange'); th.inputs['From Min'].default_value = .78; th.inputs['From Max'].default_value = .9
     L(add.outputs[0], th.inputs['Value'])
     mul = nt.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = dens; L(th.outputs['Result'], mul.inputs[0])
+    if LAYER:
+        # The drifting layers are seen straight on, where noise reaching the box's skin showed as a cloud
+        # cut off by a straight edge: fade the density out before the skin (length >= 1 on every face).
+        edge = nt.nodes.new('ShaderNodeMapRange'); edge.inputs['From Min'].default_value = 1.0; edge.inputs['From Max'].default_value = .78
+        L(ln.outputs['Value'], edge.inputs['Value'])
+        keep = nt.nodes.new('ShaderNodeMath'); keep.operation = 'MULTIPLY'; L(th.outputs['Result'], keep.inputs[0]); L(edge.outputs['Result'], keep.inputs[1])
+        L(keep.outputs[0], mul.inputs[0])
     vol = nt.nodes.new('ShaderNodeVolumePrincipled'); vol.inputs['Color'].default_value = srgb("fff4ee")
     vol.inputs['Anisotropy'].default_value = .35
     # sunset clouds glow a little of their own: warm rose light from the whole sky
@@ -84,9 +104,32 @@ clouds = [
     (-160, 170, 20, 30, 14, 10), (170, 180, 16, 34, 14, 10), (35, 150, 22, 30, 12, 10), (-95, 160, 30, 26, 12, 9),
     (-30, 140, 24, 26, 12, 9), (100, 150, 34, 24, 10, 8), (-140, 130, 40, 20, 10, 7), (150, 140, 44, 20, 10, 7),
 ]
-for i, (x, y, z, sx, sy, sz) in enumerate(clouds):
-    bpy.ops.mesh.primitive_cube_add(size=2, location=(x, y, z)); o = bpy.context.active_object
-    o.scale = (sx, sy, sz); o.data.materials.append(cloud_material("Cloud %d" % i, i * 3.7))
+def layer_clouds(mode):
+    # (x, z, sx, sz, density) across one period; z in layer units (0..120 = card 0..20 m, 6 units a metre).
+    # Far: low flat banks near the horizon, thinner. Mid: the big billowing ones. Near: higher, rounder puffs.
+    spec = {"far": (10, 36, 54, (30, 50), (7, 10), 1.8, 11),
+            "mid": (9, 56, 80, (30, 46), (13, 18), 2.4, 23),
+            "near": (8, 84, 98, (20, 30), (9, 12), 2.4, 37)}[mode]
+    count, z0, z1, (wx0, wx1), (hz0, hz1), dens, seed = spec
+    rnd = random.Random(seed); out = []
+    for i in range(count):
+        x = -PERIOD / 2 + (i + .5 + rnd.uniform(-.28, .28)) * PERIOD / count
+        out.append((x, rnd.uniform(z0, z1), rnd.uniform(wx0, wx1), rnd.uniform(hz0, hz1), dens, seed + i * 3.7))
+    return out
+
+if MODE == "full":
+    for i, (x, y, z, sx, sy, sz) in enumerate(clouds):
+        bpy.ops.mesh.primitive_cube_add(size=2, location=(x, y, z)); o = bpy.context.active_object
+        o.scale = (sx, sy, sz); o.data.materials.append(cloud_material("Cloud %d" % i, i * 3.7))
+elif LAYER:
+    for i, (x, z, sx, sz, dens, w) in enumerate(layer_clouds(MODE)):
+        m = cloud_material("Cloud %d" % i, w, dens)
+        # The same cloud a period to either side: Object coordinates give the copies the same noise.
+        # Each cloud stands at its own depth (40 apart, boxes 32 deep): overlapping volume boxes cut
+        # straight-edged notches out of each other, and the orthographic view makes depth invisible.
+        for shift in (-PERIOD, 0, PERIOD):
+            bpy.ops.mesh.primitive_cube_add(size=2, location=(x + shift, i * 40, z)); o = bpy.context.active_object
+            o.scale = (sx, 16, sz); o.data.materials.append(m)
 
 # ---------- the low sun behind the clouds, warm; a soft rose fill from the sky
 sun = bpy.data.lights.new("Sun", 'SUN'); sun.energy = 5.5; sun.color = srgb("ff9e5e")[:3]; sun.angle = math.radians(3)
@@ -103,7 +146,15 @@ sc.camera = co
 sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.cycles.volume_bounces = 2; sc.cycles.max_bounces = 6
 sc.render.resolution_x, sc.render.resolution_y = 3072, 1024; sc.render.resolution_percentage = PCT
+if LAYER:
+    # Straight on and orthographic, one period wide, the layer's 0..120 units tall; the sky is left out
+    # (it still lights the clouds) so only the clouds and their alpha are in the image.
+    cam.type = 'ORTHO'; cam.ortho_scale = PERIOD; cam.clip_end = 2000
+    co.location = (0, -400, LAYER_HEIGHT / 2); co.rotation_euler = (math.radians(90), 0, 0)
+    sc.render.resolution_x, sc.render.resolution_y = 3072, 768
+    sc.render.film_transparent = True
 sc.view_settings.view_transform = 'Standard'; sc.view_settings.look = 'None'
 sc.render.image_settings.file_format = 'PNG'; sc.render.filepath = OUT
+if LAYER: sc.render.image_settings.color_mode = 'RGBA'
 bpy.ops.render.render(write_still=True)
 print("SKY DONE", OUT, flush=True)

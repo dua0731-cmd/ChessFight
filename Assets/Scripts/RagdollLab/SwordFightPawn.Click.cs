@@ -11,8 +11,9 @@ namespace ChessFight.RagdollLab
         public const float Windup = .16f, ActiveTime = .20f, Recovery = .34f;
         public const float SwingDuration = Windup + ActiveTime + Recovery;
         /// <summary>10-28 (승규 님, a "sword swipes" clip: "좌클릭을 누를 때마다 한 가지 동작으로 칼을 휘두르는게 아니라 여러
-        /// 방면으로"): each piece's click is a combo of four cuts in different directions (Combos below; the fourth from 10-29). A click during a
-        /// cut or within this long after it takes the next one; a longer pause starts over at the piece's own first cut.</summary>
+        /// 방면으로"): each piece's click was a combo of four cuts in different directions; since R828 every piece has the one
+        /// diagonal (OneCut). A click during a cut or within this long after it chains the next one from where the blade is;
+        /// a longer pause starts over from the guard.</summary>
         public const float ComboWindow = .6f;
         public float SwingAge { get; private set; } = 99f;
         /// <summary>Which cut of its piece's combo the click cut is (0 = the piece's own first cut).</summary>
@@ -37,8 +38,31 @@ namespace ChessFight.RagdollLab
         /// at where a foe was) up to PullConeMost; the lean eases in at PullRate degrees a second.</summary>
         public const float PullCone = 35f, PullReach = 1.9f, PullRate = 420f, PullConePerLagSecond = 100f, PullConeMost = 60f;
         /// <summary>A hit catches the blade: for BiteTime seconds the cut goes on at BitePace of its speed (on the machine
-        /// that runs it, so every screen sees the blade held in the piece it cut), then swings on through.</summary>
-        public const float BiteTime = .07f, BitePace = .12f;
+        /// that runs it, so every screen sees the blade held in the piece it cut), then swings on through.
+        /// R808 (승규 님 11-23, the online play: "피격을 해도 허공을 가로지르는 것 같음"): .07 s at 12% → .10 s at 5%. A client
+        /// draws the host's poses 30 times a second with 7 players or more, and .07 s was two of them, eased over into a
+        /// slight slowing; three all but still ones read as the blade stopping in the piece. The cutter's whole picture is
+        /// not held as the cut piece's is (RagdollPawn.HoldVisual): its camera follows its body, so a piece walking as it
+        /// cut slid back and jumped on its own screen. This holds its arm and blade - the whole cut - instead.</summary>
+        public const float BiteTime = .10f, BitePace = .05f;
+        /// <summary>R808: a cut that meets the shell of a piece under its respawn protection (ShellRadius) is caught this
+        /// long at BitePace while the shell rings (SfFxKind.SwordBlocked), instead of going through as if nobody were there.</summary>
+        public const float BlockBiteTime = .06f;
+        /// <summary>R808: cuts stopped on a protected piece's shell (the checks).</summary>
+        public int Blocks { get; private set; }
+        /// <summary>R812 (승규 님 11-24, after R808's automated check: a quarter of a second after a hit the blade was still
+        /// going down through the cut piece's lower body - "하는 게좋아?" → "넣어줘"): once a catch is over (BiteTime,
+        /// BlockBiteTime) the rest of the blade's pass goes this many times as fast - out of the piece in half the time, as
+        /// a heavy blade that has bitten tears on through - and the recovery takes the time saved back (RecoveryPace), so a
+        /// cut that lands is as long as before (0.68 s and its catch) and a combo's beat is unchanged. The lines it goes
+        /// along are the same (a sweep still cuts a second piece on its way: the samples follow the blade's turn). 1: as
+        /// before R812.</summary>
+        public const float SnapPace = 2f;
+        // R812: the rest of this cut's pass snapping through after a catch, and the time (s) that has saved so far.
+        bool snapping;
+        float snapSaved;
+        /// <summary>R812: the recovery's pace: slower by the time a snap saved, 1 without one.</summary>
+        float RecoveryPace => snapSaved > 0f ? style.Recovery / (style.Recovery + snapSaved) : 1f;
         const float BladeLength = .88f;
         float pull, biteLeft;
         /// <summary>How many hits have caught this fighter's blade (the checks).</summary>
@@ -68,12 +92,27 @@ namespace ChessFight.RagdollLab
         void CancelClickSwing()
         {
             inputBuffer = 0; SwingAge = 99f; sinceSwing = 99f; wasActive = false; hitThisSwing.Clear();
-            Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; biteLeft = 0f;
+            Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; biteLeft = 0f; snapping = false; snapSaved = 0f;
         }
 
         /// <summary>A click while a cut runs waits for its blade to go through (the next cut of the combo) instead of being
         /// dropped.</summary>
         float ClickBuffer => .13f + (ClassicControls && Attacking ? Mathf.Max(0f, windup + style.Active - SwingAge) : 0f);
+
+        /// <summary>R830: the blade is going through a cut now, on this screen (SwordSlashTrail draws its afterimage):
+        /// where the cut is run, from the end of its windup until its blade has gone through; where it is only seen, while
+        /// the blade turns as fast as a cut (remoteCut, the same test as the swing's whoosh).</summary>
+        internal bool Slashing
+        {
+            get
+            {
+                if (!Alive || Pawn == null || Pawn.State != PawnState.Active || SwordAway) return false;
+                if (Skills != null && Skills.Blade != null) return false;
+                if (!Authority) return remoteCut > .12f;
+                if (!ClassicControls) return Attacking;
+                return Attacking && SwingAge >= windup - .01f && SwingAge <= windup + style.Active + .01f;
+            }
+        }
 
         /// <summary>A skill takes the sword: a click cut still running stops (without the step's input dropped, as StopCombat does).</summary>
         internal void CancelSwing() { if (ClassicControls) CancelClickSwing(); }
@@ -93,7 +132,8 @@ namespace ChessFight.RagdollLab
                 fromArm = BodyLocal(armNow);
                 ChestChannels(out fromLean, out fromTwist, out fromRoll);
                 fromBody = Attacking ? Pawn.BodyTurn : 0f;
-                float carried = through ? CutLength - SwingAge : 0f;
+                // R812: the rest of the recovery as long as it would still take (slower after a snap), not its lines.
+                float carried = through ? (CutLength - SwingAge) / RecoveryPace : 0f;
                 bufferedAim.y = 0;
                 swingDirection = bufferedAim.sqrMagnitude > .01f ? bufferedAim.normalized : Pawn.Facing;
                 var combo = ComboOf(Pawn.Piece);
@@ -102,14 +142,31 @@ namespace ChessFight.RagdollLab
                 style = combo[ComboStep];
                 windup = style.Windup + carried;
                 SwingAge = 0; Swings++; inputBuffer = 0; Protection = 0;
-                hitThisSwing.Clear(); wasActive = false; pull = 0f; biteLeft = 0f;
+                hitThisSwing.Clear(); wasActive = false; pull = 0f; biteLeft = 0f; snapping = false; snapSaved = 0f;
+                BladeSeenMoving();   // R813: where the cut is run, its pose moves from this step
             }
             inputBuffer = Mathf.Max(0, inputBuffer - dt);
             if (!Attacking) { Pawn.BodyTurn = 0f; Pawn.FaceHoldRate = 0f; pull = 0f; sinceSwing += dt; StepOffArm(dt); return; }
             sinceSwing = 0f;
             // R670: a hit catches the blade for a moment (the cut all but stops in the piece, then goes on through).
             float pace = 1f;
-            if (biteLeft > 0f) { biteLeft -= dt; pace = BitePace; }
+            bool passing = SwingAge < windup + style.Active;
+            if (biteLeft > 0f)
+            {
+                biteLeft -= dt; pace = BitePace;
+                // R812: the catch over, the rest of the pass snaps through.
+                if (biteLeft <= 0f && passing) snapping = true;
+            }
+            else if (snapping && passing)
+            {
+                pace = SnapPace;
+                snapSaved += dt * (SnapPace - 1f);
+            }
+            else
+            {
+                snapping = false;
+                if (!passing) pace = RecoveryPace;
+            }
             SwingAge += dt * pace;
             // R670: until the blade starts, the cut goes where the player looks now, not where they looked at the click
             // (a chained cut's windup is up to half a second: a foe has moved on by then), leaning to the foe that way.
@@ -300,7 +357,7 @@ namespace ChessFight.RagdollLab
             {
                 bool cutting = Quaternion.Angle(lastRemoteTurn, remoteRotation) / dt > 200f;
                 // The swing's whoosh where this fighter's cuts are only seen: as its blade starts moving like one.
-                if (cutting && remoteCut <= 0f && ClassicControls && Alive && Pawn.State == PawnState.Active) SwingSound();
+                if (cutting && remoteCut <= 0f && ClassicControls && Alive && Pawn.State == PawnState.Active) { SwingSound(); BladeSeenMoving(); }
                 remoteCut = cutting ? .2f : Mathf.Max(0f, remoteCut - dt);
                 lastRemoteTurn = remoteRotation;
                 remoteOffArm = Mathf.MoveTowards(remoteOffArm, remoteCut > 0f ? 1f : 0f, dt / (remoteCut > 0f ? .2f : .3f));
@@ -312,13 +369,17 @@ namespace ChessFight.RagdollLab
 
         /// <summary>10-29 (승규 님: "칼이 휘두를 때 sfx 넣어줘"): the piece's own sword whoosh as a click cut's blade starts
         /// going through (Resources/SwordFightSkillSfx/Swing + piece), a little higher or lower each time so a combo's
-        /// four cuts are not one sound four times over.</summary>
+        /// four cuts are not one sound four times over. R808: at its own level for this screen's player's cuts, under it
+        /// and quieter further off for everyone else's (SwordFightSkillSfx.Heard): with 9 players every cut's whoosh was
+        /// as loud on every screen as one's own.</summary>
         void SwingSound() =>
-            SwordFightSkillSfx.Moment("Swing" + Pawn.Piece, Hand.position, Skills, Random.Range(.92f, 1.08f));
+            SwordFightSkillSfx.Moment("Swing" + Pawn.Piece, Hand.position, Skills, Random.Range(.92f, 1.08f),
+                SwordFightSkillSfx.Heard(Hand.position, SwordFightSkillSfx.Viewer(Pawn)));
 
         void DetectClickHit(Vector3 start, Vector3 end)
         {
             if (!Attacking) return;   // stopped this step (a parried cut)
+            HitShells(start, end);
             int count = Physics.OverlapCapsuleNonAlloc(start, end, .15f, overlaps, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
@@ -326,45 +387,69 @@ namespace ChessFight.RagdollLab
                 if (!RagdollPawn.ColliderOwner.TryGetValue(c, out var target) || target == Pawn ||
                     target.Team == Pawn.Team || c.GetComponent<SwordBladeContact>() != null) continue;
                 var victim = target.GetComponent<SwordFightPawn>();
+                // A piece under its respawn protection takes no cut (its shell stops the blade first: HitShells).
                 if (victim == null || !victim.Alive || victim.Protection > 0 || !hitThisSwing.Add(victim)) continue;
                 // A king in its guard (the skill test scene) takes the cut and answers it.
-                if (victim.Skills != null && victim.Skills.Parry(this, c.ClosestPoint(Hand.position))) { HitFlash = .1f; CancelClickSwing(); return; }
+                if (victim.Skills != null && victim.Skills.Parry(this, c.ClosestPoint(Hand.position))) { HitFlash = StrikeFlash; CancelClickSwing(); return; }
                 Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
                 CutPush(away.normalized, out Vector3 push, out Vector3 topple);
                 target.TakeHit(push * SameFall(target), .65f, 0, true);
                 // The upper body goes on a little faster the way the blade went than the hips, so it falls that way.
                 if (!target.NetworkPuppet)
                     for (int b = (int)BodyId.Chest; b <= (int)BodyId.HandR; b++) target.bodies[b].linearVelocity += topple * target.PushScale * SameFall(target);
-                victim.StopCombat(); victim.FlashHit(CutFlash); HitFlash = .1f; HitsLanded++;
+                // R808: the cut's own cutter goes with it (the hit sound and effect know whose it was on this machine).
+                victim.StopCombat(); victim.FlashHit(CutFlash, this); HitFlash = StrikeFlash; HitsLanded++;
                 // R670: the blade is caught in the piece it cut (StepClickSwing).
                 biteLeft = BiteTime; Bites++;
                 RaiseStruck(this, victim);
             }
         }
 
-        /// <summary>10-29 (승규 님: "칼을 휘두르는 방향에 따라 상대가 그쪽 방향으로 넘어지거나"): a click cut's hit, the way its
-        /// blade was going where it struck instead of always ahead. A sweep throws the victim sideways the way it went, a
-        /// chop from above drives it down where it stands (less far, barely lifted), a rising cut lifts it up and back, a
-        /// thrust shoves it straight back. Then (승규 님: "날아가는 범위를 줄여주고") less far than the old 3.4 m/s: a heavy
-        /// 2.3 m/s along the ground; <paramref name="topple"/> is the extra the upper body gets that way, so it falls toward
-        /// it.</summary>
+        /// <summary>R808 (승규 님 11-23: "피격을 해도 허공을 가로지르는 것 같음"; a cut on a piece just back on the board went
+        /// through it without a sound): the shells of the foes under their respawn protection - ShellRadius about their
+        /// hips, as SwordFightMatch draws the bubble - that this line of the blade meets. Each stops this cut once
+        /// (BlockedOn): it is caught for a moment and the shell rings, on every screen.</summary>
+        void HitShells(Vector3 start, Vector3 end)
+        {
+            for (int i = 0; i < everyone.Count; i++)
+            {
+                var f = everyone[i];
+                if (f == null || f == this || f.Pawn == null || !f.Alive || f.Protection <= 0f || f.Pawn.Team == Pawn.Team) continue;
+                Vector3 centre = f.Pawn.Hips.position + Vector3.up * ShellLift;
+                Vector3 off = NearestOnLine(start, end, centre) - centre;
+                if (off.sqrMagnitude > ShellRadius * ShellRadius || !hitThisSwing.Add(f)) continue;
+                // Where the blade meets the shell: its surface over the blade's nearest point.
+                Vector3 outward = off.sqrMagnitude > 1e-6f ? off.normalized : (Pawn.Hips.position - centre).normalized;
+                BlockedOn(f, centre + outward * ShellRadius, end - start);
+            }
+        }
+
+        void BlockedOn(SwordFightPawn shielded, Vector3 at, Vector3 along)
+        {
+            biteLeft = Mathf.Max(biteLeft, BlockBiteTime); Blocks++;
+            Skills?.RaiseBlocked(shielded.Pawn, at, along.sqrMagnitude > 1e-6f ? along.normalized : Pawn.Facing);
+        }
+
+        static Vector3 NearestOnLine(Vector3 a, Vector3 b, Vector3 p)
+        {
+            Vector3 ab = b - a;
+            float t = ab.sqrMagnitude > 1e-8f ? Mathf.Clamp01(Vector3.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+            return a + ab * t;
+        }
+
+        /// <summary>A click cut's hit. R828 (승규 님 11-24: "베기 방향에 따라 가는 것이 아닌 베면 앞으로 밀려지게 해"; from
+        /// 10-29 it went the way the blade was going): every cut that lands pushes the victim straight ahead of the cutter
+        /// (the way the cut was aimed), 2.3 m/s along the ground (10-29's "날아가는 범위를 줄여주고") and a small lift;
+        /// <paramref name="topple"/> is the extra the upper body gets that way, so it falls forward, away from the
+        /// cutter.</summary>
         void CutPush(Vector3 away, out Vector3 push, out Vector3 topple)
         {
-            // The tip's way round now; a thrust barely turns its blade, so then the way it points.
-            Vector3 move = SwingLine(SwingAge + .02f) - SwingLine(SwingAge - .01f);
-            Vector3 blade = SwingLine(SwingAge);
-            bool thrust = style.ArmDrawn != Vector3.zero && move.magnitude < .12f;
-            Vector3 way = thrust ? blade : move.normalized;
-            Vector3 flat = way; flat.y = 0f;
-            // Too steep to say which side (a chop straight down): the way the cut faces, then away from the cutter.
-            if (flat.sqrMagnitude < .04f) flat = SwingFrame * .7f + away * .3f;
+            Vector3 flat = swingDirection; flat.y = 0f;
+            if (flat.sqrMagnitude < .01f) flat = Pawn.Facing;
+            if (flat.sqrMagnitude < .01f) flat = away;
             flat.Normalize();
-            // Never back into the cutter: a cut's far end can curl toward it.
-            if (Vector3.Dot(flat, away) < -.2f) flat = (flat + away * 1.2f).normalized;
-            float down = Mathf.Clamp01(-way.y), up = Mathf.Clamp01(way.y);
-            float along = 2.3f * (1f - .35f * down);
-            push = flat * along + Vector3.up * (.7f - .5f * down + 1f * up);
-            topple = flat * 1f + Vector3.down * (.8f * down);
+            push = flat * 2.3f + Vector3.up * .6f;
+            topple = flat * 1f;
         }
 
         Vector3 ClickBladeDirection()
@@ -465,6 +550,14 @@ namespace ChessFight.RagdollLab
         // 10-29 (승규 님: "다 0.68초에 맞춰", then "폰만 기존 0.56초로"): every piece's cuts now take 0.68 s in all (windup +
         // cut + recovery), each piece keeping its own split of it (the knight's quick windup, the rook's long cut) - but
         // the pawn's, which stay its own quick 0.56 s.
+        // R808 (승규 님 11-23, after the online play's "피격을 해도 허공을 가로지르는 것 같음": "베기 속도를 올리는 것도" →
+        // the windup only, "같이 넣어줘"): every windup about 30% shorter, none under 0.1 s (king .20 → .14, queen, rook
+        // and bishop .17 → .12, knight .13 → .10, pawn .12 → .10), the time taken off given to the recovery. A first cut
+        // lands that much sooner after the click; each cut still takes 0.68 s (the pawn's 0.56) and a chained cut's windup
+        // takes over the rest of the recovery, so a combo's beat and the pieces' balance are as they were. The blade's own
+        // pass (Active) is unchanged: faster, it would go through a piece in even less time (Docs/GameModes/SwordFight/
+        // HIT_FEEL_ONLINE_2026-11-23.md). With less windup the body has less time to turn to a cut aimed far round
+        // (FaceTurnRate): 108 degrees at .12 s where it was 153 at .17.
         /// <summary>A piece's swing (10-25, 승규 님: "기물별로 휘두르는 모션을 따로" - the table: king's overhead chop, queen's
         /// diagonal, rook's waist sweep, bishop's rising cut, knight's chop-and-hook, pawn's thrust). Where it hits is
         /// just where its blade goes (the cut sweeps the blade's line), so a wide sweep reaches wide and a thrust far -
@@ -477,6 +570,9 @@ namespace ChessFight.RagdollLab
             /// <summary>The chest's turn (+ toward the sword hand) at the top of the windup and at the end of the cut, and
             /// its lean forward (+) into the cut and back (-) in the windup.</summary>
             public float TwistUp, TwistThrough, LeanIn, LeanBack;
+            // R828: the one cut left (OneCut) is a plain cut, so nothing sets the thrust, draw, snap and two-hand options
+            // below any more; they stay (and the code that reads them) for a cut that needs them again.
+#pragma warning disable CS0649
             /// <summary>A thrust's arm (the swing's frame): drawn back here through the windup while the blade already
             /// points ahead, then driven out along the blade through the first part of the cut. Zero: the arm keeps to
             /// the blade's line, as for a cut.</summary>
@@ -491,6 +587,7 @@ namespace ChessFight.RagdollLab
             public bool Snap;
             /// <summary>10-29: both hands on the hilt (the free arm reaches to it, OffArmLine) from the windup through the cut.</summary>
             public bool TwoHands;
+#pragma warning restore CS0649
         }
 
         /// <summary>Lines round an arc in the plane of ahead and <paramref name="side"/>: 0 ahead, 90 along side.</summary>
@@ -506,254 +603,58 @@ namespace ChessFight.RagdollLab
             return keys;
         }
 
-        static readonly SwingStyle KingSwing = new SwingStyle
-        {
-            // Heavy and nearly upright: raised high over the head, brought straight down (15 degrees off upright).
-            // 10-29 (승규 님: "킹 베는 동작이 좀 느려"): every king cut .26 / .18 / .40 -> .20 / .15 / .32 (0.84 s -> 0.67 s).
-            Windup = .20f, Active = .15f, Recovery = .33f,
-            Keys = Arc(new Vector3(.27f, 1f, 0f), 115f, -55f, 6), TwistUp = 6f, TwistThrough = -6f, LeanIn = 18f, LeanBack = -6f,
-        };
         static readonly SwingStyle QueenSwing = new SwingStyle
         {
             // Quick and wide: raised high out over the sword shoulder, cut down across the body to the far hip (45 degrees)
             // with the body turning through it. 10-25 (승규 님: "퀸 너무 까딱까딱 거려 좀 멋있게"): it was drawn back behind
             // the shoulder, into the head, and the body check threw it from side to side; now it is raised high and upright
             // beside the head (its pommel hangs down the body's side, clear of it) and the body turns through the cut.
-            Windup = .17f, Active = .18f, Recovery = .33f,
+            Windup = .12f, Active = .18f, Recovery = .38f,
             Keys = Arc(new Vector3(.6f, 1f, 0f), 100f, -65f, 8), TwistUp = 15f, TwistThrough = -20f, LeanIn = 12f, LeanBack = -4f,
             BodyUp = 0f, BodyThrough = -45f,
         };
-        static readonly SwingStyle RookSwing = new SwingStyle
-        {
-            // Waist high, a half circle from the sword side round the front to the far side: slow, but it sweeps wide. The
-            // hand sits against the wide body, so the body turns with the blade and carries the hand round.
-            // 10-29 (승규 님: "룩도 좀 느려"): every rook cut .22 / .26 / .40 -> .17 / .21 / .32 (0.88 s -> 0.70 s).
-            Windup = .17f, Active = .20f, Recovery = .31f,
-            Keys = Arc(new Vector3(1f, -.08f, 0f), 95f, -95f, 8), TwistUp = 15f, TwistThrough = -15f, LeanIn = 6f, LeanBack = 0f,
-            BodyUp = 80f, BodyThrough = -85f,
-        };
-        static readonly SwingStyle BishopSwing = new SwingStyle
-        {
-            // The queen's line the other way: drawn down to the far hip with the body turned away, then cut up across the
-            // body to high and upright beside the head as the body turns back through it (10-25, 승규 님: "비숍도
-            // 마찬가지로" - the queen's sweep and body turn).
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(.6f, 1f, 0f), -65f, 100f, 8), TwistUp = -18f, TwistThrough = 15f, LeanIn = 4f, LeanBack = 8f,
-            BodyUp = -40f, BodyThrough = 30f,
-        };
-        static readonly SwingStyle KnightSwing = new SwingStyle
-        {
-            // A kukri's chop (10-25, 승규 님: "나이트는 휘두르는 게 쿠크리 처럼"): the blade cocked back over the sword
-            // shoulder with the elbow drawn back, a short chop that speeds up into the hit (the wrist snapping the heavy belly
-            // through) down across the front, then a draw - the blade pulled back toward the far hip along its edge.
-            Windup = .13f, Active = .22f, Recovery = .33f,
-            Keys = new[]
-            {
-                new Vector3(.35f, .55f, -.75f), new Vector3(.35f, .9f, .1f), new Vector3(.2f, .5f, .85f), new Vector3(0f, -.15f, 1f),
-                new Vector3(-.25f, -.55f, .8f), new Vector3(-.4f, -.65f, .4f),
-            },
-            TwistUp = 15f, TwistThrough = -25f, LeanIn = 20f, LeanBack = -6f,
-            BodyUp = 30f, BodyThrough = -30f,
-            ArmDrawn = new Vector3(.55f, .35f, -.6f), ArmPull = new Vector3(.3f, -.75f, -.35f), Snap = true,
-        };
-        static readonly SwingStyle PawnSwing = new SwingStyle
-        {
-            // A straight thrust ahead (the pawn only goes forward), lifting a little at its end.
-            Windup = .12f, Active = .14f, Recovery = .30f,
-            Keys = new[] { new Vector3(.05f, .12f, 1f), new Vector3(0f, .04f, 1f), new Vector3(0f, .1f, 1f), new Vector3(0f, .42f, .9f) },
-            TwistUp = 20f, TwistThrough = -12f, LeanIn = 22f, LeanBack = -10f,
-            ArmDrawn = new Vector3(.35f, -.7f, -.45f),
-        };
-
-        // 10-28: each piece's second and third cuts (ComboWindow). Every cut of a combo keeps its piece's pace, so the
-        // balance chosen on 10-25 (reach by where the blade goes, evened out by pace) is unchanged; only the direction
-        // changes from click to click, as in the clip (a rising cut, one down from above, one across).
-        static readonly SwingStyle KingRise = new SwingStyle
-        {
-            // Up from the low far side to high on the sword side, the heavy blade dragged up through the front.
-            Windup = .20f, Active = .15f, Recovery = .33f,
-            Keys = Arc(new Vector3(.45f, 1f, 0f), -60f, 105f, 8), TwistUp = -15f, TwistThrough = 12f, LeanIn = 6f, LeanBack = 6f,
-            BodyUp = -35f, BodyThrough = 25f,
-        };
-        static readonly SwingStyle KingSweep = new SwingStyle
-        {
-            // The finisher: a waist-high sweep from the sword side round the front, the whole body turned through it.
-            Windup = .20f, Active = .15f, Recovery = .33f,
-            Keys = Arc(new Vector3(1f, -.12f, 0f), 95f, -95f, 8), TwistUp = 15f, TwistThrough = -15f, LeanIn = 8f, LeanBack = 0f,
-            BodyUp = 75f, BodyThrough = -80f,
-        };
-        static readonly SwingStyle QueenRise = new SwingStyle
-        {
-            // Back up the way the first came down, flatter: from low on the far side to high out on the sword side.
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(1f, .7f, 0f), -70f, 95f, 8), TwistUp = -18f, TwistThrough = 15f, LeanIn = 4f, LeanBack = 8f,
-            BodyUp = -45f, BodyThrough = 35f,
-        };
-        static readonly SwingStyle QueenSweep = new SwingStyle
-        {
-            // Chest high and flat, from the sword side round to the far side.
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(1f, .12f, 0f), 90f, -85f, 8), TwistUp = 18f, TwistThrough = -20f, LeanIn = 8f, LeanBack = -2f,
-            BodyUp = 55f, BodyThrough = -65f,
-        };
-        static readonly SwingStyle RookBack = new SwingStyle
-        {
-            // The sweep back: from the far side round the front to the sword side, the body turned the other way.
-            Windup = .17f, Active = .20f, Recovery = .31f,
-            Keys = Arc(new Vector3(1f, -.08f, 0f), -95f, 95f, 8), TwistUp = -15f, TwistThrough = 15f, LeanIn = 6f, LeanBack = 0f,
-            BodyUp = -85f, BodyThrough = 80f,
-        };
-        static readonly SwingStyle RookCleave = new SwingStyle
-        {
-            // 10-29 (승규 님: "지금 동작 3번 4번 아래 위로 휘두르는데 다르게 휘두르게 해"; it was a straight slam down): a heavy
-            // slanting cleave, lifted to shoulder height on the sword side where the sweep back ended and driven down across
-            // the front to low on the far side, flatter than the king's or queen's diagonals, the wide body turning through.
-            Windup = .17f, Active = .20f, Recovery = .31f,
-            Keys = Arc(new Vector3(1f, .55f, 0f), 105f, -80f, 8), TwistUp = 15f, TwistThrough = -18f, LeanIn = 14f, LeanBack = -4f,
-            BodyUp = 70f, BodyThrough = -70f,
-        };
-        static readonly SwingStyle BishopFall = new SwingStyle
-        {
-            // The other half of its diagonal: from high on the sword side down across the body to the far hip.
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(.6f, 1f, 0f), 100f, -65f, 8), TwistUp = 15f, TwistThrough = -20f, LeanIn = 12f, LeanBack = -4f,
-            BodyUp = 0f, BodyThrough = -45f,
-        };
-        static readonly SwingStyle BishopCross = new SwingStyle
-        {
-            // The other diagonal, backhand: from high on the far side down across to low on the sword side (the two
-            // diagonals make the bishop's X).
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(-.6f, 1f, 0f), 95f, -65f, 8), TwistUp = -20f, TwistThrough = 15f, LeanIn = 10f, LeanBack = -4f,
-            BodyUp = -55f, BodyThrough = 35f,
-        };
-        static readonly SwingStyle KnightRise = new SwingStyle
-        {
-            // Back up from the far hip where the draw ended, snapping up across the front to high on the sword side.
-            Windup = .13f, Active = .22f, Recovery = .33f,
-            Keys = new[]
-            {
-                new Vector3(-.45f, -.6f, .5f), new Vector3(-.35f, -.25f, .95f), new Vector3(0f, .15f, 1f),
-                new Vector3(.35f, .5f, .8f), new Vector3(.55f, .8f, .2f),
-            },
-            TwistUp = -20f, TwistThrough = 20f, LeanIn = 6f, LeanBack = 4f,
-            BodyUp = -35f, BodyThrough = 30f, Snap = true,
-        };
-        static readonly SwingStyle KnightHook = new SwingStyle
-        {
-            // The knight's L: a flat hook in from the sword side across the front, then dropped down and drawn back.
-            Windup = .13f, Active = .22f, Recovery = .33f,
-            Keys = new[]
-            {
-                new Vector3(.9f, .3f, .25f), new Vector3(.55f, .3f, .8f), new Vector3(0f, .25f, 1f),
-                new Vector3(-.3f, .1f, .95f), new Vector3(-.4f, -.45f, .75f),
-            },
-            TwistUp = 20f, TwistThrough = -25f, LeanIn = 14f, LeanBack = -4f,
-            BodyUp = 45f, BodyThrough = -40f,
-            ArmPull = new Vector3(.3f, -.75f, -.35f), Snap = true,
-        };
-        static readonly SwingStyle PawnLeft = new SwingStyle
-        {
-            // A pawn takes on its forward diagonals: a short cut down across to the front on the far side…
-            Windup = .12f, Active = .14f, Recovery = .30f,
-            Keys = new[] { new Vector3(.4f, .55f, .75f), new Vector3(.15f, .25f, .97f), new Vector3(-.2f, -.05f, 1f), new Vector3(-.42f, -.3f, .85f) },
-            TwistUp = 18f, TwistThrough = -18f, LeanIn = 14f, LeanBack = -6f,
-            BodyUp = 0f, BodyThrough = -25f,
-        };
-        static readonly SwingStyle PawnRight = new SwingStyle
-        {
-            // …and one up across to the front on the sword side.
-            Windup = .12f, Active = .14f, Recovery = .30f,
-            Keys = new[] { new Vector3(-.4f, -.3f, .85f), new Vector3(-.1f, 0f, 1f), new Vector3(.25f, .3f, .95f), new Vector3(.48f, .55f, .7f) },
-            TwistUp = -15f, TwistThrough = 15f, LeanIn = 10f, LeanBack = 4f,
-            BodyUp = -25f, BodyThrough = 15f,
-        };
-
-        // 10-29 (승규 님: "각 기물별 1개 공격 방향을 더 해주고 자연스럽게 이어져야 돼"): a fourth cut per piece, in a
-        // direction its combo did not have yet. Each starts near where the third ended and ends near where the first
-        // starts (the combo wraps round), and its body turn runs from the third's end toward the first's windup, so the
-        // chain keeps turning one way instead of unwinding between cuts.
-        static readonly SwingStyle KingCleave = new SwingStyle
-        {
-            // Two-handed (10-29, 승규 님: "킹은 양손으로 대각선 내려치기로"): the free hand joins the hilt as the sword is
-            // lifted high on the far side (from where the sweep ended), and both bring it down across to low on the sword
-            // side, the body turning back and leaning into it; the overhead chop then loads up from there on the same side.
-            Windup = .20f, Active = .15f, Recovery = .33f,
-            Keys = Arc(new Vector3(-.45f, 1f, 0f), 100f, -60f, 8), TwistUp = -18f, TwistThrough = 12f, LeanIn = 20f, LeanBack = -6f,
-            BodyUp = -60f, BodyThrough = 25f, TwoHands = true,
-        };
-        static readonly SwingStyle QueenReturn = new SwingStyle
-        {
-            // The sweep back: chest high from the far side where the sweep ended round to the sword side, rising a little,
-            // which leaves the blade out on the sword side for the first cut's diagonal.
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = Arc(new Vector3(1f, .3f, 0f), -85f, 95f, 8), TwistUp = -18f, TwistThrough = 18f, LeanIn = 6f, LeanBack = -2f,
-            BodyUp = -60f, BodyThrough = 50f,
-        };
-        static readonly SwingStyle RookRam = new SwingStyle
-        {
-            // 10-29 (the same; it was a rising cut straight up): the battering ram. Both hands take the hilt low before the
-            // belly with the point already ahead (from low on the far side where the cleave ended), and the whole body
-            // lunges in behind it, driving it straight out waist high; the body turns back toward the sword side as it
-            // goes, ready for the first sweep.
-            Windup = .17f, Active = .20f, Recovery = .31f,
-            Keys = new[] { new Vector3(-.08f, -.12f, 1f), new Vector3(-.03f, -.1f, 1f), new Vector3(0f, -.06f, 1f), new Vector3(.02f, 0f, 1f) },
-            TwistUp = -12f, TwistThrough = 6f, LeanIn = 26f, LeanBack = -6f,
-            BodyUp = -45f, BodyThrough = 20f,
-            ArmDrawn = new Vector3(.05f, -.5f, .45f), TwoHands = true,
-        };
-        static readonly SwingStyle BishopThrust = new SwingStyle
-        {
-            // A two-handed thrust (10-29, 승규 님: "비숍 4번 째에서 양손으로 찌르기"): from low on the sword side where the X
-            // ended, the hilt is drawn in low before the belly in both hands with the point already ahead, then both
-            // drive it straight out chest high, the body squaring up behind it; the first cut then drops to the far hip.
-            Windup = .17f, Active = .18f, Recovery = .33f,
-            Keys = new[] { new Vector3(.05f, 0f, 1f), new Vector3(0f, -.02f, 1f), new Vector3(0f, .05f, 1f), new Vector3(0f, .15f, .99f) },
-            TwistUp = 15f, TwistThrough = -8f, LeanIn = 22f, LeanBack = -8f,
-            BodyUp = 20f, BodyThrough = -10f,
-            ArmDrawn = new Vector3(0f, -.6f, .55f), TwoHands = true,
-        };
-        static readonly SwingStyle KnightReturn = new SwingStyle
-        {
-            // The L the other way round: up from the far hip where the hook's draw ended, then a flat backhand hook across
-            // the front to the sword side, snapping up behind the sword shoulder where the chop is cocked.
-            Windup = .13f, Active = .22f, Recovery = .33f,
-            Keys = new[]
-            {
-                new Vector3(-.45f, -.4f, .75f), new Vector3(-.7f, .25f, .65f), new Vector3(-.2f, .35f, 1f),
-                new Vector3(.4f, .4f, .85f), new Vector3(.75f, .5f, .3f),
-            },
-            TwistUp = -22f, TwistThrough = 20f, LeanIn = 8f, LeanBack = 2f,
-            BodyUp = -40f, BodyThrough = 35f, Snap = true,
-        };
-        static readonly SwingStyle PawnChop = new SwingStyle
-        {
-            // Straight down ahead from high (where the rising cut ended), a short chop to low in front; the thrust then
-            // draws back from there.
-            Windup = .12f, Active = .14f, Recovery = .30f,
-            Keys = new[] { new Vector3(.25f, .85f, .45f), new Vector3(.1f, .6f, .8f), new Vector3(0f, .15f, 1f), new Vector3(0f, -.25f, .95f) },
-            TwistUp = 10f, TwistThrough = -8f, LeanIn = 20f, LeanBack = -8f,
-            BodyUp = 15f, BodyThrough = 0f,
-        };
-
-        static readonly SwingStyle[] KingCombo = { KingSwing, KingRise, KingSweep, KingCleave };
-        static readonly SwingStyle[] QueenCombo = { QueenSwing, QueenRise, QueenSweep, QueenReturn };
-        static readonly SwingStyle[] RookCombo = { RookSwing, RookBack, RookCleave, RookRam };
-        static readonly SwingStyle[] BishopCombo = { BishopSwing, BishopFall, BishopCross, BishopThrust };
-        static readonly SwingStyle[] KnightCombo = { KnightSwing, KnightRise, KnightHook, KnightReturn };
-        static readonly SwingStyle[] PawnCombo = { PawnSwing, PawnLeft, PawnRight, PawnChop };
+        // R828 (승규 님 11-24: "소드 파이트 공격 동작 4개 … 대각선으로 베기 한 개의 동작만 남겨두고 다 지워", "모든 기물 퀸
+        // 대각선으로"): every piece now cuts only the queen's diagonal, at the queen's pace; each piece's own swing and
+        // its four-cut combo (10-25, 10-28, 10-29) are gone. A click right after a cut still chains (ComboWindow): the
+        // same diagonal again, wound up from where the last one ended.
+        static readonly SwingStyle[] OneCut = { QueenSwing };
 
         SwingStyle style = QueenSwing;
 
-        static SwingStyle[] ComboOf(PieceKind piece) => piece switch
+        /// <summary>R813: a piece's first cut as the build has it - windup, blade pass, recovery (s); the feel log prints it.</summary>
+        public static (float windup, float active, float recovery) FirstCut(PieceKind piece)
         {
-            PieceKind.King => KingCombo,
-            PieceKind.Rook => RookCombo,
-            PieceKind.Bishop => BishopCombo,
-            PieceKind.Knight => KnightCombo,
-            PieceKind.Pawn => PawnCombo,
-            _ => QueenCombo,
-        };
+            var s = ComboOf(piece)[0];
+            return (s.Windup, s.Active, s.Recovery);
+        }
+
+        // R813 (SwordFightFeelLog): this screen's own player's last click and whether its piece stood idle then (a click
+        // during a cut waits for it, which is not the delay being measured), until its blade is seen to move.
+        float clickedAt = -1f;
+        bool clickIdle;
+
+        /// <summary>R813: this screen's player clicked (where the cut is run: SetInput; on a client: LabNetLink.Sword, which
+        /// sends it). Only this screen's own fighter keeps the time.</summary>
+        internal void NoteClick()
+        {
+            if (!SwordFeelStats.Measuring || Pawn == null || SwordFightSkillSfx.ViewerPawn != Pawn) return;
+            SwordFeelStats.Clicks++;
+            if (clickedAt >= 0f && Time.unscaledTime - clickedAt < 1.5f) return;   // the first of a run of clicks
+            clickedAt = Time.unscaledTime;
+            clickIdle = Authority ? !Attacking : remoteCut <= 0f;
+        }
+
+        /// <summary>R813: this fighter's blade is seen to start a cut on this screen: how long after its player's click.</summary>
+        void BladeSeenMoving()
+        {
+            if (clickedAt < 0f) return;
+            float after = Time.unscaledTime - clickedAt;
+            if (clickIdle && after < 1.5f) SwordFeelStats.ClickToBlade.Add(after * 1000f);
+            clickedAt = -1f;
+        }
+
+        /// <summary>R828: the same one cut for every piece (OneCut).</summary>
+        static SwingStyle[] ComboOf(PieceKind piece) => OneCut;
 
         /// <summary>A value wound from <paramref name="from"/> (where it was when the cut started) to <paramref name="up"/>
         /// through the windup, carried to <paramref name="through"/> with the blade and eased back to zero through the

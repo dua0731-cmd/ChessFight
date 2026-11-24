@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ChessFight.Network;
@@ -9,6 +9,20 @@ public static class NetworkCoreTests
     static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
     static void Test(string name, Action test) { test(); passed++; Console.WriteLine("PASS " + name); }
     static ulong[] Ids(int start, int count) => Enumerable.Range(start, count).Select(x => (ulong)x).ToArray();
+    // R745: a player a match started with (Starters), for the ranked-match rule.
+    static Starters.Seat StartSeat(ulong id, int team, int slot) => new Starters.Seat { Id = id, Team = team, Slot = slot };
+    // R745: a record book's text as an older build wrote it - its totals lines cut to `totals` fields, its records to `records`.
+    static string CutColumns(string text, int totals, int records)
+    {
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var f = lines[i].Split('|');
+            if (f[0] == "M" && f.Length > totals) lines[i] = string.Join("|", f, 0, totals);
+            else if (f[0] == "R" && f.Length > records) lines[i] = string.Join("|", f, 0, records);
+        }
+        return string.Join("\n", lines);
+    }
     // Host election candidates. Class-level rather than local functions: mcs, which runs these
     // tests on Linux (Tools/run-tests-linux.sh), cannot parse local functions.
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
@@ -145,6 +159,87 @@ public static class NetworkCoreTests
     // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286, R287):
     // RoamingFleet.Yard, the yard the seeds are vetted on; the map checks its own fleet against it.
     static RoamingFleet YardFleet(double start, uint seed) => RoamingFleet.Yard(seed, start);
+    // R725, the Royal Vault: every timing is sampled from clock 0 and from a Unix-scale clock.
+    static readonly double[] VaultClocks = { 0.0, 1762000003.25 };
+    // Seconds within [t0, t0 + span) in which `holds` is true, sampled every dt at the steps' middles.
+    static double VaultSeconds(Func<double, bool> holds, double t0, double span, double dt)
+    {
+        int steps = (int)Math.Round(span / dt), n = 0;
+        for (int k = 0; k < steps; k++) if (holds(t0 + (k + .5) * dt)) n++;
+        return n * dt;
+    }
+    // The lengths of the runs in which `holds` is true through one period from t0, sampled every dt at the steps' middles.
+    // The scan starts at the first false sample, so no run is cut in two.
+    static List<double> VaultRuns(Func<double, bool> holds, double t0, double period, double dt)
+    {
+        int steps = (int)Math.Round(period / dt), start = 0, run = 0;
+        while (start < steps && holds(t0 + (start + .5) * dt)) start++;
+        var runs = new List<double>();
+        for (int k = start; k < start + steps; k++)
+        {
+            if (holds(t0 + (k + .5) * dt)) run++;
+            else if (run > 0) { runs.Add(run * dt); run = 0; }
+        }
+        if (run > 0) runs.Add(run * dt);
+        return runs;
+    }
+    // A dial hammer's head turned `degrees` from hanging down (Unity's turn about +x: a point y down, z along the way from
+    // the axle goes to y cos - z sin, y sin + z cos): the height of its lowest corner over the walkway.
+    static double VaultHammerLowest(double degrees)
+    {
+        double a = degrees * Math.PI / 180, low = double.MaxValue;
+        foreach (double rho in new[] { RoyalVaultRules.HammerInner, RoyalVaultRules.HammerOuter })
+            foreach (double tau in new[] { -RoyalVaultRules.HammerAlong / 2, RoyalVaultRules.HammerAlong / 2 })
+                low = Math.Min(low, RoyalVaultRules.HammerAxleAbove - rho * Math.Cos(a) - tau * Math.Sin(a));
+        return low;
+    }
+    // How far along the way from the axle any part of the head's outline (sampled every 1 % of each edge) below `below`
+    // over the walkway reaches, turned `degrees`.
+    static double VaultHammerReach(double degrees, double below)
+    {
+        double a = degrees * Math.PI / 180, r0 = RoyalVaultRules.HammerInner, r1 = RoyalVaultRules.HammerOuter, h = RoyalVaultRules.HammerAlong / 2, reach = 0;
+        for (int k = 0; k < 400; k++)
+        {
+            int edge = k / 100;
+            double f = (k % 100) / 100.0;
+            double rho = edge == 0 ? r0 + (r1 - r0) * f : edge == 1 ? r1 : edge == 2 ? r1 - (r1 - r0) * f : r0;
+            double tau = edge == 0 ? -h : edge == 1 ? -h + 2 * h * f : edge == 2 ? h : h - 2 * h * f;
+            if (RoyalVaultRules.HammerAxleAbove - rho * Math.Cos(a) - tau * Math.Sin(a) < below) reach = Math.Max(reach, Math.Abs(-rho * Math.Sin(a) + tau * Math.Cos(a)));
+        }
+        return reach;
+    }
+    // A body (BodyHalf either way of its middle along z) stepping into the press band at t - its front on the band's south
+    // edge - and crossing it at v m/s, stepped every 5 ms until its middle (by which the wave judges it) is off the band:
+    // never in the band while a landing's wave runs (a landing included), and no part of it within the crush shell's reach -
+    // the die and PressCrushBeyond round it - while that reach is down within a standing piece's height (HammerBodyTop) of the
+    // floor (the die's bottom less PressCrushBelow).
+    static bool VaultPressCrossing(double t, double v)
+    {
+        double body = RoyalVaultRules.BodyHalf, z0 = RoyalVaultRules.PressBandZ0 - body, z1 = RoyalVaultRules.PressBandZ1;
+        double reach = RoyalVaultRules.PressDieAlong / 2 + RoyalVaultRules.PressCrushBeyond;
+        double crush0 = RoyalVaultRules.PressZ - reach, crush1 = RoyalVaultRules.PressZ + reach;
+        for (int k = 0; z0 + v * k * .005 <= z1; k++)
+        {
+            double s = k * .005, z = z0 + v * s;
+            if (RoyalVaultRules.PressSinceLanding(t + s) < RoyalVaultRules.PressWaveSeconds) return false;
+            if (z + body > crush0 && z - body < crush1
+                && RoyalVaultRules.PressDieBottom(t + s) - RoyalVaultRules.PressCrushBelow < RoyalVaultRules.HammerBodyTop) return false;
+        }
+        return true;
+    }
+    // f gives the same at s and at s plus a whole number of `period`s near 1.76e9 s (a Unix-scale clock), for 97 s spread
+    // through a period: within 1e-6, or 1e-4 deg for an angle (compared round the circle). `period` is a whole number of
+    // f's own periods that a double holds exactly, so the offset is exact.
+    static void VaultRepeats(string what, Func<double, double> f, double period, bool degrees)
+    {
+        double offset = Math.Round(1.76e9 / period) * period;
+        for (int k = 0; k < 97; k++)
+        {
+            double s = period * (k + .318) / 97, a = f(s), b = f(s + offset);
+            double off = degrees ? Math.Abs(RoyalVaultRules.Wrap(a - b + 180, 360) - 180) : Math.Abs(a - b);
+            Check(off <= (degrees ? 1e-4 : 1e-6), what + " the same " + offset + " s on: off by " + off + " at " + s);
+        }
+    }
     public static int Main()
     {
         try
@@ -926,6 +1021,623 @@ public static class NetworkCoreTests
                 Check(Math.Abs(SortingYardRules.ComesDownIn(a, 0.0) - (2.0 * a.Down + a.Move)) < 1e-9 && SortingYardRules.ComesDownIn(a, 2.0 * a.Down + a.Move + .1) == 0.0, "comes down in");
                 // The pairs' plates fit their wells beside the post, 0.03 m off it.
                 Check(SortingYardRules.HoistInner[1] < 3.3 && SortingYardRules.HoistOuter[0] > 3.7 && SortingYardRules.HoistInner[0] >= .87, "plates beside the post"); });
+            Test("Royal vault towers (R725): two lanes of seven rows 3.6 m wide and 0.85 m apart, half a metre up a row to J1, every hop within a run's reach at the lab's shorter air time, off the lane line and from the take-off edges too", () => {
+                double gap = RoyalVaultRules.TowerGap, r = RoyalVaultRules.TowerDiameter / 2, edge = RoyalVaultRules.TowerFieldZ0;
+                Check(Math.Abs(gap - .85) < 1e-9 && gap <= 1.5, "0.85 m gaps, no plain jump over 1.5 m: " + gap);
+                Check(Math.Abs((RoyalVaultRules.TowerCount + 1) * RoyalVaultRules.TowerStep - 4.0) < 1e-12
+                      && RoyalVaultRules.TowerTop(RoyalVaultRules.TowerCount + 1) == RoyalVaultRules.RouteY[10], "eight half-metre steps up to J1 at 4 m");
+                for (int k = 1; k <= RoyalVaultRules.TowerCount; k++)
+                {
+                    double z = RoyalVaultRules.TowerZ(k);
+                    Check(Math.Abs(z - r - edge - gap) < 1e-9 && (k == 1 || z > RoyalVaultRules.TowerZ(k - 1)), "row " + k + " rising, the gap before it 0.85 m");
+                    edge = z + r;
+                }
+                Check(Math.Abs(RoyalVaultRules.TowerFieldZ1 - edge - gap) < 1e-9, "the last gap, row 7 to J1, 0.85 m");
+                double lanes = 2 * RoyalVaultRules.TowerLaneX - RoyalVaultRules.TowerDiameter;
+                double diagonal = Math.Sqrt(Math.Pow(2 * RoyalVaultRules.TowerLaneX, 2) + Math.Pow(RoyalVaultRules.TowerDiameter + gap, 2)) - RoyalVaultRules.TowerDiameter;
+                Check(Math.Abs(lanes - .8) < 1e-9 && diagonal >= 2.5, "the lanes 0.8 m apart, the diagonal to the next row no shortcut: " + diagonal);
+                double air = RoyalVaultRules.JumpAirSeconds(RoyalVaultRules.TowerStep), lab = .94 * RoyalVaultRules.RunSpeed * air;
+                Check(Math.Abs(air - .574) <= .002, "0.574 s in the air onto +0.5 m: " + air);
+                // The same hop stepped through (4.9 m/s up, gravity x1.4 rising, x1.61 falling) until the feet are down on +0.5 m.
+                double y = 0, vy = 4.9, s = 0;
+                while (vy > 0 || y > RoyalVaultRules.TowerStep) { vy -= 9.81 * 1.4 * (vy < 0 ? 1.15 : 1.0) * 1e-5; y += vy * 1e-5; s += 1e-5; }
+                Check(Math.Abs(s - air) < 1e-3, "the air time is the hop's: " + s + " / " + air);
+                Check(lab - gap >= .3, "0.3 m to spare on the lane line at the lab's 6 % shorter air time: " + (lab - gap));
+                Check(Math.Abs(RoyalVaultRules.TowerGapOffLine(0) - gap) < 1e-12 && Math.Abs(RoyalVaultRules.EdgeGapOffLine(0) - gap) < 1e-12, "on the lane line the gaps are the gap");
+                for (int k = 1; k <= 20; k++)
+                    Check(RoyalVaultRules.TowerGapOffLine(k * .05) > RoyalVaultRules.TowerGapOffLine((k - 1) * .05)
+                          && RoyalVaultRules.EdgeGapOffLine(k * .05) > RoyalVaultRules.EdgeGapOffLine((k - 1) * .05), "round tops: the gaps widen off the line");
+                Check(RoyalVaultRules.TowerGapOffLine(.8) <= lab - .1, "0.8 m off the line, tower to tower: " + RoyalVaultRules.TowerGapOffLine(.8));
+                Check(RoyalVaultRules.EdgeGapOffLine(RoyalVaultRules.TowerTakeoffHalf) <= lab - .15,
+                      "a take-off edge's opening end to the tower: " + RoyalVaultRules.EdgeGapOffLine(RoyalVaultRules.TowerTakeoffHalf)); });
+            Test("Royal vault layout and route (R725): a 200.9 m path from the entry to the exit over the east tower lane, the checkpoints in order and on their floors with CP3 short of the pad, every hazard 2.5 m clear of the next device's, the pad's landings 1.5 m short of drawer 1", () => {
+                double[] x = RoyalVaultRules.RouteX, y = RoyalVaultRules.RouteY, z = RoyalVaultRules.RouteZ;
+                Check(x.Length == 28 && y.Length == 28 && z.Length == 28, "P0..P27");
+                Check(x[0] == 0 && y[0] == 0 && z[0] == 0 && x[27] == 0 && y[27] == RoyalVaultRules.ExitY && z[27] == RoyalVaultRules.ExitZ, "P0 at the entry, P27 at the exit");
+                for (int k = 1; k <= RoyalVaultRules.TowerCount; k++)
+                    Check(x[2 + k] == RoyalVaultRules.TowerLaneX && Math.Abs(y[2 + k] - RoyalVaultRules.TowerTop(k)) < 1e-9 && Math.Abs(z[2 + k] - RoyalVaultRules.TowerZ(k)) < 1e-9,
+                          "P" + (2 + k) + " on row " + k + "'s top");
+                double length = 0;
+                for (int i = 1; i < z.Length; i++)
+                {
+                    Check(z[i] >= z[i - 1], "never back along z at P" + i);
+                    length += Math.Sqrt((x[i] - x[i - 1]) * (x[i] - x[i - 1]) + (y[i] - y[i - 1]) * (y[i] - y[i - 1]) + (z[i] - z[i - 1]) * (z[i] - z[i - 1]));
+                }
+                Check(Math.Abs(length - 200.9) <= .3, "200.9 m long: " + length);
+                Check(y[19] - y[18] == 4 && z[19] - z[18] == 12 && y[23] - y[22] == 4 && z[23] - z[22] == 12 && RoyalVaultRules.StairTwoZ1 - RoyalVaultRules.NeckZ1 == 12
+                      && RoyalVaultRules.TerraceZ0 - RoyalVaultRules.PlatesZ1 == 12 && Math.Asin(4 / RoyalVaultRules.StairSlope) * 180 / Math.PI < 19.5, "the stairs 4 m up over 12 m, under the 19.5 deg rule");
+                // Checkpoints in order, each 2 m deep trigger on its floor; CP3 straddles the walkway's end, short of the pad.
+                double[] cp = RoyalVaultRules.CheckpointZ;
+                double rest = RoyalVaultRules.TowerZ(RoyalVaultRules.TowerRest), half = RoyalVaultRules.TowerDiameter / 2;
+                Check(cp.Length == 7, "CP0..CP6");
+                for (int i = 1; i < cp.Length; i++) Check(cp[i] > cp[i - 1], "the checkpoints in order");
+                Check(cp[0] + 1 <= RoyalVaultRules.ForecourtZ1 && Math.Abs(cp[1] - rest) < 1e-9 && cp[1] + 1 <= rest + half && cp[2] - 1 >= RoyalVaultRules.J1Z0 && cp[2] + 1 <= RoyalVaultRules.J1Z1
+                      && cp[4] - 1 >= RoyalVaultRules.J2Z0 && cp[4] + 1 <= RoyalVaultRules.J2Z1 && cp[5] - 1 >= RoyalVaultRules.TerraceZ0 && cp[5] + 1 <= RoyalVaultRules.DoorZ0
+                      && cp[6] == RoyalVaultRules.DoorZ1 + 2.5 && cp[6] + 1 <= RoyalVaultRules.ArchZ, "each checkpoint's trigger on its floor: forecourt, rest, J1, J2, terrace, 2.5 m past the door");
+                Check(cp[3] - 1 <= RoyalVaultRules.WalkZ1 && cp[3] + 1 >= RoyalVaultRules.WalkZ1 && cp[3] <= RoyalVaultRules.PadZ - RoyalVaultRules.PadSize / 2 + 1e-9,
+                      "CP3 straddles the walkway's end, short of the pad (" + cp[3] + " <= " + (RoyalVaultRules.PadZ - RoyalVaultRules.PadSize / 2) + ")");
+                // Hazards along z, branch by branch: hurdle zones (hub +- reach), bulkhead panels (0.8 m thick, built so), hammer
+                // zones, the belts then the press band, the drawer boxes, the plates then the door. 2.5 m between devices; the
+                // cells inside a pair are pinned instead.
+                double reach = RoyalVaultRules.HurdleReach, panel = .4, zone = RoyalVaultRules.HammerZoneHalf, drawer = RoyalVaultRules.DrawerLong / 2;
+                double[] hub = RoyalVaultRules.HurdleHubZ, bz = RoyalVaultRules.BulkheadZ, axle = RoyalVaultRules.HammerAxleZ, dz = RoyalVaultRules.DrawerZ;
+                double hurdles = (hub[1] - reach) - (hub[0] + reach), toBulkhead = (bz[0] - panel) - (hub[1] + reach), bulkheadCell = (bz[1] - panel) - (bz[0] + panel);
+                double hammerCell = (axle[1] - zone) - (axle[0] + zone), toPress = RoyalVaultRules.PressBandZ0 - RoyalVaultRules.BeltZ1, drawerCell = (dz[1] - drawer) - (dz[0] + drawer);
+                double toPlates = RoyalVaultRules.PlateZ0 - RoyalVaultRules.PressBandZ1, toDoor = RoyalVaultRules.DoorZ0 - RoyalVaultRules.PlatesZ1;
+                Check(hurdles >= 2.5 && Math.Abs(hurdles - 2.6) < .005, "the hurdle zones 2.6 m apart: " + hurdles);
+                Check(toBulkhead >= 2.5 && Math.Abs(toBulkhead - 2.55) < .005, "hurdle 2 to bulkhead 1 2.55 m: " + toBulkhead);
+                Check(toPress >= 2.5 && Math.Abs(toPress - 4.0) < .005, "the belts' end to the press band 4.0 m: " + toPress);
+                Check(toPlates >= 2.5 && toDoor >= 2.5, "the press band to the plates, the plates to the door");
+                Check(Math.Abs(bulkheadCell - 3.2) < .005 && Math.Abs(hammerCell - 5.05) < .005 && Math.Abs(drawerCell - 1.4) < .005, "the cells: bulkheads 3.2, hammers 5.05, drawers 1.4 m");
+                double farthest = RoyalVaultRules.PadLandZ + RoyalVaultRules.PadSize / 2 + RoyalVaultRules.PadCatch, hit = dz[0] - drawer - RoyalVaultRules.BodyHalf;
+                Check(Math.Abs(farthest - 94.7) < 1e-9 && Math.Abs(hit - 96.5) < 1e-9 && farthest <= hit - 1.5 + 1e-9, "the farthest landing 94.7 is 1.5 m short of drawer 1's reach 96.5");
+                Check(RoyalVaultRules.ShelfOpenZ1 <= RoyalVaultRules.BeltZ1 + .3 + 1e-9 && RoyalVaultRules.ShelfOpenZ0 >= farthest + 1.5 - 1e-9
+                      && dz[0] - drawer >= RoyalVaultRules.ShelfOpenZ0 && dz[1] + drawer <= RoyalVaultRules.ShelfOpenZ1, "the shelf open over the belts beside the drawers only, 1.5 m past the landings");
+                Check(Math.Abs(RoyalVaultRules.BeltEastX1 - RoyalVaultRules.ShelfX0 - 1) < 1e-9 && RoyalVaultRules.ShelfX0 > RoyalVaultRules.PressX + RoyalVaultRules.PressDieAcross / 2,
+                      "the shelf over the east belt by 1 m, never over the neck"); });
+            Test("Royal vault hurdles (R725): two bars counter-rotating at +110 / -100 deg/s, their zones 2.5 m apart and 2 m past the entrance, the bar over any point once its arrival time has run, a jump window wherever the bar can be jumped", () => {
+                double[] dps = RoyalVaultRules.HurdleDegreesPerSecond, hub = RoyalVaultRules.HurdleHubZ;
+                double reach = RoyalVaultRules.HurdleReach;
+                Check(dps[0] == 110 && dps[1] == -100 && dps[0] >= 105 && -dps[1] >= 95, "+110 / -100 deg/s, counter-rotating, no slower than the garden's 105 / 95 (R680)");
+                Check((hub[1] - reach) - (hub[0] + reach) >= 2.5 - 1e-9, "the zones 2.5 m apart");
+                Check(hub[0] - reach - 8.0 >= 2.0 - 1e-9, "2 m past the corridor's entrance (the forecourt's west edge is open up to z 8)");
+                Check(RoyalVaultRules.HurdleHubX == RoyalVaultRules.CorridorX && reach <= 4.0 - .05 + 1e-9, "in the corridor's middle, the tips 0.05 m off its rails");
+                var rng = new Random(703);
+                for (int h = 0; h < 2; h++)
+                    foreach (double origin in VaultClocks)
+                        for (int n = 0; n < 1000; n++)
+                        {
+                            double r = .2 + (reach - .2) * rng.NextDouble(), a = 2 * Math.PI * rng.NextDouble(), t = origin + 100 * rng.NextDouble();
+                            double dx = r * Math.Cos(a), dz = r * Math.Sin(a), wait = RoyalVaultRules.HurdleArrivesIn(h, dx, dz, t);
+                            Check(wait >= 0 && wait < 180 / Math.Abs(dps[h]) + 1e-9, "the bar comes within half a turn: " + wait);
+                            // Then the bar (local x at yaw b points (cos b, 0, -sin b)) lies through the point, within 0.05 deg.
+                            double b = RoyalVaultRules.HurdleAngle(h, t + wait) * Math.PI / 180;
+                            Check(Math.Abs(dx * Math.Sin(b) + dz * Math.Cos(b)) <= r * Math.Sin(.05 * Math.PI / 180), "hurdle " + (h + 1) + " over (" + dx + ", " + dz + ") when it said, at " + t);
+                        }
+                for (int h = 0; h < 2; h++)
+                {
+                    for (int k = 0; 1.6 + k * .05 <= reach + 1e-9; k++)
+                    {
+                        double r = 1.6 + k * .05;
+                        RoyalVaultRules.HurdleJumpWindow(h, r, out double lo, out double hi);
+                        Check(lo > 0 && lo < hi, "a window to jump hurdle " + (h + 1) + " " + r + " m out");
+                        // Its ends put the feet at the bar's top just as bar and body meet: rising at lo - half, falling at hi + half.
+                        double half = RoyalVaultRules.HurdleBodyHalf / (Math.Abs(dps[h]) * Math.PI / 180 * r), g = 9.81 * 1.4, apex = 4.9 / g, rise = lo - half, fall = hi + half;
+                        double yRise = 4.9 * rise - g * rise * rise / 2, yFall = 4.9 * apex - g * apex * apex / 2 - g * 1.15 * (fall - apex) * (fall - apex) / 2;
+                        Check(rise < apex && fall > apex && Math.Abs(yRise - RoyalVaultRules.HurdleBarHigh) < 1e-9 && Math.Abs(yFall - RoyalVaultRules.HurdleBarHigh) < 1e-9,
+                              "the feet over the bar's top from the window's start to its end");
+                    }
+                    RoyalVaultRules.HurdleJumpWindow(h, 1.0, out double nearLo, out double nearHi);
+                    Check(nearLo >= nearHi, "1 m from the hub the bar is too slow to jump");
+                }
+                RoyalVaultRules.HurdleJumpWindow(0, 2, out double lo0, out double hi0);
+                RoyalVaultRules.HurdleJumpWindow(1, 2, out double lo1, out double hi1);
+                // R725 fun pass: the bar's top 0.5 m (was 0.55: [0.257, 0.442) and [0.268, 0.430), 0.185 and 0.162 s wide).
+                Check(RoyalVaultRules.HurdleBarHigh == .5 && RoyalVaultRules.HurdleBarLow == .25, "the bar 0.25 .. 0.5 m over the floor");
+                Check(Math.Abs(lo0 - .241) < .002 && Math.Abs(hi0 - .457) < .002 && Math.Abs(lo1 - .252) < .002 && Math.Abs(hi1 - .446) < .002
+                      && Math.Abs(hi0 - lo0 - .217) < .002 && Math.Abs(hi1 - lo1 - .193) < .002,
+                      "2 m out: [0.241, 0.457) and [0.252, 0.446), 0.217 and 0.193 s wide: " + lo0 + ", " + hi0 + ", " + lo1 + ", " + hi1); });
+            Test("Royal vault hurdle knock (R725 fun pass): a hurdle leaves a body it knocked down alone for half a turn and 0.6 s (2.24 / 2.4 s), so the other arm passes over it once free, and lets it through the bar for three quarters of a turn (2.45 / 2.7 s), the bar square to the spot by then, well before the first arm is back", () => {
+                double[] dps = RoyalVaultRules.HurdleDegreesPerSecond;
+                double reach = RoyalVaultRules.HurdleReach;
+                // R725 review: 0.6, not 0.3 - an arm coming from behind overtakes a walking pawn slowly and was still on it.
+                Check(RoyalVaultRules.HurdleFreePass == .6, "0.6 s past the other arm");
+                for (int h = 0; h < 2; h++)
+                {
+                    double half = 180 / Math.Abs(dps[h]), turn = 2 * half;
+                    double cooldown = RoyalVaultRules.HurdleHitCooldown(h), through = RoyalVaultRules.HurdleLetThroughSeconds(h);
+                    Check(Math.Abs(RoyalVaultRules.HurdleHalfTurn(h) - half) < 1e-12, "hurdle " + (h + 1) + ": half a turn " + half + " s");
+                    Check(cooldown > half && cooldown < turn && Math.Abs(cooldown - half - RoyalVaultRules.HurdleFreePass) < 1e-12,
+                          "hurdle " + (h + 1) + ": the cooldown longer than half a turn and shorter than a full turn: " + cooldown + " (" + half + ", " + turn + ")");
+                    Check(through > cooldown && through < turn - RoyalVaultRules.HurdleFreePass,
+                          "hurdle " + (h + 1) + ": let through past the cooldown, and up again 0.6 s and more before the first arm is back: " + through);
+                    foreach (double origin in VaultClocks)
+                    {
+                        // Three quarters of a turn on, the bar's line stands square to where it was: both arms 90 deg off the spot.
+                        double turned = RoyalVaultRules.Wrap(RoyalVaultRules.HurdleAngle(h, origin + through) - RoyalVaultRules.HurdleAngle(h, origin), 180);
+                        Check(Math.Abs(turned - 90) < 1e-3, "hurdle " + (h + 1) + ": square to the spot as the let-through ends: " + turned);
+                        // Wherever the bar knocks a body down, the bar's next pass over that spot is the other arm's, half a turn on:
+                        // inside the cooldown and the let-through. The one after it, the first arm's, comes after both.
+                        var rng = new Random(7031 + h);
+                        for (int n = 0; n < 200; n++)
+                        {
+                            double r = 1.6 + (reach - 1.6) * rng.NextDouble(), a = 2 * Math.PI * rng.NextDouble(), t = origin + 100 * rng.NextDouble();
+                            double dx = r * Math.Cos(a), dz = r * Math.Sin(a), hit = t + RoyalVaultRules.HurdleArrivesIn(h, dx, dz, t);
+                            double other = 1e-3 + RoyalVaultRules.HurdleArrivesIn(h, dx, dz, hit + 1e-3);
+                            double first = other + 1e-3 + RoyalVaultRules.HurdleArrivesIn(h, dx, dz, hit + other + 1e-3);
+                            Check(Math.Abs(other - half) < 1e-5 && other < cooldown && other < through, "hurdle " + (h + 1) + ": the other arm over the spot " + other + " s on, free");
+                            Check(Math.Abs(first - turn) < 1e-5 && first > cooldown && first > through, "hurdle " + (h + 1) + ": the first arm back " + first + " s on, a hit again");
+                        }
+                    }
+                }
+                Check(Math.Abs(RoyalVaultRules.HurdleHitCooldown(0) - 2.236) < .001 && Math.Abs(RoyalVaultRules.HurdleHitCooldown(1) - 2.4) < 1e-9,
+                      "cooldowns 2.24 and 2.4 s: " + RoyalVaultRules.HurdleHitCooldown(0) + ", " + RoyalVaultRules.HurdleHitCooldown(1));
+                Check(Math.Abs(RoyalVaultRules.HurdleLetThroughSeconds(0) - 2.455) < .001 && Math.Abs(RoyalVaultRules.HurdleLetThroughSeconds(1) - 2.7) < 1e-9,
+                      "let-throughs 2.45 and 2.7 s: " + RoyalVaultRules.HurdleLetThroughSeconds(0) + ", " + RoyalVaultRules.HurdleLetThroughSeconds(1)); });
+            Test("Royal vault bulkheads (R725): pocket panels half a cycle apart keep a 4 m gap open always, each half open 1.7 s a cycle, bulkhead 2 half a cycle behind, panels at most 4.5 m/s, the floor cue green only while the half's middle stays clear a second", () => {
+                double cycle = RoyalVaultRules.BulkheadCycle, travel = RoyalVaultRules.BulkheadTravel, width = RoyalVaultRules.BulkheadHalfWidth;
+                Check(travel == width && RoyalVaultRules.BulkheadPhase[1] - RoyalVaultRules.BulkheadPhase[0] == cycle / 2 && cycle / 2 == 3.0,
+                      "a panel closes exactly its half; bulkhead 2 runs half a cycle, 3 s, from bulkhead 1");
+                foreach (double origin in VaultClocks)
+                    for (int b = 0; b < 2; b++)
+                    {
+                        int bb = b;
+                        double peak = 0, lastW = RoyalVaultRules.BulkheadOut(b, -1, origin), lastE = RoyalVaultRules.BulkheadOut(b, 1, origin);
+                        for (int k = 1; k <= (int)Math.Round(2 * cycle / .001); k++)
+                        {
+                            double t = origin + k * .001, w = RoyalVaultRules.BulkheadOut(b, -1, t), e = RoyalVaultRules.BulkheadOut(b, 1, t);
+                            Check(2 * width - travel * (w + e) >= 3.99, "a 4 m gap always open, bulkhead " + (b + 1) + " at " + t);
+                            Check(Math.Abs(e - RoyalVaultRules.BulkheadOut(b, -1, t + cycle / 2)) < 1e-6, "its panels half a cycle apart");
+                            if (b == 1)
+                                for (int side = -1; side <= 1; side += 2)
+                                    Check(Math.Abs(RoyalVaultRules.BulkheadOut(1, side, t) - RoyalVaultRules.BulkheadOut(0, side, t - cycle / 2)) < 1e-6, "bulkhead 2 is bulkhead 1 half a cycle later");
+                            peak = Math.Max(peak, Math.Max(Math.Abs(w - lastW), Math.Abs(e - lastE)) * travel / .001);
+                            lastW = w;
+                            lastE = e;
+                        }
+                        Check(peak <= 4.5 && peak > 3.9, "the panels at most 4.5 m/s: " + peak);
+                        for (int side = -1; side <= 1; side += 2)
+                        {
+                            int sd = side;
+                            double open = VaultSeconds(t => RoyalVaultRules.BulkheadOut(bb, sd, t) == 0, origin, cycle, .001), most = 0, go = 0, warn = 0;
+                            Check(Math.Abs(open - 1.7) <= .005, "each half fully open 1.7 s a cycle: " + open);
+                            for (int k = 0; k < 600; k++)
+                            {
+                                double t = origin + (k + .5) * .01, c = RoyalVaultRules.BulkheadClearFor(b, side * width / 2, t);
+                                var cue = RoyalVaultRules.BulkheadCue(b, side, t);
+                                most = Math.Max(most, c);
+                                Check(cue == RoyalVaultRules.Cue.Go ? c >= RoyalVaultRules.BulkheadWarnSeconds
+                                      : cue == RoyalVaultRules.Cue.Warn ? c > 0 && c < RoyalVaultRules.BulkheadWarnSeconds : cue == RoyalVaultRules.Cue.Stop && RoyalVaultRules.BulkheadBlocked(b, side * width / 2, t),
+                                      "the half's cue: go while its middle stays clear a second, warn in its last second, stop while shut");
+                                if (cue == RoyalVaultRules.Cue.Go) go += .01;
+                                if (cue == RoyalVaultRules.Cue.Warn) warn += .01;
+                            }
+                            Check(Math.Abs(most - 2.84) <= .05, "the half's middle clear at most 2.84 s: " + most);
+                            Check(Math.Abs(go - 1.87) <= .05 && Math.Abs(warn - .98) <= .05, "go 1.87 s and warn 0.98 s a cycle: " + go + " / " + warn);
+                        }
+                        double middle = 0;
+                        for (int k = 0; k < 600; k++) middle = Math.Max(middle, RoyalVaultRules.BulkheadClearFor(b, 0, origin + (k + .5) * .01));
+                        Check(middle < RoyalVaultRules.BulkheadWarnSeconds && Math.Abs(middle - .88) <= .05, "never a second clear in the corridor's middle: " + middle);
+                    } });
+            Test("Royal vault dial hammers (R725): each head at body height 1.94 s of a 6 s turn, hammer 2 half a turn behind, sweeping -z at the bottom, the zones 4.5 m apart, a runner following the head in through before it comes round, the lamp red exactly at body height", () => {
+                double b = RoyalVaultRules.HammerBodyHalfAngle, dps = RoyalVaultRules.HammerDegreesPerSecond, turn = 360 / dps, zone = RoyalVaultRules.HammerZoneHalf;
+                double[] axle = RoyalVaultRules.HammerAxleZ;
+                Check(Math.Abs(b - 58.22) <= .05, "58.22 deg either side of hanging down: " + b);
+                Check(Math.Abs(VaultHammerLowest(0) - .1) < 1e-9 && Math.Abs(VaultHammerLowest(b) - RoyalVaultRules.HammerBodyTop) < 1e-9
+                      && Math.Abs(VaultHammerLowest(-b) - RoyalVaultRules.HammerBodyTop) < 1e-9, "hanging down the head passes 0.1 m over the walkway; at +-b its lowest corner is at body height");
+                double far = 0;
+                for (int k = 0; k <= 2000; k++) far = Math.Max(far, VaultHammerReach(-b + b * k / 1000.0, RoyalVaultRules.HammerBodyTop));
+                Check(far <= zone - RoyalVaultRules.HammerBodyMargin + 1e-9 && far >= zone - RoyalVaultRules.HammerBodyMargin - .03, "a zone is the head's reach under body height and the margin: " + far);
+                Check(Math.Abs(RoyalVaultRules.HammerPhase(1) - RoyalVaultRules.HammerPhase(0) - turn / 2) < 1e-9, "the pair half a turn apart");
+                Check((axle[1] - zone) - (axle[0] + zone) >= 4.5 && axle[0] - zone >= RoyalVaultRules.J1Z1 + 2 && RoyalVaultRules.WalkZ1 - (axle[1] + zone) >= 2,
+                      "the zones apart with a 4.5 m cell between, 2 m of walkway before and after them");
+                foreach (double origin in VaultClocks)
+                    for (int i = 0; i < 2; i++)
+                    {
+                        int ii = i;
+                        double window = VaultSeconds(t => RoyalVaultRules.HammerAtBody(ii, t), origin, turn, .001), stop = 0, warn = 0, go = 0, off = 0;
+                        Check(Math.Abs(window - 1.94) <= .02, "at body height 1.94 s a turn: " + window);
+                        for (int k = 0; k < (int)Math.Round(turn / .001); k++)
+                        {
+                            double t = origin + (k + .5) * .001, clear = RoyalVaultRules.HammerClearFor(i, t), since = RoyalVaultRules.HammerSinceClear(i, t);
+                            bool at = RoyalVaultRules.HammerAtBody(i, t);
+                            var cue = RoyalVaultRules.HammerCue(i, t);
+                            Check(cue == (at ? RoyalVaultRules.Cue.Stop : clear < 1 ? RoyalVaultRules.Cue.Warn : since < 1 ? RoyalVaultRules.Cue.Go : RoyalVaultRules.Cue.Off)
+                                  && (at ? clear == 0 && since == 0 : clear > 0 && Math.Abs(clear + since - (turn - window)) < .01), "the lamp: red exactly at body height, warning the second before, green the second after");
+                            if (cue == RoyalVaultRules.Cue.Stop) stop += .001;
+                            else if (cue == RoyalVaultRules.Cue.Warn) warn += .001;
+                            else if (cue == RoyalVaultRules.Cue.Go) go += .001;
+                            else off += .001;
+                            if (i == 1) Check(Math.Abs(RoyalVaultRules.Wrap(RoyalVaultRules.HammerAngle(1, t) - RoyalVaultRules.HammerAngle(0, t), 360) - 180) < 1e-4, "hammer 2 half a turn behind");
+                        }
+                        Check(Math.Abs(stop - window) < .002 && Math.Abs(warn - 1) < .002 && Math.Abs(go - 1) < .002 && Math.Abs(off - (turn - window - 2)) < .002, "red 1.94, warning 1, green 1, dark 2.06 s");
+                        foreach (double target in new[] { 1.0, 359.0 })
+                        {
+                            double t = origin + RoyalVaultRules.Wrap((target - RoyalVaultRules.HammerAngle(i, origin)) / dps, turn);
+                            double vz = (RoyalVaultRules.HammerHeadZ(i, t + 1e-3) - RoyalVaultRules.HammerHeadZ(i, t - 1e-3)) / 2e-3;
+                            Check(Math.Abs(RoyalVaultRules.Wrap(RoyalVaultRules.HammerAngle(i, t) - target + 180, 360) - 180) < 1e-3 && vz < 0, "at " + target + " deg the head sweeps -z: " + vz);
+                        }
+                        // A runner who sets off from the zone's edge as the head leaves body height crosses it before the head comes round.
+                        double leave = origin + RoyalVaultRules.Wrap((b + 1e-3 - RoyalVaultRules.HammerAngle(i, origin)) / dps, turn);
+                        Check(!RoyalVaultRules.HammerAtBody(i, leave) && RoyalVaultRules.HammerSinceClear(i, leave) < .001
+                              && RoyalVaultRules.HammerClearFor(i, leave) >= 2 * zone / RoyalVaultRules.RunSpeed, "following the head in, a runner is through in " + 2 * zone / RoyalVaultRules.RunSpeed + " s of " + RoyalVaultRules.HammerClearFor(i, leave));
+                    } });
+            Test("Royal vault crown press (R725): a 4.5 s cycle of sit, rise, up, warning and fall, the die easing up and falling onto the floor, its crush reaching 0.15 m round it and 0.3 m under it, a runner stepping in 0.30 to 1.88 s after a landing and a sprinter from 0.37 s clear of the wave and the crush, PressSafeToCross never wrong at a run or a sprint, the band the neck's full width, the cue red only in the wave and green only when a runner may step in", () => {
+                double period = RoyalVaultRules.PressPeriod, up = period - RoyalVaultRules.PressFall - RoyalVaultRules.PressWarnSeconds - RoyalVaultRules.PressSit - RoyalVaultRules.PressRise;
+                double band = RoyalVaultRules.PressBandZ1 - RoyalVaultRules.PressBandZ0, cross = band / RoyalVaultRules.RunSpeed;
+                Check(Math.Abs(up - 1.65) < 1e-9, "sit 0.4, rise 1.0, up 1.65, warning 1.2 and fall 0.25 make 4.5 s");
+                Check(RoyalVaultRules.PressDieAcross == 8 && RoyalVaultRules.PressX - RoyalVaultRules.PressDieAcross / 2 == RoyalVaultRules.BeltWestX0
+                      && RoyalVaultRules.PressBandZ0 == RoyalVaultRules.NeckZ0 && RoyalVaultRules.PressBandZ1 < RoyalVaultRules.NeckZ1 && Math.Abs(band - 6) < 1e-9,
+                      "a full-width band: the die as wide as the 8 m neck (x -6..2), 6 m of band from the neck's mouth");
+                // The builder makes the one crush shell from these; a standing piece under its reach needs the die 1.5 m up.
+                Check(RoyalVaultRules.PressCrushBeyond == .15 && RoyalVaultRules.PressCrushBelow == .3
+                      && RoyalVaultRules.PressHeadroom == RoyalVaultRules.HammerBodyTop + RoyalVaultRules.PressCrushBelow && Math.Abs(RoyalVaultRules.PressHeadroom - 1.5) < 1e-9,
+                      "the crush reaches 0.15 m round the die and 0.3 m under it, so a 1.2 m piece is clear under it with the die's bottom 1.5 m up");
+                var stages = new[] { RoyalVaultRules.PressStage.Down, RoyalVaultRules.PressStage.Rising, RoyalVaultRules.PressStage.Up, RoyalVaultRules.PressStage.Warning, RoyalVaultRules.PressStage.Falling };
+                double[] seconds = { RoyalVaultRules.PressSit, RoyalVaultRules.PressRise, up, RoyalVaultRules.PressWarnSeconds, RoyalVaultRules.PressFall };
+                foreach (double origin in VaultClocks)
+                {
+                    for (int n = 0; n < stages.Length; n++)
+                    {
+                        var stage = stages[n];
+                        double spent = VaultSeconds(t => RoyalVaultRules.PressAt(t) == stage, origin, period, .001);
+                        Check(Math.Abs(spent - seconds[n]) <= .002, stage + " for " + spent + " s");
+                    }
+                    double last = RoyalVaultRules.PressLowered(origin);
+                    for (int k = 1; k <= (int)Math.Round(2 * period / .01); k++)
+                    {
+                        double t = origin + k * .01, l = RoyalVaultRules.PressLowered(t);
+                        Check(l >= 0 && l <= 1 && Math.Abs(RoyalVaultRules.PressDieBottom(t) - RoyalVaultRules.PressDrop * (1 - l)) < 1e-9, "lowered 0..1, the die's bottom from it");
+                        if (RoyalVaultRules.PressAt(origin + (k - 1) * .01) != RoyalVaultRules.PressStage.Falling) Check(Math.Abs(l - last) <= .05, "the die eases: " + (l - last) + " in 10 ms at " + t);
+                        last = l;
+                    }
+                    double landing = origin + RoyalVaultRules.PressLandsIn(origin);
+                    Check(RoyalVaultRules.PressLowered(landing - 1e-5) > 1 - 1e-3 && RoyalVaultRules.PressLowered(landing + 1e-5) == 1 && RoyalVaultRules.PressDieBottom(landing + 1e-5) == 0,
+                          "the fall reaches the floor at the landing");
+                    for (int k = 0; .30 + k * .05 < 1.88 - 1e-9; k++)
+                    {
+                        // 10 us past e, so the rounding of landing + e never starts the walk a hair before it
+                        double e = .30 + k * .05, t = landing + e + 1e-5;
+                        Check(VaultPressCrossing(t, RoyalVaultRules.RunSpeed) && RoyalVaultRules.PressSafeToCross(t, cross) && RoyalVaultRules.PressCue(t) == RoyalVaultRules.Cue.Go,
+                              "a runner may step in " + e + " s after a landing");
+                    }
+                    double rule = 0, walked = 0, sprint = 0, firstSprint = double.NaN;
+                    for (int k = 0; k < (int)Math.Round(period / .01); k++)
+                    {
+                        double e = (k + .5) * .01, t = landing + e;
+                        bool safe = RoyalVaultRules.PressSafeToCross(t, cross), clear = VaultPressCrossing(t, RoyalVaultRules.RunSpeed);
+                        bool sprints = RoyalVaultRules.PressSafeToCross(t, band / RoyalVaultRules.SprintSpeed);
+                        Check(clear || !safe, "PressSafeToCross never sends a runner into the wave or the crush, " + e + " s after a landing");
+                        // R725: by its middle alone, from 0.33 s it sent a sprinter's front under the die while the bottom was 1.05 m up.
+                        Check(VaultPressCrossing(t, RoyalVaultRules.SprintSpeed) || !sprints, "nor a sprinter, " + e + " s after a landing");
+                        var cue = RoyalVaultRules.PressCue(t);
+                        Check((cue == RoyalVaultRules.Cue.Stop) == (RoyalVaultRules.PressSinceLanding(t) < RoyalVaultRules.PressWaveSeconds) && (cue == RoyalVaultRules.Cue.Go) == (safe && cue != RoyalVaultRules.Cue.Stop),
+                              "red only in the wave, green just while a runner may step in, " + e + " s after a landing");
+                        if (safe) rule += .01;
+                        if (clear) walked += .01;
+                        if (sprints)
+                        {
+                            sprint += .01;
+                            if (double.IsNaN(firstSprint)) firstSprint = e;
+                        }
+                    }
+                    Check(Math.Abs(rule - 1.58) <= .02 && Math.Abs(walked - rule - .1) <= .02, "runners may step in 1.58 s a cycle, 0.1 s inside what the walk allows: " + rule + " / " + walked);
+                    Check(Math.Abs(sprint - 2.28) <= .03 && Math.Abs(firstSprint - .37) <= .015, "sprinters 2.28 s a cycle from 0.37 s: " + sprint + " from " + firstSprint);
+                } });
+            Test("Royal vault belts (R725): the west belt always back at 1 m/s, the east one stopped then back at 1.5 m/s by 5 s halves, never forward nor faster back (R518), easing between, warning in the stopped half's last second, the slats' travel and the ride times true", () => {
+                double c = 2 * RoyalVaultRules.EastHalf, length = RoyalVaultRules.BeltZ1 - RoyalVaultRules.BeltZ0;
+                Check(RoyalVaultRules.BeltSplitX - RoyalVaultRules.BeltWestX0 == 5 && RoyalVaultRules.BeltEastX1 - RoyalVaultRules.BeltSplitX == 5 && length == 14, "two 5 m belts side by side, 14 m long");
+                Check(RoyalVaultRules.WestBeltSpeed == -1.0 && RoyalVaultRules.EastStopSpeed == 0 && RoyalVaultRules.EastBackSpeed == -1.5 && RoyalVaultRules.EastHalf == 5,
+                      "west -1.0; east 0 then -1.5 by 5 s halves");
+                Check(RoyalVaultRules.BeltTravel(0, 0) == 0 && RoyalVaultRules.BeltTravel(1, 0) == 0, "the slats' travel counts from clock 0");
+                foreach (double origin in VaultClocks)
+                {
+                    double last = RoyalVaultRules.BeltSpeed(1, origin), stopped = 0, back = 0, warned = 0;
+                    for (int k = 1; k <= (int)Math.Round(2 * c / .01); k++)
+                    {
+                        double t = origin + k * .01, v = RoyalVaultRules.BeltSpeed(1, t), u = RoyalVaultRules.Wrap(t, c), left = RoyalVaultRules.EastStoppedFor(t);
+                        bool warn = RoyalVaultRules.EastWarn(t);
+                        Check(RoyalVaultRules.BeltSpeed(0, t) == RoyalVaultRules.WestBeltSpeed, "the west belt always back at 1.0 m/s");
+                        Check(v >= RoyalVaultRules.EastBackSpeed && v <= 0, "never forward, never back faster than 1.5 m/s (R518): " + v);
+                        Check(Math.Abs(v - last) <= .06, "the east belt eases: " + (v - last) + " in 10 ms");
+                        if (u > RoyalVaultRules.EastRamp + 1e-6 && u < RoyalVaultRules.EastHalf - 1e-6) Check(v == RoyalVaultRules.EastStopSpeed && left > 0, "stopped through the first half");
+                        if (u > RoyalVaultRules.EastHalf + RoyalVaultRules.EastRamp + 1e-6 && u < c - 1e-6) Check(v == RoyalVaultRules.EastBackSpeed && left == 0, "back through the second half");
+                        Check(warn == (left > 0 && left <= RoyalVaultRules.EastWarnSeconds) && (!warn || v == 0), "the warning in the stopped half's last second");
+                        Check(RoyalVaultRules.BeltCue(0, t) == RoyalVaultRules.Cue.Stop && RoyalVaultRules.BeltCue(1, t) == (warn ? RoyalVaultRules.Cue.Warn : left > 0 ? RoyalVaultRules.Cue.Go : RoyalVaultRules.Cue.Stop),
+                              "the belt cues: the west one red, the east one green while stopped, warning, red while it runs back");
+                        for (int belt = 0; belt < 2; belt++)
+                        {
+                            double rate = (RoyalVaultRules.BeltTravel(belt, t + 1e-3) - RoyalVaultRules.BeltTravel(belt, t - 1e-3)) / 2e-3;
+                            Check(Math.Abs(rate - RoyalVaultRules.BeltSpeed(belt, t)) <= 1e-3, "the slats move at the belt's speed: " + rate + " / " + RoyalVaultRules.BeltSpeed(belt, t) + " at " + t);
+                        }
+                        if (v == 0) stopped += .01;
+                        if (v == RoyalVaultRules.EastBackSpeed) back += .01;
+                        if (warn) warned += .01;
+                        last = v;
+                    }
+                    Check(Math.Abs(stopped - 9) <= .02 && Math.Abs(back - 9) <= .02 && Math.Abs(warned - 2) <= .02, "4.5 s stopped, 4.5 s back, a 1 s warning a cycle: " + stopped + ", " + back + ", " + warned);
+                    double eastRun = 0;
+                    foreach (double v in new[] { RoyalVaultRules.RunSpeed, 3.1, RoyalVaultRules.SprintSpeed })
+                        for (int j = 0; j < 50; j++)
+                        {
+                            double t = origin + j * c / 50 + .0123, west = 0;
+                            for (int belt = 0; belt < 2; belt++)
+                            {
+                                double z = 0, s = 0, ride = RoyalVaultRules.BeltRideSeconds(belt, t, v, length);
+                                while (z < length) { z += (v + RoyalVaultRules.BeltSpeed(belt, t + s)) * .001; s += .001; }
+                                Check(Math.Abs(ride - s) <= .05, "the ride within 0.05 s of a 1 ms walk: " + ride + " / " + s);
+                                if (belt == 0) west = ride;
+                                else if (v == RoyalVaultRules.RunSpeed)
+                                {
+                                    Check(ride < west, "at a run the east belt is always the faster ride: " + ride + " / " + west);
+                                    eastRun += ride / 50;
+                                }
+                            }
+                            if (v == RoyalVaultRules.RunSpeed) Check(Math.Abs(west - 9.34) < .01, "the west ride 9.34 s at a run: " + west);
+                        }
+                    Check(Math.Abs(eastRun - 7.78) <= .05, "the east ride 7.78 s at a run on average: " + eastRun);
+                } });
+            Test("Royal vault pad (R725): the knight's leap at 10.76 up and 5.06 forward for 1.719 s, every catch up to 0.6 m outside the trigger clearing the shelf's lip and the rails by 0.5 m and landing between the shelf's rails short of the drawers, softly", () => {
+                RoyalVaultRules.PadThrow(out double up, out double vx, out double vz, out double seconds);
+                Check(Math.Abs(up - 10.76) <= .02 && Math.Abs(vz - 5.06) <= .02 && Math.Abs(seconds - 1.719) <= .005, "10.76 up, 5.06 forward, 1.719 s: " + up + ", " + vz + ", " + seconds);
+                RoyalVaultRules.PadFlight(RoyalVaultRules.PadX, RoyalVaultRules.PadZ, seconds, out double cx, out double cy, out double cz);
+                Check(Math.Abs(cx - RoyalVaultRules.PadLandX) < 1e-9 && Math.Abs(cy - RoyalVaultRules.PadLandY) < 1e-9 && Math.Abs(cz - RoyalVaultRules.PadLandZ) < 1e-9, "the pad's middle lands on the landing");
+                Check(Math.Abs(RoyalVaultRules.PadFloor + up * up / (2 * RoyalVaultRules.PadGravity) - RoyalVaultRules.PadLandY - RoyalVaultRules.PadClearance) < 1e-9, "the apex PadClearance over the landing");
+                // What a flight passes (x0, x1, z0, z1, top): the shelf's lip (its south edge), the shelf's east and west rails
+                // over the landing zone, the east belt's rail, the approach's north-east rail; rails 0.3 m thick, 1.2 m tall.
+                const double rail = .3, tall = 1.2, body = RoyalVaultRules.BodyHalf;
+                var over = new[]
+                {
+                    new[] { RoyalVaultRules.ShelfX0, RoyalVaultRules.ShelfX1, RoyalVaultRules.ShelfZ0, RoyalVaultRules.ShelfZ0, RoyalVaultRules.PadLandY },
+                    new[] { RoyalVaultRules.ShelfX1, RoyalVaultRules.ShelfX1 + rail, RoyalVaultRules.ShelfZ0, RoyalVaultRules.ShelfOpenZ0, RoyalVaultRules.PadLandY + tall },
+                    new[] { RoyalVaultRules.ShelfX0 - rail, RoyalVaultRules.ShelfX0, RoyalVaultRules.ShelfZ0, RoyalVaultRules.ShelfOpenZ0, RoyalVaultRules.PadLandY + tall },
+                    new[] { RoyalVaultRules.BeltEastX1, RoyalVaultRules.BeltEastX1 + rail, RoyalVaultRules.BeltZ0, RoyalVaultRules.ShelfZ0, RoyalVaultRules.PadFloor + tall },
+                    new[] { RoyalVaultRules.BeltEastX1 + rail, 14.0, RoyalVaultRules.ApproachZ1, RoyalVaultRules.ApproachZ1 + rail, RoyalVaultRules.PadFloor + tall },
+                };
+                double least = double.MaxValue;
+                foreach (double outside in new[] { 0, .3, RoyalVaultRules.PadCatch })
+                    for (int side = 0; side < 4; side++)
+                        for (int j = 0; j < 13; j++)
+                        {
+                            // Ground points round the trigger's edge pushed out by `outside`, 13 a side; sameThrow keeps each one's offset.
+                            double h = RoyalVaultRules.PadSize / 2 + outside, along = -h + 2 * h * j / 12;
+                            double x0 = RoyalVaultRules.PadX + (side == 0 ? -h : side == 1 ? h : along), z0 = RoyalVaultRules.PadZ + (side == 2 ? -h : side == 3 ? h : along);
+                            for (int k = 0; k * .002 <= seconds; k++)
+                            {
+                                RoyalVaultRules.PadFlight(x0, z0, k * .002, out double x, out double y, out double z);
+                                foreach (var box in over)
+                                    if (x + body >= box[0] && x - body <= box[1] && z + body >= box[2] && z - body <= box[3])
+                                    {
+                                        least = Math.Min(least, y - box[4]);
+                                        Check(y >= box[4] + .5, "0.5 m over what it passes, thrown from (" + x0 + ", " + z0 + "), " + k * .002 + " s in: " + (y - box[4]));
+                                    }
+                            }
+                            RoyalVaultRules.PadFlight(x0, z0, seconds, out double lx, out double ly, out double lz);
+                            Check(lx >= RoyalVaultRules.ShelfX0 + body && lx <= RoyalVaultRules.ShelfX1 - body && lz >= RoyalVaultRules.ShelfZ0 + .5 && lz <= 94.8 && Math.Abs(ly - RoyalVaultRules.PadLandY) < 1e-9,
+                                  "it lands on the shelf between its rails, short of the drawers: " + lx + ", " + lz);
+                        }
+                Check(least >= .5 && least < .7, "the closest pass: " + least);
+                // A floor hit counts the speed along the floor's normal, divided by sqrt(1.4 x 1.15) in Pawn Rush (RagdollPawn
+                // PawnRushLandingImpact); 9 m/s knocks a pawn down.
+                double vy = up - RoyalVaultRules.PadGravity * seconds;
+                Check(Math.Abs(vy) / Math.Sqrt(1.4 * 1.15) < 9 && Math.Sqrt(vx * vx + vy * vy + vz * vz) / Math.Sqrt(1.4 * 1.15) < 9, "the landing does not floor the pawn: " + Math.Abs(vy) / Math.Sqrt(1.4 * 1.15)); });
+            Test("Royal vault drawers (R725): a 4.8 s cycle with drawer 2 1.5 s behind drawer 1, the face within the shelf and at most 5.5 m/s, the cell between them never swept, the warning in the rest's last second, a body at x 5 clear of the hit's reach at most 3.2 s, a push off the edge landing under the knockdown", () => {
+                double cycle = RoyalVaultRules.DrawerCycle, half = RoyalVaultRules.DrawerLong / 2;
+                double[] dz = RoyalVaultRules.DrawerZ;
+                Check(Math.Abs(cycle - 4.8) < 1e-9 && RoyalVaultRules.DrawerPhase[0] - RoyalVaultRules.DrawerPhase[1] == 1.5, "4.8 s a cycle, drawer 2 1.5 s behind drawer 1");
+                Check(RoyalVaultRules.DrawerTravel == RoyalVaultRules.ShelfX1 - RoyalVaultRules.ShelfX0, "a drawer sweeps the shelf's full width");
+                // The drawers move only across the shelf, so the stretch between their boxes is never swept.
+                Check(Math.Abs(dz[0] + half - 99.2) < 1e-9 && Math.Abs(dz[1] - half - 100.6) < 1e-9 && dz[1] - half - (dz[0] + half) > 2 * RoyalVaultRules.BodyHalf + .5,
+                      "the cell z 99.2..100.6 between the boxes, room for a body");
+                foreach (double origin in VaultClocks)
+                {
+                    double peak = 0;
+                    double[] lastFace = { RoyalVaultRules.DrawerFaceX(0, origin - .0005), RoyalVaultRules.DrawerFaceX(1, origin - .0005) };
+                    for (int k = 0; k < (int)Math.Round(2 * cycle / .001); k++)
+                    {
+                        double t = origin + (k + .5) * .001;
+                        Check(Math.Abs(RoyalVaultRules.DrawerOut(1, t) - RoyalVaultRules.DrawerOut(0, t - 1.5)) < 1e-6, "drawer 2 is drawer 1 1.5 s later");
+                        for (int i = 0; i < 2; i++)
+                        {
+                            double face = RoyalVaultRules.DrawerFaceX(i, t), o = RoyalVaultRules.DrawerOut(i, t);
+                            bool warn = RoyalVaultRules.DrawerWarn(i, t);
+                            Check(face >= RoyalVaultRules.ShelfX0 - 1e-9 && face <= RoyalVaultRules.ShelfX1 + 1e-9, "the face within the shelf: " + face);
+                            peak = Math.Max(peak, Math.Abs(face - lastFace[i]) / .001);
+                            lastFace[i] = face;
+                            Check(!warn || (o == 0 && RoyalVaultRules.DrawerOut(i, t + RoyalVaultRules.DrawerWarnSeconds + .002) > 0), "warned, it comes out within the second");
+                            Check(warn || o > 0 || RoyalVaultRules.DrawerOut(i, t + RoyalVaultRules.DrawerWarnSeconds - .002) == 0, "unwarned at rest, it stays in for the next second");
+                            Check(RoyalVaultRules.DrawerCue(i, t) == (warn ? RoyalVaultRules.Cue.Warn : o > 0 ? RoyalVaultRules.Cue.Stop : RoyalVaultRules.Cue.Off), "the face cue: warning, red while out, dark in");
+                        }
+                    }
+                    Check(peak <= 5.5 && peak > 5.2, "the face at most 5.5 m/s: " + peak);
+                    for (int i = 0; i < 2; i++)
+                    {
+                        int ii = i;
+                        double warned = VaultSeconds(t => RoyalVaultRules.DrawerWarn(ii, t), origin, cycle, .001);
+                        double blocked = VaultSeconds(t => RoyalVaultRules.DrawerReachX(ii, t) < 5 + RoyalVaultRules.BodyHalf, origin, cycle, .001), most = 0;
+                        for (int k = 0; k < (int)Math.Round(cycle / .01); k++) most = Math.Max(most, RoyalVaultRules.DrawerClearFor(i, 5, origin + (k + .5) * .01));
+                        // R725 review: timed against the hit's reach, DrawerShellBeyond ahead of the face (1.51 / 3.3 s by the face).
+                        Check(Math.Abs(warned - 1.0) <= .002 && Math.Abs(blocked - 1.62) <= .02 && Math.Abs(most - 3.18) <= .05,
+                              "warned 1 s; a body at x 5 blocked 1.62 s and clear at most 3.18 s a cycle: " + warned + ", " + blocked + ", " + most);
+                    }
+                }
+                // Pushed off the open edge a pawn drops 4 m onto the belts; under Pawn Rush gravity a floor landing counts as the
+                // same drop under plain gravity (PawnRushLandingImpact), under the 9 m/s knockdown.
+                Check(Math.Sqrt(2 * 9.81 * (RoyalVaultRules.PadLandY - RoyalVaultRules.PadFloor)) < 9, "the drop onto the belts lands under the knockdown"); });
+            Test("Royal vault fork 2 balance (model, R725): the pad and the shelf beat the belts and the press by 1.5 s at a run and 0.3 s at 3.1 m/s and lose at most 0.6 s at a sprint, and a knockdown off at drawer 1 costs a runner 0.5 s more than the pad gains", () => {
+                double[] speeds = { RoyalVaultRules.RunSpeed, 3.1, RoyalVaultRules.SprintSpeed }, least = { 1.5, .3, -.6 };
+                foreach (double origin in VaultClocks)
+                    for (int n = 0; n < speeds.Length; n++)
+                    {
+                        double gain = 0, drop = 0;
+                        for (int k = 0; k < 200; k++)
+                        {
+                            double t0 = origin + .37 * k, safe = RoyalVaultRules.ForkTwoSafeSeconds(t0, speeds[n]), risky = RoyalVaultRules.ForkTwoRiskySeconds(t0, speeds[n]);
+                            Check(safe > 0 && risky > 0, "positive times");
+                            gain += (safe - risky) / 200;
+                            if (n == 0) drop += RoyalVaultRules.ForkTwoDropCost(t0, speeds[n]) / 200;
+                        }
+                        Check(gain >= least[n], "the risky branch gains at least " + least[n] + " s at " + speeds[n] + " m/s: " + gain);
+                        // R725 fun pass: the drawers knock down (DrawerKnockdown), so a runner knocked off at drawer 1 ends slower than
+                        // one that rode the belts (the critic's risk 2: a swept pad run used to beat a clean belt run).
+                        if (n == 0) Check(drop >= 1.0 && drop - gain >= .5,
+                                          "a knockdown off at drawer 1 costs a runner at least 1 s, and 0.5 s more than the pad gains: " + drop + ", " + gain);
+                    } });
+            Test("Royal vault flipping plates (R725): the rows half a cycle apart, one always flat and both for 1.2 s twice a cycle, the inner edge at most 5.5 m/s, FlatFor and the warning true to the lift, the warning long enough to cross a row before the slip", () => {
+                double cycle = RoyalVaultRules.PlateCycle;
+                Check(Math.Abs(RoyalVaultRules.PlateFlat - 5.2) < 1e-9 && RoyalVaultRules.PlatePhase(1) - RoyalVaultRules.PlatePhase(0) == cycle / 2, "flat 5.2 s, the rows half a cycle apart");
+                Check(RoyalVaultRules.PlateZ0 == RoyalVaultRules.J2Z1 && RoyalVaultRules.PlateZ0 + RoyalVaultRules.PlateCount * RoyalVaultRules.PlatePitch == RoyalVaultRules.PlatesZ1
+                      && Math.Abs(RoyalVaultRules.PlatePitch - RoyalVaultRules.PlateLong - .05) < 1e-9 && Math.Abs(8 - 2 * RoyalVaultRules.PlateWide - .06) < 1e-9,
+                      "five plates a row from J2 to the stair, 0.05 m seams along, 0.06 m between the rows");
+                foreach (double origin in VaultClocks)
+                {
+                    double peak = 0, last = RoyalVaultRules.PlateAngle(0, origin - .0005);
+                    for (int k = 0; k < (int)Math.Round(2 * cycle / .001); k++)
+                    {
+                        double t = origin + (k + .5) * .001, a0 = RoyalVaultRules.PlateAngle(0, t);
+                        Check(a0 == 0 || RoyalVaultRules.PlateAngle(1, t) == 0, "one row always flat");
+                        for (int row = 0; row < 2; row++)
+                        {
+                            double a = RoyalVaultRules.PlateAngle(row, t), flat = RoyalVaultRules.PlateFlatFor(row, t);
+                            bool warn = RoyalVaultRules.PlateWarn(row, t);
+                            Check(a >= 0 && a <= RoyalVaultRules.PlateAngleMax && (flat > 0) == (a == 0), "FlatFor runs just while the row lies flat");
+                            Check(a > 0 ? warn : warn == (flat <= RoyalVaultRules.PlateWarnSeconds), "the warning from 1.6 s before the lift through the lift");
+                            Check(RoyalVaultRules.PlateCue(row, t) == (a > 0 ? RoyalVaultRules.Cue.Stop : warn ? RoyalVaultRules.Cue.Warn : RoyalVaultRules.Cue.Off), "the rim cue: red while tilted, warning, dark");
+                        }
+                        peak = Math.Max(peak, Math.Abs(a0 - last) / .001);
+                        last = a0;
+                    }
+                    Check(peak * Math.PI / 180 * RoyalVaultRules.PlateWide <= 5.5, "the inner edge at most 5.5 m/s: " + peak * Math.PI / 180 * RoyalVaultRules.PlateWide);
+                    var both = VaultRuns(t => RoyalVaultRules.PlateAngle(0, t) == 0 && RoyalVaultRules.PlateAngle(1, t) == 0, origin, cycle, .001);
+                    Check(both.Count == 2 && both.All(run => Math.Abs(run - 1.2) <= .01), "both rows flat 1.2 s twice a cycle: " + string.Join(", ", both));
+                    for (int row = 0; row < 2; row++)
+                    {
+                        double t1 = origin;
+                        while (RoyalVaultRules.PlateFlatFor(row, t1) == 0) t1 += .01;
+                        double lift = t1 + RoyalVaultRules.PlateFlatFor(row, t1), slip = 0;
+                        Check(RoyalVaultRules.PlateAngle(row, lift - 1e-4) == 0 && RoyalVaultRules.PlateFlatFor(row, lift - 1e-4) > 0
+                              && RoyalVaultRules.PlateAngle(row, lift + 1e-4) > 0 && RoyalVaultRules.PlateFlatFor(row, lift + 1e-4) == 0, "FlatFor reaches 0 just as the row lifts");
+                        Check(!RoyalVaultRules.PlateWarn(row, lift - RoyalVaultRules.PlateWarnSeconds - 1e-4) && RoyalVaultRules.PlateWarn(row, lift - RoyalVaultRules.PlateWarnSeconds + 1e-4),
+                              "the warning starts 1.6 s before the lift");
+                        while (RoyalVaultRules.PlateAngle(row, lift + slip) < RoyalVaultRules.PlateSlipAngle) slip += 1e-4;
+                        Check(RoyalVaultRules.PlateWarnSeconds + slip >= .25 + (RoyalVaultRules.PlateWide + .03) / RoyalVaultRules.RunSpeed,
+                              "warned, a runner crosses a row before it slips: " + (RoyalVaultRules.PlateWarnSeconds + slip) + " s");
+                    }
+                } });
+            Test("Royal vault door (R725): the rolling disc covers the octagonal doorway, passable 6.0 s of 15 with a 2.7 s mean and a 9 s longest wait, rolling at most 5.1 m/s, the countdown 3 2 1 ending as it opens, the closing warning in its last 1.5 s, the signs in order", () => {
+                double period = RoyalVaultRules.DoorPeriod, start = RoyalVaultRules.DoorPassableStart, end = RoyalVaultRules.DoorPassableEnd, pass = RoyalVaultRules.DoorPassWidth;
+                double corner = RoyalVaultRules.DoorWayInradius / Math.Cos(Math.PI / 8);
+                Check(RoyalVaultRules.DoorRadius - corner >= .25, "the disc covers the octagon's corners by 0.25 m: " + (RoyalVaultRules.DoorRadius - corner));
+                Check(Math.Abs(end - start - 6.0) <= .05 && RoyalVaultRules.DoorShutHold > 0, "passable 6.0 s a period: " + (end - start));
+                Check(RoyalVaultRules.DoorClearWidth(start) >= pass && RoyalVaultRules.DoorClearWidth(start - 1e-6) < pass
+                      && RoyalVaultRules.DoorClearWidth(end - 1e-6) >= pass && RoyalVaultRules.DoorClearWidth(end + 1e-6) < pass, "passable just while 2.5 m are clear 1 m up");
+                Check(RoyalVaultRules.DoorClearWidth(0) == 0 && Math.Abs(RoyalVaultRules.DoorClearWidth(RoyalVaultRules.DoorRoll + 1) - 7.03) <= .01, "shut nothing is clear, open 7.03 m");
+                string[] order = { "3", "2", "1", "열림", "닫힘", "" };
+                foreach (double origin in VaultClocks)
+                {
+                    double passable = 0, waits = 0, longest = 0, peak = 0, warned = 0, last = RoyalVaultRules.DoorOpen(origin - .0005);
+                    int samples = (int)Math.Round(2 * period / .001);
+                    var signs = new List<string>();
+                    for (int k = 0; k < samples; k++)
+                    {
+                        double t = origin + (k + .5) * .001, wait = RoyalVaultRules.DoorOpensIn(t), open = RoyalVaultRules.DoorPassableFor(t), o = RoyalVaultRules.DoorOpen(t);
+                        int count = RoyalVaultRules.DoorCountdown(t);
+                        bool closing = RoyalVaultRules.DoorClosingWarn(t);
+                        string sign = RoyalVaultRules.DoorSign(t, out RoyalVaultRules.Cue look);
+                        Check((open > 0) == (wait == 0) && (open > 0) == (RoyalVaultRules.DoorClearWidth(t) >= pass), "passable just while 2.5 m are clear, waiting otherwise");
+                        Check(count == (wait > 0 && wait <= 3 ? (int)Math.Ceiling(wait) : 0) && closing == (open > 0 && open <= RoyalVaultRules.DoorClosingWarnSeconds), "the countdown and the closing warning");
+                        Check(sign == (count > 0 ? count.ToString() : closing ? "닫힘" : open > 0 ? "열림" : "")
+                              && look == (count > 0 ? RoyalVaultRules.Cue.Off : closing ? RoyalVaultRules.Cue.Warn : open > 0 ? RoyalVaultRules.Cue.Go : RoyalVaultRules.Cue.Off),
+                              "the sign: digits in ink, 열림 green, 닫힘 warning, else empty");
+                        if (signs.Count == 0 || signs[signs.Count - 1] != sign) signs.Add(sign);
+                        if (open > 0) passable += .001;
+                        if (closing) warned += .001;
+                        waits += wait / samples;
+                        longest = Math.Max(longest, wait);
+                        peak = Math.Max(peak, Math.Abs(o - last) * RoyalVaultRules.DoorTravel / .001);
+                        last = o;
+                    }
+                    Check(Math.Abs(passable / 2 - 6.0) <= .05 && Math.Abs(warned / 2 - 1.5) <= .005, "passable 6.0 s and warning 1.5 s a period: " + passable / 2 + ", " + warned / 2);
+                    Check(Math.Abs(waits - 2.7) <= .1 && Math.Abs(longest - 9.0) <= .1, "a 2.7 s mean wait, 9 s at the longest: " + waits + ", " + longest);
+                    Check(peak <= 5.1 && peak > 4.9, "rolling at most 5.1 m/s: " + peak);
+                    int at = Array.IndexOf(order, signs[0]);
+                    Check(signs.Count >= 12 && at >= 0, "the signs come round twice: " + string.Join(" ", signs));
+                    for (int i = 0; i < signs.Count; i++) Check(signs[i] == order[(at + i) % order.Length], "the signs in order: " + string.Join(" / ", signs));
+                    double t1 = origin;
+                    while (RoyalVaultRules.DoorOpensIn(t1) == 0) t1 += .01;
+                    double opens = t1 + RoyalVaultRules.DoorOpensIn(t1), closes = opens + (end - start);
+                    Check(RoyalVaultRules.DoorCountdown(opens - 3 - 1e-4) == 0 && RoyalVaultRules.DoorCountdown(opens - 3 + 1e-4) == 3 && RoyalVaultRules.DoorCountdown(opens - 1e-4) == 1
+                          && RoyalVaultRules.DoorPassableFor(opens - 1e-4) == 0 && RoyalVaultRules.DoorCountdown(opens + 1e-4) == 0 && RoyalVaultRules.DoorPassableFor(opens + 1e-4) > 0,
+                          "3, 2, 1 through the last three seconds, ending just as it opens");
+                    Check(!RoyalVaultRules.DoorClosingWarn(closes - RoyalVaultRules.DoorClosingWarnSeconds - 1e-4) && RoyalVaultRules.DoorClosingWarn(closes - RoyalVaultRules.DoorClosingWarnSeconds + 1e-4)
+                          && RoyalVaultRules.DoorClosingWarn(closes - 1e-4) && !RoyalVaultRules.DoorClosingWarn(closes + 1e-4) && RoyalVaultRules.DoorPassableFor(closes + 1e-4) == 0,
+                          "the closing warning through the last 1.5 s");
+                } });
+            Test("Royal vault clock (R725): every machine and cue gives the same at s and at s plus a whole number of its periods near 1.76e9 s, within 1e-6 (angles 1e-4 deg)", () => {
+                VaultRepeats("Blink", t => RoyalVaultRules.Blink(t) ? 1 : 0, .25, false);
+                for (int h = 0; h < 2; h++)
+                {
+                    // A whole number of turns that is a whole number of seconds: 360 / gcd(360, deg/s), 36 s at 110 deg/s, 18 s at 100.
+                    int hh = h, rate = (int)Math.Abs(RoyalVaultRules.HurdleDegreesPerSecond[h]), g = 360, m = rate;
+                    while (m != 0) { int rest = g % m; g = m; m = rest; }
+                    Check(rate == Math.Abs(RoyalVaultRules.HurdleDegreesPerSecond[h]), "whole degrees a second");
+                    VaultRepeats("HurdleAngle " + h, t => RoyalVaultRules.HurdleAngle(hh, t), 360 / g, true);
+                    VaultRepeats("HurdleArrivesIn " + h, t => RoyalVaultRules.HurdleArrivesIn(hh, 1.3, -2.1, t), 360 / g, false);
+                }
+                double bc = RoyalVaultRules.BulkheadCycle, turn = 360 / RoyalVaultRules.HammerDegreesPerSecond, drawers = 5 * RoyalVaultRules.DrawerCycle;
+                Check(drawers == 24, "five drawer cycles are 24 s exactly");
+                for (int i = 0; i < 2; i++)
+                {
+                    int ii = i;
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        int sd = side;
+                        VaultRepeats("BulkheadOut", t => RoyalVaultRules.BulkheadOut(ii, sd, t), bc, false);
+                        VaultRepeats("BulkheadBlocked", t => RoyalVaultRules.BulkheadBlocked(ii, sd * 1.7, t) ? 1 : 0, bc, false);
+                        VaultRepeats("BulkheadClearFor", t => RoyalVaultRules.BulkheadClearFor(ii, sd * RoyalVaultRules.BulkheadHalfWidth / 2, t), bc, false);
+                        VaultRepeats("BulkheadCue", t => (int)RoyalVaultRules.BulkheadCue(ii, sd, t), bc, false);
+                    }
+                    VaultRepeats("HammerAngle", t => RoyalVaultRules.HammerAngle(ii, t), turn, true);
+                    VaultRepeats("HammerAtBody", t => RoyalVaultRules.HammerAtBody(ii, t) ? 1 : 0, turn, false);
+                    VaultRepeats("HammerClearFor", t => RoyalVaultRules.HammerClearFor(ii, t), turn, false);
+                    VaultRepeats("HammerSinceClear", t => RoyalVaultRules.HammerSinceClear(ii, t), turn, false);
+                    VaultRepeats("HammerHeadZ", t => RoyalVaultRules.HammerHeadZ(ii, t), turn, false);
+                    VaultRepeats("HammerCue", t => (int)RoyalVaultRules.HammerCue(ii, t), turn, false);
+                    VaultRepeats("BeltSpeed", t => RoyalVaultRules.BeltSpeed(ii, t), 2 * RoyalVaultRules.EastHalf, false);
+                    VaultRepeats("BeltCue", t => (int)RoyalVaultRules.BeltCue(ii, t), 2 * RoyalVaultRules.EastHalf, false);
+                    VaultRepeats("BeltRideSeconds", t => RoyalVaultRules.BeltRideSeconds(ii, t, RoyalVaultRules.RunSpeed, 14), 2 * RoyalVaultRules.EastHalf, false);
+                    VaultRepeats("DrawerOut", t => RoyalVaultRules.DrawerOut(ii, t), drawers, false);
+                    VaultRepeats("DrawerWarn", t => RoyalVaultRules.DrawerWarn(ii, t) ? 1 : 0, drawers, false);
+                    VaultRepeats("DrawerClearFor", t => RoyalVaultRules.DrawerClearFor(ii, 5, t), drawers, false);
+                    VaultRepeats("DrawerCue", t => (int)RoyalVaultRules.DrawerCue(ii, t), drawers, false);
+                    VaultRepeats("PlateAngle", t => RoyalVaultRules.PlateAngle(ii, t), RoyalVaultRules.PlateCycle, true);
+                    VaultRepeats("PlateFlatFor", t => RoyalVaultRules.PlateFlatFor(ii, t), RoyalVaultRules.PlateCycle, false);
+                    VaultRepeats("PlateWarn", t => RoyalVaultRules.PlateWarn(ii, t) ? 1 : 0, RoyalVaultRules.PlateCycle, false);
+                    VaultRepeats("PlateCue", t => (int)RoyalVaultRules.PlateCue(ii, t), RoyalVaultRules.PlateCycle, false);
+                    // The slats' travel adds the same metres every cycle.
+                    double c = 2 * RoyalVaultRules.EastHalf, n = Math.Round(1.76e9 / c), each = RoyalVaultRules.BeltTravel(i, c) - RoyalVaultRules.BeltTravel(i, 0);
+                    for (int k = 0; k < 97; k++)
+                    {
+                        double s = c * (k + .318) / 97, off = RoyalVaultRules.BeltTravel(i, s + n * c) - RoyalVaultRules.BeltTravel(i, s) - n * each;
+                        Check(Math.Abs(off) <= 1e-6, "the slats' travel adds whole cycles: off by " + off);
+                    }
+                }
+                double press = RoyalVaultRules.PressPeriod, cross = (RoyalVaultRules.PressBandZ1 - RoyalVaultRules.PressBandZ0) / RoyalVaultRules.RunSpeed;
+                VaultRepeats("PressLowered", t => RoyalVaultRules.PressLowered(t), press, false);
+                VaultRepeats("PressAt", t => (int)RoyalVaultRules.PressAt(t), press, false);
+                VaultRepeats("PressLandsIn", t => RoyalVaultRules.PressLandsIn(t), press, false);
+                VaultRepeats("PressSafeToCross", t => RoyalVaultRules.PressSafeToCross(t, cross) ? 1 : 0, press, false);
+                VaultRepeats("PressCue", t => (int)RoyalVaultRules.PressCue(t), press, false);
+                VaultRepeats("EastStoppedFor", t => RoyalVaultRules.EastStoppedFor(t), 2 * RoyalVaultRules.EastHalf, false);
+                VaultRepeats("EastWarn", t => RoyalVaultRules.EastWarn(t) ? 1 : 0, 2 * RoyalVaultRules.EastHalf, false);
+                double door = RoyalVaultRules.DoorPeriod;
+                VaultRepeats("DoorOpen", t => RoyalVaultRules.DoorOpen(t), door, false);
+                VaultRepeats("DoorClearWidth", t => RoyalVaultRules.DoorClearWidth(t), door, false);
+                VaultRepeats("DoorPassableFor", t => RoyalVaultRules.DoorPassableFor(t), door, false);
+                VaultRepeats("DoorOpensIn", t => RoyalVaultRules.DoorOpensIn(t), door, false);
+                VaultRepeats("DoorCountdown", t => RoyalVaultRules.DoorCountdown(t), door, false);
+                VaultRepeats("DoorClosingWarn", t => RoyalVaultRules.DoorClosingWarn(t) ? 1 : 0, door, false);
+                VaultRepeats("DoorSign", t => { string text = RoyalVaultRules.DoorSign(t, out RoyalVaultRules.Cue look); return Array.IndexOf(new[] { "", "1", "2", "3", "열림", "닫힘" }, text) * 4 + (int)look; }, door, false); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");
@@ -2171,6 +2883,30 @@ public static class NetworkCoreTests
                 Check(SwordWire.Size(big)>1011,"over before fitting");
                 SwordWire.Fit(big,1024-13); Check(SwordWire.Size(big)<=1011&&big.Fighters.Count==12&&big.Fighters[0].Skill&&big.Fighters[0].Edge&&big.Fighters[0].Glow,"fitted, the first ones whole: "+SwordWire.Size(big));
                 Check(SwordWire.BaseBytes==17&&SwordWire.SkillBytes==28&&SwordWire.EdgeBytes==29&&SwordWire.GlowBytes==16&&SwordWire.CollapseBytes==26,"sizes as documented"); });
+            Test("R819 skill look-back: a client's round trip and playback delay, capped, none before it reports", () => {
+                Check(SkillLag.Seconds(0,0)==0f,"nothing reported yet: no look-back");
+                Check(Math.Abs(SkillLag.Seconds(40,70)-(40+70+SkillLag.ExtraMs)/1000f)<1e-5f,"a home link: 40 + 70 + the averages");
+                Check(Math.Abs(SkillLag.Seconds(0,70)-(70+SkillLag.ExtraMs)/1000f)<1e-5f,"a loopback link: the playback delay alone");
+                Check(SkillLag.Seconds(300,160)==SkillLag.MostSeconds&&SkillLag.MostSeconds<=0.25f,"a far link stops at the cap (a dodge still counts)");
+                Check(SkillLag.Seconds(-5,-5)==0f,"nonsense is no look-back");
+                // a runner at the sprint speed (9.6 m/s) is this far past the picture a 40 ms / 70 ms client aimed at
+                float gap=9.6f*SkillLag.Seconds(40,70); Check(gap>1.2f&&gap<1.4f,"the gap the look-back closes: "+gap); });
+            Test("R819 skill trail: by time, a straight line between samples, the ends held, the oldest let go", () => {
+                var t=new SkillTrail(48,9); var row=new float[9]; var got=new float[9];
+                Check(!t.At(1,got)&&t.Count==0,"empty: nothing to give");
+                // a piece running along x at 9.6 m/s and jumping (a 0.9 m arc over 0.86 s), 120 steps a second
+                for(int i=0;i<200;i++){double time=i/120.0; for(int k=0;k<9;k++) row[k]=0f; row[0]=(float)(9.6*time); row[1]=(float)Math.Max(0,4.2*time-4.905*time*time); row[2]=k2(i); t.Add(time,row);}
+                Check(t.Count==48&&Math.Abs(t.Newest-199/120.0)<1e-9&&Math.Abs(t.Oldest-152/120.0)<1e-9,"the newest 48 steps kept");
+                double now=199/120.0;
+                Check(t.At(now-0.1,got)&&Math.Abs(got[0]-9.6*(now-0.1))<1e-3,"0.1 s back: 0.96 m behind ("+got[0]+")");
+                Check(t.At(now-0.1-1/240.0,got)&&Math.Abs(got[0]-9.6*(now-0.1-1/240.0))<1e-3,"between two steps: on the line");
+                Check(t.At(now+1,got)&&Math.Abs(got[0]-9.6*now)<1e-3,"after the newest: the newest");
+                Check(t.At(0,got)&&Math.Abs(got[0]-9.6*(152/120.0))<1e-3,"before the oldest: the oldest");
+                t.Add(now,row); t.Add(now-1,row); Check(t.Count==48&&Math.Abs(t.Newest-now)<1e-9,"a step not after the newest is dropped");
+                var u=new SkillTrail(4,1); for(int i=0;i<9;i++) u.Add(i,new float[]{i*2f});
+                Check(u.At(6.5,got)&&Math.Abs(got[0]-13f)<1e-5,"a small ring wrapped twice reads in time order: "+got[0]);
+                bool threw=false; try{new SkillTrail(1,9);}catch(ArgumentOutOfRangeException){threw=true;} Check(threw,"a trail needs two samples");
+                float k2(int i)=>i*0.01f; });
             Test("Playback delay: 70 ms on a steady link, more as the link wobbles, never past 160 ms", () => {
                 var d=new PlaybackDelay(); var rng=new Random(4);
                 for(int i=0;i<300;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*2,(uint)(i*33.3));
@@ -2621,7 +3357,15 @@ public static class NetworkCoreTests
                 Check(PlayerNames.Check("체스러버", false).Ok && PlayerNames.Check(" Knight 7 ", false).Ok, "plain names");
                 Check(PlayerNames.Check("룩", false).Error == "2자 이상", "too short");
                 Check(PlayerNames.Check("가나다라마바사아자차카타파", false).Error == "12자까지", "too long");
-                Check(PlayerNames.Check("룩!", false).Error == "한글·영어·숫자만" && PlayerNames.Check("<b>퀸</b>", false).Error == "한글·영어·숫자만", "symbols");
+                Check(PlayerNames.Check("룩!", false).Error == "쓸 수 없는 글자" && PlayerNames.Check("<b>퀸</b>", false).Error == "쓸 수 없는 글자", "symbols");
+                // R749: Chinese characters, simplified and traditional, alone or mixed; kana still refused.
+                Check(PlayerNames.Check("龙骑士", false).Ok && PlayerNames.Check("王小明 7", false).Ok && PlayerNames.Check("國王 Rook", false).Ok, "hanzi names");
+                Check(PlayerNames.Check("龙", false).Error == "2자 이상" && PlayerNames.Check("ナイト", false).Error == "쓸 수 없는 글자", "hanzi length, kana");
+                Check(PlayerNames.Check("管理员1", false).Error == "쓸 수 없는 말" && PlayerNames.Check("笨 蛋", false).Error == "쓸 수 없는 말", "Chinese banned words");
+                Check(PlayerNames.Showable("龙骑士"), "a published hanzi name shows");
+                // R790: the Russian alphabet too (Ё included); other Cyrillic letters and Russian banned words refused.
+                Check(PlayerNames.Check("Ферзь", false).Ok && PlayerNames.Check("Ёжик 7", false).Ok && PlayerNames.Check("Иван Rook", false).Ok && PlayerNames.Showable("Ферзь"), "Russian names");
+                Check(PlayerNames.Check("Ґава", false).Error == "쓸 수 없는 글자" && PlayerNames.Check("Админ", false).Error == "쓸 수 없는 말", "other Cyrillic, Russian banned words");
                 Check(PlayerNames.Check("철벽  룩", false).Error == "띄어쓰기는 한 칸", "double space"); });
             Test("Player name: an unfinished syllable waits while typing, then reads as an error", () => {
                 var typing = PlayerNames.Check("체스ㄹ", true);
@@ -3127,6 +3871,96 @@ public static class NetworkCoreTests
                 Check(PawnRushRunaway.Flung(1800f, 550f, -465f) && PawnRushRunaway.Flung(40f, 0f, 40f) && PawnRushRunaway.Flung(0f, -50.5f, 0f),
                       "a wrapping boat's bat (11-09), fast sideways, a fall past the line");
                 Check(PawnRushRunaway.Flung(float.NaN, 0f, 0f) && PawnRushRunaway.Flung(0f, float.PositiveInfinity, 0f), "broken numbers"); });
+            Test("Unstuck (R786): stuck only after 5 s of pushing within 1 m, barred states start it again, the hold, the cooldown, never forward", () => {
+                var w = new StuckWatch();
+                for (int i = 0; i < 40; i++) w.Step(.1f, 0f, 0f, i * .5f, true, false);
+                Check(!w.Stuck && w.Pushed < 1f, "walking along is never stuck");
+                w.Reset();
+                for (int i = 0; i < 19; i++) w.Step(.25f, (i % 2) * .4f, 0f, 0f, true, false);
+                Check(!w.Stuck && w.StuckWithin(StuckWatch.Slack), "4.75 s flailing within 1 m: not yet, but within the host's slack");
+                w.Step(.25f, 0f, .3f, 0f, true, false);
+                Check(w.Stuck, "5 s of pushing within 1 m is stuck");
+                w.Reset();
+                for (int i = 0; i < 12; i++) w.Step(.25f, 0f, 0f, 0f, true, false);
+                for (int i = 0; i < 40; i++) w.Step(.25f, 0f, 0f, 0f, false, false);
+                Check(w.Pushed == 3f, "letting go of the keys pauses the count");
+                for (int i = 0; i < 8; i++) w.Step(.25f, 0f, 0f, 0f, true, false);
+                Check(w.Stuck, "and pushing again goes on from there");
+                w.Step(.1f, 0f, 0f, 0f, true, true);
+                Check(!w.Stuck && w.Pushed == 0f, "held, carried or a respawn waiting: starts again");
+                for (int i = 0; i < 60; i++) w.Step(.1f, 0f, 0f, 0f, true, false);
+                w.Step(.1f, 0f, 0f, 1.2f, true, false);
+                Check(!w.Stuck && w.Pushed < .2f, "moving past 1 m starts again");
+                w.Step(.1f, float.NaN, 0f, 0f, true, false);
+                Check(!w.Stuck && w.Pushed == 0f, "broken numbers never count");
+                var hold = new UnstuckHold();
+                bool done = false;
+                for (int i = 0; i < 7; i++) done |= hold.Step(.25f, true, true);
+                Check(!done && hold.Share > .85f, "1.75 s held: not yet");
+                Check(hold.Step(.25f, true, true) && !hold.Step(.25f, true, true), "2 s held: done once");
+                hold.Step(.1f, true, false);
+                Check(hold.Held == 0f, "letting go starts the hold again");
+                for (int i = 0; i < 15; i++) hold.Step(.1f, true, true);
+                hold.Step(.1f, false, true);
+                Check(hold.Held == 0f, "no longer stuck: the hold starts again");
+                Check(StuckWatch.Ready(5f, -1f) && !StuckWatch.Ready(40f, 20f) && StuckWatch.Ready(50f, 20f), "never used, 20 s after, 30 s after");
+                Check(StuckWatch.SecondsLeft(40f, 20f) == 10 && StuckWatch.SecondsLeft(50f, 20f) == 0, "seconds left");
+                int[] orders = { 1, 2, 3, 4 }, sections = { 0, 0, 2, 2 };
+                float[] metres = { 5f, 40f, 10f, 60f }, dist = { 90f, 50f, 12f, 30f };
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 70f) == 3, "past every checkpoint: the highest");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 30f) == 2, "knocked back behind checkpoint 4: checkpoint 3, not 4");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 2, 58f) == 3, "a checkpoint 2 m ahead in the same section counts as here");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 1, 999f) == 1, "fallen back into an earlier section: its last checkpoint");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, 0, 1f) == -1, "behind every checkpoint reached: none (the start)");
+                Check(StuckWatch.Back(orders, sections, metres, dist, 4, -1, 0f) == 2, "unmeasured: the nearest one");
+                Check(StuckWatch.Back(orders, new[] { -1, -1, -1, -1 }, metres, dist, 4, 2, 70f) == -1, "checkpoints the course cannot measure are not taken"); });
+            Test("Streamer mode (R792): others' names as a numbered player kept all run, mine and nameless ones stay, codes as dots", () => {
+                StreamerMode.Reset();
+                Check(StreamerMode.Name(5, "갬빗", false) == "갬빗" && StreamerMode.Code("42 6890 6151") == "42 6890 6151", "off: as they are");
+                int before = StreamerMode.Version;
+                StreamerMode.Set(true, true);
+                Check(StreamerMode.Version != before, "a change moves the version");
+                int at = StreamerMode.Version;
+                StreamerMode.Set(true, true);
+                Check(StreamerMode.Version == at, "the same settings again do not");
+                Check(StreamerMode.Number(5) == 1 && StreamerMode.Number(9) == 2 && StreamerMode.Number(5) == 1, "numbers in the order met, kept");
+                Check(StreamerMode.Name(5, "갬빗", false) == StreamerMode.Alias(5) && StreamerMode.Alias(5) != StreamerMode.Alias(9), "another player: a numbered player");
+                Check(StreamerMode.Alias(9).Contains("2"), "the number shows");
+                Check(StreamerMode.Name(9, "폰돌이", true) == "폰돌이" && StreamerMode.Name(0, "BOT 1", false) == "BOT 1", "mine, and one with no id, stay");
+                Check(StreamerMode.Listed(3, "앙파상", false).Contains("3") && StreamerMode.Listed(3, "앙파상", true) == "앙파상", "a stored name by its place, mine stays");
+                Check(StreamerMode.Code("42 6890 6151") == "●● ●●●● ●●●●" && StreamerMode.Code("") == "" && StreamerMode.Code(null) == null, "codes as dots, the gaps kept");
+                StreamerMode.Set(true, false);
+                Check(StreamerMode.Code("42 6890") == "42 6890" && StreamerMode.Name(5, "갬빗", false) != "갬빗", "each hides on its own");
+                StreamerMode.Reset();
+                Check(!StreamerMode.HideNames && !StreamerMode.HideCodes, "reset"); });
+            Test("Colour aid (R792): off is the identity, a grey stays grey, red and green apart for a red-green eye, the strength scales it", () => {
+                Func<float[], float[], float> gap = (a, b) => { float d = 0f; for (int i = 0; i < 9; i++) d = Math.Max(d, Math.Abs(a[i] - b[i])); return d; };
+                var identity = new float[] { 1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f };
+                Check(gap(ColourAid.Matrix(ColourAid.Off, 1f), identity) == 0f && gap(ColourAid.Matrix(ColourAid.Protan, 0f), identity) == 0f
+                      && gap(ColourAid.Matrix(9, 1f), identity) == 0f && gap(ColourAid.Matrix(ColourAid.Deutan, float.NaN), identity) == 0f, "off, no strength, unknown: identity");
+                for (int kind = ColourAid.Protan; kind <= ColourAid.Tritan; kind++)
+                {
+                    var m = ColourAid.Matrix(kind, 1f);
+                    foreach (float v in m) Check(!float.IsNaN(v) && !float.IsInfinity(v) && Math.Abs(v) < 2f, "a matrix URP's channel mixer can take (-200..200 %)");
+                    ColourAid.Apply(m, .5f, .5f, .5f, out float r, out float g, out float b);
+                    Check(Math.Abs(r - .5f) < 1e-3f && Math.Abs(g - .5f) < 1e-3f && Math.Abs(b - .5f) < 1e-3f, "a grey stays grey");
+                    var half = ColourAid.Matrix(kind, .5f);
+                    for (int i = 0; i < 9; i++) Check(Math.Abs(half[i] - (identity[i] + m[i]) * .5f) < 1e-5f, "half strength is halfway");
+                }
+                foreach (int kind in new[] { ColourAid.Protan, ColourAid.Deutan })
+                {
+                    ColourAid.Apply(ColourAid.Matrix(kind, 1f), 1f, 0f, 0f, out _, out float rg, out float rb);
+                    ColourAid.Apply(ColourAid.Matrix(kind, 1f), 0f, 1f, 0f, out _, out float gg, out float gb);
+                    Check(Math.Abs(rb - gb) > .3f, "red and green end up far apart in blue, which a red-green eye sees");
+                }
+                Check(gap(ColourAid.InAces(identity), identity) < 1e-3f, "in ACEScg the identity stays (near) the identity");
+                for (int kind = ColourAid.Protan; kind <= ColourAid.Tritan; kind++)
+                {
+                    var aces = ColourAid.InAces(ColourAid.Matrix(kind, 1f));
+                    ColourAid.Apply(aces, .4f, .4f, .4f, out float r, out float g, out float b);
+                    Check(Math.Abs(r - .4f) < 2e-3f && Math.Abs(g - .4f) < 2e-3f && Math.Abs(b - .4f) < 2e-3f, "and a grey stays grey there too");
+                    foreach (float v in aces) Check(Math.Abs(v) < 2f, "within the mixer's range there too");
+                } });
             Test("Host fitness (R533): the graphics card counts too - a fast one costs nothing, a slow one the square root of how much slower, never under 40%", () => {
                 int cpu = HostFitness.Base(40, 8, 16000, false);
                 Check(cpu == 1000 && HostFitness.Base(40, 8, 16000, false, 0) == cpu && HostFitness.Base(40, 8, 16000, false, -1) == cpu, "an unmeasured card costs nothing");
@@ -3375,6 +4209,381 @@ public static class NetworkCoreTests
                 Check(Math.Abs(start2 - (origin + 187.3)) < 1e-9 && GiantChessReplay.Decode(GiantChessReplay.Encode(start2, origin), origin) == start2, "a tenth, both ways");
                 Check(GiantChessReplay.Encode(origin - 5, origin) == 1, "never before the round's start");
                 Check(GiantChessReplay.Encode(origin + 1e6, origin) == 65535, "clamped: 109 minutes"); });
+            Test("R736 match records: totals, one write a match, a left match replaced by its end, the text both ways", () => {
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                // Pawn Rush from a result: second over both teams, one of the winners' heads.
+                var result = new MatchResult { WinningTeam = 0, Needed = 2, MatchSeconds = 300 };
+                result.Players.Add(new ResultPlayer { Name = "a", Team = 1, FinishSeconds = 200 });
+                result.Players.Add(new ResultPlayer { Name = "me", Team = 0, Self = true, Piece = PieceKind.Knight, FinishSeconds = 261.4 });
+                result.Players.Add(new ResultPlayer { Name = "b", Team = 0, FinishSeconds = 280 });
+                result.Players.Add(new ResultPlayer { Name = "c", Team = 1, MetersLeft = 12 });
+                var won = RecordBuild.PawnRush(result);
+                Check(won != null && won.Mode == pr && won.Result == RecordResult.Win && won.Piece == PieceKind.Knight, "a win as the knight");
+                Check(won.Place == 2 && won.CountsToWin && won.Ours == 2 && won.Theirs == 2, "second, counted, 2 a side");
+                Check(RecordText.Headline(won) == "2위 · 4:21" && RecordText.Sub(won) == "", "its lines, place and time only (R804): " + RecordText.Headline(won));
+                result.Players[1].FinishSeconds = -1; result.Players[1].MetersLeft = 41.4f; result.WinningTeam = 1;
+                var lost = RecordBuild.PawnRush(result);
+                Check(lost.Result == RecordResult.Loss && lost.Place == 0 && RecordText.Headline(lost) == "도착 못 함" && RecordText.Sub(lost) == "", "a loss off the platform, no distance (R741)");
+                result.Players[1].Self = false;
+                Check(RecordBuild.PawnRush(result) == null, "a spectator has no line");
+                // Sword Fight: the black side's score first for a black player; how it ended.
+                var duel = RecordBuild.SwordFight(1, 7, 10, 1, 180, 240, PieceKind.Rook, 3, 3, 4, 1);
+                Check(duel.Result == RecordResult.Win && duel.ScoreOurs == 10 && duel.ScoreTheirs == 7 && duel.End == SwordEnd.Target, "black won 10 : 7");
+                Check(RecordBuild.SwordFight(0, 8, 9, 1, 240, 240, PieceKind.Queen, 6, 6, 1, 2).End == SwordEnd.TimeUp, "the clock ran out");
+                Check(RecordBuild.SwordFight(0, 5, 5, -1, 300, 240, PieceKind.Queen, 6, 6, 1, 2).Result == RecordResult.Draw, "a draw");
+                Check(RecordText.Headline(RecordBuild.SwordFight(0, 8, 9, 1, 240, 240, PieceKind.Queen, 6, 6, 1, 2)) == "8 : 9 · 시간 종료", "the time-up line");
+                Check(RecordText.Sub(duel) == "내가 떨어뜨림 4 · 떨어짐 1", "falls caused and taken");
+                // The book.
+                var book = new RecordBook();
+                won.Match = 11; won.FinishSeconds = 261.4; won.When = 1000;
+                duel.Match = 12;
+                var left = RecordBuild.Left(pr, PieceKind.Pawn, 6, 6); left.Match = 13;
+                Check(book.Add(won) && book.Add(duel) && book.Add(left), "three matches");
+                Check(!book.Add(won), "the same match is not written twice");
+                Check(book.Recent.Count == 3 && book.Recent[0] == left && book.Recent[2] == won, "newest first");
+                var all = book.All;
+                Check(all.Games == 3 && all.Wins == 2 && all.Left == 1 && all.AllLosses == 1 && RecordText.Rate(all.Wins, all.Games) == "67%", "2 of 3");
+                Check(book.Mode(pr).Games == 2 && book.Mode(pr).Firsts == 0 && Math.Abs(book.Mode(pr).BestFinish - 261.4) < 1e-9 && book.Mode(pr).NotFinished == 0, "Pawn Rush totals");
+                Check(book.Mode(sf).Knockouts == 4 && book.Mode(sf).Falls == 1 && book.Mode(sf).BestKnockouts == 4, "Sword Fight totals");
+                Check(book.PieceGames[(int)PieceKind.Knight] == 1 && book.PieceWins[(int)PieceKind.Knight] == 1 && book.PieceGames[(int)PieceKind.Pawn] == 1 && book.PieceWins[(int)PieceKind.Pawn] == 0, "by piece");
+                Check(RecordText.Headline(left) == "" && RecordText.Sub(left) == "" && RecordText.Badge(left.Result) == "탈주", "the left line: the 탈주 badge, no words (R804)");
+                // Back into the left match and its end seen: the end takes the "나감"'s place and its count.
+                var back = RecordBuild.PawnRush(new MatchResult { WinningTeam = 0, Needed = 1, Players = { new ResultPlayer { Team = 0, Self = true, Piece = PieceKind.Queen, FinishSeconds = 238 } } });
+                back.Match = 13;
+                Check(book.Add(back) && book.Recent.Count == 3 && book.Recent[0] == back, "the end replaced the left match");
+                all = book.All;
+                Check(all.Games == 3 && all.Wins == 3 && all.Left == 0 && book.Mode(pr).Firsts == 1 && Math.Abs(book.Mode(pr).BestFinish - 238) < 1e-9, "and its count");
+                Check(book.PieceGames[(int)PieceKind.Pawn] == 0 && book.PieceGames[(int)PieceKind.Queen] == 1, "the left match's piece taken back");
+                var leftAgain = RecordBuild.Left(pr, PieceKind.Pawn, 6, 6); leftAgain.Match = 13;
+                Check(!book.Add(leftAgain), "a left match never replaces an end");
+                // The text both ways, and what does not read.
+                var copy = RecordBook.Decode(book.Encode());
+                Check(copy.Encode() == book.Encode(), "the text both ways");
+                Check(copy.Recent.Count == 3 && copy.Recent[0].Match == 13 && copy.Recent[0].Piece == PieceKind.Queen && copy.All.Wins == 3, "the same book");
+                Check(RecordBook.Decode("").Recent.Count == 0 && RecordBook.Decode("CFR0\nR|1").All.Games == 0, "nothing, another version");
+                Check(RecordBook.Decode(book.Encode().Replace("R|12|", "R|x|")).Recent.Count == 2, "a line that does not read is skipped");
+                Check(!book.Add(new MatchRecord { Mode = "a|b" }) && !book.Add(new MatchRecord()), "no mode, no record");
+                // Only the last Kept stay in the list; the totals keep every match.
+                for (int i = 0; i < RecordBook.Kept + 5; i++) book.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = sf, Result = RecordResult.Loss });
+                Check(book.Recent.Count == RecordBook.Kept && book.All.Games == 3 + RecordBook.Kept + 5, "50 kept, all counted");
+                // When.
+                var offset = TimeSpan.FromHours(9);
+                var now = new DateTime(2026, 11, 21, 22, 0, 0);
+                double at = new DateTimeOffset(2026, 11, 21, 21, 40, 0, offset).ToUnixTimeSeconds();
+                Check(RecordText.When(at, now, offset) == "오늘 21:40" && RecordText.When(at - 86400, now, offset) == "어제 21:40" &&
+                      RecordText.When(at - 3 * 86400, now, offset) == "11-18 21:40" && RecordText.When(0, now, offset) == "", "today, yesterday, a date");
+                Check(RecordText.Rate(0, 0) == "—" && RecordText.Rate(1, 2) == "50%" && RecordText.Rate(32, 62) == "52%", "rates"); });
+            Test("R742 match detail: sections as entered, falls in each, promotions, the line-up from the result, kept with its record", () => {
+                var d = new MatchDetail();
+                d.Enter("왕실 정원", 0); d.Fall(); d.Checkpoints += 3;
+                d.Enter("왕실 정원", 10);   // the same section again: no new line
+                d.Enter("도개교", 68); d.Promote(PieceKind.Knight, 112);
+                d.Enter("대계단 홀", 140); d.Fall(); d.Fall(); d.Skills = 7; d.Dives = 12; d.Grabs = 3;
+                Check(d.Legs.Count == 3 && d.Legs[0].Falls == 1 && d.Legs[2].Falls == 2 && d.Falls == 3, "three sections, falls where they happened");
+                Check(d.Promotions.Count == 1 && d.Promotions[0].Leg == "도개교" && d.Promotions[0].Piece == PieceKind.Knight, "promoted in the drawbridge");
+                Check(d.LegEnd(0, 261) == 68 && d.LegEnd(2, 261) == 261, "a section's end is the next one's start");
+                var result = new MatchResult { WinningTeam = 0, Needed = 2, MatchSeconds = 298 };
+                result.Players.Add(new ResultPlayer { Name = "체크메이트", Team = 0, Piece = PieceKind.Queen, FinishSeconds = 242 });
+                result.Players.Add(new ResultPlayer { Name = "나", Team = 0, Self = true, Piece = PieceKind.Knight, FinishSeconds = 261 });
+                result.Players.Add(new ResultPlayer { Name = "룩마스터", Team = 1, Piece = PieceKind.Rook, FinishSeconds = 290 });
+                result.Players.Add(new ResultPlayer { Name = "폰스타", Team = 1, Piece = PieceKind.Pawn });
+                var r = RecordBuild.PawnRush(result, d);
+                Check(r.Detail == d && d.Duration == 298 && d.Clincher == "나", "the result's end and who decided it");
+                Check(d.Players.Count == 4 && d.Players[0].Name == "체크메이트" && d.Players[1].Self && d.Players[1].Place == 2 &&
+                      !d.Players[2].Ours && d.Players[2].Place == 3 && d.Players[3].Place == 0 && d.Players[3].Seconds < 0, "ours first, by crossing; a non-finisher");
+                // Sword Fight: the falls of the match.
+                var s = new MatchDetail { SwordF = 6, SwordE = 1 };
+                s.Score(new DetailFall { At = 38, Ours = true, ByMe = true, Victim = "룩마스터", Credit = "나", Cause = "칼" });
+                s.Score(new DetailFall { At = 107, Ours = false, OfMe = true, Victim = "나", Credit = "비숍\t킹", Cause = "포크 강하" });
+                var sw = RecordBuild.SwordFight(0, 10, 6, 0, 192, 240, PieceKind.Knight, 4, 4, 4, 1, s);
+                Check(sw.Detail == s && s.Duration == 192 && s.Score(true) == 1 && s.Score(false) == 1 && s.Feed[1].Credit == "비숍 킹", "the feed, a tab in a name cleaned");
+                // Both ways, alone and inside the book.
+                var back = MatchDetail.Decode(d.Encode());
+                Check(back != null && back.Encode() == d.Encode(), "the detail's text both ways");
+                Check(MatchDetail.Unpack(s.Pack()).Encode() == s.Encode() && MatchDetail.Unpack("not base64!") == null && MatchDetail.Decode("D0\nT\t1\t") == null, "packed, and what does not read");
+                var book = new RecordBook();
+                r.Match = 5; sw.Match = 6;
+                book.Add(r); book.Add(sw);
+                book.Add(new MatchRecord { Match = 7, Mode = GameModes.KingRush.Key, Result = RecordResult.Loss });   // no detail
+                var copy = RecordBook.Decode(book.Encode());
+                Check(copy.Encode() == book.Encode() && copy.Recent[2].Detail.Legs.Count == 3 && copy.Recent[1].Detail.Feed.Count == 2 && copy.Recent[0].Detail == null, "kept in the book");
+                Check(RecordBook.Decode(book.Encode().Replace("|" + r.Detail.Pack(), "")).Recent.Count == 3, "a line from before R742 (no detail field) still reads"); });
+            // R743: the 순위 tab's rules (Core Ranking).
+            Test("R743 ranking: the score sorts rate then matches, a line's details both ways and checked, this player's line from the book's ranked matches", () => {
+                Check(RankRules.Permille(32, 62) == 516 && RankText.Rate(32, 62) == "51.6" && RankText.Rate(0, 0) == "—", "51.6%");
+                Check(RankRules.Score(30, 18) > RankRules.Score(20, 12) && RankRules.Score(84, 60) > RankRules.Score(125, 85), "an equal rate puts more matches first; a higher rate first");
+                Check(RankRules.Score(100000, 100000) == 1000 * 100000 + 99999, "the cap stays inside an int");
+                Check(!RankRules.Ranked(19) && RankRules.Ranked(20), "from 20 matches (R745: back from R744's 10)");
+                int today = RankRules.Day(1795200000);
+                Check(!RankRules.Resting(today - 29, today) && RankRules.Resting(today - 30, today) && !RankRules.Resting(0, today), "30 days rest; an unknown day never rests");
+                Check(RankText.Last(today, today) == "오늘" && RankText.Last(today - 1, today) == "어제" && RankText.Last(today - 3, today) == "3일 전" &&
+                      RankText.Last(today - 35, today) == "쉬는 중 · 35일 전" && RankText.Last(0, today) == "", "the last match");
+                Check(RankText.Top(128, 712) == "상위 18%" && RankText.Top(1, 712) == "상위 1%" && RankText.Top(0, 712) == "", "the top share");
+                Check(RankText.Games(62, 32) == "62판 · 32승" && RankText.Progress(6, 20) == "6/20판", "matches and wins, matches so far");
+                // A line's details (R745, version 2: the ranked matches of the board's mode).
+                var d = RankDetails.Pack(new RankEntry { Games = 62, Wins = 32, LastDay = today - 2, Piece = PieceKind.Knight }, "나이트메어");
+                var e = RankDetails.Read(7, 128, RankRules.Score(62, 32), d, d.Length);
+                Check(e != null && e.Id == 7 && e.Rank == 128 && e.Games == 62 && e.Wins == 32 && e.LastDay == today - 2 &&
+                      e.Piece == PieceKind.Knight && e.Name == "나이트메어" && !e.Waiting, "the details both ways");
+                Check(RankDetails.Pack(new RankEntry { Games = 62, Wins = 32 }, "가나다라마바사아자차카타").Length <= 15, "twelve Korean letters in 15 ints");
+                var big = new int[RankRules.MaxDetails]; Array.Copy(d, big, d.Length);
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 32), big, d.Length) != null, "read from Steam's larger buffer");
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 33), d, d.Length) == null, "a score its numbers do not give");
+                var few = RankDetails.Pack(new RankEntry { Games = 19, Wins = 19 }, "ab");
+                Check(RankDetails.Read(7, 1, RankRules.Score(19, 19), few, few.Length) == null, "under 20 matches");
+                var odd = (int[])d.Clone(); odd[0] = 1;
+                Check(RankDetails.Read(7, 1, RankRules.Score(62, 32), odd, odd.Length) == null, "a version 1 line (R743: every match counted) no longer reads");
+                var broken = (int[])d.Clone(); broken[6] = -1;   // not UTF-8
+                var kept = RankDetails.Read(7, 1, RankRules.Score(62, 32), broken, broken.Length);
+                Check(kept != null && kept.Name == "" && kept.Games == 62, "a broken name drops the name, not the line");
+                // This player's line from the book: only the ranked matches count (R745), nothing below 20 of them, the
+                // newest ranked match's day, the piece played most.
+                var book = new RecordBook();
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                double t0 = 1795200000, last = t0 + 86400 * 3;
+                for (int i = 0; i < 30; i++)
+                    book.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = pr, Result = i % 2 == 0 ? RecordResult.Win : RecordResult.Loss,
+                                               Piece = i < 20 ? PieceKind.Rook : PieceKind.Knight, When = t0 + i * 60, Ranked = i < 19 });
+                Check(book.Mode(pr).Games == 30 && book.Mode(pr).RankedGames == 19 && book.Mode(pr).RankedWins == 10 && book.Mode(pr).Wins == 15, "30 matches, 19 of them ranked");
+                Check(RankUpload.From(book, RankBoard.PawnRush) == null, "19 ranked matches: not yet, however many the others");
+                var short1 = RankCount.Of(book, RankBoard.PawnRush);
+                Check(!short1.Ranked && short1.Have == 19 && short1.Need == 20 && short1.ToGo == 1 &&
+                      RankText.Need(short1) == "순위 판 1판 더 하면 순위에 올라가요", "one to go");
+                book.Add(new MatchRecord { Match = 200, Mode = pr, Result = RecordResult.Left, Piece = PieceKind.Rook, When = last, Ranked = true });
+                var line = RankUpload.From(book, RankBoard.PawnRush);
+                Check(line != null && line.Self && line.Games == 20 && line.Wins == 10 && line.LastDay == RankRules.Day(last) &&
+                      line.Piece == PieceKind.Rook, "20 ranked matches with the left one a loss, the newest day, the rook");
+                var up = RankDetails.Pack(line, "ab");
+                Check(RankDetails.Read(9, 5, line.Score, up, up.Length) != null, "its own line reads");
+                // R746 (user 11-21: "폰 러쉬랑 소드파이트 순위를 구분 지어야 해 … 각각 20판씩 하면 그 후 순위에 찍혀야 돼"): a board
+                // for each mode and none over both; a mode's own 20 ranked matches put a player on its board.
+                Check(RankRules.Boards.Length == 2 && RankUpload.From(book, RankBoard.SwordFight) == null, "two boards; Pawn Rush's 20 put nobody on Sword Fight's");
+                for (int i = 0; i < 20; i++)
+                    book.Add(new MatchRecord { Match = (ulong)(300 + i), Mode = sf, Result = i < 15 ? RecordResult.Win : i < 18 ? RecordResult.Loss : RecordResult.Draw,
+                                               Piece = PieceKind.Queen, When = last + 60 + i, Ranked = true });
+                var sword = RankUpload.From(book, RankBoard.SwordFight);
+                var rushStill = RankUpload.From(book, RankBoard.PawnRush);
+                Check(sword != null && sword.Games == 20 && sword.Wins == 15 && sword.LastDay == RankRules.Day(last + 79) && sword.Piece == PieceKind.Queen &&
+                      rushStill.Games == 20 && rushStill.Wins == 10, "Sword Fight's own 20 on its board; Pawn Rush's line as it was");
+                var drawn = RankCount.Of(book, RankBoard.SwordFight);
+                Check(drawn.Ranked && drawn.ToGo == 0 && drawn.Draws == 2 && drawn.Losses == 3 && RankRules.Permille(drawn.Wins, drawn.Games) == 750, "a draw is not a win (asked 11-21, kept)");
+                var none = RankCount.Of(new RecordBook(), RankBoard.SwordFight);
+                Check(none.Have == 0 && none.Need == 20 && RankText.Need(none) == "순위 판 20판 더 하면 순위에 올라가요", "nothing yet: 20 to go");
+                // The text: the ranked counts and marks are kept; an older book reads, with none of its matches ranked.
+                string text = book.Encode();
+                var copy = RecordBook.Decode(text);
+                Check(copy.Encode() == text && copy.Mode(pr).RankedGames == 20 && copy.Mode(pr).RankedWins == 10 && copy.Mode(sf).RankedDraws == 2 &&
+                      copy.Mode(pr).RankedLast == last && copy.Mode(pr).Last == last && copy.All.Last == last + 79, "the ranked counts and the last times are kept");
+                Check(copy.Recent.Count == RecordBook.Kept && copy.Recent[0].Ranked && copy.Recent.FindAll(r => r.Ranked).Count == 39, "and each record's mark");
+                var before745 = RecordBook.Decode(CutColumns(text, 14, 18));
+                Check(before745.Mode(pr).Games == 31 && before745.Mode(pr).Last == last && before745.Mode(pr).RankedGames == 0 && !before745.Recent.Exists(r => r.Ranked) &&
+                      RankUpload.From(before745, RankBoard.PawnRush) == null, "a book from before R745 reads, and none of its matches is ranked");
+                var before743 = RecordBook.Decode(CutColumns(text, 13, 17));
+                Check(before743.Mode(pr).Games == 31 && before743.Mode(pr).Last == 0 && before743.Recent.Count == RecordBook.Kept, "a totals line from before R743 reads");
+                var wrong = RecordBook.Decode(text.Replace("M|" + pr + "|31|", "M|" + pr + "|5|"));
+                Check(wrong.Mode(pr).Games == 5 && wrong.Mode(pr).RankedGames == 0, "more ranked matches than matches count as none");
+                Check(RankRules.BoardName(RankBoard.SwordFight) == "ChessFight_WinRate_SwordFight_v2" && RankRules.BoardName(RankBoard.PawnRush) == "ChessFight_WinRate_PawnRush_v2" && RankRules.ProgressBoard == "ChessFight_Progress" &&
+                      RankRules.ModeKey(RankBoard.SwordFight) == sf && RankRules.ModeKey(RankBoard.PawnRush) == pr && RankRules.Title(RankBoard.SwordFight) == "소드 파이트", "the boards' names"); });
+            // R745 (user 11-21, the 순위 tab's limits that code alone mends).
+            Test("R745 ranked matches: a room matchmaking made, people only, two a side; a match held as 나감 from its start; Steam's count back into a smaller book", () => {
+                // Which matches count, by what the room wrote at its start.
+                string two = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(2, 0, 1), StartSeat(3, 1, 0), StartSeat(4, 1, 1) });
+                Check(RankRules.MinSide == 2 && RankRules.RankedMatch(true, "2,2", two), "2 v 2 of people from matchmaking counts");
+                Check(!RankRules.RankedMatch(false, "2,2", two), "a room a player made does not");
+                Check(!RankRules.RankedMatch(true, "3,3", two) && !RankRules.RankedMatch(true, "3,2", two), "nor a match with a bot in a seat");
+                string one = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(3, 1, 0) });
+                Check(!RankRules.RankedMatch(true, "1,1", one), "nor 1 v 1");
+                string lone = Starters.Encode(new[] { StartSeat(1, 0, 0), StartSeat(2, 0, 1), StartSeat(5, 0, 2), StartSeat(3, 1, 0) });
+                Check(!RankRules.RankedMatch(true, "3,1", lone), "nor 3 v 1");
+                Check(!RankRules.RankedMatch(true, "", two) && !RankRules.RankedMatch(true, "2,2", "") && !RankRules.RankedMatch(true, "x", two), "nor a room that does not say");
+                var six = new List<Starters.Seat>();
+                for (int k = 0; k < 6; k++) { six.Add(StartSeat((ulong)(10 + k), 0, k)); six.Add(StartSeat((ulong)(20 + k), 1, k)); }
+                Check(RankRules.RankedMatch(true, "6,6", Starters.Encode(six)), "6 v 6 counts");
+                // A match is held as "나감" from its start; its end takes that place.
+                var book = new RecordBook();
+                string pr = GameModes.KingRush.Key, sf = GameModes.SwordFight.Key;
+                var held = RecordBuild.Left(pr, PieceKind.Pawn, 0, 0); held.Match = 50; held.Ranked = true; held.When = 1000;
+                Check(book.Hold(held) && book.Recent.Count == 1 && book.Mode(pr).Left == 1 && book.Mode(pr).RankedGames == 1 && book.Mode(pr).RankedWins == 0,
+                      "held from the start: a ranked loss unless the end says otherwise");
+                Check(RecordBook.Decode(book.Encode()).Mode(pr).Left == 1 && RecordBook.Decode(book.Encode()).Recent[0].Result == RecordResult.Left, "and in the text a killed game leaves behind");
+                var later = RecordBuild.Left(pr, PieceKind.Knight, 6, 6); later.Match = 50; later.Ranked = true; later.When = 1100;
+                Check(book.Hold(later) && book.Recent.Count == 1 && book.Recent[0].Piece == PieceKind.Knight && book.Recent[0].Ours == 6 && book.Mode(pr).Games == 1 &&
+                      book.Mode(pr).RankedGames == 1 && book.PieceGames[(int)PieceKind.Pawn] == 0 && book.PieceGames[(int)PieceKind.Knight] == 1,
+                      "held again with the piece and the sides as they are now: still one match");
+                var end = new MatchRecord { Match = 50, Mode = pr, Result = RecordResult.Win, Piece = PieceKind.Queen, Place = 1, FinishSeconds = 200, Ranked = true, When = 1200 };
+                Check(book.Add(end) && book.Recent.Count == 1 && book.Mode(pr).Left == 0 && book.Mode(pr).Wins == 1 && book.Mode(pr).RankedGames == 1 && book.Mode(pr).RankedWins == 1,
+                      "the end takes the held 나감's place");
+                Check(!book.Hold(later) && book.Mode(pr).Wins == 1 && book.Recent[0] == end, "a match whose end is written is not held again");
+                var other = RecordBuild.Left(pr, PieceKind.Pawn, 2, 2); other.Match = 51; other.When = 1300;
+                Check(book.Hold(other) && book.Recent[0] == other && book.Mode(pr).Games == 2 && book.Mode(pr).RankedGames == 1, "a match that does not count is held too, for no board");
+                Check(!book.Hold(new MatchRecord { Match = 52, Mode = pr, Result = RecordResult.Win }) && !book.Hold(RecordBuild.Left(pr, PieceKind.Pawn, 1, 1)) && !book.Hold(null),
+                      "only the 나감 of a match is held");
+                // The whole count as Steam keeps it (the progress board), both ways.
+                var big = new RecordBook();
+                double t0 = 1795200000;
+                for (int i = 0; i < 30; i++)
+                {
+                    bool win = i % 3 != 0;
+                    big.Add(new MatchRecord { Match = (ulong)(100 + i), Mode = pr, Result = win ? RecordResult.Win : RecordResult.Loss, Piece = PieceKind.Rook,
+                                              Place = win ? 1 : 0, FinishSeconds = win ? 250.5 - i : -1, When = t0 + i * 100, Ranked = i < 24 });
+                }
+                for (int i = 0; i < 12; i++)
+                    big.Add(new MatchRecord { Match = (ulong)(200 + i), Mode = sf, Result = i < 6 ? RecordResult.Win : i < 10 ? RecordResult.Loss : RecordResult.Draw,
+                                              Piece = PieceKind.Queen, Knockouts = 3, Falls = 1, When = t0 + 86400 + i * 100, Ranked = true });
+                var mine = RankProgress.From(big);
+                var packed = mine.Pack("나이트메어");
+                Check(packed.Length <= RankRules.MaxDetails && mine.Score == 42, "it fits Steam's 64 ints; its score is the matches");
+                var read = RankProgress.Read(77, mine.Score, packed, packed.Length);
+                Check(read != null && read.Id == 77 && read.Name == "나이트메어" && read.Games == 42 && read.Rush.Games == 30 && read.Rush.Wins == 20 && read.Rush.Losses == 10 &&
+                      read.Rush.RankedGames == 24 && read.Rush.RankedWins == 16 && read.Rush.Firsts == 20 && read.Rush.NotFinished == 10 && Math.Abs(read.Rush.BestFinish - 221.5) < 0.001,
+                      "Pawn Rush's count both ways");
+                Check(read.Sword.Games == 12 && read.Sword.Wins == 6 && read.Sword.Draws == 2 && read.Sword.RankedGames == 12 && read.Sword.RankedDraws == 2 &&
+                      read.Sword.Knockouts == 36 && read.Sword.Falls == 12 && read.Sword.BestKnockouts == 3, "Sword Fight's");
+                Check(read.PieceGames[(int)PieceKind.Rook] == 30 && read.PieceWins[(int)PieceKind.Rook] == 20 && read.PieceGames[(int)PieceKind.Queen] == 12 &&
+                      read.RushPiece == PieceKind.Rook && read.SwordPiece == PieceKind.Queen && read.Piece(RankBoard.PawnRush) == PieceKind.Rook, "the pieces");
+                Check(RankRules.Day(read.Rush.RankedLast) == RankRules.Day(t0 + 2300) && RankRules.Day(read.Sword.Last) == RankRules.Day(t0 + 86400 + 1100), "the last days");
+                Check(RankProgress.Read(77, mine.Score + 1, packed, packed.Length) == null, "a score that is not its matches");
+                var more = (int[])packed.Clone(); more[2]++;
+                Check(RankProgress.Read(77, mine.Score, more, more.Length) == null, "results that do not add up to the matches");
+                var overRanked = (int[])packed.Clone(); overRanked[6] = 31;
+                Check(RankProgress.Read(77, mine.Score, overRanked, overRanked.Length) == null, "more ranked matches than matches");
+                var otherVersion = (int[])packed.Clone(); otherVersion[0] = 9;
+                Check(RankProgress.Read(77, mine.Score, otherVersion, otherVersion.Length) == null && RankProgress.Read(77, mine.Score, packed, 10) == null, "another version, a short line");
+                // A new PC, a reinstall: the empty book takes Steam's count (the list of recent matches cannot come back).
+                var fresh = new RecordBook();
+                Check(read.RestoreInto(fresh) && fresh.All.Games == 42 && fresh.Mode(pr).Wins == 20 && fresh.Mode(pr).RankedGames == 24 && fresh.Mode(sf).RankedDraws == 2 &&
+                      fresh.Recent.Count == 0 && fresh.PieceGames[(int)PieceKind.Rook] == 30, "a new PC gets Steam's count, not the list");
+                var again = RankUpload.From(fresh, RankBoard.PawnRush);
+                var before = RankUpload.From(big, RankBoard.PawnRush);
+                Check(again != null && again.Score == before.Score && again.Games == 24 && again.LastDay == before.LastDay, "and stands on the board as it did");
+                Check(RecordBook.Decode(fresh.Encode()).Mode(pr).RankedGames == 24, "kept in the text");
+                Check(!read.RestoreInto(fresh), "the same count changes nothing");
+                // Never the other way: a book that holds more matches is not written over by Steam's smaller count.
+                fresh.Add(new MatchRecord { Match = 900, Mode = pr, Result = RecordResult.Win, Piece = PieceKind.Rook, Place = 2, FinishSeconds = 300, When = t0 + 5 * 86400 });
+                Check(!read.RestoreInto(fresh) && fresh.Mode(pr).Games == 31 && fresh.Mode(pr).Wins == 21, "a book with more matches stays");
+                // Mode by mode: this PC played more Pawn Rush, Steam kept more Sword Fight.
+                var pc = new RecordBook();
+                for (int i = 0; i < 35; i++) pc.Add(new MatchRecord { Match = (ulong)(500 + i), Mode = pr, Result = RecordResult.Loss, Piece = PieceKind.Pawn, When = t0 + i });
+                for (int i = 0; i < 3; i++) pc.Add(new MatchRecord { Match = (ulong)(600 + i), Mode = sf, Result = RecordResult.Win, Piece = PieceKind.Pawn, When = t0 + 100 + i });
+                Check(read.RestoreInto(pc) && pc.Mode(pr).Games == 35 && pc.Mode(pr).Wins == 0 && pc.Mode(sf).Games == 12 && pc.Mode(sf).Wins == 6 && pc.Recent.Count == 38,
+                      "each mode from where it has more matches; the list stays this PC's");
+                // A friend who is not on a board yet, as the 친구 view shows them.
+                var friend = read.Waiting(RankBoard.SwordFight);
+                Check(friend.Waiting && friend.Rank == 0 && friend.Have == 12 && friend.Need == 20 && friend.Games == 12 && friend.Wins == 6 && friend.Piece == PieceKind.Queen &&
+                      RankText.Progress(friend.Have, friend.Need) == "12/20판", "a friend 12 of Sword Fight's 20 along");
+                var swordOnly = read.Waiting(RankBoard.SwordFight);
+                Check(swordOnly.Have == 12 && swordOnly.Need == 20 && swordOnly.Piece == PieceKind.Queen && read.Count(RankBoard.PawnRush).Ranked, "12 of Sword Fight's 20; on Pawn Rush's board"); });
+            // R737: party codes and room numbers - the lobby ID's lower 10 digits, read back however it is typed.
+            Test("lobby code: the short number", () => {
+                const ulong real = 109775245186061991UL;   // a lobby from the logs: upper half 0x01860000, lower 4268906151
+                Check(LobbyCode.Short(real) == 4268906151UL && LobbyCode.Plain(real) == "4268906151", "the lower half, copied plain");
+                Check(LobbyCode.Format(real) == "42 6890 6151", "fours from the right");
+                Check(LobbyCode.Format(LobbyCode.LobbyHigh | 10235012UL) == "1023 5012" && LobbyCode.Format(LobbyCode.LobbyHigh | 7UL) == "7", "shorter ones");
+                Check(LobbyCode.Format(0) == "—" && LobbyCode.Plain(0) == "", "none");
+                const ulong odd = 0x0170000000001234UL;   // another upper half: shown and copied whole
+                Check(LobbyCode.Plain(odd) == odd.ToString() && LobbyCode.Format(odd).Replace(" ", "") == odd.ToString(), "not a usual lobby");
+                ulong id;
+                Check(LobbyCode.TryRead("42 6890 6151", out id) && id == real, "as shown");
+                Check(LobbyCode.TryRead("4268906151", out id) && id == real && LobbyCode.TryRead("42-6890-6151", out id) && id == real, "copied, dashes");
+                Check(LobbyCode.TryRead("10 9775 2451 8606 1991", out id) && id == real && LobbyCode.TryRead("109775245186061991", out id) && id == real, "the old whole number");
+                Check(LobbyCode.TryRead(odd.ToString(), out id) && id == odd, "an unusual one whole");
+                Check(LobbyCode.TryRead("4294967295", out id) && id == (LobbyCode.LobbyHigh | 0xFFFFFFFFUL), "the largest short one");
+                Check(!LobbyCode.TryRead("", out id) && !LobbyCode.TryRead(" · ", out id) && !LobbyCode.TryRead("0", out id), "nothing");
+                Check(!LobbyCode.TryRead("4268a906151", out id) && !LobbyCode.TryRead("99999999999999999999999", out id), "letters, too long"); });
+            // R747: the string table - Korean is the key, a missing line or cell shows the Korean.
+            Test("localization: reading the table", () => {
+                var problems = new List<string>();
+                var table = StringTable.Parse("﻿# comment\r\nko\ten\tzh-Hans\r\n@ready\t1\t0\r\n언어\tLanguage\t语言\r\n" +
+                                              "두 줄\\n입니다\tTwo\\nlines\r\n탭\\t칸\tTab\\tcell\t\r\n반만\t\r\n", problems);
+                Check(problems.Count == 0, "no problems: " + string.Join(" / ", problems));
+                Check(table.Codes.Count == 3 && table.Count == 4 && table.Has("en") && table.Has("ZH-HANS") && !table.Has("ru"), "columns and lines");
+                Check(table.Ready("ko") && table.Ready("en") && !table.Ready("zh-Hans") && !table.Ready("ru"), "ready marks");
+                Check(table.Get("언어", "en") == "Language" && table.Get("언어", "zh-Hans") == "语言" && table.Get("언어", "ko") == "언어", "a line");
+                Check(table.Get("두 줄\n입니다", "en") == "Two\nlines" && table.Get("탭\t칸", "en") == "Tab\tcell", "escapes");
+                Check(table.Get("반만", "en") == "반만" && table.Get("탭\t칸", "zh-Hans") == "탭\t칸", "an empty cell shows the Korean");
+                Check(table.Get("없는 줄", "en") == "없는 줄" && table.Get("언어", "ru") == "언어" && table.Get(null, "en") == "", "unknown line, language, null");
+                Check(table.Translated("en") == 3 && table.Translated("zh-Hans") == 1 && table.Translated("ko") == 4 && table.Translated("ru") == 0, "how much is translated");
+                Check(StringTable.Unescape(StringTable.Escape("a\\b\nc\td")) == "a\\b\nc\td" && StringTable.Escape("a\nb") == "a\\nb", "escape round trip");
+                problems.Clear();
+                var bad = StringTable.Parse("en\tko\n언어\tLanguage\n", problems);
+                Check(bad.Count == 0 && problems.Count == 1 && !bad.Has("en"), "a header that does not start with ko");
+                problems.Clear();
+                var twice = StringTable.Parse("ko\ten\txx\n언어\tLanguage\n언어\tTongue\n\t빈 키\n", problems);
+                Check(twice.Get("언어", "en") == "Tongue" && twice.Count == 1 && problems.Count == 3, "unknown code, a line twice, an empty key: " + string.Join(" / ", problems));
+                Check(StringTable.Parse("", null).Count == 0 && StringTable.Parse("# only a comment\n", null).Has("ko"), "nothing");
+                Check(StringTable.Slots("낙하 {0} · 맞음 {1:0.0} {0}") == "0,1" && StringTable.Slots("{{0}} 없음") == "" && StringTable.Slots("{x} {12}") == "12", "slots");
+                problems.Clear();
+                StringTable.Parse("ko\ten\n{0}/{1}판\t{1} of {0}\n{0}명\t{0} players {1}\n{0}승\tWins\n", problems);
+                Check(problems.Count == 2, "a translation that adds or drops a slot: " + string.Join(" / ", problems)); });
+            // 11-23: a name with a syllable Black Han Sans lacks (권등떄이) is drawn all in the body font.
+            Test("localization: the display face's letters", () => {
+                Check(DisplayGlyphs.Covers("권등때이") && DisplayGlyphs.Covers("라무라밍") && DisplayGlyphs.Covers("sixzerotwo") && DisplayGlyphs.Covers("ㅋㅋ ㅏ"), "common names");
+                Check(!DisplayGlyphs.Covers("권등떄이") && !DisplayGlyphs.Covers("쀍") && !DisplayGlyphs.Covers("Ünal") && !DisplayGlyphs.Covers("王"), "a letter the face lacks");
+                Check(DisplayGlyphs.Covers("BLACK · PAWN") && DisplayGlyphs.Covers("") && DisplayGlyphs.Covers(null), "punctuation still falls back per glyph");
+                Check(!DisplayGlyphs.Covers("a\U0001F600"), "an emoji");
+                int hangul = 0;
+                for (int c = 0xAC00; c <= 0xD7A3; c++) if (DisplayGlyphs.Has(c)) hangul++;
+                Check(hangul == 2581, "the syllables the font file has: " + hangul); });
+            Test("localization: picking and showing a language", () => {
+                Check(Languages.FromSteam("koreana") == "ko" && Languages.FromSteam("schinese") == "zh-Hans" && Languages.FromSteam("latam") == "es-419" &&
+                      Languages.FromSteam("brazilian") == "pt-BR" && Languages.FromSteam(" English ") == "en" && Languages.FromSteam("klingon") == null && Languages.FromSteam(null) == null, "Steam names");
+                Check(Languages.SteamName(true, "english", "koreana") == "koreana" && Languages.SteamName(false, "english", "koreana") == "english" &&
+                      Languages.SteamName(true, "english", "") == "english" && Languages.SteamName(true, "english", null) == "english",
+                      "the test App ID (Spacewar, English only) follows Steam's client language; the real one its own");
+                Check(Languages.FromSystem("Korean") == "ko" && Languages.FromSystem("ChineseTraditional") == "zh-Hant" && Languages.FromSystem("Chinese") == "zh-Hans" &&
+                      Languages.FromSystem("Portuguese") == "pt-BR" && Languages.FromSystem("Unknown") == null && Languages.FromSystem("") == null, "Windows names");
+                Check(Languages.All[0].Code == Loc.Source && Languages.All.Select(l => l.Code).Distinct().Count() == Languages.All.Length &&
+                      Languages.All.Select(l => l.Steam).Distinct().Count() == Languages.All.Length, "Korean first, no code or Steam name twice");
+                var table = StringTable.Parse("ko\ten\tru\n@ready\t1\t0\n언어\tLanguage\tЯзык\n낙하 {0} · 맞음 {1}\tHits {1}, falls {0}\n틀린 {0}\tBroken {5}\n", null);
+                Check(Languages.Choose("ru", "en", "Korean", table) == "ru", "the player's own pick, even half done");
+                Check(Languages.Choose("", "en", "ru", table) == "en" && Languages.Choose(null, "ru", "en", table) == "en", "Steam's, else Windows', only when ready");
+                Check(Languages.Choose("ja", "ru", null, table) == "ko" && Languages.Choose(null, null, null, null) == "ko", "else Korean");
+                int changes = 0;
+                Action counted = () => changes++;
+                Loc.Changed += counted;
+                try
+                {
+                    Loc.Load(table);
+                    Check(Loc.Lang == "ko" && Loc.T("언어") == "언어" && changes == 1, "a new table keeps Korean");
+                    Check(Loc.Use("EN") && Loc.Lang == "en" && Loc.T("언어") == "Language" && Loc.Current.Native == "English" && changes == 2, "switched");
+                    Check(Loc.Use("en") && changes == 2 && !Loc.Use("ja") && !Loc.Use("xx") && Loc.Lang == "en", "the same again, a column it lacks");
+                    Check(Loc.F("낙하 {0} · 맞음 {1}", 3, 7) == "Hits 7, falls 3" && Loc.F("없는 {0}", 1.5) == "없는 1.5", "slots in the language's own order");
+                    Check(Loc.F("틀린 {0}", "x") == "틀린 x", "a translation whose slots do not fit shows the Korean");
+                    // R756: words already shown follow a change of language (a label built once).
+                    Check(Loc.Previous == "ko" && Loc.Again("언어") == "Language" && Loc.Again("엘리트") == "엘리트" && Loc.Again("") == "", "Korean on screen to English");
+                    Check(Loc.Use("ru") && Loc.Previous == "en" && Loc.Again("Language") == "Язык" && Loc.Again("Hits 7, falls 3") == "Hits 7, falls 3", "English on screen to Russian");
+                    Check(Loc.Use("ko") && Loc.Again("Язык") == "언어" && Loc.Again("Language") == "Language", "Russian back to Korean; only the language left");
+                    Check(table.KoreanOf("Language", "en") == "언어" && table.KoreanOf("언어", "ko") == "언어" && table.KoreanOf("x", "en") == null && table.KoreanOf("Language", "xx") == null, "the line behind a translation");
+                    Loc.Load(StringTable.Parse("ko\tja\n언어\t言語\n", null));
+                    Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "a table without the language shown goes back to Korean");
+                }
+                finally { Loc.Changed -= counted; Loc.Load(StringTable.Empty); }
+                Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "back to nothing"); });
+            // R747: the table the game ships (found up from the test's folder, Temp/...), read with no problems.
+            Test("localization: the shipped table", () => {
+                string path = null;
+                for (var dir = new System.IO.DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); dir != null && path == null; dir = dir.Parent)
+                {
+                    var p = System.IO.Path.Combine(dir.FullName, "Assets", "Resources", "Localization", "Strings.txt");
+                    if (System.IO.File.Exists(p)) path = p;
+                }
+                Check(path != null, "Assets/Resources/Localization/Strings.txt not found");
+                var problems = new List<string>();
+                var table = StringTable.Parse(System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8), problems);
+                Check(problems.Count == 0, "problems: " + string.Join(" / ", problems));
+                Check(table.Codes[0] == "ko" && table.Count > 0 && table.Has("en"), "Korean first, English there");
+                foreach (var code in table.Codes) Check(Languages.Find(code) != null, "a column for a language the game knows: " + code);
+                // R755: English and Simplified Chinese are ready, so Steam's or Windows' language picks them by itself;
+                // a pick in the settings still wins, and Korean stays the fallback.
+                Check(table.Ready("en") && table.Ready("zh-Hans"), "English and Simplified Chinese marked ready");
+                Check(Languages.Choose("", Languages.FromSteam("english"), "", table) == "en", "Steam in English starts in English");
+                Check(Languages.Choose("", Languages.FromSteam("schinese"), "", table) == "zh-Hans", "Steam in Simplified Chinese starts in Chinese");
+                Check(Languages.Choose("", Languages.FromSteam("koreana"), Languages.FromSystem("English"), table) == "ko", "Steam in Korean stays Korean");
+                Check(Languages.Choose("", "", Languages.FromSystem("ChineseSimplified"), table) == "zh-Hans", "no Steam, Windows in Chinese");
+                // R790: Russian has a column but is not ready yet, so Steam in Russian still starts in Korean.
+                Check(table.Has("ru") && !table.Ready("ru"), "Russian there, not ready yet");
+                Check(Languages.Choose("", Languages.FromSteam("russian"), "", table) == "ko", "a language not ready yet falls back to Korean");
+                Check(Languages.Choose("ko", Languages.FromSteam("english"), "", table) == "ko", "the settings' pick wins over Steam"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

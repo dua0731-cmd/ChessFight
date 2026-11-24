@@ -1,3 +1,4 @@
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -74,7 +75,7 @@ namespace ChessFight.Gameplay
             var r = new Rect((Screen.width - w) * .5f, Screen.height - AboveGauge * s - 64f * s * .5f - h * .5f, w, h);
             Plate(r, s);
             big.fontSize = Mathf.RoundToInt(21f * s * k);
-            Text(new Rect(r.x, r.y + 7f * s * k, r.width, 28f * s * k), "잡혔다! 좌클릭 연타", big);
+            Text(new Rect(r.x, r.y + 7f * s * k, r.width, 28f * s * k), Loc.T("잡혔다! 좌클릭 연타"), big);
             float inset = 18f * s * k, barH = Mathf.Max(4f, 9f * s * k);
             var bar = new Rect(r.x + inset, r.yMax - 14f * s * k - barH, r.width - 2f * inset, barH);
             Fill(bar, Track);
@@ -88,7 +89,7 @@ namespace ChessFight.Gameplay
             var r = new Rect((Screen.width - w) * .5f, Screen.height - AboveGauge * s - 32f * s * .5f - h * .5f, w, h);
             Plate(r, s);
             small.fontSize = Mathf.RoundToInt(16f * s * k);
-            Text(r, "잡는 중", small);
+            Text(r, Loc.T("잡는 중"), small);
         }
 
         // The screen's edges pinch in when a hand takes hold: in for 0.05 s, out again over about 0.35 s.

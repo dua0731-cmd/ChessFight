@@ -11,6 +11,7 @@ namespace ChessFight.PawnRush
     //         water away); the posts bob faster, so they slosh more
     //  tip    a lotus pad tipping into the water: one slap-and-splash as it tips, the same splash softer and lower as it
     //         rights itself
+    //  land   (R767) a piece coming down on a drum: a hollow wooden 통 and a slosh (GardenDrumDip.Landed)
     // NearFarSound like the plaza's sounds; the motion is ObstacleMotion / TiltingPad, this only listens. GardenPlazaSound
     // adds this on waking (the garden is built into the scene, so nothing new has to be built in).
     public sealed class GardenFloatSound : MonoBehaviour
@@ -38,7 +39,13 @@ namespace ChessFight.PawnRush
                 bool drum = name.StartsWith("Bobbing platform P"), post = name.StartsWith("Shortcut post K") && !name.Contains("spin");
                 if (!drum && !post) continue;
                 // R543: the drums also answer a piece landing on them (GardenDrumDip; R635: they tip about its feet).
-                if (drum && motion.GetComponent<GardenDrumDip>() == null) motion.gameObject.AddComponent<GardenDrumDip>();
+                // R767: and sound it - a hollow wooden 통 with a slosh, as loud as the piece fell (DrumLand).
+                if (drum)
+                {
+                    var dip = motion.GetComponent<GardenDrumDip>();
+                    if (dip == null) dip = motion.gameObject.AddComponent<GardenDrumDip>();
+                    Listen(dip, motion.transform);
+                }
                 // top speed of a sine bob: 2 pi (amplitude) / period
                 float top = 2f * Mathf.PI * Mathf.Max(.05f, motion.distance) / Mathf.Max(.5f, motion.period);
                 floats.Add(new Float
@@ -56,6 +63,30 @@ namespace ChessFight.PawnRush
                     sound = new NearFarSound(pad.transform, "Pad splash sound", null, null, false)
                         { NearFull = 3f, NearEnd = 18f, FarStart = 6f, FarEnd = 30f, FarGain = .6f },
                 });
+        }
+
+        // R767: one shot source per drum, a landing heard at most every MinGap s (a piece is many colliders and
+        // several pieces can land together).
+        const float MinGap = .15f;
+        AudioClip land, landFar;
+
+        void Listen(GardenDrumDip dip, Transform at)
+        {
+            if (land == null)
+            {
+                land = Load("DrumLand");
+                landFar = Load("DrumLandFar");
+            }
+            var sound = new NearFarSound(at, "Drum land sound", null, null, false)
+                { NearFull = 3f, NearEnd = 18f, FarStart = 6f, FarEnd = 30f, FarGain = .6f };
+            float last = -1f, pitch = .94f + .1f * ((floats.Count * .618034f) % 1f);
+            dip.Landed += fall =>
+            {
+                if (land == null || Time.time - last < MinGap) return;
+                last = Time.time;
+                float k = Mathf.InverseLerp(1.5f, 8f, fall);
+                sound.Shot(land, landFar, Mathf.Lerp(.3f, .7f, k), pitch * Mathf.Lerp(1.04f, .94f, k) * Random.Range(.97f, 1.03f));
+            };
         }
 
         static AudioClip Load(string name)

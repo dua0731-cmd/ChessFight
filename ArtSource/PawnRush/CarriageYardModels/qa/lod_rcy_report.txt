@@ -1,0 +1,11 @@
+lod_rcy.py (R809) ratio 0.50, sharp 30 deg
+RcyEntrance: 7 objects, 246316 -> 123153 triangles (50%), box drift 0.013 m
+RcyCanal: 3 objects, 157054 -> 78526 triangles (50%), box drift 0.009 m
+RcySorting: 8 objects, 328460 -> 164229 triangles (50%), box drift 0.008 m
+RcyPlatform: 1 objects, 50688 -> 25344 triangles (50%), box drift 0.003 m
+RcyFinishCourt: 1 objects, 55084 -> 27542 triangles (50%), box drift 0.005 m
+RcyScenery: 1 objects, 33712 -> 16856 triangles (50%), box drift 0.005 m
+RcySceneryOwn: 1 objects, 41504 -> 20752 triangles (50%), box drift 0.006 m
+RcyCastleOuterGate: 1 objects, 42592 -> 21296 triangles (50%), box drift 0.008 m
+RcyCastleFinalGate: 1 objects, 38380 -> 19190 triangles (50%), box drift 0.003 m
+RcyCastleSectionEnd: 1 objects, 54966 -> 27478 triangles (50%), box drift 0.003 m

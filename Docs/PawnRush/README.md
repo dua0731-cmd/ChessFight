@@ -15,19 +15,16 @@
 | 정원·홀·미니게임·작전 회의실 프리팹 | Project에서 선택 | `Assets/Prefabs/PawnRushSections/` |
 | 맵 프리팹 하나씩(왕실 마차뜰 등, R507 병합) | **ChessFight → Pawn Rush → Open Map Test**, `[` `]`로 맵 고르기 | `Assets/Scenes/PawnRush_MapTest.unity` · `Assets/Prefabs/PawnRushMaps/` |
 
-판은 장애물·미니게임을 번갈아 배치하는 7슬롯 구조다. 현재 후보가 있는 슬롯은 다음과 같고, 빈 슬롯5는 건너뛴다.
+한 판은 6구간이다(R688, 컨셉은 R690 "세 구역, 두 관문"). 지금 후보는 다음과 같다(자세한 것은 [구간 §3](PAWN_RUSH_SECTIONS.md)).
 
 | 슬롯 | 현재 후보 |
 |---|---|
-| 1 초반 장애물 | 왕실 수로 정원 |
-| 2 초반 미니게임 | C 해자 도개교 · D 쇠살문 누각 · A 의장 광장 |
-| 3 중반 장애물 | 대계단 현관홀 |
-| 4 중반 미니게임 | B 동관 · E 서고 · F 무도회장 · J 세탁장 |
-| 5 후반 장애물 | 없음 |
-| 6 후반 미니게임 | G 행차 회랑 · H 체스 홀 · I 침실 |
-| 7 마지막 구간 | 작전 회의실 |
-
-팀원 맵 **왕실 마차뜰**(`RoyalCarriageYard`, `claude/nifty-tesla-8212va`에서 R507로 병합)은 아직 슬롯 후보가 아니라 맵 시험 장면에서만 연다. 슬롯 1 "1-2 왕실 마차뜰"로 넣으려면 입구·출구와 결승 처리를 먼저 정해야 한다([ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) §12 결정 1 · §13).
+| 1 초반 장애물 | 왕실 수로 정원 · 왕실 마차뜰(R508 구간 모드) |
+| 2 미니게임 1(첫째 관문 · 성문) | C 해자 도개교 · D 쇠살문 누각 · A 의장 광장 |
+| 3 중반 장애물 | 대계단 현관홀. 초안(회색 상자 — 코스 프리팹 시험 숫자 4와 구간 검사에만 나오고 판은 뽑지 않음, R780): **왕실 시계탑** — 계단 없는 벽타기 구간([설계 · 회색 상자](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)). 둘째 초안(회색 상자, R816 — 숫자 5): **대연회장** — 연회 겸 무도회 홀을 세 번 지나며 웨이터 · 식탁보 · 은 뚜껑 승강기 · 왈츠 · 무대 막 · 초콜릿 분수 · 샹들리에를 타고 가 왕의 발코니에서 끝나는 구간(R825: 샴페인 탑은 뺌)([설계 v0.4 · 회색 상자](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md)). 뒤 번호가 하나씩 밀렸다(6 작전 회의실 · 7 왕의 서재 · 8 천문대 · 9 금고실) |
+| 4 미니게임 2(둘째 관문 · 윗궁 문) | B 동관 · E 서고 · F 무도회장 · J 세탁장 · G 행차 회랑 · H 체스 홀 · I 침실(R691) |
+| 5 후반 장애물 | 국왕 작전실 · 왕의 서재 → 거인 체스(R706). 초안(회색 상자 — 코스 프리팹 시험과 구간 검사에만 나오고 판은 뽑지 않음, R712): 왕실 천문대 · **왕실 금고실**(R725, [금고실 §1 · §10](PAWN_RUSH_ROYAL_VAULT.md)) |
+| 6 엔딩 | 국왕 알현실 자리의 임시 바닥 |
 
 정원·현관홀·작전 회의실의 현재 아트와 빌더는 개편에 계속 사용한다. `Course01v4Builder`라는 클래스 이름을 가진 partial 파일도 이 맵들을 만들므로 구형 전체 코스와 함께 옮기거나 삭제하지 않는다.
 
@@ -43,7 +40,10 @@
 | 작전 회의실 아트·코드 | [Library 아트 원본](../../ArtSource/PawnRush/Library/README.md) |
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
 | 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
+| 중반 장애물(코스 2) 왕실 시계탑 — 벽타기 구간의 레벨 디자인 초안과 재미 검증(R775) · 회색 상자(R780: 코스 프리팹 시험 숫자 4, 판에는 아직 없음, 사용자 Unity 확인 전) | **[PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1](PAWN_RUSH_ROYAL_CLOCK_TOWER_DESIGN_v0.1.md)** · 그림 [입체](Mockups/R775_RoyalClockTower_Iso.svg) · [위 · 옆](Mockups/R775_RoyalClockTower.svg) · [장치와 ㄱ자 · 반원](Mockups/R775_RoyalClockTower_Devices.svg) · 스크립트 `Tools/RoyalClockTower/` |
+| 중반 장애물(코스 2) 대연회장 — 벽타기를 쓰는 구간의 레벨 디자인 초안(R787 v0.1 → R788 v0.2 → R789 v0.3 → R815 v0.4 → **R816 회색 상자** → R817 첫 플레이 뒤 고침 → R818 샹들리에 모양 · [컨셉 아트](ConceptArt/R818_BanquetHallConcept/banquet_concept_graybox.png) → R825 두 번째 플레이 뒤 고침(샴페인 탑 없앰) → R828 은 뚜껑 승강 틀 · 분수 사다리 없앰: 코스 프리팹 시험 숫자 5, 판에는 아직 없음, 사용자 Unity 확인 전) | **[회색 상자 — 여는 법 · 지으며 바꾼 것 · 자동 점검](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md#회색-상자-r816)** · [사진](Checks/R816_BanquetHallGraybox/hall_01_from_south_east.png) · **[PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md)**(아이디어 여섯 + 샹들리에 + 왈츠, 홀의 구성 · 좌표 · 시간) · [배치도 · 단면 · 높이 · 시간 예산](Mockups/R815_BanquetHall.svg) · [입체 미리보기](ConceptArt/R815_BanquetHall/banquet_blockout_v4.png) · [진행 영상](ConceptArt/R815_BanquetHall/banquet_flow_v0.4.mp4) · 지나간 판 [v0.3](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.3.md)([배치도](Mockups/R789_BanquetHall.svg) · [영상](ConceptArt/R789_BanquetHall/banquet_flow_v0.3.mp4)) · [v0.2](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.2.md)(구간마다의 자세한 설명) · [컨셉 아트](ConceptArt/R787_BanquetHall/banquet_concept.webp) · 지나간 판 [v0.1](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.1.md) · 스크립트 `ArtSource/PawnRush/BanquetHall/` · v0.4의 바탕: [v0.3 검수 뒤 고칠 다섯 가지의 안 + 아이디어 목록](PAWN_RUSH_BANQUET_HALL_V04_PROPOSAL.md) · [스케치](Mockups/R805_BanquetHall_Options.svg) · **[장애물 아이디어 여덟(R814)](PAWN_RUSH_BANQUET_HALL_OBSTACLE_IDEAS.md)** · [영상](ConceptArt/R814_BanquetObstacleIdeas/banquet_obstacle_ideas.mp4) |
 | 후반 장애물 왕실 천문대 — 레벨 디자인 초안(R711) · 회색 상자(R712 → R720 구조 v0.3으로 다시 지음 → R721 달려 본 뒤 고침: 코스 프리팹 시험 6번, 판에는 아직 없음) | **[구조안 v0.3(R716, 검수 전)](PAWN_RUSH_ROYAL_OBSERVATORY_STRUCTURE_v0.3.md)** · **[새 장애물 여덟 종(R717)](PAWN_RUSH_ROYAL_OBSERVATORY_OBSTACLES_v0.1.md)** · [PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1](PAWN_RUSH_ROYAL_OBSERVATORY_DESIGN_v0.1.md) · [배치도](Mockups/R711_RoyalObservatory.svg) · [비트별 의도 · 예상 행동(R713)](PAWN_RUSH_ROYAL_OBSERVATORY_BEHAVIOR_v0.1.md) |
+| 후반 장애물 왕실 금고실 — 사용자 기획서 A안의 회색 모형(R725: 코스 프리팹 시험 7번 · 맵 시험, 판에는 아직 없음)·봇 재미 검증 | [PAWN_RUSH_ROYAL_VAULT](PAWN_RUSH_ROYAL_VAULT.md) · [사용자 기획서 v0.1](PAWN_RUSH_ROYAL_VAULT_DESIGN_v0.1.md) · [제작 명세 v2](PAWN_RUSH_ROYAL_VAULT_SPEC_v2.md) |
 | 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
 | **코스·미니게임 3단계 아트 기준(모델링·텍스처)** | [PAWN_RUSH_ART_PHASES](PAWN_RUSH_ART_PHASES.md) |
 | 공간 이미지·제작 규격 | [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md) · [이미지 갤러리](PAWN_RUSH_MINIGAME_CONCEPTS.html) |
@@ -71,3 +71,5 @@
 ## 5. 확인 범위
 
 R497은 파일·메뉴·폐기 모드 정리다. 자동 검사와 AI가 보는 Unity 화면은 사용자 직접 확인과 구분하며, 최신 결과는 [VALIDATION](../Network/VALIDATION.md)에 기록한다. 각 퍼즐의 실제 입력 완주·손맛·12명 성능·다중PC Steam은 별도 확인 항목이다.
+
+- [낙오자 구제의 쉬운 길 — 맵별 기획](PAWN_RUSH_RELIEF_WAYS.md) (R783): 구제가 발동된 구간을 걸어서 지나게 하는 덱과 꺼지는 장치, 구간별 좌표와 확인 방법.

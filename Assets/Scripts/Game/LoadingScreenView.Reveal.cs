@@ -185,7 +185,7 @@ namespace ChessFight.Game
             revealTitle.style.position = Position.Absolute;
             revealTitle.style.left = 56f;
             revealTitle.style.top = 26f;
-            var title = RLabel(revealTitle, "이번 판 미니게임", 40f, Ebony, true);
+            var title = RLabel(revealTitle, Loc.T("이번 판 미니게임"), 40f, Ebony, true);
             title.style.position = Position.Relative;
             title.style.paddingLeft = 30f;
             title.style.paddingRight = 34f;
@@ -253,7 +253,8 @@ namespace ChessFight.Game
             p.Face.Bar(PanelTall - BandTall, BarTall, Brass);
             p.Root.Add(p.Face);
 
-            var label = RLabel(p.Root, PanelLabels[index], 22f, Ivory, true);
+            // R750: PanelLabels' words, numbered, through the string table
+            var label = RLabel(p.Root, Loc.F("미니게임 {0}", index + 1), 22f, Ivory, true);
             label.style.left = 44f;
             label.style.top = 18f;
             label.style.backgroundColor = LabelBack;
@@ -393,8 +394,9 @@ namespace ChessFight.Game
             p.Face.Picture(shown >= 0 ? p.Pictures[shown] : null, locked ? 1f - dim : UnpickedBright * cut);
             p.Face.BarFill(locked ? Eo3(Ph(age, .02f, .18f)) : 0f);
 
-            string name = locked ? p.Names[p.Pick] : "? ? ?";
-            if (p.Name.text != name) p.Name.text = name;
+            // R750: the section's name (Resources/Loading/PawnRushCourse.txt) through the string table; no rows for them yet
+            string name = locked ? Loc.T(p.Names[p.Pick]) : "? ? ?";
+            if (p.Name.text != name) { p.Name.text = name; FitName(p.Name, name); }
             p.Name.style.opacity = locked ? 1f : .4f;
             // R625: "? ? ?" slides in once the versus panels have gathered into this one
             p.Name.style.translate = new Translate(locked ? -50f * (1f - EoBack(Ph(age, .02f, .16f)))
@@ -481,7 +483,8 @@ namespace ChessFight.Game
         static Vector2 Shake(float age, float amount, float length, int seed)
         {
             if (age < 0f || age > length) return Vector2.zero;
-            float k = Mathf.Pow(1f - age / length, 2f) * amount;
+            // R786: settings → 카메라 흔들림 (and 접근성 → 화면 흔들림 줄이기) reach the matching screens too.
+            float k = Mathf.Pow(1f - age / length, 2f) * amount * GameSettings.ShakeScale;
             return new Vector2(Mathf.Sin(age * 97f + seed * 3.1f) * k, Mathf.Cos(age * 83f + seed * 1.7f) * k);
         }
 
@@ -549,8 +552,11 @@ namespace ChessFight.Game
         }
 
         static VisualElement BuildMatchAnnouncement(VisualElement parent, string mode, float top, float size, bool compact = false,
-                                                    string headlineText = "상대를 찾았습니다", string subtitleText = "곧 대결이 시작됩니다")
+                                                    string headlineText = null, string subtitleText = null)
         {
+            // R750: the callers pass their words translated already; null is the default pair.
+            headlineText = headlineText ?? Loc.T("상대를 찾았습니다");
+            subtitleText = subtitleText ?? Loc.T("곧 대결이 시작됩니다");
             var header = RBox(parent, 0f, top, StageWide, compact ? 88f : 104f);
             header.name = "match-announcement";
             var modeLabel = RLabel(header, mode, 15f, Brass, false);
@@ -602,6 +608,30 @@ namespace ChessFight.Game
             e.style.top = y;
             e.style.width = w;
             e.style.height = h;
+        }
+
+        // R757 (user 11-22, English: "이번 판 미니게임 글이 많아서 다 안보이고" - "Portcullis Gatehouse" ran into the next
+        // panel): a name wider than its 350 px box shrinks to fit; one that would go under 30 px breaks into two lines
+        // instead (the band is 128 px tall). Korean names fit at the full 46 px as before.
+        const float RevealNameSize = 46f, RevealNameRoom = 340f, RevealNameSmallest = 30f, RevealNameTwoLines = 34f;
+
+        static void FitName(Label label, string text)
+        {
+            float size = RevealNameSize;
+            bool wrap = false;
+            float at = label.resolvedStyle.fontSize;
+            if (label.panel != null && at > 0f && !string.IsNullOrEmpty(text))
+            {
+                float wide = label.MeasureTextSize(text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x * RevealNameSize / at;
+                if (wide > RevealNameRoom) size = RevealNameSize * RevealNameRoom / wide;
+                if (size < RevealNameSmallest)
+                {
+                    wrap = true;
+                    size = Mathf.Clamp(RevealNameSize * 1.8f * RevealNameRoom / wide, 22f, RevealNameTwoLines);
+                }
+            }
+            label.style.fontSize = size;
+            label.style.whiteSpace = wrap ? WhiteSpace.Normal : WhiteSpace.NoWrap;
         }
 
         static void RStretch(VisualElement e, Texture2D image)

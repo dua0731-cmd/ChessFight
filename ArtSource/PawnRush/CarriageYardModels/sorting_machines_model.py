@@ -27,8 +27,8 @@
 #   "RCY Hoist frame"      a loft hoist's standing part: the framed partition between the shafts, the lucam post, arm and
 #                          roof, the pulleys (the arm's gold trim, the lamps, ropes and the well's boards stay the code's)
 #   "RCY Hoist pallet P" / "N"   a pallet (HoistPallet's pivot on the plate's top) with its two sacks at local +x / -x
-#   "RCY Lift wheel"       the lifting waterwheel (it turns about x): hub, caps, rims, eight spoke pairs and paddles (the
-#                          gold handles a pawn holds stay the code's)
+#   "RCY Lift wheel"       the lifting waterwheel (it turns about x): hub, caps, rims, eight spoke pairs and paddles, and
+#                          (11-23) the handles a pawn holds: rope-wound walnut rungs on iron brackets (lift_handle)
 
 LIFT_R, LIFT_W = 5.2, 3.0          # VerticalWaterwheel: wheelRadius, wheelWidth
 ROPE = "RCY | rope"
@@ -617,12 +617,34 @@ def hoist_pallet(col, sign):
 # ------------------------------------------------------------------ the lifting waterwheel
 
 
+def lift_handle(col):
+    """11-23 (승규 "마지막 구간 물레방아 손잡이 부분도 노란색 말고 다른 걸로 모델링 해줘"): the bar a pawn holds, which was
+    the code's gold cylinder and its two gold posts (VerticalWaterwheel: centre (0, 4.65, .32) in the paddle's frame, 0.16
+    thick, 2.5 long across x; posts at x +-1.2). Now a worn walnut rung of the same size, rope wound round where hands go
+    (two grips, turn by turn), iron ferrules at its ends and an iron bracket each side bolted to the paddle's face."""
+    c, R, L = (0.0, 4.65, .32), .08, 2.5
+    parts = [cylinder(col, "Handle rung", U(*c), U(1, 0, 0), R, L, WALNUT, segments=12)]
+    for s in (-1, 1):
+        # A grip of rope: eight turns from 0.25 to 0.85 out, each a short drum with a hair of gap.
+        for t in range(8):
+            x = s * (.25 + .075 * t + .0375)
+            parts.append(cylinder(col, "Handle rope", U(x, c[1], c[2]), U(1, 0, 0), R + .018, .068, ROPE, segments=12))
+        parts.append(cylinder(col, "Handle ferrule", U(s * (L / 2 - .04), c[1], c[2]), U(1, 0, 0), R + .012, .08, IRON, segments=12))
+        # The bracket: a strap round the rung and a plate down to the paddle's face (z .18), two bolts on it.
+        parts.append(cylinder(col, "Handle strap", U(s * 1.2, c[1], c[2]), U(1, 0, 0), R + .02, .07, IRON, segments=12))
+        parts.append(ubox(col, "Handle bracket", (s * 1.2, c[1], (c[2] + .18) / 2), (.07, .1, c[2] - .18), IRON, bevel=.006))
+        parts.append(ubox(col, "Handle plate", (s * 1.2, c[1], .18 + .012), (.16, .26, .024), IRON, bevel=.004))
+        for dy in (-.08, .08):
+            parts.append(bolt(col, U(s * 1.2, c[1] + dy, .18 + .024), U(0, 0, 1), r=.022))
+    return parts
+
+
 def lift_wheel(col):
     """R686 (승규 11-17 "2번째 사진도 컨셉아트에 맞춰서"; RCY_09 3 "Upright paddle wheel", RCY_06): the concept's chunky
     paddle wheel - two thick rims studded with iron bolts, eight broad spokes a face, deep stepped paddles of three
     planks standing out past the rims with an iron edge and battens behind, a wooden hub with an iron face plate, a brass
-    collar and boss. Every paddle and spoke where VerticalWaterwheel's are (its grab boxes; the gold handles stay the
-    code's). No crown (승규 11-17 "왕관 지워"). The rims and spokes in oak (a darker override per model, as the giant
+    collar and boss. Every paddle and spoke where VerticalWaterwheel's are (its grab boxes); since 11-23 the handles
+    too (lift_handle: rope-wound walnut rungs on iron brackets, the code's gold bars no longer drawn). No crown (승규 11-17 "왕관 지워"). The rims and spokes in oak (a darker override per model, as the giant
     wheel's), the paddles in pale sawn timber, the hub walnut."""
     half, rim = LIFT_W * .5, LIFT_R - .35
     r_in, r_out, rim_d = rim - .22, rim + .2, .28
@@ -663,6 +685,7 @@ def lift_wheel(col):
         blade.append(ubox(col, "Paddle edge", (0, 5.35 - .03, 0), (LIFT_W - .04, .1, .36 + 2 * PROUD), IRON, bevel=.008))
         for s in (-1, 1):
             blade.append(ubox(col, "Paddle batten", (s * .75, 4.75, -.18 - .025), (.14, 1.15, .05), WALNUT, bevel=.008))
+        blade += lift_handle(col)
         parts += place(blade, Matrix.Rotation(-math.radians(k * 45), 4, "X"))
     return parts
 

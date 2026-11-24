@@ -24,6 +24,8 @@ namespace ChessFight.PawnRush
     //                       the saddle; YardHorseRig turns its bones with YardHorse's pivots (horse_model.py)
     //   RcyHitch            a team's pole, swingle-tree and traces
     //   RcyGateLeafW/E      the start gates' leaves (TimedGate)
+    //   RcyFinalGateLeafW/E the final gate's leaves (PushGate), old and scratched in their own slots RCY_Oldwalnut and
+    //                       RCY_Oldiron (textures/rcy_worn.py, 11-23)
     //   RcyCanal            zone 2 (the pilot): landings and balustrades, parapets, canal walls, the four walkways, the
     //                       wheel's axle posts and bearings, the flume, cistern and trestles
     //   RcyGiantWaterwheel  the giant waterwheel (HorizontalWaterwheel): rims, buckets, hub, six spoke pairs, the crowned
@@ -152,6 +154,83 @@ namespace ChessFight.PawnRush
             Debug.Log("[RoyalCarriageYard] 모델 " + shown + "구역 · 블록아웃 " + hidden + "개 그림 끔(충돌은 그대로)");
             // The castle kit over both gates (and the section's end), in its own textures (RoyalCarriageYard.Castle.cs).
             DressCastle();
+            // R809: the big still models' far halves, once their materials are all set.
+            AttachLods();
+        }
+
+        // R809 (the 11-23 build test: the yard drew at 52 fps on an RTX 3060, the grand stair hall at 77 - the yard is open
+        // and nearly all of it is in view at once; the user: "마차뜰 LOD 부터 해줘 너무 많이는 줄이지 말고"): a model with a
+        // Resources/PawnRushCarriageYard/LOD/<model>_LOD1 (lod_rcy.py: half its triangles, nothing else changed) gets it
+        // hung beside each of its pieces, the two in one LODGroup: the piece as it is nearer than LodSwitch metres times
+        // the LOD bias, its half beyond. Nothing is culled. Pictures only - the models have no colliders - and the same
+        // materials slot for slot.
+        // R827 (11-24 build test: both PCs ran at the PC quality level's own LOD bias 2 - nobody had touched the settings'
+        // '세부 묘사', which sets 0.6 / 1 / 1.6 - so the half began only past ~80 m): LodSwitch is given at bias 1 as half
+        // the distance meant at that default, so the default switches at about 40 m (높음 1.6 ~32 m, 중간 20, 낮음 12).
+        const string LodFolder = ModelFolder + "LOD/";
+        const float LodSwitch = 20f, LodFov = 60f;
+        readonly List<(string name, Transform pivot, GameObject model)> hung = new List<(string, Transform, GameObject)>();
+
+        void AttachLods()
+        {
+            int models = 0, pieces = 0;
+            long near = 0, far = 0;
+            foreach (var (name, pivot, model) in hung)
+            {
+                if (pivot == null) continue;
+                var half = Resources.Load<GameObject>(LodFolder + name + "_LOD1");
+                if (half == null) continue;
+                // The piece and the FBX renderer it came from, by name (Hang instantiated the model under the pivot).
+                var source = model.GetComponentsInChildren<Renderer>(true);
+                var views = pivot.GetComponentsInChildren<Renderer>(true);
+                var byName = new Dictionary<string, (Renderer view, Renderer source)>();
+                for (int k = 0; k < views.Length && k < source.Length; k++) byName[views[k].name] = (views[k], source[k]);
+                var farView = Object.Instantiate(half, pivot, false);
+                farView.name = name + " LOD1";
+                bool used = false;
+                foreach (var r in farView.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!byName.TryGetValue(r.name, out var pair) || pair.view.GetComponent<LODGroup>() != null) { r.enabled = false; continue; }
+                    // The materials the piece drew with, matched by the FBX slot names (a slot may have lost its faces).
+                    var given = new Dictionary<string, Material>();
+                    var from = pair.source.sharedMaterials;
+                    var drawn = pair.view.sharedMaterials;
+                    for (int i = 0; i < from.Length && i < drawn.Length; i++)
+                        if (from[i] != null && !given.ContainsKey(from[i].name)) given[from[i].name] = drawn[i];
+                    var slots = r.sharedMaterials;
+                    for (int i = 0; i < slots.Length; i++)
+                        slots[i] = slots[i] != null && given.TryGetValue(slots[i].name, out var m) ? m : (drawn.Length > 0 ? drawn[0] : clay);
+                    r.sharedMaterials = slots;
+                    r.shadowCastingMode = pair.view.shadowCastingMode;
+                    r.transform.SetParent(pair.view.transform, true);
+                    var group = pair.view.gameObject.AddComponent<LODGroup>();
+                    group.SetLODs(new[] { new LOD(.5f, new[] { pair.view }), new LOD(0f, new[] { r }) });
+                    group.RecalculateBounds();
+                    // The screen height at which the piece is LodSwitch metres away (its reference point, LOD bias 1).
+                    float height = group.size / (2f * LodSwitch * Mathf.Tan(LodFov * .5f * Mathf.Deg2Rad));
+                    group.SetLODs(new[] { new LOD(Mathf.Clamp(height, .002f, .99f), new[] { pair.view }), new LOD(0f, new[] { r }) });
+                    near += Triangles(pair.view);
+                    far += Triangles(r);
+                    pieces++;
+                    used = true;
+                }
+                // A many-piece FBX leaves its emptied root behind (a one-piece FBX's root is its piece, now moved).
+                if (farView != null && farView.GetComponent<Renderer>() == null) Object.Destroy(farView);
+                if (used) models++;
+            }
+            if (pieces > 0)
+                Debug.Log($"[RoyalCarriageYard] 먼 거리 LOD: 모델 {models}개 · 조각 {pieces}개, 삼각형 {near:N0} → {far:N0} " +
+                          $"(배율 1에서 {LodSwitch:0} m · 지금 배율 {QualitySettings.lodBias:0.##} → 약 {LodSwitch * QualitySettings.lodBias:0} m 넘어서)");
+        }
+
+        static long Triangles(Renderer r)
+        {
+            Mesh mesh = null;
+            if (r.TryGetComponent<MeshFilter>(out var filter)) mesh = filter.sharedMesh;
+            if (mesh == null) return 0;
+            long n = 0;
+            for (int i = 0; i < mesh.subMeshCount; i++) n += (long)mesh.GetIndexCount(i) / 3;
+            return n;
         }
 
         // After the map is switched on: a moving obstacle builds its own parts in its Awake, so only now are there parts
@@ -191,6 +270,17 @@ namespace ChessFight.PawnRush
                     hidden += Unpaint(gate);
                     Ride(gate.transform, leaf.localPosition.x >= 0f ? "RcyGateLeafW" : "RcyGateLeafE");
                 }
+            // The final gate's leaves (11-23, movers_model.py final_gate_leaf: old walnut planks, rusty strap hinges, a
+            // knocker on the code's ring): each leaf's own boxes stop drawing (their colliders stay - what a hand holds),
+            // the progress bar and its sign over the gate keep drawing.
+            foreach (var push in root.GetComponentsInChildren<PushGate>(true))
+                foreach (var leaf in push.GetComponentsInChildren<Rigidbody>(true))
+                {
+                    var door = leaf.transform.Find("Door");
+                    if (door == null) continue;
+                    hidden += Unpaint(leaf);
+                    Ride(leaf.transform, door.localPosition.x >= 0f ? "RcyFinalGateLeafW" : "RcyFinalGateLeafE");
+                }
             hidden += DressSortingMachines();
             Debug.Log("[RoyalCarriageYard] 움직이는 모델 · 블록아웃 " + hidden + "개 그림 끔(충돌은 그대로)");
             // R686: how many slots got the baked library (Resources/PawnRushCarriageYard/Materials) and which names did not.
@@ -201,7 +291,7 @@ namespace ChessFight.PawnRush
         // Zone 3's machines (sorting_machines_model.py): each machine's standing part on its root, each moving part on
         // the pivot the code moves it by. Kept drawing: the gold trims, the lamps, the ropes and chains the code
         // stretches, the marks and rings that warn (the gap marks, the reach and sector, the slam circle and its wave and
-        // dust, the well's boards and edge), and the handles a pawn holds on the lifting wheel.
+        // dust, the well's boards and edge). The lifting wheel's handles are the model's since 11-23.
         int DressSortingMachines()
         {
             int hidden = 0;
@@ -252,7 +342,10 @@ namespace ChessFight.PawnRush
             }
             foreach (var wheel in root.GetComponentsInChildren<VerticalWaterwheel>(true))
             {
-                hidden += Unpaint(wheel, "Handle", "Handle post");
+                // 11-23 (승규 "물레방아 손잡이 부분도 노란색 말고 다른 걸로 모델링 해줘"): the model has its own handles
+                // (rope-wound walnut rungs on iron brackets, sorting_machines_model.py lift_handle) where the code's gold
+                // bars are, so those stop drawing too; their grab colliders stay.
+                hidden += Unpaint(wheel);
                 Ride(wheel.transform, "RcyLiftWheel");
             }
             return hidden;
@@ -482,6 +575,7 @@ namespace ChessFight.PawnRush
                 r.sharedMaterials = slots;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
+            hung.Add((name, pivot, model));   // R809: AttachLods
             return pivot;
         }
 

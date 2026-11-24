@@ -35,6 +35,11 @@ namespace ChessFight.PawnRush
     //                   GardenLakeBoat sails round the lake's wide waters (R487: four, two on each of two routes)
     //   GardenTrees     trees off the course (R491, trees_sample.py: 승규's two Tripo trees painted by tree_asset.py), in
     //                   groves on the reservoir terraces (3.8) and the waterside banks (0.6)
+    //   GardenFinish    the last two graybox spots (2026-11-22, island_lock_sample_v2.py, after Codex pictures in
+    //                   Docs/PawnRush/ConceptArt/GardenFinish): the island in the north-west lake (stone ring, tiles, lawn,
+    //                   bushes, two cypresses, a two-tier fountain with a bell of water and four streams) and the east
+    //                   lock's running water ("Water lock" in PR_GardenLockWater, its rollers' and walls' whitewater, the
+    //                   inflow sill and the drain grate)
     public static partial class RoyalWaterGardenBuilder
     {
         const string ConceptFolder = "PawnRushGardenConcept/";
@@ -179,6 +184,18 @@ namespace ChessFight.PawnRush
             // R491: 승규's two trees (tree_asset.py, trees_sample.py) in groves on the reservoir terraces and the
             // waterside banks, off the course. Out of reach: nothing covers or collides.
             new ConceptPiece { model = "GardenTrees" },
+            // 2026-11-22 (승규 "여기만 하면 돼" over pictures of the grey island and the lock's white arrows; "좋아, Unity에
+            // 붙여"): the island (its cylinder still collides) and the lock's water (the current still carries pawns; the
+            // glass sheet and the arrows only drew). The fountain's bell and streams are fall-shader sheets ("Fall ...").
+            new ConceptPiece
+            {
+                model = "GardenFinish",
+                covered = new[]
+                {
+                    ("Garden", "Garden island"), ("Garden", "Island fountain"),
+                    ("B4_EastLock", "Lock water"), ("B4_EastLock", "Current arrow"),
+                },
+            },
         };
 
         // R440: Blender materials drawn with the garden's own shaders rather than a GC_ material of the same name.
@@ -187,7 +204,8 @@ namespace ChessFight.PawnRush
             { "GC_basin_water", "PR_GardenWaterShallow" },   // R426: the fountains' basins (the mosaic shows through)
             { "GC_tier_water", "PR_GardenWater" },            // R440: the pools
             { "GC_fall_upper", "PR_GardenFallUpper" },        // R440: the spillway's falls (R441: 3.45 m)
-            { "GC_fall_lower", "PR_GardenFallLower" },        // R440: the weirs' falls (R441: 1.31 m)
+            { "GC_fall_lower", "PR_GardenFallLower" },        // R440: the weirs' falls (R441: 1.31 m); the island fountain's
+            { "GC_lock_water", "PR_GardenLockWater" },        // 2026-11-22: the lock's running water (Garden Flow Water)
         };
 
         static void ConceptDressing(Transform content)
@@ -225,6 +243,82 @@ namespace ChessFight.PawnRush
                 if (piece.model == "GardenWater") FallLines(content);
                 if (piece.model == "GardenWatergate") LakeBoats(content, dress.transform);
             }
+        }
+
+        // R816 (user 11-24 "정원 LOD 진행"; the carriage yard's R809 way, RoyalCarriageYard.AttachLods): a model with a
+        // Resources/PawnRushGardenConcept/LOD/<model>_LOD1 (lod_garden.py: half its triangles, nothing else changed) gets
+        // each LOD1 piece hung under its piece, the two in one LODGroup: the piece nearer than LodSwitch metres times the
+        // LOD bias (R827: 20 m at bias 1, so the PC default bias 2 switches at about 40 m, as the carriage yard's), its half beyond. Nothing is culled. Only a piece still
+        // drawn inside its model gets one: what Hang, LakeBoats and the like moved onto obstacles (rotating bars,
+        // platforms, boats) or Remove/Cover switched off keeps no LOD, and a name the model has twice keeps none either.
+        // Pictures only - the garden's models have no colliders - and the same garden materials (ConceptMaterial). The
+        // garden is baked into its prefab, so this runs in Play from RoyalWaterGarden.Awake on the baked "Concept
+        // dressing" (its children are named after their models), and is never baked in itself.
+        const string LodFolder = ConceptFolder + "LOD/";
+        const float LodSwitch = 20f, LodFov = 60f;
+
+        public static void AttachLods(Transform content)
+        {
+            var pivot = content != null ? content.Find("Concept dressing") : null;
+            if (pivot == null) return;
+            var cache = new Dictionary<string, Material>();
+            int pieces = 0;
+            long near = 0, far = 0;
+            foreach (var piece in ConceptPieces)
+            {
+                string model = piece.model;
+                var dress = pivot.Find(model);
+                if (dress == null) continue;
+                var half = Resources.Load<GameObject>(LodFolder + model + "_LOD1");
+                if (half == null) continue;
+                var views = new Dictionary<string, Renderer>();
+                var twice = new HashSet<string>();
+                foreach (var r in dress.GetComponentsInChildren<Renderer>(true))
+                    if (!views.ContainsKey(r.name)) views[r.name] = r; else twice.Add(r.name);
+                var farView = Object.Instantiate(half, pivot, false);
+                farView.name = model + " LOD1";
+                foreach (var r in farView.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (twice.Contains(r.name) || !views.TryGetValue(r.name, out var view) || !view.enabled ||
+                        !view.gameObject.activeInHierarchy || view.GetComponent<LODGroup>() != null)
+                    {
+                        r.enabled = false;
+                        continue;
+                    }
+                    var slots = r.sharedMaterials;
+                    for (int i = 0; i < slots.Length; i++)
+                        if (slots[i] != null) slots[i] = ConceptMaterial(slots[i], cache);
+                    r.sharedMaterials = slots;
+                    r.shadowCastingMode = view.shadowCastingMode;
+                    r.transform.SetParent(view.transform, true);
+                    var group = view.gameObject.AddComponent<LODGroup>();
+                    group.SetLODs(new[] { new LOD(.5f, new[] { view }), new LOD(0f, new[] { r }) });
+                    group.RecalculateBounds();
+                    float height = group.size / (2f * LodSwitch * Mathf.Tan(LodFov * .5f * Mathf.Deg2Rad));
+                    group.SetLODs(new[] { new LOD(Mathf.Clamp(height, .002f, .99f), new[] { view }), new LOD(0f, new[] { r }) });
+                    near += LodTriangles(view);
+                    far += LodTriangles(r);
+                    pieces++;
+                }
+                if (farView != null)
+                {
+                    // what is left of the LOD1 model (unused pieces, emptied nodes) goes
+                    foreach (var r in farView.GetComponentsInChildren<Renderer>(true))
+                        if (r != null && !r.enabled) Object.DestroyImmediate(r.gameObject);
+                    if (farView.GetComponentInChildren<Renderer>(true) == null) Object.DestroyImmediate(farView);
+                }
+            }
+            if (pieces > 0)
+                Debug.Log($"[정원] 먼 거리 LOD: 조각 {pieces}개, 삼각형 {near:N0} → {far:N0} " +
+                          $"(배율 1에서 {LodSwitch:0} m · 지금 배율 {QualitySettings.lodBias:0.##} → 약 {LodSwitch * QualitySettings.lodBias:0} m 넘어서)");
+        }
+
+        static long LodTriangles(Renderer r)
+        {
+            if (!r.TryGetComponent<MeshFilter>(out var filter) || filter.sharedMesh == null) return 0;
+            long n = 0;
+            for (int i = 0; i < filter.sharedMesh.subMeshCount; i++) n += (long)filter.sharedMesh.GetIndexCount(i) / 3;
+            return n;
         }
 
         // R485 (승규 "보트 애니메이션을 둘거야 ... 그 구간에서 배가 떠 다니는 애니메이션 만들어줘", "성벽 안 수로 수문"); R486
@@ -387,7 +481,8 @@ namespace ChessFight.PawnRush
         }
 
         // "GC | cream stone" (as the FBX names it) -> Resources/PawnRushGardenConcept/Materials/GC_cream_stone.
-        static Material ConceptMaterial(Material imported, Dictionary<string, Material> cache)
+        // R769: also GardenBirds' (its FBX is drawn with the same GC_ materials).
+        internal static Material ConceptMaterial(Material imported, Dictionary<string, Material> cache)
         {
             // R420: Unity imports "GC | cream stone" as "GC _ cream stone" (the | becomes _), so every run of characters
             // that are not letters or digits becomes one underscore: both spellings give GC_cream_stone.

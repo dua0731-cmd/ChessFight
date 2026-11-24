@@ -54,7 +54,8 @@ namespace ChessFight.PawnRush
             {
                 pad = now;
                 openedAt = Time.time;
-                if (pad != null) ArenaFx.Sfx("sfx_mg_quarter", pad.transform.position, twoD: true, pitch: 1.5f);
+                // 11-22: the charge resolving (sfx_promo_ready, the charge's mallet voice) in place of the coin-like sfx_mg_quarter
+                if (pad != null) ArenaFx.Sfx("sfx_promo_ready", pad.transform.position, twoD: true);
             }
             if (pad == null) { GiveCursorBack(); return; }
             TakeCursor();
@@ -72,7 +73,8 @@ namespace ChessFight.PawnRush
                 asked = piece;
             }
             else StationPromotion.Choose(MiniGameBase.LocalDriver, piece);
-            ArenaFx.Sfx("sfx_mg_complete", pad.transform.position, twoD: true, volume: .6f);
+            // 11-22 (user "기물 바뀌는 소리도 지금 차오르는 소리랑 맞춰 동전 소리 말고"): the change, in the charge's voice
+            ArenaFx.Sfx("sfx_promo_change", pad.transform.position, twoD: true);
             pad = null;
             GiveCursorBack();
         }
@@ -136,8 +138,8 @@ namespace ChessFight.PawnRush
             GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), white);
             GUI.color = new Color(1f, 1f, 1f, t);
             float left = Mathf.Max(0f, PawnRushPromotion.ChooseSeconds - (Time.time - openedAt));
-            GUI.Label(new Rect(0, y - 70, Screen.width, 40), "<b>승격! 원하는 기물을 고르세요</b>", title);
-            GUI.Label(new Rect(0, y - 36, Screen.width, 28), $"1~4 키 또는 클릭 · {Mathf.CeilToInt(left)}초 뒤 무작위", line);
+            GUI.Label(new Rect(0, y - 70, Screen.width, 40), "<b>" + Loc.T("승격! 원하는 기물을 고르세요") + "</b>", title);
+            GUI.Label(new Rect(0, y - 36, Screen.width, 28), Loc.F("1~4 키 또는 클릭 · {0}초 뒤 무작위", Mathf.CeilToInt(left)), line);
 
             var mouse = Event.current.mousePosition;
             for (int i = 0; i < n; i++)
@@ -154,9 +156,9 @@ namespace ChessFight.PawnRush
                 GUI.color = new Color(1f, 1f, 1f, t);
                 GUI.Label(new Rect(r.x, r.y + 10, r.width, 30), $"<color=#E2B23C>{i + 1}</color>", key);
                 GUI.Label(new Rect(r.x, r.y + 40, r.width, 80), $"<size=64>{Symbol(piece)}</size>", title);
-                GUI.Label(new Rect(r.x, r.y + 126, r.width, 40), $"<b>{ChessPieces.Name(piece)}</b>", name);
-                GUI.Label(new Rect(r.x, r.y + 166, r.width, 28), $"<color=#E2B23C>{PawnRushPromotion.SkillName(piece)}</color>", skill);
-                GUI.Label(new Rect(r.x + 12, r.y + 198, r.width - 24, 80), PawnRushPromotion.SkillLine(piece), line);
+                GUI.Label(new Rect(r.x, r.y + 126, r.width, 40), "<b>" + Loc.T(ChessPieces.Name(piece)) + "</b>", name);
+                GUI.Label(new Rect(r.x, r.y + 166, r.width, 28), "<color=#E2B23C>" + Loc.T(PawnRushPromotion.SkillName(piece)) + "</color>", skill);
+                GUI.Label(new Rect(r.x + 12, r.y + 198, r.width - 24, 80), Loc.T(PawnRushPromotion.SkillLine(piece)), line);
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none)) Pick(piece);
             }
             GUI.color = old;

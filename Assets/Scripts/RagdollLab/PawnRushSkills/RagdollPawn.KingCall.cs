@@ -111,7 +111,7 @@ namespace ChessFight.RagdollLab
                     if (!press || !CanStartSkill()) break;
                     skillStage = SkillStage.Windup;
                     stageTime = 0f;
-                    SkillDetail = "부를 팀원 고르기";
+                    SkillDetail = Loc.T("부를 팀원 고르기");
                     KingCallList(kingListScratch);
                     Log($"{DisplayName}: 왕의 부름 — 목록 (같은 구간 팀원 {kingListScratch.Count}명)");
                     break;
@@ -172,7 +172,7 @@ namespace ChessFight.RagdollLab
             skillStage = SkillStage.Active;
             stageTime = 0f;
             SkillUses++;
-            SkillDetail = "대답 기다림";
+            SkillDetail = Loc.T("대답 기다림");
             kingHitsAtCall = Hits;
             kingHitAtCall = LastSkillHit;
             Log($"{DisplayName}: 왕의 부름 → {picks[0].DisplayName}{(n > 1 ? ", " + picks[1].DisplayName : "")} ({s.kingCallWindow:0.#}초 안에 F)");
@@ -206,7 +206,7 @@ namespace ChessFight.RagdollLab
             ResetKingSlots();
             skillStage = SkillStage.None;
             stageTime = 0f;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             StartCooldown(s.kingCooldown);
         }
 

@@ -27,6 +27,12 @@ namespace ChessFight.PawnRush
         readonly HashSet<ImportedObstacleActor> struck = new HashSet<ImportedObstacleActor>();
         long struckPass = long.MinValue;
 
+        // R768: for GardenRobotSound - this robot's own time on the shared clock, its hand and how far the hand reaches.
+        public double Now => ObstacleClock.Now + phase;
+        public Transform Hand => hand;
+        public float HandReach => handReach;
+        public float LowAngle => lowAngle;
+
         // For the builder: on an inactive object, before Awake.
         public void Configure(Vector3 axis, Transform hand)
         {

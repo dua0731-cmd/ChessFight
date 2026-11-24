@@ -195,6 +195,32 @@ namespace ChessFight.PawnRush
             return cp;
         }
 
+        // R733: a checkpoint's trigger over the whole floor it stands on (x0..x1, z0..z1 in the frame its `at` was given in,
+        // 3 m up from its floor); its respawn spots stay where they were. A 2 m strip narrower than the floor, or across a
+        // floor the way turns on, could be run round (the user, 11-21: "어떨 때는 다른 곳에서 체크 포인트 돼고"), and a
+        // fall then went back to the checkpoint before. Exact for yaws in steps of 90°.
+        public static CourseCheckpoint CoverFloor(CourseCheckpoint cp, float x0, float x1, float z0, float z1)
+        {
+            var t = cp.transform;
+            var box = cp.GetComponent<BoxCollider>();
+            var back = Quaternion.Inverse(t.localRotation);
+            Vector3 a = back * (new Vector3(x0, t.localPosition.y, z0) - t.localPosition);
+            Vector3 c = back * (new Vector3(x1, t.localPosition.y, z1) - t.localPosition);
+            Vector3 min = Vector3.Min(a, c), max = Vector3.Max(a, c);
+            box.center = new Vector3((min.x + max.x) * .5f, 0f, (min.z + max.z) * .5f);
+            box.size = new Vector3(max.x - min.x, box.size.y, max.z - min.z);
+            return cp;
+        }
+
+        // R733: a checkpoint's trigger set in its own frame (x across the way, z along it), for one not on a square floor.
+        public static CourseCheckpoint CheckpointBox(CourseCheckpoint cp, Vector3 center, Vector3 size)
+        {
+            var box = cp.GetComponent<BoxCollider>();
+            box.center = center;
+            box.size = size;
+            return cp;
+        }
+
         static void Finish(GameObject go, Material material, bool noClimb, bool solid)
         {
             var renderer = go.GetComponent<MeshRenderer>();

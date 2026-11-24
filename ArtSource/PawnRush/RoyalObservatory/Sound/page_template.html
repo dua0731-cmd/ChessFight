@@ -1,0 +1,127 @@
+<title>왕실 천문대 소리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: an explanation, then one band per device (meteors, flare, beams, irises, petals, moving parts, the hall),
+   each a row of sound cards with their takes; the observatory's night navy and brass, committed to dark like the room. */
+:root {
+  --night: #0b1020; --panel: #141b31; --panel-hi: #1d2744; --line: rgba(214, 178, 104, .34);
+  --brass: #d9b46a; --star: #eef0f7; --muted: #a3abc4; --warn: #f2a48f;
+  --display: "Gowun Batang", "Noto Serif KR", serif;
+  --body: "Noto Sans KR", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+body { background: var(--night); color: var(--star); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 36px 56px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+        display: grid; gap: 34px; }
+header { display: grid; gap: 10px; max-width: 70ch; }
+.kicker { font-size: 11px; letter-spacing: .24em; color: var(--brass); font-weight: 700; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+header strong { color: var(--star); }
+.band { display: grid; gap: 14px; }
+.band h2 { font-family: var(--display); font-weight: 700; font-size: 22px; margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+.head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.head h3 { font-weight: 700; font-size: 17px; margin: 0; flex: 1; min-width: 0; }
+.loop { font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
+.where { margin: 0; color: var(--muted); font-size: 13px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.game { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 8px; border: 1px solid var(--brass);
+        background: var(--brass); color: var(--night); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.game:hover { filter: brightness(1.08); }
+.takes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.take { display: grid; gap: 2px; justify-items: start; padding: 9px; border-radius: 8px; border: 1px solid var(--line);
+        background: transparent; text-align: left; min-width: 0; }
+.take:hover { background: var(--panel-hi); }
+.take.on { border-color: var(--brass); background: var(--panel-hi); }
+.take .n { font-family: var(--display); font-size: 17px; line-height: 1.1; }
+.take .nums { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.take .tag { font-size: 11px; font-weight: 700; color: var(--brass); }
+.take .flag { font-size: 11px; font-weight: 700; color: var(--warn); }
+.take.playing, .game.playing { box-shadow: 0 0 0 3px rgba(217, 180, 106, .35); }
+footer { max-width: 70ch; color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+footer code { font-family: var(--mono); color: var(--star); overflow-wrap: anywhere; }
+@media (max-width: 420px) { .takes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="kicker">CHESS FIGHT · 폰 러쉬 · 왕실 천문대</div>
+    <h1>왕실 천문대 소리</h1>
+    <p>ElevenLabs로 소리마다 2 ~ 4개씩 만든 후보예요. <strong>금색 테두리</strong>가 지금 게임에 들어간 것이고, <strong>▶ 게임 소리</strong>는 다듬은 게임 파일 그대로예요. 숫자는 가장 커지는 때와 그 뒤 잦아드는 길이(ms), 반복음은 길이예요. 반복음은 이 페이지에서만 앞 6초로 잘랐어요.</p>
+    <p>AI는 소리를 들을 수 없어서 파형 숫자로만 골랐어요(빨리 시작 · 짧게 끝남 · 삐 울림 없음, 반복음은 고르고 이음매가 매끄러운 것). 바꾸고 싶은 건 채팅에 <strong>"유성 착지 3번, 조리개 맞닿음 2번"</strong>처럼 알려 주세요.</p>
+  </header>
+  <div id="bands" style="display:grid;gap:34px"></div>
+  <footer>
+    <div>게임에서는 설정 → 소리 → <strong>효과음</strong> 크기를 따르고, 천문대 안에 있을 때만 들려요.</div>
+    <div>원본과 고르는 스크립트: <code>ArtSource/PawnRush/RoyalObservatory/Sound</code> (<code>picks.json</code>을 바꾸고 <code>bake.py</code>를 다시 돌리면 게임 소리가 바뀜)</div>
+  </footer>
+</div>
+<script>
+const groups = /*DATA*/[];
+const bands = document.getElementById('bands');
+let playing = null;
+function play(src, el) {
+  try {
+    if (playing) { playing.audio.pause(); playing.el.classList.remove('playing'); }
+    const audio = new Audio(src);
+    el.classList.add('playing');
+    playing = { audio, el };
+    audio.addEventListener('ended', () => el.classList.remove('playing'));
+    audio.play().catch(() => el.classList.remove('playing'));
+  } catch (e) { el.classList.remove('playing'); }
+}
+for (const g of groups) {
+  const band = document.createElement('section');
+  band.className = 'band';
+  const h2 = document.createElement('h2');
+  h2.textContent = g.title;
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  for (const c of g.cards) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const head = document.createElement('div');
+    head.className = 'head';
+    const h = document.createElement('h3');
+    h.textContent = c.label;
+    head.append(h);
+    if (c.loop) { const l = document.createElement('span'); l.className = 'loop'; l.textContent = '반복음'; head.append(l); }
+    const game = document.createElement('button');
+    game.className = 'game';
+    game.type = 'button';
+    game.textContent = '▶ 게임 소리';
+    game.setAttribute('aria-label', g.title + ' ' + c.label + ' 게임 소리 듣기');
+    game.addEventListener('click', () => play(c.game, game));
+    head.append(game);
+    const where = document.createElement('p');
+    where.className = 'where';
+    where.textContent = c.where;
+    const takes = document.createElement('div');
+    takes.className = 'takes';
+    for (const t of c.takes) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'take' + (t.on ? ' on' : '');
+      b.setAttribute('aria-label', c.label + ' ' + t.n + '번 듣기');
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = t.n + '번';
+      const nums = document.createElement('span'); nums.className = 'nums'; nums.textContent = t.nums;
+      b.append(n, nums);
+      if (t.on) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '게임에 들어감'; b.append(tag); }
+      for (const f of t.flags) { const fl = document.createElement('span'); fl.className = 'flag'; fl.textContent = f; b.append(fl); }
+      b.addEventListener('click', () => play(t.src, b));
+      takes.append(b);
+    }
+    card.append(head, where, takes);
+    grid.append(card);
+  }
+  band.append(h2, grid);
+  bands.append(band);
+}
+</script>

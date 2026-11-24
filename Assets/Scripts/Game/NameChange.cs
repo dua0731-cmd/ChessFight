@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Game
@@ -21,7 +22,7 @@ namespace ChessFight.Game
         public static void Begin(Vector2 from, Func<Vector2> backTo, string backTitle)
         {
             if (screen != null || NameScreen.Showing || SceneTransition.Busy) return;
-            SceneTransition.Run("이름 바꾸기", from,
+            SceneTransition.Run(Loc.T("이름 바꾸기"), from,
                 () =>
                 {
                     screen = new GameObject("Name Screen").AddComponent<NameScreen>();

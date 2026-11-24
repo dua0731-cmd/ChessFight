@@ -23,7 +23,8 @@ LIT_GUID = "933532a4fcc9baf4fa0491de14d08ed7"   # URP Lit
 # vertex colour rcy_kit writes per stone part).
 TINT_GUID = hashlib.md5(b"chessfight:Assets/Art/PawnRushCarriageYard/Shaders/RcyTintLit.shader").hexdigest()
 TINTED = {"RCY_Flag", "RCY_Stone", "RCY_Shade"}
-BIG = {"RCY_Stone", "RCY_Flag", "RCY_Shade", "RCY_Marble", "RCY_Tile", "RCY_Oak", "RCY_Walnut", "RCY_Timber", "RCY_Soil"}
+BIG = {"RCY_Stone", "RCY_Flag", "RCY_Shade", "RCY_Marble", "RCY_Tile", "RCY_Oak", "RCY_Walnut", "RCY_Timber", "RCY_Soil",
+       "RCY_Oldwalnut"}   # 11-23: the final gate's 8 m of old planks, their 1-2 px scratches kept
 
 
 def guid(rel):

@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Game
@@ -50,8 +51,8 @@ namespace ChessFight.Game
             menu.leave = leave;
             menu.online = online;
             menu.warning = online
-                ? "팀은 한 명이 빠진 채로 계속 싸웁니다. 끝나기 전에는 로비에서 다시 돌아올 수 있어요."
-                : "연습을 끝내고 로비로 돌아갑니다. 지금까지의 진행은 저장되지 않습니다.";
+                ? Loc.T("팀은 한 명이 빠진 채로 계속 싸웁니다. 끝나기 전에는 로비에서 다시 돌아올 수 있어요.")
+                : Loc.T("연습을 끝내고 로비로 돌아갑니다. 지금까지의 진행은 저장되지 않습니다.");
             current = menu;
             return menu;
         }
@@ -222,28 +223,28 @@ namespace ChessFight.Game
             float x = panel.x + 30, iw = w - 60;
             if (!confirm)
             {
-                Say(new Rect(x, panel.y + 26, iw, 40), "메뉴", title, Gold, TextAnchor.MiddleLeft);
+                Say(new Rect(x, panel.y + 26, iw, 40), Loc.T("메뉴"), title, Gold, TextAnchor.MiddleLeft);
                 // "경기 진행 중": a red dot pill, the match does not stop.
                 var pill = new Rect(panel.xMax - 30 - 118, panel.y + 34, 118, 26);
                 Box(pill, new Color(Red.r, Red.g, Red.b, .16f), Color.clear, 13f);
                 Box(new Rect(pill.x + 12, pill.center.y - 4, 8, 8), new Color(1f, .42f, .35f), Color.clear, 4f);
                 sub.fontStyle = FontStyle.Bold;
                 sub.fontSize = 13;
-                Say(new Rect(pill.x + 26, pill.y, pill.width - 30, pill.height), "경기 진행 중", sub, RedText, TextAnchor.MiddleLeft);
+                Say(new Rect(pill.x + 26, pill.y, pill.width - 30, pill.height), Loc.T("경기 진행 중"), sub, RedText, TextAnchor.MiddleLeft);
                 sub.fontStyle = FontStyle.Normal;
                 sub.fontSize = 14;
-                Say(new Rect(x, panel.y + 74, iw, 22), "메뉴를 열어도 경기는 멈추지 않아요", sub, Muted, TextAnchor.MiddleLeft);
+                Say(new Rect(x, panel.y + 74, iw, 22), Loc.T("메뉴를 열어도 경기는 멈추지 않아요"), sub, Muted, TextAnchor.MiddleLeft);
                 float y = panel.y + 112;
-                if (Flat(new Rect(x, y, iw, 56), "게임으로 돌아가기", Gold, Color.clear, new Color(.1f, .07f, .04f), "ESC")) SetOpen(false);
+                if (Flat(new Rect(x, y, iw, 56), Loc.T("게임으로 돌아가기"), Gold, Color.clear, new Color(.1f, .07f, .04f), "ESC")) SetOpen(false);
                 y += 64;
-                if (Flat(new Rect(x, y, iw, 52), "설정", Plate, PlateEdge, Cream, "›")) SettingsWindow.Open();
+                if (Flat(new Rect(x, y, iw, 52), Loc.T("설정"), Plate, PlateEdge, Cream, "›")) SettingsWindow.Open();
                 y += 52 + 14;
                 GUI.color = new Color(1f, 1f, 1f, .07f);
                 GUI.DrawTexture(new Rect(x, y, iw, 1), white);
                 GUI.color = old;
                 y += 14;
                 plain.fontSize = 16;
-                if (Flat(new Rect(x, y, iw, 48), "게임 나가기", Color.clear, new Color(Red.r, Red.g, Red.b, .45f), RedText)) confirm = true;
+                if (Flat(new Rect(x, y, iw, 48), Loc.T("게임 나가기"), Color.clear, new Color(Red.r, Red.g, Red.b, .45f), RedText)) confirm = true;
                 plain.fontSize = 18;
             }
             else
@@ -251,15 +252,15 @@ namespace ChessFight.Game
                 Box(new Rect(x, panel.y + 28, 44, 44), new Color(Red.r, Red.g, Red.b, .16f), Color.clear, 22f);
                 title.fontSize = 26;
                 Say(new Rect(x, panel.y + 28, 44, 44), "!", title, new Color(1f, .42f, .35f), TextAnchor.MiddleCenter);
-                Say(new Rect(x + 58, panel.y + 28, iw - 58, 44), "정말 나가시겠습니까?", title, Bright, TextAnchor.MiddleLeft);
+                Say(new Rect(x + 58, panel.y + 28, iw - 58, 44), Loc.T("정말 나가시겠습니까?"), title, Bright, TextAnchor.MiddleLeft);
                 title.fontSize = 30;
                 var note = new Rect(x, panel.y + 90, iw, lines.Length * 46f + 16f);
                 Box(note, new Color(Red.r, Red.g, Red.b, .08f), new Color(Red.r, Red.g, Red.b, .3f), 10f);
                 for (int i = 0; i < lines.Length; i++)
                     Say(new Rect(note.x + 16, note.y + 8 + i * 46f, note.width - 32, 46), "• " + lines[i], red, i == 0 ? RedSoft : Cream, TextAnchor.MiddleLeft);
                 float y = note.yMax + 18, bw = (iw - 10) / 2f;
-                if (Flat(new Rect(x, y, bw, 52), "남아서 계속하기", Plate, PlateEdge, Cream, null, TextAnchor.MiddleCenter)) confirm = false;
-                if (Flat(new Rect(x + bw + 10, y, bw, 52), "나가기", Red, Color.clear, Color.white, null, TextAnchor.MiddleCenter)) { GUI.matrix = keep; Leave(); return; }
+                if (Flat(new Rect(x, y, bw, 52), Loc.T("남아서 계속하기"), Plate, PlateEdge, Cream, null, TextAnchor.MiddleCenter)) confirm = false;
+                if (Flat(new Rect(x + bw + 10, y, bw, 52), Loc.T("나가기"), Red, Color.clear, Color.white, null, TextAnchor.MiddleCenter)) { GUI.matrix = keep; Leave(); return; }
             }
             GUI.matrix = keep;
         }

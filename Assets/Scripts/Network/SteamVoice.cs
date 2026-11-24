@@ -136,7 +136,7 @@ namespace ChessFight.Network
             for (int round = 0; round < 8; round++)
             {
                 var available = SteamUser.GetAvailableVoice(out uint size);
-                if (available == EVoiceResult.k_EVoiceResultRestricted) { Problem = "Steam이 이 계정의 음성을 막았어요."; break; }
+                if (available == EVoiceResult.k_EVoiceResultRestricted) { Problem = Loc.T("Steam이 이 계정의 음성을 막았어요."); break; }
                 if (available != EVoiceResult.k_EVoiceResultOK || size == 0) break;
                 var result = SteamUser.GetVoice(true, captured, (uint)captured.Length, out uint written);
                 if (result != EVoiceResult.k_EVoiceResultOK || written == 0 || written > captured.Length) break;

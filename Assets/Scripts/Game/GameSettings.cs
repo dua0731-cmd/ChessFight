@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Game
 {
     // The actions the player can bind (settings → 조작 → 키 설정), two keys each. Sheet opens the
     // match sheet (기보지, R131; it was the unused "Score" on ` until then), Talk is push to talk.
-    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Skill2, Use, Respawn, Chat, Sheet, Talk }
+    // R786: Skill2 (Q) and Respawn (R) are gone - nothing in either mode read them, and as hidden bindings they would
+    // still have swapped keys with the shown ones. Saved keys go by name (key.<action>.<slot>), so the order is free.
+    // Unstuck (R, R786) is held to go back when the match says the pawn is stuck (SteamPawnRushLink.Unstuck, StuckWatch);
+    // a new name, so a key once swapped onto the old Respawn does not come back with it.
+    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Use, Unstuck, Chat, Sheet, Talk }
 
     // What the settings window (R64, laid out again in R77) changes, kept on this
     // PC in PlayerPrefs and read by whoever it concerns: the movement code asks
@@ -15,9 +20,9 @@ namespace ChessFight.Game
     // ScreenOverlay for brightness and the frame counter.
     //
     // Every value lives under an id ("master", "fov", ...); the typed properties
-    // below are the ones the game reads. Values the game cannot use yet
-    // (controller, colour-blind modes...) keep their ids, so the feature can read
-    // them when it comes; the window shows those lines dim and locked (R674).
+    // below are the ones the game reads. R786: the window has no line any more for
+    // a feature the game lacks (the "준비 중" lines of R674 are gone); such a value
+    // saved before stays in PlayerPrefs, unread.
     //
     // The display settings are applied at start only once the player has changed
     // them, so a PC that never opens the window keeps the project's defaults.
@@ -68,6 +73,7 @@ namespace ChessFight.Game
             Version++;
             PlayerPrefs.Save();
             AudioListener.volume = Master;
+            StreamerMode.Set(HideNames, HideCodes);
             try { Changed?.Invoke(); }
             catch (Exception e) { Debug.LogException(e); }
         }
@@ -95,6 +101,10 @@ namespace ChessFight.Game
         public static float CameraDistance => Float("camdist", 3.6f);
         public static bool ReduceShake => Bool("reduceshake", false);
         public static bool ReduceFlash => Bool("reduceflash", false);
+        // R786 (접근성 → 번쩍임 줄이기, which reached only the lobby buttons' sparks before): bright flashes are drawn at
+        // this share - the skills' and the swords' flash and lens streak, their moment lights, the mini-games' light
+        // flashes, the matching screens' and the result screen's white flash, and the buttons.
+        public static float FlashScale => ReduceFlash ? .3f : 1f;
         // Camera shake is multiplied by this (settings → 게임플레이 → 카메라 흔들림, and 접근성).
         public static float ShakeScale => ReduceShake ? 0f : Mathf.Clamp01(Float("shake", 100f) / 100f);
         // The sprint's field-of-view kick.
@@ -137,12 +147,24 @@ namespace ChessFight.Game
         // The match-found moment is heard even with the window behind another (ScreenOverlay.MatchFound).
         public static bool ReadyDing => Bool("readyding", true);
 
+        // R792, settings → 소셜 → 방송 → 스트리머 모드: on, it hides what the two lines under it pick (both by default) on
+        // this PC's screens - Core StreamerMode, which the name sources and the codes ask.
+        public static bool Streamer => Bool("streamer", false);
+        public static bool HideNames => Streamer && Bool("hidename", true);
+        public static bool HideCodes => Streamer && Bool("hidecode", true);
+
+        // R792, settings → 접근성 → 색약 모드: Core ColourAid's kind (0 off, 1 적색약, 2 녹색약, 3 청색약) and its strength
+        // 0..1, which GameLook's channel mixer volume applies.
+        public static int ColourAidKind => Mathf.Clamp(Int("cb", 0), 0, 3);
+        public static float ColourAidStrength => Mathf.Clamp01(Float("cbs", 100f) / 100f);
+
         // Loaded before the first scene, so the title screen already has them.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Load()
         {
             LoadKeys();
             AudioListener.volume = Master;
+            StreamerMode.Set(HideNames, HideCodes);
             ApplyDisplay();
             ScreenOverlay.Ensure();
             SettingsBackdrop.Prewarm();
@@ -161,9 +183,8 @@ namespace ChessFight.Game
             { GameKey.Shove, new[] { KeyCode.Mouse0, KeyCode.None } },
             { GameKey.Grab, new[] { KeyCode.Mouse1, KeyCode.None } },
             { GameKey.Skill, new[] { KeyCode.E, KeyCode.None } },
-            { GameKey.Skill2, new[] { KeyCode.Q, KeyCode.None } },
             { GameKey.Use, new[] { KeyCode.F, KeyCode.None } },
-            { GameKey.Respawn, new[] { KeyCode.R, KeyCode.None } },
+            { GameKey.Unstuck, new[] { KeyCode.R, KeyCode.None } },
             { GameKey.Chat, new[] { KeyCode.Return, KeyCode.None } },
             { GameKey.Sheet, new[] { KeyCode.Tab, KeyCode.None } },
             { GameKey.Talk, new[] { KeyCode.V, KeyCode.None } },
@@ -274,18 +295,18 @@ namespace ChessFight.Game
             switch (key)
             {
                 case KeyCode.None: return "—";
-                case KeyCode.Mouse0: return "좌클릭";
-                case KeyCode.Mouse1: return "우클릭";
-                case KeyCode.Mouse2: return "휠 클릭";
-                case KeyCode.Mouse3: return "마우스 4";
-                case KeyCode.Mouse4: return "마우스 5";
+                case KeyCode.Mouse0: return Loc.T("좌클릭");
+                case KeyCode.Mouse1: return Loc.T("우클릭");
+                case KeyCode.Mouse2: return Loc.T("휠 클릭");
+                case KeyCode.Mouse3: return Loc.T("마우스 4");
+                case KeyCode.Mouse4: return Loc.T("마우스 5");
                 case KeyCode.Space: return "Space";
-                case KeyCode.LeftShift: return "왼쪽 Shift";
-                case KeyCode.RightShift: return "오른쪽 Shift";
-                case KeyCode.LeftControl: return "왼쪽 Ctrl";
-                case KeyCode.RightControl: return "오른쪽 Ctrl";
-                case KeyCode.LeftAlt: return "왼쪽 Alt";
-                case KeyCode.RightAlt: return "오른쪽 Alt";
+                case KeyCode.LeftShift: return Loc.T("왼쪽 Shift");
+                case KeyCode.RightShift: return Loc.T("오른쪽 Shift");
+                case KeyCode.LeftControl: return Loc.T("왼쪽 Ctrl");
+                case KeyCode.RightControl: return Loc.T("오른쪽 Ctrl");
+                case KeyCode.LeftAlt: return Loc.T("왼쪽 Alt");
+                case KeyCode.RightAlt: return Loc.T("오른쪽 Alt");
                 case KeyCode.Return: return "Enter";
                 case KeyCode.UpArrow: return "↑";
                 case KeyCode.DownArrow: return "↓";
@@ -294,7 +315,7 @@ namespace ChessFight.Game
                 case KeyCode.BackQuote: return "`";
             }
             if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9) return ((int)(key - KeyCode.Alpha0)).ToString();
-            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return "숫자판 " + (int)(key - KeyCode.Keypad0);
+            if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9) return Loc.F("숫자판 {0}", (int)(key - KeyCode.Keypad0));
             return key.ToString();
         }
 
@@ -309,7 +330,7 @@ namespace ChessFight.Game
                 case KeyCode.LeftShift: case KeyCode.RightShift: return "Shift";
                 case KeyCode.LeftControl: case KeyCode.RightControl: return "Ctrl";
                 case KeyCode.LeftAlt: case KeyCode.RightAlt: return "Alt";
-                case KeyCode.Mouse2: return "휠";
+                case KeyCode.Mouse2: return Loc.T("휠");
                 case KeyCode.Mouse3: return "M4";
                 case KeyCode.Mouse4: return "M5";
             }
@@ -409,8 +430,8 @@ namespace ChessFight.Game
                 try { Screen.GetDisplayLayout(layout); } catch (Exception) { }
                 for (int i = 0; i < layout.Count; i++)
                     // Windows names them like \\.\DISPLAY1: only a real model name is worth showing.
-                    list.Add($"모니터 {i + 1}" + (string.IsNullOrEmpty(layout[i].name) || layout[i].name.StartsWith("\\") ? "" : $" ({layout[i].name})"));
-                if (list.Count == 0) list.Add("모니터 1");
+                    list.Add(Loc.F("모니터 {0}", i + 1) + (string.IsNullOrEmpty(layout[i].name) || layout[i].name.StartsWith("\\") ? "" : $" ({layout[i].name})"));
+                if (list.Count == 0) list.Add(Loc.F("모니터 {0}", 1));
                 return list;
             }
         }
@@ -455,8 +476,8 @@ namespace ChessFight.Game
         }
 
         // ---------- graphics quality ----------
-        // The built-in renderer's own switches: the quality level ("Mobile", "PC"),
-        // shadows, MSAA and LOD bias. Water, effects and glow have no switch yet.
+        // The quality level ("Mobile", "PC"), shadows, MSAA and LOD bias (PipelineSettings: the URP asset's), and the
+        // render scale (R792, on its own). Water and effects have no switch.
 
         public static readonly string[] Presets = { "낮음", "중간", "높음", "사용자 지정" };
         static readonly int[][] PresetValues = { new[] { 0, 0, 0 }, new[] { 2, 1, 1 }, new[] { 3, 2, 2 } };   // shadow, aa, detail
@@ -488,6 +509,24 @@ namespace ChessFight.Game
             ApplyGraphics();
         }
 
+        // R792, settings → 그래픽 품질 → 렌더 해상도: the share of the screen's pixels the 3D picture is drawn at (50..100 %),
+        // upscaled with FSR; the menus and HUD stay sharp. Not part of the presets: never changed, each quality level
+        // keeps its asset's own (PC 100 %, Mobile - the "낮음" preset - 80 %).
+        public const float MinRenderScale = .5f;
+        public static float RenderScale => Has("renderscale") ? Mathf.Clamp(Float("renderscale", 1f), MinRenderScale, 1f) : PipelineSettings.RenderScale;
+
+        public static void SetRenderScale(float scale)
+        {
+            SetFloat("renderscale", Mathf.Clamp(scale, MinRenderScale, 1f));
+            PipelineSettings.SetRenderScale(RenderScale);
+        }
+
+        public static void ResetRenderScale()
+        {
+            Forget("renderscale");
+            PipelineSettings.RestoreRenderScale();
+        }
+
         static void ApplyGraphics()
         {
             int levels = QualitySettings.names.Length;
@@ -496,6 +535,8 @@ namespace ChessFight.Game
             if (Has("shadow")) PipelineSettings.SetShadows(Shadow);
             if (Has("aa")) PipelineSettings.SetMsaa(new[] { 1, 2, 4, 8 }[Mathf.Clamp(Antialias, 0, 3)]);
             if (Has("detail")) QualitySettings.lodBias = new[] { .6f, 1f, 1.6f }[Mathf.Clamp(Detail, 0, 2)];
+            // R792: a quality level carries its own asset, and with it its render scale; keep the player's.
+            if (Has("renderscale")) PipelineSettings.SetRenderScale(RenderScale);
             // A quality level carries its own vsync; keep the player's.
             if (Has("vsync")) QualitySettings.vSyncCount = Bool("vsync", true) ? 1 : 0;
         }

@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $Copy = 'C:\유니티\ChessFight_TestCopy'
 $UnityEditor = 'C:/Program Files/Unity/Hub/Editor/6000.3.11f1/Editor'
-$skipDirs = @('.git', 'Temp', 'Logs', 'obj', '.vs', '.vscode', 'Library')
+$skipDirs = @('.git', 'Temp', 'Logs', 'obj', '.vs', '.vscode', 'Library', 'UserSettings')   # R727: UserSettings is not in git - a worktree has none, and mirroring it away breaks the copy's Editor search (an exception in Play)
 $skipFiles = @('*.csproj', '*.sln', '*.slnx', '*.blend', '*.blend1')
 Write-Host "Bringing the copy up to date: $Copy"
 robocopy $root $Copy /MIR /XD @skipDirs /XF @skipFiles /R:1 /W:1 /MT:16 /NP /NFL /NDL | Out-Null

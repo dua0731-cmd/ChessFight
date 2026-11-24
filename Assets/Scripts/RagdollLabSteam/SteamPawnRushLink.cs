@@ -63,7 +63,7 @@ namespace ChessFight.RagdollLab.Net
     /// Not yet: bots only stand at the start.
     /// </summary>
     [DefaultExecutionOrder(-150)]
-    public sealed class SteamPawnRushLink : MonoBehaviour
+    public sealed partial class SteamPawnRushLink : MonoBehaviour
     {
         const int Channel = 34;                 // 31 capsule motion, 32 lab, 33 sword fight
         // R306: the snapshots go on a schedule at the host's rate (SnapshotRate: 60 a second for a few players, else 30), the
@@ -159,6 +159,13 @@ namespace ChessFight.RagdollLab.Net
             public byte DevClearSeq;
             // Host only (R529): the last flight cheat press heard from this player (TypeDevFly's number).
             public byte DevFlySeq;
+            // R786 (SteamPawnRushLink.Unstuck.cs): host only - how long it has pushed without getting anywhere, the last
+            // ask heard, when it last went back, and the way back waiting (when, where).
+            public readonly StuckWatch Stuck = new StuckWatch();
+            public byte UnstuckSeq;
+            public float UnstuckUsed = -1f, UnstuckTime = -1f;
+            public Vector3 UnstuckAt;
+            public Quaternion UnstuckRotation;
         }
 
         // What the match runs on (R508): course 01 or a section round.
@@ -342,6 +349,7 @@ namespace ChessFight.RagdollLab.Net
             WaterZone.Entered += OnWater;
             TeamZone.Intruded += OnIntruded;
             RagdollPawn.SkillFx += OnPawnRushFx;
+            RagdollPawn.SkillFx += OnRecordFx;
             // R514: this PC's stamina, the bar the offline playtest shows (the playtest is off in a match); on once the race goes.
             staminaBar = gameObject.AddComponent<MatchStaminaBar>();
             staminaBar.enabled = false;
@@ -381,8 +389,42 @@ namespace ChessFight.RagdollLab.Net
             routeLine = Debug.isDebugBuild ? SteamRoute.Line(session, routes) : "";
         }
 
+        // R736: this player's match record. Armed once the match has started with this player seated (a spectator has
+        // none); the race's end writes it (CrownFinish), and the link going away before that writes "나감".
+        void NoteRecord()
+        {
+            if (Spectating || !Started() || !runners.TryGetValue(session.Self, out var me)) return;
+            // R745: with whether it is a ranked match (the room's word, the same on every PC), and the "나감" held from now.
+            MatchRecords.Arm(session.Match, GameModes.KingRush.Key, session.RankedMatch);
+            int ours = 0, theirs = 0;
+            foreach (var r in runners.Values) { if (r.Team == me.Team) ours++; else theirs++; }
+            MatchRecords.Note(me.Pawn != null ? me.Pawn.Piece : PieceKind.Pawn, ours, theirs);
+        }
+
+        // R742: this player's skill uses, dives and grabs for the match record's detail. Every PC sees each moment once
+        // (the host where it happens, a client as the host's moment is played back to it).
+        void OnRecordFx(SkillFxEvent e)
+        {
+            var log = MatchRecords.Log;
+            if (log == null || e.by == null || !runners.TryGetValue(session.Self, out var me) || me.Pawn != e.by) return;
+            switch (e.kind)
+            {
+                case SkillFxKind.CourseDive: log.Dives++; break;
+                case SkillFxKind.CourseGrab: log.Grabs++; break;
+                case SkillFxKind.QueenBlast:
+                case SkillFxKind.RookThrow:
+                case SkillFxKind.BishopRopeThrow:
+                case SkillFxKind.KnightLeap:
+                case SkillFxKind.PawnStep:
+                case SkillFxKind.KingCall:
+                    log.Skills++;
+                    break;
+            }
+        }
+
         void OnDestroy()
         {
+            MatchRecords.Abandon();
             requests?.Dispose();
             controls?.Disable();
             Checkpoint.Reached -= OnCheckpoint;
@@ -392,6 +434,7 @@ namespace ChessFight.RagdollLab.Net
             WaterZone.Entered -= OnWater;
             TeamZone.Intruded -= OnIntruded;
             RagdollPawn.SkillFx -= OnPawnRushFx;
+            RagdollPawn.SkillFx -= OnRecordFx;
             if (finish != null) finish.Decided -= OnDecided;
             // R704: the room's flow rules end with its match (an offline course after it plays the game as it was).
             PawnRushRules.Current = default;
@@ -618,6 +661,8 @@ namespace ChessFight.RagdollLab.Net
                 r.Sequence = 0;
                 r.RespawnTime = -1f;
                 r.Synced = r.AckSet = false;
+                r.UnstuckTime = -1f;   // R786: the way back waiting went with the old host, like its respawns
+                r.Stuck.Reset();
                 r.Jump = r.Shove = r.Ability = r.Ability2 = r.Skill = 0;
             }
             pending = default;
@@ -664,6 +709,7 @@ namespace ChessFight.RagdollLab.Net
             if (Spectating) Watch();
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
+            NoteRecord();
             // A client's skill timers run before this frame's packets overwrite them.
             if (!authority)
                 foreach (var r in runners.Values)
@@ -677,6 +723,8 @@ namespace ChessFight.RagdollLab.Net
             // mini-game - on the host at once, from a client through the host (only the host judges the mini-games).
             if (Debug.isDebugBuild && LegacyKeys.Down(KeyCode.F6) && !ChatBox.KeysHeld) AskMiniGameDone();
             if (Debug.isDebugBuild && DevCheats.FlightKey != KeyCode.None && LegacyKeys.Down(DevCheats.FlightKey) && !ChatBox.KeysHeld) AskFlight();
+            // R786: stuck pawns (the host watches all, this PC its own for the prompt) and the way back.
+            StepUnstuck(local);
             if (authority)
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
@@ -726,12 +774,20 @@ namespace ChessFight.RagdollLab.Net
             float now = Time.realtimeSinceStartup;
             foreach (var r in runners.Values)
             {
-                if (r.Id == session.Self) continue;
+                if (r.Id == session.Self)
+                {
+                    if (r.Pawn != null) r.Pawn.SkillViewLag = 0f;
+                    continue;
+                }
                 if (r.Bot || r.InputAt < 0f || now - r.InputAt > InputTimeout)
                 {
+                    r.Pawn.SkillViewLag = 0f;
                     r.Pawn.SetInput(default);
                     continue;
                 }
+                // R819: how old this player's picture of the others is (its round trip and playback delay, as it reports them):
+                // the skills' target searches look that far back too (RagdollPawn.SkillLag.cs).
+                r.Pawn.SkillViewLag = SkillLag.Seconds(r.Input.roundTripMs, r.Input.delayMs);
                 Played(r, now);
                 var input = r.Input.Held();
                 input.interact = false;   // F is the skill key on this course
@@ -904,6 +960,7 @@ namespace ChessFight.RagdollLab.Net
 
         void OnGUI()
         {
+            UnstuckGui();   // R786
             if (session == null || !session.Started || session.Match == 0 || !Spectating || ended || !Started() || LoadingScreenView.Showing) return;
             if (!runners.TryGetValue(watchId, out var r) || r.Pawn == null) return;
             float unit = Screen.height / 1080f;
@@ -1250,6 +1307,7 @@ namespace ChessFight.RagdollLab.Net
             }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevClear) { ReceiveDevClear(r, bytes); return; }
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevFly) { ReceiveDevFly(r, bytes); return; }
+            if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeUnstuck) { ReceiveUnstuck(r, bytes); return; }
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;
             if (r.Sequence != 0 && !RagdollNetProtocol.Newer(sequence, r.Sequence)) return;   // overtaken: its counts are stale
             if (!r.Synced)

@@ -87,6 +87,8 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            // JY-gfx: the sets read with derivatives taken before the branches below (CFSurfaceGradients).
+            #define CF_SURFACE_GRAD
             #include "Assets/Shaders/URP/CFLit.hlsl"
 
             float hash3(float3 p) { p = frac(p * 0.3183099 + 0.1); p *= 17.0; return frac(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -135,6 +137,7 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
             half4 frag(CFLitVaryings i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
+                CFSurfaceGradients(i.positionWS);
                 float3 p = i.positionWS;
                 float3 n = normalize(i.normalWS);
                 // Worked out before the branches (derivatives): CoursePattern's checker (light where floor(x) + floor(z)
@@ -172,7 +175,8 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
                         metal = goldK * _GoldMetallic;
                         gloss = lerp(gloss, _GoldSmoothness, goldK);
                     }
-                    return CFShade(top, albedo, metal, gloss, 1);
+                    // JY-gfx: the polished checker wears only a faint surface.
+                    return CFShadeSet(top, albedo, metal, gloss, 1, CF_SET_PAINT, 0.4);
                 }
                 if (n.y > _EdgeCos)
                     return CFShade(i, _GoldColor.rgb * (0.94 + 0.12 * cloud), _GoldMetallic, _GoldSmoothness, 1);

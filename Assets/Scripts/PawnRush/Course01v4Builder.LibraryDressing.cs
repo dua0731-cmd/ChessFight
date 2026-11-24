@@ -194,12 +194,17 @@ namespace ChessFight.PawnRush
                 if (light.type == LightType.Directional) continue;
                 light.intensity = 6f;
                 light.range = Mathf.Min(light.range, 9f);
+                // R809 (the 11-23 build test's "Reduced additional punctual light shadows resolution by 4 to make 96 shadow
+                // maps fit"; Tools/SectionLightProbe): the FBX's lanterns came in with hard shadows - 16 point lights, six
+                // maps each, all at once over ~2,900 casters, so URP quartered every small light's shadow in the round.
+                // Lantern glow without shadows, as the game's other lamps (MiniGameFixtures, the yard's lamps).
+                light.shadows = LightShadows.None;
                 lamps++;
             }
             var summary = new System.Text.StringBuilder();
             foreach (var pair in counts) summary.Append(" ").Append(pair.Key).Append(" ").Append(pair.Value);
             Debug.Log("[작전 회의실] 회색 점토 칠함: 한 재질 " + looks + "개(" + summary.ToString().Trim() + "), 부품별 소품 " + props +
-                      "개, 체스 칸 " + tiles.Count + "개 · 깃발 " + hidden + "개 끔, 등불 빛 " + lamps + "개 6으로");
+                      "개, 체스 칸 " + tiles.Count + "개 · 깃발 " + hidden + "개 끔, 등불 빛 " + lamps + "개 6으로 · 그림자 끔");
         }
 
         static (Kind, Color) LibraryLookFor(string name, Renderer r)

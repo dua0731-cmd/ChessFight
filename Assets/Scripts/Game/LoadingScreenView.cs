@@ -443,14 +443,14 @@ namespace ChessFight.Game
                 if (isIn) joined[team]++;
                 if (isReady) ready[team]++;
                 float age = card.OnAt >= 0 ? now - card.OnAt : -1;
-                card.Status.text = !isIn ? "찾는 중" : age < ArrivedSeconds ? "입장!"
-                                 : State.Matching ? "대기 중" : isReady ? "준비 완료" : "불러오는 중";
+                card.Status.text = !isIn ? Loc.T("찾는 중") : age < ArrivedSeconds ? Loc.T("입장!")
+                                 : State.Matching ? Loc.T("대기 중") : isReady ? Loc.T("준비 완료") : Loc.T("불러오는 중");
                 // R533: under the name while matching, the player's role in the room (its manager, the PC that
                 // simulates it) in place of the team and piece; a development build adds each PC's machine score
                 // (who simulates, and why).
                 string role = isIn && State.Matching ? Role(i) : "";
                 int score = isIn && State.Matching && i < State.Scores.Count ? State.Scores[i] : 0;
-                string sub = score > 0 ? (role != "" ? role + " · " + score : "성능 " + score) : role != "" ? role : card.SubBase;
+                string sub = score > 0 ? (role != "" ? role + " · " + score : Loc.F("성능 {0}", score)) : role != "" ? role : card.SubBase;
                 if (card.Sub.text != sub) card.Sub.text = sub;
                 card.Sub.EnableInClassList("load-sub-role", role != "");
                 // The manager's buttons take the status label's place: a card is too narrow for both and a name.
@@ -469,7 +469,7 @@ namespace ChessFight.Game
                     SetCard(empty, false, false, "", now);
                     empty.Root.RemoveFromClassList("load-me");
                     empty.Plate.Set(false, true);
-                    empty.Status.text = "찾는 중";
+                    empty.Status.text = Loc.T("찾는 중");
                     empty.Status.style.display = DisplayStyle.Flex;
                     if (empty.Sub.text != "") empty.Sub.text = "";
                     empty.Sub.RemoveFromClassList("load-sub-role");
@@ -479,15 +479,15 @@ namespace ChessFight.Game
                 }
                 for (int k = 0; k < cards[team].Count; k++) cards[team][k].Root.style.display = k < shown ? DisplayStyle.Flex : DisplayStyle.None;
                 if (counts[team] != null)
-                    counts[team].text = State.Matching ? joined[team] + " / " + Mathf.Max(shown, 1) + " 입장"
-                                                       : ready[team] + " / " + Mathf.Max(seen[team], 1) + " 준비";
+                    counts[team].text = State.Matching ? Loc.F("{0} / {1} 입장", joined[team], Mathf.Max(shown, 1))
+                                                       : Loc.F("{0} / {1} 준비", ready[team], Mathf.Max(seen[team], 1));
             }
         }
 
         // R533: what a card says of its player while matching: the room's manager, the PC that simulates it, both
         // ("" for anyone else).
         string Role(int entry) =>
-            entry == State.Manager ? (entry == State.Host ? "방장 · 물리 담당" : "방장") : entry == State.Host ? "물리 담당" : "";
+            entry == State.Manager ? (entry == State.Host ? Loc.T("방장 · 물리 담당") : Loc.T("방장")) : entry == State.Host ? Loc.T("물리 담당") : "";
 
         // R533: the manager's two buttons on a card, shown only on the manager's own screen and only for a player it
         // may hand the role to or put out. True when the card shows either.
@@ -507,15 +507,15 @@ namespace ChessFight.Game
             card.Actions.style.display = give || kick || move ? DisplayStyle.Flex : DisplayStyle.None;
             if (!give) card.GiveArmedAt = -10;
             if (!kick) card.KickArmedAt = -10;
-            Arm(card.Give, give && now - card.GiveArmedAt < ArmSeconds, "양도", "load-card-give-armed");
-            Arm(card.Kick, kick && now - card.KickArmedAt < ArmSeconds, "강퇴", "load-card-kick-armed");
+            Arm(card.Give, give && now - card.GiveArmedAt < ArmSeconds, Loc.T("양도"), "load-card-give-armed");
+            Arm(card.Kick, kick && now - card.KickArmedAt < ArmSeconds, Loc.T("강퇴"), "load-card-kick-armed");
             return give || kick || move;
         }
 
         // An armed button asks once more ("확인") in its own colour; left alone it goes back.
         static void Arm(Button button, bool armed, string label, string armedClass)
         {
-            string text = armed ? "확인" : label;
+            string text = armed ? Loc.T("확인") : label;
             if (button.text != text) button.text = text;
             button.EnableInClassList(armedClass, armed);
         }
@@ -542,7 +542,7 @@ namespace ChessFight.Game
                 card.SubBase = present ? (card.Team == 0 ? "WHITE · " : "BLACK · ") + (bot ? "AI" : kind.ToString().ToUpperInvariant()) : "";
                 card.Sub.text = card.SubBase;
             }
-            string shown = present ? name : "빈 자리";
+            string shown = present ? name : Loc.T("빈 자리");
             if (card.Name.text != shown) card.Name.text = shown;
         }
 
@@ -554,7 +554,7 @@ namespace ChessFight.Game
                 float x = age / CardEnter;
                 float back = 1 + 2.70158f * Mathf.Pow(x - 1, 3) + 1.70158f * Mathf.Pow(x - 1, 2);
                 card.Root.style.translate = new Translate(card.Side * -30f * (1 - back), 0);
-                card.Flash.style.opacity = .55f * (1 - x);
+                card.Flash.style.opacity = .55f * GameSettings.FlashScale * (1 - x);
             }
             else
             {
@@ -579,7 +579,7 @@ namespace ChessFight.Game
             card.Root.Add(card.Avatar);
             var names = new VisualElement { pickingMode = PickingMode.Ignore };
             names.AddToClassList("load-names");
-            card.Name = new Label("빈 자리") { pickingMode = PickingMode.Ignore };
+            card.Name = new Label(Loc.T("빈 자리")) { pickingMode = PickingMode.Ignore };
             card.Name.AddToClassList("load-name");
             RuntimePanels.Display(card.Name);
             card.Sub = new Label("") { pickingMode = PickingMode.Ignore };
@@ -593,7 +593,7 @@ namespace ChessFight.Game
             // R533: the manager's buttons for this player (hidden until ShowActions says otherwise).
             card.Actions = new VisualElement { pickingMode = PickingMode.Ignore };
             card.Actions.AddToClassList("load-card-actions");
-            card.Give = new Button { text = "양도", focusable = false };
+            card.Give = new Button { text = Loc.T("양도"), focusable = false };
             card.Give.AddToClassList("a-btn"); card.Give.AddToClassList("a-sm"); card.Give.AddToClassList("load-card-btn");
             // The first click arms the button, the second within ArmSeconds does it; arming one lets the other go.
             card.Give.clicked += () =>
@@ -603,7 +603,7 @@ namespace ChessFight.Game
                 if (Time.unscaledTime - card.GiveArmedAt < ArmSeconds) { card.GiveArmedAt = -10; GiveRequested?.Invoke(card.Key); }
                 else card.GiveArmedAt = Time.unscaledTime;
             };
-            card.Kick = new Button { text = "강퇴", focusable = false };
+            card.Kick = new Button { text = Loc.T("강퇴"), focusable = false };
             card.Kick.AddToClassList("a-btn"); card.Kick.AddToClassList("a-sm"); card.Kick.AddToClassList("a-danger"); card.Kick.AddToClassList("load-card-btn");
             card.Kick.clicked += () =>
             {
@@ -613,7 +613,7 @@ namespace ChessFight.Game
                 else card.KickArmedAt = Time.unscaledTime;
             };
             // R694: the manager moves this player on (the session picks where to).
-            card.Move = new Button { text = "옮기기", focusable = false };
+            card.Move = new Button { text = Loc.T("옮기기"), focusable = false };
             card.Move.AddToClassList("a-btn"); card.Move.AddToClassList("a-sm"); card.Move.AddToClassList("load-card-btn");
             card.Move.clicked += () => { if (card.Key != 0) MoveRequested?.Invoke(card.Key); };
             card.Actions.Add(card.Move);

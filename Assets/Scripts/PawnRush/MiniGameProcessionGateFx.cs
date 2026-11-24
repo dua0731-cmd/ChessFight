@@ -13,6 +13,9 @@ namespace ChessFight.PawnRush
         Part leftRod, rightRod, leftCloth, rightCloth;
 
         protected override float Length => 3.4f;
+        // R772 (user 11-22, "G랑 H 시작"): the rods' clack and the banners' drop over the door rising, in this moment's
+        // time (ArtSource/PawnRush/Sfx/compose_gates.py)
+        protected override string GateSound => "sfx_procession_gate";
 
         protected override void Build()
         {

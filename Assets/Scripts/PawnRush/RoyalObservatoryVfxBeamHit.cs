@@ -243,8 +243,14 @@ namespace ChessFight.PawnRush
             s.sparks.GetPropertyBlock(block);
             block.SetFloat(FloorId, -transform.InverseTransformPoint(body).y);   // the deck, in the strike's frame
             s.sparks.SetPropertyBlock(block);
-            if (MiniGameBase.LocalDriver is Component me && me != null && actor.gameObject == me.gameObject) struckAt = Time.time;
+            bool mine = MiniGameBase.LocalDriver is Component me && me != null && actor.gameObject == me.gameObject;
+            if (mine) struckAt = Time.time;
+            // R742: the crackle on the thrown pawn (every PC) and, for its own player, the hit
+            if (sound == null) sound = RoyalObservatorySound.For(this);
+            if (sound != null) sound.BeamStruck(body, mine);
         }
+
+        RoyalObservatorySound sound;
 
         void LateUpdate()
         {

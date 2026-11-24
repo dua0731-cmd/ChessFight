@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -135,7 +136,7 @@ namespace ChessFight.Game
             else versusBackdrop.style.backgroundColor = StripBase;
             RStretch(RLayer(versusBackdrop), revealVignette);
 
-            versusTitle = BuildMatchAnnouncement(versusBox, "폰 러쉬", 16f, 36f, true);
+            versusTitle = BuildMatchAnnouncement(versusBox, Loc.T("폰 러쉬"), 16f, 36f, true);
 
             versusTeams = new RSlant(14f, Ebony);
             versusTeams.style.position = Position.Absolute;
@@ -147,6 +148,8 @@ namespace ChessFight.Game
             versusTeamsText.style.paddingRight = 30f;
             versusTeamsText.style.paddingTop = 16f;
             versusTeamsText.style.paddingBottom = 14f;
+            // R750: never narrower than its words (the English counts, "White 6 : Black 6", ran past the plate).
+            versusTeamsText.style.flexShrink = 0f;
             versusTeamsText.enableRichText = true;
             versusBox.Add(versusTeams);
 
@@ -185,7 +188,7 @@ namespace ChessFight.Game
                 versusCoats.Add(TextCoat.Apply(letter, VsWide, LetterSize, new Color(1f, .95f, .84f, .32f), new Color(1f, .97f, .9f, .85f), 24f, 124f));
             }
             float duelMid = PanelTall - BandTall / 2f;
-            var duel = RLabel(versusBladeBox, "대결", 24f, Ivory, true);
+            var duel = RLabel(versusBladeBox, Loc.T("대결"), 24f, Ivory, true);
             RPlace(duel, PanelLean * (.5f - duelMid / PanelTall), duelMid - 16f, VsWide, 32f);
             // the reveal's title comes in over this scene as it swaps (SyncVersus)
             revealTitle?.BringToFront();
@@ -217,7 +220,7 @@ namespace ChessFight.Game
             for (int i = 0; i < State.Teams.Count; i++) (State.Teams[i] == 0 ? white : black).Add(i);
             if (white.Count > VersusStage.PerTeam) white.RemoveRange(VersusStage.PerTeam, white.Count - VersusStage.PerTeam);
             if (black.Count > VersusStage.PerTeam) black.RemoveRange(VersusStage.PerTeam, black.Count - VersusStage.PerTeam);
-            versusTeamsText.text = $"백 <color=#B88A3E>{white.Count}</color>   :   흑 <color=#B88A3E>{black.Count}</color>";
+            versusTeamsText.text = Loc.T("백") + $" <color=#B88A3E>{white.Count}</color>   :   " + Loc.T("흑") + $" <color=#B88A3E>{black.Count}</color>";
 
             int total = white.Count + black.Count;
             AddSide(white, SideWhite, false, 0, total);
@@ -310,7 +313,10 @@ namespace ChessFight.Game
             else RuntimePanels.Display(number);
             number.style.unityTextAlign = TextAnchor.MiddleLeft;
             RPlace(number, 12f, bandTop + 12f, w - 16f, 58f);
-            string tag = me ? "나" : (black ? "흑" : "백") + (bot ? " · BOT" : "");
+            // R750: a strip is narrow - where the colour's name is long ("Black"), a bot's strip says only "BOT" (its side
+            // already shows the colour); Korean keeps "흑 · BOT".
+            string color = black ? Loc.T("흑") : Loc.T("백");
+            string tag = me ? Loc.T("나") : bot ? (color.Length > 2 ? "BOT" : color + " · BOT") : color;
             var team = RLabel(s.Inside, tag, me ? 20f : 15f, me ? Brass : TagColor, true);
             team.style.unityTextAlign = TextAnchor.MiddleLeft;
             RPlace(team, 10f, bandTop + 78f, w - 12f, 24f);

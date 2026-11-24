@@ -32,12 +32,17 @@ namespace ChessFight.Gameplay
     // walls, 0 `blendMetres` out, eased over half a second, and at 0 the scene's own are put back exactly as they were
     // noted (the carriage yard's way, PawnRush YardAtmosphere). The windows' glow and shafts, the probes and the shell's
     // shadows are the course's own objects and stay. In the course's own scene the weight is 1 throughout, as before.
+    //
+    // R734 (the user, 11-21: every join between two rooms to change its light smoothly): the sun, the ambient light and
+    // the haze go through the one mixer of every place's light (Game ZoneLight) - the ambient as the sky's own harmonics,
+    // so it no longer jumps where the library's light comes in and goes, and two places fading at once share the light
+    // instead of each putting the other's back - and the fade reaches 24 m out (was 8) with a two-second ease.
     public sealed class RoyalLibraryLighting : MonoBehaviour
     {
         [Tooltip("The library's own light (off: the scene's light as it was)")]
         public bool on = true;
         [Tooltip("In a round: metres outside the course's outer walls over which its light fades out")]
-        [Min(.5f)] public float blendMetres = 8f;
+        [Min(.5f)] public float blendMetres = 24f;
 
         [Header("Sun")]
         [Tooltip("The sun's height over the horizon (deg): late afternoon, long shafts")]
@@ -112,15 +117,11 @@ namespace ChessFight.Gameplay
         // The course's outer walls in its own frame (x ±160, z -151 ~ 171, the hall's floor to its roof).
         static readonly Bounds CourseArea = new Bounds(new Vector3(0f, 16f, 10f), new Vector3(320f, 92f, 322f));
         bool zoned, built, applied;
-        float weight, lastApplied = -1f, lookForView;
-        Camera view;
+        float weight, lastApplied = -1f;
         ZoneGrade grade;
         readonly List<(Light light, float strength)> fills = new List<(Light, float)>();
-        // The scene's own, noted the moment the library's light comes in.
-        Light sun;
-        Color sunColor0; float sunIntensity0, shadowStrength0; Quaternion sunRotation0; LightShadows shadows0;
-        AmbientMode ambientMode0; Color sky0, equator0, ground0, flat0, skyFrom, equatorFrom, groundFrom; SphericalHarmonicsL2 probe0;
-        bool fog0; FogMode fogMode0; Color fogColor0; float fogStart0, fogEnd0, fogDensity0;
+        // R734: the sun, ambient and haze in the mixer of every place's light (Game ZoneLight).
+        ZoneLight zone;
 
         IEnumerator Start()
         {
@@ -154,7 +155,9 @@ namespace ChessFight.Gameplay
                 Probe(rig, "Gallery probe", new Vector3(0f, 6f, -80f), new Vector3(0f, 3.5f, -80f), new Vector3(76f, 54f, 140f));
             }
             built = true;
-            if (!zoned) { weight = 1f; Capture(); Apply(1f); }
+            zone = ZoneLight.Add("Royal Library");
+            foreach (var (light, _) in fills) ZoneLight.Own(light);
+            Look();
             Debug.Log("[왕의 서재 조명] 해 · 하늘빛 · 안개 · 색 보정" + (probes ? " · 반사 프로브 2" : "") + ", 창 " + windows
                       + "개(" + (windowGlow ? "빛" : "") + (shafts ? " · 빛줄기" : "") + "), 그림자 끈 벽 · 천장 " + shell + "개"
                       + (zoned ? " — 판 구간: 카메라가 서재 안에 있을 때만" : ""));
@@ -164,105 +167,43 @@ namespace ChessFight.Gameplay
 
         // ------------------------------------------------------------------ the library's light over the scene's
 
-        // In a round: how far in the camera is (1 inside the outer walls, 0 blendMetres out), eased in time so a camera
-        // that jumps (a respawn, a spectator switch) does not flick the light.
+        // In a round: how far in the camera is (1 inside the outer walls, 0 blendMetres out), eased in time
+        // (ZoneLight.Ease, about two seconds) so a camera that jumps (a respawn, a spectator switch) or a pawn running in
+        // does not flick the light. In the course's own scene: 1 throughout. The sun, ambient and haze are the mixer's
+        // (it runs after this); the fills and the grade are the library's own.
         void LateUpdate()
         {
-            if (!built || !zoned) return;
-            weight = Mathf.MoveTowards(weight, AreaWeight(), Time.unscaledDeltaTime / .5f);
+            if (!built || zone == null) return;
+            Look();
+            weight = zone.Ease(zoned ? ZoneLight.Inside(transform, CourseArea, blendMetres) : 1f);
             if (weight <= .0005f) { if (applied) Restore(); return; }
-            if (!applied) Capture();
+            applied = true;
             if (Mathf.Abs(weight - lastApplied) > .0005f) Apply(weight);
         }
 
-        float AreaWeight()
+        // The library's look as the mixer takes it (read every frame: the fields may be tuned while playing).
+        void Look()
         {
-            if (view == null || !view.isActiveAndEnabled)
-            {
-                if (Time.unscaledTime < lookForView) return weight;
-                lookForView = Time.unscaledTime + 1f;
-                view = Camera.main;
-                if (view == null)
-                    foreach (var c in Camera.allCameras)
-                        if (c.cameraType == CameraType.Game && c.targetTexture == null) { view = c; break; }
-                if (view == null) return 0f;
-            }
-            var p = transform.InverseTransformPoint(view.transform.position);
-            float d = Vector3.Distance(CourseArea.ClosestPoint(p), p);
-            return 1f - Mathf.SmoothStep(0f, 1f, d / Mathf.Max(.5f, blendMetres));
+            zone.TurnSun = true;
+            zone.SunRotation = transform.rotation * Quaternion.Euler(sunHeight, sunYaw, 0f);
+            zone.SunColor = sunColor;
+            zone.SunIntensity = sunIntensity;
+            zone.ShadowStrength = shadowStrength;
+            zone.SoftShadows = true;
+            zone.Sky = ambientSky;
+            zone.Equator = ambientEquator;
+            zone.Ground = ambientGround;
+            zone.Fog = haze;
+            zone.FogColor = hazeColor;
+            zone.FogStart = hazeStart;
+            zone.FogEnd = hazeEnd;
         }
 
-        bool IsFill(Light l)
-        {
-            foreach (var f in fills) if (f.light == l) return true;
-            return false;
-        }
-
-        Light FindSun()
-        {
-            if (RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional && !IsFill(RenderSettings.sun)) return RenderSettings.sun;
-            foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None))
-                if (l.type == LightType.Directional && !IsFill(l)) return l;
-            return null;
-        }
-
-        void Capture()
-        {
-            applied = true;
-            lastApplied = -1f;
-            sun = FindSun();
-            if (sun != null)
-            {
-                sunColor0 = sun.color; sunIntensity0 = sun.intensity; shadowStrength0 = sun.shadowStrength;
-                sunRotation0 = sun.transform.rotation; shadows0 = sun.shadows;
-            }
-            ambientMode0 = RenderSettings.ambientMode;
-            sky0 = RenderSettings.ambientSkyColor; equator0 = RenderSettings.ambientEquatorColor; ground0 = RenderSettings.ambientGroundColor;
-            flat0 = RenderSettings.ambientLight; probe0 = RenderSettings.ambientProbe;
-            switch (ambientMode0)
-            {
-                case AmbientMode.Trilight: skyFrom = sky0; equatorFrom = equator0; groundFrom = ground0; break;
-                case AmbientMode.Flat: skyFrom = equatorFrom = groundFrom = flat0; break;
-                default:
-                    // The sky's (or a custom) ambient: what it gives straight up, sideways and straight down.
-                    var dirs = new[] { Vector3.up, new Vector3(.7071f, 0f, .7071f), Vector3.down };
-                    var got = new Color[3];
-                    probe0.Evaluate(dirs, got);
-                    skyFrom = got[0]; equatorFrom = got[1]; groundFrom = got[2];
-                    break;
-            }
-            fog0 = RenderSettings.fog; fogMode0 = RenderSettings.fogMode; fogColor0 = RenderSettings.fogColor;
-            fogStart0 = RenderSettings.fogStartDistance; fogEnd0 = RenderSettings.fogEndDistance; fogDensity0 = RenderSettings.fogDensity;
-        }
-
-        // w 1 = the library's light as R7 set it (the sun turned low through the right windows, trilight, haze, fills, grade).
+        // w 1 = the library's fills and grade whole (the sun turned low through the right windows, the trilight and the
+        // haze are the mixer's).
         void Apply(float w)
         {
             lastApplied = w;
-            if (sun != null)
-            {
-                sun.transform.rotation = Quaternion.Slerp(sunRotation0, transform.rotation * Quaternion.Euler(sunHeight, sunYaw, 0f), w);
-                sun.color = Color.Lerp(sunColor0, sunColor, w);
-                sun.intensity = Mathf.Lerp(sunIntensity0, sunIntensity, w);
-                sun.shadowStrength = Mathf.Lerp(shadowStrength0, shadowStrength, w);
-                sun.shadows = LightShadows.Soft;
-                RenderSettings.sun = sun;
-            }
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = Color.Lerp(skyFrom, ambientSky, w);
-            RenderSettings.ambientEquatorColor = Color.Lerp(equatorFrom, ambientEquator, w);
-            RenderSettings.ambientGroundColor = Color.Lerp(groundFrom, ambientGround, w);
-            if (haze)
-            {
-                // From the scene's own linear fog, or from none (pushed past everything) when it had none.
-                bool fromLinear = fog0 && fogMode0 == FogMode.Linear;
-                RenderSettings.fog = true;
-                RenderSettings.fogMode = FogMode.Linear;
-                RenderSettings.fogColor = Color.Lerp(fog0 ? fogColor0 : hazeColor, hazeColor, w);
-                RenderSettings.fogStartDistance = Mathf.Lerp(fromLinear ? fogStart0 : 3000f, hazeStart, w);
-                RenderSettings.fogEndDistance = Mathf.Lerp(fromLinear ? fogEnd0 : 6000f, hazeEnd, w);
-            }
-            else RenderSettings.fog = fog0 && w < .999f;
             foreach (var (light, strength) in fills)
             {
                 if (light == null) continue;
@@ -276,16 +217,6 @@ namespace ChessFight.Gameplay
         {
             applied = false;
             lastApplied = -1f;
-            if (sun != null)
-            {
-                sun.color = sunColor0; sun.intensity = sunIntensity0; sun.shadowStrength = shadowStrength0;
-                sun.transform.rotation = sunRotation0; sun.shadows = shadows0;
-            }
-            RenderSettings.ambientMode = ambientMode0;
-            RenderSettings.ambientSkyColor = sky0; RenderSettings.ambientEquatorColor = equator0; RenderSettings.ambientGroundColor = ground0;
-            RenderSettings.ambientLight = flat0; RenderSettings.ambientProbe = probe0;
-            RenderSettings.fog = fog0; RenderSettings.fogMode = fogMode0; RenderSettings.fogColor = fogColor0;
-            RenderSettings.fogStartDistance = fogStart0; RenderSettings.fogEndDistance = fogEnd0; RenderSettings.fogDensity = fogDensity0;
             foreach (var (light, _) in fills) if (light != null) light.enabled = false;
             if (grade != null) grade.Weight = 0f;
         }
@@ -294,6 +225,7 @@ namespace ChessFight.Gameplay
         {
             if (applied) Restore();
             weight = 0f;
+            if (zone != null) zone.Weight = 0f;
         }
 
         int ShellShadowsOff()
@@ -490,6 +422,7 @@ namespace ChessFight.Gameplay
 
         void OnDestroy()
         {
+            zone?.Remove();
             foreach (var o in made)
                 if (o != null) Destroy(o);
         }

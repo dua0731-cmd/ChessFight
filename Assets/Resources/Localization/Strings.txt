@@ -1,0 +1,1119 @@
+# ChessFight string table (R747, Docs/Architecture/UI.md, "언어 · 번역"). Tab-separated, UTF-8.
+# Column 1 is the Korean text exactly as the code or UXML has it - it is the key. One column per language after it.
+# An empty cell is "not translated yet": the game shows the Korean. In a cell, \n is a line break, \t a tab, \\ a backslash.
+# {0} {1} are the values Loc.F puts in; a translation may put them in any order but must keep every one.
+# @ready: 1 when a language is complete enough that Steam's or Windows' language may pick it by itself.
+ko	en	zh-Hans	ru
+@ready	1	1	0
+# --- settings window: frame (SettingsHud.uxml, SettingsWindow.Build)
+설정	Settings	设置	Настройки
+설명	Description	说明	Описание
+뒤로	Back	返回	Назад
+바꾸는 즉시 저장돼요	Changes are saved right away	更改后立即保存	Изменения сохраняются сразу
+게임 나가기	Quit game	退出游戏	Выйти из игры
+플레이어	Player	玩家	Игрок
+STEAM 연결됨	STEAM ONLINE	STEAM 已连接	STEAM В СЕТИ
+STEAM 오프라인	STEAM OFFLINE	STEAM 离线	STEAM НЕ В СЕТИ
+{0} 기본값 복원	Reset {0}	恢复{0}默认值	Сброс: {0}
+줄 위에 마우스를 올리면 여기에 설명이 나와요.	Point at a line to see what it does here.	将鼠标移到某一行上，这里会显示说明。	Наведите на строку, чтобы увидеть здесь описание.
+설명이 필요 없는 항목이에요.	This one explains itself.	此项无需说明。	Здесь всё понятно без описания.
+준비 중	Coming soon	即将推出	Скоро
+끔	Off	关	Выкл.
+켬	On	开	Вкл.
+# --- settings window: tabs, pages, sections
+화면	Video	画面	Экран
+소리	Audio	声音	Звук
+조작	Controls	操作	Управление
+게임플레이	Gameplay	游戏玩法	Игра
+소셜	Social	社交	Общение
+접근성	Accessibility	辅助功能	Доступность
+디스플레이	Display	显示	Дисплей
+그래픽 품질	Graphics	画质	Графика
+정보 표시	Info	信息显示	Информация
+볼륨	Volume	音量	Громкость
+기타	Other	其他	Прочее
+음성 채팅	Voice chat	语音聊天	Голосовой чат
+말하는 방식	How you talk	发言方式	Режим микрофона
+크기	Levels	音量大小	Уровни
+마우스	Mouse	鼠标	Мышь
+키 설정	Key bindings	按键设置	Назначение клавиш
+이동	Move	移动	Ход
+행동	Actions	动作	Действия
+카메라	Camera	镜头	Камера
+화면 표시	HUD	界面显示	HUD
+이름과 표시	Names and markers	名称与标记	Имена и метки
+일반	General	常规	Общие
+채팅	Chat	聊天	Чат
+초대	Invite	邀请	Приглашения
+보기 편하게	Comfort	舒适观看	Комфорт
+# --- settings window: R792 (render scale, streamer mode, colour-blind mode; Core StreamerMode · ColourAid)
+렌더 해상도	Render resolution	渲染分辨率	Разрешение рендера
+경기 화면(3D)을 화면 크기의 이 비율로 그린 뒤 FSR로 늘려요. 낮추면 프레임이 크게 오르고 조금 흐려져요. 메뉴와 글자는 그대로 또렷해요. 바꾸지 않으면 '낮음'은 80 %, 나머지는 100 %.	Draws the 3D picture at this share of the screen size, then scales it up with FSR. Lower raises the frame rate a lot and blurs a little. Menus and text stay sharp. Left alone, 'Low' uses 80 % and the rest 100 %.	以屏幕尺寸的此比例绘制 3D 画面，再用 FSR 放大。调低可大幅提升帧率，画面会稍微变模糊。菜单和文字仍然清晰。未更改时，“低”为 80 %，其余为 100 %。	3D-картинка рисуется в этой доле от размера экрана и увеличивается с помощью FSR. Ниже — заметно больше кадров и немного размытия. Меню и текст остаются чёткими. Если не менять: «Низкое» — 80 %, остальные — 100 %.
+방송	Streaming	直播	Трансляция
+스트리머 모드	Streamer mode	主播模式	Режим стримера
+방송할 때 켜요. 아래에서 고른 것을 내 화면에서만 가려요. 다른 사람 화면은 그대로예요.	Turn it on while streaming. It hides what you pick below, on your screen only. Nobody else's screen changes.	直播时开启。只在你的画面上隐藏下面选中的内容，其他人的画面不变。	Включайте на время трансляции. Скрывает выбранное ниже только на вашем экране; у других ничего не меняется.
+다른 사람 이름 가리기	Hide other players' names	隐藏其他玩家名称	Скрывать имена других игроков
+다른 사람 이름이 "플레이어 3"처럼 보이고 Steam 프로필 사진도 가려요: 로비 · 친구 목록 · 방 · 경기 이름표 · 순위 · 결과 · 채팅 · 전적 · 순위표. 내 이름은 그대로. 켜 둔 동안 끝난 경기는 전적에도 그렇게 남아요.	Other players show as "Player 3" and their Steam pictures are hidden: lobby · friends list · room · name tags · standings · results · chat · history · leaderboards. Your own name stays. Matches finished while it is on stay that way in your history.	其他玩家显示为“玩家 3”，并隐藏其 Steam 头像：大厅 · 好友列表 · 房间 · 比赛名牌 · 排名 · 结果 · 聊天 · 战绩 · 排行榜。你自己的名称不变。开启期间结束的比赛在战绩中也会这样保存。	Другие игроки показываются как «Игрок 3», их аватары Steam скрыты: лобби · список друзей · комната · таблички с именами · позиции · итоги · чат · история · рейтинг. Ваше имя остаётся. Матчи, сыгранные в этом режиме, так и сохранятся в истории.
+방 번호 · 파티 코드 가리기	Hide room number · party code	隐藏房间号 · 队伍代码	Скрывать номер комнаты · код группы
+화면에 ●●●●로 보이고, 복사 버튼은 진짜 번호를 그대로 복사해요.	Shows as ●●●●; the copy button still copies the real number.	画面上显示为 ●●●●，复制按钮仍会复制真实号码。	Показывается как ●●●●; кнопка копирования по-прежнему копирует настоящий номер.
+색약 모드	Colorblind mode	色弱模式	Режим для дальтоников
+적색약	Protanopia	红色弱	Протанопия
+녹색약	Deuteranopia	绿色弱	Дейтеранопия
+청색약	Tritanopia	蓝色弱	Тританопия
+경기 · 로비 화면의 색을 고쳐, 구분하기 어려운 색(적색약 · 녹색약: 빨강과 초록, 청색약: 파랑과 노랑)이 갈라져 보이게 해요. 상대 팀 스킬의 빨간색과 경고 색이 잘 보여요. 메뉴와 글자는 그대로예요.	Corrects the colors of the match and lobby pictures so that colors that are hard to tell apart (protanopia · deuteranopia: red and green, tritanopia: blue and yellow) separate. The enemy team's red skills and the warning colors stand out. Menus and text stay as they are.	校正比赛和大厅画面的颜色，让难以区分的颜色（红色弱 · 绿色弱：红与绿，蓝色弱：蓝与黄）分开显示。对方队伍技能的红色和警告色更容易看清。菜单和文字不变。	Корректирует цвета в матче и лобби, чтобы трудноразличимые цвета (протанопия · дейтеранопия: красный и зелёный, тританопия: синий и жёлтый) стали различимы. Красные умения соперников и предупреждающие цвета видны лучше. Меню и текст не меняются.
+색 보정 세기	Color correction strength	色彩校正强度	Сила коррекции цвета
+색약 모드의 세기.	How strong the colorblind mode is.	色弱模式的强度。	Насколько сильно действует режим для дальтоников.
+플레이어 {0}	Player {0}	玩家 {0}	Игрок {0}
+# --- settings window: the language line (R747)
+언어	Language	语言	Язык
+번역 중	in progress	翻译中	в работе
+게임 글자의 언어. 고르지 않으면 Steam에서 이 게임에 정한 언어를 따라요(번역이 끝난 언어만). 아직 번역이 없는 글자는 한국어로 보여요.	The language of the game's text. Until you pick one, the game follows the language set for it in Steam (once that translation is finished). Text not translated yet shows in Korean.	游戏文字的语言。未选择时，将使用 Steam 中为本游戏设置的语言（仅限已完成翻译的语言）。尚未翻译的文字会以韩语显示。	Язык текста в игре. Пока вы его не выбрали, игра берёт язык, заданный для неё в Steam (если перевод на него готов). Ещё не переведённый текст показывается на корейском.
+# ===== lobby (R748): LobbyBootstrap, NetworkHudView, its tabs, rank and record, Core RankText / RecordText
+# --- LobbyBootstrap.cs: toasts
+게임 모드: {0}	Game mode: {0}	游戏模式：{0}	Режим игры: {0}
+{0}님에게 초대를 보냈어요	Invite sent to {0}	已向{0}发送邀请	Приглашение отправлено: {0}
+지금은 초대할 수 없습니다.	You can't invite right now.	现在无法邀请。	Сейчас нельзя пригласить.
+매칭 중에는 이름을 바꿀 수 없어요	You can't change your name while matchmaking	匹配中无法更改名称	Во время подбора нельзя сменить имя
+로비	Lobby	大厅	Лобби
+파티 코드를 복사했어요	Party code copied	已复制小队代码	Код группы скопирован
+방 번호를 복사했어요	Room code copied	已复制房间号	Код комнаты скопирован
+시험 규칙: 탈주 기록을 지웠어요	Test rules: leave record cleared	测试规则：已清除逃跑记录	Тестовые правила: история выходов очищена
+{0}님이 파티에 참가했어요	{0} joined the party	{0}加入了小队	{0} вступает в группу
+{0}님이 파티를 나갔어요	{0} left the party	{0}离开了小队	{0} покидает группу
+파티장이 모드를 {0}(으)로 바꿨어요	The party leader switched the mode to {0}	队长将模式切换为{0}	Лидер группы выбрал режим: {0}
+파티에 참가했어요	You joined the party	你加入了小队	Вы вступили в группу
+# --- LobbyBootstrap.cs: mode names (GameModes.Name, wrapped where the lobby shows them; may duplicate another file's rows)
+폰 러쉬	Pawn Rush	兵卒冲锋	Пешечный рывок
+소드 파이트	Sword Fight	剑斗	Бой на мечах
+# --- LobbyBootstrap.cs: lineup tags and names
+나	Me	我	Я
+파티 준비 중	Setting up party	正在组建小队	Создание группы
+오프라인	Offline	离线	Не в сети
+파티장 · {0}/6	Leader · {0}/6	队长 · {0}/6	Лидер · {0}/6
+대기 중	Waiting	等待中	Ожидание
+# --- LobbyBootstrap.cs: connection details
+연결됨	Connected	已连接	Подключено
+연결 안 됨 - Steam 실행 후 다시 연결	Not connected - start Steam, then reconnect	未连接 - 请启动 Steam 后重新连接	Нет подключения - запустите Steam и подключитесь снова
+입력: {0}	Input: {0}	输入：{0}	Ввод: {0}
+버전 {0}	Version {0}	版本 {0}	Версия {0}
+F8 지연 시뮬레이터 · F9 탈주 기록 지우기	F8 lag simulator · F9 clear leave record	F8 延迟模拟器 · F9 清除逃跑记录	F8 симулятор задержки · F9 сброс истории выходов
+F9 탈주 기록 지우기	F9 clear leave record	F9 清除逃跑记录	F9 сброс истории выходов
+# --- LobbyBootstrap.cs: mode card and play button
+진행 중인 경기가 끝나기 전에는 모드를 바꿀 수 없습니다.	You can't change the mode until your match in progress ends.	进行中的比赛结束前无法更改模式。	Нельзя сменить режим, пока не закончится текущий матч.
+파티장만 모드를 바꿀 수 있습니다.	Only the party leader can change the mode.	只有队长可以更改模式。	Сменить режим может только лидер группы.
+매칭 중에는 모드를 바꿀 수 없습니다.	You can't change the mode while matchmaking.	匹配中无法更改模式。	Во время подбора нельзя сменить режим.
+모드마다 따로 매칭합니다. 준비 중인 모드는 아직 고를 수 없습니다.	Each mode has its own matchmaking. Modes marked Coming soon can't be picked yet.	每个模式单独匹配。标有“即将推出”的模式暂时无法选择。	У каждого режима свой подбор игроков. Режимы с пометкой «Скоро» пока недоступны.
+봇 포함 시 비공개 방 전용	With bots: private rooms only	含机器人时仅限私人房间	С ботами: только закрытые комнаты
+진행 중인 경기가 끝나기 전에는 새 경기를 시작할 수 없어요	You can't start a new match until your match in progress ends	进行中的比赛结束前无法开始新比赛	Нельзя начать новый матч, пока не закончится текущий
+{0} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요	{0} · The match you left is still going · Back to your spot	{0} · 你离开的比赛仍在进行 · 返回你的位置	{0} · Покинутый вами матч ещё идёт · Вернуться на своё место
+# --- LobbyBootstrap.cs: matchmaking card and banner
+파티원 경기 중	Party member in a match	队友比赛中	Участник группы в матче
+파티장을 따라가는 중	Following the party leader	正在跟随队长	Следуем за лидером группы
+경기 시작!	Match starting!	比赛开始！	Матч начинается!
+상대를 찾았습니다	Opponents found	已找到对手	Соперники найдены
+경기로 돌아가는 중	Returning to match	正在返回比赛	Возврат в матч
+비공개 방	Private room	私人房间	Закрытая комната
+상대를 찾는 중	Finding opponents	正在寻找对手	Поиск соперников
+파티원들이 경기를 마치기를 기다리는 중	Waiting for your party to finish their match	正在等待队友结束比赛	Ждём, пока группа закончит матч
+파티장이 방을 찾는 중...	The party leader is finding a room...	队长正在寻找房间...	Лидер группы ищет комнату...
+상대 팀 찾는 중	Finding an opposing team	正在寻找对方队伍	Поиск команды соперников
+경기를 시작합니다!	The match is starting!	比赛即将开始！	Начинаем матч!
+나갔던 경기로 돌아가는 중...	Returning to the match you left...	正在返回你离开的比赛...	Возврат в покинутый матч...
+더미를 추가하고 시작하세요	Add dummies, then start	添加假人后开始	Добавьте манекены и начните
+방 번호를 친구에게 알려 주세요	Give your friends the room code	把房间号告诉好友	Сообщите друзьям код комнаты
+방장이 시작하기를 기다리는 중	Waiting for the host to start	正在等待房主开始	Ждём, когда хост начнёт
+먼저 나왔어요 · 혼자 하려면 파티 나가기	You left early · Leave the party to play alone	你提前离开了 · 想单独游戏请离开小队	Вы вышли раньше · Чтобы играть соло, покиньте группу
+내 자리와 체크포인트로 돌아가요	Back to your spot and checkpoint	返回你的位置和检查点	Вернуться на своё место и к контрольной точке
+12명 없이 시작 가능	Can start with fewer than 12	不满 12 人也可开始	Можно начать, если игроков меньше 12
+시험 규칙 · 1 대 1부터 · 봇 허용	Test rules · from 1 vs 1 · bots allowed	测试规则 · 1 对 1 起 · 允许机器人	Тестовые правила · от 1 на 1 · боты разрешены
+방 번호  {0}	Room code  {0}	房间号  {0}	Код комнаты  {0}
+# --- LobbyBootstrap.cs: test room dummies
+방장만 더미 수를 변경하고 시작할 수 있어요.	Only the host can change the dummies and start.	只有房主可以更改假人数量并开始。	Менять манекены и начинать может только хост.
+이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)	Dummies don't move or attack · up to 6 per team (you included)	假人不会移动或攻击 · 每队最多 6 人（含自己）	Манекены не двигаются и не атакуют · до 6 на команду (с вами)
+아군이나 적군 더미를 1명 이상 추가하세요.	Add at least 1 ally or enemy dummy.	请至少添加 1 个友方或敌方假人。	Добавьте хотя бы 1 манекен - союзника или противника.
+파티 더미는 유지됩니다. −는 이 방에서 추가한 더미만 제거해요.	Party dummies stay. − removes only dummies added in this room.	小队假人会保留。− 只移除在此房间添加的假人。	Манекены группы остаются. − убирает только манекены, добавленные в этой комнате.
+준비되면 오른쪽 아래 테스트 시작을 누르세요.	When ready, press Start test at the bottom right.	准备好后，请点击右下角的“开始测试”。	Когда будете готовы, нажмите «Начать тест» справа внизу.
+# --- NetworkHud.uxml
+플레이	Play	游戏	Играть
+기물 도감	Codex	棋子图鉴	Справочник
+전적	History	战绩	История
+순위	Rank	排名	Рейтинг
+파티	Party	小队	Группа
+친구	Friends	好友	Друзья
+정보	Info	信息	Инфо
+Steam에 연결되지 않았습니다.	Not connected to Steam.	未连接到 Steam。	Нет подключения к Steam.
+Steam 다시 연결	Reconnect to Steam	重新连接 Steam	Подключиться к Steam
+복사	Copy	复制	Копировать
+12명 채우기	Fill to 12	补满 12 人	Добавить до 12
+봇 비우기	Clear bots	清空机器人	Убрать ботов
+아군 더미	Ally dummies	友方假人	Манекены-союзники
+적군 더미	Enemy dummies	敌方假人	Манекены-противники
+킹 러시	King Rush	国王冲锋	Королевский рывок
+변경 >	Change >	更改 >	Сменить >
+방 생성	New room	创建房间	Создать
+랜덤 매칭	Quick match	随机匹配	Быстрая игра
+매칭 중	Matchmaking	匹配中	Идёт подбор
+매칭 취소	Cancel matching	取消匹配	Отменить подбор
+경기 시작	Start match	开始比赛	Начать матч
+파티 코드	Party code	小队代码	Код группы
+AI 봇	AI bots	AI 机器人	ИИ-боты
+코드로 참가	Join with code	用代码加入	Войти по коду
+파티 나가기	Leave party	离开小队	Покинуть группу
+연결 정보	Connection info	连接信息	Подключение
+친구 초대	Invite friends	邀请好友	Позвать друзей
+온라인	Online	在线	В сети
+전체	All	全部	Все
+새로고침	Refresh	刷新	Обновить
+Steam 오버레이로 초대	Invite via Steam overlay	通过 Steam 界面邀请	Пригласить через оверлей Steam
+코드로도 참가 가능	Friends can also join with a code	也可用代码加入	Друзья могут войти и по коду
+친구의 파티 코드나 비공개 방 번호를 넣으세요.	Enter a friend's party code or a private room number.	请输入好友的小队代码或私人房间号。	Введите код группы друга или номер закрытой комнаты.
+붙여넣기	Paste	粘贴	Вставить
+파티 참가	Join party	加入小队	Войти в группу
+비공개 방 참가	Join private room	加入私人房间	Войти в закрытую комнату
+게임 모드	Game mode	游戏模式	Режим игры
+# --- NetworkHudView.cs
+모드 선택	Choose mode	选择模式	Выбрать режим
+음소거	Mute	静音	Заглушить
+음소거 풀기	Unmute	取消静音	Вернуть звук
+진행 중인 경기로 돌아가기	Back to your match	返回进行中的比赛	Вернуться в матч
+현재 모드	Current mode	当前模式	Текущий режим
+수락	Accept	接受	Принять
+거절	Decline	拒绝	Отклонить
+{0} 님이 파티에 초대했어요	{0} invited you to a party	{0}邀请你加入小队	{0} приглашает вас в группу
+(초대 {0}개 더)	({0} more invites)	（还有 {0} 个邀请）	(ещё приглашения: {0})
+{0} / {1} 온라인	{0} / {1} online	{0} / {1} 在线	{0} / {1} в сети
+친구 목록을 불러오는 중입니다.	Loading your friends list...	正在加载好友列表...	Загрузка списка друзей...
+접속 중인 친구가 없습니다.	No friends online.	没有在线的好友。	Нет друзей в сети.
+친구가 없습니다.	No friends yet.	还没有好友。	Друзей пока нет.
+이 게임 중	In this game	正在玩本游戏	В этой игре
+자리 비움	Away	离开	Нет на месте
+Steam 온라인	Online on Steam	Steam 在线	В сети Steam
+내 파티	In my party	在我的小队中	В моей группе
+파티 더미 (아군)	Party dummies (allies)	小队假人（友方）	Манекены группы (союзники)
+추가 더미 비우기	Clear extra dummies	清空额外假人	Убрать лишние манекены
+테스트 시작	Start test	开始测试	Начать тест
+선택됨	Selected	已选择	Выбрано
+플레이 가능	Playable	可游玩	Доступно
+Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нужно подключение к Steam
+진행 중인 경기가 있어 바꿀 수 없어요	Can't change this with a match in progress	有进行中的比赛，无法更改	Нельзя изменить во время матча
+매칭 중엔 바꿀 수 없어요	Can't change this while matchmaking	匹配中无法更改	Нельзя изменить во время подбора
+파티장만 바꿀 수 있어요	Only the party leader can change this	只有队长可以更改	Изменить может только лидер группы
+# --- NetworkHudView.cs: GameModes' names, taglines and summaries (Core/GameModes.cs data, wrapped where shown)
+팀 레이스	Team Race	团队竞速	Командная гонка
+대난투	Brawl	大乱斗	Потасовка
+장애물 구간과 미니게임을 지나 작전 회의실의 골에 팀 과반이 먼저 서면 승리	Get through obstacle sections and mini-games; the first team with most of its players on the war room goal wins	穿过障碍区和小游戏，率先让过半队员站上作战会议室终点的队伍获胜	Пройдите участки с препятствиями и мини-игры; побеждает команда, большинство которой первым встанет на цель в штабном зале
+상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점	Knock rivals off the board for 1 point each; first to 10 wins	把对手打出棋盘得 1 分，先得 10 分者获胜	Сбросьте соперника с доски - 1 очко; побеждает первый, кто наберёт 10
+# --- NetworkHudView.Tabs.cs
+팀 색으로 보기	Show team colors	以队伍颜色显示	Цвета команд
+백	White	白	Белые
+흑	Black	黑	Чёрные
+끌어서 돌려 보기	Drag to rotate	拖动旋转	Тяните, чтобы вращать
+능력치	Stats	属性	Характеристики
+무게	Weight	重量	Вес
+오르기	Climb	攀爬	Лазание
+질주 가능	Can sprint	可冲刺	Умеет бегать
+눌림 · 비틀거림 면역	Can't be squashed or staggered	免疫压扁和踉跄	Не сплющивается и не шатается
+이 모드에는 나오지 않아요	Not in this mode	此模式中不出现	Нет в этом режиме
+고를 수 없는 기물이에요	This piece can't be picked	无法选择此棋子	Эту фигуру нельзя выбрать
+자세히 보기	Details	查看详情	Подробнее
+폰 러쉬 시작 기물	Pawn Rush starting piece	兵卒冲锋初始棋子	Стартовая фигура Пешечного рывка
+폰 러쉬에서 모두가 폰으로 출발 · 소드 파이트에서는 못 고름	Everyone starts as a pawn in Pawn Rush · can't be picked in Sword Fight	兵卒冲锋中所有人以兵出发 · 剑斗中无法选择	В Пешечном рывке все начинают пешкой · в Бою на мечах не выбрать
+두 모드	Both modes	两种模式	Оба режима
+폰 러쉬 승격 발판 · 소드 파이트 고르기	Pawn Rush promotion pad · pickable in Sword Fight	兵卒冲锋升变踏板 · 剑斗中可选	Плита превращения в Пешечном рывке · выбор в Бою на мечах
+소드 파이트 전용	Sword Fight only	剑斗专用	Только Бой на мечах
+소드 파이트 고르기 · 폰 러쉬에는 나오지 않음	Pickable in Sword Fight · not in Pawn Rush	剑斗中可选 · 兵卒冲锋中不出现	Выбор в Бою на мечах · нет в Пешечном рывке
+폰 러쉬 전용	Pawn Rush only	兵卒冲锋专用	Только Пешечный рывок
+폰 러쉬 승격 발판 · 소드 파이트에서는 못 고름	Pawn Rush promotion pad · can't be picked in Sword Fight	兵卒冲锋升变踏板 · 剑斗中无法选择	Плита превращения в Пешечном рывке · в Бою на мечах не выбрать
+내 기록 · <color=#E2B866>{0}판 {1}승</color>	My record · <color=#E2B866>{0} · {1}W</color>	我的记录 · <color=#E2B866>{0} 场 {1} 胜</color>	Моя статистика · <color=#E2B866>{0} · {1} поб.</color>
+내 기록	My record	我的记录	Моя статистика
+전체 승률	Overall win rate	总胜率	Общий процент побед
+가장 빠른 도착	Fastest finish	最快到达	Быстрейший финиш
+1위 도착	1st place finishes	第一名到达	Финиш первым
+도착 못 함	Did not finish	未到达	Без финиша
+내가 떨어뜨림	Knockouts	击落	Сбросы
+떨어짐	Falls	坠落	Падения
+한 판 최다 떨어뜨림	Most knockouts in a match	单场最多击落	Макс. сбросов за матч
+온라인 경기만 셈 · 판수는 Steam에 보관, 최근 경기 목록은 이 PC에만	Online matches only · totals are kept on Steam, the recent match list only on this PC	仅统计在线比赛 · 场次保存在 Steam，最近比赛列表仅保存在本机	Только онлайн-матчи · итоги хранятся в Steam, список последних матчей - только на этом ПК
+아직 기록이 없어요	No matches yet	暂无记录	Матчей пока нет
+온라인 경기를 끝까지 하면 여기에 쌓여요	Online matches you play to the end show up here	打完的在线比赛会记录在这里	Здесь появятся онлайн-матчи, сыгранные до конца
+최근 {0}판까지 보관	Keeps the last {0} matches	保留最近 {0} 场	Хранятся последние матчи: {0}
+{0}판 · {1}승 {2}패	{0} matches · {1} W {2} L	{0} 场 · {1} 胜 {2} 负	Матчи: {0} · {1} В {2} П
+{0}무	{0} D	{0} 平	{0} Н
+{0}번	{0}	{0} 次	{0}
+# --- NetworkHudView.Tabs.cs: Core data wrapped where shown (ChessPieces.Name, RecordText.Badge, PawnRushPromotion, SwordSkillNames)
+폰	Pawn	兵	Пешка
+나이트	Knight	马	Конь
+비숍	Bishop	象	Слон
+룩	Rook	车	Ладья
+퀸	Queen	后	Ферзь
+킹	King	王	Король
+승	Win	胜	Победа
+패	Loss	负	Поражение
+탈주	Quit	逃跑	Побег
+무	Draw	平	Ничья
+첫 두 걸음	First Double Step	首步双进	Первый двойной шаг
+팔방 밀치기	All-Around Shove	八方推挤	Круговой толчок
+직선 사슬 견인	Chain Pull	直线锁链牵引	Притягивающая цепь
+교차 밧줄	Cross Rope	交叉绳索	Перекрёстный канат
+꺾어 도약	Knight's Leap	折跃	Прыжок коня
+두 칸을 빠르게 내딛는다	Dashes two squares forward	快速向前迈出两格	Быстрый рывок на две клетки вперёд
+둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다	Shoves away every rival around you. Strong in scrums and at getting in the way	推开周围所有对手。擅长贴身缠斗和阻挠	Отталкивает всех соперников вокруг. Хорош в толкотне и для помех
+사슬을 던져 적은 끌어오고 팀원은 옆으로 데려온다	Throws a chain that pulls enemies in and brings teammates to your side	掷出锁链，把敌人拉过来，把队友带到身边	Бросает цепь: врагов притягивает, союзников переносит к вам
+대각선 밧줄을 깔아 길을 막는다. 상대 견제용	Lays a diagonal rope that blocks the way. For holding rivals back	铺下斜向绳索挡住道路。用于牵制对手	Натягивает диагональный канат, перекрывая путь. Сдерживает соперников
+높이 뛰어 꺾어 착지한다. 틈과 턱을 넘기 좋다	Leaps high and lands at an angle. Good for clearing gaps and ledges	高高跃起并转折落地。适合越过缝隙和台阶	Высокий прыжок с приземлением под углом. Удобен для пропастей и уступов
+왕의 반격	Royal Riposte	王之反击	Ответный удар
+꼬치 베기	Skewer Slash	串刺斩	Сквозной удар
+열린 파일 포격	File Barrage	开放线炮击	Обстрел линии
+관통 핀	Piercing Pin	穿透牵制	Связка-укол
+포크 강하	Fork Dive	捉双突袭	Вилка с неба
+(폰은 스킬 없음)	(Pawns have no skill)	（兵没有技能）	(У пешки нет навыка)
+왕의 귀환	King's Return	王者归来	Возврат короля
+체크메이트 일섬	Mate Strike	将杀一闪	Матовый удар
+성벽 붕괴	Wall Breaker	城墙崩塌	Слом стены
+대각선 미끄럼	Diagonal Slide	斜线滑行	Косой рывок
+벼랑 끝 역전	Cliff Save	绝境逆转	На краю
+# --- Core/Ranking.cs (RankText: the 순위 tab's numbers)
+{0}판 · {1}승	{0} matches · {1} W	{0} 场 · {1} 胜	{0} · {1} В
+{0}/{1}판	{0}/{1} matches	{0}/{1} 场	Матчи: {0}/{1}
+쉬는 중 · {0}일 전	Resting · {0} days ago	休息中 · {0} 天前	Отдых · {0} дн.
+오늘	Today	今天	Сегодня
+어제	Yesterday	昨天	Вчера
+{0}일 전	{0} days ago	{0} 天前	{0} дн. назад
+상위 {0}%	Top {0}%	前 {0}%	Топ {0}%
+순위 판 {0}판 더 하면 순위에 올라가요	Play {0} more ranked matches to make the board	再打 {0} 场排位赛即可上榜	Ещё рейтинговых матчей до таблицы: {0}
+# --- Core/MatchRecords.cs (RecordText: the 전적 tab's lines)
+{0} 대 {1}	{0} vs {1}	{0} 对 {1}	{0} на {1}
+{0} · 시간 종료	{0} · Time up	{0} · 时间到	{0} · Время вышло
+{0} · 서든데스	{0} · Sudden death	{0} · 突然死亡	{0} · Внезапная смерть
+{0}위 · {1}	#{0} · {1}	第 {0} 名 · {1}	№{0} · {1}
+내가 떨어뜨림 {0} · 떨어짐 {1}	Knockouts {0} · Falls {1}	击落 {0} · 坠落 {1}	Сбросы: {0} · Падения: {1}
+우리 팀 승리에 들어감	Counted toward our win	计入我方胜利	В зачёт нашей победы
+왕관 발판 도착	Reached the crown pad	到达王冠踏板	Коронная плита достигнута
+우리 팀 승리	Our team won	我方胜利	Победа нашей команды
+오늘 {0}	Today {0}	今天 {0}	Сегодня {0}
+어제 {0}	Yesterday {0}	昨天 {0}	Вчера {0}
+# --- Game/NetworkHudView.Ranking.cs (the lobby's 순위 tab)
+모드별 내 순위	My rank by mode	我在各模式的排名	Мой рейтинг по режимам
+순위 규칙	Ranking rules	排名规则	Правила рейтинга
+· 폰 러쉬 · 소드 파이트 순위는 따로 매겨요	· Pawn Rush and Sword Fight are ranked separately	· 兵卒冲锋和剑斗分别排名	· У каждого режима свой рейтинг
+· 그 모드의 순위 판 {0}판 이상이면 순위에 올라가요	· {0} ranked matches of a mode put you on its board	· 某模式排位赛达到 {0} 场即可登上该模式排行榜	· От {0} рейтинговых матчей в режиме - вы в его таблице лидеров
+· 순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상	· Ranked = Quick match · no bots · {0} vs {0} or more	· 排位赛 = 随机匹配 · 无机器人 · {0} 对 {0} 及以上	· Рейтинговый = Быстрая игра · без ботов · от {0} на {0}
+· 누적 승률 순 · 같으면 판수 많은 쪽이 위	· Ordered by all-time win rate · ties go to more matches	· 按累计胜率排序 · 相同时场次多者在前	· По проценту побед · при равенстве выше тот, у кого больше матчей
+· 시즌 없이 계속 쌓여요 · 나가거나 튕긴 판은 패	· No seasons, it all adds up · leaving or dropping out counts as a loss	· 没有赛季，持续累计 · 退出或掉线的比赛记为失败	· Без сезонов · выход или обрыв связи = поражение
+· {0}일 안 하면 자리는 그대로, 흐리게 '쉬는 중'	· {0} days without a match: you keep your place, dimmed as 'Resting'	· {0} 天未比赛：名次保留，以灰色显示“休息中”	· {0} дн. без матчей: место сохраняется, строка тускнеет («Отдых»)
+순위표	Leaderboard	排行榜	Лидеры
+내 주변	Around me	我的附近	Рядом
+플레이어 · 가장 많이 쓴 기물	Player · most played piece	玩家 · 最常用棋子	Игрок · самая частая фигура
+누적 승률	Win rate	累计胜率	Процент побед
+순위 판 · 승	Ranked · Wins	排位赛 · 胜	Рейтинговые · Победы
+마지막 경기	Last match	最近比赛	Последний матч
+Steam 순위표 · 판이 끝날 때마다 갱신	Steam leaderboard · updated after every match	Steam 排行榜 · 每场比赛结束后更新	Таблица лидеров Steam · обновляется после каждого матча
+{0}승 {1}패 {2}무	{0} W {1} L {2} D	{0} 胜 {1} 负 {2} 平	{0} В {1} П {2} Н
+{0}승 {1}패	{0} W {1} L	{0} 胜 {1} 负	{0} В {1} П
+{0}판	{0} matches	{0} 场	{0}
+순위 판 {0}판 더 하면\n순위에 올라가요	{0} more ranked\nmatches to go	再打 {0} 场排位赛\n即可上榜	Ещё рейтинговых\nматчей: {0}
+지금 승률 {0}% · {1}\n{2}판이 되면 그때 승률로 순위에 들어가요	Win rate now {0}% · {1}\nAt {2} matches you join the board at your win rate then	当前胜率 {0}% · {1}\n达到 {2} 场时按当时的胜率上榜	Сейчас побед {0}% · {1}\nНа {2}-м матче войдёте в таблицу с процентом на тот момент
+순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상인 판	Ranked = Quick match · no bots · {0} vs {0} or more	排位赛 = 随机匹配 · 无机器人 · {0} 对 {0} 及以上的比赛	Рейтинговый матч = Быстрая игра · без ботов · {0} на {0} и больше
+승률 <color=#F3EBDD>{0}%</color>	Win rate <color=#F3EBDD>{0}%</color>	胜率 <color=#F3EBDD>{0}%</color>	Доля побед <color=#F3EBDD>{0}%</color>
+{0}판 · {1}	{0} matches · {1}	{0} 场 · {1}	Матчи: {0} · {1}
+{0}판 {1}% · {2}	{0} matches {1}% · {2}	{0} 场 {1}% · {2}	Матчи: {0}, {1}% · {2}
+Steam에 연결되면 순위가 보여요	Connect to Steam to see the rankings	连接 Steam 后即可查看排名	Подключитесь к Steam, чтобы увидеть рейтинг
+순위를 불러오는 중이에요	Loading the rankings	正在加载排名	Загрузка рейтинга
+Steam 순위표를 받지 못했어요	Couldn't get the Steam leaderboard	未能获取 Steam 排行榜	Не удалось получить таблицу лидеров Steam
+Steam 순위표를 열지 못했어요. 잠시 뒤에 다시 볼게요.	Couldn't open the Steam leaderboard. Trying again shortly.	无法打开 Steam 排行榜。稍后将重试。	Не удалось открыть таблицу лидеров Steam. Скоро попробуем снова.
+Steam 순위표를 받지 못했어요. 잠시 뒤에 다시 볼게요.	Couldn't get the Steam leaderboard. Trying again shortly.	未能获取 Steam 排行榜。稍后将重试。	Не удалось получить таблицу лидеров Steam. Скоро попробуем снова.
+순위에 오르면 내 위아래 {0}명이 보여요	Once you're on the board, the {0} players above and below you show here	上榜后会显示你上下各 {0} 名玩家	В таблице вы увидите соседей сверху и снизу (по {0})
+곧 순위에 올라가요	You'll be on the board soon	即将上榜	Скоро вы попадёте в таблицу
+이 쪽에는 순위가 없어요	Nothing on this page	此页没有排名	На этой странице пусто
+아직 순위에 오른 사람이 없어요	No one is on the board yet	还没有人上榜	В таблице пока никого нет
+순위 판 {0}판 이상이면 순위에 올라가요	{0} ranked matches put you on the board	排位赛达到 {0} 场即可上榜	Рейтинговых матчей для попадания в таблицу: {0}
+{0} · 순위에 오른 친구 {1}명	{0} · {1} friends on the board	{0} · {1} 位好友上榜	{0} · друзей в таблице: {1}
+나 포함	incl. me	含我	вкл. меня
+아직 {0}명	{0} not ranked yet	还有 {0} 人未上榜	Ещё не в таблице: {0}
+{0} · 내 위아래 {1}명씩	{0} · {1} above and below me	{0} · 我上下各 {1} 名	{0} · по {1} выше и ниже меня
+{0} · 순위에 오른 {1}명	{0} · {1} on the board	{0} · {1} 人上榜	{0} · в таблице: {1}
+전체 {0}위	#{0} overall	总排名第 {0}	№{0} в общем рейтинге
+친구 중 {0}위	#{0} among friends	好友中第 {0}	№{0} среди друзей
+# --- Game/NetworkHudView.RecordDetail.cs (a match's detail in the 전적 tab)
+‹ 목록으로	‹ Back to list	‹ 返回列表	‹ К списку
+경기 시간 {0}	Match time {0}	比赛时间 {0}	Время матча {0}
+순위 판	Ranked	排位赛	Рейтинговый матч
+Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
+폰 출발	Started as a pawn	以兵出发	Старт пешкой
+이 판은 상세 기록이 없어요	No details for this match	这场比赛没有详细记录	Нет подробностей об этом матче
+상세 기록은 이 기능이 생긴 뒤(R742) 끝낸 온라인 경기부터 남아요	Details are kept for online matches finished since this feature arrived (R742)	详细记录仅保存此功能推出（R742）后结束的在线比赛	Подробности сохраняются для онлайн-матчей, сыгранных после появления этой функции (R742)
+먼저 10점	First to 10	先得 10 分	До 10 очков
+시간 종료	Time up	时间到	Время вышло
+서든데스	Sudden death	突然死亡	Внезапная смерть
+우리 팀 패배	Our team lost	我方失败	Наша команда проиграла
+무승부	Draw	平局	Ничья
+내가 넣은 점수 {0} (우리 팀에서 가장 많이)	My points {0} (most on our team)	我的得分 {0}（我方最多）	Мои очки: {0} (больше всех в команде)
+내가 넣은 점수 {0}	My points {0}	我的得分 {0}	Мои очки: {0}
+우리 팀 {0}명 중 {1}번째로 왕관 발판	Reached the crown pad #{1} of {0} on our team	我方 {0} 人中第 {1} 个到达王冠踏板	На коронной плите {1}-м из {0} в команде
+구간 기록	Sections	区段记录	Участки
+떨어짐 {0}	Falls {0}	坠落 {0}	Падения: {0}
+승격: {0}	Promoted: {0}	升变：{0}	Превращение: {0}
+{0}위 도착	Finished #{0}	第 {0} 名到达	Финиш: {0}-е место
+떨어짐 없음	No falls	无坠落	Без падений
+구간 기록이 없어요	No section records	没有区段记录	Нет записей участков
+내 플레이	My play	我的表现	Моя игра
+체크포인트	Checkpoints	检查点	Чекпоинты
+스킬	Skills	技能	Навыки
+다이빙	Dives	飞扑	Нырки
+잡기	Grabs	抓取	Захваты
+승격	Promotions	升变	Превращения
+{0}의 {1} 도착으로 승리 결정	Win sealed by {0} at {1}	{0} 于 {1} 到达，锁定胜局	Победа: финиш игрока {0} на {1}
+상대 {0}의 {1} 도착으로 결정	Decided by rival {0} at {1}	对手 {0} 于 {1} 到达，胜负已定	Исход решил финиш соперника {0} на {1}
+우리 팀 {0}명 도착 · 상대 팀 {1}명 도착	Our team: {0} finished · Their team: {1} finished	我方 {0} 人到达 · 对方 {1} 人到达	Финишировали: наши — {0} · соперники — {1}
+우리 팀	Our team	我方	Наша команда
+상대 팀	Their team	对方	Соперники
+승리	Winner	胜利	Победитель
+{0}위 {1}	#{0} {1}	第 {0} 名 {1}	№{0} {1}
+점수 흐름	Score over time	得分走势	Счёт по ходу матча
+내가 떨어짐	My falls	我的坠落	Мои падения
+떨어뜨림	Knockouts	击落	Сбросы
+나와 관련된 장외	Knockouts and falls involving me	与我相关的出界	Сбросы и падения с моим участием
+{0} ← 나	{0} ← me	{0} ← 我	{0} ← я
+나 — 스스로	Me — on my own	我 — 自己掉落	Я — сам(а)
+나 ← {0}	Me ← {0}	我 ← {0}	Я ← {0}
+떨어뜨리거나 떨어진 일이 없어요	No knockouts or falls	没有击落或坠落	Ни сбросов, ни падений
+명단	Players	名单	Игроки
+# the fall feed's causes (SwordFightMatch.Hud CauseName; skill names are above)
+칼	Sword	剑	Меч
+폰 걸음	Pawn step	兵步	Шаг пешки
+# --- Pawn Rush course sections (PawnRushSection.DisplayName: the 전적 detail's section list, Loc.T where shown; R749)
+정문 의장 광장	Main Gate Parade Square	正门仪仗广场	Парадная площадь у главных ворот
+보수 중인 동관	East Wing Under Repair	修缮中的东翼	Восточное крыло на ремонте
+해자 도개교	Moat Drawbridge	护城河吊桥	Подъёмный мост через ров
+정문 쇠살문 누각	Portcullis Gatehouse	正门铁闸门楼	Надвратная башня с решёткой
+왕궁 서고	Palace Archives	王宫书库	Дворцовый архив
+대무도회장	Grand Ballroom	大舞厅	Большой бальный зал
+왕의 행차 회랑	King's Procession Gallery	国王巡行回廊	Галерея королевского шествия
+국왕 체스 홀	King's Chess Hall	国王棋厅	Королевский шахматный зал
+국왕 침실	King's Bedchamber	国王寝宫	Королевская опочивальня
+왕궁 세탁장	Palace Laundry	王宫洗衣房	Дворцовая прачечная
+왕실 마차뜰	Royal Carriage Yard	王室马车庭院	Королевский каретный двор
+왕실 수로 정원	Royal Water Garden	王室水道花园	Королевский водный сад
+대계단 현관홀	Grand Stair Hall	大阶梯门厅	Зал с парадной лестницей
+왕의 서재 · 거인 체스	King's Library · Giant Chess	国王书房 · 巨型国际象棋	Королевская библиотека · Гигантские шахматы
+왕의 서재와 거대 체스판	King's Library and Giant Chessboard	国王书房与巨型棋盘	Королевская библиотека и гигантская доска
+왕실 천문대 (회색 상자)	Royal Observatory (graybox)	王室天文台（灰盒）	Королевская обсерватория (заготовка)
+왕실 금고실	Royal Vault	王室金库	Королевское хранилище
+왕실 시계탑	Royal Clock Tower	王室钟楼	Королевская часовая башня
+국왕 작전실	King's War Room	国王作战室	Королевский штаб
+국왕 알현실 (임시)	Throne Room (temp)	国王谒见厅（临时）	Тронный зал (временно)
+후반 장애물 (임시 바닥)	Late Obstacles (temp floor)	后段障碍（临时地面）	Поздние препятствия (временный пол)
+# --- other screens' UXML text (RuntimePanels.Create translates it; their code is not moved over yet)
+팀	Team	队伍	Команда
+이전 대화	Earlier messages	之前的消息	Предыдущие сообщения
+Tab 채널 · Enter 보내기 · Esc 닫기	Tab channel · Enter send · Esc close	Tab 切换频道 · Enter 发送 · Esc 关闭	Tab канал · Enter отправить · Esc закрыть
+닫기	Close	关闭	Закрыть
+클릭해서 시작	Click to start	点击开始	Нажмите, чтобы начать
+이름 바꾸기	Change name	更改名称	Сменить имя
+백팀	White team	白队	Белые
+흑팀	Black team	黑队	Чёрные
+모두 입장 완료 · 곧 출발!	Everyone's in · starting soon!	全员就位 · 即将出发！	Все на месте · скоро старт!
+봇 추가  +	Add bot  +	添加机器人  +	Добавить бота  +
+게임 시작	Start game	开始游戏	Начать игру
+경기	Match	比赛	Матч
+Esc 로비로 나가기 · WASD 이동 · Space 점프\nEnter 채팅 · Tab(누르고 있기) 명단	Esc back to lobby · WASD move · Space jump\nEnter chat · Tab (hold) roster	Esc 返回大厅 · WASD 移动 · Space 跳跃\nEnter 聊天 · Tab（按住）名单	Esc в лобби · WASD движение · Space прыжок\nEnter чат · Tab (удерживать) список игроков
+나중에 언제든 바꿀 수 있어요	You can change it any time later	之后随时可以更改	Это можно изменить в любой момент
+내 이름	My name	我的名称	Моё имя
+이름을 입력하세요	Enter a name	请输入名称	Введите имя
+추천 이름	Suggested names	推荐名称	Предлагаемые имена
+추천	Suggest	推荐	Предложить
+눌러서 쓰기	Click to use	点击使用	Нажмите, чтобы выбрать
+이 이름으로 시작	Start with this name	使用此名称开始	Начать с этим именем
+돌아가기	Back	返回	Назад
+시작	Start	开始	Начать
+WASD 이동 · Shift 질주 · Space 점프 · 우클릭 스킬 없음 · Esc 메뉴	WASD move · Shift sprint · Space jump · no right-click skill · Esc menu	WASD 移动 · Shift 冲刺 · Space 跳跃 · 右键无技能 · Esc 菜单	WASD движение · Shift бег · Space прыжок · ПКМ без навыка · Esc меню
+계속 플레이	Keep playing	继续游戏	Продолжить игру
+이전 클릭 베기로 전환 (F6)	Switch to the old click slash (F6)	切换为旧版点击斩击（F6）	Вернуть старый удар по клику (F6)
+로비로 돌아가기	Back to lobby	返回大厅	Вернуться в лобби
+다음 화면	Next screen	下一页	Далее
+# ===== status lines, loading, results, voice, menu, name screen (R750)
+# --- Assets/Scripts/Network/SteamSession.cs
+Steam 연결 중...	Connecting to Steam...	正在连接 Steam...	Подключение к Steam...
+지금은 {0} 채팅을 쓸 수 없어요.	You can't use {0} chat right now.	现在无法使用{0}聊天。	Сейчас чат «{0}» недоступен.
+1초에 한 번까지 보낼 수 있어요.	You can send one message per second.	每秒最多发送一条消息。	Можно отправлять одно сообщение в секунду.
+메시지를 보내지 못했어요.	Couldn't send the message.	消息发送失败。	Не удалось отправить сообщение.
+방이 가득 찼거나 닫혔습니다.	The room is full or closed.	房间已满或已关闭。	Комната заполнена или закрыта.
+게임 버전이 다릅니다. (내 버전 {0} / 상대 {1}) 같은 빌드로 맞춘 뒤 다시 시도하세요.	Game versions differ (yours {0} / theirs {1}). Get the same build and try again.	游戏版本不同（我的版本 {0} / 对方 {1}）。请使用相同版本后重试。	Версии игры не совпадают (у вас {0} / у другого игрока {1}). Установите одинаковую сборку и попробуйте снова.
+알 수 없음	unknown	未知	неизвестно
+Steamworks 플러그인을 불러오지 못했습니다: {0}	Couldn't load the Steamworks plugin: {0}	无法加载 Steamworks 插件：{0}	Не удалось загрузить плагин Steamworks: {0}
+Steam 클라이언트가 이 게임보다 오래되었습니다. Steam을 업데이트한 뒤 다시 연결하세요.	Your Steam client is older than this game. Update Steam, then reconnect.	Steam 客户端版本比本游戏旧。请更新 Steam 后重新连接。	Ваш клиент Steam старее этой игры. Обновите Steam и подключитесь снова.
+Steam 초기화 실패. Steam을 실행하고 로그인한 뒤 다시 연결하세요. (App ID {0})	Steam failed to start. Run Steam, sign in, then reconnect. (App ID {0})	Steam 初始化失败。请启动并登录 Steam 后重新连接。（App ID {0}）	Не удалось запустить Steam. Запустите Steam, войдите в аккаунт и подключитесь снова. (App ID {0})
+Steam 응답이 없습니다. 다시 시도하세요.	Steam isn't responding. Try again.	Steam 没有响应。请重试。	Steam не отвечает. Попробуйте снова.
+파티를 다시 만드는 중...	Recreating the party...	正在重新创建小队...	Создаём группу заново...
+Steam 연결이 잠시 끊겼습니다. 다시 연결되기를 기다리는 중...	Lost the Steam connection for a moment. Waiting for it to come back...	与 Steam 的连接暂时中断。正在等待重新连接...	Связь со Steam ненадолго прервалась. Ждём восстановления...
+Steam 연결이 끊겼습니다. 다시 연결되면 저절로 이어집니다(Steam 로그인을 확인하세요).	Disconnected from Steam. The game carries on by itself once it reconnects (check you are signed in to Steam).	与 Steam 的连接已断开。重新连接后会自动继续(请确认已登录 Steam)。	Связь со Steam потеряна. Игра продолжится сама, когда связь вернётся (проверьте вход в Steam).
+Steam 방을 만들지 못했습니다: {0}	Couldn't create the Steam lobby: {0}	无法创建 Steam 房间：{0}	Не удалось создать лобби Steam: {0}
+파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요.	Party ready. Invite friends or start matchmaking.	小队已就绪。邀请好友或开始匹配吧。	Группа готова. Пригласите друзей или начните подбор игроков.
+{0} 님이 파티에 초대했어요 · 끝나고 로비에서 수락할 수 있어요	{0} invited you to a party · Accept it in the lobby afterwards	{0}邀请你加入小队 · 结束后可在大厅接受	{0} приглашает вас в группу · Принять можно потом в лобби
+{0} 님이 파티에 초대했어요 · 로비에서 수락할 수 있어요	{0} invited you to a party · Accept it in the lobby	{0}邀请你加入小队 · 可在大厅接受	{0} приглашает вас в группу · Принять можно в лобби
+다른 파티에 들어가려면 먼저 매칭/경기를 취소하세요.	Cancel matchmaking or leave the match before joining another party.	要加入其他小队，请先取消匹配或比赛。	Чтобы перейти в другую группу, сначала отмените подбор или покиньте матч.
+파티에 참가했습니다.	Joined the party.	已加入小队。	Вы вступили в группу.
+비공개 테스트 방을 만드는 중...	Creating a private test room...	正在创建私人测试房间...	Создаём закрытую тестовую комнату...
+파티 전체가 들어갈 자리를 찾는 중...	Finding a room with space for the whole party...	正在寻找能容纳整个小队的房间...	Ищем комнату с местами для всей группы...
+Steam 검색 실패. 다시 시도합니다...	Steam search failed. Retrying...	Steam 搜索失败。正在重试...	Ошибка поиска Steam. Повторяем...
+파티장이 나갔습니다. 매칭이 취소되었습니다.	The party leader left. Matchmaking was canceled.	队长已离开。匹配已取消。	Лидер группы вышел. Подбор отменён.
+파티 구성이 바뀌어 매칭을 취소했습니다.	The party changed, so matchmaking was canceled.	小队成员发生变化，匹配已取消。	Состав группы изменился, подбор отменён.
+파티원이 취소했습니다.	A party member canceled.	队友取消了匹配。	Участник группы отменил подбор.
+파티 준비 완료. 파티장을 기다리는 중.	Party ready. Waiting for the party leader.	小队已就绪。正在等待队长。	Группа готова. Ждём лидера группы.
+파티가 대기실에 있습니다. 매칭이 끝나거나 취소되면 파티로 다시 모입니다.	Your party is in a waiting room. It regroups once matchmaking ends or is canceled.	小队在等候室中。匹配结束或取消后将重新集结为小队。	Ваша группа в зале ожидания. Она соберётся снова, когда подбор закончится или будет отменён.
+파티원들이 아직 경기 중입니다. 경기가 끝나면 파티로 다시 모입니다.	Party members are still in a match. The party regroups when it ends.	队友仍在比赛中。比赛结束后将重新集结为小队。	Участники группы ещё в матче. Группа соберётся снова после его окончания.
+파티장이 매칭을 찾는 중...	The party leader is matchmaking...	队长正在匹配...	Лидер группы ищет матч...
+예약 시간 안에 파티가 모두 입장하지 못했습니다.	The whole party didn't get in before the reservation ran out.	小队未能在预留时间内全部进入。	Вся группа не успела войти до окончания брони.
+파티 전체가 들어갈 자리가 없습니다. 다시 찾는 중...	No space for the whole party. Searching again...	没有能容纳整个小队的位置。正在重新寻找...	Нет мест для всей группы. Ищем снова...
+이 방에는 파티 전체가 들어갈 자리가 없습니다.	This room has no space for the whole party.	此房间没有能容纳整个小队的位置。	В этой комнате нет мест для всей группы.
+입장 승인이 시간 초과되었습니다.	Timed out waiting to be let in.	等待入场许可超时。	Время ожидания допуска истекло.
+예약이 해제되었거나 파티원 연결이 끊겼습니다.	The reservation was released or a party member disconnected.	预留已解除，或有队友断开连接。	Бронь снята или участник группы отключился.
+경기 중 · {0}명이 자리를 비움 · 경기가 끝나기 전에 돌아올 수 있습니다.	In a match · {0} away · They can come back before it ends.	比赛中 · {0} 人离开 · 比赛结束前可以回来。	Идёт матч · Отошли: {0} · Они могут вернуться до конца матча.
+경기 시작! WASD 이동, Space 점프.	Match started! WASD to move, Space to jump.	比赛开始！WASD 移动，Space 跳跃。	Матч начался! WASD — движение, Space — прыжок.
+경기 시작 준비 중: 물리 계산을 맡을 PC를 고르는 중...	Getting ready: picking the PC that runs the physics...	比赛准备中：正在选择负责物理计算的电脑...	Подготовка: выбираем ПК для расчёта физики...
+대기실 {0}/12명. 대기 중에도 움직일 수 있습니다.	Waiting room {0}/12. You can move around while you wait.	等候室 {0}/12 人。等待时也可以移动。	Зал ожидания {0}/12. Пока ждёте, можно двигаться.
+방이 닫혔습니다. 파티로 돌아갑니다.	The room closed. Returning to your party.	房间已关闭。返回小队。	Комната закрыта. Возвращаемся в группу.
+대기실이 닫혀 다른 방을 찾는 중...	The waiting room closed. Finding another room...	等候室已关闭，正在寻找其他房间...	Зал ожидания закрыт. Ищем другую комнату...
+대기실이 닫혀 파티장이 다른 방을 찾는 중...	The waiting room closed. The party leader is finding another room...	等候室已关闭，队长正在寻找其他房间...	Зал ожидания закрыт. Лидер группы ищет другую комнату...
+이 PC가 물리 계산을 맡았습니다.	This PC is now the physics host.	本机已负责物理计算。	Этот ПК теперь хост физики.
+물리 담당 PC가 {0} 님으로 바뀌었습니다.	{0}'s PC now runs the physics.	物理计算改由{0}的电脑负责。	Теперь физику считает ПК игрока {0}.
+물리 계산을 맡은 PC가 사라지고 이어받을 PC가 없어 경기가 끝났습니다. 파티로 돌아갑니다.	The PC running the physics left and no one could take over, so the match ended. Returning to your party.	负责物理计算的电脑离开且无人接替，比赛结束。返回小队。	ПК, считавший физику, вышел, а заменить его некому — матч окончен. Возвращаемся в группу.
+물리 담당 PC의 연결이 끊겨 이 PC가 물리 계산을 이어받았습니다.	The physics host disconnected, so this PC took over the physics.	物理主机断开连接，本机已接替物理计算。	Хост физики отключился, физику взял на себя этот ПК.
+물리 담당 PC도 다음 차례({0})도 응답하지 않아 이 PC가 물리 계산을 이어받았습니다.	Neither the physics host nor the next in line ({0}) responded, so this PC took over the physics.	物理主机和下一顺位（{0}）均无响应，本机已接替物理计算。	Ни хост физики, ни следующий по очереди ({0}) не ответили — физику взял на себя этот ПК.
+PC 성능 1등인 {0} 님의 PC가 물리 계산을 맡습니다.	{0} has the fastest PC, so it will run the physics.	{0}的电脑性能最高，将负责物理计算。	Самый мощный ПК у игрока {0} — он будет считать физику.
+PC 성능 1등이라 이 PC가 물리 계산을 맡았습니다.	This PC is the fastest, so it now runs the physics.	本机性能最高，已负责物理计算。	Этот ПК самый мощный и теперь считает физику.
+PC 성능 1등인 {0} 님의 PC가 물리 계산을 맡았습니다.	{0} has the fastest PC, so it now runs the physics.	{0}的电脑性能最高，已负责物理计算。	Самый мощный ПК у игрока {0} — теперь он считает физику.
+{0} 님의 PC가 물리 계산을 받지 않아 이 PC가 다시 맡았습니다.	{0}'s PC didn't take the physics, so this PC took it back.	{0}的电脑未接收物理计算，本机已重新负责。	ПК игрока {0} не принял физику, её снова считает этот ПК.
+물리 담당 PC가 방을 나가 이 PC가 물리 계산을 이어받았습니다.	The physics host left the room, so this PC took over the physics.	物理主机离开了房间，本机已接替物理计算。	Хост физики покинул комнату, физику взял на себя этот ПК.
+물리 담당 PC가 느려져 {0} 님의 PC가 이어받습니다.	The physics host slowed down, so {0}'s PC is taking over.	物理主机变慢，{0}的电脑将接替。	Хост физики замедлился, его сменяет ПК игрока {0}.
+성능이 더 좋은 {0} 님의 PC가 물리 계산을 넘겨받습니다.	{0}'s faster PC is taking over the physics.	性能更好的{0}的电脑正在接手物理计算。	Более мощный ПК игрока {0} принимает физику.
+성능이 더 좋은 {0} 님의 PC가 물리 계산을 맡습니다.	{0}'s faster PC will run the physics.	性能更好的{0}的电脑将负责物理计算。	Физику будет считать более мощный ПК игрока {0}.
+{0} 님이 경기에 돌아왔습니다.	{0} is back in the match.	{0}回到了比赛。	{0} снова в матче.
+{0}명이 경기에 돌아왔습니다.	{0} players are back in the match.	{0} 名玩家回到了比赛。	Вернулись в матч: {0}.
+{0} 님이 파티에 들어왔어요	{0} joined the party	{0}加入了小队	{0} присоединяется к группе
+{0} 님이 파티를 나갔어요	{0} left the party	{0}离开了小队	{0} покидает группу
+{0} 님이 빈자리에 들어왔어요	{0} took an open spot	{0}进入了空位	{0} занимает свободное место
+{0} 님이 경기를 나갔어요	{0} left the match	{0}离开了比赛	{0} покидает матч
+이 PC가 방장이 되었습니다. 게임 시작과 방 관리를 맡아요.	You're the host now. You start the game and manage the room.	你现在是房主。由你开始游戏并管理房间。	Теперь вы хост. Вы начинаете игру и управляете комнатой.
+방장이 {0} 님으로 바뀌었습니다.	{0} is now the host.	房主已变为{0}。	Теперь хост — {0}.
+지금 나가면 24시간 안의 {0}번째 탈주라 매칭이 {1:0}분 동안 정지됩니다.	Leaving now makes it leave {0} within 24 hours: matchmaking is blocked for {1:0} min.	现在离开将是 24 小时内第 {0} 次逃跑，匹配将被禁止 {1:0} 分钟。	Если выйти сейчас, это будет {0}-й выход за 24 часа: подбор заблокируют на {1:0} мин.
+지금 나가면 탈주 {0}회로 기록됩니다. 24시간 안에 {1}회부터 매칭이 정지됩니다.	Leaving now is recorded as leave {0}. Matchmaking is blocked from leave {1} within 24 hours.	现在离开将记为第 {0} 次逃跑。24 小时内达到 {1} 次起将禁止匹配。	Если выйти сейчас, это засчитается как {0}-й выход. Подбор блокируется с {1}-го выхода за 24 часа.
+탈주 벌칙으로 매칭이 정지되어 있어요. {0} 남음 (24시간 안에 {1}번 나감)	Matchmaking is blocked for leaving matches. {0} left ({1} leaves in 24 hours)	因逃跑惩罚，匹配已被禁止。剩余 {0}（24 小时内离开 {1} 次）	Подбор заблокирован за выходы из матчей. Осталось {0} (выходов за 24 часа: {1})
+파티원 {0} 님이 탈주 벌칙으로 매칭 정지 중이에요. {1} 남음	Party member {0} is blocked from matchmaking for leaving matches. {1} left	队友{0}因逃跑惩罚被禁止匹配。剩余 {1}	Участник группы {0} заблокирован в подборе за выходы из матчей. Осталось {1}
+경기 도중 나가 탈주 {0}회째예요. 매칭이 {1:0}분 동안 정지됩니다.	You left mid-match: leave {0}. Matchmaking is blocked for {1:0} min.	比赛中途离开，第 {0} 次逃跑。匹配将被禁止 {1:0} 分钟。	Вы вышли посреди матча: {0}-й выход. Подбор заблокирован на {1:0} мин.
+경기 도중 나가 탈주 {0}회로 기록됐어요. 24시간 안에 {1}회부터 매칭이 정지됩니다.	You left mid-match: recorded as leave {0}. Matchmaking is blocked from leave {1} within 24 hours.	比赛中途离开，记为第 {0} 次逃跑。24 小时内达到 {1} 次起将禁止匹配。	Вы вышли посреди матча: засчитан {0}-й выход. Подбор блокируется с {1}-го выхода за 24 часа.
+파티로 돌아왔습니다.	Back with your party.	已回到小队。	Вы снова в группе.
+방을 새 물리 담당 PC로 옮기는 중이에요 · 시작과 새 입장은 잠시 기다려요	Moving the room to a new physics host · Starting and joining are on hold	正在将房间移至新的物理主机 · 开始和新入场请稍候	Комната переезжает к новому хосту физики · Старт и вход временно недоступны
+파티원이 아직 경기 중입니다. 경기가 끝나고 돌아오면 다시 시작하세요.	A party member is still in a match. Start again once they're back.	队友仍在比赛中。等他们回来后再开始。	Участник группы ещё в матче. Начните снова, когда он вернётся.
+진행 중인 경기가 있어요. 그 경기로 돌아가거나 끝날 때까지 다른 경기는 할 수 없어요.	You have a match in progress. Go back to it, or wait for it to end, before playing another.	你有进行中的比赛。返回该比赛或等它结束前，无法进行其他比赛。	У вас есть незавершённый матч. Вернитесь в него или дождитесь его конца, прежде чем играть другой.
+봇이 있는 파티는 공개 매칭에 들어갈 수 없습니다. 봇을 빼거나 테스트 방을 만드세요.	A party with bots can't join public matchmaking. Remove the bots or make a test room.	含机器人的小队无法进入公开匹配。请移除机器人或创建测试房间。	Группа с ботами не может участвовать в открытом подборе. Уберите ботов или создайте тестовую комнату.
+방장이 방에서 내보냈습니다.	The host removed you from the room.	房主已将你移出房间。	Хост удалил вас из комнаты.
+그 경기에는 돌아갈 수 없습니다(경기가 끝났거나 이 계정이 시작 멤버가 아닙니다).	You can't return to that match (it has ended, or this account wasn't in it at the start).	无法返回该比赛（比赛已结束，或此账号不是开局成员）。	Вернуться в этот матч нельзя (он окончен или этот аккаунт не участвовал в нём с начала).
+# --- Assets/Scripts/Network/SteamRoute.cs
+릴레이 · Steam 핑 {0} ms	Relay · Steam ping {0} ms	中继 · Steam 延迟 {0} ms	Ретранслятор · пинг Steam {0} мс
+직접 · Steam 핑 {0} ms	Direct · Steam ping {0} ms	直连 · Steam 延迟 {0} ms	Напрямую · пинг Steam {0} мс
+물리 담당 PC와 연결 정보 없음	No connection info for the physics host	没有与物理主机的连接信息	Нет данных о связи с хостом физики
+직접 {0}명 · 릴레이 {1}명 · Steam 핑 최대 {2} ms	Direct {0} · Relay {1} · Steam ping max {2} ms	直连 {0} 人 · 中继 {1} 人 · Steam 最大延迟 {2} ms	Напрямую {0} · Ретранслятор {1} · макс. пинг Steam {2} мс
+참가자와 연결 정보 없음	No connection info for the players	没有与其他玩家的连接信息	Нет данных о связи с игроками
+# --- Assets/Scripts/Network/SteamVoice.cs
+Steam이 이 계정의 음성을 막았어요.	Steam has blocked voice chat for this account.	Steam 已禁用此账号的语音。	Steam заблокировал голосовой чат для этого аккаунта.
+# --- Game/LoadingContent.cs (loading screen tips; title = GameModes.Name, rows exist)
+부축	Helping up	搀扶	Помощь союзнику
+과반 승리	Majority wins	过半获胜	Победа большинства
+무작위 구간	Random sections	随机区段	Случайные участки
+벽타기	Wall climbing	攀墙	Лазание по стенам
+미니게임	Mini-games	小游戏	Мини-игры
+방해	Sabotage	干扰	Саботаж
+판 축소	Shrinking board	棋盘缩小	Сужение доски
+두 걸음으로 넘어진 팀원에게 닿으면 바로 일으켜요. 둘 다 1.5초 동안 빨라져요.	Reach a fallen teammate with your double step to help them up at once. You both get faster for 1.5 seconds.	用双步冲刺碰到倒地的队友即可立刻扶起。两人都会加速 1.5 秒。	Коснитесь упавшего союзника двойным шагом — он сразу встанет. Вы оба ускоритесь на 1,5 секунды.
+1등 혼자로는 못 이겨요. 우리 팀 {0}명이 먼저 작전 회의실의 골에 서야 해요.	Finishing first alone won't win it. {0} of your team must stand on the war room goal first.	只有一人第一个到达赢不了。我方需要 {0} 人先站上作战会议室的终点。	Одного первого места мало. На цели в штабе первыми должны встать игроки вашей команды: {0}.
+판마다 장애물 구간과 미니게임이 새로 골라져요. 한 판의 구성은 모두에게 똑같아요.	Every match draws new obstacle sections and mini-games. The lineup is the same for everyone in it.	每场比赛都会重新抽选障碍区和小游戏。同一场比赛中所有人的组合相同。	В каждом матче заново выбираются участки с препятствиями и мини-игры. Набор одинаков для всех участников.
+줄눈이 보이는 돌 블록 벽은 오를 수 있어요. 매끈한 벽은 못 올라가요.	You can climb stone block walls with visible joints. Smooth walls can't be climbed.	看得见砖缝的石块墙可以攀爬。光滑的墙爬不上去。	По каменным стенам с видимыми швами можно лазать. На гладкие стены не залезть.
+팀 문은 우리 팀 미니게임을 끝내야 열려요. 여럿이 같이 하면 훨씬 빨라요.	Your team's door opens once your team clears its mini-game. It goes much faster together.	完成我方的小游戏后，队伍之门才会打开。多人一起会快很多。	Дверь команды откроется, когда ваша команда пройдёт мини-игру. Вместе гораздо быстрее.
+상대 팀 스테이션에 들어가 밀고 막을 수 있어요. 대신 그동안 우리 팀 일은 못 해요.	You can go into the other team's station to push and block them. But meanwhile you can't help your own team.	可以进入对方队伍的站点推挤和阻挡。但这段时间无法帮助我方。	Можно зайти на станцию соперников, чтобы толкать их и мешать. Но в это время вы не помогаете своей команде.
+떨어지면 마지막으로 지난 체크포인트에서 다시 시작해요. 낭떠러지 옆에선 침착하게.	If you fall, you restart at the last checkpoint you passed. Stay calm near the edges.	坠落后会从最后经过的检查点重新开始。在悬崖边要冷静。	Упав, вы начнёте с последней пройденной контрольной точки. У края не торопитесь.
+F는 기물 스킬(F로 조준, 한 번 더 F로 발동, 클릭은 취소), E는 떨어질 때 쓰는 가장자리 스킬이에요.	F is your piece's skill (F to aim, F again to use, click to cancel); E is the edge skill for when you're falling.	F 是棋子技能（按 F 瞄准，再按 F 发动，点击取消），E 是坠落时使用的边缘技能。	F — навык фигуры (F — прицел, ещё раз F — применить, клик — отмена), E — навык края при падении.
+2분부터 30초마다 유령 기물이 칸을 지워요. 빛나는 칸에서 피하세요.	From 2 minutes on, a ghost piece wipes out squares every 30 seconds. Get off glowing squares.	从 2 分钟起，每 30 秒会有幽灵棋子消除格子。请离开发光的格子。	С 2-й минуты каждые 30 секунд фигура-призрак стирает клетки. Уходите со светящихся клеток.
+# --- Game/LoadingScreenView.cs (player cards)
+찾는 중	Searching	寻找中	Поиск
+입장!	Joined!	已进入！	В игре!
+준비 완료	Ready	准备完毕	Готово
+불러오는 중	Loading	加载中	Загрузка
+성능 {0}	Perf {0}	性能 {0}	Мощность {0}
+{0} / {1} 입장	{0} / {1} in	{0} / {1} 已进入	{0} / {1} вошли
+{0} / {1} 준비	{0} / {1} ready	{0} / {1} 已准备	{0} / {1} готовы
+방장 · 물리 담당	Host · Physics	房主 · 物理主机	Хост · Физика
+방장	Host	房主	Хост
+물리 담당	Physics host	物理主机	Хост физики
+양도	Give host	转让	Передать хост
+강퇴	Kick	踢出	Выгнать
+확인	Sure?	确定？	Точно?
+빈 자리	Empty seat	空位	Пустое место
+옮기기	Move	移动	Переместить
+# --- Game/LoadingScreenView.Room.cs (a room's waiting room; rule names are Core PawnRushRules data)
+방 번호	Room code	房间号	Код комнаты
+팀이 꽉 찼으면 여기로 잠시 옮겼다가 조율해요	Team full? Wait here a moment while you sort it out	队伍满员时，先暂时移到这里再协调	Команда заполнена? Подождите здесь, пока не договоритесь
+봇 −	Bot −	机器人 −	Бот −
+봇 +	Bot +	机器人 +	Бот +
+게임 규칙	Game rules	游戏规则	Правила игры
+낙오자 구제	Catch-up help	落后者援助	Помощь отстающим
+미니게임을 깬 뒤	After a mini-game	完成小游戏后	После мини-игры
+엔딩	Ending	结局	Концовка
+한 팀이 깨면	One team clears	一队完成时	Прошла одна команда
+두 팀이 깨면	Both teams clear	两队完成时	Прошли обе команды
+바로 통과	Straight through	直接通过	Сразу дальше
+모여서 발판	Gather on pad	集合踏板	Сбор на плите
+상대 문 20초 뒤	Rival gate +20s	对方门 20 秒后	Ворота соперника +20 с
+왕관 발판	Crown pad	王冠踏板	Коронная плита
+왕좌 차지전	Throne hold	王座争夺战	Удержание трона
+방장이 정해요	The host decides	由房主决定	Решает хост
+눌러서 바꾸기 · 흐린 칸은 준비 중	Click to change · dim ones coming soon	点击更改 · 灰色项即将推出	Нажмите, чтобы сменить · тусклые — скоро
+눌러서 바꾸기	Click to change	点击更改	Нажмите, чтобы сменить
+빈 관전석	Empty spectator seat	空观战席	Свободное место зрителя
+방 나가기	Leave room	离开房间	Покинуть комнату
+관전석 {0} / {1}	Spectators {0} / {1}	观战席 {0} / {1}	Зрители {0} / {1}
+빈 관전석 · 눌러서 이동	Empty spectator seat · click to move	空观战席 · 点击移动	Свободное место зрителя · нажмите, чтобы перейти
+눌러서 이동	Click to move	点击移动	Нажмите, чтобы перейти
+# --- Game/LoadingScreenView.Reveal.cs (Pawn Rush course reveal; section names from Resources/Loading/PawnRushCourse.txt not added)
+이번 판 미니게임	This match's mini-games	本场小游戏	Мини-игры этого матча
+미니게임 {0}	Mini-game {0}	小游戏 {0}	Мини-игра {0}
+곧 대결이 시작됩니다	The showdown starts soon	对决即将开始	Скоро начнётся схватка
+# --- Game/LoadingScreenView.Versus.cs
+대결	Duel	对决	Дуэль
+# --- Game/LoadingScreenView.SwordPick.cs (Sword Fight found / pick / team / clash)
+매칭 완료	Match found	匹配成功	Матч найден
+기물 선택	Pick your piece	选择棋子	Выберите фигуру
+결투 개시	Duel begins	决斗开始	Дуэль начинается
+곧 기물을 선택합니다	Piece pick coming up	即将选择棋子	Скоро выбор фигуры
+초	sec	秒	с
+확정	Lock in	确定	Подтвердить
+우리 팀이 선택한 기물	Our team's pieces	我方选择的棋子	Фигуры нашей команды
+자동 배정	Auto pick	自动分配	Автовыбор
+모두 준비되면 화면이 열리고 경기장에서 3 · 2 · 1	When everyone's ready the screen opens - then 3 · 2 · 1 in the arena	所有人准备好后画面打开，然后在赛场倒数 3 · 2 · 1	Когда все будут готовы, экран откроется — затем 3 · 2 · 1 на арене
+{0}명	{0} players	{0} 人	Игроки: {0}
+봇	Bot	机器人	Бот
+{0} 선택	{0}'s pick	{0} 的选择	Выбор: {0}
+보내는 중	Sending	发送中	Отправка
+자동	Auto	自动	Авто
+고르는 중	Picking	选择中	Выбирает
+팀원 대기 중	Waiting for teammates	等待队友	Ждём союзников
+확정 중	Locking in	确认中	Подтверждение
+# --- Bootstrap/MatchLoader.cs (loading screen step lines, room note)
+끊긴 PC를 정리하는 중	Clearing out a dropped PC	正在清理断开的电脑	Отключаем выпавший ПК
+나갔던 경기로 돌아가는 중	Returning to the match you left	正在返回你离开的比赛	Возвращаемся в покинутый матч
+파티장이 방을 찾는 중	The party leader is finding a room	队长正在寻找房间	Лидер группы ищет комнату
+관전 {0}	{0} watching	观战 {0}	Зрители: {0}
+이 모드는 관전석이 비어야 시작할 수 있어요	This mode can only start with the spectator seats empty	此模式需要观战席为空才能开始	Этот режим запускается только без зрителей
+2명 이상이면 시작할 수 있어요 (봇 포함)	Can start with 2 or more (bots count)	2 人及以上即可开始（含机器人）	Можно начать от 2 игроков (боты считаются)
+지금 시작할 수 있어요	Ready to start	现在可以开始	Можно начинать
+모두 입장하면 시작할 수 있어요	Can start once everyone's in	所有人进入后即可开始	Можно начать, когда все войдут
+경기장을 불러오는 중	Loading the arena	正在加载赛场	Загрузка арены
+이번 판 코스 공개 중	Revealing this match's course	正在公布本场赛道	Показываем трассу этого матча
+코스를 불러오는 중	Loading the course	正在加载赛道	Загрузка трассы
+코스를 여는 중	Opening the course	正在开启赛道	Открываем трассу
+코스를 미리 그리는 중	Warming up the course	正在预渲染赛道	Подготовка трассы
+캐릭터를 준비하는 중	Getting the characters ready	正在准备角色	Готовим персонажей
+다른 플레이어를 기다리는 중	Waiting for other players	正在等待其他玩家	Ждём других игроков
+모두 준비 완료 · 곧 출발해요	Everyone's ready · starting soon	全员准备完毕 · 即将出发	Все готовы · скоро старт
+곧 출발해요 · 늦는 플레이어는 준비되는 대로 따라와요	Starting soon · late players follow as soon as they're ready	即将出发 · 较慢的玩家准备好后随即跟上	Скоро старт · опоздавшие присоединятся, как только будут готовы
+# SteamSession.RoomHeldMessage (const in SteamSession.cs), wrapped where MatchLoader shows it - may duplicate the SteamSession file's row
+# --- Network/SteamMotion.cs (ConnectionStatus: lobby connection info and the match's warning banner; QualityLine: ping line)
+Steam P2P 연결이 끊겨 다시 연결하는 중입니다.	Steam P2P connection lost. Reconnecting...	Steam P2P 连接中断，正在重新连接。	Соединение Steam P2P потеряно. Переподключаемся...
+물리 담당 PC의 응답이 끊겨 파티로 돌아왔습니다.	The physics host stopped responding. You're back in your party.	物理主机无响应，已返回小队。	Хост физики перестал отвечать. Вы снова в группе.
+물리 담당 PC와의 연결이 불안정합니다...	Unstable connection to the physics host...	与物理主机的连接不稳定...	Нестабильная связь с хостом физики...
+물리 담당 PC 응답 없음 - 멈춤. 다음 PC로 넘기는 중... ({0}초 안에 안 되면 파티로 복귀)	Physics host not responding - paused. Handing over to the next PC... (back to your party in {0}s if that fails)	物理主机无响应 - 已暂停。正在交给下一台电脑...（{0} 秒内未成功则返回小队）	Хост физики не отвечает - пауза. Передаём следующему ПК... (если не выйдет за {0} с - возврат в группу)
+물리 담당 PC의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중	Nothing from the physics host's waiting room - waiting in the room	未收到物理主机的等候室动作 - 正在等候室等待	От хоста физики нет данных зала ожидания - ждём в комнате
+Steam으로 연결됨	Connected via Steam	已通过 Steam 连接	Подключено через Steam
+Steam 전송 오류: {0}	Steam send error: {0}	Steam 发送错误：{0}	Ошибка отправки Steam: {0}
+물리 담당 PC가 바뀌었습니다.	The physics host changed.	物理主机已更换。	Хост физики сменился.
+지연 시뮬 {0}	Lag sim {0}	延迟模拟 {0}	Симуляция задержки {0}
+직접 {0} · 릴레이 {1}	Direct {0} · Relay {1}	直连 {0} · 中继 {1}	Напрямую {0} · Ретранслятор {1}
+릴레이	Relay	中继	Ретранслятор
+직접	Direct	直连	Напрямую
+물리 담당 · 최대 핑 {0}	Physics host · max ping {0}	物理主机 · 最大延迟 {0}	Хост физики · макс. пинг {0}
+핑 {0} · 응답 {1}	Ping {0} · response {1}	延迟 {0} · 响应 {1}	Пинг {0} · ответ {1}
+# --- Game/PawnRushResultHud.cs (the Pawn Rush result screen)
+미리보기 · R 다시 재생 · H 결과판 숨기기	Preview · R replay · H hide results	预览 · R 重播 · H 隐藏结果板	Предпросмотр · R повтор · H скрыть итоги
+결승	Finish	终点	Финиш
+순서	Order	顺序	Порядок
+승리 확정	Win sealed	胜局已定	Победа обеспечена
+승리 {0}/{1}	Win {0}/{1}	胜利 {0}/{1}	Победа {0}/{1}
+두 팀 모두 결승 인원을 채우지 못했어요	Neither team got enough players to the finish	两队都未凑够到达终点的人数	Ни одна команда не довела до финиша нужное число игроков
+{0} {1}명이 먼저 결승선을 넘었어요	{0} got {1} across the finish line first	{0} {1} 人率先越过终点线	{0} — первыми на финише: {1}
+{0}이 먼저 {1}명 결승선을 넘었어요	{0} got {1} across the finish line first	{0} 率先让 {1} 人越过终点线	{0} — первыми на финише: {1}
+경기 시간	Match time	比赛时间	Время матча
+미도착	Not finished	未到达	Не финишировал
+없음	None	无	Нет
+다시 매칭	Play again	再次匹配	Играть ещё
+로비로	To lobby	返回大厅	В лобби
+결과판 숨기기	Hide results	隐藏结果板	Скрыть итоги
+결과판 보기	Show results	查看结果板	Показать итоги
+승리!	Victory!	胜利！	Победа!
+패배	Defeat	失败	Поражение
+{0}초 뒤 자동으로 로비로	Back to the lobby in {0} s	{0} 秒后自动返回大厅	В лобби через {0} с
+미리보기라 여기서 멈춰요	Preview: it stops here	预览到此为止	Предпросмотр: на этом всё
+로비로 가는 중	Going to the lobby	正在前往大厅	Переход в лобби
+# --- Game/PawnRushResultDirector.cs (preview toasts)
+미리보기라 다시 매칭하지 않아요. 게임에서는 파티 그대로 다음 경기를 찾아요.	Preview: no matchmaking. In the game, your party looks for the next match together.	这是预览，不会再次匹配。游戏中会保持小队寻找下一场比赛。	Предпросмотр: без подбора. В игре ваша группа вместе ищет следующий матч.
+미리보기라 로비로 가지 않아요. 게임에서는 바로 로비로 가요.	Preview: staying here. In the game, this goes straight to the lobby.	这是预览，不会返回大厅。游戏中会直接返回大厅。	Предпросмотр: остаёмся здесь. В игре вы сразу вернётесь в лобби.
+12초가 지나 게임이라면 로비로 가요. 미리보기에서는 여기 머물러요 (R 다시 재생).	12 s are up: the game would go to the lobby now. The preview stays here (R replay).	已过 12 秒，游戏中此时会返回大厅。预览会停在这里（R 重播）。	Прошло 12 с: в игре сейчас был бы переход в лобби. Предпросмотр остаётся здесь (R повтор).
+# --- Game/SwordFightHud.cs
+백팀  {0}   :   {1}  흑팀	White team  {0}   :   {1}  Black team	白队  {0}   :   {1}  黑队	Белые  {0}   :   {1}  Чёрные
+소드파이트 · 폰     {0:0}:{1:00}   /   {2}점	Sword Fight · Pawn     {0:0}:{1:00}   /   {2} pts	剑斗 · 兵     {0:0}:{1:00}   /   {2} 分	Бой на мечах · Пешка     {0:0}:{1:00}   /   {2} очк.
+나는 백팀 · 폰	You: White team · Pawn	我是白队 · 兵	Вы: Белые · Пешка
+나는 흑팀 · 폰	You: Black team · Pawn	我是黑队 · 兵	Вы: Чёрные · Пешка
+입장 중	Joining	进入中	Вход
+백팀 승리!	White team wins!	白队获胜！	Белые победили!
+흑팀 승리!	Black team wins!	黑队获胜！	Чёрные победили!
+소드파이트	Sword Fight	剑斗	Бой на мечах
+[클릭 베기] 좌클릭 한 번 = 자동 베기 · F6 조작 전환	[Click slash] One left click = auto slash · F6 switch controls	[点击斩击] 左键单击 = 自动斩击 · F6 切换操作	[Удар кликом] Один левый клик = автоудар · F6 смена управления
+[물리 드래그] 좌클릭 유지 + 마우스 = 베기 · F6 조작 전환	[Physics drag] Hold left click + move mouse = slash · F6 switch controls	[物理拖动] 按住左键 + 移动鼠标 = 斩击 · F6 切换操作	[Физ. замах] Удерживайте ЛКМ и ведите мышь = удар · F6 смена управления
+이전 방식과 손맛 비교 · 누르고만 있어서는 연속 공격하지 않습니다	Compare the feel with the old way · holding the button doesn't keep attacking	对比旧方式的手感 · 只按住不会连续攻击	Сравните ощущения со старым способом · удержание кнопки не даёт серии атак
+무게감 있는 드래그 · 넓고 빠른 베기만 넉다운 · 놓으면 수납	Weighty drag · only wide, fast slashes knock down · let go to sheathe	有分量的拖动 · 只有大幅快速的斩击能击倒 · 松开即收剑	Весомый замах · с ног сбивают только широкие быстрые удары · отпустите, чтобы убрать меч
+물리 드래그로 전환 (F6)	Switch to physics drag (F6)	切换为物理拖动（F6）	Включить физ. замах (F6)
+# --- Game/GameMenu.cs (the Esc menu, OnGUI)
+팀은 한 명이 빠진 채로 계속 싸웁니다. 끝나기 전에는 로비에서 다시 돌아올 수 있어요.	Your team fights on one player short. You can come back from the lobby before the match ends.	队伍将少一人继续战斗。比赛结束前可以从大厅返回。	Ваша команда продолжит бой без одного игрока. До конца матча вы можете вернуться из лобби.
+연습을 끝내고 로비로 돌아갑니다. 지금까지의 진행은 저장되지 않습니다.	Ends the practice and returns to the lobby. Progress so far is not saved.	结束练习并返回大厅。目前的进度不会保存。	Завершает тренировку и возвращает в лобби. Прогресс не сохранится.
+메뉴	Menu	菜单	Меню
+경기 진행 중	Match live	比赛进行中	Идёт матч
+메뉴를 열어도 경기는 멈추지 않아요	Opening the menu doesn't pause the match	打开菜单不会暂停比赛	Меню не ставит матч на паузу
+게임으로 돌아가기	Back to game	返回游戏	Вернуться в игру
+정말 나가시겠습니까?	Really leave?	确定要离开吗？	Точно выйти?
+남아서 계속하기	Stay in the match	留下继续	Остаться в матче
+나가기	Leave	离开	Выйти
+# --- Game/VoiceHud.cs (the scoresheet and talkers)
+{0} (나)	{0} (me)	{0}（我）	{0} (я)
+기 보 지	Scoresheet	棋谱	Бланк партии
+경기 명단	Match roster	比赛名单	Состав матча
+내 목소리	My voice	我的声音	Мой голос
+팀 전체	Whole team	全队	Вся команда
+팀원	Teammates	队友	Союзники
+음성 채팅 꺼짐	Voice chat off	语音聊天已关闭	Голосовой чат выкл.
+음성 꺼짐	Voice off	语音已关闭	Голос выкл.
+음소거 풀기: {0}	Unmute: {0}	取消静音：{0}	Включить звук: {0}
+음소거: {0}	Mute: {0}	静音：{0}	Заглушить: {0}
+# --- Game/NameScreen.cs
+지금 이름 · {0}	Current name · {0}	当前名称 · {0}	Текущее имя · {0}
+바꾸기	Change	更改	Изменить
+이름을 정해 주세요	Choose your name	请设定你的名称	Выберите имя
+바꿨어요! 돌아가는 중	Changed! Going back	已更改！正在返回	Изменено! Возвращаемся
+이 이름으로 바꾸기	Use this name	改为此名称	Взять это имя
+좋아요! 로비로 가는 중	Great! Off to the lobby	好的！正在前往大厅	Отлично! Идём в лобби
+# --- Bootstrap/IntroController.cs (transition titles, Steam line)
+시작 화면	Title screen	标题画面	Титульный экран
+이름 설정	Name setup	名称设置	Выбор имени
+STEAM 연결됨 · {0}	STEAM ONLINE · {0}	STEAM 已连接 · {0}	STEAM подключён · {0}
+# --- Game/ChatBox.cs
+채팅에 연결되지 않았어요.	Chat isn't connected.	未连接到聊天。	Чат не подключён.
+{0}에 말하기	Say to {0}	对{0}说	Кому: {0}
+입력 중 · 이동 멈춤	Typing · movement paused	输入中 · 移动已暂停	Ввод · движение на паузе
+# --- Core/PlayerNames.cs (name check reasons, shown in place of the character count)
+쓸 수 없는 글자	Unsupported character	包含不支持的字符	Недопустимый символ
+다 쓰지 않은 글자	Unfinished letter	未完成的字	Незаконченный символ
+{0}자 이상	At least {0} chars	至少 {0} 个字	Не меньше {0} симв.
+{0}자까지	Up to {0} chars	最多 {0} 个字	До {0} симв.
+띄어쓰기는 한 칸	One space at a time	空格只能一个	Не больше одного пробела подряд
+쓸 수 없는 말	Not allowed	不可使用的词语	Запрещено
+# ===== settings window rows (R749): SettingsWindow item names, descriptions, options and notes; GameSettings key, display, frame, quality and monitor names
+Steam에 연결되면 들어가요 · 지금은 저장만	Joins in once you're on Steam · only saved for now	连接 Steam 后生效 · 目前仅保存设置	Включится после входа в Steam · пока только сохраняется
+Steam 음성 · 파티와 팀	Steam voice · party and team	Steam 语音 · 小队与队伍	Голос Steam · группа и команда
+끄면 듣지도 말하지도 않아요.	Turned off, you neither hear nor talk.	关闭后既听不到也不会发言。	Если выключить, вы не слышите и не говорите.
+파티 음성 자동 참여	Join party voice automatically	自动加入小队语音	Автовход в голос группы
+파티에 들어가면 파티원과 바로 이어져요. 로비에서도, 경기 중에도.	Joining a party connects you to its members right away. In the lobby and in matches.	加入小队后立即与队友连线。大厅和比赛中都有效。	При входе в группу вы сразу на связи с её участниками. В лобби и в матчах.
+팀 음성 자동 참여	Join team voice automatically	自动加入队伍语音	Автовход в голос команды
+경기 방에 들어가면 같은 팀과 이어져요. 파티가 없으면 팀 전체에게, 파티가 있으면 파티에게 말해요(경기 중 Tab을 누르고 있으면 나오는 기보지에서 바꿔요). 상대 팀 목소리는 들리지 않아요.	Entering a match room connects you to your team. Without a party you talk to the whole team, with one to your party (switch it on the scoresheet you get by holding Tab in a match). You never hear the other team.	进入比赛房间后与同队连线。没有小队时对全队说话，有小队时对小队说话（比赛中按住 Tab 打开棋谱即可切换）。听不到对方队伍的声音。	При входе в комнату матча вы на связи со своей командой. Без группы вы говорите всей команде, с группой — только группе (переключается в бланке партии, если удерживать Tab в матче). Соперников вы не слышите.
+마이크 켜기	Microphone on	开麦方式	Включение микрофона
+누르고 말하기	Push to talk	按键说话	По нажатию
+자동으로 켜지기	Voice activated	自动开麦	По голосу
+누르고 말하기는 아래 키를 누르는 동안만, 자동으로 켜지기는 말소리가 기준을 넘을 때 내 목소리가 나가요.	Push to talk sends your voice only while you hold the key below; voice activated sends it when you're louder than the threshold.	按键说话只在按住下方按键时发送声音；自动开麦在声音超过阈值时发送。	«По нажатию» передаёт голос, только пока зажата клавиша ниже; «По голосу» — когда вы громче порога.
+누르고 말하기 키	Push-to-talk key	按键说话键	Клавиша голоса
+누르는 동안 내 목소리가 나가요.	Sends your voice while held.	按住时发送你的声音。	Передаёт ваш голос, пока зажата.
+켜지는 크기	Threshold	开麦阈值	Порог
+말해 보면 줄이 차올라요. 동그라미를 끌어 기준을 정하면 그보다 큰 소리만 나가요(키보드 소리를 막아요). 줄이 노랗게 바뀌면 지금 나가는 소리예요.	Speak and the bar fills up. Drag the circle to set a threshold: only sound louder than it goes out (keeps keyboard noise out). The bar turns yellow while sound is going out.	说话时音量条会上升。拖动圆点设定阈值，只有比它大的声音才会发送（可挡住键盘声）。音量条变黄表示正在发送声音。	Говорите — шкала заполняется. Перетащите кружок, чтобы задать порог: передаётся только звук громче него (отсекает шум клавиатуры). Пока звук передаётся, шкала жёлтая.
+마이크 확인	Mic check	麦克风测试	Проверка микрофона
+말해 보면 칸이 차올라요. "들어 보기"를 누르면 내 목소리가 나에게만 들려요(다른 사람에게는 안 가요).	Speak and the cells fill up. "Listen" plays your voice back to you only (no one else hears it).	说话时格子会亮起。点击“试听”只有你自己能听到自己的声音（不会发给别人）。	Говорите — ячейки заполняются. «Прослушать» воспроизводит ваш голос только вам (другие его не слышат).
+Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	Doesn't change in the Unity Editor, only in the built game.	在 Unity 编辑器中不会改变，仅在构建的游戏中生效。	В редакторе Unity не меняется, только в собранной игре.
+화면 모드	Display mode	显示模式	Режим экрана
+테두리 없는 창은 다른 창으로 빨리 넘어갈 수 있고, 전체 화면은 입력 지연이 조금 더 적어요.	Borderless window lets you switch to other windows quickly; fullscreen has slightly less input lag.	无边框窗口可以快速切换到其他窗口，全屏的输入延迟稍低。	Окно без рамки позволяет быстро переходить к другим окнам; в полноэкранном режиме задержка ввода чуть меньше.
+모니터	Monitor	显示器	Монитор
+게임을 띄울 모니터.	The monitor the game shows on.	显示游戏的显示器。	Монитор, на котором идёт игра.
+해상도	Resolution	分辨率	Разрешение
+창 모드와 전체 화면에서 쓰는 크기. 테두리 없는 창은 모니터 크기를 따라가요.	The size used in windowed and fullscreen. Borderless window follows the monitor's size.	窗口和全屏模式使用的尺寸。无边框窗口跟随显示器尺寸。	Размер в оконном и полноэкранном режимах. Окно без рамки берёт размер монитора.
+시야 범위	Field of view	视野范围	Поле зрения
+경기 카메라에 보이는 넓이. 넓을수록 주변이 잘 보이지만 멀미가 날 수 있어요.	How wide the match camera sees. Wider shows more around you but may cause motion sickness.	比赛镜头可见的宽度。越宽越能看清周围，但可能会晕。	Ширина обзора камеры в матче. Чем шире, тем больше видно вокруг, но может укачивать.
+프레임 제한	Frame limit	帧率限制	Лимит кадров
+1초에 그릴 최대 장면 수. 모니터 주사율에 맞추면 부드럽고 전기도 덜 써요. 수직 동기화가 켜져 있으면 주사율을 따라가요.	The most frames drawn per second. Matching your monitor's refresh rate is smooth and saves power. With VSync on, it follows the refresh rate.	每秒最多绘制的画面数。与显示器刷新率一致更流畅也更省电。开启垂直同步时跟随刷新率。	Максимум кадров в секунду. Под частоту монитора — плавно и экономит энергию. С верт. синхронизацией следует частоте обновления.
+수직 동기화	VSync	垂直同步	Верт. синхронизация
+화면이 가로로 찢어지는 것을 막아요. 켜면 입력이 조금 늦게 느껴질 수 있어요.	Stops the picture tearing sideways. With it on, input may feel slightly delayed.	防止画面横向撕裂。开启后输入可能感觉稍有延迟。	Убирает горизонтальные разрывы картинки. Когда включено, ввод может чуть запаздывать.
+밝기	Brightness	亮度	Яркость
+전체 밝기. 어두운 곳이 안 보이면 올리세요.	Overall brightness. Turn it up if you can't see in dark places.	整体亮度。暗处看不清时请调高。	Общая яркость. Повысьте, если в тёмных местах ничего не видно.
+낮음	Low	低	Низкое
+중간	Medium	中	Среднее
+높음	High	高	Высокое
+전체 품질	Overall quality	整体画质	Общее качество
+아래 항목을 한 번에 맞춰요. 아래를 하나라도 바꾸면 "사용자 지정"이 돼요. 낮음은 사양 낮은 PC용(Mobile 단계).	Sets everything below at once. Changing any of them makes it "Custom". Low is for low-end PCs (the Mobile tier).	一次性调整下方所有项目。改动其中任意一项即变为“自定义”。低适合配置较低的电脑（Mobile 级别）。	Задаёт всё ниже сразу. Изменение любого пункта даёт «Своё». «Низкое» — для слабых ПК (уровень Mobile).
+그림자	Shadows	阴影	Тени
+말과 장애물의 그림자. 프레임에 가장 크게 영향을 줘요.	Shadows of pieces and obstacles. Has the biggest effect on frame rate.	棋子和障碍物的阴影。对帧率影响最大。	Тени фигур и препятствий. Сильнее всего влияют на частоту кадров.
+계단 현상 줄이기	Anti-aliasing	抗锯齿	Сглаживание
+말과 체스판 가장자리의 지글거림을 줄여요(MSAA).	Smooths jagged edges on pieces and the chessboard (MSAA).	减少棋子和棋盘边缘的锯齿（MSAA）。	Сглаживает зубчатые края фигур и доски (MSAA).
+배경 디테일	Background detail	背景细节	Детализация фона
+멀리 있는 성벽과 장식을 얼마나 자세히 그릴지.	How finely distant castle walls and decorations are drawn.	远处城墙和装饰的绘制精细程度。	Насколько подробно рисуются дальние стены замка и декор.
+보통	Normal	普通	Обычное
+빛 번짐	Bloom	泛光	Свечение
+금색 장식과 조명 주위가 은은하게 번져요. 끄면 스킬 번쩍임의 번짐도 함께 꺼져요.	Gold trim and lights glow softly. Turning it off also turns off the glow of skill flashes.	金色装饰和灯光周围柔和发光。关闭后技能闪光的光晕也会一并关闭。	Золотая отделка и огни мягко светятся. Если выключить, пропадёт и свечение вспышек навыков.
+사양이 낮은 PC는 "낮음"부터	Low-end PCs: start from "Low"	配置较低的电脑建议从“低”开始	Слабым ПК — начать с «Низкое»
+경기 화면 구석에 작게	Small, in a corner of the match screen	小字显示在比赛画面角落	Мелко, в углу экрана матча
+프레임 표시	Show FPS	显示帧率	Показывать FPS
+오른쪽 위에 초당 프레임 수.	Frames per second at the top right.	在右上角显示每秒帧数。	Кадры в секунду в правом верхнем углу.
+핑 표시	Show ping	显示延迟	Показывать пинг
+물리 계산을 맡은 PC와 주고받는 데 걸리는 시간. 끊김 경고는 끄더라도 그대로 떠요.	The round-trip time to the PC running the physics. Connection warnings still show with this off.	与负责物理计算的电脑往返所需的时间。即使关闭，断线警告仍会显示。	Время отклика до хоста физики. Предупреждения о связи видны и при выключенной опции.
+전체 소리	Master volume	总音量	Общая громкость
+모든 소리의 크기.	How loud everything is.	所有声音的大小。	Громкость всех звуков.
+배경 음악	Music	背景音乐	Музыка
+로비, 매칭 화면(코스 공개 · 소드 파이트 입장), 경기 음악.	Lobby, match screens (course reveal · Sword Fight entrance) and match music.	大厅、匹配画面（赛道公布 · 剑斗入场）和比赛音乐。	Лобби, экраны подбора (показ трассы · вход в Бой на мечах) и музыка матча.
+효과음	Sound effects	音效	Звуковые эффекты
+점프 · 다이빙 · 발소리, 스킬, 장애물과 구간 소리, 매칭 화면 소리, 시작 로고 소리.	Jumps · dives · footsteps, skills, obstacles and sections, match screen sounds, the start logo.	跳跃 · 飞扑 · 脚步、技能、障碍和区段的声音、匹配画面声音、开场标志声音。	Прыжки · нырки · шаги, навыки, препятствия и участки, звуки экранов подбора, стартовый логотип.
+버튼 소리	Button sounds	按钮音效	Звуки кнопок
+로비 · 설정 창의 버튼 · 탭 · 창 열고 닫는 소리(R738). 매칭 화면 소리는 효과음 크기를 따라요.	Buttons · tabs · windows opening and closing in the lobby and settings (R738). Match screen sounds follow the sound effects volume.	大厅 · 设置窗口的按钮 · 标签 · 窗口开关声音（R738）。匹配画面声音跟随音效音量。	Кнопки · вкладки · открытие и закрытие окон в лобби и настройках (R738). Звуки экранов подбора следуют громкости эффектов.
+다른 사람 목소리 크기. 모두 같은 크기로 들려요.	How loud other people's voices are. Everyone is heard at the same volume.	其他人的语音音量。所有人听起来音量相同。	Громкость голосов других игроков. Все звучат одинаково громко.
+창이 뒤에 있으면 소리 끄기	Mute when in the background	窗口在后台时静音	Без звука в фоне
+다른 창을 보고 있을 때 게임 소리를 꺼요.	Mutes the game while you're looking at another window.	查看其他窗口时关闭游戏声音。	Выключает звук игры, пока вы в другом окне.
+경기 잡힘 알림음	Match found alert	匹配成功提示音	Сигнал найденного матча
+매칭이 잡혀 입장 화면이 열리면, 다른 창을 보고 있어도 6초 동안 그 소리가 들려요(위 항목이 켜져 있어도).	When a match is found and the entry screen opens, its sound plays for 6 seconds even if you're in another window (even with the option above on).	匹配成功并打开入场画面时，即使你在看其他窗口，也会播放 6 秒提示音（即使开启了上方选项）。	Когда матч найден и открывается экран входа, его звук играет 6 с, даже если вы в другом окне (даже с включённой опцией выше).
+마이크 크기	Mic volume	麦克风音量	Громкость микрофона
+내 목소리가 다른 사람에게 들리는 크기. 100이 원래 크기예요.	How loud your voice is for others. 100 is its normal level.	你的声音传给别人时的大小。100 为原始音量。	Как громко вас слышат другие. 100 — обычный уровень.
+마우스 감도	Mouse sensitivity	鼠标灵敏度	Чувствительность мыши
+{0}배	{0}x	{0} 倍	{0}x
+시점이 도는 빠르기.	How fast the view turns.	视角转动的速度。	Скорость поворота камеры.
+상하 반전	Invert Y	上下反转	Инверсия Y
+마우스를 올리면 아래를 봐요.	Moving the mouse up looks down.	向上移动鼠标时视角向下。	Мышь вверх — взгляд вниз.
+질주 방식	Sprint mode	冲刺方式	Режим бега
+누르고 있기	Hold	按住	Удержание
+한 번 눌러 켜기	Toggle	单击切换	Переключение
+한 번 눌러 켜기는 다시 누르거나 멈출 때까지 달려요.	With toggle, you keep running until you press it again or stop.	单击切换时会一直跑，直到再次按下或停下。	При переключении вы бежите, пока не нажмёте снова или не остановитесь.
+칸을 누르고 바꿀 키를 누르세요 · 겹치면 서로 바뀌어요 · Delete로 비우기	Click a box, then press the new key · a key already used swaps over · Delete clears	点击格子后按下新按键 · 与已有按键重复时会互换 · 按 Delete 清空	Нажмите на поле, затем новую клавишу · занятые клавиши меняются местами · Delete очищает
+앞으로	Forward	前进	Вперёд
+왼쪽	Left	向左	Влево
+오른쪽	Right	向右	Вправо
+점프	Jump	跳跃	Прыжок
+질주	Sprint	冲刺	Бег
+다이빙 · 칼 베기	Dive · Sword slash	飞扑 · 挥剑	Нырок · Удар мечом
+폰 러쉬: 앞으로 몸을 날려요(갈고리를 꺼냈으면 누르고 있다가 떼서 던져요). 소드 파이트: 칼을 휘둘러요.	Pawn Rush: throws yourself forward (with the hook out, hold then release to throw it). Sword Fight: swings your sword.	兵卒冲锋：向前飞扑（拿出钩爪时按住后松开即可投出）。剑斗：挥剑。	Пешечный рывок: бросок вперёд (с крюком в руках — удерживайте и отпустите, чтобы бросить его). Бой на мечах: взмах мечом.
+잡기 · 조준 취소	Grab · Cancel aim	抓取 · 取消瞄准	Захват · Отмена прицела
+폰 러쉬: 누르는 동안 잡아요. 소드 파이트: 스킬 조준을 취소해요.	Pawn Rush: grabs while held. Sword Fight: cancels skill aiming.	兵卒冲锋：按住时抓取。剑斗：取消技能瞄准。	Пешечный рывок: захват, пока зажато. Бой на мечах: отмена прицеливания навыка.
+기물 스킬	Piece skill	棋子技能	Навык фигуры
+폰 러쉬: 내 기물의 스킬. 소드 파이트: F 스킬. 화면의 스킬 칸에도 이 키가 나와요.	Pawn Rush: your piece's skill. Sword Fight: the F skill. The skill box on screen shows this key too.	兵卒冲锋：你的棋子技能。剑斗：F 技能。画面上的技能格也会显示此按键。	Пешечный рывок: навык вашей фигуры. Бой на мечах: навык F. Эта клавиша видна и в ячейке навыка на экране.
+두 번째 스킬	Second skill	第二技能	Второй навык
+소드 파이트: E 스킬. 폰 러쉬: 폰일 때 갈고리를 꺼내고 넣어요.	Sword Fight: the E skill. Pawn Rush: takes the hook out and puts it away as a pawn.	剑斗：E 技能。兵卒冲锋：作为兵时拿出或收起钩爪。	Бой на мечах: навык E. Пешечный рывок: пешка достаёт и убирает крюк.
+끼었을 때 되돌아가기	Back when stuck	卡住时返回	Назад, если застряли
+폰 러쉬: 5초 넘게 이동 키를 눌러도 제자리면 "끼었나요?"가 떠요. 그때 2초 누르고 있으면 지금 자리보다 뒤의 체크포인트로 돌아가요. 30초에 한 번, 잡혀 있을 때와 미니게임 방 안에서는 안 돼요.	Pawn Rush: push the move keys for over 5 s without getting anywhere and "Stuck?" appears. Hold this key for 2 s then to go back to a checkpoint behind where you are. Once every 30 s; not while held, nor inside a mini-game room.	兵卒冲锋：按住移动键超过 5 秒仍在原地时会出现"卡住了吗？"。此时按住此键 2 秒，就会回到当前位置后方的检查点。每 30 秒一次；被抓住时和小游戏房间内不可用。	Пешечный рывок: если больше 5 с жать клавиши движения и стоять на месте, появится «Застряли?». Тогда удерживайте эту клавишу 2 с, чтобы вернуться к контрольной точке позади вас. Раз в 30 с; не работает, когда вас схватили, и в комнатах мини-игр.
+보조 스킬	Extra skill	辅助技能	Доп. навык
+채팅 열기	Open chat	打开聊天	Открыть чат
+경기 명단 (기보지)	Match roster (scoresheet)	比赛名单（棋谱）	Состав матча (бланк партии)
+경기 중 누르고 있는 동안만 열려요. 우리 팀 음성, 말하는 곳, 음소거.	Open only while held in a match. Our team's voice, who you talk to, mute.	仅在比赛中按住时打开。我方语音、发言对象、静音。	Открыт, только пока зажато в матче. Голос нашей команды, кому вы говорите, заглушение.
+음성 채팅: 누르는 동안 내 목소리가 나가요.	Voice chat: sends your voice while held.	语音聊天：按住时发送你的声音。	Голосовой чат: передаёт ваш голос, пока зажато.
+카메라 거리	Camera distance	镜头距离	Дистанция камеры
+경기를 시작할 때 말과 카메라 사이 거리. 경기 중에는 휠로 바꿔요. 한 번도 안 바꿨으면 폰 러쉬는 원래 거리(6 m)로 시작해요.	Distance between your piece and the camera when a match starts. Change it with the wheel in a match. If never changed, Pawn Rush starts at its usual distance (6 m).	比赛开始时棋子与镜头的距离。比赛中用滚轮调整。如果从未调整过，兵卒冲锋会以默认距离（6 m）开始。	Расстояние от фигуры до камеры в начале матча. В матче меняется колесом. Если не менять, Пешечный рывок начинается с обычного расстояния (6 м).
+질주할 때 시야 넓어짐	Wider view when sprinting	冲刺时视野变宽	Шире обзор при беге
+질주하는 동안 화면이 살짝 넓어져 빨라 보여요. 폰 러쉬와 소드 파이트 모두.	The view widens a little while you sprint so it feels faster. In both Pawn Rush and Sword Fight.	冲刺时画面稍微变宽，显得更快。兵卒冲锋和剑斗都有。	Во время бега обзор чуть расширяется, чтобы ощущалась скорость. В Пешечном рывке и Бое на мечах.
+카메라 흔들림	Camera shake	镜头晃动	Тряска камеры
+부딪힘, 스킬, 매칭 · 결과 화면의 흔들림 세기.	How strongly bumps, skills, the match screens and the results screen shake.	碰撞、技能、匹配画面与结果画面的晃动强度。	Сила тряски от столкновений, навыков, экранов подбора и экрана итогов.
+팀원 이름	Teammate names	队友名称	Имена союзников
+항상	Always	始终	Всегда
+가까울 때만	Only when near	仅在附近时	Только вблизи
+팀원 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요. 벽에 가리면 보이지 않아요.	Name tags over teammates. Only when near: sharp up to 15 m, gone at 22 m. Hidden behind walls.	队友头顶的名牌。仅在附近时：15 m 内清晰，22 m 时消失。被墙挡住时不显示。	Имена над союзниками. Только вблизи: чётко до 15 м, исчезают на 22 м. Скрыты за стенами.
+상대 이름	Opponent names	对手名称	Имена соперников
+상대 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요.	Name tags over opponents. Only when near: sharp up to 15 m, gone at 22 m.	对手头顶的名牌。仅在附近时：15 m 内清晰，22 m 时消失。	Имена над соперниками. Только вблизи: чётко до 15 м, исчезают на 22 м.
+내 머리 위에도 이름표를 띄워요.	A name tag over your own head too.	在自己头顶也显示名牌。	Имя и над вашей головой.
+끄면 채팅이 숨고 열리지 않아요.	Turned off, chat is hidden and won't open.	关闭后聊天会隐藏且无法打开。	Если выключить, чат скрыт и не открывается.
+욕설 가리기	Hide swearing	屏蔽脏话	Скрывать брань
+흔한 욕을 ** 로 가려요. 내 화면에서만.	Covers common swear words with **. On your screen only.	用 ** 遮住常见脏话。仅在你的画面上。	Заменяет частую брань на **. Только на вашем экране.
+글자 크기	Text size	文字大小	Размер текста
+작게	Small	小	Мелкий
+크게	Large	大	Крупный
+채팅 글자 크기.	Chat text size.	聊天文字大小。	Размер текста чата.
+채팅 배경 진하기	Chat background opacity	聊天背景浓度	Непрозрачность фона чата
+경기 중 채팅 뒤에 까만 바탕을 깔아 글자를 읽기 쉽게 해요. 0이면 지금처럼 바탕 없이 글자만.	Puts a dark backing behind chat in matches so it's easier to read. At 0, just the text as now.	比赛中在聊天后方加上深色底，让文字更易读。为 0 时与现在一样只显示文字。	В матчах подкладывает тёмный фон под чат, чтобы легче читать. При 0 — только текст, как сейчас.
+채팅 받기	Show chat from	接收聊天	Показывать чат от
+모두	Everyone	所有人	Все
+파티와 팀만	Party and team only	仅小队和队伍	Только группа и команда
+파티만	Party only	仅小队	Только группа
+다른 사람이 보낸 줄 중 어느 채널을 보여 줄지(전체 채널을 끄고 싶을 때). 내가 보낸 줄과 알림은 늘 보이고, 보내기는 그대로 돼요.	Which channels' lines from others to show (to turn off the all channel). Your own lines and notices always show, and sending still works.	显示他人发送的哪些频道消息（想关闭全体频道时使用）。你自己发的消息和通知始终显示，发送不受影响。	Какие каналы показывать в сообщениях других (чтобы выключить общий канал). Ваши сообщения и уведомления видны всегда, отправка работает.
+파티 초대 받기	Accept party invites from	接收小队邀请	Приглашения в группу от
+Steam 친구만	Steam friends only	仅 Steam 好友	Только друзья в Steam
+받지 않기	No one	不接收	Ни от кого
+누가 보낸 파티 초대를 게임 안(로비 수락 칸 · 채팅 알림)에 띄울지. Steam 자체 알림은 이 설정과 상관없이 와요.	Whose party invites show in the game (the lobby's accept box · chat notices). Steam's own notifications come regardless.	在游戏内（大厅接受栏 · 聊天通知）显示谁发来的小队邀请。Steam 自身的通知不受此设置影响。	Чьи приглашения в группу показывать в игре (поле принятия в лобби · уведомления в чате). Уведомления самого Steam приходят в любом случае.
+메뉴 크기	Menu size	菜单大小	Размер меню
+인트로, 로비, 채팅 같은 메뉴 화면의 크기. 이 설정 화면은 그대로예요.	Size of menu screens like the intro, lobby and chat. This settings window stays the same.	开场、大厅、聊天等菜单画面的大小。此设置窗口不变。	Размер экранов меню: заставка, лобби, чат. Это окно настроек не меняется.
+화면 흔들림 줄이기	Reduce screen shake	减少画面晃动	Меньше тряски экрана
+카메라 흔들림, 매칭 화면의 흔들림, 질주 시야 넓어짐을 한 번에 꺼요.	Turns off camera shake, the match screens' shake and the sprint view widening in one go.	一次关闭镜头晃动、匹配画面的晃动和冲刺时视野变宽。	Сразу выключает тряску камеры, тряску экранов подбора и расширение обзора при беге.
+번쩍임 줄이기	Reduce flashes	减少闪光	Меньше вспышек
+스킬과 칼이 부딪힐 때의 번쩍임, 미니게임의 빛, 매칭 · 결과 화면의 번쩍임, 버튼을 누를 때의 불꽃을 약하게 해요.	Softens the flashes of skills and clashing swords, the mini-games' light flashes, the flashes on the match screens and the results screen, and the sparks when buttons are pressed.	减弱技能和剑相撞时的闪光、小游戏的闪光、匹配画面与结果画面的闪光，以及按下按钮时的火花。	Смягчает вспышки навыков и столкновений мечей, световые вспышки мини-игр, вспышки экранов подбора и итогов и искры при нажатии кнопок.
+게임을 끝낼까요?	Quit the game?	要退出游戏吗？	Выйти из игры?
+게임 창이 닫혀요.	The game window will close.	游戏窗口将会关闭。	Окно игры закроется.
+취소	Cancel	取消	Отмена
+키를 누르세요…	Press a key…	请按下按键…	Нажмите клавишу…
+들어 보기	Listen	试听	Прослушать
+마이크가 없어요	No microphone	没有麦克风	Нет микрофона
+Steam 필요	Needs Steam	需要 Steam	Нужен Steam
+그만 듣기	Stop listening	停止试听	Остановить
+좌클릭	Left click	左键	ЛКМ
+우클릭	Right click	右键	ПКМ
+휠 클릭	Wheel click	滚轮点击	Клик колесом
+마우스 4	Mouse 4	鼠标 4	Мышь 4
+마우스 5	Mouse 5	鼠标 5	Мышь 5
+왼쪽 Shift	Left Shift	左 Shift	Левый Shift
+오른쪽 Shift	Right Shift	右 Shift	Правый Shift
+왼쪽 Ctrl	Left Ctrl	左 Ctrl	Левый Ctrl
+오른쪽 Ctrl	Right Ctrl	右 Ctrl	Правый Ctrl
+왼쪽 Alt	Left Alt	左 Alt	Левый Alt
+오른쪽 Alt	Right Alt	右 Alt	Правый Alt
+휠	Wheel	滚轮	Колесо
+전체 화면	Fullscreen	全屏	Полный экран
+테두리 없는 창	Borderless window	无边框窗口	Окно без рамки
+창 모드	Windowed	窗口模式	Оконный
+제한 없음	Unlimited	不限制	Без лимита
+사용자 지정	Custom	自定义	Своё
+숫자판 {0}	Numpad {0}	小键盘 {0}	Num {0}
+모니터 {0}	Monitor {0}	显示器 {0}	Монитор {0}
+# ===== Pawn Rush in the match (R751): crown pad, falls, promotion, mini-game guidance and missions, standings strip, skill card and stages, rook chain prompt, king call
+승리 인원이 바뀌었어요  ·  백 {0} → {1}  ·  흑 {2} → {3}	Players needed to win changed  ·  White {0} → {1}  ·  Black {2} → {3}	获胜所需人数已变化  ·  白方 {0} → {1}  ·  黑方 {2} → {3}	Для победы нужно другое число игроков  ·  Белые {0} → {1}  ·  Чёрные {2} → {3}
+왕관 발판  백 {0}/{1}  ·  흑 {2}/{3}	Crown pad  White {0}/{1}  ·  Black {2}/{3}	王冠踏板  白方 {0}/{1}  ·  黑方 {2}/{3}	Коронная плита  Белые {0}/{1}  ·  Чёрные {2}/{3}
+(팀 과반이 올라가 있는 동안 시간이 쌓임)	(time builds while most of a team is on it)	（队伍过半站在上面时累计时间）	(время идёт, пока на ней большинство команды)
+(팀 과반이 동시에 올라가면 승리)	(most of a team on it at once wins)	（队伍过半同时站上即获胜）	(большинство команды на ней одновременно — победа)
+우리 팀이 왕관 발판을 차지했습니다	Our team took the crown pad	我方占领了王冠踏板	Наша команда заняла коронную плиту
+상대 팀이 왕관 발판을 차지했습니다	The other team took the crown pad	对方占领了王冠踏板	Соперники заняли коронную плиту
+{0} · 곧 결과 화면	{0} · Results coming up	{0} · 即将进入结果画面	{0} · Скоро итоги
+체크포인트로 돌아갑니다	Back to the checkpoint	返回检查点	Возврат к контрольной точке
+상대 진영입니다 · 체크포인트에서 다시 출발!	Enemy ground · starting again from the checkpoint!	这里是对方阵地 · 从检查点重新出发！	Чужая территория · старт с контрольной точки!
+체크포인트에서 다시 출발!	Starting again from the checkpoint!	从检查点重新出发！	Старт с контрольной точки!
+물에 빠졌습니다!	Fell in the water!	掉进水里了！	Упали в воду!
+상대 진영입니다!	Enemy ground!	这里是对方阵地！	Чужая территория!
+떨어졌습니다!	You fell!	掉下去了！	Вы упали!
+승격! 원하는 기물을 고르세요	Promotion! Pick your piece	升变！选择你想要的棋子	Превращение! Выберите фигуру
+1~4 키 또는 클릭 · {0}초 뒤 무작위	Keys 1-4 or click · random in {0} s	按 1~4 键或点击 · {0} 秒后随机	Клавиши 1-4 или клик · случайно через {0} с
+금빛 킹에게 다이빙하거나 질주하세요	Dive or sprint into the golden king	向金色的王飞扑或冲刺	Нырком или бегом врежьтесь в золотого короля
+킹의 퇴로를 막아 체크하세요	Block the king's escape to check it	堵住王的退路将军	Перекройте королю отход, чтобы дать шах
+킹 포획   {0} / {1}	Kings caught   {0} / {1}	捕获王   {0} / {1}	Пойманные короли   {0} / {1}
+잡은 폰 {0} / {1}	Pawns caught {0} / {1}	抓到的兵 {0} / {1}	Пойманные пешки {0} / {1}
+함께 밟기	Step on together	一起踩	Встаньте вместе
+{0} · 쉬운 길이 열리고 장애물이 꺼졌습니다	{0} · An easier way opened and obstacles stopped	{0} · 简单路线已开启，障碍已关闭	{0} · Открылся лёгкий путь, препятствия остановлены
+승격 · 기물 고르는 중	Promotion · picking a piece	升变 · 正在选择棋子	Превращение · выбор фигуры
+승격 발판 · 사용함	Promotion pad · used	升变踏板 · 已使用	Плита превращения · использована
+승격 발판 · 원하는 기물 선택\n폰이 {0:0}초 서 있기	Promotion pad · pick your piece\nA pawn stands here {0:0} s	升变踏板 · 选择想要的棋子\n兵站立 {0:0} 秒	Плита превращения · выберите фигуру\nПешка стоит {0:0} с
+입구 기준 왼쪽 출구가 열렸습니다	The left exit (from the entrance) is open	以入口为准，左侧出口已打开	Открыт левый выход (если смотреть от входа)
+입구 기준 오른쪽 출구가 열렸습니다	The right exit (from the entrance) is open	以入口为准，右侧出口已打开	Открыт правый выход (если смотреть от входа)
+중앙 공용 판  ·  밝은 칸을 칠하세요	Shared board in the middle  ·  paint the light squares	中央公共棋盘  ·  请涂浅色格	Общая доска в центре  ·  красьте светлые клетки
+중앙 공용 판  ·  어두운 칸을 칠하세요	Shared board in the middle  ·  paint the dark squares	中央公共棋盘  ·  请涂深色格	Общая доска в центре  ·  красьте тёмные клетки
+입구에서 왼쪽으로  ·  우리 팀 진영	Left from the entrance  ·  our side	从入口向左  ·  我方阵地	Влево от входа  ·  наша сторона
+입구에서 오른쪽으로  ·  우리 팀 진영	Right from the entrance  ·  our side	从入口向右  ·  我方阵地	Вправо от входа  ·  наша сторона
+상대 진영  ·  우리 진영은 입구 기준 왼쪽	Enemy side  ·  ours is left from the entrance	对方阵地  ·  我方阵地在入口左侧	Сторона соперников  ·  наша — слева от входа
+상대 진영  ·  우리 진영은 입구 기준 오른쪽	Enemy side  ·  ours is right from the entrance	对方阵地  ·  我方阵地在入口右侧	Сторона соперников  ·  наша — справа от входа
+가운데 공용 판 · 밝은 칸	Shared middle board · light squares	中间公共棋盘 · 浅色格	Общая доска в центре · светлые клетки
+가운데 공용 판 · 어두운 칸	Shared middle board · dark squares	中间公共棋盘 · 深色格	Общая доска в центре · тёмные клетки
+입구에서 왼쪽 진영	Left side from the entrance	入口左侧阵地	Левая сторона от входа
+입구에서 오른쪽 진영	Right side from the entrance	入口右侧阵地	Сторона справа от входа
+청록색	teal	青绿色	бирюзовый
+주황색	orange	橙色	оранжевый
+미니게임 클리어 · 문 앞 금색 발판에 모이세요	Mini-game cleared · gather on the gold pad by the door	小游戏完成 · 请到门前的金色踏板集合	Мини-игра пройдена · соберитесь на золотой плите у двери
+우리 팀이 미니게임을 깼습니다 · 문 앞 금색 발판으로 오세요	Our team cleared the mini-game · come to the gold pad by the door	我方完成了小游戏 · 请到门前的金色踏板	Наша команда прошла мини-игру · идите к золотой плите у двери
+{0} / {1}명	{0} / {1} players	{0} / {1} 人	Игроков: {0} / {1}
+상대 팀이 먼저 통과했습니다 · {0}초 뒤 우리 문도 열립니다	The other team got through first · our door opens in {0} s	对方先通过了 · {0} 秒后我方的门也会打开	Соперники прошли первыми · наша дверь откроется через {0} с
+관전	Watch	观战	Смотреть
+실시간 순위	Live standings	实时排名	Текущие места
+위	th	名	-е
+조준 (마우스로 방향 · 좌클릭 밧줄 던지기 · 우클릭/F 취소)	Aim (mouse sets the direction · left click throws the rope · right click/F cancels)	瞄准（鼠标定方向 · 左键扔绳 · 右键/F 取消）	Прицел (мышь — направление · ЛКМ — бросить верёвку · ПКМ/F — отмена)
+밧줄이 날아감	Rope flying	绳索飞出	Верёвка летит
+밧줄 걸림 — WASD로 끌고 다니기 · 휠↑ 느슨하게 · 휠↓ 팽팽하게 · F/우클릭 놓기	Rope caught — drag them with WASD · wheel↑ slacken · wheel↓ tighten · F/right click lets go	绳索套住 — 用 WASD 拖着走 · 滚轮↑ 放松 · 滚轮↓ 拉紧 · F/右键 松开	Верёвка зацепила — тащите на WASD · колесо↑ ослабить · колесо↓ натянуть · F/ПКМ — отпустить
+밧줄 거둠	Rope pulled back	收回绳索	Верёвка смотана
+밧줄 끊어짐	Rope snapped	绳索断了	Верёвка порвалась
+부를 팀원 고르기	Pick teammates to call	选择要召唤的队友	Выберите, кого позвать
+대답 기다림	Waiting for answers	等待回应	Ждём ответов
+연결 (F 한 번 더 → {0})	Link (F again → {0})	连接（再按 F → {0}）	Связь (ещё раз F → {0})
+연결 (대상 없음)	Link (no target)	连接（无目标）	Связь (нет цели)
+첫 걸음	First step	第一步	Первый шаг
+두 번째 걸음 → {0}	Second step → {0}	第二步 → {0}	Второй шаг → {0}
+준비 (뒷발로 섬) → {0}	Rearing up → {0}	准备（后腿站立）→ {0}	На дыбы → {0}
+착지 후딜	Landing recovery	落地硬直	Восстановление после приземления
+도약 → {0}	Leap → {0}	跃起 → {0}	Прыжок → {0}
+도약	Leap	跃起	Прыжок
+머리 찍고 착지	Head stomp, landing	踩头落地	Прыжок на голову, приземление
+조준 (마우스로 위치 · 좌클릭 설치 · 우클릭/F 취소)	Aim (mouse sets the spot · left click places · right click/F cancels)	瞄准（鼠标定位置 · 左键放置 · 右键/F 取消）	Прицел (мышь — место · ЛКМ — поставить · ПКМ/F — отмена)
+실이 날아가는 중	Thread flying	丝线飞出中	Нить летит
+예고 (빛이 조여듦)	Warning (light closing in)	预警（光圈收紧）	Предупреждение (свет сжимается)
+후딜 (검에 끌려 돎)	Recovery (dragged round by the sword)	硬直（被剑带着转）	Восстановление (меч тянет по кругу)
+조준 (마우스로 방향 · 좌클릭 던지기 · 우클릭/F 취소)	Aim (mouse sets the direction · left click throws · right click/F cancels)	瞄准（鼠标定方向 · 左键投掷 · 右键/F 取消）	Прицел (мышь — направление · ЛКМ — бросить · ПКМ/F — отмена)
+팔 휘두르기	Arm swing	挥臂	Взмах рукой
+사슬이 날아감	Chain flying	锁链飞出	Цепь летит
+사슬 되감기	Chain winding back	收回锁链	Цепь сматывается
+팀원에게 손잡이 (우클릭으로 잡기)	Handle for a teammate (right click to grab)	给队友的把手（右键抓住）	Ручка для союзника (ПКМ — схватить)
+팀원 끌어올림	Pulling a teammate up	拉起队友	Подтягиваем союзника
+적 끌어옴	Pulling an enemy in	拉来敌人	Притягиваем врага
+쿨타임	Cooldown	冷却	Перезарядка
+준비됨	Ready	就绪	Готово
+조준	Aim	瞄准	Прицел
+예고	Warning	预警	Предупреждение
+발동	Active	发动	Действует
+연결 (F 한 번 더)	Link (F again)	连接（再按 F）	Связь (ещё раз F)
+후딜	Recovery	硬直	Восстановление
+쿨타임 {0:0.0}초	Cooldown {0:0.0} s	冷却 {0:0.0} 秒	Перезарядка {0:0.0} с
+{0} 조준 → {1}	{0} aim → {1}	{0} 瞄准 → {1}	{0} — прицел → {1}
+{0} 사용	{0} use	{0} 使用	{0} — применить
+승격 발판에 서서 승격	Stand on a promotion pad to promote	站上升变踏板即可升变	На плиту превращения
+우클릭: 잡기	Right click: grab	右键：抓住	ПКМ: схватить
+{0}(룩)의 사슬 · {1:0.0}초	{0}'s (rook) chain · {1:0.0} s	{0}（车）的锁链 · {1:0.0} 秒	Цепь {0} (ладья) · {1:0.0} с
+두 자리를 채우세요	Fill both spots	填满两个位置	Займите оба места
+같은 구간에 팀원이 없어요	No teammates in this section	同一区段没有队友	На этом участке нет союзников
+좌클릭 · 고르기	Left click · pick	左键 · 选择	ЛКМ · выбрать
+F · 부르기	F · call	F · 召唤	F · позвать
+우클릭 · 취소	Right click · cancel	右键 · 取消	ПКМ · отмена
+대답을 기다려요	Waiting for answers	等待回应	Ждём ответов
+왕의 부름	King's Call	王的召唤	Зов короля
+{0}번 자리	Spot {0}	{0} 号位	Место {0}
+비어 있음	Empty	空位	Пусто
+출발!	Go!	出发！	Вперёд!
+도착	Arrived	到达	На месте
+대답 없음	No answer	无回应	Нет ответа
+{0} · 킹	{0} · King	{0} · 王	{0} · Король
+놓침	Missed	错过	Упущено
+남은 시간	Time left	剩余时间	Осталось времени
+왕의 부름을 받았습니다	The king is calling you	收到了王的召唤	Вас зовёт король
+A 체스판 칠하기	A Paint the Board	A 涂色棋盘	A Раскрась доску
+B 판자 다리 놓기	B Plank Bridge	B 铺木板桥	B Мост из досок
+C 도개교	C Drawbridge	C 吊桥	C Подъёмный мост
+D 캡스턴 성문	D Capstan Gate	D 绞盘城门	D Ворота с кабестаном
+E 종탑	E Bell Tower	E 钟楼	E Колокольня
+F 앙파상 사냥	F En Passant Hunt	F 吃过路兵猎场	F Охота: взятие на проходе
+G 킹 호위	G King's Escort	G 护送国王	G Эскорт короля
+H 체크메이트 몰이	H Checkmate Chase	H 将杀围捕	H Загнать в мат
+I 체크 막기	I Block the Check	I 挡住将军	I Защита от шаха
+J 나이트의 길	J Knight's Path	J 骑士之路	J Путь коня
+백팀은 밝은 칸, 흑팀은 어두운 칸 위에 서 있으면 칠해집니다 · 우리 칸을 모두 칠하면 문이 열립니다	White paints by standing on light squares, black on dark ones · paint all of ours and the door opens	白队站在浅色格、黑队站在深色格上即可涂色 · 涂完我方所有格子门就会打开	Белые красят, стоя на светлых клетках, чёрные — на тёмных · закрасьте все наши, и дверь откроется
+판자를 우클릭으로 잡아 들고 다리 끝 빈자리에 놓으세요 · 상대 판자도 가져올 수 있습니다	Grab a plank with right click, carry it and lay it in the gap at the bridge's end · you can take the other team's planks too	用右键抓起木板，放到桥尽头的空位 · 也可以抢对方的木板	Схватите доску ПКМ, донесите и положите в проём на конце моста · можно брать и доски соперников
+밧줄 매듭을 우클릭으로 잡고 뒤로 걸어 당기세요 · 질주하면 더 세게 당깁니다	Grab the rope knot with right click and walk backwards to pull · sprinting pulls harder	用右键抓住绳结向后走来拉 · 冲刺拉得更用力	Схватите узел верёвки ПКМ и идите назад, чтобы тянуть · на бегу тянете сильнее
+캡스턴 막대를 화살표 방향으로 밀어 돌리세요 · 돌리는 만큼 쇠살문이 올라갑니다	Push the capstan bars the way the arrows point · the portcullis rises as it turns	把绞盘横杆往箭头方向推着转 · 转多少铁闸门就升多少	Толкайте рычаги кабестана по стрелкам · решётка поднимается по мере вращения
+탑을 올라 꼭대기의 종을 울리세요 · 종을 모두 울리면 문이 열립니다	Climb the tower and ring the bells at the top · ring them all and the door opens	爬上塔楼敲响顶上的钟 · 全部敲响门就会打开	Поднимитесь на башню и позвоните в колокола наверху · позвоните во все, и дверь откроется
+두 칸 전진해 빛나는 폰을 다이빙으로 들이받아 잡으세요 · 빛이 꺼지기 전에만 잡힙니다	Dive into a glowing pawn that stepped two squares to catch it · only while it glows	飞扑撞上前进两格后发光的兵即可抓住 · 只在发光时才能抓	Нырком врежьтесь в светящуюся пешку, шагнувшую на две клетки, чтобы взять её · только пока она светится
+밧줄을 우클릭으로 잡고 킹의 썰매를 문까지 끄세요 · 길을 막은 룩은 옆 차고로 끌어 넣습니다	Grab the rope with right click and haul the king's sled to the door · drag rooks blocking the way into the side bays	用右键抓住绳子把国王的雪橇拖到门口 · 挡路的车拖进旁边的车库	Схватите верёвку ПКМ и тащите сани короля к двери · ладей на пути оттащите в боковые ниши
+우리 폰 둘레 3×3칸이 공격 칸입니다 · 킹을 몰아 체크로 굳힌 뒤 다이빙으로 잡으세요	The 3×3 squares around our pawns are attack squares · corner the king with checks, then dive to catch it	我方兵周围 3×3 格是攻击格 · 用将军把王逼住后飞扑抓住	Клетки 3×3 вокруг наших пешек — клетки атаки · загоните короля шахами, затем возьмите нырком
+방패 수레를 밀어 공격선을 막으세요 · 나이트는 끌어내리고 폰은 들이받아 체크를 모두 풉니다	Push shield carts to block attack lines · pull knights down and ram pawns to clear every check	推动盾车挡住攻击线 · 把马拉下来、撞开兵，解除所有将军	Толкайте тележки-щиты, чтобы перекрыть линии атаки · стаскивайте коней и тараньте пешек, чтобы снять все шахи
+점프대에서 Space로 높이 뛰어 상대 기물이 있는 통에 올라서면 그 기물을 잡습니다 · 금색 통 둘을 함께 밟으면 물에 잠긴 킹이 떠오릅니다	Jump high with Space on a launch pad and land on a barrel with an enemy piece to catch it · step on both gold barrels together to raise the sunken king	在跳台上按 Space 高高跳起，站上有对方棋子的桶即可抓住它 · 一起踩两个金色桶，沉在水里的王就会浮起来	Прыгните высоко с трамплина на Space и приземлитесь на бочку с фигурой соперника, чтобы взять её · встаньте вместе на обе золотые бочки, чтобы поднять затонувшего короля
+# ===== course signs and 3D words (R753): SignText sweeps the round's TextMesh words through the table; the carriage yard's signs, push gate, mini-game team plaques, the typewriter note; the grab HUD
+1. 짐마차 마당: 돌진하는 마차와 말 피하기	1. Wagon Yard: dodge the charging carts	1. 马车院：躲开冲撞的马车和马	1. Двор повозок: уклоняйтесь от мчащихся телег
+2. 거대 물레방아: 바퀴살 사이 구멍으로 점프 + 다이빙	2. Giant Waterwheel: jump + dive through the gaps	2. 巨型水车：从辐条间的空隙跳跃 + 飞扑	2. Водяное колесо: прыжок + нырок в просветы
+물레방아에 점프해서 매달리기 (우클릭을 누른 채로)	Jump and hang on (hold right click)	跳上水车并抓住（按住右键）	Прыгните и повисните (удерживайте ПКМ)
+4. 최종 성문: 우클릭을 누른 채로 밀기	4. Final Gate: hold right click and push	4. 最终城门：按住右键推开	4. Последние ворота: удерживайте ПКМ и толкайте
+3. 왕실 하역 창고: 컨베이어는 짐 사이로 · 짐더미 줄은 초록 빈칸으로	3. Loading Depot: conveyors between cargo · green gaps in the rows	3. 王室卸货仓库：从货物之间穿过传送带 · 货堆行走绿色空位	3. Склад: конвейеры — между грузами · ряды — по зелёным
+들보 크레인은 넘거나 뒤따라 · 승강대는 초록 불에 · 궤짝엔 점프	Beam cranes: jump or follow · lifts on green · jump the crates	横梁吊车跳过或跟在后面 · 升降台绿灯时乘坐 · 遇到木箱就跳	Краны: прыжок или следом · лифт на зелёный · ящик — прыжок
+목재 크레인: 낮은 들보는 점프 · 지나간 뒤를 따라가기	Timber crane: jump the beam · follow it	木材吊车：跳过低横梁 · 跟在它后面走	Кран с брусом: перепрыгните балку · идите за ней
+도르래 승강대: 초록 불에 타기	Pulley lift: ride on green	滑轮升降台：绿灯时乘坐	Блочный лифт: садитесь на зелёный
+매달린 짐 아래 서지 말 것	Don't stand under hanging loads	不要站在悬挂的货物下面	Не стойте под висящими грузами
+입고	In	入库	Приём
+분류	Sort	分拣	Сортировка
+우클릭을 누른 채로 밀기	Hold right click and push	按住右键推动	Удерживайте ПКМ и толкайте
+1 → 2 → 3 → 4 → 5\n기억한 글자로 올라가 안으로 들어가세요	1 → 2 → 3 → 4 → 5\nClimb by the letters you remembered and go inside	1 → 2 → 3 → 4 → 5\n按记住的字母往上爬，然后进去	1 → 2 → 3 → 4 → 5\nПоднимитесь по запомненным буквам и войдите внутрь
+잡혔다! 좌클릭 연타	Grabbed! Mash left click	被抓住了！连点左键	Вас схватили! Жмите ЛКМ
+잡는 중	Holding	抓取中	Держим
+백팀 출구 방향	White team exit this way	白队出口方向	Выход белых — сюда
+흑팀 출구 방향	Black team exit this way	黑队出口方向	Выход чёрных — сюда
+백팀 진영	White team side	白队阵地	Сторона белых
+흑팀 진영	Black team side	黑队阵地	Сторона чёрных
+백팀 출구	White team exit	白队出口	Выход белых
+흑팀 출구	Black team exit	黑队出口	Выход чёрных
+# ===== Sword Fight in the match (R752): SwordFightMatch.Hud, SteamSwordFightLink
+# --- RagdollLab/SwordFightMatch.Hud.cs (Sword Fight match HUD: stamps, score, caption, pick cards, end card)
+{0} — 스스로	{0} — on their own	{0} — 自己掉落	{0} — сам
+{0} ← {1}의 {2}	{0} ← {1}'s {2}	{0} ← {1}的{2}	{0} ← {2} ({1})
+장외!	Ring out!	出界！	Вылет!
+{0} · 흰 팀 +1	{0} · White +1	{0} · 白队 +1	{0} · Белые +1
+{0} · 검은 팀 +1	{0} · Black +1	{0} · 黑队 +1	{0} · Чёрные +1
+빼앗음!	Stolen!	夺取！	Отобрано!
+먼저 {0}점	First to {0}	先得 {0} 分	Первым до {0}
+4:00 종료	Full time	4:00 结束	Время вышло
+흰 팀 승리	White wins	白队获胜	Белые победили
+검은 팀 승리	Black wins	黑队获胜	Чёрные победили
+반격!	Riposte!	反击！	Рипост!
+칼을 받아냄	Caught the blade	接住了剑	Клинок пойман
+귀환!	Return!	归来！	Возвращение!
+칼을 박고 매달림	Blade planted, hanging on	插剑悬挂	Меч вонзён, держится
+역전!	Comeback!	逆转！	Камбэк!
+나이트가 머리를 넘는다	The knight vaults overhead	骑士从头顶跃过	Конь перепрыгивает через голову
+탈출!	Escape!	脱出！	Побег!
+비숍이 대각선으로 빠져나간다	The bishop slips out diagonally	主教斜向溜走	Слон ускользает по диагонали
+성벽 붕괴!	Wall Breaker!	城墙崩塌！	Сокрушитель стен!
+바닥째 무너진다	The floor caves in	连地面一起崩塌	Пол обрушивается
+시작!	Go!	开始！	Начали!
+{0:0.0}초 뒤 돌아온다	Back in {0:0.0} s	{0:0.0} 秒后回来	Возврат через {0:0.0} с
+{0} 그대로 돌아온다. 스킬 쿨타임도 이어진다	Back as the same {0}. Skill cooldowns keep running	以原来的{0}回来。技能冷却继续计算	Вернётесь той же фигурой: {0}. Перезарядка навыков продолжается
+{0:0.0}초	{0:0.0} s	{0:0.0} 秒	{0:0.0} с
+준비	ready	就绪	— к бою
+E 없음	E none	无 E	E нет
+대각선으로 부딪히면 넘어뜨린다. 둘째 걸음은 방향을 바꿀 수 있다	Bump diagonally to knock down. The second step can change direction	斜向撞上可击倒。第二步可以改变方向	Удар по диагонали сбивает с ног. Второй шаг может сменить направление
+좌클릭 베기 · F 조준 뒤 F 발동, 좌·우클릭 취소 · E는 떨어지기 시작할 때	Click: slash · F aims, F again casts, clicks cancel · E as you start to fall	左键挥砍 · 按 F 瞄准再按 F 发动，左/右键取消 · E 在开始坠落时使用	ЛКМ: удар · F — прицел, ещё F — применить, клики отменяют · E — когда начинаете падать
+시작 기물 고르기	Pick your starting piece	选择初始棋子	Выберите стартовую фигуру
+같은 팀 안에서는 겹치지 않아요	Teammates can't pick the same piece	同队内不能选相同的棋子	Союзники не могут выбрать одну фигуру
+{0} 고름	{0}'s pick	{0} 的选择	Выбор: {0}
+골랐어요	Picked	已选择	Выбрано
+Space · 더블클릭으로 확정	Space · double-click	Space · 双击确认	Space · двойной клик
+클릭해서 선택	Click to pick	点击选择	Нажмите, чтобы выбрать
+나 · {0}	Me · {0}	我 · {0}	Я · {0}
+나 · 고르는 중	Me · picking	我 · 选择中	Я · выбираю
+{0} · 고르는 중	{0} · picking	{0} · 选择中	{0} · выбирает
+골랐어요. 다른 사람을 기다리는 중	Picked. Waiting for the others	已选择。正在等待其他人	Выбрано. Ждём остальных
+방장에게 보내는 중	Sending to the host	正在发送给房主	Отправка хосту
+{0} 선택 · Space나 더블클릭으로 확정	{0} selected · Space or double-click to lock in	已选 {0} · 按 Space 或双击确认	Выбрано: {0} · Space или двойной клик — подтвердить
+클릭 · 1~5로 선택, Space나 더블클릭으로 확정	Click or 1-5 to select · Space or double-click to lock in	点击或按 1~5 选择 · 按 Space 或双击确认	Клик или 1-5 — выбор · Space или двойной клик — подтвердить
+{0}점	{0} points	{0} 分	Очки: {0}
+{0} — 무승부 {1} : {2}	{0} — Draw {1} : {2}	{0} — 平局 {1} : {2}	{0} — Ничья {1} : {2}
+{0} — 흰 팀 승리 {1} : {2}	{0} — White wins {1} : {2}	{0} — 白队获胜 {1} : {2}	{0} — Белые победили {1} : {2}
+{0} — 검은 팀 승리 {1} : {2}	{0} — Black wins {1} : {2}	{0} — 黑队获胜 {1} : {2}	{0} — Чёрные победили {1} : {2}
+비겼다.	It's a draw.	平局。	Ничья.
+우리 팀이 이겼다.	Our team won.	我方获胜。	Наша команда победила.
+우리 팀이 졌다.	Our team lost.	我方失败。	Наша команда проиграла.
+떨어뜨린 수가 점수.	Each knockout is a point.	击落数即为得分。	Каждый сброс — очко.
+흰 팀	White team	白队	Белые
+검은 팀	Black team	黑队	Чёрные
+장외로 얻은 점수 {0}	Knockout points {0}	出界得分 {0}	Очки за вылеты: {0}
+# --- Assets/Scripts/RagdollLabSteam/SteamSwordFightLink.cs
+소드파이트 호스트 연결이 끊어졌습니다.	Lost the connection to the Sword Fight host.	与剑斗主机的连接已断开。	Связь с хостом боя на мечах потеряна.
+# ===== waiting room start notes and the emote wheel (R754): MatchLoader StartNote, EmoteWheel moods, PieceEmotes names
+{0} 대 {1} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)	{0} vs {1} · you can start now (starts by itself at 12)	{0} 对 {1} · 现在可以开始（满 12 人自动开始）	{0} против {1} · можно начинать (при 12 игроках — автостарт)
+{0} 대 {1} · 방장이 시작할 수 있어요	{0} vs {1} · the host can start	{0} 对 {1} · 房主可以开始	{0} против {1} · хост может начать
+{0} 대 {1} · 방에 들어온 {2}명이 자리를 받는 중이에요	{0} vs {1} · {2} who just joined are getting seats	{0} 对 {1} · 刚进入房间的 {2} 人正在分配座位	{0} против {1} · новые игроки ({2}) получают места
+{0} 대 {1} · 팀마다 {2}명 이상이면 시작할 수 있어요	{0} vs {1} · can start with {2} or more a team	{0} 对 {1} · 每队 {2} 人及以上即可开始	{0} против {1} · можно начать, если в команде от {2}
+{0} 대 {1} · 두 팀 인원이 같아야 시작할 수 있어요	{0} vs {1} · both teams need the same number to start	{0} 对 {1} · 两队人数相同才能开始	{0} против {1} · для старта нужно поровну игроков
+{0} 대 {1} · 모두 입장하면 시작할 수 있어요	{0} vs {1} · can start once everyone's in	{0} 对 {1} · 所有人进入后即可开始	{0} против {1} · можно начать, когда все войдут
+도발	Taunt	挑衅	Насмешка
+기쁨	Joy	喜悦	Радость
+당황	Flustered	慌张	Растерянность
+분노	Anger	愤怒	Гнев
+주먹 불끈	Fist pump	握拳	Кулак вверх
+깡충 점프	Hop	蹦跳	Подскок
+방패 뒤에 숨기	Hide behind the shield	躲到盾后	Спрятаться за щит
+땅 치며 울상	Pound the ground	捶地哭丧	Стучать по земле
+팔짱 끼고 우뚝	Arms crossed, standing tall	抱臂挺立	Руки на груди, гордо
+껄껄 웃음	Hearty laugh	哈哈大笑	Задорный смех
+성벽에 금이 감	The wall cracks	城墙裂开	Стена трескается
+성벽 쾅	Wall slam	城墙重击	Удар стеной
+음흉한 미소	Sly grin	阴险微笑	Хитрая ухмылка
+평온한 기도	Calm prayer	平静祈祷	Спокойная молитва
+지팡이를 떨어뜨림	Drops the staff	掉了法杖	Роняет посох
+한숨	Sigh	叹气	Вздох
+창 겨누기	Lance aimed	举枪瞄准	Копьё наготове
+승리 포즈	Victory pose	胜利姿势	Победная поза
+말이 뒷걸음질	The horse backs off	马儿后退	Конь пятится
+콧김 씩씩	Snorting	喷鼻气	Фырканье
+호령	Command	号令	Приказ
+호탕한 웃음	Roaring laugh	豪爽大笑	Раскатистый хохот
+왕관이 삐딱해짐	Crown askew	王冠歪了	Корона набекрень
+왕관을 벗어 쥠	Crown in hand	摘下王冠	Корона в руке
+턱 괴고 윙크	Chin on hand, wink	托腮眨眼	Щека на ладони, подмигивание
+우아한 박수	Graceful applause	优雅鼓掌	Изящные аплодисменты
+부채로 얼굴 가림	Hides behind a fan	用扇子遮脸	Прячется за веером
+홀을 겨눔	Scepter pointed	举起权杖	Скипетр нацелен
+# --- RagdollLabSteam/SteamPawnRushLink.Unstuck.cs (R786: 끼었을 때 되돌아가기)
+끼었나요?	Stuck?	卡住了吗？	Застряли?
+{0} 길게 누르면 뒤 체크포인트로 되돌아가요	Hold {0} to go back to a checkpoint behind you	长按 {0} 返回身后的检查点	Удерживайте {0}, чтобы вернуться к контрольной точке позади
+{0}초 뒤에 다시 되돌아갈 수 있어요	You can go back again in {0} s	{0} 秒后可再次返回	Вернуться снова можно через {0} с
+되돌아가는 중…	Going back…	正在返回…	Возвращаемся…
+지금은 되돌아갈 수 없어요	You can't go back right now	现在无法返回	Сейчас вернуться нельзя

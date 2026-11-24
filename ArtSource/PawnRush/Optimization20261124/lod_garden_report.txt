@@ -1,0 +1,8 @@
+lod_garden.py (R816) ratio 0.50, sharp 30 deg
+GardenPlaza: 27 objects, 313866 -> 158888 triangles (51%), box drift 0.115 m
+GardenCanal: 13 objects, 181430 -> 90711 triangles (50%), box drift 0.005 m
+GardenLockDyke: 15 objects, 276588 -> 138289 triangles (50%), box drift 0.004 m
+GardenGate: 10 objects, 203969 -> 101977 triangles (50%), box drift 0.015 m
+GardenWalls: 56 objects, 294298 -> 147129 triangles (50%), box drift 0.038 m
+GardenPlatforms: 18 objects, 243612 -> 121800 triangles (50%), box drift 0.003 m
+GardenWatergate: 6 objects, 222112 -> 111056 triangles (50%), box drift 0.002 m

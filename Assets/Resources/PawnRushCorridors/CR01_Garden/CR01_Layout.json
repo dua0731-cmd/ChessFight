@@ -1,0 +1,16 @@
+{
+  "id": "CR01_Garden",
+  "height": 4.5,
+  "z_from": 0.0,
+  "z_to": 9.2,
+  "bay_span_authored": 1.9,
+  "pier_depth": 0.9,
+  "open_sky": true,
+  "modules": [
+    "Bay",
+    "Floor",
+    "Pier",
+    "Portal"
+  ],
+  "ornaments": []
+}

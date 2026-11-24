@@ -31,6 +31,10 @@ namespace ChessFight.RagdollLab
         BishopLeap, BishopCross, BishopHit,
         // R236, the bishop's new E (대각선 미끄럼): he pushes off, an enemy pushed aside on his way, he stops.
         BishopSlide, BishopSlideHit, BishopSlideStop,
+        // R808, not a skill's: a click cut stopped on the shell of a piece under its respawn protection (SwordFightPawn.
+        // HitShells; at = where the blade met the shell, target = that piece). Last, so every older number keeps its
+        // meaning: a build without it draws nothing for it.
+        SwordBlocked,
     }
 
     /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
@@ -1337,6 +1341,12 @@ namespace ChessFight.RagdollLab
 
         void Raise(SfFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, float size, int order = 0)
             => Fx?.Invoke(new SfFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, size = size, order = order });
+
+        /// <summary>R808: this piece's click cut was stopped on <paramref name="shielded"/>'s protection shell (SwordFightPawn.
+        /// HitShells, where the cut is run). Raised as a moment like the skills' so the host's link sends it and every
+        /// screen plays it once when its bodies get there (the ring: SwordFightSkillFx.ShellRing, SwordFightSkillSfx, the
+        /// bubble's flare in SwordFightMatch.Board).</summary>
+        internal void RaiseBlocked(RagdollPawn shielded, Vector3 at, Vector3 dir) => Raise(SfFxKind.SwordBlocked, shielded, at, dir, 0f);
 
         void Say(string text) => Log?.Invoke(this, text);
 

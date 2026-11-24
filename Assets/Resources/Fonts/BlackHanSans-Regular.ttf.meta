@@ -10,6 +10,8 @@ TrueTypeFontImporter:
   includeFontData: 1
   fontNames:
   - Black Han Sans
+  - Malgun Gothic
+  - Microsoft YaHei
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

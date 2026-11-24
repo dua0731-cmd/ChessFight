@@ -39,6 +39,8 @@ namespace ChessFight.PawnRush
                 case PawnRushMissions.Checkmate: ChessHall(decoration, root); break;
                 case PawnRushMissions.CheckBlock: Bedchamber(decoration, scope, station); break;
             }
+            // R757: dressed again mid-match too (MgCheckBlock's new position, MgKingEscort) - its words in the game's language
+            if (Application.isPlaying) ChessFight.Game.SignText.TranslateUnder(decoration);
         }
 
         static void GoalSign(Transform parent, MissionStation station, int game)

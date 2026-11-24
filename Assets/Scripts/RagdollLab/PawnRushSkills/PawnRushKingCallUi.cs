@@ -268,7 +268,7 @@ namespace ChessFight.RagdollLab
             display = Resources.Load<Font>("Fonts/BlackHanSans-Regular");
             // The OS font's family name exactly (Unity 6 draws IMGUI text through TextCore: a name it cannot load, such as
             // "Malgun Gothic Bold", logged a warning on every label every frame and drew other glyphs in its place).
-            label = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 16);
+            label = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Microsoft YaHei", "Arial" }, 16);
             glyphs = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI Symbol", "Segoe UI Emoji", "Arial Unicode MS" }, 32);
             if (display == null) display = label;
             crown = CrownTexture();
@@ -281,7 +281,7 @@ namespace ChessFight.RagdollLab
         void DrawList(RagdollPawn me, float s)
         {
             if (Event.current.type == EventType.Repaint) GUI.DrawTexture(new Rect(0f, 0f, Screen.width, 330f * s), shade, ScaleMode.StretchToFill);
-            float y = Title(s, "두 자리를 채우세요");
+            float y = Title(s, Loc.T("두 자리를 채우세요"));
             var places = new Slot[2];
             for (int i = 0; i < 2; i++)
             {
@@ -303,7 +303,7 @@ namespace ChessFight.RagdollLab
             float top = 300f * s;
             if (candidates.Count == 0)
             {
-                const string none = "같은 구간에 팀원이 없어요";
+                string none = Loc.T("같은 구간에 팀원이 없어요");
                 float w = Measure(none, label, 18f * s) + 2f * Pad * s;
                 var r = new Rect((Screen.width - w) * 0.5f, top, w, H * s);
                 Fill(r, new Color(Ink.r, Ink.g, Ink.b, 0.9f), H * 0.5f * s);
@@ -331,7 +331,7 @@ namespace ChessFight.RagdollLab
             }
 
             // The keys.
-            Chips(s, ("좌클릭 · 고르기", false), ("F · 부르기", true), ("우클릭 · 취소", false));
+            Chips(s, (Loc.T("좌클릭 · 고르기"), false), (Loc.T("F · 부르기"), true), (Loc.T("우클릭 · 취소"), false));
         }
 
         /// <summary>D's king screen after the call (Flow 1 and 4): each place's time left, then how it went.</summary>
@@ -340,7 +340,7 @@ namespace ChessFight.RagdollLab
             bool waiting = mine[0].state == RagdollPawn.KingSlotState.Waiting || mine[1].state == RagdollPawn.KingSlotState.Waiting;
             // The same shade as the list's: the crown's shaft of light stands right behind the title.
             if (Event.current.type == EventType.Repaint) GUI.DrawTexture(new Rect(0f, 0f, Screen.width, 330f * s), shade, ScaleMode.StretchToFill);
-            float y = Title(s, waiting ? "대답을 기다려요" : null);
+            float y = Title(s, waiting ? Loc.T("대답을 기다려요") : null);
             ClockFace(s, y + 14f * s, new[] { mine[0].state != RagdollPawn.KingSlotState.None ? mine[0] : null, mine[1].state != RagdollPawn.KingSlotState.None ? mine[1] : null }, mine);
         }
 
@@ -348,12 +348,12 @@ namespace ChessFight.RagdollLab
         float Title(float s, string line)
         {
             float top = 28f * s, h = 40f * s;
-            float wName = Measure("왕의 부름", display, 30f * s), wLine = line != null ? Measure(line, label, 16f * s) : 0f;
+            float wName = Measure(Loc.T("왕의 부름"), display, 30f * s), wLine = line != null ? Measure(line, label, 16f * s) : 0f;
             float w = 32f * s + 12f * s + wName + (line != null ? 12f * s + wLine : 0f);
             float x = (Screen.width - w) * 0.5f;
             Icon(new Rect(x, top + (h - 24f * s) * 0.5f, 32f * s, 24f * s), Gold);
             x += 44f * s;
-            Write(new Rect(x, top, wName, h), "왕의 부름", display, 30f * s, Cream, TextAnchor.MiddleLeft);
+            Write(new Rect(x, top, wName, h), Loc.T("왕의 부름"), display, 30f * s, Cream, TextAnchor.MiddleLeft);
             if (line != null) Write(new Rect(x + wName + 12f * s, top, wLine, h), line, label, 16f * s, Sub, TextAnchor.MiddleLeft);
             return top + h;
         }
@@ -371,14 +371,14 @@ namespace ChessFight.RagdollLab
             {
                 var r = new Rect(face.x + pad + i * (cw + gap), face.y + pad, cw, h);
                 var p = places[i];
-                string place = $"{i + 1}번 자리";
+                string place = Loc.F("{0}번 자리", i + 1);
                 if (p == null)
                 {
                     Fill(r, Cell, 10f * s);
                     Dashed(r, Edge, 2f * s, 10f * s, 8f * s);
                     Write(new Rect(r.x, r.y + 8f * s, r.width, 18f * s), place, label, 13f * s, Gold, TextAnchor.UpperCenter);
                     Write(new Rect(r.x, r.y + 28f * s, r.width, 46f * s), "—", glyphs, 40f * s, Muted, TextAnchor.MiddleCenter);
-                    Write(new Rect(r.x, r.y + 78f * s, r.width, 24f * s), "비어 있음", label, 18f * s, Muted, TextAnchor.UpperCenter, true);
+                    Write(new Rect(r.x, r.y + 78f * s, r.width, 24f * s), Loc.T("비어 있음"), label, 18f * s, Muted, TextAnchor.UpperCenter, true);
                     continue;
                 }
                 var state = called != null ? p.state : RagdollPawn.KingSlotState.None;
@@ -398,8 +398,8 @@ namespace ChessFight.RagdollLab
                     else Write(new Rect(r.x, r.y + 76f * s, r.width, 24f * s), p.name, label, 18f * s, ink, TextAnchor.UpperCenter, true);
                     continue;
                 }
-                string how = state == RagdollPawn.KingSlotState.Going ? "출발!" : state == RagdollPawn.KingSlotState.Arrived ? "도착"
-                           : state == RagdollPawn.KingSlotState.Cancelled ? "취소" : "대답 없음";
+                string how = Loc.T(state == RagdollPawn.KingSlotState.Going ? "출발!" : state == RagdollPawn.KingSlotState.Arrived ? "도착"
+                           : state == RagdollPawn.KingSlotState.Cancelled ? "취소" : "대답 없음");
                 Write(new Rect(r.x, r.y + 34f * s, r.width, 24f * s), p.name, label, 18f * s, ink, TextAnchor.UpperCenter, true);
                 Write(new Rect(r.x, r.y + 60f * s, r.width, 40f * s), how, display, 26f * s, ink, TextAnchor.UpperCenter);
             }
@@ -431,27 +431,27 @@ namespace ChessFight.RagdollLab
             Fill(who, Cell, 10f * s);
             // Who called: the chess king (no label, no crown, R146).
             Write(new Rect(who.x, who.y + 4f * s, who.width, 74f * s), KingIcon, glyphs, 62f * s, Cream, TextAnchor.MiddleCenter);
-            Write(new Rect(who.x, who.y + 80f * s, who.width, 26f * s), $"{callerName} · 킹", label, 20f * s, Cream, TextAnchor.UpperCenter, true);
+            Write(new Rect(who.x, who.y + 80f * s, who.width, 26f * s), Loc.F("{0} · 킹", callerName), label, 20f * s, Cream, TextAnchor.UpperCenter, true);
             if (going)
             {
                 Fill(time, Gold, 10f * s);
-                Write(time, callState == RagdollPawn.KingSlotState.Arrived ? "도착" : "출발!", display, 46f * s, Ink, TextAnchor.MiddleCenter);
+                Write(time, Loc.T(callState == RagdollPawn.KingSlotState.Arrived ? "도착" : "출발!"), display, 46f * s, Ink, TextAnchor.MiddleCenter);
             }
             else if (off)
             {
                 Fill(time, Cell, 10f * s);
-                Write(time, callState == RagdollPawn.KingSlotState.Cancelled ? "취소" : "놓침", display, 40f * s, Muted, TextAnchor.MiddleCenter);
+                Write(time, Loc.T(callState == RagdollPawn.KingSlotState.Cancelled ? "취소" : "놓침"), display, 40f * s, Muted, TextAnchor.MiddleCenter);
             }
             else
             {
                 Fill(time, Cream, 10f * s);
-                Write(new Rect(time.x, time.y + 10f * s, time.width, 18f * s), "남은 시간", label, 14f * s, Brown, TextAnchor.UpperCenter);
+                Write(new Rect(time.x, time.y + 10f * s, time.width, 18f * s), Loc.T("남은 시간"), label, 14f * s, Brown, TextAnchor.UpperCenter);
                 Write(new Rect(time.x, time.y + 34f * s, time.width, 64f * s), Clock(callEndsAt - Time.time), display, 46f * s, Ink, TextAnchor.MiddleCenter);
             }
             // The band under it.
             var band = new Rect(body.x + 14f * s, body.yMax, w - 28f * s, 54f * s);
             Fill(band, Gold, 10f * s, false, true);
-            Write(new Rect(band.x + 18f * s, band.y, band.width - 36f * s, band.height), "왕의 부름을 받았습니다", display, 28f * s, Ink, TextAnchor.MiddleLeft);
+            Write(new Rect(band.x + 18f * s, band.y, band.width - 36f * s, band.height), Loc.T("왕의 부름을 받았습니다"), display, 28f * s, Ink, TextAnchor.MiddleLeft);
         }
 
         /// <summary>The keys at the bottom: dark chips, the call's in gold.</summary>

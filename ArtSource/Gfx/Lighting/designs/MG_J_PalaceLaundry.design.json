@@ -1,0 +1,421 @@
+{
+ "concept_en": "The palace bathhouse in the morning. It is a white-tiled washhall under a flat timber ceiling, with two storeys of arcaded windows down both long walls. The morning sun comes in only through the east windows. It lays long diagonal stripes across the east pool and slants as shafts through the steam. On the west side, the sky through each arcade window pools on the water in front of it. Each of the seven iron wheel-chandeliers carries a near-daylight room light down onto the tubs below it; the warmth stays in their candles. Hidden daylight washes, hung in mid-air, make the cream walls, the linen on the lines, the balconies and the upper window piers glow evenly. A brass lantern on every arcade pier keeps a small warm halo. The two team gates in the far wall are the brightest framed planes, each under one shadow-casting pool of light. Beyond them, a lit tunnel opens into the rear gallery, whose exit door is the last bright point.",
+ "concept_ko": "컨셉: 아침의 궁전 목욕탕입니다. 목조 천장 아래 흰 타일 세탁장으로, 양쪽 긴 벽에 2층 아케이드 창이 이어지는 '창으로 밝은 닫힌 방'입니다.\n층별 구성은 다음과 같습니다.\n- 데이라이트: 동쪽 창으로 든 아침 해가 동쪽 욕조에 사선 빛줄과 증기 속 광선을 만들고, 서쪽은 아케이드 창마다 하늘빛이 창 앞 물 위에 고입니다.\n- 기본광: 일곱 개 철제 바퀴 샹들리에가 각자 아래 욕조를 거의 낮빛인 흰색으로 비춥니다. 따뜻함은 촛불에만 둡니다.\n- 워시: 숨은 낮빛 워시가 크림색 벽, 빨래, 발코니, 위층 창 기둥을 고르게 밝힙니다.\n- 장식광: 기둥마다 놋쇠 랜턴이 작은 따뜻한 후광을 냅니다.\n주인공은 안쪽 벽의 두 팀 게이트입니다. 그림자를 드리우는 스폿 하나씩이 아치, 깃발, 진행바, 문을 홀 평균의 약 두 배로 밝혀 가장 밝은 액자가 되고, 그 너머로 터널과 뒤 회랑이 마지막 출구 문까지 이어집니다.\n지금보다 바뀌는 점은 세 가지입니다.\n- '위에서 내리는 차가운 빛'은 이 홀에 실제로 천장이 있어서 맞지 않으므로, 동·서 창의 중립 낮빛으로 바꿨습니다.\n- 금색 큐브 위의 따뜻한 램프 12개와 자동 골 라이트를 걷어 노란 웅덩이를 없앴습니다.\n- 샹들리에가 실제로 방을 밝히고 벽 전체를 씻어, 윗벽이 어둡지 않은 밝은 목욕탕이 되게 했습니다.\n간접광이 이제 베이크되므로 직접광은 목표의 약 60%로 잡았습니다. 베이크와 합치면 바닥 약 1.0, 벽 1.0~1.3이 되도록 계산했습니다.",
+ "survey": "SIZE AND STRUCTURE\n- The pool hall is x -22..22 by z 0..24, about 13 m high under a flat timber ceiling with cross beams at z 5/10/15/20.\n- J_HallEnv is roofed. The method's recipe 7.5, which says \"roofless\", is out of date. The survey pictures show the ceiling and no sun leak through it.\n- Beyond the back wall, two gate tunnels run at x ±(9.6..14.4), z 24..30. Each has its J_Leaf door at z 27.0-27.4, 5.1 m tall.\n- The rear gallery is x -22..22, z 30..36. Its floor shows in the top view, so it is open to at least about 13 m. The exit door is at (0, 0, 36).\n\nBAYS AND HEIGHTS\nBoth long walls have five bays: z 0-5, 5-10, 10-15, 15-20 and 20-24. Heights were read from the pictures with the camera model, which put spot 1's camera about 22 m from the west wall:\n- the piers at z 5/10/15/20 carry the team's brass lanterns at y 3.4;\n- white-tile wainscot up to about 1.5 m;\n- a large arcade opening at about 1.6-4.5 m, with sky behind it;\n- in front of each opening, a laundry line at |x| 21.2, y 4.2, with three sheets at y 2.7-4.2;\n- a balcony with balustrade at about 5.2-6.3 m;\n- an arched upper window at about 6.9-11 m;\n- a cornice at about 12 m.\nThe back wall has two lanterns at (±18.4, 3.4, 23.6). Seven iron wheel-chandeliers hang with their sockets at y 10.7: on x 0 at z 7.5/12.5/17.5, and on x ±12 at z 7.5/17.5.\n\nAXIS AND FLOORS\n- The central checker-marble aisle (x -2..2) runs from the entry to the back wall.\n- The entry band (z 0-4) is checker marble at y 0.\n- The raised white-tile station (z 4-6.1) is at y 0.4, with the promo pads at x ±16.5.\n- Two pools: x 2.1..21.9 on each side, z 6.1..23.3. Water is at -0.25 over white-tile basins at -1.4. Each pool has 17 floating tubs with tops at 0.4, plus dolls and glowing gold cubes up to y 2.4.\n\nSUN AND OPENINGS\nThe sun travels (-0.50, -0.60, -0.62), so it enters only through the east (+x) wall:\n- the lower openings throw diagonal patches along the east pool's outer strip (x 18.5-20.5, z 0-21);\n- the upper windows throw five slanted stripes, about 1.8 x 4.6 m each, at x 13-16 across the east pool, the station and the entry band;\n- there are small patches low on the entry wall's east corner.\nThe west (white) half, the back wall and the west wall get no direct sun. The shafts draw in the east window openings. The entry door (z 0) and the exit door (z 36) join closed corridors.\n\nLIGHT POSITIONS\nThere are no ledges I can verify, so the hidden lights hang in free air, at least 0.9 m from anything:\n- 1.5 m under each chandelier ring (y 9.2);\n- over each pool at y 8 (|x| 12);\n- just inside the arcade openings (|x| 19, y 4.8), between the laundry lines below and the balcony above;\n- above the entry band (y 8.5);\n- mid-height in the tunnels and the gallery.\n\nSURFACES (estimated albedo)\n- white tile (basins, wainscot, station, passages) about 0.8\n- cream ashlar walls about 0.65\n- checker marble about 0.45-0.5\n- maple tubs about 0.45\n- tan timber ceiling about 0.45\n- linen about 0.8\n- walnut sign boards about 0.35\n\nROUTE (white)\n(0,0,0) → west along the entry band to (-12, 0, 3) → station → zigzag over the west pool's tubs between x -20 and -4 → gate strip (-8.6, 22.9) → west tunnel (x -12, z 24-30) → east along the gallery to (0, 0, 33) → exit door (0, 0, 36). Black mirrors this route on the sunny east side.\n\nHERO\nThe two team gates in the back wall: the arch frame at x ±(8.8..15.2), y 0-7.2, with the team banner, progress bar and exit label above. The J_Leaf door sits 3 m inside, and the J_Wheel stands beside the arch.\n\nLANDMARK\nFrom the entrance, the chandelier row over the aisle leads the eye to the back wall and its two lit gates.\n\nKEEP READABLE\nTubs and their numbers, dolls and gold cubes, promo pads, game signs, progress bars.",
+ "hierarchy": "- Field F is about 1.0, direct plus baked. The route floor is 0.74-1.16 (mean 0.97, uniformity about 0.76, which meets the \"very even\" recipe). The walls are 0.7-1.36, at least as bright as the floor, peaking at mid-height. The timber ceiling is the dimmest surface at 0.52-0.85, but not dark.\n- Hero: each team gate. The arch, banner zone and progress bar reach 1.65-2.3 (about 2F, a little over one stop above the route). The door 3 m inside is at 1.0-1.6, like a deep doorway. The gate accents are shadow-casting, so pieces coming in put contact shadows onto the gate.\n- Secondaries:\n  - the east pool's sun stripes, about 1.8 (floor patches on the black side only);\n  - the linen sheets at about 1.0-1.1 (luminous white);\n  - the lanterns' warm 1-2 m halos;\n  - in the rear gallery, the exit door at about 2.3 over a field of 0.6-1.0.\n- Zones toward the goal: entry band 0.75-1.0 → pool route about 1.0 → gate strip 1.3 → gate 2.3. Then the tunnel 1.1-1.4 → gallery 0.6-1.0 → exit door 2.3.\n- Shade minimum in view is 0.43, at the top corners of the back wall, which is above F/3.\n- Key:fill on the route is about 2.4:1 (direct 0.55-0.77 over the bake's 0.39), meeting the course-2 target.\n- D6 pattern: space with focal point, a twin focal frame with one gate per team.\n- Mood: course 2, light and grand. A clean, even, bright morning bathhouse whose only warmth is in the flames.",
+ "look": {
+  "Indoor": 0.7,
+  "Bounce": 0.3,
+  "BounceTint": [
+   0.97,
+   1,
+   0.99
+  ],
+  "Exposure": 0.05,
+  "Contrast": 22,
+  "Saturation": 16,
+  "BloomIntensity": 0.5,
+  "BloomThreshold": 1.3,
+  "Vignette": 0.12,
+  "ShaftIntensity": 1.5,
+  "ShaftDensity": 0.04
+ },
+ "rig": {
+  "Lid": false,
+  "ClearGlass": true,
+  "FixtureBoost": 3,
+  "FixtureReach": 0.6,
+  "LampIntensity": 0,
+  "UplightIntensity": 0,
+  "GoalIntensity": 0,
+  "StageIntensity": 0,
+  "HeartIntensity": 0,
+  "FloorGloss": 0.75
+ },
+ "plan": [
+  {
+   "layer": "daylight",
+   "note": "West arcade windows' sky light. One shadowless spot just inside each of the three pool bays' lower openings: 2.2 m in front of the swaying sheets, 0.6 m above the line, under the balcony. Aimed inward and down so the water and tubs in front of each window are a little brighter than the pool's middle, and the room reads as lit from its windows. Sits between the lanterns on the piers. E about 0.45 on the tubs 5 m in front (cos 0.88, W(0.5) 0.88): I = 0.45*25/(0.88*0.88) = 14.",
+   "type": "Spot",
+   "at": [
+    -19,
+    4.8,
+    7.5
+   ],
+   "to": [
+    -19,
+    4.8,
+    17.5
+   ],
+   "count": 3,
+   "aim": [
+    1,
+    -0.6,
+    0
+   ],
+   "angle": 120,
+   "inner": 80,
+   "intensity": 14,
+   "range": 10,
+   "color": [
+    0.98,
+    0.99,
+    1
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "daylight",
+   "note": "East arcade windows' sky light, the mirror of the west row, on the sunny side where it joins the sun's stripes. Same sizing: E about 0.45 at 5 m gives I 14.",
+   "type": "Spot",
+   "at": [
+    19,
+    4.8,
+    7.5
+   ],
+   "to": [
+    19,
+    4.8,
+    17.5
+   ],
+   "count": 3,
+   "aim": [
+    -1,
+    -0.6,
+    0
+   ],
+   "angle": 120,
+   "inner": 80,
+   "intensity": 14,
+   "range": 10,
+   "color": [
+    0.98,
+    0.99,
+    1
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "general",
+   "note": "Chandelier room light, the west and east chandeliers of the first row (x ±12, z 7.5). Each chandelier owns the down-light on its pool. A 150-degree spot 1.5 m under the ring (about 0.9 m clear), tilted 19 degrees toward the entry so the station, entry band and entry wall share it. Near-daylight so the white tile does not yellow; the warmth stays in the candles. E about 0.5 on the tubs 8.8 m below (cos 0.94, W(0.49) 0.89, lum 0.96): I = 0.5*77/(0.94*0.89*0.96) = 48, set to 46.",
+   "type": "Spot",
+   "at": [
+    -12,
+    9.2,
+    7.5
+   ],
+   "to": [
+    12,
+    9.2,
+    7.5
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -1,
+    -0.35
+   ],
+   "angle": 150,
+   "inner": 100,
+   "intensity": 46,
+   "range": 18,
+   "color": [
+    1,
+    0.96,
+    0.9
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "general",
+   "note": "Chandelier room light, the west and east chandeliers of the last row (x ±12, z 17.5). Tilted 19 degrees toward the back wall so the gate approach and the gate strip are lifted before the gate accent. Same sizing as the first row: I 46.",
+   "type": "Spot",
+   "at": [
+    -12,
+    9.2,
+    17.5
+   ],
+   "to": [
+    12,
+    9.2,
+    17.5
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -1,
+    0.35
+   ],
+   "angle": 150,
+   "inner": 100,
+   "intensity": 46,
+   "range": 18,
+   "color": [
+    1,
+    0.96,
+    0.9
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "general",
+   "note": "Chandelier room light, the three aisle chandeliers (x 0, z 7.5/12.5/17.5), straight down. Kept lower than the side rows so the central aisle, which is not the race line, does not outshine the pools. They also light the inner halves of both pools. E about 0.35 on the aisle 9.2 m below (W(0.51) 0.87): I = 0.35*85/(0.87*0.96) = 36, set to 32.",
+   "type": "Spot",
+   "at": [
+    0,
+    9.2,
+    7.5
+   ],
+   "to": [
+    0,
+    9.2,
+    17.5
+   ],
+   "count": 3,
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "angle": 150,
+   "inner": 100,
+   "intensity": 32,
+   "range": 18,
+   "color": [
+    1,
+    0.96,
+    0.9
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "West wall wash: the room's daylight spreading over a pale wall (hidden, neutral). Three spots 10 m out over the pool at balcony height, aimed at mid-wall. The 70-degree inner cone covers wainscot, sheets, lantern piers, balcony, upper-window piers and cornice (y 0-13) and about 12 m of wall each, so there are no scallops and no dark upper half. E about 0.55 per spot at 10.1 m (cos 0.99, W(0.56) 0.81): I = 0.55*102/(0.99*0.81*0.97) = 72, set to 70. Neighbours overlap to about 0.9 direct.",
+   "type": "Spot",
+   "at": [
+    -12,
+    8,
+    4.5
+   ],
+   "to": [
+    -12,
+    8,
+    19.5
+   ],
+   "count": 3,
+   "aim": [
+    -10,
+    -1.5,
+    0
+   ],
+   "angle": 100,
+   "inner": 70,
+   "intensity": 70,
+   "range": 18,
+   "color": [
+    1,
+    0.97,
+    0.94
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "East wall wash, the mirror of the west. This wall faces away from the sun, so without it the arcade would sit dark against its bright windows. Same sizing: I 70.",
+   "type": "Spot",
+   "at": [
+    12,
+    8,
+    4.5
+   ],
+   "to": [
+    12,
+    8,
+    19.5
+   ],
+   "count": 3,
+   "aim": [
+    10,
+    -1.5,
+    0
+   ],
+   "angle": 100,
+   "inner": 80,
+   "intensity": 70,
+   "range": 18,
+   "color": [
+    1,
+    0.97,
+    0.94
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Back wall between the gates, the far end of the axis seen from the entrance. One wide spot from mid-hall, moved 2.6 m off the centre chandelier, aimed at the wall's lower half (x about ±9). E about 0.4 at (0,4,23.3), d 10.1, cos 0.87, W 0.81: I = 0.4*102/(0.87*0.81*0.97) = 60, set to 55.",
+   "type": "Spot",
+   "at": [
+    0,
+    9,
+    14.5
+   ],
+   "aim": [
+    0,
+    -5,
+    8.8
+   ],
+   "angle": 120,
+   "inner": 80,
+   "intensity": 55,
+   "range": 18,
+   "color": [
+    1,
+    0.97,
+    0.94
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "The hero, each team's gate: the arch frame, banner, progress bar and the J_Leaf door 3 m inside. One shadow-casting spot per gate, from high on the approach side 9 m out, at (±12, 8, 15) = arch top + offset. Aimed down through the arch at the door's foot. The ray to the door's top passes the 7.2 m arch at y 6.0, so the whole door is lit, and the closed door stops the beam. Pieces coming in cast contact shadows into the gate. E +1.4 on the arch at 9.4 m (cos 0.88, W(0.43) 0.93): I = 1.4*88/(0.88*0.93*0.98) = 154, set to 155. The door gets +0.6.",
+   "type": "Spot",
+   "each": "arch",
+   "anchor": "top",
+   "offset": [
+    0,
+    0.8,
+    -8.8
+   ],
+   "inward": false,
+   "max": 2,
+   "aim": [
+    0,
+    -7,
+    12
+   ],
+   "angle": 46,
+   "inner": 26,
+   "intensity": 155,
+   "range": 22,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": true
+  },
+  {
+   "layer": "general",
+   "note": "Entry band and station. The first bay has no chandelier, and this is the start view. Two wide spots above the entry band, tilted toward the hall so that the entry corridor behind the entry wall gets under 0.01. They also lift the entry wall's lower part and the game signs' faces to about 0.3. E about 0.35 on the floor 8.5 m below (W(0.65) 0.67): I = 0.35*72/(0.67*0.97) = 39, set to 38.",
+   "type": "Spot",
+   "at": [
+    -9,
+    8.5,
+    2
+   ],
+   "to": [
+    9,
+    8.5,
+    2
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -1,
+    0.4
+   ],
+   "angle": 130,
+   "inner": 90,
+   "intensity": 38,
+   "range": 13,
+   "color": [
+    1,
+    0.97,
+    0.94
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "general",
+   "note": "Gate tunnels: one soft point at the far end of each tunnel, at (±12, 3.5, 29.4) = passage top + offset. It sits 2 m behind the J_Leaf door, out of its way however it opens, 2.4 m from the side walls and 0.6 m inside the gallery mouth. When the gate opens, the passage reads lit toward the rear gallery and there is no dark mouth. E about 0.6 on the floor 3.5 m below (W(0.5) 0.88): I = 0.6*12.25/(0.88*0.98) = 8.5, set to 7 because the narrow walls bounce it back.",
+   "type": "Point",
+   "each": "Gate passage",
+   "anchor": "top",
+   "offset": [
+    0,
+    3.5,
+    2.4
+   ],
+   "inward": false,
+   "max": 2,
+   "intensity": 7,
+   "range": 7,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "general",
+   "note": "Rear gallery (z 30-36, open to at least 13 m): the gallery's even daylight. Five downward wide spots on its centre line at 6 m height, 9 m apart. Floor and lower walls are even (about 0.6-1.0), with no hot bands on walls 3 m away, unlike point lights. The end walls are 4 m from the last spot. E about 0.55 on the floor 6 m below (W(0.6) 0.76): I = 0.55*36/(0.76*0.98) = 27.",
+   "type": "Spot",
+   "at": [
+    -18,
+    6,
+    33
+   ],
+   "to": [
+    18,
+    6,
+    33
+   ],
+   "count": 5,
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "angle": 150,
+   "inner": 110,
+   "intensity": 27,
+   "range": 10,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "The way out: the exit door at (0,0,36) as the gallery's brightest framed plane, about 2.3 against a field of 0.6-1.0. One spot from above the gallery's front wall (1.2 m clear), narrow enough to stay on the door and its frame. E +0.85 on the door at 5.7 m (cos 0.85, W(0.57) 0.81): I = 0.85*32/(0.85*0.81*0.98) = 40.",
+   "type": "Spot",
+   "at": [
+    0,
+    5,
+    31.2
+   ],
+   "aim": [
+    0,
+    -3,
+    4.8
+   ],
+   "angle": 50,
+   "inner": 30,
+   "intensity": 40,
+   "range": 10,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  }
+ ],
+ "expected": "SPOT 1: start, heading west along the entry band (survey picture 1)\n- The west wall fills the far view 22 m away, evenly bright cream at about 200/255. From the base up: the white-tile wainscot, five arcade openings with sky, the linen sheets glowing white in front of them, a warm lantern halo on each pier, then the balcony and the foot of the upper windows. There is no dark band at the top.\n- The glossy checker entry band ahead is at about 0.75-1.0 and holds the lanterns' reflections.\n- On the right are the raised white-tile station (bright) and the west pool. Its tubs get a little brighter toward the window wall.\n- On the left, the entry wall is at 0.7-1.0, and the game sign boards are readable.\n- This side has no sun; the whole frame is even and morning-white, with warmth only in the lantern flames.\n\nSPOT 2: mid-pool, looking east across the hall (survey picture 2)\n- Foreground: the west pool's tubs at about 1.0 (warm maple) and turquoise water over bright tile.\n- Middle: the aisle band at about 1.1, not brighter than the pools.\n- Beyond: the east pool, crossed by long bright diagonal sun stripes through the water, with sun shafts slanting down from the east windows through the steam.\n- The east wall, 25-40 m away, is washed even at about 1.3 at mid-height: white sheets, small warm lantern halos, the balcony, and five upper windows with sky. The piers between them are lit, so the windows do not glare.\n- The timber ceiling is a mid-tan with a warm glow around each chandelier.\n- On the left, the back wall shows the west gate as the brightest framed plane (about 2.3) beside the wheel.\n\nSPOT 3: the gate approach and the way out\n- Heading toward the west gate: the arch, banner and progress bar at 2.2-2.3, framed by the back wall at about 1.0. The door 3 m inside is at 1.0-1.6, and pieces cast short contact shadows onto the gate strip and the door.\n- When the gate opens, the tunnel is lit toward its far end (1.1-1.4), with the rear gallery beyond at 0.6-1.0.\n- Turning east, the far end wall of the gallery is lit, and the exit door on the left is the gallery's brightest plane (about 2.3) before the closed corridor beyond.",
+ "light_count": 32,
+ "self_check": "I checked the plan with a small evaluator that uses the URP formula E = I*lum(colour)*W(d/R)*cos/d² with W = (1-x⁴)² and URP spot falloff. It covers the 32 plan lights, the 17 team fixtures at the new rig and the sun, whose patches I traced through the east openings. On top I added a three-surface (floor, walls, ceiling), three-bounce radiosity estimate of the bake: indirect about 0.39 on the floor, 0.43 on the walls and 0.52 on the ceiling, plus 0.05 of sky.\n\nPOSITIONS\n- All 32 lights are inside the box (-23..23, -2.9..13.4, -0.6..36.6).\n- The nearest surface or part is 0.9 m away: the chandelier rings, estimated at y 10.1-10.9, above the room lights at 9.2.\n- Sky fills are 2.2 m from the swaying sheets, 0.6 m above the lines, 1.7 m from the estimated balcony and 3.6 m from the lanterns.\n- Washers and gate spots hang in free air, at least 2.2 m from anything. The entry spots are 2.1 m from the entry wall and 3.5 m from the sign backplates.\n- The tunnel lights are 2.0 m behind the door leaf, 2.4 m from the walls and at least 1.6 m under a ceiling of 5.1 m or more.\n- Gallery spots are 3 m from the gallery walls, and the exit spot is 1.2 m from the front wall.\n- Fix: the back wash started 1.3 m from the centre chandelier; I moved it to 2.6 m.\n\nEACH-NAMES\n- \"arch\" (x2) and \"Gate passage\" (x2) are real, enabled parts in the anatomy. The [off] \"Arch ...\" parts are disabled, so they are not picked.\n- Their anchors give (±12, 8, 15) and (±12, 3.5, 29.4).\n- I did not use \"each Line cord\": it would make 10 sky fills, and Max/Spacing cannot reliably pick the middle bays.\n\nAIMS\n- Gate spots are on-axis to the door's foot. The ray to the door's top clears the 7.2 m arch at 6.0. They are shadowed, so the closed door blocks them.\n- The washers' inner cone spans the wall from 0 to 13 m.\n- The chandelier side rows are tilted ±19 degrees toward the entry and toward the gates.\n- Entry spots are tilted so the entry corridor gets under 0.01. Without the tilt it got about 0.2 (fixed).\n\nRESULTS (direct + estimated bake)\n- Route floor 0.74-1.16 (mean 0.97, uniformity 0.76).\n- Walls 0.67-1.36.\n- Ceiling 0.52-0.85.\n- Gates 1.65-2.3; door 1.0-1.6.\n- Tunnel 1.1-1.4; gallery 0.56-1.0; exit door 2.3.\n- Minimum anywhere in view 0.43, which is above F/3.\n\nFIXES MADE ALONG THE WAY\n- Walls dark above 10 m and a scalloped back wall: the washers now stand 10 m out with wider cones.\n- The banner zone of the gate was at 3.3: the cone is narrower and aimed at the door's foot.\n- The aisle was brighter than the race line: the aisle chandeliers are now 32 against 46 on the side rows.\n- A hot back-corner patch came from the end-bay sky fills: I dropped them (the end bays are lit by the entry spots and the gate spots).\n- The exit spot spilled onto the wall: I narrowed it.\n- Gallery point lights made hot bands on the walls 3 m away: replaced by downward wide spots at 6 m.\n- The washers dropped from 78 to 70 to keep the walls at 0.7-1.35 times the floor.\n\nOVERLAP\n- At most 9 lights by cone over any sample point; most points have 7 or fewer.\n- By range spheres, up to 20 in mid-air near the ceiling centre. The ranges follow the method's rule of 1.5-2 times the farthest surface served.\n- There are 2 shadowed spots and no shadowed point lights.\n\nLEAKS\n- The tunnel and gallery lights face away from the hall's back wall.\n- The gallery spots put about 0.1 onto the first 2 m of the next corridor behind the exit, as if through the door.\n\nBUDGET\n- 32 plan lights + 17 team fixtures = 49. Counting the 8 corridor lights in the section and the sun, the total is 58, under 60.\n- 13 plan lines, below the 15-35 aim because repeated fixtures are rows or each-lines.\n\nJY RULES\n- Warm colour only at the flames: the team's lanterns and chandeliers at boost 3 with reach 0.6, giving 3.6 m and 6.6 m halos.\n- Every plan light is near-neutral: sky (0.98, 0.99, 1), washes (1, 0.97, 0.94), chandelier room light (1, 0.96, 0.9).\n- Removed: the old warm lamp lights at the gold cubes, the warm uplights and the automatic goal light.\n- No yellow or night cast in the grade, shafts or BounceTint.\n- The morning sun is untouched, and nothing is placed in or aimed through the corridor joins.\n- The hall is bright through its walls and chandeliers, not through Exposure (0.05).",
+ "open_questions": "1. Roof and lid. J_HallEnv has a flat timber ceiling at about 13 m, but the method's recipe 7.5 says roofless. I left Lid off because the survey shows the sun only through the east openings, with no leak. If the bake shows the sun through the ceiling, turn Lid on.\n2. Heights. The wainscot, openings, balcony, upper windows and chandelier rings were read from the pictures, not measured. The chandelier room lights sit at 9.2. Please check that no chandelier part hangs below about 9.5, and that the balcony projects less than 1 m: the sky fills at |x| 19, y 4.8 assume this.\n3. Rear gallery and tunnels. Neither is in any picture. I assumed the gallery is open to at least 13 m, because its floor shows in the top view, and that the tunnels are at least 5.1 m high. How does J_Leaf open (lift, swing or slide)? The tunnel light sits 2 m behind it.\n4. Gold cubes. The 12 glowing gold cubes now light nothing (LampIntensity 0). The old lights were fixed to the hall, so they would stay behind if a cube moved or was collected. If JY wants the cubes to light the dolls, a short gold glow (I about 1, R about 2) should be parented to each cube in the team's code.\n5. Entry sconces. The brass three-candle sconces beside the entry door have no flames and no lights, so I gave them no glow, although the recipe wants warm sconces at the doors. If the team adds flame meshes, add a glow pair (I about 1.5, R 2.5).\n6. Bake estimate. The bake numbers are my estimate: indirect about 0.4 on the floor, 0.43 on the walls, 0.52 on the ceiling. If the baked hall reads brighter or darker, scale PlanScale (or WashScale/GeneralScale) rather than Exposure. Then match Indoor (0.7) so a white pawn on the west pool reads like the tub under it.\n7. Look values. Do the look's Exposure, Contrast and Saturation replace the global -0.15/30/18 or add to it? I assumed replace. Is BloomThreshold in gamma space? 1.3 keeps the lit arch (about 1.5 linear) and the walls from blooming in either case.\n8. Sun asymmetry. Only the east (black) half gets sun stripes; the west (white) half has window light only. This is correct under the fixed sun, but the two teams' halves look different.\n9. Ceiling. The timber ceiling stays the dimmest surface (0.52-0.85). If it reads heavy in the east-facing wide views, the fix is an uplight line: 4 spots at (±7, 8.5, 7.5/17.5) aimed up, I about 8, R 12. That needs a trade-off in the budget if the corridor lights count toward the 60.\n10. Reflection probe. Re-render the hall's reflection probe after the bake: the water and the glossy tile (FloorGloss 0.75) must reflect this room's windows and lanterns."
+}

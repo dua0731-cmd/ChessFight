@@ -14,6 +14,9 @@
 #                      straps (the traces and straps in the slot "RCY | leather", painted like the horses' tack).
 #   "RCY Gate leaf W" / "RCY Gate leaf E"   a start gate's TimedGate frame (the hinge at the origin; W runs +x, E -x):
 #                      framed boards, iron bands with studs, knuckles, the crown plate; ledges and braces behind.
+#   "RCY Final gate leaf W" / "... E"   the final gate's PushGate leaves (11-23; build_final_gate_leaves(), export
+#                      RcyFinalGateLeafW / E): 4 x 7.2 m, 0.5 thick, old walnut planks and rusty strap hinges in the
+#                      aged slots "RCY | oldwalnut" / "RCY | oldiron" (textures/rcy_worn.py), a brass knocker.
 # The horse itself is one skinned model now, horse_model.py (RcyHorse); its five pinned parts (RcyHorseBody, ...Neck,
 # ...ForeLeg, ...HindLeg, ...Harness) are gone.
 
@@ -484,6 +487,124 @@ def gate_leaf(col, side):
     return parts
 
 
+def ring(col, name, centre, major, minor, mat=GOLD, seg=20, sides=8):
+    """A ring standing in the x-z plane (flat against a door's face) round `centre`."""
+    bm = bmesh.new()
+    rows = []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        d = Vector((math.cos(a), 0, math.sin(a)))
+        rows.append([bm.verts.new(Vector(centre) + d * (major + minor * math.cos(2 * math.pi * k / sides))
+                                  + Vector((0, minor * math.sin(2 * math.pi * k / sides), 0))) for k in range(sides)])
+    for i in range(seg):
+        a, b = rows[i], rows[(i + 1) % seg]
+        for k in range(sides):
+            bm.faces.new((a[k], a[(k + 1) % sides], b[(k + 1) % sides], b[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    for f in bm.faces:
+        f.smooth = True
+    return mesh_object(name, bm, col, (mat,))
+
+
+# The final gate's leaves (11-23 승규 "마차뜰 출구 문 모델링 해줘": the push gate was still the code's boxes - a dark slab,
+# four flat bands, a gold square and a gold disc). PushGate builds them 8 m wide, 7.2 high, 0.5 thick, each hinged at the
+# opening's edge (x +-4) and running to the middle; the platform (where pawns push) is local -z, Blender -y. The concept
+# (RCY_06: two walnut plank leaves, dark iron strap hinges, a brass ring knocker each where the pawns hold on). No crown
+# plate (R685, the start gate's was taken off). The code's ring collider (a 0.55 m disc at 3.3 m from the hinge, 0.95 m
+# up, 0.37 m out of the face) is where the modelled knocker hangs, so what a pawn grabs is what it sees.
+# Old (승규 "너무 흠집이 없는 문이야 약간의 스크래치 낡은 문 컨셉으로 해줘"): the wood and iron in their own aged tiles
+# (textures/rcy_worn.py: bleached and grimy walnut with scratches and gouges, rusty scratched iron), and in the shape:
+# boards of uneven width standing in or out of the face and a little askew, gaps at their ends, a split board, straps
+# sagging from their hinges, studs missing or standing loose. Seeded: every build the same.
+FINAL_LEAF = dict(w=4.0, h=7.2, t=.5, ring_x=3.3, ring_z=.95)
+OLD_WALNUT, OLD_IRON = "RCY | oldwalnut", "RCY | oldiron"
+
+
+def tilt(ob, pivot, deg):
+    """Turns a part about the Blender y axis (square to the door's face) through `pivot`."""
+    p = Matrix.Translation(Vector(pivot))
+    ob.matrix_world = p @ Matrix.Rotation(math.radians(deg), 4, "Y") @ p.inverted() @ ob.matrix_world
+    return ob
+
+
+def final_gate_leaf(col, side):
+    """A final gate leaf in its hinge's frame, running `side` (+1 the left/W leaf, -1 the right/E) along x."""
+    W, H, T = FINAL_LEAF["w"], FINAL_LEAF["h"], FINAL_LEAF["t"]
+    r = random.Random(2311 + side)
+    parts = []
+
+    def X(a, b):
+        return min(side * a, side * b), max(side * a, side * b)
+
+    S = .34   # the stiles' width
+    for a, b in ((0, S), (W - S, W)):
+        x0, x1 = X(a, b)
+        parts.append(box(col, "Stile", (x0, -T / 2, 0), (x1, T / 2, H), OLD_WALNUT, bevel=.03))
+    rails = ((0, .38), (3.42, 3.78), (H - .38, H))
+    for z0, z1 in rails:
+        x0, x1 = X(S, W - S)
+        parts.append(box(col, "Rail", (x0, -T / 2 + r.uniform(0, .012), z0), (x1, T / 2, z1), OLD_WALNUT, bevel=.03))
+    # Twelve boards a panel, each its own width, depth and lean; one split along its length.
+    n = 12
+    cuts = [0.0]
+    for k in range(1, n):
+        cuts.append(k / n + r.uniform(-.25, .25) / n)
+    cuts.append(1.0)
+    split = r.randrange(1, n - 1)
+    for k in range(n):
+        a = S + (W - 2 * S) * cuts[k]
+        b = S + (W - 2 * S) * cuts[k + 1]
+        for (_, z0), (z1, _) in zip(rails, rails[1:]):
+            g0, g1 = r.uniform(.006, .02), r.uniform(.006, .02)
+            front = -T / 2 + r.uniform(.035, .075)
+            lo, hi = z0 + r.uniform(0, .025), z1 - r.uniform(0, .04)
+            spans = [(a + g0, b - g1)]
+            if k == split and z0 < 1:
+                m = (a + b) / 2 + r.uniform(-.02, .02)
+                spans = [(a + g0, m - .008), (m + .008, b - g1)]
+            for p, q in spans:
+                x0, x1 = X(p, q)
+                ob = box(col, "Board", (x0, front, lo), (x1, T / 2 - .05, hi), OLD_WALNUT, bevel=.016, segments=1)
+                parts.append(tilt(ob, ((x0 + x1) / 2, 0, (lo + hi) / 2), r.uniform(-.35, .35)))
+    # The platform's face: four iron strap hinges from the knuckles, studded, each ending in a fleur short of the middle
+    # (the bottom one low, clear of the knocker); each sags a little from its hinge, studs gone or loose here and there.
+    F = -T / 2
+    for zc in (.5, 2.35, 4.75, 6.55):
+        reach = W - .45
+        sag = -side * r.uniform(.25, .7)
+        piece = []
+        x0, x1 = X(.04, reach)
+        piece.append(box(col, "Strap hinge", (x0, F - .06, zc - .1), (x1, F, zc + .1), OLD_IRON, bevel=.012, segments=1))
+        for k in range(12):
+            if r.random() < .14:
+                continue
+            out = .035 * (1.6 if r.random() < .12 else 1.0)
+            piece.append(dome(col, "Stud", (side * (.18 + (reach - .4) * k / 11), F - .06, zc), "y", out, -1, OLD_IRON))
+        piece.append(prism(col, "Strap fleur", [(side * (reach - .02 + a * 1.3), zc + b * 1.3) for a, b in FLEUR],
+                           F - .06, F, OLD_IRON))
+        bpy.context.view_layer.update()
+        parts += [tilt(o, (0, 0, zc), sag) for o in piece]
+        parts.append(cylinder(col, "Knuckle", (side * .02, 0, zc), (0, 0, 1), .075, .26, OLD_IRON, segments=10))
+    # An iron edge on the meeting stile, top to bottom (the two leaves' read as one strip down the middle).
+    x0, x1 = X(W - .09, W)
+    parts.append(box(col, "Meeting edge", (x0, F - .04, .12), (x1, F, H - .12), OLD_IRON, bevel=.01, segments=1))
+    # The knocker: a brass back plate, a gold boss and the ring hanging from it, round the code's ring collider.
+    rx, rz = side * FINAL_LEAF["ring_x"], FINAL_LEAF["ring_z"]
+    parts.append(cylinder(col, "Knocker plate", (rx, F - .025, rz + .12), (0, 1, 0), .3, .05, BRASS, segments=20, bevel=.01))
+    parts.append(dome(col, "Knocker boss", (rx, F - .05, rz + .34), "y", .1, -1, GOLD, seg=12))
+    parts.append(ring(col, "Knocker ring", (rx, F - .12, rz + .02), .27, .045))
+    # The far face: a backing behind the boards (their gaps show wood, not daylight), ledges behind the straps and a
+    # brace across each half.
+    x0, x1 = X(S, W - S)
+    parts.append(box(col, "Backing", (x0, T / 2 - .045, .38), (x1, T / 2, H - .38), OLD_WALNUT))
+    for za, zb in ((.38, 3.42), (3.78, H - .38)):
+        parts.append(beam(col, "Brace", (side * .4, T / 2 + .035, za + .2), (side * (W - .4), T / 2 + .035, zb - .2),
+                          w=.22, h=.07, mat=OLD_WALNUT))
+    for zc in (.5, 2.35, 4.75, 6.55):
+        parts.append(box(col, "Ledge", (x0, T / 2, zc - .14), (x1, T / 2 + .1, zc + .14), OLD_WALNUT, bevel=.015))
+    return parts
+
+
 # ------------------------------------------------------------------ build
 
 
@@ -504,6 +625,18 @@ def build_movers():
     make("RCY Hitch", hitch)
     make("RCY Gate leaf W", lambda c: gate_leaf(c, 1))
     make("RCY Gate leaf E", lambda c: gate_leaf(c, -1))
+    build_final_gate_leaves(made)
+    return made
+
+
+def build_final_gate_leaves(made=None):
+    """The final gate's two leaves (export: RcyFinalGateLeafW / RcyFinalGateLeafE)."""
+    made = {} if made is None else made
+    for name, side in (("RCY Final gate leaf W", 1), ("RCY Final gate leaf E", -1)):
+        col = collection(name)
+        clear(col)
+        join(col, name.replace("RCY ", ""), final_gate_leaf(col, side))
+        made[name] = tris(col)
     return made
 
 

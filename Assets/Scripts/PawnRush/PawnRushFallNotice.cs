@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
@@ -139,7 +140,7 @@ namespace ChessFight.PawnRush
                 GUI.DrawTexture(full, Texture2D.whiteTexture);
                 float y = Screen.height * .3f;
                 Shadowed(new Rect(0, y, Screen.width, 60 * unit), FallLine(mine.Cause), title, Ivory, k);
-                Shadowed(new Rect(0, y + 58 * unit, Screen.width, 30 * unit), "체크포인트로 돌아갑니다", line, Brass, k);
+                Shadowed(new Rect(0, y + 58 * unit, Screen.width, 30 * unit), Loc.T("체크포인트로 돌아갑니다"), line, Brass, k);
                 if (mine.Delay > .3f)
                 {
                     float left = Mathf.Clamp01(1f - since / mine.Delay), w = 280f * unit, h = 4f * unit;
@@ -160,7 +161,7 @@ namespace ChessFight.PawnRush
                 }
                 float fade = Mathf.Clamp01((BackSeconds - back) / .4f);
                 Shadowed(new Rect(0, Screen.height * .3f + 14 * unit, Screen.width, 40 * unit),
-                    backCause == Cause.Zone ? "상대 진영입니다 · 체크포인트에서 다시 출발!" : "체크포인트에서 다시 출발!", line, Ivory, fade);
+                    Loc.T(backCause == Cause.Zone ? "상대 진영입니다 · 체크포인트에서 다시 출발!" : "체크포인트에서 다시 출발!"), line, Ivory, fade);
             }
             GUI.color = old;
         }
@@ -169,9 +170,9 @@ namespace ChessFight.PawnRush
         {
             switch (cause)
             {
-                case Cause.Water: return "<b>물에 빠졌습니다!</b>";
-                case Cause.Zone: return "<b>상대 진영입니다!</b>";
-                default: return "<b>떨어졌습니다!</b>";
+                case Cause.Water: return "<b>" + Loc.T("물에 빠졌습니다!") + "</b>";
+                case Cause.Zone: return "<b>" + Loc.T("상대 진영입니다!") + "</b>";
+                default: return "<b>" + Loc.T("떨어졌습니다!") + "</b>";
             }
         }
 

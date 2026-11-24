@@ -36,7 +36,15 @@ namespace ChessFight.PawnRush
         // F's holders are "<model> <n>".
         static readonly string[] SolidPropPrefixes = { "F_CoatStand ", "F_DrinksTable ", "F_Topiary " };
         // C_Drawbridge_EnvV2's prop meshes (Blender names, a ".001" suffix for the copies).
-        static readonly string[] SolidKitMeshes = { "crate", "gear", "lifebuoy", "rope coil", "banner post" };
+        // R812 (user 11-24, the moat edge photos: "난간 밧줄 묶는곳에 충돌"): the two stone posts the rope is tied round and the
+        // parapet between them, too. Not the rope, nor the pulleys and plate on the rope's line (user: "여기 충돌 지워").
+        // The winches (the user's model, 3.2 x 2.5 m, 2.2 m high) as one box (user 11-24, a pawn inside the winch: "여기 충돌
+        // 다시 제대로 처리 해"): the game's own winch frame is 3.2 x 1 x 1 m, and until the 2 cm floor was fixed the
+        // neighbouring props' boxes, blown up to 2 m, had been covering the rest.
+        static readonly string[] SolidKitMeshes =
+        {
+            "crate", "gear", "lifebuoy", "rope coil", "banner post", "rope anchor post", "KIT_Parapet", "winch",
+        };
 
         static readonly float[] EBoxes =   // 16 props: min x, y, z, max x, y, z in the hang parent's frame
         {
@@ -151,14 +159,26 @@ namespace ChessFight.PawnRush
             var bounds = filter.sharedMesh.bounds;
             var box = t.gameObject.AddComponent<BoxCollider>();
             box.center = bounds.center;
-            box.size = Vector3.Max(bounds.size, Vector3.one * .02f);
+            // R812 (user 11-24, "아직도 여기 투명 벽 처럼 막혀 있어"): the 2 cm floor is in metres, not in the mesh's own
+            // units. C's environment FBX keeps its meshes in centimetres under a 100 (the parapet 835) scale, so a floor
+            // in mesh units made every box at least 2 m - the parapet's 16.7 m - an invisible wall over the rope lane.
+            var scale = t.lossyScale;
+            var least = new Vector3(.02f / Mathf.Max(Mathf.Abs(scale.x), 1e-6f), .02f / Mathf.Max(Mathf.Abs(scale.y), 1e-6f),
+                                    .02f / Mathf.Max(Mathf.Abs(scale.z), 1e-6f));
+            box.size = Vector3.Max(bounds.size, least);
             if (t.GetComponent<NoClimbSurface>() == null) t.gameObject.AddComponent<NoClimbSurface>();
             return 1;
         }
 
         // The table's boxes under the frame the model hangs in (the parent of its 180-degree pivot), once.
+        // 11-22 (user, a photo of the repair wing's entry band: "보이지 않는 벽에 막히는 문제"): B's (and E's, J's)
+        // FBX keeps its mesh object under the name of the file, so the search met "B_StationEnv" twice - the model and
+        // its mesh - and laid the table a second time in the turned pivot's frame: boxes where no prop stands, one on
+        // each entry band beside the aisle, the hall's out past the entry. Only the model itself (hung by its pivot,
+        // not a child of a same-named model) gets them.
         static int TableBoxes(Transform model, float[] table)
         {
+            if (model.parent != null && model.parent.name == model.name) return 0;
             var pivot = model.parent;
             var frame = pivot != null ? pivot.parent : null;
             if (frame == null || frame.Find(PropColliderName + " " + model.name) != null) return 0;

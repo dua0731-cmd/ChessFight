@@ -273,14 +273,9 @@ namespace ChessFight.PawnRush
             // piece (Blender z -2.8 .. 14.4 at r 8), their middles 9.8 m over the tower's foot; the base (middle 0.6 m
             // up) and the cornice (19.2 m up) are pieces round the axis outside that height, so they stay. Cut in Play
             // (MeshCutOut, as R340's balustrades), in the hall model's own frame (it only turns about y).
-            foreach (var r in hallModel.GetComponentsInChildren<Renderer>(true))
-            {
-                if (!r.name.Replace('_', ' ').StartsWith("HallV15 Royal dais tower") || !r.TryGetComponent<MeshFilter>(out var f)) continue;
-                var b = r.bounds;
-                var mid = hallModel.InverseTransformPoint(new Vector3(b.center.x, b.min.y + 9.8f, b.center.z));
-                if (!f.TryGetComponent<MeshCutOut>(out _))
-                    f.gameObject.AddComponent<MeshCutOut>().Configure(hallModel, new Bounds(mid, new Vector3(20f, 6f, 20f)));
-            }
+            // R823 (11-24, "원형 기둥에 기둥으로 된 것들 지워" again): that cut never ran in Play since R309 (and a player build
+            // cannot read the mesh); the sixteen pilasters are now out of GrandStairHallV15.fbx itself
+            // (ArtSource/PawnRush/Optimization20261124/bake_meshcutout.py, the same box), so nothing is cut here.
         }
 
         // R353: the rolling carpet's model (RollingSpawner) and its materials: the body in the hall carpet, the spiral

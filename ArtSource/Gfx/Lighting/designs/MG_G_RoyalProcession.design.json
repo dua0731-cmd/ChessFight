@@ -1,0 +1,529 @@
+{
+ "concept_en": "Morning procession in a skylit loggia. The two ribbed skylights bring cool-white daylight down both racing lanes and the velvet aisle. That light rises in two steps toward the far wall. The open side arcades frame the sky between washed cream columns, and the column shafts are uplit so the colonnade glows against the sky. The fixed sun slants through the rib grids onto the entrance steps. At the end, the two team gates (the goals) are the brightest planes, beside the centre portal one step lower. Through the gates, an open-topped court in daylight, with four warm lanterns, leads to the exit arch, which the two inner lanterns frame.",
+ "concept_ko": "아침의 왕실 행렬 회랑입니다. 두 개의 리브 천창이 맑은 흰 낮빛을 두 레인과 가운데 벨벳 통로로 내려 보내고, 그 빛은 먼 벽(게이트) 쪽으로 두 단계에 걸쳐 밝아집니다. 층별로 보면, 천창 낮빛 두 줄과 뒤뜰의 하늘빛이 바탕입니다. 양쪽 열린 아케이드 벽, 게이트 벽, 입구 벽, 뒤뜰 벽은 중성 워시가 밝히고, 아케이드 기둥 위쪽은 업라이트로 하늘을 배경으로 빛나게 합니다. 따뜻한 빛은 뒤뜰 기둥의 랜턴 네 개에만 둡니다. 주인공은 각 레인 끝의 팀 게이트(골)로, 홀에서 가장 밝은 면입니다(필드의 약 2.2~2.5배). 가운데 정문은 한 단계 낮은 축의 랜드마크이고, 뒤뜰에서는 두 랜턴이 감싼 출구 아치가 초점입니다. 지금의 '기둥마다 금빛 업라이트, 차가운 그늘의 측랑' 컨셉과 자동 램프·업라이트·골 라이트(정문 블록 속에 묻힌 것 포함)를 걷어 냅니다. 대신 이 홀의 실제 개구부(천창, 아케이드)에서 오는 중성 낮빛과 건축 리듬을 따르는 배치로 바꿔, 밝은 궁전 낮 공간이면서 빛이 레이스를 골로 이끌게 합니다.",
+ "survey": "SIZE: The nave spans x -22.6..22.6 (45 m wide) and z -0.8..26.4 (27 m). Its flat cream-marble ceiling sits at 12.0 m. Two ribbed skylight vaults are open grids (no glass; ribs up to 15.4 m) over x -13.9..-2 and 2..14, z 0..23.5 (each 12 x 23.5 m). Solid ceiling strips cover the centre aisle (x +-2) and the side aisles (x +-13.9..22.6). The rear court ('rear passage') runs z 26.4..36 and is 44 m wide. It has 17 m marble walls and no ceiling, only the shadow-only sun lid at 17.1 m.\n\nBAYS AND AXIS: The hall is symmetric about x=0, and the procession runs along z. The side walls have columns at about z 1.5, 7.4, 13.2, 18.9, 24.6, inferred from the old auto-uplights plus a 1.5 m offset. Their centres are at about x +-21.3, with fluted shafts on podiums and gold bases at about 2.5 m. In picture 1, bays 1 and 3 (z 1.5-7.4, 13.2-18.9) are OPEN round arches over a parapet of about 2.2 m, with sky visible and no glass. Bay 2 (and probably bay 4) is plain with a crown banner, and purple drapes hang at the piers.\n\nENTRY WALL: The inner face is at about z 1.0. A 12.6 m portal (x +-6.3, 7.5 m high) sits between columns at about +-8.3, +-12.6, +-17.1. There are six glazed windows with curtains, each flanked by a pair of brass globe sconces at about 3.7 m. The sconces are modelled in the wall mesh and do not glow.\n\nFAR WALL (z 24-26.4): The centre portal is a block at x -8..8, 10.4 m tall, with navy doors and gold rings. The team gates are 12 m frames at x +-8.5..15.5, each with a 5.6 m tunnel to the court. Each tunnel has a portcullis door at z 27. Exit signs on iron backplates hang at z 23.4 (y 3.1-6.9). The corner bays complete the wall.\n\nOPENINGS AND THE MORNING SUN: The sun travels (-0.50,-0.60,-0.62). Through the skylight grids it drops 12 m and shifts about 10 m to -x and 12 m to -z. So its rib-patterned pools land only near the entry (z 0..~10): on the start, the crown pedestals and stairs (x -8..4), the west start corner, and the lower west and entry walls. It also warms the upper entry wall (picture 1, top left). Through the east arcade it pools on the east-aisle floor (x 15-21, z 0-16) and on the entry wall's east corner. The west arcade only frames bright sky. The entry windows face away from the sun. The court gets no sun because of the lid, except a thin sun line on its floor through the 0.5 m slots at its rear corners (top view). The method's one sun pool per bay is therefore impossible here: the lanes' daylight has to be the skylights' diffuse light.\n\nLEDGES: There is no walkway or cornice to hide lights. Lights hang 0.7 m under the skylight openings (y 11.3-11.4), 0.5 m above the alcove tops (y 4.0), over the court (y 15.5), and above the centre block (y 11.5).\n\nSURFACES: Cream marble ceiling, vaults, walls and aisle (albedo about 0.7). NAVY marble on all game floors (albedo about 0.12), the dark mass in picture 2. Maple tracks, purple velvet runner, drapes and banners, brass and gold trim. Ebony and ivory rooks. StoneShadow tunnel linings. White marble court.\n\nROUTE (white): Start (0,0,0)-(0,0,2), then west along z about 2.5 through the sun. Up the ramp at x -12, z 2.4-4. Along the lane x -12, z 5-23, past the palanquin (z 6-8) and three rooks that slide out of the alcoves at x -15..-19, z 12.6-22.1. Through the white tunnel (z 24-30) into the court, east along z 33 to the axis, and out through the exit arch at (0,0,36) to CR06. Black mirrors this at x +12.\n\nEXIT: The court's axis arch, about 9.7 m tall, flanked by the inner lanterns at x +-6.5.\n\nHERO: The two team gates at the lane ends.\n\nLANDMARK FROM THE ENTRANCE: The centre portal on the axis, between them.\n\nExterior reference E_ext is about 1.7 (the method's value; not measured).",
+ "hierarchy": "All E values below are the direct realtime light computed for the plan; I estimate the bake adds about +0.3. Field F is the lane floors at z 8-20: direct 0.8-1.1, so about 1.1-1.4 in total. That is above the method's 0.8-1.0 for course 3, because JY wants bright rooms.\n\nSteps along the procession:\n- Threshold (z 0-8): patchy sun pools of about 2 with 1.0-1.2 between them.\n- Lanes: 1.0F, rising to about 1.5F in the goal zone (z 20-24: 1.75-2.4 direct).\n- HERO, the two team gates (the goals): tunnel mouth and door 2.6-2.9 total, frames 1.8-2.4, so about 2.2-2.5F. This is the only distinct jump and the brightest framed plane in each lane's forward view.\n- Secondary, the centre portal (the axis landmark): 1.0-2.0 total, about 1.5F, so the triptych reads with the goals brightest.\n- Far-wall base and corner bays: about 0.7-1.3.\n- Arcade walls: 0.7-1.2. Column shafts about 1.5-1.8 where uplit. Walls are 0.7-1.3x the floor E and, being cream against navy floors, far brighter on screen.\n- Side aisles (strips): 0.8-1.1 (0.7-0.8F). The east aisle also has sun pools.\n- Centre aisle: 0.6 -> 1.3, rising toward the portal.\n- Tunnels: about 1.2-1.5.\n- Rear court: route floor 1.1-1.6. The exit arch is the court's focus at about 1.5 (jambs) to 2.5 (crown), framed by two warm lantern halos. The court's corners and side walls are about 0.5-0.9.\n\nShade minimum: about 0.45 in the court corners, which is at least a third of F. The visible backs of pawns and rooks rely on Indoor plus CFCharacter's fill.\n\nKey:fill: about 2.5:1 on the race line (overhead skylight light on the tops of pieces and the floor versus bake and Indoor on their sides).\n\nD6 pattern: space with framed path. Two daylit lanes run between washed arcades and end in focal frames (the gate frames with their signs). In the court, a focal frame of two lanterns around the lit exit arch.\n\nCourse mood: symmetric, rhythmic, rising toward the gates: solemn and grand but bright, neutral daylight, warmth only in the lanterns.",
+ "look": {
+  "Indoor": 0.6,
+  "Bounce": 0.5,
+  "BounceTint": [
+   0.97,
+   0.96,
+   0.95
+  ],
+  "Exposure": 0.1,
+  "Contrast": 24,
+  "Saturation": 15,
+  "BloomIntensity": 0.45,
+  "BloomThreshold": 1.3,
+  "Vignette": 0.14,
+  "ShaftIntensity": 1.5,
+  "ShaftDensity": 0.035
+ },
+ "rig": {
+  "Lid": true,
+  "ClearGlass": true,
+  "FixtureBoost": 1,
+  "FixtureReach": 1,
+  "LampIntensity": 0,
+  "UplightIntensity": 0,
+  "GoalIntensity": 0,
+  "StageIntensity": 0,
+  "HeartIntensity": 0,
+  "FloorGloss": 0.65
+ },
+ "plan": [
+  {
+   "layer": "daylight",
+   "note": "Skylight daylight, row 1 (z 10): the two ribbed skylights' diffuse morning light carried down onto both lanes and the centre aisle, one under each skylight's centre, 0.7 m below the rib grid. Lane 4 m off-axis: I = 0.45*11.7^2/(0.94*0.78) = 84",
+   "type": "Spot",
+   "at": [
+    -8,
+    11.4,
+    10
+   ],
+   "to": [
+    8,
+    11.4,
+    10
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 85,
+   "range": 20,
+   "angle": 120,
+   "inner": 80,
+   "color": [
+    0.96,
+    0.98,
+    1
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "daylight",
+   "note": "Skylight daylight, row 2 (z 17): one step brighter toward the gates (the procession rises). Shadowed, so the sliding rooks and the pieces in the obstacle and goal stretch (z 11-24) get soft contact shadows. I = 0.5*137/(0.94*0.78) = 93 -> 100",
+   "type": "Spot",
+   "at": [
+    -8,
+    11.4,
+    17
+   ],
+   "to": [
+    8,
+    11.4,
+    17
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -1,
+    0
+   ],
+   "intensity": 100,
+   "range": 20,
+   "angle": 120,
+   "inner": 80,
+   "color": [
+    0.96,
+    0.98,
+    1
+   ],
+   "shadows": true
+  },
+  {
+   "layer": "general",
+   "note": "Rear court sky: the court has no ceiling (the lid only stops the sun), so its base is sky light from above. The spots are tilted toward the end wall so they reach it and keep their cones out of the nave (nave floor gets < 0.05). Floor: I = 0.4*15.6^2/(1*0.67) = 145 -> 150",
+   "type": "Spot",
+   "at": [
+    -16.5,
+    15.5,
+    31
+   ],
+   "to": [
+    16.5,
+    15.5,
+    31
+   ],
+   "count": 4,
+   "aim": [
+    0,
+    -1,
+    0.3
+   ],
+   "intensity": 150,
+   "range": 24,
+   "angle": 100,
+   "inner": 70,
+   "color": [
+    0.96,
+    0.98,
+    1
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "West arcade wash: daylight spreading from the west skylight onto the arcade (columns, crown-banner bays, the parapets under the open arches), one light per two bays. Aimed at the wall foot so the lower wall the race camera sees is not dark. Wall at y 4.5: d 13.8, cos 0.87, W 0.71 -> E 0.65",
+   "type": "Spot",
+   "at": [
+    -9,
+    11.3,
+    6.5
+   ],
+   "to": [
+    -9,
+    11.3,
+    18
+   ],
+   "count": 2,
+   "aim": [
+    -12.3,
+    -9.3,
+    0
+   ],
+   "intensity": 190,
+   "range": 22,
+   "angle": 90,
+   "inner": 60,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "East arcade wash, mirror of the west (the east aisle also gets the real sun through its open arches)",
+   "type": "Spot",
+   "at": [
+    9,
+    11.3,
+    6.5
+   ],
+   "to": [
+    9,
+    11.3,
+    18
+   ],
+   "count": 2,
+   "aim": [
+    12.3,
+    -9.3,
+    0
+   ],
+   "intensity": 190,
+   "range": 22,
+   "angle": 90,
+   "inner": 60,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Far (gate) wall wash from the skylights' far ends: corner bays, team-gate frames and the centre portal lifted to about the field, aimed at y 3 so the gates' lower halves and the corners the lanes look at are lit. Wall at y 3: d 12.2, cos 0.74, W 0.74 -> E 0.45 each, 0.6-1.1 summed",
+   "type": "Spot",
+   "at": [
+    -16,
+    11.3,
+    16
+   ],
+   "to": [
+    16,
+    11.3,
+    16
+   ],
+   "count": 4,
+   "aim": [
+    0,
+    -8.3,
+    9
+   ],
+   "intensity": 120,
+   "range": 20,
+   "angle": 90,
+   "inner": 60,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Entry wall inner face (glazed windows, curtains, sconces), seen at the start turn. Kept low on purpose: the sun already warms its upper half and pools on the floor in front, so the threshold must not outshine the lanes. Wall at y 4: d 11.2, cos 0.76, W 0.58 -> E 0.3",
+   "type": "Spot",
+   "at": [
+    -13,
+    11.3,
+    9.5
+   ],
+   "to": [
+    13,
+    11.3,
+    9.5
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -9.8,
+    -8.5
+   ],
+   "intensity": 90,
+   "range": 16,
+   "angle": 100,
+   "inner": 65,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Court end wall in front of each tunnel exit, the first thing seen coming out of the tunnel. Narrow and aimed at the wall foot, so the upper wall gets no hot spot (a 90-degree version put E 5 at 8 m). End wall at y 3: d 9.4, cos 0.53, W 0.77 -> E 0.75",
+   "type": "Spot",
+   "at": [
+    -12,
+    11,
+    31
+   ],
+   "to": [
+    12,
+    11,
+    31
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -10,
+    5
+   ],
+   "intensity": 160,
+   "range": 16,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Court gate-wall back, west: from the end-wall side back onto the tunnel-exit arch and the centre block's back face, which the route passes 2 m away; also lights the route floor at z 31-34. Block back: d 9.0, cos 0.39, W 0.69 -> E 0.6",
+   "type": "Spot",
+   "at": [
+    -9.5,
+    10.5,
+    34.5
+   ],
+   "aim": [
+    1.5,
+    -8.5,
+    -4.5
+   ],
+   "intensity": 180,
+   "range": 14,
+   "angle": 80,
+   "inner": 55,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "wash",
+   "note": "Court gate-wall back, east: mirror of the west",
+   "type": "Spot",
+   "at": [
+    9.5,
+    10.5,
+    34.5
+   ],
+   "aim": [
+    -1.5,
+    -8.5,
+    -4.5
+   ],
+   "intensity": 180,
+   "range": 14,
+   "angle": 80,
+   "inner": 55,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "uplight",
+   "note": "West arcade columns (z 7.4, 13.2, 18.9): neutral uplight from 0.5 m above the alcove tops onto the upper fluted shafts, so the colonnade glows against the sky in the open arches. Replaces the warm gold uplight at every column foot. The narrow cone misses the gold bases. Shaft at y 8: d 5, cos 0.6, W 0.88 -> E +0.6",
+   "type": "Spot",
+   "at": [
+    -17.5,
+    4,
+    7.4
+   ],
+   "to": [
+    -17.5,
+    4,
+    18.9
+   ],
+   "count": 3,
+   "aim": [
+    -3,
+    6,
+    0
+   ],
+   "intensity": 30,
+   "range": 10,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "uplight",
+   "note": "East arcade columns: mirror of the west",
+   "type": "Spot",
+   "at": [
+    17.5,
+    4,
+    7.4
+   ],
+   "to": [
+    17.5,
+    4,
+    18.9
+   ],
+   "count": 3,
+   "aim": [
+    3,
+    6,
+    0
+   ],
+   "intensity": 30,
+   "range": 10,
+   "angle": 50,
+   "inner": 30,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "decorative",
+   "note": "The court's four lanterns on the tall end-wall columns (the hall's only lamps; the two inner ones frame the exit arch): one short warm glow each, 0.45 m in front of the glowing glass. Halo E 2.4 at 1 m, 0.4 at 2 m",
+   "type": "Point",
+   "each": "Lantern glass",
+   "anchor": "centre",
+   "offset": [
+    0,
+    0,
+    -0.6
+   ],
+   "inward": false,
+   "max": 4,
+   "spacing": 1,
+   "intensity": 2.5,
+   "range": 3,
+   "color": [
+    1,
+    0.72,
+    0.42
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "Team gates (the goals), the hero of each lane: one focal spot per gate from high over the lane on the approach side, covering the tunnel mouth, the portcullis door and the frame. Neutral and unshadowed, so the hanging exit sign does not print a dark block on the gate. Mouth at y 3: d 11.9, cos 0.78, W 0.65 -> E +1.8; gate total 2.5-2.9",
+   "type": "Spot",
+   "at": [
+    -12,
+    10.5,
+    15.5
+   ],
+   "to": [
+    12,
+    10.5,
+    15.5
+   ],
+   "count": 2,
+   "aim": [
+    0,
+    -9.5,
+    9.3
+   ],
+   "intensity": 520,
+   "range": 18,
+   "angle": 50,
+   "inner": 25,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "Centre portal, the axis landmark seen from the entrance: one step below the team gates (about 1.5F), so the triptych reads with the goals brightest. Door at y 4: d 11.1, cos 0.81, W 0.67 -> E +0.45 on top of the far wash",
+   "type": "Spot",
+   "at": [
+    0,
+    10.5,
+    15
+   ],
+   "aim": [
+    0,
+    -6.5,
+    9
+   ],
+   "intensity": 100,
+   "range": 17,
+   "angle": 60,
+   "inner": 40,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "Exit arch, the way out to CR06, framed by the two inner lanterns: a focal spot from 1.1 m above the centre block, covering the arch and the floor at its foot where the route turns. Arch at y 3: d 10.7, cos 0.61, W 0.55 -> E 0.85; 1.5-2.5 with the court sky",
+   "type": "Spot",
+   "at": [
+    0,
+    11.5,
+    29.5
+   ],
+   "aim": [
+    0,
+    -8.5,
+    6.5
+   ],
+   "intensity": 250,
+   "range": 15,
+   "angle": 60,
+   "inner": 40,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  },
+  {
+   "layer": "accent",
+   "note": "Inside each gate tunnel, past the door: daylight spilling in from the court, so the passage under the gate (dark StoneShadow linings) is not a dark mouth. Linings 1.7-2.3 m away get E 0.7-1; the floor gets 0.3 plus the gate spot and the court sky",
+   "type": "Point",
+   "at": [
+    -12,
+    4,
+    28.8
+   ],
+   "to": [
+    12,
+    4,
+    28.8
+   ],
+   "count": 2,
+   "intensity": 5,
+   "range": 8,
+   "color": [
+    1,
+    0.98,
+    0.95
+   ],
+   "shadows": false
+  }
+ ],
+ "expected": "SPOT 1 (the start turn, camera looking west across the hall from about x 0..3, z 4-5, as in picture 1):\n- A sunlit threshold: rib-patterned sun pools on the cream floor around the crown pedestal, the stairs and the pawns.\n- Thin neutral sun shafts slant down from the skylights toward the entry.\n- At the left, the entry wall's upper half is sun-warmed, its glazed window bright, and its lower part soft (about 0.6-0.8 with bounce).\n- Ahead, 20-25 m away, the west arcade: washed cream columns (about 0.8) whose upper shafts glow brighter (about 1.5) against the sky in the two open arches, with the crown-banner bay between and the drapes deep purple.\n- At the right, the palanquin's king, an ebony rook dark against a bright white alcove (about 1.0), and the navy floor at about 1.1 showing reflections of the lit walls.\n- No yellow or blue cast; colour comes only from the materials.\n\nSPOT 2 (the white lane, x -12, z 10-15, looking +z, as in picture 2):\n- An evenly daylit lane under the skylight (about 1.1-1.3), brightening toward the end (about 1.75 at z 20, about 2.4 in the goal zone).\n- Rooks read as dark silhouettes against bright alcoves.\n- The west arcade's columns and drapes at the left, washed (0.8-1.0).\n- Dead ahead, the white team gate is clearly the brightest framed plane (tunnel mouth and door about 2.5-2.9, frame about 2), and the '백팀 출구' sign plate catches the focal light.\n- The centre portal with its ring-handled doors at the right edge, one step lower (about 1.4-1.9). The corner bay at the left about 1.0.\n- Pawns entering the goal frame get their backs lit (about 2.3) by the gate light.\n\nSPOT 3 (through the tunnel into the rear court, then the turn toward the exit):\n- The tunnel stays light (floor about 1.2-1.5, linings about 0.9) and opens into a marble court in cool daylight that is open to the sky.\n- Route floor about 1.1-1.6.\n- The end wall in front of the tunnel exit about 1.5 at eye height.\n- Four warm lantern halos on the tall columns.\n- At the right, the tunnel-exit arch and the centre block's back at 0.6-1.4.\n- On the axis, the exit arch framed by the two inner lanterns is the court's brightest element (about 1.5 at the jambs, about 2.5 at the crown), with CR06's warm corridor lamps beyond.\n- The court's side walls at the far ends about 0.6-0.9 with the bake.",
+ "light_count": 42,
+ "self_check": "I checked the plan numerically with <home>/AppData\\Local\\Temp\\claude\\164a07f2c8a37503\\f8d6fffc-4ec4-4c9c-928e-016f7d435ca4\\scratchpad\\royalproc\\evalrp.py, which applies URP attenuation W=(1-(d/R)^4)^2, the spot cone falloff and cos to about 120 probe points. I checked clearances with <home>/AppData\\Local\\Temp\\claude\\164a07f2c8a37503\\f8d6fffc-4ec4-4c9c-928e-016f7d435ca4\\scratchpad\\royalproc\\clear_rp.py against about 45 anatomy boxes.\n\nINSIDE THE HALL AND 0.3 m CLEAR: All 38 plan lights are inside the box (-23.6..24.4, -1..17.5, -1.8..38.2). The closest clearances:\n- Lantern glows: 0.45 m in front of the glass and cage. I moved them from 0.35 to 0.45 m.\n- Column uplights: 0.5 m above the alcove tops (y 3.5).\n- Skylight rows and washers: 0.7-0.8 m under the ceiling plane and ribs.\n- Tunnel points: 0.7 m before the exit arches and 1.4 m behind the doors.\n- Exit spot: 1.1 m above the centre block.\n- Court spots: 1.6 m under the lid.\nNo light sits in a floor or a wall.\n\nEACH-NAMES: 'Lantern glass' is a real part name without the 'Content / ' prefix. It has 4 enabled parts (the disabled [off] set at z 23 is ignored), with max 4.\n\nAIMS: Every aim is the from-to vector to its stated target, checked against the probe results: gates at y 1-3 at z 24.8, the far wall at y 3, arcade wall feet at x +-21.3, the court end wall at y 1-3, the block back at z 31, column shafts at y 8-10.\n\nINTENSITIES: Each light is sized by I = E d^2/(cos W). Examples:\n- Skylight rows: 0.45*137/(0.94*0.78) = 84.\n- Team gates: 1.8*142/(0.78*0.65) = 504 -> 520.\n- Column uplights: 0.6*25/(0.6*0.88) = 28 -> 30.\n- Court sky: 0.4*243/0.67 = 145 -> 150.\n\nRANGES: 1.4-2x the farthest surface each light serves. The lanterns stay at R 3 (halo only).\n\nFIXES DURING THE CHECK:\n- Court end-wall washer: E 5.3 hot spot at 8 m -> narrowed to 50 degrees and aimed at the foot.\n- Exit spot: 3.9 at the arch crown -> narrowed.\n- Column uplights: 2.4 hot band -> I 60 cut to 30, moved over the alcoves, cone kept off the gold bases.\n- The court lights first leaked 0.1-0.2 into the nave and lit the court's own tunnel roofs -> tilted, now < 0.05 in the nave.\n- The entry washers first doubled the threshold's floor light -> lowered to I 90.\n- The centre portal at first matched the gates -> cut to I 100 (gates stay the only 2.5F element).\n- Court route floor dipped to 0.29 at x -6 -> added the two gate-wall-back washers.\n\nBUDGET: 38 plan lights plus the team's 4 'Skylight sun' spots (unchanged, FixtureBoost 1) = 42. With the two corridors' 12 LIGHT_0 in view, 54. All under 60. There are 17 plan lines. Per-pixel overlap is 3-5 in the lanes and 8-9 only in the goal zone and tunnels (at most 12).\n\nSHADOWS: 2 lights (the z 17 skylight row), no shadowed points. The old auto lights are all off (LampIntensity, UplightIntensity and GoalIntensity set to 0). The old goal light sat inside the centre gate block.\n\nJY'S RULES:\n- The morning sun is untouched.\n- Colours: skylight light (0.96,0.98,1.0) faintly cool but not sky-blue; washes and accents in the sun's family (1,0.98,0.95); warmth (1,0.72,0.42) only at the four lantern flames.\n- No warm or blue fill, haze or grade. Shafts are thin and neutral.\n- Bright: F about 1.1-1.4.\n- The placement follows the architecture: skylights, the arcade rhythm, three doors, lanterns.\n- Section ends stay closed: nothing aims into CR05 or CR06; only the exit spot falls a little through the open arch.\n\nNOT VERIFIED: no Unity render. The bake's level (about +0.3) is my estimate, and the albedos are read from the pictures.",
+ "open_questions": "1. Look scale: I set Contrast 24, Saturation 15 and Exposure 0.1 on the same scale as the existing course-3 entries (26-28 / 14-18), treating them as the look's own values. If the look actually adds to the global 30/18 and -0.15, halve contrast and saturation.\n\n2. Material proposal for JY: the navy marble game floor (albedo about 0.12) is the largest surface in the race view (picture 2) and caps how bright the hall can look. A lighter blue-grey or veined light marble would do more than any light. Meanwhile FloorGloss 0.65 lets it reflect the lit walls and gates.\n\n3. Does the bake include the sun's (directional) indirect light? If not, the entry sun pools will not bounce onto the entry wall, the pedestals or the pawns. Fallback: two diffuse-only bounce spots 0.6 m above the start floor (x -4 and -14, z 4), aimed up, I about 6.\n\n4. Does the bake treat the shadow-only lid as a roof? If not, the rear court bakes as an open court and is brighter: lower the court sky by about 30%. If it does, the court relies on the plan lights. Also, if the baked sky through the arcades reads blue in the shade, the bake's sky colour needs neutralising (outside this plan).\n\n5. The entry wall's brass globe sconces (a pair per window, in the wall mesh, not glowing): if the team makes the globes emissive or gives their positions, add one warm glow per sconce (I about 2, R 2.5). The nave has no warm points of its own.\n\n6. Sun leak: a thin sun line enters the court through about 0.5 m slots where the 44 m end wall meets the side walls (top view). Seal the slots, or keep it as a deliberate sun blade.\n\n7. The exit-sign iron plates at z 23.4 sit inside the team-gate spot (E about 5). If they wash out or glint, lower the spot to about 420 or narrow it.\n\n8. The palanquins' functional gold glow gets no light, since it is not a lamp and may move.\n\n9. The side-column positions (x about +-21.3; z 7.4, 13.2, 18.9) are inferred. Check that the uplights land on the shafts."
+}

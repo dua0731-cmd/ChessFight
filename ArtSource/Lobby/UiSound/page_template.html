@@ -1,0 +1,111 @@
+<title>로비 메뉴 소리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column of explanation, then a grid of nine sound cards, each a row of four takes; the lobby's own
+   ebony-and-gold look, committed to dark like the game. */
+:root {
+  --ebony: #120e0b; --panel: #1e1711; --panel-hi: #2c2218; --line: rgba(201, 154, 69, .38);
+  --gold: #e2b866; --ivory: #f3ebdd; --muted: #b9a68a; --warn: #f0a08e;
+  --display: "Black Han Sans", "Noto Sans KR", system-ui, sans-serif;
+  --body: "Noto Sans KR", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+body { background: var(--ebony); color: var(--ivory); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 36px 56px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { display: grid; gap: 10px; max-width: 70ch; }
+.kicker { font-size: 11px; letter-spacing: .24em; color: var(--gold); font-weight: 700; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.1; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+header strong { color: var(--ivory); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; margin-top: 28px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.head { display: flex; align-items: center; gap: 12px; }
+.head h2 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 0; flex: 1; }
+.where { margin: 0; color: var(--muted); font-size: 13px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.game { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--gold);
+        background: var(--gold); color: #1a130c; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.game:hover { filter: brightness(1.08); }
+.takes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.take { display: grid; gap: 2px; justify-items: start; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+        background: transparent; text-align: left; min-width: 0; }
+.take:hover { background: var(--panel-hi); }
+.take.on { border-color: var(--gold); background: var(--panel-hi); }
+.take .n { font-family: var(--display); font-size: 18px; line-height: 1; }
+.take .nums { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.take .tag { font-size: 11px; font-weight: 700; color: var(--gold); }
+.take .flag { font-size: 11px; font-weight: 700; color: var(--warn); }
+.take.playing, .game.playing { box-shadow: 0 0 0 3px rgba(226, 184, 102, .35); }
+footer { margin-top: 28px; max-width: 70ch; color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+footer code { font-family: var(--mono); color: var(--ivory); }
+@media (max-width: 420px) { .takes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="kicker">CHESS FIGHT · 로비와 설정 창</div>
+    <h1>로비 메뉴 소리</h1>
+    <p>ElevenLabs로 종류마다 4개씩 만든 후보예요. <strong>금색 테두리</strong>가 지금 게임에 들어간 소리이고, 왼쪽 위 버튼은 게임에서 실제로 나는 크기 그대로 들려줘요. 숫자는 소리가 가장 커지는 때(ms)와 그 뒤 잦아드는 길이(ms)예요.</p>
+    <p>AI는 소리를 들을 수 없어서 파형 숫자로만 골랐어요(울림 없음 · 빨리 시작 · 짧게 끝남). 바꾸고 싶은 건 채팅에 <strong>"클릭 2번, 탭 4번"</strong>처럼 알려 주세요.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>
+    <div>게임에서는 설정 → 소리 → <strong>버튼 소리</strong> 크기를 따라요(기본 60%).</div>
+    <div>원본과 고르는 스크립트: <code>ArtSource/Lobby/UiSound</code> (<code>picks.json</code>을 바꾸고 <code>bake.py</code>를 다시 돌리면 게임 소리가 바뀜)</div>
+  </footer>
+</div>
+<script>
+const cards = /*DATA*/[];
+const grid = document.getElementById('grid');
+let playing = null;
+function play(src, el) {
+  try {
+    if (playing) { playing.audio.pause(); playing.el.classList.remove('playing'); }
+    const audio = new Audio(src);
+    el.classList.add('playing');
+    playing = { audio, el };
+    audio.addEventListener('ended', () => el.classList.remove('playing'));
+    audio.play().catch(() => el.classList.remove('playing'));
+  } catch (e) { el.classList.remove('playing'); }
+}
+for (const c of cards) {
+  const card = document.createElement('section');
+  card.className = 'card';
+  const head = document.createElement('div');
+  head.className = 'head';
+  const h = document.createElement('h2');
+  h.textContent = c.label;
+  const game = document.createElement('button');
+  game.className = 'game';
+  game.type = 'button';
+  game.textContent = '▶ 게임 소리';
+  game.setAttribute('aria-label', c.label + ' 게임 소리 듣기');
+  game.addEventListener('click', () => play(c.game, game));
+  head.append(h, game);
+  const where = document.createElement('p');
+  where.className = 'where';
+  where.textContent = c.where;
+  const takes = document.createElement('div');
+  takes.className = 'takes';
+  for (const t of c.takes) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'take' + (t.on ? ' on' : '');
+    b.setAttribute('aria-label', c.label + ' ' + t.n + '번 듣기');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = t.n + '번';
+    const nums = document.createElement('span'); nums.className = 'nums'; nums.textContent = t.hit + ' · ' + t.tail + ' ms';
+    b.append(n, nums);
+    if (t.on) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '게임에 들어감'; b.append(tag); }
+    for (const f of t.flags) { const fl = document.createElement('span'); fl.className = 'flag'; fl.textContent = f; b.append(fl); }
+    b.addEventListener('click', () => play(t.src, b));
+    takes.append(b);
+  }
+  card.append(head, where, takes);
+  grid.append(card);
+}
+</script>

@@ -132,7 +132,7 @@ namespace ChessFight.PawnRush
                         s.Length[team] = s.Path[team] != null ? ProgressPath.Length(s.Path[team]) : 0f;
                     }
                     bool mini = s.Mini != null || (section != null && section.Kind == PawnRushSection.SlotKind.MiniGame);
-                    s.Label = mini ? "미니게임" : section != null ? section.DisplayName : "";
+                    s.Label = mini ? Loc.T("미니게임") : section != null ? Loc.T(section.DisplayName) : "";
                     weights[i] = PawnRushStandings.Weight(mini, s.Length[0]);
                     segments.Add(s);
                 }
@@ -210,6 +210,8 @@ namespace ChessFight.PawnRush
         void OnGUI()
         {
             if (!Showing || Event.current.type != EventType.Repaint || segments.Count == 0) return;
+            // the settings window is uGUI, and OnGUI draws over every canvas: nothing of the standings over it (user 11-23)
+            if (SettingsWindow.IsOpen) return;
             unit = Mathf.Clamp(Screen.height / 720f, .75f, 2.4f);
             if (808f * unit > Screen.width - 16f) unit = (Screen.width - 16f) / 808f;
             stripLeft = Screen.width * .5f - 640f * unit;       // the mock-up's 1280 frame about the middle
@@ -234,13 +236,13 @@ namespace ChessFight.PawnRush
             if (self >= 0)
             {
                 Text(S(244, 13, 33, 42), ranks[self].ToString(), 28f, Ivory, TextAnchor.MiddleRight, true);
-                Text(S(278, 23, 16, 24), "위", 15f, Ivory, TextAnchor.MiddleLeft, true);
+                Text(S(278, 23, 16, 24), Ordinal(ranks[self]), 15f, Ivory, TextAnchor.MiddleLeft, true);
             }
-            else Text(S(246, 13, 50, 42), "관전", 15f, Ivory, TextAnchor.MiddleCenter, true);
+            else Text(S(246, 13, 50, 42), Loc.T("관전"), 15f, Ivory, TextAnchor.MiddleCenter, true);
             Text(S(299, 25, 25, 20), "/ " + racers.Count, 10.5f, Muted, TextAnchor.MiddleLeft, false);
             // the two lanes
-            Text(S(322, 17, 18, 13), "백", 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
-            Text(S(322, 30, 18, 13), "흑", 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 17, 18, 13), Short(Teams.White), 9f, Arena.TeamColor(Teams.White, true), TextAnchor.MiddleRight, true);
+            Text(S(322, 30, 18, 13), Short(Teams.Black), 9f, Arena.TeamColor(Teams.Black, true), TextAnchor.MiddleRight, true);
             for (int i = 0; i < segments.Count; i++)
             {
                 var s = segments[i];
@@ -266,9 +268,13 @@ namespace ChessFight.PawnRush
             if (finish != null)
             {
                 for (int team = 0; team < 2; team++)
-                    Text(S(928, team == 0 ? 17 : 31, 62, 14), (team == 0 ? "백 " : "흑 ") + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team)),
-                         11f, Arena.TeamColor(team, true), TextAnchor.MiddleLeft, true);
-                Text(S(980, 28, 58, 14), "왕관 발판", 8.5f, Muted, TextAnchor.MiddleCenter, false);
+                {
+                    string count = " " + finish.OnPlatform(team) + " / " + PawnRushFinish.Needed(finish.Players(team));
+                    string line = Loc.T(team == 0 ? "백" : "흑") + count;
+                    if (!Fits(line, 11f, 62f)) line = Short(team) + count;   // R758: as the lanes' tags
+                    Text(S(928, team == 0 ? 17 : 31, 62, 14), line, 11f, Arena.TeamColor(team, true), TextAnchor.MiddleLeft, true);
+                }
+                Text(S(980, 28, 58, 14), Loc.T("왕관 발판"), 8.5f, Muted, TextAnchor.MiddleCenter, false);
             }
         }
 
@@ -295,7 +301,7 @@ namespace ChessFight.PawnRush
             if (lineCount <= 0) return;
             float height = 34f + lineCount * 23f - 2f;
             Box(L(1062, 6, 206, height), Panel, new Color(Brass.r, Brass.g, Brass.b, .6f));
-            Text(L(1074, 10, 180, 18), "실시간 순위", 11f, Brass, TextAnchor.MiddleLeft, true);
+            Text(L(1074, 10, 180, 18), Loc.T("실시간 순위"), 11f, Brass, TextAnchor.MiddleLeft, true);
             for (int i = 0; i < lineCount; i++)
             {
                 int racer = lines[i];
@@ -313,21 +319,41 @@ namespace ChessFight.PawnRush
 
         static string Name(CrownFinish.Runner runner, bool own)
         {
-            string name = string.IsNullOrEmpty(runner.Name) ? (own ? "나" : "플레이어") : runner.Name;
+            string name = string.IsNullOrEmpty(runner.Name) ? Loc.T(own ? "나" : "플레이어") : runner.Name;
             return name.Length > 10 ? name.Substring(0, 9) + "…" : name;
+        }
+
+        // R751: the small word after the big rank number - "위" in Korean, the table's word elsewhere ("名"), and
+        // English's own ordinal ending (1st, 2nd, 3rd, 11th), which no single table cell can say.
+        static string Ordinal(int rank)
+        {
+            if (Loc.Lang != "en") return Loc.T("위");
+            int tens = rank % 100, ones = rank % 10;
+            if (tens >= 11 && tens <= 13) return "th";
+            return ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th";
         }
 
         // A section's name under its segment: whole if it fits, else its last word ("왕실 수로 정원" -> "정원"). A
         // bracketed part is left off ("국왕 알현실 (임시)" -> "국왕 알현실"; R688).
+        // R790: languages that put the head noun first ("Зал с парадной лестницей") would keep a dependent word
+        // ("лестницей"), so there the name is cut to the room with "…" instead ("Зал с пара…").
         static string Short(string label, float room)
         {
             if (string.IsNullOrEmpty(label)) return "";
             int open = label.IndexOf('(');
             if (open > 0) label = label.Substring(0, open).Trim();
             if (label.Length * 8f <= room + 24f) return label;
+            if (HeadFirst(Loc.Lang))
+            {
+                int fit = Mathf.Max(3, Mathf.FloorToInt((room + 24f) / 8f) - 1);
+                return fit < label.Length ? label.Substring(0, fit).TrimEnd() + "…" : label;
+            }
             int space = label.LastIndexOf(' ');
             return space >= 0 && space + 1 < label.Length ? label.Substring(space + 1) : label;
         }
+
+        static bool HeadFirst(string lang) =>
+            lang == "ru" || lang == "es" || lang == "es-419" || lang == "pt-BR" || lang == "fr" || lang == "pl";
 
         // ------------------------------------------------------------------ drawing
 
@@ -355,6 +381,23 @@ namespace ChessFight.PawnRush
         {
             GUI.color = colour;
             GUI.DrawTexture(new Rect(x - radius, y - radius, radius * 2f, radius * 2f), DiscTexture());
+        }
+
+        // R758 (user 11-22, English: the lanes' "White" / "Black" ran over "/ 4"): the 18-unit tags take a team's word
+        // when it is a letter or two (백 · 흑, 白 · 黑) and its first letter otherwise (W · B).
+        static string Short(int team)
+        {
+            string word = Loc.T(team == Teams.White ? "백" : "흑");
+            return word.Length > 2 ? word.Substring(0, 1) : word;
+        }
+
+        // Whether `value` drawn bold at `size` fits `width` (the mock-up's units).
+        bool Fits(string value, float size, float width)
+        {
+            if (text == null) return true;
+            text.fontSize = Mathf.Max(9, Mathf.RoundToInt(size * unit));
+            text.fontStyle = FontStyle.Bold;
+            return text.CalcSize(new GUIContent(value)).x <= width * unit;
         }
 
         void Text(Rect r, string value, float size, Color colour, TextAnchor anchor, bool bold)

@@ -246,7 +246,7 @@ namespace ChessFight.Game
             if (!open) return;
             string text = field.value ?? "";
             if (ChatText.Clean(text) == "") { Close(true); return; }
-            string refused = send?.Invoke(channel, text) ?? "채팅에 연결되지 않았어요.";
+            string refused = send?.Invoke(channel, text) ?? Loc.T("채팅에 연결되지 않았어요.");
             if (refused != "") { ShowNote(refused); return; }
             field.value = "";
             scroll = 0;
@@ -332,14 +332,14 @@ namespace ChessFight.Game
 
             if (chip != null)
             {
-                chip.text = ChatText.Label(channel);
+                chip.text = Loc.T(ChatText.Label(channel));
                 foreach (var c in Channels) chip.EnableInClassList("chat-chip-" + Key(c), c == channel);
             }
             // The input line is a strip of the channel it goes to.
             if (entry != null) foreach (var c in Channels) entry.EnableInClassList("chat-line-" + Key(c), c == channel);
             if (placeholder != null)
             {
-                placeholder.text = $"{ChatText.Label(channel)}에 말하기";
+                placeholder.text = Loc.F("{0}에 말하기", Loc.T(ChatText.Label(channel)));
                 Show(placeholder, string.IsNullOrEmpty(field.value));
             }
             bool error = noteError && now < noteUntil;
@@ -352,7 +352,7 @@ namespace ChessFight.Game
             }
             if (note != null)
             {
-                note.text = open && Where == Layout.Match ? "입력 중 · 이동 멈춤" : "";
+                note.text = open && Where == Layout.Match ? Loc.T("입력 중 · 이동 멈춤") : "";
                 Show(note, note.text != "");
             }
             if (scrolled != null) Show(scrolled, open && scroll > 0);
@@ -413,8 +413,9 @@ namespace ChessFight.Game
             row.AddToClassList("chat-line-" + Key(e.Channel));
             if (e.Notice) { row.AddToClassList("chat-line-notice"); row.Add(Text(e.Text, "chat-notice")); return row; }
             if (e.Mine) row.AddToClassList("chat-line-me");
-            // The Steam name the line came from.
-            var name = Text(e.Name, "chat-name");
+            // The Steam name the line came from (R792: another player's as "플레이어 N" while streamer mode hides names - a
+            // line kept from before it was turned on too; the view redraws on any settings change).
+            var name = Text(e.Mine || e.Sender == 0 ? e.Name : StreamerMode.Name(e.Sender, e.Name, false), "chat-name");
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);

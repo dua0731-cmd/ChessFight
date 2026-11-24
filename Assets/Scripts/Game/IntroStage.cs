@@ -225,6 +225,7 @@ namespace ChessFight.Game
                 d.localPosition = new Vector3(x, d.localPosition.y, d.localPosition.z);
             }
 
+            DriftClouds(t);
             foreach (var p in pennants) p.Tick(t, dt, view, mouse);
             foreach (var r in runners) r.Tick(t, dt, 1f);
             foreach (var s in shoves) s.Tick(t, dt, 1f);

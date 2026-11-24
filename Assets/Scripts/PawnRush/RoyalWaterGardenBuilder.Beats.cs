@@ -43,7 +43,8 @@ namespace ChessFight.PawnRush
             Mass(b, "Start yard", -6f, 6f, -61f, -50f, 0f);
             Rail(b, "Start yard rail W", -6.3f, -6f, -61f, -51.2f, 0f);
             Rail(b, "Start yard rail E", 6f, 6.3f, -61f, -51.2f, 0f);
-            b.Checkpoint(0, V(0f, 0f, -57f), 0f, 10f);
+            // R733: CP0 to CP4 and CP 끝 cover the floor they are on (CourseBuilder.CoverFloor), their spots where they were.
+            CourseBuilder.CoverFloor(b.Checkpoint(0, V(0f, 0f, -57f), 0f, 10f), -6f, 6f, -61f, -53f);
             // The plaza: 34 m across round (0, -35), a 1.1 m kerb with 13 m openings south (the yard) and north (the
             // canal walk), so nobody is knocked into the water from it.
             b.Cylinder("Fountain plaza", V(PlazaCenter.x, Deep, PlazaCenter.y), PlazaRadius * 2f, -Deep, k.floorChecker, true, true)
@@ -133,7 +134,7 @@ namespace ChessFight.PawnRush
             // The ramp north (x -35..-27, z -12.5 -> -1, y 0 -> 1.8, 9°).
             b.Slope("West ramp", -35f, -27f, -12.5f, -1f, 0f, WestLandingY, 3f, 0f, k.floorChecker, true).AddComponent<CourseFloor>().sloped = true;
             b.Slope("West ramp rail E", -27.3f, -27f, -12.2f, -1f, 0f, WestLandingY, 3f, 1.1f, k.wallNoClimb, true);
-            b.Checkpoint(1, V(-4f, 0f, -15.5f), -90f, 5f);
+            CourseBuilder.CoverFloor(b.Checkpoint(1, V(-4f, 0f, -15.5f), -90f, 5f), -5f, -3f, -18.5f, -12.5f);
             for (int i = 0; i < GeyserAt.Length; i++) Geyser(b, i);
         }
 
@@ -172,7 +173,9 @@ namespace ChessFight.PawnRush
             Mass(b, "West landing", -35f, -25.2f, -1f, 8f, WestLandingY);
             Rail(b, "West landing rail N", -35f, -25.2f, 8f, 8.3f, WestLandingY);
             Rail(b, "West landing rail S", -27f, -25.2f, -1.3f, -1f, WestLandingY);
-            b.Checkpoint(2, V(-30f, WestLandingY, 3.5f), 90f, 7f);
+            // R733: the whole landing - its strip (x -31..-29) let a runner up the ramp's east half turn straight for P1
+            // past it, and a fall off the platforms went back down to CP1.
+            CourseBuilder.CoverFloor(b.Checkpoint(2, V(-30f, WestLandingY, 3.5f), 90f, 7f), -35f, -25.2f, -1f, 8f);
             for (int i = 0; i < PlatformCount; i++)
             {
                 var top = PlatformTop(i);
@@ -197,11 +200,14 @@ namespace ChessFight.PawnRush
             Mass(b, "East landing", 25.2f, 35f, 0f, 10f, Upper);
             Rail(b, "East landing rail S", 25.2f, 35f, -.3f, 0f, Upper);
             Rail(b, "East landing rail N", 25.2f, 26.4f, 9.7f, 10f, Upper);
-            b.Checkpoint(3, V(30.1f, Upper, 4.5f), 0f, 7f);
+            // R733: the whole landing - its strip (z 3.5..5.5) was south of where a jump off P8 (z 3.5..9.5) lands, so a
+            // runner went on north into the lock without it.
+            CourseBuilder.CoverFloor(b.Checkpoint(3, V(30.1f, Upper, 4.5f), 0f, 7f), 25.2f, 35f, 0f, 10f);
             // The lock (x 27..35, z 10..24), walled both sides: water runs south over its floor at 1.5 m/s, and three
             // sluice gates rise and drop every 4.5 s (R680: was 6 s), each three quarters of a second after the one
             // before (was a second: the same sixth of the cycle).
-            Mass(b, "Lock floor", 27f, 35f, 10f, 24f, Upper);
+            // 2026-11-22: under the running water (GardenFinish's "Water lock"): steps on it are soft water parting.
+            Mass(b, "Lock floor", 27f, 35f, 10f, 24f, Upper).AddComponent<WetFloor>();
             Solid(b, "Lock wall W", V(26.4f, Deep, 10f), V(27f, Upper + 1.8f, 24f));
             Solid(b, "Lock wall E", V(35f, Deep, -.3f), V(35.6f, Upper + 1.8f, 32.6f));
             float[] gateZ = { 13f, 17.5f, 22f };
@@ -237,7 +243,9 @@ namespace ChessFight.PawnRush
             // boarding quay. Its south edge is open over the water. CP4 at its start, CP5 between the robots.
             Mass(b, "Robot dyke", 8f, 35f, 24f, 32.6f, Upper);
             Rail(b, "Dyke wall N", 10f, 35f, 30f, 30.5f, Upper);
-            b.Checkpoint(4, V(31f, Upper, 27f), -90f, 5f);
+            // R733: across the lock's whole mouth (x 27..35; its strip was x 30..32, so a runner out of the lock's west side
+            // turned west under it) and the dyke's walk (z 24..30). Still east of the first robot's hand (x 26 +- 0.9).
+            CourseBuilder.CoverFloor(b.Checkpoint(4, V(31f, Upper, 27f), -90f, 5f), 27f, 35f, 24f, 30f);
             b.Checkpoint(5, V(DykeCheckpointX, Upper, 27f), -90f, 6f);
             Robot(b, "1", 26f, 0f);
             Robot(b, "2", 13f, (float)(ChessFight.Network.RoyalWaterGardenRules.RobotCycle * .5));
@@ -370,7 +378,7 @@ namespace ChessFight.PawnRush
             Marker(b, "Exit terrace (CP 끝)", -6f, 6f, 60.5f, 66.5f, Upper);
             Rail(b, "Exit terrace rail W", -6.3f, -6f, 60.5f, 66.1f, Upper);
             Rail(b, "Exit terrace rail E", 6f, 6.3f, 60.5f, 66.1f, Upper);
-            b.Checkpoint(7, V(0f, Upper, 63.5f), 0f, 10f);
+            CourseBuilder.CoverFloor(b.Checkpoint(7, V(0f, Upper, 63.5f), 0f, 10f), -6f, 6f, 60.5f, 66.5f);
             // The open arch, four steps of 0.25 down, the entrance band (z 68.5..72.5, y 2.8): the section contract.
             // R462: the arch is 승규's reference gate (gate_sample_v2.py, its sizes in units of the 12 m opening, from the
             // band's 2.8): the jambs (x +-6..8.6, z 64.7..68.3) up to where the round arch (springing 13, crown 19) clears

@@ -93,7 +93,7 @@ namespace ChessFight.RagdollLab
                         aimLocked = false;
                         skillGrabLatch = skillGrabRaw;
                         skillDir = ChainAim(s);
-                        SkillDetail = "조준 (마우스로 방향 · 좌클릭 던지기 · 우클릭/F 취소)";
+                        SkillDetail = Loc.T("조준 (마우스로 방향 · 좌클릭 던지기 · 우클릭/F 취소)");
                     }
                     break;
                 case SkillStage.Windup:
@@ -116,7 +116,7 @@ namespace ChessFight.RagdollLab
                             aimLocked = true;
                             stageTime = 0f;
                             facing = FlatDir(skillDir);
-                            SkillDetail = "팔 휘두르기";
+                            SkillDetail = Loc.T("팔 휘두르기");
                         }
                         break;
                     }
@@ -150,7 +150,12 @@ namespace ChessFight.RagdollLab
             chainAimTarget = ChainAssistTarget(s, flat);
             if (chainAimTarget != null)
             {
-                Vector3 to = chainAimTarget.bodies[(int)BodyId.Chest].position - (bodies[(int)BodyId.Chest].position + flat * 0.2f);
+                // R819: at where it will be when the chain gets there (the swing still to come and the flight), across the
+                // ground: a piece running across the line used to be a metre or more past it by then.
+                Vector3 origin = bodies[(int)BodyId.Chest].position + flat * 0.2f;
+                float swingLeft = aimLocked ? Mathf.Max(0f, s.rookSwing - stageTime) : s.rookSwing;
+                float flight = Flat(chainAimTarget.bodies[(int)BodyId.Chest].position - origin).magnitude / Mathf.Max(1f, s.rookChainSpeed);
+                Vector3 to = LeadChest(chainAimTarget, swingLeft + flight, s.rookChainLead) - origin;
                 float pitch = Mathf.Asin(Mathf.Clamp(to.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
                 pitch = Mathf.Clamp(pitch, -s.rookChainPitch, s.rookChainPitch) * Mathf.Deg2Rad;
                 Vector3 across = Flat(to).sqrMagnitude > 1e-4f ? Flat(to).normalized : flat;
@@ -177,18 +182,37 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || other.State != PawnState.Active || other.SkillUntargetable || other.chainCarry || other.kingCarry) continue;
                 if (!IsEnemyOf(other) && !IsAllyOf(other)) continue;
-                Vector3 to = other.bodies[(int)BodyId.Chest].position - from;
-                float across = Flat(to).magnitude;
-                if (across < 0.6f || across > s.rookChainRange) continue;
-                float pitch = Mathf.Abs(Mathf.Asin(Mathf.Clamp(to.normalized.y, -1f, 1f)) * Mathf.Rad2Deg);
-                if (pitch > s.rookChainPitch) continue;
-                float angle = Vector3.Angle(flat, Flat(to));
+                // R819: where it is, or (online) where the rook's player saw it, whichever is nearer the aim: the aim line on
+                // that player's screen bent onto the piece from its picture, the host's piece had run out of the 10° by then.
+                Vector3 chest = other.bodies[(int)BodyId.Chest].position;
+                float angle = ChainAngle(s, flat, from, chest);
+                if (SeenBy(other, out _, out var seenChest, out _))
+                {
+                    float seen = ChainAngle(s, flat, from, seenChest);
+                    if (seen < angle && ClearSight(from, seenChest))
+                    {
+                        angle = seen;
+                        chest = seenChest;
+                    }
+                }
                 if (angle > bestAngle) continue;
-                if (!ClearSight(from, other.bodies[(int)BodyId.Chest].position)) continue;
+                if (!ClearSight(from, chest)) continue;
                 best = other;
                 bestAngle = angle;
             }
             return best;
+        }
+
+        /// <summary>How far off the aim (degrees) a chest at <paramref name="chest"/> is for the chain; out of its reach or its
+        /// pitch, more than any angle.</summary>
+        static float ChainAngle(PawnRushSkillParams s, Vector3 flat, Vector3 from, Vector3 chest)
+        {
+            Vector3 to = chest - from;
+            float across = Flat(to).magnitude;
+            if (across < 0.6f || across > s.rookChainRange) return float.MaxValue;
+            float pitch = Mathf.Abs(Mathf.Asin(Mathf.Clamp(to.normalized.y, -1f, 1f)) * Mathf.Rad2Deg);
+            if (pitch > s.rookChainPitch) return float.MaxValue;
+            return Vector3.Angle(flat, Flat(to));
         }
 
         /// <summary>Where the chain's line starts: the chest, a little forward (the aim line and the flight are measured from here).</summary>
@@ -203,7 +227,8 @@ namespace ChessFight.RagdollLab
             chainFrom = ChainOrigin;
             chainTip = chainFrom;
             chainOn = null;
-            SkillDetail = "사슬이 날아감";
+            chainHoming = chainAimTarget;   // R819: the piece the aim bent onto, if any, followed a little in the flight
+            SkillDetail = Loc.T("사슬이 날아감");
             Fx(SkillFxKind.RookThrow, null, chainFrom, skillDir, 0, s.rookChainRange);
         }
 
@@ -218,11 +243,22 @@ namespace ChessFight.RagdollLab
                     float left = s.rookChainRange - chainOut;
                     bool last = step >= left;
                     if (last) step = Mathf.Max(0f, left);
-                    Vector3 from = chainFrom + skillDir * chainOut;
+                    // R819: the chain bends a little after the piece the aim was on (a running or jumping piece left the
+                    // straight line in the 0.1 s swing and the up to 0.33 s flight); the tip goes on from where it is.
+                    SteerChain(s, dt, step);
+                    Vector3 from = chainTip;
                     var hit = ChainSweep(s, from, step, out var at, out var other, out bool solid);
+                    // R819: the piece it was thrown at is caught when the tip passes within rookChainCatch of its body
+                    // (hips to head), unless something the sweep met comes first.
+                    if (other == null && CatchHoming(s, from, step, hit ? Vector3.Distance(from, at) : step, out var caught))
+                    {
+                        other = chainHoming;
+                        at = caught;
+                    }
                     if (other != null)
                     {
                         chainTip = at;
+                        chainHoming = null;
                         if (IsEnemyOf(other)) StartChainPull(s, other, false);
                         else OfferChain(s, other);
                         return;
@@ -230,12 +266,17 @@ namespace ChessFight.RagdollLab
                     if (hit)
                     {
                         chainTip = at;
+                        chainHoming = null;
                         Rewind(solid ? "벽·지형에 닿음" : "걸리지 않는 상대에 닿음");
                         return;
                     }
                     chainOut += step;
-                    chainTip = chainFrom + skillDir * chainOut;
-                    if (last) Rewind("6 m 끝까지 감");
+                    chainTip = from + skillDir * step;
+                    if (last)
+                    {
+                        chainHoming = null;
+                        Rewind("사거리 끝까지 감");
+                    }
                     break;
                 }
                 case ChainPhase.Offer:
@@ -288,6 +329,45 @@ namespace ChessFight.RagdollLab
 
         Vector3 rewindFrom;
         float chainCooldown = -1f;
+        RagdollPawn chainHoming;
+
+        /// <summary>R819: the homing piece can still be taken by the chain (the same rules as the sweep's).</summary>
+        bool HomingTakes(RagdollPawn p) => p != null && p != this && !p.SkillUntargetable && !p.NetworkPuppet && p.State == PawnState.Active
+                                           && !p.chainCarry && !p.kingCarry && (IsEnemyOf(p) || IsAllyOf(p));
+
+        /// <summary>R819: turn the chain's way toward the piece it was thrown at - its chest where it will be when the tip gets
+        /// there - at most rookChainTurn degrees a second, and only while that piece is within rookChainTurnCone of the way
+        /// (a piece behind the tip is let go; it never turns round).</summary>
+        void SteerChain(PawnRushSkillParams s, float dt, float step)
+        {
+            var target = chainHoming;
+            if (!HomingTakes(target))
+            {
+                chainHoming = null;
+                return;
+            }
+            Vector3 chest = target.bodies[(int)BodyId.Chest].position;
+            float arrive = Vector3.Distance(chainTip, chest) / Mathf.Max(1f, s.rookChainSpeed);
+            Vector3 want = LeadChest(target, arrive, s.rookChainLead) - chainTip;
+            if (want.sqrMagnitude < 1e-4f) return;
+            float off = Vector3.Angle(skillDir, want);
+            if (off > s.rookChainTurnCone) return;
+            skillDir = Vector3.RotateTowards(skillDir, want.normalized, s.rookChainTurn * Mathf.Deg2Rad * dt, 0f).normalized;
+        }
+
+        /// <summary>R819: the chain's tip, going <paramref name="step"/> m from <paramref name="from"/> this step, passes within
+        /// rookChainCatch of the homing piece's body before <paramref name="before"/> m (where the sweep met something else),
+        /// with nothing solid between: where on the way it is caught.</summary>
+        bool CatchHoming(PawnRushSkillParams s, Vector3 from, float step, float before, out Vector3 at)
+        {
+            at = from;
+            var target = chainHoming;
+            if (!HomingTakes(target) || step <= 1e-4f) return false;
+            Vector3 to = from + skillDir * step;
+            if (SegmentToBody(from, to, target, out at) > s.rookChainCatch) return false;
+            if (Vector3.Distance(from, at) > before + 0.01f) return false;
+            return ClearSight(from, target.bodies[(int)BodyId.Chest].position);
+        }
 
         void Rewind(string why)
         {
@@ -295,7 +375,7 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             rewindFrom = chainTip;
             chainOn = null;
-            SkillDetail = "사슬 되감기";
+            SkillDetail = Loc.T("사슬 되감기");
             Log($"룩 사슬: {why} → 되감기");
         }
 
@@ -308,7 +388,7 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             skillStage = SkillStage.None;
             stageTime = 0f;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
             StartCooldown(cooldown);
         }
 
@@ -360,7 +440,7 @@ namespace ChessFight.RagdollLab
             chainOn = ally;
             ally.chainOfferBy = this;
             ally.chainGrabEdge = false;
-            SkillDetail = "팀원에게 손잡이 (우클릭으로 잡기)";
+            SkillDetail = Loc.T("팀원에게 손잡이 (우클릭으로 잡기)");
             Fx(SkillFxKind.RookHook, ally, chainTip, skillDir, 1, s.rookAllyWindow);
             Log($"룩 사슬 → {ally.DisplayName}(팀원): 손잡이 {s.rookAllyWindow:0.#}초 — 우클릭으로 잡기");
         }
@@ -373,7 +453,7 @@ namespace ChessFight.RagdollLab
             Vector3 to = ChainSpot(s, target, ally);
             float time = ally ? s.rookAllyPull : s.rookPullTime * (target.Weight >= s.rookHeavyWeight - 0.01f ? s.rookHeavySlow : 1f);
             target.StartChainCarry(this, ally, to, time);
-            SkillDetail = ally ? "팀원 끌어올림" : "적 끌어옴";
+            SkillDetail = Loc.T(ally ? "팀원 끌어올림" : "적 끌어옴");
             Fx(SkillFxKind.RookHook, target, chainTip, skillDir, ally ? 2 : 0, time);
             Log($"룩 사슬 → {target.DisplayName}{(ally ? "(팀원): 잡음" : ": 걸림")} → {time:0.00}초 동안 {Flat(to - target.bodies[0].position).magnitude:0.0} m 끌려옴");
         }
@@ -417,13 +497,14 @@ namespace ChessFight.RagdollLab
             chainT = 0f;
             chainCooldown = -1f;
             skillStage = SkillStage.None;
-            SkillDetail = "";
+            SkillDetail = Loc.T("");
         }
 
         /// <summary>Everything the chain leaves running when the skills are cleared (a knockdown, a piece switch).</summary>
         void ClearRookChain()
         {
             BreakChain("스킬 끝");
+            chainHoming = null;
             chainOfferBy = null;
             chainGrabEdge = false;
             if (chainCarry) EndChainCarry(false);

@@ -159,7 +159,7 @@ namespace ChessFight.PawnRush
                     pressGlow[press] = MiniGameMarks.Ring(ring, "Press loop", Vector3.zero, h * .93f, .2f).GetComponent<MarkGlow>();
                     MiniGameMarks.Ring(ring, "Press loop inner", Vector3.zero, h * .78f, .07f, 48, 0f, null, .018f, false);
                     var word = Arena.Text(b.parent, "Press word", c + new Vector3(0f, .05f, h - .35f), .32f, Arena.Gold);
-                    word.text = "함께 밟기";
+                    word.text = Loc.T("함께 밟기");
                     word.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                     pressRings[press] = ring;
                     pressAt[press] = c;

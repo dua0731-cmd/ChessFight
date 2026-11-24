@@ -38,6 +38,20 @@ namespace ChessFight.PawnRush
 
         public float X => (float)RoyalWaterGardenRules.BoatX(Lane, boat, ObstacleClock.Now + phase);
 
+        // R729: where the boat is along its lane now as if it were afloat - with no dive under the tunnels. Its own
+        // transform sinks up to DiveDepth (9.8 m) at either end of the lane, so a height read off it there is far below
+        // the open water's (the relief bridge took its deck height from it: SectionRelief, 11-20 build test).
+        // A boat that has not woken yet has no start pose: it is still where the builder put it, afloat.
+        public Vector3 Afloat => awake ? StartPosition + StartRotation * new Vector3(X - authoredX, 0f, 0f) : transform.position;
+
+        bool awake;
+
+        protected override void Awake()
+        {
+            awake = true;
+            base.Awake();
+        }
+
         // R633: how fast it runs along its lane (world, m/s), from the lane itself rather than from where it was drawn
         // last frame. Online a client's obstacle clock holds and catches up between the host's snapshots, so the drawn
         // boat's step from frame to frame swung between none and double; the water's wake (its wavelength goes with the

@@ -1,0 +1,17 @@
+{
+  "id": "CR02_CarriageYard",
+  "height": 4.5,
+  "z_from": 0.0,
+  "z_to": 9.2,
+  "bay_span_authored": 1.9,
+  "pier_depth": 0.9,
+  "open_sky": true,
+  "modules": [
+    "Bay",
+    "BayWest",
+    "Floor",
+    "Pier",
+    "Portal"
+  ],
+  "ornaments": []
+}

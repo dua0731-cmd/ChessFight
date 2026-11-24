@@ -23,6 +23,7 @@ namespace ChessFight.Gameplay
         void OnGUI()
         {
             if (source == null || !(source is IStaminaReadout readout)) return;
+            if (SettingsWindow.IsOpen) return;     // OnGUI draws over the settings window's canvas (user 11-23)
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
             StaminaBarGui.Draw(readout.Stamina01, style, Piece != null ? Piece() : PieceKind.Pawn);
             // R642: held / holding another piece. Only Pawn Rush adds this bar (SteamPawnRushLink).

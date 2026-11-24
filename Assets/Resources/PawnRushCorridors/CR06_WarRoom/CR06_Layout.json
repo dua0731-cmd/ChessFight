@@ -1,0 +1,58 @@
+{
+  "id": "CR06_WarRoom",
+  "height": 6.5,
+  "z_from": 0.65,
+  "z_to": 10.0,
+  "bay_span_authored": 1.9,
+  "pier_depth": 0.9,
+  "modules": [
+    "Bay",
+    "BayMid",
+    "CeilingBay",
+    "CeilingBeam",
+    "EndWall",
+    "Header",
+    "Pier",
+    "Portal"
+  ],
+  "ornaments": [
+    {
+      "name": "CR06_Lantern",
+      "per": "pier",
+      "index": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "offset": [
+        0.0,
+        3.7,
+        0.0
+      ]
+    },
+    {
+      "name": "CR06_CeilingCompass",
+      "per": "bay",
+      "index": [
+        1
+      ],
+      "mirror": false,
+      "offset": [
+        0.0,
+        6.36,
+        0.0
+      ]
+    }
+  ],
+  "banner": {
+    "width": 1.0,
+    "height": 3.4,
+    "fabric": "PR_Cor_IronTeal"
+  },
+  "banner_room": {
+    "width": 1.3,
+    "height": 3.0,
+    "fabric": "PR_Cor_IronTeal"
+  }
+}

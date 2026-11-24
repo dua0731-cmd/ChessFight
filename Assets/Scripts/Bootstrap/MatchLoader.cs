@@ -29,6 +29,9 @@ namespace ChessFight.Game
         // The screen is drawn at least this long before the scene may switch on,
         // since switching on freezes the frame.
         const float MinimumShow = .4f;
+        // R732: the longest the warm-up waits on what the scene draws behind the screen (LoadWarmup) - a guard; the
+        // round's own tour gives up sooner (RoundPrewarm).
+        const float WarmupHoldLimit = 40f;
         // R548: Pawn Rush's course reveal seen to its end already (a player coming back into a running match), and how
         // long before this PC's own start the host's start time may lie before it counts as left from an earlier round.
         const float RevealSkipped = 1e5f;
@@ -176,7 +179,7 @@ namespace ChessFight.Game
                 // R694: a room a player made - an empty seat clicked, the manager's "옮기기", the room's number, a side's bots.
                 screen.SeatRequested += seat => runtime.Session.TakeSeat(seat);
                 screen.MoveRequested += id => runtime.Session.MovePlayer(id);
-                screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = runtime.Session.Match.ToString();
+                screen.CopyRoomRequested += () => GUIUtility.systemCopyBuffer = LobbyCode.Plain(runtime.Session.Match);
                 // R703: the manager picked a flow rule.
                 screen.RulesRequested += packed => runtime.Session.SetRules(packed);
                 screen.TeamBotRequested += (team, more) => { if (more > 0) runtime.Session.AddTestBot(team); else runtime.Session.RemoveTestBot(team); };
@@ -218,18 +221,8 @@ namespace ChessFight.Game
             session.Online && session.PrivateRoom && session.Match != 0 && !session.Started && !session.WaitingForParty
             && SceneManager.GetActiveScene().name == SceneNames.Lobby;
 
-        // A room's number in fours, as the lobby shows it.
-        static string Spaced(ulong id)
-        {
-            string digits = id.ToString();
-            var text = new System.Text.StringBuilder();
-            for (int i = 0; i < digits.Length; i++)
-            {
-                if (i > 0 && (digits.Length - i) % 4 == 0) text.Append(' ');
-                text.Append(digits[i]);
-            }
-            return text.ToString();
-        }
+        // A room's number in groups, as the lobby shows it (LobbyCode, R737).
+        static string Spaced(ulong id) => LobbyCode.Format(id);
 
         void Matchmaking()
         {
@@ -290,20 +283,20 @@ namespace ChessFight.Game
             // R538: nor for a player on its way back into a running match (the room's numbers there are who is away).
             state.StartNote = !session.EarlyStartMode || session.Started || session.Match == 0 || session.JoiningLive ? ""
                 // R644: the room's owner is a PC that has gone silent; nothing starts until Steam takes it out of the room.
-                : session.RoomHeld ? SteamSession.RoomHeldMessage
-                : state.CanStart ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)"
-                : !session.IsManager && ready ? $"{white} 대 {black} · 방장이 시작할 수 있어요"
+                : session.RoomHeld ? Loc.T(SteamSession.RoomHeldMessage)
+                : state.CanStart ? Loc.F("{0} 대 {1} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)", white, black)
+                : !session.IsManager && ready ? Loc.F("{0} 대 {1} · 방장이 시작할 수 있어요", white, black)
                 // R525: the start waits (up to SteamSession.JoinGrace) for players already in the room to get their seats.
-                : session.SeatingJoiners > 0 ? $"{white} 대 {black} · 방에 들어온 {session.SeatingJoiners}명이 자리를 받는 중이에요"
-                : white < min || black < min ? $"{white} 대 {black} · 팀마다 {min}명 이상이면 시작할 수 있어요"
-                : white != black ? $"{white} 대 {black} · 두 팀 인원이 같아야 시작할 수 있어요"
-                : $"{white} 대 {black} · 모두 입장하면 시작할 수 있어요";
+                : session.SeatingJoiners > 0 ? Loc.F("{0} 대 {1} · 방에 들어온 {2}명이 자리를 받는 중이에요", white, black, session.SeatingJoiners)
+                : white < min || black < min ? Loc.F("{0} 대 {1} · 팀마다 {2}명 이상이면 시작할 수 있어요", white, black, min)
+                : white != black ? Loc.F("{0} 대 {1} · 두 팀 인원이 같아야 시작할 수 있어요", white, black)
+                : Loc.F("{0} 대 {1} · 모두 입장하면 시작할 수 있어요", white, black);
             int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
             // R294: a new host in the waiting room says so for a few seconds (who, and why: the best PC).
             state.Step = session.NoteShowing ? session.Note
-                       : session.RoomHeld ? "끊긴 PC를 정리하는 중"
-                       : session.JoiningLive ? "나갔던 경기로 돌아가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
+                       : session.RoomHeld ? Loc.T("끊긴 PC를 정리하는 중")
+                       : session.JoiningLive ? Loc.T("나갔던 경기로 돌아가는 중") : Following(session) ? Loc.T("파티장이 방을 찾는 중") : Loc.T("상대 팀 찾는 중");
             state.Clear();
             state.Room = room;
             if (room) FillRoom(state, session);
@@ -336,7 +329,7 @@ namespace ChessFight.Game
         static void FillRoom(LoadingState state, SteamSession session)
         {
             int white = session.TeamCount(0), black = session.TeamCount(1), watching = session.Spectators.Count;
-            state.RoomCode = Spaced(session.Match);
+            state.RoomCode = StreamerMode.Code(Spaced(session.Match));   // R792: dots in streamer mode
             state.Rules = session.RoomRules;
             state.CanSetRules = session.CanSetRules;
             state.Expected = TeamReservations.TeamSize * 2;
@@ -351,16 +344,16 @@ namespace ChessFight.Game
                 state.CanAddTeamBot[team] = session.CanAddTestBot(team);
                 state.CanRemoveTeamBot[team] = session.CanEditTestBots && session.TestBots(team) > 0;
             }
-            string seats = $"{white} 대 {black}" + (watching > 0 ? $" · 관전 {watching}" : "");
-            state.RoomNote = session.RoomHeld ? SteamSession.RoomHeldMessage
+            string seats = Loc.F("{0} 대 {1}", white, black) + (watching > 0 ? " · " + Loc.F("관전 {0}", watching) : "");
+            state.RoomNote = session.RoomHeld ? Loc.T(SteamSession.RoomHeldMessage)
                 // R697: Pawn Rush's spectators go into the match and watch; another mode's room waits for the seats to empty.
-                : watching > 0 && !session.SpectatingAllowed ? seats + " · 이 모드는 관전석이 비어야 시작할 수 있어요"
-                : white + black < 2 ? seats + " · 2명 이상이면 시작할 수 있어요 (봇 포함)"
-                : state.CanStart ? seats + " · 지금 시작할 수 있어요"
-                : session.IsManager ? seats + " · 모두 입장하면 시작할 수 있어요"
-                : seats + " · 방장이 시작하기를 기다리는 중";
+                : watching > 0 && !session.SpectatingAllowed ? seats + " · " + Loc.T("이 모드는 관전석이 비어야 시작할 수 있어요")
+                : white + black < 2 ? seats + " · " + Loc.T("2명 이상이면 시작할 수 있어요 (봇 포함)")
+                : state.CanStart ? seats + " · " + Loc.T("지금 시작할 수 있어요")
+                : session.IsManager ? seats + " · " + Loc.T("모두 입장하면 시작할 수 있어요")
+                : seats + " · " + Loc.T("방장이 시작하기를 기다리는 중");
             state.Step = session.NoteShowing ? session.Note
-                       : session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중";
+                       : session.IsManager ? Loc.T("방 번호를 친구에게 알려 주세요") : Loc.T("방장이 시작하기를 기다리는 중");
             foreach (ulong id in session.Spectators)
             {
                 if (id == session.Self) state.SpecMe = state.SpecKeys.Count;
@@ -430,7 +423,7 @@ namespace ChessFight.Game
                     // R624: so do Sword Fight's pick, our team's pieces and the clash (the cards must stay clickable).
                     bool picking = view != null && view.SwordHolding;
                     bool revealing = view != null && (view.RevealHolding || picking);
-                    step = picking ? "경기장을 불러오는 중" : revealing && load.progress >= .9f ? "이번 판 코스 공개 중" : "코스를 불러오는 중";
+                    step = picking ? Loc.T("경기장을 불러오는 중") : revealing && load.progress >= .9f ? Loc.T("이번 판 코스 공개 중") : Loc.T("코스를 불러오는 중");
                     // A match that ended meanwhile still has to finish this load (Unity
                     // cannot abandon one); NetworkRuntime then heads back to the lobby.
                     // R693: nor while the party is still walking out of the lobby (the screen is not up yet).
@@ -443,15 +436,18 @@ namespace ChessFight.Game
                     break;
                 case Phase.Opening:
                     percent = LoadProgress.Percent(LoadStage.Opening, 0);
-                    step = "코스를 여는 중";
+                    step = Loc.T("코스를 여는 중");
                     break;
                 case Phase.WarmingUp:
                     if (session.Match == 0) { Finish(); return; }
                     if (skipFrame) skipFrame = false;
                     else warmup.Add(Time.unscaledDeltaTime * 1000.0);
-                    percent = LoadProgress.Percent(LoadStage.WarmingUp, warmup.Fraction);
-                    step = "캐릭터를 준비하는 중";
-                    if (warmup.Done)
+                    // R732: and whatever the scene draws behind the screen first (the Pawn Rush round's tour of its
+                    // sections, RoundPrewarm), for WarmupHoldLimit at most.
+                    bool drawing = LoadWarmup.Busy && now - warmFrom < WarmupHoldLimit;
+                    percent = LoadProgress.Percent(LoadStage.WarmingUp, Math.Min(warmup.Fraction, drawing ? LoadWarmup.Fraction : 1.0));
+                    step = drawing ? Loc.T("코스를 미리 그리는 중") : Loc.T("캐릭터를 준비하는 중");
+                    if (warmup.Done && !drawing)
                     {
                         phase = Phase.Waiting; readyAt = now; percent = MatchStart.Ready;
                         // R596: where this PC's load went, against the reveal (the scene may switch on from
@@ -525,8 +521,8 @@ namespace ChessFight.Game
             if (start == 0 && now - readyAt >= MatchStart.ClientGiveUp) { Finish(); return ""; }
 
             bool everyone = session.Roster.Keys.All(id => session.LoadPercent(id) >= MatchStart.Ready);
-            if (start == 0) return "다른 플레이어를 기다리는 중";
-            return everyone ? "모두 준비 완료 · 곧 출발해요" : "곧 출발해요 · 늦는 플레이어는 준비되는 대로 따라와요";
+            if (start == 0) return Loc.T("다른 플레이어를 기다리는 중");
+            return everyone ? Loc.T("모두 준비 완료 · 곧 출발해요") : Loc.T("곧 출발해요 · 늦는 플레이어는 준비되는 대로 따라와요");
         }
 
         void Finish()

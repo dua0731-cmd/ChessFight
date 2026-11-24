@@ -1738,12 +1738,23 @@ namespace ChessFight.PawnRush
             string name = System.Text.RegularExpressions.Regex.Replace(imported.name.Replace(" (Instance)", ""), "[^A-Za-z0-9]+", "_").Trim('_');
             if (!cache.TryGetValue(name, out var material))
             {
-                material = Resources.Load<Material>(OwnMaterials + name);
-                if (material == null) material = Resources.Load<Material>(Materials + name);
+                material = KitMaterialFile(name);
+                // R729: Blender's copy of a material is "Name.001" ("Name_001" here): the E library's and F ballroom's
+                // HallEnv floors (PR_Mid_WalnutFloor.001, PR_Mid_CreamFloor.001) were drawn with the FBX's own untextured
+                // material (11-20 build test). The copy is the material it was copied from.
+                var copy = System.Text.RegularExpressions.Regex.Match(name, "^(.+)_[0-9]{3}$");
+                if (material == null && copy.Success) material = KitMaterialFile(copy.Groups[1].Value);
                 if (material == null) Debug.LogWarning("[미니게임 모델] 재질이 없습니다: Resources/" + Materials + name);
                 cache[name] = material;
             }
             return material != null ? material : imported;
+        }
+
+        // A kit material by its file name: the user-model sets' own first, then the garden concept's.
+        static Material KitMaterialFile(string file)
+        {
+            var material = Resources.Load<Material>(OwnMaterials + file);
+            return material != null ? material : Resources.Load<Material>(Materials + file);
         }
 
         // Stops `root`'s pictures drawing; colliders and the game's components are untouched.

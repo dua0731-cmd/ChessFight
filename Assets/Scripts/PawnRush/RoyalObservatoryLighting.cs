@@ -32,12 +32,17 @@ namespace ChessFight.PawnRush
     // inside its box (the tunnel, the hall, the balcony), 0 `blendMetres` out, eased over half a second, and at 0 the
     // scene's own are put back exactly as they were noted. The shaft, the probes and the shell's shadows are the course's
     // own objects and stay.
+    // R734 (the user, 11-21: every join between two rooms to change its light smoothly): the moon, the ambient light and
+    // the haze go through the one mixer of every place's light (Game ZoneLight) - the ambient as the sky's own harmonics,
+    // so it no longer jumps where the observatory's light comes in and goes - and the fade reaches 24 m out (was 8) with
+    // a two-second ease. The night sky (RoyalObservatorySky) is still swapped whole: it is seen only through the slit and
+    // from the balcony.
     public sealed class RoyalObservatoryLighting : MonoBehaviour
     {
         [Tooltip("The observatory's own light (off: the scene's light as it was)")]
         public bool on = true;
         [Tooltip("Metres outside the observatory over which its light fades out")]
-        [Min(.5f)] public float blendMetres = 8f;
+        [Min(.5f)] public float blendMetres = 24f;
 
         [Header("Moon (the scene's directional light)")]
         [Tooltip("Where the moonlight comes in on the dome: heading (deg, 0 north) - the slit's - and elevation (deg)")]
@@ -94,17 +99,13 @@ namespace ChessFight.PawnRush
 
         readonly List<Object> made = new List<Object>();
         bool built, applied;
-        float weight, lastApplied = -1f, lookForView;
-        Camera view;
+        float weight, lastApplied = -1f;
         ZoneGrade grade;
         Light fill;
         readonly List<ReflectionProbe> probeList = new List<ReflectionProbe>();
         float probesAt = float.MaxValue;
-        // The scene's own, noted the moment the observatory's light comes in.
-        Light sun;
-        Color sunColor0; float sunIntensity0, shadowStrength0; Quaternion sunRotation0; LightShadows shadows0;
-        AmbientMode ambientMode0; Color sky0, equator0, ground0, flat0, skyFrom, equatorFrom, groundFrom; SphericalHarmonicsL2 probe0;
-        bool fog0; FogMode fogMode0; Color fogColor0; float fogStart0, fogEnd0, fogDensity0;
+        // R734: the moon, ambient and haze in the mixer of every place's light (Game ZoneLight).
+        ZoneLight zone;
 
         public static void AddTo(GameObject content)
         {
@@ -143,6 +144,9 @@ namespace ChessFight.PawnRush
             }
             probesAt = Time.time + 2.5f;   // the course's devices and models settle in the first frames
             built = true;
+            zone = ZoneLight.Add("Royal Observatory");
+            ZoneLight.Own(fill);
+            Look();
             Debug.Log("[천문대 조명] 달빛 · 따뜻한 보조광 · 남색 주변광" + (haze ? " · 안개" : "") + " · 색 보정 · 블룸"
                       + (shaft ? " · 달빛 줄기" : "") + (probes ? " · 반사 프로브 2" : "") + ", 그림자 끈 홀 껍데기 " + shell
                       + "개 — 카메라가 천문대 안에 있을 때만");
@@ -163,12 +167,16 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the observatory's light over the scene's
 
+        // How far in the camera is (1 inside the box, 0 blendMetres out), eased in time (ZoneLight.Ease, about two
+        // seconds) so a camera that jumps (a respawn, a spectator switch) or a pawn running in does not flick the light.
+        // The moon, ambient and haze are the mixer's (it runs after this); the fill and the grade are the observatory's.
         void LateUpdate()
         {
-            if (!built) return;
-            weight = Mathf.MoveTowards(weight, AreaWeight(), Time.unscaledDeltaTime / .5f);
+            if (!built || zone == null) return;
+            Look();
+            weight = zone.Ease(ZoneLight.Inside(transform, Area, blendMetres));
             if (weight <= .0005f) { if (applied) Restore(); return; }
-            if (!applied) Capture();
+            applied = true;
             if (Mathf.Abs(weight - lastApplied) > .0005f) Apply(weight);
             // The probes are drawn once, under the observatory's own light (not the scene's day light the first frames
             // may still show).
@@ -180,89 +188,28 @@ namespace ChessFight.PawnRush
             }
         }
 
-        // How far in the camera is (1 inside the box, 0 blendMetres out), eased in time by LateUpdate so a camera that
-        // jumps (a respawn, a spectator switch) does not flick the light.
-        float AreaWeight()
+        // The observatory's look as the mixer takes it (read every frame: the fields may be tuned while playing).
+        void Look()
         {
-            if (view == null || !view.isActiveAndEnabled)
-            {
-                if (Time.unscaledTime < lookForView) return weight;
-                lookForView = Time.unscaledTime + 1f;
-                view = Camera.main;
-                if (view == null)
-                    foreach (var c in Camera.allCameras)
-                        if (c.cameraType == CameraType.Game && c.targetTexture == null) { view = c; break; }
-                if (view == null) return 0f;
-            }
-            var p = transform.InverseTransformPoint(view.transform.position);
-            float d = Vector3.Distance(Area.ClosestPoint(p), p);
-            return 1f - Mathf.SmoothStep(0f, 1f, d / Mathf.Max(.5f, blendMetres));
+            zone.TurnSun = true;
+            zone.SunRotation = Quaternion.LookRotation(MoonDirection());
+            zone.SunColor = moonColor;
+            zone.SunIntensity = moonIntensity;
+            zone.ShadowStrength = shadowStrength;
+            zone.SoftShadows = true;
+            zone.Sky = ambientSky;
+            zone.Equator = ambientEquator;
+            zone.Ground = ambientGround;
+            zone.Fog = haze;
+            zone.FogColor = hazeColor;
+            zone.FogStart = hazeStart;
+            zone.FogEnd = hazeEnd;
         }
 
-        Light FindSun()
-        {
-            if (RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional && RenderSettings.sun != fill) return RenderSettings.sun;
-            foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None))
-                if (l.type == LightType.Directional && l != fill && l.GetComponentInParent<RoyalObservatoryLighting>() == null) return l;
-            return null;
-        }
-
-        void Capture()
-        {
-            applied = true;
-            lastApplied = -1f;
-            sun = FindSun();
-            if (sun != null)
-            {
-                sunColor0 = sun.color; sunIntensity0 = sun.intensity; shadowStrength0 = sun.shadowStrength;
-                sunRotation0 = sun.transform.rotation; shadows0 = sun.shadows;
-            }
-            ambientMode0 = RenderSettings.ambientMode;
-            sky0 = RenderSettings.ambientSkyColor; equator0 = RenderSettings.ambientEquatorColor; ground0 = RenderSettings.ambientGroundColor;
-            flat0 = RenderSettings.ambientLight; probe0 = RenderSettings.ambientProbe;
-            switch (ambientMode0)
-            {
-                case AmbientMode.Trilight: skyFrom = sky0; equatorFrom = equator0; groundFrom = ground0; break;
-                case AmbientMode.Flat: skyFrom = equatorFrom = groundFrom = flat0; break;
-                default:
-                    // The sky's (or a custom) ambient: what it gives straight up, sideways and straight down.
-                    var dirs = new[] { Vector3.up, new Vector3(.7071f, 0f, .7071f), Vector3.down };
-                    var got = new Color[3];
-                    probe0.Evaluate(dirs, got);
-                    skyFrom = got[0]; equatorFrom = got[1]; groundFrom = got[2];
-                    break;
-            }
-            fog0 = RenderSettings.fog; fogMode0 = RenderSettings.fogMode; fogColor0 = RenderSettings.fogColor;
-            fogStart0 = RenderSettings.fogStartDistance; fogEnd0 = RenderSettings.fogEndDistance; fogDensity0 = RenderSettings.fogDensity;
-        }
-
-        // w 1 = the observatory's light as R7 sets it.
+        // w 1 = the observatory's fill and grade whole.
         void Apply(float w)
         {
             lastApplied = w;
-            if (sun != null)
-            {
-                sun.transform.rotation = Quaternion.Slerp(sunRotation0, Quaternion.LookRotation(MoonDirection()), w);
-                sun.color = Color.Lerp(sunColor0, moonColor, w);
-                sun.intensity = Mathf.Lerp(sunIntensity0, moonIntensity, w);
-                sun.shadowStrength = Mathf.Lerp(shadowStrength0, shadowStrength, w);
-                sun.shadows = LightShadows.Soft;
-                RenderSettings.sun = sun;
-            }
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = Color.Lerp(skyFrom, ambientSky, w);
-            RenderSettings.ambientEquatorColor = Color.Lerp(equatorFrom, ambientEquator, w);
-            RenderSettings.ambientGroundColor = Color.Lerp(groundFrom, ambientGround, w);
-            if (haze)
-            {
-                // From the scene's own linear fog, or from none (pushed past everything) when it had none.
-                bool fromLinear = fog0 && fogMode0 == FogMode.Linear;
-                RenderSettings.fog = true;
-                RenderSettings.fogMode = FogMode.Linear;
-                RenderSettings.fogColor = Color.Lerp(fog0 ? fogColor0 : hazeColor, hazeColor, w);
-                RenderSettings.fogStartDistance = Mathf.Lerp(fromLinear ? fogStart0 : 3000f, hazeStart, w);
-                RenderSettings.fogEndDistance = Mathf.Lerp(fromLinear ? fogEnd0 : 6000f, hazeEnd, w);
-            }
             if (fill != null)
             {
                 fill.intensity = warmFill * w;
@@ -275,16 +222,6 @@ namespace ChessFight.PawnRush
         {
             applied = false;
             lastApplied = -1f;
-            if (sun != null)
-            {
-                sun.color = sunColor0; sun.intensity = sunIntensity0; sun.shadowStrength = shadowStrength0;
-                sun.transform.rotation = sunRotation0; sun.shadows = shadows0;
-            }
-            RenderSettings.ambientMode = ambientMode0;
-            RenderSettings.ambientSkyColor = sky0; RenderSettings.ambientEquatorColor = equator0; RenderSettings.ambientGroundColor = ground0;
-            RenderSettings.ambientLight = flat0; RenderSettings.ambientProbe = probe0;
-            RenderSettings.fog = fog0; RenderSettings.fogMode = fogMode0; RenderSettings.fogColor = fogColor0;
-            RenderSettings.fogStartDistance = fogStart0; RenderSettings.fogEndDistance = fogEnd0; RenderSettings.fogDensity = fogDensity0;
             if (fill != null) fill.enabled = false;
             if (grade != null) grade.Weight = 0f;
         }
@@ -293,6 +230,7 @@ namespace ChessFight.PawnRush
         {
             if (applied) Restore();
             weight = 0f;
+            if (zone != null) zone.Weight = 0f;
         }
 
         int ShellShadowsOff()
@@ -397,6 +335,7 @@ namespace ChessFight.PawnRush
 
         void OnDestroy()
         {
+            zone?.Remove();
             foreach (var o in made)
                 if (o != null) Destroy(o);
         }

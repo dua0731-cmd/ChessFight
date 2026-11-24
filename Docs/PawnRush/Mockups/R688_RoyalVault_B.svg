@@ -1,0 +1,355 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1330" width="100%" style="height:auto;max-width:1280px" font-family="'Malgun Gothic','Noto Sans KR','Apple SD Gothic Neo',sans-serif">
+<title>왕실 금고실 시안 B — 겹쳐 오르는 금고 서가</title>
+<defs><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="context-stroke"/></marker><pattern id="abyss" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#0b0d12"/><line x1="0" y1="0" x2="0" y2="10" stroke="#ffffff" stroke-opacity=".05" stroke-width="3"/></pattern><pattern id="hz" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#e0604f" fill-opacity=".16"/><line x1="0" y1="0" x2="0" y2="8" stroke="#e0604f" stroke-opacity=".55" stroke-width="2"/></pattern></defs>
+<rect width="1280" height="1330" fill="#171a22"/>
+<text x="24" y="34" font-size="20" fill="#f4ead2" text-anchor="start" font-weight="700">시안 B · 겹쳐 오르는 금고 서가 — 세 층 지그재그, 위층에서 떨어지면 지나온 아래층으로</text>
+<text x="24" y="56" font-size="12.5" fill="#a39a85" text-anchor="start">폭 12 m · 길이 56 m의 좁고 높은 금고 탑 안에 선반 같은 회랑 세 층(y 0 북쪽 → y 6 남쪽 → y 12 북쪽). 층마다 4 m씩 겹쳐 뒤처진 사람이 머리 위 앞선 사람을 봄.</text>
+<text x="24" y="74" font-size="12.5" fill="#a39a85" text-anchor="start">주 경로 약 185 m · 바닥 폭 12 m(탑) · 높이 12 m · 체크포인트 5 · 장애물 9종 — 가장 작은 땅, 가장 큰 높이 긴장</text>
+<rect x="16" y="92" width="900" height="196" fill="#1f232d" rx="8"/>
+<text x="32" y="118" font-size="16" fill="#f4ead2" text-anchor="start" font-weight="700">L0 · y 0 · 북쪽으로 (금고 바닥길)</text>
+<rect x="136.62" y="148" width="658.75" height="124" fill="url(#abyss)"/>
+<line x1="136.62" y1="163.5" x2="795.38" y2="163.5" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="136.62" y1="202.25" x2="795.38" y2="202.25" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="136.62" y1="241" x2="795.38" y2="241" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="159.88" y1="148" x2="159.88" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="159.88" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 0</text>
+<line x1="198.62" y1="148" x2="198.62" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="237.38" y1="148" x2="237.38" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="237.38" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 10</text>
+<line x1="276.12" y1="148" x2="276.12" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="314.88" y1="148" x2="314.88" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="314.88" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 20</text>
+<line x1="353.62" y1="148" x2="353.62" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="392.38" y1="148" x2="392.38" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="392.38" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 30</text>
+<line x1="431.12" y1="148" x2="431.12" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="469.88" y1="148" x2="469.88" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="469.88" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 40</text>
+<line x1="508.62" y1="148" x2="508.62" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="547.38" y1="148" x2="547.38" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="547.38" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 50</text>
+<line x1="586.12" y1="148" x2="586.12" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="624.88" y1="148" x2="624.88" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="624.88" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 60</text>
+<line x1="663.62" y1="148" x2="663.62" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="702.38" y1="148" x2="702.38" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="702.38" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 70</text>
+<line x1="741.12" y1="148" x2="741.12" y2="272" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="779.88" y1="148" x2="779.88" y2="272" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="779.88" y="143" font-size="9" fill="#6f6a5e" text-anchor="middle">z 80</text>
+<rect x="206.38" y="194.5" width="372" height="62" fill="#c7b994" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="190.88" y="163.5" width="372" height="62" fill="#e2d6b2" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="159.88" y="158.85" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="159.88" y="256.5" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="159.88" y="194.5" width="31" height="93" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="190.88" y="163.5" width="341" height="62" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<text x="361.38" y="181.5" font-size="10" fill="#f4ead2" text-anchor="middle" font-weight="700">금고 바닥길 (폭 8)</text>
+<circle cx="268.38" cy="194.5" r="23.25" fill="#7a4fa0" stroke="#4a2c66" stroke-width="1.2" fill-opacity="0.85"/>
+<circle cx="361.38" cy="194.5" r="23.25" fill="#7a4fa0" stroke="#4a2c66" stroke-width="1.2" fill-opacity="0.85"/>
+<rect x="241.25" y="167.38" width="54.25" height="54.25" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="334.25" y="167.38" width="54.25" height="54.25" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="407.88" y="182.1" width="108.5" height="43.4" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<text x="462.12" y="207.8" font-size="9.5" fill="#f4ead2" text-anchor="middle" font-weight="700">보석 벨트 ←1.8</text>
+<rect x="392.38" y="163.5" width="186" height="18.6" fill="#a99d80" stroke="#5c5649" stroke-width="1"/>
+<text x="485.38" y="176.8" font-size="8.5" fill="#171a22" text-anchor="middle" font-weight="700">벽 계단</text>
+<rect x="533.42" y="169.7" width="24.8" height="24.8" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<text x="545.82" y="186.1" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">↕</text>
+<rect x="533.42" y="196.05" width="24.8" height="24.8" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<text x="545.82" y="212.45" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">↕</text>
+<rect x="559.78" y="169.7" width="24.8" height="24.8" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<text x="572.18" y="186.1" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">↕</text>
+<rect x="559.78" y="196.05" width="24.8" height="24.8" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<text x="572.18" y="212.45" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">↕</text>
+<polyline points="167.62,241 206.38,194.5 516.38,194.5 547.38,194.5" fill="none" stroke="#f4ead2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" opacity=".95"/>
+<polyline points="400.12,172.8 570.62,172.8" fill="none" stroke="#8fc3e6" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" stroke-dasharray="7 5" opacity=".95"/>
+<path d="M214.12,217.75 v-16 l11,4 l-11,4" fill="#3fb6a8" stroke="#3fb6a8" stroke-width="1.6"/>
+<text x="217.12" y="229.75" font-size="10" fill="#7fe0d3" text-anchor="middle" font-weight="700">CP0</text>
+<circle cx="268.38" cy="181.5" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="268.38" y="185.1" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V05</text>
+<circle cx="462.12" cy="190.8" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="462.12" y="194.4" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V06</text>
+<circle cx="559" cy="182.28" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="559" y="185.88" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V11</text>
+<path d="M896,122 l-16,6 l4,-6 l-4,-6 Z" fill="#f4ead2"/>
+<text x="880" y="140" font-size="10" fill="#a39a85" text-anchor="middle">+z (진행) →</text>
+<rect x="32" y="269" width="38.75" height="5" fill="#f4ead2"/>
+<rect x="70.75" y="269" width="38.75" height="5" fill="none" stroke="#f4ead2" stroke-width="1"/>
+<text x="115.5" y="274" font-size="10" fill="#a39a85" text-anchor="start">10 m</text>
+<rect x="16" y="296" width="900" height="196" fill="#1f232d" rx="8"/>
+<text x="32" y="322" font-size="16" fill="#f4ead2" text-anchor="start" font-weight="700">L1 · y 6 · 남쪽으로 (동쪽 선반 회랑)</text>
+<rect x="136.62" y="352" width="658.75" height="124" fill="url(#abyss)"/>
+<line x1="136.62" y1="367.5" x2="795.38" y2="367.5" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="136.62" y1="406.25" x2="795.38" y2="406.25" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="136.62" y1="445" x2="795.38" y2="445" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="159.88" y1="352" x2="159.88" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="159.88" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 0</text>
+<line x1="198.62" y1="352" x2="198.62" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="237.38" y1="352" x2="237.38" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="237.38" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 10</text>
+<line x1="276.12" y1="352" x2="276.12" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="314.88" y1="352" x2="314.88" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="314.88" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 20</text>
+<line x1="353.62" y1="352" x2="353.62" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="392.38" y1="352" x2="392.38" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="392.38" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 30</text>
+<line x1="431.12" y1="352" x2="431.12" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="469.88" y1="352" x2="469.88" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="469.88" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 40</text>
+<line x1="508.62" y1="352" x2="508.62" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="547.38" y1="352" x2="547.38" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="547.38" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 50</text>
+<line x1="586.12" y1="352" x2="586.12" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="624.88" y1="352" x2="624.88" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="624.88" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 60</text>
+<line x1="663.62" y1="352" x2="663.62" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="702.38" y1="352" x2="702.38" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="702.38" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 70</text>
+<line x1="741.12" y1="352" x2="741.12" y2="476" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="779.88" y1="352" x2="779.88" y2="476" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="779.88" y="347" font-size="9" fill="#6f6a5e" text-anchor="middle">z 80</text>
+<rect x="190.88" y="367.5" width="372" height="62" fill="#8c8474" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="190.88" y="367.5" width="372" height="62" fill="#e2d6b2" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="159.88" y="362.85" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="159.88" y="460.5" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="206.38" y="398.5" width="372" height="62" fill="#c7b994" stroke="#5c5649" stroke-width="1"/>
+<text x="392.38" y="416.5" font-size="10" fill="#171a22" text-anchor="middle" font-weight="700">동쪽 선반 회랑 (폭 8, 동쪽은 벽)</text>
+<rect x="454.38" y="455.85" width="62" height="4.65" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="466.78" y="398.5" width="37.2" height="62" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="314.88" y="455.85" width="62" height="4.65" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="327.27" y="398.5" width="37.2" height="62" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="384.62" y="451.2" width="17.05" height="9.3" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="407.88" y="451.2" width="17.05" height="9.3" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="431.12" y="451.2" width="17.05" height="9.3" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="159.88" y="398.5" width="46.5" height="62" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="183.12" y="433.5" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">계단 ↑</text>
+<circle cx="392.38" cy="410.12" r="8.53" fill="#d9b25a" stroke="#8a6a22" stroke-width="1.2"/>
+<polyline points="570.62,429.5 221.88,429.5 175.38,429.5" fill="none" stroke="#f4ead2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" opacity=".95"/>
+<polyline points="392.38,410.12 322.62,392.3" fill="none" stroke="#f0a04b" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" opacity=".95"/>
+<polyline points="345.88,401.6 345.88,386.1" fill="none" stroke="#e0604f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" stroke-dasharray="4 4" opacity=".95"/>
+<text x="361.38" y="380.68" font-size="9" fill="#f08b7d" text-anchor="middle">→ L0</text>
+<path d="M547.38,414 v-16 l11,4 l-11,4" fill="#3fb6a8" stroke="#3fb6a8" stroke-width="1.6"/>
+<text x="550.38" y="426" font-size="10" fill="#7fe0d3" text-anchor="middle" font-weight="700">CP1</text>
+<circle cx="485.38" cy="435.88" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="485.38" y="439.48" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V04</text>
+<circle cx="400.12" cy="435.88" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="400.12" y="439.48" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V08</text>
+<circle cx="392.38" cy="397.12" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="392.38" y="400.73" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V07</text>
+<path d="M896,326 l-16,6 l4,-6 l-4,-6 Z" fill="#f4ead2"/>
+<text x="880" y="344" font-size="10" fill="#a39a85" text-anchor="middle">+z (진행) →</text>
+<rect x="32" y="473" width="38.75" height="5" fill="#f4ead2"/>
+<rect x="70.75" y="473" width="38.75" height="5" fill="none" stroke="#f4ead2" stroke-width="1"/>
+<text x="115.5" y="478" font-size="10" fill="#a39a85" text-anchor="start">10 m</text>
+<rect x="16" y="500" width="900" height="196" fill="#1f232d" rx="8"/>
+<text x="32" y="526" font-size="16" fill="#f4ead2" text-anchor="start" font-weight="700">L2 · y 12 · 북쪽으로 (서쪽 높은 회랑)</text>
+<rect x="136.62" y="556" width="658.75" height="124" fill="url(#abyss)"/>
+<line x1="136.62" y1="571.5" x2="795.38" y2="571.5" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="136.62" y1="610.25" x2="795.38" y2="610.25" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="136.62" y1="649" x2="795.38" y2="649" stroke="#ffffff" stroke-opacity=".10"/>
+<line x1="159.88" y1="556" x2="159.88" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="159.88" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 0</text>
+<line x1="198.62" y1="556" x2="198.62" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="237.38" y1="556" x2="237.38" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="237.38" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 10</text>
+<line x1="276.12" y1="556" x2="276.12" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="314.88" y1="556" x2="314.88" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="314.88" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 20</text>
+<line x1="353.62" y1="556" x2="353.62" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="392.38" y1="556" x2="392.38" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="392.38" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 30</text>
+<line x1="431.12" y1="556" x2="431.12" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="469.88" y1="556" x2="469.88" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="469.88" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 40</text>
+<line x1="508.62" y1="556" x2="508.62" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="547.38" y1="556" x2="547.38" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="547.38" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 50</text>
+<line x1="586.12" y1="556" x2="586.12" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="624.88" y1="556" x2="624.88" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="624.88" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 60</text>
+<line x1="663.62" y1="556" x2="663.62" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="702.38" y1="556" x2="702.38" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="702.38" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 70</text>
+<line x1="741.12" y1="556" x2="741.12" y2="680" stroke="#ffffff" stroke-opacity=".045"/>
+<line x1="779.88" y1="556" x2="779.88" y2="680" stroke="#ffffff" stroke-opacity=".10"/>
+<text x="779.88" y="551" font-size="9" fill="#6f6a5e" text-anchor="middle">z 80</text>
+<rect x="190.88" y="571.5" width="372" height="62" fill="#8c8474" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="206.38" y="602.5" width="372" height="62" fill="#c7b994" stroke="#3a3f4c" stroke-width="1" fill-opacity="0.18"/>
+<rect x="159.88" y="566.85" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="159.88" y="664.5" width="434" height="4.65" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="190.88" y="571.5" width="372" height="62" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="376.88" y="589.5" font-size="10" fill="#171a22" text-anchor="middle" font-weight="700">서쪽 높은 회랑 (폭 8, 서쪽은 벽)</text>
+<rect x="283.88" y="571.5" width="31" height="31" fill="#e2d6b2" stroke="#1f5a41" stroke-width="1" fill-opacity="0.55"/>
+<rect x="286.2" y="573.83" width="26.35" height="26.35" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="283.88" y="602.5" width="31" height="31" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1" fill-opacity="1"/>
+<rect x="314.88" y="571.5" width="31" height="31" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1" fill-opacity="1"/>
+<rect x="314.88" y="602.5" width="31" height="31" fill="#e2d6b2" stroke="#1f5a41" stroke-width="1" fill-opacity="0.55"/>
+<rect x="317.2" y="604.83" width="26.35" height="26.35" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="345.88" y="571.5" width="31" height="31" fill="#e2d6b2" stroke="#1f5a41" stroke-width="1" fill-opacity="0.55"/>
+<rect x="348.2" y="573.83" width="26.35" height="26.35" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="345.88" y="602.5" width="31" height="31" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1" fill-opacity="1"/>
+<rect x="376.88" y="571.5" width="31" height="31" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1" fill-opacity="1"/>
+<rect x="376.88" y="602.5" width="31" height="31" fill="#e2d6b2" stroke="#1f5a41" stroke-width="1" fill-opacity="0.55"/>
+<rect x="379.2" y="604.83" width="26.35" height="26.35" fill="url(#hz)" stroke="#e0604f" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="547.38" y="566.85" width="15.5" height="16.27" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="547.38" y="621.88" width="15.5" height="16.27" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<rect x="547.38" y="583.12" width="15.5" height="38.75" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<rect x="562.88" y="556" width="93" height="93" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="609.38" y="606.5" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">보물실</text>
+<rect x="655.88" y="556" width="46.5" height="93" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="679.12" y="606.5" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">테라스</text>
+<rect x="702.38" y="556" width="15.5" height="93" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<rect x="717.88" y="556" width="31" height="93" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="733.38" y="606.5" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">출구</text>
+<polyline points="183.12,618 221.88,602.5 733.38,602.5" fill="none" stroke="#f4ead2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" opacity=".95"/>
+<polyline points="361.38,628.85 361.38,642.8" fill="none" stroke="#e0604f" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#tip)" stroke-dasharray="4 4" opacity=".95"/>
+<text x="376.88" y="661.4" font-size="9" fill="#f08b7d" text-anchor="middle">→ L1</text>
+<path d="M221.88,625.75 v-16 l11,4 l-11,4" fill="#3fb6a8" stroke="#3fb6a8" stroke-width="1.6"/>
+<text x="224.88" y="637.75" font-size="10" fill="#7fe0d3" text-anchor="middle" font-weight="700">CP2</text>
+<path d="M500.88,579.25 v-16 l11,4 l-11,4" fill="#3fb6a8" stroke="#3fb6a8" stroke-width="1.6"/>
+<text x="503.88" y="591.25" font-size="10" fill="#7fe0d3" text-anchor="middle" font-weight="700">CP3</text>
+<path d="M624.88,625.75 v-16 l11,4 l-11,4" fill="#3fb6a8" stroke="#3fb6a8" stroke-width="1.6"/>
+<text x="627.88" y="637.75" font-size="10" fill="#7fe0d3" text-anchor="middle" font-weight="700">CP4</text>
+<circle cx="376.88" cy="589.5" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="376.88" y="593.1" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V09</text>
+<circle cx="555.12" cy="589.5" r="9" fill="#d9b25a" stroke="#171a22" stroke-width="1.5"/>
+<text x="555.12" y="593.1" font-size="9.5" fill="#171a22" text-anchor="middle" font-weight="700">V10</text>
+<path d="M896,530 l-16,6 l4,-6 l-4,-6 Z" fill="#f4ead2"/>
+<text x="880" y="548" font-size="10" fill="#a39a85" text-anchor="middle">+z (진행) →</text>
+<rect x="32" y="677" width="38.75" height="5" fill="#f4ead2"/>
+<rect x="70.75" y="677" width="38.75" height="5" fill="none" stroke="#f4ead2" stroke-width="1"/>
+<text x="115.5" y="682" font-size="10" fill="#a39a85" text-anchor="start">10 m</text>
+<rect x="928" y="92" width="336" height="600" fill="#1f232d" rx="8"/>
+<text x="944" y="116" font-size="14.5" fill="#f4ead2" text-anchor="start" font-weight="700">가로 단면 (z 26에서 자름)</text>
+<text x="944" y="130" font-size="11" fill="#a39a85" text-anchor="start">층마다 4 m 겹침: 위층 안쪽 끝 아래에 아래층</text>
+<line x1="978" y1="668" x2="1244" y2="668" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="671.5" font-size="9" fill="#6f6a5e" text-anchor="end">y -4</text>
+<line x1="978" y1="571.64" x2="1244" y2="571.64" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="575.14" font-size="9" fill="#6f6a5e" text-anchor="end">y 0</text>
+<line x1="978" y1="475.27" x2="1244" y2="475.27" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="478.77" font-size="9" fill="#6f6a5e" text-anchor="end">y 4</text>
+<line x1="978" y1="378.91" x2="1244" y2="378.91" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="382.41" font-size="9" fill="#6f6a5e" text-anchor="end">y 8</text>
+<line x1="978" y1="282.55" x2="1244" y2="282.55" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="286.05" font-size="9" fill="#6f6a5e" text-anchor="end">y 12</text>
+<line x1="978" y1="186.18" x2="1244" y2="186.18" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="972" y="189.68" font-size="9" fill="#6f6a5e" text-anchor="end">y 16</text>
+<text x="978" y="682" font-size="9" fill="#6f6a5e" text-anchor="middle">-12</text>
+<text x="1044.5" y="682" font-size="9" fill="#6f6a5e" text-anchor="middle">-8</text>
+<text x="1111" y="682" font-size="9" fill="#6f6a5e" text-anchor="middle">-4</text>
+<text x="1177.5" y="682" font-size="9" fill="#6f6a5e" text-anchor="middle">0</text>
+<text x="1244" y="682" font-size="9" fill="#6f6a5e" text-anchor="middle">4</text>
+<rect x="978" y="138" width="266" height="530" fill="url(#abyss)"/>
+<rect x="1011.25" y="571.64" width="133" height="19.27" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<text x="1077.75" y="566.64" font-size="10" fill="#f4ead2" text-anchor="middle">L0</text>
+<rect x="1077.75" y="427.09" width="133" height="19.27" fill="#c7b994" stroke="#5c5649" stroke-width="1"/>
+<text x="1144.25" y="422.09" font-size="10" fill="#f4ead2" text-anchor="middle">L1</text>
+<rect x="1011.25" y="282.55" width="133" height="19.27" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="1077.75" y="277.55" font-size="10" fill="#f4ead2" text-anchor="middle">L2</text>
+<rect x="1001.27" y="138" width="9.98" height="530" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<rect x="1210.75" y="138" width="9.97" height="530" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<path d="M1039.51,571.64 L1042.01,557.06 L1046.99,557.06 L1049.49,571.64 Z" fill="#f4ead2"/>
+<circle cx="1044.5" cy="551.76" r="5.83" fill="#f4ead2"/>
+<path d="M1106.01,427.09 L1108.51,412.52 L1113.49,412.52 L1115.99,427.09 Z" fill="#f4ead2"/>
+<circle cx="1111" cy="407.22" r="5.83" fill="#f4ead2"/>
+<path d="M1056.14,282.55 L1058.63,267.97 L1063.62,267.97 L1066.11,282.55 Z" fill="#f4ead2"/>
+<circle cx="1061.12" cy="262.67" r="5.83" fill="#f4ead2"/>
+<polyline points="1134.28,277.73 1117.65,417.45" fill="none" stroke="#e0604f" stroke-width="1.8" marker-end="url(#tip)" stroke-dasharray="4 4"/>
+<polyline points="1071.1,422.27 1054.47,562" fill="none" stroke="#e0604f" stroke-width="1.8" marker-end="url(#tip)" stroke-dasharray="4 4"/>
+<text x="1120.97" y="203.05" font-size="9.5" fill="#f08b7d" text-anchor="middle">L2 → L1</text>
+<text x="1061.12" y="345.18" font-size="9.5" fill="#f08b7d" text-anchor="middle">L1 → L0</text>
+<circle cx="1204.1" cy="364.45" r="43.23" fill="none" stroke="#d9b25a" stroke-dasharray="4 4"/>
+<text x="1187.47" y="284.95" font-size="9" fill="#d9b25a" text-anchor="middle">다이얼 망치</text>
+<rect x="16" y="708" width="1248" height="250" fill="#1f232d" rx="8"/>
+<text x="32" y="732" font-size="14.5" fill="#f4ead2" text-anchor="start" font-weight="700">세로 단면 (진행을 펼쳐 겹쳐 그림: L0 북쪽 → 끝 승강대 → L1 남쪽 → 끝 계단 → L2 북쪽 → 출구)</text>
+<line x1="66" y1="934" x2="1244" y2="934" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="937.5" font-size="9" fill="#6f6a5e" text-anchor="end">y -4</text>
+<line x1="66" y1="901.27" x2="1244" y2="901.27" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="904.77" font-size="9" fill="#6f6a5e" text-anchor="end">y 0</text>
+<line x1="66" y1="868.55" x2="1244" y2="868.55" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="872.05" font-size="9" fill="#6f6a5e" text-anchor="end">y 4</text>
+<line x1="66" y1="835.82" x2="1244" y2="835.82" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="839.32" font-size="9" fill="#6f6a5e" text-anchor="end">y 8</text>
+<line x1="66" y1="803.09" x2="1244" y2="803.09" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="806.59" font-size="9" fill="#6f6a5e" text-anchor="end">y 12</text>
+<line x1="66" y1="770.36" x2="1244" y2="770.36" stroke="#ffffff" stroke-opacity=".06"/>
+<text x="60" y="773.86" font-size="9" fill="#6f6a5e" text-anchor="end">y 16</text>
+<text x="107.58" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">0</text>
+<text x="246.16" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">10</text>
+<text x="384.75" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">20</text>
+<text x="523.34" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">30</text>
+<text x="661.93" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">40</text>
+<text x="800.52" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">50</text>
+<text x="939.11" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">60</text>
+<text x="1077.69" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">70</text>
+<text x="1216.28" y="948" font-size="9" fill="#6f6a5e" text-anchor="middle">80</text>
+<rect x="66" y="754" width="1178" height="180" fill="url(#abyss)"/>
+<rect x="107.58" y="901.27" width="665.22" height="6.55" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<text x="440.19" y="896.27" font-size="10" fill="#f4ead2" text-anchor="middle">L0 금고 바닥길 →</text>
+<rect x="745.08" y="852.18" width="110.87" height="49.09" fill="#d9b25a" stroke="#8a6a22" stroke-width="1" fill-opacity="0.55"/>
+<text x="800.52" y="847.18" font-size="10" fill="#f4ead2" text-anchor="middle">금화 승강대 ↕6</text>
+<rect x="190.73" y="852.18" width="665.22" height="6.55" fill="#c7b994" stroke="#5c5649" stroke-width="1"/>
+<text x="523.34" y="847.18" font-size="10" fill="#f4ead2" text-anchor="middle">← L1 선반 회랑</text>
+<polygon points="107.58,852.18 190.73,803.09 190.73,809.64 107.58,858.73" fill="#e2d6b2" stroke="#5c5649"/>
+<rect x="163.01" y="803.09" width="665.22" height="6.55" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="495.62" y="798.09" font-size="10" fill="#f4ead2" text-anchor="middle">L2 높은 회랑 →</text>
+<rect x="800.52" y="737.64" width="27.72" height="65.45" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1"/>
+<rect x="828.24" y="803.09" width="332.61" height="6.55" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="994.54" y="798.09" font-size="10" fill="#f4ead2" text-anchor="middle">보물실 · 출구</text>
+<polygon points="1077.69,803.09 1105.41,811.27 1105.41,817.82 1077.69,809.64" fill="#e2d6b2" stroke="#5c5649"/>
+<rect x="280.81" y="858.73" width="41.58" height="11.45" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1"/>
+<polyline points="301.6,871 301.6,896.36" fill="none" stroke="#e0604f" stroke-width="1.8" marker-end="url(#tip)" stroke-dasharray="4 4"/>
+<rect x="447.12" y="858.73" width="41.58" height="11.45" fill="#3f8f6b" stroke="#1f5a41" stroke-width="1"/>
+<polyline points="467.91,871 467.91,896.36" fill="none" stroke="#e0604f" stroke-width="1.8" marker-end="url(#tip)" stroke-dasharray="4 4"/>
+<polyline points="772.8,897.18 800.52,848.09" fill="none" stroke="#f4ead2" stroke-width="1.8" marker-end="url(#tip)"/>
+<polyline points="149.15,848.91 176.87,801.45" fill="none" stroke="#f4ead2" stroke-width="1.8" marker-end="url(#tip)"/>
+<path d="M242.01,901.27 L244.09,896.32 L248.24,896.32 L250.32,901.27 Z" fill="#f4ead2"/>
+<circle cx="246.16" cy="894.52" r="2.2" fill="#f4ead2"/>
+<path d="M657.77,852.18 L659.85,847.23 L664.01,847.23 L666.09,852.18 Z" fill="#f4ead2"/>
+<circle cx="661.93" cy="845.43" r="2.2" fill="#f4ead2"/>
+<path d="M519.18,803.09 L521.26,798.14 L525.42,798.14 L527.5,803.09 Z" fill="#f4ead2"/>
+<circle cx="523.34" cy="796.34" r="2.2" fill="#f4ead2"/>
+<rect x="16" y="972" width="290" height="349" fill="#1f232d" rx="8"/>
+<text x="30" y="994" font-size="13" fill="#f4ead2" text-anchor="start" font-weight="700">범례</text>
+<rect x="30" y="1006" width="22" height="12" fill="#8c8474" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1016" font-size="11" fill="#f4ead2" text-anchor="start">바닥 y 0 ~ 2</text>
+<rect x="30" y="1027" width="22" height="12" fill="#a99d80" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1037" font-size="11" fill="#f4ead2" text-anchor="start">바닥 y 4 (밝을수록 높음)</text>
+<rect x="30" y="1048" width="22" height="12" fill="#c7b994" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1058" font-size="11" fill="#f4ead2" text-anchor="start">바닥 y 8</text>
+<rect x="30" y="1069" width="22" height="12" fill="#e2d6b2" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1079" font-size="11" fill="#f4ead2" text-anchor="start">바닥 y 12</text>
+<rect x="30" y="1090" width="22" height="12" fill="url(#abyss)" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1100" font-size="11" fill="#f4ead2" text-anchor="start">금고 심연(빠지면 체크포인트)</text>
+<rect x="30" y="1111" width="22" height="12" fill="url(#hz)" stroke="#e0604f" stroke-width="1"/>
+<text x="62" y="1121" font-size="11" fill="#f4ead2" text-anchor="start">쓸림 · 낙하 · 밀림 구역</text>
+<rect x="30" y="1132" width="22" height="12" fill="#3f8f6b" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1142" font-size="11" fill="#f4ead2" text-anchor="start">금고 쇠(벽 · 벨트 · 판)</text>
+<rect x="30" y="1153" width="22" height="12" fill="#7a4fa0" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1163" font-size="11" fill="#f4ead2" text-anchor="start">왕관 원(예고되는 자리)</text>
+<rect x="30" y="1174" width="22" height="12" fill="#d9b25a" stroke="#5c5649" stroke-width="1"/>
+<text x="62" y="1184" font-size="11" fill="#f4ead2" text-anchor="start">금 장치(금화 탑 · 다이얼 · 문)</text>
+<line x1="30" y1="1201" x2="52" y2="1201" stroke="#f4ead2" stroke-width="2.4"/>
+<text x="62" y="1205" font-size="11" fill="#f4ead2" text-anchor="start">주 경로</text>
+<line x1="30" y1="1222" x2="52" y2="1222" stroke="#f0a04b" stroke-width="2.4"/>
+<text x="62" y="1226" font-size="11" fill="#f4ead2" text-anchor="start">짧고 위험한 길</text>
+<line x1="30" y1="1243" x2="52" y2="1243" stroke="#8fc3e6" stroke-width="2.4" stroke-dasharray="7 5"/>
+<text x="62" y="1247" font-size="11" fill="#f4ead2" text-anchor="start">길고 안전한 길</text>
+<line x1="30" y1="1264" x2="52" y2="1264" stroke="#e0604f" stroke-width="2.4" stroke-dasharray="4 4"/>
+<text x="62" y="1268" font-size="11" fill="#f4ead2" text-anchor="start">떨어지면 가는 곳</text>
+<path d="M36,1291 v-14 l10,4 l-10,4" fill="#3fb6a8" stroke="#3fb6a8"/>
+<text x="62" y="1289" font-size="11" fill="#f4ead2" text-anchor="start">체크포인트(개인)</text>
+<circle cx="41" cy="1306" r="8" fill="#d9b25a"/>
+<text x="41" y="1309.5" font-size="9" fill="#171a22" text-anchor="middle" font-weight="700">V</text>
+<text x="62" y="1310" font-size="11" fill="#f4ead2" text-anchor="start">장애물 번호(기획서 §6)</text>
+<rect x="318" y="972" width="946" height="195" fill="#1f232d" rx="8"/>
+<text x="332" y="994" font-size="13" fill="#f4ead2" text-anchor="start" font-weight="700">층 순서</text>
+<text x="332" y="1016" font-size="11.5" fill="#f4ead2" text-anchor="start">L0 (y 0, 북쪽으로 44 m) 왕관 프레스 V05 두 개(엇박자) → 보석 벨트 V06(진행 반대) → 끝: 금화 승강대 V11(빠름, 7초 주기)</text>
+<text x="332" y="1033" font-size="11.5" fill="#f4ead2" text-anchor="start">/ 벽 계단(느림, 난간).</text>
+<text x="332" y="1050" font-size="11.5" fill="#f4ead2" text-anchor="start">L1 (y 6, 남쪽으로 48 m, 동쪽 벽) 다이얼 망치 V04 두 개가 회랑을 가로질러 서쪽 열린 끝으로 쓺 → 맞으면 L0로 떨어짐(약 15 ~</text>
+<text x="332" y="1067" font-size="11.5" fill="#f4ead2" text-anchor="start">20초 손해). 사이에 금고 서랍 V08.</text>
+<text x="332" y="1084" font-size="11.5" fill="#f4ead2" text-anchor="start">지름길: L1 가운데의 동전 발사판 V07이 L2 첫머리 위로 던짐(끝 계단과 L2 앞 10 m를 건너뜀). 실패하면 L0로.</text>
+<text x="332" y="1101" font-size="11.5" fill="#f4ead2" text-anchor="start">L2 (y 12, 북쪽으로 46 m, 서쪽 벽) 뒤집히는 금고 판 V09 두 줄 → 시간 자물쇠 금고문 V10 → 보물실 · 테라스 · 출구(y 11).</text>
+<text x="332" y="1118" font-size="11.5" fill="#e5dcc5" text-anchor="start">· 떨어진 곳은 항상 바로 아래층 = 이미 지나온 길(기획서 v1.0 &#x27;겹쳐 지나가는 길&#x27;). 체크포인트는 층마다 첫머리에.</text>
+<text x="332" y="1135" font-size="11.5" fill="#e5dcc5" text-anchor="start">· 위험: 아래층에서 카메라가 위층 바닥에 걸림(CameraSeeThrough 필요), 폭 8 m에 12명이 몰림, L1 망치에 같은 사람이 여러 번</text>
+<text x="332" y="1152" font-size="11.5" fill="#f4ead2" text-anchor="start">떨어질 수 있음.</text>
+</svg>

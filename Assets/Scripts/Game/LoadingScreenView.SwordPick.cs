@@ -281,7 +281,7 @@ namespace ChessFight.Game
         {
             foundGroup = RBox(box, 0f, 0f, StageWide, StageTall);
             // R645: game lines, not sentences ("상대를 찾았습니다 / 곧 대결이 시작됩니다" read like an editor's notice)
-            foundTitle = BuildMatchAnnouncement(foundGroup, "소드 파이트", 22f, 46f, false, "매칭 완료", "");
+            foundTitle = BuildMatchAnnouncement(foundGroup, Loc.T("소드 파이트"), 22f, 46f, false, Loc.T("매칭 완료"), "");
             // the match under the title, one quiet line: the sides' size and the rule
             foundInfo = RBox(foundGroup, 0f, 134f, StageWide, 24f);
             foundSize = RLabel(foundInfo, "", 15f, InkSoft, false);
@@ -293,7 +293,7 @@ namespace ChessFight.Game
                 float near = side == 0 ? StageWide / 2f - LineupMiddle / 2f : StageWide / 2f + LineupMiddle / 2f;
                 var head = RBox(foundGroup, side == 0 ? near - LineupWide : near, LineupTop - 34f, LineupWide, 22f);
                 foundHeads[side] = head;
-                var name = Bold(side == 0 ? Left(RLabel(head, "우리 팀", 14f, UsLight, false)) : Right(RLabel(head, "상대 팀", 14f, ThemLight, false)));
+                var name = Bold(side == 0 ? Left(RLabel(head, Loc.T("우리 팀"), 14f, UsLight, false)) : Right(RLabel(head, Loc.T("상대 팀"), 14f, ThemLight, false)));
                 RPlace(name, 4f, 0f, LineupWide - 8f, 22f);
                 name.style.letterSpacing = 6f;
                 var count = side == 0 ? Right(RLabel(head, "", 13f, InkSoft, false)) : Left(RLabel(head, "", 13f, InkSoft, false));
@@ -321,7 +321,7 @@ namespace ChessFight.Game
             }
             foundVs = BigVs(foundGroup, LineupTop + LineupTall / 2f - 100f);
             foundCoat = TextCoat.Apply(foundVs, StageWide, 200f, VsGloss, VsGlint, VsFrom, VsTo);
-            var soon = RLabel(foundGroup, "곧 기물을 선택합니다", 18f, InkSoft, false);
+            var soon = RLabel(foundGroup, Loc.T("곧 기물을 선택합니다"), 18f, InkSoft, false);
             RPlace(soon, 0f, 572f, StageWide, 26f);
             const float w = 120f, gap = 12f;
             float left = (StageWide - (3f * w + 2f * gap)) / 2f;
@@ -338,13 +338,13 @@ namespace ChessFight.Game
         void BuildPick(VisualElement box)
         {
             pickGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            pickTitle = BuildMatchAnnouncement(pickGroup, "소드 파이트", 16f, 40f, true, "기물 선택", "");
+            pickTitle = BuildMatchAnnouncement(pickGroup, Loc.T("소드 파이트"), 16f, 40f, true, Loc.T("기물 선택"), "");
             pickClock = Right(RLabel(pickGroup, "15", 56f, Ivory, false));
             RPlace(pickClock, 960f, 28f, 210f, 62f);
             pickClock.style.textShadow = new TextShadow { offset = new Vector2(4f, 4f), blurRadius = 0f, color = Brass };
             var font = RuntimePanels.TitleFont;
             if (font != null) pickClock.style.unityFont = font;
-            var unit = Left(RLabel(pickGroup, "초", 16f, InkSoft, false));
+            var unit = Left(RLabel(pickGroup, Loc.T("초"), 16f, InkSoft, false));
             RPlace(unit, 1178f, 52f, 40f, 30f);
             pickTimer = new RSlant(6f, DotOff);
             RPlace(pickTimer, 996f, 98f, 220f, 10f);
@@ -375,11 +375,11 @@ namespace ChessFight.Game
                 card.Tag = Bold(Right(RLabel(card.Root, "", 14f, Brass, false)));
                 RPlace(card.Tag, cardW - 156f, 18f, 136f, 20f);
                 card.Figure = RBox(card.Root, (cardW - 200f) / 2f, 40f, 200f, 200f);
-                var name = RLabel(card.Root, ChessPieces.Name(piece), 36f, Ivory, true);
+                var name = RLabel(card.Root, Loc.T(ChessPieces.Name(piece)), 36f, Ivory, true);
                 RPlace(name, 0f, 246f, cardW, 46f);
-                var skill = Left(RLabel(card.Root, "F  " + SwordSkillNames.Skill(piece), 15f, Ivory, false));
+                var skill = Left(RLabel(card.Root, "F  " + Loc.T(SwordSkillNames.Skill(piece)), 15f, Ivory, false));
                 RPlace(skill, 24f, 306f, cardW - 36f, 24f);
-                var edge = Left(RLabel(card.Root, "E  " + SwordSkillNames.Edge(piece), 15f, Ivory, false));
+                var edge = Left(RLabel(card.Root, "E  " + Loc.T(SwordSkillNames.Edge(piece)), 15f, Ivory, false));
                 RPlace(edge, 18f, 340f, cardW - 36f, 24f);
                 card.Root.RegisterCallback<PointerDownEvent>(e =>
                 {
@@ -414,7 +414,7 @@ namespace ChessFight.Game
             button.style.borderTopWidth = button.style.borderRightWidth = button.style.borderBottomWidth = button.style.borderLeftWidth = 1f;
             var rim = new Color(Ivory.r, Ivory.g, Ivory.b, .18f);
             button.style.borderTopColor = button.style.borderRightColor = button.style.borderBottomColor = button.style.borderLeftColor = rim;
-            var press = Left(RLabel(button, "확정", 22f, Ivory, true));
+            var press = Left(RLabel(button, Loc.T("확정"), 22f, Ivory, true));
             RPlace(press, 22f, 0f, 84f, 52f);
             var key = RBox(button, 126f, 12f, 64f, 28f);
             key.style.backgroundColor = new Color(Ivory.r, Ivory.g, Ivory.b, .07f);
@@ -445,7 +445,7 @@ namespace ChessFight.Game
         void BuildTeam(VisualElement box)
         {
             teamGroup = RBox(box, 0f, 0f, StageWide, StageTall);
-            teamTitle = TitlePlate(teamGroup, "우리 팀이 선택한 기물", 450f);
+            teamTitle = TitlePlate(teamGroup, Loc.T("우리 팀이 선택한 기물"), 450f);
             for (int i = 0; i < LoadingStudio.PerTeam; i++)
             {
                 var card = new TeamCard { Root = RBox(teamGroup, 0f, 0f, 220f, 360f) };
@@ -453,7 +453,7 @@ namespace ChessFight.Game
                 card.Face = new RSlant(24f, CardFace);
                 card.Root.Add(card.Face);
                 card.Owner = Bold(Left(RLabel(card.Root, "", 14f, Brass, false)));
-                card.Tag = Bold(RLabel(card.Root, "자동 배정", 13f, Ivory, false));
+                card.Tag = Bold(RLabel(card.Root, Loc.T("자동 배정"), 13f, Ivory, false));
                 card.Tag.style.backgroundColor = AutoTag;
                 card.Figure = RBox(card.Root, 0f, 0f, 10f, 10f);
                 card.Name = RLabel(card.Root, "", 32f, Ivory, true);
@@ -468,7 +468,7 @@ namespace ChessFight.Game
             RPlace(teamBar, 260f, 642f, 760f, 9f);
             teamBar.Bar(0f, 9f, Gold);
             teamGroup.Add(teamBar);
-            var then = RLabel(teamGroup, "모두 준비되면 화면이 열리고 경기장에서 3 · 2 · 1", 14f, new Color(Ivory.r, Ivory.g, Ivory.b, .6f), false);
+            var then = RLabel(teamGroup, Loc.T("모두 준비되면 화면이 열리고 경기장에서 3 · 2 · 1"), 14f, new Color(Ivory.r, Ivory.g, Ivory.b, .6f), false);
             RPlace(then, 0f, 664f, StageWide, 22f);
         }
 
@@ -484,10 +484,10 @@ namespace ChessFight.Game
             clashRight = new SwordPoly(ThemDeep, new Vector2(SeamX(-40f), -40f), new Vector2(StageWide + 40f, -40f), new Vector2(StageWide + 40f, 760f), new Vector2(SeamX(760f), 760f));
             RPlace(clashRight, 0f, 0f, StageWide, StageTall);
             clashShake.Add(clashRight);
-            var ours = Bold(Left(RLabel(clashLeft, "우리 팀", 16f, UsLight, false)));
+            var ours = Bold(Left(RLabel(clashLeft, Loc.T("우리 팀"), 16f, UsLight, false)));
             RPlace(ours, 60f, 150f, 300f, 24f);
             ours.style.letterSpacing = 6f;
-            var theirs = Bold(Right(RLabel(clashRight, "상대 팀", 16f, ThemLight, false)));
+            var theirs = Bold(Right(RLabel(clashRight, Loc.T("상대 팀"), 16f, ThemLight, false)));
             RPlace(theirs, 920f, 546f, 300f, 24f);
             theirs.style.letterSpacing = 6f;
             for (int side = 0; side < 2; side++)
@@ -528,7 +528,7 @@ namespace ChessFight.Game
             }
             clashVs = BigVs(clashShake, 250f);
             clashCoat = TextCoat.Apply(clashVs, StageWide, 200f, VsGloss, VsGlint, VsFrom, VsTo);
-            clashTitle = BuildMatchAnnouncement(clashShake, "소드 파이트", 508f, 40f, false, "결투 개시", "");
+            clashTitle = BuildMatchAnnouncement(clashShake, Loc.T("소드 파이트"), 508f, 40f, false, Loc.T("결투 개시"), "");
             clashSub = RLabel(clashGroup, "", 15f, InkSoft, false);
             RPlace(clashSub, 0f, 684f, StageWide, 24f);
         }
@@ -631,7 +631,7 @@ namespace ChessFight.Game
                 var list = side == 0 ? sideUs : sideThem;
                 foundHeads[side].style.translate = new Translate((side == 0 ? -1f : 1f) * 30f * (1f - banner), 0f);
                 foundHeads[side].style.opacity = banner;
-                Text(foundCounts[side], list.Count + "명");
+                Text(foundCounts[side], Loc.F("{0}명", list.Count));
                 string icon = (side == 0 ? myTeam : 1 - myTeam) == 0 ? "Pawn_White" : "Pawn_Black";
                 var cards = foundCards[side];
                 for (int k = 0; k < cards.Count; k++)
@@ -643,8 +643,8 @@ namespace ChessFight.Game
                     int i = list[k];
                     bool me = i == State.Me;
                     Text(card.Name, i < State.Names.Count ? State.Names[i] : "");
-                    string tag = me ? "나" : i < State.Bots.Count && State.Bots[i] ? "봇" : "플레이어";
-                    if (i == State.Manager) tag += " · 방장";
+                    string tag = me ? Loc.T("나") : i < State.Bots.Count && State.Bots[i] ? Loc.T("봇") : Loc.T("플레이어");
+                    if (i == State.Manager) tag += " · " + Loc.T("방장");
                     Text(card.Tag, tag);
                     card.Tag.style.color = me ? Ivory : Brass;
                     card.Edge.Set(me ? Ivory : Color.black);
@@ -673,7 +673,7 @@ namespace ChessFight.Game
                     float a = FoundPlateAt + FoundPlateStep * k, land = a + PlateSlide;
                     card.Root.style.translate = new Translate(0f, -50f * (1f - Eo3(Ph(t, a, PlateSlide))));
                     card.Root.style.opacity = Ph(t, a, .1f);
-                    card.Flash.style.opacity = t < land ? 0f : .08f * (1f - Ph(t, land, .16f));
+                    card.Flash.style.opacity = t < land ? 0f : .08f * GameSettings.FlashScale * (1f - Ph(t, land, .16f));
                     float sweep = Ph(t, land + .05f, .4f);
                     card.Face.SliceAt(-80f + (card.Wide + 160f) * sweep, sweep > 0f && sweep < 1f ? 1f : 0f);
                 }
@@ -754,7 +754,7 @@ namespace ChessFight.Game
                 card.Face.SetFill(isMine ? CardMine : marked || pending ? CardMarked : CardFace);
                 card.Edge.Set(isMine ? Ivory : marked || pending ? Brass : Color.black);
                 card.Face.BarFill(isMine ? 1f : pending ? .7f : marked ? .35f : 0f);
-                Text(card.Tag, taken ? holder + " 선택" : isMine ? "확정" : pending ? "보내는 중" : marked ? "선택됨" : "");
+                Text(card.Tag, taken ? Loc.F("{0} 선택", holder) : isMine ? Loc.T("확정") : pending ? Loc.T("보내는 중") : marked ? Loc.T("선택됨") : "");
                 card.Tag.style.color = isMine ? Ivory : Brass;
                 float a = .05f * i, lift = isMine ? -14f : marked || pending ? -10f : 0f;
                 card.Root.style.translate = new Translate(0f, 60f * (1f - Eo3(Ph(t, a, .3f))) + lift);
@@ -771,8 +771,8 @@ namespace ChessFight.Game
                 int e = sideUs[k];
                 var p = PickOf(e);
                 bool bot = e < State.Bots.Count && State.Bots[e];
-                string who = e == State.Me ? "나" : e < State.Names.Count ? State.Names[e] : "";
-                Text(chip.Text, who + " · " + (p != PieceKind.Pawn ? ChessPieces.Name(p) : bot ? "자동" : "고르는 중"));
+                string who = e == State.Me ? Loc.T("나") : e < State.Names.Count ? State.Names[e] : "";
+                Text(chip.Text, who + " · " + (p != PieceKind.Pawn ? Loc.T(ChessPieces.Name(p)) : bot ? Loc.T("자동") : Loc.T("고르는 중")));
                 chip.Face.SetFill(e == State.Me ? Ivory : CardFace);
                 chip.Text.style.color = e == State.Me ? Ebony : p != PieceKind.Pawn ? Ivory : InkSoft;
             }
@@ -781,9 +781,9 @@ namespace ChessFight.Game
             pickConfirm.style.display = canConfirm ? DisplayStyle.Flex : DisplayStyle.None;
             // R645 (11-14, 사용자 "너무 에디터 느낌 … 실제 게임에서 문구를 넣어줘, 필요 없으면 삭제"): short game lines, no
             // instructions - the cards and the confirm button already show how to pick.
-            Text(pickHint, mine != PieceKind.Pawn ? "팀원 대기 중"
-                         : swordAsked.HasValue ? "확정 중"
-                         : swordMarked.HasValue ? "SPACE  확정"
+            Text(pickHint, mine != PieceKind.Pawn ? Loc.T("팀원 대기 중")
+                         : swordAsked.HasValue ? Loc.T("확정 중")
+                         : swordMarked.HasValue ? "SPACE  " + Loc.T("확정")
                          : "");
             if (!Hiding) SwordKeys();
         }
@@ -861,24 +861,24 @@ namespace ChessFight.Game
 
                 var piece = PickOf(e);
                 bool auto = e < State.PickAuto.Count && State.PickAuto[e];
-                Text(card.Owner, me ? "나" : e < State.Names.Count ? State.Names[e] : "");
+                Text(card.Owner, me ? Loc.T("나") : e < State.Names.Count ? State.Names[e] : "");
                 RPlace(card.Owner, 24f, 12f, cw - 40f, 22f);
                 card.Tag.style.display = auto ? DisplayStyle.Flex : DisplayStyle.None;
                 RPlace(card.Tag, cw - 96f, 12f, 76f, 22f);
                 float fig = cw * .72f;
                 RPlace(card.Figure, (cw - fig) / 2f, 40f, fig, fig);
                 SetFigure(card.Figure, ref card.FigureKey, piece, MyTeam());
-                Text(card.Name, piece != PieceKind.Pawn ? ChessPieces.Name(piece) : "");
+                Text(card.Name, piece != PieceKind.Pawn ? Loc.T(ChessPieces.Name(piece)) : "");
                 card.Name.style.fontSize = me ? 38f : 30f;
                 RPlace(card.Name, 0f, 44f + fig, cw, 46f);
-                Text(card.Skill, me && piece != PieceKind.Pawn ? "F " + SwordSkillNames.Skill(piece) + " · E " + SwordSkillNames.Edge(piece) : "");
+                Text(card.Skill, me && piece != PieceKind.Pawn ? "F " + Loc.T(SwordSkillNames.Skill(piece)) + " · E " + Loc.T(SwordSkillNames.Edge(piece)) : "");
                 RPlace(card.Skill, 0f, 94f + fig, cw, 22f);
 
                 float a = .07f * k;
                 card.Root.style.translate = new Translate(0f, 50f * (1f - Eo3(Ph(u, a, .3f))) + (me ? -12f : 0f));
                 card.Root.style.opacity = Ph(u, a, .12f);
             }
-            Text(teamLoad, string.IsNullOrEmpty(State.Step) ? "경기장을 불러오는 중" : State.Step);
+            Text(teamLoad, string.IsNullOrEmpty(State.Step) ? Loc.T("경기장을 불러오는 중") : State.Step);
             Text(teamPercent, State.Percent + "%");
             teamBar.BarFill(Mathf.Clamp01(State.Percent / 100f));
         }
@@ -923,7 +923,7 @@ namespace ChessFight.Game
             clashCut.Set(tip + 12f / down.y, 1f - Ph(cooled, 0f, .35f));
             clashCut.style.opacity = cooled < .1f ? 1f : Mathf.Lerp(1f, .55f, Ph(cooled, .1f, .5f));
             // R636: the project blends in linear light, where .1 already reads as a light flash (.55 washed the cut out)
-            clashFlash.style.opacity = hit < 0f ? 0f : .1f * (1f - Ph(hit, 0f, .12f));
+            clashFlash.style.opacity = hit < 0f ? 0f : .1f * GameSettings.FlashScale * (1f - Ph(hit, 0f, .12f));
             bool flying = tip > SwingFrom && tip - BladeLong < CutLength + 20f;
             clashSword.style.opacity = flying ? 1f : 0f;
             clashSword.style.translate = new Translate(down.x * tip, down.y * tip);

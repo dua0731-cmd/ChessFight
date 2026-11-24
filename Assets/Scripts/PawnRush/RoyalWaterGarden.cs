@@ -29,6 +29,9 @@ namespace ChessFight.PawnRush
             var content = transform.Find(ContentName);
             if (content != null) RoyalWaterGardenBuilder.CloseSideRoutes(content, kit);
             else if (buildIfEmpty) RoyalWaterGardenBuilder.Build(this);
+            // R816: the big still models' far halves, on the baked dressing as it wakes (never baked into the prefab)
+            content = transform.Find(ContentName);
+            if (content != null && Application.isPlaying) RoyalWaterGardenBuilder.AttachLods(content);
         }
     }
 }

@@ -154,7 +154,7 @@ namespace ChessFight.Game
                     {
                         slot.Id = talking.Id;
                         string name = NameOf?.Invoke(talking.Id) ?? "";
-                        slot.Name.text = talking.Id == VoiceBoard.Self ? name + " (나)" : name;
+                        slot.Name.text = talking.Id == VoiceBoard.Self ? Loc.F("{0} (나)", name) : name;
                         // The newest speaker goes to the bottom of the list.
                         slot.Box.BringToFront();
                     }
@@ -185,15 +185,15 @@ namespace ChessFight.Game
 
             // The heading: 기보지, and on the right where my voice goes and the key that closes it.
             var left = Add(paper, "vh-head-left");
-            var title = Text(left, "vh-title", "기 보 지");
+            var title = Text(left, "vh-title", Loc.T("기 보 지"));
             Serif(title);
-            Text(left, "vh-subtitle", "경기 명단");
+            Text(left, "vh-subtitle", Loc.T("경기 명단"));
             var right = Add(paper, "vh-head-right");
-            voiceNote = Text(right, "vh-voice-label", "내 목소리");
+            voiceNote = Text(right, "vh-voice-label", Loc.T("내 목소리"));
             picker = Add(right, "vh-picker");
             picker.pickingMode = PickingMode.Position;
-            pickParty = Pick(picker, "파티", VoiceBoard.PartyColor, VoiceChannel.Party);
-            pickTeam = Pick(picker, "팀 전체", VoiceBoard.TeamColor, VoiceChannel.Team);
+            pickParty = Pick(picker, Loc.T("파티"), VoiceBoard.PartyColor, VoiceChannel.Party);
+            pickTeam = Pick(picker, Loc.T("팀 전체"), VoiceBoard.TeamColor, VoiceChannel.Team);
             keyCap = Text(right, "vh-keycap", "P");
 
             // The column heads: No. | my team | theirs.
@@ -203,17 +203,17 @@ namespace ChessFight.Game
             mineKing = new ChessGlyphs.PieceMark(PieceKind.King, true, Brown);
             mineKing.AddToClassList("vh-colhead-king");
             mine.Add(mineKing);
-            mineHead = Text(mine, "vh-colhead-text", "백 · 우리 팀");
+            mineHead = Text(mine, "vh-colhead-text", Loc.T("백") + " · " + Loc.T("우리 팀"));
             Serif(mineHead);
             Add(mine, "vh-grow");
             legend = Add(mine, "vh-legend");
-            Swatch(legend, VoiceBoard.PartyColor, "파티");
-            Swatch(legend, VoiceBoard.TeamColor, "팀원");
+            Swatch(legend, VoiceBoard.PartyColor, Loc.T("파티"));
+            Swatch(legend, VoiceBoard.TeamColor, Loc.T("팀원"));
             var theirs = Add(paper, "vh-colhead vh-colhead-theirs");
             theirsKing = new ChessGlyphs.PieceMark(PieceKind.King, false, Brown);
             theirsKing.AddToClassList("vh-colhead-king");
             theirs.Add(theirsKing);
-            theirsHead = Text(theirs, "vh-colhead-text", "흑 · 상대 팀");
+            theirsHead = Text(theirs, "vh-colhead-text", Loc.T("흑") + " · " + Loc.T("상대 팀"));
             Serif(theirsHead);
 
             for (int i = 0; i < VoiceArt.Rows; i++)
@@ -312,8 +312,8 @@ namespace ChessFight.Game
             var data = Sheet?.Invoke();
             int myTeam = data != null ? Mathf.Clamp(data.MyTeam, 0, 1) : 0;
             bool white = myTeam == 0;
-            mineHead.text = (white ? "백" : "흑") + " · 우리 팀";
-            theirsHead.text = (white ? "흑" : "백") + " · 상대 팀";
+            mineHead.text = (white ? Loc.T("백") : Loc.T("흑")) + " · " + Loc.T("우리 팀");
+            theirsHead.text = (white ? Loc.T("흑") : Loc.T("백")) + " · " + Loc.T("상대 팀");
             mineKing.Set(PieceKind.King, white);
             theirsKing.Set(PieceKind.King, !white);
             keyCap.text = GameSettings.KeyName(GameSettings.Key(GameKey.Sheet));
@@ -321,7 +321,7 @@ namespace ChessFight.Game
             bool running = VoiceBoard.Running;
             Show(picker, running);
             Show(legend, true);
-            voiceNote.text = running ? "내 목소리" : "음성 채팅 꺼짐";
+            voiceNote.text = running ? Loc.T("내 목소리") : Loc.T("음성 채팅 꺼짐");
             Choice(pickParty, VoiceBoard.Target == VoiceChannel.Party, VoiceBoard.PartyUsable);
             Choice(pickTeam, VoiceBoard.Target == VoiceChannel.Team, VoiceBoard.TeamUsable);
 
@@ -373,7 +373,7 @@ namespace ChessFight.Game
             }
             else side.Box.style.backgroundColor = Color.clear;
             side.Name.EnableInClassList("vh-name-quiet", muted || p.VoiceOff);
-            side.Tag.text = p.Me ? "나" : p.Bot ? "AI" : mine && p.VoiceOff ? "음성 꺼짐" : "";
+            side.Tag.text = p.Me ? Loc.T("나") : p.Bot ? "AI" : mine && p.VoiceOff ? Loc.T("음성 꺼짐") : "";
             if (side.Edge != null)
             {
                 Show(side.Edge, true);
@@ -386,7 +386,7 @@ namespace ChessFight.Game
                 side.Mute.EnableInClassList("vh-mute-on", muted);
                 side.MuteMark.Set(muted ? ChessGlyphs.SpeakerMark.Look.Muted : ChessGlyphs.SpeakerMark.Look.Quiet,
                                   muted ? VoiceBoard.MutedColor : Muted);
-                side.Mute.tooltip = (muted ? "음소거 풀기: " : "음소거: ") + p.Name;
+                side.Mute.tooltip = muted ? Loc.F("음소거 풀기: {0}", p.Name) : Loc.F("음소거: {0}", p.Name);
             }
         }
 
