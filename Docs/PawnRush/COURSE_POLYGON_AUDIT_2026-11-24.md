@@ -40,6 +40,8 @@
 | 4 | H 국왕 체스 홀 | 431,335 | 661,659 | 820 |
 | 4 | I 국왕 침실 | 752,567 | 914,275 | 726 |
 
+마차뜰 숫자에는 새 마차뜰 LOD(`Assets/Resources/PawnRushCarriageYard/LOD`, `*_LOD1.fbx` 10개 → LODGroup 10)가 들어가 있다. 활성 숫자는 LOD 0(가까이서 볼 때)이라 LOD를 붙여도 줄지 않고, 멀리서 볼 때만 '하위 LOD' 쪽으로 바뀐다. 말(`RcyHorse`)은 R680부터 자체 LOD가 있다(`*_LOD1`, 약 14 m 넘으면 한 마리 약 4만 4천 → 1만 2천, `RoyalCarriageYard.Dressing.cs` `DressHorse`). 위 집계는 모두 가까이서(LOD 0) 센 숫자다.
+
 미니게임에는 LODGroup이 하나도 없다.
 
 ## 한 판에 합치면
@@ -59,6 +61,17 @@
 - 천문대: RoHallArcadeBay 591,290 · RoHallNicheBay 284,206 · RoHallStatues 253,604.
 - 서재: RlGalleryBookcase 188,604.
 - 미니게임 B ~ J: 홀 환경 FBX가 10 ~ 36만(E_Tower_9 360,804 · J_Tub 238,000 · E_HallEnv 232,140 · F_HallEnv 202,080 · J_HallEnv 202,416 · B_StationEnv 183,418).
+
+## 뒤따른 작업
+
+- **R811 C 해자 도개교**: 돌 블록 모듈(6,000 × 450개)만 1,500으로 → `C_Drawbridge_EnvV2.fbx` 3,314,060 → 1,289,060. 위 표의 C 숫자(3,637,678)는 줄이기 전이다. `ArtSource/PawnRush/MiniGames/Early/c_drawbridge_v2_lighten.py`.
+- **R813 대계단**: 모양이 같은 데까지만 — 모서리 기둥 · 석상 3 · 낙하 나이트 · 공중 발판 · 원형 벽 2 · 선풍기 날개, 그려지는 삼각형 약 −205k(2,846,667 → 약 2.64M). 바깥 벽 · 난간 등은 그대로. `ArtSource/PawnRush/Optimization20261124/stair_pass.py`.
+
+- **R821 작전실 · 천문대**: 작전실 송풍기 0.9 · 지도 액자 0.7(−27,942), 천문대는 줄일 면이 거의 없어 그대로.
+
+- **R820 정원**: 먼 거리 LOD — 큰 정지 모델 조각 115개, 40 m(배율 1) 넘으면 1,272,263 → 635,895. 위 표의 정원 숫자는 가까이서(LOD 0) 그대로.
+
+- **R822 정리**: 대계단 홀 모델의 안 그려지는 부품 35개 삭제(870,831 삼각형) — 위 표 대계단의 "숨긴 것 포함" 숫자가 약 87만 줄어듦.
 
 ## 11-13 조사와 비교 (활성)
 

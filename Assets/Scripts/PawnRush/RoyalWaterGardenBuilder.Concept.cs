@@ -245,6 +245,82 @@ namespace ChessFight.PawnRush
             }
         }
 
+        // R816 (user 11-24 "정원 LOD 진행"; the carriage yard's R809 way, RoyalCarriageYard.AttachLods): a model with a
+        // Resources/PawnRushGardenConcept/LOD/<model>_LOD1 (lod_garden.py: half its triangles, nothing else changed) gets
+        // each LOD1 piece hung under its piece, the two in one LODGroup: the piece nearer than LodSwitch metres (at LOD
+        // bias 1 - the PC "높음" preset's 1.6 makes it about 64 m), its half beyond. Nothing is culled. Only a piece still
+        // drawn inside its model gets one: what Hang, LakeBoats and the like moved onto obstacles (rotating bars,
+        // platforms, boats) or Remove/Cover switched off keeps no LOD, and a name the model has twice keeps none either.
+        // Pictures only - the garden's models have no colliders - and the same garden materials (ConceptMaterial). The
+        // garden is baked into its prefab, so this runs in Play from RoyalWaterGarden.Awake on the baked "Concept
+        // dressing" (its children are named after their models), and is never baked in itself.
+        const string LodFolder = ConceptFolder + "LOD/";
+        const float LodSwitch = 40f, LodFov = 60f;
+
+        public static void AttachLods(Transform content)
+        {
+            var pivot = content != null ? content.Find("Concept dressing") : null;
+            if (pivot == null) return;
+            var cache = new Dictionary<string, Material>();
+            int pieces = 0;
+            long near = 0, far = 0;
+            foreach (var piece in ConceptPieces)
+            {
+                string model = piece.model;
+                var dress = pivot.Find(model);
+                if (dress == null) continue;
+                var half = Resources.Load<GameObject>(LodFolder + model + "_LOD1");
+                if (half == null) continue;
+                var views = new Dictionary<string, Renderer>();
+                var twice = new HashSet<string>();
+                foreach (var r in dress.GetComponentsInChildren<Renderer>(true))
+                    if (!views.ContainsKey(r.name)) views[r.name] = r; else twice.Add(r.name);
+                var farView = Object.Instantiate(half, pivot, false);
+                farView.name = model + " LOD1";
+                foreach (var r in farView.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (twice.Contains(r.name) || !views.TryGetValue(r.name, out var view) || !view.enabled ||
+                        !view.gameObject.activeInHierarchy || view.GetComponent<LODGroup>() != null)
+                    {
+                        r.enabled = false;
+                        continue;
+                    }
+                    var slots = r.sharedMaterials;
+                    for (int i = 0; i < slots.Length; i++)
+                        if (slots[i] != null) slots[i] = ConceptMaterial(slots[i], cache);
+                    r.sharedMaterials = slots;
+                    r.shadowCastingMode = view.shadowCastingMode;
+                    r.transform.SetParent(view.transform, true);
+                    var group = view.gameObject.AddComponent<LODGroup>();
+                    group.SetLODs(new[] { new LOD(.5f, new[] { view }), new LOD(0f, new[] { r }) });
+                    group.RecalculateBounds();
+                    float height = group.size / (2f * LodSwitch * Mathf.Tan(LodFov * .5f * Mathf.Deg2Rad));
+                    group.SetLODs(new[] { new LOD(Mathf.Clamp(height, .002f, .99f), new[] { view }), new LOD(0f, new[] { r }) });
+                    near += LodTriangles(view);
+                    far += LodTriangles(r);
+                    pieces++;
+                }
+                if (farView != null)
+                {
+                    // what is left of the LOD1 model (unused pieces, emptied nodes) goes
+                    foreach (var r in farView.GetComponentsInChildren<Renderer>(true))
+                        if (r != null && !r.enabled) Object.DestroyImmediate(r.gameObject);
+                    if (farView.GetComponentInChildren<Renderer>(true) == null) Object.DestroyImmediate(farView);
+                }
+            }
+            if (pieces > 0)
+                Debug.Log($"[정원] 먼 거리 LOD: 조각 {pieces}개, 삼각형 {near:N0} → {far:N0} " +
+                          $"(LOD 배율 1에서 {LodSwitch:0} m 넘어서, 지금 배율 {QualitySettings.lodBias:0.##})");
+        }
+
+        static long LodTriangles(Renderer r)
+        {
+            if (!r.TryGetComponent<MeshFilter>(out var filter) || filter.sharedMesh == null) return 0;
+            long n = 0;
+            for (int i = 0; i < filter.sharedMesh.subMeshCount; i++) n += (long)filter.sharedMesh.GetIndexCount(i) / 3;
+            return n;
+        }
+
         // R485 (승규 "보트 애니메이션을 둘거야 ... 그 구간에서 배가 떠 다니는 애니메이션 만들어줘", "성벽 안 수로 수문"); R486
         // ("총 3개가 나올 수 있게 하고 각자 택스쳐가 다르게 해줘 중반 구간 물 쪽 전체를 누릴 수 있게"): each of the lake's
         // three boats rides a pivot in the section's frame, put where the FBX left it (its route's start, bow north),

@@ -14,13 +14,25 @@ namespace ChessFight.PawnRush
         [SerializeField] Transform frame;
         [SerializeField] Bounds[] boxes = new Bounds[0];
 
+        bool awake;
+
+        // R823 (user 11-24, the landing's railing and the dais tower's pilasters back in the hall): since R309 the hall's
+        // art is put on in Play (GrandStairHall.Awake), on an active object, so the component woke - and found no boxes -
+        // before Configure gave them: nothing was cut. A component that is already awake cuts when it is configured.
         public void Configure(Transform space, params Bounds[] cut)
         {
             frame = space;
             boxes = cut;
+            if (awake) Cut();
         }
 
         void Awake()
+        {
+            awake = true;
+            Cut();
+        }
+
+        void Cut()
         {
             var filter = GetComponent<MeshFilter>();
             var source = filter.sharedMesh;

@@ -71,7 +71,7 @@ namespace ChessFight.PawnRush
             }
             Debug.Log("[대계단 홀] v15 모델 " + view.transform.childCount + "개 조각, 블록아웃 " + off + "개 숨김(충돌은 그대로)");
             SeamlessFloors(view.transform, marble);
-            OpenLanding(view.transform, content);
+            // R823: OpenLanding's cut is baked into the model (bake_meshcutout.py)
             ClearLandingChandeliers(view.transform, content);
             HubChandelierLights(view.transform);
             WidenHallFloor(content);
@@ -190,6 +190,9 @@ namespace ChessFight.PawnRush
         // landing's five rails (section frame). The upper flight's rails (x +-8.15, up to z 52) stay. R348 (승규 11-04, a
         // shot of the L-shaped railing at the landing's north-east corner: "샹들리에 쪽 아직 난간이 제거가 안 됐어"): the
         // spiral foot's two rails go too (W x 4.15, z 66 .. 71.5; N z 71.35, x 4.3 .. 10.5), the model's and the blockout's.
+        // R823 (11-24): baked - these pieces are no longer in GrandStairHallV15.fbx (ArtSource/PawnRush/Optimization20261124/
+        // bake_meshcutout.py ran this very rule in Blender), because the cut never ran in Play since R309 and a player
+        // build cannot read the mesh. Kept for the record and for a re-exported model; not called.
         static void OpenLanding(Transform view, Transform content)
         {
             Transform rails = null;
