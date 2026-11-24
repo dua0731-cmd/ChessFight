@@ -172,3 +172,7 @@ Packages/packages-lock.json linguist-generated
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary
 *.glb                   lfs
+
+# JY-gfx baked indirect light (GfxBakedLight assets exceed 100 MB)
+Assets/Resources/Gfx/Baked/*.asset lfs
+Assets/Resources/Gfx/Baked/**/*.asset lfs
