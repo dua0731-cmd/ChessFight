@@ -8,6 +8,7 @@ namespace ChessFight.PawnRush.Editor
     /// JY-gfx (2026-11-24, the graphics upgrade): how the upgrade's own files are imported, and the sky's material.
     ///   Resources/Gfx/Sets/*.png   the surface sets (ChessFight.Game.GameSurfaces): data, not colour; mipmapped,
     ///                              tiled, BC7, all alike (they are copied into texture arrays on the GPU)
+    ///   Resources/Gfx/Height/*.png the floors' relief: R height, G ambient occlusion; data, mipmapped, tiled, BC5
     ///   Resources/Gfx/Sky/*.exr    the sky picture: HDR, no mips (read at mip 0), wraps round, BC6H
     ///   Resources/Gfx/GfxSky.mat   ChessFight/Gfx Sky with that picture (ChessFight.Game.GameSky)
     /// </summary>
@@ -39,6 +40,30 @@ namespace ChessFight.PawnRush.Editor
                     settings.overridden = true;
                     settings.maxTextureSize = 1024;
                     settings.format = TextureImporterFormat.BC7;
+                    importer.SetPlatformTextureSettings(settings);
+                }
+            }
+            else if (assetPath.StartsWith(Root + "/Height/"))
+            {
+                // The floors' relief (GameSurfaces gives a Gfx Lit twin the one named after its base map): R height,
+                // G ambient occlusion, baked from the swatch scripts' geometry. Data; BC5 keeps the two channels apart.
+                importer.textureType = TextureImporterType.Default;
+                importer.textureShape = TextureImporterShape.Texture2D;
+                importer.sRGBTexture = false;
+                importer.alphaSource = TextureImporterAlphaSource.None;
+                importer.mipmapEnabled = true;
+                importer.isReadable = false;
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.filterMode = FilterMode.Trilinear;
+                importer.anisoLevel = 8;
+                importer.maxTextureSize = 1024;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                foreach (var platform in new[] { "Standalone", "Windows Store Apps" })
+                {
+                    var settings = importer.GetPlatformTextureSettings(platform);
+                    settings.overridden = true;
+                    settings.maxTextureSize = 1024;
+                    settings.format = TextureImporterFormat.BC5;
                     importer.SetPlatformTextureSettings(settings);
                 }
             }

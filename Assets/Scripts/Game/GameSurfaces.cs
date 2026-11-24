@@ -63,6 +63,7 @@ namespace ChessFight.Game
         {
             Shader.SetGlobalVector(OnId, Ready && enabled ? new Vector4(1f, Strength, Macro, 0f) : Vector4.zero);
             Shader.SetGlobalFloat(FoliageId, Ready && enabled ? Foliage : 0f);
+            Shader.SetGlobalFloat(ReliefShadowId, ReliefShadow);
         }
 
         /// <summary>How much sun comes through leaves and grass blades (Gfx Lit's leaf set, Gfx Grass; 0 none).</summary>
@@ -101,6 +102,65 @@ namespace ChessFight.Game
             foreach (var twin in originalOf.Keys) if (twin != null) Object.Destroy(twin);
             twinOf.Clear();
             originalOf.Clear();
+            reliefDepthOf.Clear();
+        }
+
+        // ---------------------------------------------------------------- the floors' relief
+
+        /// <summary>The relief (parallax occlusion, joints darker in the shade) on the twins that have one.</summary>
+        public static bool ReliefOn = true;
+        /// <summary>Every twin's relief depth times this.</summary>
+        public static float ReliefDepth = 1f;
+        /// <summary>How much of the sun's shadow the relief casts into its own joints (0 none, 1 all).</summary>
+        public static float ReliefShadow = 1f;
+        static readonly int ReliefShadowId = Shader.PropertyToID("_GfxReliefShadow");
+
+        static readonly Dictionary<string, Texture2D> reliefOf = new Dictionary<string, Texture2D>();
+        static readonly Dictionary<Material, float> reliefDepthOf = new Dictionary<Material, float>();
+        static readonly int ParallaxMapId = Shader.PropertyToID("_ParallaxMap"), ParallaxId = Shader.PropertyToID("_Parallax"),
+            OcclusionMapId = Shader.PropertyToID("_OcclusionMap"), OcclusionStrengthId = Shader.PropertyToID("_OcclusionStrength");
+
+        /// <summary>The relief a material's swatch was baked with (JY-gfx 11-24: the swatch scripts r502-r509 baked height
+        /// and occlusion from real geometry, but only colour and normals came into the game): Resources/Gfx/Height/
+        /// &lt;swatch&gt;_HeightAO (R height, G occlusion), found by the base map's name (&lt;swatch&gt;_BaseColor); and its depth
+        /// in UV units (a floor swatch's tile is 2 m).</summary>
+        public static Texture2D Relief(Material m, out float depth)
+        {
+            depth = 0f;
+            var baseMap = m.HasProperty(BaseMapId) ? m.GetTexture(BaseMapId) : null;
+            if (baseMap == null) return null;
+            string stem = baseMap.name;
+            int at = stem.LastIndexOf("_BaseColor", System.StringComparison.Ordinal);
+            if (at <= 0) return null;
+            stem = stem.Substring(0, at);
+            if (!reliefOf.TryGetValue(stem, out var map)) reliefOf[stem] = map = Resources.Load<Texture2D>("Gfx/Height/" + stem + "_HeightAO");
+            if (map == null) return null;
+            depth = Depth(stem);
+            return map;
+        }
+
+        // Metres of relief over the swatch's 2 m tile, by what the swatch shows.
+        static float Depth(string stem)
+        {
+            var s = stem.ToLowerInvariant();
+            foreach (var w in new[] { "marble", "tile" }) if (s.Contains(w)) return .008f / 2f;
+            foreach (var w in new[] { "wood", "walnut", "maple", "parquet", "plank", "oak", "joist", "staves", "wainscot", "door" }) if (s.Contains(w)) return .008f / 2f;
+            foreach (var w in new[] { "canvas", "linen", "velvet", "ermine", "metal", "iron" }) if (s.Contains(w)) return .004f / 2f;
+            return .03f / 2f;   // stone: flagstones, slate, paving, brick, basalt, limestone
+        }
+
+        /// <summary>ReliefOn and ReliefDepth onto every twin made so far.</summary>
+        public static void ApplyRelief()
+        {
+            Shader.SetGlobalFloat(ReliefShadowId, ReliefShadow);
+            foreach (var kv in reliefDepthOf)
+            {
+                var twin = kv.Key;
+                if (twin == null) continue;
+                if (ReliefOn) twin.EnableKeyword("_PARALLAXMAP");
+                else twin.DisableKeyword("_PARALLAXMAP");
+                twin.SetFloat(ParallaxId, kv.Value * ReliefDepth);
+            }
         }
 
         // ---------------------------------------------------------------- URP Lit -> Gfx Lit
@@ -164,9 +224,12 @@ namespace ChessFight.Game
         static Material Twin(Material m)
         {
             if (twinOf.TryGetValue(m, out var twin)) return twin;
-            float scale = 0f;
-            int set = m.GetInstanceID() > 0 ? Pick(m, out scale) : -1;
-            if (set < 0)
+            float scale = 0f, depth = 0f;
+            bool asset = m.GetInstanceID() > 0;
+            int set = asset ? Pick(m, out scale) : -1;
+            // A floor whose swatch has a relief gets a twin for it even without a set (the pass skips sets below 0).
+            var relief = asset && !(m.HasProperty(SurfaceId) && m.GetFloat(SurfaceId) > .5f) ? Relief(m, out depth) : null;
+            if (set < 0 && relief == null)
             {
                 twinOf[m] = m;
                 return m;
@@ -177,6 +240,20 @@ namespace ChessFight.Game
             twin.renderQueue = m.renderQueue;
             twin.SetFloat(SetId, set);
             twin.SetFloat(SetScaleId, scale);
+            if (relief != null)
+            {
+                twin.SetTexture(ParallaxMapId, relief);
+                twin.SetFloat(ParallaxId, depth * ReliefDepth);
+                if (ReliefOn) twin.EnableKeyword("_PARALLAXMAP");
+                // The baked occlusion (G) deepens the joints in the shade, unless the material brings its own.
+                if (!m.IsKeywordEnabled("_OCCLUSIONMAP"))
+                {
+                    twin.SetTexture(OcclusionMapId, relief);
+                    twin.SetFloat(OcclusionStrengthId, 1f);
+                    twin.EnableKeyword("_OCCLUSIONMAP");
+                }
+                reliefDepthOf[twin] = depth;
+            }
             twinOf[m] = twin;
             originalOf[twin] = m;
             return twin;

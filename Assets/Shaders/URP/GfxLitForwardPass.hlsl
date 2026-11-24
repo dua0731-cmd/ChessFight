@@ -56,7 +56,32 @@ void GfxLitPassFragment(
 
     InitializeBakedGIData(input, inputData);
 
+#if defined(_PARALLAXMAP) && defined(REQUIRES_WORLD_SPACE_TANGENT_INTERPOLATOR)
+    // JY-gfx: the relief's own shadow from the sun (inside the joints, on the stones' lee sides), from where the
+    // view ray met the height map (input.uv is that point now).
+    half reliefShadow = 1.0;
+    if (gfxReliefFade > 0.0)
+    {
+        float sgn = input.tangentWS.w * GetOddNegativeScale();
+        float3 bitangent = sgn * cross(input.normalWS.xyz, input.tangentWS.xyz);
+        float3x3 tbn = float3x3(input.tangentWS.xyz, bitangent, input.normalWS.xyz);
+        float3 lightTS = normalize(mul(tbn, _MainLightPosition.xyz));
+        reliefShadow = lerp(1.0, GfxReliefShadow(input.uv, gfxReliefHeight, lightTS), gfxReliefFade * _GfxReliefShadow);
+    }
+#endif
+
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
+#if defined(_PARALLAXMAP) && defined(REQUIRES_WORLD_SPACE_TANGENT_INTERPOLATOR)
+    // That shadow takes its share of the sun's light back out (the sky's light stays).
+    if (reliefShadow < 0.999)
+    {
+        BRDFData brdfData;
+        InitializeBRDFData(surfaceData, brdfData);
+        Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, inputData.shadowMask);
+        half3 sun = LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS);
+        color.rgb = max(color.rgb - sun * (1.0 - reliefShadow), 0.0);
+    }
+#endif
     // JY-gfx: leaves let the sun through (the leaf set only).
     if ((int)(_GfxSet + 0.5) == CF_SET_LEAF && !IsSurfaceTypeTransparent(_Surface))
         color.rgb += CFFoliageLight(inputData.normalWS, inputData.viewDirectionWS, surfaceData.albedo, inputData.shadowCoord);

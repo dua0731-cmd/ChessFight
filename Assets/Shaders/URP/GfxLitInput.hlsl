@@ -197,10 +197,82 @@ half2 SampleClearCoat(float2 uv)
 #endif  // _CLEARCOAT
 }
 
+// JY-gfx (2026-11-24): the floors' relief. A Gfx Lit twin's _ParallaxMap is its swatch's baked height and occlusion
+// (Resources/Gfx/Height: R height, G occlusion; GameSurfaces.Relief), _Parallax the relief's depth in UV units (one UV
+// unit is the swatch's tile, 2 m for the floors). Parallax occlusion mapping (Unity's ParallaxOcclusionMapping, secant
+// refinement): more steps the flatter the view, the full-resolution derivatives kept for every sample, faded out by
+// the height map's mip level (far floors keep their normal map only). The height found at the end is kept
+// (gfxReliefHeight) for the dust in the joints.
+static float gfxReliefHeight = 1.0;
+// The height map's footprint at this pixel (kept for the shadow's reads) and how much of the relief is in (1 near, 0
+// past the fade).
+static float2 gfxReliefDx, gfxReliefDy;
+static float gfxReliefFade = 0.0;
+// How much of the relief's sun shadow is in (a global, GameSurfaces.ReliefShadow).
+float _GfxReliefShadow;
+
+struct PerPixelHeightDisplacementParam
+{
+    float2 uv;
+    float2 dx;
+    float2 dy;
+};
+
+real ComputePerPixelHeightDisplacement(real2 texOffsetCurrent, real lod, PerPixelHeightDisplacementParam param)
+{
+    return SAMPLE_TEXTURE2D_GRAD(_ParallaxMap, sampler_ParallaxMap, param.uv + texOffsetCurrent, param.dx, param.dy).r;
+}
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/PerPixelDisplacement.hlsl"
+
+// Mip levels of the 1024 height maps: the relief is whole up to GFX_RELIEF_LOD_FULL and gone by one level more.
+#define GFX_RELIEF_LOD_FULL 3.5
+
 void ApplyPerPixelDisplacement(half3 viewDirTS, inout float2 uv)
 {
 #if defined(_PARALLAXMAP)
-    uv += ParallaxMapping(TEXTURE2D_ARGS(_ParallaxMap, sampler_ParallaxMap), viewDirTS, _Parallax, uv);
+    float2 dx = ddx(uv), dy = ddy(uv);
+    float lod = 0.5 * log2(max(max(dot(dx, dx), dot(dy, dy)) * 1048576.0, 1e-8));
+    float3 v = normalize((float3)viewDirTS);
+    if (lod < GFX_RELIEF_LOD_FULL + 1.0 && v.z > 0.02)
+    {
+        v.xy *= _Parallax;
+        int steps = (int)lerp(28.0, 8.0, saturate(v.z));
+        PerPixelHeightDisplacementParam p;
+        p.uv = uv;
+        p.dx = dx;
+        p.dy = dy;
+        real height;
+        uv += ParallaxOcclusionMapping(lod, GFX_RELIEF_LOD_FULL, steps, v, p, height);
+        gfxReliefFade = 1.0 - saturate(lod - GFX_RELIEF_LOD_FULL);
+        gfxReliefHeight = lerp(1.0, height, gfxReliefFade);
+        gfxReliefDx = dx;
+        gfxReliefDy = dy;
+    }
+#endif
+}
+
+// JY-gfx: the relief's shadow from the main light: from the point the view ray found, toward the light (lightTS, in
+// tangent space), whether the height map rises above the ray before the top. Soft: how far it rises, less the further
+// along. 1 lit, 0 in shadow.
+#define GFX_RELIEF_SHADOW_STEPS 8
+half GfxReliefShadow(float2 uv, float h, float3 lightTS)
+{
+#if defined(_PARALLAXMAP)
+    if (lightTS.z <= 0.05 || h >= 0.995) return 1.0;
+    float stepH = (1.0 - h) / GFX_RELIEF_SHADOW_STEPS;
+    float2 stepUV = lightTS.xy * _Parallax / lightTS.z * stepH;
+    float rayH = h, blocked = 0.0;
+    [unroll] for (int i = 1; i <= GFX_RELIEF_SHADOW_STEPS; i++)
+    {
+        uv += stepUV;
+        rayH += stepH;
+        float s = SAMPLE_TEXTURE2D_GRAD(_ParallaxMap, sampler_ParallaxMap, uv, gfxReliefDx, gfxReliefDy).r;
+        blocked = max(blocked, (s - rayH) * (1.0 - (float)i / (GFX_RELIEF_SHADOW_STEPS + 1)) * 10.0);
+    }
+    return 1.0 - saturate(blocked);
+#else
+    return 1.0;
 #endif
 }
 
@@ -275,6 +347,12 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
     outSurfaceData.occlusion = SampleOcclusion(uv);
+#if defined(_PARALLAXMAP)
+    // JY-gfx: dust in the joints and the low parts of the relief (its own height): darker and rougher, no tint.
+    half low = 1.0 - smoothstep(0.05, 0.5, gfxReliefHeight);
+    outSurfaceData.albedo *= 1.0 - 0.35 * low;
+    outSurfaceData.smoothness *= 1.0 - 0.6 * low;
+#endif
     outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
 
 #if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)

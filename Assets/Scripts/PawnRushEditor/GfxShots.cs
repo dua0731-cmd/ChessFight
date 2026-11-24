@@ -39,7 +39,7 @@ namespace ChessFight.PawnRush.Editor
         const string ActiveKey = "GfxShots.Active", CodeKey = "GfxShots.Code", StartKey = "GfxShots.Start";
         const string OutKey = "GfxShots.Out", TagKey = "GfxShots.Tag", SectionsKey = "GfxShots.Sections", SizeKey = "GfxShots.Size";
         const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa", LineupKey = "GfxShots.Lineup";
-        const string TimeKey = "GfxShots.Time", ScanKey = "GfxShots.Scan";
+        const string TimeKey = "GfxShots.Time", ScanKey = "GfxShots.Scan", FloorsKey = "GfxShots.Floors";
         const float GiveUpSeconds = 1500f;
 
         static GfxShots()
@@ -80,6 +80,9 @@ namespace ChessFight.PawnRush.Editor
             // -gfxScan all (or a,b,c): those sections in at once before the pictures, and what the upgrade's runtime
             // look-rounds over every renderer cost then (scan_tag.txt).
             SessionState.SetString(ScanKey, Arg("-gfxScan") ?? "");
+            // -gfxFloors: no pictures; at every route spot, rays through a 96x54 grid of the game camera's view find the
+            // floor under each (a surface facing up) and its material: floors_<section>.txt and floors_all_tag.txt.
+            SessionState.SetBool(FloorsKey, System.Environment.GetCommandLineArgs().Contains("-gfxFloors"));
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             // The scene's own round, playtest and camera off: the sections come in one at a time.
             foreach (var go in scene.GetRootGameObjects())
@@ -212,11 +215,23 @@ namespace ChessFight.PawnRush.Editor
                     var lineup = SessionState.GetBool(LineupKey, false) ? Lineup(spots, name) : null;
                     string only = SessionState.GetString(SpotsKey, "");
                     var tunes = Tunes(SessionState.GetString(TuneKey, ""));
+                    bool census = SessionState.GetBool(FloorsKey, false);
+                    var floorTable = new Dictionary<string, FloorEntry>();
+                    int floorPixels = 0, allPixels = 0;
+                    var floorDistances = new List<float>();
                     foreach (var spot in spots)
                     {
                         if (only.Length > 0 && !only.Split(',').Any(s => spot.name.EndsWith("_" + s.Trim()))) continue;
                         cam.transform.SetPositionAndRotation(spot.eye, Quaternion.LookRotation(spot.target - spot.eye, Vector3.up));
                         cam.fieldOfView = spot.fov;
+                        if (census)
+                        {
+                            // Route spots only (the game's camera); the close-ups and the wide view are not what a player sees.
+                            if (spot.way == Vector3.zero) continue;
+                            for (int i = 0; i < 4; i++) yield return null;
+                            FloorCensus(section, floorTable, ref floorPixels, ref allPixels, floorDistances);
+                            continue;
+                        }
                         foreach (var (tuneName, settings) in tunes)
                         {
                             Look(settings);
@@ -248,6 +263,7 @@ namespace ChessFight.PawnRush.Editor
                             else Capture(rt, tuneName.Length > 0 ? $"{spot.name}_{tag}_{tuneName}" : $"{spot.name}_{tag}");
                         }
                     }
+                    if (census) WriteFloors(name, floorTable, floorPixels, allPixels, floorDistances);
                     var sun = ZoneLight.Sun != null ? ZoneLight.Sun : RenderSettings.sun;
                     notes.AppendLine($"{name}: {spots.Count} pictures; sun {(sun != null ? $"{sun.intensity:0.00} ({sun.color.r:0.00}, {sun.color.g:0.00}, {sun.color.b:0.00}) {sun.transform.eulerAngles}" : "none")}, "
                         + $"sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}, ambient {RenderSettings.ambientMode}, fog {RenderSettings.fog} {RenderSettings.fogMode}");
@@ -271,7 +287,8 @@ namespace ChessFight.PawnRush.Editor
                 if (pipeline != null)
                     notes.AppendLine($"pipeline {pipeline.name}: HDR {pipeline.supportsHDR}, shadows {pipeline.shadowDistance} m in {pipeline.shadowCascadeCount}, "
                         + $"grading {pipeline.colorGradingMode}, MSAA {pipeline.msaaSampleCount}");
-                notes.AppendLine($"pictures {pictures}, timed looks {timed}, failed {failures}");
+                if (censused > 0) WriteAllFloors();
+                notes.AppendLine($"pictures {pictures}, timed looks {timed}, floor censuses {censused}, failed {failures}");
                 File.WriteAllText(Path.Combine(folder, $"notes_{tag}.txt"), notes.ToString());
                 if (timeFrames > 0) File.WriteAllText(Path.Combine(folder, $"times_{tag}.csv"), times.ToString());
                 Debug.Log("[GfxShots]\n" + notes);
@@ -279,7 +296,9 @@ namespace ChessFight.PawnRush.Editor
                 Time.timeScale = 1f;
                 foreach (var rt in targets.Values) if (rt != null) rt.Release();
                 if (tiny != null) tiny.Release();
-                SessionState.SetInt(CodeKey, failures == 0 && pictures + timed > 0 ? 0 : 1);
+                if (idTarget != null) idTarget.Release();
+                foreach (var id in idMaterialOf.Values) if (id != null) Destroy(id);
+                SessionState.SetInt(CodeKey, failures == 0 && pictures + timed + censused > 0 ? 0 : 1);
                 EditorApplication.isPlaying = false;
             }
 
@@ -421,6 +440,11 @@ namespace ChessFight.PawnRush.Editor
                 GameSurfaces.Apply();
                 GameSurfaces.LitOn = F("lit", GameSurfaces.LitOn ? 1f : 0f) > .5f;
                 GameSurfaces.Dress(GameSurfaces.LitOn);
+                // relief=0: the floors flat as before; rdepth=1.5: every relief deeper.
+                GameSurfaces.ReliefOn = F("relief", 1f) > .5f;
+                GameSurfaces.ReliefDepth = F("rdepth", GameSurfaces.ReliefDepth);
+                GameSurfaces.ReliefShadow = F("rshadow", GameSurfaces.ReliefShadow);
+                GameSurfaces.ApplyRelief();
                 // The scene's haze (linear fog): distances and colour.
                 RenderSettings.fogStartDistance = F("fogs", RenderSettings.fogStartDistance);
                 RenderSettings.fogEndDistance = F("foge", RenderSettings.fogEndDistance);
@@ -632,6 +656,207 @@ namespace ChessFight.PawnRush.Editor
                     }
                 }
                 return root;
+            }
+
+            sealed class FloorEntry
+            {
+                public int pixels;
+                public float distance;
+                public string materials, details;
+                public readonly HashSet<string> sections = new HashSet<string>();
+            }
+
+            readonly Dictionary<string, FloorEntry> allFloors = new Dictionary<string, FloorEntry>();
+            int allFloorPixels, allScreenPixels, censused;
+
+            // What floor the game's camera sees. The view is drawn once with every material slot of every mesh in a flat
+            // colour of its own (an id: unlit, no fog, no post, no shafts) and read back, so each pixel names the
+            // material actually drawn there (art meshes over grey-box colliders included); a ray through the pixel says
+            // whether the surface there faces up (floor) and how far it is.
+            const int CensusW = 192, CensusH = 108;
+            RenderTexture idTarget;
+            Texture2D idRead;
+            Shader idShader;
+            readonly Dictionary<Material, Material> idMaterialOf = new Dictionary<Material, Material>();
+            readonly List<Material> idOriginals = new List<Material>();
+
+            Material IdMaterial(Material original)
+            {
+                if (original == null) return null;
+                if (idMaterialOf.TryGetValue(original, out var id)) return id;
+                idOriginals.Add(original);
+                int n = idOriginals.Count;   // 1-based; 0 is the background
+                id = new Material(idShader) { name = "id " + n, hideFlags = HideFlags.DontSave };
+                // Sixteen levels a channel, 13 apart and none darker than 40: an 8-bit target, linear or sRGB, keeps them.
+                id.SetColor("_BaseColor", new Color(Level(n % 16) / 255f, Level(n / 16 % 16) / 255f, Level(n / 256 % 16) / 255f, 1f));
+                idMaterialOf[original] = id;
+                return id;
+            }
+
+            static int Level(int k) => 40 + 13 * k;
+
+            // The id a pixel's colour encodes: 0 the background, -1 a colour no id has (a sprite, text, particles).
+            static int IdOf(Color32 c)
+            {
+                if (c.r < 20 && c.g < 20 && c.b < 20) return 0;
+                int K(byte v)
+                {
+                    int k = Mathf.RoundToInt((v - 40) / 13f);
+                    return k >= 0 && k <= 15 && Mathf.Abs(v - Level(k)) <= 5 ? k : -1;
+                }
+                int r = K(c.r), g = K(c.g), b = K(c.b);
+                return r < 0 || g < 0 || b < 0 ? -1 : r + 16 * g + 256 * b;
+            }
+
+            void FloorCensus(GameObject section, Dictionary<string, FloorEntry> table, ref int floorPixels, ref int allPixels, List<float> distances)
+            {
+                if (idShader == null) idShader = Shader.Find("Universal Render Pipeline/Unlit");
+                // Ids afresh for every view (4095 at most).
+                foreach (var old in idMaterialOf.Values) if (old != null) Destroy(old);
+                idMaterialOf.Clear();
+                idOriginals.Clear();
+                if (idTarget == null)
+                {
+                    idTarget = new RenderTexture(CensusW, CensusH, 24, RenderTextureFormat.ARGB32) { antiAliasing = 1 };
+                    idTarget.Create();
+                    idRead = new Texture2D(CensusW, CensusH, TextureFormat.RGBA32, false);
+                }
+                // Every mesh's materials swapped for their ids, its property block (a tint a script sets) lifted, both
+                // put back after.
+                var swapped = new List<(Renderer, Material[], MaterialPropertyBlock)>();
+                foreach (var r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                {
+                    if (!(r is MeshRenderer) && !(r is SkinnedMeshRenderer)) continue;
+                    var mats = r.sharedMaterials;
+                    var ids = new Material[mats.Length];
+                    for (int k = 0; k < mats.Length; k++) ids[k] = IdMaterial(mats[k]);
+                    MaterialPropertyBlock block = null;
+                    if (r.HasPropertyBlock())
+                    {
+                        block = new MaterialPropertyBlock();
+                        r.GetPropertyBlock(block);
+                        r.SetPropertyBlock(null);
+                    }
+                    swapped.Add((r, mats, block));
+                    r.sharedMaterials = ids;
+                }
+                var data = cam.GetUniversalAdditionalCameraData();
+                bool post0 = data.renderPostProcessing, hdr0 = cam.allowHDR, fog0 = RenderSettings.fog;
+                var aa0 = data.antialiasing;
+                var clear0 = cam.clearFlags;
+                var background0 = cam.backgroundColor;
+                var capture0 = GameShafts.CaptureCamera;
+                data.renderPostProcessing = false;
+                data.antialiasing = AntialiasingMode.None;
+                cam.allowHDR = false;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+                RenderSettings.fog = false;
+                GameShafts.CaptureCamera = null;
+                Color32[] pixels;
+                try
+                {
+                    Draw(idTarget);
+                    var active = RenderTexture.active;
+                    RenderTexture.active = idTarget;
+                    idRead.ReadPixels(new Rect(0f, 0f, CensusW, CensusH), 0, 0, false);
+                    idRead.Apply(false);
+                    RenderTexture.active = active;
+                    pixels = idRead.GetPixels32();
+                }
+                finally
+                {
+                    foreach (var (r, mats, block) in swapped)
+                    {
+                        if (r == null) continue;
+                        r.sharedMaterials = mats;
+                        if (block != null) r.SetPropertyBlock(block);
+                    }
+                    data.renderPostProcessing = post0;
+                    data.antialiasing = aa0;
+                    cam.allowHDR = hdr0;
+                    cam.clearFlags = clear0;
+                    cam.backgroundColor = background0;
+                    RenderSettings.fog = fog0;
+                    GameShafts.CaptureCamera = capture0;
+                }
+                for (int y = 0; y < CensusH; y++)
+                    for (int x = 0; x < CensusW; x++)
+                    {
+                        allPixels++;
+                        allScreenPixels++;
+                        var ray = cam.ViewportPointToRay(new Vector3((x + .5f) / CensusW, (y + .5f) / CensusH, 0f));
+                        if (!Physics.Raycast(ray, out var hit, 800f, ~0, QueryTriggerInteraction.Ignore)) continue;
+                        if (hit.normal.y < .6f) continue;
+                        floorPixels++;
+                        allFloorPixels++;
+                        distances.Add(hit.distance);
+                        int id = IdOf(pixels[y * CensusW + x]);
+                        string key, details = "";
+                        if (id >= 1 && id <= idOriginals.Count && idOriginals[id - 1] != null)
+                        {
+                            var m = idOriginals[id - 1];
+                            key = $"{m.name} [{(m.shader != null ? m.shader.name : "?")}]";
+                            details = Textures(m);
+                        }
+                        else key = id == 0 ? "(nothing drawn)" : id < 0 ? "(not a mesh: sprite, text, particles)" : "(unknown id)";
+                        foreach (var t in new[] { table, allFloors })
+                        {
+                            if (!t.TryGetValue(key, out var e)) t[key] = e = new FloorEntry { materials = key, details = details };
+                            e.pixels++;
+                            e.distance += hit.distance;
+                            e.sections.Add(section.name);
+                        }
+                    }
+                censused++;
+            }
+
+            // A material's textures: property=texture name, and its tiling.
+            static string Textures(Material m)
+            {
+                var parts = new List<string>();
+                foreach (var p in m.GetTexturePropertyNames())
+                {
+                    var t = m.GetTexture(p);
+                    if (t == null) continue;
+                    var s = m.GetTextureScale(p);
+                    parts.Add($"{p}={t.name}{(s != Vector2.one ? $" x{s.x:0.##},{s.y:0.##}" : "")}");
+                }
+                return parts.Count > 0 ? string.Join(", ", parts) : "(no textures)";
+            }
+
+            void WriteFloors(string section, Dictionary<string, FloorEntry> table, int floorPixels, int allPixels, List<float> distances)
+            {
+                distances.Sort();
+                var sb = new StringBuilder();
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}: floor is {1:0.0}% of the game camera's view ({2} of {3} rays); floor distance median {4:0.0} m, 90% within {5:0.0} m",
+                    section, 100f * floorPixels / Mathf.Max(1, allPixels), floorPixels, allPixels,
+                    distances.Count > 0 ? distances[distances.Count / 2] : 0f, distances.Count > 0 ? distances[Mathf.Min(distances.Count - 1, (int)(distances.Count * .9f))] : 0f));
+                foreach (var e in table.Values.OrderByDescending(v => v.pixels))
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,5:0.0}% of floor  {1,5:0.0}% of view  {2,5:0.0} m  {3}\n        {4}",
+                        100f * e.pixels / Mathf.Max(1, floorPixels), 100f * e.pixels / Mathf.Max(1, allPixels), e.distance / Mathf.Max(1, e.pixels), e.materials, e.details));
+                File.WriteAllText(Path.Combine(folder, $"floors_{Short(section)}.txt"), sb.ToString());
+            }
+
+            void WriteAllFloors()
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "every section: floor is {0:0.0}% of the game camera's view", 100f * allFloorPixels / Mathf.Max(1, allScreenPixels)));
+                // By shader: how much of all the floor each shader draws.
+                var byShader = new Dictionary<string, int>();
+                foreach (var e in allFloors.Values)
+                {
+                    var shaders = string.Join(" + ", e.materials.Split('|').Select(s => s.Trim()).Select(s => { int a = s.LastIndexOf('['); return a >= 0 ? s.Substring(a) : s; }).Distinct());
+                    byShader[shaders] = byShader.TryGetValue(shaders, out var n) ? n + e.pixels : e.pixels;
+                }
+                sb.AppendLine("by shader:");
+                foreach (var kv in byShader.OrderByDescending(k => k.Value))
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "  {0,5:0.0}%  {1}", 100f * kv.Value / Mathf.Max(1, allFloorPixels), kv.Key));
+                sb.AppendLine("by material:");
+                foreach (var e in allFloors.Values.OrderByDescending(v => v.pixels).Take(80))
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "  {0,5:0.0}%  {1,5:0.0} m  {2}  ({3})\n          {4}",
+                        100f * e.pixels / Mathf.Max(1, allFloorPixels), e.distance / Mathf.Max(1, e.pixels), e.materials, string.Join(", ", e.sections.Select(Short)), e.details));
+                File.WriteAllText(Path.Combine(folder, $"floors_all_{tag}.txt"), sb.ToString());
             }
 
             // The texture a look draws into: one per MSAA sample count.
