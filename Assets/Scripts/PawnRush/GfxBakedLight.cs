@@ -95,6 +95,7 @@ namespace ChessFight.PawnRush
             var where = Paths(section);
             var p = new Placed { root = section, data = data };
             int missing = 0, other = 0;
+            var examples = new List<string>();
             foreach (var part in data.parts)
             {
                 if (!where.TryGetValue(part.path, out var t)) { missing++; continue; }
@@ -102,14 +103,21 @@ namespace ChessFight.PawnRush
                 var filter = t.GetComponent<MeshFilter>();
                 if (renderer == null || filter == null || filter.sharedMesh == null) { missing++; continue; }
                 var mesh = filter.sharedMesh;
-                if (mesh.vertexCount != part.vertices || Plain(mesh.name) != Plain(part.mesh)) { other++; continue; }
-                if (part.baked != null && part.baked.vertexCount != mesh.vertexCount) { other++; continue; }
+                // The part's mesh must be the one the bake saw; its baked copy may have more vertices (the second UV set
+                // splits them along its seams).
+                if (mesh.vertexCount != part.vertices || Plain(mesh.name) != Plain(part.mesh))
+                {
+                    other++;
+                    if (examples.Count < 4) examples.Add($"{part.path}: '{mesh.name}' {mesh.vertexCount} here, '{part.mesh}' {part.vertices} baked");
+                    continue;
+                }
                 p.parts.Add((renderer, filter, mesh, part.baked, part.lightmap, part.scaleOffset));
             }
             if (sceneOwn == null && placed.Count == 0) sceneOwn = LightmapSettings.lightmaps;
             placed.Add(p);
             Rebuild();
-            Last = $"{Key(section.name)}: baked light on {p.parts.Count} of {data.parts.Length} parts ({missing} not found, {other} with another mesh)";
+            Last = $"{Key(section.name)}: baked light on {p.parts.Count} of {data.parts.Length} parts ({missing} not found, {other} with another mesh"
+                 + (examples.Count > 0 ? ", e.g. " + string.Join("; ", examples) : "") + ")";
         }
 
         static void Remove(Transform section)

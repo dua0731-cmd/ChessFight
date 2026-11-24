@@ -40,10 +40,15 @@ namespace ChessFight.Game
             /// <summary>The room's colour in its bounced light (its walls' and floors': warm for cream stone and wood, white
             /// for grey); kept near white (JY: shade, haze and grade never turn yellow).</summary>
             public Color BounceTint = Color.white;
-            /// <summary>The grade: neutral by rule (no warm or night cast; only light sources are warm).</summary>
+            /// <summary>The grade: neutral by rule in a day hall (no warm or night cast; only light sources are warm).</summary>
             public float Exposure, Contrast = 24f, Saturation = 18f, BloomIntensity = .7f, BloomThreshold = .9f, Vignette = .15f;
             public float ShaftIntensity = 1.2f, ShaftDensity = .03f;
             public Color ShaftTint = new Color(1f, .98f, .95f);
+            /// <summary>For a map whose concept is another time (the night observatory): white balance, the shadows' and
+            /// highlights' tones (white: untouched; ShadowsLift raises the shadows), the bloom's spread (below 0: untouched)
+            /// and tint (white: untouched).</summary>
+            public float Temperature, Tint, ShadowsLift, BloomScatter = -1f;
+            public Color ShadowsTone = Color.white, HighlightsTone = Color.white, BloomTint = Color.white;
 
             public Look Copy(string name)
             {
@@ -68,6 +73,7 @@ namespace ChessFight.Game
             public Volume volume;
             public VolumeProfile profile;
 #endif
+            public bool shaftsOnly;
         }
 
         static readonly List<Place> places = new List<Place>();
@@ -87,11 +93,15 @@ namespace ChessFight.Game
 
         /// <summary>A section with a look of its own: its frame, its box in that frame, the look (kept, so changing its
         /// numbers changes the section; call Refresh for the grade's).</summary>
-        public static void Add(Transform frame, Bounds area, Look look)
+        public static void Add(Transform frame, Bounds area, Look look) => Add(frame, area, look, true, true);
+
+        /// <summary>light false: a section that lights itself (its own sun and ambient stay); grade false: only the look's
+        /// light shafts over its own grade, true: the look's grade over it too.</summary>
+        public static void Add(Transform frame, Bounds area, Look look, bool light, bool grade)
         {
             if (frame == null || look == null) return;
             foreach (var p in places) if (p.frame == frame) return;
-            var place = new Place { frame = frame, area = area, look = look, zone = ZoneLight.Add(look.Name + ": " + frame.name) };
+            var place = new Place { frame = frame, area = area, look = look, zone = light ? ZoneLight.Add(look.Name + ": " + frame.name) : null };
 #if CF_URP
             var go = new GameObject(look.Name + " grade (JY-gfx)");
             go.transform.SetParent(frame, false);
@@ -99,7 +109,8 @@ namespace ChessFight.Game
             volume.isGlobal = true;
             volume.priority = Priority;
             volume.weight = 0f;
-            place.profile = Profile(look);
+            place.shaftsOnly = !grade;
+            place.profile = Profile(look, grade);
             volume.sharedProfile = place.profile;
             place.volume = volume;
 #endif
@@ -107,11 +118,19 @@ namespace ChessFight.Game
         }
 
 #if CF_URP
-        /// <summary>A look's grade and shafts over GameGrade's (only what a look changes).</summary>
-        public static VolumeProfile Profile(Look look)
+        /// <summary>A look's grade and shafts over GameGrade's (only what a look changes); grade false: the shafts alone.</summary>
+        public static VolumeProfile Profile(Look look, bool grade = true)
         {
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.name = look.Name;
+            if (!grade)
+            {
+                var only = profile.Add<GfxLightShafts>(false);
+                only.intensity.Override(look.ShaftIntensity);
+                only.density.Override(look.ShaftDensity);
+                only.tint.Override(look.ShaftTint);
+                return profile;
+            }
             var adjust = profile.Add<ColorAdjustments>(false);
             adjust.postExposure.Override(look.Exposure);
             adjust.contrast.Override(look.Contrast);
@@ -119,7 +138,21 @@ namespace ChessFight.Game
             var bloom = profile.Add<Bloom>(false);
             bloom.intensity.Override(look.BloomIntensity);
             bloom.threshold.Override(look.BloomThreshold);
+            if (look.BloomScatter >= 0f) bloom.scatter.Override(look.BloomScatter);
+            if (look.BloomTint != Color.white) bloom.tint.Override(look.BloomTint);
             profile.Add<Vignette>(false).intensity.Override(look.Vignette);
+            if (look.Temperature != 0f || look.Tint != 0f)
+            {
+                var balance = profile.Add<WhiteBalance>(false);
+                balance.temperature.Override(look.Temperature);
+                balance.tint.Override(look.Tint);
+            }
+            if (look.ShadowsTone != Color.white || look.HighlightsTone != Color.white || look.ShadowsLift != 0f)
+            {
+                var tones = profile.Add<ShadowsMidtonesHighlights>(false);
+                tones.shadows.Override(new Vector4(look.ShadowsTone.r, look.ShadowsTone.g, look.ShadowsTone.b, look.ShadowsLift));
+                tones.highlights.Override(new Vector4(look.HighlightsTone.r, look.HighlightsTone.g, look.HighlightsTone.b, 0f));
+            }
             var shafts = profile.Add<GfxLightShafts>(false);
             shafts.intensity.Override(look.ShaftIntensity);
             shafts.density.Override(look.ShaftDensity);
@@ -136,7 +169,7 @@ namespace ChessFight.Game
             {
                 if (p.volume == null) continue;
                 if (p.profile != null) Object.Destroy(p.profile);
-                p.profile = Profile(p.look);
+                p.profile = Profile(p.look, !p.shaftsOnly);
                 p.volume.sharedProfile = p.profile;
             }
 #endif
@@ -152,7 +185,7 @@ namespace ChessFight.Game
                 var p = places[i];
                 if (p.frame == null)
                 {
-                    p.zone.Remove();
+                    p.zone?.Remove();
 #if CF_URP
                     if (p.profile != null) Object.Destroy(p.profile);
 #endif
@@ -161,6 +194,15 @@ namespace ChessFight.Game
                 }
                 var look = p.look;
                 var z = p.zone;
+                if (z == null)
+                {
+                    // Shafts only (a section that lights itself): the volume by where the camera is, no light of ours.
+                    float inside = wanted ? Mathf.Max(0f, ZoneLight.Inside(p.frame, p.area, Blend)) : 0f;
+#if CF_URP
+                    if (p.volume != null) p.volume.weight = inside;
+#endif
+                    continue;
+                }
                 // The scene's sun, sky and haze as they are (one time of day); less of the sky's light inside.
                 z.KeepSun = true;
                 z.TurnSun = false;

@@ -50,6 +50,29 @@ namespace ChessFight.PawnRush
             public Color FloorTint = Color.white;
             /// <summary>Each layer of the map's light plan times this (and all of it times PlanScale): tunable as a whole.</summary>
             public float PlanScale = 1f, DaylightScale = 1f, GeneralScale = 1f, WashScale = 1f, UplightScale = 1f, DecorativeScale = 1f, AccentScale = 1f, BounceScale = 1f;
+            /// <summary>Every planned light's colour times this (a whole plan made cooler or warmer at once).</summary>
+            public Color PlanTint = Color.white;
+            /// <summary>A section that lights itself (Map.OwnLook): the component of its own light, by type name, and fields of
+            /// it set while the upgrade is on ("field=value;field=r|g|b"; put back when it is off), and its lights to put out
+            /// (names, comma-separated).</summary>
+            public string OwnType = "", OwnSet = "", OwnLightsOff = "";
+            /// <summary>Shadows back on for every part whose own light code turned them off (glass, glows and effects
+            /// aside), so the walls and the dome block light again (and the bake sees them).</summary>
+            public bool ShadowsOn;
+            /// <summary>A part that glows (its name's start): its material copied with this emission (times GlowIntensity, the
+            /// base map as the emission map) and baked as a light, e.g. a starry dome as the room's sky.</summary>
+            public string GlowPart = "";
+            public Color GlowColor = Color.white;
+            public float GlowIntensity;
+            /// <summary>The glow's own emission map (a Resources path), e.g. only the stars of a night sky; empty: the base map.</summary>
+            public string GlowMap = "";
+            /// <summary>A moon where the section's moonlight comes from (its own light's dome point and MoonDirection, else
+            /// the scene's directional light): a disc MoonSize metres across (GfxMoon), MoonDistance metres out from that
+            /// point (below 0: inside a dome that is itself the night sky, as the observatory's; JY: "맵에 달과 거기서부터
+            /// 빛이 새어나와서 맵에 빛줄기가 비춰지도록").</summary>
+            public bool Moon;
+            public float MoonDistance = 160f, MoonSize = 26f, MoonIntensity = 5f;
+            public Color MoonColor = new Color(.86f, .92f, 1f);
         }
 
         /// <summary>
@@ -73,6 +96,9 @@ namespace ChessFight.PawnRush
             public string Anchor = "centre";
             public Vector3 Offset;
             public bool Inward;
+            /// <summary>Offset and Aim turned to the hall's middle seen from above: x toward it, y up, z along the wall (a lamp
+            /// in front of each statue round a rotunda, aimed back at it).</summary>
+            public bool Radial;
             public int Max = 64;
             public float Spacing;
             /// <summary>A spot's way in the section's frame (its x toward the middle when Inward).</summary>
@@ -80,6 +106,11 @@ namespace ChessFight.PawnRush
             public float Intensity = 1f, Range = 10f, Angle = 60f, Inner = 40f;
             public Color Color = Color.white;
             public bool Shadows;
+            /// <summary>Above 0: a spot's beam seen in the haze (a soft cone to where its light lands, GfxBeam), this bright.</summary>
+            public float Beam;
+            /// <summary>The share of its light that bounces in the bake (1 as real; lower keeps the light on what it is aimed
+            /// at, for drama).</summary>
+            public float Bounce = 1f;
         }
 
         public sealed class Map
@@ -95,6 +126,8 @@ namespace ChessFight.PawnRush
             /// <summary>The section lights its own sky, sun and ambient (the team's code: the Royal Library, the night
             /// Observatory): no look of the course's over it, only the rig (its plan) and its baked light.</summary>
             public bool OwnLook;
+            /// <summary>With OwnLook: the look's grade over the section's own all the same (a night of our own over theirs).</summary>
+            public bool OwnGrade;
         }
 
         // ------------------------------------------------------------------ the maps
@@ -223,6 +256,16 @@ namespace ChessFight.PawnRush
                 },
                 Rig = new Rig { FixtureBoost = 1.2f, FixtureReach = 1.2f, LampIntensity = 3f, GoalIntensity = 8f },
             },
+            new Map
+            {
+                Key = "3-2_RoyalObservatory", OwnLook = true, OwnGrade = true,
+                Concept = "the night observatory (JY's own concept, 11-24): the runners' path lit from above like a stage under the night, the galleries round it as dark as a real night except where their lamps glow, and the starry dome itself the room's sky, its blue light falling over the whole hall",
+                Look = new GameCourses.Look
+                {
+                    Name = "Royal observatory", Indoor = 1f, Bounce = 0f, BounceTint = new Color(1f, 1f, 1f), Exposure = .15f, Contrast = 30f, Saturation = 14f, BloomIntensity = 1.1f, BloomThreshold = .75f, Vignette = .24f, ShaftIntensity = .45f, ShaftDensity = .012f, ShaftTint = new Color(.75f, .85f, 1f), Temperature = -18f, Tint = 6f, ShadowsLift = -.04f, BloomScatter = .78f, ShadowsTone = new Color(.86f, .9f, 1.12f), HighlightsTone = new Color(1.03f, 1f, .96f), BloomTint = new Color(.78f, .86f, 1f),
+                },
+                Rig = new Rig { Lid = false, ClearGlass = true, FixtureBoost = 1f, FixtureReach = .7f, LampIntensity = 0f, UplightIntensity = 0f, GoalIntensity = 0f, StageIntensity = 0f, HeartIntensity = 0f, FloorGloss = 0f, OwnType = "RoyalObservatoryLighting", OwnSet = "moonIntensity=1.8;warmFill=0;ambientSky=.025|.03|.08;ambientEquator=.012|.015|.035;ambientGround=.006|.006|.015;hazeStart=30;hazeEnd=320;hazeColor=.01|.015|.04;shaftStrength=.08", OwnLightsOff = "Warm fill", ShadowsOn = true, GlowPart = "RoHall dome sky", GlowColor = new Color(1f, 1f, 1f), GlowIntensity = 2f, GlowMap = "Gfx/Glow/RO_DomeSky_Glow", Moon = true, MoonDistance = -2f, MoonSize = 9f, MoonIntensity = 2.5f, MoonColor = new Color(.86f, .92f, 1f) },
+            },
         };
 
         /// <summary>The map a section is, by its name (its course's default when none is named).</summary>
@@ -248,7 +291,8 @@ namespace ChessFight.PawnRush
             var map = For(section.name, course);
             var frame = section.transform;
             if (!Box(frame, out var box)) return;
-            if (!map.OwnLook) GameCourses.Add(frame, box, map.Look);
+            // A section that lights itself keeps its own light; only the look's shafts go over it (and its grade, OwnGrade).
+            GameCourses.Add(frame, box, map.Look, !map.OwnLook, !map.OwnLook || map.OwnGrade);
             var rig = section.gameObject.AddComponent<GfxMapRig>();
             rig.Build(map, box, section);
         }
@@ -303,6 +347,37 @@ namespace ChessFight.PawnRush
         Renderer lid;
         // The map's light plan as built: each light with the plan line it came from.
         readonly List<(Light light, GfxMapLights.Fixture line)> planned = new List<(Light, GfxMapLights.Fixture)>();
+        readonly List<(Renderer beam, Light light)> beams = new List<(Renderer, Light)>();
+        // A section that lights itself (Rig.OwnType): its own light's component, its fields as they were, its lights put out;
+        // the parts whose shadows come back (Rig.ShadowsOn); the glowing part's materials (Rig.GlowPart). Each set once
+        // when the upgrade comes on and put back when it goes off.
+        MonoBehaviour own;
+        readonly Dictionary<System.Reflection.FieldInfo, object> ownWas = new Dictionary<System.Reflection.FieldInfo, object>();
+        readonly List<Light> ownOff = new List<Light>();
+        readonly List<Renderer> shadowsBack = new List<Renderer>();
+        readonly List<(Renderer renderer, Material[] was, Material[] glow)> glows = new List<(Renderer, Material[], Material[])>();
+        bool ownOn;
+        string ownSet = "";
+        Renderer moon;
+        /// <summary>The moon (Rig.Moon), where its light comes in and the way it goes (for the picture tool's view of it).</summary>
+        public bool HasMoon => moon != null;
+        public Vector3 MoonThrough { get; private set; }
+        public Vector3 MoonWay { get; private set; }
+
+        /// <summary>What the rig built and changed, in a line (the picture tool's notes).</summary>
+        public string Notes()
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            string s = $"{ours.Count} lights of its own, {planned.Count} plan lights, {beams.Count} beams, {fixtures.Count} fixtures";
+            if (own != null) s += $"; own light {own.GetType().Name} ({ownWas.Count} fields set, {ownOff.Count} lights out)";
+            if (shadowsBack.Count > 0) s += $"; shadows back on {shadowsBack.Count} parts";
+            if (glows.Count > 0) s += $"; {glows.Count} parts glowing";
+            if (moon != null)
+                s += string.Format(inv, "; moon at {0} ({1}), {2:0.0} m wide, through {3}, way {4}", moon.transform.position, moon.enabled ? "on" : "off",
+                    moon.transform.lossyScale.x, MoonThrough, MoonWay);
+            else if (map != null && map.Rig.Moon) s += "; moon wanted but not made";
+            return s;
+        }
 
         public string Concept => map != null ? map.Concept : "";
 
@@ -418,6 +493,9 @@ namespace ChessFight.PawnRush
                 if (heart != null) Add(Kind.Heart, LightType.Point, heart.bounds.center + Vector3.up * 1f, Quaternion.identity, map.Rig.HeartRange, 0f);
             }
 
+            // A section that lights itself: what of its own light the map changes.
+            Own();
+
             // The map's light plan, line by line.
             Plan(box);
             LateUpdate();
@@ -441,7 +519,7 @@ namespace ChessFight.PawnRush
             var parts = GetComponentsInChildren<Renderer>(true);
             foreach (var line in GfxMapPlans.For(map.Key) ?? map.Plan)
             {
-                var points = new List<(Vector3 at, float side)>();
+                var points = new List<(Vector3 at, float side, Vector3 toward)>();
                 if (!string.IsNullOrEmpty(line.Each))
                 {
                     foreach (var r in parts)
@@ -452,15 +530,14 @@ namespace ChessFight.PawnRush
                               : line.Anchor == "bottom" ? new Vector3(b.center.x, b.min.y, b.center.z) : b.center;
                         // +1: the hall's middle is to the right of the part (its x larger).
                         float side = p.x < box.center.x ? 1f : -1f;
-                        var offset = line.Offset;
-                        if (line.Inward) offset.x *= side;
-                        p += offset;
+                        var toward = Toward(p, box);
+                        p += Turn(line.Offset, line, side, toward);
                         bool near = false;
                         if (line.Spacing > 0f)
                             foreach (var q in points)
                                 if (Vector3.Distance(q.at, p) < line.Spacing) { near = true; break; }
                         if (near) continue;
-                        points.Add((p, side));
+                        points.Add((p, side, toward));
                         if (points.Count >= line.Max) break;
                     }
                 }
@@ -468,13 +545,12 @@ namespace ChessFight.PawnRush
                     for (int i = 0; i < line.Count; i++)
                     {
                         var p = Vector3.Lerp(line.At, line.To, i / (line.Count - 1f));
-                        points.Add((p, p.x < box.center.x ? 1f : -1f));
+                        points.Add((p, p.x < box.center.x ? 1f : -1f, Toward(p, box)));
                     }
-                else points.Add((line.At, line.At.x < box.center.x ? 1f : -1f));
-                foreach (var (at, side) in points)
+                else points.Add((line.At, line.At.x < box.center.x ? 1f : -1f, Toward(line.At, box)));
+                foreach (var (at, side, toward) in points)
                 {
-                    var aim = line.Aim;
-                    if (line.Inward) aim.x *= side;
+                    var aim = Turn(line.Aim, line, side, toward);
                     var way = frame.TransformDirection(aim.sqrMagnitude > 1e-6f ? aim.normalized : Vector3.down);
                     var up = Mathf.Abs(Vector3.Dot(way, frame.up)) > .95f ? frame.forward : frame.up;
                     var go = new GameObject("Plan " + line.Layer + " light (JY-gfx)");
@@ -490,10 +566,250 @@ namespace ChessFight.PawnRush
                     }
                     l.shadows = line.Shadows ? LightShadows.Soft : LightShadows.None;
                     l.color = line.Color;
+                    l.bounceIntensity = line.Bounce;
                     l.intensity = 0f;
                     planned.Add((l, line));
+                    if (line.Type == LightType.Spot && line.Beam > 0f)
+                    {
+                        var beam = Beam(go.transform, line, l);
+                        if (beam != null) beams.Add((beam, l));
+                    }
                 }
             }
+        }
+
+        static Shader beamShader;
+
+        // A spot's beam in the haze: a soft cone from the light to where it lands (the first thing in its way), drawn added.
+        Renderer Beam(Transform light, GfxMapLights.Fixture line, Light l)
+        {
+            if (beamShader == null) beamShader = Shader.Find("ChessFight/Gfx Beam");
+            if (beamShader == null) return null;
+            float length = l.range * .85f;
+            if (Physics.Raycast(light.position, light.forward, out var hit, l.range, ~0, QueryTriggerInteraction.Ignore)) length = Mathf.Max(.5f, hit.distance);
+            float radius = length * Mathf.Tan(l.spotAngle * .5f * Mathf.Deg2Rad) * .8f;
+            const int N = 24;
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var triangles = new List<int>();
+            for (int i = 0; i <= N; i++)
+            {
+                float a = i * Mathf.PI * 2f / N;
+                var round = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f);
+                var normal = (round * length - Vector3.forward * radius).normalized;
+                vertices.Add(round * .06f);
+                normals.Add(normal);
+                uv.Add(new Vector2(i / (float)N, 0f));
+                vertices.Add(round * radius + Vector3.forward * length);
+                normals.Add(normal);
+                uv.Add(new Vector2(i / (float)N, 1f));
+            }
+            for (int i = 0; i < N; i++)
+            {
+                int a0 = i * 2, a1 = a0 + 1, b0 = a0 + 2, b1 = a0 + 3;
+                triangles.Add(a0); triangles.Add(b0); triangles.Add(a1);
+                triangles.Add(a1); triangles.Add(b0); triangles.Add(b1);
+            }
+            var mesh = new Mesh { name = "Beam (JY-gfx)", hideFlags = HideFlags.DontSave };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            var go = new GameObject("Beam (JY-gfx)");
+            go.transform.SetParent(light, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            r.lightProbeUsage = LightProbeUsage.Off;
+            r.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            var m = new Material(beamShader) { name = "Beam (JY-gfx)", hideFlags = HideFlags.DontSave };
+            m.SetColor("_Color", line.Color);
+            m.SetFloat("_Strength", line.Beam);
+            r.sharedMaterial = m;
+            r.enabled = false;
+            return r;
+        }
+
+        // What of a section's own light the map changes: found once (Build).
+        void Own()
+        {
+            var rig = map.Rig;
+            if (!string.IsNullOrEmpty(rig.OwnType))
+                foreach (var mb in GetComponentsInChildren<MonoBehaviour>(true))
+                    if (mb != null && mb.GetType().Name == rig.OwnType) { own = mb; break; }
+            if (!string.IsNullOrEmpty(rig.OwnLightsOff))
+            {
+                var names = new HashSet<string>(rig.OwnLightsOff.Split(','));
+                foreach (var l in GetComponentsInChildren<Light>(true))
+                    if (names.Contains(l.name.Trim())) ownOff.Add(l);
+            }
+            if (rig.ShadowsOn)
+                foreach (var r in GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (r.shadowCastingMode != ShadowCastingMode.Off || r.name.EndsWith("(JY-gfx)")) continue;
+                    var n = r.name.ToLowerInvariant();
+                    if (n.Contains("glass") || n.Contains("glow") || n.Contains("shaft") || n.Contains("beam") || n.Contains("halo") || n.Contains("fx")) continue;
+                    bool clear = false;
+                    foreach (var m in r.sharedMaterials)
+                        if (m != null && (m.renderQueue >= 2450 || (m.IsKeywordEnabled("_EMISSION") && m.HasProperty("_EmissionColor") && m.GetColor("_EmissionColor").maxColorComponent >= .5f))) { clear = true; break; }
+                    if (!clear) shadowsBack.Add(r);
+                }
+            if (!string.IsNullOrEmpty(rig.GlowPart) && rig.GlowIntensity > 0f)
+                foreach (var r in GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (!r.name.StartsWith(rig.GlowPart, System.StringComparison.Ordinal)) continue;
+                    var was = r.sharedMaterials;
+                    var glow = new Material[was.Length];
+                    for (int i = 0; i < was.Length; i++)
+                    {
+                        if (was[i] == null) continue;
+                        var m = new Material(was[i]) { name = was[i].name + " (glow)", hideFlags = HideFlags.DontSave };
+                        m.EnableKeyword("_EMISSION");
+                        if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", rig.GlowColor * rig.GlowIntensity);
+                        var glowMap = string.IsNullOrEmpty(rig.GlowMap) ? null : Resources.Load<Texture2D>(rig.GlowMap);
+                        if (m.HasProperty("_EmissionMap")) m.SetTexture("_EmissionMap", glowMap != null ? glowMap : m.HasProperty("_BaseMap") ? m.GetTexture("_BaseMap") : null);
+                        m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
+                        glow[i] = m;
+                    }
+                    glows.Add((r, was, glow));
+                }
+            if (rig.Moon) moon = Moon();
+        }
+
+        static Shader moonShader;
+
+        // The moon: where its light comes in (the section's own light's slit, MoonDirection; else the scene's directional
+        // light through the section's middle), MoonDistance further out, facing in.
+        Renderer Moon()
+        {
+            var rig = map.Rig;
+            if (moonShader == null) moonShader = Shader.Find("ChessFight/Gfx Moon");
+            if (moonShader == null) return null;
+            const System.Reflection.BindingFlags Any = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            Vector3 way = Vector3.zero, through = Vector3.zero;
+            bool found = false;
+            if (own != null)
+            {
+                var type = own.GetType();
+                var wayOf = type.GetMethod("MoonDirection", Any);
+                var dome = type.GetMethod("DomePoint", Any);
+                var heading = type.GetField("moonHeading", Any);
+                var elevation = type.GetField("moonElevation", Any);
+                if (wayOf != null && dome != null && heading != null && elevation != null)
+                {
+                    way = (Vector3)wayOf.Invoke(own, null);
+                    var local = (Vector3)dome.Invoke(null, new object[] { (float)heading.GetValue(own), (float)elevation.GetValue(own) });
+                    through = own.transform.TransformPoint(local);
+                    found = true;
+                }
+            }
+            if (!found)
+            {
+                var sun = RenderSettings.sun;
+                if (sun == null) return null;
+                way = sun.transform.forward;
+                through = GetComponentInChildren<Renderer>() != null ? transform.position : transform.position;
+            }
+            way = way.normalized;
+            MoonThrough = through;
+            MoonWay = way;
+            var mesh = new Mesh { name = "Moon (JY-gfx)", hideFlags = HideFlags.DontSave };
+            mesh.SetVertices(new List<Vector3> { new Vector3(-.5f, -.5f, 0f), new Vector3(.5f, -.5f, 0f), new Vector3(.5f, .5f, 0f), new Vector3(-.5f, .5f, 0f) });
+            mesh.SetUVs(0, new List<Vector2> { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) });
+            mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            var go = new GameObject("Moon (JY-gfx)");
+            go.transform.SetParent(transform, true);
+            go.transform.SetPositionAndRotation(through - way * rig.MoonDistance, Quaternion.LookRotation(way));
+            // The disc's radius is 0.24 of the quad's half-width (GfxMoon _Disc): a quad MoonSize / 0.24 wide makes the
+            // disc MoonSize across, with room for the halo.
+            go.transform.localScale = Vector3.one * (rig.MoonSize / .24f);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            r.lightProbeUsage = LightProbeUsage.Off;
+            r.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            var m = new Material(moonShader) { name = "Moon (JY-gfx)", hideFlags = HideFlags.DontSave };
+            m.SetColor("_Color", rig.MoonColor * rig.MoonIntensity);
+            r.sharedMaterial = m;
+            r.enabled = false;
+            return r;
+        }
+
+        // The section's own light as the map wants it while the upgrade is on, and back as it was when it is off: its fields
+        // set again whenever the map's OwnSet changes (the picture tool trying others; "field=value" items split by ';' or
+        // '&'), the glow and the moon kept in step with the rig's numbers.
+        void OwnOn(bool on)
+        {
+            var rig = map.Rig;
+            // Its lights stay out while on (its code may set them again when its weight moves).
+            if (on) foreach (var l in ownOff) if (l != null) l.intensity = 0f;
+            string set = on && own != null ? rig.OwnSet ?? "" : "";
+            if (set != ownSet)
+            {
+                foreach (var kv in ownWas) kv.Key.SetValue(own, kv.Value);
+                ownWas.Clear();
+                ownSet = set;
+                foreach (var item in set.Split(';', '&'))
+                {
+                    int eq = item.IndexOf('=');
+                    if (eq <= 0) continue;
+                    var f = own.GetType().GetField(item.Substring(0, eq).Trim());
+                    if (f == null) continue;
+                    var value = Parse(item.Substring(eq + 1).Trim(), f.FieldType);
+                    if (value == null) continue;
+                    if (!ownWas.ContainsKey(f)) ownWas[f] = f.GetValue(own);
+                    f.SetValue(own, value);
+                }
+            }
+            if (on)
+            {
+                var emission = rig.GlowColor * rig.GlowIntensity;
+                foreach (var (_, _, glow) in glows)
+                    foreach (var m in glow) if (m != null && m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", emission);
+                if (moon != null && moon.sharedMaterial != null) moon.sharedMaterial.SetColor("_Color", rig.MoonColor * rig.MoonIntensity);
+            }
+            if (on == ownOn) return;
+            ownOn = on;
+            foreach (var r in shadowsBack) if (r != null) r.shadowCastingMode = on ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            foreach (var (r, was, glow) in glows) if (r != null) r.sharedMaterials = on ? glow : was;
+            if (moon != null) moon.enabled = on;
+        }
+
+        static object Parse(string text, System.Type type)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var parts = text.Split('|');
+            float P(int i) => float.Parse(parts[i], System.Globalization.NumberStyles.Float, inv);
+            if (type == typeof(float)) return P(0);
+            if (type == typeof(int)) return Mathf.RoundToInt(P(0));
+            if (type == typeof(bool)) return text == "1" || text == "true";
+            if (type == typeof(string)) return text;
+            if (type == typeof(Color)) return new Color(P(0), P(1), P(2), parts.Length > 3 ? P(3) : 1f);
+            if (type == typeof(Vector3)) return new Vector3(P(0), P(1), P(2));
+            return null;
+        }
+
+        // The level way from a point to the hall's middle (the section's box centre).
+        static Vector3 Toward(Vector3 p, Bounds box)
+        {
+            var d = box.center - p;
+            d.y = 0f;
+            return d.sqrMagnitude > 1e-4f ? d.normalized : Vector3.forward;
+        }
+
+        // A plan line's offset or aim as meant: when Radial, x toward the middle, y up, z along the wall; when Inward, its x
+        // toward the middle; else as written.
+        static Vector3 Turn(Vector3 v, GfxMapLights.Fixture line, float side, Vector3 toward)
+        {
+            if (line.Radial) return toward * v.x + Vector3.up * v.y + Vector3.Cross(Vector3.up, toward) * v.z;
+            if (line.Inward) v.x *= side;
+            return v;
         }
 
         static float Scale(GfxMapLights.Rig rig, string layer)
@@ -670,6 +986,7 @@ namespace ChessFight.PawnRush
             bool on = GameCourses.On && GameGfx.Upgrade;
             // Its baked indirect light on with the upgrade (GfxBaked: a lightmap per section, where one was baked).
             GfxBaked.Set(transform, on);
+            OwnOn(on);
             var rig = map.Rig;
             foreach (var (light, kind) in ours)
             {
@@ -696,9 +1013,12 @@ namespace ChessFight.PawnRush
             foreach (var (light, line) in planned)
             {
                 if (light == null) continue;
+                light.color = line.Color * rig.PlanTint;
                 light.intensity = on ? line.Intensity * Scale(rig, line.Layer) : 0f;
                 light.enabled = light.intensity > 0f;
             }
+            foreach (var (beam, light) in beams)
+                if (beam != null) beam.enabled = light != null && light.enabled;
             if (lid != null) lid.enabled = on && rig.Lid;
             Floors(on);
             foreach (var kv in floors)

@@ -173,6 +173,11 @@ namespace ChessFight.PawnRush.Editor
                     var filter = r.GetComponent<MeshFilter>();
                     if (filter == null || filter.sharedMesh == null) continue;
                     if (Moving(r, root.transform)) { moving++; continue; }
+                    // See-through things (glass, beams, glows) neither hold nor block the baked light, nor do the upgrade's
+                    // own shadowless pictures (the moon); its shadow-only lid does block.
+                    bool clear = r.shadowCastingMode == ShadowCastingMode.Off && r.name.EndsWith("(JY-gfx)");
+                    foreach (var m in r.sharedMaterials) if (m != null && m.renderQueue >= 2500) { clear = true; break; }
+                    if (clear) continue;
                     GameObjectUtility.SetStaticEditorFlags(r.gameObject, GameObjectUtility.GetStaticEditorFlags(r.gameObject) | StaticEditorFlags.ContributeGI);
                     r.receiveGI = ReceiveGI.Lightmaps;
                     var mesh = filter.sharedMesh;
@@ -240,6 +245,89 @@ namespace ChessFight.PawnRush.Editor
             return true;
         }
 
+        // The Royal Observatory's dome sky as a night sky glows: only its stars and the Milky Way, not the dark between
+        // (JY: "실제 밤하늘은 푸르수름하긴 하지만 별이 많은부분이 빛나고, 별이 없는부분은 빛이 안나잖아"). Stars: brighter than
+        // their own few pixels round them; the band: brighter than its row's mean sky. Resources/Gfx/Glow/RO_DomeSky_Glow.png.
+        [MenuItem("ChessFight/Graphics/Make the observatory dome's star glow")]
+        public static void StarGlow()
+        {
+            const string From = "Assets/Art/RoyalObservatory/Textures/RO_DomeSky_Albedo.png", Dir = "Assets/Resources/Gfx/Glow";
+            const string To = Dir + "/RO_DomeSky_Glow.png";
+            var source = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
+            source.LoadImage(File.ReadAllBytes(From));
+            int w = source.width, h = source.height;
+            var px = source.GetPixels32();
+            var lum = new float[w * h];
+            for (int i = 0; i < lum.Length; i++) lum[i] = (.2126f * px[i].r + .7152f * px[i].g + .0722f * px[i].b) / 255f;
+            var near = Blur(lum, w, h, 6);
+            var wide = Blur(lum, w, h, 20);
+            var row = new float[h];
+            for (int y = 0; y < h; y++)
+            {
+                float sum = 0f;
+                for (int x = 0; x < w; x++) sum += lum[y * w + x];
+                row[y] = sum / w;
+            }
+            var glow = new Color32[w * h];
+            float lit = 0f;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int i = y * w + x;
+                    float star = Mathf.Clamp01((lum[i] - near[i] - .03f) * 7f);
+                    float band = Mathf.Clamp01((wide[i] - row[y] - .015f) * 6f) * .55f;
+                    float m = Mathf.Max(star, band);
+                    lit += m;
+                    glow[i] = new Color32((byte)(px[i].r * m), (byte)(px[i].g * m), (byte)(px[i].b * m), 255);
+                }
+            var made = new Texture2D(w, h, TextureFormat.RGBA32, false, false);
+            made.SetPixels32(glow);
+            made.Apply();
+            Folder(Dir);
+            File.WriteAllBytes(To, made.EncodeToPNG());
+            Object.DestroyImmediate(made);
+            Object.DestroyImmediate(source);
+            AssetDatabase.ImportAsset(To);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(To);
+            var from = (TextureImporter)AssetImporter.GetAtPath(From);
+            importer.sRGBTexture = true;
+            importer.maxTextureSize = 4096;
+            importer.wrapModeU = from != null ? from.wrapModeU : TextureWrapMode.Repeat;
+            importer.wrapModeV = from != null ? from.wrapModeV : TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+            Debug.Log($"[GfxBake] star glow {w}x{h}: {100f * lit / lum.Length:0.0}% of the sky glows -> {To}");
+            if (Application.isBatchMode) EditorApplication.Exit(0);
+        }
+
+        // A box blur of radius r, wrapping across (a sky panorama) and clamped up and down.
+        static float[] Blur(float[] src, int w, int h, int r)
+        {
+            var across = new float[src.Length];
+            var result = new float[src.Length];
+            float n = 2 * r + 1;
+            for (int y = 0; y < h; y++)
+            {
+                float sum = 0f;
+                for (int k = -r; k <= r; k++) sum += src[y * w + ((k % w) + w) % w];
+                for (int x = 0; x < w; x++)
+                {
+                    across[y * w + x] = sum / n;
+                    sum += src[y * w + (x + r + 1) % w] - src[y * w + ((x - r) % w + w) % w];
+                }
+            }
+            for (int x = 0; x < w; x++)
+            {
+                float sum = 0f;
+                for (int k = -r; k <= r; k++) sum += across[Mathf.Clamp(k, 0, h - 1) * w + x];
+                for (int y = 0; y < h; y++)
+                {
+                    result[y * w + x] = sum / n;
+                    sum += across[Mathf.Clamp(y + r + 1, 0, h - 1) * w + x] - across[Mathf.Clamp(y - r, 0, h - 1) * w + x];
+                }
+            }
+            return result;
+        }
+
         // The light of a section that lights itself, for its bake (read from its own component, by name: the editor does not
         // reference the gameplay code): the Royal Observatory's night (moon, ambient, haze; JY: "천문대는 밤 맞아"), and the
         // Royal Library's own sun and ambient when its map keeps them (GfxMapLights.Map.OwnLook).
@@ -290,6 +378,8 @@ namespace ChessFight.PawnRush.Editor
                 if (t.GetComponent<Rigidbody>() != null || t.GetComponent<Animator>() != null || t.GetComponent<Animation>() != null) return true;
                 string n = t.name;
                 if (n.Contains("Rook") || n.Contains("Pawn") || n.Contains("Knight") || n.Contains("Bishop") || n.Contains("Queen") || n.StartsWith("Piece") || n.Contains(" piece")) return true;
+                // Devices that turn about a pivot (the observatory's meteor rings and orbit tracks).
+                if (n.StartsWith("Device_") || n == "pivot" || n.EndsWith(" pivot")) return true;
             }
             foreach (var m in r.sharedMaterials) if (m != null && m.name.StartsWith("M_Piece")) return true;
             return false;
@@ -301,14 +391,31 @@ namespace ChessFight.PawnRush.Editor
             Folder(OutFolder + "/" + key);
             string dataPath = OutFolder + "/" + key + ".asset";
             AssetDatabase.DeleteAsset(dataPath);
+            // The bake's lightmaps are float EXRs of 30 MB and more each: kept as half floats, ZIP-compressed (the game's copy
+            // is compressed on import, BC6H, whatever the file).
             var maps = new List<Texture2D>();
             for (int i = 0; i < LightmapSettings.lightmaps.Length; i++)
             {
                 var t = LightmapSettings.lightmaps[i].lightmapColor;
                 string from = AssetDatabase.GetAssetPath(t);
-                string to = OutFolder + "/" + key + "/Lightmap-" + i + Path.GetExtension(from);
+                string to = OutFolder + "/" + key + "/Lightmap-" + i + ".exr";
                 AssetDatabase.DeleteAsset(to);
-                AssetDatabase.CopyAsset(from, to);
+                var source = (TextureImporter)AssetImporter.GetAtPath(from);
+                source.isReadable = true;
+                source.textureCompression = TextureImporterCompression.Uncompressed;
+                source.SaveAndReimport();
+                var read = AssetDatabase.LoadAssetAtPath<Texture2D>(from);
+                var half = new Texture2D(read.width, read.height, TextureFormat.RGBAHalf, false, true);
+                half.SetPixels(read.GetPixels());
+                half.Apply();
+                File.WriteAllBytes(to, half.EncodeToEXR(Texture2D.EXRFlags.CompressZIP));
+                Object.DestroyImmediate(half);
+                AssetDatabase.ImportAsset(to);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(to);
+                importer.textureType = TextureImporterType.Lightmap;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.isReadable = false;
+                importer.SaveAndReimport();
                 maps.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(to));
             }
             var data = ScriptableObject.CreateInstance<GfxBakedLight>();

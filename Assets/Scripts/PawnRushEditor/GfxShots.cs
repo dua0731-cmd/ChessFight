@@ -327,6 +327,8 @@ namespace ChessFight.PawnRush.Editor
                     notes.AppendLine($"{name}: {spots.Count} pictures; sun {(sun != null ? $"{sun.intensity:0.00} ({sun.color.r:0.00}, {sun.color.g:0.00}, {sun.color.b:0.00}) {sun.transform.eulerAngles}" : "none")}, "
                         + $"sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}, ambient {RenderSettings.ambientMode}, fog {RenderSettings.fog} {RenderSettings.fogMode}");
                     if (GfxBaked.Last.Length > 0) notes.AppendLine("  " + GfxBaked.Last);
+                    var mapRig = section.GetComponent<GfxMapRig>();
+                    if (mapRig != null) notes.AppendLine("  rig: " + mapRig.Notes());
                     if (SessionState.GetBool(FreezeKey, false)) Freeze(section, joins, name);
                     if (pawns != null) Destroy(pawns);
                     if (lineup != null) Destroy(lineup);
@@ -435,6 +437,30 @@ namespace ChessFight.PawnRush.Editor
                     var eye = frame.TransformPoint(new Vector3(hall.center.x, y, hall.center.z));
                     float aspect = 16f / 9f;
                     list.Add(new Spot { name = $"{Short(name)}_top", eye = eye, target = eye - frame.up * 10f, up = frame.forward, ortho = Mathf.Max(hall.size.z * .52f, hall.size.x * .52f / aspect) });
+                }
+                // Up at the moon (a section with one, GfxMapLights.Rig.Moon): from the point of the route, 2 m up, that sees it
+                // clear (nothing in the way) and is nearest under it (-gfxSpots ...,sky).
+                if (SessionState.GetString(SpotsKey, "").Split(',').Any(s => s.Trim() == "sky"))
+                {
+                    var rig = section.GetComponent<GfxMapRig>();
+                    var moonPart = section.transform.Find("Moon (JY-gfx)");
+                    if (rig != null && rig.HasMoon && moonPart != null)
+                    {
+                        Vector3 best = Vector3.zero;
+                        float nearest = float.MaxValue;
+                        for (float d = 0f; d <= length; d += 2f)
+                        {
+                            var eye = PointAt(route, d) + Vector3.up * 2f;
+                            var flat = moonPart.position - eye;
+                            flat.y = 0f;
+                            if (flat.magnitude >= nearest || Physics.Linecast(eye, moonPart.position, ~0, QueryTriggerInteraction.Ignore)) continue;
+                            nearest = flat.magnitude;
+                            best = eye;
+                        }
+                        if (nearest < float.MaxValue)
+                            list.Add(new Spot { name = $"{Short(name)}_sky", eye = best, target = moonPart.position, fov = 60f });
+                        else notes.AppendLine($"{name}: no point of the route sees the moon clear");
+                    }
                 }
                 return list;
             }
