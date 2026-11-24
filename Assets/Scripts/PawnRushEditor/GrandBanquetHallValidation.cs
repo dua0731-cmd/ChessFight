@@ -482,6 +482,8 @@ namespace ChessFight.PawnRush.Editor
             Shot("hall_11_dais_gallery", new Vector3(16f, 13.5f, 59f), new Vector3(-4.25f, 10.5f, 56.5f), 60f, false);
             Shot("hall_12_fountain_close", new Vector3(-19f, 13.5f, 16f), new Vector3(-27.7f, 12f, 9.2f), 60f, false);
             Shot("hall_13_from_the_loft", new Vector3(-2.6f, 21.6f, 4f), new Vector3(0f, 18f, 30f), 66f, false);
+            Shot("hall_14_chandelier_close", new Vector3(-8.5f, 21f, 13.5f), new Vector3(-2.6f, 19.8f, B.ScreenZ + B.RopeAlong[1]), 42f, false);
+            Shot("hall_15_great_chandelier", new Vector3(10f, 22f, 28f), new Vector3(0f, 18.5f, B.GreatZ), 52f, false);
         }
 
         static void Capture(string name, Vector3 eye, Vector3 target, Vector3 up, float fieldOfView, bool flat, int width, int height, bool hideShell)

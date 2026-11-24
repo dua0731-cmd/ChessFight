@@ -499,8 +499,11 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ 7. the chandeliers
 
-        // R817: each rope's candle wheel is small and high on the rope (1.6 m under the pivot, 2 m across): the 3.2 m wheels
-        // at hand height hid the next rope from whoever waited on the loft.
+        // R818 (the user: "샹들리에가 샹들리에처럼 안생겼어 … 디자인적으로 신경써서"): each rope is a gilded crown chandelier
+        // on its chain (BanquetChandelierShape.Hanging - the hook, the chain, the crown cap, fanned chains, the stem, an
+        // upper and a main ring of candles, crystal drops, and at the rope's end the hoop a pawn hangs from), turned with
+        // the rope; above its pivot a still rod to a rose on the ceiling, with a swivel at the pivot. The rope draws
+        // nothing itself.
         static void Chandeliers(CourseBuilder b)
         {
             for (int lane = 0; lane < LinesX.Length; lane++)
@@ -509,38 +512,44 @@ namespace ChessFight.PawnRush
                     float x = LinesX[lane], z = ScreenZ + RopeAlong[k], y = PivotY(k);
                     var pivot = Root(b, "BH chandelier " + (lane == 0 ? "W" : "E") + (k + 1), V(x, y, z));
                     var rope = pivot.gameObject.AddComponent<RopeLine>();
-                    rope.Configure(RopeL[k], RopeSwing, RopePeriod, ((k + lane) % 2) * RopePeriod * .5f, .12f, Brass);
+                    rope.Configure(RopeL[k], RopeSwing, RopePeriod, ((k + lane) % 2) * RopePeriod * .5f, 0f, null);
                     var look = b.Group("BH chandelier look", pivot);
-                    YardKit.Cylinder(look, "BH chandelier wheel", V(0f, -1.6f, 0f), Vector3.up, 2f, .14f, Brass, YardKit.Solid.None);
-                    YardKit.Ball(look, "BH chandelier drop", V(0f, -RopeL[k], 0f), .55f, Brass, YardKit.Solid.None);
-                    for (int c = 0; c < 6; c++)
-                    {
-                        float a = c * 60f * Mathf.Deg2Rad;
-                        YardKit.Ball(look, "BH chandelier candle", V(.85f * Mathf.Sin(a), -1.4f, .85f * Mathf.Cos(a)), .24f, Candle, YardKit.Solid.None);
-                    }
+                    Picture(look, "BH chandelier", BanquetChandelierShape.Hanging(RopeL[k]));
                     look.gameObject.AddComponent<ChandelierLook>().Configure(rope);
-                    YardKit.Box(b.parent, "BH ceiling chain", V(x, (y + Ceiling) * .5f, z), V(.12f, Ceiling - y, .12f), Brass, YardKit.Solid.None);
+                    YardKit.Cylinder(b.parent, "BH chandelier rod", V(x, (y + Ceiling) * .5f, z), Vector3.up, .09f, Ceiling - y, Brass, YardKit.Solid.None);
+                    YardKit.Ball(b.parent, "BH chandelier swivel", V(x, y + .02f, z), .24f, Brass, YardKit.Solid.None);
+                    YardKit.Cylinder(b.parent, "BH ceiling rose", V(x, Ceiling - .12f, z), Vector3.up, 1.1f, .24f, Brass, YardKit.Solid.None);
                 }
         }
 
-        // The great chandelier in the middle of the hall, between the two lines of ropes: a still ring of candles 8.4 m
-        // across hung from the ceiling, its top a floor (green: a place to rest) with a checkpoint. The first line's last
-        // ropes swing their ends 0.3 m short of its south rim (1.7 m over it); the second line's first ropes come 0.3 m
-        // off its north rim, 0.55 m over it.
+        // The great chandelier in the middle of the hall, between the two lines of ropes: a still gilded corona 8.4 m
+        // across hung from the ceiling (BanquetChandelierShape.Great: a dish with a lip of candles, a column with S-arms
+        // and a crown, chains to the lip), its dish's top a floor with a green carpet (a place to rest) and a checkpoint.
+        // The first line's last ropes swing their ends 0.3 m short of its south rim (1.7 m over it); the second line's
+        // first ropes come 0.3 m off its north rim, 0.55 m over it. Its floor and column are plain colliders under the
+        // picture.
         static void GreatChandelier(CourseBuilder b)
         {
             var g = Root(b, "BH great chandelier", V(0f, GreatY, GreatZ));
-            YardKit.Cylinder(g, "BH great chandelier ring", V(0f, -.15f, 0f), Vector3.up, GreatR * 2f, .3f, Look.Rest, YardKit.Solid.Solid)
-                   .AddComponent<CourseFloor>();
-            YardKit.Cylinder(g, "BH great chandelier tier", V(0f, -1.2f, 0f), Vector3.up, GreatR * 1.4f, .25f, Brass, YardKit.Solid.None);
-            YardKit.Ball(g, "BH great chandelier drop", V(0f, -2.4f, 0f), 1.4f, Brass, YardKit.Solid.None);
-            YardKit.Cylinder(g, "BH great chandelier stem", V(0f, 1.6f, 0f), Vector3.up, .9f, 3.2f, Look.NoClimb, YardKit.Solid.NoClimb);
-            YardKit.Box(g, "BH great chandelier chain", V(0f, (Ceiling - GreatY) * .5f + 1.6f, 0f), V(.2f, Ceiling - GreatY - 3.2f, .2f), Brass, YardKit.Solid.None);
-            for (int c = 0; c < 16; c++)
-            {
-                float a = c * 22.5f * Mathf.Deg2Rad;
-                YardKit.Ball(g, "BH great chandelier candle", V((GreatR - .25f) * Mathf.Sin(a), .25f, (GreatR - .25f) * Mathf.Cos(a)), .3f, Candle, YardKit.Solid.None);
-            }
+            var floor = YardKit.Cylinder(g, "BH great chandelier floor", V(0f, -.15f, 0f), Vector3.up, GreatR * 2f, .3f, Look.Rest, YardKit.Solid.Solid);
+            floor.AddComponent<CourseFloor>();
+            Object.DestroyImmediate(floor.GetComponent<MeshRenderer>());
+            var column = YardKit.Cylinder(g, "BH great chandelier column", V(0f, 1.5f, 0f), Vector3.up, BanquetChandelierShape.GreatColumn * 2f, 3f,
+                                          Look.NoClimb, YardKit.Solid.NoClimb);
+            Object.DestroyImmediate(column.GetComponent<MeshRenderer>());
+            YardKit.Cylinder(g, "BH great chandelier carpet", V(0f, .008f, 0f), Vector3.up, GreatR * 2f - .5f, .016f, Look.Rest, YardKit.Solid.None);
+            Picture(g, "BH great chandelier body", BanquetChandelierShape.Great(Ceiling - GreatY - BanquetChandelierShape.GreatColumnTop));
+        }
+
+        static Material Crystal => Arena.Lit("M_BanquetCrystal", Arena.Hex("#DDEEFF"), .5f, .12f);
+
+        // A chandelier's picture: its mesh with brass, wax, flame and crystal (BanquetChandelierShape's four parts).
+        static void Picture(Transform parent, string name, Mesh mesh)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { Brass, Cloth, Candle, Crystal };
         }
 
         // ------------------------------------------------------------------ the way (R817)

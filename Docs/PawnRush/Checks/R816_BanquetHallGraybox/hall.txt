@@ -1,4 +1,4 @@
-R816 grand banquet hall checks (2026-11-24 13:57). Not a play test: no pawn runs it.
+R816 grand banquet hall checks (2026-11-24 14:11). Not a play test: no pawn runs it.
 
 == Edit: built in a scratch scene, every mover where it was built (the clock's 0)
 PASS  E1 what is there: waiters 5 (5), cloches 2 (2), couples 10 (10), pleats 20 (20), chandeliers 10 (10) and the great one 1 (1), tablecloth tricks 1 (1), chocolate tiers 3 (3), towers 1 (1) with washing levels 4 (4), lamps 4 (4), checkpoints 9 (9), kill volumes 5 (5), meant gaps 5 (5); colliders 174
@@ -7,7 +7,7 @@ PASS  E1 what is there: waiters 5 (5), cloches 2 (2), couples 10 (10), pleats 20
       백팀 길 319.9 m, 가장 넓은 틈 0.90 m
       뜻한 틈 5곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
       체크포인트 9개, 부활 자리 54곳
-      오를 수 없는 면 100개
+      오를 수 없는 면 99개
       입구 (0.0, 0.0, 0.0) → 출구 (0.0, 20.8, 72.0)
 PASS  E2 section checks (SectionValidator): no errors
 PASS  E3 entry and exit: entry (0, 0, 0), exit (0, 20.8, 72)
@@ -52,9 +52,9 @@ PASS  P4 chandeliers' ends swing 4.18 m each way (5.14 m for the second line): 1
 PASS  P5 the curtain opens: the south half's leading pleat goes to the buffet, the north one to the stage's end: south 16..39.5, north 40.6..49.55
 PASS  P6 the couples go round the whole floor: middles x -16.2..7.5, z 10.2..51.8
 PASS  P7 the tablecloth is pulled every 10 s and the tower runs over every 4 s: pulls 1 (nobody on the cloth: throws 0), level spills 15
-PASS  P9 the boarding and alighting lamps light as queens stop: 4 of 4 lit at all; BH boarding lamp W 31.151 % BH boarding lamp E 31.151 % BH alighting lamp S 34.18 % BH alighting lamp N 34.18 %
-      33906 frames watched
-      at the pictures: the trick 4.001 s into its 10 s, the cloth drawn at z 34, scale z 1
+PASS  P9 the boarding and alighting lamps light as queens stop: 4 of 4 lit at all; BH boarding lamp W 31.942 % BH boarding lamp E 31.942 % BH alighting lamp S 34.258 % BH alighting lamp N 34.258 %
+      39997 frames watched
+      at the pictures: the trick 4.004 s into its 10 s, the cloth drawn at z 34, scale z 1
       picture hall_00_top.png
       picture hall_01_from_south_east.png
       picture hall_02_from_east.png
@@ -69,6 +69,8 @@ PASS  P9 the boarding and alighting lamps light as queens stop: 4 of 4 lit at al
       picture hall_11_dais_gallery.png
       picture hall_12_fountain_close.png
       picture hall_13_from_the_loft.png
+      picture hall_14_chandelier_close.png
+      picture hall_15_great_chandelier.png
 PASS  P8 errors logged in Play: 0
 
 Grand banquet hall result: PASS
