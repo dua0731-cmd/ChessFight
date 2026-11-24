@@ -1,12 +1,15 @@
-# The grand banquet hall as its grey box stands after R817 (the user's first run) and R818 (the chandeliers), dressed as
-# a concept picture in the look of the place's concept art (Docs/PawnRush/ConceptArt/R787_BanquetHall): cream stone and
-# walnut, gold, white banners with chess emblems, olive runners, red carpets along the way, candles, crown chandeliers.
-# Two renders: the whole hall, and the chandeliers over the dance floor from near (written beside the first as
-# <out>_chandeliers.png). A picture only: nothing here goes into Unity.
+# The grand banquet hall as its grey box stands after R828 (R818's chandeliers; R825's waiters, cloche lifts and king's
+# balcony with no champagne tower; R828's dumbwaiter frame over the lifts and a fountain climbed against its flow with no
+# ladders), dressed as a concept picture in the look of the place's concept art (Docs/PawnRush/ConceptArt/R787_BanquetHall):
+# cream stone and walnut, gold, white banners with chess emblems, olive runners, red carpets along the way, candles, crown
+# chandeliers. Four renders (R833): the whole hall, the chandeliers over the dance floor, the cloche lifts in their
+# dumbwaiter and the chocolate fountain under the loft's ladder (the last three written beside the first as
+# <out>_chandeliers.png, <out>_cloche_lifts.png, <out>_fountain.png). R818's version of this script drew R818's layout
+# (git history). A picture only: nothing here goes into Unity.
 # The layout is GrandBanquetHallBuilder.cs's (section frame: x east, y up, z north; in Blender (X, Y, Z) = (x, z, y)),
 # its numbers copied below; the chandeliers are BanquetChandelierShape.cs's, built the same way (turned profiles, rings,
-# tubes). The machines are posed at one moment of the shared clock (T): the cloches up, the curtain opening, the top of
-# the champagne tower running over, the couples where the clock has them.
+# tubes). The machines are posed at one moment of the shared clock (T): the west cloche lift open at the table to board,
+# the east one open at the dais to step out, the curtain shut, the chocolate's ripples, the couples where the clock has them.
 #
 #   blender --background --factory-startup --python banquet_graybox_concept.py -- <out.png> [samples] [width] [height]
 #
@@ -19,24 +22,31 @@ _here = os.path.dirname(os.path.abspath(__file__))
 _blk = open(os.path.join(_here, "banquet_blockout.py"), encoding="utf-8").read()
 exec(compile(_blk.split("# ---------------------------------------------------------------- the hall")[0], "banquet_blockout.py (head)", "exec"), globals())
 random.seed(11)
-T = 13.4
+# The clock's moment (R833): the west cloche lift is open at the table (1.5 s into its 12.4 s) and the east one, half a
+# cycle on, open at the dais; the curtain is shut (its 15 s cycle opens from 6 s), so it hides nothing of the fountain.
+T = 1.5
 
-# ---------------------------------------------------------------- the grey box's numbers (GrandBanquetHallBuilder, R818)
+# ---------------------------------------------------------------- the grey box's numbers (GrandBanquetHallBuilder, R828)
 TY, SY, DY, HY, LY, CEIL = 4.4, 7.4, 10.4, 14.8, 20.0, 34.0
 HX0, HX1, HZ1, SCR, DZ = -32.0, 32.0, 72.0, 6.0, 56.0
 TRAY_X, BODY_X, TRAY_Y, TRAY_R, STACK_R, STACK_TOP = 27.8, 29.8, 2.4, 1.5, 0.8, 5.0
-WZ0, WLANE, WSPEED, NW = 0.5, 49.0, 2.2, 5
+WZ0, WLANE, WSPEED, NW = 0.5, 29.0, 2.2, 4                   # R825: four waiters, the pantry door 8 m along the table
 COUNTER = (22.0, 26.0, 4.0, 12.0)
-KITCHEN_Z1, PANTRY_Z0 = 4.0, 43.0
+KITCHEN_Z1, PANTRY_Z0, PANTRY_TOP = 4.0, 26.0, 7.8
 T_X0, T_X1, T_Z0, CLOTH_Z1, RUN_X = 14.0, 26.0, 18.0, 50.0, 20.0
 PLATES = (23.0, 29.0, 35.0, 41.0, 47.0)
-CLOCHE_X, CLOCHE_Z, CLOCHE_R, BAND, DOME_R, LIFT = (17.0, 23.0), 52.9, 2.2, 1.4, 1.4, 5.6
+# R825 the cloche lifts (ClocheLift), R828 the dumbwaiter frame they hang from (posts, a beam, pulleys, cables, chains).
+CLOCHE_X, CLOCHE_Z, CLOCHE_R, BAND, OPEN = (17.0, 23.0), DZ - 0.1 - 2.2, 2.2, 1.6, 2.0
+PLATTER_TOP = TY + 0.12
+RISE = DY - PLATTER_TOP
+GANTRY_X, GANTRY_Y, CABLE_X = (T_X0 + 0.15, 20.0, T_X1 - 0.15), 16.6, 2.4
 CURTAIN_Z, STAGE_X1, CURTAIN_X, RAIL = 40.05, -20.0, -24.5, SY + 10.6
 STAGE_Z0, STAGE_Z1, OPEN_S, PLEAT_W = CURTAIN_Z - 11.0, CURTAIN_Z + 9.0, 16.0, 1.05
 BASS_X, BASS_TOP, BASS_Z = -23.95, 9.6, (19.0, CURTAIN_Z - 13.0)
 BUF = (-32.0, -23.5, 3.0, 17.0)
 FX, FZ, BOWL_R, BOWL_TOP = -27.7, 9.2, 4.2, 7.9
-TIER_R, TIER_TOP, STILL = (3.3, 2.3, 1.3), (10.733, 13.567, 16.4), 1.3
+# R828: every tier flows from rim to foot at 0.3 m/s, four ripples on each run down it (ChocolateRipples).
+TIER_R, TIER_TOP, FLOW, RIPPLES = (3.3, 2.3, 1.3), (10.733, 13.567, 16.4), 0.3, 4
 LANES = (-2.6, 2.6)
 ROPE_L = (6.5, 6.5, 6.5, 8.0, 8.0)
 ROPE_LOW = (LY + 0.55, LY + 0.05, LY - 0.45, 17.8 + 0.55, 17.8 + 0.05)
@@ -51,12 +61,26 @@ GREAT_Z = SCR + ALONG[2] + _E[2] + 0.3 + _CH
 ALONG.append(GREAT_Z + _CH + 0.3 - SCR + _E[3])
 ALONG.append(ALONG[3] + _E[3] + 0.8 + _E[4])
 LAND_Z = SCR + ALONG[4] + _E[4]
-TOWER_Z = LAND_Z + 0.6 + 4 * 1.9 * 0.5
-LEVELS, PITCH, LEVEL_H = 4, 1.9, 1.5
-BAL_Y = HY + LEVELS * LEVEL_H
-LOFT_X0, LOFT_X1 = -31.0, 4.6
+# R825: no champagne tower; the last ropes end over the king's balcony, the head table's wings either side of it.
+BAL_Y, BAL_X, BAL_Z0 = 16.0, 6.0, LAND_Z - 0.8
+TABLES_Z0 = BAL_Z0 + 0.9
+LOFT_X0, LOFT_X1, LADDER_OUT = -31.0, 4.6, 0.3
 BOARD_X = -4.25
-print("GREAT_Z %.3f LAND_Z %.3f TOWER_Z %.3f" % (GREAT_Z, LAND_Z, TOWER_Z))
+print("GREAT_Z %.3f LAND_Z %.3f BAL_Z0 %.3f" % (GREAT_Z, LAND_Z, BAL_Z0))
+
+
+def cloche_heights(t, delay):
+    # ClocheLift.Heights: the platter's height over the table and the cloche's over the platter (0 shut, OPEN lifted off).
+    board, shut, up, top = 3.0, 0.6, 2.2, 2.6
+    u = (t - delay) % (board + 3 * shut + 2 * up + top + shut)
+    ease = lambda x: 0.5 * (1 - math.cos(math.pi * min(1.0, max(0.0, x))))
+    for length, f in ((board, lambda k: (0.0, OPEN)), (shut, lambda k: (0.0, OPEN * (1 - ease(k)))), (up, lambda k: (RISE * ease(k), 0.0)),
+                      (shut, lambda k: (RISE, OPEN * ease(k))), (top, lambda k: (RISE, OPEN)), (shut, lambda k: (RISE, OPEN * (1 - ease(k)))),
+                      (up, lambda k: (RISE * (1 - ease(k)), 0.0))):
+        if u < length:
+            return f(u / length)
+        u -= length
+    return 0.0, OPEN * ease(u / shut)
 
 # ---------------------------------------------------------------- the concept art's colours
 M_CREAM = marble("MAT_CreamStone", (0.66, 0.57, 0.44), (0.60, 0.51, 0.39), 0.28)
@@ -78,8 +102,9 @@ except Exception:
 # The blockout's parquet, darker and less glossy here (it mirrored every candle).
 M_PARQUET = principled("MAT_ParquetC", (0.19, 0.095, 0.04), 0.62)
 M_PARQUET2 = principled("MAT_ParquetPaleC", (0.40, 0.27, 0.14), 0.62)
-M_COUPE = principled("MAT_Coupe", (0.95, 0.86, 0.55), 0.08, 0.0, (1.0, 0.82, 0.42), 0.25)
 M_BALUSTER = principled("MAT_Baluster", (0.88, 0.84, 0.76), 0.35)
+# R828: the chocolate's ripples, a little lighter and glossier than the sheet they run down.
+M_CHOCWAVE = principled("MAT_ChocolateWave", (0.27, 0.12, 0.05), 0.16)
 M_BLACK = principled("MAT_PawnBlack", (0.06, 0.055, 0.06), 0.45)
 
 
@@ -346,6 +371,8 @@ box("Wall N high", -6.0, 6.0, BAL_Y + 8.0, 30, HZ1, HZ1 + 1.2, M_CREAM)
 box("Exit arch light", -3.5, 3.5, BAL_Y, BAL_Y + 7.6, HZ1 + 0.4, HZ1 + 0.6, M_DOORL)
 box("Wall E low", HX1, HX1 + 1.2, 0, 9.0, 0, HZ1, M_CREAM)        # cut away over 9 m: the camera looks in from the east
 box("Wall S low", HX0, HX1, 0, 8.0, -1.2, 0, M_CREAM)             # and from the south
+# The walls' upper parts, for the views from inside the hall only (R833: through the cut the fountain's view saw the night).
+CLOSE_ONLY = [box("Wall S high", HX0, HX1, 8.0, 30, -1.2, 0, M_CREAM), box("Wall E high", HX1, HX1 + 1.2, 9.0, 30, 0, HZ1, M_CREAM)]
 box("Cornice W", HX0, HX0 + 0.5, 29.4, 30.2, 0, HZ1, M_GOLD)
 box("Cornice N", HX0, HX1, 29.4, 30.2, HZ1 - 0.5, HZ1, M_GOLD)
 for z in range(4, 70, 8):
@@ -405,9 +432,11 @@ for i in range(3):
 box("Kitchen wall", 25.7, 26.0, 0, 7.8, 0, KITCHEN_Z1, M_CREAM)
 box("Kitchen roof", 25.7, HX1, 7.5, 7.8, 0, KITCHEN_Z1, M_WALNUT)
 box("Kitchen light", 26.2, HX1 - 0.2, 0, 7.2, 0.05, 0.2, M_DOORL)
-box("Pantry lintel", 26.0, HX1, 7.2, 7.8, PANTRY_Z0, PANTRY_Z0 + 0.3, M_WALNUT)
-box("Pantry wall W", 25.7, 26.0, TY, 7.8, PANTRY_Z0, DZ, M_CREAM)
-box("Pantry roof", 25.7, HX1, 7.5, 7.8, PANTRY_Z0, DZ, M_WALNUT)
+box("Pantry lintel", 26.0, HX1, 7.2, PANTRY_TOP, PANTRY_Z0, PANTRY_Z0 + 0.3, M_WALNUT)
+box("Pantry post", 31.7, HX1, 0, 7.5, PANTRY_Z0, PANTRY_Z0 + 0.3, M_WALNUT)
+box("Pantry wall W", 25.7, 26.0, TY, PANTRY_TOP, PANTRY_Z0, DZ, M_CREAM)
+box("Pantry roof", 25.7, HX1, 7.5, PANTRY_TOP, PANTRY_Z0, DZ, M_WALNUT)
+box("Pantry cornice", 25.6, 26.1, PANTRY_TOP - 0.25, PANTRY_TOP + 0.05, PANTRY_Z0, DZ, M_GOLD)
 box("Pantry light", 26.2, HX1 - 0.2, 0, 7.0, PANTRY_Z0 + 3.0, PANTRY_Z0 + 3.2, M_DOORL)
 carpet([(0, 1.2), (0, 3.0), (15, 3.0), (15, 8.0)], 0.0)
 carpet([(COUNTER[0] + 0.3, 8.0), (COUNTER[1] - 0.6, 8.0)], TRAY_Y)
@@ -460,20 +489,73 @@ cyl("Magician hat brim", RUN_X, 7.45, 7.6, 15.2, 2.0, M_EBONY)
 cyl("Magician hat", RUN_X, 7.6, 9.1, 15.2, 1.25, M_EBONY)
 for s in (-1, 1):
     bar("Magician arm", (RUN_X + s * 0.9, 5.6, 15.5), (RUN_X + s * 2.5, TY + 0.2, T_Z0 - 0.1), 0.42, M_ROBE)
-lift = LIFT  # the clock's T has both cloches up
-for x in CLOCHE_X:
-    cyl("Platter", x, TY, TY + 0.06, CLOCHE_Z, CLOCHE_R * 2 + 0.2, M_SILVER)
-    inst(ME_SPH, "Roast", M_ROAST, U(x, TY + 0.7, CLOCHE_Z), (2.6, 1.6, 1.4))
-    y0 = TY + 0.06 + lift
-    cyl("Cloche band", x, y0, y0 + BAND, CLOCHE_Z, CLOCHE_R * 2, M_CLOCHE)
-    torus("Cloche rim", x, y0 + BAND, CLOCHE_Z, CLOCHE_R - 0.05, 0.06, M_GOLD)
-    inst(ME_SPH, "Cloche dome", M_CLOCHE, U(x, y0 + BAND, CLOCHE_Z), (DOME_R * 2, DOME_R * 2, 3.2))
-    ball("Cloche knob", x, y0 + BAND + 1.75, CLOCHE_Z, 0.5, M_GOLD)
-    ball("Glove", x, y0 + BAND + 2.1, CLOCHE_Z, 0.95, M_GLOVE)
-    bar("Sleeve", (x, y0 + BAND + 2.4, CLOCHE_Z), (x, y0 + BAND + 9.0, CLOCHE_Z - 4.0), 0.8, M_COAT)
-player(CLOCHE_X[0] + 1.75, TY + 0.06 + lift + BAND, CLOCHE_Z + 0.4, 1)
+# The cloche lifts (R825) in their dumbwaiter (R828): each platter hangs on two cables from gold lugs outside its
+# cloche's band, each cloche on its own chain from its knob, over gold pulleys under a beam on three posts (slate in the
+# grey box: they are not climbed; here walnut with gold bases and capitals, the east one on the pantry's wall). Nobody
+# holds anything. The west lift is open at the table to board, the east one, half a cycle on, open at the dais.
+def band_mesh():
+    # The cloche's band: an open ring, so the platter shows under a lifted cloche.
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=False, cap_tris=False, segments=64, radius1=CLOCHE_R, radius2=CLOCHE_R, depth=BAND)
+    bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0, BAND / 2))
+    me = bpy.data.meshes.new("ME_ClocheBand")
+    bm.to_mesh(me)
+    bm.free()
+    for p in me.polygons:
+        p.use_smooth = True
+    me.materials.append(None)
+    return me
 
-# ---------------------------------------------------------------- the royal dais, the gallery, the head table, the tower, the balcony
+
+def chain(name, x, y0, y1, z, link=0.2, r=0.03, mat=None):
+    # Links turned a quarter to each other from y0 up to y1 (section), as the chandeliers' chains.
+    bm = bmesh.new()
+    y, k = y0 + link * 0.5, 0
+    while y < y1 - link * 0.3:
+        m = T3(x, z, y) @ Matrix.Rotation(k * math.pi / 2, 4, "Z") @ Matrix.Rotation(math.pi / 2, 4, "X") @ Matrix.Diagonal((1, 1.6, 1, 1))
+        ring_bm(bm, link * 0.42, r, m, 12, 5)
+        y += link * 0.82
+        k += 1
+    o = bpy.data.objects.new(name, to_mesh(name, bm, mat or M_GOLDB))
+    col.objects.link(o)
+    return o
+
+
+band_me = band_mesh()
+for i, x in enumerate(CLOCHE_X):
+    up, lifted = cloche_heights(T, i * 6.2)
+    py = PLATTER_TOP + up                            # the platter's top
+    cy = py + lifted                                 # the cloche's foot
+    cyl("Platter", x, py - 0.12, py, CLOCHE_Z, CLOCHE_R * 2, M_SILVER)
+    torus("Platter rim", x, py - 0.02, CLOCHE_Z, CLOCHE_R, 0.05, M_GOLD)
+    for s in (-1, 1):
+        box("Platter lug", x + s * CLOCHE_R, x + s * (CLOCHE_R + 0.36), py - 0.08, py + 0.06, CLOCHE_Z - 0.15, CLOCHE_Z + 0.15, M_GOLDB)
+        torus("Lug eye", x + s * CABLE_X, py + 0.16, CLOCHE_Z, 0.1, 0.03, M_GOLDB, (math.pi / 2, 0, 0))
+        bar("Cable", (x + s * CABLE_X, py + 0.24, CLOCHE_Z), (x + s * CABLE_X, GANTRY_Y - 0.2, CLOCHE_Z), 0.07, M_IRON)
+    inst(band_me, "Cloche band", M_CLOCHE, U(x, cy, CLOCHE_Z), (1, 1, 1))
+    torus("Cloche foot", x, cy + 0.04, CLOCHE_Z, CLOCHE_R, 0.06, M_GOLD)
+    torus("Cloche rim", x, cy + BAND, CLOCHE_Z, CLOCHE_R + 0.02, 0.07, M_GOLD)
+    inst(ME_SPH, "Cloche dome", M_CLOCHE, U(x, cy + BAND + 0.2, CLOCHE_Z), (CLOCHE_R * 2, CLOCHE_R * 2, 1.6))
+    ball("Cloche knob", x, cy + BAND + 1.05, CLOCHE_Z, 0.6, M_GOLD)
+    torus("Knob eye", x, cy + BAND + 1.42, CLOCHE_Z, 0.12, 0.035, M_GOLDB, (math.pi / 2, 0, 0))
+    chain("Cloche chain", x, cy + BAND + 1.5, GANTRY_Y - 0.2, CLOCHE_Z)
+for gx in GANTRY_X:
+    foot = PANTRY_TOP if gx > T_X1 - 1.0 else TY
+    box("Dumbwaiter post", gx - 0.15, gx + 0.15, foot, GANTRY_Y, CLOCHE_Z - 0.15, CLOCHE_Z + 0.15, M_WALNUT)
+    box("Dumbwaiter post base", gx - 0.24, gx + 0.24, foot, foot + 0.35, CLOCHE_Z - 0.24, CLOCHE_Z + 0.24, M_GOLD)
+    box("Dumbwaiter post capital", gx - 0.24, gx + 0.24, GANTRY_Y - 0.3, GANTRY_Y, CLOCHE_Z - 0.24, CLOCHE_Z + 0.24, M_GOLD)
+    ball("Dumbwaiter finial", gx, GANTRY_Y + 0.62, CLOCHE_Z, 0.36, M_GOLDB)
+box("Dumbwaiter beam", T_X0, T_X1, GANTRY_Y, GANTRY_Y + 0.35, CLOCHE_Z - 0.25, CLOCHE_Z + 0.25, M_WALNUT)
+box("Dumbwaiter beam trim", T_X0 - 0.05, T_X1 + 0.05, GANTRY_Y + 0.35, GANTRY_Y + 0.45, CLOCHE_Z - 0.3, CLOCHE_Z + 0.3, M_GOLD)
+for x in CLOCHE_X:
+    for s in (-1, 0, 1):
+        inst(ME_CYL, "Pulley", M_GOLDB, U(x + s * CABLE_X, GANTRY_Y - 0.2, CLOCHE_Z), (0.42, 0.42, 0.12), (math.pi / 2, 0, 0))
+        box("Pulley hanger", x + s * CABLE_X - 0.03, x + s * CABLE_X + 0.03, GANTRY_Y - 0.25, GANTRY_Y, CLOCHE_Z - 0.09, CLOCHE_Z + 0.09, M_GOLD)
+player(CLOCHE_X[0] + 0.7, PLATTER_TOP, CLOCHE_Z - 0.5, 1)          # boarding the west lift
+player(CLOCHE_X[0] - 1.2, TY + 0.05, CLOCHE_Z - 3.2, 0)            # on the way to it
+player(CLOCHE_X[1] - 0.6, DY, DZ + 0.8, 0)                         # out of the east lift onto the dais
+
+# ---------------------------------------------------------------- the royal dais, the gallery, the head table, the king's balcony
 box("Dais", HX0, HX1, 0, DY, DZ, HZ1, M_DAISM)
 box("Dais edge", HX0, HX1, DY - 0.45, DY + 0.04, DZ - 0.15, DZ + 0.05, M_GOLD)
 for x in range(-30, 31, 4):
@@ -492,52 +574,40 @@ for s in (-1, 1):
     cyl("Boarding post", x, DY, DY + 1.8, DZ + 0.15, 0.3, M_GOLD, ME_CYL8)
     ball("Boarding lantern", x, DY + 2.1, DZ + 0.15, 0.6, M_LAMP)
     lamps.append((x, DY + 2.3, DZ + 0.15))
-tables = TOWER_Z - 3.5
+tables = TABLES_Z0
 box("Gallery end W", BOARD_X - opening - 1.7, BOARD_X - opening - 1.4, DY, DY + 2.6, DZ + 0.3, tables, M_WALNUT)
 box("Gallery end E", 26.0, 26.3, DY, DY + 2.6, DZ + 0.3, tables + 0.3, M_WALNUT)
+box("Gallery end NE", 24.0, 26.0, DY, DY + 2.6, tables, tables + 0.3, M_WALNUT)
 carpet([((CLOCHE_X[0] + CLOCHE_X[1]) / 2, DZ + 1.3), (BOARD_X, DZ + 1.3), (BOARD_X, DZ + 0.9)], DY)
-for x0, x1 in ((-24.0, -6.0), (6.0, 24.0)):
-    box("Head table", x0, x1, HY - 0.5, HY, tables, TOWER_Z + 2.5, M_LINEN)
-    box("Head table skirt", x0, x1, DY, HY - 0.5, tables - 0.06, TOWER_Z + 2.5, M_CLOTH)
+# R825: the head table's two wings stand either side of the king's balcony.
+for x0, x1 in ((-24.0, -BAL_X), (BAL_X, 24.0)):
+    box("Head table", x0, x1, HY - 0.5, HY, tables, tables + 6.0, M_LINEN)
+    box("Head table skirt", x0, x1, DY, HY - 0.5, tables - 0.06, tables + 6.0, M_CLOTH)
+    box("Head table hem", x0 - 0.04, x1 + 0.04, HY - 0.75, HY - 0.45, tables - 0.1, tables + 6.0, M_GOLD)
     box("Head table runner", x0 + 0.5, x1 - 0.5, HY, HY + 0.02, tables + 2.4, tables + 3.6, M_OLIVE)
     for x in (x0 + 3, (x0 + x1) / 2, x1 - 3):
-        candelabra(x, HY, tables + 1.3, 1.3)
+        candelabra(x, HY, tables + 1.2, 1.3)
         bouquet(x + 2.2, HY, tables + 3.0, 1.0)
-box("Pedestal", -5.0, 5.0, HY - 0.5, HY, TOWER_Z - 5.0, TOWER_Z + 5.0, M_LINEN)
-box("Pedestal skirt", -5.0, 5.0, DY, HY - 0.5, TOWER_Z - 5.06, TOWER_Z + 5.0, M_CLOTH)
-box("Pedestal hem", -5.1, 5.1, HY - 0.7, HY - 0.45, TOWER_Z - 5.1, TOWER_Z + 5.1, M_GOLD)
-coupes = {}
-u = (T - 1.0) % 4.0
-for k in range(LEVELS):
-    n, base = LEVELS - k, HY + LEVEL_H * k
-    spill = 0.2 + 0.5 * (LEVELS - 1 - k) <= u < 0.2 + 0.5 * (LEVELS - 1 - k) + 1.6
-    places = [((i - (n - 1) / 2) * PITCH, base, TOWER_Z + (j - (n - 1) / 2) * PITCH) for i in range(n) for j in range(n)]
-    many("Coupe feet", P(0.55, 0.06, 0.55, 0.0), places, M_GLASS, 24)
-    many("Coupe stems", P(0.06, 0.62, 0.07, 0.06), places, M_GLASS, 10)
-    many("Coupes", P(0.98, 1.5, 0.92, 1.42, 0.6, 1.08, 0.2, 0.7, 0.07, 0.62), places, M_CHAMP if spill else M_COUPE, 24)
-    if spill:
-        half = n * PITCH / 2
-        for (x0, x1, z0, z1) in ((-half, half, -half - 0.08, -half - 0.03), (-half, half, half + 0.03, half + 0.08), (-half - 0.08, -half - 0.03, -half, half), (half + 0.03, half + 0.08, -half, half)):
-            box("Champagne sheet", x0, x1, base - 0.1, base + LEVEL_H, TOWER_Z + z0, TOWER_Z + z1, M_CHAMP)
-bar("Bottle", (0, BAL_Y + 1.6, TOWER_Z + 2.6), (0, BAL_Y + 0.9, TOWER_Z + 0.6), 1.3, M_BOTTLE)
-bar("Bottle label", (0, BAL_Y + 1.45, TOWER_Z + 2.15), (0, BAL_Y + 1.2, TOWER_Z + 1.4), 1.36, M_GOLD)
-bar("Pour", (0, BAL_Y + 0.85, TOWER_Z + 0.5), (0, BAL_Y + 0.1, TOWER_Z + 0.1), 0.2, M_CHAMP)
-bar("Sommelier sleeve", (0, BAL_Y + 1.5, TOWER_Z + 2.0), (0, 29.0, TOWER_Z + 6.0), 0.8, M_COAT)
-ball("Sommelier glove", 0, BAL_Y + 1.5, TOWER_Z + 2.0, 0.9, M_GLOVE)
-player(-1.2, HY + LEVEL_H * 2, TOWER_Z - 1.9 - 0.45, 0)
-player(-2.4, HY, LAND_Z, 1)
-box("Balcony", -6.0, 6.0, BAL_Y - 0.6, BAL_Y, TOWER_Z + 0.95, HZ1, M_DAISM)
-box("Balcony fascia", -6.1, 6.1, BAL_Y - 0.9, BAL_Y - 0.5, TOWER_Z + 0.85, HZ1, M_GOLD)
-for x in (-6.0, 5.7):
-    box("Balcony rail", x, x + 0.3, BAL_Y + 0.95, BAL_Y + 1.1, TOWER_Z + 0.95, HZ1, M_GOLD)
+# The king's balcony (R825, the end): a sheer marble front 16 m up, the last ropes' ends 0.8 m over its front, the exit
+# at its back; gold rails along its sides, the two thrones and the canopy.
+box("Balcony", -BAL_X, BAL_X, DY, BAL_Y, BAL_Z0, HZ1, M_DAISM)
+box("Balcony fascia", -BAL_X - 0.1, BAL_X + 0.1, BAL_Y - 0.45, BAL_Y + 0.04, BAL_Z0 - 0.15, HZ1, M_GOLD)
+box("Balcony plinth", -BAL_X - 0.1, BAL_X + 0.1, DY, DY + 0.5, BAL_Z0 - 0.12, HZ1, M_GOLD)
+for x in (-3.9, 0.0, 3.9):
+    box("Balcony panel", x - 1.5, x + 1.5, DY + 1.0, BAL_Y - 1.0, BAL_Z0 - 0.08, BAL_Z0 - 0.02, M_CREAM)
+    box("Balcony panel frame", x - 1.62, x + 1.62, DY + 0.88, BAL_Y - 0.88, BAL_Z0 - 0.06, BAL_Z0 - 0.01, M_GOLD)
+banner(0.0, BAL_Z0 - 0.1, DY + 1.6, BAL_Y - 1.6, 0)
+for x in (-BAL_X - 0.3, BAL_X):
+    box("Balcony rail", x, x + 0.3, BAL_Y + 0.95, BAL_Y + 1.1, BAL_Z0, HZ1, M_GOLD)
     many("Balcony balusters", P(0.07, 0.95, 0.11, 0.85, 0.07, 0.6, 0.13, 0.3, 0.08, 0.06, 0.11, 0),
-         [(x + 0.15, BAL_Y, z) for z in [TOWER_Z + 1.2 + 0.42 * i for i in range(int((HZ1 - TOWER_Z - 1.2) / 0.42))]], M_BALUSTER)
-carpet([(0, TOWER_Z + 1.6), (0, HZ1 - 0.3)], BAL_Y)
+         [(x + 0.15, BAL_Y, z) for z in [BAL_Z0 + 0.3 + 0.42 * i for i in range(int((HZ1 - BAL_Z0 - 0.3) / 0.42))]], M_BALUSTER)
+carpet([(0, BAL_Z0 + 1.6), (0, HZ1 - 0.3)], BAL_Y)
 for s in (-1, 1):
-    box("Throne", s * 3.9 - 0.9, s * 3.9 + 0.9, BAL_Y, BAL_Y + 3.6, HZ1 - 2.4, HZ1 - 1.2, M_GOLD)
-    box("Throne seat", s * 3.9 - 0.9, s * 3.9 + 0.9, BAL_Y, BAL_Y + 1.3, HZ1 - 3.4, HZ1 - 1.2, M_VELVET)
+    box("Throne", s * 4.2 - 0.9, s * 4.2 + 0.9, BAL_Y, BAL_Y + 3.6, HZ1 - 2.6, HZ1 - 1.2, M_GOLD)
+    box("Throne seat", s * 4.2 - 0.9, s * 4.2 + 0.9, BAL_Y, BAL_Y + 1.3, HZ1 - 3.6, HZ1 - 1.2, M_VELVET)
 box("Canopy", -5.0, 5.0, BAL_Y + 7.8, BAL_Y + 8.6, HZ1 - 3.0, HZ1, M_VELVET)
 box("Canopy fringe", -5.1, 5.1, BAL_Y + 7.5, BAL_Y + 7.8, HZ1 - 3.1, HZ1 - 2.9, M_GOLD)
+player(-1.4, BAL_Y, BAL_Z0 + 1.6, 1)                                # arrived
 
 # ---------------------------------------------------------------- the dance floor and the couples
 for i in range(11):
@@ -566,9 +636,11 @@ box("Stage floor", HX0, STAGE_X1, SY - 0.1, SY, STAGE_Z0, STAGE_Z1, M_PARQUET2)
 box("Stage front trim", STAGE_X1 - 0.1, STAGE_X1 + 0.06, SY - 0.7, SY, STAGE_Z0, STAGE_Z1, M_GOLD)
 for z in range(int(STAGE_Z0) + 2, int(STAGE_Z1), 3):
     box("Stage front panel", STAGE_X1, STAGE_X1 + 0.05, 1.0, SY - 1.2, z - 1.0, z + 1.0, M_CLOTH2)
-bar("Curtain rail", (CURTAIN_X, RAIL, OPEN_S - 3.5), (CURTAIN_X, RAIL, STAGE_Z1 + 2.0), 0.3, M_GOLD)
-box("Pelmet", CURTAIN_X - 0.5, CURTAIN_X + 0.5, RAIL + 0.3, RAIL + 1.9, OPEN_S - 3.5, STAGE_Z1 + 2.0, M_VELVET2)
-box("Pelmet fringe", CURTAIN_X + 0.5, CURTAIN_X + 0.6, RAIL + 0.1, RAIL + 0.5, OPEN_S - 3.5, STAGE_Z1 + 2.0, M_GOLD)
+# The rail and its pelmet run on 3.5 m past the curtain's open end, over the fountain's north-east: the fountain's own
+# view (R833) leaves them out, a cutaway, or they would cover the top of the fountain and the loft's ladder.
+PELMET = [bar("Curtain rail", (CURTAIN_X, RAIL, OPEN_S - 3.5), (CURTAIN_X, RAIL, STAGE_Z1 + 2.0), 0.3, M_GOLD),
+          box("Pelmet", CURTAIN_X - 0.5, CURTAIN_X + 0.5, RAIL + 0.3, RAIL + 1.9, OPEN_S - 3.5, STAGE_Z1 + 2.0, M_VELVET2),
+          box("Pelmet fringe", CURTAIN_X + 0.5, CURTAIN_X + 0.6, RAIL + 0.1, RAIL + 0.5, OPEN_S - 3.5, STAGE_Z1 + 2.0, M_GOLD)]
 cyc = (T % 15.0)
 op = 0.0 if cyc < 6 else (lambda k: k * k * (3 - 2 * k))(min(1.0, (cyc - 6) / 5.0)) if cyc < 11 else 1.0 if cyc < 13 else 1.0 - (lambda k: k * k * (3 - 2 * k))((cyc - 13) / 2.0)
 for side in (-1, 1):
@@ -601,15 +673,46 @@ box("Buffet", BUF[0], BUF[1], SY - 0.5, SY, BUF[2], BUF[3], M_LINEN)
 box("Buffet skirt", BUF[0], BUF[1] + 0.08, 0, SY - 0.5, BUF[2], BUF[3] + 0.08, M_CLOTH)
 box("Buffet hem", BUF[0], BUF[1] + 0.12, SY - 0.75, SY - 0.45, BUF[2] - 0.04, BUF[3] + 0.12, M_GOLD)
 cyl("Fountain bowl", FX, SY, BOWL_TOP, FZ, BOWL_R * 2, M_SILVER)
+torus("Fountain bowl rim", FX, BOWL_TOP - 0.02, FZ, BOWL_R, 0.08, M_GOLD)
 cyl("Chocolate pool", FX, BOWL_TOP - 0.05, BOWL_TOP + 0.01, FZ, BOWL_R * 2 - 0.3, M_CHOC)
+# R828: the chocolate runs over each tier's rim and down the whole of its side - one sheet, no pale band, no ladders -
+# with its ripples (ChocolateRipples) where the clock has them, here wavy as a liquid's; a lip where it curls over the
+# rim; glossy streaks running down from the lip with a drop at the end of each, so a still picture shows it pouring.
+def wavy_ring(name, x, y, z, R, r, amp, waves, phase, mat, seg=120, sides=8):
+    bm = bmesh.new()
+    rows = []
+    for u in range(seg):
+        a = 2 * math.pi * u / seg
+        c = Vector((x + R * math.cos(a), z + R * math.sin(a), y + amp * math.sin(waves * a + phase)))
+        rad = Vector((math.cos(a), math.sin(a), 0))
+        rows.append([bm.verts.new(c + (rad * math.cos(2 * math.pi * v / sides) + Vector((0, 0, 1)) * math.sin(2 * math.pi * v / sides)) * r)
+                     for v in range(sides)])
+    for u in range(seg):
+        a_, b_ = rows[u], rows[(u + 1) % seg]
+        for v in range(sides):
+            bm.faces.new((a_[v], b_[v], b_[(v + 1) % sides], a_[(v + 1) % sides]))
+    o = bpy.data.objects.new(name, to_mesh(name, bm, mat))
+    col.objects.link(o)
+    return o
+
+
 below = BOWL_TOP
 for k in range(3):
-    flow_top = TIER_TOP[k] - STILL
-    cyl("Chocolate falling", FX, below, flow_top, FZ, TIER_R[k] * 2, M_CHOC)
-    cyl("Chocolate still", FX, flow_top, TIER_TOP[k], FZ, TIER_R[k] * 2, M_CHOC2)
-    torus("Tier rim", FX, TIER_TOP[k], FZ, TIER_R[k], 0.09, M_SILVER)
-    for n in range(3):
-        torus("Drip", FX, below + (flow_top - below) * (0.2 + 0.3 * n), FZ, TIER_R[k] + 0.03, 0.06, M_CHOC2)
+    h, R = TIER_TOP[k] - below, TIER_R[k]
+    cyl("Chocolate tier", FX, below, TIER_TOP[k], FZ, R * 2, M_CHOC)
+    wavy_ring("Chocolate lip", FX, TIER_TOP[k] - 0.05, FZ, R + 0.02, 0.09, 0.025, 9, k, M_CHOC)
+    for i in range(RIPPLES):
+        under = (FLOW * T + i * h / RIPPLES) % h
+        if 0.2 < under < h - 0.12:
+            wavy_ring("Chocolate ripple", FX, TIER_TOP[k] - 0.08 - under, FZ, R + 0.02, 0.05, 0.05, 6 + k, 1.7 * i + k, M_CHOCWAVE)
+    n = int(2 * math.pi * R / 0.42)
+    for j in range(n):
+        a = 2 * math.pi * (j + 0.37 * k + 0.3 * random.random()) / n
+        sx, sz = FX + (R + 0.015) * math.cos(a), FZ + (R + 0.015) * math.sin(a)
+        end = TIER_TOP[k] - 0.1 - h * (0.5 + 0.48 * random.random())
+        w = 0.06 + 0.05 * random.random()
+        bar("Chocolate streak", (sx, TIER_TOP[k] - 0.06, sz), (sx, end, sz), w, M_CHOCWAVE)
+        ball("Chocolate drop", sx, end, sz, w + 0.06, M_CHOCWAVE)
     below = TIER_TOP[k]
 cyl("Fountain column", FX, TIER_TOP[2], TIER_TOP[2] + 1.2, FZ, 0.7, M_SILVER)
 inst(ME_CONE, "Fountain crown", M_GOLD, U(FX, TIER_TOP[2] + 1.7, FZ), (1.2, 1.2, 1.0))
@@ -624,8 +727,21 @@ for (x, z) in ((-30.6, 15.6), (-26.0, 15.8)):
     for t2, r2 in ((0.9, 1.5), (1.4, 1.1), (1.85, 0.75)):
         cyl("Cake", x, SY + t2, SY + t2 + 0.45, z, r2, M_BERRY if t2 > 1.5 else M_PLATE)
 carpet([(CURTAIN_X + 0.3, OPEN_S - 0.3), (FX, BUF[3] - 1.4), (FX, FZ + BOWL_R + 0.9)], SY)
-player(FX - 1.0, TIER_TOP[0], FZ + TIER_R[0] - 0.4, 1)
-player(FX + 0.3, BOWL_TOP, FZ + TIER_R[0] + 0.5, 0)
+# The lamplighters' ladder (R825; the hall's only ladder since R828): hung from the loft's edge on two hooks, in front of
+# the fountain, its foot a metre under the fountain's top, 1.6 m from its south edge.
+lz = SCR + LADDER_OUT + 0.05
+for s in (-1, 1):
+    bar("Ladder rail", (FX + s * 0.74, TIER_TOP[2] - 1.0, lz), (FX + s * 0.74, LY + 0.1, lz), 0.1, M_GOLDB)
+    # A hook round the loft's edge (its face is 0.4 m deep): a ring from the rail's top back over the edge.
+    torus("Ladder hook", FX + s * 0.74, LY + 0.1, (lz + SCR - 0.4) / 2, (lz - SCR + 0.4) / 2, 0.045, M_GOLDB, (0, math.pi / 2, 0))
+y = TIER_TOP[2] - 0.7
+while y < LY - 0.1:
+    bar("Ladder rung", (FX - 0.74, y, lz), (FX + 0.74, y, lz), 0.07, M_GOLDB)
+    y += 0.4
+player(FX + 0.6, BOWL_TOP, FZ + TIER_R[0] + 0.45, 0)                # at the foot of the first tier
+player(FX + 0.3, TIER_TOP[0] + 0.9, FZ + TIER_R[1] + 0.32, 0)       # climbing the second against the flow
+player(FX - 0.9, TIER_TOP[0], FZ + TIER_R[1] + 0.6, 1)              # resting on the first tier's ring
+player(FX + 0.1, 17.4, lz + 0.35, 1)                                # up the loft's ladder
 
 # ---------------------------------------------------------------- the chandeliers
 hanging = {l: hanging_meshes(l) for l in set(ROPE_L)}
@@ -641,9 +757,9 @@ for lane, x in enumerate(LANES):
         end = Vector((0, l * math.sin(ang), -l * math.cos(ang)))
         mid = g.location + Vector((0, (l - 1.5) * math.sin(ang), -(l - 1.5) * math.cos(ang)))
         lamps.append((mid.x, mid.z, mid.y))
-        if lane == 0 and k == 1:
+        if lane == 0 and k in (1, 4):
             hand = g.location + end
-            player(hand.x, hand.z - 1.05, hand.y, 0)
+            player(hand.x, hand.z - 1.05, hand.y, 0 if k == 1 else 1)
 great = place_meshes(great_meshes(CEIL - GREAT_Y - 4.6), "Great chandelier", U(0, GREAT_Y, GREAT_Z))
 cyl("Great chandelier carpet", 0, GREAT_Y + 0.004, GREAT_Y + 0.02, GREAT_Z, GREAT_R * 2 - 0.5, M_OLIVE2)
 for a in (0, 120, 240):
@@ -713,9 +829,20 @@ scene.view_settings.exposure = -0.2
 scene.render.image_settings.file_format = "PNG"
 print("OBJECTS", len(col.objects), "LAMPS", len(lamps))
 
+# R818's two views, and R833's two of what R825 - R828 changed: the cloche lifts in their dumbwaiter from over the long
+# table, and the chocolate fountain with the loft's ladder from over the dance floor's south-west corner.
 shots = (("", 26, U(66, 60, -12), U(-6, 4, 36)),
-         ("_chandeliers", 22, U(13, 25.5, 6.5), U(-2, 15, 44)))
+         ("_chandeliers", 22, U(13, 25.5, 6.5), U(-2, 15, 44)),
+         ("_cloche_lifts", 24, U(31.0, 15.6, 36.5), U(19.0, 11.2, 55.0)),
+         ("_fountain", 20, U(-12.5, 19.0, 17.5), U(-28.4, 12.6, 6.6)))
+ONLY = os.environ.get("BANQUET_SHOTS")   # e.g. "_cloche_lifts,_fountain": render only these
+if ONLY:
+    shots = tuple(s for s in shots if (s[0] or "hall") in ONLY.split(","))
 for suffix, lens, eye, target in shots:
+    for o in CLOSE_ONLY:
+        o.hide_render = suffix not in ("_cloche_lifts", "_fountain")
+    for o in PELMET:
+        o.hide_render = suffix == "_fountain"
     cam_d.lens = lens
     cam.location = eye
     aim(cam, target)
