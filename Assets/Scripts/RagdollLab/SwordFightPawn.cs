@@ -35,6 +35,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The sword model as drawn (its mesh and how big), for a copy of it; null with the boxes.</summary>
         public Transform SwordModel => swordModel;
         public float SwordModelScale => modelScale;
+        /// <summary>R830: the sword as drawn this frame (grip at its origin, blade along +Z), null before Initialize.</summary>
+        internal Transform SwordTransform => sword;
         public Vector3 BladeRoot => SwordBody.position + SwordBody.rotation * Vector3.forward * .13f;
         public Vector3 BladeTip => SwordBody.position + SwordBody.rotation * Vector3.forward * .88f;
         public Vector3 WeaponOffset => Alive ? Pawn.Hips.transform.InverseTransformPoint(sword.position) : Vector3.zero;
@@ -90,6 +92,8 @@ namespace ChessFight.RagdollLab
             Pawn.PoseOverride = SwordPose;
             var root = new GameObject("Physical sword");
             root.transform.SetParent(transform); sword = root.transform;
+            // R830: the cut's afterimage, drawn from the sword as it is posed each frame.
+            if (GetComponent<SwordSlashTrail>() == null) gameObject.AddComponent<SwordSlashTrail>();
             bladeMaterial = new Material(LitMaterials.Lit) { color = new Color(.69f, .82f, .94f) };
             hiltMaterial = new Material(LitMaterials.Lit) { color = new Color(.85f, .60f, .21f) };
             blade = Part("Blade", new Vector3(0, 0, .50f), new Vector3(.12f, .055f, .76f), bladeMaterial);
@@ -455,8 +459,9 @@ namespace ChessFight.RagdollLab
             // 10-25 (승규 님: "퀸 나이트 폰 빼고 나머지 기물의 칼 크기가 커"): the king's, rook's and bishop's a size smaller.
             // Then ("왕이 몸에 비해 칼이 좀 커"): the king's smaller again, 0.8 → 0.65.
             // 10-27 ("킹이랑 룩 칼 좀 더 키워줘" → "룩이 아니라 비숍, 비숍 킹을 1.5배로"): king 0.65 → 1, bishop 0.8 → 1.2,
-            // rook back to 0.8. Then ("퀸은 10퍼 작게"): queen 0.9.
-            float size = Pawn.Piece == PieceKind.King ? 1f : Pawn.Piece == PieceKind.Bishop ? 1.2f : Pawn.Piece == PieceKind.Rook ? .8f
+            // rook back to 0.8. Then ("퀸은 10퍼 작게"): queen 0.9. R831 (11-24, "킹 칼 좀 더 크기 키워줘"): king 1 → 1.25
+            // (drawing only: the cut's reach is the blade's line, BladeLength, as before).
+            float size = Pawn.Piece == PieceKind.King ? 1.25f : Pawn.Piece == PieceKind.Bishop ? 1.2f : Pawn.Piece == PieceKind.Rook ? .8f
                 : Pawn.Piece == PieceKind.Queen ? .9f : 1f;
             // The models' guards sit 0.09 m up from their origin and their pommels hang below it (the model stands along
             // +Y). 10-25 (승규 님: "손잡이 위쪽에 잡아져 있어" → "모든 기물이 손잡이 부분 잡게"): the hand held it just under
