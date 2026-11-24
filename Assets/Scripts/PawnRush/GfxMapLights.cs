@@ -9,8 +9,8 @@ namespace ChessFight.PawnRush
     /// JY-gfx (2026-11-24): each indoor map's own light. JY: "3코스도 각 맵들마다 컨셉이 아에 다른데 획일화되잖아", with
     /// twenty pictures of interiors lit by their architecture: chandeliers and sconces, lanterns along a nave, uplight on
     /// columns, skylights and leaded windows throwing their pattern on stone (그래픽-재구축\조명\참고_JY). So every map has
-    /// a concept of its own (Maps), from what the map is: a look (GameCourses: its sun through its windows, ambient,
-    /// haze, grade, sky) and a rig built from its own parts:
+    /// a concept of its own (Maps), from what the map is: a look (GameCourses: how much of the morning's sky light
+    /// gets in, its grade and shafts; the sun and the sky stay the scene's, one time of day) and a rig built from its own parts:
     ///   lid       a shadow-only roof over the roofless hall: the sun gets in only through its windows and skylights, as
     ///             patterned pools and beams (the shafts only draw where the sun is blocked), and the lamps can show;
     ///   glass     the windows' panes stop casting shadows, so the light comes through them;
@@ -48,6 +48,38 @@ namespace ChessFight.PawnRush
             /// material in Resources/PawnRushMiniGames/Materials, the swatch family's; empty keeps it), times FloorTint.</summary>
             public string FloorFrom = "", FloorTo = "";
             public Color FloorTint = Color.white;
+            /// <summary>Each layer of the map's light plan times this (and all of it times PlanScale): tunable as a whole.</summary>
+            public float PlanScale = 1f, DaylightScale = 1f, GeneralScale = 1f, WashScale = 1f, UplightScale = 1f, DecorativeScale = 1f, AccentScale = 1f, BounceScale = 1f;
+        }
+
+        /// <summary>
+        /// One line of a map's light plan, its lighting design (JY 11-24: "조명 설계부터 다시 하고 라이팅 구현해"): a light at a
+        /// place in the section's frame (x right, y up, z along the way), a row of them, or one at each part of a name, with
+        /// the layer it belongs to.
+        /// </summary>
+        public sealed class Fixture
+        {
+            /// <summary>daylight, general, wash, uplight, decorative, accent or bounce (each has a scale on the rig).</summary>
+            public string Layer = "general";
+            /// <summary>What it is for, in words (the design's reason).</summary>
+            public string Note = "";
+            public LightType Type = LightType.Point;
+            /// <summary>Where; with Count over 1, a row of Count lights from At to To (both ends included).</summary>
+            public Vector3 At, To;
+            public int Count = 1;
+            /// <summary>Or one light at each enabled part whose name starts with this, at Anchor ("centre", "top", "bottom")
+            /// of its box plus Offset (its x toward the hall's middle when Inward), at most Max, none closer than Spacing.</summary>
+            public string Each = "";
+            public string Anchor = "centre";
+            public Vector3 Offset;
+            public bool Inward;
+            public int Max = 64;
+            public float Spacing;
+            /// <summary>A spot's way in the section's frame (its x toward the middle when Inward).</summary>
+            public Vector3 Aim = Vector3.down;
+            public float Intensity = 1f, Range = 10f, Angle = 60f, Inner = 40f;
+            public Color Color = Color.white;
+            public bool Shadows;
         }
 
         public sealed class Map
@@ -58,6 +90,11 @@ namespace ChessFight.PawnRush
             public string Concept;
             public GameCourses.Look Look;
             public Rig Rig;
+            /// <summary>The map's lighting design, light by light (built with the rig, read every frame).</summary>
+            public List<Fixture> Plan = new List<Fixture>();
+            /// <summary>The section lights its own sky, sun and ambient (the team's code: the Royal Library, the night
+            /// Observatory): no look of the course's over it, only the rig (its plan) and its baked light.</summary>
+            public bool OwnLook;
         }
 
         // ------------------------------------------------------------------ the maps
@@ -70,9 +107,7 @@ namespace ChessFight.PawnRush
             Key = "", Concept = "a plain bright interior",
             Look = new GameCourses.Look
             {
-                Name = "Course 2", SunWay = new Vector3(.6f, -.62f, -.5f), SunColor = new Color(1f, .97f, .92f), SunIntensity = 2f,
-                Sky = new Color(.6f, .6f, .62f), Equator = new Color(.55f, .53f, .52f), Ground = new Color(.32f, .3f, .28f),
-                FogColor = new Color(.82f, .82f, .84f), FogStart = 40f, FogEnd = 360f,
+                Name = "Course 2", Indoor = .85f, Bounce = .7f,
             },
             Rig = new Rig(),
         };
@@ -83,11 +118,8 @@ namespace ChessFight.PawnRush
             Key = "", Concept = "a plain darker interior",
             Look = new GameCourses.Look
             {
-                Name = "Course 3", SunWay = new Vector3(.2f, -.85f, -.45f), SunColor = new Color(1f, .96f, .9f), SunIntensity = 1.6f,
-                Sky = new Color(.26f, .26f, .32f), Equator = new Color(.22f, .21f, .24f), Ground = new Color(.11f, .1f, .11f),
-                FogColor = new Color(.3f, .3f, .34f), FogStart = 8f, FogEnd = 140f,
-                Exposure = -.1f, Contrast = 30f, Saturation = 14f, BloomIntensity = .9f, BloomThreshold = .85f, Vignette = .26f,
-                ShaftIntensity = 2f, ShaftDensity = .05f, SkyTint = new Color(.55f, .58f, .68f),
+                Name = "Course 3", Indoor = .45f, Bounce = .6f, Exposure = .1f, Contrast = 26f, Saturation = 14f, BloomIntensity = .9f, BloomThreshold = .85f, Vignette = .2f,
+                ShaftIntensity = 2f, ShaftDensity = .05f,
             },
             Rig = new Rig { LampIntensity = 3f },
         };
@@ -101,10 +133,7 @@ namespace ChessFight.PawnRush
                 Concept = "the grand entrance of light: daylight falling through the dome's lattice onto the red stair, warm uplight washing every column and wall (a great station hall), the hub chandelier glowing, marble gleaming",
                 Look = new GameCourses.Look
                 {
-                    Name = "Grand stair hall", SunWay = new Vector3(.3f, -.82f, -.48f), SunColor = new Color(1f, .97f, .92f), SunIntensity = 2.2f,
-                    Sky = new Color(.62f, .6f, .6f), Equator = new Color(.55f, .5f, .48f), Ground = new Color(.4f, .3f, .28f),
-                    FogColor = new Color(.85f, .84f, .84f), FogStart = 40f, FogEnd = 320f,
-                    Exposure = 0f, Contrast = 24f, Saturation = 18f, BloomIntensity = .8f, BloomThreshold = .9f, Vignette = .14f,
+                    Name = "Grand stair hall", Indoor = .85f, Bounce = .6f, Exposure = 0f, Contrast = 24f, Saturation = 18f, BloomIntensity = .8f, BloomThreshold = .9f, Vignette = .14f,
                     ShaftIntensity = 1.4f, ShaftDensity = .03f,
                 },
                 Rig = new Rig { UplightColor = new Color(1f, .9f, .78f), Lid = false, FixtureBoost = 1.5f, FixtureReach = 1.3f, LampIntensity = 2.5f, UplightIntensity = 2f, UplightMax = 16, GoalIntensity = 0f },
@@ -115,10 +144,7 @@ namespace ChessFight.PawnRush
                 Concept = "the royal workshop: daylight pouring in from above as through a skylight, sawdust haze, warm work-lamp pools over the benches and the pit, warm light washing up the columns, walnut planks underfoot instead of the dark slate",
                 Look = new GameCourses.Look
                 {
-                    Name = "Repair wing", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.95f, .97f, 1f), SunIntensity = 2.2f,
-                    Sky = new Color(.72f, .7f, .7f), Equator = new Color(.64f, .6f, .58f), Ground = new Color(.4f, .35f, .32f),
-                    FogColor = new Color(.7f, .68f, .66f), FogStart = 15f, FogEnd = 200f,
-                    Exposure = .1f, Contrast = 28f, Saturation = 16f, ShaftIntensity = 1.6f, ShaftDensity = .045f,
+                    Name = "Repair wing", Indoor = .85f, Bounce = .7f, Exposure = .1f, Contrast = 28f, Saturation = 16f, ShaftIntensity = 1.6f, ShaftDensity = .045f,
                 },
                 Rig = new Rig { FloorTo = "PR_Mid_WalnutFloor", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
@@ -128,10 +154,7 @@ namespace ChessFight.PawnRush
                 Concept = "the bright reading room: cream daylight from above between the bookshelf towers, warm reading lamps and sconces, warm light up the columns, a polished herringbone parquet holding the lamps",
                 Look = new GameCourses.Look
                 {
-                    Name = "Reading room", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(1f, .95f, .86f), SunIntensity = 2.2f,
-                    Sky = new Color(.72f, .7f, .7f), Equator = new Color(.64f, .6f, .58f), Ground = new Color(.4f, .35f, .32f),
-                    FogColor = new Color(.76f, .74f, .72f), FogStart = 12f, FogEnd = 180f,
-                    Exposure = .1f, Contrast = 26f, Saturation = 18f, ShaftIntensity = 1.8f, ShaftDensity = .05f, ShaftTint = new Color(1f, .95f, .85f),
+                    Name = "Reading room", Indoor = .85f, Bounce = .7f, Exposure = .1f, Contrast = 26f, Saturation = 18f, ShaftIntensity = 1.8f, ShaftDensity = .05f,
                 },
                 Rig = new Rig { FloorTo = "PR_Mid_Parquet", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
@@ -141,10 +164,7 @@ namespace ChessFight.PawnRush
                 Concept = "the glamour ballroom: the chandeliers are the stars, great warm pools on the dance floor and sparkle, gold columns lit from below, cool daylight from above, polished cream marble doubling the lamps",
                 Look = new GameCourses.Look
                 {
-                    Name = "Ballroom", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.92f, .95f, 1f), SunIntensity = 2.2f,
-                    Sky = new Color(.72f, .7f, .7f), Equator = new Color(.64f, .6f, .58f), Ground = new Color(.4f, .35f, .32f),
-                    FogColor = new Color(.78f, .78f, .82f), FogStart = 25f, FogEnd = 260f,
-                    Exposure = .1f, Contrast = 24f, Saturation = 20f, BloomIntensity = .95f, BloomThreshold = .8f, ShaftIntensity = 1.2f,
+                    Name = "Ballroom", Indoor = .85f, Bounce = .7f, Exposure = .1f, Contrast = 24f, Saturation = 20f, BloomIntensity = .95f, BloomThreshold = .8f, ShaftIntensity = 1.2f,
                 },
                 Rig = new Rig { FloorTo = "PR_Mid_BallroomMarble", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .85f, Lid = false, FixtureBoost = 4f, FixtureReach = 1.6f, LampIntensity = 4f, UplightIntensity = 4f, UplightMax = 20, GoalIntensity = 3f },
             },
@@ -154,10 +174,7 @@ namespace ChessFight.PawnRush
                 Concept = "the fresh washhouse: clean cool daylight from above into steam over the pools, the water's light on white tiles, warm sconces by the doors",
                 Look = new GameCourses.Look
                 {
-                    Name = "Laundry", SunWay = new Vector3(.35f, -.85f, -.4f), SunColor = new Color(.95f, .98f, 1f), SunIntensity = 2.2f,
-                    Sky = new Color(.72f, .7f, .7f), Equator = new Color(.64f, .6f, .58f), Ground = new Color(.4f, .35f, .32f),
-                    FogColor = new Color(.86f, .9f, .92f), FogStart = 10f, FogEnd = 160f,
-                    Exposure = .1f, Contrast = 20f, Saturation = 18f, ShaftIntensity = 1.4f, ShaftDensity = .04f, ShaftTint = new Color(.95f, .98f, 1f),
+                    Name = "Laundry", Indoor = .85f, Bounce = .6f, Exposure = .1f, Contrast = 20f, Saturation = 18f, ShaftIntensity = 1.4f, ShaftDensity = .04f,
                 },
                 Rig = new Rig { FloorTo = "PR_Mid_WhiteTile", FloorFrom = "PR_Mid_SlateFloor", FloorGloss = .75f, UplightMax = 20, UplightIntensity = 4f, Lid = false, FixtureBoost = 3f, FixtureReach = 1.6f, LampIntensity = 4f, GoalIntensity = 2.5f },
             },
@@ -165,28 +182,22 @@ namespace ChessFight.PawnRush
             new Map
             {
                 Key = "MG_G_RoyalProcession",
-                Concept = "the ceremonial nave: columns of light falling from the high skylights onto the carpet, gold light rising up every column into the dark, indigo hush around, the far door the brightest",
+                Concept = "the ceremonial nave: columns of light falling from the high skylights onto the carpet, gold light rising up every column, the side aisles in cool shade, the far doors the brightest",
                 Look = new GameCourses.Look
                 {
-                    Name = "Procession nave", SunWay = new Vector3(.1f, -.92f, -.38f), SunColor = new Color(1f, .97f, .92f), SunIntensity = 3f,
-                    Sky = new Color(.32f, .32f, .42f), Equator = new Color(.28f, .26f, .32f), Ground = new Color(.14f, .13f, .15f),
-                    FogColor = new Color(.26f, .26f, .34f), FogStart = 6f, FogEnd = 120f,
-                    Exposure = -.02f, Contrast = 32f, Saturation = 16f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .3f,
-                    ShaftIntensity = 2.6f, ShaftDensity = .06f, SkyTint = new Color(.5f, .52f, .62f),
+                    Name = "Procession nave", Indoor = .45f, Bounce = .6f, Exposure = .15f, Contrast = 28f, Saturation = 16f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .22f,
+                    ShaftIntensity = 2.6f, ShaftDensity = .06f,
                 },
                 Rig = new Rig { LampIntensity = 6f, UplightIntensity = 9f, UplightColor = new Color(1f, .75f, .45f), UplightMax = 16, GoalIntensity = 8f },
             },
             new Map
             {
                 Key = "MG_H_KingsChessHall",
-                Concept = "the king's game: the board as a stage under one great pool of light, long window grids across it, the hall's edges falling away into darkness",
+                Concept = "the king's game: the board as a stage under one great pool of light, long window grids across it, the hall's edges falling away into shade",
                 Look = new GameCourses.Look
                 {
-                    Name = "King's chess hall", SunWay = new Vector3(.78f, -.5f, -.37f), SunColor = new Color(1f, .96f, .88f), SunIntensity = 2.6f,
-                    Sky = new Color(.32f, .32f, .42f), Equator = new Color(.28f, .26f, .32f), Ground = new Color(.14f, .13f, .15f),
-                    FogColor = new Color(.28f, .27f, .32f), FogStart = 8f, FogEnd = 130f,
-                    Exposure = -.02f, Contrast = 30f, Saturation = 16f, BloomIntensity = .9f, BloomThreshold = .85f, Vignette = .28f,
-                    ShaftIntensity = 2.2f, ShaftDensity = .05f, SkyTint = new Color(.55f, .56f, .64f),
+                    Name = "King's chess hall", Indoor = .4f, Bounce = .6f, Exposure = .1f, Contrast = 28f, Saturation = 16f, BloomIntensity = .9f, BloomThreshold = .85f, Vignette = .22f,
+                    ShaftIntensity = 2.2f, ShaftDensity = .05f,
                 },
                 Rig = new Rig { LampIntensity = 5f, UplightIntensity = 4f, UplightMax = 10, GoalIntensity = 4f, StageIntensity = 8f },
             },
@@ -196,11 +207,8 @@ namespace ChessFight.PawnRush
                 Concept = "the royal bedchamber: an intimate room in deep plum and red, the canopy bed glowing warm at its heart, soft daylight through the curtained windows, the lasers bright in the dim",
                 Look = new GameCourses.Look
                 {
-                    Name = "Bedchamber", SunWay = new Vector3(.7f, -.55f, -.45f), SunColor = new Color(.85f, .9f, 1f), SunIntensity = 1.4f,
-                    Sky = new Color(.32f, .32f, .42f), Equator = new Color(.28f, .26f, .32f), Ground = new Color(.14f, .13f, .15f),
-                    FogColor = new Color(.26f, .2f, .26f), FogStart = 8f, FogEnd = 110f,
-                    Exposure = -.02f, Contrast = 30f, Saturation = 18f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .32f,
-                    ShaftIntensity = 1.6f, ShaftDensity = .045f, ShaftTint = new Color(.9f, .94f, 1f), SkyTint = new Color(.5f, .5f, .6f),
+                    Name = "Bedchamber", Indoor = .4f, Bounce = .6f, Exposure = .1f, Contrast = 28f, Saturation = 18f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .25f,
+                    ShaftIntensity = 1.6f, ShaftDensity = .045f,
                 },
                 Rig = new Rig { LampIntensity = 5f, GoalIntensity = 3f, HeartWord = "bed", HeartIntensity = 5f, HeartRange = 10f },
             },
@@ -210,11 +218,8 @@ namespace ChessFight.PawnRush
                 Concept = "the war council before the end: a dark Gothic hall, lanterns marching along the bridge, cool light high through the lancets, the final golden door blazing",
                 Look = new GameCourses.Look
                 {
-                    Name = "War room", SunWay = new Vector3(.6f, -.6f, -.53f), SunColor = new Color(.85f, .9f, 1f), SunIntensity = 1.8f,
-                    Sky = new Color(.3f, .31f, .42f), Equator = new Color(.28f, .26f, .32f), Ground = new Color(.14f, .13f, .15f),
-                    FogColor = new Color(.24f, .24f, .3f), FogStart = 8f, FogEnd = 140f,
-                    Exposure = -.02f, Contrast = 32f, Saturation = 16f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .3f,
-                    ShaftIntensity = 2.4f, ShaftDensity = .06f, ShaftTint = new Color(.92f, .95f, 1f), SkyTint = new Color(.45f, .48f, .6f),
+                    Name = "War room", Indoor = .4f, Bounce = .6f, Exposure = .1f, Contrast = 28f, Saturation = 16f, BloomIntensity = 1f, BloomThreshold = .8f, Vignette = .24f,
+                    ShaftIntensity = 2.4f, ShaftDensity = .06f,
                 },
                 Rig = new Rig { FixtureBoost = 1.2f, FixtureReach = 1.2f, LampIntensity = 3f, GoalIntensity = 8f },
             },
@@ -227,16 +232,23 @@ namespace ChessFight.PawnRush
             return course == 2 ? Course2Default : Course3Default;
         }
 
+        /// <summary>Whether the section has a map of its own (not a course's default).</summary>
+        public static bool Has(string sectionName)
+        {
+            foreach (var m in Maps) if (sectionName.Contains(m.Key)) return true;
+            return false;
+        }
+
         // ------------------------------------------------------------------ dressing a section
 
-        /// <summary>A course 2 or 3 section: its look in place and its rig built.</summary>
+        /// <summary>A course 2 or 3 section: its look in place (unless it lights itself) and its rig built.</summary>
         public static void Dress(PawnRushSection section, int course)
         {
             if (section == null || section.GetComponent<GfxMapRig>() != null) return;
             var map = For(section.name, course);
             var frame = section.transform;
             if (!Box(frame, out var box)) return;
-            GameCourses.Add(frame, box, map.Look);
+            if (!map.OwnLook) GameCourses.Add(frame, box, map.Look);
             var rig = section.gameObject.AddComponent<GfxMapRig>();
             rig.Build(map, box, section);
         }
@@ -289,6 +301,8 @@ namespace ChessFight.PawnRush
         readonly List<Fixture> fixtures = new List<Fixture>();
         readonly List<(Renderer renderer, ShadowCastingMode mode)> glass = new List<(Renderer, ShadowCastingMode)>();
         Renderer lid;
+        // The map's light plan as built: each light with the plan line it came from.
+        readonly List<(Light light, GfxMapLights.Fixture line)> planned = new List<(Light, GfxMapLights.Fixture)>();
 
         public string Concept => map != null ? map.Concept : "";
 
@@ -403,10 +417,101 @@ namespace ChessFight.PawnRush
                     if (r.enabled && r.name.ToLowerInvariant().Contains(map.Rig.HeartWord) && (heart == null || r.bounds.size.sqrMagnitude > heart.bounds.size.sqrMagnitude)) heart = r;
                 if (heart != null) Add(Kind.Heart, LightType.Point, heart.bounds.center + Vector3.up * 1f, Quaternion.identity, map.Rig.HeartRange, 0f);
             }
+
+            // The map's light plan, line by line.
+            Plan(box);
             LateUpdate();
         }
 
         static string Plain(string name) => name.EndsWith(" (Gfx)") ? name.Substring(0, name.Length - 6) : name;
+
+        // A world box as a box in the section's frame.
+        Bounds Local(Bounds b)
+        {
+            var l = new Bounds(transform.InverseTransformPoint(b.center), Vector3.zero);
+            for (int i = 0; i < 8; i++)
+                l.Encapsulate(transform.InverseTransformPoint(new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z)));
+            return l;
+        }
+
+        // Every line of the map's plan as lights: one at At, a row from At to To, or one at each part of a name.
+        void Plan(Bounds box)
+        {
+            var frame = transform;
+            var parts = GetComponentsInChildren<Renderer>(true);
+            foreach (var line in GfxMapPlans.For(map.Key) ?? map.Plan)
+            {
+                var points = new List<(Vector3 at, float side)>();
+                if (!string.IsNullOrEmpty(line.Each))
+                {
+                    foreach (var r in parts)
+                    {
+                        if (!r.enabled || !r.gameObject.activeInHierarchy || !r.name.StartsWith(line.Each, System.StringComparison.Ordinal)) continue;
+                        var b = Local(r.bounds);
+                        var p = line.Anchor == "top" ? new Vector3(b.center.x, b.max.y, b.center.z)
+                              : line.Anchor == "bottom" ? new Vector3(b.center.x, b.min.y, b.center.z) : b.center;
+                        // +1: the hall's middle is to the right of the part (its x larger).
+                        float side = p.x < box.center.x ? 1f : -1f;
+                        var offset = line.Offset;
+                        if (line.Inward) offset.x *= side;
+                        p += offset;
+                        bool near = false;
+                        if (line.Spacing > 0f)
+                            foreach (var q in points)
+                                if (Vector3.Distance(q.at, p) < line.Spacing) { near = true; break; }
+                        if (near) continue;
+                        points.Add((p, side));
+                        if (points.Count >= line.Max) break;
+                    }
+                }
+                else if (line.Count > 1)
+                    for (int i = 0; i < line.Count; i++)
+                    {
+                        var p = Vector3.Lerp(line.At, line.To, i / (line.Count - 1f));
+                        points.Add((p, p.x < box.center.x ? 1f : -1f));
+                    }
+                else points.Add((line.At, line.At.x < box.center.x ? 1f : -1f));
+                foreach (var (at, side) in points)
+                {
+                    var aim = line.Aim;
+                    if (line.Inward) aim.x *= side;
+                    var way = frame.TransformDirection(aim.sqrMagnitude > 1e-6f ? aim.normalized : Vector3.down);
+                    var up = Mathf.Abs(Vector3.Dot(way, frame.up)) > .95f ? frame.forward : frame.up;
+                    var go = new GameObject("Plan " + line.Layer + " light (JY-gfx)");
+                    go.transform.SetParent(frame, false);
+                    go.transform.SetPositionAndRotation(frame.TransformPoint(at), Quaternion.LookRotation(way, up));
+                    var l = go.AddComponent<Light>();
+                    l.type = line.Type;
+                    l.range = line.Range;
+                    if (line.Type == LightType.Spot)
+                    {
+                        l.spotAngle = line.Angle;
+                        l.innerSpotAngle = Mathf.Min(line.Inner, line.Angle);
+                    }
+                    l.shadows = line.Shadows ? LightShadows.Soft : LightShadows.None;
+                    l.color = line.Color;
+                    l.intensity = 0f;
+                    planned.Add((l, line));
+                }
+            }
+        }
+
+        static float Scale(GfxMapLights.Rig rig, string layer)
+        {
+            float s;
+            switch (layer)
+            {
+                case "daylight": s = rig.DaylightScale; break;
+                case "general": s = rig.GeneralScale; break;
+                case "wash": s = rig.WashScale; break;
+                case "uplight": s = rig.UplightScale; break;
+                case "decorative": s = rig.DecorativeScale; break;
+                case "accent": s = rig.AccentScale; break;
+                case "bounce": s = rig.BounceScale; break;
+                default: s = 1f; break;
+            }
+            return s * rig.PlanScale;
+        }
 
         // The floor FloorFrom names as the rig wants it now: the FloorTo material (dressed as the upgrade dresses it)
         // or the map's own, times FloorTint (a copy for this section), or the map's own back when the upgrade is off.
@@ -556,10 +661,15 @@ namespace ChessFight.PawnRush
             foreach (var k in f) t.Add(i + k);
         }
 
+        // The section's baked indirect light (GfxBakedLight, where one was baked) given back with it.
+        void OnDestroy() => GfxBaked.Set(transform, false);
+
         void LateUpdate()
         {
             if (map == null) return;
             bool on = GameCourses.On && GameGfx.Upgrade;
+            // Its baked indirect light on with the upgrade (GfxBaked: a lightmap per section, where one was baked).
+            GfxBaked.Set(transform, on);
             var rig = map.Rig;
             foreach (var (light, kind) in ours)
             {
@@ -582,6 +692,12 @@ namespace ChessFight.PawnRush
                 // (only while the flicker runs, or the scaling would pile up).
                 if (f.flicker != null && f.flicker.isActiveAndEnabled) f.light.intensity *= on ? rig.FixtureBoost : 1f;
                 else f.light.intensity = f.intensity * (on ? rig.FixtureBoost : 1f);
+            }
+            foreach (var (light, line) in planned)
+            {
+                if (light == null) continue;
+                light.intensity = on ? line.Intensity * Scale(rig, line.Layer) : 0f;
+                light.enabled = light.intensity > 0f;
             }
             if (lid != null) lid.enabled = on && rig.Lid;
             Floors(on);

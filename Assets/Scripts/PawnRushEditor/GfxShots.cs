@@ -39,7 +39,8 @@ namespace ChessFight.PawnRush.Editor
         const string ActiveKey = "GfxShots.Active", CodeKey = "GfxShots.Code", StartKey = "GfxShots.Start";
         const string OutKey = "GfxShots.Out", TagKey = "GfxShots.Tag", SectionsKey = "GfxShots.Sections", SizeKey = "GfxShots.Size";
         const string TuneKey = "GfxShots.Tune", SpotsKey = "GfxShots.Spots", MsaaKey = "GfxShots.Msaa", LineupKey = "GfxShots.Lineup";
-        const string TimeKey = "GfxShots.Time", ScanKey = "GfxShots.Scan", FloorsKey = "GfxShots.Floors";
+        const string TimeKey = "GfxShots.Time", ScanKey = "GfxShots.Scan", FloorsKey = "GfxShots.Floors", AloneKey = "GfxShots.Alone";
+        const string DumpKey = "GfxShots.Dump", FreezeKey = "GfxShots.Freeze";
         const float GiveUpSeconds = 1500f;
 
         static GfxShots()
@@ -53,6 +54,42 @@ namespace ChessFight.PawnRush.Editor
             var args = System.Environment.GetCommandLineArgs();
             int at = System.Array.IndexOf(args, name);
             return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+        }
+
+        // The corridors a round builds at a section's entry and exit (PawnRushRound, SectionCorridor). The neighbours are
+        // stand-ins: a corridor asks only their slot and kind. The section's slot comes from its zone and kind, set as the
+        // round sets it (before the section starts); the corridors' look follows it.
+        internal static GameObject Joins(GameObject sectionObject, string name)
+        {
+            var section = sectionObject.GetComponent<PawnRushSection>();
+            if (section == null) return null;
+            int slot = name.StartsWith("Early_") ? 0 : name.StartsWith("Mid_") ? 2 : name.StartsWith("Late_") ? 4 : name.StartsWith("Final_") ? 6 : -1;
+            if (slot < 0) return null;
+            if (slot < 6 && section.Kind == PawnRushSection.SlotKind.MiniGame) slot++;
+            section.Configure(slot, section.Seed, section.TeamSize, double.NaN);
+            var holder = new GameObject("Joins (GfxShots)");
+            if (slot > 0)
+            {
+                var entry = section.EntryWorld;
+                var at = new Pose(entry.position - entry.rotation * Vector3.forward * SectionCorridor.Length, entry.rotation);
+                SectionCorridor.Build(holder.transform, at, StandIn(holder.transform, slot - 1), section, 1);
+            }
+            if (slot < 6) SectionCorridor.Build(holder.transform, section.ExitWorld, section, StandIn(holder.transform, slot + 1), 2);
+            return holder;
+        }
+
+        static PawnRushSection StandIn(Transform holder, int slot)
+        {
+            var go = new GameObject("Neighbour in slot " + slot + " (stand-in)");
+            go.SetActive(false);
+            go.transform.SetParent(holder, false);
+            var s = go.AddComponent<PawnRushSection>();
+            var kind = slot % 2 == 1 && slot < 6 ? PawnRushSection.SlotKind.MiniGame : PawnRushSection.SlotKind.Obstacle;
+            s.Describe("", "", kind, Vector3.zero, Vector3.zero, 0f, null);
+            s.Configure(slot, 1, 1, double.NaN);
+            // The last slot is the war room: its corridor is wider at the far end and has its own kit.
+            if (slot == 6) go.AddComponent<WarRoomSection>();
+            return s;
         }
 
         [MenuItem("ChessFight/Graphics/Pictures of the sections (Play)")]
@@ -83,6 +120,13 @@ namespace ChessFight.PawnRush.Editor
             // -gfxFloors: no pictures; at every route spot, rays through a 96x54 grid of the game camera's view find the
             // floor under each (a surface facing up) and its material: floors_<section>.txt and floors_all_tag.txt.
             SessionState.SetBool(FloorsKey, System.Environment.GetCommandLineArgs().Contains("-gfxFloors"));
+            // -gfxAlone: each section by itself, open at its ends (without it, the corridors a round joins it with).
+            SessionState.SetBool(AloneKey, System.Environment.GetCommandLineArgs().Contains("-gfxAlone"));
+            // -gfxDump: what each section is made of and where, and every light on it (anatomy_<section>.txt).
+            SessionState.SetBool(DumpKey, System.Environment.GetCommandLineArgs().Contains("-gfxDump"));
+            // -gfxFreeze: each section as the game built and dressed it (its models, the upgrade's materials, the rig's
+            // lights, the corridors) saved as a prefab with the meshes, materials and textures it made, for GfxBake to bake.
+            SessionState.SetBool(FreezeKey, System.Environment.GetCommandLineArgs().Contains("-gfxFreeze"));
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             // The scene's own round, playtest and camera off: the sections come in one at a time.
             foreach (var go in scene.GetRootGameObjects())
@@ -121,6 +165,9 @@ namespace ChessFight.PawnRush.Editor
             public string name;
             public Vector3 eye, target, at, way;
             public float fov = 60f;
+            // The view's up (a straight-down view needs one) and, above 0, an orthographic view this many metres half high.
+            public Vector3 up = Vector3.up;
+            public float ortho;
         }
 
         sealed class Runner : MonoBehaviour
@@ -201,6 +248,11 @@ namespace ChessFight.PawnRush.Editor
                     Time.timeScale = 1f;
                     var section = Instantiate(prefab);
                     section.name = name;
+                    // JY 11-24 ("실제 게임상에선 통로와 연결되어 막혀있는 부분이니까. 다른 프리팹들도 마찬가지고"): a
+                    // round joins every section to its neighbours by corridors (SectionCorridor: walls, a ceiling, a
+                    // header over a mini-game's arch), so its ends are closed there. The pictures have them too: what the
+                    // game's camera sees at the ends, and no sun or sky through them.
+                    var joins = SessionState.GetBool(AloneKey, false) ? null : Joins(section, name);
                     // Awake and Start dress the section; the first frames settle what moves.
                     for (int i = 0; i < 40; i++) yield return null;
                     Time.timeScale = 0f;
@@ -214,6 +266,7 @@ namespace ChessFight.PawnRush.Editor
                     // The small things on its paving, now (the watch spreads them over frames).
                     var rushSection = section.GetComponent<PawnRushSection>();
                     if (rushSection != null) GfxGround.Now(rushSection);
+                    if (SessionState.GetBool(DumpKey, false)) Anatomy(section, name);
                     var spots = Spots(section, name);
                     var pawns = Pawns(spots);
                     var lineup = SessionState.GetBool(LineupKey, false) ? Lineup(spots, name) : null;
@@ -226,8 +279,10 @@ namespace ChessFight.PawnRush.Editor
                     foreach (var spot in spots)
                     {
                         if (only.Length > 0 && !only.Split(',').Any(s => spot.name.EndsWith("_" + s.Trim()))) continue;
-                        cam.transform.SetPositionAndRotation(spot.eye, Quaternion.LookRotation(spot.target - spot.eye, Vector3.up));
+                        cam.transform.SetPositionAndRotation(spot.eye, Quaternion.LookRotation(spot.target - spot.eye, spot.up));
                         cam.fieldOfView = spot.fov;
+                        cam.orthographic = spot.ortho > 0f;
+                        if (cam.orthographic) cam.orthographicSize = spot.ortho;
                         if (census)
                         {
                             // Route spots only (the game's camera); the close-ups and the wide view are not what a player sees.
@@ -271,8 +326,11 @@ namespace ChessFight.PawnRush.Editor
                     var sun = ZoneLight.Sun != null ? ZoneLight.Sun : RenderSettings.sun;
                     notes.AppendLine($"{name}: {spots.Count} pictures; sun {(sun != null ? $"{sun.intensity:0.00} ({sun.color.r:0.00}, {sun.color.g:0.00}, {sun.color.b:0.00}) {sun.transform.eulerAngles}" : "none")}, "
                         + $"sky {(RenderSettings.skybox != null ? RenderSettings.skybox.name : "none")}, ambient {RenderSettings.ambientMode}, fog {RenderSettings.fog} {RenderSettings.fogMode}");
+                    if (GfxBaked.Last.Length > 0) notes.AppendLine("  " + GfxBaked.Last);
+                    if (SessionState.GetBool(FreezeKey, false)) Freeze(section, joins, name);
                     if (pawns != null) Destroy(pawns);
                     if (lineup != null) Destroy(lineup);
+                    if (joins != null) Destroy(joins);
                     Destroy(section);
                     yield return null;
                     yield return null;
@@ -292,6 +350,7 @@ namespace ChessFight.PawnRush.Editor
                     notes.AppendLine($"pipeline {pipeline.name}: HDR {pipeline.supportsHDR}, shadows {pipeline.shadowDistance} m in {pipeline.shadowCascadeCount}, "
                         + $"grading {pipeline.colorGradingMode}, MSAA {pipeline.msaaSampleCount}");
                 if (censused > 0) WriteAllFloors();
+                notes.AppendLine($"zone light mixer: the scene's ambient light noted again {ZoneLight.Renotes} times (it changed under the mix)");
                 notes.AppendLine($"pictures {pictures}, timed looks {timed}, floor censuses {censused}, failed {failures}");
                 File.WriteAllText(Path.Combine(folder, $"notes_{tag}.txt"), notes.ToString());
                 if (timeFrames > 0) File.WriteAllText(Path.Combine(folder, $"times_{tag}.csv"), times.ToString());
@@ -363,6 +422,19 @@ namespace ChessFight.PawnRush.Editor
                     way.y = 0f;
                     way = way.sqrMagnitude > 1e-4f ? way.normalized : section.transform.forward;
                     list.Add(new Spot { name = $"{Short(name)}_0wide", eye = p0 - way * 10f + Vector3.up * 9f, target = PointAt(route, Mathf.Min(length, 30f)) + Vector3.up * 1f, fov = 62f });
+                }
+                // Straight down over the hall from just under its lid, the way on upward, orthographic: where the sun's
+                // pools and the lamps' light fall. Inside the place, so its light is on; what is above is not drawn.
+                // Only when asked (-gfxSpots ...,top).
+                if (SessionState.GetString(SpotsKey, "").Split(',').Any(s => s.Trim() == "top") && GfxMapLights.Box(section.transform, out var hall))
+                {
+                    var frame = section.transform;
+                    float y = hall.max.y - .1f;
+                    var lid = section.GetComponentsInChildren<MeshFilter>(true).FirstOrDefault(f => f.name.StartsWith("Sun lid"));
+                    if (lid != null && lid.sharedMesh != null) y = Mathf.Min(y, lid.sharedMesh.bounds.min.y - .4f);
+                    var eye = frame.TransformPoint(new Vector3(hall.center.x, y, hall.center.z));
+                    float aspect = 16f / 9f;
+                    list.Add(new Spot { name = $"{Short(name)}_top", eye = eye, target = eye - frame.up * 10f, up = frame.forward, ortho = Mathf.Max(hall.size.z * .52f, hall.size.x * .52f / aspect) });
                 }
                 return list;
             }
@@ -457,6 +529,8 @@ namespace ChessFight.PawnRush.Editor
                 RenderSettings.fogEndDistance = F("foge", RenderSettings.fogEndDistance);
                 var fog = RenderSettings.fogColor;
                 RenderSettings.fogColor = new Color(F("fogr", fog.r), F("fogg", fog.g), F("fogb", fog.b), 1f);
+                // bake=0: no section gets its baked indirect light (GfxBaked), to compare.
+                GfxBaked.Enabled = F("bake", 1f) > .5f;
                 // The renderer's ambient occlusion (SSAO): strength, reach in metres, share on the direct light.
                 var ao = Ssao();
                 if (ao != null)
@@ -473,7 +547,7 @@ namespace ChessFight.PawnRush.Editor
 
             static Dictionary<string, object> mapBase;
 
-            // MG_F_ClockworkBallroom.SunIntensity=2.4 or WarRoom.GoalColor=1|.8|.5: one number of a map's look
+            // MG_F_ClockworkBallroom.Indoor=.7 or WarRoom.GoalColor=1|.8|.5: one number of a map's look
             // (GameCourses.Look) or rig (GfxMapLights.Rig) for this look; every number not given goes back to how the run
             // found it. The map is GfxMapLights.Maps' Key (Course2 / Course3 for the defaults).
             static void MapKeys(Dictionary<string, string> s)
@@ -592,6 +666,110 @@ namespace ChessFight.PawnRush.Editor
                 foreach (var kv in counts.OrderByDescending(k => k.Value)) sb.AppendLine($"{kv.Value,6}  {100f * kv.Value / Mathf.Max(1, total),5:0.0}%  {kv.Key}");
                 File.WriteAllText(Path.Combine(folder, $"shaders_{Short(name)}.txt"), sb.ToString());
                 File.WriteAllLines(Path.Combine(folder, $"litsets_{Short(name)}.txt"), sets);
+            }
+
+            // The section and its corridors as built and dressed now, saved for a bake in edit mode (GfxBake -bakePrefab):
+            // Assets/GfxBakeTest/Frozen/<section>_frozen.prefab, and everything it made at run time (meshes, materials,
+            // readable textures) in <section>_made.asset beside it. The batch copy only.
+            void Freeze(GameObject section, GameObject joins, string name)
+            {
+                const string Root = "Assets/GfxBakeTest", Dir = Root + "/Frozen";
+                if (!AssetDatabase.IsValidFolder(Root)) AssetDatabase.CreateFolder("Assets", "GfxBakeTest");
+                if (!AssetDatabase.IsValidFolder(Dir)) AssetDatabase.CreateFolder(Root, "Frozen");
+                string store = Dir + "/" + Short(name) + "_made.asset", prefabPath = Dir + "/" + Short(name) + "_frozen.prefab";
+                AssetDatabase.DeleteAsset(store);
+                AssetDatabase.DeleteAsset(prefabPath);
+                var holder = new GameObject(Short(name) + " (frozen)");
+                var parents = new List<(Transform t, Transform parent)>();
+                foreach (var go in new[] { section, joins })
+                {
+                    if (go == null) continue;
+                    parents.Add((go.transform, go.transform.parent));
+                    go.transform.SetParent(holder.transform, true);
+                }
+                Object main = null;
+                int kept = 0;
+                var done = new HashSet<Object>();
+                void Keep(Object o)
+                {
+                    if (o == null || o is RenderTexture || !done.Add(o) || AssetDatabase.Contains(o)) return;
+                    if (o is Texture2D t && !t.isReadable) return;
+                    o.hideFlags = HideFlags.None;
+                    if (main == null)
+                    {
+                        AssetDatabase.CreateAsset(o, store);
+                        main = o;
+                    }
+                    else AssetDatabase.AddObjectToAsset(o, main);
+                    kept++;
+                }
+                foreach (var filter in holder.GetComponentsInChildren<MeshFilter>(true)) Keep(filter.sharedMesh);
+                foreach (var r in holder.GetComponentsInChildren<Renderer>(true))
+                    foreach (var m in r.sharedMaterials)
+                    {
+                        if (m == null) continue;
+                        foreach (var id in m.GetTexturePropertyNameIDs()) Keep(m.GetTexture(id));
+                        Keep(m);
+                    }
+                AssetDatabase.SaveAssets();
+                PrefabUtility.SaveAsPrefabAsset(holder, prefabPath, out bool saved);
+                foreach (var (t, parent) in parents) t.SetParent(parent, true);
+                Destroy(holder);
+                notes.AppendLine($"{name}: frozen as {prefabPath} ({(saved ? "saved" : "FAILED")}), {kept} made things kept");
+            }
+
+            // What the section is made of and where, in its own frame (metres: x right, y up, z along the way), and every
+            // light in the scene: renderers grouped by their top part under the section and their name without its number.
+            void Anatomy(GameObject section, string name)
+            {
+                var frame = section.transform;
+                var inv = CultureInfo.InvariantCulture;
+                string V(Vector3 v) => string.Format(inv, "({0:0.0} {1:0.0} {2:0.0})", v.x, v.y, v.z);
+                Bounds Local(Bounds b)
+                {
+                    var l = new Bounds(frame.InverseTransformPoint(b.center), Vector3.zero);
+                    for (int i = 0; i < 8; i++)
+                        l.Encapsulate(frame.InverseTransformPoint(new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z)));
+                    return l;
+                }
+                var sb = new StringBuilder();
+                sb.AppendLine($"{name}: frame at {V(frame.position)}, yaw {frame.eulerAngles.y:0}");
+                if (GfxMapLights.Box(frame, out var box)) sb.AppendLine($"box {V(box.min)} .. {V(box.max)}");
+                var rush = section.GetComponent<PawnRushSection>();
+                if (rush != null) sb.AppendLine($"entry {V(rush.EntryLocal.position)}, exit {V(rush.ExitLocal.position)} yaw {rush.ExitLocal.rotation.eulerAngles.y:0}, kind {rush.Kind}, slot {rush.Slot}");
+                var path = section.GetComponentInChildren<ProgressPath>(true);
+                var route = path != null ? path.World(0) : null;
+                if (route != null) sb.AppendLine("white's route: " + string.Join(" ", route.Select(p => V(frame.InverseTransformPoint(p)))));
+                var groups = new SortedDictionary<string, (int n, Bounds b, HashSet<string> mats, string shadow, bool glow)>();
+                foreach (var r in section.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) continue;
+                    var top = r.transform;
+                    while (top.parent != null && top.parent != frame) top = top.parent;
+                    string own = System.Text.RegularExpressions.Regex.Replace(r.name, @"\s*\(\d+\)$", "");
+                    string key = (top == r.transform ? "" : top.name + " / ") + own + (r.enabled && r.gameObject.activeInHierarchy ? "" : " [off]");
+                    var lb = Local(r.bounds);
+                    bool glow = r.sharedMaterials.Any(m => m != null && m.IsKeywordEnabled("_EMISSION") && m.HasProperty("_EmissionColor") && m.GetColor("_EmissionColor").maxColorComponent >= .5f);
+                    if (groups.TryGetValue(key, out var g))
+                    {
+                        g.b.Encapsulate(lb);
+                        foreach (var m in r.sharedMaterials) if (m != null) g.mats.Add(m.name);
+                        groups[key] = (g.n + 1, g.b, g.mats, g.shadow, g.glow || glow);
+                    }
+                    else groups[key] = (1, lb, new HashSet<string>(r.sharedMaterials.Where(m => m != null).Select(m => m.name)), r.shadowCastingMode.ToString(), glow);
+                }
+                sb.AppendLine($"renderers in {groups.Count} groups (count, box min .. max, shadows, glows, materials):");
+                foreach (var kv in groups)
+                    sb.AppendLine($"  {kv.Key} x{kv.Value.n}: {V(kv.Value.b.min)} .. {V(kv.Value.b.max)} {kv.Value.shadow}{(kv.Value.glow ? " GLOWS" : "")} [{string.Join(", ", kv.Value.mats.Take(4))}]");
+                sb.AppendLine("lights (type, where, way, intensity, range, angle, colour, shadows, parent):");
+                foreach (var l in Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    var way = frame.InverseTransformDirection(l.transform.forward);
+                    sb.AppendLine(string.Format(inv, "  {0} {1}{2} at {3} way {4} i {5:0.00} r {6:0.0} a {7:0} c ({8:0.00} {9:0.00} {10:0.00}) {11} under {12}",
+                        l.name, l.type, l.isActiveAndEnabled ? "" : " [off]", V(frame.InverseTransformPoint(l.transform.position)), V(way), l.intensity, l.range,
+                        l.spotAngle, l.color.r, l.color.g, l.color.b, l.shadows, l.transform.parent != null ? l.transform.parent.name : "-"));
+                }
+                File.WriteAllText(Path.Combine(folder, $"anatomy_{Short(name)}.txt"), sb.ToString());
             }
 
             static string Short(string name)

@@ -54,7 +54,9 @@ namespace ChessFight.PawnRush
                 if (course == 1) GfxGround.Request(section);
                 bool own = false;
                 foreach (var n in OwnLight) own |= section.name.Contains(n);
-                if ((course == 2 || course == 3) && !own) GfxMapLights.Dress(section, course);
+                // A section that lights itself is dressed only when its map says what to add (GfxMapLights.Map.OwnLook:
+                // its light plan and its bake, never a look over its own).
+                if ((course == 2 || course == 3) && (!own || GfxMapLights.Has(section.name))) GfxMapLights.Dress(section, course);
             }
             if (!fresh) return;
             GameSurfaces.Wake();

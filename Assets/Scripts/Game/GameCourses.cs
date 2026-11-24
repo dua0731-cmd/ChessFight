@@ -14,11 +14,16 @@ namespace ChessFight.Game
     /// "3코스는 엄중하고, 압도적이거나 웅장하고, 게임의 결말같은"), and then: "3코스도 각 맵들마다 컨셉이 아에 다른데
     /// 획일화되잖아" - so every map brings its own look (the PawnRush side, GfxMapLights, picks it by the map's name and
     /// builds its fixtures; this class carries the scene-wide part):
-    ///   place   the team's zone light mixer (ZoneLight): the look's sun, turned in the section's own frame (x right, y
-    ///           up, z along the route) so it comes through that map's windows however the round laid it, its ambient
-    ///           light and its haze, faded in over the corridor as the camera comes in;
-    ///   volume  the look's grade and light shafts, a global volume of the place's own, weighted the same way;
-    ///   sky     the sky over the roofless halls times the look's tint.
+    /// One time of day everywhere (JY, later the same day: "1코스, 2코스, 3코스 다 시간은 그냥 아침이야. 맵을 진행할수록
+    /// 해 위치가 변하는 기믹은 없어. 다 똑같은 시간대인데 2코스,3코스는 실내라 스카이 조명이나 선 라이트 영향을 좀
+    /// 덜받는거지"): the sun, the sky and the haze stay the scene's morning; a place only lets less of the sky's light in.
+    /// JY then: a map's time of day follows its concept ("각 맵마다 컨셉이 다르고, 그 맵에 어울리는 시간대로 달라질 수
+    /// 있는데 아직은 아침 말고 다른 컨셉으로 가야하는게 천문대 말곤 없는거로 가자"): every map here is morning; the Royal
+    /// Observatory, night, lights itself (RoyalObservatoryLighting). A map given another time later brings its own sun.
+    ///   place   the team's zone light mixer (ZoneLight): the scene's own sun kept exactly, the scene's own ambient light
+    ///           (the sky's) times the look's Indoor share and a little greyer (bounced off the walls), faded in over the
+    ///           corridor as the camera comes in;
+    ///   volume  the look's grade and light shafts, a global volume of the place's own, weighted the same way.
     /// Off with the upgrade (GameGfx).
     /// </summary>
     public static class GameCourses
@@ -26,19 +31,19 @@ namespace ChessFight.Game
         public sealed class Look
         {
             public string Name;
-            /// <summary>The way the sun's light travels in the section's frame (x right, y up, z along the route).</summary>
-            public Vector3 SunWay = new Vector3(.5f, -.7f, -.5f);
-            public Color SunColor = Color.white;
-            public float SunIntensity = 1.5f, ShadowStrength = 1f;
-            /// <summary>The ambient light from above, the sides and below (sRGB, the gradient mode's).</summary>
-            public Color Sky = new Color(.5f, .5f, .52f), Equator = new Color(.45f, .44f, .44f), Ground = new Color(.25f, .24f, .23f);
-            public Color FogColor = new Color(.7f, .7f, .72f);
-            public float FogStart = 30f, FogEnd = 300f;
-            public float Exposure, Contrast = 24f, Saturation = 18f, Temperature, BloomIntensity = .7f, BloomThreshold = .9f, Vignette = .15f;
+            /// <summary>The share of the sky's light that gets in: the scene's own ambient light times this (the walls,
+            /// the ceilings and the rig's lid keep the rest out). The sun is the scene's, never changed.</summary>
+            public float Indoor = .5f;
+            /// <summary>How much of that light has bounced off the room before it reaches anything: 0 the sky's own blue,
+            /// 1 all of it the room's colour (BounceTint times its brightness).</summary>
+            public float Bounce = .5f;
+            /// <summary>The room's colour in its bounced light (its walls' and floors': warm for cream stone and wood, white
+            /// for grey); kept near white (JY: shade, haze and grade never turn yellow).</summary>
+            public Color BounceTint = Color.white;
+            /// <summary>The grade: neutral by rule (no warm or night cast; only light sources are warm).</summary>
+            public float Exposure, Contrast = 24f, Saturation = 18f, BloomIntensity = .7f, BloomThreshold = .9f, Vignette = .15f;
             public float ShaftIntensity = 1.2f, ShaftDensity = .03f;
-            public Color ShaftTint = new Color(1f, .97f, .92f);
-            /// <summary>The sky over the roofless halls, times this.</summary>
-            public Color SkyTint = Color.white;
+            public Color ShaftTint = new Color(1f, .98f, .95f);
 
             public Look Copy(string name)
             {
@@ -66,7 +71,6 @@ namespace ChessFight.Game
         }
 
         static readonly List<Place> places = new List<Place>();
-        static readonly int TintId = Shader.PropertyToID("_Tint");
 
         /// <summary>The look the camera is most inside now, and how far (0 to 1).</summary>
         public static string Current { get; private set; } = "";
@@ -112,7 +116,6 @@ namespace ChessFight.Game
             adjust.postExposure.Override(look.Exposure);
             adjust.contrast.Override(look.Contrast);
             adjust.saturation.Override(look.Saturation);
-            profile.Add<WhiteBalance>(false).temperature.Override(look.Temperature);
             var bloom = profile.Add<Bloom>(false);
             bloom.intensity.Override(look.BloomIntensity);
             bloom.threshold.Override(look.BloomThreshold);
@@ -158,18 +161,13 @@ namespace ChessFight.Game
                 }
                 var look = p.look;
                 var z = p.zone;
-                z.TurnSun = true;
-                z.SunRotation = Quaternion.LookRotation(p.frame.TransformDirection(look.SunWay.normalized), Vector3.up);
-                z.SunColor = look.SunColor;
-                z.SunIntensity = look.SunIntensity;
-                z.ShadowStrength = look.ShadowStrength;
-                z.Sky = look.Sky;
-                z.Equator = look.Equator;
-                z.Ground = look.Ground;
-                z.Fog = true;
-                z.FogColor = look.FogColor;
-                z.FogStart = look.FogStart;
-                z.FogEnd = look.FogEnd;
+                // The scene's sun, sky and haze as they are (one time of day); less of the sky's light inside.
+                z.KeepSun = true;
+                z.TurnSun = false;
+                z.AmbientScale = Mathf.Max(0f, look.Indoor);
+                z.AmbientNeutral = look.Bounce;
+                z.AmbientTint = look.BounceTint;
+                z.Fog = false;
                 float w = z.Ease(wanted ? ZoneLight.Inside(p.frame, p.area, Blend) : 0f);
 #if CF_URP
                 if (p.volume != null) p.volume.weight = w;
@@ -178,10 +176,6 @@ namespace ChessFight.Game
             }
             Weight = best;
             Current = top != null ? top.Name : "";
-            // The sky over the roofless halls (GameSky's own copy of the sky material only).
-            var sky = RenderSettings.skybox;
-            if (sky != null && sky.name == "Gfx sky" && sky.HasProperty(TintId))
-                sky.SetColor(TintId, top != null ? Color.Lerp(Color.white, top.SkyTint, best) : Color.white);
         }
 
         sealed class Watch : MonoBehaviour
