@@ -37,13 +37,48 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: TU_Bark
+    second: {fileID: 2100000, guid: 1c34bceb211578d48bbb258a1ca96fe0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: TU_CreamBlock
     second: {fileID: 2100000, guid: 6cb88110eee377e4c84fb6d7e652ad5e, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: TU_CreamBlockShade
+    second: {fileID: 2100000, guid: 97f25b30e6d18304fbc9db278ae3d0a2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: TU_CreamPaint
     second: {fileID: 2100000, guid: 08c8c79d9357ea546a9422c574a0c639, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_EagleBrown
+    second: {fileID: 2100000, guid: a064597e0a2bb7142abeef91f372f608, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_EagleChest
+    second: {fileID: 2100000, guid: fd60fe09f9cf08c4ba4a4dc982d7e968, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_EagleCream
+    second: {fileID: 2100000, guid: e98b28457b4c3b14aab5125bb17a8683, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_EagleDark
+    second: {fileID: 2100000, guid: 1036cb53f573fbc4885d147e36b09ca7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_EagleEye
+    second: {fileID: 2100000, guid: e7d18c22fcb1bac47908aac61e2cf1aa, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -57,6 +92,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: TU_GrassBlades
+    second: {fileID: 2100000, guid: aadb4b776a186b248b1a6f7cc980bf60, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: TU_Kit_CastleKit
     second: {fileID: 2100000, guid: a223f0375b983e549a15c890040778ac, type: 2}
   - first:
@@ -64,6 +104,21 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: TU_Kit_GateKit
     second: {fileID: 2100000, guid: 32b6fec3584426a469d752804a99d7f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_Leaf
+    second: {fileID: 2100000, guid: 1d5f760c2a3e028498777281e050f5f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_LeafLight
+    second: {fileID: 2100000, guid: fe7668a1b3558c548a9c666cd4a78d08, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_Leaves
+    second: {fileID: 2100000, guid: c0a5263e249412741804da3e0475debb, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -92,8 +147,23 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: TU_Road
+    second: {fileID: 2100000, guid: 43ae81a137813114193a59fe52acbcf8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_Rock
+    second: {fileID: 2100000, guid: dd9a30e9c3373074bb614fddee7c7f5c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: TU_Walnut
     second: {fileID: 2100000, guid: 8ea46ac5f3c7d2940bbae3f6eaca4042, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TU_WetStone
+    second: {fileID: 2100000, guid: 44953337217a07c43a4ff0bb116283ee, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

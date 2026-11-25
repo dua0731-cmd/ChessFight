@@ -1,0 +1,11 @@
+This prompt is complete: do not read any other file in the repository and change no other file. Call the image tool at most twice per image (regenerate once only if a rule below is broken, and keep the better one). Never resize, crop or convert a result. After saving, reply with the file paths and one short line each.
+
+## Format (follow attached image 1 exactly)
+
+Attached image 1 (`ref1_sheet_format.webp`) is ONLY the target format: several separate game assets standing in ONE horizontal row on a PURE WHITE background, each with only a soft contact shadow, the same 3/4 view from slightly above, the same soft studio light, stylized 3D game-asset look with chunky rounded bevels. Ignore its subject and materials. Each image is 1536x1024 landscape.
+
+Absolutely NOT in any image: no text, no titles, no labels, no numbers, no captions, no dimension lines, no arrows, no icons, no logos, no flags, no banners, no loose hanging or swaying cloth, no hands or human body parts, no faces, no team colours (no blue, no orange), no candles, no flames, no glowing glass or light sources (candle holders are EMPTY cups), no background scenery, no floor plane, no frames or borders. Each asset is a complete separate object with clear empty white space around it; nothing overlaps or touches another asset. Show the full object, never cropped.
+
+## Materials (follow attached image 2)
+
+Attached image 2 (`ref2_concept_banquet.webp`) is the chosen art direction: a lavish royal banquet-and-ball hall of a chess party game. Match its materials and colours exactly: warm cream dressed stone and cream marble, rich dark-to-mid walnut wood (pilasters, beams, panels, furniture), polished warm gold trim, caps, rims, finials and filigree, crisp white linen with gold hems, olive-green runners and velvet, polished silver for the cloches and platters, deep red velvet for the stage only, glossy chocolate brown for the fountain only. Bright, warm, festive, chunky shapes, soft rounded bevels, clean readable silhouettes. Attached images 3 onward (`ref3_...` and later) are the course LAYOUT renders: they show where each asset stands and its proportions, but their materials are placeholders - always use image 2's materials.

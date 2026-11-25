@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 830" width="800" height="830" font-family="'Malgun Gothic','Noto Sans KR',sans-serif">
+  <!-- R834 first-run tutorial layout. Top view of the ragdoll test map (LabLayout coordinates).
+       px = 60 + (x + 40) * 9, py = 40 + (32 - z) * 9. North is up. Design only: nothing is built. -->
+  <rect width="800" height="830" fill="#ffffff"/>
+  <text x="60" y="24" font-size="15" font-weight="700" fill="#22252b">첫 실행 튜토리얼 배치도 v0.1 (R834) — 레그돌 시험장 맵, 위가 북쪽, 눈금 한 칸 = 5 m</text>
+
+  <!-- 5 m grid -->
+  <g stroke="#eceef1" stroke-width="1">
+    <path d="M60 40V661M105 40V661M150 40V661M195 40V661M240 40V661M285 40V661M330 40V661M375 40V661M420 40V661M465 40V661M510 40V661M555 40V661M600 40V661M645 40V661M690 40V661M735 40V661"/>
+    <path d="M60 58H735M60 103H735M60 148H735M60 193H735M60 238H735M60 283H735M60 328H735M60 373H735M60 418H735M60 463H735M60 508H735M60 553H735M60 598H735M60 643H735"/>
+  </g>
+
+  <!-- floors -->
+  <g stroke="#9aa1ab" stroke-width="1.2">
+    <rect x="60" y="193" width="225" height="270" fill="#eef1f4"/>
+    <rect x="555" y="193" width="180" height="270" fill="#eef1f4"/>
+    <rect x="348" y="40" width="144" height="144" fill="#eef1f4"/>
+    <rect x="285" y="193" width="270" height="270" fill="#f6f1e4"/>
+    <rect x="393" y="607" width="54" height="54" fill="#f6f1e4"/>
+  </g>
+
+  <!-- west: platform and slopes -->
+  <rect x="60" y="193" width="45" height="270" fill="#cfd6de" stroke="#9aa1ab"/>
+  <rect x="105" y="382" width="168" height="54" fill="#dde3ea" stroke="#9aa1ab"/>
+  <rect x="105" y="301" width="78" height="54" fill="#dde3ea" stroke="#9aa1ab"/>
+  <rect x="105" y="220" width="45" height="54" fill="#dde3ea" stroke="#9aa1ab"/>
+  <g font-size="11" fill="#4a515b">
+    <text x="64" y="210">5 m 단</text>
+    <text x="170" y="413">15° 내리막</text>
+    <text x="188" y="332">30°</text>
+    <text x="155" y="251">45°</text>
+    <text x="66" y="482" font-weight="700">[4] 경사 (자유 연습)</text>
+  </g>
+
+  <!-- north: spinning bar and climb faces -->
+  <circle cx="420" cy="112" r="58" fill="none" stroke="#b8bec7" stroke-dasharray="4 4"/>
+  <line x1="362" y1="112" x2="478" y2="112" stroke="#6b7480" stroke-width="4" stroke-linecap="round"/>
+  <text x="498" y="60" font-size="11" fill="#4a515b" font-weight="700">[2] 회전 봉 (자유 연습)</text>
+  <rect x="312" y="152" width="54" height="54" fill="#c3cad3" stroke="#6b7480"/>
+  <rect x="406" y="193" width="28" height="14" fill="#c3cad3" stroke="#6b7480"/>
+  <rect x="487" y="193" width="28" height="14" fill="#c3cad3" stroke="#6b7480"/>
+  <g font-size="11" fill="#4a515b">
+    <text x="232" y="170">12 m 계단벽</text>
+    <text x="232" y="184">(자유 연습)</text>
+    <text x="398" y="222">역경사</text>
+    <text x="484" y="222">곡면</text>
+  </g>
+
+  <!-- east: walls -->
+  <rect x="600" y="382" width="45" height="54" fill="#c3cad3" stroke="#6b7480"/>
+  <rect x="600" y="301" width="45" height="54" fill="#aab3be" stroke="#6b7480"/>
+  <rect x="600" y="220" width="45" height="54" fill="#8f9aa7" stroke="#6b7480"/>
+  <g font-size="12" fill="#22252b" font-weight="700">
+    <text x="655" y="413">2 m 벽</text>
+    <text x="655" y="332">3 m 벽</text>
+    <text x="655" y="245">4 m 벽</text>
+  </g>
+  <text x="655" y="260" font-size="11" fill="#4a515b">(선택: 벽 도약)</text>
+  <text x="600" y="482" font-size="11" fill="#4a515b" font-weight="700">[3] 벽</text>
+
+  <!-- south: beam and landing -->
+  <rect x="417" y="463" width="6" height="144" fill="#6b7480"/>
+  <text x="432" y="540" font-size="11" fill="#4a515b">[5] 외나무다리 0.6 m × 16 m</text>
+  <text x="432" y="554" font-size="11" fill="#4a515b">(아래는 허공 — 떨어지면 다리 앞에서 다시)</text>
+  <rect x="405" y="622" width="30" height="24" rx="3" fill="#f2c94c" stroke="#a37b00"/>
+  <text x="456" y="639" font-size="12" fill="#22252b" font-weight="700">졸업 문 → 로비</text>
+
+  <!-- low obstacles + new hurdles -->
+  <line x1="487" y1="391" x2="515" y2="391" stroke="#6b7480" stroke-width="4" stroke-linecap="round"/>
+  <text x="520" y="386" font-size="11" fill="#4a515b">림보 봉</text>
+  <rect x="492" y="418" width="18" height="27" fill="#c3cad3" stroke="#6b7480"/>
+  <text x="515" y="440" font-size="11" fill="#4a515b">터널 (선택)</text>
+  <g stroke="#c0562b" stroke-width="4" stroke-linecap="round">
+    <line x1="446" y1="352" x2="460" y2="340"/>
+    <line x1="464" y1="370" x2="478" y2="358"/>
+  </g>
+  <text x="470" y="346" font-size="11" fill="#c0562b">낮은 턱 둘 (새 소품)</text>
+
+  <!-- promotion bays (new) -->
+  <g fill="#fff7d6" stroke="#a37b00" stroke-width="1.2">
+    <rect x="303" y="220" width="54" height="50"/>
+    <rect x="303" y="276" width="54" height="50"/>
+    <rect x="303" y="332" width="54" height="50"/>
+    <rect x="303" y="388" width="54" height="50"/>
+  </g>
+  <g font-size="12" fill="#22252b" font-weight="700" text-anchor="middle">
+    <text x="330" y="250">나이트</text>
+    <text x="330" y="306">비숍</text>
+    <text x="330" y="362">룩</text>
+    <text x="330" y="418">퀸</text>
+  </g>
+  <text x="292" y="454" font-size="11" fill="#a37b00">승격 칸 넷 (새로)</text>
+
+  <!-- dummies -->
+  <g fill="#d9534f" stroke="#7d2320">
+    <circle cx="474" cy="328" r="5"/>
+    <circle cx="474" cy="303" r="5"/>
+    <circle cx="492" cy="315" r="5"/>
+    <circle cx="420" cy="296" r="5"/>
+  </g>
+  <circle cx="402" cy="302" r="5" fill="#2f80ed" stroke="#17427c"/>
+
+  <!-- route -->
+  <path d="M406 382 L420 337 L453 348 L471 364 L501 391 L560 408 L591 409 L622 409 L622 372 L590 356 L590 328 L622 328 L560 320 L483 316 L420 310 L357 318 L372 430 L420 463 L420 634"
+        fill="none" stroke="#2f80ed" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="7 4"/>
+
+  <!-- spawn -->
+  <path d="M406 374 l7 14 h-14 z" fill="#22252b"/>
+  <text x="417" y="393" font-size="11" fill="#22252b">출발</text>
+
+  <!-- step numbers -->
+  <g font-size="12" font-weight="700" text-anchor="middle">
+    <g fill="#2f80ed" stroke="#ffffff" stroke-width="1.5">
+      <circle cx="420" cy="337" r="10"/>
+      <circle cx="449" cy="366" r="10"/>
+      <circle cx="501" cy="405" r="10"/>
+      <circle cx="560" cy="420" r="10"/>
+      <circle cx="622" cy="409" r="10"/>
+      <circle cx="622" cy="328" r="10"/>
+      <circle cx="505" cy="296" r="10"/>
+      <circle cx="420" cy="276" r="10"/>
+      <circle cx="372" cy="318" r="10"/>
+      <circle cx="405" cy="500" r="10"/>
+    </g>
+    <g fill="#ffffff">
+      <text x="420" y="341">1</text>
+      <text x="449" y="370">2</text>
+      <text x="501" y="409">3</text>
+      <text x="560" y="424">4</text>
+      <text x="622" y="413">5</text>
+      <text x="622" y="332">6</text>
+      <text x="505" y="300">7</text>
+      <text x="420" y="280">8</text>
+      <text x="372" y="322">9</text>
+      <text x="402" y="504" font-size="10">10</text>
+    </g>
+  </g>
+
+  <text x="430" y="457" font-size="11" fill="#4a515b" font-weight="700">[1] 본 바닥 30 × 30 m</text>
+
+  <!-- legend -->
+  <rect x="60" y="676" width="675" height="142" fill="#f7f8fa" stroke="#d5d9df"/>
+  <g font-size="12" fill="#22252b">
+    <text x="72" y="696"><tspan font-weight="700">필수 수업 10단계</tspan> (파란 점선 = 가는 길, 처음 하는 사람 약 3분 50초)</text>
+    <text x="72" y="716">1 둘러보기 · 걷기</text>
+    <text x="72" y="734">2 점프 (낮은 턱)</text>
+    <text x="72" y="752">3 다이빙 (림보 봉 밑으로)</text>
+    <text x="72" y="770">4 질주 · 스테미나</text>
+    <text x="72" y="788">5 모서리 잡고 오르기 (2 m)</text>
+    <text x="300" y="716">6 벽타기 (3 m)</text>
+    <text x="300" y="734">7 몸싸움: 태클 · 잡아 던지기 · 버둥대기</text>
+    <text x="300" y="752">8 폰 스킬: 두 걸음 · 팀원 일으키기</text>
+    <text x="300" y="770">9 승격 + 기물 스킬 (넷 중 하나 필수)</text>
+    <text x="300" y="788">10 외나무다리 · 체크포인트 → 졸업 문</text>
+  </g>
+  <g font-size="11" fill="#4a515b">
+    <circle cx="566" cy="712" r="5" fill="#d9534f" stroke="#7d2320"/>
+    <text x="578" y="716">적 더미</text>
+    <circle cx="566" cy="730" r="5" fill="#2f80ed" stroke="#17427c"/>
+    <text x="578" y="734">팀원 더미 (넘어져 있음)</text>
+    <rect x="560" y="743" width="12" height="10" fill="#fff7d6" stroke="#a37b00"/>
+    <text x="578" y="752">새로 놓는 것 (노랑 · 주황)</text>
+    <rect x="560" y="761" width="12" height="10" fill="#c3cad3" stroke="#6b7480"/>
+    <text x="578" y="770">지금 시험장에 있는 것</text>
+    <text x="72" y="808">자리는 초안이다. 회색 상자를 달려 본 뒤 맞춘다. 남동쪽 [7] 시험대(x 5 ~ 75, z −15 ~ −105)는 1차에서 빼서 그리지 않았다.</text>
+  </g>
+</svg>

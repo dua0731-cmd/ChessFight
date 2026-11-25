@@ -49,7 +49,7 @@ FLOORS = [  # (x0, y0, x1, y1, kind) top at z 0
     (-8., 16., 8., 32., "board"),                    # bar floor 16 x 16
     (-3., -37., 3., -31., "board3"),                 # beam landing 6 x 6
 ]
-MOAT_Z = -10.           # dry moat floor, below the kill height so nobody lands on it alive
+MOAT_Z = -14.           # dry moat floor, below the kill height so nobody lands on it alive
 RIM_IN = (-52., -47., 47., 42.)    # inner edge of the courtyard rim (10-12 m from any play floor)
 RIM_W = 6.
 
@@ -66,7 +66,15 @@ def mats():
     M["gold"] = K.principled("TU_Gold", (.83, .37, .01, 1), rough=.32, metal=.6)
     M["purple"] = K.principled("TU_Purple", (.12, .006, .16, 1), rough=.45)
     M["paint"] = K.principled("TU_CreamPaint", (.86, .70, .54, 1), rough=.45)
-    M["grass"] = K.principled("TU_Grass", (.06, .20, .03, 1), rough=.9)
+    M["grass"] = K.image_material("TU_Grass", os.path.join(T, "TU_Grass_BaseColor.png"), rough=.9)
+    M["shade"] = K.image_material("TU_CreamBlockShade", os.path.join(T, "TU_CreamBlockShade_BaseColor.png"), rough=.8)
+    M["wet"] = K.image_material("TU_WetStone", os.path.join(T, "TU_WetStone_BaseColor.png"), rough=.25)
+    M["bark"] = K.image_material("TU_Bark", os.path.join(T, "TU_Bark_BaseColor.png"), os.path.join(T, "TU_Bark_Normal.png"), rough=.85)
+    M["leaves"] = K.image_material("TU_Leaves", os.path.join(T, "TU_Leaves_BaseColor.png"), rough=.6)
+    nt = M["leaves"].node_tree
+    nt.links.new(next(n for n in nt.nodes if n.type == "TEX_IMAGE").outputs["Alpha"], next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED").inputs["Alpha"])
+    M["road"] = K.image_material("TU_Road", os.path.join(T, "TU_Road_BaseColor.png"), rough=.8)
+    M["rock"] = K.image_material("TU_Rock", os.path.join(T, "TU_Rock_BaseColor.png"), rough=.85)
     return M
 
 
@@ -583,6 +591,8 @@ def build_floors(M, coll):
             bm.faces.new(vs)
             o = new_obj("TU_Floor_%s_%d_%d" % (kind, x0, y0), bm, [M["paving"]], coll)
             boxuv(o, 2.)
+            inlay = paving_inlay(M, coll, x0, y0, x1, y1)
+            if inlay: objs.append(inlay)
         objs.append(o)
     return objs
 
@@ -590,39 +600,24 @@ def build_floors(M, coll):
 def build_trims_and_moat(M, coll, occ):
     """Gold trim flush along every outer floor edge, the moat wall under it down to the moat floor, buttresses."""
     runs = boundary_runs(occ)
-    bm_w = bmesh.new(); bm_g = bmesh.new()
+    bm_w = bmesh.new(); bm_s = bmesh.new(); bm_wet = bmesh.new(); bm_g = bmesh.new()
     for (ax, ay), (bx, by), (nx, ny) in runs:
         L = math.hypot(bx - ax, by - ay)
         if L < .01: continue
-        # beam opening: no wall face where the beam leaves the main floor / meets the landing is still fine (beam is
-        # 0.6 m wide and hangs 0.5 m deep), the wall just continues behind it.
-        t = Vector((bx - ax, by - ay, 0)).normalized(); n = Vector((nx, ny, 0))
+        n = Vector((nx, ny, 0))
         a = Vector((ax, ay, 0)); b = Vector((bx, by, 0))
-        # wall face (slightly proud of the edge so it covers the game box's 1 m side)
-        o = n * .02
-        cuboid(bm_w, [a + o - n * .4 + Vector((0, 0, MOAT_Z)), b + o - n * .4 + Vector((0, 0, MOAT_Z)),
-                      b + o + Vector((0, 0, MOAT_Z)), a + o + Vector((0, 0, MOAT_Z)),
-                      a + o - n * .4 + Vector((0, 0, -.28)), b + o - n * .4 + Vector((0, 0, -.28)),
-                      b + o + Vector((0, 0, -.28)), a + o + Vector((0, 0, -.28))])
-        # gold lip: top 0.28 m of the wall, 6 cm proud, plus a 0.2 m flush strip on the floor top
+        # the wall, 2 cm proud of the edge so it covers the game box's 1 m side; arches, pilasters, wet band
+        arcade_wall(bm_w, bm_s, bm_wet, a, b, n, .02)
+        # gold lip: top 0.28 m of the wall, 8 cm proud, plus a 0.2 m flush strip on the floor top
         g0 = n * .08
         cuboid(bm_g, [a - n * .2 + Vector((0, 0, -.28)), b - n * .2 + Vector((0, 0, -.28)), b + g0 + Vector((0, 0, -.28)), a + g0 + Vector((0, 0, -.28)),
                       a - n * .2 + Vector((0, 0, .004)), b - n * .2 + Vector((0, 0, .004)), b + g0 + Vector((0, 0, .004)), a + g0 + Vector((0, 0, .004))])
-        # buttresses every ~6 m
-        k = int(L // 6)
-        for i in range(1, k + 1):
-            c = a + t * (L * i / (k + 1))
-            w = .45
-            cuboid(bm_w, [c - t * w + Vector((0, 0, MOAT_Z)), c + t * w + Vector((0, 0, MOAT_Z)), c + t * w + n * .5 + Vector((0, 0, MOAT_Z)), c - t * w + n * .5 + Vector((0, 0, MOAT_Z)),
-                          c - t * w + Vector((0, 0, -.6)), c + t * w + Vector((0, 0, -.6)), c + t * w + n * .5 + Vector((0, 0, -.9)), c - t * w + n * .5 + Vector((0, 0, -.9))])
-    for bm in (bm_w, bm_g):
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    w = new_obj("TU_MoatWalls", bm_w, [M["block"]], coll); boxuv(w, 2.)
+    bmesh.ops.recalc_face_normals(bm_g, faces=bm_g.faces)
     g = new_obj("TU_FloorTrim", bm_g, [M["gold"]], coll)
-    return [w, g]
+    return finish_walls(bm_w, bm_s, bm_wet, M, coll, "TU_MoatWalls") + [g]
 
 
-def build_rim(M, coll):
+def build_rim(M, coll, trees):
     """The courtyard rim: paving ring at z 0, its inner moat wall, the moat floor, grass outside."""
     x0, y0, x1, y1 = RIM_IN; W = RIM_W
     bm = bmesh.new()
@@ -637,7 +632,7 @@ def build_rim(M, coll):
         if f.normal.z < 0: f.normal_flip()
     rim = new_obj("TU_Rim", bm, [M["paving"]], coll); boxuv(rim, 2.)
     # inner moat wall facing the moat, gold lip
-    bm = bmesh.new(); bg = bmesh.new()
+    bm = bmesh.new(); bm_s = bmesh.new(); bm_wet = bmesh.new(); bg = bmesh.new()
     c = [Vector((x, y, 0)) for x, y in inner]
     ctr = Vector(((x0 + x1) / 2, (y0 + y1) / 2, 0))
     for i in range(4):
@@ -645,35 +640,372 @@ def build_rim(M, coll):
         t = (b - a).normalized(); n = Vector((-t.y, t.x, 0))
         if n.dot(ctr - a) < 0: n = -n                    # n points into the moat
         Z = Vector((0, 0, 1))
-        cuboid(bm, [a - n * .4 + Z * MOAT_Z, b - n * .4 + Z * MOAT_Z, b + Z * MOAT_Z, a + Z * MOAT_Z,
-                    a - n * .4 - Z * .28, b - n * .4 - Z * .28, b - Z * .28, a - Z * .28])
+        arcade_wall(bm, bm_s, bm_wet, a, b, n, 0.)
+        L = (b - a).length; k = int(L // 6); bay = L / (k + 1)
+        for fa in FALL_AT:
+            j = min(k, max(0, int(round(fa * (k + 1) - .5))))
+            fall_works(bm, bg, a, t, n, bay * (j + .5))
         cuboid(bg, [a - n * .25 - Z * .28, b - n * .25 - Z * .28, b + n * .08 - Z * .28, a + n * .08 - Z * .28,
                     a - n * .25 + Z * .004, b - n * .25 + Z * .004, b + n * .08 + Z * .004, a + n * .08 + Z * .004])
-        L = (b - a).length; k = int(L // 6)
-        for j in range(1, k + 1):
-            p = a + t * (L * j / (k + 1)); w = .45
-            cuboid(bm, [p - t * w + Z * MOAT_Z, p + t * w + Z * MOAT_Z, p + t * w + n * .5 + Z * MOAT_Z, p - t * w + n * .5 + Z * MOAT_Z,
-                        p - t * w - Z * .6, p + t * w - Z * .6, p + t * w + n * .5 - Z * .9, p - t * w + n * .5 - Z * .9])
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bmesh.ops.recalc_face_normals(bg, faces=bg.faces)
-    wall = new_obj("TU_RimMoatWall", bm, [M["block"]], coll); boxuv(wall, 2.)
+    bmesh.ops.recalc_face_normals(bg, faces=bg.faces)
+    walls = finish_walls(bm, bm_s, bm_wet, M, coll, "TU_RimMoatWall")
     gold = new_obj("TU_RimTrim", bg, [M["gold"]], coll)
     # moat floor
     bm = bmesh.new()
     vs = [bm.verts.new((x, y, MOAT_Z)) for x, y in inner]; bm.faces.new(vs)
     moat = new_obj("TU_MoatFloor", bm, [M["moat"]], coll); boxuv(moat, 4.)
-    # grass beyond the castle
-    bm = bmesh.new(); G = 400
+    return [rim] + walls + [gold, moat] + build_grounds(M, coll, None, trees)
+
+
+# ------------------------------------------------------------------ R834 aerial pass (the intro camera starts high)
+WATER_Z = -7.           # TutorialMoatWater's surface
+
+
+def arcade_wall(bm_w, bm_s, bm_wet, a, b, n, proud):
+    """One moat wall run a..b, facing n (into the water), built as real masonry (11-25 "아치 문을 좀더 디테일 하고
+    입체적이게"): each bay between pilasters (one every L / (floor(L / 6) + 1), the spacing TutorialMoatWater pours its
+    falls between) is an arch opening 0.45 m deep - piers either side, spandrel stones over the curve, a back wall in
+    shaded stone - framed by nine separate voussoirs with a raised keystone, an outer moulding, stepped imposts at the
+    springing; pilasters with capitals; a cornice with dentils under the gold lip; a wet band at the water line."""
+    Z = Vector((0, 0, 1)); t = (b - a).normalized(); L = (b - a).length
+    f = n * proud
+    D = .45                                     # the arches' depth behind the face
+    TOP = -.80                                  # under the cornice
+    LOW = WATER_Z - .6                          # the openings' foot, under water
+
+    def P(s, z, out):
+        return a + t * s + f + n * out + Z * z
+
+    def box(s0, s1, z0, z1, o0, o1, bm):
+        cuboid(bm, [P(s0, z0, o0), P(s1, z0, o0), P(s1, z0, o1), P(s0, z0, o1),
+                    P(s0, z1, o0), P(s1, z1, o0), P(s1, z1, o1), P(s0, z1, o1)])
+
+    def prism(q, o0, o1, bm):
+        """A block whose face is the quad q = [(s, z)] x4 (in order), from depth o0 to o1."""
+        cuboid(bm, [P(q[0][0], q[0][1], o0), P(q[1][0], q[1][1], o0), P(q[1][0], q[1][1], o1), P(q[0][0], q[0][1], o1),
+                    P(q[3][0], q[3][1], o0), P(q[2][0], q[2][1], o0), P(q[2][0], q[2][1], o1), P(q[3][0], q[3][1], o1)])
+
+    box(0, L, MOAT_Z, LOW, -D - .2, 0, bm_w)                    # under the openings: solid
+    box(0, L, LOW, -.28, -D - .2, -D, bm_s)                     # the recess's back wall
+    box(0, L, TOP, -.28, -D, 0, bm_w)                           # the band over the arches
+    box(0, L, -.64, -.28, 0, .24, bm_w)                         # cornice
+    box(0, L, -.72, -.64, 0, .14, bm_w)                         # its step
+    s = .2
+    while s < L - .3:                                           # dentils
+        box(s, s + .16, -.82, -.72, 0, .09, bm_w); s += .36
+    k = int(L // 6)
+    piers = [L * i / (k + 1) for i in range(1, k + 1)]
+    for c in piers:                                             # pilasters with capitals
+        box(c - .45, c + .45, MOAT_Z, TOP, 0, .42, bm_w)
+        box(c - .55, c + .55, TOP - .22, TOP, 0, .52, bm_w)
+        box(c - .5, c + .5, TOP - .34, TOP - .22, 0, .47, bm_w)
+        box(c - .47, c + .47, LOW, WATER_Z + .3, 0, .432, bm_wet)
+    stops = [0.] + piers + [L]
+    seg = 16
+    for s0, s1 in zip(stops, stops[1:]):
+        left = s0 + (.45 if s0 > 0 else .1) + .45
+        right = s1 - (.45 if s1 < L else .1) - .45
+        w = right - left
+        if w < 1.6:
+            box(s0, s1, LOW, TOP, -D, 0, bm_w)
+            continue
+        r = w / 2; cx = (left + right) / 2; crown = -1.3; zc = crown - r
+        box(s0, left, LOW, TOP, -D, 0, bm_w)                    # piers (their inner sides are the jambs)
+        box(right, s1, LOW, TOP, -D, 0, bm_w)
+        box(s0, left, LOW, WATER_Z + .3, 0, .012, bm_wet)
+        box(right, s1, LOW, WATER_Z + .3, 0, .012, bm_wet)
+        box(left, right, LOW, WATER_Z + .3, -D, -D + .012, bm_wet)
+        for i in range(seg):                                    # spandrel stones over the curve
+            a0 = math.pi * (1 - i / seg); a1 = math.pi * (1 - (i + 1) / seg)
+            pa = (cx + r * math.cos(a0), zc + r * math.sin(a0)); pb = (cx + r * math.cos(a1), zc + r * math.sin(a1))
+            prism([pa, pb, (pb[0], TOP), (pa[0], TOP)], -D, 0, bm_w)
+        nv = 9; gap = .012
+        for i in range(nv):                                     # voussoirs and the keystone
+            a0 = math.pi * (1 - i / nv) - gap; a1 = math.pi * (1 - (i + 1) / nv) + gap
+            key = i == nv // 2
+            ro = r + (.52 if key else .36); out = .2 if key else .1
+            q = [(cx + r * math.cos(a0), zc + r * math.sin(a0)), (cx + r * math.cos(a1), zc + r * math.sin(a1)),
+                 (cx + ro * math.cos(a1), zc + ro * math.sin(a1)), (cx + ro * math.cos(a0), zc + ro * math.sin(a0))]
+            prism(q, 0, out, bm_w)
+            if key:
+                prism([(cx - .1, zc + r + .1), (cx + .1, zc + r + .1), (cx + .14, zc + r + .42), (cx - .14, zc + r + .42)], out, out + .05, bm_w)
+        for i in range(seg):                                    # the outer moulding
+            a0 = math.pi * (1 - i / seg); a1 = math.pi * (1 - (i + 1) / seg)
+            r0, r1 = r + .36, r + .46
+            if abs((a0 + a1) / 2 - math.pi / 2) < math.pi / nv * .55: continue   # broken by the keystone
+            prism([(cx + r0 * math.cos(a0), zc + r0 * math.sin(a0)), (cx + r0 * math.cos(a1), zc + r0 * math.sin(a1)),
+                   (cx + r1 * math.cos(a1), zc + r1 * math.sin(a1)), (cx + r1 * math.cos(a0), zc + r1 * math.sin(a0))], 0, .14, bm_w)
+        # imposts at the springing: a slab overhanging the opening a little, a narrower step under it
+        box(left - .4, left + .05, zc - .2, zc, 0, .16, bm_w)
+        box(left - .35, left, zc - .32, zc - .2, 0, .09, bm_w)
+        box(right - .05, right + .4, zc - .2, zc, 0, .16, bm_w)
+        box(right, right + .35, zc - .32, zc - .2, 0, .09, bm_w)
+
+
+FALL_AT = (.3, .7)          # TutorialMoatWater.fallAt: two falls per rim side, in the bays nearest these fractions
+
+
+def fall_works(bm, bg, a, t, n, s):
+    """The stonework of one moat-wall fall (11-25 "폭포수 입체감을 더 키워"), in the arch at s along the run: a spout
+    channel out of the arch's back wall onto corbels, a basin on stepped corbels below it whose front sill is lower
+    than its sides (the water spills over it), gold on the spout's mouth and the basin's rim. TutorialMoatWater pours
+    the spout onto the basin's water (-4.33) and the basin's sill down to the moat (-7) at these same numbers."""
+    Z = Vector((0, 0, 1))
+
+    def P(ds, z, o):
+        return a + t * (s + ds) + n * o + Z * z
+
+    def box(bmx, s0, s1, z0, z1, o0, o1):
+        cuboid(bmx, [P(s0, z0, o0), P(s1, z0, o0), P(s1, z0, o1), P(s0, z0, o1),
+                     P(s0, z1, o0), P(s1, z1, o0), P(s1, z1, o1), P(s0, z1, o1)])
+    # spout: floor, side walls, gold mouth, corbels under it
+    box(bm, -.58, .58, -2.02, -1.84, -.46, .95)
+    for sd in (-1, 1):
+        box(bm, sd * .44 if sd > 0 else -.6, .6 if sd > 0 else -.44, -1.84, -1.52, -.46, .95)
+    box(bg, -.62, .62, -2.04, -1.82, .95, 1.02)
+    box(bg, -.62, -.44, -1.82, -1.5, .95, 1.02); box(bg, .44, .62, -1.82, -1.5, .95, 1.02)
+    box(bm, -.42, .42, -2.42, -2.02, -.46, .62)
+    box(bm, -.28, .28, -2.75, -2.42, -.46, .32)
+    # basin: bottom, back, sides, a lower front sill, gold rims, three stepped corbels
+    box(bm, -1.52, 1.52, -4.78, -4.56, -.3, 1.97)
+    box(bm, -1.52, 1.52, -4.56, -4.12, -.3, -.1)
+    box(bm, -1.52, -1.3, -4.56, -4.12, -.1, 1.97); box(bm, 1.3, 1.52, -4.56, -4.12, -.1, 1.97)
+    box(bm, -1.3, 1.3, -4.56, -4.40, 1.77, 1.97)
+    box(bg, -1.56, -1.28, -4.12, -4.06, -.3, 2.0); box(bg, 1.28, 1.56, -4.12, -4.06, -.3, 2.0)
+    box(bg, -1.3, 1.3, -4.40, -4.36, 1.77, 1.99)
+    box(bm, -1.2, 1.2, -5.35, -4.78, -.3, 1.5)
+    box(bm, -.8, .8, -5.95, -5.35, -.3, .95)
+    box(bm, -.42, .42, -6.5, -5.95, -.3, .45)
+
+
+def finish_walls(bm_w, bm_s, bm_wet, M, coll, name):
+    bmesh.ops.recalc_face_normals(bm_w, faces=bm_w.faces)
+    bmesh.ops.recalc_face_normals(bm_wet, faces=bm_wet.faces)
+    w = new_obj(name, bm_w, [M["block"]], coll); boxuv(w, 2.)
+    s = new_obj(name + "Arches", bm_s, [M["shade"]], coll); boxuv(s, 2.)
+    wt = new_obj(name + "Wet", bm_wet, [M["wet"]], coll); boxuv(wt, 2.)
+    return [w, s, wt]
+
+
+def paving_inlay(M, coll, x0, y0, x1, y1):
+    """A walnut-marble border and a 5 m grid of thin inlay lines over a large paving floor (decals 2-3 mm up)."""
+    if min(x1 - x0, y1 - y0) < 6: return None
+    bm = bmesh.new()
+
+    def strip(ax, ay, bx, by, z):
+        vs = [bm.verts.new((ax, ay, z)), bm.verts.new((bx, ay, z)), bm.verts.new((bx, by, z)), bm.verts.new((ax, by, z))]
+        bm.faces.new(vs)
+    e, wb = .3, .45
+    strip(x0 + e, y0 + e, x1 - e, y0 + e + wb, .003); strip(x0 + e, y1 - e - wb, x1 - e, y1 - e, .003)
+    strip(x0 + e, y0 + e + wb, x0 + e + wb, y1 - e - wb, .003); strip(x1 - e - wb, y0 + e + wb, x1 - e, y1 - e - wb, .003)
+    lw = .07
+    x = x0 + 5.
+    while x < x1 - 1.:
+        strip(x - lw, y0 + e + wb, x + lw, y1 - e - wb, .002); x += 5.
+    y = y0 + 5.
+    while y < y1 - 1.:
+        strip(x0 + e + wb, y - lw, x1 - e - wb, y + lw, .0021); y += 5.
+    o = new_obj("TU_FloorInlay_%d_%d" % (x0, y0), bm, [M["walnut_m"]], coll)
+    boxuv(o, 2.5)
+    return o
+
+
+def terrain_height(x, y):
+    """Meadow and hills round the castle: 0 at the walls, rising from 14 m out to rolling hills 6-32 m high."""
+    X0, Y0, X1, Y1 = RIM_IN[0] - RIM_W, RIM_IN[1] - RIM_W, RIM_IN[2] + RIM_W, RIM_IN[3] + RIM_W
+    dx = max(X0 - x, 0., x - X1); dy = max(Y0 - y, 0., y - Y1)
+    d = math.hypot(dx, dy)
+    u = min(1., max(0., (d - 14.) / 160.)); u = u * u * (3 - 2 * u)
+    hills = (.55 + .25 * math.sin(x * .021 + 1.3) * math.cos(y * .017 - .4) + .2 * math.sin(x * .053 - y * .041 + 2.1)
+             + .12 * math.sin(x * .11 + y * .09))
+    return u * (6. + 26. * max(0., hills)), d
+
+
+GROUND_CELL = 5.
+ROAD = [(0., 47.6), (0., 58.), (3., 74.), (11., 96.), (24., 122.), (36., 150.), (44., 185.), (48., 230.)]   # from the gate north
+TREE_PLACEMENTS = []        # (variant, x, y, z, yaw degrees, scale): written to tu_tree_placements.json for Unity
+
+
+def ground_tri_height(x, y):
+    """The hills mesh's own height at (x, y): the same two triangles per cell it is built from, so whatever stands
+    on the ground (the road, rocks, trees) sits on the surface Unity draws, not on the smooth formula."""
+    G = 400.; c = GROUND_CELL
+    i = math.floor((x + G) / c); j = math.floor((y + G) / c)
+    x0 = -G + i * c; y0 = -G + j * c
+    u = (x - x0) / c; v = (y - y0) / c
+    h00 = terrain_height(x0, y0)[0]; h10 = terrain_height(x0 + c, y0)[0]
+    h01 = terrain_height(x0, y0 + c)[0]; h11 = terrain_height(x0 + c, y0 + c)[0]
+    if u >= v:   # triangle (00, 10, 11)
+        return h00 + u * (h10 - h00) + v * (h11 - h10)
+    return h00 + v * (h01 - h00) + u * (h11 - h01)   # triangle (00, 11, 01)
+
+
+def road_distance(x, y):
+    best = 1e9
+    for (ax, ay), (bx, by) in zip(ROAD, ROAD[1:]):
+        dx, dy = bx - ax, by - ay
+        t = max(0., min(1., ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+        best = min(best, math.hypot(x - ax - t * dx, y - ay - t * dy))
+    return best
+
+
+def build_grounds(M, coll, kit_coll, trees):
+    """Outside the walls (11-25 "성 외곽을 더 디테일 하게 ... 고해상도로"): the 2048 meadow on a flat ring and 5 m
+    hills beyond (explicit triangles), a cobbled road from the gate out over the hills with kerbs, a battered stone
+    foundation round the walls, limestone rocks half sunk in the grass, and grown trees and bushes (tu_trees_v1) as
+    instances - their places go to Unity as a list (TutorialDress plants the same FBX there with LODs)."""
+    X0, Y0, X1, Y1 = RIM_IN[0] - RIM_W, RIM_IN[1] - RIM_W, RIM_IN[2] + RIM_W, RIM_IN[3] + RIM_W
+    G = 400; out = []
+    bm = bmesh.new()
     go = [bm.verts.new(p) for p in ((-G, -G, -.02), (G, -G, -.02), (G, G, -.02), (-G, G, -.02))]
-    gi = [bm.verts.new((x, y, -.02)) for x, y in outer]
+    gi = [bm.verts.new((x, y, -.02)) for x, y in ((X0, Y0), (X1, Y0), (X1, Y1), (X0, Y1))]
     for i in range(4):
         j = (i + 1) % 4
-        f = bm.faces.new([go[i], go[j], gi[j], gi[i]])
+        bm.faces.new([go[i], go[j], gi[j], gi[i]])
     for f in bm.faces:
         if f.normal.z < 0: f.normal_flip()
-    grass = new_obj("TU_Grass", bm, [M["grass"]], coll)
-    return [rim, wall, gold, moat, grass]
+    o = new_obj("TU_Grass", bm, [M["grass"]], coll); boxuv(o, 4.); out.append(o)
 
+    # hills: two triangles per 5 m cell (diagonal 00-11), where a whole cell lies 12 m or more outside the walls
+    bm = bmesh.new(); c = GROUND_CELL; N = int(2 * G / c); verts = {}
 
+    def V(i, j):
+        if (i, j) not in verts:
+            x = -G + i * c; y = -G + j * c
+            verts[(i, j)] = bm.verts.new((x, y, terrain_height(x, y)[0]))
+        return verts[(i, j)]
+    for i in range(N):
+        for j in range(N):
+            ds = [terrain_height(-G + (i + a) * c, -G + (j + b) * c)[1] for a in (0, 1) for b in (0, 1)]
+            if min(ds) < 12.: continue
+            for tri in ((V(i, j), V(i + 1, j), V(i + 1, j + 1)), (V(i, j), V(i + 1, j + 1), V(i, j + 1))):
+                f = bm.faces.new(tri); f.smooth = True
+    o = new_obj("TU_Hills", bm, [M["grass"]], coll); boxuv(o, 4.); out.append(o)
+
+    # the road: 5 m of cobbles between 0.35 m kerbs, 12 cm over the ground, sampled every metre
+    bm = bmesh.new(); bk = bmesh.new()
+    pts = []
+    for (ax, ay), (bx, by) in zip(ROAD, ROAD[1:]):
+        L = math.hypot(bx - ax, by - ay); n = max(1, int(L))
+        for s in range(n):
+            pts.append((ax + (bx - ax) * s / n, ay + (by - ay) * s / n))
+    pts.append(ROAD[-1])
+    prev = None
+    for i, (x, y) in enumerate(pts):
+        nx_, ny_ = pts[min(i + 1, len(pts) - 1)][0] - pts[max(i - 1, 0)][0], pts[min(i + 1, len(pts) - 1)][1] - pts[max(i - 1, 0)][1]
+        ln = math.hypot(nx_, ny_) or 1.; side = (-ny_ / ln, nx_ / ln)
+        row = []
+        for off in (-2.85, -2.5, 2.5, 2.85):
+            px, py = x + side[0] * off, y + side[1] * off
+            h = max(ground_tri_height(px, py), 0.) if py > Y1 + 2 else 0.
+            row.append(Vector((px, py, h + .12)))
+        if prev:
+            f = bm.faces.new([bm.verts.new(prev[1]), bm.verts.new(row[1]), bm.verts.new(row[2]), bm.verts.new(prev[2])])
+            for s0, s1 in ((0, 1), (2, 3)):
+                a0, a1, b0, b1 = prev[s0], prev[s1], row[s0], row[s1]
+                up = Vector((0, 0, .1))
+                cuboid(bk, [a0 - Vector((0, 0, .3)), a1 - Vector((0, 0, .3)), b1 - Vector((0, 0, .3)), b0 - Vector((0, 0, .3)),
+                            a0 + up, a1 + up, b1 + up, b0 + up])
+        prev = row
+    for f in bm.faces:
+        f.normal_update()
+        if f.normal.z < 0: f.normal_flip()
+    bmesh.ops.recalc_face_normals(bk, faces=bk.faces)
+    o = new_obj("TU_Road", bm, [M["road"]], coll); boxuv(o, 3.); out.append(o)
+    o = new_obj("TU_RoadKerb", bk, [M["rock"]], coll); boxuv(o, 2.); out.append(o)
+
+    # a battered stone foundation round the outside of the walls (1.4 m up the wall, 1.1 m out at the grass)
+    bm = bmesh.new()
+    corners = [(X0, Y0), (X1, Y0), (X1, Y1), (X0, Y1)]
+    for i in range(4):
+        (ax, ay), (bx, by) = corners[i], corners[(i + 1) % 4]
+        a = Vector((ax, ay, 0)); b = Vector((bx, by, 0))
+        t = (b - a).normalized(); n = Vector((t.y, -t.x, 0))        # outward (the corners run anticlockwise)
+        a2 = a - t * 1.1; b2 = b + t * 1.1
+        cuboid(bm, [a2 - n * .3 + Vector((0, 0, -.3)), b2 - n * .3 + Vector((0, 0, -.3)), b2 + n * 1.1 + Vector((0, 0, -.3)), a2 + n * 1.1 + Vector((0, 0, -.3)),
+                    a2 - n * .3 + Vector((0, 0, 1.4)), b2 - n * .3 + Vector((0, 0, 1.4)), b2 + Vector((0, 0, 1.4)), a2 + Vector((0, 0, 1.4))])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    o = new_obj("TU_WallFoundation", bm, [M["block"]], coll); boxuv(o, 2.); out.append(o)
+
+    rng = np.random.default_rng(83411)
+
+    def free(x, y, clear):
+        return road_distance(x, y) > clear
+
+    # rocks: displaced icospheres, half sunk
+    bm = bmesh.new(); placed = 0; tries = 0
+    while placed < 46 and tries < 4000:
+        tries += 1
+        x = rng.uniform(-170, 170); y = rng.uniform(-170, 170)
+        h, d = terrain_height(x, y)
+        if d < 4 or d > 140 or not free(x, y, 5.): continue
+        h = ground_tri_height(x, y) if d >= 12 else 0.
+        s = rng.uniform(.5, 2.2)
+        res = bmesh.ops.create_icosphere(bm, subdivisions=3, radius=1.)
+        ph = rng.uniform(0, 10, 3)
+        for v in res["verts"]:
+            p = v.co
+            k = 1 + .22 * math.sin(p.x * 3.1 + ph[0]) * math.sin(p.y * 2.7 + ph[1]) + .12 * math.sin(p.z * 5.3 + ph[2]) + .08 * math.sin((p.x + p.y) * 9.)
+            v.co = Vector((p.x * s * 1.3, p.y * s, p.z * s * .62)) * k + Vector((x, y, h - s * .18))
+        for fc in {fc for v in res["verts"] for fc in v.link_faces}: fc.smooth = True
+        placed += 1
+    o = new_obj("TU_Rocks", bm, [M["rock"]], coll); boxuv(o, 2.); out.append(o)
+
+    # trees and bushes: instances of the kit's LOD0, a ring of bushes at the foundation and along the road
+    TREE_PLACEMENTS.clear()
+
+    def plant(variant, x, y, scale, yaw):
+        h, d = terrain_height(x, y)
+        z = ground_tri_height(x, y) if d >= 12 else 0.
+        src = trees[variant]
+        inst = bpy.data.objects.new("TU_%s_at" % variant, src.data)
+        inst.location = (x, y, z); inst.rotation_euler = (0, 0, math.radians(yaw)); inst.scale = (scale,) * 3
+        coll.objects.link(inst)
+        TREE_PLACEMENTS.append((variant, round(x, 3), round(y, 3), round(z, 3), round(yaw, 1), round(scale, 3)))
+
+    spots = []; tries = 0
+    while len(spots) < 150 and tries < 9000:
+        tries += 1
+        x = rng.uniform(-200, 200); y = rng.uniform(-200, 200)
+        h, d = terrain_height(x, y)
+        if d < 10. or d > 140. or not free(x, y, 6.): continue
+        # groves: denser where a slow noise is high
+        if rng.random() > .35 + .65 * (.5 + .5 * math.sin(x * .045) * math.cos(y * .038)): continue
+        if any((x - px) ** 2 + (y - py) ** 2 < 42 for px, py in spots): continue
+        spots.append((x, y))
+        plant(("TreeA", "TreeB", "TreeC")[int(rng.integers(0, 3))], x, y, rng.uniform(.85, 1.3), rng.uniform(0, 360))
+    for i in range(4):                                       # bushes at the foundation, clear of the towers
+        (ax, ay), (bx, by) = corners[i], corners[(i + 1) % 4]
+        L = math.hypot(bx - ax, by - ay); t = ((bx - ax) / L, (by - ay) / L); n = (t[1], -t[0])
+        s = 14.
+        while s < L - 14:
+            if abs(s - L / 2) > 9 and rng.random() < .55:
+                x = ax + t[0] * s + n[0] * rng.uniform(2.2, 3.2); y = ay + t[1] * s + n[1] * rng.uniform(2.2, 3.2)
+                if free(x, y, 4.): plant("Bush", x, y, rng.uniform(.8, 1.25), rng.uniform(0, 360))
+            s += rng.uniform(4.5, 8.)
+    for (x, y) in pts[8::7]:                                  # bushes along the road
+        for sd in (-1, 1):
+            if rng.random() < .6:
+                plant("Bush", x + sd * rng.uniform(4.2, 5.5), y + rng.uniform(-1, 1), rng.uniform(.7, 1.1), rng.uniform(0, 360))
+    # grass tufts (11-25 "잔디 바닥 좀 더 그래픽 좋게"): Unity draws them instanced (TutorialMeadowGrass); dense near the
+    # walls, thinning out to 140 m, none on the road. Unity coordinates (x, up, z), yaw, scale.
+    tufts = []; tries = 0
+    while len(tufts) < 14000 and tries < 60000:
+        tries += 1
+        x = rng.uniform(-200, 200); y = rng.uniform(-200, 200)
+        h, d = terrain_height(x, y)
+        if d < .8 or d > 140.: continue
+        if rng.random() > math.exp(-d / 55.): continue
+        if road_distance(x, y) < 3.3: continue
+        z = ground_tri_height(x, y) if d >= 12 else 0.
+        tufts.append("%.2f,%.2f,%.2f,%.0f,%.2f" % (x, z - .04, y, rng.uniform(0, 360), rng.uniform(.7, 1.35)))
+    with open(os.path.join(K.HERE, "tu_grass_tufts.txt"), "w", newline="\n") as fh:
+        fh.write("# x,y(up),z,yaw,scale - Unity coordinates\n" + "\n".join(tufts) + "\n")
+    print("GROUNDS tufts", len(tufts))
+    with open(os.path.join(K.HERE, "tu_tree_placements.json"), "w") as fh:
+        json.dump({"frame": "Blender (x, y, z) = Unity (x, z, y); yaw about Blender z (Unity: -yaw)", "trees": TREE_PLACEMENTS}, fh, indent=0)
+    print("GROUNDS trees+bushes", len(TREE_PLACEMENTS), "rocks", placed)
+    return out
 # ------------------------------------------------------------------ the course
 def build_course(M, coll, P):
     out = []
@@ -947,6 +1279,13 @@ def main():
     P["arch"] = part_finish_arch(M, kit_coll)
     P["balustrade"] = part_balustrade(M, kit_coll)
     P["post"] = part_post(M, kit_coll)
+    # grown trees (tu_trees_v1): LOD0 for the map, LOD1 for Unity's far LOD
+    import tu_trees_v1 as TR
+    importlib.reload(TR)
+    trees = {}; tree_lods = {}
+    for i, v in enumerate(("TreeA", "TreeB", "TreeC", "Bush")):
+        trees[v] = TR.make_object(v, 100 + i, 0, [M["bark"], M["leaves"]], kit_coll)
+        tree_lods[v] = TR.make_object(v, 100 + i, 1, [M["bark"], M["leaves"]], kit_coll)
     for name, o in P.items():
         report.setdefault("made:" + o.name, dict(source="Blender", after=K.inspect(o), tris=K.tris(o),
                                                  size=[round(float(v), 2) for v in (K.bounds(o)[1] - K.bounds(o)[0])]))
@@ -961,7 +1300,7 @@ def main():
     occ = floor_cells()
     build_floors(M, map_coll)
     build_trims_and_moat(M, map_coll, occ)
-    build_rim(M, map_coll)
+    build_rim(M, map_coll, trees)
     build_course(M, map_coll, P)
     # balustrades: on the rim's inner edge (outside the play floors, 10+ m from them), with posts every 3 modules
     x0, y0, x1, y1 = RIM_IN
@@ -991,6 +1330,11 @@ def main():
 
 VIEWS = {
     "overview":   ((-70, -95, 72), (-3, -2, -2), 30),
+    "aerial":     ((-48, -88, 58), (2, -4, -4), 30),
+    "sky":        ((10, -150, 190), (0, -5, -5), 30),
+    "arch":       ((6, -25, -2.5), (3, -15.4, -3.6), 30),
+    "outside":    ((-6, 36, 16), (14, 120, 6), 30),
+    "trees":      ((-75, 20, 6), (-110, 60, 6), 32),
     "concept":    ((-58, -62, 34), (2, 2, 0), 28),
     "walls":      ((3, -24, 9), (22, -2, 1.5), 32),
     "low":        ((-2, -20, 4.5), (7, -6, .3), 30),

@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab.Editor
     /// 11-body physics rig + puppet, and lays out the six test fixtures from the spec with primitives.
     /// Menu: ChessFight/Ragdoll Lab/Rebuild Pawn + Scene.
     /// </summary>
-    public static class RagdollLabBuilder
+    public static partial class RagdollLabBuilder
     {
         // The lab's assets sit in the project's kind folders (10-08 folder cleanup): the model in
         // Art/Pawn, what this builder bakes in Art/PawnGenerated, and the shared Materials,

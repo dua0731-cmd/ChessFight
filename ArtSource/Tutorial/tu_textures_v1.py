@@ -121,5 +121,24 @@ def main():
     rgb = rgb * (1 - .45 * edge[..., None]) + np.array([.35, .33, .30]) * .45 * edge[..., None]
     save("TU_MoatFloor_BaseColor", rgb)
 
+    # R834 aerial pass (own seed, so the maps above stay as they were): the cream blocks in shade (inside the moat
+    # walls' blind arches), wet stone at the water line, and the meadow outside the walls (4 x 4 m)
+    rng2 = np.random.default_rng(8341)
+    rgb, edge = blocks(n, 2., 1., .5, .03, np.array([.90, .76, .64]), .07, rng2)
+    rgb *= (0.94 + .12 * fbm(n, rng2, 8, 5))[..., None]
+    rgb = rgb * (1 - .35 * edge[..., None]) + np.array([.66, .52, .42]) * .35 * edge[..., None]
+    save("TU_CreamBlockShade_BaseColor", rgb * np.array([.70, .68, .72]))
+    wet = rgb * np.array([.46, .46, .38]) + np.array([.02, .05, .02])
+    wet *= (0.8 + .35 * fbm(n, rng2, 5, 5))[..., None]
+    save("TU_WetStone_BaseColor", wet)
+    base = np.array([.30, .52, .18])
+    g1 = fbm(n, rng2, 3, 6); g2 = fbm(n, rng2, 24, 3)
+    rgb = base[None, None, :] * (0.78 + .35 * g1)[..., None]
+    rgb += (g2 - .5)[..., None] * np.array([.10, .12, .04])
+    rgb += np.clip(g1 - .62, 0, 1)[..., None] * np.array([.35, .25, .05])     # sunlit dry patches
+    save("TU_Grass_BaseColor", rgb)
 
-main()
+
+
+if __name__ == "__main__":
+    main()

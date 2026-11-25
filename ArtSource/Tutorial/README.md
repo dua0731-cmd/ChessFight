@@ -71,6 +71,15 @@ Tripo 원본(`Source/`): A1 = 시트 01, A2 = 시트 02, A3 = 시트 03. 시트 
 - 사본 검사(`Tools/Run-Tutorial.ps1`, 11-25): 위치 맞음, 수업 1 ~ 6 · 10 통과, Play 오류 0. 수업 7 봇 검사(B2 · L7-2 · B10)는 다른 세션 작업 — 맵을 얹은 뒤 두 번 실패, `-tutorialNoDress`(맵 없이)로도 같은 셋이 실패 → 맵 때문이 아님.
 - **사람이 Unity에서 본 적 없음.**
 
+## 하늘 · 공기 (11-25)
+
+- 구름 하늘: `tu_sky_v1.py`(Cycles 부피 적운 파노라마, 해는 장면 Directional Light 방향, `volume_biased` = 네모 잘림 없음) → `tu_sky_grade_v1.py`(밝은 부분을 눌러 지평선이 하얗게 날지 않게) → `TU_SkyClouds.exr`, Unity `Skybox/Panoramic`(노출 0.72).
+- `TutorialClearAir`(RagdollLab): 안개 900 m 밖, 블룸 약하게, 비네트 없음, 대비 · 채도 30. JY-gfx 패키지는 튜토리얼에 쓰지 않음(사용자 11-25).
+
 ## 남은 일
 
 - 시험용 레인 둘(역경사·곡면, `[3b]`)은 시험장 모양 그대로 돌 무늬만 입힘 — 튜토리얼에서 뺄지 사용자 결정.
+
+## 독수리 (R839, 시작 연출)
+
+`tu_eagle_v1.py` (`-- --render --save --export`): 컨셉 `Docs/Player/ConceptArt/R839_TutorialEagle/`. 전부 Blender로 만듦(깃털 한 장씩). 결과 `TU_Eagle_v1.blend` · `Renders/eagle_*.png` · `Assets/Art/Tutorial/Models/TU_Eagle.fbx` · `Assets/Art/Tutorial/Textures/TU_EagleFeather_BaseColor/Normal.png`. 약 8만 4천 삼각형, LOD 없음. 부품이 따로(원점 = 관절): Body · Head · Tail · Wing_L/R > WingTip_L/R · Leg_L/R — Unity의 `TutorialIntro.cs`가 리그 없이 돌림.

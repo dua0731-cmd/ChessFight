@@ -65,7 +65,9 @@ def main():
     m = bpy.data.collections["Map"]
     objs = [o for o in m.objects if o.type == 'MESH']
     sweep = [o for o in objs if o.name.startswith("TU_Sweeper")]
-    grass = [o for o in objs if o.name == "TU_Grass"]
+    trees = [o for o in objs if o.name.startswith(("TU_TreeA_at", "TU_TreeB_at", "TU_TreeC_at", "TU_Bush_at"))]
+    objs = [o for o in objs if o not in trees]
+    grass = [o for o in objs if o.name.startswith(("TU_Grass", "TU_Hills", "TU_Road", "TU_WallFoundation", "TU_Rocks"))]
     course = [o for o in objs if o not in sweep and o not in grass and o.name.startswith(COURSE)]
     castle = [o for o in objs if o not in sweep and o not in grass and o not in course]
     print("GROUPS course", len(course), "castle", len(castle), "sweeper", len(sweep))
@@ -75,9 +77,31 @@ def main():
     loc = sweep[0].matrix_world.translation.copy()
     s.data.transform(Matrix.Translation(-loc)); s.data.transform(TURN); s.name = s.data.name = "TU_SweeperLook"
     export([s], os.path.join(MODELS, "TU_Sweeper.fbx"))
+    # grown trees: one FBX per kind, its _LOD0 and _LOD1 as they are (Unity makes the LOD group from the names; the
+    # builder turns each instance 180 degrees more for the axis change); their places as a CSV
+    for v in ("TreeA", "TreeB", "TreeC", "Bush"):
+        lods = [bpy.data.objects["TU_%s_LOD%d" % (v, k)] for k in (0, 1)]
+        for lo in lods: lo.location = (0, 0, 0); lo.hide_set(False)
+        export(lods, os.path.join(MODELS, "TU_%s.fbx" % v))
+    src = os.path.join(HERE, "tu_tree_placements.json")
+    if os.path.exists(src):
+        import json
+        rows = json.load(open(src))["trees"]
+        NL = chr(10)
+        with open(os.path.join(MODELS, "TU_TreePlacements.txt"), "w", newline=NL) as fh:
+            fh.write("# variant,x,y(up),z,yaw(Blender, degrees),scale - Unity coordinates (Blender x, z, y)" + NL)
+            for v, x, y, z, yaw, sc in rows:
+                fh.write("%s,%.3f,%.3f,%.3f,%.1f,%.3f" % (v, x, z, y, yaw, sc) + NL)
+        print("TREES", len(rows))
+    for extra in ("TU_GrassBlades_BaseColor.png", "TU_Grass_Normal.png", "TU_MeadowMacro.png", "TU_SkyClouds.exr"):   # Unity-only maps
+        shutil.copy2(os.path.join(TEX_SRC, extra), os.path.join(TEXTURES, extra))
+    tf = os.path.join(HERE, "tu_grass_tufts.txt")
+    if os.path.exists(tf):
+        shutil.copy2(tf, os.path.join(MODELS, "TU_GrassTufts.txt")); print("TUFTS copied")
     # textures every exported material uses
     used = set()
-    for o in (a, b, g, s):
+    tree_objs = [bpy.data.objects["TU_%s_LOD0" % v] for v in ("TreeA", "TreeB", "TreeC", "Bush")]
+    for o in [a, b, g, s] + tree_objs:
         for mat in o.data.materials:
             if mat and mat.use_nodes:
                 for n in mat.node_tree.nodes:

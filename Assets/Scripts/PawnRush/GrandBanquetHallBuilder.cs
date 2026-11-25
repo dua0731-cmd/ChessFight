@@ -173,6 +173,7 @@ namespace ChessFight.PawnRush
             GreatChandelier(b);
             TheWay(b);
             Course(b);
+            if (Application.isPlaying) content.AddComponent<GrandBanquetHallDressing>();   // B0 (R837): the Blender models over the graybox
 
             hall.GetComponent<PawnRushSection>().Describe(GrandBanquetHallSection.Id, GrandBanquetHallSection.DisplayName,
                 PawnRushSection.SlotKind.Obstacle, GrandBanquetHallSection.Entry, GrandBanquetHallSection.Exit, 0f, Beats());

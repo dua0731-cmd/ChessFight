@@ -1,5 +1,9 @@
 # 변경 이력
 
+- 2026-11-25 R839 (seoungtest) · 튜토리얼 안내 화면을 시중 게임 튜토리얼처럼: 위 칸 나뉜 진행 막대, 아래 수업 카드(번호 네모 · 수업 안 진행 막대 · "도움말"), 가운데 띠("좋아요!" · "준비 끝!") — `TutorialCourse.cs` 화면만, 스테미나 막대 양식. 컴파일 PASS, 사용자 Unity 확인 전, 커밋 안 함.
+- 2026-11-25 R836 (seoungtest) · 대연회장 모델링 에셋 시트 12장(Codex, 모델 11 · 재질 견본 1): Docs/PawnRush/ConceptArt/R836_BanquetHallAssets.
+- 2026-11-25 R835 (seoungtest) · 대연회장 모델링 작업 환경: main(R833)을 seoungtest에 로컬 합치기, Play하면 대연회장이 바로 뜨는 SeoungTestBanquetOnly.cs(천문대용 스위치 대신), 구역 · 세션 · 파일 규칙 계획 ArtSource/PawnRush/BanquetHall/PLAN.md. 모델 없음.
+- 2026-11-25 R834 (seoungtest) · 첫 실행 튜토리얼 회색 상자 1차: main 병합 뒤 새 씬 `Tutorial.unity`(시험장 맵 + 오프라인 폰 러쉬 폰), 진행기 `TutorialCourse` 수업 1 ~ 6 · 10, 자동 점검 `TutorialValidation`. 설계 v0.1 · 배치도는 Docs/Player. 컴파일 PASS, 사용자 Unity 확인 전, 푸시 안 함
 - 2026-11-25 R833 · 대연회장 컨셉 아트 다시(R828 회색 상자 배치, Blender 네 장: 홀 전체 · 샹들리에 · 은 뚜껑 승강기 · 초콜릿 분수와 회랑 사다리). 그림만, Unity 변경 없음.
 - 2026-11-24 R828 · 대연회장 회색 상자: 은 뚜껑 승강기를 배식 승강기 틀(기둥 셋 · 가로대 · 도르래)에 쇠줄 · 사슬로 매닮(장갑 없앰), 초콜릿 분수의 금 사다리 없앰 — 층 전체가 초당 0.3 m로 흐르고 물결이 흘러내리며 거슬러 오름, 테 밑 0.45 m만 당기지 않음(R817 미끄러짐). 자동 점검 PASS. 사용자 Unity 확인 전.
 - 2026-11-24 R827 이어서 · 대계단 왕실 발코니 체크포인트 CP7(출구 테라스는 CP8, 프리팹도 맞춤) · 프로토콜 v62, 마차뜰 · 정원 먼 거리 LOD를 기본 배율 2에서 약 40 m로(`LodSwitch` 20 m). 컴파일 · Core 232 · 세션 115 PASS, 사용자 Unity 확인(11-24), main 커밋 · 푸시.
