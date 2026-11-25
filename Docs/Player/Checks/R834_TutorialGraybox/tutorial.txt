@@ -1,0 +1,52 @@
+R834 first-run tutorial grey box checks (2026-11-25 01:14). The pawn is moved, no keys are pressed.
+
+== Edit: build the scene
+PASS  E1 scene saved: Assets/Scenes/Tutorial.unity
+PASS  E2 playtest spawner with the pawn prefab: RagdollPawn
+PASS  E3 tutorial course: present
+PASS  E4 two hurdles: 2
+PASS  E5 no lab floor labels: 0
+PASS  E6 no map test leftovers: 
+PASS  P1 pawn spawned: (-1.5, 0.25, -6)
+PASS  P2 lesson 1 at the start: 1
+PASS  P3 Pawn Rush skills on the pawn: 
+      picture 01_start.png
+      picture 00_overview.png
+PASS  L1 walking onto the gold square ends lesson 1: lesson now 2, expected 2, hips (0, 0.25, -1)
+PASS  L2 both hurdle lines crossed, then the square: lesson now 3, expected 3, hips (7.3, 0.25, -1)
+PASS  L3a reaching the square round the bar does not count: lesson now 3, expected 3, hips (9, 0.25, -8.8)
+PASS  L3b under the bar's line, then the square: lesson now 4, expected 4, hips (9, 0.25, -8.8)
+PASS  L4a the square without sprinting does not count: lesson now 4, expected 4, hips (18.3, 0.25, -9)
+NOTE  L4 sprint needs a held key: passed by hand (SkipLessonForTest)
+PASS  L4b next lesson after the sprint: lesson now 5, expected 5, hips (18.3, 0.25, -9)
+PASS  L5 standing on the 2 m wall ends lesson 5: lesson now 6, expected 6, hips (22.5, 2.25, -9)
+      picture 02_wall_tops.png
+PASS  L6 standing on the 3 m wall ends lesson 6: lesson now 7, expected 7, hips (22.5, 3.25, 0)
+PASS  B1 three practice bots: 3
+PASS  B5 the bots wear the black set: Pawn_P2
+PASS  B2 the bots walk about the yard on their own (4 s, more than 1 m, still in the yard): 3 walked, 3 in the yard: (10.95, 0.25, 5.33) black (11.4, 0.26, 3.87) black (12.39, 0.75, 5.73) black
+      picture 04_fight_yard.png
+PASS  L7-1 is lesson 7's first part: 7-1
+PASS  B6 a bot that sees a dive coming steps aside and stays up: dive began 3.81 m away, the bot moved 2.06 m aside, Active, lesson 7-1
+PASS  L7-1 a dive from behind knocks the bot over (physics) and ends 7-1: dive began 1.82 m behind, bot Active, lesson 7-2
+PASS  B8 a bot runs from the player in 7-2: 1.6 m -> 2.89 m in 1.4 s
+PASS  L7-2 then the grab: 7-2
+PASS  L7-2 chasing and holding the bot 0.8 s ends 7-2 (physics, a real grip): bot held 0.22 s into the chase, lesson 7-3
+PASS  B10 a held bot struggles free (clicks with jumps, pulling away): held True, got free True, gauge now 0
+PASS  L7-3 then getting free: 7-3
+PASS  B3 the first bot comes and holds the player (physics, both hands): held 2.26 s after the lesson began
+PASS  B9 the other two stand by the player to cut the way out: 2.63 m, 2.65 m
+      picture 05_hunt.png
+PASS  L7-3 not done while only held (needs the struggle): 7-3
+PASS  L7-3 a teleport out of the bot's hands does not count: 7-3
+PASS  L7-3 struggling free (mashing the left button) ends 7-3: 6 clicks, lesson 10
+PASS  B4 the bot lets go once lesson 7 is over: free
+PASS  L7 done: lesson 10 next: lesson now 10, expected 10, hips (4.11, 0.25, 5.82)
+      picture 03_beam.png
+PASS  P4 a fall comes back to the lesson's start: hips (0, 0.26, -13.8), 0 m from the beam's start
+PASS  P5 still lesson 10 after the fall: lesson now 10, expected 10, hips (0, 0.26, -13.8)
+PASS  L10 the landing finishes the tutorial: finished
+PASS  P6 the done flag is written: 
+PASS  P7 errors logged in Play: 0
+
+Tutorial result: PASS

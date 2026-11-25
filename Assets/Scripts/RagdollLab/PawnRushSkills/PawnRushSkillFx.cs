@@ -1097,6 +1097,10 @@ namespace ChessFight.RagdollLab
             Time.timeScale = 0f;
         }
 
+        /// <summary>2026-11-25: this PC's own view judders (PawnRushCourseSkills.Mash, the struggle clicks): the skills' shake,
+        /// with its settings scale; nothing is sent.</summary>
+        public void ShakeView(float amplitude, float seconds) => Shake(amplitude, seconds);
+
         void Shake(float amplitude, float seconds)
         {
             // Settings → 카메라 흔들림 / 화면 흔들림 줄이기 (R77).

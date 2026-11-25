@@ -716,6 +716,51 @@ Steam 전송 오류: {0}	Steam send error: {0}	Steam 发送错误：{0}	Ошиб
 시작 화면	Title screen	标题画面	Титульный экран
 이름 설정	Name setup	名称设置	Выбор имени
 STEAM 연결됨 · {0}	STEAM ONLINE · {0}	STEAM 已连接 · {0}	STEAM подключён · {0}
+# --- RagdollLab/Tutorial/TutorialCourse.cs, TutorialBots.cs (the first-run tutorial, R834 / R841; lesson titles reach Loc.T through a variable)
+튜토리얼	Tutorial	教程	Обучение
+튜토리얼 완료	Tutorial complete	教程完成	Обучение пройдено
+로비로 이동합니다	Heading to the lobby	即将前往大厅	Переход в лобби
+도움말	Tip	提示	Совет
+성공!	Success!	成功！	Успех!
+{0} 완료	{0} complete	{0} 完成	{0}: готово
+Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다	You can skip the tutorial from the Esc menu	可在 Esc 菜单中跳过教程	Обучение можно пропустить в меню Esc
+{0}단계를 완료하면 건너뛸 수 있습니다	You can skip once you finish step {0}	完成第 {0} 步后即可跳过	Пропустить можно после шага {0}
+체크포인트에서 다시 시작합니다	Restarting from the checkpoint	从检查点重新开始	Перезапуск с контрольной точки
+연습 상대	Sparring partner	陪练	Спарринг-партнёр
+점프 다이빙	Jump Dive	跳跃飞扑	Нырок в прыжке
+매달리기	Ledge Grab	攀挂	Зацеп за край
+벽 타기	Wall Climb	攀墙	Лазание по стене
+밀치기	Tackle	冲撞	Толчок
+탈출	Escape	挣脱	Освобождение
+폰 스킬	Pawn Skill	兵的技能	Навык пешки
+연속 스텝	Double Step	连续冲步	Двойной шаг
+외나무다리	Narrow Bridge	独木桥	Узкий мост
+{0} {1} {2} {3} 로 이동해 빛기둥에 도착하세요	Move with {0} {1} {2} {3} and reach the pillar of light	用 {0} {1} {2} {3} 移动，到达光柱	Двигайтесь клавишами {0} {1} {2} {3} и дойдите до столба света
+화면을 클릭하면 마우스로 시점을 조작할 수 있습니다	Click the screen to look around with the mouse	点击画面后可用鼠标控制视角	Щёлкните по экрану, чтобы управлять камерой мышью
+{0} 로 장애물 2개를 뛰어넘으세요	Jump over the 2 obstacles with {0}	用 {0} 跳过 2 个障碍	Перепрыгните 2 препятствия клавишей {0}
+장애물 바로 앞에서 {0} 를 누르세요	Press {0} right in front of the obstacle	在障碍正前方按 {0}	Нажмите {0} прямо перед препятствием
+달리는 중 {0} 로 봉 아래를 통과하세요	While running, dive under the bar with {0}	奔跑中用 {0} 从横杆下穿过	На бегу нырните под перекладину клавишей {0}
+서서는 지나갈 수 없습니다	You can't pass standing up	站着无法通过	Стоя не пройти
+{0} 점프 중 {1} 로 몸을 날려 빛기둥에 도착하세요	Jump with {0}, then dive in mid-air with {1} to reach the pillar of light	用 {0} 跳起后在空中按 {1} 飞扑，到达光柱	Прыгните клавишей {0} и в воздухе нырните клавишей {1}, чтобы достичь столба света
+발이 땅에서 떨어진 뒤에 {0} 를 누르세요	Press {0} after your feet leave the ground	双脚离地后再按 {0}	Нажмите {0}, когда ноги оторвутся от земли
+{0} 를 누른 채 벽 앞까지 질주하세요	Hold {0} and sprint to the wall	按住 {0} 冲刺到墙前	Удерживая {0}, добегите до стены
+질주 중에는 스테미나가 소모됩니다	Sprinting uses stamina	冲刺会消耗体力	Бег расходует выносливость
+{0} 점프 후 {1} 를 누른 채 벽 위로 올라가세요	Jump with {0}, then hold {1} to climb onto the wall	用 {0} 跳起后按住 {1} 爬上墙顶	Прыгните клавишей {0}, затем удерживайте {1}, чтобы забраться на стену
+모서리에 매달린 상태에서 {0} 를 누르면 올라갑니다	While hanging from the ledge, press {0} to pull yourself up	挂在边缘时按 {0} 即可翻上去	Повиснув на краю, нажмите {0}, чтобы подтянуться
+벽에 붙어 {0} + {1} 로 꼭대기까지 오르세요	Get against the wall and climb to the top with {0} + {1}	贴住墙壁，用 {0} + {1} 爬到顶	Прижмитесь к стене и поднимитесь наверх клавишами {0} + {1}
+멈춰 있으면 스테미나가 소모되지 않습니다	Holding still uses no stamina	停住不动时不消耗体力	Пока вы не двигаетесь, выносливость не тратится
+{0} 로 연습 상대를 넘어뜨리세요	Knock down a sparring partner with {0}	用 {0} 撞倒陪练	Сбейте спарринг-партнёра клавишей {0}
+정면 공격은 피합니다. 뒤나 옆에서 접근하세요	They dodge attacks from the front. Come in from behind or the side	正面攻击会被躲开。请从背后或侧面接近	От атаки в лоб они уклоняются. Заходите сзади или сбоку
+{0} 를 누른 채 연습 상대를 붙잡으세요	Hold {0} to grab a sparring partner	按住 {0} 抓住陪练	Удерживая {0}, схватите спарринг-партнёра
+{0} 로 추격하세요. 잡은 상태에서 {1} 로 던질 수 있습니다	Chase them with {0}. While holding one, throw it with {1}	用 {0} 追上去。抓住后可用 {1} 投掷	Догоняйте клавишей {0}. Схватив, можно бросить клавишей {1}
+잡히면 {0} 연타로 탈출하세요	When grabbed, mash {0} to break free	被抓住时连按 {0} 挣脱	Если вас схватили, быстро нажимайте {0}, чтобы вырваться
+연타하면서 반대 방향으로 이동하면 더 빨리 풀립니다	Moving away while mashing frees you faster	连按的同时向反方向移动能更快挣脱	Двигайтесь в противоположную сторону — вырветесь быстрее
+{0} 로 스텝을 사용하세요	Use your step with {0}	用 {0} 使出冲步	Используйте шаг клавишей {0}
+이동 중인 방향으로 짧게 돌진합니다	A short dash in the direction you are moving	朝移动方向短距离冲出	Короткий рывок в сторону движения
+연습 상대 앞에서 {0} {0} 를 연속으로 눌러 공격하세요	In front of a sparring partner, press {0} {0} in a row to attack	在陪练面前连按 {0} {0} 进行攻击	Перед спарринг-партнёром нажмите {0} {0} подряд, чтобы атаковать
+두 번째 스텝은 정면 가까이에 상대가 있을 때만 나갑니다	The second step only goes off with an opponent close in front	只有正前方近处有对手时才会使出第二步	Второй шаг срабатывает, только если противник близко перед вами
+다리를 건너 금빛 문에 도착하세요	Cross the bridge and reach the golden gate	走过独木桥，到达金色之门	Перейдите мост и дойдите до золотых ворот
+떨어지면 다리 앞에서 다시 시작합니다	If you fall, you restart in front of the bridge	掉下去会从桥前重新开始	Упав, вы начнёте заново перед мостом
 # --- Game/ChatBox.cs
 채팅에 연결되지 않았어요.	Chat isn't connected.	未连接到聊天。	Чат не подключён.
 {0}에 말하기	Say to {0}	对{0}说	Кому: {0}

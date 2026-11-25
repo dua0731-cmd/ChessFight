@@ -410,7 +410,7 @@ namespace ChessFight.RagdollLab.Net
             switch (e.kind)
             {
                 case SkillFxKind.CourseDive: log.Dives++; break;
-                case SkillFxKind.CourseGrab: log.Grabs++; break;
+                case SkillFxKind.CourseGrab: if (e.count == 0) log.Grabs++; break;   // count 1, 2: the held pawn's '뿍' and the ledge's '톡탁', not grabs
                 case SkillFxKind.QueenBlast:
                 case SkillFxKind.RookThrow:
                 case SkillFxKind.BishopRopeThrow:

@@ -206,6 +206,8 @@ namespace ChessFight.Game
             {
                 case SceneNames.Intro: Host(scene).AddComponent<IntroController>(); break;
                 case SceneNames.Lobby: Host(scene).AddComponent<LobbyBootstrap>(); break;
+                // R841: the first-run tutorial gives way to an invite or a friend joining (TutorialGuard).
+                case SceneNames.Tutorial: Host(scene).AddComponent<TutorialGuard>(); break;
             }
             // A mode scene opened as the match scene shows the networked pawns
             // instead of its offline playtest.

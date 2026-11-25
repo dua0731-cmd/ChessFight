@@ -65,6 +65,11 @@ namespace ChessFight.RagdollLab
         // bake_glass.py: walk taps -21 dB, run taps -20 dB (50 ms); x0.6 sets them about the dry steps (-26 / -24 dB),
         // a landing a little over them.
         const float GlassGain = .6f, GlassLandGain = .8f, LandGlassAfter = .15f;
+        // 2026-11-25 (the tutorial's plank bridge, user "외나무다리 이 소리가 아니야"): on a WoodFloor the steps are a hollow
+        // woody knock, WoodWalk* / WoodRun* (ArtSource/PawnRush/Sfx/bake_wood.py: one step from one take, -15 dB at 50 ms;
+        // x0.3 sets it about the dry steps, -26 dB). One clip only, so its pitch swings wider (WoodWobble semitones).
+        readonly List<AudioClip> woodWalk = new List<AudioClip>(), woodRun = new List<AudioClip>();
+        const float WoodGain = .3f, WoodWobble = 1.2f;
         readonly Dictionary<RagdollPawn, Feet> feet = new Dictionary<RagdollPawn, Feet>();
         readonly List<RagdollPawn> pawns = new List<RagdollPawn>();
         readonly RaycastHit[] hits = new RaycastHit[8];
@@ -85,8 +90,10 @@ namespace ChessFight.RagdollLab
                 else if (clip.name.StartsWith("WadeRun")) wadeRun.Add(clip);
                 else if (clip.name.StartsWith("GlassWalk")) glassWalk.Add(clip);
                 else if (clip.name.StartsWith("GlassRun")) glassRun.Add(clip);
+                else if (clip.name.StartsWith("WoodWalk")) woodWalk.Add(clip);
+                else if (clip.name.StartsWith("WoodRun")) woodRun.Add(clip);
             }
-            foreach (var list in new[] { walk, run, wadeWalk, wadeRun, glassWalk, glassRun })
+            foreach (var list in new[] { walk, run, wadeWalk, wadeRun, glassWalk, glassRun, woodWalk, woodRun })
                 list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
             var holder = new GameObject("Pawn Rush footsteps").transform;
             holder.SetParent(transform, false);
@@ -130,8 +137,8 @@ namespace ChessFight.RagdollLab
                 if (raw.sqrMagnitude > 400f) { f.phase = .55f; f.half = -1; continue; }
                 f.velocity = Vector3.Lerp(f.velocity, raw, 1f - Mathf.Exp(-dt / .08f));
                 Vector3 floorVel;
-                bool wet, glass;
-                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel, out wet, out glass))
+                bool wet, glass, wood;
+                if (!OnFeet(pawn, hips, f.velocity.y, out floorVel, out wet, out glass, out wood))
                 {
                     f.phase = .55f; f.half = -1; f.offFor += dt;
                     continue;
@@ -144,7 +151,7 @@ namespace ChessFight.RagdollLab
                 if (landed && glass && glassWalk.Count + glassRun.Count > 0)
                 {
                     // A landing on glass: one tap now, the next on the legs' own count.
-                    Step(f, sprint, false, true, hips, Mathf.Max(speed, 2.5f), cam, GlassLandGain);
+                    Step(f, sprint, false, true, false, hips, Mathf.Max(speed, 2.5f), cam, GlassLandGain);
                     continue;
                 }
                 if (!pawn.NetworkPuppet)
@@ -163,7 +170,7 @@ namespace ChessFight.RagdollLab
                     if (f.phase < 1f) continue;
                     f.phase = Mathf.Repeat(f.phase, 1f);
                 }
-                Step(f, sprint, wet, glass, hips, speed, cam, 0f);
+                Step(f, sprint, wet, glass, wood, hips, speed, cam, 0f);
             }
         }
 
@@ -181,11 +188,12 @@ namespace ChessFight.RagdollLab
             return 2f * cycles;
         }
 
-        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel, out bool wet, out bool glass)
+        bool OnFeet(RagdollPawn pawn, Vector3 hips, float vy, out Vector3 floorVel, out bool wet, out bool glass, out bool wood)
         {
             floorVel = Vector3.zero;
             wet = false;
             glass = false;
+            wood = false;
             if (!pawn.NetworkPuppet)
             {
                 if (!pawn.Grounded || pawn.State != PawnState.Active || pawn.Diving || pawn.Climbing || pawn.Floating || pawn.OnRope)
@@ -207,6 +215,7 @@ namespace ChessFight.RagdollLab
                 floorVel = surface != null ? surface.PointVelocity(h.point) : body != null ? body.GetPointVelocity(h.point) : Vector3.zero;
                 wet = h.collider.GetComponent<ChessFight.Gameplay.WetFloor>() != null;
                 glass = h.collider.GetComponent<ChessFight.Gameplay.GlassFloor>() != null;
+                wood = h.collider.GetComponent<ChessFight.Gameplay.WoodFloor>() != null;
             }
             if (!pawn.NetworkPuppet) return true;
             // Upright: the hips stand about standHeight over the floor (lying down they are much lower).
@@ -214,14 +223,20 @@ namespace ChessFight.RagdollLab
         }
 
         // levelOver: the level to use instead of the set's own (0 = the set's).
-        void Step(Feet f, bool sprint, bool wet, bool glass, Vector3 at, float speed, Camera cam, float levelOver)
+        void Step(Feet f, bool sprint, bool wet, bool glass, bool wood, Vector3 at, float speed, Camera cam, float levelOver)
         {
             List<AudioClip> set;
-            float level;
+            float level, wobble = .5f;
             if (glass && (glassWalk.Count > 0 || glassRun.Count > 0))
             {
                 set = sprint && glassRun.Count > 0 ? glassRun : glassWalk.Count > 0 ? glassWalk : glassRun;
                 level = GlassGain;
+            }
+            else if (wood && (woodWalk.Count > 0 || woodRun.Count > 0))
+            {
+                set = sprint && woodRun.Count > 0 ? woodRun : woodWalk.Count > 0 ? woodWalk : woodRun;
+                level = WoodGain;
+                wobble = WoodWobble;
             }
             else if (wet && (wadeWalk.Count > 0 || wadeRun.Count > 0))
             {
@@ -254,7 +269,7 @@ namespace ChessFight.RagdollLab
             a.Stop();
             a.clip = set[pick];
             a.volume = Mathf.Clamp01(gain);
-            a.pitch = Mathf.Pow(2f, Random.Range(-.5f, .5f) / 12f);
+            a.pitch = Mathf.Pow(2f, Random.Range(-wobble, wobble) / 12f);
             a.panStereo = pan;
             a.Play();
             Steps++;

@@ -18,5 +18,11 @@ namespace ChessFight.Game
         // platform (PawnRushResultFlow), and they go back to the lobby.
         public const string PawnRushVictory = "PawnRushVictory";
         public const string PawnRushLose = "PawnRushLose";
+        // The first-run tutorial (R834, R841): after the intro (and the name screen the first time) until this PC has
+        // finished or skipped it once (TutorialDone), then the lobby. Offline: its own playtest pawn and practice bots.
+        public const string Tutorial = "Tutorial";
+        // GameSettings flag: the tutorial was finished or skipped at this PC (RagdollLab TutorialCourse writes it, the
+        // intro reads it).
+        public const string TutorialDone = "tutorialdone";
     }
 }
