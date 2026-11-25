@@ -204,12 +204,31 @@ namespace ChessFight.Game
 
         // The lobby loads behind the board; the board opens on the player's own
         // piece once the lobby has built its stage.
+        // R841 (user 11-25 "위치는 이름을 입력 한 후 튜토리얼 씬에 할 수 있게"; Docs/Player/TUTORIAL_DESIGN_v0.1.md 7): a PC
+        // that has not finished or skipped the tutorial goes to the Tutorial scene first - after the name screen the first
+        // time, straight from the start plate when the name is already there (a game quit halfway through it) - and
+        // the tutorial goes on to the lobby itself. Not when the player is already with someone (started from an
+        // invite): the tutorial must never stand between a player and the friends waiting.
         void GoToLobby(Vector2 from)
         {
             if (left) return;
             left = true;
             AsyncOperation load = null;
             int loadedFrame = -1;
+            if (TutorialFirst())
+            {
+                SceneTransition.Run(Loc.T("튜토리얼"), from,
+                    () => load = SceneManager.LoadSceneAsync(SceneNames.Tutorial),
+                    () =>
+                    {
+                        if (load == null || !load.isDone) return false;
+                        if (loadedFrame < 0) loadedFrame = Time.frameCount;
+                        // A couple of frames for the scene's pawn, map dressing and water to be made.
+                        return Time.frameCount > loadedFrame + 3;
+                    },
+                    () => new Vector2(.5f, .5f));
+                return;
+            }
             SceneTransition.Run(Loc.T("로비"), from,
                 () => load = SceneManager.LoadSceneAsync(SceneNames.Lobby),
                 () =>
@@ -220,6 +239,14 @@ namespace ChessFight.Game
                     return Time.frameCount > loadedFrame + 2;
                 },
                 LobbyPlayerAt);
+        }
+
+        // The tutorial comes first: not done at this PC, the scene is in this build, and the player is alone.
+        static bool TutorialFirst()
+        {
+            if (GameSettings.Bool(SceneNames.TutorialDone, false)) return false;
+            if (!Application.CanStreamedLevelBeLoaded(SceneNames.Tutorial)) return false;
+            return !TutorialGuard.WithOthers();
         }
 
         static Vector2 LobbyPlayerAt()

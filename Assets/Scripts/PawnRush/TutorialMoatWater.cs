@@ -15,7 +15,7 @@ namespace ChessFight.PawnRush
     //  - a pawn that falls in splashes (GardenSplashPool's spray, YardWaterSplash's rings) on its way down to the kill
     //    box under it (top -8 m): the surface sits 1 m above that, so nobody stands on water.
     // A picture only: no collider but the splash trigger, nothing sent, nothing changes the lessons. Built at Start.
-    public sealed class TutorialMoatWater : MonoBehaviour
+    public sealed partial class TutorialMoatWater : MonoBehaviour
     {
         [Tooltip("The water's surface (m, world y). The kill box's top is -8")]
         [SerializeField] float surfaceY = -7f;
@@ -97,6 +97,7 @@ namespace ChessFight.PawnRush
                     fall.AddSheet(lip - along * basinHalfWidth, lip + along * basinHalfWidth, inward, sillSpeed, surfaceY, true, sillJets,
                                   .21f + .31f * falls, .45f);
                     fall.Finish();
+                    AddPour(mid + inward * (sillLipOut + .5f) + Vector3.up * ((sillLipY + surfaceY) * .5f));   // its sound (TutorialMoatWater.Sound)
                     falls++;
                 }
             }
@@ -111,6 +112,7 @@ namespace ChessFight.PawnRush
                 water.Own(pool.gameObject);
             }
             go.SetActive(true);
+            AddLap();
             Debug.Log("[튜토리얼 물] 해자 물 표면 1개(높이 " + surfaceY + " m), 2단 폭포 " + falls + "곳(물받이 수면 " + falls + "개)"
                       + (splashes ? ", 빠지면 물보라" : ""));
         }

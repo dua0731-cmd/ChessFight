@@ -2,7 +2,7 @@
 
 2026-11-24. 사용자 "레그돌 시험장을 플레이어들이 조작감이나 스킬들을 튜토리얼 할 수 있도록 실제로 스팀에서 다운로드 후 첫 장면에만 넣을 생각이야 지금 레그돌 테스트 씬 조사해 보고 이 맵을 어떻게 조작감이나 스킬을 알 수 있을 지 설계 해".
 
-**상태: 회색 상자 1차(수업 1 ~ 7 · 10, 7은 연습 상대 봇 셋)를 seoungtest에 만듦 — 아래 "회색 상자 1차" 절. 사람이 달려 본 적 없음.** 처음 번호는 R829였으나 같은 시각 다른 세션이 R828 ~ R833을 써서 R834로 옮겼다. 시간 · 거리는 손계산이다. 배치도: [R834_TutorialLayout.svg](Mockups/R834_TutorialLayout.svg).
+**상태(11-25, R841): main에 있음 — 수업 · 독수리 오프닝 · 소리 · 인트로 연결(이름 화면 뒤, 아래 "인트로 연결" 절). 튜토리얼 안은 사용자가 Unity에서 봄, 인트로 → 튜토리얼 → 로비 흐름과 플레이어 빌드는 확인 전.** 처음에는 회색 상자 1차(수업 1 ~ 7 · 10, 7은 연습 상대 봇 셋)를 seoungtest에 만들었다 — 아래 "회색 상자 1차" 절. 처음 번호는 R829였으나 같은 시각 다른 세션이 R828 ~ R833을 써서 R834로 옮겼다. 시간 · 거리는 손계산이다. 배치도: [R834_TutorialLayout.svg](Mockups/R834_TutorialLayout.svg).
 
 ## 회색 상자 1차 (11-25, seoungtest)
 
@@ -51,6 +51,35 @@
 - 수업 8 · 9(폰 스킬 · 승격)는 다음 차례. 그동안 7 다음에 10으로 가고 화면에 그렇게 적는다.
 - `RagdollTest.unity`와 시험장 코드는 바꾸지 않았다(빌더 클래스에 `partial` 한 단어만).
 - seoungtest의 천문대 전용 편집기 파일(`SeoungTestObservatoryOnly.cs` — Play를 늘 코스 시험 씬으로 돌리던 것)을 지웠다. 천문대 작업은 R726에서 main으로 갔고, 그대로 두면 튜토리얼 씬 Play가 막힌다.
+
+## 인트로 연결 (11-25, R841 · 사용자 확인 전)
+
+사용자 "위치는 이름을 입력 한 후 튜토리얼 씬에 할 수 있게". §7의 흐름 그대로:
+
+- `Bootstrap/IntroController.GoToLobby`: 이 PC에서 튜토리얼을 마치거나 건너뛴 적이 없으면(`GameSettings` `tutorialdone` = `SceneNames.TutorialDone`) 로비 대신 `SceneNames.Tutorial`을 불러온다. 처음 실행은 이름 화면의 확인 뒤, 이름이 이미 있는 PC는 시작 화면에서 바로(중간에 끈 사람 · **이미 이름이 있는 기존 플레이어도 한 번**). 전환 화면 제목 "튜토리얼".
+- 혼자가 아닐 때는 안 보낸다: 초대로 시작했거나 파티가 2명 이상이거나 방 안(`Bootstrap/TutorialGuard.WithOthers`). 튜토리얼 중에 그렇게 되면(초대 수락 · 친구가 내 파티에 들어옴) 건너뛴 것으로 저장하고 로비로 간다(`NetworkRuntime`이 `Tutorial` 씬에 `TutorialGuard`를 붙임). Steam으로 확인한 적 없음.
+- 독수리 오프닝의 시계는 전환 화면이 덮고 있는 동안 멈춰 있다(`TutorialIntro`, `SceneTransition.Busy`).
+- 씬은 빌드 목록의 로비 다음에 있다. `Rebuild Tutorial Scene`은 이제 씬 파일만 덮어써서 `.meta`의 GUID가 그대로다(전에는 지우고 복사해 지을 때마다 GUID가 바뀌었다).
+- 수업 문구 44줄은 번역 표(`Resources/Localization/Strings.txt`, 영 · 중 · 러)에 있다. 수업 이름은 변수로 `Loc.T`에 가므로 `Find-Untranslated.ps1`에는 "코드에서 안 보임"으로 나온다.
+- 아직 없는 것: 로비의 "튜토리얼 다시 하기"(§11-4), 수업 9(승격).
+
+## 소리 (11-25, R841 · 튜토리얼 안은 사용자 확인)
+
+사용자 "튜토리얼 씬 사운드 필요한 곳 모두 조사해" → 항목별로 진행. 새 소리는 ElevenLabs flow "튜토리얼 독수리 오프닝 소리"(`92W4uG7w7gbSbvADmfh7`)에서 사용자가 번호로 고름.
+
+| 무엇 | 소리 | 코드 |
+|---|---|---|
+| 독수리 오프닝 | 날갯짓(날갯짓 박자마다) · 울음(씬 시작 0.3초 · 5초 · 날아오르기 직전) · 착지 미끄러짐 · 깃털 털기 — `Resources/TutorialSfx/Eagle*`(`ArtSource/Tutorial/bake_eagle_sfx.py`) | `TutorialIntro.Sound.cs` |
+| 수업 진행 · 낙사 | 완료 도장 `sfx_rank_complete`, 다음 칸 `sfx_ep_ready`, 졸업 `sfx_mg_complete`, 배너 · 힌트 `MenuSound`, 건너뛰기 거절 `sfx_paint_blocked`, 낙사 `sfx_fall` · 부활 `sfx_respawn` — 모두 있던 파일 | `TutorialCourse.Sound.cs` |
+| 벽 모서리 잡기 | '톡탁' `Resources/PawnRushSkillSfx/CourseLedgeGrab`(폰 러쉬 움직임 소리와 같은 규칙) — R841에 경기 코드로 옮김(모든 PC, [경기 오디오 §2](../PawnRush/PAWN_RUSH_AUDIO.md)), 튜토리얼은 그것을 씀 | `RagdollPawn.SoundGrab`, `PawnRushSkillSfx` |
+| 몸싸움 반응 | 잡힌 폰 '뿍'(`CourseGrabbed`, 모든 PC) · 좌클릭 연타 '탁'과 짧은 화면 흔들림(`CourseMash0~5`, 자기 화면만) — 튜토리얼에서 만들어 사용자 "실제 인게임에서도 플레이어들끼리 작동이 되야해 단 플레이 연타 같은 건 자기 화면에만"으로 **경기 코드에 넣었고 튜토리얼은 그것을 그대로 씀**(튜토리얼 전용 코드 · `TutorialShake`는 지움). 자세한 것은 [경기 오디오 §2](../PawnRush/PAWN_RUSH_AUDIO.md). 처음 넣은 순음 '뽁·뾰오옹·뽀잉'(65 · 66 · 69)은 "으악 소리 나게 음성 x · 탁탁탁 · 뿍"으로 바꿈, 넘어짐 소리(74)는 "넘어짐 소리는 빼주고"로 뺌 | `PawnRushCourseSkills.Mash`, `RagdollPawn.SoundGrab`, `PawnRushSkillSfx` |
+| 외나무다리 | 나무 발소리 `Resources/PawnRushStepSfx/WoodWalk0` · `WoodRun0`(테이크 42, `ArtSource/PawnRush/Sfx/bake_wood.py`) — 사용자 "외나무다리 이 소리가 아니야"로 밧줄 삐걱(`sfx_rope_creak`)을 뺌. 다리 콜라이더에 새 표시 `Gameplay/WoodFloor`를 붙이면 `PawnRushStepSfx`가 마른 발소리 대신 냄(유리 `GlassFloor`와 같은 방식, 다른 바닥은 그대로) | `TutorialCourse.Sound.cs` `MarkBridge`, `PawnRushStepSfx.cs` |
+| 해자 · 폭포 | 마차뜰의 `WaterPour`(폭포 8곳) · `WaterFlow`(해자, 가장 가까운 곳) | `PawnRush/TutorialMoatWater.Sound.cs` |
+| 분위기 | 바람 반복음 `TutorialSfx/WindLoop`(2초 테이크로 짠 12초) · 가끔 먼 새소리 `Birds` | `TutorialAmbience.cs` |
+
+- 안 넣은 것: 스테미나 바닥 소리(사용자 "넣지 마"), 배경음악(이 커넥터로는 음악을 못 만듦).
+- 모서리 잡기 '톡탁'과 잡힌 폰 '뿍'은 기존 잡기 '햡' 바로 뒤에 같이 난다.
+- 오프닝 중에는 어떤 키도 먹지 않는다(점프 키 건너뛰기를 없앰 — 건너뛰면 폰을 움직일 수 없던 버그, Esc 메뉴도 오프닝 동안 꺼 둠).
 
 ## 사용자 결정 (11-24, R834 이어서)
 

@@ -48,8 +48,14 @@ namespace ChessFight.RagdollLab.Editor
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(TutorialSource) == null)
                 throw new System.Exception(TutorialSource + "이 없습니다 (ChessFight > Development > Map Authoring > Rebuild Pawn Rush Map Test Scene).");
             EnsureFolders();
-            AssetDatabase.DeleteAsset(TutorialScenePath);
-            AssetDatabase.CopyAsset(TutorialSource, TutorialScenePath);
+            // R841: the scene is in the build list now (the intro loads it), by its GUID: a rebuild writes over the file
+            // and keeps its .meta, so the list's entry stays good (DeleteAsset + CopyAsset gave it a new GUID each time).
+            if (System.IO.File.Exists(TutorialScenePath))
+            {
+                System.IO.File.Copy(TutorialSource, TutorialScenePath, true);
+                AssetDatabase.ImportAsset(TutorialScenePath, ImportAssetOptions.ForceUpdate);
+            }
+            else AssetDatabase.CopyAsset(TutorialSource, TutorialScenePath);
             var scene = EditorSceneManager.OpenScene(TutorialScenePath, OpenSceneMode.Single);
 
             // The map test's own parts go (its maps are built at Play; nothing of them is in the scene).

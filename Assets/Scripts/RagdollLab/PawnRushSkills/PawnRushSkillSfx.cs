@@ -53,6 +53,16 @@ namespace ChessFight.RagdollLab
             // flop 1.9x (it was hardly heard), about 3.5 dB nearer the skills' hits.
             { "CourseDive", 0.62f }, { "CourseGrab", 0.48f }, { "CourseJump", 0.62f },
             { "CourseLandLight", 0.5f }, { "CourseLandFlop", 1f },
+            // 2026-11-25 (user "이건 실제 인게임에서도 플레이어들끼리 작동이 되야해 단 플레이 연타 같은 건 자기 화면에만"; the
+            // tutorial's sounds, ArtSource/PawnRush/Sfx/bake_reactions.py): a pawn taken hold of, the cork '뿍' (after
+            // Prepare -13 dB; x0.51 sets it at the grab's -19), heard by every PC; and a struggle click '탁', six taps
+            // (after Prepare -20 to -21 dB; x0.6 sets them at the footsteps' -25), heard only by the one struggling
+            // (PawnRushCourseSkills.Mash).
+            { "CourseGrabbed", 0.51f },
+            // The ledge catch '톡탁' (bake_ledge.py; after Prepare -19.5 dB, the grab's level).
+            { "CourseLedgeGrab", 0.48f },
+            { "CourseMash0", 0.6f }, { "CourseMash1", 0.6f }, { "CourseMash2", 0.6f },
+            { "CourseMash3", 0.6f }, { "CourseMash4", 0.6f }, { "CourseMash5", 0.6f },
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
             { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
             { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
@@ -153,7 +163,11 @@ namespace ChessFight.RagdollLab
                 // R652: movement, one per pawn even when two pawns do the same thing in one frame (each keeps its own
                 // place on screen), a little off pitch each time so twelve pawns' jumps are not one machine.
                 case SkillFxKind.CourseDive: Play("CourseDive", e.at, Wobble(), groupHits: false); break;
-                case SkillFxKind.CourseGrab: Play("CourseGrab", e.at, Wobble(), groupHits: false); break;
+                // count 1 (2026-11-25): not a hand taking hold but a pawn being taken hold of, at that pawn: the '뿍'.
+                // count 2: the hold is a wall's top edge: the ledge catch '톡탁', after the grab's own sound.
+                case SkillFxKind.CourseGrab:
+                    Play(e.count == 1 ? "CourseGrabbed" : e.count == 2 ? "CourseLedgeGrab" : "CourseGrab", e.at, Wobble(), groupHits: false);
+                    break;
                 case SkillFxKind.CourseJump: Play("CourseJump", e.at, Wobble() + (e.count == 1 ? 1f : 0f), e.count == 1 ? .8f : 1f, false); break;
                 case SkillFxKind.CourseLand:
                     if (e.count == 1)
@@ -358,6 +372,18 @@ namespace ChessFight.RagdollLab
 
         /// <summary>R652: up to a third of a semitone either way, for the movement sounds.</summary>
         static float Wobble() => UnityEngine.Random.Range(-.35f, .35f);
+
+        /// <summary>2026-11-25: one struggle click of this PC's own pawn (PawnRushCourseSkills.Mash), at its hips: one of
+        /// the six '탁' taps, never the same one twice running. Not sent: only the one struggling hears it.</summary>
+        public void PlayMash(Vector3 at)
+        {
+            int i = UnityEngine.Random.Range(0, 6);
+            if (i == lastMash) i = (i + 1 + UnityEngine.Random.Range(0, 5)) % 6;
+            lastMash = i;
+            Play("CourseMash" + i, at, Wobble(), groupHits: false);
+        }
+
+        int lastMash = -1;
 
         AudioSource Play(string name, Vector3 at, float semitones = 0f, float level = 1f, bool groupHits = true)
         {

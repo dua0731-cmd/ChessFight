@@ -23,10 +23,10 @@ namespace ChessFight.RagdollLab
     /// The grappling hook is off as in a match (SectionPlaytest's hook zone far below).
     /// </summary>
     [DefaultExecutionOrder(-500)]
-    public sealed class TutorialCourse : MonoBehaviour
+    public sealed partial class TutorialCourse : MonoBehaviour
     {
         /// <summary>GameSettings flag: the tutorial was finished or skipped at this PC (the intro reads it, grey box 3).</summary>
-        public const string DoneKey = "tutorialdone";
+        public const string DoneKey = SceneNames.TutorialDone;
         /// <summary>The lesson number from which leaving (skipping) is allowed: after lesson 7 (user 11-24).</summary>
         public const int SkipAfterLesson = 7;
         const float HintAfter = 20f;
@@ -432,6 +432,8 @@ namespace ChessFight.RagdollLab
 
         void Start()
         {
+            gameObject.AddComponent<TutorialAmbience>();   // the breeze and the birds, from the first frame
+            MarkBridge();   // wooden footsteps on the plank bridge (TutorialCourse.Sound)
             // The practice bots walk their lines from the start (seen from lesson 1 on, met in lesson 7).
             if (spawner != null && spawner.CharacterPrefab != null)
             {
@@ -445,6 +447,7 @@ namespace ChessFight.RagdollLab
         void Begin(int index)
         {
             current = index;
+            CueBegan();
             lessonStart = Time.time;
             sprintFor = onTopFor = holdFor = heldFor = 0f;
             underBar = sprinted = airDived = false;
@@ -474,6 +477,7 @@ namespace ChessFight.RagdollLab
             doneTitle = finished.title;
             if (finished.goal == Goal.Escape) skipOpen = true;  // lesson 7 is done: skipping opens (user 11-24)
             praiseUntil = Time.time + PraiseFor;
+            CueDone();
             if (current + 1 < lessons.Count) Begin(current + 1);
         }
 
@@ -488,6 +492,7 @@ namespace ChessFight.RagdollLab
             if (pawn == null || current < 0) return;
             // The opening (TutorialIntro: the eagle's ride and the crash landing): the first lesson's clock starts after it.
             if (TutorialIntro.Playing) { lessonStart = Time.time; hasLast = false; return; }
+            CueUpdate();
             var hips = pawn.Hips.position;
             var lesson = lessons[current];
             if (pawn.Diving) lastDive = Time.time;
@@ -561,6 +566,7 @@ namespace ChessFight.RagdollLab
                     {
                         lastDone = lesson.number;
                         goalAt = Time.time;
+                        CueGoal();
                         marker.gameObject.SetActive(false);
                         GameSettings.SetBool(DoneKey, true);
                     }
@@ -574,6 +580,7 @@ namespace ChessFight.RagdollLab
         {
             if (spawner == null || who != spawner.Driver) return;
             fellUntil = Time.time + volume.RespawnDelay + 1.2f;
+            CueFell(volume.RespawnDelay);
             hasLast = false;
         }
 
@@ -583,6 +590,7 @@ namespace ChessFight.RagdollLab
             if (!skipOpen && !Finished)
             {
                 noSkipUntil = Time.time + 3f;
+                CueRefused();
                 return;
             }
             GameSettings.SetBool(DoneKey, true);

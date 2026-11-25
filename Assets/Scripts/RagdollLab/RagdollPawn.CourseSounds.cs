@@ -99,11 +99,26 @@ namespace ChessFight.RagdollLab
             Fx(SkillFxKind.CourseJump, null, bodies[0].position, facing, vault ? 1 : 0);
         }
 
-        /// <summary>After the hands' step: a hand has just taken hold of something (a pawn, a thing, a wall, a rope).</summary>
+        /// <summary>After the hands' step: a hand has just taken hold of something (a pawn, a thing, a wall, a rope).
+        /// 2026-11-25 (user "이건 실제 인게임에서도 플레이어들끼리 작동이 되야해"): when what it took hold of is another pawn,
+        /// a second moment at that pawn, count 1 - the held one's cork '뿍' (PawnRushSkillSfx "CourseGrabbed"), sent on
+        /// like the grab so every PC hears it; and when it is a wall's top edge, a third, count 2 - the ledge catch
+        /// '톡탁' ("CourseLedgeGrab"; first the tutorial's, R841 the game's). A PC built before this plays either as a
+        /// second grab.</summary>
         void SoundGrab(bool heldBefore)
         {
             if (PawnRushPhysics == null || NetworkPuppet || heldBefore) return;
-            if (Grabbing || Climbing || OnRope) Fx(SkillFxKind.CourseGrab, null, bodies[0].position, facing);
+            if (!(Grabbing || Climbing || OnRope)) return;
+            Fx(SkillFxKind.CourseGrab, null, bodies[0].position, facing);
+            var held = HeldPawn(handL) ?? HeldPawn(handR);
+            if (held != null) Fx(SkillFxKind.CourseGrab, null, held.Hips.position, facing, 1);
+            else if (handL.HoldingLedge || handR.HoldingLedge) Fx(SkillFxKind.CourseGrab, null, bodies[0].position, facing, 2);
+        }
+
+        RagdollPawn HeldPawn(PawnHand hand)
+        {
+            if (hand == null || !hand.IsHolding || hand.HeldCollider == null) return null;
+            return ColliderOwner.TryGetValue(hand.HeldCollider, out var other) && other != null && other != this ? other : null;
         }
     }
 }

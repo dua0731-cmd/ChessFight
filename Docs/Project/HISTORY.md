@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-25 R841 · 튜토리얼 소리(독수리 오프닝 · 수업 · 해자 · 바람 · 새 · 나무 발소리)와 오프닝 키 잠금, 잡힌 폰 '뿍' · 모서리 '톡탁'(모든 PC) · 연타 '탁' + 화면 흔들림(자기 화면만)을 경기 코드에, 인트로 → (이름) → 튜토리얼 → 로비 연결(`SceneNames.Tutorial`, 빌드 목록, `TutorialGuard`), 튜토리얼 문구 번역 44줄, 튜토리얼만 main에 한 커밋(대연회장 모델링은 seoungtest에 남김). 컴파일 · Core PASS, 인트로 흐름 · 경기 · 온라인은 사용자 확인 전.
 - 2026-11-25 R839 (seoungtest) · 튜토리얼 안내 화면을 시중 게임 튜토리얼처럼: 위 칸 나뉜 진행 막대, 아래 수업 카드(번호 네모 · 수업 안 진행 막대 · "도움말"), 가운데 띠("좋아요!" · "준비 끝!") — `TutorialCourse.cs` 화면만, 스테미나 막대 양식. 컴파일 PASS, 사용자 Unity 확인 전, 커밋 안 함.
 - 2026-11-25 R836 (seoungtest) · 대연회장 모델링 에셋 시트 12장(Codex, 모델 11 · 재질 견본 1): Docs/PawnRush/ConceptArt/R836_BanquetHallAssets.
 - 2026-11-25 R835 (seoungtest) · 대연회장 모델링 작업 환경: main(R833)을 seoungtest에 로컬 합치기, Play하면 대연회장이 바로 뜨는 SeoungTestBanquetOnly.cs(천문대용 스위치 대신), 구역 · 세션 · 파일 규칙 계획 ArtSource/PawnRush/BanquetHall/PLAN.md. 모델 없음.

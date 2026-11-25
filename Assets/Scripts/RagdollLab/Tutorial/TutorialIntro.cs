@@ -27,14 +27,15 @@ namespace ChessFight.RagdollLab
     /// at the elbow and wrist and the legs bend under its weight.
     /// Nothing here collides. The pawn is held on the back by teleporting it there every frame (its keys are off, the
     /// spawner is disabled); the throw is a knockdown and a launch, so its fall is the game's own ragdoll.
-    /// The jump key skips the ride. In batch mode (the automatic checks) there is no opening.
+    /// No key does anything while it plays (user 11-25; the jump key's skip and its screen line are gone, the Esc menu
+    /// is off until the lessons start). In batch mode (the automatic checks) there is no opening.
     /// </summary>
     [DefaultExecutionOrder(-400)]
-    public sealed class TutorialIntro : MonoBehaviour
+    public sealed partial class TutorialIntro : MonoBehaviour
     {
         /// <summary>The opening is running: the lessons and their screen wait (TutorialCourse).</summary>
         public static bool Playing { get; private set; }
-        /// <summary>The pawn is still on the eagle's back (the screen shows only the skip line).</summary>
+        /// <summary>The pawn is still on the eagle's back (the lessons' screen waits).</summary>
         public static bool Riding { get; private set; }
 
         // Seconds: the approach (a lap round the yard), the landing (feet, hops, belly slide), lying winded, getting up, leaving.
@@ -181,9 +182,14 @@ namespace ChessFight.RagdollLab
                 // The view for the ride: fixed behind the eagle's head (TutorialIntroCamera, after the orbit camera).
                 if (spawner.Orbit != null) spawner.Orbit.gameObject.AddComponent<TutorialIntroCamera>().intro = this;
             }
+            // R841, coming from the intro: the opening's clock waits while the scene transition still covers the screen
+            // (the eagle held at the start of its lap, the pawn already on its back), so none of the flight is missed.
+            if (SceneTransition.Busy) started = Time.time;
             float t = Time.time - started;
-            if (Riding && t > 0.6f && GameSettings.Pressed(GameKey.Jump)) { SkipRide(); return; }
+            // No key does anything while the opening plays (user 11-25 "이 연출 장면에서는 어떤 키를 눌러도 작용 할 수 없게 해":
+            // the jump key's skip left the pawn at the start unable to move): no skip, and the Esc menu is off.
             Pose(t);
+            SoundStep(t);
             float throwAt = Approach + TripAt + 0.04f;
             if (Riding)
             {
@@ -191,7 +197,24 @@ namespace ChessFight.RagdollLab
                 else Seat();
             }
             else if (Playing && t >= throwAt + LessonsAfter) Playing = false;
+            HoldMenu(Playing);
             if (t >= Approach + Landing + Dazed + Rise + Leave) gameObject.SetActive(false);
+        }
+
+        // The scene's Esc menu (GameMenu, installed by the spawner) is switched off while the opening plays.
+        GameMenu menu;
+
+        void HoldMenu(bool hold)
+        {
+            if (menu == null) menu = FindFirstObjectByType<GameMenu>();
+            if (menu == null) return;
+            if (hold && GameMenu.IsOpen) GameMenu.Close();
+            menu.enabled = !hold;
+        }
+
+        void OnDisable()
+        {
+            if (menu != null) menu.enabled = true;
         }
 
         // Also after the physics step, so the pawn never drifts off the seat between frames.
@@ -327,19 +350,6 @@ namespace ChessFight.RagdollLab
             pawn.Launch(face * (SlideSpeed - 1.5f) + Vector3.up * 5.5f);
         }
 
-        // The jump key: the pawn stands at the start, the eagle is already getting up to leave.
-        void SkipRide()
-        {
-            Riding = Playing = false;
-            if (spawner != null)
-            {
-                spawner.enabled = true;
-                spawner.MoveTo(TutorialLayout.Start + Vector3.up * 0.05f, Quaternion.Euler(0f, TutorialLayout.StartYaw, 0f));
-            }
-            GiveViewBack();
-            started = Time.time - (Approach + Landing + Dazed);
-        }
-
         static Vector3 Curve(Vector3[] p, float u)
         {
             float v = 1f - u;
@@ -449,6 +459,7 @@ namespace ChessFight.RagdollLab
                 float beats = Mathf.Max(Mathf.Max(Window(t, -1f, 2.0f), Window(t, 4.2f, 5.7f)), Smooth(FlareFrom - 0.1f, FlareFrom + 0.3f, t));
                 float phase = t < FlareFrom ? t * CruiseBeat : FlareFrom * CruiseBeat + (t - FlareFrom) * BrakeBeat;
                 Beat(ref b, phase, beats, Mathf.Lerp(8f, 20f, flare), Mathf.Lerp(33f, 45f, flare), out float rise, out float kick);
+                beatPhase = phase; beatWeight = beats; beatStage = 0;   // for the wing sound (TutorialIntro.Sound)
                 pos += Vector3.up * rise;
                 // The flare: reared back with the wings cupping the air ahead, the tail spread down, the feet thrown out.
                 pitch = kick - 40f * flare;
@@ -597,6 +608,7 @@ namespace ChessFight.RagdollLab
                 b.handRaiseL = b.handRaiseR = Mathf.Lerp(b.handRaiseL, 14f, open);
                 float phase = fly * 3.9f - 0.24f * fly * fly;         // from the top of the first power stroke
                 Beat(ref b, phase, airborne, 10f, Mathf.Lerp(48f, 36f, u), out float rise, out float kick);
+                if (phase >= 0f) { beatPhase = phase; beatWeight = airborne; beatStage = 1; }   // for the wing sound
                 pos += Vector3.up * rise * airborne;
                 Vector3 flat = new Vector3(dir.x, 0f, dir.z);
                 float turn = fly > 0f ? Vector3.SignedAngle(flat, Vector3.ProjectOnPlane(CurveDir(outPath, Mathf.Min(1f, eased + 0.06f)), Vector3.up), Vector3.up) : 0f;
@@ -649,22 +661,6 @@ namespace ChessFight.RagdollLab
             Set(B.Neck2, q);
             Set(B.Head, q * Yaw(b.neckYaw * 0.4f + b.headYaw) * Nod(b.neckPitch * 0.35f + b.curl * 1.2f + b.headPitch) * Quaternion.AngleAxis(b.headRoll, fwd));
             Set(B.Tail, Nod(-b.tailPitch) * Quaternion.AngleAxis(b.tailRoll, fwd));   // tailPitch > 0: tail tip down
-        }
-
-        GUIStyle skipStyle;
-
-        void OnGUI()
-        {
-            if (!Riding || started < 0f || SettingsWindow.IsOpen || GameMenu.IsOpen) return;
-            if (skipStyle == null)
-            {
-                skipStyle = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, alignment = TextAnchor.LowerRight, richText = true };
-                skipStyle.normal.textColor = new Color(246 / 255f, 233 / 255f, 204 / 255f);
-            }
-            float s = Mathf.Clamp(Screen.height / 900f, .8f, 2.2f);
-            skipStyle.fontSize = Mathf.RoundToInt(18f * s);
-            string line = Loc.F("{0} 건너뛰기", "<color=#FFD152><b>[" + GameSettings.KeyCap(GameKey.Jump) + "]</b></color>");
-            GUI.Label(new Rect(0f, 0f, Screen.width - 28f * s, Screen.height - 26f * s), line, skipStyle);
         }
     }
 }

@@ -104,6 +104,24 @@ namespace ChessFight.RagdollLab
                 if (pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
                 if (pawn.PawnRushPhysics == null) pawn.PawnRushPhysics = physics;
             }
+            Mash();
+        }
+
+        // 2026-11-25 (the tutorial's struggle feel, then user "이건 실제 인게임에서도 플레이어들끼리 작동이 되야해 단 플레이
+        // 연타 같은 건 자기 화면에만 나타나게"): each struggle click of this PC's own pawn while it is held - the key the
+        // struggle reads (GameKey.Shove, the left click), pressed here, so a client hears it at once without waiting for
+        // the host - is a '탁' (PawnRushSkillSfx.PlayMash) and a short judder of this PC's view (0.06 m and 0.6°, gone in
+        // 0.14 s; a skill hit is 0.1 - 0.2 over 0.2 - 0.3 s). Nothing is sent: the other players do not hear or feel it.
+        const float MashShake = .06f, MashShakeFor = .14f;
+
+        void Mash()
+        {
+            var me = Viewer;
+            if (me == null || !me.BeingHeld || me.State == PawnState.Ragdoll) return;
+            if (ChessFight.Game.GameMenu.IsOpen || ChessFight.Game.SettingsWindow.IsOpen) return;
+            if (!ChessFight.Game.GameSettings.Pressed(ChessFight.Game.GameKey.Shove)) return;
+            if (sfx != null) sfx.PlayMash(me.Hips.position);
+            if (fx != null) fx.ShakeView(MashShake, MashShakeFor);
         }
 
         /// <summary>The skill key card at the bottom right, in the same colours as the skill test bed's (PawnRushSkillFx.SkillCard,
