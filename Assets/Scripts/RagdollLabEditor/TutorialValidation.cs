@@ -249,6 +249,8 @@ namespace ChessFight.RagdollLab.Editor
                 Check("B1 three practice bots", bots != null && bots.Count == 3, bots != null ? bots.Count.ToString() : "none");
                 botsAt = new Vector3[bots != null ? bots.Count : 0];
                 for (int i = 0; i < botsAt.Length; i++) botsAt[i] = bots[i] != null ? bots[i].Hips.position : Vector3.zero;
+                botsWent = new float[botsAt.Length];
+                watchBots = true;
                 Put(TutorialLayout.FightStart, TutorialLayout.FightStartYaw);
             });
             Add("bots wander", 4f, () =>
@@ -256,15 +258,16 @@ namespace ChessFight.RagdollLab.Editor
                 var bots = Course.Bots;
                 var skin = bots[0].skin != null ? bots[0].skin.sharedMaterial : null;
                 Check("B5 the bots wear the black set", skin != null && skin.name.StartsWith("Pawn_P2"), skin != null ? skin.name : "none");
+                watchBots = false;
                 int walked = 0, inYard = 0;
                 string where = "";
                 var yard = TutorialLayout.BotYard;
                 for (int i = 0; i < botsAt.Length; i++)
                 {
                     var hips = bots[i].Hips.position;
-                    if (Vector3.Distance(Flat(hips), Flat(botsAt[i])) > 1f) walked++;
+                    if (botsWent[i] > 1f) walked++;   // the way it walked: a bot may stroll out and back, or stand a moment first
                     if (hips.x > yard.xMin - 0.6f && hips.x < yard.xMax + 0.6f && hips.z > yard.yMin - 0.6f && hips.z < yard.yMax + 0.6f) inYard++;
-                    where += " " + V(hips) + (bots[i].Team == Teams.Black ? " black" : " team " + bots[i].Team);
+                    where += " " + V(hips) + " walked " + F(botsWent[i]) + " m" + (bots[i].Team == Teams.Black ? " black" : " team " + bots[i].Team);
                 }
                 Check("B2 the bots walk about the yard on their own (4 s, more than 1 m, still in the yard)",
                       walked == botsAt.Length && inYard == botsAt.Length, walked + " walked, " + inYard + " in the yard:" + where);
@@ -343,12 +346,13 @@ namespace ChessFight.RagdollLab.Editor
                 Put(new Vector3(b.x - 0.6f, 0f, b.z), 90f);
                 botHeldSeen = botFreed = false;
                 botHeldAt = -1f;
+                chaseClosest = float.MaxValue;
                 chaseBot = 1;
             });
             Add("hold", 6f, () =>
             {
                 Check("L7-2 chasing and holding the bot 0.8 s ends 7-2 (physics, a real grip)", Course.LessonLabel == "7-3",
-                      "bot held " + (botHeldAt >= 0f ? F(botHeldAt) + " s into the chase" : "never") + ", lesson " + Course.LessonLabel);
+                      "bot held " + (botHeldAt >= 0f ? F(botHeldAt) + " s into the chase" : "never, closest " + F(chaseClosest) + " m") + ", lesson " + Course.LessonLabel);
             });
             Add("struggle", 4f, () =>
             {
@@ -431,6 +435,8 @@ namespace ChessFight.RagdollLab.Editor
         }
 
         static Vector3[] botsAt = new Vector3[0];
+        static float[] botsWent = new float[0];
+        static bool watchBots;
         static Vector3 botFrom;
         static float diveFrom, fleeFrom;
         static string labelBefore = "";
@@ -439,6 +445,8 @@ namespace ChessFight.RagdollLab.Editor
         static bool struggling;
         static double nextStruggle;
         static float botHeldAt = -1f;
+        static double chaseLetGo;
+        static float chaseClosest = float.MaxValue;
         static double chaseFrom;
 
         // The player chasing bot `chaseBot` at a sprint with the grab key down (every editor frame while it is set).
@@ -452,9 +460,17 @@ namespace ChessFight.RagdollLab.Editor
             if (botWasHeld && !held) botFreed = true;
             botWasHeld = held;
             var to = Flat(bot.Hips.position - Pawn.Hips.position);
-            var dir = to.sqrMagnitude > 0.0001f ? to.normalized : Pawn.Facing;
+            float gap = to.magnitude;
+            var dir = gap > 0.01f ? to / gap : Pawn.Facing;
+            if (gap < chaseClosest) chaseClosest = gap;
+            // As a person chases: sprint only from afar, ease off close in so the body does not overshoot and circle the
+            // bot, keep walking right into it (the palms reach 0.25 m), and press grab only within arm's reach - a hand
+            // takes whatever is nearest while the key is down, a wall or the floor included, so anything else is let go.
+            if (Pawn.Grabbing && !Pawn.HoldingPawn(out _)) chaseLetGo = now + 0.25;
+            bool grab = gap < 1.2f && now >= chaseLetGo;
             if (Spawner != null && Spawner.Driver is RagdollDriver driver)
-                driver.SetCommand(new CharacterCommand { Move = to.magnitude > 0.45f ? dir : Vector3.zero, Sprint = true, Grab = true, Aim = dir });
+                driver.SetCommand(new CharacterCommand { Move = gap > 0.25f ? dir * Mathf.Clamp(gap / 1.2f, 0.5f, 1f) : Vector3.zero,
+                                                         Sprint = gap > 1.6f, Grab = grab, Aim = dir });
         }
 
         // The player holding the grab key toward dir (spawner off, so it stays held).
@@ -486,6 +502,13 @@ namespace ChessFight.RagdollLab.Editor
                 if (heldSeen < 0f && Pawn != null && Pawn.BeingHeld) heldSeen = (float)(now - heldWatchFrom);
             }
             else heldWatchFrom = 0;
+            if (watchBots && Course != null && Course.Bots != null)
+                for (int i = 0; i < botsAt.Length && i < Course.Bots.Count; i++)
+                {
+                    var at = Course.Bots[i].Hips.position;
+                    botsWent[i] += Vector3.Distance(Flat(at), Flat(botsAt[i]));
+                    botsAt[i] = at;
+                }
             if (chaseBot >= 0) ChaseStep(now);
             else chaseFrom = 0;
             if (struggling && now >= nextStruggle && Pawn != null && Spawner.Driver is RagdollDriver mashing)
