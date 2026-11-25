@@ -193,7 +193,17 @@ namespace ChessFight.Network
         //      (they were 2 m strips a runner could pass beside). A v60 PC would reach other checkpoints on the same run.
         // v62 (R827): the grand stair hall gets a checkpoint over the royal balcony (CP7) and its exit terrace becomes CP8;
         //      the seats' checkpoints go over the wire by order (PawnRushNetState), so a v61 PC would read them one off.
-        public const string Protocol = "chessfight.dua0731.network.v62";
+        // v63 (R840, branch JY-audience-hall merged 11-25; the branch's builds were v61.hall1 - hall4):
+        // hall1 (11-21): the round's ending is the king's audience hall graybox (Final_AudienceHall)
+        //      instead of the temporary floor, and under "왕좌 차지전" the teams stand across the hall and the platform waits
+        //      3 s. A v62 PC would build the other ending.
+        // hall2: the last slot may draw the halls B, C and D too, and the room rule "엔딩 맵" pins one (rules bits 8-10);
+        //      under "왕좌 차지전" each hall says where the rows stand and hall C sends a team's falls to its own alcove.
+        // hall3: the room rule "엔딩 시작" (rules bit 11) - under "30초 뒤 소환" the throne contest's first byte carries the
+        //      summons' countdown (bit 3), and the others count its 30 s from when they hear it.
+        // hall4: the kings' summons onto the chessboard (ThroneSummonsShow, ISummonCarry) - no new bytes, but the halls are
+        // built differently (boards on the floor, hall B's nave columns) and everyone is carried, not stood in rows.
+        public const string Protocol = "chessfight.dua0731.network.v63";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

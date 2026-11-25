@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1000" viewBox="0 0 1100 1000" font-family="'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif">
+  <defs>
+    <pattern id="board" x="524" y="242" width="48" height="48" patternUnits="userSpaceOnUse">
+      <rect width="48" height="48" fill="#e9e2d3"/>
+      <rect width="24" height="24" fill="#cfc6b4"/>
+      <rect x="24" y="24" width="24" height="24" fill="#cfc6b4"/>
+    </pattern>
+    <style>
+      text { fill: #2a2622; font-size: 11px; }
+      .t { font-weight: 700; font-size: 13px; }
+      .s { font-size: 10.5px; }
+      .floor { fill: #ece6da; }
+      .wall { fill: none; stroke: #2a2622; stroke-width: 3; }
+      .stair { fill: #d4ccbd; stroke: #8f8676; stroke-width: .8; }
+      .top { fill: #f3efe8; stroke: #8f8676; stroke-width: .8; }
+      .plat { fill: #e9b824; fill-opacity: .4; stroke: #b07f08; stroke-width: 2; }
+      .throne { fill: #6f5210; }
+      .col { fill: #d6cfc1; stroke: #6d665b; stroke-width: 1; }
+      .pit { fill: #2f3440; }
+      .carpet { fill: #a8232b; fill-opacity: .7; }
+      .w { fill: #ffffff; stroke: #2a2622; stroke-width: 1.2; }
+      .b { fill: #222222; stroke: #000000; stroke-width: 1.2; }
+      .guide { stroke: #b9b2a5; stroke-width: 1; stroke-dasharray: 4 4; }
+      .shade { fill: #2a2622; fill-opacity: .06; }
+    </style>
+  </defs>
+  <rect width="1100" height="1000" fill="#faf8f3"/>
+  <text x="40" y="32" style="font-size:18px;font-weight:700">국왕 알현실 변형안 v0.2 · 같은 축척으로 비교</text>
+  <text x="40" y="52" style="font-size:12px">위: 위에서 본 모습(정문이 아래) · 아래: 정문에서 본 단면(높이) · 1 m = 6 px · 2026-11-21 제안, 아직 짓기 전 · 숫자는 시작값</text>
+
+  <!-- ======================= Plans: X = cx + 6x, Y = 470 - 6z ======================= -->
+
+  <!-- A: the current draft (cx 120) -->
+  <rect class="floor" x="48" y="338" width="144" height="132"/>
+  <rect class="carpet" x="111" y="422" width="18" height="48"/>
+  <rect class="stair" x="78" y="356" width="84" height="66"/>
+  <rect x="78" y="404" width="18" height="18" fill="#bdb4a3"/>
+  <rect x="144" y="404" width="18" height="18" fill="#bdb4a3"/>
+  <rect class="top" x="96" y="356" width="48" height="48"/>
+  <circle class="plat" cx="120" cy="380" r="18"/>
+  <rect class="throne" x="114" y="357.2" width="12" height="7.2"/>
+  <line x1="78" y1="356" x2="162" y2="356" stroke="#2a2622" stroke-width="2.5"/>
+  <g class="w"><circle cx="66" cy="398" r="2.6"/><circle cx="66" cy="390.8" r="2.6"/><circle cx="66" cy="383.6" r="2.6"/><circle cx="66" cy="376.4" r="2.6"/><circle cx="66" cy="369.2" r="2.6"/><circle cx="66" cy="362" r="2.6"/></g>
+  <g class="b"><circle cx="174" cy="398" r="2.6"/><circle cx="174" cy="390.8" r="2.6"/><circle cx="174" cy="383.6" r="2.6"/><circle cx="174" cy="376.4" r="2.6"/><circle cx="174" cy="369.2" r="2.6"/><circle cx="174" cy="362" r="2.6"/></g>
+  <path class="wall" d="M84 470 H48 V338 H192 V470 H156"/>
+  <text x="120" y="492" text-anchor="middle" class="t">A · 지금 초안 (대조군)</text>
+  <text x="120" y="508" text-anchor="middle" class="s">24 × 22 m · 천장 8 m</text>
+  <text x="120" y="522" text-anchor="middle" class="s">낮은 계단 단상 1.25 m</text>
+
+  <!-- B: the long cathedral hall (cx 350) -->
+  <rect class="floor" x="260" y="86" width="180" height="384"/>
+  <rect class="shade" x="260" y="206" width="36" height="264"/>
+  <rect class="shade" x="404" y="206" width="36" height="264"/>
+  <rect class="carpet" x="338" y="206" width="24" height="264"/>
+  <g class="col">
+    <circle cx="296" cy="434" r="6"/><circle cx="296" cy="398" r="6"/><circle cx="296" cy="362" r="6"/><circle cx="296" cy="326" r="6"/><circle cx="296" cy="290" r="6"/><circle cx="296" cy="254" r="6"/><circle cx="296" cy="218" r="6"/>
+    <circle cx="404" cy="434" r="6"/><circle cx="404" cy="398" r="6"/><circle cx="404" cy="362" r="6"/><circle cx="404" cy="326" r="6"/><circle cx="404" cy="290" r="6"/><circle cx="404" cy="254" r="6"/><circle cx="404" cy="218" r="6"/>
+  </g>
+  <rect class="stair" x="314" y="161" width="72" height="45"/>
+  <g stroke="#8f8676" stroke-width=".6"><line x1="314" y1="197" x2="386" y2="197"/><line x1="314" y1="188" x2="386" y2="188"/><line x1="314" y1="179" x2="386" y2="179"/><line x1="314" y1="170" x2="386" y2="170"/></g>
+  <rect class="stair" x="269" y="122" width="45" height="36"/>
+  <rect class="stair" x="386" y="122" width="45" height="36"/>
+  <rect class="top" x="314" y="110" width="72" height="51"/>
+  <circle class="plat" cx="350" cy="137" r="21"/>
+  <rect class="throne" x="341" y="111.2" width="18" height="10.8"/>
+  <line x1="314" y1="110" x2="386" y2="110" stroke="#2a2622" stroke-width="2.5"/>
+  <g class="w"><circle cx="278" cy="194" r="2.6"/><circle cx="278" cy="186.8" r="2.6"/><circle cx="278" cy="179.6" r="2.6"/><circle cx="278" cy="172.4" r="2.6"/><circle cx="278" cy="165.2" r="2.6"/><circle cx="278" cy="158" r="2.6"/></g>
+  <g class="b"><circle cx="422" cy="194" r="2.6"/><circle cx="422" cy="186.8" r="2.6"/><circle cx="422" cy="179.6" r="2.6"/><circle cx="422" cy="172.4" r="2.6"/><circle cx="422" cy="165.2" r="2.6"/><circle cx="422" cy="158" r="2.6"/></g>
+  <path class="wall" d="M314 470 H260 V86 H440 V470 H386"/>
+  <text x="350" y="300" text-anchor="middle" class="s" transform="rotate(-90 350 300)" style="fill:#ffffff">정문에서 제단까지 44 m</text>
+  <text x="350" y="492" text-anchor="middle" class="t">B · 대성당 알현실 (길고 높게)</text>
+  <text x="350" y="508" text-anchor="middle" class="s">30 × 64 m · 천장 24 m · 기둥 두 줄</text>
+  <text x="350" y="522" text-anchor="middle" class="s">높은 계단 제단 2.5 m, 발판 7 m</text>
+
+  <!-- C: the rotunda (cx 620, centre z 22 -> y 338) -->
+  <circle class="floor" cx="620" cy="338" r="132"/>
+  <rect x="524" y="242" width="192" height="192" fill="url(#board)"/>
+  <rect class="pit" x="578" y="296" width="84" height="84"/>
+  <rect class="stair" x="612.5" y="362" width="15" height="18"/>
+  <rect class="stair" x="612.5" y="296" width="15" height="18"/>
+  <rect class="stair" x="578" y="330.5" width="18" height="15"/>
+  <rect class="stair" x="644" y="330.5" width="18" height="15"/>
+  <rect class="top" x="596" y="314" width="48" height="48"/>
+  <circle class="plat" cx="620" cy="338" r="24"/>
+  <circle cx="620" cy="338" r="18" fill="none" stroke="#b07f08" stroke-width="1" stroke-dasharray="3 3"/>
+  <rect class="throne" x="614" y="315.2" width="12" height="7.2"/>
+  <g class="w"><circle cx="548" cy="356" r="2.6"/><circle cx="548" cy="348.8" r="2.6"/><circle cx="548" cy="341.6" r="2.6"/><circle cx="548" cy="334.4" r="2.6"/><circle cx="548" cy="327.2" r="2.6"/><circle cx="548" cy="320" r="2.6"/></g>
+  <g class="b"><circle cx="692" cy="356" r="2.6"/><circle cx="692" cy="348.8" r="2.6"/><circle cx="692" cy="341.6" r="2.6"/><circle cx="692" cy="334.4" r="2.6"/><circle cx="692" cy="327.2" r="2.6"/><circle cx="692" cy="320" r="2.6"/></g>
+  <circle cx="620" cy="338" r="132" class="wall"/>
+  <path d="M584 465 A132 132 0 0 0 656 465" fill="none" stroke="#faf8f3" stroke-width="6"/>
+  <path d="M489.2 320 A132 132 0 0 0 489.2 356" fill="none" stroke="#ffffff" stroke-width="6"/>
+  <path d="M750.8 356 A132 132 0 0 0 750.8 320" fill="none" stroke="#555555" stroke-width="6"/>
+  <text x="482" y="341" text-anchor="end" class="s">백 아치</text>
+  <text x="758" y="341" text-anchor="start" class="s">흑 아치</text>
+  <text x="620" y="290" text-anchor="middle" class="s" style="font-size:9.5px">해자(폭 3 m)</text>
+  <text x="620" y="492" text-anchor="middle" class="t">C · 원형 돔 (중앙 섬과 해자)</text>
+  <text x="620" y="508" text-anchor="middle" class="s">지름 44 m · 천장 30 m · 바닥은 4 m 칸 체스판</text>
+  <text x="620" y="522" text-anchor="middle" class="s">가운데 네 칸이 섬(0.6 m), 다리 4개</text>
+
+  <!-- D: the giant throne (cx 935) -->
+  <rect class="floor" x="833" y="206" width="204" height="264"/>
+  <rect class="carpet" x="923" y="344" width="24" height="126"/>
+  <rect x="917" y="338" width="36" height="6" fill="#d4ccbd" stroke="#8f8676" stroke-width=".6"/>
+  <rect x="917" y="332" width="36" height="6" fill="#ddd6c9" stroke="#8f8676" stroke-width=".6"/>
+  <rect x="917" y="326" width="36" height="6" fill="#e6e0d5" stroke="#8f8676" stroke-width=".6"/>
+  <rect x="911" y="302" width="48" height="24" fill="#bdb4a3" stroke="#6d665b" stroke-width=".8"/>
+  <rect class="carpet" x="884" y="296" width="12" height="66"/>
+  <rect class="carpet" x="974" y="296" width="12" height="66"/>
+  <rect x="905" y="254" width="60" height="42" fill="#f1dc9a" stroke="#b07f08" stroke-width="1"/>
+  <circle class="plat" cx="935" cy="275" r="18"/>
+  <rect class="throne" x="896" y="254" width="9" height="42" fill-opacity=".85"/>
+  <rect class="throne" x="965" y="254" width="9" height="42" fill-opacity=".85"/>
+  <rect class="throne" x="896" y="245" width="78" height="9"/>
+  <g class="w"><circle cx="863" cy="314" r="2.6"/><circle cx="863" cy="306.8" r="2.6"/><circle cx="863" cy="299.6" r="2.6"/><circle cx="863" cy="292.4" r="2.6"/><circle cx="863" cy="285.2" r="2.6"/><circle cx="863" cy="278" r="2.6"/></g>
+  <g class="b"><circle cx="1007" cy="314" r="2.6"/><circle cx="1007" cy="306.8" r="2.6"/><circle cx="1007" cy="299.6" r="2.6"/><circle cx="1007" cy="292.4" r="2.6"/><circle cx="1007" cy="285.2" r="2.6"/><circle cx="1007" cy="278" r="2.6"/></g>
+  <path class="wall" d="M899 470 H833 V206 H1037 V470 H971"/>
+  <text x="935" y="236" text-anchor="middle" class="s" style="font-size:9.5px">등받이 14 m</text>
+  <text x="935" y="357" text-anchor="middle" class="s" style="font-size:9px;fill:#ffffff">책 계단</text>
+  <text x="935" y="318" text-anchor="middle" class="s" style="font-size:9px">발받침 1.5 m</text>
+  <text x="935" y="492" text-anchor="middle" class="t">D · 거인의 왕좌 (장난감 크기)</text>
+  <text x="935" y="508" text-anchor="middle" class="s">34 × 44 m · 천장 32 m</text>
+  <text x="935" y="522" text-anchor="middle" class="s">왕좌 방석(3 m 높이)이 발판</text>
+
+  <!-- ======================= Sections from the door: X = cx + 6x, Y = 830 - 6y ======================= -->
+  <text x="40" y="566" class="t">정문에서 본 단면 — 높이 비교 (작은 흰 기둥 모양 = 폰 1 m)</text>
+  <line class="guide" x1="40" y1="770" x2="1060" y2="770"/><text x="40" y="766" class="s">10 m</text>
+  <line class="guide" x1="40" y1="710" x2="1060" y2="710"/><text x="40" y="706" class="s">20 m</text>
+  <line class="guide" x1="40" y1="650" x2="1060" y2="650"/><text x="40" y="646" class="s">30 m</text>
+  <line x1="40" y1="830" x2="1060" y2="830" stroke="#2a2622" stroke-width="2"/>
+
+  <!-- A -->
+  <path d="M48 830 V782 H192 V830" fill="none" stroke="#2a2622" stroke-width="2"/>
+  <polygon points="78,830 96,822.5 144,822.5 162,830" class="stair"/>
+  <rect x="83.4" y="805.4" width="7.2" height="17.1" fill="#ffffff" stroke="#2a2622" stroke-width=".8"/>
+  <rect x="149.4" y="805.4" width="7.2" height="17.1" fill="#222222"/>
+  <rect class="throne" x="112.5" y="806.9" width="15" height="15.6"/>
+  <rect x="64" y="824" width="4" height="6" class="w"/>
+  <text x="120" y="776" text-anchor="middle" class="s">8 m</text>
+
+  <!-- B -->
+  <path d="M260 830 V686 H440 V830" fill="none" stroke="#2a2622" stroke-width="2"/>
+  <rect class="col" x="290" y="710" width="12" height="120"/>
+  <rect class="col" x="398" y="710" width="12" height="120"/>
+  <polygon points="269,830 314,815 386,815 431,830" class="stair"/>
+  <rect x="334" y="734" width="32" height="81" fill="#5b3c8c" fill-opacity=".45"/>
+  <rect x="332" y="731" width="36" height="4" fill="#5b3c8c"/>
+  <rect class="throne" x="341" y="776" width="18" height="39"/>
+  <rect x="276" y="824" width="4" height="6" class="w"/>
+  <text x="350" y="680" text-anchor="middle" class="s">24 m</text>
+
+  <!-- C -->
+  <path d="M488 830 V758 Q488 650 614 650 M626 650 Q752 650 752 758 V830" fill="none" stroke="#2a2622" stroke-width="2"/>
+  <polygon points="614,650 626,650 640,826.4 600,826.4" fill="#e9b824" fill-opacity=".18"/>
+  <path d="M488 830 H578 V848 H596 V826.4 H644 V848 H662 V830 H752" fill="none" stroke="#2a2622" stroke-width="2"/>
+  <rect x="578" y="830" width="18" height="18" class="pit"/>
+  <rect x="644" y="830" width="18" height="18" class="pit"/>
+  <rect class="throne" x="614" y="809.6" width="12" height="16.8"/>
+  <rect x="546" y="824" width="4" height="6" class="w"/>
+  <text x="620" y="644" text-anchor="middle" class="s">30 m · 둥근 창</text>
+
+  <!-- D -->
+  <path d="M833 830 V638 H1037 V830" fill="none" stroke="#2a2622" stroke-width="2"/>
+  <rect class="throne" x="896" y="746" width="78" height="66" fill-opacity=".55"/>
+  <rect class="throne" x="896" y="812" width="6" height="18"/>
+  <rect class="throne" x="968" y="812" width="6" height="18"/>
+  <rect class="throne" x="896" y="803" width="9" height="9"/>
+  <rect class="throne" x="965" y="803" width="9" height="9"/>
+  <rect x="905" y="809" width="60" height="3.5" fill="#e9b824"/>
+  <rect x="911" y="821" width="48" height="9" fill="#bdb4a3" stroke="#6d665b" stroke-width=".8"/>
+  <rect x="861" y="824" width="4" height="6" class="w"/>
+  <text x="935" y="632" text-anchor="middle" class="s">32 m</text>
+  <text x="935" y="740" text-anchor="middle" class="s" style="font-size:9.5px">왕좌 14 m</text>
+
+  <!-- Legend -->
+  <circle cx="48" cy="900" r="7" class="plat"/><text x="60" y="904">왕좌 발판(판정)</text>
+  <rect x="160" y="893" width="16" height="14" class="stair"/><text x="182" y="904">계단</text>
+  <rect x="228" y="893" width="16" height="14" class="top"/><text x="250" y="904">단상 윗면</text>
+  <rect x="318" y="893" width="16" height="14" class="pit"/><text x="340" y="904">해자(떨어지면 잡힌 말)</text>
+  <rect x="470" y="893" width="16" height="14" class="carpet"/><text x="492" y="904">융단</text>
+  <circle cx="545" cy="900" r="4" class="w"/><circle cx="557" cy="900" r="4" class="b"/><text x="568" y="904">팀이 서는 자리(소환 뒤)</text>
+  <rect x="712" y="893" width="16" height="14" class="throne"/><text x="734" y="904">왕좌</text>
+  <text x="40" y="940" class="s">공통 생각: 홀은 눈으로 보기에 거대하게, 싸우는 자리는 촘촘하게 — 폰은 초속 2.5 m(전력 3.6 m)라 50 m를 달리면 약 14~20초가 걸린다.</text>
+  <text x="40" y="958" class="s">그래서 B · C · D 모두 팀이 서는 자리는 발판에서 8~12 m 안쪽이고, 넓은 공간은 들어오는 길과 머리 위(천장 · 돔 · 거대한 왕좌)에 쓴다.</text>
+  <text x="40" y="976" class="s">규칙은 모두 지금의 왕좌 차지전(팀 과반이 발판 위에 있는 동안 시간이 쌓임) 그대로이고, 판마다 바뀌는 것은 공간과 발판의 생김새다.</text>
+</svg>
