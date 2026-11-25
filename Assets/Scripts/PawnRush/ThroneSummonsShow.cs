@@ -650,9 +650,10 @@ namespace ChessFight.PawnRush
             big.fontSize = Mathf.RoundToInt(72f * unit * (1f + .3f * (1f - Mathf.Clamp01((t - Muster) / .2f))));
             var at = new Rect(0f, Screen.height * .26f, Screen.width, 110f * unit);
             GUI.color = new Color(.1f, .07f, 0f, .85f * a);
-            GUI.Label(new Rect(at.x + 4f * unit, at.y + 4f * unit, at.width, at.height), "양 팀 집결!", big);
+            string muster = Loc.T("양 팀 집결!");
+            GUI.Label(new Rect(at.x + 4f * unit, at.y + 4f * unit, at.width, at.height), muster, big);
             GUI.color = new Color(Yellow.r, Yellow.g, Yellow.b, a);
-            GUI.Label(at, "양 팀 집결!", big);
+            GUI.Label(at, muster, big);
             GUI.color = was;
         }
     }

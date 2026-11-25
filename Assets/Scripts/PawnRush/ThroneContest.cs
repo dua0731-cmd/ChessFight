@@ -516,16 +516,16 @@ namespace ChessFight.PawnRush
             Bar(new Rect(box.xMax - 10f * unit - side, box.y, side, height), Teams.Black, unit);
             // Between the bars: who holds the platform now.
             bool waiting = Waiting;
-            string state = waiting ? "곧 발판이 켜집니다"
-                         : holder == Teams.White ? "백팀 점유 중" : holder == Teams.Black ? "흑팀 점유 중"
-                         : holder == PawnRushThrone.Both ? "동시 점유 · 멈춤" : "발판이 비었습니다";
+            string state = waiting ? Loc.T("곧 발판이 켜집니다")
+                         : holder == Teams.White ? Loc.T("백팀 점유 중") : holder == Teams.Black ? Loc.T("흑팀 점유 중")
+                         : holder == PawnRushThrone.Both ? Loc.T("동시 점유 · 멈춤") : Loc.T("발판이 비었습니다");
             GUI.color = waiting ? new Color(1f, .7f, .35f)
                       : holder == PawnRushThrone.Both ? new Color(1f, .55f, .45f) : holder == PawnRushThrone.Nobody ? new Color(.8f, .76f, .66f) : new Color(1f, .86f, .45f);
             small.fontSize = Mathf.RoundToInt(17f * unit);
             GUI.Label(new Rect(box.center.x - mid * .5f, box.y + 30f * unit, mid, 26f * unit), state, small);
             GUI.color = new Color(1f, .9f, .6f);
             small.fontSize = Mathf.RoundToInt(13f * unit);
-            GUI.Label(new Rect(box.center.x - mid * .5f, box.y + 8f * unit, mid, 20f * unit), "왕좌 차지전", small);
+            GUI.Label(new Rect(box.center.x - mid * .5f, box.y + 8f * unit, mid, 20f * unit), Loc.T("왕좌 차지전"), small);
             HudBottom = box.yMax;
 
             // The first seconds: what this is.
@@ -538,13 +538,13 @@ namespace ChessFight.PawnRush
                 GUI.DrawTexture(band, Texture2D.whiteTexture);
                 GUI.color = new Color(1f, .86f, .45f, alpha);
                 big.fontSize = Mathf.RoundToInt(46f * unit);
-                GUI.Label(new Rect(band.x, band.y + 10f * unit, band.width, 62f * unit), "왕좌 차지전!", big);
+                GUI.Label(new Rect(band.x, band.y + 10f * unit, band.width, 62f * unit), Loc.T("왕좌 차지전!"), big);
                 GUI.color = new Color(.96f, .92f, .82f, alpha);
                 small.fontSize = Mathf.RoundToInt(19f * unit);
-                GUI.Label(new Rect(band.x, band.y + 76f * unit, band.width, 28f * unit), "금색 발판 위에 팀 과반이 올라가 있는 동안 시간이 쌓입니다 · 먼저 채우는 팀이 승리", small);
+                GUI.Label(new Rect(band.x, band.y + 76f * unit, band.width, 28f * unit), Loc.T("금색 발판 위에 팀 과반이 올라가 있는 동안 시간이 쌓입니다 · 먼저 채우는 팀이 승리"), small);
                 small.fontSize = Mathf.RoundToInt(16f * unit);
                 GUI.Label(new Rect(band.x, band.y + 108f * unit, band.width, 26f * unit),
-                          $"백팀 {target[0]:0}초 · 흑팀 {target[1]:0}초   (스스로 깬 미니게임 하나에 {PawnRushThrone.PerClear:0}초 단축)", small);
+                          Loc.F("백팀 {0:0}초 · 흑팀 {1:0}초   (스스로 깬 미니게임 하나에 {2:0}초 단축)", target[0], target[1], PawnRushThrone.PerClear), small);
             }
             // The standoff (IThroneStage): 3, 2, 1 under the banner, then a moment of "on".
             if (standoff > 0f && beganAt >= 0f)
@@ -555,7 +555,7 @@ namespace ChessFight.PawnRush
                     GUI.color = new Color(1f, .86f, .45f, left > 0f ? 1f : Mathf.Clamp01((left + GoSeconds) / GoSeconds));
                     big.fontSize = Mathf.RoundToInt(80f * unit);
                     GUI.Label(new Rect(0f, Screen.height * .3f + 160f * unit, Screen.width, 100f * unit),
-                              left > 0f ? Mathf.CeilToInt(left).ToString() : "발판 켜짐!", big);
+                              left > 0f ? Mathf.CeilToInt(left).ToString() : Loc.T("발판 켜짐!"), big);
                 }
             }
             GUI.color = was;
@@ -578,12 +578,12 @@ namespace ChessFight.PawnRush
             GUI.DrawTexture(band, Texture2D.whiteTexture);
             GUI.color = left <= 3f ? new Color(1f, .45f, .35f) : new Color(1f, .86f, .45f);
             big.fontSize = Mathf.RoundToInt(38f * unit);
-            GUI.Label(new Rect(band.x, band.y + 6f * unit, band.width, 50f * unit), $"왕의 부름까지 {Mathf.CeilToInt(left)}", big);
+            GUI.Label(new Rect(band.x, band.y + 6f * unit, band.width, 50f * unit), Loc.F("왕의 부름까지 {0}", Mathf.CeilToInt(left)), big);
             GUI.color = new Color(.96f, .92f, .82f);
             small.fontSize = Mathf.RoundToInt(17f * unit);
             bool inside = MiniGameBase.LocalDriver != null && InHall(MiniGameBase.LocalDriver);
             GUI.Label(new Rect(band.x, band.y + 58f * unit, band.width, 26f * unit),
-                      inside ? "먼저 왔다 · 자리를 잡으세요 (발판은 소환 뒤에 켜집니다)" : "알현실로! 시간이 다 되면 남은 사람은 모두 소환됩니다", small);
+                      inside ? Loc.T("먼저 왔다 · 자리를 잡으세요 (발판은 소환 뒤에 켜집니다)") : Loc.T("알현실로! 시간이 다 되면 남은 사람은 모두 소환됩니다"), small);
             HudBottom = band.yMax;
             GUI.color = was;
         }
@@ -598,7 +598,7 @@ namespace ChessFight.PawnRush
             GUI.color = holds ? new Color(1f, .9f, .6f) : new Color(.93f, .89f, .8f);
             small.fontSize = Mathf.RoundToInt(15f * unit);
             GUI.Label(new Rect(area.x, area.y + 8f * unit, area.width, 22f * unit),
-                      $"{Teams.Name(team)}팀  {held[team]:0.0} / {target[team]:0}초  ·  발판 {need}", small);
+                      Loc.F("{0}  {1:0.0} / {2:0}초  ·  발판 {3}", Loc.T(team == Teams.White ? "백팀" : "흑팀"), held[team], target[team], need), small);
             var track = new Rect(area.x, area.y + 38f * unit, area.width, 24f * unit);
             GUI.color = holds ? new Color(1f, .82f, .35f) : new Color(.45f, .4f, .32f);
             GUI.DrawTexture(new Rect(track.x - 2f, track.y - 2f, track.width + 4f, track.height + 4f), Texture2D.whiteTexture);

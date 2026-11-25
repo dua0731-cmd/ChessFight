@@ -189,7 +189,7 @@
 - `ThroneSummonsShow` (PawnRush): 킹과 지팡이, 연출 전부(어둡게 하기 · 눈 · 판 물결 · 빛기둥 · 오로라 · 섬광 · 빛줄기 · "양 팀 집결!"). 모든 PC가 시작을 들은 때부터 재생한다. 바이트는 늘지 않았다.
 - `ThroneContest`: 판이 있으면 `Call` → 칸 배정, 출발 예약, `ISummonCarry`로 데려가기, 시작 때 풀기. 대치는 `Lead`(5.4초)만큼 길어진다. 3 · 2 · 1은 마지막 3초만, "왕좌 차지전!" 띠는 빛줄기 때 나온다.
 - `ISummonCarry` (Gameplay) + `RagdollSummonCarry` (RagdollLab, 시작할 때 등록): 왕의 부름 스킬과 같은 외부 비행(`RagdollPawn.Fly`)이다. 몸이 아무것과도 부딪히지 않게 해서 데려가고, 도착하면 세워서 붙든다. 그동안은 '운반 중'이라 낙오 복귀가 건드리지 않는다. 래그돌이 아닌 캐릭터는 순간이동한다.
-- `ThroneBoard`, `ChessSummons` (Core, 코어 테스트 1개), 프로토콜 `v61.hall4`, 그림 도구 `AudienceHallPictures`의 소환 그림 3장(S1 두 킹의 '탁' · S2 들어오는 중 · S3 왕관 빛줄기).
+- `ThroneBoard`, `ChessSummons` (Core, 코어 테스트 1개), 프로토콜 `v61.hall4`(main 병합 R840부터 `v63`), 그림 도구 `AudienceHallPictures`의 소환 그림 3장(S1 두 킹의 '탁' · S2 들어오는 중 · S3 왕관 빛줄기).
 
 **해 보는 법:** 이 브랜치에서 구간 시험(SectionPlaytest)의 F10으로 "왕좌 차지전" 또는 "왕좌 차지전 · 30초 소환", F11로 홀을 고르고 홀로 달려 들어간다. 혼자면 내가 문을 넘는 순간 바로 시작된다.
 

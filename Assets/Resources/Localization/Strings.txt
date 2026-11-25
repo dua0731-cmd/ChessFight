@@ -402,6 +402,10 @@ Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
 왕실 시계탑	Royal Clock Tower	王室钟楼	Королевская часовая башня
 국왕 작전실	King's War Room	国王作战室	Королевский штаб
 국왕 알현실 (임시)	Throne Room (temp)	国王谒见厅（临时）	Тронный зал (временно)
+국왕 알현실	Throne Room	国王谒见厅	Тронный зал
+국왕 알현실 B · 대성당	Throne Room B · Cathedral	国王谒见厅 B · 大教堂	Тронный зал B · Собор
+국왕 알현실 C · 원형 돔	Throne Room C · Rotunda	国王谒见厅 C · 圆顶大厅	Тронный зал C · Ротонда
+국왕 알현실 D · 거인의 왕좌	Throne Room D · Giant's Throne	国王谒见厅 D · 巨人王座	Тронный зал D · Трон великана
 후반 장애물 (임시 바닥)	Late Obstacles (temp floor)	后段障碍（临时地面）	Поздние препятствия (временный пол)
 # --- other screens' UXML text (RuntimePanels.Create translates it; their code is not moved over yet)
 팀	Team	队伍	Команда
@@ -566,6 +570,15 @@ F는 기물 스킬(F로 조준, 한 번 더 F로 발동, 클릭은 취소), E는
 상대 문 20초 뒤	Rival gate +20s	对方门 20 秒后	Ворота соперника +20 с
 왕관 발판	Crown pad	王冠踏板	Коронная плита
 왕좌 차지전	Throne hold	王座争夺战	Удержание трона
+엔딩 맵	Ending map	结局地图	Карта концовки
+엔딩 시작	Ending start	结局开始	Начало концовки
+무작위	Random	随机	Случайно
+A 지금 초안	A Current draft	A 当前草案	A Текущий черновик
+B 대성당	B Cathedral	B 大教堂	B Собор
+C 원형 돔	C Rotunda	C 圆顶大厅	C Ротонда
+D 거인의 왕좌	D Giant's throne	D 巨人王座	D Трон великана
+바로 모두 소환	Summon all now	立即召唤全员	Призвать всех сразу
+30초 뒤 소환	Summon after 30s	30 秒后召唤	Призыв через 30 с
 방장이 정해요	The host decides	由房主决定	Решает хост
 눌러서 바꾸기 · 흐린 칸은 준비 중	Click to change · dim ones coming soon	点击更改 · 灰色项即将推出	Нажмите, чтобы сменить · тусклые — скоро
 눌러서 바꾸기	Click to change	点击更改	Нажмите, чтобы сменить
@@ -1117,3 +1130,18 @@ Space · 더블클릭으로 확정	Space · double-click	Space · 双击确认	S
 {0}초 뒤에 다시 되돌아갈 수 있어요	You can go back again in {0} s	{0} 秒后可再次返回	Вернуться снова можно через {0} с
 되돌아가는 중…	Going back…	正在返回…	Возвращаемся…
 지금은 되돌아갈 수 없어요	You can't go back right now	现在无法返回	Сейчас вернуться нельзя
+# --- the throne contest and the kings' summons (ThroneContest.OnGUI, ThroneSummonsShow; R840)
+곧 발판이 켜집니다	The pad lights up soon	踏板即将亮起	Плита скоро зажжётся
+백팀 점유 중	White holds the pad	白队占领中	Белые удерживают
+흑팀 점유 중	Black holds the pad	黑队占领中	Чёрные удерживают
+동시 점유 · 멈춤	Both teams on · paused	双方同时占领 · 暂停	Обе команды · пауза
+발판이 비었습니다	The pad is empty	踏板无人	Плита пуста
+왕좌 차지전!	Throne hold!	王座争夺战！	Удержание трона!
+금색 발판 위에 팀 과반이 올라가 있는 동안 시간이 쌓입니다 · 먼저 채우는 팀이 승리	Time builds while most of a team stands on the gold pad · the first team to fill its time wins	队伍过半成员站在金色踏板上时累计时间 · 先攒满的队伍获胜	Время идёт, пока большая часть команды стоит на золотой плите · побеждает команда, первой набравшая своё время
+백팀 {0:0}초 · 흑팀 {1:0}초   (스스로 깬 미니게임 하나에 {2:0}초 단축)	White {0:0} s · Black {1:0} s   ({2:0} s less for each mini-game a team cleared itself)	白队 {0:0} 秒 · 黑队 {1:0} 秒   （每自行完成一个小游戏减少 {2:0} 秒）	Белые {0:0} с · Чёрные {1:0} с   (−{2:0} с за каждую мини-игру, пройденную самостоятельно)
+발판 켜짐!	Pad on!	踏板亮起！	Плита зажглась!
+왕의 부름까지 {0}	King's summons in {0}	距国王召唤 {0}	До призыва короля: {0}
+먼저 왔다 · 자리를 잡으세요 (발판은 소환 뒤에 켜집니다)	You are here first · take your place (the pad lights up after the summons)	你先到了 · 请就位（踏板在召唤后亮起）	Вы пришли первыми · займите место (плита зажжётся после призыва)
+알현실로! 시간이 다 되면 남은 사람은 모두 소환됩니다	To the throne room! When time runs out, everyone left is summoned	前往谒见厅！时间一到，其余的人都会被召唤	В тронный зал! Когда время выйдет, остальных призовут
+{0}  {1:0.0} / {2:0}초  ·  발판 {3}	{0}  {1:0.0} / {2:0} s  ·  Pad {3}	{0}  {1:0.0} / {2:0} 秒  ·  踏板 {3}	{0}  {1:0.0} / {2:0} с  ·  Плита {3}
+양 팀 집결!	Both teams assemble!	两队集结！	Обе команды в сборе!
