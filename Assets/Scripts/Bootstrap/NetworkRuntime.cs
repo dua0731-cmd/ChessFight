@@ -137,6 +137,16 @@ namespace ChessFight.Game
             HostFitnessProbe.Start();
             // The settings window's top bar shows who is playing (R77).
             SettingsWindow.Identity = () => Session.Online ? Session.Name(Session.Self) : null;
+            // R842: the settings window's "튜토리얼 다시 하기" - from the lobby, alone and not matching.
+            SettingsWindow.TutorialReplay = () =>
+            {
+                if (SceneManager.GetActiveScene().name != SceneNames.Lobby || SceneTransition.Busy) return false;
+                if (!Application.CanStreamedLevelBeLoaded(SceneNames.Tutorial)) return false;
+                if (Session != null && Session.Online && (Session.Busy || TutorialGuard.WithOthers())) return false;
+                SettingsWindow.Close();
+                SceneTransition.ToTutorial(new Vector2(.5f, .5f));
+                return true;
+            };
             loader = new MatchLoader(this, clock.Now);
             // A chat that fails to build must not take the session down with it.
             // On an object of its own: a UI document on this object would make the

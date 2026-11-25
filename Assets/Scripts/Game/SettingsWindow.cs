@@ -121,6 +121,13 @@ namespace ChessFight.Game
         }
 
         sealed class Keys : Item { public GameKey Key; }
+        // R842: a line with one button that does something (튜토리얼 다시 하기). Run says whether it could; when it
+        // could not, the description panel shows Refused.
+        sealed class Act : Item { public string Button, Refused; public Func<bool> Run; }
+
+        /// <summary>R842: starts the tutorial again from the lobby (set by the game's runtime, which knows the scene and the
+        /// party); false when it cannot just now. Null: the line is not shown.</summary>
+        public static Func<bool> TutorialReplay;
         sealed class MicTest : Item { }
 
         // The voice-activated threshold (R131): a slider whose rail also shows the live microphone level.
@@ -380,6 +387,16 @@ namespace ChessFight.Game
                             Bind(GameKey.Chat, "채팅 열기"),
                             Bind(GameKey.Sheet, "경기 명단 (기보지)", "경기 중 누르고 있는 동안만 열려요. 우리 팀 음성, 말하는 곳, 음소거."),
                             Bind(GameKey.Talk, "누르고 말하기", "음성 채팅: 누르는 동안 내 목소리가 나가요."),
+                        } },
+                        new Section { Title = "튜토리얼", Items = new Item[]
+                        {
+                            ShownWhen(new Act
+                            {
+                                Label = "튜토리얼 다시 하기", Button = "다시 하기",
+                                Desc = "처음에 한 조작 튜토리얼을 다시 해요. 로비에서, 혼자일 때만 할 수 있어요. 도중에 Esc 메뉴에서 언제든 로비로 돌아올 수 있어요.",
+                                Refused = "지금은 할 수 없어요. 로비에서, 파티에 혼자 있고 매칭 중이 아닐 때 눌러 주세요.",
+                                Run = () => TutorialReplay != null && TutorialReplay(),
+                            }, () => TutorialReplay != null),
                         } },
                     } },
                 } },
@@ -650,6 +667,7 @@ namespace ChessFight.Game
                 case Choice c: StepLine(val, c); break;
                 case Slide s: SlideLine(val, s); break;
                 case Keys k: KeysLine(val, k); break;
+                case Act a: ActLine(val, a); break;
                 case MicTest _: MicLine(val); break;
                 case Gate _: GateLine(val); break;
             }
@@ -912,6 +930,25 @@ namespace ChessFight.Game
             track.RegisterCallback<PointerMoveEvent>(e => { if (track.HasPointerCapture(e.pointerId)) At(e.localPosition); });
             track.RegisterCallback<PointerUpEvent>(e => { if (track.HasPointerCapture(e.pointerId)) track.ReleasePointer(e.pointerId); });
             refreshers.Add(Show);
+        }
+
+        // R842: one button, in the key buttons' look.
+        void ActLine(VisualElement val, Act a)
+        {
+            var box = Add(val, "s2-keys");
+            var button = new Button { text = Loc.T(a.Button), focusable = false };
+            button.AddToClassList("chunky");
+            button.AddToClassList("ch-ivory");
+            button.AddToClassList("ch-xs");
+            button.AddToClassList("s2-key");
+            button.AddToClassList(MenuSound.SoundClass(MenuSound.Kind.Confirm));
+            button.clicked += () =>
+            {
+                if (a.Run != null && a.Run()) return;
+                Describe(Loc.T(a.Label), Loc.T(a.Refused), null);
+            };
+            ChunkyButtons.Springy(button);
+            box.Add(button);
         }
 
         void KeysLine(VisualElement val, Keys k)

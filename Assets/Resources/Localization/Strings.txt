@@ -761,6 +761,11 @@ Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다	You can skip the tut
 두 번째 스텝은 정면 가까이에 상대가 있을 때만 나갑니다	The second step only goes off with an opponent close in front	只有正前方近处有对手时才会使出第二步	Второй шаг срабатывает, только если противник близко перед вами
 다리를 건너 금빛 문에 도착하세요	Cross the bridge and reach the golden gate	走过独木桥，到达金色之门	Перейдите мост и дойдите до золотых ворот
 떨어지면 다리 앞에서 다시 시작합니다	If you fall, you restart in front of the bridge	掉下去会从桥前重新开始	Упав, вы начнёте заново перед мостом
+# (R842, Game/SettingsWindow.cs: the tutorial again from the settings window)
+튜토리얼 다시 하기	Play the tutorial again	重玩教程	Пройти обучение снова
+다시 하기	Play again	重玩	Заново
+처음에 한 조작 튜토리얼을 다시 해요. 로비에서, 혼자일 때만 할 수 있어요. 도중에 Esc 메뉴에서 언제든 로비로 돌아올 수 있어요.	Plays the controls tutorial from your first launch again. Only from the lobby, while you are alone. You can return to the lobby from the Esc menu at any time.	重新游玩首次启动时的操作教程。只能在大厅且独自一人时进行。途中可随时通过 Esc 菜单返回大厅。	Запускает обучение управлению заново. Только из лобби и когда вы одни. Вернуться в лобби можно в любой момент через меню Esc.
+지금은 할 수 없어요. 로비에서, 파티에 혼자 있고 매칭 중이 아닐 때 눌러 주세요.	Not available right now. Use it in the lobby, alone in your party and not matchmaking.	现在无法进行。请在大厅、队伍中只有自己且未在匹配时使用。	Сейчас недоступно. Нажмите в лобби, когда вы одни в группе и не ищете матч.
 # --- Game/ChatBox.cs
 채팅에 연결되지 않았어요.	Chat isn't connected.	未连接到聊天。	Чат не подключён.
 {0}에 말하기	Say to {0}	对{0}说	Кому: {0}

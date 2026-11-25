@@ -26,7 +26,8 @@ namespace ChessFight.Game
             leaving = true;
             GameSettings.SetBool(SceneNames.TutorialDone, true);
             Debug.Log("[Tutorial] 다른 플레이어와 함께라 튜토리얼을 건너뛴 것으로 하고 로비로 갑니다.");
-            SceneManager.LoadScene(SceneNames.Lobby);
+            GameMenu.Close();
+            SceneTransition.ToLobby(new Vector2(.5f, .5f));
         }
     }
 }

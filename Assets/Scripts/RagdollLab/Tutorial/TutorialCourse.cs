@@ -103,6 +103,8 @@ namespace ChessFight.RagdollLab
             BuildKillFloor();
             BuildMarker();
             GameMenu.Use(gameObject, Leave, false);
+            // R842: played again from the settings window (done before): leaving is open from the start.
+            if (GameSettings.Bool(DoneKey, false)) skipOpen = true;
         }
 
         void OnEnable() => KillVolume.Entered += OnFell;
@@ -597,7 +599,13 @@ namespace ChessFight.RagdollLab
             LeaveToLobby();
         }
 
-        static void LeaveToLobby() => SceneManager.LoadScene(SceneNames.Lobby);
+        // R842: behind the scene transition's board, as the intro goes to the lobby (a bare LoadScene froze on the
+        // tutorial's last frame until the lobby was up). The Esc menu closes first, so it is not left on the screen.
+        static void LeaveToLobby()
+        {
+            GameMenu.Close();
+            SceneTransition.ToLobby(new Vector2(.5f, .5f));
+        }
 
         // ------------------------------------------------------------------ screen
 
