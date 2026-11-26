@@ -1,7 +1,9 @@
 ﻿param(
     [string]$Copy = 'C:\유니티\ChessFight_TestCopy',
     [string]$UnityEditor = 'C:/Program Files/Unity/Hub/Editor/6000.3.11f1/Editor',
-    [switch]$NoCapture
+    [switch]$NoCapture,
+    # R845: only the held-clock pictures whose names start so (e.g. 'stage'), none of the hall's or the table's
+    [string]$Only = ''
 )
 # R816: the grand banquet hall's (대연회장) grey-box checks on a copy of this project, so the Editor can keep the original
 # open (Run-RoyalClockTower.ps1's way). Brings the copy up to date with this folder (never the copy's own Library), then
@@ -37,6 +39,7 @@ New-Item -ItemType Directory -Path $logs -Force | Out-Null
 $unityLog = Join-Path $logs 'grandbanquethall_unity.log'
 $arguments = @('-batchmode', '-projectPath', "`"$Copy`"", '-executeMethod', 'ChessFight.PawnRush.Editor.GrandBanquetHallValidation.RunBatch')
 if ($NoCapture) { $arguments += '-banquetNoCapture' }
+if ($Only) { $arguments += @('-banquetOnly', $Only) }
 $arguments += @('-logFile', "`"$unityLog`"")
 Write-Host 'Running GrandBanquetHallValidation.RunBatch in Unity (batch mode)...'
 $started = Get-Date

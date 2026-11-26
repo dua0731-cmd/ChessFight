@@ -33,7 +33,7 @@ namespace ChessFight.PawnRush.Editor
         public const string SectionPrefab = "Assets/Prefabs/PawnRushSections/Mid_2-4_GrandBanquetHall.prefab";
         // Offline the obstacle clock is the scene's time, so the pictures come about 14 s in: the drum rolling (the cloth
         // red) and the cloches up.
-        const float WatchSeconds = 14f, RuntimeLimit = 300f;
+        const float WatchSeconds = 14f, RuntimeLimit = 480f;
 
         static readonly List<string> failures = new List<string>();
         static readonly List<string> errors = new List<string>();
@@ -80,6 +80,17 @@ namespace ChessFight.PawnRush.Editor
         }
 
         static bool NoCapture => Array.IndexOf(Environment.GetCommandLineArgs(), "-banquetNoCapture") >= 0;
+
+        // R845: "-banquetOnly <start>": only the held-clock pictures whose names start so (no hall or table-show pictures).
+        static string Only
+        {
+            get
+            {
+                var args = Environment.GetCommandLineArgs();
+                int i = Array.IndexOf(args, "-banquetOnly");
+                return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+            }
+        }
 
         // ------------------------------------------------------------------ Edit
 
@@ -299,7 +310,7 @@ namespace ChessFight.PawnRush.Editor
             if (change == PlayModeStateChange.EnteredPlayMode && SessionState.GetBool(ActiveKey, false))
             {
                 failures.Clear(); errors.Clear(); pictures.Clear(); ranges.Clear(); shell.Clear(); lastZ.Clear(); lampLit.Clear();
-                stopping = judged = false; watchFrom = -1f; samples = 0f; wraps = 0;
+                stopping = judged = false; watchFrom = -1f; samples = 0f; wraps = 0; showNext = -1; showTaken = 0; heldNext = -1; watchClock = -1.0; watchStep = 0f; watchedTime = 0f;
                 frame = content = null;
                 beganAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
@@ -339,6 +350,8 @@ namespace ChessFight.PawnRush.Editor
                     return;
                 }
                 if (pictures.Count > 0) { pictures.Dequeue()(); return; }
+                if (Only == null && ShowPictures()) return;
+                if (HeldPictures()) return;
                 Finish();
             }
             catch (Exception e)
@@ -382,6 +395,12 @@ namespace ChessFight.PawnRush.Editor
         // (its distance off the track's middle), the leading pleats' places, and every rope's end.
         static void Watch()
         {
+            // R845: each frame counts for the clock time since the last (frames are not even: a frame the shows move
+            // many vertices in is longer), so a lamp's share is of the time, not of the frames.
+            double clockNow = ObstacleClock.Now;
+            watchStep = watchClock < 0.0 ? 0f : (float)(clockNow - watchClock);
+            watchClock = clockNow;
+            watchedTime += watchStep;
             foreach (var w in content.GetComponentsInChildren<BanquetWaiter>())
             {
                 var p = frame.InverseTransformPoint(w.transform.position);
@@ -402,7 +421,7 @@ namespace ChessFight.PawnRush.Editor
             foreach (var rope in content.GetComponentsInChildren<RopeLine>())
                 Note(rope.name, frame.InverseTransformPoint(rope.Point(rope.Length, ObstacleClock.Now)).z);
             foreach (var lamp in content.GetComponentsInChildren<ClockLamp>())
-                if (lamp.Lit(ObstacleClock.Now)) lampLit[lamp.transform.parent.name] = lampLit.TryGetValue(lamp.transform.parent.name, out float f) ? f + 1f : 1f;
+                if (lamp.Lit(ObstacleClock.Now)) lampLit[lamp.transform.parent.name] = (lampLit.TryGetValue(lamp.transform.parent.name, out float f) ? f : 0f) + watchStep;
             // R828: how far each hoist line's hook goes and how far the line's ends are from its hook and its pulley (a line
             // left behind would be metres off; one stretched a frame before this read, a few centimetres); how far down each
             // tier's ripples run.
@@ -415,7 +434,245 @@ namespace ChessFight.PawnRush.Editor
             }
             foreach (var r in content.GetComponentsInChildren<ChocolateRipples>())
                 for (int i = 0; i < r.Count; i++) Note("ripples " + r.name, r.Ring(i).localPosition.y);
+            // The dressed table's show (BanquetTableShow, 11-25): how far each plate tips and leaves its place, and how
+            // many candles burn while the cloth lies and while it is away.
+            foreach (var p in content.GetComponentsInChildren<BanquetPlate>())
+            {
+                var at = frame.InverseTransformPoint(p.transform.position);
+                Note("plate tip", Vector3.Angle(frame.up, p.transform.up));
+                Note("plate off", new Vector2(at.x - B.RunnerX, at.z - (B.TableZ0 + p.Along)).magnitude);
+                Note("plate lift", at.y - (B.TableY + .06f));
+            }
+            var show = content.GetComponent<BanquetTableShow>();
+            var trick = content.GetComponentInChildren<TableclothTrick>();
+            if (show != null && trick != null && samples > 2f)
+            {
+                float u = trick.Phase(ObstacleClock.Now);
+                if (u > .5f && u < trick.PullAt - .1f) Note("candles lying", show.Lit);
+                // (the last candles are still dying for a moment after the cloth's end has gone into the hands)
+                if (show.ClothAway && u > trick.PullAt + 1.4f) Note("candles away", show.Lit);
+            }
+            // R845: the cloche lifts' show - the pulleys' turn, the steam, the jolt.
+            var liftShow = content.GetComponent<BanquetLiftShow>();
+            if (liftShow != null && samples > 2f) { Note("lift turned", liftShow.Turned); Note("lift steam", liftShow.Steam); Note("lift jolt", liftShow.Jolted); }
+            // R845: the stage's show - how far its pictures overlap when the curtain stands shut or open, how narrow a
+            // pleat is drawn, how far a hem lags, the leak and the stage lights.
+            var stage = content.GetComponent<BanquetStageShow>();
+            if (stage != null && samples > 2f)
+            {
+                if (stage.Opened <= 0f || stage.Opened >= 1f) { Note("stage overlap still", stage.TopOverlap); Note("stage hem overlap still", stage.HemOverlap); }
+                Note("stage narrowest", stage.Narrowest);
+                Note("stage hem lag", stage.HemLag);
+                Note("stage leak", stage.Leak);
+                Note("stage lit", stage.Lit);
+                Note("stage tassels", stage.Swung);
+                Note("stage players", stage.Playing);
+                if (stage.Opened <= 0f) Note("stage lit shut", stage.Lit);
+            }
             samples++;
+        }
+
+        // The show's pictures: the table at these moments of the trick's cycle (each taken on the first frame past it).
+        static readonly (float phase, string name)[] showMoments =
+        {
+            (1f, "lying"), (5.2f, "drum_roll"), (5.62f, "pull_a"), (5.82f, "pull_b"), (6.05f, "pull_c"), (6.6f, "away"),
+            (8.1f, "lay_a"), (8.35f, "lay_b"), (8.7f, "lay_c"), (9.3f, "lay_d"), (9.85f, "lay_e"),
+        };
+        static int showNext = -1;
+        static float showLast;
+
+        // True while the show's pictures are still being taken.
+        static bool ShowPictures()
+        {
+            if (NoCapture || content == null) return false;
+            var show = content.GetComponent<BanquetTableShow>();
+            var trick = content.GetComponentInChildren<TableclothTrick>();
+            if (show == null || trick == null) return false;
+            float u = trick.Phase(ObstacleClock.Now);
+            if (showNext < 0)
+            {
+                // Begin with the moment that comes next in this cycle.
+                showNext = 0;
+                showTaken = 0;
+                while (showNext < showMoments.Length && showMoments[showNext].phase <= u) showNext++;
+                showNext %= showMoments.Length;
+                showLast = u;
+                return true;
+            }
+            if (showTaken >= showMoments.Length) return false;
+            float want = showMoments[showNext].phase;
+            bool passed = showLast <= u ? showLast < want && want <= u : want > showLast || want <= u;
+            showLast = u;
+            if (!passed) return true;
+            string name = "show_" + (showNext + 1).ToString("00", CultureInfo.InvariantCulture) + "_" + showMoments[showNext].name;
+            Log("      the show at " + F(u) + " s of the trick (wanted " + F(want) + "): candles burning " + show.Lit + " of " + show.Candles +
+                ", the cloth " + (show.ClothAway ? "away" : "drawn " + F(show.Run.Slide(u)) + " m south"));
+            Capture(name + "_wide", new Vector3(3f, 14f, 9f), new Vector3(20f, 4.6f, 31f), Vector3.up, 55f, false, 1536, 1024, true);
+            Capture(name + "_near", new Vector3(10.5f, 9f, 17f), new Vector3(20f, 4.9f, 25.5f), Vector3.up, 55f, false, 1536, 1024, true);
+            showNext = (showNext + 1) % showMoments.Length;
+            showTaken++;
+            return showTaken < showMoments.Length;
+        }
+
+        static int showTaken;
+
+        // ------------------------------------------------------------------ R845: the shows at a held clock
+
+        // The shows (BanquetStageShow ...) at chosen moments: the obstacle clock is held there (ObstacleClock.Use) for a
+        // few frames, so every mover and every picture stands where that moment puts it, then the picture. `at` is the
+        // clock (300 s: a whole number of the curtain's 15 s and the trick's 10 s).
+        readonly struct Held
+        {
+            public readonly double at;
+            public readonly string name;
+            public readonly Vector3 eye, target;
+            public readonly float fov, wait;
+            public readonly Action before;
+
+            // `before`: done as the clock is held (a show set off); `wait`: seconds of the scene's time before the picture.
+            public Held(double clock, string picture, Vector3 from, Vector3 to, float fieldOfView, Action beforeIt = null, float waitFor = .12f)
+            {
+                at = clock; name = picture; eye = from; target = to; fov = fieldOfView; before = beforeIt; wait = waitFor;
+            }
+        }
+
+        static readonly List<Held> held = new List<Held>();
+        static int heldNext = -1, heldFrame;
+        static double watchClock = -1.0;
+        static float watchStep, watchedTime;
+        static float heldTime;
+
+        static void HeldMoments()
+        {
+            held.Clear();
+            const double T = 300.0;
+            // The curtain (15 s: shut 0 .. 6, opening 6 .. 11, open 11 .. 13, closing 13 .. 15).
+            var curtain = new (float u, string name)[]
+            {
+                (3f, "shut"), (5.7f, "leak"), (6.9f, "opening_a"), (8.3f, "opening_b"), (10.2f, "opening_c"), (11.5f, "open_settling"),
+                (12.8f, "open"), (13.8f, "closing"), (15.35f, "shut_settling"),
+            };
+            for (int i = 0; i < curtain.Length; i++)
+            {
+                string n = "stage_" + (i + 1).ToString("00", CultureInfo.InvariantCulture) + "_" + curtain[i].name;
+                held.Add(new Held(T + curtain[i].u, n + "_wide", new Vector3(6f, 15f, 31f), new Vector3(-24.5f, 12f, 31.5f), 74f));
+                held.Add(new Held(T + curtain[i].u, n + "_seam", new Vector3(-13f, 13f, 40.5f), new Vector3(-24.5f, 12.5f, 40.05f), 62f));
+                held.Add(new Held(T + curtain[i].u, n + "_south", new Vector3(-14f, 13f, 22f), new Vector3(-24.5f, 12.5f, 16f), 62f));
+            }
+            // The orchestra (playing while the curtain is open: 11 .. 13 s) at two moments of a bar, close.
+            held.Add(new Held(T + 11.2, "stage_10_players_a", new Vector3(-17f, 11.5f, 39f), new Vector3(-28.5f, 9.8f, 39f), 58f));
+            held.Add(new Held(T + 12.0, "stage_11_players_b", new Vector3(-17f, 11.5f, 39f), new Vector3(-28.5f, 9.8f, 39f), 58f));
+            held.Add(new Held(T + 12.0, "stage_12_bassists", new Vector3(-12f, 6.5f, 24f), new Vector3(-21.4f, 3f, 23f), 62f));
+            // The waltz: a bar's first beat (the gowns kick out) and its rise (beat 2 .. 3), from the floor and close.
+            // (300 s is half a bar in: a bar's first beat at 300.8)
+            held.Add(new Held(T + 0.8, "waltz_01_beat_one", new Vector3(12f, 10f, 17f), new Vector3(-4f, 5.5f, 30f), 62f));
+            held.Add(new Held(T + 0.0, "waltz_02_rise", new Vector3(12f, 10f, 17f), new Vector3(-4f, 5.5f, 30f), 62f));
+            var queen = BanquetWaltz.Queen(0, T + 0.8);
+            BanquetWaltz.Pose(0, T + 0.8, out var middle, out _);
+            var outward = (queen - middle).normalized;
+            var near = new Vector3(queen.x, 6f, queen.y);
+            held.Add(new Held(T + 0.8, "waltz_03_gown_close", near + new Vector3(outward.x * 6f - outward.y * 2f, .9f, outward.y * 6f + outward.x * 2f), near, 60f));
+            // The west cloche lift (12.4 s; at 310 s its cycle starts): rising (the pulleys turn), arriving at the dais (the
+            // jolt, the cloche lifting off), the steam, and the cloche lifting off again at the table.
+            var dais = new Vector3(B.ClocheX[0], B.DaisY + 1f, B.ClocheZ);
+            held.Add(new Held(314.7, "lift_01_rising_pulleys", new Vector3(B.ClocheX[0] + 2f, 15.2f, B.ClocheZ - 3.4f), new Vector3(B.ClocheX[0] + .6f, 16.3f, B.ClocheZ), 48f));
+            held.Add(new Held(315.85, "lift_02_arriving", new Vector3(25f, 14.5f, 44f), dais, 55f));
+            held.Add(new Held(316.4, "lift_03_steam", new Vector3(25f, 14.5f, 44f), dais, 55f));
+            held.Add(new Held(317.2, "lift_04_steam_late", new Vector3(25f, 14.5f, 44f), dais, 55f));
+            held.Add(new Held(316.4, "lift_05_steam_close", new Vector3(21.5f, 12.6f, 48.5f), dais + new Vector3(0f, .6f, 0f), 50f));
+            // (11-26) just down at the table: the jolt hops up, never into the table
+            held.Add(new Held(321.88, "lift_07_table_arrive_low", new Vector3(21.8f, 5.3f, 48.6f), new Vector3(B.ClocheX[0], B.TableY + .4f, B.ClocheZ), 55f));
+            // (11-26) the platter at the table, cloche off, seen from above (the user saw the table through it)
+            held.Add(new Held(311.5, "lift_08_platter_from_above", new Vector3(B.ClocheX[0] + 2.5f, B.TableY + 4.5f, B.ClocheZ - 3f), new Vector3(B.ClocheX[0], B.TableY, B.ClocheZ), 55f,
+                              PlatterFaces));
+            held.Add(new Held(322.2, "lift_06_table_open", new Vector3(23f, 8.5f, 45f), new Vector3(B.ClocheX[0], B.TableY + 1.2f, B.ClocheZ), 55f));
+            // The chocolate fountain: whole and its crown, at two moments.
+            var fountain = new Vector3(B.Fountain.x, 12.5f, B.Fountain.y);
+            held.Add(new Held(T, "fountain_01_whole", fountain + new Vector3(8.5f, 2f, 4.8f), fountain, 58f));
+            held.Add(new Held(T + 0.9, "fountain_02_whole_later", fountain + new Vector3(8.5f, 2f, 4.8f), fountain, 58f));
+            held.Add(new Held(T, "fountain_03_crown", fountain + new Vector3(3.4f, 5.6f, 2.6f), fountain + new Vector3(0f, 4.4f, 0f), 46f));
+            held.Add(new Held(T + 0.9, "fountain_04_tier", fountain + new Vector3(5.2f, 0f, 3f), fountain + new Vector3(0f, -1.5f, 0f), 50f));
+            held.Add(new Held(T + 1.7, "fountain_05_side_close", fountain + new Vector3(4.2f, -2.6f, 2.2f), fountain + new Vector3(0f, -3.2f, 0f), 48f));
+            held.Add(new Held(T + 0.4, "fountain_06_from_below", fountain + new Vector3(7.5f, -3.8f, 6f), fountain + new Vector3(0f, 1f, 0f), 60f));
+            // The waiters' walk, the great chandelier's candles and crystals, the dais's candles and the balcony's shower, the
+            // guests at the trick (the trick's 10 s: the drum 5 .. 5.6, the pull 5.6, laid again 8 ..), the hall's walls.
+            held.Add(new Held(T + 1.0, "waiter_01_walk", new Vector3(22f, 5.5f, 9f), new Vector3(29.8f, 3.5f, 16f), 58f));
+            held.Add(new Held(T + 1.25, "waiter_02_walk_step", new Vector3(22f, 5.5f, 9f), new Vector3(29.8f, 3.5f, 16f), 58f));
+            held.Add(new Held(T, "great_01_candles", new Vector3(9f, 21.5f, B.GreatZ - 8f), new Vector3(0f, 18.2f, B.GreatZ), 52f));
+            held.Add(new Held(T, "great_02_crystals", new Vector3(6.5f, 16.2f, B.GreatZ - 5f), new Vector3(3f, 16.8f, B.GreatZ - 1.5f), 50f));
+            held.Add(new Held(T, "dais_01_candelabra", new Vector3(14f, 17f, 52f), new Vector3(12f, 15.5f, B.TablesZ0 + 3f), 55f));
+            held.Add(new Held(T, "dais_02_balcony_shower", new Vector3(10f, 22f, B.BalconyZ0 - 6f), new Vector3(0f, 18.5f, B.BalconyZ0 + 4f), 58f,
+                              () => content.GetComponent<BanquetDaisShow>()?.Celebrate(), 1.1f));
+            held.Add(new Held(T + 5.4, "guests_01_drum", new Vector3(22f, 8.5f, 20f), new Vector3(12.8f, 3.6f, 30f), 58f));
+            held.Add(new Held(T + 5.9, "guests_02_pull", new Vector3(22f, 8.5f, 20f), new Vector3(12.8f, 3.6f, 30f), 58f));
+            held.Add(new Held(T + 8.6, "guests_03_clap", new Vector3(22f, 8.5f, 20f), new Vector3(12.8f, 3.6f, 30f), 58f));
+            held.Add(new Held(T, "hall_wall_01_sconces", new Vector3(-20f, 10f, 30f), new Vector3(-31f, 8.5f, 36f), 60f));
+            // The long table's cue and folds (11-26): the drum early and late (the tug's folds, the red beating), the
+            // pull's long folds, the folds it settles out of once laid (the trick's 10 s: drum 3.5 .. 5.5, pulled 5.5, laid by 10).
+            var trickNear = new Vector3(16f, 7.5f, 15.5f);
+            foreach (var (u, n) in new[] { (4.0, "table_01_drum_early"), (5.3, "table_02_drum_late"), (5.65, "table_03_pull"), (10.15, "table_04_settling") })
+            {
+                held.Add(new Held(T + u, n + "_near", trickNear, new Vector3(20f, 4.4f, 20.5f), 50f));
+                held.Add(new Held(T + u, n + "_wide", new Vector3(10.5f, 9f, 17f), new Vector3(20f, 4.9f, 25.5f), 55f));
+            }
+            // The candle flame close (11-26, BanquetShowKit.NewFlame): a table candelabrum, a wall sconce, the great
+            // chandelier's rim, a hanging chandelier (its candles lit without a rider for the picture).
+            held.Add(new Held(T, "candle_01_table", new Vector3(17.2f, 8f, 20.4f), new Vector3(15.25f, 7.4f, 22.4f), 42f));
+            held.Add(new Held(T, "candle_02_sconce", new Vector3(-27.5f, 8.4f, 39f), new Vector3(-30.7f, 7.9f, 40.97f), 42f));
+            held.Add(new Held(T, "candle_03_great", new Vector3(6.5f, 19.3f, B.GreatZ - 1.2f), new Vector3(4.26f, 18.65f, B.GreatZ + .56f), 40f));
+            held.Add(new Held(T, "candle_04_hanging", new Vector3(-8.5f, 21f, 13.5f), new Vector3(-2.6f, 19.8f, B.ScreenZ + B.RopeAlong[1]), 42f,
+                              () => ChandelierRideLights.CandlesOnlyWhenRidden = false, .6f));
+            held.Add(new Held(T + 2.0, "hall_wall_02_banners", new Vector3(-12f, 22f, 26f), new Vector3(-31f, 24f, 36f), 60f));
+            var only = Only;
+            if (only != null) held.RemoveAll(h => Array.TrueForAll(only.Split(','), s => !h.name.StartsWith(s.Trim(), StringComparison.Ordinal)));
+        }
+
+        // True while the held pictures are still being taken.
+        static bool HeldPictures()
+        {
+            if (NoCapture || content == null) return false;
+            if (heldNext < 0) { HeldMoments(); heldNext = 0; heldFrame = -1; }
+            if (heldNext >= held.Count)
+            {
+                if (ObstacleClock.Source != null) ObstacleClock.Use(null);
+                return false;
+            }
+            var h = held[heldNext];
+            if (heldFrame < 0)
+            {
+                double at = h.at;
+                ObstacleClock.Use(() => at);
+                heldFrame = Time.frameCount;
+                heldTime = Time.time;
+                h.before?.Invoke();
+                return true;
+            }
+            // a few physics steps for the movers (their interpolation settles) and a frame for the pictures
+            if (Time.frameCount - heldFrame < 6 || Time.time - heldTime < h.wait) return true;
+            var waltz = content.GetComponent<BanquetWaltzShow>();
+            if (waltz != null && h.name.StartsWith("waltz", StringComparison.Ordinal))
+                Log("      " + h.name + ": gowns out " + F(100f * waltz.Flared) + " %, partners up " + F(waltz.Risen) + " m");
+            var fountainShow = content.GetComponent<BanquetFountainShow>();
+            if (fountainShow != null && h.name.StartsWith("fountain", StringComparison.Ordinal))
+                Log("      " + h.name + ": drops running " + fountainShow.Falling + ", the surface slid " + F(fountainShow.Slid % 10f) + " m");
+            var guests = content.GetComponent<BanquetGuestShow>();
+            if (guests != null && h.name.StartsWith("guests", StringComparison.Ordinal)) Log("      " + h.name + ": guests turned up to " + F(guests.Moved) + " deg");
+            var dais = content.GetComponent<BanquetDaisShow>();
+            if (dais != null && h.name.StartsWith("dais", StringComparison.Ordinal)) Log("      " + h.name + ": confetti in the air " + dais.Falling);
+            var hallShow = content.GetComponent<BanquetHallShow>();
+            if (hallShow != null && h.name.StartsWith("hall_wall", StringComparison.Ordinal)) Log("      " + h.name + ": banners' points out " + F(hallShow.Stirred) + " m");
+            var lifts = content.GetComponent<BanquetLiftShow>();
+            if (lifts != null && h.name.StartsWith("lift", StringComparison.Ordinal))
+                Log("      " + h.name + ": steam puffs " + lifts.Steam + ", pulleys turned " + F(lifts.Turned) + " deg, jolt " + F(lifts.Jolted) + " m");
+            var stage = content.GetComponent<BanquetStageShow>();
+            if (stage != null && h.name.StartsWith("stage", StringComparison.Ordinal))
+                Log("      " + h.name + " at " + F(h.at % 15.0) + " s of the curtain: open " + F(stage.Opened) + ", hem lag " + F(stage.HemLag) +
+                    " m, overlap rail " + F(stage.TopOverlap) + " / hem " + F(stage.HemOverlap) + " m, narrowest " + F(stage.Narrowest) +
+                    ", leak " + F(stage.Leak) + ", stage lights " + F(stage.Lit));
+            Capture(h.name, h.eye, h.target, Vector3.up, h.fov, false, 1536, 1024, true);
+            heldNext++;
+            heldFrame = -1;
+            return true;
         }
 
         static readonly Dictionary<string, float> lampLit = new Dictionary<string, float>();
@@ -476,7 +733,7 @@ namespace ChessFight.PawnRush.Editor
             bool lampsOk = lampLit.Count == 4;
             foreach (var kv in lampLit)
             {
-                float share = kv.Value / Mathf.Max(1f, samples);
+                float share = kv.Value / Mathf.Max(.001f, watchedTime);
                 lit += " " + kv.Key + " " + F(100f * share) + " %";
                 lampsOk &= share > .2f && share < .45f;
             }
@@ -509,7 +766,134 @@ namespace ChessFight.PawnRush.Editor
                 rippleRuns += " " + r.name.Substring(3) + " " + F(run.x) + ".." + F(run.y) + " of " + F(r.Height) + " m";
             }
             Check("P11 the chocolate's ripples run down the whole of each tier, rim to foot", tiers == 3 && tiersOk == 3, tiersOk + " of " + tiers + ";" + rippleRuns);
+            // 11-25: the dressed table's show. The plates' colliders rock (a few degrees, never off their place, never
+            // under the table) and every candle is out while the cloth is in the magician's hands and burns while it lies.
+            var show = content.GetComponent<BanquetTableShow>();
+            if (show == null) Log("NOT RUN: P12 the dressed table's show (no BanquetTableShow: the dressing is off or the trick is missing)");
+            else
+            {
+                Vector2 R(string key) => ranges.TryGetValue(key, out var r) ? r : new Vector2(float.NaN, float.NaN);
+                Vector2 tip = R("plate tip"), offPlace = R("plate off"), lift = R("plate lift"), lying = R("candles lying"), away = R("candles away");
+                Check("P12 the dressed table's show: the plates rock where they stand, the candles go out and are lit with the cloth",
+                      show.Plates == B.PlateZ.Length && show.Sheets > 0 && show.Candles > 0 && tip.y > 2f && tip.y < 8f && offPlace.y < .02f &&
+                      lift.x > -.01f && lift.y < .2f && lying.x == show.Candles && away.y == 0f,
+                      "plates " + show.Plates + ", tipped up to " + F(tip.y) + " deg, off their place " + F(offPlace.y) + " m, lifted " + F(lift.x) + ".." + F(lift.y) +
+                      " m; cloth meshes " + show.Sheets + ", ware " + show.WarePieces + "; candles " + show.Candles + ", burning " + F(lying.x) + ".." + F(lying.y) +
+                      " while the cloth lies and " + F(away.x) + ".." + F(away.y) + " while it is away");
+            }
+            // R845: the stage's show. The pleats' pictures do not lie through one another while the curtain stands shut or
+            // open, gather no narrower than the bunched spacing, their hems lag and settle; the seam leaks light before it
+            // opens; the stage lights come up open and are out shut.
+            var stage = content.GetComponent<BanquetStageShow>();
+            if (stage == null) Log("NOT RUN: P13 the stage's show (no BanquetStageShow: the dressing is off)");
+            else
+            {
+                Vector2 R(string key) => ranges.TryGetValue(key, out var r) ? r : new Vector2(float.NaN, float.NaN);
+                Vector2 still = R("stage overlap still"), hemStill = R("stage hem overlap still"), swung = R("stage tassels"), playing = R("stage players"), narrow = R("stage narrowest"), hem = R("stage hem lag"), leak = R("stage leak"),
+                        stageLit = R("stage lit"), litShut = R("stage lit shut");
+                Check("P13 the stage's show: the curtain's pictures gather without lying through one another, the hems swing, light leaks and the stage lights follow",
+                      stage.Pleats == 2 * B.Pleats && stage.Meshes >= stage.Pleats && still.y < .05f && hemStill.y < .15f && swung.y > 1f && playing.y > 1f && narrow.x >= .29f && hem.y > .05f && hem.y < .8f &&
+                      leak.y > .5f && stageLit.y > .9f && litShut.y < .01f,
+                      "pleats " + stage.Pleats + " (skinned meshes " + stage.Meshes + "), tassels " + stage.TasselCount + " swinging up to " + F(swung.y) + " deg; overlap while still up to " + F(still.y) + " m at the rail, " + F(hemStill.y) + " at the hem" +
+                      " m, narrowest " + F(narrow.x) + ", hems lag up to " + F(hem.y) + " m, leak up to " + F(leak.y) + ", stage lights " + F(stageLit.x) + ".." + F(stageLit.y) +
+                      " (shut " + F(litShut.y) + "); players " + stage.Musicians + " leaning up to " + F(playing.y) + " deg; " + F(stage.Cost) + " ms a frame setting " + stage.Bones + " bones");
+            }
+            // R845: the waltz's show - the gowns and the partners found, every collider left as it was built.
+            var waltzShow = content.GetComponent<BanquetWaltzShow>();
+            if (waltzShow == null) Log("NOT RUN: P14 the waltz's show (no BanquetWaltzShow: the dressing is off)");
+            else
+                Check("P14 the waltz's show: the queens' gowns flare and the partners rise with the beat", waltzShow.Couples == BanquetWaltz.Couples &&
+                      waltzShow.Partners == BanquetWaltz.Couples && waltzShow.Gowns > 0,
+                      "couples " + waltzShow.Couples + ", partners " + waltzShow.Partners + ", skinned gowns " + waltzShow.Gowns);
+            var fountainCheck = content.GetComponent<BanquetFountainShow>();
+            if (fountainCheck == null) Log("NOT RUN: P16 the fountain's show (no BanquetFountainShow: the dressing is off)");
+            else
+                Check("P16 the fountain's show: chocolate sheets over every tier and round the crown, drops down them, rings across the pools, the chocolate sliding",
+                      fountainCheck.Sheets == B.TierR.Length + 1 && fountainCheck.RipplesHidden == 3 * B.Ripples && fountainCheck.Drops == 21 && fountainCheck.Rings == 12 && fountainCheck.Surfaces > 0,
+                      "chocolate sheets " + fountainCheck.Sheets + " (the builder's ripple rings drawn as their swells: " + fountainCheck.RipplesHidden + " hidden), drops " + fountainCheck.Drops + ", rings " + fountainCheck.Rings + ", chocolate surfaces " + fountainCheck.Surfaces);
+            ShowsChecks();
+            var liftCheck = content.GetComponent<BanquetLiftShow>();
+            if (liftCheck == null) Log("NOT RUN: P15 the cloche lifts' show (no BanquetLiftShow: the dressing is off)");
+            else
+            {
+                Vector2 R(string key) => ranges.TryGetValue(key, out var r) ? r : new Vector2(float.NaN, float.NaN);
+                Vector2 turned = R("lift turned"), steamed = R("lift steam"), jolt = R("lift jolt");
+                Check("P15 the cloche lifts' show: the pulleys turn with the lines, steam rises as a cloche lifts off, the lifts jolt as they arrive",
+                      liftCheck.Lifts == 2 && liftCheck.PulleyMeshes > 0 && turned.y > 1000f && steamed.y >= 4f && jolt.y > .01f && jolt.y < .06f,
+                      "lifts " + liftCheck.Lifts + ", skinned frame meshes " + liftCheck.PulleyMeshes + ", pulleys turned up to " + F(turned.y) +
+                      " deg, steam puffs up to " + F(steamed.y) + ", jolt up to " + F(jolt.y) + " m");
+            }
             Log("      " + F(samples) + " frames watched");
+        }
+
+        // (11-26) Which way the platters' walked tops face: their triangles within 1 cm of the top and 2 m of the middle,
+        // how many face up (seen from above) and how many down (seen from below only: the table shows through them).
+        static void PlatterFaces()
+        {
+            foreach (var lift in content.GetComponentsInChildren<ClocheLift>())
+            {
+                if (lift.Which != ClocheLift.Part.Platter) continue;
+                int up = 0, down = 0;
+                foreach (var f in lift.GetComponentsInChildren<MeshFilter>())
+                {
+                    var m = f.sharedMesh;
+                    if (m == null || !m.isReadable || !f.name.EndsWith("_LOD0")) continue;
+                    var v = m.vertices;
+                    var tr = m.triangles;
+                    for (int i = 0; i + 2 < tr.Length; i += 3)
+                    {
+                        Vector3 a = f.transform.TransformPoint(v[tr[i]]), b = f.transform.TransformPoint(v[tr[i + 1]]), c = f.transform.TransformPoint(v[tr[i + 2]]);
+                        var top = lift.transform.position.y;
+                        if (Mathf.Abs(a.y - top) > .01f || Mathf.Abs(b.y - top) > .01f || Mathf.Abs(c.y - top) > .01f) continue;
+                        var mid = (a + b + c) / 3f - lift.transform.position;
+                        if (new Vector2(mid.x, mid.z).magnitude > 2f) continue;
+                        if (Vector3.Cross(b - a, c - a).y > 0f) up++; else down++;
+                    }
+                    Log("      platter " + lift.name + " mesh " + f.name + ": top triangles facing up " + up + ", down " + down +
+                        "; root y " + F(frame.InverseTransformPoint(lift.transform.position).y));
+                    var rend = f.GetComponent<Renderer>();
+                    string mats = "";
+                    if (rend != null) foreach (var mm in rend.sharedMaterials) mats += " " + (mm != null ? mm.name + "/" + mm.shader.name + "/q" + mm.renderQueue : "null");
+                    Log("        submeshes " + m.subMeshCount + ", renderer " + (rend == null ? "none" : rend.GetType().Name + " enabled " + rend.enabled + " visible " + rend.isVisible) + ", materials" + mats);
+                    for (int s = 0; s < m.subMeshCount; s++) Log("        submesh " + s + ": " + m.GetSubMesh(s).indexCount / 3 + " triangles");
+                }
+            }
+        }
+
+        // R845: the shows' parts found and every skinned picture drawn by its part's LOD group (a skinned mesh out of
+        // its group would be drawn at every level at once).
+        static void ShowsChecks()
+        {
+            var grouped = new HashSet<Renderer>();
+            foreach (var g in content.GetComponentsInChildren<LODGroup>(true))
+                foreach (var lod in g.GetLODs())
+                    if (lod.renderers != null)
+                        foreach (var r in lod.renderers) if (r != null) grouped.Add(r);
+            int skins = 0, loose = 0;
+            string looseNames = "";
+            foreach (var s in content.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (s.sharedMesh == null || !s.sharedMesh.name.EndsWith("(연출 뼈대)", StringComparison.Ordinal)) continue;
+                skins++;
+                if (s.name.Contains("_LOD") && !grouped.Contains(s)) { loose++; if (loose <= 3) looseNames += " " + s.name; }
+            }
+            Check("P17 the shows' skinned pictures are each drawn by their part's LOD group", skins > 0 && loose == 0,
+                  skins + " skinned, " + loose + " outside a LOD group" + looseNames);
+            var waiter = content.GetComponent<BanquetWaiterShow>();
+            var great = content.GetComponent<BanquetGreatChandelierShow>();
+            var dais = content.GetComponent<BanquetDaisShow>();
+            var guests = content.GetComponent<BanquetGuestShow>();
+            var hall = content.GetComponent<BanquetHallShow>();
+            if (waiter == null || great == null || dais == null || guests == null || hall == null)
+            {
+                Log("NOT RUN: P18 the waiters', great chandelier's, dais's, guests' and walls' shows (the dressing is off)");
+                return;
+            }
+            Check("P18 the waiters waddle, the great chandelier and the head tables' candles burn, the guests watch, the walls' sconces burn and banners stir",
+                  waiter.Waiters == B.Waiters && great.Candles == 24 && great.Skinned > 0 && dais.Candles > 0 && dais.Pieces > 0 &&
+                  guests.Guests == 9 && hall.Candles > 0 && hall.Banners > 0,
+                  "waiters " + waiter.Waiters + "; great chandelier candles " + great.Candles + ", crystal meshes " + great.Skinned + "; head tables' candles " +
+                  dais.Candles + ", confetti " + dais.Pieces + "; guests " + guests.Guests + "; sconce candles " + hall.Candles + ", banners " + hall.Banners);
         }
 
         static void Pictures()
@@ -523,7 +907,7 @@ namespace ChessFight.PawnRush.Editor
                 Log("      at the pictures: the trick " + F(trick.Phase(ObstacleClock.Now)) + " s into its 10 s, the cloth " +
                     (shown == null ? "missing" : shown.enabled ? "drawn at z " + F(frame.InverseTransformPoint(cloth.position).z) + ", scale z " + F(cloth.parent.localScale.z) : "away"));
             }
-            if (NoCapture) return;
+            if (NoCapture || Only != null) return;
             void Shot(string name, Vector3 eye, Vector3 target, float fov, bool hideShell = true) =>
                 pictures.Enqueue(() => Capture(name, eye, target, Vector3.up, fov, false, 1536, 1024, hideShell));
             pictures.Enqueue(() => Capture("hall_00_top", new Vector3(0f, 120f, 36f), new Vector3(0f, 0f, 36f), Vector3.forward, 40f, true, 1024, 1152, true));

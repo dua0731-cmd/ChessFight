@@ -35,6 +35,12 @@ namespace ChessFight.PawnRush
         long lastPull = long.MinValue;
 
         public float Period => lie + roll + pull + gone + lay;
+        // Seconds into the cycle: the drum roll's start, the pull, the laying's start, and how long the laying takes
+        // (read by the dressed table's show, BanquetTableShow).
+        public float RollAt => lie;
+        public float PullAt => lie + roll;
+        public float LayAt => lie + roll + pull + gone;
+        public float LayTime => lay;
         public int Throws { get; private set; }
         public int Pulls { get; private set; }
 

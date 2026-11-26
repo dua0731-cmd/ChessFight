@@ -5,9 +5,10 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // B2 the long table (B0's test piece first, seoungtest R837; ArtSource/PawnRush/BanquetHall/bh_b0_table_model.py, the
-    // shapes after the R836 sheet BH_A04): the table's walnut body, the cloth and runner (they ride the tablecloth trick's
-    // picture "BH tablecloth", pivoted on its south end: pulled south, hidden, laid again by its z scale), the plates,
-    // goblets and candelabra, the guests' chairs. Colliders, the plates' floors and the trick stay the builder's.
+    // shapes after the R836 sheet BH_A04): the table's walnut body, the cloth and runner (hung on the tablecloth trick's
+    // picture "BH tablecloth"; R844: BanquetTableShow takes them off it and moves their vertices - drawn out from under
+    // the ware into the magician's hands, flung back), the plates, goblets and candelabra, the guests' chairs. Colliders
+    // and the trick stay the builder's, but for the plates: R844 makes them rock where they stand (BanquetPlate).
     public sealed partial class GrandBanquetHallDressing
     {
         static readonly Hang[] TableHangs =
@@ -56,17 +57,24 @@ namespace ChessFight.PawnRush
             }
         };
 
-        // The trick switches the graybox cloth's renderers itself (hidden while the magician holds it, its material red
-        // while the drum rolls); the model follows the graybox cloth's renderer, which the dressing emptied but left on.
-        static readonly Action<GrandBanquetHallDressing> TableCloth = d =>
+        // The table's show (BanquetTableShow.cs, the user 11-25): the cloth drawn out from under the ware and flung back,
+        // the plates rocking where they stand (their colliders with them: BanquetPlate), the goblets and candelabra
+        // dragged and rocking, the candles put out and lit in turn, the magician leaning. The trick keeps its timing and
+        // its throw; its own picture (the emptied graybox cloth it slides and stretches) is no longer followed.
+        static readonly Action<GrandBanquetHallDressing> TableShow = d =>
         {
-            foreach (var host in d.FindAll("BH tablecloth"))
-            {
-                var model = ModelOn(host, "bh_table_cloth");
-                var source = host.Find("BH cloth");
-                if (model == null || source == null || !source.TryGetComponent<Renderer>(out var r)) continue;
-                model.gameObject.AddComponent<BanquetClothModel>().Configure(r);
-            }
+            var trick = d.GetComponentInChildren<TableclothTrick>(true);
+            if (trick != null) d.gameObject.AddComponent<BanquetTableShow>().Configure(d, trick);
+        };
+
+        // R845: the cloche lifts' show (BanquetLiftShow.cs: the pulleys turn, the lifts jolt as they arrive, steam and a
+        // glint as a cloche lifts off) and the seated guests watching the trick (BanquetGuestShow.cs) - pictures only,
+        // the lifts' course, the trick and every collider as built.
+        static readonly Action<GrandBanquetHallDressing> LiftAndGuestShow = d =>
+        {
+            d.gameObject.AddComponent<BanquetLiftShow>().Configure(d);
+            var trick = d.GetComponentInChildren<TableclothTrick>(true);
+            if (trick != null) d.gameObject.AddComponent<BanquetGuestShow>().Configure(d, trick);
         };
     }
 
@@ -122,47 +130,6 @@ namespace ChessFight.PawnRush
                 l.SetPositionAndRotation(bottom - d / length * (Pitch * (i + .5f)), turn);
             }
             for (int i = n; i < links.Count; i++) links[i].gameObject.SetActive(false);
-        }
-    }
-
-    // The cloth model shown and hidden with the graybox cloth's renderer, and its linen warmed toward red while the drum
-    // rolls (the graybox's cue, BanquetDevices.TableclothTrick: its renderer then draws the "rolling" material).
-    [DefaultExecutionOrder(200)]
-    public sealed class BanquetClothModel : MonoBehaviour
-    {
-        static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        [SerializeField] Renderer source;
-        Renderer[] mine = Array.Empty<Renderer>();
-        Material lying;
-        MaterialPropertyBlock block;
-        bool tinted;
-
-        public void Configure(Renderer graybox)
-        {
-            source = graybox;
-            lying = graybox.sharedMaterial;
-            mine = GetComponentsInChildren<Renderer>(true);
-            block = new MaterialPropertyBlock();
-        }
-
-        void LateUpdate()
-        {
-            if (source == null) return;
-            bool shown = source.enabled;
-            bool rolling = source.sharedMaterial != lying;
-            foreach (var r in mine)
-            {
-                if (r.enabled != shown) r.enabled = shown;
-                if (rolling == tinted || !r.name.EndsWith("cloth", StringComparison.Ordinal)) continue;   // the linen only
-                if (rolling)
-                {
-                    block.Clear();
-                    block.SetColor(BaseColor, new Color(1f, .55f, .5f, 1f));
-                    r.SetPropertyBlock(block);
-                }
-                else r.SetPropertyBlock(null);
-            }
-            tinted = rolling;
         }
     }
 }

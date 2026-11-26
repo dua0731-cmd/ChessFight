@@ -16,5 +16,10 @@ namespace ChessFight.PawnRush
                        covers = new[] { "BH balcony", "BH balcony edge", "BH balcony rail W", "BH balcony rail E", "BH canopy" } },
             new Hang { zone = "B3", model = "bh_thrones", covers = new[] { "BH throne" } },
         };
+
+        // R845: the dais's show (BanquetDaisShow.cs): the head tables' candelabra burn, the balcony showers confetti on
+        // whoever reaches it (seen on each PC, nothing sent). Pictures only.
+        static readonly System.Action<GrandBanquetHallDressing> DaisShow = d =>
+            d.gameObject.AddComponent<BanquetDaisShow>().Configure(d);
     }
 }

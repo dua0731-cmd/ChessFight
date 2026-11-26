@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
@@ -39,10 +40,45 @@ namespace ChessFight.PawnRush
                         if (look == null) continue;
                         if (d.HangOn(look, fbx) != null) hung++;
                         Cover(look, "BH chandelier", false);
+                        d.RideLights(root, look, GrandBanquetHallBuilder.RopeL[k]);
                     }
             }
             if (hung > 0) Debug.Log("[대연회장 입히기] 매달린 샹들리에 " + hung + "개");
             d.SplitLods();      // (the after-dress actions run in no set order: these were hung after the hall's pass)
         };
+
+        // A hanging chandelier's lamp and candles, lit while a piece rides it (ChandelierRideLights; the user 11-25:
+        // "기물이 샹들리에를 타면 녹색등 밑에 켜주고 위에 촛불은 실제 촛불 색으로 켜줘"). The green is the ring of crystal
+        // drops under the main ring (not a lamp in the middle: "원으로 둘러 싸인 부분에서 나와야 해"), in the stage
+        // lamps' lit glass (LampGlobes). The flames' colours are in their mesh; the material only brightens them.
+        Material rideFlame, rideLampLit;
+        bool rideMaterialsMade;
+
+        void RideLights(Transform root, Transform look, float ropeLength)
+        {
+            if (!root.TryGetComponent<ChessFight.Gameplay.RopeLine>(out var rope)) return;
+            if (!rideMaterialsMade)
+            {
+                rideMaterialsMade = true;
+                var shader = Shader.Find(LitMaterials.ParticlesUnlitName);
+                if (shader != null)
+                {
+                    rideFlame = new Material(shader) { name = "BH candle flame", mainTexture = Texture2D.whiteTexture, color = new Color(1.9f, 1.75f, 1.5f, 1f) };
+                    LitMaterials.MakeTransparent(rideFlame);
+                    ownedMaterials.Add(rideFlame);
+                }
+                var crystal = Resources.Load<Material>(MaterialFolder + "BH_Crystal");
+                if (crystal != null)
+                {
+                    rideLampLit = new Material(crystal) { name = "BH chandelier drop (lit)" };
+                    rideLampLit.color = new Color(.62f, 1f, .72f, .8f);
+                    rideLampLit.EnableKeyword("_EMISSION");
+                    rideLampLit.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                    if (rideLampLit.HasProperty("_EmissionColor")) rideLampLit.SetColor("_EmissionColor", new Color(.49f, 1f, .6f) * 3f);
+                    ownedMaterials.Add(rideLampLit);
+                }
+            }
+            look.gameObject.AddComponent<ChandelierRideLights>().Build(rope, ropeLength, rideFlame, rideLampLit);
+        }
     }
 }

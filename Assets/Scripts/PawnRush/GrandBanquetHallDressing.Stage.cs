@@ -44,6 +44,16 @@ namespace ChessFight.PawnRush
             if (n > 0) Debug.Log("[대연회장 입히기] 등 유리구 " + n + "개");
         };
 
+        // The stage's show (R845, BanquetStageShow.cs): the pleats' pictures gather and swing, the pelmet's tassels sway,
+        // light leaks from the seam and the stage lights follow the curtain; colliders and timing stay the builder's.
+        // R845 too: the chocolate fountain's show (BanquetFountainShow.cs: streams from the crown, drops, rings across the
+        // pools, the chocolate's surface sliding) - pictures only, the tiers' pull and colliders as built.
+        static readonly System.Action<GrandBanquetHallDressing> StageShow = d =>
+        {
+            d.gameObject.AddComponent<BanquetStageShow>().Configure(d);
+            d.gameObject.AddComponent<BanquetFountainShow>().Configure(d);
+        };
+
         static Hang[] StageList()
         {
             var list = new System.Collections.Generic.List<Hang>

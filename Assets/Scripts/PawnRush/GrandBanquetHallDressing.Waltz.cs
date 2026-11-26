@@ -8,6 +8,11 @@ namespace ChessFight.PawnRush
     {
         static readonly Hang[] WaltzHangs = CoupleHangs();
 
+        // The waltz's show (R845, BanquetWaltzShow.cs): the gowns flare and trail, the partners rise and fall with the
+        // beat; the queens' shoulders (the floor a pawn stands on) and every collider stay as built.
+        static readonly System.Action<GrandBanquetHallDressing> WaltzShow = d =>
+            d.gameObject.AddComponent<BanquetWaltzShow>().Configure(d);
+
         static Hang[] CoupleHangs()
         {
             var list = new Hang[BanquetWaltz.Couples + 1];
