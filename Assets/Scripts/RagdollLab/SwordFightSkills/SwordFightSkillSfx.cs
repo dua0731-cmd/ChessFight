@@ -20,7 +20,9 @@ namespace ChessFight.RagdollLab
     /// R120: the bishop's F sounds are in the family of its edge sound (승규 님: "비숍도 잘 어울리는 소리로") — no more heavy
     /// hum and metal latch: a swirling energy gathering on the cast, a rushing wind streak as the hands shoot out, a gust
     /// bursting up from the floor ending in a soft deep thump as they grab the ankles; and the ally set down on the edge
-    /// (<see cref="SfFxKind.BishopSet"/>) settles with a soft airy thump.
+    /// (<see cref="SfFxKind.BishopSet"/>) settles with a soft airy thump. 2026-11-26: that edge skill (the rescue hand) was
+    /// replaced by the diagonal slide; its BishopReach, BishopCatch and BishopSet clips are gone, and so is QueenMiss (never
+    /// raised).
     ///
     /// One clip per moment in Resources/SwordFightSkillSfx, named after the <see cref="SfFxKind"/>; the cast is per piece
     /// ("Cast" + piece, the knight has none: its leap is its cast). Prepared once when loaded with the shared normalization:
@@ -60,10 +62,9 @@ namespace ChessFight.RagdollLab
             { "RookSlam", 0.9f }, { "RookHit", 0.8f }, { "RookBlocked", 0.7f },
             // 10-28 (사용자 "비숍 f 기존에 있던 사운드는 지우고 아예 새롭게"): the old F's BishopFire and BishopPin clips are
             // gone and CastBishop is a new take - the X cut's moments below are one family of airy steel swishes.
-            { "BishopSet", 0.7f },
             { "KnightLeap", 1f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
             { "Interrupted", 0.55f },
-            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 1f },
+            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "KnightFlip", 1f },
             // 10-25 (승규 님: "칼집에서 뽑는 소리, 베인 뒤 한 박자 늦게 반응"): the queen's draw as she goes through, and the cut a beat later.
             { "QueenBlink", 0.9f }, { "QueenCut", 0.9f },
             // 10-26 later (승규 님): KnightFlip, QueenThrust, KingVault (stronger, cinematic), BishopReach and BishopSet are
@@ -71,7 +72,7 @@ namespace ChessFight.RagdollLab
             // 10-26, the realistic effects' own sounds (ElevenLabs): the knight's kick landing,
             // the queen's sparks on the thrust and on the hit, the king's vault off the sword and its landing, the bishop's catch.
             { "KnightKickHit", 0.85f }, { "QueenThrustSparks", 0.55f }, { "QueenHitSparks", 0.6f },
-            { "KingVault", 0.75f }, { "KingLand", 0.85f }, { "BishopCatch", 0.75f }, { "RookTremble", 0.85f },
+            { "KingVault", 0.75f }, { "KingLand", 0.85f }, { "RookTremble", 0.85f },
             // 10-28 (the king's edge effects E2, E5, E6): the crown drawn on his landing spot, the enemies his landing hits
             // (under KingLand), the fall when his sword is cut out.
             { "KingMark", 0.55f }, { "KingLandHit", 0.6f }, { "KingDrop", 0.6f },
@@ -79,14 +80,17 @@ namespace ChessFight.RagdollLab
             // forming, the throw, the cross, a piece it took), the king's counter cut, the knight's crouch and kick on the
             // edge, the queen's edge cut missing.
             { "BishopDraw", 0.6f }, { "BishopLeap", 0.75f }, { "BishopCross", 0.85f }, { "BishopHit", 0.8f },
-            { "KingCounterSpin", 0.8f }, { "KnightCrouch", 0.6f }, { "KnightKick", 0.75f }, { "QueenMiss", 0.5f },
+            { "KingCounterSpin", 0.8f }, { "KnightCrouch", 0.6f }, { "KnightKick", 0.75f },
             // 10-29: each piece's sword whoosh on a click cut (SwordFightPawn.SwingSound), under the skills' moments.
             // The rook's heavy blade (rook_c in code) a little under its old level (승규 님: "룩 휘두르는 소리 아주 살짝만 낮추고"), then it and the queen's a little
             // lower again ("퀸이랑 룩 칼 휘두르는 소리 조금만 낮춰").
             // The rook's louder (승규 님: "룩 사운드를 키워주고"): its low rumble reads quiet at the same level. So does the bishop's
             // thin flick (the A made in code: "B로해서 소리 키워줘", then "A로 해줘").
             // 10-29 later ("비숍 칼 휘두르는 사운드 다시"): the bishop's is a fuller blade now (pawn_swing.py bishop_d), so
-            // less of a lift than the thin flick had.
+            // less of a lift than the thin flick had. (The shipped SwingBishop.mp3 was the ElevenLabs take "SwingBishop G" of
+            // the R236 flow, not pawn_swing.py output; 2026-11-26 R845 it is a new take made on the paid plan.)
+            // 2026-11-26 R845: every ElevenLabs clip in this folder except SwordHit/SwingPawn/SwingRook (made in code) is a
+            // new take made on the paid plan, same names (Tools/Sfx/Regen2026, Docs/Skills/SOUND.md 'R845').
             { "SwingKing", 0.5f }, { "SwingQueen", 0.42f }, { "SwingRook", 0.7f }, { "SwingBishop", 0.75f },
             { "SwingKnight", 0.5f }, { "SwingPawn", 0.5f },
             // 10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): one sword hit for every piece (SwordFightPawn.FlashHit).
@@ -127,7 +131,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The edge skills' sounds (R116): each belongs to its skill while it runs and stops if that is called off.
         /// The rook's plays when its chunk falls (the floor's news, not a skill moment).</summary>
-        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "KingMark", "QueenMark", "RookCollapse", "BishopReach", "KnightCrouch", "KnightFlip", "KnightKick", "BishopSlide" };
+        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "KingMark", "QueenMark", "RookCollapse", "KnightCrouch", "KnightFlip", "KnightKick", "BishopSlide" };
 
         /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts. 10-26: none now - the knight's
         /// somersault sound is its spin from the start (승규 님: "기존 소리 말고 다른 소리"), and its kick has its own

@@ -65,11 +65,12 @@ namespace ChessFight.RagdollLab
             { "CourseMash3", 0.6f }, { "CourseMash4", 0.6f }, { "CourseMash5", 0.6f },
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
             { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
-            { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
-            { "BishopThrow", 0.6f }, { "BishopLand", 0.7f }, { "BishopArm", 0.7f }, { "BishopHum", 0.35f },
-            { "BishopTrip", 0.95f }, { "BishopEnd", 0.6f },
+            // 2026-11-26: the old rook dash's (RookLock, RookDash, RookHit, RookWall), the old X tripwire's (BishopThrow,
+            // BishopLand, BishopArm, BishopHum, BishopTrip, BishopEnd) and KnightDaze are gone - nothing played them (the rook
+            // throws its chain, bishopRope is on). The tripwire's Play calls below stay and are silent if it is turned back on.
+            { "RookTick", 0.35f },
             { "KnightLeap", 0.7f }, { "KnightTurn", 0.7f }, { "KnightLand", 0.8f }, { "KnightStomp", 1f },
-            { "KnightDaze", 0.4f }, { "KnightAir", 0.3f },
+            { "KnightAir", 0.3f },
             // R153 2nd (승규 님 10-16: "그에 맞는 사슬 소리 모든 sfx 적용 해줘"): the rook's chain, one heavy iron chain for every
             // moment (ElevenLabs, low-passed and taken 2-3 semitones down so no bright jingle rings), and the "no target" knock.
             { "ChainThrow", 0.7f }, { "ChainRun", 0.45f }, { "ChainBite", 0.9f }, { "ChainPull", 0.75f }, { "ChainOffer", 0.5f },
@@ -183,14 +184,6 @@ namespace ChessFight.RagdollLab
                 // 10-25 (the queen drawn for real): each piece her shock hits, the knocked-down one lower and heavier. Silent
                 // until Resources/PawnRushSkillSfx/QueenHit is there.
                 case SkillFxKind.QueenHit: Play("QueenHit", e.at, e.count == 1 ? -2f : 0f, e.count == 1 ? 1.1f : 0.85f); break;
-                // The charge keeps sounding under its hits (it ends with the dash). R115: one impact, no rising pitch —
-                // hits one, two, three a whole tone apart sounded like a piano scale (승규 님 "피아노 같은 소리 말고
-                // 임펙트 있는 소리"); later hits are only a little louder, the stopping fourth a little lower and heavier.
-                case SkillFxKind.RookHit: Play("RookHit", e.at, 0f, 1f + 0.08f * Mathf.Clamp(e.count - 1, 0, 2)); break;
-                case SkillFxKind.RookStop: Play("RookHit", e.at, -2f, 1.25f); break;
-                case SkillFxKind.RookWall: Play("RookWall", e.at); break;
-                case SkillFxKind.RookBarricade: Play("RookWall", e.at, 3f, 0.8f); break;
-                case SkillFxKind.RookSlam: Play("RookWall", e.at, -2f); break;
                 case SkillFxKind.BishopWire:
                     Play("BishopLand", e.at);
                     if (e.source is SkillTripwire w && !wires.ContainsKey(w)) wires[w] = new WireWatch { armed = w.Armed, at = e.at };

@@ -97,10 +97,12 @@ namespace ChessFight.Network
         }
 
         // The round's pick for every slot as an index into Names(slot), -1 for a slot with nothing to draw.
-        public int[] Picks(int seed)
+        public int[] Picks(int seed, int endingMap = 0)
         {
             var distinct = new List<string>();
-            var ids = PawnRushSections.Choose(seed, Options(distinct));
+            var options = Options(distinct);
+            var ids = PawnRushSections.Choose(seed, options);
+            PawnRushSections.PinEnding(ids, options, endingMap);
             var picks = new int[keys.Length];
             for (int s = 0; s < picks.Length; s++)
                 picks[s] = ids[s] >= 0 ? keys[s].IndexOf(distinct[ids[s]]) : -1;
@@ -108,9 +110,9 @@ namespace ChessFight.Network
         }
 
         // The round's section names, slot by slot ("" for a slot with nothing to draw).
-        public string[] PickNames(int seed)
+        public string[] PickNames(int seed, int endingMap = 0)
         {
-            var picks = Picks(seed);
+            var picks = Picks(seed, endingMap);
             var shown = new string[picks.Length];
             for (int s = 0; s < shown.Length; s++) shown[s] = picks[s] >= 0 ? names[s][picks[s]] : "";
             return shown;

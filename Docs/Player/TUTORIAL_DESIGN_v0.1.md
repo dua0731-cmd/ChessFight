@@ -61,7 +61,9 @@
 - 독수리 오프닝의 시계는 전환 화면이 덮고 있는 동안 멈춰 있다(`TutorialIntro`, `SceneTransition.Busy`).
 - 씬은 빌드 목록의 로비 다음에 있다. `Rebuild Tutorial Scene`은 이제 씬 파일만 덮어써서 `.meta`의 GUID가 그대로다(전에는 지우고 복사해 지을 때마다 GUID가 바뀌었다).
 - 수업 문구 44줄은 번역 표(`Resources/Localization/Strings.txt`, 영 · 중 · 러)에 있다. 수업 이름은 변수로 `Loc.T`에 가므로 `Find-Untranslated.ps1`에는 "코드에서 안 보임"으로 나온다.
-- 아직 없는 것: 로비의 "튜토리얼 다시 하기"(§11-4), 수업 9(승격).
+- **로비로 가는 전환(R842):** 졸업 · Esc 나가기 · 초대 모두 인트로와 같은 전환 화면으로 로비에 간다(`SceneTransition.ToLobby` — 전에는 `LoadScene`이라 로비가 뜰 때까지 화면이 멈췄다).
+- **다시 하기(R842, 사용자 "설정창에 튜토리얼 다시 하기 넣어주고"):** 설정 → 조작 → 키 설정 맨 아래 "튜토리얼" 구역의 "다시 하기". 로비에서 파티에 혼자이고 매칭 중이 아닐 때만 되고, 아니면 설명 칸에 이유가 뜬다(`SettingsWindow.TutorialReplay`, `NetworkRuntime`). 이미 마친 PC라 Esc 나가기가 처음부터 열려 있다.
+- 아직 없는 것: 수업 9(승격).
 
 ## 소리 (11-25, R841 · 튜토리얼 안은 사용자 확인)
 

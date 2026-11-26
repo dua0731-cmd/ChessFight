@@ -36,6 +36,16 @@ namespace ChessFight.Network
         // numbers them). An id offered to several slots (the mini-game slots may share their games) comes
         // up at most once a round while the slot has another; the slot's pick of the previous round
         // (last[slot]) is left out while it has another too. A slot with no options gets -1.
+        // JY-audience-hall: the room's "엔딩 맵" (PawnRushRules.EndingMap) - 0 leaves the last slot as drawn, 1..n puts
+        // that slot's n-th option there. Both the round (PawnRushRound) and the entrance screen's course table pin alike.
+        public static void PinEnding(int[] picks, int[][] options, int map)
+        {
+            if (picks == null || options == null || map <= 0) return;
+            int last = System.Math.Min(picks.Length, options.Length) - 1;
+            if (last < 0 || options[last] == null || map > options[last].Length) return;
+            picks[last] = options[last][map - 1];
+        }
+
         public static int[] Choose(int seed, int[][] options, int[] last = null)
         {
             var picks = new int[options == null ? 0 : options.Length];

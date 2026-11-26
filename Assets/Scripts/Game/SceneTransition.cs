@@ -66,6 +66,44 @@ namespace ChessFight.Game
             current.Begin(nextScreen, closeAt, whileCovered, ready, openAt, done);
         }
 
+        // R842 (user 11-25 "튜토리얼이 끝나고 로비로 넘어갈 때 끊겨 자연스럽게 넘어갈 수 있도록"): to the lobby behind the
+        // board, as the intro goes there - the lobby loads while the screen is covered and the board opens on the
+        // player's own piece once the lobby has built its stage. The tutorial's end, its Esc leave and its guard use it.
+        public static void ToLobby(Vector2 from)
+        {
+            AsyncOperation load = null;
+            int loadedFrame = -1;
+            Run(ChessFight.Network.Loc.T("로비"), from,
+                () => load = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(SceneNames.Lobby),
+                () =>
+                {
+                    if (load == null || !load.isDone || FindAnyObjectByType<LobbyStage>() == null) return false;
+                    if (loadedFrame < 0) loadedFrame = Time.frameCount;
+                    return Time.frameCount > loadedFrame + 2;
+                },
+                () =>
+                {
+                    var stage = FindAnyObjectByType<LobbyStage>();
+                    return stage != null ? stage.SelfOnScreen() : new Vector2(.5f, .62f);
+                });
+        }
+
+        // R842: to the tutorial behind the board (the settings window's "튜토리얼 다시 하기").
+        public static void ToTutorial(Vector2 from)
+        {
+            AsyncOperation load = null;
+            int loadedFrame = -1;
+            Run(ChessFight.Network.Loc.T("튜토리얼"), from,
+                () => load = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(SceneNames.Tutorial),
+                () =>
+                {
+                    if (load == null || !load.isDone) return false;
+                    if (loadedFrame < 0) loadedFrame = Time.frameCount;
+                    return Time.frameCount > loadedFrame + 3;
+                },
+                () => new Vector2(.5f, .5f));
+        }
+
         void Build()
         {
             var root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("TransitionHud"),
