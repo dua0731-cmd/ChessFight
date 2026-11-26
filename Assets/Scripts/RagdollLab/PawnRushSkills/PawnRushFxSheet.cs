@@ -110,12 +110,19 @@ namespace ChessFight.RagdollLab
             S("RopeMiss", PawnRushSkillIds.RopePassant, PieceKind.Pawn, 1, "k w0.3 c+ w0.25 c-", 3.2f, new Vector3(5f, 3f, 0f), new Vector3(0f, 0.6f, 3f)),
             S("JumpStomp", PawnRushSkillIds.JumpStomp, PieceKind.Knight, 0, "a0,1,-0.22 w0.1 k w0.75 k", 3.6f, new Vector3(6f, 4f, -1f), new Vector3(0f, 1.5f, 3.5f), V(0.3f, 4.5f), V(1.8f, 3.6f), V(-1.2f, 3.2f), V(-3.5f, 1f)),
             S("FlatPop", PawnRushSkillIds.JumpStomp, PieceKind.Knight, 1, "x10 w1 j w0.35 j w0.35 j w0.35 j w0.35 j", 4.2f, new Vector3(3f, 2f, 2.5f), new Vector3(0f, 0.3f, 0f)),
+            // Bundle 2 (the leader is the enemy furthest along +z: behind P1 here, who faces -z).
+            S("SwordThrow", PawnRushSkillIds.SwordThrow, PieceKind.Bishop, 0, "k", 5.2f, new Vector3(6f, 3.5f, -2f), new Vector3(0f, 1f, 5f), V(0.3f, 9f)),
+            S("KettleBow", PawnRushSkillIds.KettleBow, PieceKind.Bishop, 1, "k", 3.6f, new Vector3(7f, 4f, 3f), new Vector3(0f, 1f, -5f), V(0.5f, -10f), V(4f, -3f)),
+            S("KettleSteal", PawnRushSkillIds.KettleBow, PieceKind.Bishop, 1, "k", 3.2f, new Vector3(7f, 4f, 3f), new Vector3(0f, 1f, -5f), V(0.5f, -10f), V(0.3f, -5f)),
+            S("PinBeam", PawnRushSkillIds.PinBeam, PieceKind.Bishop, 1, "k", 3.4f, new Vector3(6f, 3f, 0f), new Vector3(0f, 1f, 7f), V(0.2f, 5f), V(-0.2f, 9f), V(0f, 13f)),
+            S("FrozenLook", PawnRushSkillIds.PinBeam, PieceKind.Bishop, 1, "x11", 3.2f, new Vector3(2.8f, 2f, 2.5f), new Vector3(0f, 0.9f, 0f)),
         };
 
         static readonly string[] SetThree = { "Bolas", "TwoSteps", "HighStomp", "BackKick", "HolySwords", "StoneThrow", "HolyWater", "RollShort", "TowerTrap", "QueenStar", "CheckChain" };
         static readonly string[] SetFourA = { "Trip4", "Brick", "Pit", "PitHole", "ForkBonk", "ForkOne", "BackKick4", "HolyWater4", "Sermon", "Charge4", "StoneCap", "CrownToss", "Insolent" };
         static readonly string[] SetFourB = { "PoisonTrap", "Poison", "PawnStorm", "ButtSlam", "Neigh", "RainCloud", "Censer", "Bell", "Crook", "WallUp", "SideSlide", "Mower", "ScholarMate", "PerpetualCheck", "QueenSac4" };
         static readonly string[] SetJY1 = { "StepsDiag", "RopePassant", "RopeMiss", "JumpStomp", "FlatPop" };
+        static readonly string[] SetJY2 = { "SwordThrow", "KettleBow", "KettleSteal", "PinBeam", "FrozenLook" };
         static readonly string[] SetFourC = { "PromoCountdown", "Burrow", "SafetyPin", "RookDive", "Timber", "GatePig", "RookLift", "Procession", "ThroneDrop", "QueensGambit" };
 
         LabGame game;
@@ -141,9 +148,9 @@ namespace ChessFight.RagdollLab
             foreach (string raw in (string.IsNullOrEmpty(names) ? "set3" : names).Split(','))
             {
                 string n = raw.Trim();
-                if (n == "set3" || n == "set4a" || n == "set4b" || n == "set4c" || n == "jy1")
+                if (n == "set3" || n == "set4a" || n == "set4b" || n == "set4c" || n == "jy1" || n == "jy2")
                 {
-                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : n == "set4b" ? SetFourB : n == "jy1" ? SetJY1 : SetFourC) list.Add(Array.Find(Shots, s => s.name == m));
+                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : n == "set4b" ? SetFourB : n == "jy1" ? SetJY1 : n == "jy2" ? SetJY2 : SetFourC) list.Add(Array.Find(Shots, s => s.name == m));
                     continue;
                 }
                 int at = Array.FindIndex(Shots, s => s.name == n);

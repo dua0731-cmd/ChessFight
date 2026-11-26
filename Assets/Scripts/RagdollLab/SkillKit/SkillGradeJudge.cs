@@ -216,6 +216,16 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.JyStomp:
                     if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 4f);
                     break;
+                case SkillFxKind.JySword:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 2.5f);
+                    break;
+                case SkillFxKind.JyBow:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 3f);
+                    else if (e.count == 2 || e.count == 3) Hit(c, e.target);
+                    break;
+                case SkillFxKind.JyBeam:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
+                    break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;
                 case SkillFxKind.BishopWire:
@@ -273,6 +283,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Dive: case SkillFxKind.S4Timber: case SkillFxKind.S4Pig: case SkillFxKind.S4Carpet:
                 case SkillFxKind.S4Throne: case SkillFxKind.S4Gambit:
                 case SkillFxKind.JyStep: case SkillFxKind.JyRope: case SkillFxKind.JyStomp:
+                case SkillFxKind.JySword: case SkillFxKind.JyBow: case SkillFxKind.JyBeam:
                     return true;
                 case SkillFxKind.S4Fan:
                     return e.count != 4;

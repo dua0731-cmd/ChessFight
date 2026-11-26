@@ -13,6 +13,11 @@ namespace ChessFight.RagdollLab
         void UpdateTWall(PawnRushSkillParams s, bool press, float dt) => JyNotYet(press, "벨코즈 q 성벽");
         void UpdateWallBuild(PawnRushSkillParams s, bool press, float dt) => JyNotYet(press, "성벽 짓기");
 
+        void JyNotYet(bool press, string name)
+        {
+            if (press) SkillDetail = $"{name}: 아직 만드는 중이에요";
+        }
+
         void UpdateSetFourJYCStates(PawnRushSkillParams s, float dt) { }
 
         void ClearSetFourJYCStates() { }

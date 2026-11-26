@@ -169,7 +169,13 @@ namespace ChessFight.RagdollLab
         //   JyStomp    0 crouch, 1 up (size: rise seconds), 2 a mark (target; count: 1 the one to stomp, 2 any other),
         //              3 dive (target), 4 stomped (target), 5 the fork ring (at; size: radius), 6 a fork shackle (target),
         //              7 landed (at)
-        S4Flat, JyStep, JyRope, JyStomp,
+        //   JySword    0 the sword in the hand (size: summon seconds), 1 thrown (at: hand, dir: its first way; size: speed),
+        //              2 the cross down (target: the one bound; at: its foot; dir: the throw's way; size: seconds), 3 a miss
+        //              stuck in the floor (at)
+        //   JyBow      0 the aim (target: the leader; size: seconds), 1 fired (target; at: the muzzle; size: speed), 2 taken
+        //              by another (target: it), 3 the leader hit (target; dir: back along the course), 4 the smoke blown off
+        //   JyBeam     0 the aim (size: seconds), 1 fired (at, dir; size: length), 2 + i the i-th on it frozen (target)
+        S4Flat, JyStep, JyRope, JyStomp, JySword, JyBow, JyBeam,
     }
 
     public struct SkillFxEvent

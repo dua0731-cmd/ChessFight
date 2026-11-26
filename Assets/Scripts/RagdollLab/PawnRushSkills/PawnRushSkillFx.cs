@@ -286,6 +286,9 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.JyStep:
                 case SkillFxKind.JyRope:
                 case SkillFxKind.JyStomp:
+                case SkillFxKind.JySword:
+                case SkillFxKind.JyBow:
+                case SkillFxKind.JyBeam:
                     try { SetFourFx(e); } catch (System.Exception ex) { FxFault("set 4 moment", ex); }
                     break;
             }

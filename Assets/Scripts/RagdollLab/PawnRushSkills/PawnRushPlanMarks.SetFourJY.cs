@@ -79,6 +79,32 @@ namespace ChessFight.RagdollLab
                 jySmall.normal.textColor = old;
                 break;
             }
+            // 케틀 궁: everyone is told who is aimed at; the one aimed at gets a red edge; a bullet taken by another is told.
+            foreach (var b in RagdollPawn.All)
+            {
+                if (b == null) continue;
+                var aimed = b.JyBowAimingAt;
+                string notice = aimed != null ? $"{b.DisplayName} → {aimed.DisplayName} 저격!"
+                              : b.JyBowStolen && b.PlanTarget != null ? $"{b.PlanTarget.DisplayName} 대신 맞음!" : null;
+                if (notice == null) continue;
+                float w = 340f, h = 40f, x = (Screen.width - w) * 0.5f, y = 72f;
+                Panel(white, new Rect(x, y, w, h));
+                var old = jySmall.normal.textColor;
+                jySmall.normal.textColor = aimed != null ? new Color(1f, 0.45f, 0.38f) : new Color(1f, 0.85f, 0.4f);
+                GUI.Label(new Rect(x, y + 2f, w, h - 4f), notice, jySmall);
+                jySmall.normal.textColor = old;
+                if (aimed == me)
+                {
+                    float edge = Mathf.Min(Screen.width, Screen.height) * 0.025f, beat = 0.35f + 0.25f * Mathf.Sin(Time.time * 12f);
+                    GUI.color = new Color(1f, 0.15f, 0.12f, beat);
+                    GUI.DrawTexture(new Rect(0f, 0f, Screen.width, edge), white);
+                    GUI.DrawTexture(new Rect(0f, Screen.height - edge, Screen.width, edge), white);
+                    GUI.DrawTexture(new Rect(0f, edge, edge, Screen.height - 2f * edge), white);
+                    GUI.DrawTexture(new Rect(Screen.width - edge, edge, edge, Screen.height - 2f * edge), white);
+                    GUI.color = Color.white;
+                }
+                break;
+            }
             // 첫 두걸음: my own window for the headbutt.
             if (me.JyDiagOpen)
             {

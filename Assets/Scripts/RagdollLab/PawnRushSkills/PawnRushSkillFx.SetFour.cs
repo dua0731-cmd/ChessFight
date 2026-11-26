@@ -287,7 +287,7 @@ namespace ChessFight.RagdollLab
                 case Cc4.Flat: CcFlatLook(look, lvl); break;   // the user's own (PawnRushSkillFx.SetFourJY.cs)
                 case Cc4.Frozen: CcFrozenLook(look, lvl); break;
             }
-            if (kind != Cc4.Flop) CcLabel(look, seconds);   // (콰당! says itself)
+            if (kind != Cc4.Flop && kind != Cc4.Frozen) CcLabel(look, seconds);   // (콰당! says itself; 멈춤's ⏸ and its ring tell it)
         }
 
         /// <summary>Its name over the head in its colour, a bar under it running down with the time.</summary>

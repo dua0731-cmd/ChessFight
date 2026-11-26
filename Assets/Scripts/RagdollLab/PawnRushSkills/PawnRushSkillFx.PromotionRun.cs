@@ -566,6 +566,17 @@ namespace ChessFight.RagdollLab
             // 11-26 (the user's own skills): pressed or pulled out of shape round its feet, per axis (납작이's drum).
             public Vector3 stretch = Vector3.one;
             public bool stretched;
+            // ...and drawn once more a little bigger behind itself in this (an outline: 멈춤's white edge).
+            public Material outline;
+        }
+
+        /// <summary>This frame <paramref name="p"/> is drawn with an outline of <paramref name="outline"/> (an inverted hull: a
+        /// front-face-culled copy 6% bigger round its hips).</summary>
+        void WantOutline(RagdollPawn p, Material outline)
+        {
+            if (p == null || p.skin == null || outline == null) return;
+            if (!giants.TryGetValue(p, out var g)) giants[p] = g = new Giant { p = p };
+            g.outline = outline;
         }
 
         /// <summary>This frame <paramref name="p"/> is drawn <paramref name="stretch"/> times its size along each world axis
@@ -639,7 +650,9 @@ namespace ChessFight.RagdollLab
                 g.posed = false;
                 bool stretched = g.stretched;
                 g.stretched = false;
-                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null && !posed && !stretched)
+                var outline = g.outline;
+                g.outline = null;
+                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null && !posed && !stretched && outline == null)
                 {
                     skin.forceRenderingOff = false;
                     if (g.baked != null) Destroy(g.baked);
@@ -673,6 +686,19 @@ namespace ChessFight.RagdollLab
                         worldBounds = bounds,
                     };
                     Graphics.RenderMesh(rp, g.baked, i, big);
+                    if (outline != null)
+                    {
+                        Vector3 hips = g.p.Hips.position;
+                        var ro = new RenderParams(outline)
+                        {
+                            shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                            receiveShadows = false,
+                            layer = skin.gameObject.layer,
+                            renderingLayerMask = skin.renderingLayerMask,
+                            worldBounds = bounds,
+                        };
+                        Graphics.RenderMesh(ro, g.baked, i, Matrix4x4.Translate(hips) * Matrix4x4.Scale(Vector3.one * 1.06f) * Matrix4x4.Translate(-hips) * big);
+                    }
                 }
             }
             foreach (var p in giantsGone) giants.Remove(p);

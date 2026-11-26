@@ -39,6 +39,21 @@ namespace ChessFight.RagdollLab
         /// <summary>The solid wall's collider (null for a picture).</summary>
         public Collider Collider => box;
 
+        /// <summary>11-26 (the user's own skills): drawn by someone else (the holy sword's cross): no stones of its own.</summary>
+        public bool Hidden
+        {
+            get => hidden;
+            set
+            {
+                hidden = value;
+                if (picture != null) picture.gameObject.SetActive(!value);
+            }
+        }
+        bool hidden;
+
+        /// <summary>11-26 (USER_SKILLS 2.1): nobody stands on its top - a piece there is slid off its side (the host's).</summary>
+        public bool NoTop { get; set; }
+
         /// <summary>The wall of <paramref name="owner"/>'s that is still standing (the newest), or null.</summary>
         public static PawnRushKitWall OwnedBy(RagdollPawn owner)
         {
@@ -68,6 +83,7 @@ namespace ChessFight.RagdollLab
 
         void FixedUpdate()
         {
+            if (NoTop) SlideOffTop();
             if (!pushing || !Standing || box == null || !box.enabled) return;
             Vector3 mid = (from + to) * 0.5f, side = Vector3.Cross(Vector3.up, pushWay);
             float half = new Vector3(to.x - from.x, 0f, to.z - from.z).magnitude * 0.5f + 0.3f;
@@ -80,6 +96,29 @@ namespace ChessFight.RagdollLab
                 Vector3 v = p.Hips.linearVelocity;   // (the hips' body: what the run drives)
                 float back = -Vector3.Dot(new Vector3(v.x, 0f, v.z), pushWay);
                 if (back < pushSpeed) p.AddVelocity(-pushWay * (pushSpeed - back));
+            }
+        }
+
+        /// <summary>A piece standing on the top (its feet over the box, near its top) is pushed off the nearer side: no wall is a
+        /// step up (USER_SKILLS 2.1).</summary>
+        void SlideOffTop()
+        {
+            if (box == null || !box.enabled || !Solid) return;
+            Vector3 mid = (from + to) * 0.5f, line = to - from;
+            line.y = 0f;
+            float half = Mathf.Max(0.15f, line.magnitude * 0.5f);
+            Vector3 along = line.sqrMagnitude > 1e-4f ? line.normalized : Vector3.forward, side = Vector3.Cross(Vector3.up, along);
+            float top = Mathf.Min(from.y, to.y) + height * Mathf.Clamp01(risen);
+            foreach (var p in RagdollPawn.All)
+            {
+                if (p == null || p.NetworkPuppet) continue;
+                Vector3 f = p.FeetPoint - mid;
+                float a = Vector3.Dot(new Vector3(f.x, 0f, f.z), along), c = Vector3.Dot(new Vector3(f.x, 0f, f.z), side);
+                if (Mathf.Abs(a) > half + 0.25f || Mathf.Abs(c) > thick * 0.5f + 0.3f) continue;
+                if (p.FeetPoint.y < top - 0.35f || p.FeetPoint.y > top + 1.2f) continue;
+                Vector3 off = side * (c >= 0f ? 1f : -1f);
+                Vector3 v = p.Hips.linearVelocity;
+                if (Vector3.Dot(new Vector3(v.x, 0f, v.z), off) < 3f) p.AddVelocity(off * 3.5f);
             }
         }
 
