@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R847 · 2026-11-26 · 폰 러쉬 룩 · 비숍 · 나이트 소리 다시:** 사용자 "폰 러쉬 구간에도 교체 할 거 있어 룩 비숍 나이트 예전 소리랑 똑같은 걸로 알아서 교체". 결과: 옛 소리와의 거리로 R845 22개 중 17개를 다시 만들어(유료 요금제, 작업판 `XXLmzf1PbQplyMZT6fjo`, 69개) 15개를 더 가까운 것으로 교체(이름 · GUID 그대로), 도구 `Tools/Sfx/Regen2026/similar.py` · `r847.py`, 기록 [SOUND.md 'R847'](../Skills/SOUND.md). 커밋: seoungtest. 상태: **사용자 Unity 청취 전**.
+
 > **R846 · 2026-11-26 · 소드 파이트 두 소리 다시:** 사용자 "킹 왕의 반격 할 때 이전과 같은 소리가 아니고 나이트 기본 공격이 예전 같은 소리가 아니야 소드 파이트는 이것만 바꾸면 될 듯" → 물어 "옛 소리와 비슷하게 새로 만들기", 비교 페이지에서 "나이트 1번", "킹은 … 왕의 반격 할 때 처음으로 나오는 소리" → "4번". 결과: `SwordFightSkillSfx/SwingKnight.mp3` · `CastKing.mp3`를 ElevenLabs 유료 요금제의 새 테이크로 교체(이름 · GUID 그대로, 작업판 `n9NLRO39rItNgk7wKJkv`), 기록 [SOUND.md 'R846'](../Skills/SOUND.md). 같은 세션의 앞 요청: 클라우드 사본 seoungtest를 `f9683c24`로 맞추고 LFS 받기(충돌 없음). 커밋: seoungtest. 상태: **사용자 Unity 청취 전**.
 
 > **R845 · 2026-11-26 · 스킬 효과음 상업 사용 정리:** 사용자 요청 "Make the skill sound effects of ChessFight safe to ship commercially (Steam). Two steps: (1) delete 15 clips the game never plays, (2) regenerate 68 clips with ElevenLabs on the now-paid account and replace the files under the same names." → 물음에 "유료 맞음, 후보 2개씩", 도중에 "동전 소리는 나게 하지마". 결과: 15개(+ `.meta`) 삭제 · 죽은 `Level` 항목 · 룩 돌진 `case` 정리, 68개를 유료 요금제로 새로 만들어 같은 이름 · GUID로 교체(2026-11-26, 작업판 `ULhjnpqP98wVoPRP9vI3`, 약 465 크레딧, 동전 울림 0), 기록 `Tools/Sfx/Regen2026/` · [SOUND.md 'R845'](../Skills/SOUND.md). 커밋: 세션 브랜치 `claude/keen-ride-3dhpje`. 상태: **사용자 Unity 청취 · 승인 전**, main 병합 전.

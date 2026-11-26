@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-26 R847 · 폰 러쉬 룩 · 비숍 · 나이트 소리 15개를 옛 소리에 가깝게 유료 요금제로 다시 만들어 교체(거리 측정 `similar.py` · 고르기 `r847.py`, 작업판 `XXLmzf1PbQplyMZT6fjo`), 2개는 그대로. seoungtest 커밋 · 푸시, Unity 청취 전.
 - 2026-11-26 R846 · 소드 파이트 `SwingKnight`(나이트 좌클릭) · `CastKing`(왕의 반격 시작)을 옛 소리에 가깝게 유료 요금제로 다시 만들어 교체(사용자가 번호로 고름, 작업판 `n9NLRO39rItNgk7wKJkv`, 후보 `ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R846`). seoungtest 커밋 · 푸시, Unity 청취 전.
 - 2026-11-26 R845 · 스킬 효과음 상업 사용 정리: 안 쓰는 15개(폰 러쉬 옛 룩 돌진 · 옛 X자 덫 · `KnightDaze`, 소드 파이트 옛 비숍 구조 · `QueenMiss`) 삭제, 68개를 ElevenLabs 유료 요금제로 새로 만들어 같은 이름 · GUID로 교체(`Tools/Sfx/Regen2026`, 동전 울림 0). 사용자 청취 전.
 - 2026-11-26 R843 · 룩 성벽길(1-5, 초반 장애물) 레벨 디자인 초안 v0.1: 능선의 성벽 셋을 지그재그로 오르는 공성 훈련의 날 — 공성 사다리 · 살인 구멍 · 공성탑 · 룩의 훈련장 · 룩/나이트 기중기 · 왕의 깃발, 배치도 SVG · Blender 입체 미리보기 셋. 1분 44초(12명 1분 56초). 문서와 그림만, Unity 변경 없음.

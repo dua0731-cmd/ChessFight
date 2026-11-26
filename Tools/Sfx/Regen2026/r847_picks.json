@@ -1,0 +1,491 @@
+{
+ "generated": "2026-11-26",
+ "request": "R847",
+ "flow": "XXLmzf1PbQplyMZT6fjo",
+ "model": "eleven_text_to_sound_v2",
+ "plan": "ElevenLabs paid plan",
+ "measure": "similar.py distance to the old clip (lower is closer)",
+ "clips": {
+  "ChainThrow": {
+   "kind": "chain",
+   "r845_distance": 19.0,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainThrow_9o36q0m5yWCcgni1uAWp.mp3",
+     "distance": 13.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainThrow_Lqw3hwsfJdIS3kiDYQYZ.mp3",
+     "distance": 14.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainThrow_VeUg9ge4yBhtD5QWJd4s.mp3",
+     "distance": 19.0,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainThrow_9o36q0m5yWCcgni1uAWp.mp3",
+   "pick_distance": 13.8
+  },
+  "ChainBite": {
+   "kind": "chain",
+   "r845_distance": 9.0,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainBite_0Zfv1VYn3jHnUU8SWWCg.mp3",
+     "distance": 9.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainBite_73jfkmI8s5wUtpBzBn1K.mp3",
+     "distance": 8.3,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainBite_BsC3mTZoJNajWVcLUcGJ.mp3",
+     "distance": 5.5,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainBite_BsC3mTZoJNajWVcLUcGJ.mp3",
+   "pick_distance": 5.5
+  },
+  "ChainPull": {
+   "kind": "chain",
+   "r845_distance": 33.5,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainPull_0vKUjaFRDKAQkaf5QBOA.mp3",
+     "distance": 17.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainPull_VlAWP7y6YUymztWBHoir.mp3",
+     "distance": 20.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainPull_ni25LEqQZIEaGdIcuq7p.mp3",
+     "distance": 22.3,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainPull_0vKUjaFRDKAQkaf5QBOA.mp3",
+   "pick_distance": 17.2
+  },
+  "ChainOffer": {
+   "kind": "chain",
+   "r845_distance": 12.7,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_0G9D2jBV5ilH2lawvQ4x.mp3",
+     "distance": 13.6,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_RFUlINThD9xUrH2KUW91.mp3",
+     "distance": 18.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_TZBmMf3MrFPhFK1TMIYi.mp3",
+     "distance": 15.4,
+     "coin_ring_ms": 107
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_jWIde81Aw5rWFwc4Pyy3.mp3",
+     "distance": 22.3,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_w1gZd9VSCkALiPReES1A.mp3",
+     "distance": 11.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_ymZnQIl1LynnnURRl0AG.mp3",
+     "distance": 12.6,
+     "coin_ring_ms": 139
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainOffer_w1gZd9VSCkALiPReES1A.mp3",
+   "pick_distance": 11.4
+  },
+  "ChainGrab": {
+   "kind": "chain",
+   "r845_distance": 16.8,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainGrab_9JLseTmW2y7Y1hUk0hNI.mp3",
+     "distance": 14.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainGrab_MPfBhOyoor8QPn8f30Rb.mp3",
+     "distance": 17.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainGrab_lMn9kgc8ydTsT0D4p02X.mp3",
+     "distance": 17.2,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainGrab_9JLseTmW2y7Y1hUk0hNI.mp3",
+   "pick_distance": 14.8
+  },
+  "ChainLand": {
+   "kind": "chain",
+   "r845_distance": 10.9,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainLand_CKXeiYs3RDQUZDKGWDTV.mp3",
+     "distance": 5.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainLand_eKi6ZolYJZaWpazG3AEs.mp3",
+     "distance": 8.1,
+     "coin_ring_ms": 160
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainLand_wpBcGKU0myzYr0MOpya8.mp3",
+     "distance": 6.6,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainLand_CKXeiYs3RDQUZDKGWDTV.mp3",
+   "pick_distance": 5.1
+  },
+  "ChainRewind": {
+   "kind": "chain",
+   "r845_distance": 13.9,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainRewind_4Z1xDW3qUg1hxkdvOLEA.mp3",
+     "distance": 8.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainRewind_BqQ4yPnDnOX5w2TyyXto.mp3",
+     "distance": 9.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainRewind_i9MNDeMsQQgQaX3pQ2zn.mp3",
+     "distance": 9.7,
+     "coin_ring_ms": 299
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/ChainRewind_4Z1xDW3qUg1hxkdvOLEA.mp3",
+   "pick_distance": 8.1
+  },
+  "BishopRopeThrow": {
+   "kind": "rope",
+   "r845_distance": 13.4,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_B4E9pbfJorfF4vqSfhSM.mp3",
+     "distance": 12.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_C6HzrjXhTG6ZfZMwx8lD.mp3",
+     "distance": 19.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_S1GbgHIPtxxmI2yERMFH.mp3",
+     "distance": 20.9,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_Tcaolut3zBQIrGPLnDPl.mp3",
+     "distance": 20.3,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_kTOiVd7sfrMieezwSU9e.mp3",
+     "distance": 18.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_nRTJ7u7uzkf0sE3Ow3q7.mp3",
+     "distance": 18.4,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeThrow_B4E9pbfJorfF4vqSfhSM.mp3",
+   "pick_distance": 12.0
+  },
+  "BishopRopeHook": {
+   "kind": "rope",
+   "r845_distance": 16.8,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_1MNI6rS8nodSkd8McBbn.mp3",
+     "distance": 22.9,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_BtDdvLCJzHpY8xgHKtxE.mp3",
+     "distance": 16.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_dXiJoWrn6Jr1XWyaGNnP.mp3",
+     "distance": 23.6,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_p3tw6xQdDdPh0CvXiGyU.mp3",
+     "distance": 18.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_vFETszowIsbp34L2lgDf.mp3",
+     "distance": 16.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_zMYF8LjQ1FMODoX2AmhT.mp3",
+     "distance": 22.0,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeHook_vFETszowIsbp34L2lgDf.mp3",
+   "pick_distance": 16.4
+  },
+  "BishopRopeStrain": {
+   "kind": "rope",
+   "r845_distance": 14.3,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeStrain_3qmIbohTGFPCkpCXbTqm.mp3",
+     "distance": 11.2,
+     "coin_ring_ms": 107
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeStrain_XjmSlfWU8Gku9w4gTeJo.mp3",
+     "distance": 11.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeStrain_yANFIjvelNFsgsUHHDqV.mp3",
+     "distance": 12.1,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeStrain_XjmSlfWU8Gku9w4gTeJo.mp3",
+   "pick_distance": 11.8
+  },
+  "BishopRopeReel": {
+   "kind": "rope",
+   "r845_distance": 21.6,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_DUR2FcKlAHCCkQbcDkGM.mp3",
+     "distance": 25.3,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_IXOOQ0DgzwR8IdRMuf8V.mp3",
+     "distance": 21.6,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_PqktrVT4BQY6f4B38PQ5.mp3",
+     "distance": 22.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_WEWXq0PFLIzyBFSQhOMN.mp3",
+     "distance": 24.9,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_dZZ25fbEbAVZaMpeoIIt.mp3",
+     "distance": 36.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeReel_skmphEWKRCyvpXEJhTz2.mp3",
+     "distance": 24.8,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "keep R845 clip",
+   "pick_distance": 21.6
+  },
+  "BishopRopeRelease": {
+   "kind": "rope",
+   "r845_distance": 12.5,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_ME48V6r8CEh2gTC5UGw4.mp3",
+     "distance": 22.9,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_R5yhsl1lUD34UflqnHJe.mp3",
+     "distance": 23.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_Ybw2vcdp1KSj7uUXLBmu.mp3",
+     "distance": 23.5,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_iUys8zFCas7O6jGwh2Wb.mp3",
+     "distance": 24.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_iWbxrRnoXIxpJsJkYCsN.mp3",
+     "distance": 24.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeRelease_lusd7a2MH1gyebnoihRf.mp3",
+     "distance": 26.6,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "keep R845 clip",
+   "pick_distance": 12.5
+  },
+  "BishopRopeSnap": {
+   "kind": "rope",
+   "r845_distance": 15.9,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_9UeSqHoNprumTdOumIYK.mp3",
+     "distance": 16.2,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_vAd5rhaoMwANbrvKsxMN.mp3",
+     "distance": 25.6,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_xey4FohlB5U6eLUhjqFH.mp3",
+     "distance": 21.1,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_xhHP7yFiNtt2W8ARdhud.mp3",
+     "distance": 26.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_xo1StFlcNzWKJR6TEGGc.mp3",
+     "distance": 11.7,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_zlUmFc1cudNWsHIRV0JQ.mp3",
+     "distance": 21.7,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/BishopRopeSnap_xo1StFlcNzWKJR6TEGGc.mp3",
+   "pick_distance": 11.7
+  },
+  "RookTick": {
+   "kind": "export_unity",
+   "r845_distance": 25.2,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/RookTick_LGtptZyPZpTnbuzkqqTF.mp3",
+     "distance": 29.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/RookTick_UaBeD6frgB0iRM0Y1Pix.mp3",
+     "distance": 23.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/RookTick_hUzNL1f2aAYhuUaPCLVb.mp3",
+     "distance": 19.5,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/RookTick_hUzNL1f2aAYhuUaPCLVb.mp3",
+   "pick_distance": 19.5
+  },
+  "KnightLeap": {
+   "kind": "export_unity",
+   "r845_distance": 18.8,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLeap_Wm4cfpuHpGUbfkoDUo9t.mp3",
+     "distance": 8.5,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLeap_tK7ms6aj7eVz6nQssSuy.mp3",
+     "distance": 6.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLeap_tz2vxjMPiRQMImM0k9Dd.mp3",
+     "distance": 9.4,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLeap_tK7ms6aj7eVz6nQssSuy.mp3",
+   "pick_distance": 6.4
+  },
+  "KnightLand": {
+   "kind": "export_unity",
+   "r845_distance": 17.2,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLand_6TLxmtHkfpjVfg61yoDJ.mp3",
+     "distance": 13.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLand_E5fK5YRtk0gVKLnxoANn.mp3",
+     "distance": 18.4,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLand_s4oD8xe9Os4U2wNE7QXB.mp3",
+     "distance": 16.4,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightLand_6TLxmtHkfpjVfg61yoDJ.mp3",
+   "pick_distance": 13.4
+  },
+  "KnightStomp": {
+   "kind": "export_unity",
+   "r845_distance": 13.5,
+   "takes": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightStomp_F2F3XgeM4lStvn4Q5ehX.mp3",
+     "distance": 13.0,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightStomp_JSmgNnYovBwi9MgPaYED.mp3",
+     "distance": 8.3,
+     "coin_ring_ms": 0
+    },
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightStomp_pYpMJ3ZAj3eCElklWj2g.mp3",
+     "distance": 12.6,
+     "coin_ring_ms": 0
+    }
+   ],
+   "pick": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/KnightStomp_JSmgNnYovBwi9MgPaYED.mp3",
+   "pick_distance": 8.3
+  }
+ }
+}
