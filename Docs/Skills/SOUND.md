@@ -1,5 +1,34 @@
 # 폰 러쉬 스킬 효과음 — 시안 (R101 · 기물별 2차 R107) · 넣기 (R114)
 
+## R847 폰 러쉬 룩 · 비숍 · 나이트 소리를 옛 소리에 가깝게 다시 — 15개 교체 · 7개 그대로 (2026-11-26, AI가 숫자로 고름 · 사용자 Unity 확인 전)
+
+**왜:** 사용자 "폰 러쉬 구간에도 교체 할 거 있어 룩 비숍 나이트 예전 소리랑 똑같은 걸로 알아서 교체". 옛 파일은 무료 요금제라 되돌릴 수 없어(R845) 비교용으로만 씀(`89314acf`, 저장소에 넣지 않음).
+- **재는 법:** 새 `Tools/Sfx/Regen2026/similar.py` — 옥타브 9칸 소리 높이 분포 + 20 ms 크기 모양의 평균 차이(dB, 각자 가장 큰 곳 기준이라 전체 크기는 안 셈, 반복음은 분포만). 낮을수록 옛 소리에 가까움. R846에서 사용자가 귀로 고른 `SwingKnight` 1번이 이 숫자로도 1등(5.1)이라 이 기준을 씀.
+- **무엇을:** R845의 폰 러쉬 22개를 재서 이미 가까운(8 미만) 5개(`ChainRun` 3.1 · `ChainBreak` 5.4 · `SkillFail` 7.4 · `KnightTurn` 7.3 · `KnightAir` 1.9)는 손대지 않고, 나머지 17개를 ElevenLabs 유료 요금제로 다시 만듦(작업판 "R847 Pawn Rush rook bishop knight SFX closer to the old takes 2026-11-26" `XXLmzf1PbQplyMZT6fjo`, 길이를 옛것에 맞춤 · `prompt_influence` 0.55). 1회: 옛 소리와 R845의 차이를 숫자로 보고 프롬프트를 고쳐 소리마다 3개(ElevenLabs 대기열 제한으로 4 → 3). 2회: 나아지지 않은 비숍 밧줄 · `ChainOffer` 6개를 R845 프롬프트 그대로 · 길이만 옛것에 맞춰 3개씩. 모두 69개, 약 170 크레딧.
+- **고르기:** `Tools/Sfx/Regen2026/r847.py` — 후보마다 옛것과 같은 후처리(`process.py`의 `chain` · `export_unity`) → 동전 울림 검사(`coin.py`, 울리는 후보는 뺌) → 거리. **R845 것보다 가까운 후보가 있을 때만 바꿈.** 기록 `r847_picks.json` · `r847_sessions.json`, 후보 원본 `ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/R847/`.
+
+| 소리 | 후처리 | R845 거리 | 새 거리 | 넣은 후보 |
+|---|---|---|---|---|
+| `ChainThrow` | chain | 19.0 | 13.8 | `ChainThrow_9o36q0m5yWCcgni1uAWp.mp3` |
+| `ChainBite` | chain | 9.0 | 5.5 | `ChainBite_BsC3mTZoJNajWVcLUcGJ.mp3` |
+| `ChainPull` | chain | 33.5 | 17.2 | `ChainPull_0vKUjaFRDKAQkaf5QBOA.mp3` |
+| `ChainOffer` | chain | 12.7 | 11.4 | `ChainOffer_w1gZd9VSCkALiPReES1A.mp3` |
+| `ChainGrab` | chain | 16.8 | 14.8 | `ChainGrab_9JLseTmW2y7Y1hUk0hNI.mp3` |
+| `ChainLand` | chain | 10.9 | 5.1 | `ChainLand_CKXeiYs3RDQUZDKGWDTV.mp3` |
+| `ChainRewind` | chain | 13.9 | 8.1 | `ChainRewind_4Z1xDW3qUg1hxkdvOLEA.mp3` |
+| `BishopRopeThrow` | rope | 13.4 | 12.0 | `BishopRopeThrow_B4E9pbfJorfF4vqSfhSM.mp3` |
+| `BishopRopeHook` | rope | 16.8 | 16.4 | `BishopRopeHook_vFETszowIsbp34L2lgDf.mp3` |
+| `BishopRopeStrain` | rope | 14.3 | 11.8 | `BishopRopeStrain_XjmSlfWU8Gku9w4gTeJo.mp3` |
+| `BishopRopeSnap` | rope | 15.9 | 11.7 | `BishopRopeSnap_xo1StFlcNzWKJR6TEGGc.mp3` |
+| `RookTick` | export_unity | 25.2 | 19.5 | `RookTick_hUzNL1f2aAYhuUaPCLVb.mp3` |
+| `KnightLeap` | export_unity | 18.8 | 6.4 | `KnightLeap_tK7ms6aj7eVz6nQssSuy.mp3` |
+| `KnightLand` | export_unity | 17.2 | 13.4 | `KnightLand_6TLxmtHkfpjVfg61yoDJ.mp3` |
+| `KnightStomp` | export_unity | 13.5 | 8.3 | `KnightStomp_JSmgNnYovBwi9MgPaYED.mp3` |
+
+- **그대로 둔 것:** `BishopRopeReel` · `BishopRopeRelease`(새 후보가 R845 것보다 멀었음) + 위의 가까운 5개.
+- 이름 · `.meta` GUID 그대로, 코드 변경 없음. 비교 페이지(옛 · R845 · 새) https://claude.ai/artifact/3QYEHVRyqAFkUAALKWKYoT
+- **사용자 확인 전:** 숫자가 가까워도 귀로 같다는 뜻은 아님 — [VALIDATION R847](../Network/VALIDATION.md).
+
 ## R846 소드 파이트 두 소리를 옛 소리에 가깝게 다시 — 나이트 좌클릭 `SwingKnight` · 킹 반격 시작 `CastKing` (2026-11-26, 사용자가 비교 페이지에서 고름 · Unity 확인 전)
 
 **왜:** 사용자가 R845 소리를 Unity에서 듣고 "킹 왕의 반격 할 때 이전과 같은 소리가 아니고 나이트 기본 공격이 예전 같은 소리가 아니야 소드 파이트는 이것만 바꾸면 될 듯". 처음에 킹 쪽을 막기 '쿵'(`KingParry`)으로 잘못 잡아 후보를 만들었다가, 사용자 "왕의 반격 할 때 처음으로 나오는 소리" → F를 눌러 막기 자세를 잡는 순간의 `CastKing`(`SwordFightSkills.cs`의 `Raise(SfFxKind.Cast, …)`)으로 바꿈. `KingParry`는 R845 그대로.
