@@ -63,7 +63,7 @@ namespace ChessFight.RagdollLab
         /// (<see cref="Staged"/>) the script's words in turn: "k" the slot's key (0 F, 1 E, 2 R, 3 Q), "c" a left click,
         /// "c+" / "c-" the left button down / up, "j" a jump, "w0.4" a wait in game seconds, "m0,1" walking that way in P1's
         /// frame and "m-" standing, "a1,0" aiming that way ("a0,1,-0.2": and that much down, to aim at the floor nearer than a
-        /// skill's reach), "s+" / "s-" sprinting, "x10" P1 given hindrance 10 (Cc4) for 8 s (to film its look), "g+" / "g-" the right button held / let go. Then <paramref name="tail"/> seconds
+        /// skill's reach), "s+" / "s-" sprinting, "x10" P1 given hindrance 10 (Cc4) for 8 s (to film its look), "g+" / "g-" the right button held / let go, "L4" / "Lr2" a 1.5 m ledge under P1 whose edge is that far ahead / to the right. Then <paramref name="tail"/> seconds
         /// more and "done perform".
         /// </summary>
         public static string Perform(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
@@ -75,8 +75,18 @@ namespace ChessFight.RagdollLab
             probe.StopAllCoroutines();
             Results.Clear();
             Staged = false;
+            probe.ClearLedges();
             probe.StartCoroutine(probe.PerformRun(piece, slot, script ?? "", ground, face, enemies ?? new Vector2[0], tail));
             return Status = "running perform";
+        }
+
+        readonly List<GameObject> ledges = new List<GameObject>();
+
+        void ClearLedges()
+        {
+            foreach (var l in ledges)
+                if (l != null) Destroy(l);
+            ledges.Clear();
         }
 
         IEnumerator PerformRun(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
@@ -135,6 +145,33 @@ namespace ChessFight.RagdollLab
                     case 'x':
                         if (int.TryParse(rest, out int ccKind) && P1 != null) P1.GiveCc((Cc4)ccKind, 8f, null);
                         break;
+                    case 'L':
+                    {
+                        // A ledge to stop at (USER_SKILLS 9.3): a block 1.5 m high under P1, its front edge "L4" 4 m ahead or
+                        // its right edge "Lr2" 2 m to the right, P1 put on top. Gone at the next shot.
+                        bool side = rest.StartsWith("r");
+                        if (P1 == null || !float.TryParse(side ? rest.Substring(1) : rest, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float edge)) break;
+                        const float high = 1.5f, far = 6f;
+                        Vector3 centre = ground + Vector3.up * (high * 0.5f);
+                        Vector3 size;
+                        if (side)
+                        {
+                            centre += right * ((edge - far) * 0.5f);
+                            size = new Vector3(edge + far, high, 2f * far);
+                        }
+                        else
+                        {
+                            centre += face * ((edge - far) * 0.5f);
+                            size = new Vector3(2f * far, high, edge + far);
+                        }
+                        var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        box.name = "Probe ledge";
+                        box.transform.SetPositionAndRotation(centre, Quaternion.LookRotation(face));
+                        box.transform.localScale = size;
+                        ledges.Add(box);
+                        P1.Teleport(ground + Vector3.up * (high + P1.standHeight + 0.05f), face);
+                        break;
+                    }
                     case 'g':
                         grab = rest != "-";
                         if (grab) Say("우클릭");

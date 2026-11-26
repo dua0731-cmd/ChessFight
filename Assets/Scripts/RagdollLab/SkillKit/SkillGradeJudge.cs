@@ -143,7 +143,7 @@ namespace ChessFight.RagdollLab
             // 11-26 (the set 4판): a hindrance put on an enemy is its giver's hit; a hindrance ending, a tied piece's hop
             // and a speech bubble are nobody's cast (they opened a cast on the piece hindered, graded "?").
             if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say || e.kind == SkillFxKind.S4Flat
-                || e.kind == SkillFxKind.JyWallLeg || e.kind == SkillFxKind.JyWallEnd)
+                || e.kind == SkillFxKind.JyWallLeg || e.kind == SkillFxKind.JyWallEnd || e.kind == SkillFxKind.S4Return || e.kind == SkillFxKind.S4Teeter)
             {
                 if (e.kind == SkillFxKind.S4Cc && e.count != 0 && e.by != null && e.target != null && e.by != e.target)
                 {

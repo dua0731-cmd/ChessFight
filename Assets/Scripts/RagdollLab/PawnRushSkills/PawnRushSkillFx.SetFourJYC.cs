@@ -43,6 +43,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.JyBuild: JyBuildFx(e, lvl); break;
                 case SkillFxKind.JyWallLeg: JyWallLegFx(e); break;
                 case SkillFxKind.JyWallEnd: JyWallEndFx(e); break;
+                default: SetFourFixFx(e, lvl); break;   // the round-1 fixes (PawnRushSkillFx.SetFourFix.cs)
             }
         }
 
@@ -679,6 +680,7 @@ namespace ChessFight.RagdollLab
 
         void DestroySetFourJYC()
         {
+            DestroySetFourFix();
             jyGiants.Clear();
             jyStrongs.Clear();
             jyTWalls.Clear();

@@ -78,16 +78,19 @@ namespace ChessFight.RagdollLab
             return result;
         }
 
-        /// <summary>"The aimed enemy": in reach (and within <paramref name="frontDeg"/> of the camera's way, and in sight of
-        /// the head if <paramref name="sight"/>), the one nearest the camera's line from the head.</summary>
-        RagdollPawn AimedFoe4(float reach, float frontDeg = 360f, bool sight = false)
+        /// <summary>"The aimed enemy": in reach (and within <paramref name="frontDeg"/> of the camera's way, in sight of the
+        /// head if <paramref name="sight"/>, its feet no more than <paramref name="above"/> over ours), the one nearest the
+        /// camera's line from the head.</summary>
+        RagdollPawn AimedFoe4(float reach, float frontDeg = 360f, bool sight = false, float above = float.PositiveInfinity)
         {
             Vector3 eye = bodies[(int)BodyId.Head].position, aim = AimRay(), me = bodies[0].position, way = FlatDir(aim);
+            float feetY = FeetPoint.y;
             RagdollPawn best = null;
             float bestScore = float.MaxValue;
             foreach (var o in All)
             {
                 if (!UltFoe(o)) continue;
+                if (o.FeetPoint.y > feetY + above) continue;
                 Vector3 at = o.bodies[(int)BodyId.Chest].position, flat = Flat(at - me);
                 if (flat.magnitude > reach) continue;
                 if (frontDeg < 359f && flat.sqrMagnitude > 0.01f && Vector3.Angle(way, flat) > frontDeg * 0.5f) continue;
@@ -210,8 +213,17 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                 {
                     if (!press || !CanStartSkill()) break;
+                    // USER_SKILLS 9.1 (the movement rule): only onto the head of the aimed enemy within forkRange, its feet no
+                    // more than jyMarkAbove over ours (as 점프&밟기); none, and it does not go (no cooldown).
+                    var onto = AimedFoe4(s.forkRange, 360f, false, s.jyMarkAbove);
+                    if (onto == null)
+                    {
+                        SkipNoTarget4("포크!");
+                        break;
+                    }
                     SkillUses++;
-                    Vector3 from = FeetPoint, to = AimFloor4(s.forkRange);
+                    planTarget = onto;
+                    Vector3 from = FeetPoint, to = onto.bodies[(int)BodyId.Head].position + Vector3.up * 0.2f;
                     planPoint = to;
                     planDir = FlatDir(to - from);
                     forkFlight4 = LeapTo4(to, s.forkHigh);
@@ -351,6 +363,15 @@ namespace ChessFight.RagdollLab
                     planTime += dt;
                     skillDir = planDir;
                     dashBase = s.charge4Speed;
+                    // USER_SKILLS 9.3: the floor ends ahead - it stops on the brink, teetering.
+                    if (EdgeAhead4(planDir, 0.7f))
+                    {
+                        Teeter4(planDir);
+                        SkillDetail = "직진! 낭떠러지 앞 (어, 어, 어!)";
+                        planPhase = PlanPhase.Recovery;
+                        planTime = 0f;
+                        break;
+                    }
                     DriveDash(dt);
                     Vector3 chest = Chest;
                     // A wall ahead: it stops dead and sees stars.
@@ -377,6 +398,11 @@ namespace ChessFight.RagdollLab
                     }
                     if (planTime * s.charge4Speed >= s.charge4Dist)
                     {
+                        // (9.1: the charge's speed goes with it - none carried on.)
+                        HaltDash();
+                        Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+                        float on = Vector3.Dot(own, planDir);
+                        if (on > 0f) AddVelocity(-planDir * on);
                         Fx(SkillFxKind.S4Charge, null, FeetPoint, planDir, 3);
                         planPhase = PlanPhase.Recovery;
                         planTime = 0f;
@@ -385,8 +411,9 @@ namespace ChessFight.RagdollLab
                 }
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    if (planTime >= 0.25f)
+                    if (planTime >= (teeter4 ? s.teeterTime : 0.25f))
                     {
+                        teeter4 = false;
                         EndPlanSkill();
                         StartCooldown(SetFourCooldown(PawnRushSkillIds.Charge4, s));
                     }
@@ -482,6 +509,18 @@ namespace ChessFight.RagdollLab
         /// <summary>Before the run (PlanKeys): what these skills let the keys do in their phases.</summary>
         void SetFourKeys()
         {
+            if (Returning4)
+            {
+                // On its way back (USER_SKILLS 9.2): no keys at all.
+                input.move = Vector3.zero;
+                input.jump = false;
+                input.sprint = false;
+                input.shove = false;
+                input.shoveHeld = false;
+                input.grab = false;
+                input.ability = input.ability2 = input.ability3 = false;
+                return;
+            }
             if (planPhase == PlanPhase.None) return;
             switch (activeSkill)
             {
@@ -521,6 +560,7 @@ namespace ChessFight.RagdollLab
         void UpdateSetFourStates(PawnRushSkillParams s, float dt)
         {
             if (NetworkPuppet || s == null) return;
+            StepReturn4(s, dt);            // the way back of the three that go far (RagdollPawn.SetFourFix.cs)
             UpdateSetFourBStates(s, dt);   // bundle 나's (RagdollPawn.SetFourB.cs)
             UpdateSetFourCStates(s, dt);   // bundle 다's (RagdollPawn.SetFourC.cs)
             UpdateSetFourJYStates(s, dt);  // the user's own (RagdollPawn.SetFourJY*.cs)
@@ -654,6 +694,8 @@ namespace ChessFight.RagdollLab
 
         void ClearSetFourStates()
         {
+            CancelReturn4();   // (a reset: no way back)
+            teeter4 = false;
             ClearSetFourBStates();
             ClearSetFourCStates();
             ClearSetFourJYStates();

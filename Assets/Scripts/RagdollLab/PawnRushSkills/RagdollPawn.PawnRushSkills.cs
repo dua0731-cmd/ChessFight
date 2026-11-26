@@ -186,6 +186,12 @@ namespace ChessFight.RagdollLab
         //              thickness): another PC stands its picture and grows it
         //   JyWallEnd  a wall leg done growing (count: the id; at: its end; size: seconds it stands from now)
         S4Flat, JyStep, JyRope, JyStomp, JySword, JyBow, JyBeam, JyGiant, JyStrong, JyTWall, JyBuild, JyWallLeg, JyWallEnd,
+        // USER_SKILLS 9장 (the round-1 skills under the movement rule; RagdollPawn.SetFourFix.cs, PawnRushSkillFx.SetFourFix.cs):
+        //   S4Return   the way back: count = stage + 10 * skill (1 땅속 헤엄, 2 더 루우욱!, 3 착석!); stage 0 the print (at),
+        //              1 the band (at: the body, normal: the print; size: seconds), 2 the flight (size: seconds), 3 home
+        //              (at: the print), 4 the print gone (a reset)
+        //   S4Teeter   stopped at an edge (at: the toe, dir: the way; size: seconds)
+        S4Return, S4Teeter,
     }
 
     public struct SkillFxEvent
@@ -606,7 +612,7 @@ namespace ChessFight.RagdollLab
         /// A ghost (the opposite-coloured bishop, RagdollPawn.BookSkills.cs) starts none.</summary>
         bool CanStartSkill(bool inAir = false) =>
             State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered && bindLeft <= 0f
-            && !chainCarry && ghostLeft <= 0f
+            && !chainCarry && ghostLeft <= 0f && !Returning4
             && (hookPhase == HookPhase.None || hookPhase == HookPhase.Held) && skillCooldownLeft <= 0f
             && (inAir || Grounded || coyote > 0f);
 
