@@ -5,6 +5,8 @@
 - 2026-11-25 R844 · 대연회장 긴 식탁 연출(`BanquetTableShow`): 식탁보가 식기 밑에서 빠져 마술사 손으로 모였다가 펼쳐져 다시 깔림, 접시 다섯은 판정째 제자리에서 흔들림(`BanquetPlate`), 금잔 · 촛대 흔들림, 식탁 촛불 50개가 순서대로 꺼지고 켜짐, 마술사가 젖히고 숙임 — 마술 주기 · 던지는 판정 그대로, 보내는 것 없음. 컴파일 PASS, 사용자 Unity 확인 전, 커밋 안 함(seoungtest).
 - 2026-11-25 R843 · 대연회장 매달린 샹들리에: 기물이 타면 큰 테 둘레의 크리스털 방울 여덟 개가 녹색으로 켜지고 초 18자루에 촛불 색 불꽃과 따뜻한 빛(`ChandelierRideLights`), 안 타면 꺼짐 — 보내는 것 없음, 컴파일 · 115 PASS, 사용자 Unity 확인 전, 커밋 안 함(seoungtest).
 - 2026-11-25 R842 · 대연회장 웨이터 접시 탑이 걸음에 맞춰 조금씩 흔들리고 덜그럭거림(그림만 — 접시 열 장으로 나눠 움직임, 판정 · 콜라이더 그대로). 컴파일 PASS, 사용자 Unity 확인 전, 커밋 안 함(seoungtest).
+- 2026-11-26 R844 · 대연회장 소리 1 · 2순위 18종(`GrandBanquetHallSound.cs` · `Resources/BanquetHallSfx` · `ArtSource/PawnRush/BanquetHall/Sound`), 테이크는 숫자로 고름, 신호음은 사용자가 고를 차례. seoungtest 커밋 · 푸시.
+- 2026-11-26 R843 · 대연회장 소리 설계 문서 `Docs/PawnRush/PAWN_RUSH_BANQUET_HALL_SFX.md`(새 소리 23종 · 시간표 · 프롬프트 초안 · 정할 것 다섯). 문서만, 소리 파일 · 코드 없음.
 - 2026-11-25 R841 · 튜토리얼 소리(독수리 오프닝 · 수업 · 해자 · 바람 · 새 · 나무 발소리)와 오프닝 키 잠금, 잡힌 폰 '뿍' · 모서리 '톡탁'(모든 PC) · 연타 '탁' + 화면 흔들림(자기 화면만)을 경기 코드에, 인트로 → (이름) → 튜토리얼 → 로비 연결(`SceneNames.Tutorial`, 빌드 목록, `TutorialGuard`), 튜토리얼 문구 번역 44줄, 튜토리얼만 main에 한 커밋(대연회장 모델링은 seoungtest에 남김). 컴파일 · Core PASS, 인트로 흐름 · 경기 · 온라인은 사용자 확인 전.
 - 2026-11-25 R839 (seoungtest) · 튜토리얼 안내 화면을 시중 게임 튜토리얼처럼: 위 칸 나뉜 진행 막대, 아래 수업 카드(번호 네모 · 수업 안 진행 막대 · "도움말"), 가운데 띠("좋아요!" · "준비 끝!") — `TutorialCourse.cs` 화면만, 스테미나 막대 양식. 컴파일 PASS, 사용자 Unity 확인 전, 커밋 안 함.
 - 2026-11-25 R836 (seoungtest) · 대연회장 모델링 에셋 시트 12장(Codex, 모델 11 · 재질 견본 1): Docs/PawnRush/ConceptArt/R836_BanquetHallAssets.
