@@ -1,0 +1,146 @@
+{
+ "BH_Stone": {
+  "tile": 2.4,
+  "metallic": 0.0,
+  "smoothness": 0.3000490665435791,
+  "size": 1024,
+  "mean": "#E3CCA6",
+  "target": "#E2CDA4",
+  "source": "BH_T1 swatch 1"
+ },
+ "BH_Marble": {
+  "tile": 2.5,
+  "metallic": 0.0,
+  "smoothness": 0.7799999713897705,
+  "size": 1024,
+  "mean": "#EFE0CC",
+  "target": "#EFE3CF",
+  "source": "BH_T1 swatch 2"
+ },
+ "BH_Walnut": {
+  "tile": 1.6,
+  "metallic": 0.0,
+  "smoothness": 0.5500000715255737,
+  "size": 1024,
+  "mean": "#5A331F",
+  "target": "#5A3220",
+  "source": "BH_T1 swatch 3"
+ },
+ "BH_Gold": {
+  "tile": 0.8,
+  "metallic": 1.0,
+  "smoothness": 0.8600000143051147,
+  "size": 1024,
+  "mean": "#D9A23D",
+  "target": "#E0A83C",
+  "source": "BH_T1 swatch 4"
+ },
+ "BH_Silver": {
+  "tile": 1.2,
+  "metallic": 1.0,
+  "smoothness": 0.800000011920929,
+  "size": 1024,
+  "mean": "#C0C0C1",
+  "target": "#C4C6C8",
+  "source": "BH_T1 swatch 5"
+ },
+ "BH_Linen": {
+  "tile": 0.8,
+  "metallic": 0.0,
+  "smoothness": 0.18000000715255737,
+  "size": 1024,
+  "mean": "#EDE9DE",
+  "target": "#F0EBDF",
+  "source": "BH_T1 swatch 6"
+ },
+ "BH_Runner": {
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.21980009973049164,
+  "size": 1024,
+  "mean": "#555D27",
+  "target": "#55642A",
+  "source": "BH_T1 swatch 7"
+ },
+ "BH_Olive": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.19999969005584717,
+  "size": 1024,
+  "mean": "#454F1A",
+  "target": "#4E5E22",
+  "source": "BH_T1 swatch 8"
+ },
+ "BH_Velvet": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.19999991357326508,
+  "size": 1024,
+  "mean": "#6C0B12",
+  "target": "#7A1018",
+  "source": "BH_T1 swatch 9"
+ },
+ "BH_FloorLight": {
+  "tile": 2.5,
+  "metallic": 0.0,
+  "smoothness": 0.8199999928474426,
+  "size": 1024,
+  "mean": "#EFDFCA",
+  "target": "#F0E0CA",
+  "source": "BH_T1 swatch 2 body, colour of the chessboard swatch's light squares"
+ },
+ "BH_FloorDark": {
+  "tile": 2.0,
+  "metallic": 0.0,
+  "smoothness": 0.6999999284744263,
+  "size": 1024,
+  "mean": "#58311C",
+  "target": "#58311C",
+  "source": "BH_T1 swatch 3 body, colour of the chessboard swatch's dark squares"
+ },
+ "BH_Chocolate": {
+  "tile": 1.5,
+  "metallic": 0.0,
+  "smoothness": 0.8600000143051147,
+  "size": 1024,
+  "mean": "#4A271A",
+  "target": "#4A2418",
+  "source": "BH_T1 swatch 11"
+ },
+ "BH_Wax": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.44999998807907104,
+  "size": 1024,
+  "mean": "#F2E8CB",
+  "target": "#F2E6C8",
+  "source": "BH_T1 swatch 12"
+ },
+ "BH_Ivory": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.6200000047683716,
+  "size": 1024,
+  "mean": "#EFE3CD",
+  "target": "#EDE3CC",
+  "source": "BH_T1 swatch 12"
+ },
+ "BH_Ebony": {
+  "tile": 1.0,
+  "metallic": 0.0,
+  "smoothness": 0.699999988079071,
+  "size": 1024,
+  "mean": "#17110E",
+  "target": "#17110E",
+  "source": "procedural"
+ },
+ "BH_GoldDamask": {
+  "tile": 0.8,
+  "metallic": 1.0,
+  "smoothness": 0.7810132503509521,
+  "size": 1024,
+  "mean": "#D3A446",
+  "target": "#D6A94A",
+  "source": "BH_T1 swatch 4"
+ }
+}

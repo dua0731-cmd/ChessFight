@@ -1,0 +1,12 @@
+{
+ "drum_roll": "1",
+ "cloth_pull": "1+2",
+ "service_bell": "2",
+ "cloche_shut": "2",
+ "curtain_cue": "1",
+ "kitchen_door": "4",
+ "tray_clink": "1",
+ "cloth_thrown": "4",
+ "cloth_lay": "1",
+ "cloche_open": "4"
+}

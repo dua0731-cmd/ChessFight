@@ -1,0 +1,290 @@
+{
+ "generated": "2026-11-26",
+ "request": "R850",
+ "flow": "tDDwKPGgDnbm5TjY3t1Z",
+ "model": "eleven_text_to_sound_v2",
+ "plan": "ElevenLabs paid plan",
+ "measure": "similar.py distance to the old clip (lower is closer)",
+ "clips": {
+  "PawnDash": {
+   "asset": "Assets/Resources/SharedSkills/Sfx/PawnDash.mp3",
+   "old_coin_ring_ms": 0,
+   "pick": 3,
+   "picked_by": "user",
+   "takes": [
+    {
+     "number": 1,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnDash_bYu0bJJu940zggXQ5W9M.mp3",
+     "distance": 7.8,
+     "bands": 5.4,
+     "envelope": 2.4,
+     "len_s": 0.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 2,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnDash_IcIhKGXJKS2v5DI0BOKu.mp3",
+     "distance": 12.9,
+     "bands": 5.1,
+     "envelope": 7.8,
+     "len_s": 0.8,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 3,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnDash_hyUq7bZy97axYnE7wHHF.mp3",
+     "distance": 5.8,
+     "bands": 2.5,
+     "envelope": 3.3,
+     "len_s": 0.8,
+     "coin_ring_ms": 0
+    }
+   ],
+   "polished": {
+    "distance_before": 5.8,
+    "distance": 1.0,
+    "bands": 0.9,
+    "envelope": 0.1,
+    "len_s": 0.8,
+    "coin_ring_ms": 0
+   }
+  },
+  "PawnBump": {
+   "asset": "Assets/Resources/SharedSkills/Sfx/PawnBump.mp3",
+   "old_coin_ring_ms": 0,
+   "pick": 6,
+   "picked_by": "user",
+   "takes": [
+    {
+     "number": 1,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_544SZOcWonQjNG2yivFq.mp3",
+     "distance": 17.8,
+     "bands": 9.2,
+     "envelope": 8.7,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 2,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_rjg76UrFuKjwYP6Y33ea.mp3",
+     "distance": 14.0,
+     "bands": 10.7,
+     "envelope": 3.4,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 3,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_rQMcc4wF9P2I6h8uhH2Q.mp3",
+     "distance": 14.1,
+     "bands": 8.5,
+     "envelope": 5.6,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 4,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_oLR5TYBodhJWj5Kymrps.mp3",
+     "distance": 13.9,
+     "bands": 9.6,
+     "envelope": 4.4,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 5,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_W3iUXq00rI5kf7om5hQr.mp3",
+     "distance": 15.9,
+     "bands": 8.3,
+     "envelope": 7.6,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 6,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnBump_ZeHUvxGabvrA7iP6zpkE.mp3",
+     "distance": 10.5,
+     "bands": 5.9,
+     "envelope": 4.6,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    }
+   ],
+   "polished": {
+    "distance_before": 10.5,
+    "distance": 5.1,
+    "bands": 4.9,
+    "envelope": 0.2,
+    "len_s": 0.48,
+    "coin_ring_ms": 0
+   }
+  },
+  "PawnCrouch": {
+   "asset": "Assets/Resources/SharedSkills/Sfx/PawnCrouch.mp3",
+   "old_coin_ring_ms": 0,
+   "pick": 6,
+   "picked_by": "user",
+   "takes": [
+    {
+     "number": 1,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_KBIQ1sbCuaCfkfzTim4H.mp3",
+     "distance": 17.5,
+     "bands": 6.3,
+     "envelope": 11.2,
+     "len_s": 0.48,
+     "coin_ring_ms": 117
+    },
+    {
+     "number": 2,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_HwboashaVCl9NQ9msVUU.mp3",
+     "distance": 14.9,
+     "bands": 7.1,
+     "envelope": 7.8,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 3,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_AxhVdTWqLjmCvBKKruUr.mp3",
+     "distance": 15.7,
+     "bands": 5.5,
+     "envelope": 10.1,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 4,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_FcnSPTIucYiN1cNl0HeS.mp3",
+     "distance": 20.2,
+     "bands": 5.9,
+     "envelope": 14.3,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 5,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_6QfUAKFOFY1cuIzuLB9V.mp3",
+     "distance": 21.6,
+     "bands": 5.9,
+     "envelope": 15.7,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 6,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SharedSkills/R850/PawnCrouch_ycwmfjkeXfsA9vpMGPp9.mp3",
+     "distance": 14.0,
+     "bands": 6.3,
+     "envelope": 7.7,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    }
+   ],
+   "polished": {
+    "distance_before": 14.0,
+    "distance": 4.7,
+    "bands": 3.1,
+    "envelope": 1.7,
+    "len_s": 0.48,
+    "coin_ring_ms": 0
+   }
+  },
+  "SwordHit": {
+   "asset": "Assets/Resources/SwordFightSkillSfx/SwordHit.wav",
+   "old_coin_ring_ms": 0,
+   "pick": 8,
+   "picked_by": "user",
+   "takes": [
+    {
+     "number": 1,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_uqgLtM6sxxPjYNpDPgN2.mp3",
+     "distance": 30.1,
+     "bands": 13.0,
+     "envelope": 17.1,
+     "len_s": 0.48,
+     "coin_ring_ms": 363
+    },
+    {
+     "number": 2,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_DheiLyOuVQ8SQ4JUuw3I.mp3",
+     "distance": 14.8,
+     "bands": 9.3,
+     "envelope": 5.5,
+     "len_s": 0.48,
+     "coin_ring_ms": 107
+    },
+    {
+     "number": 3,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_AhP9QGEFj0vcF4UuTvQE.mp3",
+     "distance": 15.0,
+     "bands": 11.1,
+     "envelope": 3.9,
+     "len_s": 0.48,
+     "coin_ring_ms": 181
+    },
+    {
+     "number": 4,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_5vc33IZdb6hNbG0sDhyx.mp3",
+     "distance": 27.7,
+     "bands": 17.2,
+     "envelope": 10.5,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 5,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_iAR3crZAlSaafchrWUEp.mp3",
+     "distance": 25.9,
+     "bands": 12.8,
+     "envelope": 13.1,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 6,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_IAcstkj61XmgamTQRY6c.mp3",
+     "distance": 31.6,
+     "bands": 17.2,
+     "envelope": 14.4,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 7,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_GXAveaJZrCQ15MlDMQoE.mp3",
+     "distance": 11.9,
+     "bands": 6.4,
+     "envelope": 5.4,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 8,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_dbtDa6OLOjh79kPc4jZJ.mp3",
+     "distance": 11.1,
+     "bands": 8.9,
+     "envelope": 2.2,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    },
+    {
+     "number": 9,
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R850/SwordHit_QBGMUDtjVChT2EZb2kQV.mp3",
+     "distance": 11.1,
+     "bands": 6.5,
+     "envelope": 4.6,
+     "len_s": 0.48,
+     "coin_ring_ms": 0
+    }
+   ],
+   "polished": {
+    "distance_before": 11.1,
+    "distance": 0.7,
+    "bands": 0.6,
+    "envelope": 0.1,
+    "len_s": 0.48,
+    "coin_ring_ms": 0
+   }
+  }
+ }
+}

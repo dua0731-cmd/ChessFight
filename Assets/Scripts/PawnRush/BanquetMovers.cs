@@ -69,6 +69,21 @@ namespace ChessFight.PawnRush
         // board -> shut -> up -> open -> top (out) -> shut -> down -> open, back to board.
         public float Period => board + 3f * shut + 2f * up + top + shut;
 
+        // R844 (the hall's sounds, GrandBanquetHallSound): seconds into this lift's cycle at `time`, and its moments -
+        // the cloche starts down over the platter at the table (BoardEnds) and at the dais (TopEnds), touches it
+        // (ShutAtTable, ShutAtTop: the platter starts up / down), lifts off at the dais (UpEnds) and at the table (DownEnds).
+        public float CycleAt(double time)
+        {
+            double u = (time - delay) % Period;
+            return (float)(u < 0.0 ? u + Period : u);
+        }
+        public float BoardEnds => board;
+        public float ShutAtTable => board + shut;
+        public float UpEnds => board + shut + up;
+        public float TopEnds => board + 2f * shut + up + top;
+        public float ShutAtTop => TopEnds + shut;
+        public float DownEnds => ShutAtTop + up;
+
         // Call on an INACTIVE object placed where it is with the platter down and the cloche open over it.
         public void Configure(Part which, float riseMetres, float openMetres, float delaySeconds)
         {
@@ -212,6 +227,13 @@ namespace ChessFight.PawnRush
 
         public float Travel => travel;
         public float Period => shut + opening + open + closing;
+        // R844 (the hall's sounds): how long it stays shut at the start of each cycle, and seconds into the cycle at `time`.
+        public float ShutSeconds => shut;
+        public float CycleAt(double time)
+        {
+            double u = (time - delay) % Period;
+            return (float)(u < 0.0 ? u + Period : u);
+        }
 
         public void Configure(float travelMetres, float shutSeconds, float openingSeconds, float openSeconds, float closingSeconds,
                               float delaySeconds)

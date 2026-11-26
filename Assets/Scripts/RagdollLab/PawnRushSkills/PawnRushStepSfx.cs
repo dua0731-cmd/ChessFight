@@ -70,6 +70,12 @@ namespace ChessFight.RagdollLab
         // x0.3 sets it about the dry steps, -26 dB). One clip only, so its pitch swings wider (WoodWobble semitones).
         readonly List<AudioClip> woodWalk = new List<AudioClip>(), woodRun = new List<AudioClip>();
         const float WoodGain = .3f, WoodWobble = 1.2f;
+        // 2026-11-26 (the grand banquet hall's sounds, R845 이어서): on a ChocolateFloor (the chocolate fountain's bowl and
+        // tiers) a sticky squelch, ChocoStep* (ArtSource/PawnRush/BanquetHall/Sound/bake.py, peak -1 dB; x0.35 sets it about
+        // the dry steps). Seen by OnFeet, read by the Step that follows it for the same pawn.
+        readonly List<AudioClip> chocoStep = new List<AudioClip>();
+        const float ChocoGain = .35f;
+        bool chocoUnder;
         readonly Dictionary<RagdollPawn, Feet> feet = new Dictionary<RagdollPawn, Feet>();
         readonly List<RagdollPawn> pawns = new List<RagdollPawn>();
         readonly RaycastHit[] hits = new RaycastHit[8];
@@ -92,8 +98,9 @@ namespace ChessFight.RagdollLab
                 else if (clip.name.StartsWith("GlassRun")) glassRun.Add(clip);
                 else if (clip.name.StartsWith("WoodWalk")) woodWalk.Add(clip);
                 else if (clip.name.StartsWith("WoodRun")) woodRun.Add(clip);
+                else if (clip.name.StartsWith("ChocoStep")) chocoStep.Add(clip);
             }
-            foreach (var list in new[] { walk, run, wadeWalk, wadeRun, glassWalk, glassRun, woodWalk, woodRun })
+            foreach (var list in new[] { walk, run, wadeWalk, wadeRun, glassWalk, glassRun, woodWalk, woodRun, chocoStep })
                 list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
             var holder = new GameObject("Pawn Rush footsteps").transform;
             holder.SetParent(transform, false);
@@ -194,6 +201,7 @@ namespace ChessFight.RagdollLab
             wet = false;
             glass = false;
             wood = false;
+            chocoUnder = false;
             if (!pawn.NetworkPuppet)
             {
                 if (!pawn.Grounded || pawn.State != PawnState.Active || pawn.Diving || pawn.Climbing || pawn.Floating || pawn.OnRope)
@@ -216,6 +224,7 @@ namespace ChessFight.RagdollLab
                 wet = h.collider.GetComponent<ChessFight.Gameplay.WetFloor>() != null;
                 glass = h.collider.GetComponent<ChessFight.Gameplay.GlassFloor>() != null;
                 wood = h.collider.GetComponent<ChessFight.Gameplay.WoodFloor>() != null;
+                chocoUnder = h.collider.GetComponent<ChessFight.Gameplay.ChocolateFloor>() != null;
             }
             if (!pawn.NetworkPuppet) return true;
             // Upright: the hips stand about standHeight over the floor (lying down they are much lower).
@@ -231,6 +240,12 @@ namespace ChessFight.RagdollLab
             {
                 set = sprint && glassRun.Count > 0 ? glassRun : glassWalk.Count > 0 ? glassWalk : glassRun;
                 level = GlassGain;
+            }
+            else if (chocoUnder && chocoStep.Count > 0)
+            {
+                set = chocoStep;
+                level = ChocoGain;
+                wobble = 1f;
             }
             else if (wood && (woodWalk.Count > 0 || woodRun.Count > 0))
             {

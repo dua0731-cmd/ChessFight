@@ -35,6 +35,15 @@ namespace ChessFight.PawnRush
         long lastPull = long.MinValue;
 
         public float Period => lie + roll + pull + gone + lay;
+        // Seconds into the cycle: the drum roll's start, the pull, the laying's start, and how long the laying takes
+        // (read by the dressed table's show, BanquetTableShow, and the hall's sounds, GrandBanquetHallSound); and each
+        // throw's spot (R844 sound: on every PC that runs the pull - a puppet's throw is ignored by Launch but still
+        // counted, as Throws is).
+        public float RollAt => lie;
+        public float PullAt => lie + roll;
+        public float LayAt => lie + roll + pull + gone;
+        public float LayTime => lay;
+        public event Action<Vector3> Threw;
         public int Throws { get; private set; }
         public int Pulls { get; private set; }
 
@@ -107,6 +116,7 @@ namespace ChessFight.PawnRush
                 var to = frame.TransformPoint(new Vector3(Mathf.Clamp(local.x, landingX0, landingX1), 0f, landingZ));
                 who.Launch(LaunchPad.ArcVelocity(from, to, clearance, gravity));
                 Throws++;
+                Threw?.Invoke(from);
             }
         }
 

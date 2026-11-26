@@ -1,0 +1,1269 @@
+{
+ "generated": "2026-11-26",
+ "plan": "ElevenLabs paid plan (upgraded 2026-10-29 22:42 KST)",
+ "model": "eleven_text_to_sound_v2",
+ "flow": "ULhjnpqP98wVoPRP9vI3",
+ "picks": {
+  "PawnRushSkillSfx/ChainThrow": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainThrow_X5pE0DiyhsNP2zMxebEZ.mp3",
+   "kind": "chain",
+   "old_len_s": 0.875,
+   "new_len_s": 0.983,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.281,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainThrow_MarILjdQ5wo5whabjmO2.mp3",
+     "len_s": 0.788,
+     "hit_s": 0.116,
+     "peak_db": -1.0,
+     "bad": [
+      "coin ring 224 ms"
+     ],
+     "score": 0.298
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainRun": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainRun_wJvlSfsq9njk4JGRQNGN.mp3",
+   "kind": "chain",
+   "old_len_s": 1.886,
+   "new_len_s": 2.334,
+   "old_hit_s": 1.65,
+   "new_hit_s": 1.506,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainRun_rVtd3j6KiXKUM8I1eyK7.mp3",
+     "len_s": 2.334,
+     "hit_s": 0.497,
+     "peak_db": -5.5,
+     "bad": [],
+     "score": 2.754
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainBite": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainBite_rdIRwC7CvqrkpRThwYdm.mp3",
+   "kind": "chain",
+   "old_len_s": 0.622,
+   "new_len_s": 0.59,
+   "old_hit_s": 0.02,
+   "new_hit_s": 0.036,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainBite_AV9wYsqMZdDHJInzLAzs.mp3",
+     "len_s": 0.913,
+     "hit_s": 0.023,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.297
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainPull": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainPull_6wMssHZgduvVDW8AGxkS.mp3",
+   "kind": "chain",
+   "old_len_s": 0.74,
+   "new_len_s": 1.056,
+   "old_hit_s": 0.13,
+   "new_hit_s": 0.291,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainPull_pumHzPrWAagSaNCGrjhg.mp3",
+     "len_s": 1.05,
+     "hit_s": 0.388,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.826
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainOffer": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainOffer_QsuGao9QwGrwtpvTdyD6.mp3",
+   "kind": "chain",
+   "old_len_s": 1.035,
+   "new_len_s": 1.15,
+   "old_hit_s": 0.13,
+   "new_hit_s": 0.172,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainOffer_Ct0XmewIhzqLv6w0xho3.mp3",
+     "len_s": 1.309,
+     "hit_s": 0.123,
+     "peak_db": -1.0,
+     "bad": [
+      "coin ring 96 ms"
+     ],
+     "score": 0.288
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainGrab": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainGrab_udVfH5cM03Fv2mSO0vS1.mp3",
+   "kind": "chain",
+   "old_len_s": 0.649,
+   "new_len_s": 0.727,
+   "old_hit_s": 0.27,
+   "new_hit_s": 0.063,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainGrab_5foFqbdKLpFf1ikZUHFb.mp3",
+     "len_s": 0.802,
+     "hit_s": 0.156,
+     "peak_db": -1.0,
+     "bad": [
+      "coin ring 139 ms"
+     ],
+     "score": 0.381
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainLand": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainLand_Kyy7Uv2aBjTJdI0BIY7W.mp3",
+   "kind": "chain",
+   "old_len_s": 0.702,
+   "new_len_s": 0.853,
+   "old_hit_s": 0.02,
+   "new_hit_s": 0.099,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainLand_NWginV32adwuUNXZXEVj.mp3",
+     "len_s": 0.885,
+     "hit_s": 0.088,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.318
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainRewind": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainRewind_GwjihlU2haIko7VQDeBw.mp3",
+   "kind": "chain",
+   "old_len_s": 0.875,
+   "new_len_s": 1.181,
+   "old_hit_s": 0.07,
+   "new_hit_s": 0.561,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainRewind_LqHl4usfvAnBXIyv0VHF.mp3",
+     "len_s": 1.181,
+     "hit_s": 0.024,
+     "peak_db": -1.0,
+     "bad": [
+      "coin ring 480 ms"
+     ],
+     "score": 0.398
+    }
+   ]
+  },
+  "PawnRushSkillSfx/ChainBreak": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainBreak_gSL5hT0m8TJe00xPktIR.mp3",
+   "kind": "chain",
+   "old_len_s": 0.697,
+   "new_len_s": 0.746,
+   "old_hit_s": 0.08,
+   "new_hit_s": 0.024,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/ChainBreak_Chz57bJjONFFJWqmiBJQ.mp3",
+     "len_s": 0.636,
+     "hit_s": 0.032,
+     "peak_db": -1.0,
+     "bad": [
+      "coin ring 128 ms"
+     ],
+     "score": 0.157
+    }
+   ]
+  },
+  "PawnRushSkillSfx/SkillFail": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/SkillFail_HNUpRyF1wrEC2JxDVruo.mp3",
+   "kind": "chain",
+   "old_len_s": 0.441,
+   "new_len_s": 0.625,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.01,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/SkillFail_0b9J1ghGvaE1mlzUmxdB.mp3",
+     "len_s": 0.625,
+     "hit_s": 0.021,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.206
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeThrow": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeThrow_8rfPKFR6ISAu2RAzdrlO.mp3",
+   "kind": "rope",
+   "old_len_s": 0.65,
+   "new_len_s": 0.768,
+   "old_hit_s": 0.44,
+   "new_hit_s": 0.147,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeThrow_y2U5rFivhfouFQ5Zlkkl.mp3",
+     "len_s": 0.744,
+     "hit_s": 0.28,
+     "peak_db": -1.6,
+     "bad": [
+      "coin ring 107 ms"
+     ],
+     "score": 0.413
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeHook": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeHook_a8H0TY8vxQPAqwnA35qC.mp3",
+   "kind": "rope",
+   "old_len_s": 0.8,
+   "new_len_s": 0.934,
+   "old_hit_s": 0.32,
+   "new_hit_s": 0.35,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeHook_2PMF8ElrclMPXhUetFwh.mp3",
+     "len_s": 0.907,
+     "hit_s": 0.639,
+     "peak_db": -1.1,
+     "bad": [],
+     "score": 0.746
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeStrain": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeStrain_TxH7W4bMXzAmQs5SrdbV.mp3",
+   "kind": "rope",
+   "old_len_s": 2.881,
+   "new_len_s": 2.608,
+   "old_hit_s": 1.74,
+   "new_hit_s": 1.673,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeStrain_NI8UOdONcfzPhd0UtTr6.mp3",
+     "len_s": 2.859,
+     "hit_s": 0.981,
+     "peak_db": -1.6,
+     "bad": [],
+     "score": 1.54
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeReel": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeReel_cpWLMd2qb4oQIdUlN2AG.mp3",
+   "kind": "rope",
+   "old_len_s": 0.45,
+   "new_len_s": 0.785,
+   "old_hit_s": 0.27,
+   "new_hit_s": 0.278,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeReel_NnYnXyEvcKr4Lf4OFgQM.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.181,
+     "peak_db": -1.1,
+     "bad": [],
+     "score": 0.529
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeRelease": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeRelease_WHZTmXvqpKvl27GUMGaP.mp3",
+   "kind": "rope",
+   "old_len_s": 0.2,
+   "new_len_s": 0.523,
+   "old_hit_s": 0.08,
+   "new_hit_s": 0.128,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeRelease_BkHQiqv0y3Pfk56YfpeB.mp3",
+     "len_s": 0.583,
+     "hit_s": 0.168,
+     "peak_db": -1.1,
+     "bad": [],
+     "score": 0.56
+    }
+   ]
+  },
+  "PawnRushSkillSfx/BishopRopeSnap": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeSnap_lcNBx1ZO4B8jwW8fNkFR.mp3",
+   "kind": "rope",
+   "old_len_s": 0.5,
+   "new_len_s": 0.38,
+   "old_hit_s": 0.1,
+   "new_hit_s": 0.076,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/BishopRopeSnap_nD11Fon0a4KdMn6Zp3mE.mp3",
+     "len_s": 0.451,
+     "hit_s": 0.163,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.174
+    }
+   ]
+  },
+  "PawnRushSkillSfx/RookTick": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/RookTick_Xe6L0wbcBoDRjLdbLSLm.mp3",
+   "kind": "export_unity",
+   "old_len_s": 0.39,
+   "new_len_s": 0.48,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.021,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/RookTick_l5jvJpln5SMZr7iUCVvE.mp3",
+     "len_s": 0.167,
+     "hit_s": 0.012,
+     "peak_db": -1.2,
+     "bad": [],
+     "score": 0.226
+    }
+   ]
+  },
+  "PawnRushSkillSfx/KnightLeap": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightLeap_8KZtkNZfh1nSSIlvVZ5T.mp3",
+   "kind": "export_unity",
+   "old_len_s": 0.569,
+   "new_len_s": 0.515,
+   "old_hit_s": 0.02,
+   "new_hit_s": 0.091,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightLeap_oYIHNxtZ5yFQjISu1XbL.mp3",
+     "len_s": 0.475,
+     "hit_s": 0.079,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.212
+    }
+   ]
+  },
+  "PawnRushSkillSfx/KnightTurn": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightTurn_UZMvZkKpIfkrshUDTpue.mp3",
+   "kind": "export_unity",
+   "old_len_s": 0.425,
+   "new_len_s": 0.329,
+   "old_hit_s": 0.05,
+   "new_hit_s": 0.024,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightTurn_q1B9EKSXwJVgfEaerL44.mp3",
+     "len_s": 0.309,
+     "hit_s": 0.023,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.17
+    }
+   ]
+  },
+  "PawnRushSkillSfx/KnightLand": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightLand_Yv4lWMKuK9VoeRzFkpRo.mp3",
+   "kind": "export_unity",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.01,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightLand_CKzYpYCgzuxj7EJ6T9YG.mp3",
+     "len_s": 0.61,
+     "hit_s": 0.028,
+     "peak_db": -1.3,
+     "bad": [],
+     "score": 0.106
+    }
+   ]
+  },
+  "PawnRushSkillSfx/KnightStomp": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightStomp_kXlIm4tSKusvkPjmm24V.mp3",
+   "kind": "export_unity",
+   "old_len_s": 0.551,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.011,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightStomp_xWGzRRftblVpqLXNhKbw.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.024,
+     "peak_db": -1.0,
+     "bad": [],
+     "score": 0.156
+    }
+   ]
+  },
+  "PawnRushSkillSfx/KnightAir": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightAir_Wn2E7i6UcjnAHljLA71A.mp3",
+   "kind": "export_unity",
+   "old_len_s": 1.054,
+   "new_len_s": 1.225,
+   "old_hit_s": 0.32,
+   "new_hit_s": 0.142,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/PawnRushSkillSfx/KnightAir_bbC8VawGJuqLDAJvgOaZ.mp3",
+     "len_s": 1.653,
+     "hit_s": 0.442,
+     "peak_db": -5.1,
+     "bad": [],
+     "score": 0.844
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingStab": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingStab_NpbBFkGBiohty0PnI5Cw.mp3",
+   "kind": "raw",
+   "old_len_s": 1.2,
+   "new_len_s": 1.2,
+   "old_hit_s": 0.04,
+   "new_hit_s": 0.041,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingStab_FmLQmHbFqDJInTLLiVqY.mp3",
+     "len_s": 1.2,
+     "hit_s": 0.232,
+     "peak_db": 4.6,
+     "bad": [
+      "coin ring 96 ms"
+     ],
+     "score": 0.384
+    }
+   ]
+  },
+  "SwordFightSkillSfx/RookCollapse": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookCollapse_CDliGPBrqALtAGnJtK9f.mp3",
+   "kind": "raw",
+   "old_len_s": 1.6,
+   "new_len_s": 1.6,
+   "old_hit_s": 0.26,
+   "new_hit_s": 0.062,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookCollapse_Eh099LqmxXKwTanqVcDB.mp3",
+     "len_s": 1.6,
+     "hit_s": 0.035,
+     "peak_db": 2.5,
+     "bad": [],
+     "score": 0.449
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenHit_LhqJ01e5pVza8aFPhBBB.mp3",
+   "kind": "raw",
+   "old_len_s": 0.48,
+   "new_len_s": 0.48,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.01,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenHit_EG1a2GacoRp44ecs0c8y.mp3",
+     "len_s": 0.48,
+     "hit_s": 0.015,
+     "peak_db": -27.8,
+     "bad": [],
+     "score": 0.009
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingCounterHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingCounterHit_CL8MLowMLf3G8IWquWgS.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.012,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingCounterHit_3kCsgRyBkt25Lwa26flJ.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.017,
+     "peak_db": -10.3,
+     "bad": [],
+     "score": 0.013
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingWhiff": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingWhiff_5713IOBOcQannAIvDQTd.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.06,
+   "new_hit_s": 0.014,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingWhiff_1azVUDcJNeZANkZgmHO7.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.012,
+     "peak_db": -11.2,
+     "bad": [],
+     "score": 0.096
+    }
+   ]
+  },
+  "SwordFightSkillSfx/Interrupted": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/Interrupted_XMHWT88ITccEkVMbQuHM.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.17,
+   "new_hit_s": 0.138,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/Interrupted_S9DtRPLsdgcpjhKSGfoU.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.011,
+     "peak_db": -2.0,
+     "bad": [],
+     "score": 0.319
+    }
+   ]
+  },
+  "SwordFightSkillSfx/CastKing": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastKing_nRx3S2hRYFICToD0HJbZ.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.22,
+   "new_hit_s": 0.191,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastKing_TR7T9gcIBSMhWxlXciDs.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.283,
+     "peak_db": 1.5,
+     "bad": [
+      "boing 192 ms"
+     ],
+     "score": 0.125
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingParry": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingParry_JHcEWzsyll9vyPmMb74l.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.025,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingParry_SwmoQXlmR4qboUpMPinL.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.081,
+     "peak_db": -26.5,
+     "bad": [],
+     "score": 0.141
+    }
+   ]
+  },
+  "SwordFightSkillSfx/CastQueen": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastQueen_8qNqPRNnpHTOGwgvU74l.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.06,
+   "new_hit_s": 0.233,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastQueen_DmkUAXQ4z0XlEIVA6u0v.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.061,
+     "peak_db": -7.3,
+     "bad": [
+      "boing 128 ms"
+     ],
+     "score": 0.003
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightKickHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightKickHit_4CqAWIkt2vbkTzs3JiOr.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.02,
+   "new_hit_s": 0.01,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightKickHit_MGgQAkf2cEwlJvWWCcqC.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.01,
+     "peak_db": -24.2,
+     "bad": [],
+     "score": 0.02
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenThrustSparks": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenThrustSparks_DtexnSd9LQ3PNQ0kaChd.mp3",
+   "kind": "raw",
+   "old_len_s": 1.0,
+   "new_len_s": 1.0,
+   "old_hit_s": 0.29,
+   "new_hit_s": 0.395,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenThrustSparks_eSmUOMgdnIS57jF1OhUp.mp3",
+     "len_s": 1.0,
+     "hit_s": 0.127,
+     "peak_db": 1.9,
+     "bad": [],
+     "score": 0.325
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenHitSparks": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenHitSparks_QgOKTApjx5hsnwmcwSeY.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.04,
+   "new_hit_s": 0.194,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenHitSparks_dAHnLw1frgMKL8HLkTCv.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.297,
+     "peak_db": 3.0,
+     "bad": [
+      "coin ring 139 ms",
+      "boing 128 ms"
+     ],
+     "score": 0.515
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingVault": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingVault_PiUbXPjCx1vIY7Kg1Hfx.mp3",
+   "kind": "raw",
+   "old_len_s": 1.0,
+   "new_len_s": 1.0,
+   "old_hit_s": 0.1,
+   "new_hit_s": 0.227,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingVault_Xahu2TzemAnvvDO6j1Xw.mp3",
+     "len_s": 1.0,
+     "hit_s": 0.263,
+     "peak_db": 3.8,
+     "bad": [],
+     "score": 0.326
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingLand": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingLand_5oVyfYXxqKQe2iIKwub0.mp3",
+   "kind": "raw",
+   "old_len_s": 0.88,
+   "new_len_s": 0.88,
+   "old_hit_s": 0.03,
+   "new_hit_s": 0.018,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingLand_bm7FknVAEfSFYOKbGq2y.mp3",
+     "len_s": 0.88,
+     "hit_s": 0.012,
+     "peak_db": -1.4,
+     "bad": [],
+     "score": 0.036
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightFlip": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightFlip_r96RCmkZichD5GYLxkGr.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.23,
+   "new_hit_s": 0.407,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightFlip_xGPnGwsFhp65tFQNglbg.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.08,
+     "peak_db": 3.4,
+     "bad": [
+      "coin ring 96 ms",
+      "boing 192 ms"
+     ],
+     "score": 0.3
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenThrust": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenThrust_MNS734Y27ODqItK9wgMU.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.11,
+   "new_hit_s": 0.032,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenThrust_ramEl7ujxUGokwKB3MhS.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.026,
+     "peak_db": 4.0,
+     "bad": [],
+     "score": 0.168
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightLeap": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightLeap_aDvRXW9T01IWxO9eFdS1.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.03,
+   "new_hit_s": 0.032,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightLeap_QSwXn3rMAY3C2cQHbPL7.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.17,
+     "peak_db": 3.6,
+     "bad": [],
+     "score": 0.28
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightLand": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightLand_IBAOXOSyp7m5VXx8zKHZ.mp3",
+   "kind": "raw",
+   "old_len_s": 0.88,
+   "new_len_s": 0.88,
+   "old_hit_s": 0.3,
+   "new_hit_s": 0.076,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightLand_EcyR2R8ivK2qWoFt0N8q.mp3",
+     "len_s": 0.88,
+     "hit_s": 0.011,
+     "peak_db": 1.9,
+     "bad": [],
+     "score": 0.579
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightHit_HO3nMFHFsSJSr6RKm9j9.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.17,
+   "new_hit_s": 0.027,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightHit_AaKCogRpdUL2udHiVKdk.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.01,
+     "peak_db": 3.2,
+     "bad": [],
+     "score": 0.319
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenStop": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenStop_s7GxTGc5P3wUwahnrj7h.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.04,
+   "new_hit_s": 0.029,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenStop_H0AhNeskcoxIxiq3eLlG.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.011,
+     "peak_db": -7.4,
+     "bad": [],
+     "score": 0.057
+    }
+   ]
+  },
+  "SwordFightSkillSfx/RookTremble": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookTremble_ycuJ3OEc2RT9qCbDVGtb.mp3",
+   "kind": "raw",
+   "old_len_s": 0.88,
+   "new_len_s": 0.88,
+   "old_hit_s": 0.02,
+   "new_hit_s": 0.148,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookTremble_6AINYE9ryMFUKuoYkles.mp3",
+     "len_s": 0.88,
+     "hit_s": 0.306,
+     "peak_db": 2.7,
+     "bad": [
+      "coin ring 139 ms"
+     ],
+     "score": 0.572
+    }
+   ]
+  },
+  "SwordFightSkillSfx/RookSlam": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookSlam_XcRYT6P7VapERweWueTt.mp3",
+   "kind": "raw",
+   "old_len_s": 1.0,
+   "new_len_s": 1.0,
+   "old_hit_s": 0.17,
+   "new_hit_s": 0.105,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookSlam_YD3CTK6zRJZyEUHYFfZG.mp3",
+     "len_s": 1.0,
+     "hit_s": 0.104,
+     "peak_db": 0.3,
+     "bad": [],
+     "score": 0.131
+    }
+   ]
+  },
+  "SwordFightSkillSfx/CastRook": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastRook_CNiRxdJRD4BlgbyG0xEc.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.17,
+   "new_hit_s": 0.053,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastRook_JtTViXbg67Lapqj5vi3X.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.027,
+     "peak_db": -6.9,
+     "bad": [],
+     "score": 0.285
+    }
+   ]
+  },
+  "SwordFightSkillSfx/RookHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookHit_V8LQjPboQUwikoZWaw4h.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.013,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookHit_54JzcbMaUBIVkOPPUTso.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.017,
+     "peak_db": 2.6,
+     "bad": [],
+     "score": 0.015
+    }
+   ]
+  },
+  "SwordFightSkillSfx/RookBlocked": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookBlocked_YwEFYaieCvNmkLOofWRz.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.012,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/RookBlocked_hPh9mjqbPf8wjfytpBxA.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.043,
+     "peak_db": 1.4,
+     "bad": [],
+     "score": 0.066
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingMark": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingMark_OXz1xZIoCgZT8KROoJga.mp3",
+   "kind": "raw",
+   "old_len_s": 1.2,
+   "new_len_s": 1.2,
+   "old_hit_s": 0.4,
+   "new_hit_s": 0.181,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingMark_QV5ivdcY2dZTv1nHBK7P.mp3",
+     "len_s": 1.2,
+     "hit_s": 0.208,
+     "peak_db": -0.9,
+     "bad": [
+      "boing 213 ms"
+     ],
+     "score": 0.385
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopDraw": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopDraw_nHjjQ9OyBXhDdL3YkkhO.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.2,
+   "new_hit_s": 0.24,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopDraw_1LDfHNs9HubchkPbcs9a.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.246,
+     "peak_db": 2.7,
+     "bad": [],
+     "score": 0.092
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopLeap": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopLeap_qjP7vYyTc0G8I3nrDz4B.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.41,
+   "new_hit_s": 0.149,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopLeap_80twdjovWfdqkF68bjD6.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.323,
+     "peak_db": 2.6,
+     "bad": [
+      "coin ring 267 ms"
+     ],
+     "score": 0.175
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopCross": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopCross_gRBsR10m4pAqJ8QqD88y.mp3",
+   "kind": "raw",
+   "old_len_s": 0.8,
+   "new_len_s": 0.8,
+   "old_hit_s": 0.07,
+   "new_hit_s": 0.132,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopCross_Qdjq4nvaePxrKFp5IiKe.mp3",
+     "len_s": 0.8,
+     "hit_s": 0.137,
+     "peak_db": 2.7,
+     "bad": [],
+     "score": 0.134
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopHit_y7oKIQtgA59ZQEbdEghI.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.09,
+   "new_hit_s": 0.028,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopHit_24yFbOhFXbZ9EboLwBs9.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.014,
+     "peak_db": 3.3,
+     "bad": [],
+     "score": 0.153
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KingCounterSpin": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingCounterSpin_v51l9nC3xNORHKOKJJL4.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.04,
+   "new_hit_s": 0.076,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KingCounterSpin_DRJ2VDP47MAunsrbhOcq.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.099,
+     "peak_db": 2.2,
+     "bad": [],
+     "score": 0.119
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightKick": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightKick_gOnhQMj875vnUaeQNFyp.mp3",
+   "kind": "raw",
+   "old_len_s": 0.48,
+   "new_len_s": 0.48,
+   "old_hit_s": 0.08,
+   "new_hit_s": 0.053,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightKick_06fxb8qLv5RGmRnCskWb.mp3",
+     "len_s": 0.48,
+     "hit_s": 0.014,
+     "peak_db": 2.6,
+     "bad": [],
+     "score": 0.131
+    }
+   ]
+  },
+  "SwordFightSkillSfx/CastBishop": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastBishop_tnDC5PmYhY0yhkJmwIIP.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.45,
+   "new_hit_s": 0.4,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/CastBishop_DFHXrl2eeHDNpNo5ZQUN.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.169,
+     "peak_db": 2.1,
+     "bad": [],
+     "score": 0.562
+    }
+   ]
+  },
+  "SwordFightSkillSfx/KnightCrouch": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightCrouch_y43acvmMlox4vwldKW3T.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.16,
+   "new_hit_s": 0.148,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/KnightCrouch_EPXVNmpOenfMzyLesxz0.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.3,
+     "peak_db": 2.2,
+     "bad": [],
+     "score": 0.281
+    }
+   ]
+  },
+  "SwordFightSkillSfx/SwingKing": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingKing_IoBlCfLWHpXfjZ7dTJVC.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.08,
+   "new_hit_s": 0.034,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingKing_6VARAI9XXO90SSnvnkuJ.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.01,
+     "peak_db": 2.1,
+     "bad": [],
+     "score": 0.14
+    }
+   ]
+  },
+  "SwordFightSkillSfx/SwingQueen": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingQueen_wfuEyO9yBbW0z7p3llnk.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.11,
+   "new_hit_s": 0.092,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingQueen_IB39gank9MpLzHOzxtbr.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.271,
+     "peak_db": -1.9,
+     "bad": [],
+     "score": 0.323
+    }
+   ]
+  },
+  "SwordFightSkillSfx/SwingKnight": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingKnight_IPs7wkPOi9YyMnRtphkS.mp3",
+   "kind": "raw",
+   "old_len_s": 0.48,
+   "new_len_s": 0.48,
+   "old_hit_s": 0.08,
+   "new_hit_s": 0.039,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingKnight_WPJw1G8WCqHqUgaHz66B.mp3",
+     "len_s": 0.48,
+     "hit_s": 0.01,
+     "peak_db": 2.7,
+     "bad": [],
+     "score": 0.14
+    }
+   ]
+  },
+  "SwordFightSkillSfx/SwingBishop": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingBishop_HL9u6DBj5zsHZuWyCPwk.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.09,
+   "new_hit_s": 0.087,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/SwingBishop_7oQ5FREwoZbgxamRmgoP.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.1,
+     "peak_db": 3.7,
+     "bad": [],
+     "score": 0.02
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopSlideAim": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideAim_EL5j18d7zjuhn5P5aRVH.mp3",
+   "kind": "raw",
+   "old_len_s": 1.0,
+   "new_len_s": 1.0,
+   "old_hit_s": 0.27,
+   "new_hit_s": 0.297,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideAim_ROJ7Fmeni9fkNh7ZaFjn.mp3",
+     "len_s": 1.0,
+     "hit_s": 0.33,
+     "peak_db": 2.9,
+     "bad": [
+      "boing 203 ms"
+     ],
+     "score": 0.119
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopSlideCancel": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideCancel_WzbLTNJ6srvjg1e7S786.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.01,
+   "new_hit_s": 0.019,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideCancel_zxZWvnQCdttj0pRIi1me.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.062,
+     "peak_db": -4.4,
+     "bad": [],
+     "score": 0.104
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopSlide": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlide_DH7YUPKCrS1abPgjeN3r.mp3",
+   "kind": "raw",
+   "old_len_s": 1.0,
+   "new_len_s": 1.0,
+   "old_hit_s": 0.46,
+   "new_hit_s": 0.437,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlide_KekchQEdEVomtPIG772z.mp3",
+     "len_s": 1.0,
+     "hit_s": 0.34,
+     "peak_db": 2.5,
+     "bad": [],
+     "score": 0.24
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopSlideHit": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideHit_rOdk9wdGmob1ihtM91Dk.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.04,
+   "new_hit_s": 0.038,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideHit_4TYnijNme4xkbb8mtgYL.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.034,
+     "peak_db": -6.3,
+     "bad": [],
+     "score": 0.012
+    }
+   ]
+  },
+  "SwordFightSkillSfx/BishopSlideStop": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideStop_663oBLCXn14aNlUUCETo.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.1,
+   "new_hit_s": 0.121,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/BishopSlideStop_1F08jJTQbx83Sbf8lbOA.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.116,
+     "peak_db": -1.3,
+     "bad": [
+      "boing 149 ms"
+     ],
+     "score": 0.032
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenMark": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenMark_tMKTPlKMUIUnaaPNhqUw.mp3",
+   "kind": "raw",
+   "old_len_s": 0.68,
+   "new_len_s": 0.68,
+   "old_hit_s": 0.41,
+   "new_hit_s": 0.349,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenMark_4A2fuMgPQQT7fs8NcZbn.mp3",
+     "len_s": 0.68,
+     "hit_s": 0.648,
+     "peak_db": 0.3,
+     "bad": [],
+     "score": 0.476
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenBlink": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenBlink_TvP129KYCegTLUcfAb4b.mp3",
+   "kind": "raw",
+   "old_len_s": 0.6,
+   "new_len_s": 0.6,
+   "old_hit_s": 0.1,
+   "new_hit_s": 0.092,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenBlink_8pbHeROIsJ0KTvOzio5R.mp3",
+     "len_s": 0.6,
+     "hit_s": 0.053,
+     "peak_db": 2.9,
+     "bad": [
+      "coin ring 341 ms"
+     ],
+     "score": 0.094
+    }
+   ]
+  },
+  "SwordFightSkillSfx/QueenCut": {
+   "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenCut_RryndXe5QnW5niRUlzrT.mp3",
+   "kind": "raw",
+   "old_len_s": 0.88,
+   "new_len_s": 0.88,
+   "old_hit_s": 0.12,
+   "new_hit_s": 0.039,
+   "others": [
+    {
+     "take": "ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/QueenCut_JwoKIyO7WVzQHaEPDl4z.mp3",
+     "len_s": 0.88,
+     "hit_s": 0.332,
+     "peak_db": 2.8,
+     "bad": [],
+     "score": 0.423
+    }
+   ]
+  }
+ },
+ "retake": []
+}

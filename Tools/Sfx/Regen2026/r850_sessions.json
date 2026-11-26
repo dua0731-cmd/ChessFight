@@ -1,0 +1,29 @@
+{
+ "flow": "tDDwKPGgDnbm5TjY3t1Z",
+ "sessions": {
+  "FvgFCiyFyiL4J0Vt8Lzq": {"clip": "SharedSkills/PawnDash", "generation": "bYu0bJJu940zggXQ5W9M"},
+  "FhWP1za2rzRa7EVEkeV3": {"clip": "SharedSkills/PawnDash", "generation": "IcIhKGXJKS2v5DI0BOKu"},
+  "37Z3aanzp0tgOjuconrM": {"clip": "SharedSkills/PawnDash", "generation": "hyUq7bZy97axYnE7wHHF"},
+  "cEGAFMVic2zyqPnLTI4O": {"clip": "SharedSkills/PawnBump", "generation": "544SZOcWonQjNG2yivFq"},
+  "usfjgOj3q8iVQcRjQhN4": {"clip": "SharedSkills/PawnBump", "generation": "rjg76UrFuKjwYP6Y33ea"},
+  "e1vb4M788VqFP3ZM7P5J": {"clip": "SharedSkills/PawnBump", "generation": "rQMcc4wF9P2I6h8uhH2Q"},
+  "5IyvdtjepI9aocJvRzV9": {"clip": "SharedSkills/PawnCrouch", "generation": "KBIQ1sbCuaCfkfzTim4H"},
+  "bMJolgY5ir20CtticI9j": {"clip": "SharedSkills/PawnCrouch", "generation": "HwboashaVCl9NQ9msVUU"},
+  "xornnC15CHMugBA8bhJ1": {"clip": "SharedSkills/PawnCrouch", "generation": "AxhVdTWqLjmCvBKKruUr"},
+  "hnTFo4wWGThAe9vYewWr": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "uqgLtM6sxxPjYNpDPgN2"},
+  "jrTpxlECi2q7xETZBP04": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "DheiLyOuVQ8SQ4JUuw3I"},
+  "IRyLslEpcvv7ATs6PD1O": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "AhP9QGEFj0vcF4UuTvQE"},
+  "dGHT7ts7CRTsfwCPNUMw": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "5vc33IZdb6hNbG0sDhyx", "round": 2},
+  "QOq8tZL8qSSMpJ5rvGby": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "iAR3crZAlSaafchrWUEp", "round": 2},
+  "d29Cx74vCbn3ODcE2C7l": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "IAcstkj61XmgamTQRY6c", "round": 2},
+  "l6H32lDSQq9FIzx7bU3t": {"clip": "SharedSkills/PawnBump", "generation": "oLR5TYBodhJWj5Kymrps", "round": 2},
+  "grIf6R7Yi48qt2RoF6hO": {"clip": "SharedSkills/PawnBump", "generation": "W3iUXq00rI5kf7om5hQr", "round": 2},
+  "Qm9bNEWP7YYwSfOlSFoy": {"clip": "SharedSkills/PawnBump", "generation": "ZeHUvxGabvrA7iP6zpkE", "round": 2},
+  "b5wNBr2mMlJ1DARhY3Xn": {"clip": "SharedSkills/PawnCrouch", "generation": "FcnSPTIucYiN1cNl0HeS", "round": 2},
+  "0r2ELJ74ZLL6k19OSKY0": {"clip": "SharedSkills/PawnCrouch", "generation": "6QfUAKFOFY1cuIzuLB9V", "round": 2},
+  "jKjrPX3ifsjQ80XvzrrY": {"clip": "SharedSkills/PawnCrouch", "generation": "ycwmfjkeXfsA9vpMGPp9", "round": 2},
+  "uSFSBUhb9ltM62I7cKCI": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "GXAveaJZrCQ15MlDMQoE", "round": 3},
+  "c3JIIUv53EBGTO5FN4DV": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "dbtDa6OLOjh79kPc4jZJ", "round": 3},
+  "44N4GFXmytkIo79DJCAn": {"clip": "SwordFightSkillSfx/SwordHit", "generation": "QBGMUDtjVChT2EZb2kQV", "round": 3}
+ }
+}
