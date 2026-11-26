@@ -284,6 +284,8 @@ namespace ChessFight.RagdollLab
                 case Cc4.BoundRoot: CcBound(look, lvl); break;
                 case Cc4.Slippery: CcSlippery(look, lvl); break;
                 case Cc4.Tiny: CcTiny(look, lvl); break;
+                case Cc4.Flat: CcFlatLook(look, lvl); break;   // the user's own (PawnRushSkillFx.SetFourJY.cs)
+                case Cc4.Frozen: CcFrozenLook(look, lvl); break;
             }
             if (kind != Cc4.Flop) CcLabel(look, seconds);   // (콰당! says itself)
         }
@@ -332,7 +334,8 @@ namespace ChessFight.RagdollLab
             var who = look.who;
             // The thud: a big "콰당!" off the body, dust out from under it.
             CmPoof(who.FeetPoint + Vector3.up * 0.1f, CmDust, 8, 1.1f, 0.42f, 0.5f, 0.25f);
-            if (!S4cHidden(who)) PopWord("콰당!", who.Hips.position + Vector3.up * 0.45f, CcColor(Cc4.Flop), 0.5f, 0.95f, who);
+            // (USER_SKILLS 5.2: one word at a time, beside the body; a skill's own word just put on it wins.)
+            if (!S4cHidden(who) && !JyWordedRecently(who)) JyWord("콰당!", who.Hips.position + Vector3.up * 0.45f, CcColor(Cc4.Flop), who);
             Shake(0.05f, 8f * Frame);
             UltClip(UltClipId.Crack, 0.6f * lvl, 0.7f);
             // Out cold: stars round its head (ROUND1 3장: "머리 위에 별").

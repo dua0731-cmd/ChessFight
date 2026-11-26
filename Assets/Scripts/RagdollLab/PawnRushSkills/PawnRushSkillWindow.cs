@@ -82,8 +82,8 @@ namespace ChessFight.RagdollLab
 
         // The 4판 tab's sets (11-26); under "폐기된 스킬" the sets before them, newest first, and the earliest behind "옛 세트"
         // (PawnRushLoadout.Preset's numbers; 2 is "모두 비우기").
-        static readonly int[] NewIds = { 13, 14, 15 };
-        static readonly string[] NewNames = { "4판 가", "4판 나", "4판 다" };
+        static readonly int[] NewIds = { 16, 13, 14, 15 };
+        static readonly string[] NewNames = { "JY", "4판 가", "4판 나", "4판 다" };
         static readonly int[] SetIds = { 12, 11, 8, 10, 9, 0 };
         static readonly string[] SetNames = { "3판", "3안-b", "3안-a", "2안-a", "1안-a", "지금 게임" };
         static readonly int[] OldIds = { 1, 3, 4, 5, 7, 6 };
@@ -428,6 +428,7 @@ namespace ChessFight.RagdollLab
         {
             switch (id)
             {
+                case 16: return "사용자가 짠 스킬 (JY) · 기물마다 두 칸 (F · E) · 퀸은 4판 가 그대로 (케틀 궁 · 거대화 · 벨코즈 q 성벽은 목록에서 넣어요) · 궁극기 없음";
                 case 15: return "4판 1차 묶음 다 · 기물마다 두 칸 (F · E) · 룩은 더 루우욱!과 넘어간다~!, 퀸은 행차와 착석!을 견주어 보기 (돼지 · 룩 리프트 · 퀸스 갬빗은 목록에서 넣어요) · 궁극기 없음";
                 case 14: return "4판 1차 묶음 나 · 기물마다 두 칸 (F · E) · 열넷 가운데 열 (향로 · 퇴장! · 수평 룩 · 영구 체크는 목록에서 넣어요) · 궁극기 없음";
                 case 13: return "4판 1차 묶음 가 · 기물마다 두 칸 (F · E) · 먼저 만든 열하나 가운데 열 (폰의 구덩이는 목록에서 넣어요) · 궁극기 없음";
@@ -591,6 +592,9 @@ namespace ChessFight.RagdollLab
         bool ColumnShown(PawnRushLoadout lo, int k) => ShowsSlot(lo, k) && (discarded || k < 2 || AnyIn(lo, k));
 
         // ---------------------------------------------------------------- the set 4판's grades
+
+        /// <summary>The "JY" tag's colour (the user's own skills).</summary>
+        static readonly Color JyTint = new Color(1f, 0.55f, 0.42f);
 
         static readonly Color[] GradeTint =
             { Color.clear, new Color(0.48f, 0.88f, 0.56f, 1f), new Color(0.5f, 0.74f, 1f, 1f), new Color(0.88f, 0.62f, 1f, 1f) };
@@ -856,17 +860,20 @@ namespace ChessFight.RagdollLab
             if (lines.Count == start + 1) lines.RemoveAt(start);
             if (!discarded)
             {
-                // The 4판's candidates by piece: the ones built first, then the ones still to come (faint).
+                // The 4판's candidates by piece: the user's own first ("JY", USER_SKILLS 1장), then the ones built, then
+                // the ones still to come (faint).
                 for (int row = 0; row < PawnRushLoadout.Rows; row++)
                 {
                     var kind = PawnRushLoadout.RowPieces[row];
                     if (kind == PieceKind.King || (listPiece >= 0 && row != listPiece)) continue;
                     start = lines.Count;
                     lines.Add(new Line { head = ChessPieces.Name(kind) });
-                    for (int pass = 0; pass < 2; pass++)
+                    for (int pass = 0; pass < 3; pass++)
                         foreach (var entry in PawnRushSkillBook.All)
                         {
-                            if (entry.origin != SkillOrigin.Set4 || entry.home != kind || entry.built != (pass == 0) || OnBoardHere(entry.id)) continue;
+                            if (entry.origin != SkillOrigin.Set4 || entry.home != kind || OnBoardHere(entry.id)) continue;
+                            bool jy = PawnRushSkillIds.SetFourJY(entry.id);
+                            if (pass == 0 ? !jy : jy || entry.built != (pass == 1)) continue;
                             lines.Add(new Line { entry = entry });
                         }
                     if (lines.Count == start + 1) lines.RemoveAt(start);
@@ -995,6 +1002,21 @@ namespace ChessFight.RagdollLab
                 {
                     GradeTag(r.xMax - pillW - gradeW - 6f, r.y + 5f, entry.id, 17f);
                     pillW += gradeW + 4f;
+                }
+                if (PawnRushSkillIds.SetFourJY(entry.id))
+                {
+                    // The user's own: a "JY" tag before its grade.
+                    float jw = TextW("JY", smallOne) + 10f;
+                    var jr = new Rect(r.xMax - pillW - jw - 6f, r.y + 5f, jw, 17f);
+                    Fill(jr, new Color(JyTint.r, JyTint.g, JyTint.b, 0.22f));
+                    var oldTag = smallOne.normal.textColor;
+                    var oldAlign2 = smallOne.alignment;
+                    smallOne.normal.textColor = JyTint;
+                    smallOne.alignment = TextAnchor.MiddleCenter;
+                    GUI.Label(jr, "JY", smallOne);
+                    smallOne.alignment = oldAlign2;
+                    smallOne.normal.textColor = oldTag;
+                    pillW += jw + 4f;
                 }
                 float tx = r.x + SkillH + 6f, tw = r.xMax - tx - 8f;
                 var oldName = cardName.normal.textColor;

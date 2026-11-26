@@ -739,6 +739,7 @@ namespace ChessFight.RagdollLab
             DrawUltNotice();   // ...and an ultimate's warning, told to everyone
             var me = Viewer != null ? Viewer() : null;
             if (me == null || me.PawnRushSkills == null) return;
+            DrawJyScreen(me);   // the user's own skills' hints, at the top, bottom and edges (PawnRushPlanMarks.SetFourJY.cs)
             string line = null, sub = null;
             float share = 0f;
             var rook = me.CastleOfferingMe();

@@ -502,6 +502,7 @@ namespace ChessFight.RagdollLab
                 default:
                     SetFourBKeys();   // bundle 나 (RagdollPawn.SetFourB.cs)
                     SetFourCKeys();   // bundle 다 (RagdollPawn.SetFourC.cs)
+                    SetFourJYKeys();  // the user's own (RagdollPawn.SetFourJY.cs)
                     break;
             }
         }
@@ -522,6 +523,7 @@ namespace ChessFight.RagdollLab
             if (NetworkPuppet || s == null) return;
             UpdateSetFourBStates(s, dt);   // bundle 나's (RagdollPawn.SetFourB.cs)
             UpdateSetFourCStates(s, dt);   // bundle 다's (RagdollPawn.SetFourC.cs)
+            UpdateSetFourJYStates(s, dt);  // the user's own (RagdollPawn.SetFourJY*.cs)
             if (bricks4.Count == 0 && pits4.Count == 0 && waters4.Count == 0 && crowns4.Count == 0 && pitOuts4.Count == 0) return;
             for (int i = bricks4.Count - 1; i >= 0; i--)
             {
@@ -654,6 +656,7 @@ namespace ChessFight.RagdollLab
         {
             ClearSetFourBStates();
             ClearSetFourCStates();
+            ClearSetFourJYStates();
             bricks4.Clear();
             pits4.Clear();
             waters4.Clear();

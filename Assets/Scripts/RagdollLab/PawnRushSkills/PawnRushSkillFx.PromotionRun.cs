@@ -563,6 +563,19 @@ namespace ChessFight.RagdollLab
             // 11-26 (the 4판's bundle 다): turned this way round its feet, or round its hips (asked again every frame).
             public Quaternion pose = Quaternion.identity;
             public bool posed, poseAtHips;
+            // 11-26 (the user's own skills): pressed or pulled out of shape round its feet, per axis (납작이's drum).
+            public Vector3 stretch = Vector3.one;
+            public bool stretched;
+        }
+
+        /// <summary>This frame <paramref name="p"/> is drawn <paramref name="stretch"/> times its size along each world axis
+        /// round its feet (납작이: wide and low).</summary>
+        void WantStretch(RagdollPawn p, Vector3 stretch)
+        {
+            if (p == null || p.skin == null) return;
+            if (!giants.TryGetValue(p, out var g)) giants[p] = g = new Giant { p = p };
+            g.stretch = stretch;
+            g.stretched = true;
         }
 
         /// <summary>This frame <paramref name="p"/> is drawn turned by <paramref name="pose"/> round its feet (a tower falling
@@ -624,7 +637,9 @@ namespace ChessFight.RagdollLab
                 g.paint = null;
                 bool posed = g.posed;
                 g.posed = false;
-                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null && !posed)
+                bool stretched = g.stretched;
+                g.stretched = false;
+                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null && !posed && !stretched)
                 {
                     skin.forceRenderingOff = false;
                     if (g.baked != null) Destroy(g.baked);
@@ -637,6 +652,7 @@ namespace ChessFight.RagdollLab
                 Vector3 feet = FloorUnder(g.p);
                 Matrix4x4 world = Matrix4x4.TRS(skin.transform.position, skin.transform.rotation, Vector3.one);
                 Matrix4x4 big = Matrix4x4.Translate(feet) * Matrix4x4.Scale(Vector3.one * g.scale) * Matrix4x4.Translate(-feet) * world;
+                if (stretched) big = Matrix4x4.Translate(feet) * Matrix4x4.Scale(g.stretch) * Matrix4x4.Translate(-feet) * big;
                 if (posed)
                 {
                     Vector3 pivot = g.poseAtHips ? g.p.Hips.position : feet;

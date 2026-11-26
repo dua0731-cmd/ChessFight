@@ -142,7 +142,7 @@ namespace ChessFight.RagdollLab
         {
             // 11-26 (the set 4판): a hindrance put on an enemy is its giver's hit; a hindrance ending, a tied piece's hop
             // and a speech bubble are nobody's cast (they opened a cast on the piece hindered, graded "?").
-            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say)
+            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say || e.kind == SkillFxKind.S4Flat)
             {
                 if (e.kind == SkillFxKind.S4Cc && e.count != 0 && e.by != null && e.target != null && e.by != e.target)
                 {
@@ -203,6 +203,19 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S3WaterThrow:
                     c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4.5f);   // (the puddle lies its seconds)
                     break;
+                // The user's own (JY): open through the steps' window, the rope in the hand and its pull, the jump.
+                case SkillFxKind.JyStep:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 1.6f);
+                    else if (e.count == 2) Hit(c, e.target);   // (the headbutt: a fall, no hindrance)
+                    break;
+                case SkillFxKind.JyRope:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 20f);   // (as long as it is held)
+                    else if (e.count == 1) c.holdUntil = Now;
+                    else if (e.count == 3) c.holdUntil = Now + 3f;
+                    break;
+                case SkillFxKind.JyStomp:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 4f);
+                    break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;
                 case SkillFxKind.BishopWire:
@@ -259,6 +272,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Sac: case SkillFxKind.S4Promo: case SkillFxKind.S4Burrow: case SkillFxKind.S4Pin:
                 case SkillFxKind.S4Dive: case SkillFxKind.S4Timber: case SkillFxKind.S4Pig: case SkillFxKind.S4Carpet:
                 case SkillFxKind.S4Throne: case SkillFxKind.S4Gambit:
+                case SkillFxKind.JyStep: case SkillFxKind.JyRope: case SkillFxKind.JyStomp:
                     return true;
                 case SkillFxKind.S4Fan:
                     return e.count != 4;

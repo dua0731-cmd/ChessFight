@@ -1194,7 +1194,7 @@ public static class NetworkCoreTests
                 plan2.Set(4,1,0); plan2.Apply(PawnRushLoadout.OpStage+4,3);
                 Check(plan2.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check,"the growing system: an empty second slot leaves the first skill at every stage");
                 var plan1=PawnRushLoadout.Preset(5);
-                Check(PawnRushLoadout.Presets==16&&plan1.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&plan1.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&plan1.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.LongSnipe&&plan1.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check
+                Check(PawnRushLoadout.Presets==17&&plan1.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&plan1.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&plan1.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.LongSnipe&&plan1.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check
                       &&plan1.Skill(PieceKind.Rook,0)==PawnRushSkillIds.ChainBehind&&plan1.Skill(PieceKind.King,0)==PawnRushSkillIds.KingSummon&&plan1.KingSlots
                       &&PawnRushSkillIds.Old(PawnRushSkillIds.SteeredSteps)&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.SteeredSteps)==PieceKind.Pawn&&!PawnRushSkillIds.Old(PawnRushSkillIds.LongSnipe)
                       &&PawnRushSkillIds.OldPiece(PawnRushSkillIds.ChainBehind)==PieceKind.Rook&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.KingSummon)==PieceKind.King,"the skill pool's plan 1: the pawn's steps, the rook's chain and the king's call run on the old ones' code, the snipe is a new skill");
@@ -1227,6 +1227,12 @@ public static class NetworkCoreTests
                 Check(PawnRushLoadout.SystemOf(15)==PawnRushLoadout.Many&&setFourCThirds==0&&setFourC.Raw(0,0)==PawnRushSkillIds.PromoCountdown&&setFourC.Raw(0,1)==PawnRushSkillIds.Pit
                       &&setFourC.Raw(3,0)==PawnRushSkillIds.RookDive&&setFourC.Raw(3,1)==PawnRushSkillIds.Timber&&setFourC.Raw(4,1)==PawnRushSkillIds.ThroneDrop&&setFourC.Raw(5,0)==0
                       &&PawnRushLoadout.Decode(setFourC.Encode()).Same(setFourC),"the set 4판's third bundle: two a piece (the rook's dive and falling tower side by side), no Q, no king");
+                var setFourJY=PawnRushLoadout.Preset(16);
+                Check(PawnRushLoadout.SystemOf(16)==PawnRushLoadout.Many&&setFourJY.Raw(0,0)==PawnRushSkillIds.StepsDiag&&setFourJY.Raw(0,1)==PawnRushSkillIds.RopePassant
+                      &&setFourJY.Raw(1,0)==PawnRushSkillIds.JumpStomp&&setFourJY.Raw(2,1)==PawnRushSkillIds.PinBeam&&setFourJY.Raw(3,1)==PawnRushSkillIds.WallBuild&&setFourJY.Raw(4,0)==PawnRushSkillIds.CrownToss
+                      &&PawnRushSkillIds.SetFour(PawnRushSkillIds.WallBuild)&&PawnRushSkillIds.SetFourJY(PawnRushSkillIds.StepsDiag)&&!PawnRushSkillIds.SetFourJY(PawnRushSkillIds.QueensGambit)
+                      &&PawnRushSkillIds.Grade4(PawnRushSkillIds.StepsDiag)==1&&PawnRushSkillIds.Grade4(PawnRushSkillIds.PinBeam)==2&&PawnRushSkillIds.Grade4(PawnRushSkillIds.WallBuild)==3
+                      &&PawnRushLoadout.Decode(setFourJY.Encode()).Same(setFourJY),"the user's own ten (JY): two a piece, the queen as in 가, their grades");
                 // The set 3판 (KITS 6.12, 11-23; 6.13, 11-24): the user's own skills, two a piece (the pawn's and the knight's
                 // basics on E: the two steps, the back kick), the bishop's swords and two basics to pick one from, no ultimate
                 // (every Q empty) and no king.

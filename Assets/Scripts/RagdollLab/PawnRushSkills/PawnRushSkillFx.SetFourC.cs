@@ -59,6 +59,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Carpet: S4CarpetFx(e, lvl); break;
                 case SkillFxKind.S4Throne: S4ThroneFx(e, lvl); break;
                 case SkillFxKind.S4Gambit: S4GambitFx(e, lvl); break;
+                default: SetFourJYFx(e, lvl); break;   // the user's own (PawnRushSkillFx.SetFourJY*.cs)
             }
         }
 
@@ -891,6 +892,7 @@ namespace ChessFight.RagdollLab
                 if (m != null) Destroy(m);
             s4cPinMesh = s4cCylinder = s4cThroneMesh = s4cEar = s4cClasp = null;
             s4cGold = null;
+            DestroySetFourJY();
         }
     }
 }

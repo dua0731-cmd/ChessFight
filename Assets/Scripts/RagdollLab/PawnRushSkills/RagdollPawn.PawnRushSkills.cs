@@ -160,6 +160,16 @@ namespace ChessFight.RagdollLab
         //   S4Throne  0 the shadow and the leap (at: the shadow; normal: from; size: flight), 1 down on it (size: sitting)
         //   S4Gambit  0 the pieces hung (at: the middle, dir; size: delay; normal: radius, every, height), 1 + i one down (at)
         S4Promo, S4Burrow, S4Pin, S4Dive, S4Timber, S4Pig, S4Lift, S4Carpet, S4Throne, S4Gambit,
+        // The user's own ten (JY, USER_SKILLS 5장; RagdollPawn.SetFourJY*.cs, PawnRushSkillFx.SetFourJY*.cs):
+        //   S4Flat     a flattened piece's jump press (target: it; count: presses so far, size: presses needed)
+        //   JyStep     0 crouch and two steps (at feet, dir; size: step time), 1 the diagonal cells lit (count: 1 left,
+        //              2 right, 3 both taken by an enemy; size: window), 2 the headbutt (target; at: contact), 3 window over
+        //   JyRope     0 rope out, 1 put away, 2 spinning (size: seconds to full), 3 thrown (at: hand, dir; size: flight
+        //              seconds; normal: where it comes down), 4 caught (target), 5 the neck chop (target), 6 missed (at)
+        //   JyStomp    0 crouch, 1 up (size: rise seconds), 2 a mark (target; count: 1 the one to stomp, 2 any other),
+        //              3 dive (target), 4 stomped (target), 5 the fork ring (at; size: radius), 6 a fork shackle (target),
+        //              7 landed (at)
+        S4Flat, JyStep, JyRope, JyStomp,
     }
 
     public struct SkillFxEvent
@@ -641,6 +651,12 @@ namespace ChessFight.RagdollLab
                 // On its way in to a king (R146), just respawned or on the finish pad (R153): nothing takes.
                 target.LastSkillHit = $"{cause}: 스킬 대상 아님";
                 return "대상 아님";
+            }
+            if (target.CurrentCc == Cc4.Frozen)
+            {
+                // 핀!'s 멈춤 (USER_SKILLS 3장): a frozen piece is not pushed.
+                target.LastSkillHit = $"{cause}: 멈춤 (밀리지 않음)";
+                return "멈춤";
             }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             push *= StagePower;   // the growing system's stage (the skill window)

@@ -599,6 +599,9 @@ namespace ChessFight.RagdollLab
         /// Queen of the Hill bishop's hover slides on it (R105).</summary>
         Vector3 givenMove;
 
+        /// <summary>The left button held as last given (SetInput), whatever a skill did to input's this step.</summary>
+        bool rawShoveHeld;
+
         public void SetInput(PawnInput next)
         {
             // A mini-game holding this pawn still (J's pad winding up), or taking its jump press instead.
@@ -625,6 +628,7 @@ namespace ChessFight.RagdollLab
             if (next.interact && !input.interact) interactPressed = true;
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
+            rawShoveHeld = next.shoveHeld;   // (as given: a skill that takes the button clears input's, every physics step)
             input.aim = next.aim;
             // 11-22: the support key (G) and the skill key (F) held (RagdollPawn.Support.cs); a G tap between two physics
             // steps is kept for the next one.
@@ -743,6 +747,7 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             if (NetworkPuppet) return;
+            if (FrozenStep(Time.fixedDeltaTime)) return;   // 핀!'s 멈춤: held exactly as it was hit (RagdollPawn.Cc.cs)
             var p = P;
             float dt = Time.fixedDeltaTime;
             if (stamina < 0f) stamina = p.climbStaminaMax;

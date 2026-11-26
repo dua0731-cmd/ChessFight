@@ -1164,5 +1164,46 @@ namespace ChessFight.RagdollLab
         [Header("4판 다 · 퀸 퀸스 갬빗 (상급)")]
         [Tooltip("겨누는 거리 (m), 둘레 지름 (m), 첫째가 떨어지기까지 (초), 사이 (초), 떨어지는 시간 (초), 말 하나의 지름 (m), 매달린 높이 (m)")]
         public float gambitRange = 25f, gambitSize = 10f, gambitDelay = 1f, gambitEvery = 0.3f, gambitFall = 0.35f, gambitPiece = 2f, gambitHigh = 6f;
+
+        // ---------------------------------------------------------------- the user's own ten (JY, USER_SKILLS 4장, 11-26)
+
+        [Header("JY · 새 상태 납작이 · 멈춤")]
+        [Tooltip("납작이: 길이 (초, 안 눌러도 풀림), 그려지는 높이 (몫), 폭 (몫), 걷기 (몫), 점프 높이 (몫)")]
+        public float flatSeconds = 8f, flatHigh = 0.25f, flatWide = 1.5f, flatMove = 0.7f, flatJump = 0.3f;
+        [Tooltip("납작이를 푸는 점프 키 누름 수")]
+        public int flatPresses = 5;
+        [Header("JY · 폰 첫 두걸음+대각선 공격 (초급)")]
+        [Tooltip("두 걸음 거리 (m), 시간 (초), 웅크림 (초), 둘째 키를 받는 시간 (초), 대각선 안쪽 · 바깥쪽 각도 (°), 대각선 거리 (m), 박치기까지 (초)")]
+        public float jyStepDist = 3f, jyStepTime = 0.35f, jyStepCrouch = 0.1f, jyDiagWindow = 1f, jyDiagInner = 25f, jyDiagOuter = 65f, jyDiagReach = 2.5f, jyDiagLunge = 0.18f;
+        [Header("JY · 폰 앙파상-밧줄 (중급)")]
+        [Tooltip("가장 짧게 · 길게 던지는 거리 (m), 다 돌리기까지 (초), 매듭이 걸리는 거리 (m), 끌려오는 빠르기 (m/s), 폰이 당겨지는 더함 (m/s), 당기는 시간 (초), 뒷목을 치는 거리 (m), 콰당! (초)")]
+        public float jyRopeShort = 4f, jyRopeLong = 10f, jyRopeSpin = 1f, jyRopeCatch = 0.7f, jyRopePull = 8f, jyRopeLunge = 4f, jyRopeTime = 1f, jyRopeChop = 1.2f, jyRopeFlop = 1.5f;
+        [Header("JY · 나이트 점프&밟기 (중급)")]
+        [Tooltip("준비 (초), 솟는 높이 (m), 무늬 거리 (m), 뛴 자리보다 높은 적 빼기 (m), 내리꽂기 (초), 머리 딛고 튀기 (m), 포크 둘레 (m), 포크 묶임 (초)")]
+        public float jyJumpPrep = 0.15f, jyJumpHigh = 3f, jyMarkRange = 6f, jyMarkAbove = 1f, jyDiveTime = 0.3f, jyStompBounce = 1f, jyForkRange = 3f, jyForkBind = 1.5f;
+        [Header("JY · 비숍 성검 던지기 (중급)")]
+        [Tooltip("소환 (초), 거리 (m), 빠르기 (m/s), 맞는 거리 (m), 십자가 높이 · 가로대 (m), 묶임 (초), 길 막는 시간 (초)")]
+        public float jySwordSummon = 0.25f, jySwordRange = 15f, jySwordSpeed = 18f, jySwordCatch = 0.8f, jyCrossHigh = 3f, jyCrossWide = 3f, jyCrossBind = 2f, jyCrossSeconds = 4f;
+        [Header("JY · 비숍 케틀 궁 (상급)")]
+        [Tooltip("조준 예고 (초), 탄환 빠르기 (m/s), 맞는 거리 (m)")]
+        public float jyBowAim = 1f, jyBowSpeed = 40f, jyBowCatch = 0.7f;
+        [Header("JY · 비숍 핀! (중급)")]
+        [Tooltip("준비 (초), 길이 (m), 폭 (m), 멈춤 (초)")]
+        public float jyBeamPrep = 0.15f, jyBeamRange = 25f, jyBeamWide = 0.4f, jyBeamFreeze = 2f;
+        [Tooltip("한 줄에서 맞는 적 수")]
+        public int jyBeamHits = 2;
+        [Header("JY · 룩 거대화 (상급)")]
+        [Tooltip("준비 (초), 크기 (배), 커지기 (초), 길이 (초)")]
+        public float jyGiantPrep = 0.5f, jyGiantScale = 4f, jyGiantGrow = 0.5f, jyGiantSeconds = 8f;
+        [Header("JY · 룩 힘세지기 (상급)")]
+        [Tooltip("준비 (초), 길이 (초), 크기 (배), 밀리는 거리 (몫), 빠르기 (몫), 집는 거리 (m), 던지는 거리 (m), 던지는 높이 (m), 빠져나오기 (초)")]
+        public float jyStrongPrep = 0.3f, jyStrongSeconds = 15f, jyStrongScale = 1.5f, jyStrongPush = 0.3f, jyStrongMove = 0.9f, jyStrongReach = 2f, jyStrongThrow = 4f, jyStrongThrowHigh = 1.5f, jyStrongEscape = 3f;
+        [Header("JY · 룩 벨코즈 q 성벽 (중급) · 성벽 짓기 (상급)")]
+        [Tooltip("벽 높이 (m), 두께 (m) · T자: 준비 (초), 뻗는 빠르기 (m/s), 곧은 길이 (m), 양쪽 날개 (m), 서 있는 시간 (초)")]
+        public float jyWallHigh = 2f, jyWallThick = 0.6f, jyTWallPrep = 0.15f, jyTWallSpeed = 20f, jyTWallLength = 10f, jyTWallWing = 4f, jyTWallSeconds = 5f;
+        [Tooltip("성벽 짓기: 분신 빠르기 (m/s), 벽 길이 (m), 꺾기 쿨 (초), 다 지은 뒤 서 있는 시간 (초)")]
+        public float jyBuildSpeed = 10f, jyBuildLength = 24f, jyBuildTurnCool = 0.5f, jyBuildSeconds = 5f;
+        [Tooltip("성벽 짓기: 꺾는 횟수")]
+        public int jyBuildTurns = 4;
     }
 }

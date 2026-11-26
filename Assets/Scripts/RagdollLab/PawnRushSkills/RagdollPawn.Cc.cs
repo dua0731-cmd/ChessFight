@@ -8,7 +8,7 @@ namespace ChessFight.RagdollLab
     /// 심해진다던가, 조작이 몇초동안 안된다거나 뭐 이런 류여야해").</summary>
     /// <remarks>Pinned (11-26, the bishop's 핀!): 묶임 as ROUND1 counts it, but on a 2 m rubber band round where the pin
     /// went in, the keys free inside it, springing back there at the end.</remarks>
-    public enum Cc4 : byte { None = 0, Flop = 1, Dizzy = 2, Tired = 3, Heavy = 4, BoundHop = 5, BoundRoot = 6, Slippery = 7, Tiny = 8, Pinned = 9 }
+    public enum Cc4 : byte { None = 0, Flop = 1, Dizzy = 2, Tired = 3, Heavy = 4, BoundHop = 5, BoundRoot = 6, Slippery = 7, Tiny = 8, Pinned = 9, Flat = 10, Frozen = 11 }
 
     /// <summary>
     /// The set 4판's seven hindrances (ROUND1 3장): a body state for a few seconds, one at a time - a new one ends the last -
@@ -23,6 +23,14 @@ namespace ChessFight.RagdollLab
     ///   미끌미끌 (Slippery)  speeding up, stopping and turning take only 20%
     ///   쪼꼬미 (Tiny)        drawn at half size (PawnRushSkillFx), runs at 70%, jumps 60% as high, pushed twice as far
     ///
+    /// Two more from the skills the user wrote (USER_SKILLS 3장, 11-26):
+    ///
+    ///   납작이 (Flat)        pressed into a flat drum (drawn 25% high, 150% wide): walks at 70%, jumps 30% as high; its top
+    ///                        is a floor anyone stands on (a box the others meet instead of its body); five presses of the
+    ///                        jump key pop it back (8 s at most)
+    ///   멈춤 (Frozen)        held exactly as it was hit, in the air too, no keys, not pushed, nothing else takes; then it
+    ///                        goes on with the speed it had
+    ///
     /// The host gives them (GiveCc) and every PC hears of it (SkillFxKind.S4Cc for the look; the kind in Flags3's bits 2-5
     /// for the keys and the speed of a piece its own PC drives). Not seen in Unity by anyone yet.
     /// </summary>
@@ -31,6 +39,14 @@ namespace ChessFight.RagdollLab
         Cc4 cc;
         float ccLeft, ccTotal, ccPhase, ccHopWait;
         Vector3 ccAt;
+        int flatPresses;
+        GameObject flatTop;
+        Vector3[] frozenPos, frozenVel, frozenSpin;
+        Quaternion[] frozenRot;
+        bool frozenHeld;
+
+        /// <summary>The jump presses a flattened piece has made towards popping back (0..5).</summary>
+        public int FlatPresses => cc == Cc4.Flat && ccLeft > 0f ? flatPresses : 0;
 
         /// <summary>The hindrance on this piece now (None when there is none).</summary>
         public Cc4 CurrentCc => ccLeft > 0f ? cc : Cc4.None;
@@ -45,6 +61,7 @@ namespace ChessFight.RagdollLab
         {
             if (NetworkPuppet || kind == Cc4.None || seconds <= 0f) return;
             if (SkillUntargetable || Floating) return;
+            if (ccLeft > 0f && cc == Cc4.Frozen) return;   // (멈춤: nothing else takes meanwhile)
             EndCc(false);
             cc = kind;
             ccLeft = ccTotal = seconds;
@@ -59,6 +76,9 @@ namespace ChessFight.RagdollLab
                 case Cc4.Tired:
                     if (stamina > 0f) stamina = 0f;
                     Exhausted = true;
+                    break;
+                case Cc4.Flat:
+                    flatPresses = 0;
                     break;
             }
             // Raised by its giver (the moment's "by"; the skill grades count it as the giver's hit), on this piece (its
@@ -81,6 +101,8 @@ namespace ChessFight.RagdollLab
             Cc4.Pinned => "묶임",
             Cc4.Slippery => "미끌미끌",
             Cc4.Tiny => "쪼꼬미",
+            Cc4.Flat => "납작이",
+            Cc4.Frozen => "멈춤",
             _ => "",
         };
 
@@ -89,6 +111,7 @@ namespace ChessFight.RagdollLab
         {
             if (ccLeft <= 0f && cc == Cc4.None) return;
             bool was = ccLeft > 0f;
+            LeaveCcBody();
             ccLeft = 0f;
             cc = Cc4.None;
             if (tell && was && !NetworkPuppet) Fx(SkillFxKind.S4Cc, this, bodies[(int)BodyId.Head].position, Vector3.up, 0, 0f);
@@ -121,6 +144,96 @@ namespace ChessFight.RagdollLab
             }
             if (cc == Cc4.BoundRoot && State == PawnState.Active) HoldCcSpot(dt);
             if (cc == Cc4.Pinned && State == PawnState.Active) HoldCcLeash();
+            if (cc == Cc4.Flat) HoldFlatTop();
+        }
+
+        // ---------------------------------------------------------------- 납작이 and 멈춤
+
+        /// <summary>A standing piece's height and width as the flat drum is measured from (about a pawn's).</summary>
+        const float FlatBaseTall = 1.6f, FlatBaseWide = 0.7f;
+
+        /// <summary>A flattened piece's top, a floor anyone stands on: a box over its feet as high as it is drawn (the others
+        /// pass through its real body meanwhile, so they meet the box and not an unseen head).</summary>
+        void HoldFlatTop()
+        {
+            var s = CcParams;
+            float high = Mathf.Max(0.15f, FlatBaseTall * (s != null ? s.flatHigh : 0.25f));
+            float wide = Mathf.Max(0.4f, FlatBaseWide * (s != null ? s.flatWide : 1.5f));
+            if (flatTop == null)
+            {
+                flatTop = new GameObject("Flat top (납작이)");
+                var rb = flatTop.AddComponent<Rigidbody>();
+                rb.isKinematic = true;
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                var box = flatTop.AddComponent<BoxCollider>();
+                box.size = new Vector3(wide, high, wide);
+                box.center = new Vector3(0f, high * 0.5f, 0f);
+                IgnoreBody(box, true);
+                foreach (var o in All)
+                    if (o != null && o != this) IgnorePiece(o, true);
+            }
+            var body = flatTop.GetComponent<Rigidbody>();
+            Vector3 feet = FeetPoint;
+            body.MovePosition(new Vector3(bodies[0].position.x, feet.y + 0.02f, bodies[0].position.z));
+            body.MoveRotation(Quaternion.LookRotation(FlatDir(facing), Vector3.up));
+        }
+
+        /// <summary>Every step before anything else (RagdollPawn.FixedUpdate): a frozen piece keeps exactly its pose and
+        /// place, and its clock runs; true while it is held (the step does nothing else).</summary>
+        bool FrozenStep(float dt)
+        {
+            if (!(ccLeft > 0f && cc == Cc4.Frozen) || bodies == null) return false;
+            if (!frozenHeld)
+            {
+                int n = bodies.Length;
+                frozenPos = new Vector3[n];
+                frozenVel = new Vector3[n];
+                frozenSpin = new Vector3[n];
+                frozenRot = new Quaternion[n];
+                for (int i = 0; i < n; i++)
+                {
+                    if (bodies[i] == null) continue;
+                    frozenPos[i] = bodies[i].position;
+                    frozenRot[i] = bodies[i].rotation;
+                    frozenVel[i] = bodies[i].linearVelocity;
+                    frozenSpin[i] = bodies[i].angularVelocity;
+                }
+                frozenHeld = true;
+            }
+            UpdateCc(dt);
+            if (!(ccLeft > 0f && cc == Cc4.Frozen)) return false;
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                if (bodies[i] == null) continue;
+                bodies[i].position = frozenPos[i];
+                bodies[i].rotation = frozenRot[i];
+                bodies[i].linearVelocity = Vector3.zero;
+                bodies[i].angularVelocity = Vector3.zero;
+            }
+            return true;
+        }
+
+        /// <summary>A hindrance's hold on the body let go: a frozen piece goes on as it was going, a flat one's top goes.</summary>
+        void LeaveCcBody()
+        {
+            if (frozenHeld)
+            {
+                frozenHeld = false;
+                if (bodies != null && frozenVel != null)
+                    for (int i = 0; i < bodies.Length && i < frozenVel.Length; i++)
+                    {
+                        if (bodies[i] == null) continue;
+                        bodies[i].linearVelocity = frozenVel[i];
+                        bodies[i].angularVelocity = frozenSpin[i];
+                    }
+            }
+            if (flatTop != null)
+            {
+                foreach (var o in All)
+                    if (o != null && o != this) IgnorePiece(o, false);
+                Destroy(flatTop);
+                flatTop = null;
+            }
         }
 
         /// <summary>On a pin's band: free inside its length, pulled back past it (harder the farther).</summary>
@@ -187,6 +300,26 @@ namespace ChessFight.RagdollLab
                     input.jump = false;
                     input.sprint = false;
                     break;
+                case Cc4.Flat:
+                    // Five presses of the jump key pop it back (each one a little hop, 30% high).
+                    if (input.jump && !NetworkPuppet)
+                    {
+                        flatPresses++;
+                        int need = s != null ? Mathf.Max(1, s.flatPresses) : 5;
+                        Fx(SkillFxKind.S4Flat, this, FeetPoint, FlatDir(facing), Mathf.Min(flatPresses, need), need);
+                        if (flatPresses >= need)
+                        {
+                            EndCc();
+                            input.jump = false;
+                        }
+                    }
+                    input.sprint = false;
+                    input.shove = false;
+                    input.shoveHeld = false;
+                    break;
+                case Cc4.Frozen:
+                    input = default(PawnInput);
+                    break;
             }
         }
 
@@ -201,6 +334,7 @@ namespace ChessFight.RagdollLab
                 {
                     Cc4.Heavy => s != null ? s.ccHeavyMove : 0.6f,
                     Cc4.Tiny => s != null ? s.ccTinyMove : 0.7f,
+                    Cc4.Flat => s != null ? s.flatMove : 0.7f,
                     _ => 1f,
                 };
             }
@@ -218,6 +352,7 @@ namespace ChessFight.RagdollLab
                     Cc4.Tired => s != null ? s.ccTiredJump : 0.6f,
                     Cc4.Heavy => s != null ? s.ccHeavyJump : 0.5f,
                     Cc4.Tiny => s != null ? s.ccTinyJump : 0.6f,
+                    Cc4.Flat => s != null ? s.flatJump : 0.3f,
                     _ => 1f,
                 };
             }
@@ -247,6 +382,7 @@ namespace ChessFight.RagdollLab
         void ClearCc()
         {
             bool had = ccLeft > 0f;
+            LeaveCcBody();
             ccLeft = 0f;
             cc = Cc4.None;
             if (had && !NetworkPuppet && bodies != null && bodies.Length > 0 && bodies[0] != null)
@@ -270,12 +406,14 @@ namespace ChessFight.RagdollLab
             var kind = (Cc4)((s.Flags3 >> NetCcShift) & NetCcMask);
             if (kind == Cc4.None)
             {
+                if (ccLeft > 0f) LeaveCcBody();
                 ccLeft = 0f;
                 cc = Cc4.None;
                 return;
             }
             if (cc != kind || ccLeft <= 0f)
             {
+                if (ccLeft > 0f) LeaveCcBody();
                 cc = kind;
                 ccPhase = 0f;
                 ccLeft = ccTotal = 3f;   // (this PC's own count until the host's state says it is over)

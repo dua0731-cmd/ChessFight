@@ -342,6 +342,17 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.Procession: UpdateProcession(s, press, dt); break;
                 case PawnRushSkillIds.ThroneDrop: UpdateThroneDrop(s, press, dt); break;
                 case PawnRushSkillIds.QueensGambit: UpdateQueensGambit(s, press, dt); break;
+                // The user's own ten (JY; RagdollPawn.SetFourJY*.cs).
+                case PawnRushSkillIds.StepsDiag: UpdateStepsDiag(s, press, dt); break;
+                case PawnRushSkillIds.RopePassant: UpdateRopePassant(s, press, dt); break;
+                case PawnRushSkillIds.JumpStomp: UpdateJumpStomp(s, press, dt); break;
+                case PawnRushSkillIds.SwordThrow: UpdateSwordThrow(s, press, dt); break;
+                case PawnRushSkillIds.KettleBow: UpdateKettleBow(s, press, dt); break;
+                case PawnRushSkillIds.PinBeam: UpdatePinBeam(s, press, dt); break;
+                case PawnRushSkillIds.Giant: UpdateGiant(s, press, dt); break;
+                case PawnRushSkillIds.Strongman: UpdateStrongman(s, press, dt); break;
+                case PawnRushSkillIds.TWall: UpdateTWall(s, press, dt); break;
+                case PawnRushSkillIds.WallBuild: UpdateWallBuild(s, press, dt); break;
             }
         }
 

@@ -97,9 +97,18 @@ namespace ChessFight.Network
                          Mower = 161, RookLift = 162,
                          CrownToss = 163, Insolent = 164, Procession = 165, ThroneDrop = 166, ScholarMate = 167, PerpetualCheck = 168,
                          QueenSac4 = 169, QueensGambit = 170;
+        // The ten the user wrote (Docs/Skills/PAWN_RUSH_SET4_USER_SKILLS.md, 11-26: "지금 먼저 할 작업은 내가 기획한 스킬들을
+        // 너가 다듬어서 게임에 넣는거"; RagdollPawn.SetFourJY*.cs): the pawn's two steps and diagonal hit and its rope, the
+        // bishop's thrown holy sword, its bow at the leader and its pin beam, the knight's jump and stomp, the rook's giant,
+        // its strongman, its T wall and its wall building. Tagged "JY" at the top of each piece's list.
+        public const int StepsDiag = 171, RopePassant = 172, SwordThrow = 173, KettleBow = 174, PinBeam = 175, JumpStomp = 176,
+                         Giant = 177, Strongman = 178, TWall = 179, WallBuild = 180;
 
-        /// <summary>One of the set 4판's skills (136..170): the skill tree's own list; every other one is retired.</summary>
-        public static bool SetFour(int id) => id >= Trip4 && id <= QueensGambit;
+        /// <summary>One of the set 4판's skills (136..180): the skill tree's own list; every other one is retired.</summary>
+        public static bool SetFour(int id) => id >= Trip4 && id <= WallBuild;
+
+        /// <summary>One of the ten the user wrote (171..180, the "JY" tag).</summary>
+        public static bool SetFourJY(int id) => id >= StepsDiag && id <= WallBuild;
 
         /// <summary>A set 4판 skill's grade (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md 4장; the user 11-26: "스킬은 초급, 중급, 상급이
         /// 있어. 이건 스킬의 위력과 쿨타임으로 정해지는거야", and any two of them in a piece's two slots): 1 초급, 2 중급,
@@ -110,8 +119,10 @@ namespace ChessFight.Network
             {
                 case PawnStorm: case PromoCountdown: case ForkBonk: case Burrow: case Bell: case Crook: case SafetyPin:
                 case Charge4: case Mower: case RookLift: case PerpetualCheck:
+                case RopePassant: case SwordThrow: case PinBeam: case JumpStomp: case TWall:
                     return 2;
                 case RookDive: case Timber: case GatePig: case Insolent: case Procession: case ThroneDrop: case QueenSac4: case QueensGambit:
+                case KettleBow: case Giant: case Strongman: case WallBuild:
                     return 3;
                 default:
                     return SetFour(id) ? 1 : 0;
@@ -425,10 +436,10 @@ namespace ChessFight.Network
         /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
         /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
         /// 0 for the others (the system stays as it is).</summary>
-        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 || preset == 13 || preset == 14 || preset == 15 ? Many : 0;
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 || preset == 13 || preset == 14 || preset == 15 || preset == 16 ? Many : 0;
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 16;
+        public const int Presets = 17;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
@@ -439,12 +450,26 @@ namespace ChessFight.Network
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
         /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
         /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, two a
-        /// piece of different grades, no ultimate), 13 to 15 the set 4판's bundles 가, 나 and 다 (two a piece, no ultimate).
+        /// piece of different grades, no ultimate), 13 to 15 the set 4판's bundles 가, 나 and 다 (two a piece, no ultimate), 16 the user's own ("JY").
         /// The king's row is empty (his call) in all but 4 to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 16)
+            {
+                // The ten the user wrote ("JY", USER_SKILLS 1장): the pawn's steps and rope, the knight's jump and stomp with
+                // the back kick, the bishop's sword and pin beam, the rook's strongman and wall building; the queen as in 가.
+                // The bow, the giant and the T wall wait in the list.
+                int[] f = { PawnRushSkillIds.StepsDiag, PawnRushSkillIds.JumpStomp, PawnRushSkillIds.SwordThrow, PawnRushSkillIds.Strongman, PawnRushSkillIds.CrownToss, 0 };
+                int[] e = { PawnRushSkillIds.RopePassant, PawnRushSkillIds.BackKick4, PawnRushSkillIds.PinBeam, PawnRushSkillIds.WallBuild, PawnRushSkillIds.Insolent, 0 };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                }
+                return p;
+            }
             if (which == 15)
             {
                 // The set 4판's third bundle (ROUND1 5장, 묶음 다, 11-26): two a piece on F and E. The rook's dive and its
