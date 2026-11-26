@@ -29,3 +29,14 @@ https://claude.ai/artifact/6k3xV1LpiLyTiEpFJrUyyu. **Not heard by the user yet; 
 | chocolate_loop | `BhChocolateLoop` | 6 loop | 1 | 6.0 | 0.395 | Thick melted chocolate pouring down a fountain in slow heavy sheets, glossy viscous glugging, seamless loop |
 | chandelier_swing | `BhChandelierSwing` | default | 4 | 0.671 | 0.61 | A swinging crystal chandelier reaching the end of its swing: scattered crystal drops tinkling with a soft brass chain creak, short |
 | arrival | `BhArrival` | default | 3 | 1.6 | 0.388 | Very short royal trumpet fanfare flourish in F major, two bright trumpets, a clear ending |
+
+R848 (11-26, user "나머지 사운드 작업 시작"): the third tier, same flow, 4 takes each, picked by the numbers.
+
+| kind | file | seconds asked | picked | game length (s) | volume in code | prompt |
+|---|---|---|---|---|---|---|
+| curtain_meet | `BhCurtainMeet` | default | 2 | 0.83 | 0.535 | Two heavy velvet stage curtains swinging closed and meeting in the middle, one soft deep fabric thud, short |
+| great_chandelier | `BhGreatChandelier` | 6 loop | 2 | 6.0 | 0.317 | Very quiet shimmer of many crystal drops gently trembling on a huge palace chandelier, delicate and sparse tinkles, calm, seamless loop |
+| guests_toast | `BhGuestsToast` | default | 3 | 1.08 | 0.416 | A dozen dinner guests tapping silver spoons on crystal wine glasses in approval, bright scattered ringing for one second, no speech |
+| bass_bump | `BhBassBump` | default | 4 | 0.9 | 0.271 | A double bass bumped by accident: low open strings booming once with a hollow wooden knock, short |
+| magic_build | `BhMagicBuild` (replaces the drum as the trick's cue, user 11-26) | 2.2 | 4 | 2.0 | 0.606 | A magician's spell charging up over two seconds: sparkling twinkling fairy chimes and a shimmering harp glissando rising steadily in pitch and intensity, magical whoosh swelling underneath, ends abruptly at its peak with no final hit |
+| choco_step | `ChocoStep0..2` (PawnRushStepSfx) | 0.5 | 4, 3, 1 | - | x0.35 in PawnRushStepSfx | A single sticky footstep in thick melted chocolate, one soft wet squelch, very short |

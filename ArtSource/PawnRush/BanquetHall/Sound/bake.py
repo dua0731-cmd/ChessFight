@@ -22,6 +22,8 @@ TAKES = os.path.join(S, 'takes')
 KINDS = {
     # 1st: the cue sounds (design 2-1)
     'drum_roll':        ('BhDrumRoll',        False, .2,  True,  False),
+    # the trick's cue as magic instead of the drum (user 11-26 "드럼 사운드 보다는 마법 같은 소리가 더 잘어울리겠어")
+    'magic_build':      ('BhMagicBuild',      False, .2,  True,  True),
     'cloth_pull':       ('BhClothPull',       False, .55, False, True),
     'service_bell':     ('BhServiceBell',     False, .5,  False, True),
     'cloche_shut':      ('BhClocheShut',      False, .6,  False, True),
@@ -40,21 +42,32 @@ KINDS = {
     'chocolate_loop':   ('BhChocolateLoop',   True,  None, False, False),
     'chandelier_swing': ('BhChandelierSwing', False, .7,  False, True),
     'arrival':          ('BhArrival',         False, .6,  False, True),
+    # 3rd: the finishing touches (design 2-3; R845 이어서, user 11-26 "나머지 사운드 작업 시작")
+    'curtain_meet':     ('BhCurtainMeet',     False, .35, False, False),
+    'great_chandelier': ('BhGreatChandelier', True,  None, False, True),
+    'guests_toast':     ('BhGuestsToast',     False, .9,  False, True),
+    'bass_bump':        ('BhBassBump',        False, .6,  False, True),
+    # the chocolate's footsteps: the three best takes go to the shared step folder (PawnRushStepSfx), not this table
+    'choco_step':       ('ChocoStep',         False, .2,  False, False),
 }
+# kinds written elsewhere (the footsteps: STEP_OUT/<name><i>.wav, the best STEP_COUNT takes)
+STEPS = {'choco_step'}
+STEP_OUT_REL, STEP_COUNT = 'Assets/Resources/PawnRushStepSfx', 3
 # Every one-shot is peak-normalised to this and every loop's RMS to LoopRms (its peak no higher than OneShotPeak);
 # how loud each is heard is the code's (GrandBanquetHallSound's volumes).
 OneShotPeak, LoopRms = -1.0, -20.0
 # One-shots kept whole up to this many seconds (a roll or a lay that lasts its device's phase, three taps, a fanfare):
 # only their edges are faded, and the numbers only look for a faint take and a late start.
-WHOLE = {'drum_roll': 2.0, 'curtain_cue': 1.1, 'cloth_lay': 2.0, 'arrival': 1.6}
+WHOLE = {'drum_roll': 2.0, 'magic_build': 2.0, 'curtain_cue': 1.1, 'cloth_lay': 2.0, 'arrival': 1.6}
 HEAVY = set()
 
 # How loud each is heard, close to it, at the settings' default effects volume (PAWN_RUSH_AUDIO.md section 0; the
 # design's 2-1 / 2-2 tables); bake.py prints the AudioSource volume that gives it (`vol`), which the code's table carries.
 EFFECTS = .8
-HEARD = dict(drum_roll=-20, cloth_pull=-18, service_bell=-21, cloche_shut=-21, lamp_chime=-22, curtain_cue=-21,
+HEARD = dict(drum_roll=-20, magic_build=-20, cloth_pull=-18, service_bell=-21, cloche_shut=-21, lamp_chime=-22, curtain_cue=-21,
              hall_ambience=-34, kitchen_door=-24, tray_clink=-30, cloth_thrown=-21, cloth_lay=-24, cloche_open=-24,
-             hoist_loop=-27, gown_loop=-32, curtain_draw=-27, chocolate_loop=-30, chandelier_swing=-26, arrival=-21)
+             hoist_loop=-27, gown_loop=-32, curtain_draw=-27, chocolate_loop=-30, chandelier_swing=-26, arrival=-21,
+             curtain_meet=-24, great_chandelier=-33, guests_toast=-26, bass_bump=-24)
 
 
 def loudness(y, loop):
@@ -143,7 +156,7 @@ def score(m, kind):
         return s
     if kind in WHOLE:
         # a drum roll should build to its end, where the pull follows, and last its whole two seconds
-        if kind == 'drum_roll': s += .5 * max(0.0, WHOLE[kind] - m['hit']) + 5 * max(0.0, WHOLE[kind] - m['length'])
+        if kind in ('drum_roll', 'magic_build'): s += .5 * max(0.0, WHOLE[kind] - m['hit']) + 5 * max(0.0, WHOLE[kind] - m['length'])
         return s + 2 * max(0.0, m['onset'] - .05)
     late = m['onset'] if swell else m['hit']
     s += 40 * max(0.0, late - (.15 if swell else .04))
@@ -191,8 +204,8 @@ def write_wav(p, y, sr=SR):
         w.writeframes((np.clip(y, -1, 1) * 32767).astype('<i2').tobytes())
 
 
-def meta(name):
-    rel = f'{OUT_REL}/{name}.wav'
+def meta(name, out_rel=OUT_REL):
+    rel = f'{out_rel}/{name}.wav'
     path = os.path.join(ROOT, rel) + '.meta'
     if os.path.exists(path): return 'kept'
     g = hashlib.md5(('chessfight:' + rel).encode()).hexdigest()
@@ -227,11 +240,37 @@ for kind in KINDS:
 report = {}
 for kind, (name, loop, _, _, _) in KINDS.items():
     rows = [measured[k] for k in measured if k.rsplit('_', 1)[0] == kind]
+    if kind in STEPS:
+        # the best few, each its own step clip (peak -1 dB; the step code sets their level)
+        best = sorted(rows, key=lambda r: r[0]['score'])[:STEP_COUNT]
+        for i, (m, x) in enumerate(best):
+            write_wav(os.path.join(ROOT, STEP_OUT_REL, f'{name}{i}.wav'), trim(x, m, kind))
+            print(f"{kind:14s} take {m['take']} -> {STEP_OUT_REL}/{name}{i}.wav  meta {meta(f'{name}{i}', STEP_OUT_REL)}")
+        report[kind] = dict(file=name + '0..', picked=[f"{kind}_{r[0]['take']}" for r in best], by='numbers', loop=False,
+                            takes=[{k: (round(v, 3) if isinstance(v, float) else v) for k, v in r[0].items()} for r in rows])
+        continue
     best = min(rows, key=lambda r: r[0]['score'])
     want = str(chosen.get(kind, best[0]['take']))
-    source = want if '_' in want else f'{kind}_{want}'
-    m, x = measured[source]
-    y = trim(x, measure(x, source.rsplit('_', 1)[0]), source.rsplit('_', 1)[0])
+    if '+' in want:
+        # takes mixed (user 11-26 "빼기 1번 2번 혼합"): each trimmed as it would be alone, laid so their loudest moments
+        # meet, summed and normalised again
+        parts = []
+        for w in want.split('+'):
+            src = w if '_' in w else f'{kind}_{w}'
+            mm, xx = measured[src]
+            parts.append(trim(xx, measure(xx, kind), kind))
+        hits = [int(np.argmax(env(p))) for p in parts]
+        lead = max(hits)
+        length = max(lead - h + len(p) for p, h in zip(parts, hits))
+        y = np.zeros(length)
+        for p, h in zip(parts, hits):
+            y[lead - h:lead - h + len(p)] += p
+        y *= 10 ** (OneShotPeak / 20) / max(np.abs(y).max(), 1e-9)
+        source = kind + '_' + want
+    else:
+        source = want if '_' in want else f'{kind}_{want}'
+        m, x = measured[source]
+        y = trim(x, measure(x, source.rsplit('_', 1)[0]), source.rsplit('_', 1)[0])
     write_wav(os.path.join(OUT, name + '.wav'), y)
     loud = loudness(y, loop)
     vol = min(1.0, 10 ** ((HEARD[kind] - loud) / 20) / EFFECTS)

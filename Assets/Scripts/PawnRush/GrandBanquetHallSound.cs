@@ -12,7 +12,7 @@ namespace ChessFight.PawnRush
     // shared obstacle clock, so each sound is played on every PC at the same moment by reading that clock here - nothing
     // is sent, the protocol is as it was. As the observatory's RoyalObservatorySound (R742):
     //   waiters (4)        the kitchen half-door's flap as each tray comes through it; their plate stacks clink (loops)
-    //   tablecloth trick   the drum roll as the cloth turns red (2 s), the pull (cymbal + cloth snap), a whoosh on every
+    //   tablecloth trick   a magic spell charging up as the cloth turns red (2 s; was a drum roll), the pull (cymbal + cloth snap), a whoosh on every
     //                      pawn thrown, the cloth's flap as it is laid again
     //   cloche lifts (2)   a service bell 0.6 s before the cloche comes down (at the table: lower at the dais), the clang
     //                      as it meets the platter, the hoist while it rises / goes down, a ring as it lifts off
@@ -22,6 +22,12 @@ namespace ChessFight.PawnRush
     //   chocolate fountain its heavy pour (loop)
     //   chandeliers (10)   a crystal tinkle at each end of each rope's swing (where the next one is caught)
     //   the hall           room tone (2D); a short fanfare for this player only, the first time it stands on the balcony
+    // R845 이어서 (user 11-26 "나머지 사운드 작업 시작"), the design's third tier:
+    //   stage curtain      a soft deep thud as its halves meet again (the cycle's end)
+    //   great chandelier   the quiet shimmer of its crystals (loop) - the resting place heard as one
+    //   guests (west row)  spoons on glasses as the cloth lands back under the ware (the trick's cycle end)
+    //   double basses      a low string boom when any pawn bumps one (each PC from what it sees: nothing sent)
+    //   chocolate          sticky footsteps on the fountain's bowl and tiers (ChocolateFloor, PawnRushStepSfx)
     // Clips: Resources/BanquetHallSfx (ArtSource/PawnRush/BanquetHall/Sound: ElevenLabs takes, bake.py). Every source
     // goes through SectionSoundGate (heard only in the hall, times the effects volume). Added by GrandBanquetHallBuilder
     // in play; works on the grey box (main) and on the dressed hall (seoungtest) alike.
@@ -30,15 +36,17 @@ namespace ChessFight.PawnRush
         const string Folder = "BanquetHallSfx/";
         public static bool Enabled = true;
 
+        // (11-26: the user picked the takes by ear on the listening page - picks.json; the pull mixes two takes.)
         // AudioSource volumes from bake.py (`vol`: heard close at the default effects volume as PAWN_RUSH_AUDIO.md
         // section 0 asks; 1 where the take is quieter).
         static readonly Dictionary<string, float> Volume = new Dictionary<string, float>
         {
-            { "BhDrumRoll", .575f }, { "BhClothPull", .977f }, { "BhServiceBell", .771f }, { "BhClocheShut", 1f },
+            { "BhDrumRoll", .425f }, { "BhMagicBuild", .606f }, { "BhClothPull", 1f }, { "BhServiceBell", .771f }, { "BhClocheShut", 1f },
             { "BhLampChime", .856f }, { "BhCurtainCue", 1f },
-            { "BhHallAmbience", .249f }, { "BhKitchenDoor", .526f }, { "BhTrayClink", .935f }, { "BhClothThrown", .504f },
-            { "BhClothLay", .483f }, { "BhClocheOpen", .718f }, { "BhHoistLoop", 1f }, { "BhGownLoop", .556f },
+            { "BhHallAmbience", .249f }, { "BhKitchenDoor", .526f }, { "BhTrayClink", 1f }, { "BhClothThrown", .657f },
+            { "BhClothLay", .535f }, { "BhClocheOpen", .718f }, { "BhHoistLoop", 1f }, { "BhGownLoop", .556f },
             { "BhCurtainDraw", .558f }, { "BhChocolateLoop", .395f }, { "BhChandelierSwing", .61f }, { "BhArrival", .388f },
+            { "BhCurtainMeet", .535f }, { "BhGreatChandelier", .317f }, { "BhGuestsToast", .416f }, { "BhBassBump", .271f },
         };
 
         // A clock step longer than this (the first frame, a hitch, joining late) plays nothing.
@@ -64,6 +72,10 @@ namespace ChessFight.PawnRush
         sealed class Swing { public RopeLine rope; public float last, rate; }
         sealed class Curtain { public CurtainPleat pleat; public Loop draw; public float last; }
         sealed class Loop { public AudioSource a; public float volume; }
+        sealed class Bass { public float z; public Bounds box; public bool touched; public float quietUntil; }
+        readonly List<Bass> basses = new List<Bass>();
+        static readonly Collider[] near = new Collider[16];
+        float bassLookAt;
 
         readonly List<BanquetWaiter> waiters = new List<BanquetWaiter>();
         readonly List<Lift> lifts = new List<Lift>();
@@ -162,6 +174,27 @@ namespace ChessFight.PawnRush
             fountain.transform.SetParent(transform, false);
             fountain.transform.position = frame.TransformPoint(new Vector3(B.Fountain.x, B.TierTop[0], B.Fountain.y));
             AddLoop(fountain.transform, "BhChocolateLoop", 4f, 30f, 1f, started++);
+
+            // R845 이어서: the great chandelier's crystals, over its dish
+            var great = new GameObject("Great chandelier spot");
+            great.transform.SetParent(transform, false);
+            great.transform.position = frame.TransformPoint(new Vector3(0f, B.GreatY + .6f, B.GreatZ));
+            AddLoop(great.transform, "BhGreatChandelier", 3f, 18f, 1f, started++);
+
+            // the double basses (their body and neck colliders), bumped
+            foreach (var c in GetComponentsInChildren<Collider>(true))
+                if (c.name == "BH double bass" || c.name == "BH bass neck")
+                {
+                    Bass known = null;
+                    foreach (var b in basses) if (Mathf.Abs(b.z - c.bounds.center.z) < 1f) known = b;
+                    if (known == null) basses.Add(known = new Bass { z = c.bounds.center.z, box = c.bounds });
+                    else known.box.Encapsulate(c.bounds);
+                }
+
+            // the fountain's chocolate underfoot (its bowl and tiers): sticky steps (PawnRushStepSfx)
+            foreach (var c in GetComponentsInChildren<Collider>(true))
+                if ((c.name == "BH fountain bowl" || c.name.StartsWith("BH chocolate tier")) && c.GetComponent<ChocolateFloor>() == null)
+                    c.gameObject.AddComponent<ChocolateFloor>();
 
             // The room tone, 2D, on a spot inside the hall so the gate counts it as this section's.
             var room = new GameObject("Hall room tone");
@@ -273,6 +306,28 @@ namespace ChessFight.PawnRush
             if (double.IsNaN(before) || step > 0) before = now;   // a clock that stands still keeps its last time
             Gowns();
             Arrival();
+            Basses();
+        }
+
+        // R845 이어서: a pawn (any character body) touching a double bass booms its low strings, once per touch and at most
+        // once a second; looked for ten times a second.
+        void Basses()
+        {
+            if (basses.Count == 0 || Time.time < bassLookAt) return;
+            bassLookAt = Time.time + .1f;
+            foreach (var b in basses)
+            {
+                int n = Physics.OverlapBoxNonAlloc(b.box.center, b.box.extents + Vector3.one * .15f, near, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                bool now = false;
+                for (int i = 0; i < n && !now; i++)
+                    if (near[i] != null && near[i].GetComponentInParent<ILaunchable>() != null) now = true;
+                if (now && !b.touched && Time.time >= b.quietUntil)
+                {
+                    Play("BhBassBump", b.box.center + Vector3.up * 1.5f, 3f, 20f);
+                    b.quietUntil = Time.time + 1f;
+                }
+                b.touched = now;
+            }
         }
 
         // The kitchen half-door flaps as each tray comes out through it (z = KitchenZ1).
@@ -291,9 +346,12 @@ namespace ChessFight.PawnRush
         {
             if (trick == null || !trick.isActiveAndEnabled) return;
             float a = trick.Phase(from), b = trick.Phase(to);
-            if (Crossed(a, b, trick.RollAt)) Play("BhDrumRoll", At(B.RunnerX, B.TableY + 1.5f, B.TableZ0 - 1f), 10f, 60f);
+            // (11-26 the user: "드럼 사운드 보다는 마법 같은 소리가 더 잘어울리겠어") a spell charging up for the two seconds, not the drum
+            if (Crossed(a, b, trick.RollAt)) Play("BhMagicBuild", At(B.RunnerX, B.TableY + 1.5f, B.TableZ0 - 1f), 10f, 60f);
             if (Crossed(a, b, trick.PullAt)) Play("BhClothPull", At(B.RunnerX, B.TableY + 1f, (B.TableZ0 + B.ClothZ1) * .5f), 8f, 50f);
             if (Crossed(a, b, trick.LayAt)) Play("BhClothLay", At(B.RunnerX, B.TableY + .5f, B.TableZ0 + 8f), 5f, 36f);
+            // R845 이어서: the guests toast the trick as the cloth lands back (the cycle's end; their figurines clap then)
+            if (Crossed(a, b, .05f)) Play("BhGuestsToast", At(12.8f, B.TableY + 1f, (B.TableZ0 + B.ClothZ1) * .5f), 4f, 26f);
         }
 
         // TableclothTrick.Pull, for every pawn it throws (FixedUpdate: the voice is placed now, the gate follows).
@@ -367,6 +425,9 @@ namespace ChessFight.PawnRush
             if (c == null || !c.isActiveAndEnabled) return;
             if (Crossed(c.CycleAt(from), c.CycleAt(to), c.ShutSeconds - 1f))
                 Play("BhCurtainCue", At(B.CurtainX + 1f, B.StageY + 2f, B.CurtainZ), 5f, 40f);
+            // R845 이어서: the halves meeting again (the closing's end is the cycle's)
+            if (Crossed(c.CycleAt(from), c.CycleAt(to), .005f))
+                Play("BhCurtainMeet", At(B.CurtainX + .5f, B.StageY + 3f, B.CurtainZ), 4f, 24f);
         }
 
         // The rail and the velvet while a leading pleat moves, louder the faster, higher drawn back.

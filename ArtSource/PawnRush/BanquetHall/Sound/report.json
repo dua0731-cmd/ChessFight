@@ -1,13 +1,13 @@
 {
  "drum_roll": {
   "file": "BhDrumRoll",
-  "picked": "drum_roll_2",
-  "by": "numbers",
+  "picked": "drum_roll_1",
+  "by": "picks.json",
   "loop": false,
   "length": 2.0,
-  "loudness": -13.3,
+  "loudness": -10.6,
   "heard": -20,
-  "vol": 0.575,
+  "vol": 0.425,
   "takes": [
    {
     "peak": -0.0,
@@ -55,15 +55,71 @@
    }
   ]
  },
- "cloth_pull": {
-  "file": "BhClothPull",
-  "picked": "cloth_pull_3",
+ "magic_build": {
+  "file": "BhMagicBuild",
+  "picked": "magic_build_4",
   "by": "numbers",
   "loop": false,
-  "length": 0.543,
-  "loudness": -15.9,
+  "length": 2.0,
+  "loudness": -13.7,
+  "heard": -20,
+  "vol": 0.606,
+  "takes": [
+   {
+    "peak": 0.0,
+    "rms": -13.95,
+    "length": 2.2,
+    "rings": 4,
+    "onset": 0.0,
+    "hit": 0.363,
+    "tail": 1.378,
+    "take": 1,
+    "score": 0.819
+   },
+   {
+    "peak": -3.488,
+    "rms": -19.511,
+    "length": 2.2,
+    "rings": 5,
+    "onset": 0.0,
+    "hit": 0.053,
+    "tail": 1.743,
+    "take": 2,
+    "score": 0.974
+   },
+   {
+    "peak": -0.0,
+    "rms": -13.127,
+    "length": 2.2,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.045,
+    "tail": 1.72,
+    "take": 3,
+    "score": 0.978
+   },
+   {
+    "peak": -2.571,
+    "rms": -19.766,
+    "length": 2.2,
+    "rings": 4,
+    "onset": 0.0,
+    "hit": 0.373,
+    "tail": 1.198,
+    "take": 4,
+    "score": 0.813
+   }
+  ]
+ },
+ "cloth_pull": {
+  "file": "BhClothPull",
+  "picked": "cloth_pull_1+2",
+  "by": "picks.json",
+  "loop": false,
+  "length": 0.635,
+  "loudness": -16.6,
   "heard": -18,
-  "vol": 0.977,
+  "vol": 1.0,
   "takes": [
    {
     "peak": -4.596,
@@ -114,7 +170,7 @@
  "service_bell": {
   "file": "BhServiceBell",
   "picked": "service_bell_2",
-  "by": "numbers",
+  "by": "picks.json",
   "loop": false,
   "length": 0.753,
   "loudness": -16.8,
@@ -170,7 +226,7 @@
  "cloche_shut": {
   "file": "BhClocheShut",
   "picked": "cloche_shut_2",
-  "by": "numbers",
+  "by": "picks.json",
   "loop": false,
   "length": 0.405,
   "loudness": -21.7,
@@ -282,7 +338,7 @@
  "curtain_cue": {
   "file": "BhCurtainCue",
   "picked": "curtain_cue_1",
-  "by": "numbers",
+  "by": "picks.json",
   "loop": false,
   "length": 1.1,
   "loudness": -29.2,
@@ -398,7 +454,7 @@
  "kitchen_door": {
   "file": "BhKitchenDoor",
   "picked": "kitchen_door_4",
-  "by": "numbers",
+  "by": "picks.json",
   "loop": false,
   "length": 0.422,
   "loudness": -16.5,
@@ -453,13 +509,13 @@
  },
  "tray_clink": {
   "file": "BhTrayClink",
-  "picked": "tray_clink_3",
-  "by": "numbers",
+  "picked": "tray_clink_1",
+  "by": "picks.json",
   "loop": true,
   "length": 4.0,
-  "loudness": -27.5,
+  "loudness": -30.6,
   "heard": -30,
-  "vol": 0.935,
+  "vol": 1.0,
   "takes": [
    {
     "peak": -7.375,
@@ -469,7 +525,7 @@
     "spread": 6.639,
     "seam": 11.019,
     "jump": 0.001,
-    "centroid": 4817.468,
+    "centroid": 4817.469,
     "take": 1,
     "score": 18.802
    },
@@ -493,7 +549,7 @@
     "spread": 7.0,
     "seam": 1.043,
     "jump": 0.006,
-    "centroid": 4576.499,
+    "centroid": 4576.5,
     "take": 3,
     "score": 14.638
    },
@@ -513,13 +569,13 @@
  },
  "cloth_thrown": {
   "file": "BhClothThrown",
-  "picked": "cloth_thrown_2",
-  "by": "numbers",
+  "picked": "cloth_thrown_4",
+  "by": "picks.json",
   "loop": false,
-  "length": 0.971,
-  "loudness": -13.1,
+  "length": 0.737,
+  "loudness": -15.4,
   "heard": -21,
-  "vol": 0.504,
+  "vol": 0.657,
   "takes": [
    {
     "peak": -5.375,
@@ -569,13 +625,13 @@
  },
  "cloth_lay": {
   "file": "BhClothLay",
-  "picked": "cloth_lay_3",
-  "by": "numbers",
+  "picked": "cloth_lay_1",
+  "by": "picks.json",
   "loop": false,
-  "length": 0.9,
-  "loudness": -15.7,
+  "length": 1.37,
+  "loudness": -16.6,
   "heard": -24,
-  "vol": 0.483,
+  "vol": 0.535,
   "takes": [
    {
     "peak": -17.499,
@@ -626,7 +682,7 @@
  "cloche_open": {
   "file": "BhClocheOpen",
   "picked": "cloche_open_4",
-  "by": "numbers",
+  "by": "picks.json",
   "loop": false,
   "length": 0.918,
   "loudness": -19.2,
@@ -733,7 +789,7 @@
     "spread": 1.722,
     "seam": 3.392,
     "jump": 0.04,
-    "centroid": 5228.582,
+    "centroid": 5228.581,
     "take": 4,
     "score": 23.932
    }
@@ -781,7 +837,7 @@
     "spread": 1.947,
     "seam": 2.177,
     "jump": 0.019,
-    "centroid": 7862.289,
+    "centroid": 7862.288,
     "take": 3,
     "score": 5.548
    },
@@ -817,7 +873,7 @@
     "spread": 20.113,
     "seam": 1.651,
     "jump": 0.001,
-    "centroid": 6772.652,
+    "centroid": 6772.651,
     "take": 1,
     "score": 41.072
    },
@@ -841,7 +897,7 @@
     "spread": 1.695,
     "seam": 6.409,
     "jump": 0.0,
-    "centroid": 7593.318,
+    "centroid": 7593.317,
     "take": 3,
     "score": 6.601
    },
@@ -853,7 +909,7 @@
     "spread": 5.712,
     "seam": 1.84,
     "jump": 0.005,
-    "centroid": 6758.104,
+    "centroid": 6758.103,
     "take": 4,
     "score": 24.847
    }
@@ -889,7 +945,7 @@
     "spread": 4.411,
     "seam": 8.266,
     "jump": 0.013,
-    "centroid": 4048.833,
+    "centroid": 4048.832,
     "take": 2,
     "score": 13.464
    },
@@ -901,7 +957,7 @@
     "spread": 3.084,
     "seam": 8.552,
     "jump": 0.003,
-    "centroid": 3167.783,
+    "centroid": 3167.784,
     "take": 3,
     "score": 10.508
    },
@@ -913,7 +969,7 @@
     "spread": 9.443,
     "seam": 13.333,
     "jump": 0.001,
-    "centroid": 1090.439,
+    "centroid": 1090.44,
     "take": 4,
     "score": 25.568
    }
@@ -1028,6 +1084,290 @@
     "tail": 0.624,
     "take": 4,
     "score": 0.0
+   }
+  ]
+ },
+ "curtain_meet": {
+  "file": "BhCurtainMeet",
+  "picked": "curtain_meet_2",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.826,
+  "loudness": -16.6,
+  "heard": -24,
+  "vol": 0.535,
+  "takes": [
+   {
+    "peak": -13.867,
+    "rms": -36.609,
+    "length": 3.0,
+    "rings": 0,
+    "onset": 0.175,
+    "hit": 1.91,
+    "tail": 0.543,
+    "take": 1,
+    "score": 82.582
+   },
+   {
+    "peak": -9.604,
+    "rms": -32.115,
+    "length": 2.0,
+    "rings": 0,
+    "onset": 0.132,
+    "hit": 0.354,
+    "tail": 0.479,
+    "take": 2,
+    "score": 15.873
+   },
+   {
+    "peak": -19.75,
+    "rms": -47.003,
+    "length": 16.0,
+    "rings": 0,
+    "onset": 0.28,
+    "hit": 13.786,
+    "tail": 0.97,
+    "take": 3,
+    "score": 590.186
+   },
+   {
+    "peak": -1.241,
+    "rms": -28.798,
+    "length": 2.0,
+    "rings": 0,
+    "onset": 0.509,
+    "hit": 0.595,
+    "tail": 0.193,
+    "take": 4,
+    "score": 23.394
+   }
+  ]
+ },
+ "great_chandelier": {
+  "file": "BhGreatChandelier",
+  "picked": "great_chandelier_2",
+  "by": "numbers",
+  "loop": true,
+  "length": 6.0,
+  "loudness": -21.1,
+  "heard": -33,
+  "vol": 0.317,
+  "takes": [
+   {
+    "peak": -19.506,
+    "rms": -43.435,
+    "length": 6.0,
+    "rings": 7,
+    "spread": 2.914,
+    "seam": 1.61,
+    "jump": 0.008,
+    "centroid": 11354.489,
+    "take": 1,
+    "score": 7.172
+   },
+   {
+    "peak": -34.539,
+    "rms": -54.613,
+    "length": 6.0,
+    "rings": 8,
+    "spread": 1.277,
+    "seam": 2.417,
+    "jump": 0.058,
+    "centroid": 10934.683,
+    "take": 2,
+    "score": 6.044
+   },
+   {
+    "peak": -6.519,
+    "rms": -27.192,
+    "length": 6.0,
+    "rings": 17,
+    "spread": 1.37,
+    "seam": 1.5,
+    "jump": 0.259,
+    "centroid": 10782.65,
+    "take": 3,
+    "score": 8.676
+   },
+   {
+    "peak": -7.99,
+    "rms": -29.999,
+    "length": 6.0,
+    "rings": 14,
+    "spread": 4.386,
+    "seam": 7.361,
+    "jump": 0.018,
+    "centroid": 10928.177,
+    "take": 4,
+    "score": 12.812
+   }
+  ]
+ },
+ "guests_toast": {
+  "file": "BhGuestsToast",
+  "picked": "guests_toast_3",
+  "by": "numbers",
+  "loop": false,
+  "length": 1.079,
+  "loudness": -16.4,
+  "heard": -26,
+  "vol": 0.416,
+  "takes": [
+   {
+    "peak": -7.919,
+    "rms": -33.851,
+    "length": 1.0,
+    "rings": 2,
+    "onset": 0.029,
+    "hit": 0.348,
+    "tail": 0.169,
+    "take": 1,
+    "score": 13.005
+   },
+   {
+    "peak": -6.797,
+    "rms": -34.398,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.002,
+    "hit": 0.257,
+    "tail": 0.303,
+    "take": 2,
+    "score": 9.192
+   },
+   {
+    "peak": -22.572,
+    "rms": -44.215,
+    "length": 2.0,
+    "rings": 2,
+    "onset": 0.0,
+    "hit": 0.006,
+    "tail": 0.999,
+    "take": 3,
+    "score": 2.514
+   },
+   {
+    "peak": -12.306,
+    "rms": -36.042,
+    "length": 1.0,
+    "rings": 1,
+    "onset": 0.095,
+    "hit": 0.276,
+    "tail": 0.099,
+    "take": 4,
+    "score": 10.019
+   }
+  ]
+ },
+ "bass_bump": {
+  "file": "BhBassBump",
+  "picked": "bass_bump_4",
+  "by": "numbers",
+  "loop": false,
+  "length": 0.899,
+  "loudness": -10.7,
+  "heard": -24,
+  "vol": 0.271,
+  "takes": [
+   {
+    "peak": -0.266,
+    "rms": -16.722,
+    "length": 2.0,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.031,
+    "tail": 0.718,
+    "take": 1,
+    "score": 2.416
+   },
+   {
+    "peak": -0.308,
+    "rms": -10.834,
+    "length": 2.0,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.196,
+    "tail": 0.722,
+    "take": 2,
+    "score": 9.054
+   },
+   {
+    "peak": -0.227,
+    "rms": -12.36,
+    "length": 3.0,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.01,
+    "tail": 1.602,
+    "take": 3,
+    "score": 20.066
+   },
+   {
+    "peak": -0.302,
+    "rms": -16.918,
+    "length": 2.0,
+    "rings": 0,
+    "onset": 0.006,
+    "hit": 0.052,
+    "tail": 0.508,
+    "take": 4,
+    "score": 0.586
+   }
+  ]
+ },
+ "choco_step": {
+  "file": "ChocoStep0..",
+  "picked": [
+   "choco_step_4",
+   "choco_step_3",
+   "choco_step_1"
+  ],
+  "by": "numbers",
+  "loop": false,
+  "takes": [
+   {
+    "peak": -14.217,
+    "rms": -42.434,
+    "length": 0.48,
+    "rings": 0,
+    "onset": 0.027,
+    "hit": 0.306,
+    "tail": 0.035,
+    "take": 1,
+    "score": 11.343
+   },
+   {
+    "peak": -17.574,
+    "rms": -42.579,
+    "length": 0.48,
+    "rings": 0,
+    "onset": 0.028,
+    "hit": 0.357,
+    "tail": 0.08,
+    "take": 2,
+    "score": 13.652
+   },
+   {
+    "peak": -19.093,
+    "rms": -44.679,
+    "length": 0.48,
+    "rings": 0,
+    "onset": 0.0,
+    "hit": 0.178,
+    "tail": 0.151,
+    "take": 3,
+    "score": 6.239
+   },
+   {
+    "peak": -15.426,
+    "rms": -42.158,
+    "length": 0.48,
+    "rings": 0,
+    "onset": 0.013,
+    "hit": 0.105,
+    "tail": 0.301,
+    "take": 4,
+    "score": 5.004
    }
   ]
  }

@@ -116,12 +116,17 @@ namespace ChessFight.PawnRush
             }
             if (u >= run.LayAt)
             {
-                // the cloth back under the ware: clapping, turning back to the table
-                float since = u - run.LayAt, held = .35f * g.toMagician;
-                look = held * Mathf.Exp(-since / .6f);
-                float clap = Mathf.Clamp01(1f - since / 1.4f);
-                bob = Clap * clap * Mathf.Abs(Mathf.Sin(2f * Mathf.PI * 3.2f * since));
-                lean = 1.2f * clap * Mathf.Abs(Mathf.Sin(2f * Mathf.PI * 3.2f * since));
+                // the cloth flying back under the ware: turning back to the table
+                float since = u - run.LayAt;
+                look = .35f * g.toMagician * Mathf.Exp(-since / .6f);
+                return;
+            }
+            if (u < 1.4f)
+            {
+                // laid (the cycle's start): clapping, as GrandBanquetHallSound's spoons ring on the glasses
+                float clap = Mathf.Clamp01(1f - u / 1.4f);
+                bob = Clap * clap * Mathf.Abs(Mathf.Sin(2f * Mathf.PI * 3.2f * u));
+                lean = 1.2f * clap * Mathf.Abs(Mathf.Sin(2f * Mathf.PI * 3.2f * u));
             }
         }
     }
