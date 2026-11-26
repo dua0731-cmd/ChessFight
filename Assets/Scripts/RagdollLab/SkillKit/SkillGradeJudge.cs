@@ -142,7 +142,8 @@ namespace ChessFight.RagdollLab
         {
             // 11-26 (the set 4판): a hindrance put on an enemy is its giver's hit; a hindrance ending, a tied piece's hop
             // and a speech bubble are nobody's cast (they opened a cast on the piece hindered, graded "?").
-            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say || e.kind == SkillFxKind.S4Flat)
+            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say || e.kind == SkillFxKind.S4Flat
+                || e.kind == SkillFxKind.JyWallLeg || e.kind == SkillFxKind.JyWallEnd)
             {
                 if (e.kind == SkillFxKind.S4Cc && e.count != 0 && e.by != null && e.target != null && e.by != e.target)
                 {
@@ -226,6 +227,18 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.JyBeam:
                     if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
                     break;
+                case SkillFxKind.JyGiant: case SkillFxKind.JyStrong:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 17f);
+                    else if (e.count == 2 && e.kind == SkillFxKind.JyGiant) Hit(c, e.target);
+                    else if (e.count == 3 && e.kind == SkillFxKind.JyStrong) Hit(c, e.target);
+                    break;
+                case SkillFxKind.JyTWall:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 6f);
+                    break;
+                case SkillFxKind.JyBuild:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 9f);
+                    else if (e.count == 2) Hit(c, e.target);
+                    break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;
                 case SkillFxKind.BishopWire:
@@ -284,6 +297,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Throne: case SkillFxKind.S4Gambit:
                 case SkillFxKind.JyStep: case SkillFxKind.JyRope: case SkillFxKind.JyStomp:
                 case SkillFxKind.JySword: case SkillFxKind.JyBow: case SkillFxKind.JyBeam:
+                case SkillFxKind.JyGiant: case SkillFxKind.JyStrong: case SkillFxKind.JyTWall: case SkillFxKind.JyBuild:
                     return true;
                 case SkillFxKind.S4Fan:
                     return e.count != 4;

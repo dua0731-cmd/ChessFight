@@ -630,6 +630,7 @@ namespace ChessFight.RagdollLab
         /// edges it too).</summary>
         void UltGiants(float dt)
         {
+            JyWallsEachFrame();   // (the walls' viewer side and tumbling: PawnRushSkillFx.SetFourJYC.cs)
             giantsGone.Clear();
             foreach (var kv in giants)
             {

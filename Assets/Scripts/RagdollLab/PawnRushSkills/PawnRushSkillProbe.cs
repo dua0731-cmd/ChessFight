@@ -63,7 +63,7 @@ namespace ChessFight.RagdollLab
         /// (<see cref="Staged"/>) the script's words in turn: "k" the slot's key (0 F, 1 E, 2 R, 3 Q), "c" a left click,
         /// "c+" / "c-" the left button down / up, "j" a jump, "w0.4" a wait in game seconds, "m0,1" walking that way in P1's
         /// frame and "m-" standing, "a1,0" aiming that way ("a0,1,-0.2": and that much down, to aim at the floor nearer than a
-        /// skill's reach), "s+" / "s-" sprinting, "x10" P1 given hindrance 10 (Cc4) for 8 s (to film its look). Then <paramref name="tail"/> seconds
+        /// skill's reach), "s+" / "s-" sprinting, "x10" P1 given hindrance 10 (Cc4) for 8 s (to film its look), "g+" / "g-" the right button held / let go. Then <paramref name="tail"/> seconds
         /// more and "done perform".
         /// </summary>
         public static string Perform(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
@@ -134,6 +134,10 @@ namespace ChessFight.RagdollLab
                         break;
                     case 'x':
                         if (int.TryParse(rest, out int ccKind) && P1 != null) P1.GiveCc((Cc4)ccKind, 8f, null);
+                        break;
+                    case 'g':
+                        grab = rest != "-";
+                        if (grab) Say("우클릭");
                         break;
                     case 's':
                         sprint = rest == "+";

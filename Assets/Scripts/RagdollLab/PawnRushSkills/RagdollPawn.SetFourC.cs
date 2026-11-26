@@ -264,7 +264,7 @@ namespace ChessFight.RagdollLab
                     // A bridge for its seconds: the fallen tower's body, low and wide (its picture is the tower itself).
                     bridge4 = PawnRushKitWall.Raise(PawnRushKitWall.NextId(), this, planPoint + planDir * 0.6f, planPoint + planDir * s.timberTall,
                         0.75f, s.timberWide, s.timberBridge, 0.05f, true);
-                    foreach (var r in bridge4.GetComponentsInChildren<Renderer>()) r.enabled = false;
+                    bridge4.Hidden = true;   // (the fallen rook is the bridge's picture)
                     Fx(SkillFxKind.S4Timber, null, planPoint, planDir, 2, s.timberBridge, planPoint + planDir * s.timberTall);
                     SkillDetail = n > 0 ? $"넘어간다~! {n}명 콰당!" : "넘어간다~! (다리)";
                     planPhase = PlanPhase.Recovery;

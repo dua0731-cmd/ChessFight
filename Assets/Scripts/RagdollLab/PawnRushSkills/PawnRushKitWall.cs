@@ -12,13 +12,17 @@ namespace ChessFight.RagdollLab
     /// rook that raised it does not touch it); every other PC is told when it stands and when it breaks
     /// (SkillFxKind.KitWall, KitWallBreak) and stands a picture of it with no collider, as the bodies it shows are the
     /// host's. It rises out of the floor, stands its time, and sinks back; an enemy rook's charge breaks it at once.
-    /// Not seen in Unity by anyone yet.
+    /// 11-26 (USER_SKILLS 5.3, the user's own walls and the 4판's 성벽! alike): no longer a grey-brown box - sand bricks
+    /// with dark mortar, battlements on top and an ink edge, in one-metre pieces that rise one after another (to 110% and
+    /// back) as it grows; a band flowing at its foot (red stripes to the other team, teal to the owner's, who also see it
+    /// half clear); shaking its last second, then tumbling down from its head into dust and a few bouncing bricks (the
+    /// effects draw those: OnCrumble). Not seen in Unity by anyone yet.
     /// </summary>
     public class PawnRushKitWall : MonoBehaviour
     {
         public static readonly List<PawnRushKitWall> All = new List<PawnRushKitWall>();
         static int nextId;
-        static Material stone;
+        static Material stone;   // (the old grey-brown box's; unused since the bricks, 11-26)
         const float SinkTime = 0.3f;
 
         public int Id { get; private set; }
@@ -34,7 +38,29 @@ namespace ChessFight.RagdollLab
         float height, thick, left, rise, risen;
         BoxCollider box;
         Rigidbody body;
-        Transform picture;
+        Transform picture;   // (the pieces' root)
+
+        // ---------------------------------------------------------------- the look (11-26)
+
+        /// <summary>The team of the piece played at this PC (the effects set it every frame): a wall of its team is drawn
+        /// half clear with a teal band, any other with a red one.</summary>
+        public static int ViewerTeam = -1;
+        /// <summary>A wall starts tumbling down (from, to: its line): the effects add the dust and the bouncing bricks.</summary>
+        public static System.Action<PawnRushKitWall, Vector3, Vector3> OnCrumble;
+
+        sealed class Piece
+        {
+            public Transform root, body, top, inkBody, inkTop, band;
+            public Renderer bodyR, topR, bandR;
+            public float born;
+        }
+        readonly List<Piece> pieces = new List<Piece>();
+        MaterialPropertyBlock mpb;   // (made on first use: no Unity objects in a component's field initializers)
+        static Material brickMat, brickClearMat, inkMat, bandRedMat, bandTealMat;
+        static Texture2D brickTex, stripeTex;
+        float created, crumbleAt = -1f;
+        bool firstFit = true;
+        const float PieceLength = 1f;
 
         /// <summary>The solid wall's collider (null for a picture).</summary>
         public Collider Collider => box;
@@ -161,14 +187,10 @@ namespace ChessFight.RagdollLab
             w.thick = Mathf.Max(0.1f, thickness);
             w.left = Mathf.Max(0.1f, seconds);
             w.rise = Mathf.Max(0.01f, riseTime);
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var cubeCollider = cube.GetComponent<Collider>();
-            if (cubeCollider != null) DestroyImmediate(cubeCollider);   // the picture only: the wall's own box is the collider
-            cube.name = "Stones";
-            cube.transform.SetParent(go.transform, false);
-            var r = cube.GetComponent<Renderer>();
-            if (r != null) r.sharedMaterial = Stone();
-            w.picture = cube.transform;
+            w.created = Time.time;
+            var stones = new GameObject("Stones");
+            stones.transform.SetParent(go.transform, false);
+            w.picture = stones.transform;
             if (solid)
             {
                 w.box = go.AddComponent<BoxCollider>();
@@ -179,14 +201,203 @@ namespace ChessFight.RagdollLab
             return w;
         }
 
-        static Material Stone()
+        /// <summary>The bricks: two across and four up a metre (0.5 x 0.25 m), sand coloured with a little variation, the
+        /// mortar dark brown; made once.</summary>
+        static Texture2D BrickTexture()
         {
-            if (stone != null) return stone;
-            var lit = LitMaterials.Lit;
-            stone = lit != null ? LitMaterials.NewLit(new Color(0.63f, 0.59f, 0.52f), 0.12f)
-                                : new Material(Shader.Find("Sprites/Default")) { color = new Color(0.63f, 0.59f, 0.52f) };
-            stone.name = "Rook wall stone";
-            return stone;
+            if (brickTex != null) return brickTex;
+            const int N = 128;
+            brickTex = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "Wall bricks", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear };
+            var px = new Color32[N * N];
+            var mortar = new Color32(92, 66, 44, 255);
+            var rnd = new System.Random(7);
+            var tints = new Color32[16];
+            for (int i = 0; i < tints.Length; i++)
+            {
+                float k = 0.9f + 0.18f * (float)rnd.NextDouble();
+                tints[i] = new Color32((byte)Mathf.Clamp(222 * k, 0, 255), (byte)Mathf.Clamp(186 * k, 0, 255), (byte)Mathf.Clamp(128 * k, 0, 255), 255);
+            }
+            for (int y = 0; y < N; y++)
+            {
+                int row = y / (N / 4);
+                int yIn = y % (N / 4);
+                int shift = row % 2 == 0 ? 0 : N / 4;
+                for (int x = 0; x < N; x++)
+                {
+                    int xs = (x + shift) % N, col = xs / (N / 2), xIn = xs % (N / 2);
+                    bool joint = yIn < 3 || xIn < 3;
+                    var c = joint ? mortar : tints[(row * 2 + col) % tints.Length];
+                    if (!joint && (yIn == 3 || xIn == 3)) c = new Color32((byte)(c.r * 0.9f), (byte)(c.g * 0.9f), (byte)(c.b * 0.9f), 255);
+                    px[y * N + x] = c;
+                }
+            }
+            brickTex.SetPixels32(px);
+            brickTex.Apply(true);
+            return brickTex;
+        }
+
+        /// <summary>Diagonal stripes, white over clear, for the band at the foot (tinted by its material).</summary>
+        static Texture2D StripeTexture()
+        {
+            if (stripeTex != null) return stripeTex;
+            const int N = 64;
+            stripeTex = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "Wall band stripes", wrapMode = TextureWrapMode.Repeat };
+            var px = new Color32[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                    px[y * N + x] = ((x + y) / (N / 4)) % 2 == 0 ? new Color32(255, 255, 255, 255) : new Color32(150, 150, 150, 255);
+            stripeTex.SetPixels32(px);
+            stripeTex.Apply(true);
+            return stripeTex;
+        }
+
+        static Material NewWallMaterial(Color color, Texture2D tex, string name)
+        {
+            Material m = LitMaterials.Lit != null ? LitMaterials.NewLit(color, 0.08f) : new Material(Shader.Find("Sprites/Default")) { color = color };
+            m.name = name;
+            if (tex != null)
+            {
+                if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", tex);
+                m.mainTexture = tex;
+            }
+            return m;
+        }
+
+        static void MakeClear(Material m, float alpha)
+        {
+            // URP Lit, transparent.
+            if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 1f);
+            if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 0f);
+            m.SetOverrideTag("RenderType", "Transparent");
+            if (m.HasProperty("_SrcBlend")) m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            if (m.HasProperty("_DstBlend")) m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            if (m.HasProperty("_ZWrite")) m.SetFloat("_ZWrite", 0f);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            var c = m.HasProperty("_BaseColor") ? m.GetColor("_BaseColor") : m.color;
+            c.a = alpha;
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
+            m.color = c;
+        }
+
+        static void Materials()
+        {
+            if (brickMat != null) return;
+            brickMat = NewWallMaterial(Color.white, BrickTexture(), "Wall bricks");
+            brickClearMat = NewWallMaterial(Color.white, BrickTexture(), "Wall bricks (own side)");
+            MakeClear(brickClearMat, 0.45f);
+            var unlit = Shader.Find("Universal Render Pipeline/Unlit");
+            inkMat = unlit != null ? new Material(unlit) { name = "Wall ink" } : new Material(Shader.Find("Sprites/Default")) { name = "Wall ink" };
+            if (inkMat.HasProperty("_BaseColor")) inkMat.SetColor("_BaseColor", new Color(0.13f, 0.09f, 0.06f));
+            inkMat.color = new Color(0.13f, 0.09f, 0.06f);
+            if (inkMat.HasProperty("_Cull")) inkMat.SetFloat("_Cull", 1f);   // (front faces off: an outline round the piece)
+            bandRedMat = NewWallMaterial(new Color(0.95f, 0.25f, 0.2f), StripeTexture(), "Wall band (theirs)");
+            bandTealMat = NewWallMaterial(new Color(0.2f, 0.78f, 0.72f), StripeTexture(), "Wall band (ours)");
+        }
+
+        Piece NewPiece(int index)
+        {
+            Materials();
+            var p = new Piece();
+            p.root = new GameObject("Piece " + index).transform;
+            p.root.SetParent(picture, false);
+            p.body = Cube(p.root, brickMat, "Bricks", out p.bodyR);
+            p.inkBody = Cube(p.root, inkMat, "Bricks ink", out _);
+            p.top = Cube(p.root, brickMat, "Battlement", out p.topR);
+            p.inkTop = Cube(p.root, inkMat, "Battlement ink", out _);
+            p.band = Cube(p.root, bandRedMat, "Foot band", out p.bandR);
+            // The first pieces of a wall raised whole rise one after another; a growing wall's come as it grows.
+            p.born = firstFit ? created + index * 0.028f : Time.time;
+            return p;
+        }
+
+        static Transform Cube(Transform parent, Material m, string name, out Renderer r)
+        {
+            var c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var col = c.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            c.name = name;
+            c.transform.SetParent(parent, false);
+            r = c.GetComponent<Renderer>();
+            r.sharedMaterial = m;
+            r.shadowCastingMode = m == inkMat ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
+            return c.transform;
+        }
+
+        /// <summary>The look every frame: the pieces along the line, each risen as far as its own rise and the wall's allow;
+        /// the band's stripes flowing; its last second shaking; tumbling down from the head once it is over.</summary>
+        void FitLook(float length)
+        {
+            if (picture == null || hidden) return;
+            if (mpb == null) mpb = new MaterialPropertyBlock();
+            int n = Mathf.Max(1, Mathf.CeilToInt(length / PieceLength - 0.01f));
+            while (pieces.Count < n) pieces.Add(NewPiece(pieces.Count));
+            firstFit = false;
+            bool ours = Owner != null && ViewerTeam >= 0 && Owner.Team == ViewerTeam;
+            float now = Time.time;
+            float shake = Standing && left < 1f ? 0.03f : 0f;
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                var p = pieces[i];
+                if (i >= n)
+                {
+                    p.root.gameObject.SetActive(false);
+                    continue;
+                }
+                p.root.gameObject.SetActive(true);
+                float start = i * PieceLength, w = Mathf.Min(PieceLength, length - start);
+                if (w <= 0.01f)
+                {
+                    p.root.gameObject.SetActive(false);
+                    continue;
+                }
+                // Its own rise: to 110% in 0.18 s, back to 100% by 0.3 s; the wall's sinking or tumbling over it.
+                float t = now - p.born;
+                float k = t <= 0f ? 0f : t < 0.18f ? 1.1f * Mathf.Sin(t / 0.18f * Mathf.PI * 0.5f) : t < 0.3f ? Mathf.Lerp(1.1f, 1f, (t - 0.18f) / 0.12f) : 1f;
+                if (crumbleAt >= 0f)
+                {
+                    // From the head (the far end) back: each piece goes down in 0.25 s, 0.04 s after the one before.
+                    float order = (n - 1 - i) * 0.04f, c = Mathf.Clamp01((now - crumbleAt - order) / 0.25f);
+                    k *= 1f - c * c;
+                }
+                else if (left <= 0f) k *= Mathf.Clamp01(risen);
+                float h = height * k;
+                bool shown = h > 0.02f;
+                p.root.gameObject.SetActive(shown);
+                if (!shown) continue;
+                Vector3 jitter = shake > 0f ? new Vector3(Random.Range(-shake, shake), 0f, Random.Range(-shake, shake)) : Vector3.zero;
+                p.root.localPosition = new Vector3(0f, 0f, -length * 0.5f + start + w * 0.5f) + jitter;
+                p.body.localScale = new Vector3(thick, h, w);
+                p.body.localPosition = new Vector3(0f, h * 0.5f, 0f);
+                p.inkBody.localScale = new Vector3(thick + 0.07f, h + 0.06f, w + 0.05f);
+                p.inkBody.localPosition = p.body.localPosition;
+                float th = Mathf.Min(0.38f, h * 0.25f), tw = w * 0.5f;
+                p.top.localScale = new Vector3(thick * 0.92f, th, tw);
+                p.top.localPosition = new Vector3(0f, h + th * 0.5f, 0f);
+                p.inkTop.localScale = new Vector3(thick * 0.92f + 0.06f, th + 0.05f, tw + 0.05f);
+                p.inkTop.localPosition = p.top.localPosition;
+                float bh = Mathf.Min(0.28f, h * 0.3f);
+                p.band.localScale = new Vector3(thick + 0.04f, bh, w);
+                p.band.localPosition = new Vector3(0f, bh * 0.5f, 0f);
+                var bodyMat = ours ? brickClearMat : brickMat;
+                if (p.bodyR.sharedMaterial != bodyMat)
+                {
+                    p.bodyR.sharedMaterial = bodyMat;
+                    p.topR.sharedMaterial = bodyMat;
+                }
+                var bandMat = ours ? bandTealMat : bandRedMat;
+                if (p.bandR.sharedMaterial != bandMat) p.bandR.sharedMaterial = bandMat;
+                // The bricks a metre to a metre; the band's stripes flowing along.
+                mpb.Clear();
+                mpb.SetVector("_BaseMap_ST", new Vector4(w, h, 0f, 0f));
+                mpb.SetVector("_MainTex_ST", new Vector4(w, h, 0f, 0f));
+                if (shake > 0f) mpb.SetColor("_BaseColor", ours ? new Color(0.85f, 0.82f, 0.8f, 0.45f) : new Color(0.85f, 0.82f, 0.8f, 1f));
+                p.bodyR.SetPropertyBlock(mpb);
+                mpb.Clear();
+                mpb.SetVector("_BaseMap_ST", new Vector4(w * 2f, 1f, -now * 0.8f, 0f));
+                mpb.SetVector("_MainTex_ST", new Vector4(w * 2f, 1f, -now * 0.8f, 0f));
+                p.bandR.SetPropertyBlock(mpb);
+            }
         }
 
         /// <summary>Lay it along a new line (the run grows it).</summary>
@@ -199,6 +410,9 @@ namespace ChessFight.RagdollLab
 
         /// <summary>It stands <paramref name="seconds"/> from now (the run is over).</summary>
         public void Stand(float seconds) => left = Mathf.Max(left, seconds);
+
+        /// <summary>It stands exactly <paramref name="seconds"/> more (a growing wall raised for long, its time told at last).</summary>
+        public void StandFor(float seconds) => left = Mathf.Max(0.05f, seconds);
 
         /// <summary>Taken down at once: it sinks away.</summary>
         public void Break()
@@ -223,11 +437,7 @@ namespace ChessFight.RagdollLab
             else transform.SetPositionAndRotation(at, turn);
             // Risen this much: its top at risen * height above the floor (the rest still under it).
             float top = height * Mathf.Clamp01(risen);
-            if (picture != null)
-            {
-                picture.localScale = new Vector3(thick, height, length);
-                picture.localPosition = new Vector3(0f, top - height * 0.5f, 0f);
-            }
+            FitLook(length);
             if (box != null)
             {
                 box.size = new Vector3(thick, height, length);
@@ -246,8 +456,15 @@ namespace ChessFight.RagdollLab
             }
             else
             {
+                // Over: it tumbles down from its head (the effects add the dust and bricks), or a hidden one just goes.
+                if (crumbleAt < 0f)
+                {
+                    crumbleAt = Time.time;
+                    if (!hidden) OnCrumble?.Invoke(this, from, to);
+                }
                 risen -= dt / SinkTime;
-                if (risen <= 0f)
+                float crumbleTime = 0.3f + Mathf.Max(1, pieces.Count) * 0.04f;
+                if (risen <= 0f && Time.time - crumbleAt > crumbleTime)
                 {
                     Destroy(gameObject);
                     return;

@@ -175,7 +175,17 @@ namespace ChessFight.RagdollLab
         //   JyBow      0 the aim (target: the leader; size: seconds), 1 fired (target; at: the muzzle; size: speed), 2 taken
         //              by another (target: it), 3 the leader hit (target; dir: back along the course), 4 the smoke blown off
         //   JyBeam     0 the aim (size: seconds), 1 fired (at, dir; size: length), 2 + i the i-th on it frozen (target)
-        S4Flat, JyStep, JyRope, JyStomp, JySword, JyBow, JyBeam,
+        //   JyGiant    0 the breath (at: where it grew; size: seconds), 1 grown (size: seconds), 2 a kick (target), 3 back
+        //              to where it grew (at: there; normal: where it was)
+        //   JyStrong   0 the flex (size: seconds), 1 strong (size: seconds), 2 lifted (target; size: its seconds to slip
+        //              out), 3 thrown (target; dir), 4 slipped out (target), 5 over
+        //   JyTWall    0 the stamp (at: feet, dir; size: seconds), 1 the split (at: there, dir: the stem's)
+        //   JyBuild    0 the clone out (at, dir; size: the wall to build), 1 a turn (at, dir: the new way; count: turns),
+        //              2 shut in (target), 3 done (at: the clone), 4 cut short (at)
+        //   JyWallLeg  a wall leg growing (count: the wall's id; at: its start, dir; size: m/s; normal: its most, height,
+        //              thickness): another PC stands its picture and grows it
+        //   JyWallEnd  a wall leg done growing (count: the id; at: its end; size: seconds it stands from now)
+        S4Flat, JyStep, JyRope, JyStomp, JySword, JyBow, JyBeam, JyGiant, JyStrong, JyTWall, JyBuild, JyWallLeg, JyWallEnd,
     }
 
     public struct SkillFxEvent
@@ -663,6 +673,12 @@ namespace ChessFight.RagdollLab
                 // 핀!'s 멈춤 (USER_SKILLS 3장): a frozen piece is not pushed.
                 target.LastSkillHit = $"{cause}: 멈춤 (밀리지 않음)";
                 return "멈춤";
+            }
+            if (target.JyGiantNow)
+            {
+                // 거대화 (USER_SKILLS 4.4): nothing pushes a giant.
+                target.LastSkillHit = $"{cause}: 거인 (밀리지 않음)";
+                return "거인";
             }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             push *= StagePower;   // the growing system's stage (the skill window)

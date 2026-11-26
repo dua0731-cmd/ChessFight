@@ -600,6 +600,37 @@ def('ThroneDrop', 'Queen', () => sh(64, 112, 44, 11, 0.32) + ring(64, 112, 44, 1
 def('QueensGambit', 'Queen', () => [['Rook', 18], ['Knight', 42], ['Bishop', 86], ['Pawn', 110]].map(([k, x]) => P(k, 'w', x, 12, 24, { r: 180 }) + sh(x, 118, 8)).join('') +
   speed(64, 40, 90, 12, 3, 12, 3.5) + P('Pawn', 'b', 64, 122, 34, { sy: 0.4, sx: 1.4 }) + burst(64, 114, 14, 6, 9) + P('Queen', 'w', 64, 110, 56));
 
+// The user's own ten (JY, 11-26; Docs/Skills/PAWN_RUSH_SET4_USER_SKILLS.md).
+const SANDBRICK = '#DEBA80', HOLYW = '#FFF8E8', TEAL = '#3CC7B8';
+def('StepsDiag', 'Pawn', () => tile(28, 106, 40, 18, '#E8D9B8') + tile(52, 92, 40, 18, '#E8D9B8') + sh(54, 112, 13) + P('Pawn', 'w', 54, 112, 46, { r: 14 }) +
+  tile(96, 74, 42, 19, RED) + P('Pawn', 'b', 98, 80, 34, { r: 34 }) + burst(80, 60, 11, 5, 8) + txt(108, 36, '×', 34, RED) + speed(30, 84, -30, 10, 2, 8, 3));
+def('RopePassant', 'Pawn', () => ln(arc(30, 38, 22, 7, 0, 360, 24), ROPE, 4) + sh(30, 116, 14) + P('Pawn', 'w', 30, 116, 52) +
+  ln(q([42, 66], [72, 44], [96, 80]), ROPE, 4) + ring(98, 86, 10, 4, ROPE, 3) + sh(98, 116, 12) + P('Pawn', 'b', 98, 116, 46, { r: -25 }) +
+  puffs([[112, 120, 5], [120, 114, 4]], '#E8D9B8') + txt(100, 34, '!', 26, RED));
+def('JumpStomp', 'Knight', () => speed(64, 18, 90, 12, 3, 12, 3.5) + P('Knight', 'w', 64, 60, 40, { f: 1 }) + P('Pawn', 'b', 64, 110, 48, { sy: 0.3, sx: 1.6 }) +
+  burst(64, 94, 12, 5, 8) + sh(22, 110, 9) + P('Pawn', 'b', 22, 110, 32) + sh(106, 110, 9) + P('Pawn', 'b', 106, 110, 32) +
+  ring(22, 109, 10, 3.5, GOLD, 3) + ring(106, 109, 10, 3.5, GOLD, 3));
+def('SwordThrow', 'Bishop', () => sword(34, 50, 34, -50) + ln(arc(34, 40, 22, 22, 200, 320, 12), GOLD, 3, 'stroke-dasharray="5 6"') +
+  `<rect x="80" y="22" width="14" height="96" rx="3" fill="${HOLYW}" stroke="${INK}" stroke-width="3.5"/><rect x="62" y="40" width="50" height="14" rx="3" fill="${HOLYW}" stroke="${INK}" stroke-width="3.5"/>` +
+  `<rect x="78" y="112" width="18" height="8" rx="2" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>` +
+  sh(66, 120, 10) + P('Pawn', 'b', 66, 120, 32) + ln([[78, 116], [70, 118]], GOLD, 3) + burst(87, 16, 10, 4, 8));
+def('KettleBow', 'Bishop', () => sh(22, 118, 12) + P('Bishop', 'w', 22, 118, 50) + ball(40, 66, 7, GOLD) +
+  ln([[46, 62], [96, 36]], RED, 2, 'stroke-dasharray="4 5"') + target(100, 32, 13) + sh(102, 118, 10) + P('Pawn', 'b', 102, 118, 36) +
+  ln(q([60, 92], [80, 80], [94, 58]), GOLD, 4) + ball(96, 56, 6, GOLD));
+def('PinBeam', 'Bishop', () => sh(16, 118, 10) + P('Bishop', 'w', 16, 118, 42) + beam([28, 80], [126, 80], 8, GOLD) +
+  P('Pawn', 'b', 62, 116, 36, { op: 0.55 }) + P('Pawn', 'b', 98, 116, 36, { op: 0.55 }) +
+  `<rect x="54" y="30" width="6" height="18" rx="2" fill="#fff" stroke="${INK}" stroke-width="2.5"/><rect x="64" y="30" width="6" height="18" rx="2" fill="#fff" stroke="${INK}" stroke-width="2.5"/>` +
+  `<rect x="90" y="30" width="6" height="18" rx="2" fill="#fff" stroke="${INK}" stroke-width="2.5"/><rect x="100" y="30" width="6" height="18" rx="2" fill="#fff" stroke="${INK}" stroke-width="2.5"/>`);
+def('Giant', 'Rook', () => sh(54, 122, 40, 9) + P('Rook', 'w', 54, 124, 116) + P('Pawn', 'b', 112, 40, 22, { r: 60 }) + burst(100, 70, 10, 4, 8) +
+  ring(112, 118, 9, 3, GOLD, 3) + speed(118, 58, 300, 10, 2, 7, 3));
+def('Strongman', 'Rook', () => sh(64, 120, 22) + P('Rook', 'w', 64, 120, 70) + P('Pawn', 'b', 42, 34, 40, { r: 90 }) +
+  ln([[48, 70], [44, 42]], CREAM, 6) + ln([[80, 70], [84, 42]], CREAM, 6) + drop(30, 30) + drop(100, 24, 0.8) + ring(64, 14, 18, 5, '#FF9A3C', 3));
+def('TWall', 'Rook', () => merlons(14, 30, 100, 5, SANDBRICK) + wall(14, 30, 100, 24, SANDBRICK) + wall(52, 54, 24, 46, SANDBRICK) +
+  `<rect x="14" y="48" width="100" height="6" fill="${RED}" opacity=".85"/>` + sh(96, 118, 12) + P('Rook', 'w', 96, 118, 40) + txt(24, 92, '!', 22, RED));
+def('WallBuild', 'Rook', () => wall(20, 84, 64, 20, SANDBRICK) + wall(64, 30, 20, 74, SANDBRICK) + merlons(20, 84, 64, 4, SANDBRICK) +
+  P('Rook', 'w', 86, 32, 30, { op: 0.55 }) + ring(86, 30, 12, 4, TEAL, 3) + sh(24, 122, 10) + P('Rook', 'w', 24, 124, 34, { op: 0.8 }) +
+  `<rect x="18" y="70" width="4" height="14" fill="${WOOD}" stroke="${INK}" stroke-width="2"/><rect x="12" y="66" width="16" height="7" rx="2" fill="#7A746D" stroke="${INK}" stroke-width="2"/>`);
+
 // No picture yet (a skill that is only a plan).
 def('Unknown', 'None', () => txt(64, 92, '?', 72, '#E6EAF2'));
 

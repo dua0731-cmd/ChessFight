@@ -42,6 +42,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.JySword: JySwordFx(e, lvl); break;
                 case SkillFxKind.JyBow: JyBowFx(e, lvl); break;
                 case SkillFxKind.JyBeam: JyBeamFx(e, lvl); break;
+                default: SetFourJYCFx(e, lvl); break;   // the rook's (PawnRushSkillFx.SetFourJYC.cs)
             }
         }
 
@@ -729,6 +730,7 @@ namespace ChessFight.RagdollLab
                 if (m != null) Destroy(m);
             jyGrey = jyOutline = null;
             jyPauseBar = jyPlay = null;
+            DestroySetFourJYC();
         }
     }
 }

@@ -17,6 +17,7 @@ namespace ChessFight.RagdollLab
     public partial class PawnRushPlanMarks
     {
         GUIStyle jyBig, jySmall;
+        float jyHeldSeen = -1f;
 
         void JyStyles()
         {
@@ -105,6 +106,41 @@ namespace ChessFight.RagdollLab
                 }
                 break;
             }
+            // 성벽 짓기: my own build - the wall left, the turns left, W A S D.
+            if (me.JyBuilding)
+            {
+                float built = Mathf.Min(s.jyBuildLength, me.PlanTime * s.jyBuildSpeed), share = 1f - built / Mathf.Max(1f, s.jyBuildLength);
+                int turnsLeft = Mathf.Max(0, s.jyBuildTurns - me.PlanNote);
+                float w = 320f, h = 70f, x = (Screen.width - w) * 0.5f, y = Screen.height - h - 24f;
+                Panel(white, new Rect(x, y, w, h));
+                GUI.Label(new Rect(x, y + 2f, w, 24f), $"성벽 짓기 · W A S D = 꺾기 · F = 끝", jySmall);
+                GUI.color = new Color(0.35f, 0.38f, 0.45f, 1f);
+                GUI.DrawTexture(new Rect(x + 20f, y + 32f, w - 40f, 8f), white);
+                GUI.color = new Color(0.95f, 0.8f, 0.45f, 1f);
+                GUI.DrawTexture(new Rect(x + 20f, y + 32f, (w - 40f) * share, 8f), white);
+                for (int i = 0; i < s.jyBuildTurns; i++)
+                {
+                    GUI.color = i < turnsLeft ? new Color(0.3f, 0.85f, 0.78f) : new Color(1f, 1f, 1f, 0.2f);
+                    GUI.DrawTexture(new Rect(x + w * 0.5f - s.jyBuildTurns * 11f + i * 22f, y + 48f, 14f, 14f), white);
+                }
+                GUI.color = Color.white;
+            }
+            // 힘세지기: lifted - "잡혔다" and the 3 s it takes to slip out.
+            RagdollPawn holder = null;
+            foreach (var r in RagdollPawn.All)
+                if (r != null && r != me && r.JyHolding == me) holder = r;
+            if (holder != null)
+            {
+                if (jyHeldSeen < 0f) jyHeldSeen = Time.time;
+                float left = Mathf.Max(0f, s.jyStrongEscape - (Time.time - jyHeldSeen));
+                float w = 260f, h = 52f, x = (Screen.width - w) * 0.5f, y = 18f;
+                Panel(white, new Rect(x, y, w, h));
+                GUI.Label(new Rect(x, y + 2f, w, 28f), $"잡혔다!  {left:0.0}초", jyBig);
+                GUI.color = new Color(1f, 0.6f, 0.3f, 1f);
+                GUI.DrawTexture(new Rect(x + 20f, y + h - 12f, (w - 40f) * Mathf.Clamp01(left / Mathf.Max(0.1f, s.jyStrongEscape)), 5f), white);
+                GUI.color = Color.white;
+            }
+            else jyHeldSeen = -1f;
             // 첫 두걸음: my own window for the headbutt.
             if (me.JyDiagOpen)
             {

@@ -658,6 +658,7 @@ namespace ChessFight.RagdollLab
                     if (planPhase == PlanPhase.Windup || planPhase == PlanPhase.Active) input.jump = false;
                     break;
             }
+            SetFourJYCKeys();   // the rook's: the strongman's buttons, the clone's keys (RagdollPawn.SetFourJYC.cs)
         }
 
         /// <summary>Every step (UpdateSetFourStates).</summary>
