@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-26 R850 · 무료 요금제에서 만든 마지막 소리 4개(폰 `PawnDash` · `PawnBump` · `PawnCrouch`, 소드 파이트 `SwordHit`)를 유료 요금제로 다시 만들어 교체, 옛 소리의 크기 곡선에 맞춰 다듬음(`r850.py` · `r850_polish.py`, 작업판 `tDDwKPGgDnbm5TjY3t1Z`, 사용자 Unity 확인 전).
 - 2026-11-26 R848 · 대연회장 소리 3순위 5종: 막이 다시 만날 때 '툭', 큰 샹들리에 수정 떨림, 식탁보가 다시 깔리면 손님들이 잔을 두드림(인형 박수도 그때), 콘트라베이스에 닿으면 '붕', 분수 위 끈적한 초콜릿 발소리(`ChocolateFloor`). 사용자가 고른 테이크로 다시 굽고, 식탁 마술 예고를 북 대신 마법 차오르는 소리로. 사용자 확인 전, 커밋 안 함.
 - 2026-11-26 R847 · 폰 러쉬 룩 · 비숍 · 나이트 소리 15개를 옛 소리에 가깝게 유료 요금제로 다시 만들어 교체(거리 측정 `similar.py` · 고르기 `r847.py`, 작업판 `XXLmzf1PbQplyMZT6fjo`), 2개는 그대로. seoungtest 커밋 · 푸시, Unity 청취 전.
 - 2026-11-26 R846 · 소드 파이트 `SwingKnight`(나이트 좌클릭) · `CastKing`(왕의 반격 시작)을 옛 소리에 가깝게 유료 요금제로 다시 만들어 교체(사용자가 번호로 고름, 작업판 `n9NLRO39rItNgk7wKJkv`, 후보 `ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R846`). seoungtest 커밋 · 푸시, Unity 청취 전.
