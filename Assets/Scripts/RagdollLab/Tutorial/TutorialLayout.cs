@@ -31,6 +31,7 @@ namespace ChessFight.RagdollLab
         public static readonly Vector3 DiveStart = new Vector3(9f, 0f, -3.6f);
         public const float LimboHalfSpan = 1.9f;   // the posts' inner faces are 2.0 m from the middle
         public static readonly Vector3 DiveMark = new Vector3(9f, 0f, -8.8f);
+        public const float UnderBarDiveWindow = 2f;   // s: the crossing counts this long after the dive (the slide on the floor)
 
         // Lesson 4: sprint east to the 2 m wall (about 8 m), at least SprintNeeded seconds without a break.
         // Lesson 3-2: a dive from a jump, back west from the bar's far side along the open floor (the tunnel is 2.7 m south).
@@ -66,8 +67,13 @@ namespace ChessFight.RagdollLab
         public const float BeamStartYaw = 180f;
         public static readonly Vector3 GoalMark = new Vector3(0f, 0f, LabLayout.BeamEndZ - 3f);
 
-        // Under the whole map: a fall comes back to the lesson's start.
-        public static readonly Vector3 KillCenter = new Vector3(0f, LabLayout.KillHeight, -5f);
+        // The moat round the map, as TutorialMoatWater draws it (the scene's surfaceY -7, bedY -14, moat -52,-47 .. 47,42).
+        public static readonly Vector3 MoatCenter = new Vector3(-2.5f, -10.5f, -2.5f);
+        public static readonly Vector3 MoatSize = new Vector3(99f, 7f, 89f);
+        public const float MoatRespawnDelay = 2.5f;   // s afloat before the lesson's start again
+
+        // Under the whole map, below the moat's water (top -12): a fall comes back to the lesson's start.
+        public static readonly Vector3 KillCenter = new Vector3(0f, LabLayout.KillHeight - 4f, -5f);
         public static readonly Vector3 KillSize = new Vector3(140f, 8f, 120f);
 
         /// <summary>A wall top (lessons 5 and 6) as a box on the ground plan: x and z of the wall, any height.</summary>

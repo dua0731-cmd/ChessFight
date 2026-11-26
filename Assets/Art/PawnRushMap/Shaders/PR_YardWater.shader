@@ -37,6 +37,24 @@ Shader "ChessFight/Pawn Rush Yard Water"
         _WaveSpeed ("Wind drift of the ripples (m/s)", Float) = 0.05
         _DetailScale ("Small ripple size (per metre)", Float) = 0.9
         _DetailStrength ("Small ripple strength", Range(0, 2)) = 0.22
+        _RingStrength ("Rings off the falls: strength", Range(0, 6)) = 1
+        _RingReach ("Rings off the falls: how far they carry (x)", Range(0.5, 8)) = 1
+        _RingRadius ("Rings off the falls: gone past this distance (m, 0: no limit)", Float) = 0
+        _LapOn ("Laps against walls (1: on, needs _LapMap)", Float) = 0
+        _LapMap ("Distance to the wall (r, m) and the way away from it (g, b)", 2D) = "black" {}
+        _LapRect ("Lap map: world x min, z min, 1 / width, 1 / depth", Vector) = (0, 0, 1, 1)
+        _LapHeight ("Lap height at the wall (m)", Float) = 0.05
+        _LapLength ("Lap wavelength (m)", Float) = 2.4
+        _LapReach ("Lap fades over (m)", Float) = 2.5
+        _LapFoam ("Lap foam at the wall", Range(0, 1.5)) = 0.8
+        _LapSurge ("Lap: how high the water rises up the wall as a crest arrives (m)", Float) = 0
+        _LapSurgeReach ("Lap: how far out the rise reaches (m)", Float) = 0.8
+        _LapFallReach ("Lap: how far the falls' waves carry to a wall (m, e-folding)", Float) = 25
+        _PawStrength ("Breeze patches: ripple strength (0: off)", Range(0, 2)) = 0
+        _PawCover ("Breeze patches: share of the water they cover", Range(0, 1)) = 0.45
+        _PawSize ("Breeze patches: size (m)", Float) = 14
+        _PawWind ("Breeze: wind (world x, z, m/s)", Vector) = (0.5, 0.2, 0, 0)
+        _PawRippleScale ("Breeze ripples per metre", Float) = 1.3
         _WaveHeight ("Swell height (m)", Float) = 0.028
         _WaveLength ("Main wavelength (m)", Float) = 3.4
         _WaveHeading ("Swell heading (deg, from +x toward +z)", Float) = 180
@@ -80,11 +98,15 @@ Shader "ChessFight/Pawn Rush Yard Water"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 
             TEXTURE2D(_WaveMap); SAMPLER(sampler_WaveMap);
+            TEXTURE2D(_LapMap); SAMPLER(sampler_LapMap);
             CBUFFER_START(UnityPerMaterial)
                 half4 _ShallowColor, _DeepColor, _SkyColor, _FoamColor;
-                float4 _Absorb, _Flow, _WaveMap_ST;
+                float4 _Absorb, _Flow, _WaveMap_ST, _LapMap_ST, _LapRect;
+                float _LapOn, _LapHeight, _LapLength, _LapReach, _LapFoam, _LapSurge, _LapSurgeReach, _LapFallReach;
+                float4 _PawWind;
+                float _PawStrength, _PawCover, _PawSize, _PawRippleScale;
                 float _DeepAt, _EdgeFoam, _FoamScale;
-                float _WaveScale, _WaveStrength, _WaveSpeed, _DetailScale, _DetailStrength;
+                float _WaveScale, _WaveStrength, _WaveSpeed, _DetailScale, _DetailStrength, _RingStrength, _RingReach, _RingRadius;
                 float _WaveHeight, _WaveLength, _WaveHeading, _WaterDepth, _Choppiness;
                 float _Refraction, _Reflection, _Glint, _GlintSharpness, _Sparkle;
             CBUFFER_END
@@ -201,9 +223,14 @@ Shader "ChessFight/Pawn Rush Yard Water"
                     #if !defined(_RCY_WATER_LOW)
                     // Short rings from the impact over longer ones that carry far, both at the dispersion speed.
                     float2 d1, d2;
-                    float s1 = RingSlope(q, 0.7 * info.w, 0.014, 2.2, d1);
-                    float s2 = RingSlope(q, 1.9 * info.w, 0.022, 5.5, d2);
-                    slope -= (d1 * s1 + d2 * s2) * min(info.y, 1.5);
+                    // 11-26 (the tutorial's moat, "웨이브 넣지 말고 폭포수 구간만 상호작용 식으로 … 멀리 갈수록 약하게"):
+                    // _RingStrength and _RingReach scale the rings and their e-folding distance (both 1 in the yard);
+                    // then "폭포수 근처에서만": past _RingRadius (m from the landing line) they are gone, faded out from
+                    // half of it (0 in the yard: no limit).
+                    float s1 = RingSlope(q, 0.7 * info.w, 0.014, 2.2 * _RingReach, d1);
+                    float s2 = RingSlope(q, 1.9 * info.w, 0.022, 5.5 * _RingReach, d2);
+                    float ringFade = _RingRadius > 0 ? 1 - smoothstep(0.5 * _RingRadius, _RingRadius, length(q)) : 1;
+                    slope -= (d1 * s1 + d2 * s2) * min(info.y, 1.5) * _RingStrength * ringFade;
                     #endif
                 }
                 #if !defined(_RCY_WATER_LOW)
@@ -234,6 +261,74 @@ Shader "ChessFight/Pawn Rush Yard Water"
                 return lerp(lerp(RcyHash(a), RcyHash(a + float2(1, 0)), f.x), lerp(RcyHash(a + float2(0, 1)), RcyHash(a + 1), f.x), f.y);
             }
 
+            // 11-26 (the tutorial's moat, "물이 살짝살짝 씩 안쪽 벽을 치게", "물이 실제로 살짝 올라가는 연출", then "수학적으로
+            // 계산해보면 변 4개에 전부 동일하게 올라가는 게 말이 돼?"): the waves at the island's walls are the falls' waves,
+            // the only waves on this still water, arriving and reflecting. _LapMap holds, over _LapRect, the signed
+            // distance d to the nearest wall (m, negative under the island) and n, the way away from the wall (its gradient;
+            // TutorialMoatWater works it out at Start). For each fall landing on this water, from the nearest point of its
+            // landing line, r away along D (unit):
+            //  - only a face turned to the fall is reached: the energy flux into the wall goes as cos(theta) = max(0, -D.n),
+            //    so the far side of a pillar or a wall facing away stays still, its sides get a little;
+            //  - the wave has spread and damped on the way: a = s e^(-r/Lf) sqrt(8 / (8 + r)) (s the fall's strength, a
+            //    slow wander in time as a fall's pour is unsteady, each fall its own phase - they are not in step);
+            //  - a vertical wall reflects it whole and without inversion; incident plus reflected at d from the wall, with
+            //    the wall's foot r + d cos(theta) from the fall:
+            //      eta = 2 a cos(k d cos(theta)) sin(f),  f = k (r + d cos(theta)) - omega t + phase,
+            //    standing across the wall (twice as high at it) and running along it at c / sin(theta), so a crest sweeps
+            //    along a wall instead of every point rising at once;
+            //  - run-up at the wall: the crest piles up, S a e^(-|d|/Rs) q^3 with q = (1 + sin f) / 2 (never below the still
+            //    water);
+            //  - foam where a crest meets the wall (within 0.8 m).
+            // eta is shown within R of the walls (e^(-|d|/R)), the falls' own rings carrying the rest. Under the island the
+            // sheet, out of sight, keeps the wall's own height so it stays up against the wall's face. Returns the height.
+            float LapHeight(float2 p, float y, out float foam)
+            {
+                foam = 0;
+                if (_LapOn < 0.5) return 0;
+                float4 m = SAMPLE_TEXTURE2D_LOD(_LapMap, sampler_LapMap, (p - _LapRect.xy) * _LapRect.zw, 0);
+                float d = max(m.r, 0);
+                float len = length(m.gb);
+                if (len < 1e-4) return 0;
+                float2 n = m.gb / len;
+                float k = RCY_TAU / max(_LapLength, 0.3);
+                float w = Omega(k);
+                float t = _Time.y;
+                float Lf = max(_LapFallReach, 1);
+                float eta = 0, rise = 0, crest = 0;
+                [loop] for (int i = 0; i < 16; i++)
+                {
+                    if (i >= (int)_RcyFallLinesCount) break;
+                    float4 info = _RcyFallLinesInfo[i];
+                    if (abs(y - info.x) > 0.4) continue;                 // falls into this water only
+                    float2 a0 = _RcyFallLines[i].xy, ab = _RcyFallLines[i].zw - a0;
+                    float2 q = p - (a0 + ab * saturate(dot(p - a0, ab) / max(dot(ab, ab), 1e-4)));
+                    float r = length(q);
+                    float cosT = saturate(-dot(q / max(r, 1e-3), n));
+                    if (cosT <= 0) continue;
+                    float a = min(info.y, 1.5) * exp(-r / Lf) * sqrt(8 / (8 + r)) * cosT
+                            * (0.55 + 0.45 * RcyNoise(float2(t * 0.25, i * 7.13)));
+                    float f = k * (r + d * cosT) - w * t + RcyHash(float2(i, 3.7)) * RCY_TAU;
+                    float s = sin(f);
+                    eta += 2 * a * cos(k * d * cosT) * s;
+                    float qq = 0.5 + 0.5 * s;
+                    rise += a * qq * qq * qq;
+                    crest += a * smoothstep(0.55, 1.0, qq);
+                }
+                foam = _LapFoam * saturate(1 - d / 0.8) * saturate(crest * 2);
+                return _LapHeight * exp(-d / max(_LapReach, 0.1)) * eta + _LapSurge * exp(-d / max(_LapSurgeReach, 0.1)) * rise;
+            }
+
+            // The slope of that (-grad h) by differences over a short step, and its foam.
+            float2 LapSlope(float2 p, float y, out float foam)
+            {
+                const float e = 0.12;
+                float f1, f2;
+                float h0 = LapHeight(p, y, foam);
+                float hx = LapHeight(p + float2(e, 0), y, f1);
+                float hz = LapHeight(p + float2(0, e), y, f2);
+                return -float2(hx - h0, hz - h0) / e;
+            }
+
             Varyings vert (Attributes v)
             {
                 Varyings o;
@@ -243,6 +338,8 @@ Shader "ChessFight/Pawn Rush Yard Water"
                 float up = saturate(nws.y * 2 - 1);
                 float3 gn;
                 ws += Gerstner(ws.xz, gn) * up;
+                float lapFoam;
+                ws.y += LapHeight(ws.xz, ws.y, lapFoam) * up;
                 nws = normalize(lerp(nws, gn, up));
                 o.positionWS = ws;
                 o.normalWS = nws;
@@ -274,7 +371,25 @@ Shader "ChessFight/Pawn Rush Yard Water"
                 #endif
                 // Churned water is rough: a fast boil on top where a fall lands.
                 half3 boil = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, carried * 2.6 + float2(t * 0.35, -t * 0.28)), 0.9);
-                float2 slope = a.xy + b.xy + c.xy + boil.xy * saturate(churn) + touched;
+                float lapFoam;
+                float2 lapSlope = LapSlope(p, i.positionWS.y, lapFoam);
+                // 11-26 (the tutorial's moat, "여기 밋밋한 부분만 좀 살려줘"): still water away from the falls and the walls
+                // is not glass - gusts roughen it in patches ("cat's paws") that ride the wind and come and go, glassy
+                // between them. The patches: two octaves of value noise of size _PawSize carried at the wind W (sampled
+                // at p - W t) and changing slowly as they go, cut at the _PawCover quantile with a soft edge. Inside, one
+                // ripple layer (never two crossing: no double pattern), carried a little faster than the patch as the
+                // ripples are pushed along by the gust.
+                float paw = 0;
+                half3 pawN = half3(0, 0, 1);
+                if (_PawStrength > 0)
+                {
+                    float2 W = _PawWind.xy;
+                    float2 g = (p - W * t) / max(_PawSize, 0.5);
+                    float m = RcyNoise(g + float2(0, t * 0.02)) * 0.65 + RcyNoise(g * 2.3 + 11.1 - float2(t * 0.04, 0)) * 0.35;
+                    paw = smoothstep(1 - _PawCover - 0.1, 1 - _PawCover + 0.15, m) * up;
+                    pawN = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, (p - W * t * 1.3) * _PawRippleScale), _PawStrength);
+                }
+                float2 slope = a.xy + b.xy + c.xy + boil.xy * saturate(churn) + touched + lapSlope * up + pawN.xy * paw;
                 float3 gn;
                 float swell = Gerstner(p, gn).y;
                 float crest = saturate(swell / max(_WaveHeight * 1.4, 1e-3) * 0.5 + 0.5);
@@ -316,7 +431,7 @@ Shader "ChessFight/Pawn Rush Yard Water"
                 // Foam: along what stands in the water (the depth under the surface below _EdgeFoam) and in the churn,
                 // cut into patches that drift with the current; less coverage, smaller and fewer bubbles.
                 float edge = saturate(1 - vertical / max(_EdgeFoam, 0.01)) * saturate(thick * 8);
-                float cover = saturate(edge * edge * 1.2 + churn);
+                float cover = saturate(edge * edge * 1.2 + churn + lapFoam * up);
                 float2 fp = (p - U * t) * _FoamScale;
                 // 11-17: the only white water where the falls land (the falls draw none of their own), so it must boil
                 // and fade: the churned foam's pattern changes faster the harder it churns (its own clock runs at
@@ -345,7 +460,8 @@ Shader "ChessFight/Pawn Rush Yard Water"
                 float3 h = normalize(sun.direction + V);
                 half ndh = saturate(dot(n, h));
                 half glint = pow(ndh, _GlintSharpness) * _Glint;
-                half rough = length(c.xy) / max(_DetailStrength, 0.01) + saturate(churn) * length(boil.xy);
+                half rough = length(c.xy) / max(_DetailStrength, 0.01) + saturate(churn) * length(boil.xy)
+                           + paw * length(pawN.xy) / max(_PawStrength, 0.01);   // the breeze patches sparkle too
                 half fleck = smoothstep(0.55, 0.9, rough) * pow(ndh, 64) * _Sparkle;
                 col += sun.color * (glint + fleck) * sun.shadowAttenuation * (1 - foam);
 

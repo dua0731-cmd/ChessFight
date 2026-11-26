@@ -866,7 +866,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var c = overlap[i];
-                if (ownSet.Contains(c) || PassesThrough(c)) continue;
+                if (ownSet.Contains(c) || PassesThrough(c) || IsLowRail(c)) continue;   // R856: a rail is not footing
                 if (c is MeshCollider mesh && !mesh.convex) return true;
                 // Only support under the foot counts; a wall beside the foot is not ground.
                 if (c.ClosestPoint(footCenter).y < footCenter.y - half.y * 0.5f) return true;
@@ -1455,6 +1455,8 @@ namespace ChessFight.RagdollLab
             // not while a skill is carrying the body (the pawn's F then Space keeps its own climb; ROYAL_CARRIAGE_YARD §13).
             bool exact = fromGround && PawnRushJumpExact && !BodyCarried;
             if (exact) up = PawnRushTakeoff(up);
+            // R856: from on top of a low rail, no higher than from the floor beside it (the coyote time off it too).
+            if (fromGround && LowRailTakeoff(p, ref up)) exact = false;
             riseExact = exact;
             // A pressed spring key (the Royal Library's typewriter, pr/2) adds a small boost only to an actual grounded jump.
             if (fromGround && Grounded && groundCollider != null &&

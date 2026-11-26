@@ -207,8 +207,25 @@ namespace ChessFight.RagdollLab.Editor
                 Expect("L3a reaching the square round the bar does not count", 3);
                 Put(TutorialLayout.DiveStart, 180f);
             });
+            // R856: past the bar's line without a dive (walked under, jumped over) does not count.
             Add("under 0", 0.6f, () => Put(LabLayout.LimboCenter + new Vector3(0f, 0f, -1.1f), 180f));
             Add("under 1", 0.5f, () => Put(TutorialLayout.DiveMark, 180f));
+            Add("no dive", 1.2f, () =>
+            {
+                Expect("L3e past the bar without a dive, then the square, does not count", 3);
+                // A real dive under it (the check drives the pawn itself; no keys).
+                Put(LabLayout.LimboCenter + new Vector3(0f, 0f, 1.3f), 180f);
+                Spawner.enabled = false;
+            });
+            Add("dive at the bar", 0.6f, () => Drive(Vector3.back, false, true));
+            Add("let go of the dive", 0.1f, () => Drive(Vector3.back, false, false));
+            Add("slid under", 1.5f, () =>
+            {
+                Drive(Vector3.zero, false, false);
+                Spawner.enabled = true;
+                Check("L3f the dive takes the pawn under the bar", Pawn.Hips.position.z < LabLayout.LimboCenter.z, "hips " + V(Pawn.Hips.position));
+                Put(TutorialLayout.DiveMark, 180f);
+            });
             Add("dive", 1.2f, () =>
             {
                 Check("L3b under the bar's line, then the square: the jump dive (3-2) next", Course.LessonLabel == "3-2", Course.LessonLabel);
@@ -418,9 +435,13 @@ namespace ChessFight.RagdollLab.Editor
                 Picture("03_beam", TutorialLayout.BeamStart + new Vector3(2.5f, 3.5f, 3.5f), TutorialLayout.BeamStart + new Vector3(0f, 0f, -10f), 60f);
                 // Off the side, over the void.
                 Put(new Vector3(3f, 0f, -22f), 180f);
+                floatedAt = float.MaxValue;
             });
-            Add("fall", 6f, () =>
+            Add("fall", 8f, () =>
             {
+                // R857: on the way the moat's water held the pawn (watched every frame, Tick).
+                Check("P8 a fall into the moat floats at the water", floatedAt < -6f && floatedAt > -11f,
+                      floatedAt < float.MaxValue ? "floated, hips down to y " + F(floatedAt) : "never floated");
                 var hips = Pawn.Hips.position;
                 float off = Vector2.Distance(new Vector2(hips.x, hips.z), new Vector2(TutorialLayout.BeamStart.x, TutorialLayout.BeamStart.z));
                 Check("P4 a fall comes back to the lesson's start", off < 2.5f && hips.y > -1f, "hips " + V(hips) + ", " + F(off) + " m from the beam's start");
@@ -491,6 +512,7 @@ namespace ChessFight.RagdollLab.Editor
         static double heldWatchFrom;
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+        static float floatedAt = float.MaxValue;   // the lowest the hips were while floating
 
         static void Tick()
         {
@@ -511,6 +533,7 @@ namespace ChessFight.RagdollLab.Editor
                 }
             if (chaseBot >= 0) ChaseStep(now);
             else chaseFrom = 0;
+            if (Pawn != null && Pawn.Floating) floatedAt = Mathf.Min(floatedAt, Pawn.Hips.position.y);
             if (struggling && now >= nextStruggle && Pawn != null && Spawner.Driver is RagdollDriver mashing)
             {
                 // Only while held (a click when free is a dive); away from the grabber.

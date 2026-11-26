@@ -37,12 +37,17 @@ namespace ChessFight.RagdollLab
         public static bool Playing { get; private set; }
         /// <summary>The pawn is still on the eagle's back (the lessons' screen waits).</summary>
         public static bool Riding { get; private set; }
+        /// <summary>Seconds into the opening; 0 until its clock runs (TutorialMusic starts with it).</summary>
+        public static float Clock { get; private set; }
 
         // Seconds: the approach (a lap round the yard), the landing (feet, hops, belly slide), lying winded, getting up, leaving.
         const float Approach = 10f, Landing = 1.7f, Dazed = 2.5f, Rise = 1.6f, Leave = 3.4f;
         const float FlareFrom = 8.6f;        // into the approach: the body rears back and the beats turn into braking
         const float TripAt = 0.6f;           // into the landing: the chest goes down; the pawn is thrown just after
         const float LessonsAfter = 1.5f;     // after the throw: the pawn is up again
+        // The pawn's speed forward as it is thrown: it comes to rest about 1 m past the start (measured), well short of
+        // lesson 1's mark. At 6.5 m/s it landed on the mark and the lesson was done with no key touched (R856).
+        const float ThrowSpeed = 3f;
         const float StandHeight = 0.84f;     // the body's middle above the floor standing on bent legs
         const float SquatHeight = 0.64f;     // with the legs folded under it
         const float BellyHeight = 0.5f;      // lying on its belly
@@ -73,6 +78,7 @@ namespace ChessFight.RagdollLab
 
         void Awake()
         {
+            Clock = 0f;
             bool whole = !Application.isBatchMode;
             if (whole)
             {
@@ -186,6 +192,7 @@ namespace ChessFight.RagdollLab
             // (the eagle held at the start of its lap, the pawn already on its back), so none of the flight is missed.
             if (SceneTransition.Busy) started = Time.time;
             float t = Time.time - started;
+            Clock = t;
             // No key does anything while the opening plays (user 11-25 "이 연출 장면에서는 어떤 키를 눌러도 작용 할 수 없게 해":
             // the jump key's skip left the pawn at the start unable to move): no skip, and the Esc menu is off.
             Pose(t);
@@ -347,7 +354,7 @@ namespace ChessFight.RagdollLab
             GiveViewBack();
             if (pawn == null) return;
             pawn.Knockdown("튜토리얼 착지", 1.0f);
-            pawn.Launch(face * (SlideSpeed - 1.5f) + Vector3.up * 5.5f);
+            pawn.Launch(face * ThrowSpeed + Vector3.up * 5.5f);
         }
 
         static Vector3 Curve(Vector3[] p, float u)

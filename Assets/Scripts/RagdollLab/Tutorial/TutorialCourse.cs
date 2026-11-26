@@ -58,7 +58,7 @@ namespace ChessFight.RagdollLab
 
         readonly List<Lesson> lessons = new List<Lesson>();
         int current = -1, lastDone;
-        float lessonStart, sprintFor, onTopFor, praiseUntil = -1f, fellUntil = -1f, noSkipUntil = -1f, goalAt = -1f;
+        float lessonStart, sprintFor, onTopFor, praiseUntil = -1f, fellUntil = -1f, noSkipUntil = -1f, goalAt = -1f, overBarUntil = -1f;
         float holdFor, heldFor, lastDive = -99f;
         bool underBar, sprinted, skipOpen;
         bool airDived, wasDiving;
@@ -101,15 +101,24 @@ namespace ChessFight.RagdollLab
             noHook.AddComponent<HookStartZone>();
             BuildLessons();
             BuildKillFloor();
+            BuildMoat();
             BuildMarker();
             GameMenu.Use(gameObject, Leave, false);
             // R842: played again from the settings window (done before): leaving is open from the start.
             if (GameSettings.Bool(DoneKey, false)) skipOpen = true;
         }
 
-        void OnEnable() => KillVolume.Entered += OnFell;
+        void OnEnable()
+        {
+            KillVolume.Entered += OnFell;
+            WaterZone.Entered += OnSplash;
+        }
 
-        void OnDisable() => KillVolume.Entered -= OnFell;
+        void OnDisable()
+        {
+            KillVolume.Entered -= OnFell;
+            WaterZone.Entered -= OnSplash;
+        }
 
         void OnDestroy()
         {
@@ -137,7 +146,7 @@ namespace ChessFight.RagdollLab
                 () => Loc.F("장애물 바로 앞에서 {0} 를 누르세요", Key(GameKey.Jump)));
             Add(3, "다이빙", Goal.UnderBar, TutorialLayout.DiveStart, 180f, TutorialLayout.DiveMark,
                 () => Loc.F("달리는 중 {0} 로 봉 아래를 통과하세요", Key(GameKey.Shove)),
-                () => Loc.T("서서는 지나갈 수 없습니다"), -1, "3-1");
+                () => Loc.T("걸어서 지나가거나 위로 넘으면 인정되지 않습니다"), -1, "3-1");
             // 3-2 (user 11-25 "점프 다이빙도 넣어줘"): a dive begun in the air, back west along the open floor.
             Add(3, "점프 다이빙", Goal.AirDive, TutorialLayout.DiveMark, 270f, TutorialLayout.AirDiveMark,
                 () => Loc.F("{0} 점프 중 {1} 로 몸을 날려 빛기둥에 도착하세요", Key(GameKey.Jump), Key(GameKey.Shove)),
@@ -212,6 +221,19 @@ namespace ChessFight.RagdollLab
             kill.transform.position = TutorialLayout.KillCenter;
             kill.AddComponent<BoxCollider>().size = TutorialLayout.KillSize;
             kill.AddComponent<KillVolume>();
+        }
+
+        // R857 (user 11-26: "물에 떨어지면 충돌 판정 없이 떨어지니까 수정해"): the moat's water holds what falls into it - the
+        // pawn splashes in, floats and thrashes, and is put back after a moment (PlaytestSpawner). The picture is
+        // TutorialMoatWater's, at the same height; the kill box lies under it for anything that gets past.
+        void BuildMoat()
+        {
+            var moat = new GameObject("Moat (WaterZone)");
+            moat.transform.SetParent(transform, false);
+            moat.transform.position = TutorialLayout.MoatCenter;
+            moat.AddComponent<BoxCollider>().size = TutorialLayout.MoatSize;
+            JsonUtility.FromJsonOverwrite("{\"respawnDelay\":" + TutorialLayout.MoatRespawnDelay.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}",
+                                          moat.AddComponent<WaterZone>());
         }
 
         // Where to go, seen from across the map: a waypoint as in a game's tutorial (11-25 "이 막대도 튜토리얼처럼 효과",
@@ -435,7 +457,10 @@ namespace ChessFight.RagdollLab
         void Start()
         {
             gameObject.AddComponent<TutorialAmbience>();   // the breeze and the birds, from the first frame
+            gameObject.AddComponent<TutorialMusic>();      // the opening's flight, then the lessons' theme
+            gameObject.AddComponent<TutorialSunset>();     // R855: the intro's sunset light (sun, ambient, haze)
             MarkBridge();   // wooden footsteps on the plank bridge (TutorialCourse.Sound)
+            MarkRails();    // the hurdles and the bar are jumped over, not stood off (no launching off them)
             // The practice bots walk their lines from the start (seen from lesson 1 on, met in lesson 7).
             if (spawner != null && spawner.CharacterPrefab != null)
             {
@@ -444,6 +469,22 @@ namespace ChessFight.RagdollLab
                 bots.Spawn(spawner.CharacterPrefab, botSkin);
             }
             Begin(0);
+        }
+
+        // The low things to jump over (Gameplay.LowRail): the hurdles, the limbo bar and its posts. Found where the layout
+        // has them, by their colliders standing 0.3 to 1 m high (the floor's top is at 0).
+        void MarkRails()
+        {
+            void Mark(Vector3 middle, Vector3 half)
+            {
+                foreach (var c in Physics.OverlapBox(middle, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore))
+                    if (c.attachedRigidbody == null && c.bounds.max.y > 0.3f && c.bounds.max.y < 1f && c.GetComponent<LowRail>() == null)
+                        c.gameObject.AddComponent<LowRail>();
+            }
+            foreach (float x in TutorialLayout.HurdleX)
+                Mark(new Vector3(x, TutorialLayout.HurdleHeight * 0.5f, TutorialLayout.HurdleZ),
+                     new Vector3(0.1f, 0.1f, TutorialLayout.HurdleLength * 0.45f));
+            Mark(LabLayout.LimboCenter + Vector3.up * 0.65f, new Vector3(2.2f, 0.05f, 0.2f));
         }
 
         void Begin(int index)
@@ -518,7 +559,13 @@ namespace ChessFight.RagdollLab
                     break;
                 case Goal.UnderBar:
                     var bar = LabLayout.LimboCenter;
-                    if (hasLast && lastHips.z > bar.z && hips.z <= bar.z && Mathf.Abs(hips.x - bar.x) < TutorialLayout.LimboHalfSpan) underBar = true;
+                    // R856 (user 11-26 "넘어가도 클리어가 된다"): only a dive that takes the hips under the bar counts -
+                    // not a jump over it, nor walking under it (the body squeezes through). Either way says so.
+                    if (hasLast && lastHips.z > bar.z && hips.z <= bar.z && Mathf.Abs(hips.x - bar.x) < TutorialLayout.LimboHalfSpan)
+                    {
+                        if (hips.y < LabLayout.LimboClearance && Time.time - lastDive < TutorialLayout.UnderBarDiveWindow) underBar = true;
+                        else { overBarUntil = Time.time + 3f; CueRefused(); }
+                    }
                     if (underBar && lesson.zone.Contains(hips)) Done();
                     break;
                 case Goal.AirDive:
@@ -578,11 +625,16 @@ namespace ChessFight.RagdollLab
             hasLast = true;
         }
 
-        void OnFell(ICharacterDriver who, KillVolume volume)
+        void OnFell(ICharacterDriver who, KillVolume volume) => Fell(who, volume.RespawnDelay);
+
+        void OnSplash(ICharacterDriver who, WaterZone water) => Fell(who, water.RespawnDelay);
+
+        // The notice and the sounds of a fall: the pawn comes back to the lesson's start after the delay.
+        void Fell(ICharacterDriver who, float delay)
         {
             if (spawner == null || who != spawner.Driver) return;
-            fellUntil = Time.time + volume.RespawnDelay + 1.2f;
-            CueFell(volume.RespawnDelay);
+            fellUntil = Time.time + delay + 1.2f;
+            CueFell(delay);
             hasLast = false;
         }
 
@@ -831,6 +883,7 @@ namespace ChessFight.RagdollLab
             }
             if (Time.time < fellUntil) Toast(h * .44f, Loc.T("체크포인트에서 다시 시작합니다"), Color.white);
             if (Time.time < noSkipUntil) Toast(h * .44f + 54f * s, Loc.F("{0}단계를 완료하면 건너뛸 수 있습니다", SkipAfterLesson), Gold);
+            if (Time.time < overBarUntil && lessons[current].goal == Goal.UnderBar) Toast(h * .44f, Loc.T("다이빙으로 봉 아래를 통과해야 합니다"), Gold);
 
             // The stamina bar (the spawner draws it only with its help box, which is off here).
             if (spawner != null && spawner.Driver is IStaminaReadout readout) StaminaBarGui.Draw(readout.Stamina01, small);

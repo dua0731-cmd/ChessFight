@@ -23,8 +23,64 @@ def arg(name, default):
 
 W = arg("--w", 4096)
 SAMPLES = arg("--samples", 64)
-SUN_UNITY = np.array([.548, .743, -.384])           # toward the sun, Unity axes
+# R855 (11-26 "하늘도 노을로 만들어줘", after "구름이나 이런 부분은 전으로"): --sunset renders the same clouds (same noise,
+# same slab) with the sun low on the horizon at TutorialSunset.cs's azimuth (125 degrees from +Z towards +X), a warm
+# sun lamp on the clouds, and writes TU_SkyCloudsSunset.exr / Renders/sky_sunset_preview.png instead (the day sky is
+# kept). Its highlights are rolled off as tu_sky_grade_v1.py does for the day sky. Unity loads it from
+# Assets/Resources/TutorialSky/TU_SkyCloudsSunset.exr (copy it there): TutorialSunset.cs. Rendered with --w 3072 --samples 24.
+SUNSET = "--sunset" in ARGS
+SUNSET_AZIMUTH, SUNSET_ELEVATION = 125., arg("--elev", 4.)
+if SUNSET:
+    _a, _e = math.radians(SUNSET_AZIMUTH), math.radians(SUNSET_ELEVATION)
+    SUN_UNITY = np.array([math.sin(_a) * math.cos(_e), math.sin(_e), math.cos(_a) * math.cos(_e)])
+else:
+    SUN_UNITY = np.array([.548, .743, -.384])           # toward the sun, Unity axes
+NAME = "TU_SkyCloudsSunset" if SUNSET else "TU_SkyClouds"
+KNEE = .55
 SUN_B = np.array([SUN_UNITY[0], SUN_UNITY[2], SUN_UNITY[1]])   # Blender axes (x, z, y)
+
+
+def srgb(h):
+    return tuple(((h >> s & 255) / 255.) ** 2.2 for s in (16, 8, 0)) + (1.,)
+
+
+# R855: the intro's sunset colours (Resources/Intro/SunsetSky.png) by height: warm gold at the horizon, peach and pink
+# above, violet overhead, and a soft glow round the low sun. The physical sky model with the sun at 4 degrees read as a
+# blue evening with a thin orange line, not the intro.
+SUNSET_CLOUD_AMBIENT, SUNSET_SUN_ENERGY = arg("--amb", .7), arg("--sun", 9.)
+SUNSET_LAMP_ELEVATION = arg("--lamp", 14.)
+SUNSET_STOPS = ((0., 0xFFD27C), (.18, 0xFBB98A), (.42, 0xEE9CA8), (.7, 0xB792C8), (1., 0x7F86CC))
+
+
+def sunset_world(nt, bg):
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    norm = nt.nodes.new("ShaderNodeVectorMath"); norm.operation = 'NORMALIZE'
+    nt.links.new(tc.outputs["Generated"], norm.inputs[0])
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ"); nt.links.new(norm.outputs["Vector"], sep.inputs[0])
+    ramp = nt.nodes.new("ShaderNodeValToRGB"); nt.links.new(sep.outputs["Z"], ramp.inputs["Fac"])
+    els = ramp.color_ramp.elements
+    while len(els) < len(SUNSET_STOPS): els.new(.5)
+    for e, (pos, col) in zip(els, SUNSET_STOPS):
+        e.position = pos; e.color = srgb(col)
+    # the glow: (dir . sun)^n, wide and soft, plus a tight bright core for the disc
+    dot = nt.nodes.new("ShaderNodeVectorMath"); dot.operation = 'DOT_PRODUCT'
+    nt.links.new(norm.outputs["Vector"], dot.inputs[0]); dot.inputs[1].default_value = tuple(SUN_B)
+    pos = nt.nodes.new("ShaderNodeMath"); pos.operation = 'MAXIMUM'; nt.links.new(dot.outputs["Value"], pos.inputs[0]); pos.inputs[1].default_value = 0.
+    wide = nt.nodes.new("ShaderNodeMath"); wide.operation = 'POWER'; nt.links.new(pos.outputs[0], wide.inputs[0]); wide.inputs[1].default_value = 24.
+    core = nt.nodes.new("ShaderNodeMath"); core.operation = 'POWER'; nt.links.new(pos.outputs[0], core.inputs[0]); core.inputs[1].default_value = 3000.
+    glow = nt.nodes.new("ShaderNodeMath"); glow.operation = 'MULTIPLY_ADD'
+    nt.links.new(core.outputs[0], glow.inputs[0]); glow.inputs[1].default_value = 6.; nt.links.new(wide.outputs[0], glow.inputs[2])
+    mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = 'RGBA'; mix.blend_type = 'ADD'; mix.clamp_result = False
+    nt.links.new(glow.outputs[0], mix.inputs["Factor"])
+    nt.links.new(ramp.outputs["Color"], mix.inputs[6]); mix.inputs[7].default_value = srgb(0xFFE6A0)
+    nt.links.new(mix.outputs[2], bg.inputs["Color"])
+    # The camera sees the colours at full strength; the clouds are lit by much less of them (else they melt into the
+    # sky) and mostly by the warm low sun lamp, so they read pink with lit rims and shaded bellies, as in the intro.
+    path = nt.nodes.new("ShaderNodeLightPath")
+    strength = nt.nodes.new("ShaderNodeMapRange")
+    nt.links.new(path.outputs["Is Camera Ray"], strength.inputs[0])
+    strength.inputs[3].default_value = SUNSET_CLOUD_AMBIENT; strength.inputs[4].default_value = 1.
+    nt.links.new(strength.outputs[0], bg.inputs["Strength"])
 
 
 def main():
@@ -58,11 +114,16 @@ def main():
             try: setattr(sky, prop, val)
             except Exception: pass
     nt.links.new(sky.outputs["Color"], bg.inputs["Color"]); bg.inputs["Strength"].default_value = .22
+    if SUNSET: sunset_world(nt, bg)
 
     # the sun lamp lights the clouds crisply
     sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", 'SUN'))
-    sun.data.energy = 2.6; sun.data.angle = math.radians(.6); sun.data.color = (1., .97, .92)
+    sun.data.energy = SUNSET_SUN_ENERGY if SUNSET else 2.6; sun.data.angle = math.radians(.6)
+    sun.data.color = (1., .58, .32) if SUNSET else (1., .97, .92)   # R855: the low sun reddens the clouds
     d = -SUN_B
+    if SUNSET:   # the lamp on the clouds stands higher than the drawn sun, so their bellies are lit, not black
+        _a, _e = math.radians(SUNSET_AZIMUTH), math.radians(SUNSET_LAMP_ELEVATION)
+        d = -np.array([math.sin(_a) * math.cos(_e), math.cos(_a) * math.cos(_e), math.sin(_e)])
     import mathutils
     sun.rotation_euler = mathutils.Vector(tuple(d)).to_track_quat('-Z', 'Y').to_euler()
     sc.collection.objects.link(sun)
@@ -139,7 +200,7 @@ def main():
     except Exception: cam.data.cycles.panorama_type = 'EQUIRECTANGULAR'
     cam.data.clip_end = 2000
 
-    tmp = os.path.join(HERE, "Renders", "sky_raw.exr")
+    tmp = os.path.join(HERE, "Renders", "sky_sunset_raw.exr" if SUNSET else "sky_raw.exr")
     os.makedirs(os.path.dirname(tmp), exist_ok=True)
     sc.render.image_settings.file_format = 'OPEN_EXR'
     sc.render.image_settings.color_depth = '16'
@@ -157,17 +218,18 @@ def main():
     target_u = .5 - math.atan2(SUN_UNITY[2], SUN_UNITY[0]) / (2 * math.pi)
     shift = int(round((target_u - sun_u_now) * wid)) % wid
     px = np.roll(px, shift, axis=1)
+    if SUNSET: px[..., :3] = px[..., :3] / (1. + KNEE * px[..., :3]) * 1.35   # tu_sky_grade_v1.py's highlight roll-off
     print("SKY sun found at u %.3f v %.3f, wants u %.3f v %.3f: rolled %d px" %
           (sun_u_now, (r + hgt // 2 + .5) / hgt, target_u, 1 - math.acos(SUN_UNITY[1]) / math.pi, shift))
-    outp = os.path.join(HERE, "Materials", "Textures", "TU_SkyClouds.exr")
-    o = bpy.data.images.new("TU_SkyClouds", wid, hgt, alpha=False, float_buffer=True)
+    outp = os.path.join(HERE, "Materials", "Textures", NAME + ".exr")
+    o = bpy.data.images.new(NAME, wid, hgt, alpha=False, float_buffer=True)
     o.pixels.foreach_set(px.ravel())
     o.filepath_raw = outp; o.file_format = 'OPEN_EXR'
     sc.render.image_settings.file_format = 'OPEN_EXR'; sc.render.image_settings.color_depth = '16'
     o.save_render(outp, scene=sc)
     prev = bpy.data.images.new("prev", wid, hgt, alpha=False)
     pp = px.copy(); pp[..., :3] = np.clip(pp[..., :3] * .8, 0, 1) ** (1 / 2.2)
-    prev.pixels.foreach_set(pp.ravel()); prev.filepath_raw = os.path.join(HERE, "Renders", "sky_preview.png"); prev.file_format = 'PNG'; prev.save()
+    prev.pixels.foreach_set(pp.ravel()); prev.filepath_raw = os.path.join(HERE, "Renders", "sky_sunset_preview.png" if SUNSET else "sky_preview.png"); prev.file_format = 'PNG'; prev.save()
     print("SKY wrote", outp)
 
 

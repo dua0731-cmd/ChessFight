@@ -740,7 +740,8 @@ Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다	You can skip the tut
 {0} 로 장애물 2개를 뛰어넘으세요	Jump over the 2 obstacles with {0}	用 {0} 跳过 2 个障碍	Перепрыгните 2 препятствия клавишей {0}
 장애물 바로 앞에서 {0} 를 누르세요	Press {0} right in front of the obstacle	在障碍正前方按 {0}	Нажмите {0} прямо перед препятствием
 달리는 중 {0} 로 봉 아래를 통과하세요	While running, dive under the bar with {0}	奔跑中用 {0} 从横杆下穿过	На бегу нырните под перекладину клавишей {0}
-서서는 지나갈 수 없습니다	You can't pass standing up	站着无法通过	Стоя не пройти
+걸어서 지나가거나 위로 넘으면 인정되지 않습니다	Walking through or jumping over does not count	走过去或从上方越过都不算	Пройти пешком или перепрыгнуть не засчитывается
+다이빙으로 봉 아래를 통과해야 합니다	Dive to get under the bar	必须飞扑从横杆下方通过	Нырните под перекладину
 {0} 점프 중 {1} 로 몸을 날려 빛기둥에 도착하세요	Jump with {0}, then dive in mid-air with {1} to reach the pillar of light	用 {0} 跳起后在空中按 {1} 飞扑，到达光柱	Прыгните клавишей {0} и в воздухе нырните клавишей {1}, чтобы достичь столба света
 발이 땅에서 떨어진 뒤에 {0} 를 누르세요	Press {0} after your feet leave the ground	双脚离地后再按 {0}	Нажмите {0}, когда ноги оторвутся от земли
 {0} 를 누른 채 벽 앞까지 질주하세요	Hold {0} and sprint to the wall	按住 {0} 冲刺到墙前	Удерживая {0}, добегите до стены

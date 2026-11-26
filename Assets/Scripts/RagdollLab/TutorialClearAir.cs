@@ -21,6 +21,9 @@ namespace ChessFight.RagdollLab
         [SerializeField] float bloomIntensity = .1f, bloomThreshold = 1.35f, bloomScatter = .45f;
         public const float Priority = 30f;
 
+        // R855: the haze colour, set to the sunset's peach by TutorialSunset.
+        public Color FogColor { get => fogColor; set => fogColor = value; }
+
         void Start()
         {
             Air();

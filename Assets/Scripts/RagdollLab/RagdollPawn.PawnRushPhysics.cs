@@ -81,6 +81,40 @@ namespace ChessFight.RagdollLab
         // jump pressed just before landing, which goes once the hips are within Grounded's reach (0.22 m over standing).
         const float TakeoffSpan = 0.25f;
 
+        // ---------------------------------------------------------------- low rails (R856)
+
+        const float LowRailNear = 1f;          // m: a rail this close to the hips
+        const float LowRailLeastRise = 0.15f;  // m: still enough of a hop to get off it
+
+        /// <summary>
+        /// A <see cref="ChessFight.Gameplay.LowRail"/> is jumped over, not footing: a foot touching one does not make the
+        /// pawn Grounded and does not lift where the hips stand (FootTouches, FootFloor). With the hips over the rail
+        /// itself the ground probe still finds it, so a pawn on top stands on it.
+        /// </summary>
+        static bool IsLowRail(Collider c) => c.TryGetComponent<ChessFight.Gameplay.LowRail>(out _);
+
+        /// <summary>
+        /// A jump near a low rail from higher than any jump off the floor takes off from (on top of the rail, or just
+        /// off it in the coyote time) tops the hips out where a jump from the floor would. False, and
+        /// <paramref name="up"/> left alone, everywhere else.
+        /// </summary>
+        bool LowRailTakeoff(RagdollParams p, ref float up)
+        {
+            Vector3 hips = bodies[0].position;
+            int n = Physics.OverlapSphereNonAlloc(hips, LowRailNear, overlap, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                if (!overlap[i].TryGetComponent<ChessFight.Gameplay.LowRail>(out var rail)) continue;
+                float over = hips.y - (rail.floorY + standHeight);
+                if (over <= TakeoffSpan) return false;   // from the floor: the jump as it is
+                float g = Mathf.Max(0.1f, -Physics.gravity.y * RiseGravityScale);
+                float full = JumpSpeed(p) * JumpSpeed(p) / (2f * g);   // the rise of a jump from standing
+                up = Mathf.Min(up, Mathf.Sqrt(2f * g * Mathf.Max(LowRailLeastRise, full - over)));
+                return true;
+            }
+            return false;
+        }
+
         // ---------------------------------------------------------------- the belly flop (R513)
 
         /// <summary>
@@ -179,7 +213,7 @@ namespace ChessFight.RagdollLab
         {
             y = 0f;
             Vector3 at = foot.bounds.center + Vector3.up * 0.1f;
-            if (!SolidRay(at, Vector3.down, 0.3f, out RaycastHit h) || h.normal.y < 0.6f) return false;
+            if (!SolidRay(at, Vector3.down, 0.3f, out RaycastHit h) || h.normal.y < 0.6f || IsLowRail(h.collider)) return false;
             y = h.point.y;
             return true;
         }
