@@ -140,6 +140,22 @@ namespace ChessFight.RagdollLab
 
         void OnPawnRush(SkillFxEvent e)
         {
+            // 11-26 (the set 4판): a hindrance put on an enemy is its giver's hit; a hindrance ending, a tied piece's hop
+            // and a speech bubble are nobody's cast (they opened a cast on the piece hindered, graded "?").
+            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say)
+            {
+                if (e.kind == SkillFxKind.S4Cc && e.count != 0 && e.by != null && e.target != null && e.by != e.target)
+                {
+                    Struck(e.target, e.by);
+                    var given = Touch(e.by, Mode.PawnRush, e.by.Piece);
+                    if (given != null)
+                    {
+                        Hit(given, e.target);
+                        Check(given);
+                    }
+                }
+                return;
+            }
             Struck(e.target, e.by);
             var c = Touch(e.by, Mode.PawnRush, PieceOf(e.kind.ToString(), e.by));
             if (c == null) return;
@@ -147,6 +163,7 @@ namespace ChessFight.RagdollLab
             {
                 case SkillFxKind.QueenHit: case SkillFxKind.RookHit: case SkillFxKind.RookStop:
                 case SkillFxKind.BishopTrip: case SkillFxKind.KnightStomp: case SkillFxKind.PawnHit:
+                case SkillFxKind.S3Hit:   // (the 3판's and 4판's smack)
                     Hit(c, e.target); break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;

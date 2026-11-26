@@ -1019,5 +1019,65 @@ namespace ChessFight.RagdollLab
         public float wallHeight = 1.2f, wallThick = 0.45f, wallSeconds = 5f, wallRise = 0.2f;
         [Tooltip("달리는 몸에 부딪힌 적을 옆으로 미는 거리 (m); 멈춘 뒤 (초); 쿨 (초)")]
         public float wallShove = 2f, wallRecovery = 0.3f, wallCooldown = 40f;
+
+        // ---------------------------------------------------------------- the set 4판 (ROUND1, 11-26: every number a
+        // first try of the planning session's, to change after the user has played it)
+
+        [Header("4판 · 공통: 등급의 쿨 (초급 · 중급 · 상급, 초)")]
+        public float s4Basic = 6f, s4Mid = 12f, s4High = 30f;
+        [Header("4판 · 날리기 세 가지: 살짝 · 뻥 · 쾅 (가는 거리 m, 높이 m)")]
+        public float s4LightDist = 2f, s4LightUp = 0.5f, s4BangDist = 5f, s4BangUp = 2f, s4BoomDist = 8f, s4BoomUp = 3.5f;
+
+        [Header("4판 · 방해(CC) 일곱 가지")]
+        [Tooltip("헤롱헤롱: 흔들리는 각 (°), 한 번 오가는 시간 (초), 밀리는 거리 배")]
+        public float ccDizzyAngle = 35f, ccDizzyPeriod = 1.2f, ccDizzyPush = 1.5f;
+        [Tooltip("지침: 점프 높이 배")]
+        public float ccTiredJump = 0.6f;
+        [Tooltip("무거움: 이동 · 점프 · 밀림 배")]
+        public float ccHeavyMove = 0.6f, ccHeavyJump = 0.5f, ccHeavyPush = 0.5f;
+        [Tooltip("묶임 (깡충형): 한 번에 가는 거리 (m), 한 번마다 (초)")]
+        public float ccHopDist = 1.2f, ccHopEvery = 0.5f;
+        [Tooltip("미끌미끌: 빨라지기 · 멈추기 · 꺾기가 듣는 몫")]
+        public float ccSlipAccel = 0.2f;
+        [Tooltip("쪼꼬미: 보이는 크기, 이동 · 점프 · 밀림 배")]
+        public float ccTinyScale = 0.5f, ccTinyMove = 0.7f, ccTinyJump = 0.6f, ccTinyPush = 2f;
+
+        [Header("4판 · 폰 앙파상! (초급)")]
+        [Tooltip("발을 내미는 시간 (초), 옆으로 닿는 거리 (m), 양쪽 부채꼴 (°), 콰당! (초)")]
+        public float tripWindow = 0.6f, tripReach = 2f, tripCone = 60f, tripFlop = 1.5f;
+        [Header("4판 · 폰 벽돌 (초급)")]
+        [Tooltip("겨누는 거리 (m), 머리 위 높이 (m), 떨어지기까지 (초), 떨어지는 시간 (초), 맞는 반지름 (m), 헤롱헤롱 (초)")]
+        public float brickRange = 12f, brickHigh = 3f, brickDelay = 0.6f, brickFall = 0.3f, brickHit = 0.8f, brickDizzy = 2f;
+        [Header("4판 · 폰 구덩이 (초급)")]
+        [Tooltip("폰 뒤로 (m), 지름 (m), 남는 시간 (초), 묶임 (초), 빠져나올 때 튀는 빠르기 (m/s)")]
+        public float pitBack = 1.1f, pitSize = 1.2f, pitSeconds = 6f, pitHold = 1.5f, pitPop = 4f;
+
+        [Header("4판 · 나이트 포크! (중급)")]
+        [Tooltip("뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 찾는 거리 (m), 둘이면 헤롱헤롱 (초), 하나면 (초)")]
+        public float forkRange = 6f, forkHigh = 2.5f, forkReach = 2f, forkDizzyTwo = 3f, forkDizzyOne = 2f;
+        [Header("4판 · 나이트 뒷발차기 (초급)")]
+        [Tooltip("맞은 적에게 더하는 헤롱헤롱 (초)")]
+        public float kick4Dizzy = 2f;
+
+        [Header("4판 · 비숍 성수병 (초급)")]
+        [Tooltip("던지는 거리 (m), 웅덩이 지름 (m), 남는 시간 (초), 미끌미끌 (초), 날아가는 시간 (초)")]
+        public float water4Range = 15f, water4Size = 3f, water4Seconds = 4f, water4Slip = 3f, water4Flight = 0.7f;
+        [Header("4판 · 비숍 설교 (초급)")]
+        [Tooltip("겨누는 거리 (m), 지침 (초)")]
+        public float sermonRange = 20f, sermonTired = 3f;
+
+        [Header("4판 · 룩 직진! (중급)")]
+        [Tooltip("고개 숙임 (초), 달리는 거리 (m) · 빠르기 (m/s), 닿는 거리 (m), 벽에 박으면 헤롱헤롱 (초)")]
+        public float charge4Bow = 0.3f, charge4Dist = 12f, charge4Speed = 10f, charge4Reach = 1.1f, charge4WallDizzy = 1.5f;
+        [Header("4판 · 룩 돌 얹기 (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 무거움 (초)")]
+        public float capRange = 4f, capHeavy = 3f;
+
+        [Header("4판 · 퀸 왕관 헌납 (초급)")]
+        [Tooltip("던지는 거리 (m), 날아가는 시간 (초), 맞는 반지름 (m), 무거움 (초)")]
+        public float crownRange = 12f, crownFlight = 0.8f, crownHit = 0.9f, crownHeavy = 3f;
+        [Header("4판 · 퀸 무엄하다! (상급)")]
+        [Tooltip("숨 들이쉬기 (초), 거리 (m), 부채꼴 (°), 쪼꼬미 (초)")]
+        public float shoutBreath = 0.4f, shoutRange = 8f, shoutCone = 90f, shoutTiny = 4f;
     }
 }

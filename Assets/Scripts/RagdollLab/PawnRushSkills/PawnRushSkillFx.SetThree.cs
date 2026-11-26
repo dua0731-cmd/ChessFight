@@ -777,11 +777,12 @@ namespace ChessFight.RagdollLab
             f.props.Add(cork);
         }
 
-        void CmPuddle(SkillFxEvent e)
+        /// <summary><paramref name="lasts"/>: how long it stays (the 3판's waterSeconds if not given; the 4판 bottle's own).</summary>
+        void CmPuddle(SkillFxEvent e, float lasts = -1f)
         {
             if (kit == null) return;
             Vector3 at = Ground(e.at) + Vector3.up * 0.012f;
-            float radius = Mathf.Max(0.3f, e.size), seconds = Params != null ? Params.waterSeconds : 4f;
+            float radius = Mathf.Max(0.3f, e.size), seconds = lasts > 0f ? lasts : Params != null ? Params.waterSeconds : 4f;
             // The bottle breaks: a splash of drops and a pop of water.
             kit.Drops(at + Vector3.up * 0.3f, Vector3.up, CmWater, 6, 6f);
             CmFlash(at + Vector3.up * 0.3f, 0.55f, 8, CmWater);
@@ -960,6 +961,7 @@ namespace ChessFight.RagdollLab
             cmCracks.Clear();
             cmTowers.Clear();
             cmStars.Clear();
+            DestroySetFour();
             DestroyComic();
         }
     }

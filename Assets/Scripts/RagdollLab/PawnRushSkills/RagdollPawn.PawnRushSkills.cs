@@ -110,6 +110,23 @@ namespace ChessFight.RagdollLab
         // 11-24 (the comic effects): a 3판 skill's hit (target; at: its belly, dir: the push, count: which hit) - the roll's,
         // its slam's, the star's, a check's and the stone's (they borrowed the old queen's hit before).
         S3Hit,
+        // 11-26, the set 4판 (RagdollPawn.SetFour.cs, RagdollPawn.Cc.cs; drawn by PawnRushSkillFx.SetFour.cs):
+        //   S4Cc      a hindrance on target (at: its head; count: Cc4, 0 when it ends; size: seconds)
+        //   S4Hop     a tied piece's hop (by; at: its feet, dir: the way)
+        //   S4Say     a speech bubble over target (at: its head; count: the words, RagdollPawn.Words4)
+        //   S4Trip    the pawn's feet out to both sides (at: feet, dir: its facing, size: seconds); count 1: target tripped
+        //   S4Brick   a brick (at: where it hangs; count 0 it appears (size: seconds till it drops), 1 it hit target, 2 the floor)
+        //   S4Pit     a pit (at; count 0 dug (size: seconds), 1 target fell in (size: seconds), 2 it closed)
+        //   S4Leap    the knight's fork leap (at: from, normal: where it lands, size: the flight's seconds)
+        //   S4Bonk    heads knocked (at: the middle; target: one; normal: the other's head; count 1 one stomped, 2 two)
+        //   S4Sermon  the little bishop onto target's shoulder (at: from, size: seconds)
+        //   S4Charge  the rook's charge (at: feet, dir: the way; count 0 the bow, 1 the run, 2 a wall (at: there), 3 the end)
+        //   S4Cap     a wall stone onto target's head (size: seconds)
+        //   S4Crown   the queen's crown (count 0 thrown: at from, normal to, size the flight; 1 it sits on target (size: seconds),
+        //             2 it missed: at)
+        //   S4Shout   the queen's shout (at: chest, dir: facing; count 0 the breath (size: seconds), 1 the shout (size: range))
+        //   S4Puddle  the set 4 holy water's puddle (at; size: radius; count: team + 1; the bottle flies as S3WaterThrow)
+        S4Cc, S4Hop, S4Say, S4Trip, S4Brick, S4Pit, S4Leap, S4Bonk, S4Sermon, S4Charge, S4Cap, S4Crown, S4Shout, S4Puddle,
     }
 
     public struct SkillFxEvent
@@ -362,6 +379,7 @@ namespace ChessFight.RagdollLab
             SupportKeys();           // 11-22: G's press, the leader standing for its support, the one carried (RagdollPawn.Support.cs)
             ChainGrabKey();          // R153: a rook's chain handle held out to it (the right click), or riding the chain
             PlanKeys();              // plan 1-나: in a castling's flight
+            CcKeys();                // the set 4판's hindrance on the keys: dizzy, tired, tied, stuck (RagdollPawn.Cc.cs)
             if (Aiming)
             {
                 // Aiming: the left click (the dive) fires the skill and the right click (the grab) calls it off.

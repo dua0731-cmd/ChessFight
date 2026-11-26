@@ -96,6 +96,7 @@ namespace ChessFight.RagdollLab
                     input.sprint = false;   // it walks through its reach
                     break;
                 case PawnRushSkillIds.BackKick:
+                case PawnRushSkillIds.BackKick4:
                     // It runs on through the bob: only the jump and the dive wait for the kick.
                     if (planPhase != PlanPhase.Windup) break;
                     input.jump = false;
@@ -310,7 +311,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.kickRecovery && (Grounded || planTime >= 1f))
                     {
                         EndPlanSkill();
-                        StartCooldown(s.kickCooldown);
+                        StartCooldown(activeSkill == PawnRushSkillIds.BackKick4 ? s.s4Basic : s.kickCooldown);
                     }
                     break;
                 default:
@@ -344,7 +345,10 @@ namespace ChessFight.RagdollLab
                 if (d > 0.05f && Vector3.Angle(back, flat) > half) continue;
                 n++;
                 Vector3 away = d > 0.05f ? flat / d : back;
-                string result = SkillHit(other, S3Push(away, s.kickThrow), true, "뒷발차기", false, s.kickKnockHold, true);
+                // The set 4판's (11-26, ROUND1 4.2): a bang over no edge guard, and 헤롱헤롱 on top (RagdollPawn.SetFour.cs).
+                string result = activeSkill == PawnRushSkillIds.BackKick4
+                    ? Hit4(other, away, 2, Cc4.Dizzy, s.kick4Dizzy, "뒷발차기", n)
+                    : SkillHit(other, S3Push(away, s.kickThrow), true, "뒷발차기", false, s.kickKnockHold, true);
                 Fx(SkillFxKind.PawnHit, other, SkillContact(other), away, 1);
                 FeelHit(other, SkillContact(other), away, FeelHard);
                 Log($"뒷발차기 → {other.DisplayName}: {result}");

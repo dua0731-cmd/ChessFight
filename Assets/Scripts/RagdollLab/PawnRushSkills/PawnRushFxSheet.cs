@@ -62,9 +62,24 @@ namespace ChessFight.RagdollLab
             S("TowerTrap", PawnRushSkillIds.TowerTrap, PieceKind.Rook, 1, "k", 2.6f, new Vector3(4f, 2.8f, 2f), new Vector3(0f, 0.8f, 6.5f), V(0f, 7f)),
             S("QueenStar", PawnRushSkillIds.QueenStar, PieceKind.Queen, 0, "k", 2f, new Vector3(0f, 9f, -5.5f), new Vector3(0f, 0f, 0.5f), V(3f, 3f), V(-4f, 2f), V(0.5f, -5f), V(5f, -2f)),
             S("CheckChain", PawnRushSkillIds.CheckChain, PieceKind.Queen, 1, "k w0.6 k w0.6 k", 2.6f, new Vector3(6f, 5f, 1f), new Vector3(0f, 0.5f, 8f), V(0f, 6f), V(4f, 10f), V(-2f, 13f)),
+            // The set 4판's bundle 가 (11-26).
+            S("Trip4", PawnRushSkillIds.Trip4, PieceKind.Pawn, 0, "m0,1 w0.45 k w0.7 m-", 2.8f, new Vector3(3.5f, 2.6f, 8f), new Vector3(0f, 0.6f, 3f), V(1.3f, 3.2f), V(-1.3f, 3.7f)),
+            S("Brick", PawnRushSkillIds.Brick, PieceKind.Pawn, 1, "k", 3.2f, new Vector3(4.5f, 3.2f, 0.5f), new Vector3(0f, 2.1f, 6f), V(0.3f, 6f)),
+            S("Pit", PawnRushSkillIds.Pit, PieceKind.Pawn, 2, "k", 2.8f, new Vector3(3f, 2.4f, 1.5f), new Vector3(0f, 0.4f, -1f), V(0f, -1.1f)),
+            S("PitHole", PawnRushSkillIds.Pit, PieceKind.Pawn, 2, "k", 1.8f, new Vector3(2.5f, 2.6f, 1.5f), new Vector3(0f, 0.2f, -1f)),
+            S("ForkBonk", PawnRushSkillIds.ForkBonk, PieceKind.Knight, 0, "k", 3.4f, new Vector3(5f, 3f, 3f), new Vector3(0f, 1f, 5.5f), V(0.75f, 6f), V(-0.75f, 6.3f)),
+            S("ForkOne", PawnRushSkillIds.ForkBonk, PieceKind.Knight, 0, "k", 2.8f, new Vector3(4.5f, 2.8f, 3f), new Vector3(0f, 1f, 5.5f), V(0.3f, 6f)),
+            S("BackKick4", PawnRushSkillIds.BackKick4, PieceKind.Knight, 1, "k", 2.6f, new Vector3(4f, 1.8f, 0.3f), new Vector3(0f, 0.6f, 0f), V(0f, -1.6f), V(0.8f, -1.4f)),
+            S("HolyWater4", PawnRushSkillIds.HolyWater4, PieceKind.Bishop, 0, "k", 3.4f, new Vector3(4f, 4f, 10f), new Vector3(0f, 0.4f, 14.5f), V(0f, 15f), V(1f, 15.6f)),
+            S("Sermon", PawnRushSkillIds.Sermon, PieceKind.Bishop, 1, "k", 3.6f, new Vector3(3f, 2.2f, 4.5f), new Vector3(0f, 1.1f, 7f), V(0.5f, 7f)),
+            S("Charge4", PawnRushSkillIds.Charge4, PieceKind.Rook, 0, "k", 2.6f, new Vector3(6f, 3.5f, 6f), new Vector3(0f, 0.6f, 7f), V(0.3f, 5f), V(-0.5f, 8.5f)),
+            S("StoneCap", PawnRushSkillIds.StoneCap, PieceKind.Rook, 1, "k", 3.6f, new Vector3(2.6f, 2f, 1f), new Vector3(0f, 1.1f, 2.6f), V(0.2f, 2.6f)),
+            S("CrownToss", PawnRushSkillIds.CrownToss, PieceKind.Queen, 0, "k", 3.6f, new Vector3(3.5f, 2.4f, 2.5f), new Vector3(0f, 1.1f, 5f), V(0.4f, 6f)),
+            S("Insolent", PawnRushSkillIds.Insolent, PieceKind.Queen, 1, "k", 4.8f, new Vector3(1.5f, 2.6f, -3f), new Vector3(0f, 0.8f, 4f), V(0.5f, 3f), V(-1.5f, 5f), V(2f, 6.5f)),
         };
 
         static readonly string[] SetThree = { "Bolas", "TwoSteps", "HighStomp", "BackKick", "HolySwords", "StoneThrow", "HolyWater", "RollShort", "TowerTrap", "QueenStar", "CheckChain" };
+        static readonly string[] SetFourA = { "Trip4", "Brick", "Pit", "PitHole", "ForkBonk", "ForkOne", "BackKick4", "HolyWater4", "Sermon", "Charge4", "StoneCap", "CrownToss", "Insolent" };
 
         LabGame game;
         PawnRushSkillBed bed;
@@ -89,9 +104,9 @@ namespace ChessFight.RagdollLab
             foreach (string raw in (string.IsNullOrEmpty(names) ? "set3" : names).Split(','))
             {
                 string n = raw.Trim();
-                if (n == "set3")
+                if (n == "set3" || n == "set4a")
                 {
-                    foreach (string m in SetThree) list.Add(Array.Find(Shots, s => s.name == m));
+                    foreach (string m in n == "set3" ? SetThree : SetFourA) list.Add(Array.Find(Shots, s => s.name == m));
                     continue;
                 }
                 int at = Array.FindIndex(Shots, s => s.name == n);
@@ -152,10 +167,11 @@ namespace ChessFight.RagdollLab
             foreach (var shot in shots)
             {
                 Status = "filming " + shot.name;
-                // The skill in its slot (on top of 3판, whose system plays every slot).
+                // The skill in its slot (on top of 3판, or 4판 가 for a 4판 skill: their system plays every slot).
                 var lo = bed.skills.loadout;
-                lo.CopyFrom(PawnRushLoadout.Preset(12));
-                lo.Apply(PawnRushLoadout.OpSystem, PawnRushLoadout.SystemOf(12));   // (a preset leaves the system as it was)
+                int basis = PawnRushSkillIds.SetFour(shot.id) ? 13 : 12;
+                lo.CopyFrom(PawnRushLoadout.Preset(basis));
+                lo.Apply(PawnRushLoadout.OpSystem, PawnRushLoadout.SystemOf(basis));   // (a preset leaves the system as it was)
                 int row = Array.IndexOf(PawnRushLoadout.RowPieces, shot.piece);
                 if (row >= 0) lo.Apply(row * PawnRushLoadout.Slots + shot.slot, shot.id);
                 string keyName = shot.slot == 0 ? "F" : shot.slot == 1 ? "E" : shot.slot == 2 ? "R" : "Q";

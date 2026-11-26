@@ -58,7 +58,8 @@ namespace ChessFight.RagdollLab
                                 * MarchScale    // the pool's king's march (RagdollPawn.PoolUltimates.cs); a flank shot's own slow (KitTwo)
                                 * KingWalkScale    // the king's walk, a driven ultimate (RagdollPawn.KingWalk.cs)
                                 * SupportScale     // a support's reward: both fast for a while (RagdollPawn.Support.cs)
-                                * BolasScale;      // the bolas' pull: the pawn lunges on (RagdollPawn.SetThree.cs)
+                                * BolasScale       // the bolas' pull: the pawn lunges on (RagdollPawn.SetThree.cs)
+                                * CcMoveScale;     // the set 4판's hindrances: heavy, tiny (RagdollPawn.Cc.cs)
 
         /// <summary>How far the seated bishop's line reaches now: fianNear at the key, fianFar once it has aimed for
         /// fianCharge seconds (any PC: the time comes with the host's skill state).</summary>
@@ -670,7 +671,7 @@ namespace ChessFight.RagdollLab
         // And 16, the last free one: the queen may check once more (the skill pool's Q-기1, RagdollPawn.PoolSkills.cs).
         const byte NetSlowed = 2, NetCheckAgain = 16;
 
-        bool KitNetBusy => slowLeft > 0f || checkAgainLeft > 0f || KitTwoNetBusy;
+        bool KitNetBusy => slowLeft > 0f || checkAgainLeft > 0f || KitTwoNetBusy || CcNetBusy;
 
         /// <summary>Host: what these skills have left on this piece.</summary>
         void CaptureKitNet(ref SkillWireState s)
@@ -678,6 +679,7 @@ namespace ChessFight.RagdollLab
             if (slowLeft > 0f) s.Flags |= NetSlowed;
             if (checkAgainLeft > 0f) s.Flags |= NetCheckAgain;
             CaptureKitTwoNet(ref s);   // the kits' second version: light, heavy (RagdollPawn.KitTwo.cs)
+            CaptureCcNet(ref s);       // the set 4판's hindrance (RagdollPawn.Cc.cs)
         }
 
         /// <summary>Client: the same on a puppet. (The time left is this screen's own count from when it first saw it.)</summary>
@@ -687,6 +689,7 @@ namespace ChessFight.RagdollLab
             SeeState(ref slowLeft, (s.Flags & NetSlowed) != 0, k != null ? k.fianSlowSeconds : 2f);
             SeeState(ref checkAgainLeft, (s.Flags & NetCheckAgain) != 0, k != null ? k.checkAgainWindow : 2f);
             ApplyKitTwoNet(in s);
+            ApplyCcNet(in s);
         }
 
         void ClearKitNet()
@@ -694,6 +697,7 @@ namespace ChessFight.RagdollLab
             slowLeft = 0f;
             checkAgainLeft = 0f;
             ClearKitTwoNet();
+            ClearCc();
         }
 
         void AdvanceKitView(float dt)
@@ -701,6 +705,7 @@ namespace ChessFight.RagdollLab
             if (slowLeft > 0f) slowLeft = Mathf.Max(0.05f, slowLeft - dt);
             if (checkAgainLeft > 0f) checkAgainLeft = Mathf.Max(0.05f, checkAgainLeft - dt);
             AdvanceKitTwoView(dt);
+            AdvanceCcView(dt);
         }
     }
 }

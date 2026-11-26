@@ -8,7 +8,8 @@ param(
 # of each shot (30 a second of game time, 960 x 540, captioned) in Logs/FxSheets/<shot>/, a contact sheet
 # Logs/FxSheets/<shot>.jpg (24 frames, four across), and one video of them all, each shot at full speed and then at half
 # speed (Logs/FxSheets/<Video or "skills">.mp4, Krita's ffmpeg). Unity's log: Logs/fxsheets_unity.log.
-# -Shots: comma-separated shot names (PawnRushFxSheet.Shots) or "set3". -Note: the caption's second line.
+# -Shots: comma-separated shot names (PawnRushFxSheet.Shots), "set3" or "set4a" (the 4판's bundle 가). -Note: the
+# caption's second line.
 # Refuses while a Unity editor is open (it would hold the project), so close Unity first.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent

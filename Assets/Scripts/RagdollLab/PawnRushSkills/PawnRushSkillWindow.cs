@@ -30,6 +30,11 @@ namespace ChessFight.RagdollLab
     /// into Resources/PawnRushSkillIcons, one a PawnRushSkillIds constant's name (a variant shows its base's; a skill that
     /// is only a plan, a question mark).
     ///
+    /// Two tabs since 2026-11-26 (the user: "지금부터 작업하는 스킬들이 실제로 게임에 넣는 걸 고려해 볼 후보들이니까 이전에 있던건
+    /// '폐기된 스킬'탭을 만들어서 거기로 넘기고, 이것들만 바로 보이도록 해야돼"): "4판 후보" shows only the set 4판's thirty-five
+    /// (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md) by piece - the ones built first, the rest faint as "준비 중" - with the 4판's
+    /// sets; "폐기된 스킬" holds every skill and set from before, still to be put in any slot.
+    ///
     /// Every change is two numbers (PawnRushLoadout.Apply). Where this PC runs the skills itself (offline, a match's host)
     /// the window makes the change; elsewhere it is asked of the host (<see cref="Send"/>) and shows when the host's
     /// loadout comes back. In a room everyone opens it ("테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게"), and the room's
@@ -71,8 +76,10 @@ namespace ChessFight.RagdollLab
 
         const string Pref = "ChessFight.PawnRushLoadout";
 
-        // The sets on the line, newest first, and the earlier ones behind "옛 세트" (PawnRushLoadout.Preset's numbers; 2 is
-        // "모두 비우기").
+        // The 4판 tab's sets (11-26); under "폐기된 스킬" the sets before them, newest first, and the earliest behind "옛 세트"
+        // (PawnRushLoadout.Preset's numbers; 2 is "모두 비우기").
+        static readonly int[] NewIds = { 13 };
+        static readonly string[] NewNames = { "4판 가" };
         static readonly int[] SetIds = { 12, 11, 8, 10, 9, 0 };
         static readonly string[] SetNames = { "3판", "3안-b", "3안-a", "2안-a", "1안-a", "지금 게임" };
         static readonly int[] OldIds = { 1, 3, 4, 5, 7, 6 };
@@ -86,6 +93,7 @@ namespace ChessFight.RagdollLab
         int dragId, pickId, hoverId, hoverNow, hoverSet = -1, hoverSetNow = -1;
         float scroll;
         bool showOld, showSystems, showIdeas;
+        bool discarded;                  // the "폐기된 스킬" tab (else "4판 후보")
         int ideasHidden;
         // The set the slots are now (-1: changed by hand), and where each skill sits, kept until the loadout changes.
         int activeSet = -1, activeHash = int.MinValue;
@@ -406,6 +414,7 @@ namespace ChessFight.RagdollLab
 
         static string SetName(int id)
         {
+            for (int i = 0; i < NewIds.Length; i++) if (NewIds[i] == id) return NewNames[i];
             for (int i = 0; i < SetIds.Length; i++) if (SetIds[i] == id) return SetNames[i];
             for (int i = 0; i < OldIds.Length; i++) if (OldIds[i] == id) return OldNames[i];
             return id == 2 ? "모두 비우기" : "";
@@ -415,6 +424,7 @@ namespace ChessFight.RagdollLab
         {
             switch (id)
             {
+                case 13: return "4판 1차 묶음 가 · 기물마다 F · E 둘 (폰은 R까지 셋) · 사용자가 고른 서른다섯 가운데 먼저 만든 열하나 · 궁극기 없음";
                 case 12: return "사용자가 짠 스킬 · 기물마다 F · E 둘 · 궁극기 없음 · 비숍은 E 돌멩이와 R 성수병 가운데 하나를 고르는 중";
                 case 11: return "기물마다 F · E 둘 · Q는 10~12초 동안 직접 모는 궁극기 여섯";
                 case 8: return "기물마다 칸 조합이 달라요 (퀸은 R까지 셋) · Q는 팀 게이지 궁극기";
@@ -442,9 +452,9 @@ namespace ChessFight.RagdollLab
             if (hash == activeHash) return;
             activeHash = hash;
             activeSet = -1;
-            for (int n = 0; n < SetIds.Length + OldIds.Length && activeSet < 0; n++)
+            for (int n = 0; n < NewIds.Length + SetIds.Length + OldIds.Length && activeSet < 0; n++)
             {
-                int id = n < SetIds.Length ? SetIds[n] : OldIds[n - SetIds.Length];
+                int id = n < NewIds.Length ? NewIds[n] : n < NewIds.Length + SetIds.Length ? SetIds[n - NewIds.Length] : OldIds[n - NewIds.Length - SetIds.Length];
                 if (Matches(lo, id)) activeSet = id;
             }
             placedAt.Clear();
@@ -493,22 +503,46 @@ namespace ChessFight.RagdollLab
             return r.xMax;
         }
 
+        void SwitchTab(bool toDiscarded)
+        {
+            discarded = toDiscarded;
+            scroll = 0f;
+            showOld = false;
+            pickId = 0;
+        }
+
         float DrawSets(PawnRushLoadout lo, float x0, float right, float y)
         {
-            GUI.Label(new Rect(x0, y, 40f, 28f), "<b>세트</b>", label);
-            float x = x0 + 44f;
-            for (int i = 0; i < SetIds.Length; i++) x = SetChip(lo, x, y, 28f, SetIds[i], SetNames[i]) + 6f;
-            string oldText = showOld ? "옛 세트 ▾" : "옛 세트 ▸";
-            float ow = TextW(oldText, label) + 24f;
-            if (Chip(new Rect(x + 6f, y, ow, 28f), oldText, showOld)) showOld = !showOld;
+            // The two tabs (11-26): the 4판's candidates, and under "폐기된 스킬" everything before them (still usable).
+            float x = x0;
+            const string NewTab = "4판 후보", OldTab = "폐기된 스킬";
+            float tw = TextW(NewTab, label) + 26f;
+            if (Chip(new Rect(x, y, tw, 28f), NewTab, !discarded) && discarded) SwitchTab(false);
+            x += tw + 6f;
+            tw = TextW(OldTab, label) + 26f;
+            if (Chip(new Rect(x, y, tw, 28f), OldTab, discarded) && !discarded) SwitchTab(true);
+            x += tw + 16f;
+            Fill(new Rect(x - 9f, y + 4f, 1f, 20f), Edge);
+            GUI.Label(new Rect(x, y, 40f, 28f), "<b>세트</b>", label);
+            x += 44f;
+            float setX = x;
+            if (!discarded)
+                for (int i = 0; i < NewIds.Length; i++) x = SetChip(lo, x, y, 28f, NewIds[i], NewNames[i]) + 6f;
+            else
+            {
+                for (int i = 0; i < SetIds.Length; i++) x = SetChip(lo, x, y, 28f, SetIds[i], SetNames[i]) + 6f;
+                string oldText = showOld ? "옛 세트 ▾" : "옛 세트 ▸";
+                float ow = TextW(oldText, label) + 24f;
+                if (Chip(new Rect(x + 6f, y, ow, 28f), oldText, showOld)) showOld = !showOld;
+            }
             float cw = TextW("모두 비우기", label) + 24f;
             var clear = new Rect(right - cw, y, cw, 28f);
             if (clear.Contains(Event.current.mousePosition)) hoverSetNow = 2;
             if (Chip(clear, "모두 비우기", false)) PickSet(lo, 2);
             y += 34f;
-            if (showOld)
+            if (discarded && showOld)
             {
-                x = x0 + 44f;
+                x = setX;
                 for (int i = 0; i < OldIds.Length; i++) x = SetChip(lo, x, y, 24f, OldIds[i], OldNames[i]) + 6f;
                 y += 30f;
             }
@@ -717,6 +751,9 @@ namespace ChessFight.RagdollLab
 
         bool InTab(SkillEntry entry) => listPiece < 0 || entry.home == PawnRushLoadout.RowPieces[listPiece];
 
+        /// <summary>The 4판 tab lists only the set 4판's skills; "폐기된 스킬" every other.</summary>
+        bool InSetTab(SkillEntry entry) => (entry.origin == SkillOrigin.Set4) != discarded;
+
         /// <summary>On the board in the tab's row (any row with no tab).</summary>
         bool OnBoardHere(int id) =>
             placedRows.TryGetValue(id, out int mask) && (listPiece < 0 || (mask & (1 << listPiece)) != 0);
@@ -736,10 +773,29 @@ namespace ChessFight.RagdollLab
                 for (int k = 0; k < PawnRushLoadout.Slots; k++)
                 {
                     var entry = PawnRushSkillBook.Find(lo.Raw(row, k));
-                    if (entry != null && listed.Add(entry.id)) lines.Add(new Line { entry = entry });
+                    if (entry != null && InSetTab(entry) && listed.Add(entry.id)) lines.Add(new Line { entry = entry });
                 }
             }
             if (lines.Count == start + 1) lines.RemoveAt(start);
+            if (!discarded)
+            {
+                // The 4판's candidates by piece: the ones built first, then the ones still to come (faint).
+                for (int row = 0; row < PawnRushLoadout.Rows; row++)
+                {
+                    var kind = PawnRushLoadout.RowPieces[row];
+                    if (kind == PieceKind.King || (listPiece >= 0 && row != listPiece)) continue;
+                    start = lines.Count;
+                    lines.Add(new Line { head = ChessPieces.Name(kind) });
+                    for (int pass = 0; pass < 2; pass++)
+                        foreach (var entry in PawnRushSkillBook.All)
+                        {
+                            if (entry.origin != SkillOrigin.Set4 || entry.home != kind || entry.built != (pass == 0) || OnBoardHere(entry.id)) continue;
+                            lines.Add(new Line { entry = entry });
+                        }
+                    if (lines.Count == start + 1) lines.RemoveAt(start);
+                }
+                return;
+            }
             foreach (var origin in GroupOrder)
             {
                 start = lines.Count;
@@ -791,11 +847,13 @@ namespace ChessFight.RagdollLab
             // The ones that are only plans, behind a switch.
             string ideas = showIdeas ? "계획만 있는 스킬 숨기기" : $"계획만 있는 스킬도 보기 ({ideasHidden})";
             float iw = TextW(ideas, label) + 24f;
-            if ((showIdeas || ideasHidden > 0) && Chip(new Rect(r.x, view.yMax + 4f, iw, 24f), ideas, showIdeas))
+            if (discarded && (showIdeas || ideasHidden > 0) && Chip(new Rect(r.x, view.yMax + 4f, iw, 24f), ideas, showIdeas))
             {
                 showIdeas = !showIdeas;
                 scroll = 0f;
             }
+            if (!discarded)
+                GUI.Label(new Rect(r.x + 2f, view.yMax + 4f, r.width - 4f, 24f), Fit("흐린 스킬은 준비 중이에요 (다음 묶음에서 만들어요). 예전 스킬은 '폐기된 스킬' 탭에 있어요.", smallOne, r.width - 4f), smallOne);
             if (withDetail) DrawDetail(lo, new Rect(r.x, r.yMax - detailH, r.width, detailH));
         }
 
@@ -840,7 +898,7 @@ namespace ChessFight.RagdollLab
 
                 // A pill at the right: where it sits on the board now, or that it is only a plan.
                 float pillW = 0f;
-                string pill = placedAt.TryGetValue(entry.id, out string at) ? at : !entry.built ? "계획만" : null;
+                string pill = placedAt.TryGetValue(entry.id, out string at) ? at : !entry.built ? (entry.origin == SkillOrigin.Set4 ? "준비 중" : "계획만") : null;
                 if (pill != null)
                 {
                     pillW = TextW(pill, smallOne) + 14f;
@@ -866,7 +924,7 @@ namespace ChessFight.RagdollLab
                 hoverNow = entry.id;
                 if (e.type == EventType.MouseDown && e.button == 0)
                 {
-                    if (!entry.built) Say("아직 칸에 넣을 수 없는 스킬이에요 (계획만 있어요)");
+                    if (!entry.built) Say(entry.origin == SkillOrigin.Set4 ? "아직 만드는 중인 스킬이에요 (다음 묶음에서 만들어요)" : "아직 칸에 넣을 수 없는 스킬이에요 (계획만 있어요)");
                     else if (selRow >= 0) Put(selRow, selSlot, entry.id);   // the slot picked on the board takes it
                     else
                     {
@@ -905,7 +963,7 @@ namespace ChessFight.RagdollLab
             GUI.Label(new Rect(tx, r.y + 6f, tw, 20f), Fit(about.name, cardName, tw), cardName);
             string tags = TagNames(about.tags);
             string meta = $"{ChessPieces.Name(about.home)} 스킬 · {PawnRushSkillBook.OriginName(about.origin)}"
-                          + (tags.Length > 0 ? " · " + tags : "") + (about.built ? "" : " · 계획만 (아직 못 넣음)")
+                          + (tags.Length > 0 ? " · " + tags : "") + (about.built ? "" : about.origin == SkillOrigin.Set4 ? " · 준비 중 (다음 묶음)" : " · 계획만 (아직 못 넣음)")
                           + (placedAt.TryGetValue(about.id, out string at) ? " · 지금 " + at : "");
             GUI.Label(new Rect(tx, r.y + 25f, tw, 16f), Fit(meta, smallOne, tw), smallOne);
             var oldColor = small.normal.textColor;

@@ -53,7 +53,8 @@ namespace ChessFight.RagdollLab
         /// <summary>How much farther pushes take this piece now (RagdollPawn.PushScale, Kick).</summary>
         float KitPushMul => lightLeft > 0f && PawnRushSkills != null ? Mathf.Max(1f, PawnRushSkills.lightPush) : 1f;
         /// <summary>How high its jumps go now (RagdollPawn.Jump).</summary>
-        float SkillJumpScale => heavyLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.heavyJump, 0.2f, 1f) : 1f;
+        float SkillJumpScale => (heavyLeft > 0f && PawnRushSkills != null ? Mathf.Clamp(PawnRushSkills.heavyJump, 0.2f, 1f) : 1f)
+                                * CcJumpScale;   // the set 4판's hindrances: tired, heavy, tiny (RagdollPawn.Cc.cs)
 
         // The words over a head (SkillFxKind.KitPop's count; under 100 a value shown as "+N").
         public const int PopCheckEscape = 100, PopDefended = 101, PopLight = 102, PopHeavy = 103, PopCrown = 104, PopUltCut = 105,
@@ -100,11 +101,15 @@ namespace ChessFight.RagdollLab
             TrackCrumbs(dt);      // where it ran, for the family fork's throw back (RagdollPawn.KnightUlts.cs)
             if (HasSkill(PawnRushSkillIds.PassantBang)) TrackOvertakes();   // who overtakes the pawn, for en passant !!
             UpdateSetThreeStates(s, dt);   // the set 3판: towers, swords, stones, puddles (RagdollPawn.SetThree.cs)
+            UpdateCc(dt);                  // the set 4판's hindrance (RagdollPawn.Cc.cs)
+            UpdateSetFourStates(s, dt);    // the set 4판's things in the world: pits, bricks, crowns, puddles (RagdollPawn.SetFour.cs)
         }
 
         void ClearKitTwoStates()
         {
             lightLeft = heavyLeft = 0f;
+            ClearCc();
+            ClearSetFourStates();
             slowScaleNow = 0f;
             chainWheelLeft = 0f;
             stepFromWarning = false;

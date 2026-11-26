@@ -244,6 +244,23 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S3Hit:
                     try { SetThreeFx(e); } catch (System.Exception ex) { FxFault("set 3 moment", ex); }
                     break;
+                // 11-26: the set 4판 and its hindrances (PawnRushSkillFx.SetFour.cs).
+                case SkillFxKind.S4Cc:
+                case SkillFxKind.S4Hop:
+                case SkillFxKind.S4Say:
+                case SkillFxKind.S4Trip:
+                case SkillFxKind.S4Brick:
+                case SkillFxKind.S4Pit:
+                case SkillFxKind.S4Leap:
+                case SkillFxKind.S4Bonk:
+                case SkillFxKind.S4Sermon:
+                case SkillFxKind.S4Charge:
+                case SkillFxKind.S4Cap:
+                case SkillFxKind.S4Crown:
+                case SkillFxKind.S4Shout:
+                case SkillFxKind.S4Puddle:
+                    try { SetFourFx(e); } catch (System.Exception ex) { FxFault("set 4 moment", ex); }
+                    break;
             }
         }
 

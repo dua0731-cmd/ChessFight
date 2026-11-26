@@ -559,19 +559,22 @@ namespace ChessFight.RagdollLab
             public RagdollPawn p;
             public float scale = 1f, want = 1f, rate = 4f, height = -1f;
             public Mesh baked;
+            public Material paint;   // drawn in this instead of its own materials (asked again every frame)
         }
 
         readonly Dictionary<RagdollPawn, Giant> giants = new Dictionary<RagdollPawn, Giant>();
         readonly List<RagdollPawn> giantsGone = new List<RagdollPawn>();
 
         /// <summary>This frame <paramref name="p"/> is drawn <paramref name="scale"/> times its size (eased at
-        /// <paramref name="rate"/> a second); not asked again, it shrinks back.</summary>
-        void WantGiant(RagdollPawn p, float scale, float rate = 4f)
+        /// <paramref name="rate"/> a second); not asked again, it goes back to its own size. 11-26: below 1 too (the 4판's
+        /// 쪼꼬미, drawn half size from its feet).</summary>
+        void WantGiant(RagdollPawn p, float scale, float rate = 4f, Material paint = null)
         {
             if (p == null || p.skin == null) return;
             if (!giants.TryGetValue(p, out var g)) giants[p] = g = new Giant { p = p };
-            g.want = Mathf.Max(1f, scale);
+            g.want = Mathf.Max(0.2f, scale);
             g.rate = rate;
+            g.paint = paint;   // (11-26: the 4판's 무거움 draws it cast iron, at its own size)
         }
 
         /// <summary>A piece's drawn height (m) when it first grows (its skin standing).</summary>
@@ -602,8 +605,10 @@ namespace ChessFight.RagdollLab
                 }
                 float step = Mathf.Max(0.5f, g.want) * g.rate * dt;
                 g.scale = Mathf.MoveTowards(g.scale, g.want, step);
-                g.want = 1f;   // (asked again by the next frame's step, or it shrinks)
-                if (g.scale <= 1.01f)
+                g.want = 1f;   // (asked again by the next frame's step, or it goes back)
+                var paint = g.paint;
+                g.paint = null;
+                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null)
                 {
                     skin.forceRenderingOff = false;
                     if (g.baked != null) Destroy(g.baked);
@@ -620,7 +625,7 @@ namespace ChessFight.RagdollLab
                 var bounds = new Bounds(feet + Vector3.up * 3f * g.scale, Vector3.one * 8f * g.scale);
                 for (int i = 0; i < g.baked.subMeshCount && mats.Length > 0; i++)
                 {
-                    var m = mats[Mathf.Min(i, mats.Length - 1)];
+                    var m = paint != null ? paint : mats[Mathf.Min(i, mats.Length - 1)];
                     if (m == null) continue;
                     var rp = new RenderParams(m)
                     {

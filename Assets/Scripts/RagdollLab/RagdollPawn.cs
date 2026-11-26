@@ -1293,7 +1293,8 @@ namespace ChessFight.RagdollLab
             Vector3 targetVel = move * (launched ? Mathf.Min(top, Mathf.Max(p.launchSteer, top * SkillAirSteer)) : top);   // over the ground
             Vector3 ownAnchor = anchorVel - frame;
             upSettle = Mathf.Max(0f, upSettle - dt);
-            float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl);
+            float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl)
+                          * CcAccelScale;   // the set 4판's slippery feet (PawnRushSkills/RagdollPawn.Cc.cs)
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
             if (p.stanceThrust > 0f && planted && moving)
             {

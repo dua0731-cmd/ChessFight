@@ -87,6 +87,20 @@ namespace ChessFight.Network
         /// <summary>One of the set 3판's skills (127..135).</summary>
         public static bool SetThree(int id) => id >= Bolas && id <= CheckChain;
 
+        // The set 4판, round 1 (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md, the user 11-26: thirty-five picked to try, "이 게임은 웃긴
+        // 게임이라고. 래그돌 물리 기반의, 체스 컨셉의."; RagdollPawn.SetFour*.cs). Every one is its own number, the ones
+        // remade from older skills too (the back kick, the holy water, the straight charge): the older stay as they were.
+        public const int Trip4 = 136, PawnStorm = 137, PoisonPawn = 138, Pit = 139, PromoCountdown = 140, Brick = 141,
+                         ForkBonk = 142, BackKick4 = 143, ButtSlam = 144, Neigh = 145, Burrow = 146,
+                         HolyWater4 = 147, Bell = 148, Crook = 149, SafetyPin = 150, Censer = 151, RainCloud = 152, Sermon = 153,
+                         Charge4 = 154, RookDive = 155, WallUp = 156, StoneCap = 157, SideSlide = 158, Timber = 159, GatePig = 160,
+                         Mower = 161, RookLift = 162,
+                         CrownToss = 163, Insolent = 164, Procession = 165, ThroneDrop = 166, ScholarMate = 167, PerpetualCheck = 168,
+                         QueenSac4 = 169, QueensGambit = 170;
+
+        /// <summary>One of the set 4판's skills (136..170): the skill tree's own list; every other one is retired.</summary>
+        public static bool SetFour(int id) => id >= Trip4 && id <= QueensGambit;
+
         /// <summary>One of the six driven ultimates (119..124).</summary>
         public static bool Driven(int id) => id >= PromotionRun && id <= KingWalk;
 
@@ -394,10 +408,10 @@ namespace ChessFight.Network
         /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
         /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
         /// 0 for the others (the system stays as it is).</summary>
-        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 ? Many : 0;
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 || preset == 13 ? Many : 0;
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 13;
+        public const int Presets = 14;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
@@ -413,6 +427,20 @@ namespace ChessFight.Network
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 13)
+            {
+                // The set 4판's first bundle (ROUND1 5장, 묶음 가, 11-26): two a piece on F and E, the pawn a third on R; no Q,
+                // no king. Any skill still goes in any slot (the skill window).
+                int[] f = { PawnRushSkillIds.Trip4, PawnRushSkillIds.ForkBonk, PawnRushSkillIds.HolyWater4, PawnRushSkillIds.Charge4, PawnRushSkillIds.CrownToss, 0 };
+                int[] e = { PawnRushSkillIds.Brick, PawnRushSkillIds.BackKick4, PawnRushSkillIds.Sermon, PawnRushSkillIds.StoneCap, PawnRushSkillIds.Insolent, 0 };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                }
+                p.slots[Row(PieceKind.Pawn) * Slots + 2] = PawnRushSkillIds.Pit;
+                return p;
+            }
             if (which == 12)
             {
                 // KITS 6.12 (11-23): F and E only, Q empty (no ultimate, so no team gauge); the king's row empty (no king in

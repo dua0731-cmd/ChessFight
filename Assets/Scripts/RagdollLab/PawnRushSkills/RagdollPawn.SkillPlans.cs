@@ -292,6 +292,18 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.TowerTrap: UpdateTowerTrap(s, press, dt); break;
                 case PawnRushSkillIds.QueenStar: UpdateQueenStar(s, press, dt); break;
                 case PawnRushSkillIds.CheckChain: UpdateCheckChain(s, press, dt); break;
+                // The set 4판, round 1, bundle 가 (RagdollPawn.SetFour.cs); the back kick's set 4 form runs on the kick's code.
+                case PawnRushSkillIds.Trip4: UpdateTrip4(s, press, dt); break;
+                case PawnRushSkillIds.Brick: UpdateBrick(s, press, dt); break;
+                case PawnRushSkillIds.Pit: UpdatePit(s, press, dt); break;
+                case PawnRushSkillIds.ForkBonk: UpdateForkBonk(s, press, dt); break;
+                case PawnRushSkillIds.BackKick4: UpdateBackKick(s, press, dt); break;
+                case PawnRushSkillIds.HolyWater4: UpdateHolyWater4(s, press, dt); break;
+                case PawnRushSkillIds.Sermon: UpdateSermon(s, press, dt); break;
+                case PawnRushSkillIds.Charge4: UpdateCharge4(s, press, dt); break;
+                case PawnRushSkillIds.StoneCap: UpdateStoneCap(s, press, dt); break;
+                case PawnRushSkillIds.CrownToss: UpdateCrownToss(s, press, dt); break;
+                case PawnRushSkillIds.Insolent: UpdateInsolent(s, press, dt); break;
             }
         }
 
@@ -341,7 +353,9 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.TowerTrap: return s.towerCooldown;
                 case PawnRushSkillIds.QueenStar: return s.starCooldown;
                 case PawnRushSkillIds.CheckChain: return s.ccCooldown;
-                default: return PawnRushSkillIds.Ultimate(id) ? UltCooldown(id, s) : 0f;
+                default:
+                    if (PawnRushSkillIds.SetFour(id)) return SetFourCooldown(id, s);
+                    return PawnRushSkillIds.Ultimate(id) ? UltCooldown(id, s) : 0f;
             }
         }
 
@@ -372,6 +386,7 @@ namespace ChessFight.RagdollLab
             PoolKeys();   // the skill pool's plan 1: the kneeling, drawing bishop (RagdollPawn.PoolSkills.cs)
             KitTwoKeys(); // the kits' second version: a queen planting her staff, a rook charging (RagdollPawn.KitTwo.cs)
             SetThreeKeys(); // the set 3판: the bolas' chop, the knight in the air, a rook rolling (RagdollPawn.SetThree.cs)
+            SetFourKeys();  // the set 4판: the rook's straight charge, the knight's fork leap (RagdollPawn.SetFour.cs)
             if (!castleCarry) return;
             input.move = Vector3.zero;
             input.jump = false;
