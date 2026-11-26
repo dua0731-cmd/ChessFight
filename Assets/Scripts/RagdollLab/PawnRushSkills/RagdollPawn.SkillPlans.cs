@@ -316,6 +316,21 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.StoneCap: UpdateStoneCap(s, press, dt); break;
                 case PawnRushSkillIds.CrownToss: UpdateCrownToss(s, press, dt); break;
                 case PawnRushSkillIds.Insolent: UpdateInsolent(s, press, dt); break;
+                // The set 4판's bundle 나 (RagdollPawn.SetFourB.cs).
+                case PawnRushSkillIds.PoisonPawn: UpdatePoisonPawn(s, press, dt); break;
+                case PawnRushSkillIds.PawnStorm: UpdatePawnStorm(s, press, dt); break;
+                case PawnRushSkillIds.ButtSlam: UpdateButtSlam(s, press, dt); break;
+                case PawnRushSkillIds.Neigh: UpdateNeigh(s, press, dt); break;
+                case PawnRushSkillIds.RainCloud: UpdateRainCloud(s, press, dt); break;
+                case PawnRushSkillIds.Censer: UpdateCenser(s, press, dt); break;
+                case PawnRushSkillIds.Bell: UpdateBell(s, press, dt); break;
+                case PawnRushSkillIds.Crook: UpdateCrook(s, press, dt); break;
+                case PawnRushSkillIds.WallUp: UpdateWallUp(s, press, dt); break;
+                case PawnRushSkillIds.SideSlide: UpdateSideSlide(s, press, dt); break;
+                case PawnRushSkillIds.Mower: UpdateMower(s, press, dt); break;
+                case PawnRushSkillIds.ScholarMate: UpdateScholarMate(s, press, dt); break;
+                case PawnRushSkillIds.PerpetualCheck: UpdatePerpetualCheck(s, press, dt); break;
+                case PawnRushSkillIds.QueenSac4: UpdateQueenSac4(s, press, dt); break;
             }
         }
 

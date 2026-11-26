@@ -499,6 +499,9 @@ namespace ChessFight.RagdollLab
                     input.shove = false;
                     input.shoveHeld = false;
                     break;
+                default:
+                    SetFourBKeys();   // bundle 나 (RagdollPawn.SetFourB.cs)
+                    break;
             }
         }
 
@@ -516,6 +519,7 @@ namespace ChessFight.RagdollLab
         void UpdateSetFourStates(PawnRushSkillParams s, float dt)
         {
             if (NetworkPuppet || s == null) return;
+            UpdateSetFourBStates(s, dt);   // bundle 나's (RagdollPawn.SetFourB.cs)
             if (bricks4.Count == 0 && pits4.Count == 0 && waters4.Count == 0 && crowns4.Count == 0 && pitOuts4.Count == 0) return;
             for (int i = bricks4.Count - 1; i >= 0; i--)
             {
@@ -646,6 +650,7 @@ namespace ChessFight.RagdollLab
 
         void ClearSetFourStates()
         {
+            ClearSetFourBStates();
             bricks4.Clear();
             pits4.Clear();
             waters4.Clear();

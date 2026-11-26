@@ -157,6 +157,9 @@ namespace ChessFight.RagdollLab
                 return;
             }
             Struck(e.target, e.by);
+            // A 4판 moment after a skill's start (a landing, a reassembly, a chase over) belongs to the cast still open, and
+            // opens none (it opened an empty one, graded "?", after the cast had been graded).
+            if (LaterMoment4(e) && (e.by == null || !open.TryGetValue(e.by, out var still) || still.closed)) return;
             var c = Touch(e.by, Mode.PawnRush, PieceOf(e.kind.ToString(), e.by));
             if (c == null) return;
             switch (e.kind)
@@ -165,6 +168,24 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.BishopTrip: case SkillFxKind.KnightStomp: case SkillFxKind.PawnHit:
                 case SkillFxKind.S3Hit:   // (the 3판's and 4판's smack)
                     Hit(c, e.target); break;
+                // What a 4판 skill leaves lying keeps its cast open while it lies, so a hit then is its (not a "?" first).
+                case SkillFxKind.S4Poison: case SkillFxKind.S4Pit: case SkillFxKind.S4Censer: case SkillFxKind.S4Wall:
+                case SkillFxKind.S4Crown:
+                    if (e.count == 0 || e.kind == SkillFxKind.S4Wall) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 0.5f);
+                    if (e.kind == SkillFxKind.S4Censer && e.count == 0) c.holdUntil += 3f;   // (its smoke lies 3 s more)
+                    break;
+                case SkillFxKind.S4Brick: case SkillFxKind.S4Bell:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 1f);
+                    break;
+                case SkillFxKind.S4Storm:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + Mathf.Max(1f, e.normal.y) + 0.5f);
+                    break;
+                case SkillFxKind.S4Cloud:
+                    c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
+                    break;
+                case SkillFxKind.S3WaterThrow:
+                    c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4.5f);   // (the puddle lies its seconds)
+                    break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;
                 case SkillFxKind.BishopWire:
@@ -205,6 +226,26 @@ namespace ChessFight.RagdollLab
                     break;
             }
             Check(c);
+        }
+
+        /// <summary>A 4판 moment that comes after its skill began (count not 0: a landing, a catch, an end), the fan's chase
+        /// (4) aside, which is a start.</summary>
+        static bool LaterMoment4(SkillFxEvent e)
+        {
+            if (e.count == 0) return false;
+            switch (e.kind)
+            {
+                case SkillFxKind.S4Trip: case SkillFxKind.S4Brick: case SkillFxKind.S4Pit: case SkillFxKind.S4Bonk:
+                case SkillFxKind.S4Charge: case SkillFxKind.S4Crown: case SkillFxKind.S4Shout: case SkillFxKind.S4Poison:
+                case SkillFxKind.S4Storm: case SkillFxKind.S4Slam: case SkillFxKind.S4Neigh: case SkillFxKind.S4Censer:
+                case SkillFxKind.S4Bell: case SkillFxKind.S4Crook: case SkillFxKind.S4Slide: case SkillFxKind.S4Mower:
+                case SkillFxKind.S4Sac:
+                    return true;
+                case SkillFxKind.S4Fan:
+                    return e.count != 4;
+                default:
+                    return false;
+            }
         }
 
         static PieceKind PieceOf(string kind, RagdollPawn by)

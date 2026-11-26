@@ -1079,5 +1079,56 @@ namespace ChessFight.RagdollLab
         [Header("4판 · 퀸 무엄하다! (상급)")]
         [Tooltip("숨 들이쉬기 (초), 거리 (m), 부채꼴 (°), 쪼꼬미 (초)")]
         public float shoutBreath = 0.4f, shoutRange = 8f, shoutCone = 90f, shoutTiny = 4f;
+
+        // ---------------------------------------------------------------- the set 4판's bundle 나 (11-26)
+
+        [Header("4판 나 · 폰 독 든 폰 (초급)")]
+        [Tooltip("남는 시간 (초), 걸리는 거리 (m), 지침 (초)")]
+        public float poisonSeconds = 8f, poisonReach = 1f, poisonTired = 3f;
+        [Header("4판 나 · 폰 폰 폭풍 (중급)")]
+        [Tooltip("꼬마 폰 수, 빠르기 (m/s), 가는 거리 (m), 가는 시간 (초), 옆 간격 (m), 닿는 거리 (m), 묶임 깡충형 (초)")]
+        public int stormCount = 3;
+        public float stormSpeed = 4.5f, stormRange = 15f, stormTime = 6f, stormGap = 0.6f, stormReach = 0.6f, stormBound = 3f;
+
+        [Header("4판 나 · 나이트 엉덩방아 (초급)")]
+        [Tooltip("뒤에서 찾는 거리 (m), 적이 없을 때 뒤로 뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 닿는 거리 (m), 콰당! (초)")]
+        public float slamBack = 6f, slamHop = 4f, slamHigh = 1.5f, slamReach = 1.5f, slamFlop = 1.5f;
+        [Header("4판 나 · 나이트 히힝! (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 등 뒤로 도는 시간 (초), 놀라 뛰는 높이 (m), 헤롱헤롱 (초)")]
+        public float neighRange = 5f, neighTime = 0.3f, neighJump = 1f, neighDizzy = 2f;
+
+        [Header("4판 나 · 비숍 먹구름 (초급)")]
+        [Tooltip("겨누는 거리 (m), 비가 오기까지 (초), 미끌미끌 (초)")]
+        public float cloudRange = 20f, cloudDelay = 0.5f, cloudSlip = 3f;
+        [Header("4판 나 · 비숍 향로 (초급)")]
+        [Tooltip("연기를 남기는 시간 (초), 연기 폭 (m), 연기 하나가 남는 시간 (초), 지침 (초)")]
+        public float censerSeconds = 4f, censerWidth = 2f, censerLinger = 3f, censerTired = 3f;
+        [Header("4판 나 · 비숍 종 씌우기 (중급)")]
+        [Tooltip("겨누는 거리 (m), 머리 위 높이 (m), 떨어지기까지 (초), 떨어지는 시간 (초), 지름 (m), 헤롱헤롱 (초)")]
+        public float bellRange = 18f, bellHigh = 6f, bellDelay = 0.8f, bellFall = 0.45f, bellSize = 1.5f, bellDizzy = 3f;
+        [Header("4판 나 · 비숍 퇴장! (중급)")]
+        [Tooltip("지팡이가 뻗는 거리 (m) · 시간 (초), 넘기는 곳 (비숍 뒤, m), 넘기는 높이 (m), 비숍이 앞으로 튀는 거리 (m)")]
+        public float crookRange = 10f, crookTime = 0.3f, crookBack = 3f, crookHigh = 1.5f, crookHop = 3f;
+
+        [Header("4판 나 · 룩 성벽! (초급)")]
+        [Tooltip("등 뒤 거리 (m), 폭 (m), 높이 (m), 두께 (m), 서 있는 시간 (초), 부딪혀 넘어지는 빠르기 (m/s)")]
+        public float rampartBack = 1.5f, rampartWide = 4f, rampartTall = 2f, rampartThick = 0.5f, rampartSeconds = 4f, rampartBump = 3f;
+        [Header("4판 나 · 룩 수평 룩 (초급)")]
+        [Tooltip("미끄러지는 거리 (m), 시간 (초), 닿는 거리 (m)")]
+        public float slideDist = 5f, slideTime = 0.4f, slideReach = 1.1f;
+        [Header("4판 나 · 룩 잔디깎이 (중급)")]
+        [Tooltip("시간 (초), 빨라지는 배, 닿는 거리 (m), 위로 날리는 높이 (m) · 거리 (m)")]
+        public float mowerSeconds = 3f, mowerSpeed = 1.3f, mowerReach = 1f, mowerUp = 3.5f, mowerDist = 2.5f;
+
+        [Header("4판 나 · 퀸 스콜라 메이트 (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 달려가는 시간 (초), 고개를 숙여 피하는 부채꼴 (좌우 °)")]
+        public float scholarRange = 6f, scholarTime = 0.4f, scholarDuck = 60f;
+        [Header("4판 나 · 퀸 영구 체크 (중급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 따라다니는 시간 (초), 때리는 사이 (초), 때리는 수, 벌어지면 끝 (m), 헤롱헤롱 (초)")]
+        public float check4Range = 8f, check4Seconds = 3f, check4Every = 0.6f, check4Break = 3f, check4Dizzy = 3f;
+        public int check4Hits = 5;
+        [Header("4판 나 · 퀸 퀸 희생!! (상급)")]
+        [Tooltip("반짝이는 시간 (초), 날리는 거리 (둘레, m), 흩어져 있는 시간 (초)")]
+        public float sac4Glow = 0.5f, sac4Range = 6f, sac4Scatter = 1.5f;
     }
 }

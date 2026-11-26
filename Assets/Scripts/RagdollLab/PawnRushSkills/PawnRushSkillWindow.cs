@@ -82,8 +82,8 @@ namespace ChessFight.RagdollLab
 
         // The 4판 tab's sets (11-26); under "폐기된 스킬" the sets before them, newest first, and the earliest behind "옛 세트"
         // (PawnRushLoadout.Preset's numbers; 2 is "모두 비우기").
-        static readonly int[] NewIds = { 13 };
-        static readonly string[] NewNames = { "4판 가" };
+        static readonly int[] NewIds = { 13, 14 };
+        static readonly string[] NewNames = { "4판 가", "4판 나" };
         static readonly int[] SetIds = { 12, 11, 8, 10, 9, 0 };
         static readonly string[] SetNames = { "3판", "3안-b", "3안-a", "2안-a", "1안-a", "지금 게임" };
         static readonly int[] OldIds = { 1, 3, 4, 5, 7, 6 };
@@ -428,6 +428,7 @@ namespace ChessFight.RagdollLab
         {
             switch (id)
             {
+                case 14: return "4판 1차 묶음 나 · 기물마다 두 칸 (F · E) · 열넷 가운데 열 (향로 · 퇴장! · 수평 룩 · 영구 체크는 목록에서 넣어요) · 궁극기 없음";
                 case 13: return "4판 1차 묶음 가 · 기물마다 두 칸 (F · E) · 먼저 만든 열하나 가운데 열 (폰의 구덩이는 목록에서 넣어요) · 궁극기 없음";
                 case 12: return "사용자가 짠 스킬 · 기물마다 F · E 둘 · 궁극기 없음 · 비숍은 E 돌멩이와 R 성수병 가운데 하나를 고르는 중";
                 case 11: return "기물마다 F · E 둘 · Q는 10~12초 동안 직접 모는 궁극기 여섯";

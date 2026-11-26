@@ -501,6 +501,60 @@ def('Insolent', 'Queen', () => sh(26, 118, 16) + P('Queen', 'w', 26, 118, 62) +
   ln(arc(40, 70, 20, 24, -40, 40, 12), W, 4) + ln(arc(40, 70, 34, 38, -38, 38, 12), W, 4) + ln(arc(40, 70, 48, 52, -36, 36, 12), W, 4) +
   [[86, 110], [102, 100], [116, 114]].map(([x, y]) => sh(x, y, 7) + P('Pawn', 'b', x, y, 22)).join('') + txt(98, 52, '!!', 34, RED));
 
+// The set 4판's bundle 나 (11-26).
+const POISON = '#8FE05A', BRONZE = '#D0923F', LILAC = '#C9B8E8', STORM = '#5A6070', GRASS = '#5BC236';
+const cloudShape = (x, y, s, col = STORM) => puffs([[x - 16 * s, y + 3 * s, 11 * s], [x, y - 4 * s, 15 * s], [x + 16 * s, y + 2 * s, 12 * s], [x + 4 * s, y + 7 * s, 11 * s]], col);
+function bellShape(x, y, s) {
+  return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-6 -30 Q0 -34 6 -30 L8 -24 Q18 -20 20 -4 Q21 10 28 18 L-28 18 Q-21 10 -20 -4 Q-18 -20 -8 -24 Z" fill="${BRONZE}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M-12 -14 Q-14 0 -18 10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/><circle cx="0" cy="22" r="6" fill="${BRONZE}" stroke="${INK}" stroke-width="3"/></g>`;
+}
+function sawBlade(x, y, r) {
+  const a = [];
+  for (let i = 0; i < 24; i++) { const t = rad(i * 15), k = i % 2 ? r * 0.78 : r; a.push([x + Math.cos(t) * k, y + Math.sin(t) * k * 0.45]); }
+  return `<polygon points="${pts(a)}" fill="${STEEL}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="${x}" cy="${y}" rx="${n1(r * 0.25)}" ry="${n1(r * 0.12)}" fill="#98A6BB" stroke="${INK}" stroke-width="2"/>`;
+}
+function fanShape(x, y, r, rot) {
+  const a = [[0, 0]];
+  for (let i = 0; i <= 12; i++) { const t = rad(-165 + i * 12.5), k = i % 2 ? r * 0.92 : r; a.push([Math.cos(t) * k, Math.sin(t) * k]); }
+  return `<g transform="translate(${x} ${y}) rotate(${rot})"><polygon points="${pts(a)}" fill="${RED}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
+    [-150, -120, -90, -60, -30].map(d => `<line x1="0" y1="0" x2="${n1(Math.cos(rad(d)) * r * 0.9)}" y2="${n1(Math.sin(rad(d)) * r * 0.9)}" stroke="${GOLD}" stroke-width="2"/>`).join('') +
+    `<circle r="3.5" fill="${GOLD}" stroke="${INK}" stroke-width="2"/></g>`;
+}
+const windKey = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2" y="-8" width="4" height="9" fill="${GOLD}" stroke="${INK}" stroke-width="2"/>` +
+  `<ellipse cx="-6" cy="-11" rx="6" ry="4" fill="${GOLD}" stroke="${INK}" stroke-width="2"/><ellipse cx="6" cy="-11" rx="6" ry="4" fill="${GOLD}" stroke="${INK}" stroke-width="2"/></g>`;
+def('PoisonPawn', 'Pawn', () => `<circle cx="44" cy="92" r="24" fill="${POISON}" opacity=".35"/>` + sh(44, 112, 14) + P('Pawn', 'w', 44, 112, 46) +
+  `<circle cx="44" cy="86" r="13" fill="${POISON}" opacity=".55"/>` + spark(22, 62, 7) + spark(66, 58, 5) + puffs([[52, 50, 4], [40, 40, 3], [58, 34, 3]], POISON) +
+  sh(98, 116, 14) + P('Pawn', 'b', 98, 116, 48, { r: -12 }) + `<circle cx="96" cy="78" r="10" fill="#9CC8F0" stroke="${INK}" stroke-width="2.5"/>` + drop(116, 70) + txt(112, 48, '!', 26, POISON));
+def('PawnStorm', 'Pawn', () => [[24, 116, 34], [48, 104, 30], [70, 92, 26]].map(([x, y, s]) => sh(x, y, 8) + P('Pawn', 'w', x, y, s) + windKey(x - s * 0.25, y - s * 0.55, s / 34)).join('') +
+  speed(20, 80, -35, 14, 3, 9, 3.5) + sh(104, 92, 12) + P('Pawn', 'b', 104, 92, 40) + ln(arc(104, 86, 12, 4, 180, 520, 20), ROPE, 3) + star5(118, 44, 6));
+def('ButtSlam', 'Knight', () => sh(62, 118, 30) + P('Pawn', 'b', 62, 120, 50, { sy: 0.32, sx: 1.5 }) + burst(40, 106, 12, 5, 8) + burst(86, 106, 12, 5, 8, 20) +
+  P('Knight', 'w', 62, 106, 62, { f: 1, r: -8 }) + puffs([[18, 114, 7], [108, 114, 7], [10, 104, 5], [116, 104, 5]]) + arrow(q([118, 30], [92, 4], [70, 22]), GOLD, 6) + txt(22, 40, '!', 28, RED));
+def('Neigh', 'Knight', () => sh(46, 116, 18) + P('Pawn', 'b', 46, 104, 52, { r: -8 }) + [0, 45, 90, 135, 180].map(a => ln([[46 + Math.cos(rad(-a)) * 26, 54 + Math.sin(rad(-a)) * 24], [46 + Math.cos(rad(-a)) * 36, 54 + Math.sin(rad(-a)) * 33]], W, 3.5)).join('') +
+  txt(30, 30, '!', 30, RED) + sh(100, 118, 16) + P('Knight', 'w', 100, 118, 56) + arrow(q([84, 112], [64, 124], [40, 118]), GOLD, 5));
+def('RainCloud', 'Bishop', () => cloudShape(64, 30, 1.3) + [36, 52, 68, 84, 96].map((x, i) => ln([[x, 50 + (i % 2) * 6], [x - 4, 62 + (i % 2) * 6]], WATER, 3)).join('') +
+  `<ellipse cx="64" cy="114" rx="38" ry="8" fill="${WATER}" stroke="${INK}" stroke-width="3"/>` + P('Pawn', 'b', 64, 112, 46, { r: 24 }) + speed(36, 108, 0, 10, 2, 7, 3));
+def('Censer', 'Bishop', () => `<ellipse cx="80" cy="104" rx="44" ry="18" fill="${LILAC}" opacity=".75"/>` + puffs([[50, 100, 12], [74, 94, 15], [100, 102, 12], [86, 112, 10]], LILAC) +
+  sh(30, 116, 14) + P('Bishop', 'w', 30, 116, 52) + ln([[44, 62], [60, 84]], GOLD, 3) + ball(62, 88, 8, GOLD) + puffs([[70, 74, 5], [78, 64, 4]], LILAC) +
+  P('Pawn', 'b', 104, 104, 34, { r: 10 }) + drop(118, 66, 0.8));
+def('Bell', 'Bishop', () => sh(64, 118, 22) + P('Pawn', 'b', 64, 118, 56) + bellShape(64, 66, 1.15) + ring(64, 64, 44, 14, W, 2.5, '7 6') + ring(64, 64, 54, 18, W, 2, '5 8') +
+  txt(104, 30, '!', 26, GOLD) + speed(64, 18, 90, 10, 3, 14, 3));
+def('Crook', 'Bishop', () => sh(28, 116, 14) + P('Bishop', 'w', 28, 116, 52) + ln([[40, 74], [98, 50]], '#9B6BE0', 5) + hook(102, 46, -100, 1.2) +
+  P('Pawn', 'b', 74, 40, 30, { r: -150 }) + arrow(q([96, 30], [64, 0], [36, 24]), GOLD, 5) + `<rect x="100" y="78" width="16" height="22" rx="2" transform="rotate(12 108 89)" fill="${RED}" stroke="${INK}" stroke-width="3"/>`);
+def('WallUp', 'Rook', () => merlons(14, 54, 56, 3, GREYSTONE) + wall(14, 54, 56, 66, GREYSTONE) + burst(14, 84, 11, 4, 7) + P('Pawn', 'b', 10, 112, 30, { r: -40 }) +
+  speed(92, 86, 0, 14, 3, 10, 4) + sh(102, 118, 14) + P('Rook', 'w', 104, 118, 46, { r: 8 }) + puffs([[30, 120, 6], [56, 120, 6]]));
+def('SideSlide', 'Rook', () => speed(36, 80, 0, 22, 3, 13, 5) + sh(60, 116, 22) + P('Rook', 'w', 60, 116, 58) + arrow([[30, 26], [96, 26]], GOLD, 7) +
+  burst(92, 84, 11, 4, 7) + P('Pawn', 'b', 110, 82, 34, { r: 60 }) + puffs([[36, 116, 6], [24, 118, 4]]));
+def('Mower', 'Rook', () => sh(50, 118, 22) + P('Rook', 'w', 50, 118, 62) + sawBlade(50, 54, 30) + speed(50, 40, -90, 8, 3, 18, 3) +
+  [[16, 96], [22, 84], [12, 80]].map(([x, y]) => `<path d="M${x} ${y} l4 -8 l2 8 z" fill="${GRASS}" stroke="${INK}" stroke-width="1.5"/>`).join('') +
+  P('Pawn', 'b', 102, 54, 34, { r: 30 }) + arrow([[100, 108], [104, 76]], W, 5));
+def('ScholarMate', 'Queen', () => sh(36, 118, 16) + P('Queen', 'w', 36, 118, 58) + fanShape(66, 58, 22, -10) + burst(84, 62, 12, 5, 8) +
+  sh(96, 118, 14) + P('Pawn', 'b', 96, 118, 48, { r: 28 }) + speed(18, 70, 0, 12, 2, 10, 3));
+def('PerpetualCheck', 'Queen', () => tile(84, 112, 56, 20) + sh(84, 112, 14) + P('Pawn', 'b', 84, 112, 46, { r: -10 }) + star5(78, 52, 6) + star5(94, 48, 5) +
+  sh(28, 118, 14) + P('Queen', 'w', 28, 118, 52) + fanShape(56, 64, 18, 20) + txt(70, 30, '+', 26, RED) + txt(92, 24, '+', 22, RED) + txt(112, 32, '+', 18, RED));
+def('QueenSac4', 'Queen', () => rays(64, 66, 14, 80, GOLD, 0.35) + burst(64, 66, 30, 12, 12, 0, GOLD) + P('Queen', 'w', 64, 92, 40, { op: 0.45 }) +
+  [[20, 40, -40], [108, 44, 40], [26, 100, -70], [104, 102, 70]].map(([x, y, r]) => `<rect x="${x - 6}" y="${y - 5}" width="12" height="10" rx="2" transform="rotate(${r} ${x} ${y})" fill="#F4EEDC" stroke="${INK}" stroke-width="2.5"/>`).join('') +
+  P('Pawn', 'b', 14, 120, 26, { r: -60 }) + P('Pawn', 'b', 116, 120, 26, { r: 60 }) + txt(64, 26, '!!', 26, GOLD));
+
 // No picture yet (a skill that is only a plan).
 def('Unknown', 'None', () => txt(64, 92, '?', 72, '#E6EAF2'));
 

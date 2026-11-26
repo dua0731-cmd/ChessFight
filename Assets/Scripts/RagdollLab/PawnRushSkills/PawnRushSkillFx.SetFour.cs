@@ -85,6 +85,9 @@ namespace ChessFight.RagdollLab
                     CmPuddle(e, Params != null ? Params.water4Seconds : 4f);
                     UltClip(UltClipId.Crack, 0.5f * lvl, 1.8f);
                     break;
+                default:
+                    SetFourBFx(e, lvl);   // bundle 나 (PawnRushSkillFx.SetFourB.cs)
+                    break;
             }
         }
 
@@ -1404,6 +1407,7 @@ namespace ChessFight.RagdollLab
 
         void DestroySetFour()
         {
+            DestroySetFourB();
             ccLooks.Clear();
             s4Bricks.Clear();
             s4Pits.Clear();

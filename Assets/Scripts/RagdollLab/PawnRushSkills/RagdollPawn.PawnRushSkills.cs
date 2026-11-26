@@ -127,6 +127,24 @@ namespace ChessFight.RagdollLab
         //   S4Shout   the queen's shout (at: chest, dir: facing; count 0 the breath (size: seconds), 1 the shout (size: range))
         //   S4Puddle  the set 4 holy water's puddle (at; size: radius; count: team + 1; the bottle flies as S3WaterThrow)
         S4Cc, S4Hop, S4Say, S4Trip, S4Brick, S4Pit, S4Leap, S4Bonk, S4Sermon, S4Charge, S4Cap, S4Crown, S4Shout, S4Puddle,
+        // The set 4판's bundle 나 (RagdollPawn.SetFourB.cs; PawnRushSkillFx.SetFourB.cs):
+        //   S4Poison  the poisoned pawn: 0 set down (at; size: seconds), 1 taken (target), 2 gone (at)
+        //   S4Storm   the clockwork pawns: 0 out (at: the middle one's start, dir; size: speed; normal: range, time, gap),
+        //             10 + i caught one (target, at), 20 + i stopped or fell off (at), 30 + i knocked over (target, at)
+        //   S4Slam    the knight's seat: 0 off (target: the enemy it hops onto, if one; at, normal: where; size: flight), 1 down
+        //   S4Neigh   round the back: 0 off (target; size: time), 1 the neigh (target)
+        //   S4Cloud   the rain cloud over the target (size: delay + rain)
+        //   S4Censer  0 the censer swinging (size: seconds), 1 one caught in the smoke (target)
+        //   S4Bell    0 over the head (target, at; size: delay), 1 rung on a head (target; size: seconds), 2 on the floor (at)
+        //   S4Crook   0 the staff out (at: root, dir; size: time; normal: its full reach), 1 hooked (target; size: flight;
+        //             normal: where it comes down), 2 missed (at: the tip)
+        //   S4Wall    the rampart (count: the wall's number; at, normal: its ends; size: seconds)
+        //   S4Slide   0 off sideways (dir; size: time), 1 done
+        //   S4Mower   0 the blade on (size: seconds), 1 one mown (target), 2 off
+        //   S4Fan     the queen's fan: 0 a dash (target; size: time), 1 the smack (target), 2 ducked (target), 3 a check
+        //             (target; count's hit in its size), 4 the chase on (target; size: seconds), 5 the chase over
+        //   S4Sac     0 the glow (size: time), 1 the bang (size: range), 2 put together again
+        S4Poison, S4Storm, S4Slam, S4Neigh, S4Cloud, S4Censer, S4Bell, S4Crook, S4Wall, S4Slide, S4Mower, S4Fan, S4Sac,
     }
 
     public struct SkillFxEvent
