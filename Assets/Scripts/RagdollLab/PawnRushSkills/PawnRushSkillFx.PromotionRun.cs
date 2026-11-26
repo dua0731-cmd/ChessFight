@@ -560,6 +560,20 @@ namespace ChessFight.RagdollLab
             public float scale = 1f, want = 1f, rate = 4f, height = -1f;
             public Mesh baked;
             public Material paint;   // drawn in this instead of its own materials (asked again every frame)
+            // 11-26 (the 4판's bundle 다): turned this way round its feet, or round its hips (asked again every frame).
+            public Quaternion pose = Quaternion.identity;
+            public bool posed, poseAtHips;
+        }
+
+        /// <summary>This frame <paramref name="p"/> is drawn turned by <paramref name="pose"/> round its feet (a tower falling
+        /// over) or round its hips (a rook stuck head first in the floor), at the size WantGiant gives it.</summary>
+        void WantPose(RagdollPawn p, Quaternion pose, bool aroundHips)
+        {
+            if (p == null || p.skin == null) return;
+            if (!giants.TryGetValue(p, out var g)) giants[p] = g = new Giant { p = p };
+            g.pose = pose;
+            g.posed = true;
+            g.poseAtHips = aroundHips;
         }
 
         readonly Dictionary<RagdollPawn, Giant> giants = new Dictionary<RagdollPawn, Giant>();
@@ -608,7 +622,9 @@ namespace ChessFight.RagdollLab
                 g.want = 1f;   // (asked again by the next frame's step, or it goes back)
                 var paint = g.paint;
                 g.paint = null;
-                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null)
+                bool posed = g.posed;
+                g.posed = false;
+                if (Mathf.Abs(g.scale - 1f) <= 0.01f && paint == null && !posed)
                 {
                     skin.forceRenderingOff = false;
                     if (g.baked != null) Destroy(g.baked);
@@ -621,6 +637,11 @@ namespace ChessFight.RagdollLab
                 Vector3 feet = FloorUnder(g.p);
                 Matrix4x4 world = Matrix4x4.TRS(skin.transform.position, skin.transform.rotation, Vector3.one);
                 Matrix4x4 big = Matrix4x4.Translate(feet) * Matrix4x4.Scale(Vector3.one * g.scale) * Matrix4x4.Translate(-feet) * world;
+                if (posed)
+                {
+                    Vector3 pivot = g.poseAtHips ? g.p.Hips.position : feet;
+                    big = Matrix4x4.Translate(pivot) * Matrix4x4.Rotate(g.pose) * Matrix4x4.Translate(-pivot) * big;
+                }
                 var mats = skin.sharedMaterials;
                 var bounds = new Bounds(feet + Vector3.up * 3f * g.scale, Vector3.one * 8f * g.scale);
                 for (int i = 0; i < g.baked.subMeshCount && mats.Length > 0; i++)
