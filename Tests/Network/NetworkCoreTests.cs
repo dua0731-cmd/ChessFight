@@ -1200,14 +1200,24 @@ public static class NetworkCoreTests
                       &&PawnRushSkillIds.OldPiece(PawnRushSkillIds.ChainBehind)==PieceKind.Rook&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.KingSummon)==PieceKind.King,"the skill pool's plan 1: the pawn's steps, the rook's chain and the king's call run on the old ones' code, the snipe is a new skill");
                 var setB=PawnRushLoadout.Preset(11);
                 Check(PawnRushLoadout.SystemOf(11)==PawnRushLoadout.Many&&setB.Raw(4,0)==PawnRushSkillIds.SeriesB&&setB.Raw(4,1)==PawnRushSkillIds.EightB&&setB.Raw(4,2)==0&&setB.Raw(1,PawnRushLoadout.UltSlot)==PawnRushSkillIds.Nightmare&&PawnRushSkillIds.TeamUltimate(PawnRushSkillIds.KingWalk)&&PawnRushSkillIds.Driven(PawnRushSkillIds.PromotionRun)&&!PawnRushSkillIds.Driven(PawnRushSkillIds.FamilyFork)&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.SeriesB)==PawnRushSkillIds.CheckSeries&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.EightB)==PawnRushSkillIds.EightLines,"the set 3안-b: the queen's two (series of checks, eight lines; no third), the six driven ultimates on Q");
+                // The set 4판's bundle 가 (ROUND1, 11-26): the two slots a piece of the game (the user: "각 캐릭터당 스킬 슬롯은
+                // 2개고"), any grades in them, no ultimate and no king.
+                var setFour=PawnRushLoadout.Preset(13);
+                int setFourThirds=0;
+                for(int row=0;row<PawnRushLoadout.Rows;row++)for(int k=2;k<PawnRushLoadout.Slots;k++)if(setFour.Raw(row,k)!=0)setFourThirds++;
+                Check(setFourThirds==0&&PawnRushSkillIds.Grade4(PawnRushSkillIds.Trip4)==1&&PawnRushSkillIds.Grade4(PawnRushSkillIds.ForkBonk)==2
+                      &&PawnRushSkillIds.Grade4(PawnRushSkillIds.Insolent)==3&&PawnRushSkillIds.Grade4(PawnRushSkillIds.QueensGambit)==3&&PawnRushSkillIds.Grade4(PawnRushSkillIds.CheckChain)==0,
+                      "the set 4판: the two slots a piece the game has (nothing in R or Q), and every skill's grade (16 basic, 11 mid, 8 high)");
+                int[] gradeCount=new int[4];
+                for(int id=PawnRushSkillIds.Trip4;id<=PawnRushSkillIds.QueensGambit;id++)gradeCount[PawnRushSkillIds.Grade4(id)]++;
+                Check(gradeCount[0]==0&&gradeCount[1]==16&&gradeCount[2]==11&&gradeCount[3]==8,"the set 4판's grades as ROUND1 4장 gives them");
+                Check(PawnRushLoadout.SystemOf(13)==PawnRushLoadout.Many&&setFour.Raw(0,0)==PawnRushSkillIds.Trip4&&setFour.Raw(0,1)==PawnRushSkillIds.Brick&&setFour.Raw(0,2)==0
+                      &&setFour.Raw(1,1)==PawnRushSkillIds.BackKick4&&setFour.Raw(4,1)==PawnRushSkillIds.Insolent&&setFour.Raw(5,0)==0&&setFour.Raw(4,PawnRushLoadout.UltSlot)==0
+                      &&PawnRushSkillIds.SetFour(PawnRushSkillIds.Trip4)&&PawnRushSkillIds.SetFour(PawnRushSkillIds.QueensGambit)&&!PawnRushSkillIds.SetFour(PawnRushSkillIds.CheckChain)
+                      &&!PawnRushSkillIds.SetFour(PawnRushSkillIds.BackKick),"the set 4판's first bundle: two a piece, no Q, no king; its numbers are its own");
                 // The set 3판 (KITS 6.12, 11-23; 6.13, 11-24): the user's own skills, two a piece (the pawn's and the knight's
                 // basics on E: the two steps, the back kick), the bishop's swords and two basics to pick one from, no ultimate
                 // (every Q empty) and no king.
-                var setFour=PawnRushLoadout.Preset(13);
-                Check(PawnRushLoadout.SystemOf(13)==PawnRushLoadout.Many&&setFour.Raw(0,0)==PawnRushSkillIds.Trip4&&setFour.Raw(0,1)==PawnRushSkillIds.Brick&&setFour.Raw(0,2)==PawnRushSkillIds.Pit
-                      &&setFour.Raw(1,1)==PawnRushSkillIds.BackKick4&&setFour.Raw(4,1)==PawnRushSkillIds.Insolent&&setFour.Raw(5,0)==0&&setFour.Raw(4,PawnRushLoadout.UltSlot)==0
-                      &&PawnRushSkillIds.SetFour(PawnRushSkillIds.Trip4)&&PawnRushSkillIds.SetFour(PawnRushSkillIds.QueensGambit)&&!PawnRushSkillIds.SetFour(PawnRushSkillIds.CheckChain)
-                      &&!PawnRushSkillIds.SetFour(PawnRushSkillIds.BackKick),"the set 4판's first bundle: two a piece (the pawn three), no Q, no king; its numbers are its own");
                 var setThree=PawnRushLoadout.Preset(12);
                 bool noUlt=true; for(int row=0;row<PawnRushLoadout.Rows;row++) if(setThree.Raw(row,PawnRushLoadout.UltSlot)!=0) noUlt=false;
                 Check(PawnRushLoadout.SystemOf(12)==PawnRushLoadout.Many&&noUlt&&setThree.Raw(0,0)==PawnRushSkillIds.Bolas&&setThree.Raw(0,1)==PawnRushSkillIds.TwoSteps&&setThree.Raw(1,0)==PawnRushSkillIds.HighStomp&&setThree.Raw(1,1)==PawnRushSkillIds.BackKick

@@ -110,6 +110,12 @@ namespace ChessFight.RagdollLab
             _ => PawnRushSkillIds.TwoSteps,
         };
 
+        /// <summary>How many of this piece's slots play, from the first (the user 11-26, Docs/Skills/PAWN_RUSH_SKILL_SET4.md
+        /// 1.1: "각 캐릭터당 스킬 슬롯은 2개고, 1개는 오프닝 구간(1코스) 미니게임 장소에서, 나머지 하나는 2코스 미니게임 장소에서
+        /// 해금되는거야"). Every slot is open until something sets it: the course's minigame places are to set 1 and then 2
+        /// on the host's piece (not wired yet; the skill test scene keeps them all open).</summary>
+        public int SkillSlotsOpen { get; set; } = int.MaxValue;
+
         /// <summary>The skills of this piece's slots this step (the host's): the one under way gets its key and the clicks
         /// and the others wait; with none under way each sees its own key and the first to start takes the step.</summary>
         void RunSlots(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
@@ -160,6 +166,12 @@ namespace ChessFight.RagdollLab
                 // (A variant - a set's own numbers - runs on its skill's code: PawnRushSkillIds.BaseOf, RagdollPawn.SetSkills.cs.)
                 int id = PawnRushSkillIds.BaseOf(SlotSkill(k));
                 if (id == 0) continue;
+                if (k >= SkillSlotsOpen)
+                {
+                    // Not open yet: a course opens a piece's slots at its minigame places (SkillSlotsOpen, not wired yet).
+                    if (slotPress[k]) SkillDetail = "아직 안 열린 칸이에요";
+                    continue;
+                }
                 cdSlot = k;
                 // The kits' second version: an ultimate's key goes on a full gauge only, one of a team's at a time.
                 if (slotPress[k] && !UltMayGo(k)) slotPress[k] = false;

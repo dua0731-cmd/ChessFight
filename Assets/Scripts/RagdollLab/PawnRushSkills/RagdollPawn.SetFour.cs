@@ -165,7 +165,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.tripWindow)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.s4Basic);
+                        StartCooldown(SetFourCooldown(PawnRushSkillIds.Trip4, s));
                     }
                     break;
                 }
@@ -186,7 +186,7 @@ namespace ChessFight.RagdollLab
             bricks4.Add(new Brick4 { aimed = aimed, at = at, wait = s.brickDelay });
             Fx(SkillFxKind.S4Brick, aimed, at, Vector3.down, 0, s.brickDelay);
             SkillDetail = $"벽돌 → {aimed.DisplayName}";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.Brick, s));
         }
 
         void UpdatePit(PawnRushSkillParams s, bool press, float dt)
@@ -198,7 +198,7 @@ namespace ChessFight.RagdollLab
             pits4.Add(new Pit4 { at = at, left = s.pitSeconds });
             Fx(SkillFxKind.S4Pit, null, at, Vector3.up, 0, s.pitSeconds);
             SkillDetail = "구덩이 (뒤에)";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.Pit, s));
         }
 
         // ---------------------------------------------------------------- 나이트
@@ -235,7 +235,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= 0.3f)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.s4Mid);
+                        StartCooldown(SetFourCooldown(PawnRushSkillIds.ForkBonk, s));
                     }
                     break;
             }
@@ -301,7 +301,7 @@ namespace ChessFight.RagdollLab
             waters4.Add(new Water4 { at = to, wait = s.water4Flight, left = s.water4Seconds });
             Fx(SkillFxKind.S3WaterThrow, null, from, FlatDir(to - from), 0, s.water4Flight, to);
             SkillDetail = "성수병 (겨눈 곳에)";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.HolyWater4, s));
         }
 
         void UpdateSermon(PawnRushSkillParams s, bool press, float dt)
@@ -317,7 +317,7 @@ namespace ChessFight.RagdollLab
             aimed.GiveCc(Cc4.Tired, s.sermonTired, this);
             Fx(SkillFxKind.S4Sermon, aimed, Chest + Vector3.up * 0.4f, FlatDir(aimed.bodies[0].position - bodies[0].position), 0, s.sermonTired);
             SkillDetail = $"설교 → {aimed.DisplayName} 지침";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.Sermon, s));
         }
 
         // ---------------------------------------------------------------- 룩
@@ -388,7 +388,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= 0.25f)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.s4Mid);
+                        StartCooldown(SetFourCooldown(PawnRushSkillIds.Charge4, s));
                     }
                     break;
             }
@@ -407,7 +407,7 @@ namespace ChessFight.RagdollLab
             aimed.GiveCc(Cc4.Heavy, s.capHeavy, this);
             Fx(SkillFxKind.S4Cap, aimed, aimed.bodies[(int)BodyId.Head].position, Vector3.down, 0, s.capHeavy);
             SkillDetail = $"돌 얹기 → {aimed.DisplayName} 무거움";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.StoneCap, s));
         }
 
         // ---------------------------------------------------------------- 퀸
@@ -425,7 +425,7 @@ namespace ChessFight.RagdollLab
             crowns4.Add(new Crown4 { from = from, to = to, flight = flight });
             Fx(SkillFxKind.S4Crown, null, from, FlatDir(to - from), 0, flight, to);
             SkillDetail = aimed != null ? $"왕관 헌납 → {aimed.DisplayName}" : "왕관 헌납";
-            StartCooldown(s.s4Basic);
+            StartCooldown(SetFourCooldown(PawnRushSkillIds.CrownToss, s));
         }
 
         /// <summary>Where a thrown crown is at <paramref name="t"/> (0..1) of its flight: a lob over the line, higher the
@@ -471,7 +471,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= 0.35f)
                     {
                         EndPlanSkill();
-                        StartCooldown(s.s4High);
+                        StartCooldown(SetFourCooldown(PawnRushSkillIds.Insolent, s));
                     }
                     break;
             }
@@ -502,18 +502,11 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>The cooldown of the skill's grade (PawnRushSkillIds.Grade4: 초급 6 s, 중급 12 s, 상급 30 s).</summary>
         static float SetFourCooldown(int id, PawnRushSkillParams s)
         {
-            switch (id)
-            {
-                case PawnRushSkillIds.ForkBonk:
-                case PawnRushSkillIds.Charge4:
-                    return s.s4Mid;
-                case PawnRushSkillIds.Insolent:
-                    return s.s4High;
-                default:
-                    return s.s4Basic;
-            }
+            int grade = PawnRushSkillIds.Grade4(id);
+            return grade >= 3 ? s.s4High : grade == 2 ? s.s4Mid : s.s4Basic;
         }
 
         // ---------------------------------------------------------------- the things left in the world (every step)

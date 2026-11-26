@@ -33,7 +33,11 @@ namespace ChessFight.RagdollLab
     /// Two tabs since 2026-11-26 (the user: "지금부터 작업하는 스킬들이 실제로 게임에 넣는 걸 고려해 볼 후보들이니까 이전에 있던건
     /// '폐기된 스킬'탭을 만들어서 거기로 넘기고, 이것들만 바로 보이도록 해야돼"): "4판 후보" shows only the set 4판's thirty-five
     /// (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md) by piece - the ones built first, the rest faint as "준비 중" - with the 4판's
-    /// sets; "폐기된 스킬" holds every skill and set from before, still to be put in any slot.
+    /// sets; "폐기된 스킬" holds every skill and set from before, still to be put in any slot. The same day the rules the
+    /// user settled (Docs/Skills/PAWN_RUSH_SKILL_SET4.md 1.1: "각 캐릭터당 스킬 슬롯은 2개고", grades mixed freely in them,
+    /// "초급,중급만 넣어서 빠르게 스킬을 돌려쓰는 대신 각각의 위력은 약하게 할 수도 있고, 중급-상급이나 초급-상급"): the 4판
+    /// tab shows a piece's two slots (F, E; R and Q only while they hold something), every 4판 skill carries its grade
+    /// and cooldown in its colour (초급 green, 중급 blue, 상급 violet), and under each piece's name its two grades.
     ///
     /// Every change is two numbers (PawnRushLoadout.Apply). Where this PC runs the skills itself (offline, a match's host)
     /// the window makes the change; elsewhere it is asked of the host (<see cref="Send"/>) and shows when the host's
@@ -424,7 +428,7 @@ namespace ChessFight.RagdollLab
         {
             switch (id)
             {
-                case 13: return "4판 1차 묶음 가 · 기물마다 F · E 둘 (폰은 R까지 셋) · 사용자가 고른 서른다섯 가운데 먼저 만든 열하나 · 궁극기 없음";
+                case 13: return "4판 1차 묶음 가 · 기물마다 두 칸 (F · E) · 먼저 만든 열하나 가운데 열 (폰의 구덩이는 목록에서 넣어요) · 궁극기 없음";
                 case 12: return "사용자가 짠 스킬 · 기물마다 F · E 둘 · 궁극기 없음 · 비숍은 E 돌멩이와 R 성수병 가운데 하나를 고르는 중";
                 case 11: return "기물마다 F · E 둘 · Q는 10~12초 동안 직접 모는 궁극기 여섯";
                 case 8: return "기물마다 칸 조합이 달라요 (퀸은 R까지 셋) · Q는 팀 게이지 궁극기";
@@ -580,6 +584,67 @@ namespace ChessFight.RagdollLab
 
         static bool ShowsSlot(PawnRushLoadout lo, int k) => lo.Plays(k) || (lo.system == PawnRushLoadout.Grow && k == 1);
 
+        /// <summary>A column of the board: in the 4판 tab the game's two slots (F, E), and R or Q only while one holds a
+        /// skill (11-26: "각 캐릭터당 스킬 슬롯은 2개고").</summary>
+        bool ColumnShown(PawnRushLoadout lo, int k) => ShowsSlot(lo, k) && (discarded || k < 2 || AnyIn(lo, k));
+
+        // ---------------------------------------------------------------- the set 4판's grades
+
+        static readonly Color[] GradeTint =
+            { Color.clear, new Color(0.48f, 0.88f, 0.56f, 1f), new Color(0.5f, 0.74f, 1f, 1f), new Color(0.88f, 0.62f, 1f, 1f) };
+
+        static string GradeName(int g) => g == 1 ? "초급" : g == 2 ? "중급" : g == 3 ? "상급" : "";
+
+        /// <summary>"초급 6초": the grade and its cooldown as the numbers have it now (empty for a skill of no grade).</summary>
+        string GradeText(int id)
+        {
+            int g = PawnRushSkillIds.Grade4(id);
+            if (g == 0) return "";
+            float cd = Skills == null ? 0f : g == 3 ? Skills.s4High : g == 2 ? Skills.s4Mid : Skills.s4Basic;
+            return $"{GradeName(g)} {cd:0.#}초";
+        }
+
+        float GradeTagW(int id) => PawnRushSkillIds.Grade4(id) == 0 ? 0f : TextW(GradeText(id), smallOne) + 10f;
+
+        /// <summary>The grade's tag in its colour at (x, y); returns its width (0 for a skill of no grade).</summary>
+        float GradeTag(float x, float y, int id, float h = 16f)
+        {
+            int g = PawnRushSkillIds.Grade4(id);
+            if (g == 0) return 0f;
+            float w = GradeTagW(id);
+            var r = new Rect(x, y, w, h);
+            Fill(r, new Color(GradeTint[g].r, GradeTint[g].g, GradeTint[g].b, 0.2f));
+            var oldColor = smallOne.normal.textColor;
+            var oldAlign = smallOne.alignment;
+            smallOne.normal.textColor = GradeTint[g];
+            smallOne.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(r, GradeText(id), smallOne);
+            smallOne.normal.textColor = oldColor;
+            smallOne.alignment = oldAlign;
+            return w;
+        }
+
+        /// <summary>Under a piece's name, its two grades ("초 · 상"), coloured; null when it holds no 4판 skill.</summary>
+        static string GradeMix(PawnRushLoadout lo, int row)
+        {
+            string mix = null;
+            for (int k = 0; k < PawnRushLoadout.Slots; k++)
+            {
+                int g = PawnRushSkillIds.Grade4(lo.Raw(row, k));
+                if (g == 0) continue;
+                string c = ColorUtility.ToHtmlStringRGB(GradeTint[g]);
+                string one = $"<color=#{c}>{GradeName(g).Substring(0, 1)}</color>";
+                mix = mix == null ? one : mix + " · " + one;
+            }
+            return mix;
+        }
+
+        string SetFourNote()
+        {
+            string cds = Skills != null ? $"초급 {Skills.s4Basic:0.#}초 · 중급 {Skills.s4Mid:0.#}초 · 상급 {Skills.s4High:0.#}초" : "초급 · 중급 · 상급";
+            return $"4판: 기물마다 두 칸 (F · E), 어느 등급이든 섞어 넣어요 ({cds}). 칸이 열리는 때 (1코스 · 2코스 미니게임 장소)는 아직 코스에 안 붙였어요.";
+        }
+
         /// <summary>The five pieces always; the king's row only while it holds a skill (no king in Pawn Rush).</summary>
         static bool ShowsRow(PawnRushLoadout lo, int row)
         {
@@ -601,7 +666,7 @@ namespace ChessFight.RagdollLab
             float y = r.y + 28f;
             bool grow = lo.system == PawnRushLoadout.Grow;
             int cols = 0;
-            for (int k = 0; k < lo.SlotCount; k++) if (ShowsSlot(lo, k)) colIndex[cols++] = k;
+            for (int k = 0; k < lo.SlotCount; k++) if (ColumnShown(lo, k)) colIndex[cols++] = k;
             int rows = 0;
             for (int row = 0; row < PawnRushLoadout.Rows; row++) if (ShowsRow(lo, row)) rowIndex[rows++] = row;
             const float nameW = 88f, colGap = 8f;
@@ -644,14 +709,20 @@ namespace ChessFight.RagdollLab
                 float ry = y + i * rowH;
                 if (i % 2 == 0) Fill(new Rect(r.x, ry, r.width, rowH), RowTint);
                 GUI.Label(new Rect(r.x, ry, 36f, rowH), Glyph(kind), glyph);
-                GUI.Label(new Rect(r.x + 38f, ry, nameW - 40f, rowH), ChessPieces.Name(kind), pieceName);
+                string mix = GradeMix(lo, row);
+                if (mix == null) GUI.Label(new Rect(r.x + 38f, ry, nameW - 40f, rowH), ChessPieces.Name(kind), pieceName);
+                else
+                {
+                    GUI.Label(new Rect(r.x + 38f, ry - 8f, nameW - 40f, rowH), ChessPieces.Name(kind), pieceName);
+                    GUI.Label(new Rect(r.x + 38f, ry + rowH * 0.5f + 4f, nameW - 38f, 16f), mix, smallOne);
+                }
                 for (int c = 0; c < cols; c++)
                     DrawSlot(lo, row, colIndex[c], new Rect(colX[c], ry + 4f, colW[c], rowH - 8f), e);
                 if (grow) DrawStages(lo, row, new Rect(r.xMax - stageW + 8f, ry, stageW - 8f, rowH));
             }
 
             float ny = y + rows * rowH + 6f;
-            GUI.Label(new Rect(r.x, ny, r.width, 18f), Fit(SystemNote(lo), smallOne, r.width), smallOne);
+            GUI.Label(new Rect(r.x, ny, r.width, 18f), Fit(discarded ? SystemNote(lo) : SetFourNote(), smallOne, r.width), smallOne);
             if (room)
                 GUI.Label(new Rect(r.x, ny + 18f, r.width, 18f), lo.hostOnly
                     ? "방: 방장만 바꿀 수 있어요. 다른 사람은 보기만 해요."
@@ -696,11 +767,15 @@ namespace ChessFight.RagdollLab
                 float nameH = twoLines ? lineH * 2f : lineH;
                 string sub = entry.home != PawnRushLoadout.RowPieces[row] ? $"({ChessPieces.Name(entry.home)} 것)"
                     : twoLines ? null : PawnRushSkillBook.Card(id);
-                bool withSub = sub != null && box.height >= nameH + subH + 6f;
-                float top = box.y + (box.height - nameH - (withSub ? subH : 0f)) * 0.5f;
+                bool room = box.height >= nameH + subH + 6f;
+                bool graded = PawnRushSkillIds.Grade4(id) > 0 && room;   // (the 4판's grade leads the line under the name)
+                bool withSub = sub != null && room;
+                float top = box.y + (box.height - nameH - (withSub || graded ? subH : 0f)) * 0.5f;
                 if (twoLines) GUI.Label(new Rect(tx, top - 1f, tw, nameH + 3f), entry.name, cardNameWrap);
                 else GUI.Label(new Rect(tx, top - 1f, tw, lineH + 3f), Fit(entry.name, cardName, tw), cardName);
-                if (withSub) GUI.Label(new Rect(tx, top + nameH + 1f, subW, subH), Fit(sub, smallOne, subW), smallOne);
+                float sx = tx;
+                if (graded) sx += GradeTag(tx, top + nameH + 1f, id, subH - 1f) + 5f;
+                if (withSub && subW - (sx - tx) > 20f) GUI.Label(new Rect(sx, top + nameH + 1f, subW - (sx - tx), subH), Fit(sub, smallOne, subW - (sx - tx)), smallOne);
                 if (mouse && dragId == 0) hoverNow = id;
                 if (cross)
                 {
@@ -913,6 +988,12 @@ namespace ChessFight.RagdollLab
                     smallOne.normal.textColor = oldPill;
                     pillW += 10f;
                 }
+                float gradeW = GradeTagW(entry.id);
+                if (gradeW > 0f)
+                {
+                    GradeTag(r.xMax - pillW - gradeW - 6f, r.y + 5f, entry.id, 17f);
+                    pillW += gradeW + 4f;
+                }
                 float tx = r.x + SkillH + 6f, tw = r.xMax - tx - 8f;
                 var oldName = cardName.normal.textColor;
                 cardName.normal.textColor = entry.built ? Ink : Faint;
@@ -962,7 +1043,8 @@ namespace ChessFight.RagdollLab
             float tx = r.x + s + 20f, tw = r.xMax - tx - 10f;
             GUI.Label(new Rect(tx, r.y + 6f, tw, 20f), Fit(about.name, cardName, tw), cardName);
             string tags = TagNames(about.tags);
-            string meta = $"{ChessPieces.Name(about.home)} 스킬 · {PawnRushSkillBook.OriginName(about.origin)}"
+            string grade = GradeText(about.id);
+            string meta = $"{ChessPieces.Name(about.home)} 스킬 · {PawnRushSkillBook.OriginName(about.origin)}" + (grade.Length > 0 ? " · " + grade : "")
                           + (tags.Length > 0 ? " · " + tags : "") + (about.built ? "" : about.origin == SkillOrigin.Set4 ? " · 준비 중 (다음 묶음)" : " · 계획만 (아직 못 넣음)")
                           + (placedAt.TryGetValue(about.id, out string at) ? " · 지금 " + at : "");
             GUI.Label(new Rect(tx, r.y + 25f, tw, 16f), Fit(meta, smallOne, tw), smallOne);
@@ -986,7 +1068,7 @@ namespace ChessFight.RagdollLab
             hoverNow = 0;
             hoverSetNow = -1;
             if (selRow >= 0 && !ShowsRow(lo, selRow)) selRow = selSlot = -1;
-            if (selSlot >= 0 && !ShowsSlot(lo, selSlot)) selRow = selSlot = -1;
+            if (selSlot >= 0 && !ColumnShown(lo, selSlot)) selRow = selSlot = -1;
             if (listPiece >= 0 && !ShowsRow(lo, listPiece)) listPiece = -1;
 
             float w = Mathf.Clamp(Screen.width - 120f, 860f, 1260f), h = Mathf.Clamp(Screen.height - 90f, 500f, 800f);

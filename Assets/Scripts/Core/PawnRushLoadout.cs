@@ -101,6 +101,23 @@ namespace ChessFight.Network
         /// <summary>One of the set 4판's skills (136..170): the skill tree's own list; every other one is retired.</summary>
         public static bool SetFour(int id) => id >= Trip4 && id <= QueensGambit;
 
+        /// <summary>A set 4판 skill's grade (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md 4장; the user 11-26: "스킬은 초급, 중급, 상급이
+        /// 있어. 이건 스킬의 위력과 쿨타임으로 정해지는거야", and any two of them in a piece's two slots): 1 초급, 2 중급,
+        /// 3 상급; 0 for a skill not of the set. Its cooldown goes by it (PawnRushSkillParams s4Basic, s4Mid, s4High).</summary>
+        public static int Grade4(int id)
+        {
+            switch (id)
+            {
+                case PawnStorm: case PromoCountdown: case ForkBonk: case Burrow: case Bell: case Crook: case SafetyPin:
+                case Charge4: case Mower: case RookLift: case PerpetualCheck:
+                    return 2;
+                case RookDive: case Timber: case GatePig: case Insolent: case Procession: case ThroneDrop: case QueenSac4: case QueensGambit:
+                    return 3;
+                default:
+                    return SetFour(id) ? 1 : 0;
+            }
+        }
+
         /// <summary>One of the six driven ultimates (119..124).</summary>
         public static bool Driven(int id) => id >= PromotionRun && id <= KingWalk;
 
@@ -422,15 +439,17 @@ namespace ChessFight.Network
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
         /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
         /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, two a
-        /// piece of different grades, no ultimate). The king's row is empty (his call) in all but 4 to 11.</summary>
+        /// piece of different grades, no ultimate), 13 the set 4판's bundle 가 (two a piece, no ultimate). The king's row is
+        /// empty (his call) in all but 4 to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
             if (which == 13)
             {
-                // The set 4판's first bundle (ROUND1 5장, 묶음 가, 11-26): two a piece on F and E, the pawn a third on R; no Q,
-                // no king. Any skill still goes in any slot (the skill window).
+                // The set 4판's first bundle (ROUND1 5장, 묶음 가, 11-26): the two slots a piece the game has (the user: "각
+                // 캐릭터당 스킬 슬롯은 2개고"), on F and E, of any grades; no Q, no king. The pawn's third (the pit) waits in
+                // the list: any skill still goes in any slot (the skill window).
                 int[] f = { PawnRushSkillIds.Trip4, PawnRushSkillIds.ForkBonk, PawnRushSkillIds.HolyWater4, PawnRushSkillIds.Charge4, PawnRushSkillIds.CrownToss, 0 };
                 int[] e = { PawnRushSkillIds.Brick, PawnRushSkillIds.BackKick4, PawnRushSkillIds.Sermon, PawnRushSkillIds.StoneCap, PawnRushSkillIds.Insolent, 0 };
                 for (int row = 0; row < Rows; row++)
@@ -438,7 +457,6 @@ namespace ChessFight.Network
                     p.slots[row * Slots] = f[row];
                     p.slots[row * Slots + 1] = e[row];
                 }
-                p.slots[Row(PieceKind.Pawn) * Slots + 2] = PawnRushSkillIds.Pit;
                 return p;
             }
             if (which == 12)

@@ -311,7 +311,7 @@ namespace ChessFight.RagdollLab
                     if (planTime >= s.kickRecovery && (Grounded || planTime >= 1f))
                     {
                         EndPlanSkill();
-                        StartCooldown(activeSkill == PawnRushSkillIds.BackKick4 ? s.s4Basic : s.kickCooldown);
+                        StartCooldown(activeSkill == PawnRushSkillIds.BackKick4 ? SetFourCooldown(PawnRushSkillIds.BackKick4, s) : s.kickCooldown);
                     }
                     break;
                 default:
