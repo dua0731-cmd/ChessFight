@@ -98,8 +98,8 @@ namespace ChessFight.RagdollLab
         public static readonly SkillEntry[] All =
         {
             // The set 4판, round 1 (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md, the user 11-26): the thirty-five to try, the skill
-            // tree's own list (every other skill sits under "폐기된 스킬"). Built: bundles 가 (RagdollPawn.SetFour.cs) and 나
-            // (RagdollPawn.SetFourB.cs).
+            // tree's own list (every other skill sits under "폐기된 스킬"). All built: bundles 가 (RagdollPawn.SetFour.cs), 나
+            // (RagdollPawn.SetFourB.cs) and 다 (RagdollPawn.SetFourC.cs).
             Made(PawnRushSkillIds.Trip4, "앙파상!", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 0.6초 동안 양옆으로 발을 쭉 (달리면서 됨)\n좌우 2 m (양쪽 60° 부채꼴)의 적이 걸려 엎어짐: 콰당! 1.5초, 머리 위 \"홀리 헬!\" · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.PawnStorm, "폰 폭풍", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Block | SkillTag.Place,
@@ -108,7 +108,7 @@ namespace ChessFight.RagdollLab
                 "키 = 발밑에 반짝이는 꼬마 폰 하나 (8초, 새로 놓으면 앞의 것은 사라짐)\n1 m 안에 처음 들어온 적: 지침 3초, 얼굴이 파래짐 · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.Pit, "구덩이", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
                 "키 = 폰 바로 뒤 바닥에 지름 1.2 m 구덩이 (6초, 흙더미로 보임)\n처음 밟은 적: 허리까지 빠져 묶임 (제자리) 1.5초, 그 뒤 튀어나옴 · 초급 · 쿨 6초"),
-            Idea(PawnRushSkillIds.PromoCountdown, "승격 5초 전", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Buff | SkillTag.Block,
+            Made(PawnRushSkillIds.PromoCountdown, "승격 5초 전", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Buff | SkillTag.Block,
                 "키 = 머리 위에 왕관과 \"5, 4, 3, 2, 1\" (모두에게 보임)\n5초 동안 안 넘어지면 \"승격!\": 둘레 5 m의 적을 쾅 날리고 3초 금빛 · 넘어지면 푸쉬식 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.Brick, "벽돌", PieceKind.Pawn, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 겨눈 적 (12 m 안)의 머리 위 3 m에 벽돌, 0.6초 뒤 떨어짐 (바닥에 그림자, 따라가지 않음)\n맞으면 헤롱헤롱 2초, 머리에 혹 · 표적이 없으면 안 나감 (쿨 없음) · 초급 · 쿨 6초"),
@@ -120,7 +120,7 @@ namespace ChessFight.RagdollLab
                 "키 = 뒤쪽 6 m 안에 적이 있으면 그 위로, 없으면 뒤로 4 m 폴짝 (높이 1.5 m)\n내려앉은 자리 1.5 m 안의 적: 콰당! 1.5초 · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.Neigh, "히힝!", PieceKind.Knight, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 적 (앞쪽 5 m 안)의 등 뒤로 휙 돌아 들어가 (0.3초) \"히힝!\"\n그 적이 제자리에서 1 m 펄쩍, 헤롱헤롱 2초 · 표적이 없으면 안 나감 · 초급 · 쿨 6초"),
-            Idea(PawnRushSkillIds.Burrow, "땅속 헤엄", PieceKind.Knight, SkillOrigin.Set4, SkillTag.Move | SkillTag.Block,
+            Made(PawnRushSkillIds.Burrow, "땅속 헤엄", PieceKind.Knight, SkillOrigin.Set4, SkillTag.Move | SkillTag.Block,
                 "키 = 바닥 속으로 (귀만 보임), 3초까지 초속 6 m로 헤엄치며 몰기 · 다시 누르거나 3초면 솟음\n솟는 자리 1.5 m 안의 적을 위로 쾅 · 헤엄치는 동안 안 맞음 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.HolyWater4, "성수병", PieceKind.Bishop, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
                 "키 = 겨눈 곳 (15 m 안)으로 포물선으로 던짐 · 깨지면 지름 3 m 웅덩이 4초\n밟은 적: 미끌미끌 3초 (웅덩이를 나가도 남음) · 초급 · 쿨 6초"),
@@ -128,7 +128,7 @@ namespace ChessFight.RagdollLab
                 "키 = 겨눈 적 (18 m 안)의 머리 위 6 m에 큰 종 (지름 1.5 m), 0.8초 뒤 떨어짐 (그림자)\n\"댕~\" 헤롱헤롱 3초, 그동안 종이 머리에 씌워짐 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.Crook, "퇴장!", PieceKind.Bishop, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 쪽으로 갈고리 지팡이가 쭉 (10 m, 0.3초)\n처음 닿은 적의 목덜미를 낚아 비숍 뒤 3 m로 넘김 (높이 1.5 m) · 비숍은 앞으로 3 m · 중급 · 쿨 12초"),
-            Idea(PawnRushSkillIds.SafetyPin, "핀!", PieceKind.Bishop, SkillOrigin.Set4, SkillTag.Block,
+            Made(PawnRushSkillIds.SafetyPin, "핀!", PieceKind.Bishop, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 겨눈 쪽으로 큰 옷핀 (15 m, 초속 20 m)\n맞은 자리에 옷자락이 꽂힘: 3초 동안 2 m 밖으로 못 나감 (고무줄), 끝나면 그 자리로 튕겨 옴 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.Censer, "향로", PieceKind.Bishop, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
                 "키 = 4초 동안 지나간 자리에 연기 (폭 2 m, 3초씩)\n연기에 들어온 적: 지침 3초 (같은 향로에는 한 번) · 초급 · 쿨 6초"),
@@ -138,7 +138,7 @@ namespace ChessFight.RagdollLab
                 "키 = 겨눈 적 (20 m 안, 보이는 적)의 어깨에 꼬마 주교가 올라앉음\n지침 3초 · 표적이 없으면 안 나감 (쿨 없음) · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.Charge4, "직진!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Move | SkillTag.Block,
                 "키 = 0.3초 고개를 숙인 뒤 (누른 순간 보던 쪽) 곧게 12 m (초속 10 m), 꺾지 못함\n닿는 적을 뻥 날림 · 벽에 박으면 룩이 헤롱헤롱 1.5초 · 낭떠러지에선 그대로 나감 · 중급 · 쿨 12초"),
-            Idea(PawnRushSkillIds.RookDive, "더 루우욱!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
+            Made(PawnRushSkillIds.RookDive, "더 루우욱!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 곳 (20 m 안)에 표시 · 0.4초 웅크렸다 포물선으로 날아가 (1.2초) 떨어짐 \"희생… 더 루우욱!\"\n떨어진 자리 4 m 안의 적: 쾅 날리고 콰당! 2초 · 룩은 거꾸로 박혀 1.5초 버둥 · 상급 · 쿨 30초"),
             Made(PawnRushSkillIds.WallUp, "성벽!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
                 "키 = 등 뒤 1.5 m에 돌벽 (폭 4 m, 높이 2 m)이 솟아 4초\n달려오다 부딪힌 적은 넘어짐 · 우리 편은 지나감 · 초급 · 쿨 6초"),
@@ -146,21 +146,21 @@ namespace ChessFight.RagdollLab
                 "키 = 겨눈 적 (앞쪽 4 m 안)의 머리에 성벽 돌을 턱\n무거움 3초, 그동안 돌이 머리에 얹혀 있음 · 표적이 없으면 안 나감 (쿨 없음) · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.SideSlide, "수평 룩", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Move | SkillTag.Block,
                 "키 = 누르고 있는 옆 이동 키 쪽으로 (없으면 오른쪽) 5 m 쭉 미끄러짐 (0.4초), 앞으로 달리던 속도는 그대로\n닿는 적을 옆으로 뻥 · 초급 · 쿨 6초"),
-            Idea(PawnRushSkillIds.Timber, "넘어간다~!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block | SkillTag.Ally,
+            Made(PawnRushSkillIds.Timber, "넘어간다~!", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block | SkillTag.Ally,
                 "키 = 1초 동안 키 8 m 탑으로 자람 (제자리, 조작 없음) · 쓰러질 줄 8 × 2 m에 그림자, 0.5초에 앞으로 쓰러짐\n그 줄의 적: 콰당! 2초 · 쓰러진 룩은 2초 다리 (팀원이 건넘) · 상급 · 쿨 30초"),
-            Idea(PawnRushSkillIds.GatePig, "돼지", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block,
+            Made(PawnRushSkillIds.GatePig, "돼지", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 2초 동안 성문을 벌려 앞쪽 (60°, 8 m)의 적을 빨아들임, 셋까지 · 그동안 걷기만\n삼킨 적을 2초 뒤 (또는 다시 누르면) 뒤로 뻥 뱉음 · 상급 · 쿨 30초"),
             Made(PawnRushSkillIds.Mower, "잔디깎이", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Move | SkillTag.Block,
                 "키 = 3초 동안 머리 톱니가 돌고 30% 빨리 달림 (몰 수 있음)\n닿는 적을 위로 쾅 · 중급 · 쿨 12초"),
-            Idea(PawnRushSkillIds.RookLift, "룩 리프트", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
+            Made(PawnRushSkillIds.RookLift, "룩 리프트", PieceKind.Rook, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block,
                 "키 = 발밑에서 지름 3 m 탑이 0.5초에 4 m 솟아 3초 (위에 있던 모두가 함께 올라감)\n올라간 적은 뛰어내려야 함 · 룩은 걸어 나갈 수 있음 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.CrownToss, "왕관 헌납", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 겨눈 쪽으로 왕관을 던짐 (12 m 포물선)\n맞은 적의 머리에 씌워짐: 무거움 3초 · 빗나가면 사라짐 · 초급 · 쿨 6초"),
             Made(PawnRushSkillIds.Insolent, "무엄하다!", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 0.4초 숨을 들이쉬고 호통 \"무엄하다!\"\n앞쪽 (90°, 8 m)의 적: 쪼꼬미 4초 · 상급 · 쿨 30초"),
-            Idea(PawnRushSkillIds.Procession, "행차", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block | SkillTag.Move,
+            Made(PawnRushSkillIds.Procession, "행차", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Place | SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 쪽으로 붉은 카펫이 굴러 나감 (폭 3 m, 초속 12 m, 20 m), 카펫은 5초, 퀸은 그 위에서 30% 빨라짐\n닿은 적은 김밥처럼 말려 3 m 밀리고 1.5초 뒤 풀림 (콰당!) · 상급 · 쿨 30초"),
-            Idea(PawnRushSkillIds.ThroneDrop, "착석!", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
+            Made(PawnRushSkillIds.ThroneDrop, "착석!", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 곳 (25 m 안)에 왕좌 그림자 (지름 5 m)와 팡파르 · 퀸이 솟구쳐 사라졌다 1초 뒤 왕좌와 함께 떨어짐\n그림자 안의 적을 쾅 · 퀸은 0.5초 뒤 움직임 · 상급 · 쿨 30초"),
             Made(PawnRushSkillIds.ScholarMate, "스콜라 메이트", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block | SkillTag.Move,
                 "키 = 겨눈 적 (앞쪽 6 m 안)에게 쪼르르 (0.4초) 부채로 뒤통수\n앞으로 엎어짐 (살짝) · 퀸을 보고 있던 적은 고개를 숙여 피함 · 초급 · 쿨 6초"),
@@ -168,7 +168,7 @@ namespace ChessFight.RagdollLab
                 "키 = 겨눈 적 (앞쪽 8 m 안)에게 붙어 3초 동안 따라다니며 0.6초마다 부채로 (다섯 번), 이동 키를 누르면 그만둠\n맞을 때마다 \"체크!\"와 휘청, 3초 헤롱헤롱 · 3 m 넘게 벌리면 끝 · 중급 · 쿨 12초"),
             Made(PawnRushSkillIds.QueenSac4, "퀸 희생!!", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block,
                 "키 = 0.5초 반짝인 뒤 펑 (머리 위에 \"!!\")\n둘레 6 m의 적을 쾅 · 퀸은 1.5초 흩어졌다가 그 자리에서 다시 조립됨 (조작 없음) · 상급 · 쿨 30초"),
-            Idea(PawnRushSkillIds.QueensGambit, "퀸스 갬빗", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block | SkillTag.Place,
+            Made(PawnRushSkillIds.QueensGambit, "퀸스 갬빗", PieceKind.Queen, SkillOrigin.Set4, SkillTag.Block | SkillTag.Place,
                 "키 = 겨눈 곳 (25 m 안) 둘레 지름 10 m의 하늘에 큰 체스 말 다섯이 거꾸로 매달림 (그림자 다섯)\n1초 뒤부터 0.3초마다 하나씩 떨어짐: 깔린 적은 납작 눌려 넘어짐 · 상급 · 쿨 30초"),
             // The skill pool's plan 1, one skill a piece (Docs/Skills/PAWN_RUSH_SKILL_POOL.md; RagdollPawn.PoolSkills.cs). The
             // knight's and the queen's are the bent leap and the check below, changed to the pool's.

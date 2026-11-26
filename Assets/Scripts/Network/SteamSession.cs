@@ -219,7 +219,9 @@ namespace ChessFight.Network
         // skilllab22: the set 4판 (136..170, a fourteenth loadout that comes with the game), its hindrances in the skill
         // state's Flags3 bits 2-5 and its moments (S4Cc .. S4Puddle).
         // skilllab23: the set 4판's bundle 나 (fourteen skills built, a fifteenth loadout, the moments S4Poison .. S4Sac).
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab23";
+        // skilllab24: the set 4판's bundle 다 (ten skills built, a sixteenth loadout, the moments S4Promo .. S4Gambit, the hindrance
+        // "묶임" on the bishop's pin).
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab24";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

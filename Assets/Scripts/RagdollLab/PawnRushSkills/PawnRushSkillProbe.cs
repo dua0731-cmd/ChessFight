@@ -62,7 +62,8 @@ namespace ChessFight.RagdollLab
         /// <paramref name="enemies"/> (x to P1's right, y ahead, metres) turned to P1, and once they have settled
         /// (<see cref="Staged"/>) the script's words in turn: "k" the slot's key (0 F, 1 E, 2 R, 3 Q), "c" a left click,
         /// "c+" / "c-" the left button down / up, "j" a jump, "w0.4" a wait in game seconds, "m0,1" walking that way in P1's
-        /// frame and "m-" standing, "a1,0" aiming that way, "s+" / "s-" sprinting. Then <paramref name="tail"/> seconds
+        /// frame and "m-" standing, "a1,0" aiming that way ("a0,1,-0.2": and that much down, to aim at the floor nearer than a
+        /// skill's reach), "s+" / "s-" sprinting. Then <paramref name="tail"/> seconds
         /// more and "done perform".
         /// </summary>
         public static string Perform(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
@@ -138,10 +139,12 @@ namespace ChessFight.RagdollLab
                     case 'a':
                         var v = Vector3.zero;
                         var parts = rest.Split(',');
-                        if (parts.Length == 2
+                        float up = 0f;
+                        if (parts.Length >= 2
                             && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float x)
-                            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float z))
-                            v = (right * x + face * z).normalized;
+                            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float z)
+                            && (parts.Length == 2 || c == 'a' && float.TryParse(parts[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out up)))
+                            v = (right * x + face * z + Vector3.up * up).normalized;
                         if (c == 'm') move = v;
                         else if (v != Vector3.zero) aim = v;
                         break;

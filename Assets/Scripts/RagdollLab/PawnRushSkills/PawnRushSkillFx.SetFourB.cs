@@ -66,6 +66,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Mower: S4MowerFx(e, lvl); break;
                 case SkillFxKind.S4Fan: S4FanFx(e, lvl); break;
                 case SkillFxKind.S4Sac: S4SacFx(e, lvl); break;
+                default: SetFourCFx(e, lvl); break;   // bundle 다 (PawnRushSkillFx.SetFourC.cs)
             }
         }
 
@@ -1177,6 +1178,7 @@ namespace ChessFight.RagdollLab
                 if (m != null) Destroy(m);
             s4bBellMesh = s4bBladeMesh = s4bFanMesh = s4bKeyMesh = s4bCardMesh = null;
             s4bSick = null;
+            DestroySetFourC();
         }
     }
 }

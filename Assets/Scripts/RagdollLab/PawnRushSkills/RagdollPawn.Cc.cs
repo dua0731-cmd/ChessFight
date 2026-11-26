@@ -6,7 +6,9 @@ namespace ChessFight.RagdollLab
     /// <summary>The set 4판's hindrances (Docs/Skills/PAWN_RUSH_SET4_ROUND1.md 3장; the user 11-26: "적의 넘어뜨리거나 띄우는건
     /// 항상 일어나기때문에 그건 cc기로 만들어선 안돼. 뭐 디버프를 받아 변신했거나, 무거워졌거나, 미끄럽게 됐거나, 스테미나 소모가
     /// 심해진다던가, 조작이 몇초동안 안된다거나 뭐 이런 류여야해").</summary>
-    public enum Cc4 : byte { None = 0, Flop = 1, Dizzy = 2, Tired = 3, Heavy = 4, BoundHop = 5, BoundRoot = 6, Slippery = 7, Tiny = 8 }
+    /// <remarks>Pinned (11-26, the bishop's 핀!): 묶임 as ROUND1 counts it, but on a 2 m rubber band round where the pin
+    /// went in, the keys free inside it, springing back there at the end.</remarks>
+    public enum Cc4 : byte { None = 0, Flop = 1, Dizzy = 2, Tired = 3, Heavy = 4, BoundHop = 5, BoundRoot = 6, Slippery = 7, Tiny = 8, Pinned = 9 }
 
     /// <summary>
     /// The set 4판's seven hindrances (ROUND1 3장): a body state for a few seconds, one at a time - a new one ends the last -
@@ -76,6 +78,7 @@ namespace ChessFight.RagdollLab
             Cc4.Heavy => "무거움",
             Cc4.BoundHop => "묶임",
             Cc4.BoundRoot => "묶임",
+            Cc4.Pinned => "묶임",
             Cc4.Slippery => "미끌미끌",
             Cc4.Tiny => "쪼꼬미",
             _ => "",
@@ -103,7 +106,11 @@ namespace ChessFight.RagdollLab
                 ccLeft -= dt;
                 if (ccLeft <= 0f || Floating || skillGuardLeft > 0f)
                 {
+                    // A pin's band, run out: it springs back to where the pin went in.
+                    bool snap = cc == Cc4.Pinned && ccLeft <= 0f && !Floating && State == PawnState.Active;
+                    Vector3 home = ccAt;
                     EndCc();
+                    if (snap && Flat(home - FeetPoint).magnitude > 0.4f) Launch(ArcTo4(FeetPoint, home, 0.7f, out _));
                     return;
                 }
             }
@@ -113,6 +120,20 @@ namespace ChessFight.RagdollLab
                 Exhausted = true;
             }
             if (cc == Cc4.BoundRoot && State == PawnState.Active) HoldCcSpot(dt);
+            if (cc == Cc4.Pinned && State == PawnState.Active) HoldCcLeash();
+        }
+
+        /// <summary>On a pin's band: free inside its length, pulled back past it (harder the farther).</summary>
+        void HoldCcLeash()
+        {
+            float r = CcParams != null ? Mathf.Max(0.3f, CcParams.pinLeash) : 2f;
+            Vector3 off = Flat(bodies[0].position - ccAt);
+            float d = off.magnitude;
+            if (d <= r) return;
+            Vector3 back = -off / d;
+            Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+            float outward = Mathf.Max(0f, -Vector3.Dot(own, back));
+            AddVelocity(back * (outward + Mathf.Min(4f, (d - r) * 6f)));
         }
 
         /// <summary>Stuck where it was caught: pulled back there, standing (as the R138 rope holds).</summary>

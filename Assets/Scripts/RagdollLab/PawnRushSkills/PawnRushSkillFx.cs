@@ -272,6 +272,16 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Mower:
                 case SkillFxKind.S4Fan:
                 case SkillFxKind.S4Sac:
+                case SkillFxKind.S4Promo:
+                case SkillFxKind.S4Burrow:
+                case SkillFxKind.S4Pin:
+                case SkillFxKind.S4Dive:
+                case SkillFxKind.S4Timber:
+                case SkillFxKind.S4Pig:
+                case SkillFxKind.S4Lift:
+                case SkillFxKind.S4Carpet:
+                case SkillFxKind.S4Throne:
+                case SkillFxKind.S4Gambit:
                     try { SetFourFx(e); } catch (System.Exception ex) { FxFault("set 4 moment", ex); }
                     break;
             }

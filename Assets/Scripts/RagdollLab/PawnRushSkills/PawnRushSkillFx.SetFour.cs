@@ -120,7 +120,8 @@ namespace ChessFight.RagdollLab
                 case Cc4.Tired: return Kit.Hex("#6CC8FF");
                 case Cc4.Heavy: return Kit.Hex("#C9C2B8");
                 case Cc4.BoundHop:
-                case Cc4.BoundRoot: return Kit.Hex("#F0B868");
+                case Cc4.BoundRoot:
+                case Cc4.Pinned: return Kit.Hex("#F0B868");
                 case Cc4.Slippery: return Kit.Hex("#7FF0F0");
                 case Cc4.Tiny: return Kit.Hex("#FF9AD5");
                 default: return Color.white;
@@ -309,6 +310,7 @@ namespace ChessFight.RagdollLab
                 var cam = ViewCamera;
                 if (cam == null) return true;
                 float s = Mathf.Max(0.01f, Kit.EaseOutBack(Mathf.Clamp01(fx.age / 0.16f)) * (1f - outk));
+                if (S4cHidden(who)) s = 0.01f;   // (swallowed: out of sight)
                 Vector3 at = DrawnHead(who) + Vector3.up * 0.7f;
                 text.Place(at, cam, s, 1f);
                 Vector3 right = cam.transform.right, up = cam.transform.up;
@@ -330,7 +332,7 @@ namespace ChessFight.RagdollLab
             var who = look.who;
             // The thud: a big "콰당!" off the body, dust out from under it.
             CmPoof(who.FeetPoint + Vector3.up * 0.1f, CmDust, 8, 1.1f, 0.42f, 0.5f, 0.25f);
-            PopWord("콰당!", who.Hips.position + Vector3.up * 0.45f, CcColor(Cc4.Flop), 0.5f, 0.95f, who);
+            if (!S4cHidden(who)) PopWord("콰당!", who.Hips.position + Vector3.up * 0.45f, CcColor(Cc4.Flop), 0.5f, 0.95f, who);
             Shake(0.05f, 8f * Frame);
             UltClip(UltClipId.Crack, 0.6f * lvl, 0.7f);
             // Out cold: stars round its head (ROUND1 3장: "머리 위에 별").
@@ -367,8 +369,14 @@ namespace ChessFight.RagdollLab
                     }
                     return false;
                 }
+                bool hidden = S4cHidden(who);
                 for (int i = 0; i < n; i++)
                 {
+                    if (hidden)
+                    {
+                        stars[i].Show(false);
+                        continue;
+                    }
                     float a = fx.age / turn * Mathf.PI * 2f + i * Mathf.PI * 2f / n;
                     Vector3 at = head + Vector3.up * ((0.32f + 0.04f * Mathf.Sin(fx.age * 9f + i * 2f)) * k)
                                  + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (radius * k);

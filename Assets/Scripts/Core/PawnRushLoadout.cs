@@ -425,10 +425,10 @@ namespace ChessFight.Network
         /// <summary>The skill system a loadout that comes with the game is made for (the skill window switches to it with
         /// the sets): 1안-a and the old 1안 one a piece, 2안-a and the old 2안 the growing one, 3안-a and the old 3안 several;
         /// 0 for the others (the system stays as it is).</summary>
-        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 || preset == 13 || preset == 14 ? Many : 0;
+        public static int SystemOf(int preset) => preset == 9 || preset == 5 ? One : preset == 10 || preset == 7 ? Grow : preset == 8 || preset == 6 || preset == 11 || preset == 12 || preset == 13 || preset == 14 || preset == 15 ? Many : 0;
 
         /// <summary>How many loadouts come with the game (<see cref="Preset"/>).</summary>
-        public const int Presets = 15;
+        public const int Presets = 16;
 
         /// <summary>The loadouts that come with the game: 0 the skills as they are (plan 1-가), 1 plan 1-나, 2 nothing
         /// in any slot, 3 the skill idea book's bundle A, 4 the kits' basic row (each piece's opening play:
@@ -439,12 +439,27 @@ namespace ChessFight.Network
         /// the set 3안-a), 9 the set 1안-a (one skill a piece at the mid tier, and the ultimate), 10 the set 2안-a (one that
         /// grows from its middlegame shape to its endgame shape, and the ultimate), 11 the set 3안-b (two normal slots a
         /// piece, the queen's without her glide; the six driven ultimates), 12 the set 3판 (the user's own skills, two a
-        /// piece of different grades, no ultimate), 13 and 14 the set 4판's bundles 가 and 나 (two a piece, no ultimate).
+        /// piece of different grades, no ultimate), 13 to 15 the set 4판's bundles 가, 나 and 다 (two a piece, no ultimate).
         /// The king's row is empty (his call) in all but 4 to 11.</summary>
         public static PawnRushLoadout Preset(int which)
         {
             var p = new PawnRushLoadout();
             if (which == 2) return p;
+            if (which == 15)
+            {
+                // The set 4판's third bundle (ROUND1 5장, 묶음 다, 11-26): two a piece on F and E. The rook's dive and its
+                // falling tower side by side and the queen's carpet and throne side by side, to compare (ROUND1 6장: "비슷한
+                // 것끼리 견주려고"; strength not balanced yet); the pawn, the knight and the bishop each with a basic
+                // that waited in the list. The other three of the bundle (돼지, 룩 리프트, 퀸스 갬빗) wait in the list.
+                int[] f = { PawnRushSkillIds.PromoCountdown, PawnRushSkillIds.Burrow, PawnRushSkillIds.SafetyPin, PawnRushSkillIds.RookDive, PawnRushSkillIds.Procession, 0 };
+                int[] e = { PawnRushSkillIds.Pit, PawnRushSkillIds.BackKick4, PawnRushSkillIds.Censer, PawnRushSkillIds.Timber, PawnRushSkillIds.ThroneDrop, 0 };
+                for (int row = 0; row < Rows; row++)
+                {
+                    p.slots[row * Slots] = f[row];
+                    p.slots[row * Slots + 1] = e[row];
+                }
+                return p;
+            }
             if (which == 14)
             {
                 // The set 4판's second bundle (ROUND1 5장, 묶음 나, 11-26): two a piece on F and E, mixing grades (the queen

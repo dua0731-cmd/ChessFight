@@ -60,7 +60,8 @@ namespace ChessFight.RagdollLab
                                 * SupportScale     // a support's reward: both fast for a while (RagdollPawn.Support.cs)
                                 * BolasScale       // the bolas' pull: the pawn lunges on (RagdollPawn.SetThree.cs)
                                 * CcMoveScale      // the set 4판's hindrances: heavy, tiny (RagdollPawn.Cc.cs)
-                                * MowerScale;      // the set 4판's 잔디깎이: 30% faster (RagdollPawn.SetFourB.cs)
+                                * MowerScale       // the set 4판's 잔디깎이: 30% faster (RagdollPawn.SetFourB.cs)
+                                * CarpetScale;     // the set 4판's 행차: 30% faster on her carpet (RagdollPawn.SetFourC.cs)
 
         /// <summary>How far the seated bishop's line reaches now: fianNear at the key, fianFar once it has aimed for
         /// fianCharge seconds (any PC: the time comes with the host's skill state).</summary>

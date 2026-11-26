@@ -92,11 +92,24 @@ namespace ChessFight.RagdollLab
             S("ScholarMate", PawnRushSkillIds.ScholarMate, PieceKind.Queen, 0, "k", 2.8f, new Vector3(4f, 2.4f, 2f), new Vector3(0f, 0.8f, 3.5f), V(0f, 4f)),
             S("PerpetualCheck", PawnRushSkillIds.PerpetualCheck, PieceKind.Queen, 1, "k", 3.8f, new Vector3(4.5f, 2.8f, 1.5f), new Vector3(0f, 0.8f, 3.5f), V(0.3f, 4f)),
             S("QueenSac4", PawnRushSkillIds.QueenSac4, PieceKind.Queen, 1, "k", 3.8f, new Vector3(0f, 6f, -6.5f), new Vector3(0f, 0.5f, 0f), V(2f, 1f), V(-2.5f, 2f), V(0.5f, -3f)),
+            // The set 4판's bundle 다 (11-26). The skills aimed at the floor look a little down ("a0,1,-0.1", from a head
+            // about 0.9 m up) to land about 9 m ahead, not at their whole reach (the queen's head is lower: "a0,1,-0.08").
+            S("PromoCountdown", PawnRushSkillIds.PromoCountdown, PieceKind.Pawn, 0, "k", 6.6f, new Vector3(3.5f, 2.4f, -2f), new Vector3(0f, 1f, 1.5f), V(1.6f, 2.2f), V(-2.2f, 1.2f), V(0.5f, 3.8f)),
+            S("Burrow", PawnRushSkillIds.Burrow, PieceKind.Knight, 0, "k m0,1 w1.1 k m-", 3.4f, new Vector3(6f, 3.5f, -2.5f), new Vector3(0f, 0.4f, 4f), V(0.3f, 7f), V(-0.8f, 7.4f)),
+            S("SafetyPin", PawnRushSkillIds.SafetyPin, PieceKind.Bishop, 0, "k", 4.2f, new Vector3(4f, 2.3f, -0.5f), new Vector3(0f, 0.8f, 4f), V(0.2f, 6.5f)),
+            S("RookDive", PawnRushSkillIds.RookDive, PieceKind.Rook, 0, "a0,1,-0.1 w0.1 k", 4.6f, new Vector3(8f, 4.5f, -1f), new Vector3(0f, 1f, 5.5f), V(0.8f, 9f), V(-1.2f, 9.5f)),
+            S("Timber", PawnRushSkillIds.Timber, PieceKind.Rook, 1, "k", 4.8f, new Vector3(13f, 7f, 1f), new Vector3(0f, 3f, 4f), V(0.3f, 4f), V(-0.4f, 6.5f)),
+            S("GatePig", PawnRushSkillIds.GatePig, PieceKind.Rook, 1, "k", 5.6f, new Vector3(6f, 3f, 1f), new Vector3(0f, 1f, 3f), V(0.5f, 4f), V(-1f, 6f)),
+            S("RookLift", PawnRushSkillIds.RookLift, PieceKind.Rook, 0, "k", 4.4f, new Vector3(10f, 5f, -4f), new Vector3(0f, 2.2f, 0f), V(0.8f, 0.8f)),
+            S("Procession", PawnRushSkillIds.Procession, PieceKind.Queen, 0, "k w0.6 m0,1 w1.4 m-", 4.4f, new Vector3(6f, 4f, -2.5f), new Vector3(0f, 0.3f, 7f), V(0.5f, 5f), V(-0.8f, 9f)),
+            S("ThroneDrop", PawnRushSkillIds.ThroneDrop, PieceKind.Queen, 1, "a0,1,-0.08 w0.1 k", 3.8f, new Vector3(7f, 4.5f, 0f), new Vector3(0f, 1.2f, 6.5f), V(0.5f, 9f), V(-1.2f, 8.3f)),
+            S("QueensGambit", PawnRushSkillIds.QueensGambit, PieceKind.Queen, 1, "a0,1,-0.07 w0.1 k", 4.2f, new Vector3(11f, 7f, 1f), new Vector3(0f, 3f, 10f), V(0.3f, 10f), V(2.8f, 12.8f)),
         };
 
         static readonly string[] SetThree = { "Bolas", "TwoSteps", "HighStomp", "BackKick", "HolySwords", "StoneThrow", "HolyWater", "RollShort", "TowerTrap", "QueenStar", "CheckChain" };
         static readonly string[] SetFourA = { "Trip4", "Brick", "Pit", "PitHole", "ForkBonk", "ForkOne", "BackKick4", "HolyWater4", "Sermon", "Charge4", "StoneCap", "CrownToss", "Insolent" };
         static readonly string[] SetFourB = { "PoisonTrap", "Poison", "PawnStorm", "ButtSlam", "Neigh", "RainCloud", "Censer", "Bell", "Crook", "WallUp", "SideSlide", "Mower", "ScholarMate", "PerpetualCheck", "QueenSac4" };
+        static readonly string[] SetFourC = { "PromoCountdown", "Burrow", "SafetyPin", "RookDive", "Timber", "GatePig", "RookLift", "Procession", "ThroneDrop", "QueensGambit" };
 
         LabGame game;
         PawnRushSkillBed bed;
@@ -121,9 +134,9 @@ namespace ChessFight.RagdollLab
             foreach (string raw in (string.IsNullOrEmpty(names) ? "set3" : names).Split(','))
             {
                 string n = raw.Trim();
-                if (n == "set3" || n == "set4a" || n == "set4b")
+                if (n == "set3" || n == "set4a" || n == "set4b" || n == "set4c")
                 {
-                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : SetFourB) list.Add(Array.Find(Shots, s => s.name == m));
+                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : n == "set4b" ? SetFourB : SetFourC) list.Add(Array.Find(Shots, s => s.name == m));
                     continue;
                 }
                 int at = Array.FindIndex(Shots, s => s.name == n);

@@ -331,6 +331,17 @@ namespace ChessFight.RagdollLab
                 case PawnRushSkillIds.ScholarMate: UpdateScholarMate(s, press, dt); break;
                 case PawnRushSkillIds.PerpetualCheck: UpdatePerpetualCheck(s, press, dt); break;
                 case PawnRushSkillIds.QueenSac4: UpdateQueenSac4(s, press, dt); break;
+                // The set 4판's bundle 다 (RagdollPawn.SetFourC.cs).
+                case PawnRushSkillIds.PromoCountdown: UpdatePromoCountdown(s, press, dt); break;
+                case PawnRushSkillIds.Burrow: UpdateBurrow(s, press, dt); break;
+                case PawnRushSkillIds.SafetyPin: UpdateSafetyPin(s, press, dt); break;
+                case PawnRushSkillIds.RookDive: UpdateRookDive(s, press, dt); break;
+                case PawnRushSkillIds.Timber: UpdateTimber(s, press, dt); break;
+                case PawnRushSkillIds.GatePig: UpdateGatePig(s, press, dt); break;
+                case PawnRushSkillIds.RookLift: UpdateRookLift(s, press, dt); break;
+                case PawnRushSkillIds.Procession: UpdateProcession(s, press, dt); break;
+                case PawnRushSkillIds.ThroneDrop: UpdateThroneDrop(s, press, dt); break;
+                case PawnRushSkillIds.QueensGambit: UpdateQueensGambit(s, press, dt); break;
             }
         }
 

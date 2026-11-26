@@ -145,6 +145,21 @@ namespace ChessFight.RagdollLab
         //             (target; count's hit in its size), 4 the chase on (target; size: seconds), 5 the chase over
         //   S4Sac     0 the glow (size: time), 1 the bang (size: range), 2 put together again
         S4Poison, S4Storm, S4Slam, S4Neigh, S4Cloud, S4Censer, S4Bell, S4Crook, S4Wall, S4Slide, S4Mower, S4Fan, S4Sac,
+        // The set 4판's bundle 다 (RagdollPawn.SetFourC.cs; PawnRushSkillFx.SetFourC.cs):
+        //   S4Promo   0 the countdown on (size: seconds), 1 promoted (size: gold seconds), 2 fizzled
+        //   S4Burrow  0 under the floor (size: seconds at most), 1 up again (count's n in the size: none when cut short)
+        //   S4Pin     0 thrown (at, dir; size: speed; normal: its farthest), 1 pinned (target; at: the spot; size: seconds),
+        //             2 missed (at)
+        //   S4Dive    0 the mark (at; size: crouch + flight), 1 off (at: from; normal: the mark; size: flight), 2 down
+        //             head first (size: stuck seconds), 3 out again
+        //   S4Timber  0 growing (at: its feet, dir; size: time), 1 falling (size: time), 2 down, a bridge (size: seconds;
+        //             normal: its far end), 3 up again
+        //   S4Pig     0 the gate open (size: seconds), 1 swallowed (target), 2 spat (target, at), 3 the gate shut
+        //   S4Lift    the tower rising under it (at: its foot; size: seconds standing)
+        //   S4Carpet  0 rolling out (at, dir; size: speed; normal: length, width, seconds), 1 one rolled up (target; size)
+        //   S4Throne  0 the shadow and the leap (at: the shadow; normal: from; size: flight), 1 down on it (size: sitting)
+        //   S4Gambit  0 the pieces hung (at: the middle, dir; size: delay; normal: radius, every, height), 1 + i one down (at)
+        S4Promo, S4Burrow, S4Pin, S4Dive, S4Timber, S4Pig, S4Lift, S4Carpet, S4Throne, S4Gambit,
     }
 
     public struct SkillFxEvent

@@ -183,6 +183,23 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Cloud:
                     c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
                     break;
+                // Bundle 다: open while it plays out (a countdown, a swim, a throw, a tower, a carpet, the falling pieces).
+                case SkillFxKind.S4Promo: case SkillFxKind.S4Burrow: case SkillFxKind.S4Dive: case SkillFxKind.S4Timber:
+                case SkillFxKind.S4Throne:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + Mathf.Clamp(e.size, 0.3f, 6f) + 0.6f);
+                    break;
+                case SkillFxKind.S4Pin:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + (e.normal - e.at).magnitude / Mathf.Max(1f, e.size) + 0.5f);
+                    break;
+                case SkillFxKind.S4Carpet:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.normal.x / Mathf.Max(1f, e.size) + 0.5f);
+                    break;
+                case SkillFxKind.S4Gambit:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4f * e.normal.y + 1f);
+                    break;
+                case SkillFxKind.S4Pig:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 2.5f);
+                    break;
                 case SkillFxKind.S3WaterThrow:
                     c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4.5f);   // (the puddle lies its seconds)
                     break;
@@ -239,7 +256,9 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.S4Charge: case SkillFxKind.S4Crown: case SkillFxKind.S4Shout: case SkillFxKind.S4Poison:
                 case SkillFxKind.S4Storm: case SkillFxKind.S4Slam: case SkillFxKind.S4Neigh: case SkillFxKind.S4Censer:
                 case SkillFxKind.S4Bell: case SkillFxKind.S4Crook: case SkillFxKind.S4Slide: case SkillFxKind.S4Mower:
-                case SkillFxKind.S4Sac:
+                case SkillFxKind.S4Sac: case SkillFxKind.S4Promo: case SkillFxKind.S4Burrow: case SkillFxKind.S4Pin:
+                case SkillFxKind.S4Dive: case SkillFxKind.S4Timber: case SkillFxKind.S4Pig: case SkillFxKind.S4Carpet:
+                case SkillFxKind.S4Throne: case SkillFxKind.S4Gambit:
                     return true;
                 case SkillFxKind.S4Fan:
                     return e.count != 4;
