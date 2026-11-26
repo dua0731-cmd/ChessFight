@@ -43,7 +43,19 @@ namespace ChessFight.Network
             "swordfight", "소드 파이트", "대난투",   // 10-27 (승규 님): was "3 VS 3 · 떨어뜨리고 빼앗기"
             "상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점", "SF", "SwordFight");   // R640: the steal sentence gone
 
-        public static readonly GameModeInfo[] All = { KingRush, SwordFight };
+        // JY-skill-test-mode (2026-11-26, the user: "메인에 폰 러쉬-스킬 테스트 게임모드를 추가할꺼야. 기존에 있던 폰 러쉬
+        // 게임모드랑 똑같은데 k키로 스킬트리를 열 수 있고, 원하는걸로 넣었다 뺐다 할수있는거야. 물론 그건 방장만 가능하고,
+        // 모든 유저 똑같이 적용되야해"): the 폰 러쉬 round as it is, with the developers' skill tree (K) of the skill lab -
+        // the room's manager puts any skill in any slot and every player plays it (PawnRushCourseSkills.SkillTest). Its
+        // matches go into the records under its own key and are never ranked.
+        public static readonly GameModeInfo PawnRushSkillTest = new GameModeInfo(
+            "rushskilltest", "폰 러쉬-스킬 테스트", "스킬 시험",
+            "폰 러쉬 그대로 · 방장이 K 스킬트리로 기물마다 스킬을 넣고 빼면 모두에게 똑같이 적용", "ST", "PawnRush_Round");
+
+        public static readonly GameModeInfo[] All = { KingRush, SwordFight, PawnRushSkillTest };
+
+        // A mode whose match is the 폰 러쉬 round (the plain one and the skill test).
+        public static bool PawnRush(string key) => key == KingRush.Key || key == PawnRushSkillTest.Key;
 
         // What a fresh party queues for.
         public static GameModeInfo Default => KingRush;

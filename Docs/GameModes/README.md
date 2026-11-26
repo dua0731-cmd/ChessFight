@@ -1,6 +1,6 @@
 # 게임 모드
 
-2026-11-06 · R497 정리 기준. 현재 로비 모드는 **폰 러시와 소드 파이트 두 개**다. Queen of the Hill은 사용자 요청으로 폐기했고 선택 카드·전용 맵·스킬·테스트·메뉴를 정리했다.
+2026-11-06 · R497 정리 기준. 현재 로비 모드는 **폰 러시와 소드 파이트 두 개**다 (2026-11-26 브랜치 `JY-skill-test-mode`에 **폰 러쉬-스킬 테스트**가 셋째로 붙었다). Queen of the Hill은 사용자 요청으로 폐기했고 선택 카드·전용 맵·스킬·테스트·메뉴를 정리했다.
 
 ## 1. 현재 모드
 
@@ -8,10 +8,13 @@
 |---|---|---|---|
 | 폰 러시 | `kingrush` | `PawnRush_Round`(R508, 구간 라운드) · `Assets/Scenes/PawnRush_Round.unity` | [현재 구간 개편](../PawnRush/README.md) · [구형 Course01](../PawnRush/Prototype/PAWN_RUSH_COURSE01.md) |
 | 소드 파이트 | `swordfight` | `SwordFight` | [실행·현재 구현](SwordFight/README.md) · [기획](SwordFight/DESIGN.md) |
+| 폰 러쉬-스킬 테스트 | `rushskilltest` | `PawnRush_Round` (폰 러시와 같은 라운드) | [스킬 연구 8.35](../Skills/PAWN_RUSH_2_SKILL_PLANS.md) |
 
 모드 목록은 `Assets/Scripts/Core/GameModes.cs`의 `GameModes.All`이다. 기본 모드는 폰 러시다. 예전 화면 이름에서 온 `GameModes.KingRush`와 `kingrush` 키는 호환을 위해 유지한다. 사용자에게 보이는 이름과 폴더 이름은 폰 러시 기준이다.
 
 폰 러시의 **로비 온라인 목적지는 R508부터 구간 라운드 `PawnRush_Round`**다: 매치 번호로 7구간(장애물 · 미니게임 · 작전 회의실)을 뽑아 모든 PC가 같이 짓고, 작전 회의실 골에 팀 과반이 먼저 서면 이긴다. 구형 Course01은 Prototype으로 빌드에 남아 있지만 로비가 열지 않는다. `PawnRush_Sections`와 `PawnRush_MiniGames`는 오프라인 개발 시험이다. 사용자 Unity · Steam 확인 전([VALIDATION R508](../Network/VALIDATION.md)).
+
+**폰 러쉬-스킬 테스트** (브랜치 `JY-skill-test-mode`, 2026-11-26, 사용자 "기존에 있던 폰 러쉬 게임모드랑 똑같은데 k키로 스킬트리를 열 수 있고, 원하는걸로 넣었다 뺐다 할수있는거야. 물론 그건 방장만 가능하고, 모든 유저 똑같이 적용되야해"): 폰 러시와 같은 구간 라운드에 스킬 연구 브랜치(`JY-skill-lab`)의 스킬과 개발자 스킬트리(K)를 얹은 모드다. 방장 PC의 마지막 스킬트리 구성으로 시작하고, K 창은 누구나 열어 보지만 **바꾸는 것은 방장만** 한다. 호스트의 구성이 모두에게 간다. 전적에는 이 모드 이름으로 남고 랭크에는 들어가지 않는다. 보통 폰 러시는 main 그대로다(스킬 0번 구성, 스킬트리 없음, 손맛 장치와 낭떠러지 지킴이 끔). 모드 판단은 `PawnRushCourseSkills.SkillTest`(경기 링크가 방의 모드로 정함)이고, 코스 씬을 혼자 열면 보통 폰 러시다.
 
 Queen of the Hill의 이전 전송 번호는 다른 모드 번호로 재사용하지 않는다. 남아 있는 `ModeRetiredQueenHill` 예약 값은 호환용 빈자리이고, 현재 모드·카드·장면이 아니다. 다른 모드에서 사용하는 공용 기물 동작·물리·Pioneer/SkillKit은 보존한다.
 

@@ -22,6 +22,20 @@ namespace ChessFight.RagdollLab
         public float intensity = 0.55f;
         [Range(0f, 1f)] public float scatter = 0.7f;
 
+        /// <summary>The ultimates' share of the picture now (0..1, PawnRushSkillFx.UltScreen.cs) and a one-frame punch (the
+        /// third frame of a blow or a judgement): while an ultimate shows, the bloom is tighter (less scatter), a little
+        /// stronger and clamped, so thin neon lines get halos and no pixel spreads a blob over the picture.</summary>
+        public static float UltK, UltPunch;
+
+        /// <summary>The volume set at once from <see cref="UltK"/> and <see cref="UltPunch"/> (the effects call it after
+        /// setting them, so a punch frame is bloomed in its own frame whatever order the LateUpdates run in).</summary>
+        public void Refresh()
+        {
+#if CF_URP
+            Apply();
+#endif
+        }
+
 #if CF_URP
         GameObject holder;
         Volume volume;
@@ -60,8 +74,11 @@ namespace ChessFight.RagdollLab
             if (bloom == null) return;
             bloom.active = intensity > 0f;
             bloom.threshold.value = Mathf.LinearToGammaSpace(threshold);
-            bloom.intensity.value = intensity;
-            bloom.scatter.value = scatter;
+            float k = Mathf.Clamp01(UltK);
+            bloom.intensity.value = Mathf.Lerp(intensity, Mathf.Min(0.70f, Mathf.Max(intensity, 0.70f)), k) * (1f + 0.6f * Mathf.Clamp01(UltPunch));
+            bloom.scatter.value = Mathf.Lerp(scatter, Mathf.Min(scatter, 0.5f), k);
+            bloom.clamp.overrideState = true;
+            bloom.clamp.value = k > 0.01f ? 6f : 65472f;
         }
 
         void OnDisable()

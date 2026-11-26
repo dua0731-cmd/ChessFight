@@ -1168,7 +1168,8 @@ namespace ChessFight.Game
         {
             switch (key)
             {
-                case "kingrush": return Resources.Load<Texture2D>("Menu/ModeLogo_PawnRush");
+                case "kingrush":
+                case "rushskilltest": return Resources.Load<Texture2D>("Menu/ModeLogo_PawnRush");
                 case "swordfight": return Resources.Load<Texture2D>("Menu/ModeLogo_SwordFight");
                 default: return null;
             }
@@ -1179,6 +1180,7 @@ namespace ChessFight.Game
             switch (key)
             {
                 case "kingrush": return new Color(.27f, .51f, .94f);
+                case "rushskilltest": return new Color(.2f, .68f, .62f);   // (the skill tree's teal)
                 case "swordfight": return new Color(.86f, .32f, .28f);
                 default: return new Color(.4f, .45f, .55f);
             }

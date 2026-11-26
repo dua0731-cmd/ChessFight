@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -209,5 +210,1013 @@ namespace ChessFight.RagdollLab
         public float kingCallDummyAnswer = 0.8f;
         [Tooltip("쿨타임 (초): 아직 안 정함, 시험용 2초")]
         public float kingCooldown = 2f;
+
+        // ---------------------------------------------------------------- Pawn Rush 2.0 skill plans (JY-skill-lab, 2026-11-19)
+
+        [Header("스킬 구성 (개발자 폰러쉬 스킬트리, K)")]
+        [Tooltip("기물마다 칸에 들어 있는 스킬과 스킬 방식 (1 = 칸 하나 · 2 = 하나가 강해짐 · 3 = 칸 셋). 스킬트리(K)에서 바꾼다")]
+        public PawnRushLoadout loadout = PawnRushLoadout.Preset(0);
+        [Tooltip("2안(하나가 강해짐) 시험: 단계 1 · 2 · 3에서 쿨타임에 곱하는 값, 스킬이 미는 힘에 곱하는 값. 임시 값이다 (스킬마다 고유한 강화는 아직 없다)")]
+        public float[] stageCooldown = { 1f, 0.75f, 0.55f };
+        public float[] stagePower = { 1f, 1.25f, 1.5f };
+
+        [Header("퀸 오브 더 힐에서 옮긴 스킬 (승규 님 R89~R156의 수치 그대로)")]
+        [Tooltip("이 여섯 스킬에 넘어지면 이 시간 동안 누워 있음 (초). 0이면 래그돌 기본")]
+        public float hillDownHold = 1f;
+
+        [Header("옮긴 스킬 — 근접 호위 (킹)")]
+        [Tooltip("준비 동작 (초)")]
+        public float wardWindup = 0.45f;
+        [Tooltip("이 반경(m) 안의 팀원이 호위를 받는다. 호위 받는 팀원이 준 사람에게서 이 반경 안에 서 있으면 준 사람이 맞을 것을 대신 받는다")]
+        public float wardRadius = 2.5f;
+        [Tooltip("위아래로 이만큼 안이면 받는다 (m)")]
+        public float wardHeight = 2f;
+        [Tooltip("호위 시간 (초)")]
+        public float wardTime = 2.9f;
+        [Tooltip("호위 중 밀림 배율")]
+        public float wardPush = 0.25f;
+        [Tooltip("호위 중 넘어질 일이 대신 이만큼 휘청 (초)")]
+        public float wardStagger = 0.2f;
+        public float wardRecovery = 0.45f;
+        public float wardCooldown = 9f;
+
+        [Header("옮긴 스킬 — 팔방 검격 (퀸)")]
+        [Tooltip("좌클릭 뒤 베기까지 (초)")]
+        public float slashWindup = 0.45f;
+        [Tooltip("검격 길이 (m) = 4칸")]
+        public float slashLength = 6f;
+        public float slashWidth = 1.2f;
+        [Tooltip("검기가 끝까지 가는 시간 (초)")]
+        public float slashTravel = 0.2f;
+        public float slashPush = 5f;
+        public float slashLift = 1.5f;
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 높은 곳(점프 중인 적)까지 맞는다 (m)")]
+        public float slashHeight = 1.2f;
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 낮게 선 적까지 맞는다 (m)")]
+        public float slashDrop = 0.45f;
+        [Tooltip("검기가 타고 오르는 턱의 높이 (m). 이보다 높은 면에서 막힌다. 낭떠러지는 얼마든 따라 내려간다")]
+        public float slashClimb = 1.05f;
+        public float slashRecovery = 0.6f;
+        public float slashCooldown = 6f;
+
+        [Header("옮긴 스킬 — 캐슬링 교대 (룩, 1-나 캐슬링과 같은 코드 · 수치만 다름)")]
+        public float swapRange = 9f;
+        [Tooltip("조준선에서 이 각도 안의 팀원을 고른다 (도)")]
+        public float swapCone = 35f;
+        [Tooltip("팀원이 받을 때까지 기다리는 시간 (초). 넘으면 취소, 쿨타임 없음")]
+        public float swapWait = 3f;
+        public float swapDummyAnswer = 0.4f;
+        [Tooltip("두 기물이 날아가 자리를 바꾸는 시간 (초)")]
+        public float swapTime = 0.55f;
+        public float swapArc = 0.9f;
+        public float swapCooldown = 12f;
+
+        [Header("옮긴 스킬 — 교차 공중 포격 (비숍)")]
+        [Tooltip("떠오르는 높이 (발이 바닥에서, m)")]
+        public float volleyHover = 1.3f;
+        public float volleyRise = 0.25f;
+        [Tooltip("첫 발을 쏘기 전까지 떠 있는 시간 (초). 다 되면 쏘지 않고 내려옴. 첫 발을 쏜 뒤에는 시간 제한 없음")]
+        public float volleyHoverTime = 3f;
+        [Tooltip("떠 있는 동안 이동 키로 미끄러지는 속도 (m/s)")]
+        public float volleyDrift = 0.7f;
+        public float volleyDriftEase = 0.9f;
+        [Tooltip("한 번 떠올라 쏠 수 있는 견제탄 수 (1~3)")]
+        public int volleyShots = 2;
+        public float volleyRange = 9f;
+        [Tooltip("견제탄이 날아가는 시간 (초)")]
+        public float volleyFlight = 0.65f;
+        [Tooltip("X자 파동 한쪽 팔 길이 (m)와 폭 (m)")]
+        public float volleyArm = 1.6f;
+        public float volleyArmWidth = 0.6f;
+        [Tooltip("가운데(조준점)에서 이 반경 안은 맞는다 (m)")]
+        public float volleyCenter = 0.75f;
+        public float volleyPush = 6.5f;
+        public float volleyLift = 2.8f;
+        public float volleyCooldown = 9f;
+
+        [Header("옮긴 스킬 — 도약 압착 (나이트)")]
+        public float pressRange = 6f;
+        [Tooltip("지금 바닥보다 이만큼 높은 곳까지만 뛰어오른다 (m)")]
+        public float pressMaxRise = 1.05f;
+        [Tooltip("호의 높이 (m)와 호를 나는 중력 배율 (클수록 짧고 굵게)")]
+        public float pressArc = 1.6f;
+        public float pressGravity = 1.6f;
+        public float pressWindup = 0.3f;
+        [Tooltip("착지 원 반경 (m)")]
+        public float pressRadius = 1.3f;
+        [Tooltip("조준점에서 이 거리(m) 안에 적이 있으면 그 적의 머리 위로 자동 조준")]
+        public float pressSnap = 1.05f;
+        [Tooltip("납작해지는 시간 (초)")]
+        public float pressFlatten = 0.7f;
+        [Tooltip("납작해진 적이 바깥으로 미끄러지는 속도 (m/s)와 시간 (초)")]
+        public float pressSlide = 2.6f;
+        public float pressSlideTime = 0.35f;
+        public float pressRecovery = 0.3f;
+        public float pressCooldown = 7f;
+
+        [Header("옮긴 스킬 — 비집고 돌파 (폰)")]
+        public float squeezeCrouch = 0.08f;
+        public float squeezeDistance = 1.8f;
+        public float squeezeSpeed = 8f;
+        public float squeezeRise = 0.22f;
+        [Tooltip("지나가며 부딪힌 기물을 옆으로 비키게 미는 속도 (m/s)")]
+        public float squeezeNudge = 1.4f;
+        public float squeezeCooldown = 5f;
+
+        [Header("1-나 폰 — 앙파상 (지나치는 놈 발 걸기)")]
+        [Tooltip("적이 이 거리 안을 스쳐 지나가면 (m), 서로 지나치는 빠르기가 이 이상일 때 (m/s) 걸 수 있다")]
+        public float passRange = 2f;
+        public float passSpeed = 1.2f;
+        [Tooltip("지나친 뒤 걸 수 있는 시간 (초)")]
+        public float passWindow = 1f;
+        [Tooltip("뛰어드는 최대 거리 (m)와 빠르기 (m/s), 닿았다고 보는 거리 (m)")]
+        public float passLunge = 3.5f;
+        public float passLungeSpeed = 10f;
+        public float passReach = 0.75f;
+        [Tooltip("걸린 적: 달리던 쪽으로 적어도 이 빠르기로 미끄러진다 (m/s), 위로 뜨는 빠르기 (m/s)")]
+        public float passTripSpeed = 4.5f;
+        public float passTripLift = 1.6f;
+        public float passCooldown = 4f;
+
+        [Header("1-나 나이트 — 포크 (두 갈래 차기)")]
+        public float forkWindup = 0.2f;
+        [Tooltip("도약: 앞으로 이만큼 (m, 2칸), 체공 (초), 최고 높이 (m)")]
+        public float forkLeap = 3f;
+        public float forkFlight = 0.55f;
+        public float forkHeight = 1.2f;
+        [Tooltip("두 자리: 착지점에서 진행 방향 좌우 이 각도 (도)로 이만큼 앞 (m), 자리 반경 (m)")]
+        public float forkAngle = 50f;
+        public float forkAhead = 1.6f;
+        public float forkRadius = 1.1f;
+        [Tooltip("둘을 한꺼번에 맞혔을 때: 바깥으로 미는 빠르기 · 위로 (m/s), 넘어뜨림. 한 자리만 맞혔을 때: 밀기만 (m/s)")]
+        public float forkPush = 6.5f;
+        public float forkLift = 2.2f;
+        public float forkSinglePush = 3.5f;
+        public float forkRecovery = 0.35f;
+        public float forkCooldown = 16f;   // the kits' second version, N-중 (the skill pool's N-중1 had 20, plan 1-나 7)
+
+        [Header("1-나 비숍 — 핀 (꿰어 묶기)")]
+        [Tooltip("빛줄이 닿는 거리 (m, 6칸), 굵기 (m), 조준 도움 각도 (도)")]
+        public float pinRange = 9f;
+        public float pinRadius = 0.3f;
+        public float pinAssist = 10f;
+        [Tooltip("처음 맞은 적 뒤로 이 거리 안 (m)의 다른 적이나 벽 · 기둥에 꽂히면 묶인다")]
+        public float pinBehind = 4f;
+        [Tooltip("묶는 줄 길이 (m), 묶인 시간 (초)")]
+        public float pinRest = 2f;
+        public float pinSeconds = 5f;
+        [Tooltip("줄이 1 m 늘어날 때마다 끌려가는 빠르기 (m/s), 그 최대 (m/s), 이만큼 넘게 늘어나면 끊어짐 (m)")]
+        public float pinStiffness = 6f;
+        public float pinPull = 6f;
+        public float pinBreak = 3.5f;
+        [Tooltip("뒤에 아무것도 없을 때 맞은 적이 휘청이는 시간 (초)")]
+        public float pinMissStagger = 0.5f;
+        public float pinRecovery = 0.3f;
+        public float pinCooldown = 16f;   // the skill pool's B-중1 (was 8)
+
+        [Header("1-나 룩 — 캐슬링 (자리 바꾸기)")]
+        [Tooltip("팀원까지 거리 (m, 8칸), 조준 도움 각도 (도)")]
+        public float castleRange = 12f;
+        public float castleAssist = 15f;
+        [Tooltip("팀원이 자기 스킬 키로 받을 시간 (초), 시험 더미가 스스로 받는 데 걸리는 시간 (초)")]
+        public float castleWindow = 2f;
+        public float castleDummyAnswer = 0.6f;
+        [Tooltip("자리 바꾸는 비행 시간 (초), 호의 높이 (m), 서로 비켜 가는 옆 너비 (m)")]
+        public float castleFlight = 0.6f;
+        public float castleArc = 1.5f;
+        public float castleSide = 0.6f;
+        [Tooltip("변형 시험: 적과도 바꾼다 (동의 없음). 예고 (초) 동안 둘 사이에 선이 보이고, 끝에 적이 공중이거나 가려지면 실패")]
+        public bool castleEnemies = false;
+        public float castleEnemyWindup = 0.8f;
+        public float castleEnemyStagger = 0.4f;
+        public float castleCooldown = 12f;
+        [Tooltip("팀원이 안 받았을 때 쿨타임 (초)")]
+        public float castleRefusedCooldown = 4f;
+
+        [Header("1-나 퀸 — 체크!")]
+        [Tooltip("적까지 거리 (m, 8칸. 후보 문서 Q-기1: 9 → 12), 조준 도움 각도 (도)")]
+        public float checkRange = 12f;
+        public float checkAssist = 20f;
+        [Tooltip("칸의 반경 (m): 체크 순간 적이 서 있던 자리. 이 시간 (초) 안에 벗어나지 않으면 맞는다")]
+        public float checkSquare = 1.5f;
+        public float checkSeconds = 1.5f;
+        [Tooltip("맞으면: 퀸 반대쪽으로 미는 빠르기 · 위로 (m/s), 넘어뜨림")]
+        public float checkPush = 7.5f;
+        public float checkLift = 2.5f;
+        [Tooltip("막기: 퀸과 그 적 사이, 줄에서 이 거리 안 (m)에 선 적 팀 기물이 대신 맞는다")]
+        public float checkBlock = 0.6f;
+        public float checkRecovery = 0.3f;
+        public float checkCooldown = 8f;
+        [Tooltip("후보 문서 Q-기1: 확정하는 순간 퀸이 적 쪽으로 미끄러지는 거리 (m), 시간 (초)")]
+        public float checkLunge = 1.5f, checkLungeTime = 0.25f;
+        [Tooltip("후보 문서 Q-기1: 칸이 터질 때 멈칫 (초), 퀸이 튕겨 물러나는 거리 (m)")]
+        public float checkStop = 0.08f, checkBounce = 0.6f;
+        [Tooltip("후보 문서 Q-기1: 적이 칸을 비켜 나가면 이 시간 (초) 안에 쿨 없이 한 번 더 걸 수 있다 (체크를 잇는다, 한 번만)")]
+        public float checkAgainWindow = 2f;
+
+        [Header("기획서 A 묶음 폰 — 터치 무브 · 자두브 (P5)")]
+        [Tooltip("손을 내밀기까지 (초), 손이 닿는 거리 (m), 조준에서 좌우 각도 (도)")]
+        public float touchWindup = 0.25f;
+        public float touchReach = 1.5f;
+        public float touchCone = 55f;
+        [Tooltip("맞은 적이 멈출 수 없는 시간 (초)")]
+        public float touchSeconds = 2f;
+        [Tooltip("자두브: 건드린 팀원이 바로 선 뒤 스킬에 안 넘어지는 시간 (초, 기상 보호)")]
+        public float touchGuard = 1f;
+        public float touchRecovery = 0.25f;
+        [Tooltip("쿨타임 (초), 아무도 못 건드렸을 때 쿨타임 (초)")]
+        public float touchCooldown = 6f;
+        public float touchMissCooldown = 2.5f;
+
+        [Header("나이트 — 뒷발차기 (3판의 초급, 11-24 KITS 6.13; 처음은 기획서 A 묶음 N4의 손 저림 판)")]
+        [Tooltip("엉덩이 들썩 예고 (초); 나이트가 향한 쪽의 뒤로 닿는 거리 (m) · 부채꼴 (°, 전체)")]
+        public float kickWindup = 0.2f, kickReach = 2.5f, kickCone = 90f;
+        [Tooltip("맞은 적이 뒤로 날아가는 거리 (m) · 꽈당 (초)")]
+        public float kickThrow = 3f, kickKnockHold = 0.6f;
+        [Tooltip("나이트가 반동으로 앞으로 더 튀는 거리 (m, 맞히든 못 맞히든; 낭떠러지 앞에서 멈춤) · 튀어 오르는 빠르기 (m/s); 들썩일 때 엉덩이가 뜨는 빠르기 (m/s) · 찰 때 두 발이 뒤로 뻗는 빠르기 (m/s)")]
+        public float kickBounce = 2f, kickHop = 2.5f, kickBob = 1.6f, kickLegs = 7f;
+        [Tooltip("찬 뒤 (초, 내려서기까지 더 기다림); 쿨 (초)")]
+        public float kickRecovery = 0.3f, kickCooldown = 5f;
+        [Tooltip("옛 판의 손 저림 (초): 지금의 뒷발차기는 쓰지 않는다 (손 저림 상태와 그 표시는 남아 있다)")]
+        public float kickNumb = 3f;
+
+        [Header("기획서 A 묶음 비숍 — 반대색 비숍 (B1)")]
+        public float ghostWindup = 0.15f;
+        [Tooltip("적의 몸과 스킬이 통과하는 시간 (초)")]
+        public float ghostSeconds = 3f;
+        [Tooltip("풀릴 때 이 거리 (m) 안에 겹쳐 있던 적과 서로 튕기는 빠르기 (m/s)")]
+        public float ghostPopRadius = 0.7f;
+        public float ghostPop = 4f;
+        public float ghostRecovery = 0.1f;
+        public float ghostCooldown = 12f;
+
+        [Header("기획서 A 묶음 룩 — 뒤에서 밀기 (R1)")]
+        [Tooltip("바로 앞 기물까지 거리 (m), 조준에서 좌우 각도 (도)")]
+        public float pushReach = 1.8f;
+        public float pushCone = 50f;
+        [Tooltip("받치는 예고 (초). 이 사이에 점프하거나 멀어지면 빠진다")]
+        public float pushWindup = 0.5f;
+        [Tooltip("쏘는 거리 (m, 여덟 걸음쯤), 그 거리를 나는 시간 (초), 호의 높이 (m)")]
+        public float pushDistance = 6f;
+        public float pushFlight = 0.55f;
+        public float pushArc = 0.5f;
+        [Tooltip("날아가는 길에 있던 적을 옆으로 미는 빠르기 (m/s)")]
+        public float pushBump = 4f;
+        [Tooltip("켜면 벽 앞에서 멈추지 않고 끝까지 쏜다 (벽에 부딪힌다). 틈 앞에서는 늘 멈춘다")]
+        public bool pushIntoWalls = false;
+        public float pushRecovery = 0.3f;
+        [Tooltip("쿨타임 (초), 아무도 못 쐈을 때 쿨타임 (초)")]
+        public float pushCooldown = 9f;
+        public float pushMissCooldown = 3f;
+
+        [Header("기획서 A 묶음 퀸 — 두 마리 토끼 (Q4)")]
+        [Tooltip("두 적까지 거리 (m), 조준에서 좌우 각도 (도), 두 선이 보이는 예고 (초)")]
+        public float hareRange = 8f;
+        public float hareCone = 40f;
+        public float hareWindup = 0.45f;
+        [Tooltip("고무줄 길이 (m), 묶인 시간 (초)")]
+        public float hareRest = 3f;
+        public float hareSeconds = 4f;
+        [Tooltip("줄이 1 m 늘어날 때마다 끌려가는 빠르기 (m/s), 그 최대 (m/s)")]
+        public float hareStiffness = 7f;
+        public float harePull = 7f;
+        [Tooltip("줄이 이만큼 (m) 넘게 늘어나면 튕겨 서로에게 날아간다: 빠르기 (m/s), 휘청 (초), 다음 튕김까지 (초)")]
+        public float hareSnap = 1f;
+        public float hareSnapPush = 5f;
+        public float hareSnapStagger = 0.4f;
+        public float hareSnapEvery = 1.2f;
+        public float hareRecovery = 0.3f;
+        [Tooltip("쿨타임 (초), 둘을 못 묶었을 때 쿨타임 (초)")]
+        public float hareCooldown = 9f;
+        public float hareMissCooldown = 3f;
+
+        // The kits by piece, the basic row (Docs/Skills/PAWN_RUSH_SKILL_KITS.md §6; RagdollPawn.KitSkills.cs).
+        [Header("기물별 한 벌 · 기본기 — 나이트 ㄱ자 도약 (10-07 첫 모양의 수치)")]
+        [Tooltip("뒷발로 서는 준비 (초). 공중에서 쓰면 준비 없이 바로 뛴다")]
+        public float leapWindup = 0.15f;
+        [Tooltip("도약 높이 (m), 거리 (m)")]
+        public float leapHeight = 1.6f;
+        public float leapDistance = 4.5f;
+        [Tooltip("래그돌이 공중에서 잃는 만큼 보태는 값: 위로, 앞으로 (10-07에 잰 값)")]
+        public float leapLift = 1.03f;
+        public float leapCarry = 1.07f;
+        [Tooltip("공중에서 한 번 더 누르기: 뜬 뒤 이만큼 (초) 지나야 됨, 꺾을 수 있는 최대 각도 (도), 새로 차고 나가는 빠르기 (m/s), 다시 뜨는 빠르기 (m/s)")]
+        public float leapTurnAfter = 0.2f;
+        public float leapTurnMax = 90f;
+        public float leapTurnSpeed = 6.2f;
+        public float leapTurnLift = 4f;
+        [Tooltip("머리 밟기: 발이 머리에서 이만큼 (m) 안, 밟힌 적 휘청 (초), 다시 튀어 오르는 빠르기 (m/s)")]
+        public float leapStompReach = 0.45f;
+        public float leapStompStagger = 0.4f;
+        public float leapStompBounce = 4f;
+        [Tooltip("이만큼 (초) 지나도 못 내려오면 (낭떠러지로 뜀) 스킬은 끝난다")]
+        public float leapLongest = 3f;
+        [Tooltip("착지 후딜 (초), 쿨타임 (초)")]
+        public float leapRecovery = 0.35f;
+        public float leapCooldown = 6f;   // the kits' second version, N-초 (was 7)
+        [Tooltip("후보 문서 N-기1: 머리를 밟을 때 멈칫 (초)")]
+        public float leapStompStop = 0.08f;
+        [Tooltip("후보 문서 N-기1: 착지 구르기 - 내려오다 땅에 닿기 이만큼 (초) 전부터, 닿은 뒤 이만큼 (초)까지 점프를 누르면 후딜 없이 구른다")]
+        public float leapRollEarly = 0.15f, leapRollLate = 0.12f;
+        [Tooltip("착지 구르기 거리 (m), 빠르기 (m/s). 앞에 바닥이 없으면 그만큼 짧게")]
+        public float leapRollDistance = 2f, leapRollSpeed = 7f;
+        [Tooltip("후보 문서 N-기1: 착지할 곳 아래 이 깊이 (m) 안에 바닥이 없으면 '블런더'")]
+        public float leapBlunderDepth = 6f;
+
+        [Header("기물별 한 벌 · 기본기 — 비숍 피앙케토")]
+        [Tooltip("자리를 잡자마자의 사거리 (m), 다 겨눴을 때의 사거리 (m), 다 겨누는 데 걸리는 시간 (초)")]
+        public float fianNear = 8f;
+        public float fianFar = 25f;
+        public float fianCharge = 1f;
+        [Tooltip("이만큼 (초) 넘게 안 쏘면 자리에서 일어난다 (쿨타임 없음)")]
+        public float fianHold = 5f;
+        [Tooltip("조준 보정: 위에서 본 각도 (도), 그 적이 위아래로 이만큼 (m) 안이면 줄이 그 적에게 곧게 간다 (계단 위아래). 줄의 굵기 (m: 허리가 줄에서 이만큼 안이면 맞음)")]
+        public float fianAssist = 6f;
+        public float fianTall = 8f;
+        public float fianRadius = 0.5f;
+        [Tooltip("켜면 팀원도 줄을 막는다 (체스의 비숍은 자기 편 말에 막힌다)")]
+        public bool fianAlliesBlock = true;
+        [Tooltip("맞은 적의 달리기 빠르기 (배, 전력질주도 안 됨), 그 시간 (초)")]
+        public float fianSlow = 0.6f;
+        public float fianSlowSeconds = 2f;
+        [Tooltip("쏜 뒤 후딜 (초), 쿨타임 (초)")]
+        public float fianRecovery = 0.25f;
+        public float fianCooldown = 6f;
+
+        [Header("기물별 한 벌 · 기본기 — 킹 왕의 한 걸음")]
+        [Tooltip("준비 (초), 걸음 빠르기 (m/s), 거리 (m, 한 칸), 후딜 (초)")]
+        public float stepWindup = 0.05f;
+        public float stepSpeed = 7.5f;
+        public float stepDistance = 1.5f;
+        public float stepRecovery = 0.15f;
+        [Tooltip("쿨타임 (초), 공중에서 쓰면 더해지는 쿨 (초), 잡힌 손을 뿌리치거나 넘어진 채 쓰면 더해지는 쿨 (초)")]
+        public float stepCooldown = 4f;
+        public float stepAirExtra = 1f;
+        public float stepDownExtra = 1.5f;
+        [Tooltip("넘어진 채 쓰기: 넘어지고 이만큼 (초) 뒤부터, 일어난 뒤 기상 보호 (초)")]
+        public float stepDownAfter = 0.35f;
+        public float stepGuard = 1.1f;
+        [Tooltip("뿌리친 손이 다시 잡기까지 (초)")]
+        public float stepShakeOff = 0.8f;
+        [Tooltip("후보 문서 K-기1: 디딜 때 '쿵' 멈칫 (초); 걸음이 적에 닿으면 그 적을 미는 거리 (m, 킹은 그 자리에 섬)")]
+        public float stepStompStop = 0.05f, stepShove = 3f;
+        [Tooltip("후보 문서 K-기1: 걸음이 끝나고 이 시간 (초) 안의 점프 · 다이빙은 걸음 쪽으로 이만큼 (m/s) 더 나감")]
+        public float stepChainWindow = 0.3f, stepChainBoost = 3f;
+        [Tooltip("후보 문서 K-기1: 넘어진 채 쓰면 이동 키 쪽으로 굴러 일어나는 빠르기 (m/s)")]
+        public float stepRollSpeed = 3.5f;
+
+        [Header("기물별 한 벌 · 기본기 — 룩 캐슬링의 덤 (킹과 룩이 바꿀 때)")]
+        [Tooltip("킹과 룩이 자리를 바꾸면 내려앉은 뒤 둘 다 이만큼 (초) 넘어지지 않는다 (기상 보호와 같은 효과)")]
+        public float castleRoyalGuard = 2f;
+
+        [Header("손맛 공통 장치 (후보 문서 1.3의 2 · 4 · 6 · 8번, 11-20. 5번 맞히면 쿨 돌려받기는 뺐다)")]
+        [Tooltip("끄면 아래 장치가 모두 꺼진다 (켜고 끄며 비교). 스킬 시험 창의 '손맛 장치' 버튼과 같다")]
+        public bool feel = true;
+        [Tooltip("멈칫 (초): 약한 CC (밀침 · 휘청 · 발 무거움) · 하드 CC (넘어뜨림) · 궁극기. 맞힌 기물과 맞은 기물의 화면에서만")]
+        public float feelStopWeak = 0.06f, feelStopHard = 0.10f, feelStopUltimate = 0.15f;
+        [Tooltip("싼 기물이 비싼 적을 맞히면 값 차이 1점마다 더 멈칫 (초; 폰 1 · 나이트 3 · 비숍 3 · 룩 5 · 퀸 9, 킹은 뺌), 멈칫의 상한 (초)")]
+        public float feelStopPerValue = 0.01f, feelStopMax = 0.20f;
+        [Tooltip("한 번에 여럿을 맞히면 하나 더마다 더 멈칫 (초, 셋까지)")]
+        public float feelStopPerExtra = 0.02f;
+        [Tooltip("이 시간 안에 또 맞히면 멈칫이 절반 (초)")]
+        public float feelStopRepeat = 0.3f;
+        [Tooltip("반동: 쏘는 스킬(피앙케토 · 체크!)이 쏜 기물을 뒤로 미는 거리 (m)")]
+        public float feelKickShot = 0.4f;
+        [Tooltip("반동: 몸으로 맞힌 폰이 되튀는 거리 (m). 나이트는 원래 머리를 밟고 위로 튄다")]
+        public float feelKickBounce = 0.5f;
+        [Tooltip("반동: 적에게 가던 몸 스킬(폰의 두 번째 걸음)이 헛치면 가던 쪽으로 더 쏠리는 거리 (m)")]
+        public float feelKickMiss = 1f;
+        [Tooltip("반동이 걸리는 시간 (초, 처음이 빠르고 점점 멎는다), 가장자리 몇 m 앞에서 멈추는지")]
+        public float feelKickTime = 0.15f, feelKickEdge = 0.3f;
+        [Tooltip("미리 누르기: 쿨이 끝나기 이만큼 안에, 또는 휘청이는 중에 누른 키는 쓸 수 있게 되는 첫 순간에 나간다 (초)")]
+        public float feelBuffer = 0.4f;
+        [Tooltip("미리 누르기: 넘어져 있거나 일어나는 중에 누른 키를 기다려 주는 시간 (초)")]
+        public float feelBufferDown = 2f;
+
+        [Header("후보 문서 1안 · 폰 첫 두 걸음 (꺾기, P-기1)")]
+        [Tooltip("첫 걸음 뒤 둘째 걸음을 받는 시간 (초), 이동 키로 꺾는 최대 각도 (도), 한 걸음만 쓰면 쿨 (초). 거리 · 빠르기 · 밀기는 위의 폰 첫 두 걸음 수치")]
+        public float steerLinkMax = 0.5f, steerTurn = 45f, steerOneStepCooldown = 3f;
+
+        [Header("후보 문서 1안 · 비숍 긴 대각선 저격 (B-중7)")]
+        [Tooltip("줄 길이: 모으기 전 (m), 다 모으면 (m), 다 모으는 시간 (초)")]
+        public float snipeNear = 10f, snipeFar = 30f, snipeCharge = 1f;
+        [Tooltip("이만큼 (초) 안 쏘면 스스로 일어남 (모으는 중이면 쏨)")]
+        public float snipeHold = 5f;
+        [Tooltip("조준 도움 각도 (도, 위에서 봄), 위아래로 노릴 수 있는 높이 (m), 줄의 반지름 (m)")]
+        public float snipeAssist = 6f, snipeTall = 8f, snipeRadius = 0.45f;
+        [Tooltip("멀수록 세다: 이 거리 (m) 안은 휘청, 이 거리 (m)까지는 넘어짐, 그 너머는 넘어지며 날아감")]
+        public float snipeStaggerUpTo = 12f, snipeKnockUpTo = 22f;
+        [Tooltip("휘청 (초); 넘어뜨릴 때 미는 빠르기 · 위로 (m/s); 멀리서 날릴 때 미는 빠르기 · 위로 (m/s, 약 2 m)")]
+        public float snipeStagger = 0.4f, snipePush = 4.5f, snipeLift = 1.5f, snipeFlyPush = 7f, snipeFlyLift = 3.5f;
+        [Tooltip("쏜 반동: 비숍이 뒤로 미끄러지는 거리 (m), 시간 (초), 그 뒤 엉덩방아 (초, 못 움직임). 중급기라 가장자리에서 안 멈춘다")]
+        public float snipeRecoil = 2f, snipeRecoilTime = 0.3f, snipeSit = 0.4f;
+        [Tooltip("모은 지 이만큼 (초)부터 표적 발밑에 빛점이 보인다 (표적에게 알림)")]
+        public float snipeWarnAfter = 0.6f;
+        public float snipeCooldown = 18f;
+        [Tooltip("팀원이 줄을 막는다")]
+        public bool snipeAlliesBlock = true;
+
+        [Header("후보 문서 1안 · 룩 뒤에서 잡기 (R-중2, 사슬 견인의 고침. 사거리 · 조준 · 휘청은 위의 룩 수치)")]
+        [Tooltip("끌어오는 빠르기 (m/s, 멀수록 오래 걸림), 끌려온 적이 내려서는 거리 (m, 룩 앞. 가까워서 우클릭으로 바로 붙잡힘)")]
+        public float behindPullSpeed = 12f, behindFront = 0.9f;
+        [Tooltip("룩이 끌려갈 때: 무거운 적 앞 몇 m에서, 벽 · 턱 몇 m 앞에서 멈추는지")]
+        public float behindHeavyGap = 0.9f, behindWallGap = 0.5f;
+        [Tooltip("걸린 뒤 좌클릭을 누르고 있으면 감는 빠르기 배수 (기획은 마우스 휠인데 휠은 네트워크로 안 가서)")]
+        public float behindReel = 1.8f;
+        [Tooltip("끌려가는 적이 이만큼 좌클릭하면 사슬을 털어낸다 (절반만 끌려옴)")]
+        public int behindShake = 3;
+        public float behindCooldown = 16f;
+
+        [Header("후보 문서 1안 · 킹 왕의 부름 (K-중1, 지금 왕의 부름의 고침. 목록 · 대답 시간 · 오는 길은 위의 킹 수치)")]
+        [Tooltip("불린 팀원이 내려서는 자리: 킹 앞 이 거리 (m, 킹이 부를 때 보던 쪽). 좌우 간격은 kingCallSpread")]
+        public float summonFront = 1.5f;
+        [Tooltip("부를 때 나팔 반동으로 킹이 물러나는 거리 (m)")]
+        public float summonRecoil = 0.5f;
+        [Tooltip("팀원이 내려서는 순간 둘레 이 반경 (m)의 적이 밀리는 빠르기 (m/s, 넘어지지 않음)")]
+        public float summonPushRadius = 2f, summonShove = 4f;
+        [Tooltip("내려선 뒤 이 시간 (초) 안에 키를 한 번 더 누르면 킹과 내려선 팀원이 함께 이만큼 (m) 밀고 나감, 걸리는 시간 (초)")]
+        public float summonPushWindow = 0.6f, summonPushDistance = 3f, summonPushTime = 0.45f;
+        public float summonCooldown = 20f;
+
+        [Header("후보 문서 3안 기본기 · 비숍 옆구리 사격 (B-기6)")]
+        [Tooltip("빛줄기 길이 (m), 조준 도움 (도), 위아래 (m), 반지름 (m); 키를 누르고 나가기까지 (초)")]
+        public float flankRange = 12f, flankAssist = 5f, flankTall = 3f, flankRadius = 0.4f, flankWindup = 0.15f;
+        [Tooltip("맞은 적이 줄 방향으로 밀리는 거리 (m), 시간 (초); 비숍이 뒤로 밀리는 거리 (m, 가장자리에서 안 멈춤)")]
+        public float flankPush = 2f, flankPushTime = 0.25f, flankRecoil = 0.4f;   // the kits' second version, B-초 (recoil was 1)
+        [Tooltip("블런더: 이 빠르기 (m/s) 넘게 달리던 적을 그 달리는 쪽 이 각도 (도) 안으로 밀면 앞으로 밀어 준 것")]
+        public float flankBlunderSpeed = 2f, flankBlunderAngle = 35f;
+        [Tooltip("쏜 줄이 보이는 시간 (초), 쿨 (초)")]
+        public float flankShow = 0.25f, flankCooldown = 6f;   // the kits' second version (was 7)
+
+        [Header("후보 문서 3안 기본기 · 룩 넘어오는 캐슬링 (R-기2)")]
+        [Tooltip("팀원을 찾는 거리 (m), 앞쪽 각도 (도), 팀원 너머 내려서는 거리 (m)")]
+        public float overRange = 6f, overAngle = 75f, overBeyond = 1.5f;
+        [Tooltip("웅크림 (초), 나는 빠르기 (m/s), 포물선 높이 (m)")]
+        public float overCrouch = 0.15f, overSpeed = 9f, overArc = 1.3f;
+        [Tooltip("내려선 둘레 이 반경 (m)의 적이 밀리는 빠르기 (m/s); 내려서는 순간 키를 누르면 이 반경 (m)까지 1.5배로")]
+        public float overRadius = 2f, overShove = 4f, overBigRadius = 3f;
+        [Tooltip("내려서는 순간의 창: 땅에 닿기 이만큼 (초) 전부터, 닿은 뒤 이만큼 (초)까지")]
+        public float overPressEarly = 0.15f, overPressLate = 0.15f;
+        [Tooltip("넘어간 팀원이 넘어질 일이 휘청이 되는 시간 (초), 후딜 (초), 쿨 (초)")]
+        public float overGuard = 1.5f, overRecovery = 0.2f, overCooldown = 10f;
+
+        [Header("후보 문서 3안 기본기 · 퀸 스콜라 찌르기 (Q-기2)")]
+        [Tooltip("옆걸음: 거리 (m), 시간 (초), 조준에서 벌어지는 각도 (도, 비스듬히 앞옆); 첫 키부터 찌르기 키를 받는 시간 (초)")]
+        public float scholarSide = 2.5f, scholarSideTime = 0.25f, scholarSideAngle = 60f, scholarWindow = 0.6f;
+        [Tooltip("찌르기: 거리 (m), 빠르기 (m/s), 닿는 반지름 (m)")]
+        public float scholarReach = 5f, scholarSpeed = 14f, scholarRadius = 0.5f;
+        [Tooltip("적이 퀸을 마주 본다고 치는 각도 (도): 그러면 밀리기만 하고 퀸이 튕겨 휘청 (초), 튕기는 거리 (m), 미는 빠르기 (m/s)")]
+        public float scholarFacing = 60f, scholarBlockedStagger = 0.6f, scholarBounce = 0.8f, scholarShove = 3f;
+        [Tooltip("등 · 옆을 찔린 적: 앞으로 밀리는 거리 (m), 휘청 (초). 서 있었고 (이 빠르기 m/s 아래) 이 거리 (m) 안에 그 적의 팀원이 없으면 넘어짐 (미는 빠르기 · 위로 m/s)")]
+        public float scholarPush = 3f, scholarStagger = 0.5f, scholarStillSpeed = 1.5f, scholarMateGap = 4f, scholarKnockPush = 5f, scholarKnockLift = 2f;
+        [Tooltip("후딜 (초), 쿨 (초), 옆걸음만 쓴 쿨 (초)")]
+        public float scholarRecovery = 0.25f, scholarCooldown = 9f, scholarStepCooldown = 4f;
+
+        [Header("후보 문서 3안 중급기 · 폰 쫓아내기 (P-중4)")]
+        [Tooltip("좌클릭 모으기: 이 시간 (초) 아래는 가장 짧게, 이 시간 (초)이면 가장 길게 찌르는 거리 (m), 쥔 채 이만큼 (초) 넘으면 저절로 찌름")]
+        public float chaseChargeMin = 0.2f, chaseChargeMax = 0.8f, chaseNear = 3f, chaseFar = 5f, chaseHold = 2f;
+        [Tooltip("찌르며 돌진하는 빠르기 (m/s), 창끝이 닿는 반지름 (m)")]
+        public float chaseSpeed = 12f, chaseRadius = 0.5f;
+        [Tooltip("맞은 적은 자기 값만큼 (m: 폰 1, 나이트 · 비숍 3, 킹 4, 룩 5, 퀸 9) 날아가고, 이 거리 (m)가 상한")]
+        public float chaseMaxThrow = 6f;
+        [Tooltip("이 값 이상의 적 (룩 · 퀸)은 넘어지며 날아간다: 미는 빠르기 · 위로 (m/s). 그 아래는 밀리기만")]
+        public int chaseKnockValue = 5;
+        public float chaseKnockPush = 8f, chaseKnockLift = 3.5f;
+        [Tooltip("맞히면 폰이 반동으로 튕기는 거리 (m); 헛치면 앞으로 엎어지며 쏠리는 빠르기 (m/s)")]
+        public float chaseBounce = 0.5f, chaseMissLurch = 2.5f;   // the kits' second version, P-중 (bounce was 0.8)
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float chaseRecovery = 0.25f, chaseCooldown = 15f;
+
+        [Header("후보 문서 3안 중급기 · 나이트 포크 (N-중1, 1-나 포크의 고침)")]
+        [Tooltip("내릴 곳을 겨누는 거리 (m), 그 높이 차 (m), 나는 빠르기 (m/s, 멀수록 오래); 내려선 곳 이 반경 (m) 안의 적을 양발로 찬다")]
+        public float forkAimRange = 9f, forkAimRise = 1.5f, forkLeapSpeed = 11f, forkKickRadius = 1.6f;
+        [Tooltip("내리꽂는 순간 좌클릭: 땅에 닿기 이만큼 (초) 전부터, 날리는 거리 배수")]
+        public float forkClickEarly = 0.15f, forkClickBoost = 1.5f;
+        [Tooltip("둘 이상 맞히면 멈칫 (초)과 공중으로 다시 튀는 빠르기 (m/s); 한 명만이면 나이트가 기우뚱 (초); 헛치면 주저앉음 (초)")]
+        public float forkDoubleStop = 0.1f, forkDoubleBounce = 5f, forkSingleWobble = 0.5f, forkMissSit = 0.6f;
+
+        [Header("후보 문서 3안 중급기 · 비숍 핀 (B-중1, 1-나 핀의 고침)")]
+        [Tooltip("좌클릭 모으기: 줄 길이 (m) 처음 · 다 모으면, 다 모으는 시간 (초); 쏜 반동 (m, 가장자리에서 안 멈춤)")]
+        public float pinNear = 10f, pinFar = 18f, pinCharge = 0.6f, pinRecoil = 1f;
+        [Tooltip("뒤 4 m 안에 그 적의 팀원: 이 시간 (초) 안에 꿰인 적이 이만큼 (m) 넘게 움직이면 뒤의 팀원이 넘어지며 날아감 (미는 빠르기 · 위로 m/s)")]
+        public float pinThreatSeconds = 3f, pinThreatMove = 0.8f, pinThreatPush = 6f, pinThreatLift = 2.5f;
+        [Tooltip("뒤에 벽 · 기둥: 거기에 꿰이는 시간 (초). 뒤가 비면: 발이 무거운 시간 (초)")]
+        public float pinPostSeconds = 3f, pinSlowSeconds = 2f;
+        [Tooltip("꿴 뒤 이 시간 (초) 안에 키를 한 번 더 누르면 줄을 타고 미끄러져 다가감 (최대 m, 적 앞 몇 m에서 멈춤)")]
+        public float pinZipWindow = 3f, pinZipMax = 6f, pinZipGap = 0.8f;
+
+        [Header("후보 문서 3안 중급기 · 퀸 연속 체크 (Q-중5)")]
+        [Tooltip("첫 체크의 사거리 (m), 조준 도움 (도); 따라붙은 뒤 다음 체크가 닿는 거리 (m)")]
+        public float seriesRange = 10f, seriesAssist = 20f, seriesFollowRange = 5f;
+        [Tooltip("빨간 칸: 폭 (m), 길이 (m, 퀸 쪽으로 길쭉), 적에서 칸의 먼 끝까지 (m, 가장 가까운 출구)")]
+        public float seriesWidth = 2f, seriesLength = 3.5f, seriesExit = 0.5f;
+        [Tooltip("칸이 터지기까지 (초): 첫째 · 둘째 · 셋째")]
+        public float seriesFuse1 = 0.9f, seriesFuse2 = 0.7f, seriesFuse3 = 0.5f;
+        [Tooltip("비켜 나간 뒤 다음 체크 키를 받는 시간 (초); 퀸이 빈 칸으로 미끄러지는 빠르기 (m/s), 그 최대 거리 (m)")]
+        public float seriesLink = 1f, seriesSlideSpeed = 12f, seriesSlideMax = 8f;
+        [Tooltip("맞으면: 미는 빠르기 · 위로 (m/s, 넘어뜨림); 셋째가 맞으면 멈칫 (초)")]
+        public float seriesPush = 7.5f, seriesLift = 2.5f, seriesFinalStop = 0.15f;
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float seriesRecovery = 0.3f, seriesCooldown = 24f;   // the kits' second version, Q-중: the queen's 1.5x (was 18)
+
+        [Header("후보 문서 2안 · 룩 뒷줄 한 수 (R-기5)")]
+        [Tooltip("옆 · 뒤로 곧게 미끄러지는 거리 (m), 시간 (초, 처음이 빠르고 점점 멎음; 가장자리에서 안 멈춤); 닿은 적을 미는 거리 (m)")]
+        public float rankSlide = 3.5f, rankSlideTime = 0.35f, rankShove = 3f;
+        [Tooltip("후딜 (초), 쿨 (초)")]
+        public float rankRecovery = 0.15f, rankCooldown = 6f;
+
+        [Header("후보 문서 2안 · 룩 직선 돌파 (R-중1)")]
+        [Tooltip("좌클릭 모으기: 바닥 줄 길이 (m) 처음 · 다 모으면, 다 모으는 시간 (초), 쥔 채 이만큼 (초) 넘으면 저절로 출발")]
+        public float fileNear = 4f, fileFar = 9f, fileCharge = 1f, fileHold = 3f;
+        [Tooltip("돌진 빠르기 (m/s), 부딪는 반지름 (m), 넘어뜨리는 적 수; 한 명 칠 때마다 더 나가는 거리 (m), 멈칫 (초)")]
+        public float fileSpeed = 12f, fileRadius = 0.6f;
+        public int fileMaxHits = 3;
+        public float fileExtra = 1f, fileStop = 0.06f;
+        [Tooltip("튕겨 넘어뜨림: 옆으로 · 앞으로 · 위로 미는 빠르기 (m/s); 벽에 박으면 룩 휘청 (초)")]
+        public float fileSideways = 5f, fileForward = 2.5f, fileLift = 2f, fileWallStagger = 0.6f;
+        public float fileCooldown = 16f;
+
+        [Header("후보 문서 2안 · 킹 런 (K-중7)")]
+        [Tooltip("걸음 수, 전체 시간 (초), 걸음 빠르기 (m/s); 박자: 앞 걸음 시작에서 이만큼 (초) 뒤가 딱 맞음, 이 차이 (초) 안이면 긴 걸음, 이 차이 (초) 안이면 보통")]
+        public int runSteps = 5;
+        public float runTime = 2.5f, runSpeed = 9f, runBeat = 0.45f, runBeatTight = 0.1f, runBeatLoose = 0.25f;
+        [Tooltip("걸음 길이 (m): 박자 맞춤 · 보통 · 어긋남")]
+        public float runLong = 2.2f, runStep = 1.8f, runShort = 1.4f;
+        [Tooltip("다섯 걸음 뒤 숨 고르기 (초), 쿨 (초)")]
+        public float runBreath = 0.5f, runCooldown = 18f;
+
+        [Header("후보 문서 3안 궁극기 · 게이지 (X-판5의 시간 부분)")]
+        [Tooltip("궁극기 게이지가 다 차는 시간 (초): 구성을 바꾸면 비어서 시작하고, 쓰면 다시 처음부터 (시험용 쿨이 켜져 있으면 그 값)")]
+        public float ultGauge = 180f;
+
+        [Header("후보 문서 3안 궁극기 · 폰 승격 (P-궁1)")]
+        [Tooltip("마지막 한 칸: 앞으로 내딛는 거리 (m), 시간 (초); 끝줄에 닿는 순간 둘레 이 반경 (m)의 적을 미는 빠르기 (m/s), 멈칫 (초)")]
+        public float promoteStep = 3f, promoteStepTime = 0.3f, promoteShoveRadius = 3f, promoteShove = 5f, promoteStop = 0.15f;
+        [Tooltip("퀸으로 있는 시간 (초), 끝나면 원래 기물로")]
+        public float promoteSeconds = 15f;
+
+        [Header("후보 문서 3안 궁극기 · 나이트 스머더드 메이트 (N-궁1)")]
+        [Tooltip("조건: 이 거리 (m) 안의 적 하나 둘레 이 반경 (m)에 그 적의 팀원이 둘 이상")]
+        public float smotherRange = 18f, smotherCluster = 2.5f;
+        [Tooltip("솟아 떨어지는 시간 (초), 높이 (m); 떨어지며 이동 키로 쫓는 거리 (m), 빠르기 (m/s)")]
+        public float smotherFlight = 1.3f, smotherHeight = 6f, smotherChase = 3f, smotherChaseSpeed = 5f;
+        [Tooltip("가운데 적에게서 이 거리 (m) 안에 떨어지면: 가운데 납작 (초), 둘레 팀원들은 날아감 (미는 빠르기 · 위로 m/s), 나이트는 다시 튐 (m/s)")]
+        public float smotherHit = 1.8f, smotherSquash = 2.5f, smotherPush = 7f, smotherLift = 3f, smotherBounce = 7f;   // the kits' second version: squash 2.5 (was 3)
+        [Tooltip("닿기 직전 좌클릭: 땅에 닿기 이만큼 (초) 전부터, 납작 더하기 (초), 멈칫 (초)")]
+        public float smotherClickEarly = 0.15f, smotherClickBonus = 0.5f, smotherClickStop = 0.15f;   // the kits' second version: +0.5 (was +1)
+        public float smotherRecovery = 0.3f;
+
+        [Header("후보 문서 3안 궁극기 · 비숍 긴 대각선 (B-궁1, 검토 칸의 체스 안: 줄이 남아 꿴다)")]
+        [Tooltip("줄 길이 (m, 벽에서 멈춤, 사람은 뚫음), 터지기까지 (초), 줄이 남는 시간 (초), 줄의 반지름 (m), 꿰인 적이 발이 박히는 시간 (초), 비숍 반동 (m)")]
+        public float diagRange = 60f, diagWarn = 1.5f, diagSeconds = 8f, diagRadius = 0.6f, diagNail = 1.5f, diagRecoil = 1f;   // the kits' second version: nailed 1.5 s (was 2.5)
+
+        [Header("후보 문서 3안 궁극기 · 룩 활발한 룩 (R-궁6, 전차)")]
+        [Tooltip("전차인 시간 (초), 빠르기 (m/s), S로 한 번 멈추는 시간 (초), 벽에 박으면 휘청 (초)")]
+        public float chariotSeconds = 10f, chariotSpeed = 6f, chariotStop = 1f, chariotWallStagger = 1f;
+        [Tooltip("부딪힌 적: 닿는 반지름 (m), 옆으로 · 앞으로 · 위로 튕기는 빠르기 (m/s)")]
+        public float chariotRadius = 0.6f, chariotSideways = 5f, chariotForward = 3f, chariotLift = 2f;
+
+        [Header("후보 문서 3안 궁극기 · 퀸 퀸 희생 (Q-궁1)")]
+        [Tooltip("떨어질 곳을 찍는 거리 (m), 그 높이 차 (m); 날아가는 시간 (초), 높이 (m); 나는 동안 이동 키로 옮기는 거리 (m), 빠르기 (m/s)")]
+        public float sacRange = 12f, sacRise = 3f, sacFlight = 1.2f, sacHeight = 3f, sacChase = 3f, sacChaseSpeed = 5f;
+        [Tooltip("터지는 반경 (m), 미는 빠르기 · 위로 (m/s), 멈칫 (초); 잡혀 돌아가기 전 결과를 보여 주는 시간 (초)")]
+        public float sacRadius = 9f, sacPush = 9f, sacLift = 4f, sacStop = 0.15f, sacShow = 0.8f;
+        [Tooltip("이만큼 이상 날리면 '탁월한 수 !!'")]
+        public int sacBrilliant = 4;
+
+        [Header("후보 문서 3안 궁극기 · 킹 행진 (K-궁1)")]
+        [Tooltip("행진 시간 (초); 넘어지지 않는 팀원의 반경 (m); 적이 못 들어오는 반경 (m)")]
+        public float marchSeconds = 10f, marchGuard = 4f, marchKeep = 2f;
+        [Tooltip("걷는 빠르기 배수: 둘레 팀원 없음 · 한 명 · 둘 이상")]
+        public float marchAlone = 1.5f, marchOne = 1.5f, marchMany = 1.5f;   // the kits' second version: 1.5 always (was 1.3, 1.5, 1.7)
+        [Tooltip("행진 걸음 (키 다시): 앞 이 거리 (m)의 적을 이만큼 (m) 밀어냄")]
+        public float marchStepReach = 2.5f, marchStepShove = 2f;
+
+        // ---- The kits' second version (Docs/Skills/PAWN_RUSH_SKILL_KITS.md 6, "기물별 한 벌 2판"; RagdollPawn.KitTwo.cs).
+        // The skills it shares with the plans above keep their numbers there, changed to this version's where it says so.
+
+        [Header("기물별 한 벌 2판 · 몸이 바뀌는 상태 (가볍게 · 무겁게)")]
+        [Tooltip("나이트에게 머리를 밟힌 적이 가벼운 시간 (초); 그동안 맞는 밀림과 날림의 배수")]
+        public float lightSeconds = 3f, lightPush = 2f;
+        [Tooltip("룩의 사슬에 끌려온 적이 무거운 시간 (초); 그동안 점프 높이의 배수")]
+        public float heavySeconds = 2f, heavyJump = 0.6f;
+        [Tooltip("머리 위에 튀는 글자 (+5, 체크 탈출)가 보이는 시간 (초)")]
+        public float popSeconds = 1.2f;
+
+        [Header("기물별 한 벌 2판 · 궁극기 팀 게이지 (체계 7.3 · 7.5, 11-21 팀 하나로)")]
+        [Tooltip("켜면 궁극 칸(Q)의 스킬은 쿨 대신 팀 게이지로 나간다: 맵의 왕관, 시간, 팀원이 적의 스킬에 넘어짐으로 찬다 (끄면 3안의 3분 쿨). 시험용 쿨이 켜져 있으면 늘 가득")]
+        public bool realGauge = true;
+        [Tooltip("시간: 1초에 차는 양 (0.001 = 0.1%), 지는 팀 (넷째 주자가 뒤진 팀)의 배수")]
+        public float gaugeTime = 0.001f, gaugeLosing = 2f;
+        [Tooltip("팀원 누구든 왕관 하나를 주우면 차는 양, 주운 왕관이 다시 생기는 시간 (초), 왕관을 줍는 거리 (m)")]
+        public float gaugeCrown = 0.04f, crownRespawn = 30f, crownReach = 0.9f;
+        [Tooltip("팀원이 적의 스킬에 넘어지거나 납작해질 때마다 차는 양; 한 사람이 이 시간 (초) 안에 이만큼까지")]
+        public float gaugeKnock = 0.015f, gaugeKnockWindow = 10f, gaugeKnockCap = 0.06f;
+        [Tooltip("예고 중에 넘어져 끊긴 궁극기가 남기는 게이지")]
+        public float gaugeCutKeep = 0.5f;
+        [Tooltip("상급기 후보가 된 2판 처음의 궁극기 여섯 (와 전차)을 궁극 칸 밖에 넣었을 때의 쿨 (초)")]
+        public float highUltCooldown = 60f;
+
+        [Header("기물별 한 벌 2판 · 궁극기 (KITS 6장의 궁극 칸)")]
+        [Tooltip("예고 (초): 승격 · 킹 행진 · 7번째 줄 (모두에게 알림)")]
+        public float ultWarn = 1f;
+        [Tooltip("스머더드 메이트: 둘레 이 반경 (m)의 적이 날아감")]
+        public float smotherRound = 4f;
+        [Tooltip("긴 대각선: 한 사람이 꿰이는 횟수")]
+        public int diagNailMax = 2;
+        [Tooltip("킹 행진: 행진 걸음 사이 (초)")]
+        public float marchStepEvery = 0.9f;
+        [Tooltip("7번째 줄: 벽 높이 · 두께 (m), 길 폭 (m, 옆 벽에서 멈춤), 룩 앞 거리 (m), 시간 (초), 가장 멀리 (m)")]
+        public float rankHeight = 2.5f, rankThick = 0.5f, rankWidth = 8f, rankGap = 1.1f, rankSeconds = 8f, rankMax = 20f;
+        [Tooltip("7번째 줄: 벽 앞의 적을 벽보다 이만큼 (m/s) 빠르게 밂; 좌클릭 모아 치기: 다 모으는 시간 (초), 튀어 나가는 거리 (m)")]
+        public float rankPushOver = 1.5f, rankCharge = 0.6f, rankJump = 3f;
+
+        [Header("세트 1안-a · 2안-a (KITS 6.9): 같은 스킬의 세트 수치와 새 셋")]
+        [Tooltip("첫 두 걸음 (중급): 비스듬히 맞히면 넘어짐 (초), 쿨 (초, 한 걸음만이면 그만큼 비율로)")]
+        public float stepMidKnock = 2f, stepMidCooldown = 8f;
+        [Tooltip("긴 대각선 저격 (중급): 가장 멀리 (m), 쿨 (초)")]
+        public float snipeMidFar = 20f, snipeMidCooldown = 12f;
+        [Tooltip("성벽 돌진 (중급): 벽이 서 있는 시간 (초), 쿨 (초)")]
+        public float wallMidSeconds = 3f, wallMidCooldown = 14f;
+        [Tooltip("연속 체크 (1안-a · 2안-a), 왕의 부름 (1안-a)의 쿨 (초)")]
+        public float seriesQuickCooldown = 12f, summonQuickCooldown = 16f;
+        [Tooltip("도약 포크: 쿨 (초), 내린 자리에서 찰 적을 찾는 거리 (m)")]
+        public float leapForkCooldown = 10f, leapForkReach = 2.2f;
+        [Tooltip("통과한 폰: 둘째 걸음의 질주 거리 (m) · 빠르기 (m/s), 막은 적을 옆으로 미는 거리 (m)")]
+        public float passedRun = 6f, passedSpeed = 10f, passedShove = 1.5f;
+        [Tooltip("데리고 걷기: 같이 옮겨 오는 팀원을 찾는 거리 (m), 넘어지지 않는 시간 (초), 몇 명")]
+        public float escortReach = 4f, escortGuard = 1f;
+        public int escortCount = 2;
+
+        [Header("궁극기 · 팀을 역전시키는 한 수 (11-21, 체계 7.4: ×1 값 → ×2 값, ×0.5는 ×1의 절반)")]
+        [Tooltip("예고 (초): 모든 화면에 알림, 쓰는 사람이 넘어지면 끊기고 게이지 절반")]
+        public float teamUltWarn = 2f;
+        [Tooltip("앙파상 !!: 되돌리는 시간 창 (초) ×1 · ×2; 끌어오는 적의 수; 날아 돌아오는 빠르기 (m/s); 엎어지는 시간 (초)")]
+        public float passantWindow1 = 20f, passantWindow2 = 40f;
+        public int passantMax = 4;
+        public float passantSpeed = 18f, passantKnock = 1.5f;
+        [Header("궁극기 · 함께 쓰는 시전과 나이트 두 가지 (11-21, RagdollPawn.KnightUlts.cs, PawnRushSkillFx.Ult.cs)")]
+        [Tooltip("패밀리 포크: 공중 시간 (초), 높이 (m), 처음 겨누는 거리 (m), 이동 키로 착지 칸을 옮기는 빠르기 (m/s), 뛴 자리에서 가장 멀리 (m), 박자 창: 내려오기 전 (초)")]
+        public float famAir = 1.6f, famHigh = 9f, famAim = 24f, famSteer = 9f, famFar = 30f, famBeat = 0.22f;
+        [Tooltip("패밀리 포크: 나이트 칸 한 칸 (m), 칸에 선 적을 잡는 반경 (m)과 박자를 맞추면 더 (m); 깔린 반경 (m)과 넘어짐 (초); 흔들리는 반경 (m)")]
+        public float famSquare = 2.2f, famCatch = 1.5f, famCatchBeat = 0.6f, famStomp = 1.8f, famStompKnock = 1.5f, famSway = 7f;
+        [Tooltip("패밀리 포크: 포크된 적을 뒤로 보내는 거리 (m, 박자를 맞추면 +5), 엎어짐 (초), 날아가는 시간 (초)과 높이 (m)")]
+        public float famBack = 20f, famKnock = 2f, famThrowTime = 1.6f, famThrowTop = 9f;
+        [Tooltip("나이트 투어: 밟는 수 ×1 · ×2; 다음 머리까지 (m); 한 번 건너뛰는 시간 (초); 납작 (초); 그 뒤 미끄러지는 거리 (m); 첫 머리를 겨눌 수 있는 거리 (m); 마지막 도약: 적 선두 앞 (m), 가장 멀리 (m), 적이 없을 때 (m)")]
+        public float ultTourHops1 = 6f, ultTourHops2 = 8f, ultTourReach = 12f, ultTourHop = 0.42f, ultTourSquash = 2.5f, ultTourSlide = 4f,
+                     ultTourStart = 22f, ultTourFinal = 10f, ultTourFinalMax = 30f, ultTourEmpty = 18f;
+        [Tooltip("나이트 투어: 머리 위에서 다음을 고르는 시간 (초); 박자 창 (내려선 뒤 초 ~ 초); 박자를 맞추면 다음 머리가 더 납작 (초)")]
+        public float ultTourWait = 0.8f, ultTourBeat0 = 0.3f, ultTourBeat1 = 0.55f, ultTourBeatSquash = 1f;
+        [Header("궁극기 여섯 · 10~12초 동안 직접 몬다 (11-22, KITS 6.1~6.6, RagdollPawn.DriveUlts.cs)")]
+        [Tooltip("3안-b세트: 퀸의 연속 체크 쿨 (초), 여덟 줄 쿨 (초): 3안-a의 1.5배를 푼 값")]
+        public float seriesBCooldown = 16f, eightBCooldown = 40f;
+        [Tooltip("판정: 이 궁극기에 맞은 적이 상대 팀의 이만큼이면 !! · ! · ★, 그 아래 하나라도 ?!, 없으면 ??")]
+        public float driveBrilliant = 0.84f, driveGreat = 0.6f, driveBest = 0.3f;
+        [Tooltip("나이트메어: 시간 (초, ×1.5 15초 · ×2 20초); 도약 거리 처음 · 한 번 밟은 뒤 · 두 번 넘게 이은 뒤 (m); 빨간 표식에 붙는 거리 (m); 착지점 위 하늘이 막혔는지 보는 높이 (m)")]
+        public float nmSeconds = 10f, nmRange0 = 40f, nmRange1 = 60f, nmRange2 = 80f, nmSnap = 4f, nmSky = 25f;
+        [Tooltip("나이트메어: 공중 시간 = 이만큼 + 100 m에 이만큼 (초); 높이 = 이만큼 + m마다 (m); 공중에서 이동 키로 고치는 빠르기 (m/s), 가장 멀리 (m); 표적을 따라가는 빠르기 (m/s), 내리기 전 고정 (초)")]
+        public float nmAir = 0.85f, nmAirPer100 = 0.6f, nmHigh = 7f, nmHighPer = 0.14f, nmSteer = 7f, nmSteerMax = 7f, nmHome = 14f, nmLock = 0.5f;
+        [Tooltip("나이트메어: 밟히는 반경 (m, 둘 넘게면 포크); 납작 (초); 그 뒤 튕겨 나가는 거리 (m); 밟은 머리 위에 서 있는 가장 긴 시간 (초)")]
+        public float nmStomp = 3f, nmSquash = 2f, nmBounce = 15f, nmRide = 1.2f;
+        [Tooltip("롱 다이애거널: 시간 (초); 발 수 (×1.5 넷, ×2 여섯); 모으는 시간 (초); 줄 길이 (m); 줄 반폭 (m)과 꺾일 때마다 더 (m); 위아래로 닿는 높이 (m)")]
+        public float gdSeconds = 10f;
+        public int gdShots = 3;
+        public float gdCharge = 0.5f, gdLength = 300f, gdWidth = 1f, gdWiden = 0.5f, gdUpDown = 2.5f;
+        [Tooltip("롱 다이애거널: 꿰인 적이 줄을 따라 끌려오는 거리 (m), 비숍 앞에 남기는 거리 (m), 끌려오는 시간 (초)과 높이 (m), 넘어짐 (초); 쏠 때 비숍이 밀리는 거리 (m)")]
+        public float gdPull = 25f, gdKeep = 2.5f, gdPullTime = 0.7f, gdPullTop = 1.5f, gdKnock = 2f, gdRecoil = 0.6f;
+        [Tooltip("승격: 질주 (초), 빠르기 (m/s), 꺾는 빠르기 (°/s), 앞길의 적을 튕기는 거리 (m)와 그 적과의 거리 (m); 퀸으로 뛰는 시간 (초), 앞으로 (m), 높이 (m)")]
+        public float prRun = 3f, prSpeed = 25f, prTurn = 150f, prShove = 5f, prShoveReach = 1.8f, prLeap = 0.55f, prLeapAhead = 6f, prLeapTop = 4f;
+        [Tooltip("승격: 내려선 둘레 (m), 날리는 거리 (m), 넘어짐 (초); 퀸의 시간 (초, ×1.5 13.5 · ×2 18), 돌진 수 (×1.5 여섯, ×2 여덟), 예고 (초), 거리 (m), 걸리는 시간 (초), 사이 (초)")]
+        public float prLand = 10f, prLandThrow = 12f, prLandKnock = 1f, prQueen = 9f;
+        public int prDashes = 4;
+        public float prWarn = 0.3f, prDash = 30f, prDashTime = 0.4f, prDashGap = 0.6f;
+        [Tooltip("승격: 돌진이 닿는 반폭 (m), 날리는 거리 (m), 넘어짐 (초); 하나 맞힐 때마다 커지는 몫, 가장 크게; 퀸의 키 (m)")]
+        public float prRadius = 2.2f, prDashThrow = 20f, prDashKnock = 2f, prGrow = 0.1f, prGrowMax = 1.5f, prTall = 6f;
+        [Tooltip("룩앤롤: 시간 (초); 돌기둥 반지름 (m)과 길이 (m, 구르는 쪽을 가로질러); 빠르기 처음 · 가장 빠르게 · 가장 느리게 (m/s), 곧게 갈 때 다 붙는 시간 (초); 꺾는 빠르기 느릴 때 · 빠를 때 (°/s), 1°마다 잃는 빠르기 (m/s)")]
+        public float rrSeconds = 10f, rrRadius = 1.5f, rrLength = 4.5f, rrSpeed0 = 15f, rrSpeed1 = 40f, rrSpeedMin = 10f, rrRamp = 3f, rrTurnSlow = 140f, rrTurnFast = 70f, rrTurnCost = 0.12f;
+        [Tooltip("룩앤롤: 점프로 튀어 오르는 빠르기 (m/s), 떨어지는 빠르기 (m/s²); 적을 날리는 거리 (m), 넘어짐 (초); 스트라이크: 이 시간 (초) 안에 이만큼; 올라탄 우리 편을 앞으로 (m); 부순 바리케이드가 다시 서는 시간 (초)")]
+        public float rrJumpUp = 14f, rrGravity = 28f, rrThrow = 25f, rrKnock = 2f, rrStrikeWindow = 0.6f, rrLift = 15f, rrRegrow = 4f;
+        public int rrStrike = 4;
+        [Tooltip("여왕 강림: 시간 (초); 내리꽂기 수 (×1.5 넷, ×2 여섯); 나는 높이 (m), 빠르기 (m/s), 가속 (m/s²), 높이를 맞추는 빠르기 (m/s); 솟는 시간 (초); 찍을 수 있는 거리 (m)")]
+        public float qdSeconds = 10f;
+        public int qdDives = 3;
+        public float qdHigh = 20f, qdSpeed = 30f, qdAccel = 60f, qdClimb = 12f, qdRiseTime = 0.8f, qdReach = 60f;
+        [Tooltip("여왕 강림: 내리꽂는 시간 = 그림자 (초); 둘레 (m)와 희생의 둘레 (m); 날리는 거리 (m), 넘어짐 (초); 끝에 내려서는 시간 (초); 희생 뒤 잡히기까지 (초)")]
+        public float qdDiveTime = 1f, qdRadius = 8f, qdSacRadius = 16f, qdThrow = 25f, qdKnock = 2.5f, qdDownTime = 0.8f, qdTakenShow = 0.8f;
+        [Tooltip("킹 워크: 시간 (초); 충격파 수 (×1.5 넷, ×2 여섯); 빠르기 배율 처음 · 과반 뒤; 그려지는 크기 처음 · 과반 뒤; 카펫 길이 (m), 반폭 (m); 행렬의 사이 (m), 카펫으로 끌려오는 빠르기 (m/s), 제자리에서 이만큼 (m) 밀리면 떨어짐; 과반이 되는 행렬 수 (킹 빼고)")]
+        public float kwSeconds = 12f;
+        public int kwWaves = 3;
+        public float kwSpeed = 1.8f, kwSpeedBig = 2.2f, kwGrow = 1.5f, kwGrowBig = 1.8f, kwCarpet = 100f, kwHalfWidth = 1.6f, kwGap = 2.5f, kwPullSpeed = 40f, kwFallOff = 3f;
+        public int kwMajority = 3;
+        [Tooltip("킹 워크: 앞길의 적을 비키게 하는 거리 (m, 크기만큼 더); 충격파의 예고 (초), 거리 (m), 반각 (°), 사이 (초), 날리는 거리 (m), 넘어짐 (초)")]
+        public float kwKeep = 2f, kwWarn = 0.4f, kwWaveReach = 30f, kwWaveHalf = 35f, kwWaveGap = 1f, kwThrow = 15f, kwKnock = 2f;
+        [Tooltip("그리스 선물: 끌어오는 수 ×1 · ×2; 빛이 한 사람에게 가는 시간 (초); 끌려와 해롱 (초); 끌려오는 시간 (초); 비숍이 잡히기까지 (초)")]
+        public float giftCount1 = 1f, giftCount2 = 3f, giftPer = 0.4f, giftDaze = 2f, giftFlight = 1.2f, giftTaken = 1.2f;
+        [Tooltip("7번째 줄: 상대 1등 앞 거리 (m); 높이 · 두께 · 길 폭 (m); 서 있는 시간 ×1 · ×2 (초); 벽 앞의 적을 뒤로 미는 빠르기 (m/s)")]
+        public float teamWallAhead = 5f, teamWallHeight = 3f, teamWallThick = 0.6f, teamWallWidth = 16f, teamWallStand1 = 4f, teamWallStand2 = 12f, teamWallBack = 1f;
+        [Tooltip("퀸 희생: 둘레 ×1 · ×2 (m); 날리는 빠르기 · 위로 (m/s, 10 m쯤); 넘어짐 (초); 떨어지는 높이 (m)")]
+        public float dropRadius1 = 10f, dropRadius2 = 20f, dropPush = 11f, dropLift = 5f, dropHold = 2.5f, dropHeight = 0.3f;
+        [Tooltip("총동원: 불러오는 팀원 ×1 · ×2; 모인 팀이 넘어지지 않는 시간 (초); 모인 자리 둘레 밀기 (m); 1등 곁 거리 (m)")]
+        public float callCount1 = 2f, callCount2 = 4f, callGuard = 5f, callShove = 3f, callSide = 1.5f;
+        [Header("궁극기 연출 · !! 탁월한 수 (11-22, PawnRushSkillFx.Impact.cs)")]
+        [Tooltip("시전자 화면에서 그 기물의 한 수(승격 · 포크 · 꼬챙이 · 7번째 줄 · 퀸 희생)를 슬로우로 보여 준다: 1 켬, 0이면 시전과 판정의 슬로우만")]
+        public float ultSigSlow = 1f;
+        [Header("지원 칸 · 선두만 G (11-22, KITS 6.1~6.5의 지원 줄 · 6.10, RagdollPawn.Support.cs)")]
+        [Tooltip("구간의 길이 (m, 코스가 구간을 안 알려 줄 때: 시험 씬은 10 m); 꼴찌가 받는 시간 (초); 데려오는 거리 (m, 선두를 넘지 않음)")]
+        public float supSection = 100f, supAnswer = 5f, supReach = 150f;
+        [Tooltip("성공: 둘이 빨라지는 시간 (초)과 배율; 곁 (m)이면 함께 튀어 나가는 거리 (m); 팀 궁극 게이지 (몫)")]
+        public float supBoost = 4f, supBoostScale = 1.4f, supNear = 4f, supDash = 12f, supGauge = 0.15f;
+        [Tooltip("나이트 말 보내기: 휘파람 (초); 빈 말이 가는 빠르기 · 타고 오는 빠르기 (m/s); 점프로 뛰어넘는 거리 (m) · 높이 (m) · 시간 (초); F를 놓아도 버티는 시간 (초)")]
+        public float supWhistle = 1f, supHorseGo = 60f, supHorseRide = 30f, supHorseJump = 10f, supHorseJumpTop = 4f, supHorseJumpTime = 0.45f, supGripGrace = 0.3f;
+        [Tooltip("룩 도개교: 펼쳐지는 시간 (초); 바닥이 움직이는 빠르기 (m/s); 폭 (m); 선두가 밀려 떨어지는 거리 (m)")]
+        public float supBridgeOpen = 1f, supBridgeSpeed = 35f, supBridgeWidth = 3f, supHoldSlip = 2.5f;
+        [Tooltip("퀸 퀸의 줄: 꼴찌 위 높이 (m); 쏘는 시간 (초); 도르래까지 오르는 시간 (초); 미끄러지는 빠르기 (m/s); 줄을 끊는 거리 (m)")]
+        public float supRopeHigh = 15f, supRopeShoot = 0.35f, supRopeLift = 0.45f, supRopeSpeed = 45f, supCutReach = 1.2f;
+        [Tooltip("비숍 주교관 드론: 날아가는 빠르기 · 모는 빠르기 (m/s); 모는 시간 (초); 매달린 깊이 (m); 바닥 위 높이 가장 낮게 · 높게 (m); 선두 곁 (m)")]
+        public float supDroneGo = 60f, supDroneDrive = 30f, supDroneTime = 6f, supDroneHang = 2.2f, supDroneLow = 1.5f, supDroneHigh = 25f, supDroneDrop = 6f;
+        [Tooltip("폰 폰 사슬: 폰 사이 (m); 가장 많이; 솟는 시간 (초); 한 번 던지는 시간 (초) · 높이 (m); 좌우로 엇갈림 (m)")]
+        public float supChainGap = 10f, supChainRise = 0.6f, supChainHop = 0.3f, supChainTop = 2.5f, supChainZig = 2f;
+        public int supChainMax = 15;
+
+        [Header("3판 (11-23, KITS 6.12: 사용자가 짠 스킬, 궁극 없음; RagdollPawn.SetThree.cs) · 모두 첫 시험값 · 11-24 6.13: 기물마다 등급이 다른 둘 (등급은 수치일 뿐)")]
+        [Tooltip("초급의 밀림 (첫 두 걸음 · 뒷발차기 · 돌멩이 · 성수병)이 낭떠러지 앞에서 멈추는 거리 (m, 체계 문서의 안전 규칙); 한 번에 이만큼 (m) 넘게 꺼지면 낭떠러지; 맞고 이만큼 (초) 지나 다시 제 발로 서면 지킴이 끝남")]
+        public float edgeGap = 0.3f, edgeDrop = 1f, edgeHold = 0.5f;
+        [Tooltip("옛 첫 두 걸음의 밀림에도 위의 낭떠러지 지킴이를 건다 (스킬 연구의 안전 규칙). 보통 폰 러쉬는 main처럼 끈다 (PawnRushCourseSkills.SkillTest)")]
+        public bool basicEdgeSafe = true;
+        [Tooltip("폰 앙파상: 볼라스 거리 (m) · 빠르기 (m/s) · 굵기 (m); 끄는 시간 (초) · 적이 끌려오는 빠르기 (m/s); 폰이 반동으로 더 나가는 빠르기 (m/s) · 그동안의 빠르기 배율")]
+        public float bolasRange = 12f, bolasSpeed = 25f, bolasRadius = 0.35f, bolasPull = 1f, bolasPullSpeed = 8f, bolasRecoil = 4f, bolasRecoilScale = 1.5f;
+        [Tooltip("폰 앙파상: 뒷목 치기가 열리는 거리 (m) · 시간 (초); 기절 (초); 감길 때 비틀 (초); 놓치면 둘이 휘청 (초); 쿨 (초)")]
+        public float bolasChopReach = 1.5f, bolasChopWindow = 0.5f, bolasStun = 1f, bolasTrip = 0.3f, bolasBump = 0.4f, bolasCooldown = 10f;
+        [Tooltip("나이트 하이점프: 높이 (m); 공중 조종 (보통의 몫); 표시 거리 (m, 아래 둘레); 내리꽂는 시간 (초); 머리 딛고 튀는 높이 (m); 표적 없으면 내려오는 빠르기 (m/s)")]
+        public float hopHeight = 3f, hopSteer = 0.15f, hopMarkReach = 10f, hopDiveTime = 0.3f, hopBounce = 1f, hopDropSpeed = 14f;
+        [Tooltip("나이트 내려찍기: 밟힌 적이 엎어져 있는 시간 (초); 착지 뒤 (초); 쿨 (초)")]
+        public float hopKnockHold = 1.5f, hopRecovery = 0.25f, hopCooldown = 9f;
+        [Tooltip("비숍 성검 소환: 적 곁 대각선 거리 (m) · 높이 (m, 바닥 위); 날기까지 (초); 빠르기 (m/s); 쉬는 시간 (초); 맞으면 속박 (초); 닿는 거리 (m); 쿨 (초)")]
+        public float swordSide = 5f, swordHigh = 1f, swordFuse = 1.5f, swordSpeed = 30f, swordRest = 0.4f, swordBind = 1f, swordReach = 0.7f, swordCooldown = 35f;
+        [Tooltip("비숍 성검 소환: 몇 번")]
+        public int swordRounds = 3;
+        [Tooltip("비숍 돌멩이 (3판의 초급 후보): 떠오르는 높이 (m) · 떠 있는 시간 (초); 돌 지름 (m) · 빠르기 (m/s) · 거리 (m) · 떨어짐 (m/s²); 맞으면 튕겨 나가는 거리 (m) · 넘어짐 (초); 쿨 (초)")]
+        public float stoneRise = 1.5f, stoneHover = 0.6f, stoneSize = 1.2f, stoneSpeed = 10f, stoneRange = 20f, stoneDrop = 1.5f, stonePush = 3f, stoneKnockHold = 1f, stoneCooldown = 6f;
+        [Tooltip("비숍 성수병 (3판의 초급 후보): 깨지는 거리 (m) · 나는 시간 (초); 웅덩이 지름 (m) · 남는 시간 (초); 미끄러져 넘어짐 (초) · 미끄러져 나가는 거리 (m); 쿨 (초)")]
+        public float waterRange = 8f, waterFlight = 0.5f, waterSize = 3f, waterSeconds = 4f, waterKnockHold = 1f, waterSlide = 3f, waterCooldown = 6f;
+        [Tooltip("룩 룩앤롤 (3판의 상급): 구르는 시간 (초); 빠르기 처음 · 끝 (m/s); 꺾임 (°/초); 기둥 반지름 · 길이 (m); 핀 거리 (m) · 넘어짐 (초); 벽 어질 (초); 쿨 (초)")]
+        public float rollSeconds = 2.5f, rollSpeed0 = 8f, rollSpeed1 = 18f, rollTurn = 30f, rollRadius = 0.9f, rollLength = 2.6f, rollThrow = 10f, rollKnock = 2f, rollDizzy = 0.5f, rollCooldown = 30f;
+        [Tooltip("룩 룩앤롤 (3판의 상급): 일어서는 쿵 둘레 (m) · 미는 거리 (m) · 넘어짐 (초); 스트라이크 몇 명")]
+        public float rollSlamRadius = 4f, rollSlamPush = 3f, rollSlamHold = 1f;
+        public int rollStrike = 3;
+        [Tooltip("룩 탑 가두기: 땅이 갈라지는 빠르기 (m/s) · 거리 (m) · 폭 (m); 갇힘 (초); 탑 지름 (m); 굴러 나와 넘어짐 (초) · 굴러 나가는 거리 (m); 쿨 (초)")]
+        public float crackSpeed = 25f, crackRange = 20f, crackWidth = 1f, towerSeconds = 1.5f, towerWide = 1.6f, towerKnockHold = 1f, towerRollOut = 1.5f, towerCooldown = 14f;
+        [Tooltip("퀸 여왕의 위상 (3판의 상급): 별 반지름 (m); 밝아지기까지 (초); 튕겨 내는 거리 (m) · 넘어짐 (초); 뒤 (초); 쿨 (초)")]
+        public float starRadius = 8f, starFuse = 0.5f, starPush = 8f, starKnockHold = 2f, starRecovery = 0.25f, starCooldown = 30f;
+        [Tooltip("퀸 연속 체크 (3판): 첫 표적 거리 (m) · 앞 반각 (°); 다음 표적 거리 (m); 표시 (초) · 날아드는 시간 (초); 다음을 기다리는 시간 (초); 날리는 거리 (m) · 셋째 (m); 넘어짐 (초); 쿨 (초, 마지막 체크 뒤)")]
+        public float ccFirst = 12f, ccCone = 60f, ccNext = 8f, ccMark = 0.25f, ccFly = 0.25f, ccWait = 1f, ccPush = 4f, ccLast = 6f, ccKnockHold = 1.5f, ccCooldown = 14f;
+        [Tooltip("퀸 연속 체크 (3판): 몇 번까지")]
+        public int ccMax = 3;
+
+        [Header("기물별 한 벌 2판 · 폰 첫 두 걸음의 앙파상 (P-초)")]
+        [Tooltip("돌진 스킬로 이 거리 (m) 안을 지나친 적의 발밑에 고리가 이만큼 (초) 뜬다")]
+        public float stepPassRange = 2f, stepPassWindow = 0.4f;
+        [Tooltip("비스듬히 맞힌 걸음과 앙파상이 넘어뜨리는 시간 (초)")]
+        public float stepKnockHold = 1.2f;
+
+        [Header("기물별 한 벌 2판 · 폰 쫓아내기 (P-중)")]
+        [Tooltip("룩 · 퀸이 넘어져 있는 시간 (초)")]
+        public float chaseKnockHold = 2f;
+
+        [Header("기물별 한 벌 2판 · 나이트 포크 (N-중): 내린 점 앞 좌우 두 자리 (ㄱ자)")]
+        [Tooltip("내린 점에서 앞으로 (m), 옆으로 (m): 두 자리가 ㄱ자로 2.5 m쯤 떨어진다; 한 자리의 반경 (m)")]
+        public float forkSpotAhead = 2.25f, forkSpotSide = 1.1f, forkSpotRadius = 1.1f;
+        [Tooltip("둘이 다 맞으면 넘어져 있는 시간 (초)")]
+        public float forkKnockHold = 2f;
+
+        [Header("기물별 한 벌 2판 · 비숍 옆구리 사격 (B-초)")]
+        [Tooltip("맞은 적의 발이 무거운 시간 (초)과 빠르기 배수")]
+        public float flankSlowSeconds = 1.5f, flankSlow = 0.7f;
+
+        [Header("기물별 한 벌 2판 · 비숍 긴 대각선 저격 (B-상, 상급 수치)")]
+        [Tooltip("넘어짐 (초): 12~22 m, 22 m 너머 (날아감). 두 저격이 같이 쓴다")]
+        public float snipeKnockHold = 2f, snipeFlyHold = 2.5f;
+        [Tooltip("상급 저격의 쿨 (초)")]
+        public float snipeHighCooldown = 40f;
+
+        [Header("기물별 한 벌 2판 · 룩 뒤에서 잡기 (R-중): 휠로 감기")]
+        [Tooltip("휠 한 칸이 빨리 감는 시간 (초)")]
+        public float behindWheelHold = 0.3f;
+
+        [Header("기물별 한 벌 2판 · 퀸 연속 체크 (Q-중)")]
+        [Tooltip("못 비킨 적이 넘어져 있는 시간 (초)")]
+        public float seriesKnockHold = 2f;
+
+        [Header("기물별 한 벌 2판 · 킹 왕의 한 걸음 (K-초): 한 칸 잡기")]
+        [Tooltip("적의 곁 이 거리 (m) 안에 그 팀원이 서 있으면 받쳐진 말: 밀리지 않는다")]
+        public float stepDefended = 1.5f;
+
+        [Header("기물별 한 벌 2판 · 퀸 여왕의 활주 (Q-초)")]
+        [Tooltip("미끄러지는 빠르기 (m/s)와 가장 먼 거리 (m); 닿은 적을 미는 거리 (m); 멈춘 뒤 (초); 쿨 (초)")]
+        public float glideSpeed = 7f, glideMax = 7f, glideShove = 1.5f, glideRecovery = 0.15f, glideCooldown = 9f;
+
+        [Header("기물별 한 벌 2판 · 퀸 여덟 줄 (Q-상, R 키)")]
+        [Tooltip("줄 길이 (m), 줄 굵기 (m), 터지기까지 (초), 돌릴 수 있는 각 (°), 돌리는 빠르기 (°/초)")]
+        public float eightLength = 7f, eightRadius = 0.5f, eightFuse = 0.5f, eightTurn = 22.5f, eightTurnSpeed = 90f;
+        [Tooltip("맞은 적을 줄 따라 미는 빠르기 · 위로 (m/s), 넘어짐 (초), 여럿 맞히면 멈칫 (초)")]
+        public float eightPush = 7f, eightLift = 3f, eightHold = 2.5f, eightStop = 0.15f;
+        [Tooltip("이만큼 이상 맞히면 멈칫")]
+        public int eightMany = 3;
+        [Tooltip("찍은 뒤 (초); 쿨 (초)")]
+        public float eightRecovery = 0.3f, eightCooldown = 60f;
+
+        [Header("기물별 한 벌 2판 · 룩 성벽 돌진 (R-상)")]
+        [Tooltip("달리는 거리 (m) · 빠르기 (m/s); 출발 전 바닥 줄 예고 (초)")]
+        public float wallRun = 9f, wallSpeed = 10f, wallWarn = 0.4f;
+        [Tooltip("성벽 높이 · 두께 (m), 서 있는 시간 (초), 솟는 시간 (초)")]
+        public float wallHeight = 1.2f, wallThick = 0.45f, wallSeconds = 5f, wallRise = 0.2f;
+        [Tooltip("달리는 몸에 부딪힌 적을 옆으로 미는 거리 (m); 멈춘 뒤 (초); 쿨 (초)")]
+        public float wallShove = 2f, wallRecovery = 0.3f, wallCooldown = 40f;
+
+        // ---------------------------------------------------------------- the set 4판 (ROUND1, 11-26: every number a
+        // first try of the planning session's, to change after the user has played it)
+
+        [Header("4판 · 공통: 등급의 쿨 (초급 · 중급 · 상급, 초)")]
+        public float s4Basic = 6f, s4Mid = 12f, s4High = 30f;
+        [Header("4판 · 날리기 세 가지: 살짝 · 뻥 · 쾅 (가는 거리 m, 높이 m)")]
+        public float s4LightDist = 2f, s4LightUp = 0.5f, s4BangDist = 5f, s4BangUp = 2f, s4BoomDist = 8f, s4BoomUp = 3.5f;
+
+        [Header("4판 · 방해(CC) 일곱 가지")]
+        [Tooltip("헤롱헤롱: 흔들리는 각 (°), 한 번 오가는 시간 (초), 밀리는 거리 배")]
+        public float ccDizzyAngle = 35f, ccDizzyPeriod = 1.2f, ccDizzyPush = 1.5f;
+        [Tooltip("지침: 점프 높이 배")]
+        public float ccTiredJump = 0.6f;
+        [Tooltip("무거움: 이동 · 점프 · 밀림 배")]
+        public float ccHeavyMove = 0.6f, ccHeavyJump = 0.5f, ccHeavyPush = 0.5f;
+        [Tooltip("묶임 (깡충형): 한 번에 가는 거리 (m), 한 번마다 (초)")]
+        public float ccHopDist = 1.2f, ccHopEvery = 0.5f;
+        [Tooltip("미끌미끌: 빨라지기 · 멈추기 · 꺾기가 듣는 몫")]
+        public float ccSlipAccel = 0.2f;
+        [Tooltip("쪼꼬미: 보이는 크기, 이동 · 점프 · 밀림 배")]
+        public float ccTinyScale = 0.5f, ccTinyMove = 0.7f, ccTinyJump = 0.6f, ccTinyPush = 2f;
+
+        [Header("4판 · 폰 앙파상! (초급)")]
+        [Tooltip("발을 내미는 시간 (초), 옆으로 닿는 거리 (m), 양쪽 부채꼴 (°), 콰당! (초)")]
+        public float tripWindow = 0.6f, tripReach = 2f, tripCone = 60f, tripFlop = 1.5f;
+        [Header("4판 · 폰 벽돌 (초급)")]
+        [Tooltip("겨누는 거리 (m), 머리 위 높이 (m), 떨어지기까지 (초), 떨어지는 시간 (초), 맞는 반지름 (m), 헤롱헤롱 (초)")]
+        public float brickRange = 12f, brickHigh = 3f, brickDelay = 0.6f, brickFall = 0.3f, brickHit = 0.8f, brickDizzy = 2f;
+        [Header("4판 · 폰 구덩이 (초급)")]
+        [Tooltip("폰 뒤로 (m), 지름 (m), 남는 시간 (초), 묶임 (초), 빠져나올 때 튀는 빠르기 (m/s)")]
+        public float pitBack = 1.1f, pitSize = 1.2f, pitSeconds = 6f, pitHold = 1.5f, pitPop = 4f;
+
+        [Header("4판 · 나이트 포크! (중급)")]
+        [Tooltip("뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 찾는 거리 (m), 둘이면 헤롱헤롱 (초), 하나면 (초)")]
+        public float forkRange = 6f, forkHigh = 2.5f, forkReach = 2f, forkDizzyTwo = 3f, forkDizzyOne = 2f;
+        [Header("4판 · 나이트 뒷발차기 (초급)")]
+        [Tooltip("맞은 적에게 더하는 헤롱헤롱 (초)")]
+        public float kick4Dizzy = 2f;
+
+        [Header("4판 · 비숍 성수병 (초급)")]
+        [Tooltip("던지는 거리 (m), 웅덩이 지름 (m), 남는 시간 (초), 미끌미끌 (초), 날아가는 시간 (초)")]
+        public float water4Range = 15f, water4Size = 3f, water4Seconds = 4f, water4Slip = 3f, water4Flight = 0.7f;
+        [Header("4판 · 비숍 설교 (초급)")]
+        [Tooltip("겨누는 거리 (m), 지침 (초)")]
+        public float sermonRange = 20f, sermonTired = 3f;
+
+        [Header("4판 · 룩 직진! (중급)")]
+        [Tooltip("고개 숙임 (초), 달리는 거리 (m) · 빠르기 (m/s), 닿는 거리 (m), 벽에 박으면 헤롱헤롱 (초)")]
+        public float charge4Bow = 0.3f, charge4Dist = 12f, charge4Speed = 10f, charge4Reach = 1.1f, charge4WallDizzy = 1.5f;
+        [Header("4판 · 룩 돌 얹기 (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 무거움 (초)")]
+        public float capRange = 4f, capHeavy = 3f;
+
+        [Header("4판 · 퀸 왕관 헌납 (초급)")]
+        [Tooltip("던지는 거리 (m), 날아가는 시간 (초), 맞는 반지름 (m), 무거움 (초)")]
+        public float crownRange = 12f, crownFlight = 0.8f, crownHit = 0.9f, crownHeavy = 3f;
+        [Header("4판 · 퀸 무엄하다! (상급)")]
+        [Tooltip("숨 들이쉬기 (초), 거리 (m), 부채꼴 (°), 쪼꼬미 (초)")]
+        public float shoutBreath = 0.4f, shoutRange = 8f, shoutCone = 90f, shoutTiny = 4f;
+
+        // ---------------------------------------------------------------- the set 4판's bundle 나 (11-26)
+
+        [Header("4판 나 · 폰 독 든 폰 (초급)")]
+        [Tooltip("남는 시간 (초), 걸리는 거리 (m), 지침 (초)")]
+        public float poisonSeconds = 8f, poisonReach = 1f, poisonTired = 3f;
+        [Header("4판 나 · 폰 폰 폭풍 (중급)")]
+        [Tooltip("꼬마 폰 수, 빠르기 (m/s), 가는 거리 (m), 가는 시간 (초), 옆 간격 (m), 닿는 거리 (m), 묶임 깡충형 (초)")]
+        public int stormCount = 3;
+        public float stormSpeed = 4.5f, stormRange = 15f, stormTime = 6f, stormGap = 0.6f, stormReach = 0.6f, stormBound = 3f;
+
+        [Header("4판 나 · 나이트 엉덩방아 (초급)")]
+        [Tooltip("뒤에서 찾는 거리 (m), 적이 없을 때 뒤로 뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 닿는 거리 (m), 콰당! (초)")]
+        public float slamBack = 6f, slamHop = 4f, slamHigh = 1.5f, slamReach = 1.5f, slamFlop = 1.5f;
+        [Header("4판 나 · 나이트 히힝! (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 등 뒤로 도는 시간 (초), 놀라 뛰는 높이 (m), 헤롱헤롱 (초)")]
+        public float neighRange = 5f, neighTime = 0.3f, neighJump = 1f, neighDizzy = 2f;
+
+        [Header("4판 나 · 비숍 먹구름 (초급)")]
+        [Tooltip("겨누는 거리 (m), 비가 오기까지 (초), 미끌미끌 (초)")]
+        public float cloudRange = 20f, cloudDelay = 0.5f, cloudSlip = 3f;
+        [Header("4판 나 · 비숍 향로 (초급)")]
+        [Tooltip("연기를 남기는 시간 (초), 연기 폭 (m), 연기 하나가 남는 시간 (초), 지침 (초)")]
+        public float censerSeconds = 4f, censerWidth = 2f, censerLinger = 3f, censerTired = 3f;
+        [Header("4판 나 · 비숍 종 씌우기 (중급)")]
+        [Tooltip("겨누는 거리 (m), 머리 위 높이 (m), 떨어지기까지 (초), 떨어지는 시간 (초), 지름 (m), 헤롱헤롱 (초)")]
+        public float bellRange = 18f, bellHigh = 6f, bellDelay = 0.8f, bellFall = 0.45f, bellSize = 1.5f, bellDizzy = 3f;
+        [Header("4판 나 · 비숍 퇴장! (중급)")]
+        [Tooltip("지팡이가 뻗는 거리 (m) · 시간 (초), 넘기는 곳 (비숍 뒤, m), 넘기는 높이 (m), 비숍이 앞으로 튀는 거리 (m)")]
+        public float crookRange = 10f, crookTime = 0.3f, crookBack = 3f, crookHigh = 1.5f, crookHop = 3f;
+
+        [Header("4판 나 · 룩 성벽! (초급)")]
+        [Tooltip("등 뒤 거리 (m), 폭 (m), 높이 (m), 두께 (m), 서 있는 시간 (초), 부딪혀 넘어지는 빠르기 (m/s)")]
+        public float rampartBack = 1.5f, rampartWide = 4f, rampartTall = 2f, rampartThick = 0.5f, rampartSeconds = 4f, rampartBump = 3f;
+        [Header("4판 나 · 룩 수평 룩 (초급)")]
+        [Tooltip("미끄러지는 거리 (m), 시간 (초), 닿는 거리 (m)")]
+        public float slideDist = 5f, slideTime = 0.4f, slideReach = 1.1f;
+        [Header("4판 나 · 룩 잔디깎이 (중급)")]
+        [Tooltip("시간 (초), 빨라지는 배, 닿는 거리 (m), 위로 날리는 높이 (m) · 거리 (m)")]
+        public float mowerSeconds = 3f, mowerSpeed = 1.3f, mowerReach = 1f, mowerUp = 3.5f, mowerDist = 2.5f;
+
+        [Header("4판 나 · 퀸 스콜라 메이트 (초급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 달려가는 시간 (초), 고개를 숙여 피하는 부채꼴 (좌우 °)")]
+        public float scholarRange = 6f, scholarTime = 0.4f, scholarDuck = 60f;
+        [Header("4판 나 · 퀸 영구 체크 (중급)")]
+        [Tooltip("겨누는 거리 (앞쪽, m), 따라다니는 시간 (초), 때리는 사이 (초), 때리는 수, 벌어지면 끝 (m), 헤롱헤롱 (초)")]
+        public float check4Range = 8f, check4Seconds = 3f, check4Every = 0.6f, check4Break = 3f, check4Dizzy = 3f;
+        public int check4Hits = 5;
+        [Header("4판 나 · 퀸 퀸 희생!! (상급)")]
+        [Tooltip("반짝이는 시간 (초), 날리는 거리 (둘레, m), 흩어져 있는 시간 (초)")]
+        public float sac4Glow = 0.5f, sac4Range = 6f, sac4Scatter = 1.5f;
+
+        // ---------------------------------------------------------------- the set 4판's bundle 다 (11-26)
+
+        [Header("4판 다 · 폰 승격 5초 전 (중급)")]
+        [Tooltip("버텨야 하는 시간 (초), 승격하면 날리는 거리 (둘레, m), 금빛인 시간 (초)")]
+        public float promoSeconds = 5f, promoRange = 5f, promoGold = 3f;
+        [Header("4판 다 · 나이트 땅속 헤엄 (중급)")]
+        [Tooltip("헤엄치는 시간 (최대, 초), 빠르기 (m/s), 솟을 때 날리는 거리 (m), 위로 날리는 높이 (m)")]
+        public float burrowSeconds = 3f, burrowSpeed = 6f, burrowReach = 1.5f, burrowUp = 3.5f;
+        [Header("4판 다 · 비숍 핀! (중급)")]
+        [Tooltip("던지는 거리 (m), 빠르기 (m/s), 맞는 거리 (m), 묶임 (초), 고무줄 길이 (m)")]
+        public float pin4Range = 15f, pinSpeed = 20f, pinReach = 0.6f, pin4Seconds = 3f, pinLeash = 2f;
+        [Header("4판 다 · 룩 더 루우욱! (상급)")]
+        [Tooltip("겨누는 거리 (m), 웅크림 (초), 날아가는 시간 (초), 떨어진 자리에서 닿는 거리 (m), 콰당! (초), 거꾸로 박혀 버둥 (초)")]
+        public float diveRange = 20f, diveCrouch = 0.4f, diveFlight = 1.2f, diveReach = 4f, diveFlop = 2f, diveStuck = 1.5f;
+        [Header("4판 다 · 룩 넘어간다~! (상급)")]
+        [Tooltip("자라는 시간 (초), 탑 키 (m), 쓰러지는 시간 (초), 쓰러진 줄의 폭 (m), 콰당! (초), 다리로 있는 시간 (초)")]
+        public float timberGrow = 1f, timberTall = 8f, timberFall = 0.5f, timberWide = 2f, timberFlop = 2f, timberBridge = 2f;
+        [Header("4판 다 · 룩 돼지 (상급)")]
+        [Tooltip("성문을 벌리는 시간 (초), 빨아들이는 거리 (m), 부채꼴 (°), 끄는 빠르기 (m/s), 삼키는 수, 뱉기까지 (삼키고, 초)")]
+        public float pigSeconds = 2f, pigRange = 8f, pigCone = 60f, pigPull = 5f, pigHold = 2f;
+        public int pigMouthful = 3;
+        [Header("4판 다 · 룩 룩 리프트 (중급)")]
+        [Tooltip("탑 지름 (m), 높이 (m), 솟는 시간 (초), 서 있는 시간 (초)")]
+        public float liftWide = 3f, liftTall = 4f, liftRise = 0.5f, liftSeconds = 3f;
+        [Header("4판 다 · 퀸 행차 (상급)")]
+        [Tooltip("카펫 폭 (m), 구르는 빠르기 (m/s), 길이 (m), 남는 시간 (초), 퀸이 빨라지는 배, 말려 밀리는 거리 (m), 말려 있는 시간 (초)")]
+        public float carpetWide = 3f, carpetSpeed = 12f, carpetLength = 20f, carpetSeconds = 5f, carpetBoost = 1.3f, carpetPush = 3f, carpetRoll = 1.5f;
+        [Header("4판 다 · 퀸 착석! (상급)")]
+        [Tooltip("겨누는 거리 (m), 그림자 지름 (m), 사라졌다 떨어지기까지 (초), 떨어지는 높이 (m), 내려앉고 못 움직이는 시간 (초)")]
+        public float throneRange = 25f, throneSize = 5f, throneDelay = 1f, throneHigh = 4f, throneSit = 0.5f;
+        [Header("4판 다 · 퀸 퀸스 갬빗 (상급)")]
+        [Tooltip("겨누는 거리 (m), 둘레 지름 (m), 첫째가 떨어지기까지 (초), 사이 (초), 떨어지는 시간 (초), 말 하나의 지름 (m), 매달린 높이 (m)")]
+        public float gambitRange = 25f, gambitSize = 10f, gambitDelay = 1f, gambitEvery = 0.3f, gambitFall = 0.35f, gambitPiece = 2f, gambitHigh = 6f;
+
+        // ---------------------------------------------------------------- the user's own ten (JY, USER_SKILLS 4장, 11-26)
+
+        [Header("JY · 새 상태 납작이 · 멈춤")]
+        [Tooltip("납작이: 길이 (초, 안 눌러도 풀림), 그려지는 높이 (몫), 폭 (몫), 걷기 (몫), 점프 높이 (몫)")]
+        public float flatSeconds = 8f, flatHigh = 0.25f, flatWide = 1.5f, flatMove = 0.7f, flatJump = 0.3f;
+        [Tooltip("납작이를 푸는 점프 키 누름 수")]
+        public int flatPresses = 5;
+        [Header("JY · 폰 첫 두걸음+대각선 공격 (초급)")]
+        [Tooltip("두 걸음 거리 (m), 시간 (초), 웅크림 (초), 둘째 키를 받는 시간 (초), 대각선 안쪽 · 바깥쪽 각도 (°), 대각선 거리 (m), 박치기까지 (초)")]
+        public float jyStepDist = 3f, jyStepTime = 0.35f, jyStepCrouch = 0.1f, jyDiagWindow = 1f, jyDiagInner = 25f, jyDiagOuter = 65f, jyDiagReach = 2.5f, jyDiagLunge = 0.18f;
+        [Header("JY · 폰 앙파상-밧줄 (중급)")]
+        [Tooltip("가장 짧게 · 길게 던지는 거리 (m), 다 돌리기까지 (초), 매듭이 걸리는 거리 (m), 끌려오는 빠르기 (m/s), 폰이 당겨지는 더함 (m/s), 당기는 시간 (초), 뒷목을 치는 거리 (m), 콰당! (초)")]
+        public float jyRopeShort = 4f, jyRopeLong = 10f, jyRopeSpin = 1f, jyRopeCatch = 0.7f, jyRopePull = 8f, jyRopeLunge = 4f, jyRopeTime = 1f, jyRopeChop = 1.2f, jyRopeFlop = 1.5f;
+        [Header("JY · 나이트 점프&밟기 (중급)")]
+        [Tooltip("준비 (초), 솟는 높이 (m), 무늬 거리 (m), 뛴 자리보다 높은 적 빼기 (m), 내리꽂기 (초), 머리 딛고 튀기 (m), 포크 둘레 (m), 포크 묶임 (초)")]
+        public float jyJumpPrep = 0.15f, jyJumpHigh = 3f, jyMarkRange = 6f, jyMarkAbove = 1f, jyDiveTime = 0.3f, jyStompBounce = 1f, jyForkRange = 3f, jyForkBind = 1.5f;
+        [Header("JY · 비숍 성검 던지기 (중급)")]
+        [Tooltip("소환 (초), 거리 (m), 빠르기 (m/s), 맞는 거리 (m), 십자가 높이 · 가로대 (m), 묶임 (초), 길 막는 시간 (초)")]
+        public float jySwordSummon = 0.25f, jySwordRange = 15f, jySwordSpeed = 18f, jySwordCatch = 0.8f, jyCrossHigh = 3f, jyCrossWide = 3f, jyCrossBind = 2f, jyCrossSeconds = 4f;
+        [Header("JY · 비숍 케틀 궁 (상급)")]
+        [Tooltip("조준 예고 (초), 탄환 빠르기 (m/s), 맞는 거리 (m)")]
+        public float jyBowAim = 1f, jyBowSpeed = 40f, jyBowCatch = 0.7f;
+        [Header("JY · 비숍 핀! (중급)")]
+        [Tooltip("준비 (초), 길이 (m), 폭 (m), 멈춤 (초)")]
+        public float jyBeamPrep = 0.15f, jyBeamRange = 25f, jyBeamWide = 0.4f, jyBeamFreeze = 2f;
+        [Tooltip("한 줄에서 맞는 적 수")]
+        public int jyBeamHits = 2;
+        [Header("JY · 룩 거대화 (상급)")]
+        [Tooltip("준비 (초), 크기 (배), 커지기 (초), 길이 (초)")]
+        public float jyGiantPrep = 0.5f, jyGiantScale = 4f, jyGiantGrow = 0.5f, jyGiantSeconds = 8f;
+        [Header("JY · 룩 힘세지기 (상급)")]
+        [Tooltip("준비 (초), 길이 (초), 크기 (배), 밀리는 거리 (몫), 빠르기 (몫), 집는 거리 (m), 던지는 거리 (m), 던지는 높이 (m), 빠져나오기 (초)")]
+        public float jyStrongPrep = 0.3f, jyStrongSeconds = 15f, jyStrongScale = 1.5f, jyStrongPush = 0.3f, jyStrongMove = 0.9f, jyStrongReach = 2f, jyStrongThrow = 4f, jyStrongThrowHigh = 1.5f, jyStrongEscape = 3f;
+        [Header("JY · 룩 벨코즈 q 성벽 (중급) · 성벽 짓기 (상급)")]
+        [Tooltip("벽 높이 (m), 두께 (m) · T자: 준비 (초), 뻗는 빠르기 (m/s), 곧은 길이 (m), 양쪽 날개 (m), 서 있는 시간 (초)")]
+        public float jyWallHigh = 2f, jyWallThick = 0.6f, jyTWallPrep = 0.15f, jyTWallSpeed = 20f, jyTWallLength = 10f, jyTWallWing = 4f, jyTWallSeconds = 5f;
+        [Tooltip("성벽 짓기: 분신 빠르기 (m/s), 벽 길이 (m), 꺾기 쿨 (초), 다 지은 뒤 서 있는 시간 (초)")]
+        public float jyBuildSpeed = 10f, jyBuildLength = 24f, jyBuildTurnCool = 0.5f, jyBuildSeconds = 5f;
+        [Tooltip("성벽 짓기: 꺾는 횟수")]
+        public int jyBuildTurns = 4;
     }
 }

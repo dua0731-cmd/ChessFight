@@ -170,6 +170,8 @@ namespace ChessFight.PawnRush
 
         void OpenGate()
         {
+            // JY-skill-lab: the skills hear that this team has cleared a mini-game (the set 2안-a's endgame shapes).
+            CourseSkills.MiniGameDone?.Invoke(team);
             // R704: under the flow rule "모여서 발판" a mini-game room's gate waits for the team on its pad
             // (MiniGameSection.Rules.cs opens it with OpenGateNow). Course 01's stations have no such room.
             if (PawnRushRules.Current.After == PawnRushRules.AfterGather && GetComponentInParent<MiniGameSection>(true) != null) return;

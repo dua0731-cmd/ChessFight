@@ -140,14 +140,105 @@ namespace ChessFight.RagdollLab
 
         void OnPawnRush(SkillFxEvent e)
         {
+            // 11-26 (the set 4판): a hindrance put on an enemy is its giver's hit; a hindrance ending, a tied piece's hop
+            // and a speech bubble are nobody's cast (they opened a cast on the piece hindered, graded "?").
+            if (e.kind == SkillFxKind.S4Cc || e.kind == SkillFxKind.S4Hop || e.kind == SkillFxKind.S4Say || e.kind == SkillFxKind.S4Flat
+                || e.kind == SkillFxKind.JyWallLeg || e.kind == SkillFxKind.JyWallEnd)
+            {
+                if (e.kind == SkillFxKind.S4Cc && e.count != 0 && e.by != null && e.target != null && e.by != e.target)
+                {
+                    Struck(e.target, e.by);
+                    var given = Touch(e.by, Mode.PawnRush, e.by.Piece);
+                    if (given != null)
+                    {
+                        Hit(given, e.target);
+                        Check(given);
+                    }
+                }
+                return;
+            }
             Struck(e.target, e.by);
+            // A 4판 moment after a skill's start (a landing, a reassembly, a chase over) belongs to the cast still open, and
+            // opens none (it opened an empty one, graded "?", after the cast had been graded).
+            if (LaterMoment4(e) && (e.by == null || !open.TryGetValue(e.by, out var still) || still.closed)) return;
             var c = Touch(e.by, Mode.PawnRush, PieceOf(e.kind.ToString(), e.by));
             if (c == null) return;
             switch (e.kind)
             {
                 case SkillFxKind.QueenHit: case SkillFxKind.RookHit: case SkillFxKind.RookStop:
                 case SkillFxKind.BishopTrip: case SkillFxKind.KnightStomp: case SkillFxKind.PawnHit:
+                case SkillFxKind.S3Hit:   // (the 3판's and 4판's smack)
                     Hit(c, e.target); break;
+                // What a 4판 skill leaves lying keeps its cast open while it lies, so a hit then is its (not a "?" first).
+                case SkillFxKind.S4Poison: case SkillFxKind.S4Pit: case SkillFxKind.S4Censer: case SkillFxKind.S4Wall:
+                case SkillFxKind.S4Crown:
+                    if (e.count == 0 || e.kind == SkillFxKind.S4Wall) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 0.5f);
+                    if (e.kind == SkillFxKind.S4Censer && e.count == 0) c.holdUntil += 3f;   // (its smoke lies 3 s more)
+                    break;
+                case SkillFxKind.S4Brick: case SkillFxKind.S4Bell:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 1f);
+                    break;
+                case SkillFxKind.S4Storm:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + Mathf.Max(1f, e.normal.y) + 0.5f);
+                    break;
+                case SkillFxKind.S4Cloud:
+                    c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
+                    break;
+                // Bundle 다: open while it plays out (a countdown, a swim, a throw, a tower, a carpet, the falling pieces).
+                case SkillFxKind.S4Promo: case SkillFxKind.S4Burrow: case SkillFxKind.S4Dive: case SkillFxKind.S4Timber:
+                case SkillFxKind.S4Throne:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + Mathf.Clamp(e.size, 0.3f, 6f) + 0.6f);
+                    break;
+                case SkillFxKind.S4Pin:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + (e.normal - e.at).magnitude / Mathf.Max(1f, e.size) + 0.5f);
+                    break;
+                case SkillFxKind.S4Carpet:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.normal.x / Mathf.Max(1f, e.size) + 0.5f);
+                    break;
+                case SkillFxKind.S4Gambit:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4f * e.normal.y + 1f);
+                    break;
+                case SkillFxKind.S4Pig:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 2.5f);
+                    break;
+                case SkillFxKind.S3WaterThrow:
+                    c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 4.5f);   // (the puddle lies its seconds)
+                    break;
+                // The user's own (JY): open through the steps' window, the rope in the hand and its pull, the jump.
+                case SkillFxKind.JyStep:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 1.6f);
+                    else if (e.count == 2) Hit(c, e.target);   // (the headbutt: a fall, no hindrance)
+                    break;
+                case SkillFxKind.JyRope:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 20f);   // (as long as it is held)
+                    else if (e.count == 1) c.holdUntil = Now;
+                    else if (e.count == 3) c.holdUntil = Now + 3f;
+                    break;
+                case SkillFxKind.JyStomp:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 4f);
+                    break;
+                case SkillFxKind.JySword:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 2.5f);
+                    break;
+                case SkillFxKind.JyBow:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 3f);
+                    else if (e.count == 2 || e.count == 3) Hit(c, e.target);
+                    break;
+                case SkillFxKind.JyBeam:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 1f);
+                    break;
+                case SkillFxKind.JyGiant: case SkillFxKind.JyStrong:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 17f);
+                    else if (e.count == 2 && e.kind == SkillFxKind.JyGiant) Hit(c, e.target);
+                    else if (e.count == 3 && e.kind == SkillFxKind.JyStrong) Hit(c, e.target);
+                    break;
+                case SkillFxKind.JyTWall:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 6f);
+                    break;
+                case SkillFxKind.JyBuild:
+                    if (e.count == 0) c.holdUntil = Mathf.Max(c.holdUntil, Now + 9f);
+                    else if (e.count == 2) Hit(c, e.target);
+                    break;
                 case SkillFxKind.PawnHelp:
                     c.helped++; break;
                 case SkillFxKind.BishopWire:
@@ -188,6 +279,31 @@ namespace ChessFight.RagdollLab
                     break;
             }
             Check(c);
+        }
+
+        /// <summary>A 4판 moment that comes after its skill began (count not 0: a landing, a catch, an end), the fan's chase
+        /// (4) aside, which is a start.</summary>
+        static bool LaterMoment4(SkillFxEvent e)
+        {
+            if (e.count == 0) return false;
+            switch (e.kind)
+            {
+                case SkillFxKind.S4Trip: case SkillFxKind.S4Brick: case SkillFxKind.S4Pit: case SkillFxKind.S4Bonk:
+                case SkillFxKind.S4Charge: case SkillFxKind.S4Crown: case SkillFxKind.S4Shout: case SkillFxKind.S4Poison:
+                case SkillFxKind.S4Storm: case SkillFxKind.S4Slam: case SkillFxKind.S4Neigh: case SkillFxKind.S4Censer:
+                case SkillFxKind.S4Bell: case SkillFxKind.S4Crook: case SkillFxKind.S4Slide: case SkillFxKind.S4Mower:
+                case SkillFxKind.S4Sac: case SkillFxKind.S4Promo: case SkillFxKind.S4Burrow: case SkillFxKind.S4Pin:
+                case SkillFxKind.S4Dive: case SkillFxKind.S4Timber: case SkillFxKind.S4Pig: case SkillFxKind.S4Carpet:
+                case SkillFxKind.S4Throne: case SkillFxKind.S4Gambit:
+                case SkillFxKind.JyStep: case SkillFxKind.JyRope: case SkillFxKind.JyStomp:
+                case SkillFxKind.JySword: case SkillFxKind.JyBow: case SkillFxKind.JyBeam:
+                case SkillFxKind.JyGiant: case SkillFxKind.JyStrong: case SkillFxKind.JyTWall: case SkillFxKind.JyBuild:
+                    return true;
+                case SkillFxKind.S4Fan:
+                    return e.count != 4;
+                default:
+                    return false;
+            }
         }
 
         static PieceKind PieceOf(string kind, RagdollPawn by)

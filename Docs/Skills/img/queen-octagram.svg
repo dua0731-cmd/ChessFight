@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>Queen octagram (여왕의 위상)</title>
+  <g fill="#111" stroke="#fff" stroke-width="1.2" stroke-linejoin="round">
+    <polygon points="100.0,94.0 90.6,69.4 100.0,6.0"/>
+    <polygon points="100.0,94.0 100.0,6.0 109.4,69.4"/>
+    <polygon points="104.2,95.8 115.0,71.7 166.5,33.5"/>
+    <polygon points="104.2,95.8 166.5,33.5 128.3,85.0"/>
+    <polygon points="106.0,100.0 130.6,90.6 194.0,100.0"/>
+    <polygon points="106.0,100.0 194.0,100.0 130.6,109.4"/>
+    <polygon points="104.2,104.2 128.3,115.0 166.5,166.5"/>
+    <polygon points="104.2,104.2 166.5,166.5 115.0,128.3"/>
+    <polygon points="100.0,106.0 109.4,130.6 100.0,194.0"/>
+    <polygon points="100.0,106.0 100.0,194.0 90.6,130.6"/>
+    <polygon points="95.8,104.2 85.0,128.3 33.5,166.5"/>
+    <polygon points="95.8,104.2 33.5,166.5 71.7,115.0"/>
+    <polygon points="94.0,100.0 69.4,109.4 6.0,100.0"/>
+    <polygon points="94.0,100.0 6.0,100.0 69.4,90.6"/>
+    <polygon points="95.8,95.8 71.7,85.0 33.5,33.5"/>
+    <polygon points="95.8,95.8 33.5,33.5 85.0,71.7"/>
+  </g>
+</svg>

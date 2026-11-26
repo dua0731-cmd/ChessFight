@@ -27,6 +27,9 @@ namespace ChessFight.RagdollLab
         public bool sprint;
         /// <summary>Pressed: the piece's main ability (E) / its second one (Q, queen and king).</summary>
         public bool ability, ability2;
+        /// <summary>Pressed: the third ability key (R, LabGame.Ability3Key: the Pawn Rush skill slots' third, the queen's;
+        /// JY-skill-lab 2026-11-20). Offline only for now: it does not travel over a network.</summary>
+        public bool ability3;
         /// <summary>Held, not an edge: a bell takes the press, en passant needs a 0.4 s hold.</summary>
         public bool interact;
         /// <summary>World-space unit vector the player aims along (the camera's forward); zero for none.</summary>
@@ -40,6 +43,11 @@ namespace ChessFight.RagdollLab
         /// <summary>The mouse wheel's notches this frame (up positive): the Pawn Rush bishop's rope (10-26). The local
         /// player's only (not sent online yet: a client works the rope with W/S).</summary>
         public float reel;
+        /// <summary>Held: the Pawn Rush support key (G, LabGame.SupportKey; JY-skill-lab 11-22): the team leader's call and its
+        /// hold (the chain, the rope, the drawbridge); its press is the edge the pawn sees.</summary>
+        public bool supportHeld;
+        /// <summary>Held: the skill key (F) - a teammate carried by a support keeps its grip with it (the horse, the drone).</summary>
+        public bool skillHeld;
     }
 
     /// <summary>
@@ -142,7 +150,8 @@ namespace ChessFight.RagdollLab
             get
             {
                 float top = Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                            * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+                            * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move
+                            * SkillMoveScale;   // heavy feet (a bishop's fianchetto, RagdollPawn.KitSkills.cs)
                 // R461: over a speed lane (ISpeedSurface) at least its speed
                 return groundSpeedSurface != null ? Mathf.Max(top, groundSpeedSurface.TopSpeed) : top;
             }
@@ -590,6 +599,9 @@ namespace ChessFight.RagdollLab
         /// Queen of the Hill bishop's hover slides on it (R105).</summary>
         Vector3 givenMove;
 
+        /// <summary>The left button held as last given (SetInput), whatever a skill did to input's this step.</summary>
+        bool rawShoveHeld;
+
         public void SetInput(PawnInput next)
         {
             // A mini-game holding this pawn still (J's pad winding up), or taking its jump press instead.
@@ -612,10 +624,17 @@ namespace ChessFight.RagdollLab
             input.shove |= next.shove;
             input.ability |= next.ability;
             input.ability2 |= next.ability2;
+            input.ability3 |= next.ability3;
             if (next.interact && !input.interact) interactPressed = true;
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
+            rawShoveHeld = next.shoveHeld;   // (as given: a skill that takes the button clears input's, every physics step)
             input.aim = next.aim;
+            // 11-22: the support key (G) and the skill key (F) held (RagdollPawn.Support.cs); a G tap between two physics
+            // steps is kept for the next one.
+            input.supportHeld = next.supportHeld;
+            input.skillHeld = next.skillHeld;
+            if (next.supportHeld) supTap = true;
             if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
             if (next.reel != 0f) AddSkillWheel(next.reel);   // the wheel's notches, kept until the next physics step
             if (next.emote != 0) PlayEmote(next.emote);
@@ -728,6 +747,7 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             if (NetworkPuppet) return;
+            if (FrozenStep(Time.fixedDeltaTime)) return;   // 핀!'s 멈춤: held exactly as it was hit (RagdollPawn.Cc.cs)
             var p = P;
             float dt = Time.fixedDeltaTime;
             if (stamina < 0f) stamina = p.climbStaminaMax;
@@ -805,6 +825,7 @@ namespace ChessFight.RagdollLab
             input.shove = false;
             input.ability = false;
             input.ability2 = false;
+            input.ability3 = false;
             interactPressed = false;
         }
 
@@ -959,6 +980,7 @@ namespace ChessFight.RagdollLab
         {
             if (Floating) return;   // the water catches it
             if (KingCallShielded) return;   // on its way in to its king (R146)
+            if (WardCatchesKnockdown(cause)) return;   // JY-skill-lab: under a close guard (근접 호위): a stagger instead
             DropHook();
             DropRope();
             EndClimbPose();
@@ -1272,10 +1294,12 @@ namespace ChessFight.RagdollLab
 
             // Thrown by a launch pad the pawn flies the pad's arc (carryVel is the throw): it may only nudge
             // itself launchSteer m/s off it, so it comes down on the spot the pad aims at.
-            Vector3 targetVel = move * (launched ? Mathf.Min(top, p.launchSteer) : top);   // over the ground
+            // (The set 3판's knight high jump steers a share of the run in the air: SkillAirSteer, RagdollPawn.SetThree.cs.)
+            Vector3 targetVel = move * (launched ? Mathf.Min(top, Mathf.Max(p.launchSteer, top * SkillAirSteer)) : top);   // over the ground
             Vector3 ownAnchor = anchorVel - frame;
             upSettle = Mathf.Max(0f, upSettle - dt);
-            float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl);
+            float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl)
+                          * CcAccelScale;   // the set 4판's slippery feet (PawnRushSkills/RagdollPawn.Cc.cs)
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
             if (p.stanceThrust > 0f && planted && moving)
             {
@@ -1460,6 +1484,7 @@ namespace ChessFight.RagdollLab
             if (fromGround && Grounded && groundCollider != null &&
                 groundCollider.GetComponentInParent<IJumpSpringSurface>() is IJumpSpringSurface spring)
                 up += Mathf.Clamp(spring.TakeJumpBonus(Hips.position), 0f, 2f);
+            up *= SkillJumpScale;   // JY-skill-lab: a rook's chain wound round it jumps lower (RagdollPawn.KitTwo.cs)
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {
@@ -3393,7 +3418,8 @@ namespace ChessFight.RagdollLab
             if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
             // Heavier pieces go less far (M11): the king a third, the rook two thirds.
-            push *= PushScale;
+            // (JY-skill-lab: and a piece under a close guard much less, 근접 호위.)
+            push *= PushScale * WardPushScale;
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
             AddVelocity(push);
@@ -3467,7 +3493,7 @@ namespace ChessFight.RagdollLab
             legs[0].ready = legs[1].ready = false;
             swingingLeg = -1;
             strideDrop = landDip = 0f;
-            input.jump = input.shove = input.ability = input.ability2 = false;
+            input.jump = input.shove = input.ability = input.ability2 = input.ability3 = false;
             interactPressed = false;
         }
 

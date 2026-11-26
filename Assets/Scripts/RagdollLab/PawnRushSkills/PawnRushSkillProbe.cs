@@ -34,6 +34,8 @@ namespace ChessFight.RagdollLab
         bool driving;
         Vector3 move, aim = Vector3.forward;
         bool sprint, jumpEdge, tapPending, clickPending, grab, abilityEdge;
+        // Perform's other keys: Q and R (the loadout's fourth and third slots) and the left button held.
+        bool ability2Edge, ability3Edge, clickHeld;
         RagdollPawn walker;
         Vector3 walkerMove;
         bool walkerJump;
@@ -53,6 +55,114 @@ namespace ChessFight.RagdollLab
         }
 
         public static string Report() => Status + "\n" + string.Join("\n", Results);
+
+        /// <summary>
+        /// Any skill in the loadout on a little script (2026-11-24, for PawnRushFxSheet's contact sheets): P1 as
+        /// <paramref name="piece"/> on <paramref name="ground"/> facing <paramref name="face"/>, a dummy at each of
+        /// <paramref name="enemies"/> (x to P1's right, y ahead, metres) turned to P1, and once they have settled
+        /// (<see cref="Staged"/>) the script's words in turn: "k" the slot's key (0 F, 1 E, 2 R, 3 Q), "c" a left click,
+        /// "c+" / "c-" the left button down / up, "j" a jump, "w0.4" a wait in game seconds, "m0,1" walking that way in P1's
+        /// frame and "m-" standing, "a1,0" aiming that way ("a0,1,-0.2": and that much down, to aim at the floor nearer than a
+        /// skill's reach), "s+" / "s-" sprinting, "x10" P1 given hindrance 10 (Cc4) for 8 s (to film its look), "g+" / "g-" the right button held / let go. Then <paramref name="tail"/> seconds
+        /// more and "done perform".
+        /// </summary>
+        public static string Perform(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
+        {
+            var bed = FindFirstObjectByType<PawnRushSkillBed>();
+            if (bed == null) return "no PawnRushSkillBed (open PawnRush_SkillTest and press Play)";
+            var probe = bed.GetComponent<PawnRushSkillProbe>();
+            if (probe == null) probe = bed.gameObject.AddComponent<PawnRushSkillProbe>();
+            probe.StopAllCoroutines();
+            Results.Clear();
+            Staged = false;
+            probe.StartCoroutine(probe.PerformRun(piece, slot, script ?? "", ground, face, enemies ?? new Vector2[0], tail));
+            return Status = "running perform";
+        }
+
+        IEnumerator PerformRun(PieceKind piece, int slot, string script, Vector3 ground, Vector3 face, Vector2[] enemies, float tail)
+        {
+            game = GetComponent<LabGame>();
+            bed = GetComponent<PawnRushSkillBed>();
+            yield return null;
+            if (P1 == null)
+            {
+                Status = "done perform (no P1)";
+                yield break;
+            }
+            face = new Vector3(face.x, 0f, face.z).normalized;
+            var right = Vector3.Cross(Vector3.up, face);
+            yield return Ready(piece, ground, face, enemies.Length);
+            Staged = false;
+            for (int i = 0; i < enemies.Length && i < game.dummies.Count; i++)
+            {
+                var at = ground + right * enemies[i].x + face * enemies[i].y;
+                var toP1 = ground - at;
+                toP1.y = 0f;
+                Place(game.dummies[i], at, toP1.sqrMagnitude > 0.01f ? toP1.normalized : -face);
+            }
+            yield return new WaitForSeconds(0.7f);
+            Staged = true;
+            foreach (string word in script.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                char c = word[0];
+                string rest = word.Substring(1);
+                if (c == 'w' && float.TryParse(rest, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float t))
+                {
+                    yield return new WaitForSeconds(t);
+                    continue;
+                }
+                switch (c)
+                {
+                    case 'k':
+                        if (slot == 0) tapPending = true;
+                        else if (slot == 1) abilityEdge = true;
+                        else if (slot == 2) ability3Edge = true;
+                        else ability2Edge = true;
+                        Say(slot == 0 ? "F" : slot == 1 ? "E" : slot == 2 ? "R" : "Q");
+                        break;
+                    case 'c':
+                        if (rest == "-") clickHeld = false;
+                        else
+                        {
+                            clickPending = true;
+                            clickHeld = rest == "+";
+                            Say("좌클릭");
+                        }
+                        break;
+                    case 'j':
+                        jumpEdge = true;
+                        break;
+                    case 'x':
+                        if (int.TryParse(rest, out int ccKind) && P1 != null) P1.GiveCc((Cc4)ccKind, 8f, null);
+                        break;
+                    case 'g':
+                        grab = rest != "-";
+                        if (grab) Say("우클릭");
+                        break;
+                    case 's':
+                        sprint = rest == "+";
+                        break;
+                    case 'm':
+                    case 'a':
+                        var v = Vector3.zero;
+                        var parts = rest.Split(',');
+                        float up = 0f;
+                        if (parts.Length >= 2
+                            && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float x)
+                            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float z)
+                            && (parts.Length == 2 || c == 'a' && float.TryParse(parts[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out up)))
+                            v = (right * x + face * z + Vector3.up * up).normalized;
+                        if (c == 'm') move = v;
+                        else if (v != Vector3.zero) aim = v;
+                        break;
+                }
+                yield return null;
+            }
+            yield return new WaitForSeconds(tail);
+            Stop();
+            Staged = false;
+            Status = "done perform";
+        }
 
         /// <summary>Stop the clock (time scale 0, frames still drawn) the first time P1 is this far into this
         /// stage, to look at a telegraph; set Time.timeScale back to 1 to go on.</summary>
@@ -87,10 +197,11 @@ namespace ChessFight.RagdollLab
             if (p1 != null)
             {
                 // The left click is the dive's button (shove): an aiming rook or bishop takes it as "go".
-                p1.SetInput(new PawnInput { move = move, aim = aim, sprint = sprint, jump = jumpEdge, shove = clickPending, grab = grab, ability = abilityEdge });
+                p1.SetInput(new PawnInput { move = move, aim = aim, sprint = sprint, jump = jumpEdge, shove = clickPending, shoveHeld = clickHeld, grab = grab,
+                                            ability = abilityEdge, ability2 = ability2Edge, ability3 = ability3Edge });
                 // The press goes in with this frame's aim and move, never ahead of them.
                 p1.SetSkillInput(tapPending);
-                jumpEdge = tapPending = clickPending = abilityEdge = false;
+                jumpEdge = tapPending = clickPending = abilityEdge = ability2Edge = ability3Edge = false;
                 if (p1.SkillAiming)
                 {
                     aimTopSpeed = Mathf.Max(aimTopSpeed, p1.HorizontalSpeed);
@@ -165,7 +276,7 @@ namespace ChessFight.RagdollLab
         void Stop()
         {
             move = Vector3.zero;
-            sprint = tapPending = clickPending = false;
+            sprint = tapPending = clickPending = clickHeld = abilityEdge = ability2Edge = ability3Edge = false;
             StopWalker();
             driving = false;
         }

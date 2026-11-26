@@ -37,6 +37,7 @@ namespace ChessFight.Game
             switch (mode != null ? mode.Key : "")
             {
                 case "kingrush":
+                case "rushskilltest":   // JY-skill-test-mode: the same round
                     return new LoadingContent
                     {
                         CourseModel = true,

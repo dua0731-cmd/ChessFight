@@ -203,7 +203,47 @@ namespace ChessFight.Network
         //      summons' countdown (bit 3), and the others count its 30 s from when they hear it.
         // hall4: the kings' summons onto the chessboard (ThroneSummonsShow, ISummonCarry) - no new bytes, but the halls are
         // built differently (boards on the floor, hall B's nave columns) and everyone is carried, not stood in rows.
-        public const string Protocol = "chessfight.dua0731.network.v63";
+        // JY-skill-lab's builds (v59.skilllab2 .. skilllab26, merged onto v63 on 2026-11-26 for the skill test mode):
+        // skilllab2: the skill state carries the skill under way and two more cooldowns (36 bytes), the skill loadout
+        // and the changes to it go over the match (two new packets), and the rules have a third skill choice.
+        // skilllab3: six more skills can sit in a slot (Queen of the Hill's, numbers 44..49); an older build would not
+        // run them.
+        // skilllab5: the king has a row in the loadout (six rows: its packet is 40 bytes and the numbers of a change
+        // moved), three more skills can sit in a slot (43, 71, 72), and a piece's skill state has one more flag (heavy
+        // feet).
+        // skilllab6: the skill pool's plan 1 - four more skills can sit in a slot (81..84), a sixth loadout that comes with
+        // the game, the hand feel's effect moment, one more flag in a piece's skill state (the queen may check again), and
+        // the rook's state says when the rook flies to what its chain caught.
+        // skilllab7: the pool's plan 3 basics - three more skills can sit in a slot (85..87) and a seventh loadout that
+        // comes with the game.
+        // skilllab8: the pool's plan 3 mids - two more skills can sit in a slot (88, 89), and the fork and the pin play as
+        // the pool's (another state in the same fields).
+        // skilllab9: the pool's plan 2 - three more skills can sit in a slot (90..92), an eighth loadout that comes with the
+        // game, and the growing system plays a row's second slot from stage 2.
+        // skilllab10: the pool's plan 3 ultimates - six more skills can sit in a slot (93..98) on a gauge.
+        // skilllab11: the kits' second version - four slots a row (F, E, R, Q: the loadout's bytes and change numbers), a
+        // ninth loadout that comes with the game, and new skills that can sit in a slot (99..).
+        // skilllab12: its ultimate gauge, map crowns and the 7th rank (103: one more skill for a slot, new moments).
+        // skilllab13: the team's comeback ultimates (104..109, a team gauge) and the room's fifth rule (the crown
+        // platform held 1.5 s: a bit more in the room's rules number).
+        // skilllab14: the sets 1안-a and 2안-a - eight more skills for a slot (110..117), two more loadouts that come with
+        // the game, and the ultimate slot played under every system.
+        // skilllab15: the knight's family fork (118: one more skill for a slot) and the ultimates' shared cast's moments.
+        // skilllab16: the knight's two ultimates played from start to end (a timed press's moment, no rooted cast).
+        // skilllab17: the six driven ultimates (119..124) and the set 3안-b's queen (125, 126): more skills for a slot, the
+        // driven ones' moments (DriveLand, DriveLine, DriveWarn, DriveState).
+        // skilllab22: the set 4판 (136..170, a fourteenth loadout that comes with the game), its hindrances in the skill
+        // state's Flags3 bits 2-5 and its moments (S4Cc .. S4Puddle).
+        // skilllab23: the set 4판's bundle 나 (fourteen skills built, a fifteenth loadout, the moments S4Poison .. S4Sac).
+        // skilllab24: the set 4판's bundle 다 (ten skills built, a sixteenth loadout, the moments S4Promo .. S4Gambit, the hindrance
+        // "묶임" on the bishop's pin).
+        // skilllab25: the user's own ten (JY, 171..180, a seventeenth loadout), two more hindrances (납작이 10, 멈춤 11) and
+        // their moments (S4Flat, JyStep ..).
+        // skilllab26: the loadout's slot count (1..3) and the support slot's switch, in its flags byte (11-26).
+        // skilltest1 (JY-skill-test-mode, 11-26): v63 with the skill lab in it and the mode 폰 러쉬-스킬 테스트
+        //      (GameModes.PawnRushSkillTest): the skill state, the loadout packets (RagdollNetProtocol types 13, 14: main's
+        //      12 is the unstuck ask) and the skills' moments. A v63 PC would not read them. v64 when it goes into main.
+        public const string Protocol = "chessfight.dua0731.network.v63.skilltest1";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -303,7 +343,7 @@ namespace ChessFight.Network
         }
         // R148: a public 폰 러쉬 room's host may start it short of twelve - three or more a side, the sides even.
         // R149: a 소드 파이트 room too (its prototype is played three against three).
-        public bool EarlyStartMode => !privateRoom && Match != 0 && ((MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key
+        public bool EarlyStartMode => !privateRoom && Match != 0 && (GameModes.PawnRush((MatchMode ?? PartyMode)?.Key)
                                                                     || (MatchMode ?? PartyMode)?.Key == GameModes.SwordFight.Key);
         public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarlyFrom(MinTeamToStart);
         // R693 (the user 2026-11-17: random matching stays on the lobby screen, so nobody is shown a room to start): a
@@ -327,7 +367,7 @@ namespace ChessFight.Network
         public IReadOnlyList<ulong> Spectators => Match == 0 ? NoSpectators : !Started && HoldsBooks ? spectators : SpectatorIds(Match);
         // R697 (the user 2026-11-17: "3단계 진행" - the spectators' seats watch the match): only Pawn Rush sends its
         // match to spectators so far; another mode's room still starts only with its spectators' seats empty.
-        public bool SpectatingAllowed => (MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key;
+        public bool SpectatingAllowed => GameModes.PawnRush((MatchMode ?? PartyMode)?.Key);
         static readonly List<ulong> NoSpectators = new List<ulong>();
         public bool IsSpectator(ulong id) => id != 0 && Spectators.Contains(id);
         static List<ulong> SpectatorIds(ulong lobby)

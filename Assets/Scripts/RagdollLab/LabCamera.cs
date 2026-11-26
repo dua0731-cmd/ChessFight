@@ -47,6 +47,7 @@ namespace ChessFight.RagdollLab
         bool initialized;
         RagdollPawn followed;
         float freeYaw, freePitch;
+        float reachScale = 1f;
         readonly RaycastHit[] hits = new RaycastHit[16];
 
         public Camera Cam => cam != null ? cam : cam = GetComponent<Camera>();
@@ -144,7 +145,8 @@ namespace ChessFight.RagdollLab
             // camera on it slid the pawn off the middle of the screen and back - that was the
             // "swinging around its root". CameraPoint is the body's centre of mass, at standing
             // height over the floor.
-            Vector3 want = pawn.CameraPoint + Vector3.up * lookHeight;
+            // 11-26: a piece may hand its camera to something else for a while (the rook's wall-building clone).
+            Vector3 want = (pawn.CameraFollowOverride ?? pawn.CameraPoint) + Vector3.up * lookHeight;
             if (!initialized || pawn != followed || (want - focus).sqrMagnitude > 36f)
             {
                 // First frame, a new pawn, or a respawn: cut rather than swoop across the arena.
@@ -200,7 +202,9 @@ namespace ChessFight.RagdollLab
             aimBlend = Mathf.MoveTowards(aimBlend, aiming ? 1f : 0f, dt * 4f);
             float aim = aimBlend * aimBlend * (3f - 2f * aimBlend);
             Vector3 pivot = focus + rot * Vector3.right * (AimShoulder * aim) + Vector3.up * (0.2f * aim);
-            float reach = Mathf.Lerp(distance, Mathf.Min(distance, AimDistance), aim);
+            // 11-26: and stand further back for a while (a giant's 2.5 times), eased.
+            reachScale = Mathf.Lerp(reachScale, pawn.CameraReachScale, 1f - Mathf.Exp(-3f * dt));
+            float reach = Mathf.Lerp(distance, Mathf.Min(distance, AimDistance), aim) * reachScale;
             // Pull in in front of walls and ease back out. Pawns never block the view:
             // with a crowd around, the camera would otherwise dive into someone's head.
             // Nor does a moving part that only sweeps past (CameraSeeThrough, R287).
@@ -225,7 +229,7 @@ namespace ChessFight.RagdollLab
                 float kick = sprintFov * GameSettings.SprintFovScale * Mathf.Clamp01((travel.magnitude - p.moveSpeed) / span);
                 fovKick = Mathf.Lerp(fovKick, kick, 1f - Mathf.Exp(-3f * dt));
                 // Settings → 화면 → 시야 범위 (R77), relative to the default 60 so a camera tuned otherwise keeps its offset.
-                Cam.fieldOfView = baseFov + (MouseDriven ? GameSettings.Fov - 60f : 0f) + fovKick;
+                Cam.fieldOfView = baseFov + (MouseDriven ? GameSettings.Fov - 60f : 0f) + fovKick + (reachScale - 1f) * 8f;   // (wider, standing back)
             }
         }
 

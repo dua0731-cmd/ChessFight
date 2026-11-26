@@ -509,7 +509,7 @@ namespace ChessFight.RagdollLab
                 LitMaterials.MakeTransparent(ghostRealMat);
             }
             var mesh = new Mesh { name = "Real afterimage", hideFlags = HideFlags.HideAndDontSave };
-            skin.BakeMesh(mesh, true);
+            BakeSkin(skin, mesh);
             var go = new GameObject("Real afterimage", typeof(MeshFilter), typeof(MeshRenderer));
             go.transform.SetParent(root, false);
             Vector3 pos = skin.transform.position;

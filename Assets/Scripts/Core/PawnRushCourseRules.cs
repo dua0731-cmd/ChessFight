@@ -23,8 +23,25 @@ namespace ChessFight.Network
         // random one (a player who walked off, or a lost connection, never keeps the pad held for good).
         public const float ChooseSeconds = 10f;
 
+        // JY-skill-lab: the skills are whatever the loadout puts in a piece's slots (the developers' skill tree), so the
+        // cards ask the course's skills for the names and the line (PawnRushCourseSkills sets these; unset - a test, a
+        // scene without the skills - the cards say what the room's rules name).
+        public static Func<PieceKind, string> NameNow, LineNow;
+
         public static string SkillName(PieceKind piece)
         {
+            string now = NameNow != null ? NameNow(piece) : null;
+            if (!string.IsNullOrEmpty(now)) return now;
+            // JY-skill-lab: the room plays by skill plan 1-나 (PawnRushRules.Skills), the cards name its skills.
+            if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
+                switch (piece)
+                {
+                    case PieceKind.Queen: return "체크!";
+                    case PieceKind.Rook: return "캐슬링";
+                    case PieceKind.Bishop: return "핀";
+                    case PieceKind.Knight: return "포크";
+                    default: return "앙파상";
+                }
             switch (piece)
             {
                 case PieceKind.Queen: return "팔방 밀치기";
@@ -37,6 +54,17 @@ namespace ChessFight.Network
 
         public static string SkillLine(PieceKind piece)
         {
+            string now = LineNow != null ? LineNow(piece) : null;
+            if (!string.IsNullOrEmpty(now)) return now;
+            if (PawnRushRules.Current.Skills == PawnRushRules.SkillsChessMoves)
+                switch (piece)
+                {
+                    case PieceKind.Queen: return "적 한 명을 지목한다. 제때 그 칸을 벗어나지 못하면 날아간다";
+                    case PieceKind.Rook: return "팀원과 자리를 바꾼다. 팀원이 스킬 키로 받아야 한다";
+                    case PieceKind.Bishop: return "빛줄로 적을 꿰어 뒤의 적이나 벽에 묶는다";
+                    case PieceKind.Knight: return "뛰어올라 앞 좌우 두 자리를 찬다. 둘을 한꺼번에 맞혀야 넘어진다";
+                    default: return "옆을 스쳐 지나간 적의 발을 건다";
+                }
             switch (piece)
             {
                 case PieceKind.Queen: return "둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다";
@@ -82,6 +110,24 @@ namespace ChessFight.Network
         public static int Needed(int teamPlayers) => MatchResult.MajorityOf(Math.Max(1, teamPlayers));
 
         public static bool Reached(int onPlatform, int teamPlayers) => teamPlayers > 0 && onPlatform >= Needed(teamPlayers);
+
+        // JY-skill-lab (2026-11-21, X-판17; PawnRushRules.HoldOn): the majority must hold the platform this long.
+        public const float HoldSeconds = 1.5f;
+
+        /// <summary>One step of holding the platform: <paramref name="now"/> is this step's Winner. The same team on it
+        /// adds the step to <paramref name="held"/>; another, or nobody, starts the count again. The winner once it has held
+        /// <paramref name="need"/> seconds, None until then.</summary>
+        public static int StepHold(ref int holder, ref float held, int now, float dt, float need)
+        {
+            if (now == None || now != holder)
+            {
+                holder = now;
+                held = 0f;
+                return None;
+            }
+            held += Math.Max(0f, dt);
+            return held >= need ? holder : None;
+        }
 
         // 0 white, 1 black, None while nobody has it. Both at once (the same physics step): the one with more on
         // the platform; still level, nobody yet.

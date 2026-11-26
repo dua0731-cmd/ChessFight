@@ -84,6 +84,16 @@ namespace ChessFight.RagdollLab
         float Dt => fxDt;
         float clock;
         float Clock => clock;
+        // ...and this screen's show time and real time (11-22, the ultimates' slow motion; see Update).
+        float realDt, showDt, realClock, showClock;
+        float RealClock => realClock;
+        float ShowClock => showClock;
+
+        /// <summary>Which clock steps an effect: the game's (default), this screen's show (slowed by the online picture slow
+        /// motion) or real time (never slowed).</summary>
+        public enum UltTick { Game, Show, Real }
+
+        float DtOf(UltTick tick) => tick == UltTick.Show ? showDt : tick == UltTick.Real ? realDt : fxDt;
 
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.labCamera != null ? game.labCamera.Cam : Camera.main;
 
@@ -129,6 +139,9 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillFx -= OnSkillFx;
             if (stopping) Time.timeScale = stopResume;
             DestroyDesignA();
+            DestroyUlt();
+            DestroySupport();
+            DestroySetThree();
             foreach (var a in anims) a.Destroy();
             foreach (var s in tileSets.Values) s.Destroy();
             foreach (var s in ghosts.Values) s.Destroy();
@@ -164,7 +177,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KnightLeap: KnightTakeOff(e); break;
                 case SkillFxKind.RookSlam: RookSlam(e); break;
                 case SkillFxKind.PawnStep: PawnStepStamp(e); break;
-                case SkillFxKind.PawnHit: PawnHit(e); break;
+                case SkillFxKind.PawnHit: PrRunHit(e); PawnHit(e); break;   // (the pawn's run writes its shoves as captures first)
                 case SkillFxKind.PawnHelp: PawnHelp(e); break;
                 // R146: the king's call (PawnRushSkillFx.KingCall.cs).
                 case SkillFxKind.KingCall: KingCallFx(e); break;
@@ -179,7 +192,126 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.BishopRopeHook: BishopRopeHookFx(e); break;
                 case SkillFxKind.BishopRopeRelease: BishopRopeReleaseFx(e); break;
                 case SkillFxKind.BishopRopeSnap: BishopRopeSnapFx(e); break;
+                // JY-skill-lab 11-20: the hand feel (RagdollPawn.HandFeel.cs).
+                case SkillFxKind.SkillFeel: FeelFx(e); break;
+                // JY-skill-lab 11-21/22: the knight's ultimates (PawnRushSkillFx.Ult.cs, PawnRushSkillFx.UltScreen.cs).
+                // UltMark is no longer raised (11-22); an old host's mark is skipped.
+                case SkillFxKind.UltCast: UltCast(e); break;
+                case SkillFxKind.UltTiming: UltTiming(e); break;
+                case SkillFxKind.UltGo: UltGo(e); break;
+                case SkillFxKind.UltStrike: UltStrike(e); break;
+                case SkillFxKind.UltHit: UltHit(e); break;
+                case SkillFxKind.UltEnd: UltEnd(e); break;
+                // 11-22: the six driven ultimates' own moments (PawnRushSkillFx.Drive*.cs).
+                case SkillFxKind.DriveLand: DriveLandFx(e); break;
+                case SkillFxKind.DriveLine: DriveLineFx(e); break;
+                case SkillFxKind.DriveWarn: DriveWarnFx(e); break;
+                case SkillFxKind.DriveState: DriveStateFx(e); break;
+                // 11-22: the support slot (PawnRushSkillFx.Support.cs).
+                case SkillFxKind.SupCall:
+                case SkillFxKind.SupGo:
+                case SkillFxKind.SupStep:
+                case SkillFxKind.SupCut:
+                case SkillFxKind.SupCancel:
+                case SkillFxKind.SupSaved:
+                    // (Guarded: an effect that throws must not stop the host's skill that raised the moment.)
+                    try { SupportFx(e); } catch (System.Exception ex) { FxFault("support moment", ex); }
+                    break;
+                // 11-23: the set 3판 (PawnRushSkillFx.SetThree.cs).
+                case SkillFxKind.S3Bolas:
+                case SkillFxKind.S3BolasCatch:
+                case SkillFxKind.S3BolasEnd:
+                case SkillFxKind.S3Stun:
+                case SkillFxKind.S3HopDive:
+                case SkillFxKind.S3Roll:
+                case SkillFxKind.S3RollEnd:
+                case SkillFxKind.S3Crack:
+                case SkillFxKind.S3Tower:
+                case SkillFxKind.S3TowerFall:
+                case SkillFxKind.S3Star:
+                case SkillFxKind.S3StarBlade:
+                case SkillFxKind.S3Check:
+                case SkillFxKind.S3SwordRise:
+                case SkillFxKind.S3SwordFly:
+                case SkillFxKind.S3SwordEnd:
+                case SkillFxKind.S3Bound:
+                case SkillFxKind.S3StoneShot:
+                case SkillFxKind.S3StoneBreak:
+                case SkillFxKind.S3WaterThrow:
+                case SkillFxKind.S3Puddle:
+                case SkillFxKind.S3Slip:
+                case SkillFxKind.S3Kick:
+                case SkillFxKind.S3Hit:
+                    try { SetThreeFx(e); } catch (System.Exception ex) { FxFault("set 3 moment", ex); }
+                    break;
+                // 11-26: the set 4판 and its hindrances (PawnRushSkillFx.SetFour.cs).
+                case SkillFxKind.S4Cc:
+                case SkillFxKind.S4Hop:
+                case SkillFxKind.S4Say:
+                case SkillFxKind.S4Trip:
+                case SkillFxKind.S4Brick:
+                case SkillFxKind.S4Pit:
+                case SkillFxKind.S4Leap:
+                case SkillFxKind.S4Bonk:
+                case SkillFxKind.S4Sermon:
+                case SkillFxKind.S4Charge:
+                case SkillFxKind.S4Cap:
+                case SkillFxKind.S4Crown:
+                case SkillFxKind.S4Shout:
+                case SkillFxKind.S4Puddle:
+                case SkillFxKind.S4Poison:
+                case SkillFxKind.S4Storm:
+                case SkillFxKind.S4Slam:
+                case SkillFxKind.S4Neigh:
+                case SkillFxKind.S4Cloud:
+                case SkillFxKind.S4Censer:
+                case SkillFxKind.S4Bell:
+                case SkillFxKind.S4Crook:
+                case SkillFxKind.S4Wall:
+                case SkillFxKind.S4Slide:
+                case SkillFxKind.S4Mower:
+                case SkillFxKind.S4Fan:
+                case SkillFxKind.S4Sac:
+                case SkillFxKind.S4Promo:
+                case SkillFxKind.S4Burrow:
+                case SkillFxKind.S4Pin:
+                case SkillFxKind.S4Dive:
+                case SkillFxKind.S4Timber:
+                case SkillFxKind.S4Pig:
+                case SkillFxKind.S4Lift:
+                case SkillFxKind.S4Carpet:
+                case SkillFxKind.S4Throne:
+                case SkillFxKind.S4Gambit:
+                case SkillFxKind.S4Flat:
+                case SkillFxKind.JyStep:
+                case SkillFxKind.JyRope:
+                case SkillFxKind.JyStomp:
+                case SkillFxKind.JySword:
+                case SkillFxKind.JyBow:
+                case SkillFxKind.JyBeam:
+                case SkillFxKind.JyGiant:
+                case SkillFxKind.JyStrong:
+                case SkillFxKind.JyTWall:
+                case SkillFxKind.JyBuild:
+                case SkillFxKind.JyWallLeg:
+                case SkillFxKind.JyWallEnd:
+                    try { SetFourFx(e); } catch (System.Exception ex) { FxFault("set 4 moment", ex); }
+                    break;
             }
+        }
+
+        /// <summary>The hand feel's hit (RagdollPawn.HandFeel.cs): the hit stop the host worked out (e.size seconds). Offline
+        /// the test bed's stand-in holds the game; online the two pieces' picture holds, and only on the hitter's and the hit
+        /// player's own screens (Docs/Skills/PAWN_RUSH_SKILL_POOL.md 1.3 #2).</summary>
+        void FeelFx(SkillFxEvent e)
+        {
+            if (e.count != RagdollPawn.FeelHitMoment || e.size <= 0f) return;
+            if ((game != null && game.NetworkControlled) || OnlineOverride)
+            {
+                var me = Viewer;
+                if (me != null && me != e.by && me != e.target) return;
+            }
+            HitStop(e.size);
         }
 
         /// <summary>The ongoing effects follow the pieces' skill stages: started once when a stage begins, ended
@@ -1118,13 +1250,21 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             float real = Time.captureDeltaTime > 0f ? Time.captureDeltaTime : Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+            realDt = real;
+            realClock += real;
+            UltSlowStep(real);   // the caster's slow motion (PawnRushSkillFx.Impact.cs): the game's time offline, this screen's online
             if (Time.timeScale > 0f && !stopping) rate = Time.timeScale;
+            // Three clocks (11-22): the game's (Clock: every mark that times gameplay - a landing's lock, a dive's shadow),
+            // this screen's show (decor that the online picture slow motion slows) and real time (the HUD, the slow
+            // motion's own curve, a hit stop's length, the shake).
             fxDt = real * rate;
+            showDt = fxDt * presentRate;
+            showClock += showDt;
             float dt = Dt;
             clock += dt;
             if (stopping)
             {
-                stopLeft -= dt;
+                stopLeft -= real;
                 if (stopLeft <= 0f)
                 {
                     stopping = false;
@@ -1146,17 +1286,18 @@ namespace ChessFight.RagdollLab
             {
                 var bloom = cam.GetComponent<PawnRushSkillBloom>();
                 if (bloom != null) bloom.enabled = effects;
+                viewBloom = bloom;
             }
 
             ShineToon();
             WatchPieces();
 
-            sparks.Step(dt);
-            motes.Step(dt);
-            smoke.Step(dt);
+            sparks.Step(showDt);
+            motes.Step(showDt);
+            smoke.Step(showDt);
 
             for (int i = anims.Count - 1; i >= 0; i--)
-                if (!anims[i].Step(dt, cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
+                if (!anims[i].Step(DtOf(anims[i].tick), cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
 
             var gone = new List<Object>();
             foreach (var kv in tileSets)
@@ -1173,11 +1314,12 @@ namespace ChessFight.RagdollLab
             else GhostSquares(dt, cam);
             air?.Step(dt);
             arc?.Step(dt, cam);
+            UltStep(dt, cam);   // the ultimates' cast: its marks, the grade, the caster's camera (PawnRushSkillFx.Ult.cs)
 
             if (shakeLeft > 0f && cam != null)
             {
-                shakeLeft -= dt;
-                shakeClock += dt;
+                shakeLeft -= realDt;
+                shakeClock += realDt;
                 bool free = ViewOverride == null && game != null && game.labCamera != null && game.labCamera.freeMode;
                 if (!free)
                 {
@@ -1215,6 +1357,21 @@ namespace ChessFight.RagdollLab
                     floor = hit.point;
                 }
             return floor;
+        }
+
+        /// <summary>A piece's skin baked at its size in the world, turned as its renderer is (the existing bakes go on from
+        /// there with the renderer's rotation and position). BakeMesh leaves the renderer's own scale out, and the pieces'
+        /// renderers are scaled 100 (a rig imported in centimetres): 11-24 a baked rook - the 3판 roll's column and tower,
+        /// the driven roll, the promotion's giant, the support's piece - came out a hundredth of its size.</summary>
+        static void BakeSkin(SkinnedMeshRenderer skin, Mesh into)
+        {
+            skin.BakeMesh(into, true);
+            Vector3 s = skin.transform.lossyScale;
+            if ((s - Vector3.one).sqrMagnitude < 1e-6f) return;
+            var v = into.vertices;
+            for (int i = 0; i < v.Length; i++) v[i] = Vector3.Scale(v[i], s);
+            into.vertices = v;
+            into.RecalculateBounds();
         }
 
         static Vector3 Ground(Vector3 at)
@@ -1294,6 +1451,8 @@ namespace ChessFight.RagdollLab
         abstract class Anim
         {
             protected float age;
+            /// <summary>The clock that steps it (11-22; the game's by default).</summary>
+            public UltTick tick;
             /// <summary>False once it is over.</summary>
             public abstract bool Step(float dt, Camera cam);
             public abstract void Destroy();

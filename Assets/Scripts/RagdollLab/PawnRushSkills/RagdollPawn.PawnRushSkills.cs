@@ -43,6 +43,149 @@ namespace ChessFight.RagdollLab
         // the course's kind of hit; size: how hard, 0..1), raised where the knock-back is given and sent on like the
         // movement moments so every PC hears it (Gameplay.CourseHitSound, CourseHitRelay). Last, so no kind's number moves.
         CourseHit,
+        // JY-skill-lab 11-20: the hand feel's moment (RagdollPawn.HandFeel.cs; count: 0 a key started a use, 1 a hit, 2 a
+        // miss; size: a hit's hit stop in seconds). After CourseHit, so no kind's number moves; an older PC skips it.
+        SkillFeel,
+        // JY-skill-lab, the kits' second version (RagdollPawn.KitTwo.cs): a word over a piece's head (target; count: a value
+        // to show as "+N" under 100, or one of the words, RagdollPawn.Pop*); a rook's wall risen (at: one end on the floor,
+        // normal: the other, dir: its face's way, size: the seconds it stands, count: its number) and broken (count).
+        KitPop, KitWall, KitWallBreak,
+        // ...and a map crown taken for the ultimate gauge (by: who; at: where; count: the crown's number; size: the seconds
+        // until it comes back: RagdollPawn.UltGauge.cs, PawnRushGaugeCrown).
+        KitCrown,
+        // ...and the 7th rank's wall risen (as KitWall, the rank's height; it moves with the rook's state:
+        // RagdollPawn.KitTwoUlts.cs).
+        KitRankWall,
+        // ...and the team ultimate's 7th rank across the way (as KitWall, its height; target: the first runner it stands
+        // before: RagdollPawn.TeamUlts.cs).
+        KitTeamWall,
+        // ...and the ultimates' shared cast (11-21; RagdollPawn.KnightUlts.cs, PawnRushSkillFx.Ult.cs): the key (by; at: its feet;
+        // dir: the camera's way; count: the skill; size: the cast's seconds), an enemy named (target; count: its place in line),
+        // the call (target: what it goes at; at: where it goes; count: the skill; size 1: the tour's last leap), an enemy struck
+        // (target; count: its place), the landing (at; count: the pieces struck; size: the round, m) and the end (count 1: cut
+        // short). Last, so no kind's number moves.
+        UltCast, UltMark, UltGo, UltStrike, UltHit, UltEnd,
+        // ...and a press timed in an ultimate (11-22; count 1: on the beat, 0: off it; target: the head it goes to, if any).
+        UltTiming,
+        // The six driven ultimates' own moments (11-22, RagdollPawn.DriveUlts.cs; each read by the ultimate under way): a
+        // landing or an impact (at; count: the pieces it hit; size: a level or a radius), a line (at to normal: a beam's
+        // stretch, a dash; count: its part; size: its width), a warning on the floor (at; size: its radius; count: its
+        // kind) and a change of the body (count: the new state; size: a scale).
+        DriveLand, DriveLine, DriveWarn, DriveState,
+        // The support slot (11-22, RagdollPawn.Support.cs; by: the leader, target: the one called): the call (at: where what
+        // comes starts - the leader's feet, the rope's top, the bridge's or the chain's far end; normal: where it ends; dir:
+        // toward the leader; count: the leader's piece; size: the answer's seconds), the answer (count 1 the one called, 0 a
+        // rider along the bridge; size: the section used - a count goes over the wire as a byte), a step on the way (count
+        // 1 the horse's leap, 2 the drone set down, or
+        // a chain's pawn: count its place, size 1 thrown over, -1 toppled), cut on the way, called off, and arrived (count:
+        // the leader's rescues; size: the gauge it gave). Last, so no kind's number moves.
+        SupCall, SupGo, SupStep, SupCut, SupCancel, SupSaved,
+        // The set 3판 (11-23, RagdollPawn.SetThree.cs; drawn by PawnRushSkillFx.SetThree.cs). A count is a byte on the wire
+        // (0..255): anything signed rides in size.
+        //   S3Bolas      the pawn's throw (at: from, dir: the way, size: speed)
+        //   S3BolasCatch caught (target; at: where)        S3BolasEnd  it is over (at; count 0 dropped, 1 let go, 2 the
+        //                                                   chop, 3 the two bumped)
+        //   S3Stun       stunned (target; size: seconds)   S3HopDive   the knight's dive (target, or none: straight down)
+        //   S3Roll       the rook topples to roll (at, dir) S3RollEnd  it stands (count 0 at the end, 1 the slam, 2 a wall)
+        //   S3Crack      the ground splitting (at: from, dir, size: speed; count 1 its end, at: there)
+        //   S3Tower      a tower round target (at: its feet, size: seconds)   S3TowerFall  it crumbles (target, at)
+        //   S3Star       the queen's star (at: her feet, dir: blade 0, size: radius)
+        //   S3StarBlade  a blade lit (target; dir: the blade's way; count: the blade, 255 none hit)
+        //   S3Check      a check (target; count: which, 1..3)
+        //   S3SwordRise  a holy sword beside target (at; dir: where it points; count: the sword's number; size: the fuse)
+        //   S3SwordFly   it flies (at: from, normal: to, dir, size: speed)    S3SwordEnd  it is gone (count; target: hit)
+        //   S3Bound      bound by light (target; size: seconds)
+        //   S3StoneShot  the bishop's stone (at: from, dir: its way, count: its number, size: speed)
+        //   S3StoneBreak it breaks (at; count)
+        //   S3WaterThrow the holy water's bottle (at: from, normal: where it breaks, size: the flight's seconds)
+        //   S3Puddle     the puddle (at; count: the team + 1; size: radius)    S3Slip  a slip in it (target, at, dir)
+        // Last, so no kind's number moves.
+        S3Bolas, S3BolasCatch, S3BolasEnd, S3Stun, S3HopDive, S3Roll, S3RollEnd, S3Crack, S3Tower, S3TowerFall, S3Star,
+        S3StarBlade, S3Check, S3SwordRise, S3SwordFly, S3SwordEnd, S3Bound, S3StoneShot, S3StoneBreak, S3WaterThrow, S3Puddle,
+        S3Slip,
+        // 11-24 (KITS 6.13): the knight's back kick, remade as the set 3판's basic (RagdollPawn.BookSkills.cs).
+        //   S3Kick       at: its feet, dir: the way it faces (the kick goes the other way); count 0 the bob, else 1 + how
+        //                many it hit
+        S3Kick,
+        // 11-24 (the comic effects): a 3판 skill's hit (target; at: its belly, dir: the push, count: which hit) - the roll's,
+        // its slam's, the star's, a check's and the stone's (they borrowed the old queen's hit before).
+        S3Hit,
+        // 11-26, the set 4판 (RagdollPawn.SetFour.cs, RagdollPawn.Cc.cs; drawn by PawnRushSkillFx.SetFour.cs):
+        //   S4Cc      a hindrance on target (at: its head; count: Cc4, 0 when it ends; size: seconds)
+        //   S4Hop     a tied piece's hop (by; at: its feet, dir: the way)
+        //   S4Say     a speech bubble over target (at: its head; count: the words, RagdollPawn.Words4)
+        //   S4Trip    the pawn's feet out to both sides (at: feet, dir: its facing, size: seconds); count 1: target tripped
+        //   S4Brick   a brick (at: where it hangs; count 0 it appears (size: seconds till it drops), 1 it hit target, 2 the floor)
+        //   S4Pit     a pit (at; count 0 dug (size: seconds), 1 target fell in (size: seconds), 2 it closed)
+        //   S4Leap    the knight's fork leap (at: from, normal: where it lands, size: the flight's seconds)
+        //   S4Bonk    heads knocked (at: the middle; target: one; normal: the other's head; count 1 one stomped, 2 two)
+        //   S4Sermon  the little bishop onto target's shoulder (at: from, size: seconds)
+        //   S4Charge  the rook's charge (at: feet, dir: the way; count 0 the bow, 1 the run, 2 a wall (at: there), 3 the end)
+        //   S4Cap     a wall stone onto target's head (size: seconds)
+        //   S4Crown   the queen's crown (count 0 thrown: at from, normal to, size the flight; 1 it sits on target (size: seconds),
+        //             2 it missed: at)
+        //   S4Shout   the queen's shout (at: chest, dir: facing; count 0 the breath (size: seconds), 1 the shout (size: range))
+        //   S4Puddle  the set 4 holy water's puddle (at; size: radius; count: team + 1; the bottle flies as S3WaterThrow)
+        S4Cc, S4Hop, S4Say, S4Trip, S4Brick, S4Pit, S4Leap, S4Bonk, S4Sermon, S4Charge, S4Cap, S4Crown, S4Shout, S4Puddle,
+        // The set 4판's bundle 나 (RagdollPawn.SetFourB.cs; PawnRushSkillFx.SetFourB.cs):
+        //   S4Poison  the poisoned pawn: 0 set down (at; size: seconds), 1 taken (target), 2 gone (at)
+        //   S4Storm   the clockwork pawns: 0 out (at: the middle one's start, dir; size: speed; normal: range, time, gap),
+        //             10 + i caught one (target, at), 20 + i stopped or fell off (at), 30 + i knocked over (target, at)
+        //   S4Slam    the knight's seat: 0 off (target: the enemy it hops onto, if one; at, normal: where; size: flight), 1 down
+        //   S4Neigh   round the back: 0 off (target; size: time), 1 the neigh (target)
+        //   S4Cloud   the rain cloud over the target (size: delay + rain)
+        //   S4Censer  0 the censer swinging (size: seconds), 1 one caught in the smoke (target)
+        //   S4Bell    0 over the head (target, at; size: delay), 1 rung on a head (target; size: seconds), 2 on the floor (at)
+        //   S4Crook   0 the staff out (at: root, dir; size: time; normal: its full reach), 1 hooked (target; size: flight;
+        //             normal: where it comes down), 2 missed (at: the tip)
+        //   S4Wall    the rampart (count: the wall's number; at, normal: its ends; size: seconds)
+        //   S4Slide   0 off sideways (dir; size: time), 1 done
+        //   S4Mower   0 the blade on (size: seconds), 1 one mown (target), 2 off
+        //   S4Fan     the queen's fan: 0 a dash (target; size: time), 1 the smack (target), 2 ducked (target), 3 a check
+        //             (target; count's hit in its size), 4 the chase on (target; size: seconds), 5 the chase over
+        //   S4Sac     0 the glow (size: time), 1 the bang (size: range), 2 put together again
+        S4Poison, S4Storm, S4Slam, S4Neigh, S4Cloud, S4Censer, S4Bell, S4Crook, S4Wall, S4Slide, S4Mower, S4Fan, S4Sac,
+        // The set 4판's bundle 다 (RagdollPawn.SetFourC.cs; PawnRushSkillFx.SetFourC.cs):
+        //   S4Promo   0 the countdown on (size: seconds), 1 promoted (size: gold seconds), 2 fizzled
+        //   S4Burrow  0 under the floor (size: seconds at most), 1 up again (count's n in the size: none when cut short)
+        //   S4Pin     0 thrown (at, dir; size: speed; normal: its farthest), 1 pinned (target; at: the spot; size: seconds),
+        //             2 missed (at)
+        //   S4Dive    0 the mark (at; size: crouch + flight), 1 off (at: from; normal: the mark; size: flight), 2 down
+        //             head first (size: stuck seconds), 3 out again
+        //   S4Timber  0 growing (at: its feet, dir; size: time), 1 falling (size: time), 2 down, a bridge (size: seconds;
+        //             normal: its far end), 3 up again
+        //   S4Pig     0 the gate open (size: seconds), 1 swallowed (target), 2 spat (target, at), 3 the gate shut
+        //   S4Lift    the tower rising under it (at: its foot; size: seconds standing)
+        //   S4Carpet  0 rolling out (at, dir; size: speed; normal: length, width, seconds), 1 one rolled up (target; size)
+        //   S4Throne  0 the shadow and the leap (at: the shadow; normal: from; size: flight), 1 down on it (size: sitting)
+        //   S4Gambit  0 the pieces hung (at: the middle, dir; size: delay; normal: radius, every, height), 1 + i one down (at)
+        S4Promo, S4Burrow, S4Pin, S4Dive, S4Timber, S4Pig, S4Lift, S4Carpet, S4Throne, S4Gambit,
+        // The user's own ten (JY, USER_SKILLS 5장; RagdollPawn.SetFourJY*.cs, PawnRushSkillFx.SetFourJY*.cs):
+        //   S4Flat     a flattened piece's jump press (target: it; count: presses so far, size: presses needed)
+        //   JyStep     0 crouch and two steps (at feet, dir; size: step time), 1 the diagonal cells lit (count: 1 left,
+        //              2 right, 3 both taken by an enemy; size: window), 2 the headbutt (target; at: contact), 3 window over
+        //   JyRope     0 rope out, 1 put away, 2 spinning (size: seconds to full), 3 thrown (at: hand, dir; size: flight
+        //              seconds; normal: where it comes down), 4 caught (target), 5 the neck chop (target), 6 missed (at)
+        //   JyStomp    0 crouch, 1 up (size: rise seconds), 2 a mark (target; count: 1 the one to stomp, 2 any other),
+        //              3 dive (target), 4 stomped (target), 5 the fork ring (at; size: radius), 6 a fork shackle (target),
+        //              7 landed (at)
+        //   JySword    0 the sword in the hand (size: summon seconds), 1 thrown (at: hand, dir: its first way; size: speed),
+        //              2 the cross down (target: the one bound; at: its foot; dir: the throw's way; size: seconds), 3 a miss
+        //              stuck in the floor (at)
+        //   JyBow      0 the aim (target: the leader; size: seconds), 1 fired (target; at: the muzzle; size: speed), 2 taken
+        //              by another (target: it), 3 the leader hit (target; dir: back along the course), 4 the smoke blown off
+        //   JyBeam     0 the aim (size: seconds), 1 fired (at, dir; size: length), 2 + i the i-th on it frozen (target)
+        //   JyGiant    0 the breath (at: where it grew; size: seconds), 1 grown (size: seconds), 2 a kick (target), 3 back
+        //              to where it grew (at: there; normal: where it was)
+        //   JyStrong   0 the flex (size: seconds), 1 strong (size: seconds), 2 lifted (target; size: its seconds to slip
+        //              out), 3 thrown (target; dir), 4 slipped out (target), 5 over
+        //   JyTWall    0 the stamp (at: feet, dir; size: seconds), 1 the split (at: there, dir: the stem's)
+        //   JyBuild    0 the clone out (at, dir; size: the wall to build), 1 a turn (at, dir: the new way; count: turns),
+        //              2 shut in (target), 3 done (at: the clone), 4 cut short (at)
+        //   JyWallLeg  a wall leg growing (count: the wall's id; at: its start, dir; size: m/s; normal: its most, height,
+        //              thickness): another PC stands its picture and grows it
+        //   JyWallEnd  a wall leg done growing (count: the id; at: its end; size: seconds it stands from now)
+        S4Flat, JyStep, JyRope, JyStomp, JySword, JyBow, JyBeam, JyGiant, JyStrong, JyTWall, JyBuild, JyWallLeg, JyWallEnd,
     }
 
     public struct SkillFxEvent
@@ -97,7 +240,7 @@ namespace ChessFight.RagdollLab
             Vector3.Lerp(bodies[(int)BodyId.Chest].position, other.bodies[(int)BodyId.Chest].position, 0.5f);
 
         SkillStage skillStage;
-        float stageTime, skillCooldownLeft, cooldownTotal, skillGrace;
+        float stageTime, skillGrace;   // (the cooldown is each slot's: skillCooldownLeft, cooldownTotal in RagdollPawn.SkillPlans.cs)
         bool skillPressed, skillConfirm, skillCancel, skillGrabRaw, skillGrabLatch, aimLocked;
         Vector3 skillMoveRaw;
         // A dash (the pawn's steps): a fixed speed along a fixed line for a while.
@@ -140,8 +283,8 @@ namespace ChessFight.RagdollLab
         public string LastSkillHit { get; internal set; } = "-";
 
         /// <summary>A rook or a bishop between its key and the left click.</summary>
-        public bool SkillAiming => Aiming;
-        public bool BishopAiming => piece == PieceKind.Bishop && skillStage == SkillStage.Windup;
+        public bool SkillAiming => Aiming && planPhase != PlanPhase.Aim;   // (plan 1-나's aim has its own marks: PlanPhaseNow)
+        public bool BishopAiming => skillPiece == PieceKind.Bishop && skillStage == SkillStage.Windup;
         public bool BishopAimValid => bishopValid;
         public Vector3 BishopAimPoint => bishopPoint;
         public Vector3 BishopAimYaw => bishopYaw;
@@ -156,7 +299,7 @@ namespace ChessFight.RagdollLab
         /// <summary>On the floor, or just off it (the coyote time).</summary>
         public bool OnTheFloor => OnFloor;
         /// <summary>The knight's landing is to be shown: in its leap, until it has come down on the head.</summary>
-        public bool KnightShowsLanding => piece == PieceKind.Knight && skillStage == SkillStage.Active && !knightTapped;
+        public bool KnightShowsLanding => skillPiece == PieceKind.Knight && skillStage == SkillStage.Active && !knightTapped;
         public Vector3 KnightLandingSpot => knightSpot;
         /// <summary>The bishop's throw: where its X leaves from and how long it flies.</summary>
         public Vector3 BishopThrowFrom => bishopFrom;
@@ -165,8 +308,9 @@ namespace ChessFight.RagdollLab
         /// lines (SkillMarks) are not drawn then.</summary>
         public static bool SkillMarksHidden { get; set; }
 
-        bool Aiming => skillStage == SkillStage.Windup && !aimLocked
-                       && (piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King);   // R146: the king's list, its clicks the list's
+        bool Aiming => (skillStage == SkillStage.Windup && !aimLocked
+                        && (skillPiece == PieceKind.Rook || skillPiece == PieceKind.Bishop || skillPiece == PieceKind.King))   // R146: the king's list, its clicks the list's
+                       || planPhase == PlanPhase.Aim;   // plan 1-나 (RagdollPawn.SkillPlans.cs): the bishop, the rook and the queen aim
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -191,9 +335,17 @@ namespace ChessFight.RagdollLab
         /// <summary>Drop whatever skill is under way and start the cooldown over (the test bed's piece switch).</summary>
         public void ResetSkill()
         {
+            SupportReset();   // (a support it was in ends: RagdollPawn.Support.cs)
             ClearSkills();
-            skillCooldownLeft = cooldownTotal = 0f;
+            for (int k = 0; k < slotCd.Length; k++) slotCd[k] = slotCdTotal[k] = 0f;
+            activeSlot = -1;
+            activeSkill = 0;
+            cdSlot = 0;
             bindLeft = 0f;
+            EndPin();
+            ClearFeel();
+            ClearPoolStates();
+            StartGauges();   // the ultimates' gauges start empty (RagdollPawn.PoolUltimates.cs)
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);
@@ -254,8 +406,8 @@ namespace ChessFight.RagdollLab
             if (PawnRushSkills != null && skillStage != SkillStage.None)
             {
                 // Tied mid-skill: it ends here, and the cooldown runs as if it had finished.
-                Log($"{DisplayName}: {SkillName(piece)} 끊김 (묶임)");
-                bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
+                Log($"{DisplayName}: {SkillName(skillPiece)} 끊김 (묶임)");
+                bool firedAlready = skillPiece == PieceKind.Bishop && skillStage == SkillStage.Active;
                 ClearSkills();
                 if (!firedAlready) StartCooldown(PieceCooldown(PawnRushSkills));
             }
@@ -284,7 +436,10 @@ namespace ChessFight.RagdollLab
             skillGrabRaw = input.grab;
             PreLassoDrag();          // 10-26: a bishop's rope's drag of the last step taken off before the run
             HoldKeysForKingCall();   // R146: on its way in to its king
+            SupportKeys();           // 11-22: G's press, the leader standing for its support, the one carried (RagdollPawn.Support.cs)
             ChainGrabKey();          // R153: a rook's chain handle held out to it (the right click), or riding the chain
+            PlanKeys();              // plan 1-나: in a castling's flight
+            CcKeys();                // the set 4판's hindrance on the keys: dizzy, tired, tied, stuck (RagdollPawn.Cc.cs)
             if (Aiming)
             {
                 // Aiming: the left click (the dive) fires the skill and the right click (the grab) calls it off.
@@ -292,7 +447,7 @@ namespace ChessFight.RagdollLab
                 skillCancel |= input.grab && !skillGrabLatch;
                 input.shove = false;
             }
-            if (piece == PieceKind.Bishop && lassoPhase != LassoPhase.None)
+            if (skillPiece == PieceKind.Bishop && lassoPhase != LassoPhase.None)
             {
                 // 10-26: holding its rope, the right click lets go; the left click does nothing; it walks (no sprint).
                 if (lassoPhase == LassoPhase.Hold) skillCancel |= input.grab && !skillGrabLatch;
@@ -315,10 +470,10 @@ namespace ChessFight.RagdollLab
                 input.grab = false;
             }
             // Aiming, the rook walks (and jumps) as usual but cannot sprint; from the click to the end it stays put (R153).
-            if (Aiming && piece == PieceKind.Rook) input.sprint = false;
+            if (Aiming && skillPiece == PieceKind.Rook) input.sprint = false;
             bool rooted = dashing || skillStage == SkillStage.Recovery
-                          || (skillStage == SkillStage.Windup && (piece == PieceKind.Queen || (piece == PieceKind.Rook && aimLocked)))
-                          || (piece == PieceKind.Rook && skillStage == SkillStage.Active);
+                          || (skillStage == SkillStage.Windup && (skillPiece == PieceKind.Queen || (skillPiece == PieceKind.Rook && aimLocked)))
+                          || (skillPiece == PieceKind.Rook && skillStage == SkillStage.Active);
             if (!rooted) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -333,7 +488,15 @@ namespace ChessFight.RagdollLab
             if (s == null) return;
             bool press = skillPressed, confirm = skillConfirm, cancel = skillCancel;
             skillPressed = skillConfirm = skillCancel = false;
-            skillCooldownLeft -= dt;
+            // The loadout (the skill window): the other slots' keys, every slot's cooldown, and the slot whose cooldown the
+            // old skills' code reads and writes - the skill's under way.
+            for (int k = 1; k < slotKeys.Length; k++)
+            {
+                slotPress[k] = slotKeys[k];
+                slotKeys[k] = false;
+            }
+            for (int k = 0; k < slotCd.Length; k++) slotCd[k] -= dt;
+            cdSlot = SkillRunning && activeSlot >= 0 ? activeSlot : 0;
             getUpGuardLeft -= dt;
             skillGuardLeft -= dt;
             skillGrace -= dt;
@@ -346,34 +509,49 @@ namespace ChessFight.RagdollLab
                 else HoldBound(dt);
             }
             UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
+            UpdateHillStates(dt);     // a close guard on it, squashed and sliding (RagdollPawn.HillSkills.cs)
+            UpdateBookStates(s, dt);  // touched, numb, a ghost, sent flying by a rook (RagdollPawn.BookSkills.cs)
+            UpdateKitStates(s, dt);   // heavy feet, how long it has lain down (RagdollPawn.KitSkills.cs)
             TrackGetUp(s);
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
+            // 11-22: the support slot - the leader's G and its stand, the one called answering with its key and carried
+            // (RagdollPawn.Support.cs).
+            press = UpdateSupportLeader(s, press, dt);
+            press = UpdateSupportMate(s, press, dt);
+            if (supCarry)
+            {
+                DrawSkillMarks(s);
+                return;
+            }
             // R153: pulled in on a rook's chain.
             if (kingCarry || UpdateChainCarry(s, dt))
             {
                 DrawSkillMarks(s);
                 return;
             }
+            // Plan 1-나 (RagdollPawn.SkillPlans.cs): a castling offered to this piece (its own key answers), a pin's rope on
+            // it, the castling's flight.
+            press = UpdatePlanMate(s, press, dt);
+            UpdatePin(s, dt);
+            if (UpdatePlanCarry(s, dt))
+            {
+                HideSkillMarks();
+                return;
+            }
 
             if (skillStage != SkillStage.None && (State == PawnState.Ragdoll || Floating))
             {
                 // Floored (or in the water) mid-skill: it ends here, and the cooldown runs as if it had finished.
-                Log($"{DisplayName}: {SkillName(piece)} 끊김 ({(Floating ? "물" : "넘어짐")})");
-                bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
+                Log($"{DisplayName}: {SkillName(skillPiece)} 끊김 ({(Floating ? "물" : "넘어짐")})");
+                bool firedAlready = skillPiece == PieceKind.Bishop && skillStage == SkillStage.Active;
                 ClearSkills();
                 if (!firedAlready) StartCooldown(PieceCooldown(s));
             }
 
-            switch (piece)
-            {
-                case PieceKind.Pawn: UpdatePawnSkill(s, press, dt); break;
-                case PieceKind.Knight: UpdateKnightSkill(s, press, dt); break;
-                case PieceKind.Bishop: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
-                case PieceKind.Rook: UpdateRookChain(s, press, confirm, cancel, dt); break;
-                case PieceKind.Queen: UpdateQueenSkill(s, press, dt); break;
-                case PieceKind.King: UpdateKingCall(s, press, cancel, dt); break;
-            }
+            // Each slot's skill, the old ones and the new, on whatever piece the loadout put it (RagdollPawn.SkillPlans.cs).
+            RunSlots(s, press, confirm, cancel, dt);
+            UpdateFeelKick(dt);   // the hand feel's recoil, bounce or lurch (RagdollPawn.HandFeel.cs)
             DrawSkillMarks(s);
         }
 
@@ -395,9 +573,10 @@ namespace ChessFight.RagdollLab
             ClearKingCall();
             ClearRookChain();
             ClearLasso();
+            ClearPlanSkills();
         }
 
-        float PieceCooldown(PawnRushSkillParams s) => piece switch
+        float PieceCooldown(PawnRushSkillParams s) => skillPiece switch
         {
             PieceKind.Pawn => s.pawnCooldown,
             PieceKind.Knight => s.knightCooldown,
@@ -410,16 +589,25 @@ namespace ChessFight.RagdollLab
 
         void StartCooldown(float seconds)
         {
+            // The kits' second version: an ultimate has no cooldown, its gauge is what it waits for (RagdollPawn.UltGauge.cs).
+            if (UltSlotOnGauge(cdSlot))
+            {
+                cooldownTotal = skillCooldownLeft = 0f;
+                return;
+            }
+            seconds *= VariantCooldownScale(SlotSkill(cdSlot));   // a set's variant on its own cooldown (RagdollPawn.SetSkills.cs)
             // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
             if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
+            seconds *= StageCooldown;   // the growing system's stage (the skill window)
             cooldownTotal = Mathf.Max(0f, seconds);
             skillCooldownLeft = cooldownTotal;
         }
 
-        /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, the knight).</summary>
+        /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, the knight).
+        /// A ghost (the opposite-coloured bishop, RagdollPawn.BookSkills.cs) starts none.</summary>
         bool CanStartSkill(bool inAir = false) =>
             State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered && bindLeft <= 0f
-            && !chainCarry
+            && !chainCarry && ghostLeft <= 0f
             && (hookPhase == HookPhase.None || hookPhase == HookPhase.Held) && skillCooldownLeft <= 0f
             && (inAir || Grounded || coyote > 0f);
 
@@ -468,8 +656,11 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>What a skill does to the piece it hits (DESIGN §2.3-2.4): a knockdown is the skill's to
-        /// give, not the impact's; a piece that is down is only pushed, one just up only staggers.</summary>
-        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause)
+        /// give, not the impact's; a piece that is down is only pushed, one just up only staggers. <paramref name="hold"/>:
+        /// how long a knockdown keeps it down (0: getUpDelay).</summary>
+        /// <param name="edgeSafe">A basic's push (11-24, KITS 6.13): the piece hit stops edgeGap short of an edge
+        /// (RagdollPawn.SetThree.cs, the system's safety rule); a mid or high skill's goes over.</param>
+        string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, bool covered = false, float hold = 0f, bool edgeSafe = false)
         {
             if (target == null || target.NetworkPuppet) return "-";
             if (target.SkillUntargetable)
@@ -478,7 +669,37 @@ namespace ChessFight.RagdollLab
                 target.LastSkillHit = $"{cause}: 스킬 대상 아님";
                 return "대상 아님";
             }
+            if (target.CurrentCc == Cc4.Frozen)
+            {
+                // 핀!'s 멈춤 (USER_SKILLS 3장): a frozen piece is not pushed.
+                target.LastSkillHit = $"{cause}: 멈춤 (밀리지 않음)";
+                return "멈춤";
+            }
+            if (target.JyGiantNow)
+            {
+                // 거대화 (USER_SKILLS 4.4): nothing pushes a giant.
+                target.LastSkillHit = $"{cause}: 거인 (밀리지 않음)";
+                return "거인";
+            }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
+            push *= StagePower;   // the growing system's stage (the skill window)
+            // A close guard (근접 호위, RagdollPawn.HillSkills.cs): the piece that gave it is covered by a guarded teammate
+            // standing near it, who takes the hit instead; a guarded piece only staggers and gives a little.
+            var cover = covered ? null : target.WardCover();
+            if (cover != null)
+            {
+                target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
+                SkillHit(cover, push, knockdown, cause, true, hold, edgeSafe);
+                return $"{cover.DisplayName}이(가) 대신 막음";
+            }
+            if (edgeSafe) target.GuardEdge();
+            if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
+            {
+                target.TakeHit(Flat(push), 0f, 0f, false);   // (TakeHit scales a guarded piece's push down)
+                target.Stagger(PawnRushSkills != null ? PawnRushSkills.wardStagger : 0.2f);
+                target.LastSkillHit = $"{cause}: 호위로 버팀";
+                return "호위로 버팀 (밀림만 조금)";
+            }
             string result;
             if (knockdown && target.State == PawnState.Ragdoll)
             {
@@ -493,9 +714,10 @@ namespace ChessFight.RagdollLab
             }
             else if (knockdown)
             {
-                target.Knockdown(cause);
+                target.Knockdown(cause, hold);
                 target.AddVelocity(push * target.PushScale);
                 result = "넘어짐";
+                if (IsEnemyOf(target)) target.GaugeKnocked(this);   // floored by an enemy's skill: its gauge fills (UltGauge)
             }
             else
             {
@@ -592,7 +814,7 @@ namespace ChessFight.RagdollLab
                     if (pawnStep == 1)
                     {
                         if (press) pawnBuffered = true;
-                        pawnTarget = SeekTarget(s);
+                        pawnTarget = pawnSteer ? null : SeekTarget(s);
                     }
                     else SteerToTarget();
                     if (WallAhead(dashBase * dt + 0.25f, out _)) dashLeft = 0f;   // a wall ends the step, no stagger
@@ -609,16 +831,36 @@ namespace ChessFight.RagdollLab
                         {
                             skillStage = SkillStage.Link;
                             stageTime = 0f;
-                            SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
+                            SkillDetail = pawnTarget != null ? Loc.F("연결 (키 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                         }
-                        else FinishPawn(s, true);
+                        else
+                        {
+                            // The hand feel: the second step went for an enemy and touched nobody - the swish, and the pawn
+                            // lurches on past where it meant to stop.
+                            if (!pawnStepHit && pawnTarget != null && IsEnemyOf(pawnTarget))
+                            {
+                                FeelMiss(FeetPoint, skillDir);
+                                FeelKick(skillDir, s.feelKickMiss);
+                            }
+                            FinishPawn(s, true);
+                        }
                     }
                     break;
                 case SkillStage.Link:
                     stageTime += dt;
+                    if (pawnSteer)
+                    {
+                        // The skill pool's P-기1 (RagdollPawn.PoolSkills.cs): the second step goes for nobody; the move keys bend
+                        // it, and it must come sooner.
+                        SkillDetail = "연결 (키 한 번 더 · 이동 키로 꺾기)";
+                        if (press) pawnBuffered = true;
+                        if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing) PawnStep(s, 2);
+                        else if (stageTime > s.steerLinkMax) FinishPawn(s, false);
+                        break;
+                    }
                     // R153 (plan v0.3 §3): the second step only goes for someone: a downed teammate or a standing enemy in front.
                     pawnTarget = SeekTarget(s);
-                    SkillDetail = pawnTarget != null ? Loc.F("연결 (F 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
+                    SkillDetail = pawnTarget != null ? Loc.F("연결 (키 한 번 더 → {0})", pawnTarget.DisplayName) : Loc.T("연결 (대상 없음)");
                     if (press) pawnBuffered = true;
                     if (pawnBuffered && stageTime >= s.pawnLinkMin && State == PawnState.Active && !Climbing)
                     {
@@ -693,7 +935,19 @@ namespace ChessFight.RagdollLab
                 skillDir = d.sqrMagnitude > 0.01f ? d.normalized : MoveOrAim();
                 distance = Mathf.Min(s.pawnSeekStep, d.magnitude + 0.3f);
             }
+            else if (n == 2 && pawnSteer) skillDir = SteeredSecond(s);   // the pool's: bent by the move keys
             else skillDir = MoveOrAim();
+            // The set 2안-a's passed pawn: the second step is a run of passedRun through the way (SetSkills).
+            passedRun = n == 2 && pawnSteer && VariantNow == PawnRushSkillIds.PassedPawn;
+            if (passedRun)
+            {
+                StartDash(s.passedSpeed, s.passedRun / Mathf.Max(0.1f, s.passedSpeed));
+                skillStage = SkillStage.Active;
+                stageTime = 0f;
+                SkillDetail = "통과한 폰: 질주";
+                Fx(SkillFxKind.PawnStep, null, FeetPoint, skillDir, n);
+                return;
+            }
             StartDash(s.pawnStepSpeed, distance / Mathf.Max(0.1f, s.pawnStepSpeed));
             skillStage = SkillStage.Active;
             stageTime = 0f;
@@ -705,7 +959,7 @@ namespace ChessFight.RagdollLab
         {
             skillStage = SkillStage.None;
             SkillDetail = Loc.T("");
-            float cooldown = bothSteps ? s.pawnCooldown : s.pawnCooldownOneStep;
+            float cooldown = bothSteps ? s.pawnCooldown : pawnSteer ? s.steerOneStepCooldown : s.pawnCooldownOneStep;
             if (pawnHelped) cooldown -= s.helpCooldownCut;
             StartCooldown(cooldown);
         }
@@ -727,10 +981,18 @@ namespace ChessFight.RagdollLab
                     if (pawnStep == 2 && other == pawnTarget) dashLeft = Mathf.Min(dashLeft, 0.02f);
                     continue;
                 }
-                if (pawnStepHit || !IsEnemyOf(other) || other.SkillUntargetable) continue;
+                if (!IsEnemyOf(other) || other.SkillUntargetable) continue;
+                // The set 2안-a's passed pawn: its second step runs through, shoving aside whoever is in the way (SetSkills).
+                if (passedRun)
+                {
+                    skillHitSet.Add(other);
+                    PassedShove(s, other);
+                    continue;
+                }
+                if (pawnStepHit) continue;
                 PawnStepHit(s, other, "");
             }
-            if (pawnStepHit) return;
+            if (pawnStepHit || passedRun) return;   // (the passed pawn only shoves aside)
             // R819 (사용자 "뛰고 계속 움직이니까 스킬이 안 걸릴 때도 있어"): the sphere above sits at chest height (0.5 m), so an
             // enemy up in a jump went over it, and online the host's enemy was a step past where the pawn's player saw it.
             // An enemy whose body (hips to head) is within pawnHitBody across the ground of the step's front, from just under
@@ -769,13 +1031,16 @@ namespace ChessFight.RagdollLab
             float angle = AxisAngle(other, skillDir);
             bool diagonal = angle > s.pawnFrontAngle && angle <= s.pawnDiagonalAngle;
             string result = diagonal
-                ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각")
-                : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
+                ? SkillHit(other, skillDir * s.pawnKnockPush + Vector3.up * s.pawnKnockLift, true, "폰 대각", false, pawnSteer ? StepKnockNow(s) : 0f, s.basicEdgeSafe)
+                : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면", false, 0f, s.basicEdgeSafe);
             string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
             Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
             Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}{how}");
-            // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
+            // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음). JY-skill-lab's hand
+            // feel: the hit stop, and the pawn bounces back off it once the step is over (RagdollPawn.HandFeel.cs).
             dashLeft = Mathf.Min(dashLeft, 0.02f);
+            FeelHit(other, SkillContact(other), skillDir, diagonal ? FeelHard : FeelWeak);
+            FeelKick(-skillDir, s.feelKickBounce);
         }
 
         void HelpUp(PawnRushSkillParams s, RagdollPawn ally)
@@ -1313,7 +1578,7 @@ namespace ChessFight.RagdollLab
             Vector3 foot = new Vector3(bodies[0].position.x, floorY + 0.05f, bodies[0].position.z);
             HideSkillMarks();
             if (SkillMarksHidden) return;   // the effects draw them (design A, R90)
-            switch (piece)
+            switch (skillPiece)
             {
                 case PieceKind.Rook when skillStage == SkillStage.Windup:
                 {
@@ -1451,7 +1716,8 @@ namespace ChessFight.RagdollLab
             }
             // 10-26: the bishop on its rope (RagdollPawn.BishopLasso.cs).
             if (LassoPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR)) return;
-            if (piece == PieceKind.Knight && skillStage == SkillStage.Windup)
+            if (HillPose(ref chest, ref head)) return;   // Queen of the Hill's six (a lean only)
+            if (skillPiece == PieceKind.Knight && skillStage == SkillStage.Windup)
             {
                 // R138 (승규 님: "좀 더 나이트다! 라는 연출"): it rears up like a horse before it springs: leaning back, head up,
                 // the arms (its front legs) up in front pawing the air, then drops into the crouch.
@@ -1467,7 +1733,7 @@ namespace ChessFight.RagdollLab
                 footL = footR = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(22f, 0f, 0f), gather);
                 return;
             }
-            if (piece == PieceKind.Knight && skillStage == SkillStage.Active && !OnFloor)
+            if (skillPiece == PieceKind.Knight && skillStage == SkillStage.Active && !OnFloor)
             {
                 // R138: a jumping horse. Going up the front legs fold under the chest and it looks up; over the top it
                 // stretches out level; coming down the front legs reach for the ground and it looks at where it lands.
@@ -1507,7 +1773,7 @@ namespace ChessFight.RagdollLab
                 footL = footR = Quaternion.Euler(14f, 0f, 0f);
                 return;
             }
-            if (piece == PieceKind.Rook && (aimLocked || chainPhase != ChainPhase.None) && skillStage != SkillStage.None)
+            if (skillPiece == PieceKind.Rook && (aimLocked || chainPhase != ChainPhase.None) && skillStage != SkillStage.None)
             {
                 // R153: the throw: the right arm swung out along the chain's line, the left braced back, leaning back
                 // against the pull while it hauls in.

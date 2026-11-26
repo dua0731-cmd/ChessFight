@@ -106,6 +106,11 @@ namespace ChessFight.RagdollLab
         public bool SuppressInput { get; set; }
         /// <summary>F does not work bells, levers or hooks: the Pawn Rush skill test bed has the skills on F.</summary>
         public bool InteractKeyOff { get; set; }
+        /// <summary>The third ability key (PawnInput.ability3; JY-skill-lab): the Pawn Rush skill test bed sets R while
+        /// the piece played has a skill in its third slot (the queen's), and R then does not put everyone back.</summary>
+        public KeyCode Ability3Key { get; set; }
+        /// <summary>The Pawn Rush support key (G; None in every other scene): held, it goes into P1's input (supportHeld).</summary>
+        public KeyCode SupportKey { get; set; }
 
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
@@ -390,7 +395,7 @@ namespace ChessFight.RagdollLab
 
         void HandleHotkeys()
         {
-            if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled) RespawnAll();
+            if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled && Ability3Key != KeyCode.R) RespawnAll();
             if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
             if (NetTestMode)
             {
@@ -422,7 +427,9 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.RightBracket)) slots.Vote(true);
             }
 
-            if (PanelOpen || UiWantsCursor || SkillListOpen || EmoteWheelOpen) Cursor.lockState = CursorLockMode.None;
+            // (JY-skill-lab: the developers' skill tree too - its own flag, as the skill list's: the network panel sets
+            // UiWantsCursor every frame, before this reads it.)
+            if (PanelOpen || UiWantsCursor || SkillListOpen || EmoteWheelOpen || PawnRushSkillWindow.AnyOpen) Cursor.lockState = CursorLockMode.None;
             else if (Cursor.lockState != CursorLockMode.Locked && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -433,7 +440,7 @@ namespace ChessFight.RagdollLab
 
         static bool Touched(PawnInput input) =>
             input.move.sqrMagnitude > 0.04f || input.jump || input.shove || input.grab || input.sprint
-            || input.ability || input.ability2 || input.interact;
+            || input.ability || input.ability2 || input.ability3 || input.interact;
 
         PawnInput ReadInput(int slotIndex)
         {
@@ -452,8 +459,11 @@ namespace ChessFight.RagdollLab
                     input.sprint = Input.GetKey(KeyCode.LeftShift);
                     input.ability = Input.GetKeyDown(KeyCode.E);
                     input.ability2 = Input.GetKeyDown(KeyCode.Q);
+                    input.ability3 = Ability3Key != KeyCode.None && Input.GetKeyDown(Ability3Key);
                     input.interact = !InteractKeyOff && Input.GetKey(KeyCode.F);
                     input.skill = SkillKey != KeyCode.None && Input.GetKeyDown(SkillKey);
+                    input.skillHeld = SkillKey != KeyCode.None && Input.GetKey(SkillKey);
+                    input.supportHeld = SupportKey != KeyCode.None && Input.GetKey(SupportKey);
                     // The emotes: 1..4 in the skill network test, where the lab's own number-key slots are gone.
                     if (NetTestMode)
                         for (int e = 0; e < ChessFight.Network.PieceEmotes.Slots; e++)

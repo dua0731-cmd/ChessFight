@@ -22,6 +22,12 @@ namespace ChessFight.Network
     //            or the first runner through the endgame course starts PawnRushThrone.SummonSeconds in which anyone may
     //            walk in and take a place, the platform off, and then the rest are summoned. Bit 11.
     //
+    //   Skills   which skill plan the pieces play by (JY-skill-lab, 2026-11-19, the user: "프로토타입을 만들어보고, 다 직접
+    //            인게임에서 해보고 판단" with the manager's switches): the skills as they are (plan 1-가), or plan 1-나 of
+    //            Docs/Skills/PAWN_RUSH_2_SKILL_PLANS.md (pawn en passant, knight fork, bishop pin, rook castling, queen
+    //            check), or the loadout the host's PC last made in the developers' skill tree (K). Whatever the match
+    //            starts with, the skill tree changes it on the way. Prototypes: rules and physics only.
+    //
     // The room carries them as one number (room data "rules"); every PC builds its round from it, and a room found by
     // random matching has none - the game as it has played so far. Core: no Unity, no Steam.
     public struct PawnRushRules
@@ -31,24 +37,32 @@ namespace ChessFight.Network
         public const int EndingCrown = 0, EndingThrone = 1;
         public const int MapDrawn = 0, MapLast = 4;
         public const int SummonNow = 0, SummonLater = 1;
+        public const int SkillsNow = 0, SkillsChessMoves = 1, SkillsTree = 2;
+        // JY-skill-lab (2026-11-21, the skill system's X-판17, a must with the team's comeback ultimates): the crown
+        // platform's majority wins at once (as before), or only after holding it PawnRushFinish.HoldSeconds.
+        public const int HoldOff = 0, HoldOn = 1;
 
         // Option 4: how long after one team's clear the other team's gate opens.
         public const double GateDelay = 20;
 
         public int Relief, After, Ending, EndingMap, Summon;
+        // JY-skill-lab: the skill plan (bits 5-6) and the crown platform's hold (bit 7). Not on the room panel: the skill
+        // test mode (GameModes.PawnRushSkillTest) plays the skill tree, every other Pawn Rush the skills as they are.
+        public int Skills, Hold;
 
         // What the running round plays by: the match link sets it from the room before the round is built; offline it
         // stays as it is (a test may set it).
         public static PawnRushRules Current;
 
-        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16 + Clamp(EndingMap, MapLast) * 256
-                               + Clamp(Summon, 1) * 2048;
+        public int Encode() => Clamp(Relief, 2) + Clamp(After, 2) * 4 + Clamp(Ending, 1) * 16 + Clamp(Skills, 2) * 32 + Clamp(Hold, 1) * 128
+                               + Clamp(EndingMap, MapLast) * 256 + Clamp(Summon, 1) * 2048;
 
         public static PawnRushRules Decode(int packed)
         {
             if (packed < 0) packed = 0;
             return new PawnRushRules { Relief = Clamp(packed & 3, 2), After = Clamp((packed >> 2) & 3, 2), Ending = Clamp((packed >> 4) & 1, 1),
-                                       EndingMap = Clamp((packed >> 8) & 7, MapLast), Summon = Clamp((packed >> 11) & 1, 1) };
+                                       EndingMap = Clamp((packed >> 8) & 7, MapLast), Summon = Clamp((packed >> 11) & 1, 1),
+                                       Skills = Clamp((packed >> 5) & 3, 2), Hold = Clamp((packed >> 7) & 1, 1) };
         }
 
         static int Clamp(int value, int max) => value < 0 ? 0 : value > max ? 0 : value;

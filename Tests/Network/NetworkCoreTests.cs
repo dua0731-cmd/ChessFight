@@ -79,7 +79,7 @@ public static class NetworkCoreTests
         var p = new SkillWirePacket { HostTimeMs = 123456, FirstSeq = 65530 };
         p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(1, 3), Stage = 2, Flags = 0xA5, Flags2 = 3, StageTime = 1.234f, Cooldown = 7.25f, CooldownTotal = 12f,
             Dx = 0.6f, Dy = 0.8f, Px = -12.345f, Py = 1.5f, Pz = 33.3f, Qx = 4, Qy = -0.5f, Qz = 79, Target = SkillWire.Ref(0, 5), Other = SkillWire.None,
-            A = 2.5f, B = 25.5f, C = 200, D = 7 });
+            A = 2.5f, B = 25.5f, C = 200, D = 7, Cooldown4 = 4.5f, Flags3 = 2, Gauge = 0.5f });
         p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(0, 0), Stage = 1, StageTime = 0.5f, Cooldown = 3f, CooldownTotal = 9f, Dx = -1f, Target = SkillWire.None,
             Other = SkillWire.None });
         p.Wires.Add(new SkillWireObject { Id = 9, Owner = SkillWire.Ref(0, 1), X = 3, Y = 0.02f, Z = -4, Yaw = 271, Age = 2.5f, Flags = 1, Trips = 1, Along0 = 0.33f,
@@ -154,8 +154,10 @@ public static class NetworkCoreTests
     // R541: the two ragdoll snapshots (the first two) and the busy skills packet (the eighth) carry WirePoints - CFRE, x and
     // z in 24 bits; the empty skills packet and the sword state (the last two) have no such point and did not change.
     // The other five are the ones pinned at R297.
+    // JY-skill-lab: the busy skills packet (the eighth) again - each state carries the skill under way and two more
+    // slots' cooldowns (3d8feeaec99034d7 before).
     const string Golden = "5692cf432cb34ea9 1bc69825b8c5743e a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 d8194986b34e5938 6aa7acd5e02fe864 "
-                          + "3d8feeaec99034d7 0a5aaf2e798a59b6 52d23acd7ef29404";
+                          + "27e6017943dc857c 0a5aaf2e798a59b6 52d23acd7ef29404";
     // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286, R287):
     // RoamingFleet.Yard, the yard the seeds are vetted on; the map checks its own fleet against it.
     static RoamingFleet YardFleet(double start, uint seed) => RoamingFleet.Yard(seed, start);
@@ -1844,13 +1846,22 @@ public static class NetworkCoreTests
                 var one=new TeamReservations(); Reserve(one,1,3); one.Reconcile(new HashSet<ulong>(Ids(1,3)),1);
                 Check(one.RemoveMember(2)&&one.Count==2&&one.Find(2)==null&&!one.RemoveMember(9)&&one.RemoveMember(1)&&one.RemoveMember(3)&&one.Count==0,"RemoveMember"); });
             Test("R703: the round's flow rules pack into one number and back; a number that is not rules is the game as it was", () => {
-                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) {
-                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending}; var back=PawnRushRules.Decode(r.Encode());
-                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending,"rules changed on the way: "+relief+after+ending); }
+                for (int relief=0; relief<3; relief++) for (int after=0; after<3; after++) for (int ending=0; ending<2; ending++) for (int skills=0; skills<3; skills++) {
+                    var r=new PawnRushRules{Relief=relief,After=after,Ending=ending,Skills=skills}; var back=PawnRushRules.Decode(r.Encode());
+                    Check(back.Relief==relief&&back.After==after&&back.Ending==ending&&back.Skills==skills,"rules changed on the way: "+relief+after+ending+skills); }
                 Check(PawnRushRules.Decode(0).Encode()==0&&PawnRushRules.Decode(-5).Encode()==0&&PawnRushRules.Decode(3).Relief==0,"a number that is not rules");
                 var picked=new PawnRushRules().With(0,PawnRushRules.ReliefBoth).With(1,PawnRushRules.AfterDelay);
                 Check(picked.Relief==2&&picked.After==2&&picked.Ending==0&&picked.Of(0)==2&&picked.Of(1)==2&&picked.Of(2)==0,"With and Of");
                 Check(PawnRushRules.Settings.Length==5&&PawnRushRules.Choices.Length==5&&PawnRushRules.Choices[4].Length==2&&PawnRushRules.Choices[0].Length==3&&PawnRushRules.Choices[1].Length==3&&PawnRushRules.Choices[2].Length==2&&PawnRushRules.Choices[3].Length==PawnRushRules.MapLast+1,"the panel's names");
+                // JY-skill-lab (X-판17): the crown platform held 1.5 s, its own bit (not on main's room panel); and the hold's count.
+                var held=PawnRushRules.Decode(new PawnRushRules{Relief=2,After=1,Ending=1,Skills=2,Hold=PawnRushRules.HoldOn}.Encode());
+                Check(held.Hold==1&&held.Relief==2&&held.After==1&&held.Ending==1&&held.Skills==2&&PawnRushRules.Decode(held.Encode()).Hold==1&&PawnRushRules.Decode(128).Hold==1&&PawnRushRules.Decode(127).Hold==0&&new PawnRushRules().Encode()==0,"the hold on the crown platform as a rule");
+                int holder=PawnRushFinish.None; float time=0f;
+                Check(PawnRushFinish.StepHold(ref holder,ref time,0,0.5f,1.5f)==PawnRushFinish.None&&PawnRushFinish.StepHold(ref holder,ref time,0,1f,1.5f)==PawnRushFinish.None&&PawnRushFinish.StepHold(ref holder,ref time,0,0.6f,1.5f)==0,"a team that holds 1.5 s wins");
+                holder=PawnRushFinish.None; time=0f;
+                Check(PawnRushFinish.StepHold(ref holder,ref time,1,0.1f,1.5f)==PawnRushFinish.None&&PawnRushFinish.StepHold(ref holder,ref time,1,1.4f,1.5f)==PawnRushFinish.None&&PawnRushFinish.StepHold(ref holder,ref time,PawnRushFinish.None,0.1f,1.5f)==PawnRushFinish.None&&time==0f
+                      &&PawnRushFinish.StepHold(ref holder,ref time,1,0.1f,1.5f)==PawnRushFinish.None&&PawnRushFinish.StepHold(ref holder,ref time,0,2f,1.5f)==PawnRushFinish.None&&holder==0,"stepping off, or the other team taking it, starts the count again");
+                Check(PawnRushRules.Decode(new PawnRushRules{Skills=PawnRushRules.SkillsChessMoves}.Encode()).Skills==1&&PawnRushRules.Decode(32).Skills==1&&PawnRushRules.Decode(64).Skills==PawnRushRules.SkillsTree&&PawnRushRules.Decode(96).Skills==0&&new PawnRushRules{Skills=PawnRushRules.SkillsTree}.Encode()==64&&new PawnRushRules{Skills=2,EndingMap=3,Summon=1}.Encode()==64+3*256+2048,"the skill plan and the skill tree (JY-skill-lab)");
                 Check(PawnRushRules.Ready(1,PawnRushRules.AfterGather)&&PawnRushRules.Ready(2,PawnRushRules.EndingThrone)&&PawnRushRules.Ready(0,2)&&PawnRushRules.Ready(1,PawnRushRules.AfterDelay),"what is built so far");
                 Check(PawnRushRules.GateDelay==20,"the gate's delay"); });
             Test("JY-audience-hall: the kings call each piece to its own chess starting square, the rest to free squares, never e1", () => {
@@ -1895,6 +1906,156 @@ public static class NetworkCoreTests
                 for (int seed=0; seed<40; seed++)
                     for (int map=1; map<=4; map++)
                         Check(hallTable.PickNames(seed,map)[5]==hallTable.Names(5)[map-1]&&hallTable.PickNames(seed,map)[0]==hallTable.PickNames(seed)[0],"the course table pins the same hall: seed "+seed+" map "+map); });
+            Test("JY-skill-lab: the skill loadout - the game's own is one old skill a piece, any skill sits in any slot, and it goes into a text and back", () => {
+                var now=PawnRushLoadout.Preset(0);
+                Check(now.system==PawnRushLoadout.One&&now.Plays(0)&&!now.Plays(1)&&!now.Plays(2)&&now.Plays(PawnRushLoadout.UltSlot)&&now.NormalSlots==1&&now.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.TwoSteps&&now.Skill(PieceKind.Knight,0)==PawnRushSkillIds.TurnLeap&&now.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.CrossRope&&now.Skill(PieceKind.Rook,0)==PawnRushSkillIds.ChainPull&&now.Skill(PieceKind.Queen,0)==PawnRushSkillIds.RingShove,"the skills as they are");
+                Check(now.Skill(PieceKind.King,0)==0&&now.Skill(PieceKind.Pawn,1)==0&&now.SlotOf(PieceKind.Rook,PawnRushSkillIds.ChainPull)==0&&now.SlotOf(PieceKind.Rook,PawnRushSkillIds.Check)==-1&&now.Stage(PieceKind.Pawn)==1,"no slot for the king, one slot a piece, stage 1");
+                var moves=PawnRushLoadout.Preset(1);
+                Check(moves.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.EnPassant&&moves.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check&&PawnRushLoadout.Preset(2).Skill(PieceKind.Pawn,0)==0,"plan 1-na, and the empty one");
+                var bundle=PawnRushLoadout.Preset(3);
+                Check(PawnRushLoadout.Presets>=5&&bundle.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.TouchMove&&bundle.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BackKick&&bundle.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.Ghost&&bundle.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackPush&&bundle.Skill(PieceKind.Queen,0)==PawnRushSkillIds.TwoHares&&bundle.Skill(PieceKind.Pawn,1)==0&&PawnRushSkillIds.TouchMove==61&&PawnRushSkillIds.TwoHares==65&&!PawnRushSkillIds.Old(PawnRushSkillIds.Ghost)&&!PawnRushSkillIds.Castle(PawnRushSkillIds.BackPush),"the skill idea book's bundle A, and its numbers");
+                var plan3=PawnRushLoadout.Preset(6);
+                Check(plan3.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.FlankShot&&plan3.Skill(PieceKind.Rook,0)==PawnRushSkillIds.CastleOver&&plan3.Skill(PieceKind.Queen,0)==PawnRushSkillIds.ScholarThrust&&plan3.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep
+                      &&plan3.Raw(3,1)==PawnRushSkillIds.ChainBehind&&plan3.Raw(5,1)==PawnRushSkillIds.KingSummon&&plan3.Raw(0,1)==PawnRushSkillIds.ChaseAway&&plan3.Raw(1,1)==PawnRushSkillIds.Fork
+                      &&plan3.Raw(2,1)==PawnRushSkillIds.Pin&&plan3.Raw(4,1)==PawnRushSkillIds.CheckSeries&&plan3.Raw(0,3)==PawnRushSkillIds.Promote&&plan3.Raw(5,3)==PawnRushSkillIds.KingMarch&&plan3.Raw(0,2)==0
+                      &&!PawnRushSkillIds.Old(PawnRushSkillIds.FlankShot)&&!PawnRushSkillIds.Old(PawnRushSkillIds.CheckSeries)&&PawnRushSkillIds.Ultimate(PawnRushSkillIds.QueenSac)&&!PawnRushSkillIds.Ultimate(PawnRushSkillIds.KingRun)
+                      &&PawnRushLoadout.Preset(7).Raw(0,2)==0&&PawnRushLoadout.Preset(7).Raw(0,3)==0,"the skill pool's plan 3: its basic, mid and ultimate rows in F, E and Q (the ultimates on a gauge)");
+                // The sets (KITS 6.9): 1안-a one normal slot and Q, 2안-a a slot that grows into its endgame shape and Q, 3안-a = 8.
+                var setOne=PawnRushLoadout.Preset(9); var setTwo=PawnRushLoadout.Preset(10);
+                Check(PawnRushLoadout.SystemOf(9)==PawnRushLoadout.One&&PawnRushLoadout.SystemOf(10)==PawnRushLoadout.Grow&&PawnRushLoadout.SystemOf(8)==PawnRushLoadout.Many&&PawnRushLoadout.SystemOf(0)==0
+                      &&setOne.Raw(1,0)==PawnRushSkillIds.LeapFork&&setOne.Raw(2,0)==PawnRushSkillIds.SnipeMid&&setOne.Raw(0,1)==0&&setOne.Raw(4,3)==PawnRushSkillIds.QueenDrop
+                      &&setOne.Skill(PieceKind.Pawn,PawnRushLoadout.UltSlot)==PawnRushSkillIds.PassantBang&&setOne.Skill(PieceKind.Rook,0)==PawnRushSkillIds.WallMid,"the set 1안-a: one skill a piece and the ultimate, played with one slot a piece");
+                setTwo.system=PawnRushLoadout.Grow;
+                Check(setTwo.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&setTwo.Skill(PieceKind.Pawn,0,2)==PawnRushSkillIds.PassedPawn&&setTwo.Skill(PieceKind.King,0,2)==PawnRushSkillIds.KingEscort
+                      &&setTwo.Skill(PieceKind.Pawn,1)==0&&setTwo.Skill(PieceKind.Pawn,PawnRushLoadout.UltSlot)==PawnRushSkillIds.PassantBang&&setTwo.Apply(PawnRushLoadout.OpStage+4,2)&&setTwo.Skill(PieceKind.Queen,0)==PawnRushSkillIds.SeriesQuick,"the set 2안-a: the middlegame shape, the endgame shape from stage 2 (a piece's own or the row's), the ultimate");
+                Check(PawnRushSkillIds.BaseOf(PawnRushSkillIds.LeapFork)==PawnRushSkillIds.BentLeap&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.SummonQuick)==PawnRushSkillIds.KingSummon&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.Check)==PawnRushSkillIds.Check
+                      &&PawnRushSkillIds.Old(PawnRushSkillIds.StepsMid)&&PawnRushSkillIds.Old(PawnRushSkillIds.SummonQuick)&&!PawnRushSkillIds.Old(PawnRushSkillIds.SnipeMid)&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.SummonQuick)==PieceKind.King
+                      &&setOne.SlotOf(PieceKind.Pawn,PawnRushSkillIds.SteeredSteps)==0&&setOne.SlotOf(PieceKind.Pawn,PawnRushSkillIds.StepsMid)==0&&PawnRushSkillIds.Snipe(PawnRushSkillIds.SnipeMid),"a set's variant runs on its skill's code, and is found by it");
+                var kit2=PawnRushLoadout.Preset(8);
+                Check(PawnRushLoadout.Slots==4&&PawnRushLoadout.UltSlot==3&&kit2.Raw(4,0)==PawnRushSkillIds.QueenGlide&&kit2.Raw(4,1)==PawnRushSkillIds.CheckSeries&&kit2.Raw(4,2)==PawnRushSkillIds.EightLines&&kit2.Raw(4,3)==PawnRushSkillIds.QueenDrop
+                      &&kit2.Raw(3,0)==PawnRushSkillIds.ChainBehind&&kit2.Raw(3,1)==PawnRushSkillIds.WallCharge&&kit2.Raw(2,0)==PawnRushSkillIds.FlankShot&&kit2.Raw(2,1)==PawnRushSkillIds.SnipeHigh&&PawnRushSkillIds.Snipe(PawnRushSkillIds.SnipeHigh)&&PawnRushSkillIds.Snipe(PawnRushSkillIds.LongSnipe)&&!PawnRushSkillIds.Snipe(PawnRushSkillIds.FlankShot)&&kit2.Raw(0,3)==PawnRushSkillIds.PassantBang
+                      &&kit2.Raw(0,2)==0&&kit2.Raw(1,2)==0&&kit2.Raw(5,2)==0&&kit2.Raw(5,1)==PawnRushSkillIds.KingSummon&&kit2.KingSlots
+                      &&kit2.Raw(3,3)==PawnRushSkillIds.RankWall&&kit2.Raw(5,3)==PawnRushSkillIds.GeneralCall&&PawnRushSkillIds.Ultimate(PawnRushSkillIds.SeventhRank)&&!PawnRushSkillIds.Ultimate(PawnRushSkillIds.WallCharge)&&!PawnRushSkillIds.Ultimate(PawnRushSkillIds.SnipeHigh)
+                      &&PawnRushSkillIds.HighCandidate(PawnRushSkillIds.SeventhRank)&&PawnRushSkillIds.HighCandidate(PawnRushSkillIds.Promote)&&!PawnRushSkillIds.HighCandidate(PawnRushSkillIds.QueenDrop)
+                      &&PawnRushSkillIds.TeamUltimate(PawnRushSkillIds.PassantBang)&&PawnRushSkillIds.TeamUltimate(PawnRushSkillIds.GeneralCall)&&!PawnRushSkillIds.TeamUltimate(PawnRushSkillIds.KingMarch)&&PawnRushSkillIds.Ultimate(PawnRushSkillIds.KnightTour),"the kits' second version: each piece's own mix, the queen's third on R, the ultimates on Q");
+                var three=PawnRushLoadout.Decode("3|81,88,93,43,12,94,85,82,95,83,0,96,0,89,97,72,84,98|1,1,1,1,1,1|0");
+                Check(three.system==PawnRushLoadout.Many&&three.Raw(0,0)==PawnRushSkillIds.SteeredSteps&&three.Raw(0,1)==PawnRushSkillIds.ChaseAway&&three.Raw(0,2)==0&&three.Raw(0,3)==PawnRushSkillIds.Promote&&three.Raw(5,3)==PawnRushSkillIds.KingMarch&&three.Raw(4,1)==PawnRushSkillIds.CheckSeries,"a text from the three slots (F, E, Q): its Q slot is Q's still, R empty");
+                var plan2=PawnRushLoadout.Preset(7);
+                Check(plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackRank&&plan2.Raw(3,1)==PawnRushSkillIds.FileCharge&&plan2.Raw(5,1)==PawnRushSkillIds.KingRun&&plan2.Raw(2,0)==PawnRushSkillIds.Fianchetto,"the skill pool's plan 2: the first skills, and what each grows into in the second slots");
+                plan2.system=PawnRushLoadout.Grow;
+                Check(plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.BackRank&&plan2.Skill(PieceKind.Rook,1)==0&&plan2.Apply(PawnRushLoadout.OpStage+3,2)&&plan2.Skill(PieceKind.Rook,0)==PawnRushSkillIds.FileCharge
+                      &&plan2.SlotOf(PieceKind.Rook,PawnRushSkillIds.FileCharge)==0&&plan2.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check,"the growing system: from stage 2 a row plays what its second slot holds, the others stay at stage 1");
+                plan2.Set(4,1,0); plan2.Apply(PawnRushLoadout.OpStage+4,3);
+                Check(plan2.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check,"the growing system: an empty second slot leaves the first skill at every stage");
+                var plan1=PawnRushLoadout.Preset(5);
+                Check(PawnRushLoadout.Presets==17&&plan1.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps&&plan1.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&plan1.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.LongSnipe&&plan1.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check
+                      &&plan1.Skill(PieceKind.Rook,0)==PawnRushSkillIds.ChainBehind&&plan1.Skill(PieceKind.King,0)==PawnRushSkillIds.KingSummon&&plan1.KingSlots
+                      &&PawnRushSkillIds.Old(PawnRushSkillIds.SteeredSteps)&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.SteeredSteps)==PieceKind.Pawn&&!PawnRushSkillIds.Old(PawnRushSkillIds.LongSnipe)
+                      &&PawnRushSkillIds.OldPiece(PawnRushSkillIds.ChainBehind)==PieceKind.Rook&&PawnRushSkillIds.OldPiece(PawnRushSkillIds.KingSummon)==PieceKind.King,"the skill pool's plan 1: the pawn's steps, the rook's chain and the king's call run on the old ones' code, the snipe is a new skill");
+                var setB=PawnRushLoadout.Preset(11);
+                Check(PawnRushLoadout.SystemOf(11)==PawnRushLoadout.Many&&setB.Raw(4,0)==PawnRushSkillIds.SeriesB&&setB.Raw(4,1)==PawnRushSkillIds.EightB&&setB.Raw(4,2)==0&&setB.Raw(1,PawnRushLoadout.UltSlot)==PawnRushSkillIds.Nightmare&&PawnRushSkillIds.TeamUltimate(PawnRushSkillIds.KingWalk)&&PawnRushSkillIds.Driven(PawnRushSkillIds.PromotionRun)&&!PawnRushSkillIds.Driven(PawnRushSkillIds.FamilyFork)&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.SeriesB)==PawnRushSkillIds.CheckSeries&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.EightB)==PawnRushSkillIds.EightLines,"the set 3안-b: the queen's two (series of checks, eight lines; no third), the six driven ultimates on Q");
+                // The set 4판's bundle 가 (ROUND1, 11-26): the two slots a piece of the game (the user: "각 캐릭터당 스킬 슬롯은
+                // 2개고"), any grades in them, no ultimate and no king.
+                var setFour=PawnRushLoadout.Preset(13);
+                int setFourThirds=0;
+                for(int row=0;row<PawnRushLoadout.Rows;row++)for(int k=2;k<PawnRushLoadout.Slots;k++)if(setFour.Raw(row,k)!=0)setFourThirds++;
+                Check(setFourThirds==0&&PawnRushSkillIds.Grade4(PawnRushSkillIds.Trip4)==1&&PawnRushSkillIds.Grade4(PawnRushSkillIds.ForkBonk)==2
+                      &&PawnRushSkillIds.Grade4(PawnRushSkillIds.Insolent)==3&&PawnRushSkillIds.Grade4(PawnRushSkillIds.QueensGambit)==3&&PawnRushSkillIds.Grade4(PawnRushSkillIds.CheckChain)==0,
+                      "the set 4판: the two slots a piece the game has (nothing in R or Q), and every skill's grade (16 basic, 11 mid, 8 high)");
+                int[] gradeCount=new int[4];
+                for(int id=PawnRushSkillIds.Trip4;id<=PawnRushSkillIds.QueensGambit;id++)gradeCount[PawnRushSkillIds.Grade4(id)]++;
+                Check(gradeCount[0]==0&&gradeCount[1]==16&&gradeCount[2]==11&&gradeCount[3]==8,"the set 4판's grades as ROUND1 4장 gives them");
+                Check(PawnRushLoadout.SystemOf(13)==PawnRushLoadout.Many&&setFour.Raw(0,0)==PawnRushSkillIds.Trip4&&setFour.Raw(0,1)==PawnRushSkillIds.Brick&&setFour.Raw(0,2)==0
+                      &&setFour.Raw(1,1)==PawnRushSkillIds.BackKick4&&setFour.Raw(4,1)==PawnRushSkillIds.Insolent&&setFour.Raw(5,0)==0&&setFour.Raw(4,PawnRushLoadout.UltSlot)==0
+                      &&PawnRushSkillIds.SetFour(PawnRushSkillIds.Trip4)&&PawnRushSkillIds.SetFour(PawnRushSkillIds.QueensGambit)&&!PawnRushSkillIds.SetFour(PawnRushSkillIds.CheckChain)
+                      &&!PawnRushSkillIds.SetFour(PawnRushSkillIds.BackKick),"the set 4판's first bundle: two a piece, no Q, no king; its numbers are its own");
+                var setFourB=PawnRushLoadout.Preset(14);
+                int setFourBThirds=0;
+                for(int row=0;row<PawnRushLoadout.Rows;row++)for(int k=2;k<PawnRushLoadout.Slots;k++)if(setFourB.Raw(row,k)!=0)setFourBThirds++;
+                Check(PawnRushLoadout.SystemOf(14)==PawnRushLoadout.Many&&setFourBThirds==0&&setFourB.Raw(0,0)==PawnRushSkillIds.PoisonPawn&&setFourB.Raw(0,1)==PawnRushSkillIds.PawnStorm
+                      &&setFourB.Raw(4,0)==PawnRushSkillIds.ScholarMate&&setFourB.Raw(4,1)==PawnRushSkillIds.QueenSac4&&setFourB.Raw(5,0)==0
+                      &&PawnRushSkillIds.Grade4(setFourB.Raw(4,0))==1&&PawnRushSkillIds.Grade4(setFourB.Raw(4,1))==3,"the set 4판's second bundle: two a piece (the queen a 초급 and a 상급), no Q, no king");
+                var setFourC=PawnRushLoadout.Preset(15);
+                int setFourCThirds=0;
+                for(int row=0;row<PawnRushLoadout.Rows;row++)for(int k=2;k<PawnRushLoadout.Slots;k++)if(setFourC.Raw(row,k)!=0)setFourCThirds++;
+                Check(PawnRushLoadout.SystemOf(15)==PawnRushLoadout.Many&&setFourCThirds==0&&setFourC.Raw(0,0)==PawnRushSkillIds.PromoCountdown&&setFourC.Raw(0,1)==PawnRushSkillIds.Pit
+                      &&setFourC.Raw(3,0)==PawnRushSkillIds.RookDive&&setFourC.Raw(3,1)==PawnRushSkillIds.Timber&&setFourC.Raw(4,1)==PawnRushSkillIds.ThroneDrop&&setFourC.Raw(5,0)==0
+                      &&PawnRushLoadout.Decode(setFourC.Encode()).Same(setFourC),"the set 4판's third bundle: two a piece (the rook's dive and falling tower side by side), no Q, no king");
+                var setFourJY=PawnRushLoadout.Preset(16);
+                Check(PawnRushLoadout.SystemOf(16)==PawnRushLoadout.Many&&setFourJY.Raw(0,0)==PawnRushSkillIds.StepsDiag&&setFourJY.Raw(0,1)==PawnRushSkillIds.RopePassant
+                      &&setFourJY.Raw(1,0)==PawnRushSkillIds.JumpStomp&&setFourJY.Raw(2,1)==PawnRushSkillIds.PinBeam&&setFourJY.Raw(3,1)==PawnRushSkillIds.WallBuild&&setFourJY.Raw(4,0)==PawnRushSkillIds.CrownToss
+                      &&PawnRushSkillIds.SetFour(PawnRushSkillIds.WallBuild)&&PawnRushSkillIds.SetFourJY(PawnRushSkillIds.StepsDiag)&&!PawnRushSkillIds.SetFourJY(PawnRushSkillIds.QueensGambit)
+                      &&PawnRushSkillIds.Grade4(PawnRushSkillIds.StepsDiag)==1&&PawnRushSkillIds.Grade4(PawnRushSkillIds.PinBeam)==2&&PawnRushSkillIds.Grade4(PawnRushSkillIds.WallBuild)==3
+                      &&PawnRushLoadout.Decode(setFourJY.Encode()).Same(setFourJY),"the user's own ten (JY): two a piece, the queen as in 가, their grades");
+                // The set 3판 (KITS 6.12, 11-23; 6.13, 11-24): the user's own skills, two a piece (the pawn's and the knight's
+                // basics on E: the two steps, the back kick), the bishop's swords and two basics to pick one from, no ultimate
+                // (every Q empty) and no king.
+                var setThree=PawnRushLoadout.Preset(12);
+                bool noUlt=true; for(int row=0;row<PawnRushLoadout.Rows;row++) if(setThree.Raw(row,PawnRushLoadout.UltSlot)!=0) noUlt=false;
+                Check(PawnRushLoadout.SystemOf(12)==PawnRushLoadout.Many&&noUlt&&setThree.Raw(0,0)==PawnRushSkillIds.Bolas&&setThree.Raw(0,1)==PawnRushSkillIds.TwoSteps&&setThree.Raw(1,0)==PawnRushSkillIds.HighStomp&&setThree.Raw(1,1)==PawnRushSkillIds.BackKick
+                      &&setThree.Raw(2,0)==PawnRushSkillIds.HolySwords&&setThree.Raw(2,1)==PawnRushSkillIds.StoneThrow&&setThree.Raw(2,2)==PawnRushSkillIds.HolyWater
+                      &&setThree.Raw(3,0)==PawnRushSkillIds.RollShort&&setThree.Raw(3,1)==PawnRushSkillIds.TowerTrap&&setThree.Raw(4,0)==PawnRushSkillIds.QueenStar&&setThree.Raw(4,1)==PawnRushSkillIds.CheckChain
+                      &&!setThree.KingSlots&&PawnRushSkillIds.SetThree(PawnRushSkillIds.Bolas)&&PawnRushSkillIds.SetThree(PawnRushSkillIds.CheckChain)&&!PawnRushSkillIds.SetThree(PawnRushSkillIds.EightB)
+                      &&!PawnRushSkillIds.Ultimate(PawnRushSkillIds.RollShort)&&!PawnRushSkillIds.Old(PawnRushSkillIds.Bolas)&&PawnRushSkillIds.BaseOf(PawnRushSkillIds.QueenStar)==PawnRushSkillIds.QueenStar
+                      &&PawnRushLoadout.Decode(setThree.Encode()).Same(setThree),"the set 3판: two skills a piece (the bishop's three), no ultimate and no king; it goes into a text and back");
+                var basics=PawnRushLoadout.Preset(4);
+                Check(basics.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.TwoSteps&&basics.Skill(PieceKind.Knight,0)==PawnRushSkillIds.BentLeap&&basics.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.Fianchetto&&basics.Skill(PieceKind.Rook,0)==PawnRushSkillIds.Castling&&basics.Skill(PieceKind.Queen,0)==PawnRushSkillIds.Check&&basics.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep&&basics.Skill(PieceKind.Pawn,1)==0&&PawnRushSkillIds.BentLeap==43&&PawnRushSkillIds.Fianchetto==71&&PawnRushSkillIds.KingStep==72&&!PawnRushSkillIds.Old(PawnRushSkillIds.BentLeap)&&!PawnRushSkillIds.Castle(PawnRushSkillIds.KingStep),"the kits' basic row: each piece's opening play, and its numbers");
+                Check(PawnRushLoadout.Rows==6&&PawnRushLoadout.Row(PieceKind.King)==5&&PawnRushLoadout.Row(PieceKind.Queen)==4&&PawnRushLoadout.OpStage==24&&PawnRushLoadout.OpSystem==30&&PawnRushLoadout.OpHostOnly==32,"six rows, the king's the last; the numbers of a change");
+                Check(!now.KingSlots&&!moves.KingSlots&&!bundle.KingSlots&&basics.KingSlots,"the king's row is empty but in the basic row: empty, he plays his call as he always did");
+                var kingSecond=new PawnRushLoadout(); kingSecond.Set(5,1,PawnRushSkillIds.KingStep);
+                Check(!kingSecond.KingSlots&&kingSecond.Skill(PieceKind.King,1)==0&&kingSecond.Raw(5,1)==PawnRushSkillIds.KingStep,"a skill in the king's second slot is not played with one slot a piece");
+                kingSecond.system=PawnRushLoadout.Many; Check(kingSecond.KingSlots&&kingSecond.SlotOf(PieceKind.King,PawnRushSkillIds.KingStep)==1,"with several slots it is, and he plays his slots");
+                for (int id=1; id<=5; id++) Check(PawnRushSkillIds.Old(id)&&now.Skill(PawnRushSkillIds.OldPiece(id),0)==id,"an old skill's own piece: "+id);
+                Check(!PawnRushSkillIds.Old(0)&&!PawnRushSkillIds.Old(PawnRushSkillIds.EnPassant),"the new skills are not old");
+                Check(PawnRushSkillIds.Castle(PawnRushSkillIds.Castling)&&PawnRushSkillIds.Castle(PawnRushSkillIds.CastleSwap)&&!PawnRushSkillIds.Castle(PawnRushSkillIds.Ward)&&!PawnRushSkillIds.Old(PawnRushSkillIds.Squeeze)&&PawnRushSkillIds.Ward==44&&PawnRushSkillIds.Squeeze==49,"Queen of the Hill's six: their numbers, and the two castlings");
+                var mine=new PawnRushLoadout{system=PawnRushLoadout.Many,slotCount=3};
+                mine.Set(0,0,PawnRushSkillIds.ChainPull); mine.Set(0,2,PawnRushSkillIds.Check); mine.Set(4,1,PawnRushSkillIds.TwoSteps); mine.Set(9,0,7); mine.Set(0,5,7); mine.SetStage(3,9);
+                Check(mine.SlotCount==4&&mine.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.ChainPull&&mine.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Check&&mine.Skill(PieceKind.Queen,1)==PawnRushSkillIds.TwoSteps&&mine.SlotOf(PieceKind.Pawn,PawnRushSkillIds.Check)==2,"any skill in any slot");
+                var back=PawnRushLoadout.Decode(mine.Encode());
+                Check(back.Same(mine)&&back.system==PawnRushLoadout.Many&&back.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Check&&back.stages[3]==3,"into a text and back");
+                mine.system=PawnRushLoadout.One;
+                Check(mine.Skill(PieceKind.Pawn,2)==0&&mine.Raw(0,2)==PawnRushSkillIds.Check&&mine.SlotOf(PieceKind.Pawn,PawnRushSkillIds.Check)==-1,"one slot a piece plays the first only (the others are kept)");
+                mine.system=PawnRushLoadout.Grow; mine.SetStage(0,2);
+                Check(mine.Stage(PieceKind.Pawn)==2&&mine.Stage(PieceKind.Rook)==3&&mine.Stage(PieceKind.King)==1&&PawnRushLoadout.Decode(mine.Encode()).Stage(PieceKind.Pawn)==2,"the growing system's stages");
+                mine.system=PawnRushLoadout.Many; Check(mine.Stage(PieceKind.Pawn)==1,"stages only with the growing system");
+                foreach (var junk in new[]{null,"","1","9|0|1","1|1,2|1,1,1,1,1","1|a,0,0,0,0,0,0,0,0,0,0,0,0,0,0|1,1,1,1,1","1|999,0,0,0,0,0,0,0,0,0,0,0,0,0,0|1,1,1,1,1"})
+                    Check(PawnRushLoadout.Decode(junk).Same(now),"a text that is not a loadout is the game as it is: "+junk);
+                var copy=new PawnRushLoadout(); copy.CopyFrom(back); Check(copy.Same(back)&&!copy.Same(now)&&!copy.Same(null),"CopyFrom and Same");
+                // A change as two numbers (what a client asks of the host), and the manager's lock.
+                var room=PawnRushLoadout.Preset(0);
+                Check(room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,7)&&room.system==PawnRushLoadout.Many,"the system");
+                Check(room.Apply(1,PawnRushSkillIds.Check)&&room.Skill(PieceKind.Pawn,1)==PawnRushSkillIds.Check&&!room.Apply(1,PawnRushSkillIds.Check)&&room.Apply(18,PawnRushSkillIds.Fork)&&room.Skill(PieceKind.Queen,2)==0&&room.Apply(PawnRushLoadout.OpSlots,3)&&room.Skill(PieceKind.Queen,2)==PawnRushSkillIds.Fork&&!room.Apply(3,999)&&!room.Apply(-1,1)&&!room.Apply(99,1),"a slot");
+                Check(room.Apply(PawnRushLoadout.OpStage+3,2)&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpStage+3,2)&&room.Apply(PawnRushLoadout.OpStage,9)&&room.stages[0]==3,"a stage");
+                Check(room.Apply(PawnRushLoadout.OpPreset,1)&&room.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.EnPassant&&room.Skill(PieceKind.Pawn,1)==0&&room.system==PawnRushLoadout.Many&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpPreset,1)&&!room.Apply(PawnRushLoadout.OpPreset,PawnRushLoadout.Presets),"a loadout that comes with the game fills the slots only");
+                Check(room.Apply(PawnRushLoadout.OpPreset,3)&&room.Skill(PieceKind.Queen,0)==PawnRushSkillIds.TwoHares&&room.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.TouchMove&&!room.Apply(PawnRushLoadout.OpPreset,3)&&!room.Apply(PawnRushLoadout.OpPreset,-1),"bundle A as a change");
+                Check(room.Apply(PawnRushLoadout.OpPreset,4)&&room.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep&&room.Skill(PieceKind.Bishop,0)==PawnRushSkillIds.Fianchetto&&room.KingSlots&&!room.Apply(PawnRushLoadout.OpPreset,4)&&!room.Apply(PawnRushLoadout.OpPreset,PawnRushLoadout.Presets)&&room.Apply(PawnRushLoadout.OpPreset,3)&&!room.KingSlots&&room.Apply(20,PawnRushSkillIds.KingStep)&&room.Skill(PieceKind.King,0)==PawnRushSkillIds.KingStep&&room.Apply(20,0),"the basic row as a change (the king's row filled, emptied again by another loadout), no loadout past the last, and the king's first slot is change 20");
+                Check(room.Allows(0,false)&&room.Allows(PawnRushLoadout.OpSystem,false)&&!room.Allows(PawnRushLoadout.OpHostOnly,false)&&room.Allows(PawnRushLoadout.OpHostOnly,true),"open: anyone changes it, the manager alone locks it");
+                Check(room.Apply(PawnRushLoadout.OpHostOnly,1)&&room.hostOnly&&!room.Apply(PawnRushLoadout.OpHostOnly,1)&&!room.Allows(0,false)&&!room.Allows(PawnRushLoadout.OpPreset,false)&&room.Allows(0,true)&&room.Allows(PawnRushLoadout.OpHostOnly,true),"locked: the manager's alone");
+                var kept=PawnRushLoadout.Decode(room.Encode()); Check(kept.hostOnly&&kept.Same(room)&&!PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").hostOnly&&PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").Same(now),"the lock in the text; a text from before it reads as open");
+                var held=new PawnRushLoadout(); held.CopyFrom(room); Check(held.hostOnly&&held.Apply(PawnRushLoadout.OpHostOnly,0)&&!held.hostOnly&&room.hostOnly,"the lock is copied, and opened again"); });
+            Test("JY-skill-lab: the skill tree's two rules (11-26) - one, two or three of F, E and R play, and the support slot's switch", () => {
+                var lo=PawnRushLoadout.Preset(16); lo.system=PawnRushLoadout.Many;
+                Check(PawnRushLoadout.OpSlots==33&&PawnRushLoadout.OpSupport==34&&PawnRushLoadout.MaxNormal==3&&PawnRushLoadout.GameSlots==2&&lo.slotCount==2&&lo.supportOn
+                      &&lo.NormalSlots==2&&lo.Plays(0)&&lo.Plays(1)&&!lo.Plays(2)&&lo.Plays(PawnRushLoadout.UltSlot),"the game's two slots, and the support on");
+                lo.Set(0,2,PawnRushSkillIds.Pit);
+                Check(lo.Skill(PieceKind.Pawn,2)==0&&lo.Apply(PawnRushLoadout.OpSlots,3)&&lo.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Pit&&!lo.Apply(PawnRushLoadout.OpSlots,3)
+                      &&lo.Apply(PawnRushLoadout.OpSlots,1)&&lo.Skill(PieceKind.Pawn,1)==0&&lo.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.StepsDiag&&lo.Raw(0,1)==PawnRushSkillIds.RopePassant&&lo.SlotOf(PieceKind.Pawn,PawnRushSkillIds.RopePassant)==-1,"three play R, one only F (the others kept)");
+                Check(!lo.Apply(PawnRushLoadout.OpSlots,0)&&!lo.Apply(PawnRushLoadout.OpSlots,4)&&lo.slotCount==1,"no count past the normal slots");
+                var one=PawnRushLoadout.Preset(9); one.system=PawnRushLoadout.One;
+                Check(!one.Apply(PawnRushLoadout.OpSlots,1)&&one.Apply(PawnRushLoadout.OpSlots,2)&&one.system==PawnRushLoadout.Many&&one.NormalSlots==2,"a count is several a piece's (one a piece is one slot already)");
+                var grow=PawnRushLoadout.Preset(10); grow.system=PawnRushLoadout.Grow; grow.SetStage(0,2);
+                Check(grow.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.PassedPawn&&grow.Apply(PawnRushLoadout.OpSlots,1)&&grow.system==PawnRushLoadout.Many&&grow.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps,"a count leaves the growing system");
+                Check(lo.Apply(PawnRushLoadout.OpSupport,0)&&!lo.supportOn&&!lo.Apply(PawnRushLoadout.OpSupport,0)&&lo.Apply(PawnRushLoadout.OpPreset,13)&&!lo.supportOn&&lo.slotCount==1,"the support's switch; a set leaves both rules as they are");
+                var back=PawnRushLoadout.Decode(lo.Encode());
+                Check(back.Same(lo)&&back.slotCount==1&&!back.supportOn&&back.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.Trip4,"both in the text and back");
+                string empty=string.Join(",",new int[PawnRushLoadout.Rows*PawnRushLoadout.Slots]);
+                var old=PawnRushLoadout.Decode("3|"+empty+"|1,1,1,1,1,1|1");
+                Check(old.system==PawnRushLoadout.Many&&old.hostOnly&&old.slotCount==PawnRushLoadout.GameSlots&&old.supportOn,"a text from before them: the game's two slots, the support on");
+                foreach (var junk in new[]{"3|"+empty+"|1,1,1,1,1,1|0|4|1","3|"+empty+"|1,1,1,1,1,1|0|0|1","3|"+empty+"|1,1,1,1,1,1|0|2|x","3|"+empty+"|1,1,1,1,1,1|0|2"})
+                    Check(PawnRushLoadout.Decode(junk).Same(PawnRushLoadout.Preset(0)),"not a loadout: "+junk);
+                var copy=new PawnRushLoadout(); copy.CopyFrom(lo); Check(copy.slotCount==1&&!copy.supportOn&&copy.Same(lo),"copied");
+                var room=PawnRushLoadout.Preset(0); room.Apply(PawnRushLoadout.OpHostOnly,1);
+                Check(!room.Allows(PawnRushLoadout.OpSlots,false)&&!room.Allows(PawnRushLoadout.OpSupport,false)&&room.Allows(PawnRushLoadout.OpSupport,true)&&room.Allows(PawnRushLoadout.OpSlots,true),"locked: the manager's alone"); });
             Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
                 Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
                 Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");
@@ -2733,7 +2894,11 @@ public static class NetworkCoreTests
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");
                 Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "PawnRush_Round", "default (the 폰 러쉬 match is the section round since R508; course 01 before)");
                 Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 1, "lookup");
-                Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene"); });
+                Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene");
+                // JY-skill-test-mode (11-26): 폰 러쉬-스킬 테스트 is the same round, a mode of its own (the last in the picker).
+                Check(GameModes.Find("rushskilltest") == GameModes.PawnRushSkillTest && GameModes.PawnRushSkillTest.Scene == GameModes.KingRush.Scene
+                      && GameModes.IndexOf("rushskilltest") == 2 && GameModes.PawnRushSkillTest.Name == "폰 러쉬-스킬 테스트"
+                      && GameModes.PawnRush("kingrush") && GameModes.PawnRush("rushskilltest") && !GameModes.PawnRush("swordfight") && !GameModes.PawnRush(null), "the skill test mode"); });
             Test("Link simulator delays in order and drops about the configured share", () => {
                 var sim=new LinkSimulator<int>(7){Profile=new LinkProfile{RoundTripMs=200}}; var got=new List<int>();
                 for(int n=0;n<5;n++) sim.Push(n,n*0.01);
@@ -2828,10 +2993,10 @@ public static class NetworkCoreTests
                 Check(fit>=8,"room for at least eight moments next to everything, got "+fit);
                 Check(header+SkillWire.Size(12,12,4,fit)<=1024,"over 1024");
                 Check(SkillWire.Size(12,0,0,0)<1024-header,"twelve states alone");
-                Check(SkillWire.StateBytes==33&&SkillWire.EventBytes==32&&SkillWire.WireBytes==20,"sizes as documented (R541: 29, 28, 18 before)"); });
+                Check(SkillWire.StateBytes==39&&SkillWire.EventBytes==32&&SkillWire.WireBytes==20,"sizes as documented (R541: 29, 28, 18 before; JY-skill-lab 36 before the kits' second version)"); });
             Test("Skills packet round trip keeps every field within its step and rejects bad packets", () => {
                 var p=new SkillWirePacket{HostTimeMs=123456,FirstSeq=65530};
-                p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Flags=0xA5,Flags2=3,StageTime=1.234f,Cooldown=7.25f,CooldownTotal=12f,Dx=0.6f,Dy=0.8f,Px=-12.345f,Py=1.5f,Pz=33.3f,Qx=4,Qy=-0.5f,Qz=79,Target=SkillWire.Ref(0,5),Other=SkillWire.None,A=2.5f,B=25.5f,C=200,D=7});
+                p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Flags=0xA5,Flags2=3,StageTime=1.234f,Cooldown=7.25f,CooldownTotal=12f,Dx=0.6f,Dy=0.8f,Px=-12.345f,Py=1.5f,Pz=33.3f,Qx=4,Qy=-0.5f,Qz=79,Target=SkillWire.Ref(0,5),Other=SkillWire.None,A=2.5f,B=25.5f,C=200,D=7,Skill=14,Cooldown2=3.3f,Cooldown3=12.7f});
                 p.Wires.Add(new SkillWireObject{Id=9,Owner=SkillWire.Ref(0,1),X=3,Y=0.02f,Z=-4,Yaw=271,Age=2.5f,Flags=1,Trips=1,Along0=0.33f,Along1=0.5f,Out0=0.62f,Out1=-0.31f});
                 p.Barricades.Add(new SkillWireBarricade{Index=0,Standing=false,RegrowLeft=3.4f});
                 p.Events.Add(new SkillWireEvent{Seq=65531,TimeMs=123000,Mode=SkillWire.ModeRetiredQueenHill,Kind=9,By=SkillWire.Ref(1,3),Target=SkillWire.None,X=1,Y=2,Z=3,Dx=0,Dy=0,Dz=-1,Ux=-5,Uy=0,Uz=5,Count=3,Size=6.5f,Source=9});
@@ -2843,6 +3008,7 @@ public static class NetworkCoreTests
                 Check(Math.Abs(s.Cooldown-7.25f)<0.051f&&Math.Abs(s.CooldownTotal-12f)<0.01f&&Math.Abs(s.Dx-0.6f)<0.01f&&Math.Abs(s.Dy-0.8f)<0.01f,"state times, dir");
                 Check(Math.Abs(s.Px+12.345f)<0.006f&&Math.Abs(s.Pz-33.3f)<0.006f&&Math.Abs(s.Qz-79f)<0.006f,"state points");
                 Check(s.Target==SkillWire.Ref(0,5)&&s.Other==SkillWire.None&&Math.Abs(s.A-2.5f)<0.01f&&Math.Abs(s.B-25.5f)<0.01f&&s.C==200&&s.D==7,"state slots");
+                Check(s.Skill==14&&Math.Abs(s.Cooldown2-3.3f)<0.051f&&Math.Abs(s.Cooldown3-12.7f)<0.051f,"the skill under way and the other slots' cooldowns (JY-skill-lab)");
                 Check(o.Id==9&&Math.Abs(o.Yaw-271f)<1.5f&&Math.Abs(o.Age-2.5f)<0.006f&&Math.Abs(o.Out0-0.62f)<0.011f&&Math.Abs(o.Out1+0.31f)<0.011f&&Math.Abs(o.Along0-0.33f)<0.003f,"wire");
                 Check(!q.Barricades[0].Standing&&Math.Abs(q.Barricades[0].RegrowLeft-3.4f)<0.051f,"barricade");
                 Check(e.Seq==65531&&e.TimeMs==123000&&e.Mode==1&&e.Kind==9&&Math.Abs(e.Dz+1f)<0.01f&&Math.Abs(e.Ux+5f)<0.006f&&e.Count==3&&Math.Abs(e.Size-6.5f)<0.006f&&e.Source==9,"event");

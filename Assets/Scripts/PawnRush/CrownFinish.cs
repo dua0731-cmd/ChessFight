@@ -187,6 +187,8 @@ namespace ChessFight.PawnRush
             Winner = PawnRushFinish.None;
             decidedAt = -1f;
             shown = false;
+            holdTeam = PawnRushFinish.None;
+            holdTime = 0f;
             if (Contest != null) Contest.ResetContest();
             foreach (var r in runners) { r.FirstOn = -1f; r.On = false; }
         }
@@ -202,6 +204,8 @@ namespace ChessFight.PawnRush
             {
                 var hips = r.Driver != null ? r.Driver.FollowTarget : null;
                 r.On = hips != null && PawnRushFinish.OnPlatform(hips.position.x - middle.x, hips.position.y - middle.y, hips.position.z - middle.z, radius);
+                // JY-skill-lab: a piece a skill takes off the count (a ghost bishop) is not on it while that lasts.
+                if (r.On && CourseSkills.OffTheCount != null && CourseSkills.OffTheCount(r.Driver)) r.On = false;
                 if (!Authority) continue;
                 if (r.On && r.FirstOn < 0f && Winner == PawnRushFinish.None && live) r.FirstOn = Clock;
                 if (!r.Counts) continue;
@@ -210,8 +214,16 @@ namespace ChessFight.PawnRush
             }
             if (!Authority || Winner != PawnRushFinish.None || contest) return;
             int winner = PawnRushFinish.Winner(whiteOn, whitePlayers, blackOn, blackPlayers);
+            // JY-skill-lab (X-판17, the room's rule): the majority must hold the platform HoldSeconds, so one ultimate that
+            // brings a team onto it, or throws the other off it, does not end the round at once.
+            if (PawnRushRules.Current.Hold == PawnRushRules.HoldOn)
+                winner = PawnRushFinish.StepHold(ref holdTeam, ref holdTime, winner, Time.fixedDeltaTime, PawnRushFinish.HoldSeconds);
             if (winner != PawnRushFinish.None) Decide(winner, Clock);
         }
+
+        // JY-skill-lab (X-판17): the team holding the platform's majority now, and for how long.
+        int holdTeam = PawnRushFinish.None;
+        float holdTime;
 
         // R707: the throne contest's word (where it is judged): this team filled its time.
         public void Win(int team)
@@ -347,8 +359,13 @@ namespace ChessFight.PawnRush
                 line = new GUIStyle(banner) { fontSize = 15 };
             }
             int w = Players(Teams.White), b = Players(Teams.Black);
+            bool hold = Contest == null && PawnRushRules.Current.Hold == PawnRushRules.HoldOn;
             string count = Loc.F("왕관 발판  백 {0}/{1}  ·  흑 {2}/{3}", OnPlatform(Teams.White), PawnRushFinish.Needed(w), OnPlatform(Teams.Black), PawnRushFinish.Needed(b))
-                           + "  " + Loc.T(Contest != null ? "(팀 과반이 올라가 있는 동안 시간이 쌓임)" : "(팀 과반이 동시에 올라가면 승리)");
+                           + "  " + (Contest != null ? Loc.T("(팀 과반이 올라가 있는 동안 시간이 쌓임)")
+                              : hold ? (holdTeam != PawnRushFinish.None && Winner == PawnRushFinish.None
+                                        ? Loc.F("({0}팀 버티는 중 {1}/{2}초)", Teams.Name(holdTeam), holdTime.ToString("0.0"), PawnRushFinish.HoldSeconds.ToString("0.#"))
+                                        : Loc.F("(팀 과반이 {0}초 버티면 승리)", PawnRushFinish.HoldSeconds.ToString("0.#")))
+                              : Loc.T("(팀 과반이 동시에 올라가면 승리)"));
             // R682: the standings strip (PawnRushStandingsHud) stands in this place and carries the count; this box is
             // drawn only where there is no strip, and the note goes under whichever is there.
             bool strip = PawnRushStandingsHud.Showing;
