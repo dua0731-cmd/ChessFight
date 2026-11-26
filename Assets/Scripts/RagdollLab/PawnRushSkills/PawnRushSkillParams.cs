@@ -1066,8 +1066,8 @@ namespace ChessFight.RagdollLab
         public float pitBack = 1.1f, pitSize = 1.2f, pitSeconds = 6f, pitHold = 1.5f, pitPop = 4f;
 
         [Header("4판 · 나이트 포크! (중급)")]
-        [Tooltip("뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 찾는 거리 (m), 둘이면 헤롱헤롱 (초), 하나면 (초)")]
-        public float forkRange = 6f, forkHigh = 2.5f, forkReach = 2f, forkDizzyTwo = 3f, forkDizzyOne = 2f;
+        [Tooltip("겨눈 적을 찾는 거리 (m, 9장: 그 적의 머리 위로만), 높이 (m), 내려앉은 자리에서 찾는 거리 (m), 둘이면 헤롱헤롱 (초), 하나면 (초)")]
+        public float forkRange = 3f, forkHigh = 2.5f, forkReach = 2f, forkDizzyTwo = 3f, forkDizzyOne = 2f;
         [Header("4판 · 나이트 뒷발차기 (초급)")]
         [Tooltip("맞은 적에게 더하는 헤롱헤롱 (초)")]
         public float kick4Dizzy = 2f;
@@ -1080,8 +1080,8 @@ namespace ChessFight.RagdollLab
         public float sermonRange = 20f, sermonTired = 3f;
 
         [Header("4판 · 룩 직진! (중급)")]
-        [Tooltip("고개 숙임 (초), 달리는 거리 (m) · 빠르기 (m/s), 닿는 거리 (m), 벽에 박으면 헤롱헤롱 (초)")]
-        public float charge4Bow = 0.3f, charge4Dist = 12f, charge4Speed = 10f, charge4Reach = 1.1f, charge4WallDizzy = 1.5f;
+        [Tooltip("고개 숙임 (초), 달리는 거리 (m, 9장: 12에서 6, 낭떠러지 앞에서 멈춤) · 빠르기 (m/s), 닿는 거리 (m), 벽에 박으면 헤롱헤롱 (초)")]
+        public float charge4Bow = 0.3f, charge4Dist = 6f, charge4Speed = 10f, charge4Reach = 1.1f, charge4WallDizzy = 1.5f;
         [Header("4판 · 룩 돌 얹기 (초급)")]
         [Tooltip("겨누는 거리 (앞쪽, m), 무거움 (초)")]
         public float capRange = 4f, capHeavy = 3f;
@@ -1104,7 +1104,7 @@ namespace ChessFight.RagdollLab
         public float stormSpeed = 4.5f, stormRange = 15f, stormTime = 6f, stormGap = 0.6f, stormReach = 0.6f, stormBound = 3f;
 
         [Header("4판 나 · 나이트 엉덩방아 (초급)")]
-        [Tooltip("뒤에서 찾는 거리 (m), 적이 없을 때 뒤로 뛰는 거리 (m), 높이 (m), 내려앉은 자리에서 닿는 거리 (m), 콰당! (초)")]
+        [Tooltip("뒤에서 찾는 거리 (m, 9장: 적이 없으면 안 나감), (쓰지 않음: 예전의 뒤로 뛰는 거리), 높이 (m), 내려앉은 자리에서 닿는 거리 (m), 콰당! (초)")]
         public float slamBack = 6f, slamHop = 4f, slamHigh = 1.5f, slamReach = 1.5f, slamFlop = 1.5f;
         [Header("4판 나 · 나이트 히힝! (초급)")]
         [Tooltip("겨누는 거리 (앞쪽, m), 등 뒤로 도는 시간 (초), 놀라 뛰는 높이 (m), 헤롱헤롱 (초)")]
@@ -1127,11 +1127,11 @@ namespace ChessFight.RagdollLab
         [Tooltip("등 뒤 거리 (m), 폭 (m), 높이 (m), 두께 (m), 서 있는 시간 (초), 부딪혀 넘어지는 빠르기 (m/s)")]
         public float rampartBack = 1.5f, rampartWide = 4f, rampartTall = 2f, rampartThick = 0.5f, rampartSeconds = 4f, rampartBump = 3f;
         [Header("4판 나 · 룩 수평 룩 (초급)")]
-        [Tooltip("미끄러지는 거리 (m), 시간 (초), 닿는 거리 (m)")]
-        public float slideDist = 5f, slideTime = 0.4f, slideReach = 1.1f;
+        [Tooltip("미끄러지는 거리 (m, 9장: 5에서 3, 바닥이 끊기면 멈춤), 시간 (초), 닿는 거리 (m)")]
+        public float slideDist = 3f, slideTime = 0.4f, slideReach = 1.1f;
         [Header("4판 나 · 룩 잔디깎이 (중급)")]
-        [Tooltip("시간 (초), 빨라지는 배, 닿는 거리 (m), 위로 날리는 높이 (m) · 거리 (m)")]
-        public float mowerSeconds = 3f, mowerSpeed = 1.3f, mowerReach = 1f, mowerUp = 3.5f, mowerDist = 2.5f;
+        [Tooltip("시간 (초), 닿는 거리 (m), 위로 날리는 높이 (m) · 거리 (m). 9장: 빨라지지 않는다")]
+        public float mowerSeconds = 3f, mowerReach = 1f, mowerUp = 3.5f, mowerDist = 2.5f;
 
         [Header("4판 나 · 퀸 스콜라 메이트 (초급)")]
         [Tooltip("겨누는 거리 (앞쪽, m), 달려가는 시간 (초), 고개를 숙여 피하는 부채꼴 (좌우 °)")]
@@ -1150,8 +1150,8 @@ namespace ChessFight.RagdollLab
         [Tooltip("버텨야 하는 시간 (초), 승격하면 날리는 거리 (둘레, m), 금빛인 시간 (초)")]
         public float promoSeconds = 5f, promoRange = 5f, promoGold = 3f;
         [Header("4판 다 · 나이트 땅속 헤엄 (중급)")]
-        [Tooltip("헤엄치는 시간 (최대, 초), 빠르기 (m/s), 솟을 때 날리는 거리 (m), 위로 날리는 높이 (m)")]
-        public float burrowSeconds = 3f, burrowSpeed = 6f, burrowReach = 1.5f, burrowUp = 3.5f;
+        [Tooltip("헤엄치는 시간 (최대, 초), 빠르기 (m/s), 솟을 때 날리는 거리 (m), 위로 날리는 높이 (m), 나이트가 솟구치는 높이 (m, 9장: 거기서 들어간 구멍으로 돌아옴)")]
+        public float burrowSeconds = 3f, burrowSpeed = 6f, burrowReach = 1.5f, burrowUp = 3.5f, burrowPop = 1.2f;
         [Header("4판 다 · 비숍 핀! (중급)")]
         [Tooltip("던지는 거리 (m), 빠르기 (m/s), 맞는 거리 (m), 묶임 (초), 고무줄 길이 (m)")]
         public float pin4Range = 15f, pinSpeed = 20f, pinReach = 0.6f, pin4Seconds = 3f, pinLeash = 2f;
@@ -1159,8 +1159,8 @@ namespace ChessFight.RagdollLab
         [Tooltip("겨누는 거리 (m), 웅크림 (초), 날아가는 시간 (초), 떨어진 자리에서 닿는 거리 (m), 콰당! (초), 거꾸로 박혀 버둥 (초)")]
         public float diveRange = 20f, diveCrouch = 0.4f, diveFlight = 1.2f, diveReach = 4f, diveFlop = 2f, diveStuck = 1.5f;
         [Header("4판 다 · 룩 넘어간다~! (상급)")]
-        [Tooltip("자라는 시간 (초), 탑 키 (m), 쓰러지는 시간 (초), 쓰러진 줄의 폭 (m), 콰당! (초), 다리로 있는 시간 (초)")]
-        public float timberGrow = 1f, timberTall = 8f, timberFall = 0.5f, timberWide = 2f, timberFlop = 2f, timberBridge = 2f;
+        [Tooltip("자라는 시간 (초), 탑 키 (m), 쓰러지는 시간 (초), 쓰러진 줄의 폭 (m), 콰당! (초), 쓰러져 누워 있는 시간 (초, 9장: 다리가 아니다 - 그림뿐, 밑동에서 일어남)")]
+        public float timberGrow = 1f, timberTall = 8f, timberFall = 0.5f, timberWide = 2f, timberFlop = 2f, timberBridge = 1f;
         [Header("4판 다 · 룩 돼지 (상급)")]
         [Tooltip("성문을 벌리는 시간 (초), 빨아들이는 거리 (m), 부채꼴 (°), 끄는 빠르기 (m/s), 삼키는 수, 뱉기까지 (삼키고, 초)")]
         public float pigSeconds = 2f, pigRange = 8f, pigCone = 60f, pigPull = 5f, pigHold = 2f;
@@ -1168,12 +1168,20 @@ namespace ChessFight.RagdollLab
         [Header("4판 다 · 룩 룩 리프트 (중급)")]
         [Tooltip("탑 지름 (m), 높이 (m), 솟는 시간 (초), 서 있는 시간 (초)")]
         public float liftWide = 3f, liftTall = 4f, liftRise = 0.5f, liftSeconds = 3f;
+        [Tooltip("9장: 룩이 비켜서는 거리 (m, 탑 밖), 탑이 솟기까지 (초, 룩이 비키는 동안), 꼭대기 둘레 성가퀴의 높이 (m, 누구도 옆으로 못 나감)")]
+        public float liftStep = 2.3f, liftDelay = 0.45f, liftWall = 2.2f;
         [Header("4판 다 · 퀸 행차 (상급)")]
-        [Tooltip("카펫 폭 (m), 구르는 빠르기 (m/s), 길이 (m), 남는 시간 (초), 퀸이 빨라지는 배, 말려 밀리는 거리 (m), 말려 있는 시간 (초)")]
-        public float carpetWide = 3f, carpetSpeed = 12f, carpetLength = 20f, carpetSeconds = 5f, carpetBoost = 1.3f, carpetPush = 3f, carpetRoll = 1.5f;
+        [Tooltip("카펫 폭 (m), 구르는 빠르기 (m/s), 길이 (m), 남는 시간 (초), 말려 밀리는 거리 (m), 말려 있는 시간 (초). 9장: 퀸은 빨라지지 않는다")]
+        public float carpetWide = 3f, carpetSpeed = 12f, carpetLength = 20f, carpetSeconds = 5f, carpetPush = 3f, carpetRoll = 1.5f;
         [Header("4판 다 · 퀸 착석! (상급)")]
         [Tooltip("겨누는 거리 (m), 그림자 지름 (m), 사라졌다 떨어지기까지 (초), 떨어지는 높이 (m), 내려앉고 못 움직이는 시간 (초)")]
         public float throneRange = 25f, throneSize = 5f, throneDelay = 1f, throneHigh = 4f, throneSit = 0.5f;
+
+        [Header("4판 1차의 이동 규칙 (9장, 11-26 밤; RagdollPawn.SetFourFix.cs): 돌아오기 · 낭떠러지 앞 멈춤")]
+        [Tooltip("돌아오기 (땅속 헤엄 · 더 루우욱! · 착석!): 고무줄이 팽팽해지는 시간 (초), 날아오는 시간 (초), 날아오는 길의 높이 (m), 줄 쪽으로 끌리는 빠르기 (m/s)")]
+        public float retBand = 0.2f, retFly = 0.4f, retArc = 1.2f, retLean = 1.2f;
+        [Tooltip("낭떠러지 앞 멈춤 (직진! · 수평 룩): 버둥대는 시간 (초), 이만큼 (m) 넘게 꺼지면 낭떠러지")]
+        public float teeterTime = 0.4f, teeterDrop = 1f;
         [Header("4판 다 · 퀸 퀸스 갬빗 (상급)")]
         [Tooltip("겨누는 거리 (m), 둘레 지름 (m), 첫째가 떨어지기까지 (초), 사이 (초), 떨어지는 시간 (초), 말 하나의 지름 (m), 매달린 높이 (m)")]
         public float gambitRange = 25f, gambitSize = 10f, gambitDelay = 1f, gambitEvery = 0.3f, gambitFall = 0.35f, gambitPiece = 2f, gambitHigh = 6f;

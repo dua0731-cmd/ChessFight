@@ -467,8 +467,10 @@ namespace ChessFight.RagdollLab
                     break;
                 }
                 default:
+                    // (USER_SKILLS 9.1: up again at its base, where it was used - not at the fallen end.)
                     s4cTimbers.Remove(by);
-                    CmPoof(by.FeetPoint + FlatDir(by.Facing) * 3f + Vector3.up * 0.4f, CmDust, 10, 2.5f, 0.5f, 0.55f, 0.6f);
+                    CmPoof(by.FeetPoint + Vector3.up * 0.4f, CmDust, 10, 1.2f, 0.5f, 0.55f, 0.6f);
+                    kit.AddSquash(by, Kit.SquashKind.Spring);
                     UltClip(UltClipId.Tap, 0.6f * lvl, 0.8f);
                     break;
             }
@@ -565,10 +567,10 @@ namespace ChessFight.RagdollLab
         void S4LiftFx(SkillFxEvent e, float lvl)
         {
             float wide = Params != null ? Params.liftWide : 3f, tall = Params != null ? Params.liftTall : 4f, rise = Params != null ? Params.liftRise : 0.5f;
-            float stand = Mathf.Max(0.3f, e.size);
+            float stand = Mathf.Max(0.3f, e.size), delay = Mathf.Max(0f, e.normal.x);   // (9.1: up once the rook is aside)
             Vector3 foot = e.at;
             var tower = CmProp(S4cCylinderMesh(), CmKeep, "Lift tower", 0.016f);
-            const int N = 6;
+            const int N = 12;   // (USER_SKILLS 9.1: the battlements wall the top in; they rise as it does)
             var merlons = new Kit.Prop[N];
             for (int i = 0; i < N; i++) merlons[i] = CmProp(S4CapMesh(), CmKeep, "Lift battlement", 0.014f);
             // A plinth at its foot and a cornice under the battlements; four dark windows half way up.
@@ -581,10 +583,11 @@ namespace ChessFight.RagdollLab
             Shake(0.06f, 10f * Frame);
             UltClip(UltClipId.Castle, 0.8f * lvl, 0.7f);
             bool sinking = false;
-            var f = kit.Run(rise * 2f + stand + 0.2f, (fx, d) =>
+            var f = kit.Run(delay + rise * 2f + stand + 0.2f, (fx, d) =>
             {
-                float top = PawnRushLiftTower.TopAt(fx.age, rise, stand, tall);
-                if (!sinking && fx.age > rise + stand)
+                float age = Mathf.Max(0f, fx.age - delay);
+                float top = PawnRushLiftTower.TopAt(age, rise, stand, tall);
+                if (!sinking && age > rise + stand)
                 {
                     sinking = true;
                     CmPoof(foot + Vector3.up * 0.2f, CmDust, 8, wide * 0.6f, 0.36f, 0.45f, 0.4f);
@@ -609,7 +612,9 @@ namespace ChessFight.RagdollLab
                 {
                     float a = i * Mathf.PI * 2f / N;
                     Vector3 rim = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (wide * 0.5f - 0.2f);
-                    CmPlace(merlons[i], foot + rim + Vector3.up * top, Quaternion.LookRotation(rim, Vector3.up), new Vector3(0.9f, 1.1f, 1f) * Mathf.Clamp01(top / 0.5f));
+                    float wallUp = Mathf.Clamp01((top - 0.5f) / Mathf.Max(0.5f, tall - 0.5f));
+                    CmPlace(merlons[i], foot + rim + Vector3.up * top, Quaternion.LookRotation(rim, Vector3.up),
+                        new Vector3(1.5f, 1.1f + 5.2f * wallUp, 1f) * Mathf.Clamp01(top / 0.5f));
                 }
                 return true;
             });
@@ -710,12 +715,21 @@ namespace ChessFight.RagdollLab
             f2.props.Add(drum);
         }
 
+        /// <summary>Queens whose throne goes now (USER_SKILLS 9.2: "왕좌는 그 자리에서 펑 사라지고 퀸만 날아와 내려선다").</summary>
+        readonly HashSet<RagdollPawn> s4cThroneEnd = new HashSet<RagdollPawn>();
+
+        void EndThrone4(RagdollPawn by)
+        {
+            if (by != null) s4cThroneEnd.Add(by);
+        }
+
         void S4ThroneFx(SkillFxEvent e, float lvl)
         {
             var by = e.by;
             if (by == null) return;
             if (e.count != 0)
             {
+                s4cThroneEnd.Remove(by);
                 // Down on the throne: a boom; the throne stays a moment.
                 float size = Params != null ? Params.throneSize : 5f, sit = Mathf.Max(0.2f, e.size);
                 Vector3 at = Ground(e.at);
@@ -732,7 +746,7 @@ namespace ChessFight.RagdollLab
                 var f = kit.Run(sit + 1.5f, (fx, d) =>
                 {
                     float outk = Mathf.Clamp01((fx.age - sit - 1.2f) / 0.3f);
-                    if (outk >= 1f)
+                    if (outk >= 1f || (by != null && s4cThroneEnd.Remove(by)))
                     {
                         CmPoof(at + Vector3.up * 0.5f, CmGold, 6, 0.8f, 0.3f, 0.4f, 0.4f);
                         return false;

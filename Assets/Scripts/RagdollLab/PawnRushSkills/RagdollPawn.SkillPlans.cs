@@ -475,6 +475,7 @@ namespace ChessFight.RagdollLab
             ClearHillSkills();
             ClearBookSkills();
             ClearKitSkills();
+            ReturnOnEnd4();   // (USER_SKILLS 9.2: a skill that went far goes home now, even cut short: RagdollPawn.SetFourFix.cs)
         }
 
         /// <summary>Everything a new skill leaves running when the skills are cleared (a knockdown, a piece switch, being

@@ -41,10 +41,6 @@ namespace ChessFight.RagdollLab
         readonly List<Gambit4> gambit4 = new List<Gambit4>();
         readonly List<RagdollPawn> swallowed4 = new List<RagdollPawn>();
         bool burrowed4;
-        PawnRushKitWall bridge4;
-
-        /// <summary>The run's top speed on her own carpet (SkillMoveScale).</summary>
-        float CarpetScale => carpet4 != null && PawnRushSkills != null && OnCarpet4(FeetPoint) ? Mathf.Max(1f, PawnRushSkills.carpetBoost) : 1f;
 
         bool OnCarpet4(Vector3 p)
         {
@@ -83,6 +79,7 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (!press || !CanStartSkill()) break;
                     SkillUses++;
+                    MarkHome4(1);   // (USER_SKILLS 9.1: back to the hole it went in by, RagdollPawn.SetFourFix.cs)
                     planDir = FlatDir(facing);
                     planPhase = PlanPhase.Active;
                     planTime = 0f;
@@ -121,6 +118,8 @@ namespace ChessFight.RagdollLab
                             Fx(SkillFxKind.S3Hit, o, o.LassoBelly, Vector3.up, n);
                         }
                         Fx(SkillFxKind.S4Burrow, null, FeetPoint, planDir, 1, n);
+                        // (Up out of the floor into the air, where the band takes it home.)
+                        Launch(Vector3.up * Mathf.Sqrt(2f * Gravity4 * Mathf.Max(0.3f, s.burrowPop)) + carryVel);
                         SkillDetail = n > 0 ? $"땅속 헤엄: 솟아 {n}명" : "땅속 헤엄: 솟음";
                         planPhase = PlanPhase.Recovery;
                         planTime = 0f;
@@ -169,6 +168,7 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                     if (!press || !CanStartSkill()) break;
                     SkillUses++;
+                    MarkHome4(2);   // (USER_SKILLS 9.1: pulled out and back where it was used)
                     planPoint = AimFloor4(s.diveRange);
                     planDir = FlatDir(planPoint - FeetPoint);
                     planPhase = PlanPhase.Windup;
@@ -261,12 +261,10 @@ namespace ChessFight.RagdollLab
                         o.GiveCc(Cc4.Flop, s.timberFlop, this);
                         Fx(SkillFxKind.S3Hit, o, o.bodies[(int)BodyId.Head].position, Vector3.down, n);
                     }
-                    // A bridge for its seconds: the fallen tower's body, low and wide (its picture is the tower itself).
-                    bridge4 = PawnRushKitWall.Raise(PawnRushKitWall.NextId(), this, planPoint + planDir * 0.6f, planPoint + planDir * s.timberTall,
-                        0.75f, s.timberWide, s.timberBridge, 0.05f, true);
-                    bridge4.Hidden = true;   // (the fallen rook is the bridge's picture)
+                    // USER_SKILLS 9.1 (the movement rule): it lies there timberBridge seconds as a picture only - no bridge,
+                    // nobody stands on it - and the rook stands up at its base, where it was used.
                     Fx(SkillFxKind.S4Timber, null, planPoint, planDir, 2, s.timberBridge, planPoint + planDir * s.timberTall);
-                    SkillDetail = n > 0 ? $"넘어간다~! {n}명 콰당!" : "넘어간다~! (다리)";
+                    SkillDetail = n > 0 ? $"넘어간다~! {n}명 콰당!" : "넘어간다~!";
                     planPhase = PlanPhase.Recovery;
                     planTime = 0f;
                     break;
@@ -275,7 +273,6 @@ namespace ChessFight.RagdollLab
                     planTime += dt;
                     if (planTime < s.timberBridge) break;
                     Fx(SkillFxKind.S4Timber, null, planPoint, planDir, 3);
-                    bridge4 = null;
                     EndPlanSkill();
                     StartCooldown(SetFourCooldown(PawnRushSkillIds.Timber, s));
                     break;
@@ -376,12 +373,38 @@ namespace ChessFight.RagdollLab
         void UpdateRookLift(PawnRushSkillParams s, bool press, float dt)
         {
             if (planPhase != PlanPhase.None || !press || !CanStartSkill()) return;
-            SkillUses++;
             Vector3 feet = FeetPoint;
             if (SolidRay(feet + Vector3.up, Vector3.down, 3f, out var floor)) feet = floor.point;
-            PawnRushLiftTower.Raise(feet, s.liftWide, s.liftTall, s.liftRise, s.liftSeconds);
-            Fx(SkillFxKind.S4Lift, null, feet, FlatDir(facing), 0, s.liftSeconds);
-            SkillDetail = "룩 리프트";
+            // USER_SKILLS 9.1 (the movement rule): the rook does not ride it - it hops liftStep m aside (right, else left,
+            // else back) as the tower comes up where it stood; with no floor there it does not go (no cooldown).
+            Vector3 face = FlatDir(facing), right = Vector3.Cross(Vector3.up, face);
+            Vector3[] ways = { right, -right, -face };
+            Vector3 step = Vector3.zero;
+            bool found = false;
+            foreach (var w in ways)
+            {
+                Vector3 p = feet + w * s.liftStep;
+                if (!SolidRay(p + Vector3.up * 1.2f, Vector3.down, 2.4f, out var there)) continue;
+                if (SolidRay(feet + Vector3.up * 0.5f, w, s.liftStep, out _)) continue;   // (a wall that way)
+                if (PieceNear4(there.point, 0.7f)) continue;                                 // (someone where it would land)
+                step = there.point;
+                found = true;
+                break;
+            }
+            if (!found)
+            {
+                SkillDetail = "룩 리프트: 옆에 내려설 곳이 없어요 (쿨 없음)";
+                Fx(SkillFxKind.SkillFail, null, FeetPoint, AimFlat(), (int)piece);
+                return;
+            }
+            SkillUses++;
+            LeapTo4(step, 0.45f);
+            // (Through whoever stands beside it while it hops, so nobody keeps it on the tower: RagdollPawn.SetFourFix.cs.)
+            liftHop4 = 0.7f;
+            PassThrough4(true);
+            PawnRushLiftTower.Raise(feet, s.liftWide, s.liftTall, s.liftRise, s.liftSeconds, s.liftDelay, s.liftWall);
+            Fx(SkillFxKind.S4Lift, null, feet, face, 0, s.liftSeconds, new Vector3(s.liftDelay, 0f, 0f));
+            SkillDetail = "룩 리프트 (옆으로 비켜섬)";
             StartCooldown(SetFourCooldown(PawnRushSkillIds.RookLift, s));
         }
 
@@ -406,6 +429,7 @@ namespace ChessFight.RagdollLab
                 {
                     if (!press || !CanStartSkill()) break;
                     SkillUses++;
+                    MarkHome4(3);   // (USER_SKILLS 9.1: after the sit, back where it was used)
                     planPoint = AimFloor4(s.throneRange);
                     planDir = FlatDir(planPoint - FeetPoint);
                     // Up out of sight and down on the shadow throneDelay later: one high throw timed to it.
@@ -654,7 +678,6 @@ namespace ChessFight.RagdollLab
             pin4 = null;
             carpet4 = null;
             gambit4.Clear();
-            bridge4 = null;
         }
     }
 }

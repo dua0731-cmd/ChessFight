@@ -53,10 +53,6 @@ namespace ChessFight.RagdollLab
         int checkCount4;
         float checkNext4;
 
-        /// <summary>The run's top speed under 잔디깎이 (SkillMoveScale).</summary>
-        float MowerScale => activeSkill == PawnRushSkillIds.Mower && planPhase == PlanPhase.Active && PawnRushSkills != null
-            ? Mathf.Max(0.5f, PawnRushSkills.mowerSpeed) : 1f;
-
         // ---------------------------------------------------------------- shared
 
         /// <summary>The speed that throws a body from <paramref name="from"/> to <paramref name="to"/> over an arc whose top is
@@ -145,9 +141,10 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.None:
                 {
                     if (!press || !CanStartSkill()) break;
-                    SkillUses++;
-                    // Onto the nearest enemy behind (within 6 m), else 4 m straight back - facing ahead all the way.
+                    // Onto the nearest enemy behind (within 6 m) - facing ahead all the way. USER_SKILLS 9.1 (the movement
+                    // rule): only with one there, its feet no more than jyMarkAbove over ours; none, and it does not go.
                     Vector3 back = -FlatDir(facing), me = bodies[0].position;
+                    float feetY = FeetPoint.y;
                     RagdollPawn onto = null;
                     float best = s.slamBack;
                     foreach (var o in All)
@@ -155,18 +152,23 @@ namespace ChessFight.RagdollLab
                         if (!UltFoe(o)) continue;
                         Vector3 off = Flat(o.bodies[0].position - me);
                         if (off.magnitude > best || off.sqrMagnitude < 0.01f || Vector3.Dot(off.normalized, back) < 0.3f) continue;
-                        if (Mathf.Abs(o.bodies[0].position.y - me.y) > 2f) continue;
+                        if (o.FeetPoint.y > feetY + s.jyMarkAbove || o.bodies[0].position.y < me.y - 2f) continue;
                         best = off.magnitude;
                         onto = o;
                     }
-                    Vector3 to = onto != null ? onto.FeetPoint : FeetPoint + back * s.slamHop;
-                    if (onto == null && SolidRay(to + Vector3.up * 2f, Vector3.down, 6f, out var floor)) to = floor.point;
+                    if (onto == null)
+                    {
+                        SkipNoTarget4("엉덩방아");
+                        break;
+                    }
+                    SkillUses++;
+                    Vector3 to = onto.FeetPoint;
                     planPoint = to;
                     planDir = FlatDir(facing);
                     leap4 = LeapTo4(to, s.slamHigh);
                     planPhase = PlanPhase.Active;
                     planTime = 0f;
-                    SkillDetail = onto != null ? $"엉덩방아 → {onto.DisplayName}" : "엉덩방아 (뒤로)";
+                    SkillDetail = $"엉덩방아 → {onto.DisplayName}";
                     Fx(SkillFxKind.S4Slam, onto, FeetPoint, back, 0, leap4, to);
                     break;
                 }
@@ -424,6 +426,15 @@ namespace ChessFight.RagdollLab
                 case PlanPhase.Active:
                 {
                     planTime += dt;
+                    // USER_SKILLS 9.3: the floor ends to that side - it stops on the brink, teetering.
+                    if (EdgeAhead4(planDir, 0.6f))
+                    {
+                        Teeter4(planDir);
+                        SkillDetail = "수평 룩: 낭떠러지 앞 (어, 어, 어!)";
+                        planPhase = PlanPhase.Recovery;
+                        planTime = 0f;
+                        break;
+                    }
                     // Sideways at the slide's speed; the run's own speed ahead is kept.
                     Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
                     Vector3 keep = own - planDir * Vector3.Dot(own, planDir);
@@ -438,6 +449,10 @@ namespace ChessFight.RagdollLab
                         Hit4(o, planDir, 2, Cc4.None, 0f, "수평 룩", hit4.Count);
                     }
                     if (planTime < s.slideTime) break;
+                    // (The slide's own speed goes with it; the run ahead stays.)
+                    Vector3 left = Flat(bodies[0].linearVelocity) - carryVel;
+                    float side = Vector3.Dot(left, planDir);
+                    if (side > 0f) AddVelocity(-planDir * side);
                     Fx(SkillFxKind.S4Slide, null, FeetPoint, planDir, 1);
                     planPhase = PlanPhase.Recovery;
                     planTime = 0f;
@@ -445,8 +460,9 @@ namespace ChessFight.RagdollLab
                 }
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    if (planTime >= 0.15f)
+                    if (planTime >= (teeter4 ? s.teeterTime : 0.15f))
                     {
+                        teeter4 = false;
                         EndPlanSkill();
                         StartCooldown(SetFourCooldown(PawnRushSkillIds.SideSlide, s));
                     }

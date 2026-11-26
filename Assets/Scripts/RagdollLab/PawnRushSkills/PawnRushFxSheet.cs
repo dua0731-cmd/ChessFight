@@ -120,6 +120,20 @@ namespace ChessFight.RagdollLab
             S("Giant", PawnRushSkillIds.Giant, PieceKind.Rook, 0, "k w0.9 m0,1 w2.2 m-", 9.2f, new Vector3(14f, 9f, -6f), new Vector3(0f, 3f, 4f), V(1.2f, 4.5f), V(-1.5f, 6f)),
             S("Strongman", PawnRushSkillIds.Strongman, PieceKind.Rook, 0, "k w0.6 g+ w0.5 g- w0.4 c w1.5", 4.6f, new Vector3(5.5f, 3.5f, -1.5f), new Vector3(0f, 1.2f, 2.5f), V(0.2f, 1.3f), V(0.5f, 4.5f)),
             S("TWall", PawnRushSkillIds.TWall, PieceKind.Rook, 1, "k", 6.4f, new Vector3(10f, 7f, -3f), new Vector3(0f, 0.5f, 6f), V(0.2f, 4f)),
+            // USER_SKILLS 9장: the round-1 skills under the movement rule ("L4" / "Lr2": a ledge whose edge is 4 m ahead / 2 m to
+            // the right, P1 on it).
+            S("ForkHead", PawnRushSkillIds.ForkBonk, PieceKind.Knight, 0, "a0,1,-0.3 k", 2.6f, new Vector3(4.5f, 2.8f, -1f), new Vector3(0f, 1f, 2f), V(0f, 2.4f), V(1.1f, 2.9f)),
+            S("ForkNone", PawnRushSkillIds.ForkBonk, PieceKind.Knight, 0, "k", 1.2f, new Vector3(3f, 2.2f, -2f), new Vector3(0f, 0.6f, 1f)),
+            S("SlamBehind", PawnRushSkillIds.ButtSlam, PieceKind.Knight, 0, "k", 2.4f, new Vector3(4.5f, 2.6f, 0.5f), new Vector3(0f, 0.8f, -1.5f), V(0f, -3f)),
+            S("BurrowHome", PawnRushSkillIds.Burrow, PieceKind.Knight, 0, "k w0.3 m0,1 w1.1 k w0.1 m-", 4.2f, new Vector3(9f, 5f, 1f), new Vector3(0f, 0.6f, 3.5f), V(0f, 7f)),
+            S("ChargeEdge", PawnRushSkillIds.Charge4, PieceKind.Rook, 0, "L4 w0.6 k", 2.6f, new Vector3(6f, 4f, 1.5f), new Vector3(0f, 1.6f, 3f)),
+            S("SlideEdge", PawnRushSkillIds.SideSlide, PieceKind.Rook, 0, "Lr2 w0.6 k", 2f, new Vector3(1f, 3.6f, -5.5f), new Vector3(1.5f, 1.6f, 0f)),
+            S("DiveHome", PawnRushSkillIds.RookDive, PieceKind.Rook, 0, "a0,1,-0.22 k", 5f, new Vector3(10f, 6f, 2f), new Vector3(0f, 0.6f, 5f), V(0f, 10f)),
+            S("TimberLie", PawnRushSkillIds.Timber, PieceKind.Rook, 1, "k", 3.6f, new Vector3(9f, 6f, 0f), new Vector3(0f, 1f, 4f), V(0f, 5f)),
+            S("LiftAside", PawnRushSkillIds.RookLift, PieceKind.Rook, 0, "k", 4.6f, new Vector3(7f, 5f, -3f), new Vector3(0f, 2f, 0f), V(0.5f, 0.6f)),
+            S("MowerPlain", PawnRushSkillIds.Mower, PieceKind.Rook, 1, "k m0,1 w2.5 m-", 3.4f, new Vector3(6f, 4f, 0f), new Vector3(0f, 0.8f, 3f), V(0f, 4f)),
+            S("ThroneHome", PawnRushSkillIds.ThroneDrop, PieceKind.Queen, 1, "a0,1,-0.2 k", 4.6f, new Vector3(11f, 7f, 2f), new Vector3(0f, 1f, 6f), V(0f, 12f)),
+            S("CarpetPlain", PawnRushSkillIds.Procession, PieceKind.Queen, 0, "k m0,1 w2 m-", 3f, new Vector3(6f, 4f, -1f), new Vector3(0f, 0.6f, 4f), V(0f, 7f)),
             S("WallBuild", PawnRushSkillIds.WallBuild, PieceKind.Rook, 1, "k w0.7 m1,0 w0.15 m- w0.7 m0,1 w0.15 m- w0.7 m-1,0 w0.15 m-", 4.8f, new Vector3(0f, 16f, -6f), new Vector3(0f, 0f, 4f), V(-2f, 5f)),
         };
 
@@ -129,6 +143,8 @@ namespace ChessFight.RagdollLab
         static readonly string[] SetJY1 = { "StepsDiag", "RopePassant", "RopeMiss", "JumpStomp", "FlatPop" };
         static readonly string[] SetJY2 = { "SwordThrow", "KettleBow", "KettleSteal", "PinBeam", "FrozenLook" };
         static readonly string[] SetJY3 = { "Giant", "Strongman", "TWall", "WallBuild", "WallUp" };
+        static readonly string[] SetFix9 = { "ForkHead", "ForkNone", "SlamBehind", "BurrowHome", "ChargeEdge", "SlideEdge", "DiveHome",
+                                             "TimberLie", "LiftAside", "MowerPlain", "ThroneHome", "CarpetPlain" };
         static readonly string[] SetFourC = { "PromoCountdown", "Burrow", "SafetyPin", "RookDive", "Timber", "GatePig", "RookLift", "Procession", "ThroneDrop", "QueensGambit" };
 
         LabGame game;
@@ -154,9 +170,9 @@ namespace ChessFight.RagdollLab
             foreach (string raw in (string.IsNullOrEmpty(names) ? "set3" : names).Split(','))
             {
                 string n = raw.Trim();
-                if (n == "set3" || n == "set4a" || n == "set4b" || n == "set4c" || n == "jy1" || n == "jy2" || n == "jy3")
+                if (n == "set3" || n == "set4a" || n == "set4b" || n == "set4c" || n == "jy1" || n == "jy2" || n == "jy3" || n == "fix9")
                 {
-                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : n == "set4b" ? SetFourB : n == "jy1" ? SetJY1 : n == "jy2" ? SetJY2 : n == "jy3" ? SetJY3 : SetFourC) list.Add(Array.Find(Shots, s => s.name == m));
+                    foreach (string m in n == "set3" ? SetThree : n == "set4a" ? SetFourA : n == "set4b" ? SetFourB : n == "jy1" ? SetJY1 : n == "jy2" ? SetJY2 : n == "jy3" ? SetJY3 : n == "fix9" ? SetFix9 : SetFourC) list.Add(Array.Find(Shots, s => s.name == m));
                     continue;
                 }
                 int at = Array.FindIndex(Shots, s => s.name == n);

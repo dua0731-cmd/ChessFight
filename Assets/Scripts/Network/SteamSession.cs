@@ -240,10 +240,12 @@ namespace ChessFight.Network
         // skilllab25: the user's own ten (JY, 171..180, a seventeenth loadout), two more hindrances (납작이 10, 멈춤 11) and
         // their moments (S4Flat, JyStep ..).
         // skilllab26: the loadout's slot count (1..3) and the support slot's switch, in its flags byte (11-26).
+        // skilllab27: the set 4판's round 1 under the movement rule (USER_SKILLS 9장): the moments S4Return and S4Teeter.
         // skilltest1 (JY-skill-test-mode, 11-26): v63 with the skill lab in it and the mode 폰 러쉬-스킬 테스트
         //      (GameModes.PawnRushSkillTest): the skill state, the loadout packets (RagdollNetProtocol types 13, 14: main's
         //      12 is the unstuck ask) and the skills' moments. A v63 PC would not read them. v64 when it goes into main.
-        public const string Protocol = "chessfight.dua0731.network.v63.skilltest1";
+        // skilltest2 (11-26 night): skilllab27 merged in - the round-1 skills under the movement rule (S4Return, S4Teeter).
+        public const string Protocol = "chessfight.dua0731.network.v63.skilltest2";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
