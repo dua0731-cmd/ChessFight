@@ -222,8 +222,10 @@ def drill_rook(n, t):
 # At the middle wall's west end two cranes reach over the ditch to a hoist door in the inner wall's parapet; their
 # treadwheels are walked by the castle's workers. The gantry carries a giant rook the way a rook moves - straight up,
 # straight across, straight down - and stops at each end: stand on its crown (the easy, slow way). The knight hangs
-# from the next gantry and leaps the way a knight does, over the wall and back, never stopping: jump and grab its
-# mane as it swings by low, let go over the walk (the fast, hard way).
+# from the next gantry and leaps the way a knight does, over the wall and back, never waiting - it only turns round at
+# each end: jump and grab its mane as it turns at the middle wall's edge, hold on while it turns on the inner wall and
+# let go on its far side, on the walk (the fast, hard way). Dropping off behind it, in the hoist door, is no good: it
+# leaps straight back through the door.
 def wall2_inner_z(x):
     return wall2_face_z(x) + WALL_T
 
@@ -264,16 +266,30 @@ KN_HIGH_Z = wall3_face_z(KNIGHT_CRANE_X) + PARAPET + 1.5   # set down on the inn
 KN_HIGH_Y = W3_Y
 KNIGHT_HOP = 4.0                                 # the leap's height over the straight line between its ends
 KNIGHT_LEAP = 3.0                                # one leap, either way
+KNIGHT_TURN = 0.6                                # turning round at each end (its rider swings round with it)
+KNIGHT_CYCLE = 2 * (KNIGHT_TURN + KNIGHT_LEAP)
+KNIGHT_DELAY = 4.2                               # its own phase (the stills' moment, 13.75 s, is still mid-leap)
+KNIGHT_HANG = (1.45, 1.2)                        # a rider on its mane: behind its axis, feet over its base
+
+
+def knight_phase(t):
+    # (s along the way, 0 at the middle wall .. 1 on the inner wall; facing, degrees about the vertical: 0 north).
+    u = (t - KNIGHT_DELAY) % KNIGHT_CYCLE
+    if u < KNIGHT_TURN:                          # at the middle wall's edge, turning from south to north
+        return 0.0, 180.0 * (1.0 - ease(u / KNIGHT_TURN))
+    u -= KNIGHT_TURN
+    if u < KNIGHT_LEAP:
+        return 0.5 * (1.0 - math.cos(math.pi * u / KNIGHT_LEAP)), 0.0    # along: slow at the ends
+    u -= KNIGHT_LEAP
+    if u < KNIGHT_TURN:                          # in the inner wall's hoist door, turning from north to south
+        return 1.0, 180.0 * ease(u / KNIGHT_TURN)
+    u -= KNIGHT_TURN
+    return 0.5 * (1.0 + math.cos(math.pi * u / KNIGHT_LEAP)), 180.0
 
 
 def knight_crane(t):
-    # (base's y, base's z): a leap there, a leap back, no stops (it turns round at the ends).
-    u = t % (2 * KNIGHT_LEAP)
-    back = u >= KNIGHT_LEAP
-    k = (u % KNIGHT_LEAP) / KNIGHT_LEAP
-    s = 0.5 * (1.0 - math.cos(math.pi * k))      # along: slow at the ends
-    if back:
-        s = 1.0 - s
+    # (base's y, base's z): a leap there, a turn, a leap back, a turn - it never waits.
+    s, facing = knight_phase(t)
     y = lerp(KNIGHT_LOW, KN_HIGH_Y, s) + KNIGHT_HOP * math.sin(math.pi * s)
     return y, lerp(KN_LOW_Z, KN_HIGH_Z, s)
 
@@ -286,6 +302,8 @@ GATEHOUSE = (-10.0, 10.0, 70.0, 82.0)            # x0, x1, z0, z1; roof GATE_Y; 
 GATE_TOWERS = [(-6.5, 70.0, 4.0, GATE_Y + 2.5), (6.5, 70.0, 4.0, GATE_Y + 2.5)]
 BANNER_Z = (71.6, 75.2)
 LEDGE_Y = (W3_Y + GATE_Y) / 2.0
+LEDGE_DEPTH = 0.6                                # the stone ledge runs the face's whole width: stand aside on it,
+LEDGE_Z = (GATEHOUSE[2] + 0.5, GATEHOUSE[3] - 0.5)    # the upper length billows out over the ledge in front of it
 GUST_CYCLE, GUST_WARN, GUST_OUT, GUST_HOLD, GUST_BACK = 7.0, 1.0, 0.6, 1.0, 0.8
 BILLOW = 40.0                                    # degrees out from the wall: the banner's face is then 50 from level
 
@@ -419,9 +437,9 @@ def report():
     print("   pawn %.1f s up the two ladders, rook %.1f s, during the %.1f s roll" % (SIEGE_CLIMB / CLIMB_UP, SIEGE_CLIMB / CLIMB_UP / ROOK, ROLL + BRIDGE_MOVE))
     print("④ board %d x %d of %.1f m at x %.1f .. %.1f, z %.1f .. %.1f; rooks slide %.1f s, cycle %.1f s" % (
         BOARD_N, BOARD_N, SQUARE, BOARD_X0, -BOARD_X0, BOARD_Z0, BOARD_Z0 + BOARD_N * SQUARE, ROOK_SLIDE, ROOK_CYCLE))
-    print("⑤ rook crane at x %.1f: crown z %.1f -> %.1f, up to %.1f, cycle %.1f s, wait %.1f s; knight at x %.1f: z %.1f -> %.1f, leap %.1f s, top %.1f" % (
-        ROOK_CRANE_X, RC_LOW_Z, RC_HIGH_Z, RC_TOP, RC_CYCLE, RC_WAIT, KNIGHT_CRANE_X, KN_LOW_Z, KN_HIGH_Z, KNIGHT_LEAP,
-        max(knight_crane(n * 0.05)[0] for n in range(120)) + KNIGHT_H))
+    print("⑤ rook crane at x %.1f: crown z %.1f -> %.1f, up to %.1f, cycle %.1f s, wait %.1f s; knight at x %.1f: z %.1f -> %.1f, leap %.1f s, turn %.1f, cycle %.1f, top %.1f" % (
+        ROOK_CRANE_X, RC_LOW_Z, RC_HIGH_Z, RC_TOP, RC_CYCLE, RC_WAIT, KNIGHT_CRANE_X, KN_LOW_Z, KN_HIGH_Z, KNIGHT_LEAP, KNIGHT_TURN, KNIGHT_CYCLE,
+        max(knight_crane(n * 0.05)[0] for n in range(int(KNIGHT_CYCLE / 0.05))) + KNIGHT_H))
     print("   ditch at the cranes: %.1f m (wall 2's inner edge z %.1f, wall 3's face z %.1f)" % (
         wall3_face_z(ROOK_CRANE_X) - wall2_inner_z(ROOK_CRANE_X), wall2_inner_z(ROOK_CRANE_X), wall3_face_z(ROOK_CRANE_X)))
     print("⑥ banner: two lengths of %.2f m, ledge %.2f; gust every %.1f s, %.0f deg out; calm %.1f s; pawn %.1f s a length, rook %.1f s" % (

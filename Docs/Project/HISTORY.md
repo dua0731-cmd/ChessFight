@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-27 R859 · 룩 성벽길 구간별 2D 설명: 구간 여섯을 설계의 시간 함수로 움직이는 단면 · 평면 HTML 한 장(주기 띠 · 볼 것 · 표, ② · ④는 시간 · 칸 탐색으로 건너는 길). 그리며 고침: ⑤ 나이트가 끝마다 0.6초 돌아섬(주기 7.2초), ⑥ 턱에서 깃발 옆으로 비켜 기다림. 문서 · 스크립트만, Unity 변경 없음.
 - 2026-11-26 R853 · 소드 파이트 퀸 F · 룩 F 조준 미리보기를 잘 보이게: 길 양쪽 선 3 → 5.5 cm · 조준 중 14 → 52%, 가운데 선 2 → 3 cm · 7 → 20%, 길 끝 가로선 · 길 전체 옅은 빛 띠 추가(`SwordFightSkillFx.LightLane`). 비숍 F는 조준 원에 상대가 걸리면 원 · X 빨강 · 7 cm · 깜빡임 + 빨간 빛 웅덩이 + 상대 발밑 빨간 고리, 상대 없을 때도 2.8 → 4.5 cm · 14 → 48%(`RealBishopMarks`, 컴파일 PASS · 커밋 안 함 · 사용자 Unity 확인 전).
 - 2026-11-26 R852 · main Unity 프로젝트 정리: 안 쓰는 에셋 5개(요거트 컵 3 · `SampleSceneProfile.asset` · `preset_weight.json`)와 `GiantChessCourse.unity` · SeoungTest 장면 둘과 `SeoungTest*.cs` 넷 지움, ChessFight 메뉴를 네 그룹으로 되돌리고 낱개 항목을 `Development/Capture` · `Graphics` · `Ragdoll Lab`으로 묶음(main 커밋 · 푸시, 사용자 Unity 확인 전).
 - 2026-11-26 R851 · seoungtest 작업(대연회장 모델링 · 연출 · 소리 R835 ~ R849, 스킬 효과음 교체 R845 ~ R847 · R850)을 main에 한 커밋으로 넣음. 안티앨리어싱 설정과 `SeoungTestBanquetOnly.cs`는 seoungtest에만 둠(사용자 Unity 확인 전).
