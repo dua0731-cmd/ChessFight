@@ -92,7 +92,7 @@ namespace ChessFight.PawnRush.Editor
             return s;
         }
 
-        [MenuItem("ChessFight/Graphics/Pictures of the sections (Play)")]
+        [MenuItem("ChessFight/Development/Graphics/Pictures of the sections (Play)")]
         public static void Run()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

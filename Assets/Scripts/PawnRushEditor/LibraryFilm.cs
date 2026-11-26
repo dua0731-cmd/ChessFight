@@ -35,7 +35,7 @@ namespace ChessFight.PawnRush.Editor
             };
         }
 
-        [MenuItem("ChessFight/Development/E 서고 종·문 영상 찍기", false, 900)]
+        [MenuItem("ChessFight/Development/Capture/Royal Library Bell and Door Film", false, 302)]
         public static void Film()
         {
             if (EditorApplication.isPlaying)

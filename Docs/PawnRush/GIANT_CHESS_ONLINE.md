@@ -19,7 +19,7 @@
   - 들어가는 것: 도장 · 덮이는 책 · 기억의 타자기 · 지휘부 문 · 거인 체스 방.
   - 새 구간 프리팹 `Assets/Prefabs/PawnRushSections/Late_3-1_RoyalLibrary.prefab`이 임시 바닥(`Late_3-0_TempFloor`) 자리를 대신합니다(`Assets/Settings/PawnRushSections.asset`).
   - 임시 바닥 프리팹과 코드는 그대로 남아 있습니다.
-- 서재 코스 장면(`GiantChessCourse.unity`)은 전처럼 혼자 시험하는 장면으로 남습니다. 폰 12개 · 봇 · F3 · N · Enter는 그대로입니다.
+- 서재 코스 장면(`GiantChessCourse.unity`)은 전처럼 혼자 시험하는 장면으로 남습니다(2026-11-26 정리 때 main에서 지웠습니다. 지금은 코스 프리팹 시험이나 맵 시험에서 `Late_3-1_RoyalLibrary`로 엽니다. 장면은 Git 이력에 있습니다). 폰 12개 · 봇 · F3 · N · Enter는 그대로입니다.
   - 바뀐 것 하나: 대국이 끝나면 다음 대국이 이어집니다.
 - 승리 조건은 넣지 않았습니다. 이 구간을 지나면 다음 복도와 다음 미니게임으로 이어집니다. 판의 결승은 그대로 작전 회의실입니다.
 

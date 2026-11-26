@@ -22,7 +22,7 @@ namespace ChessFight.RagdollLab.Editor
         const string BlackDir = "Assets/Resources/PieceModels/Black";
         static readonly string[] Pieces = { "King", "Queen", "Rook", "Knight", "Bishop" };
 
-        [MenuItem("ChessFight/Ragdoll Lab/Apply Character Look")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Apply Character Look")]
         public static void ApplyAll()
         {
             foreach (string piece in Pieces)

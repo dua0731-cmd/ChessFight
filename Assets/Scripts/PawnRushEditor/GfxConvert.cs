@@ -18,7 +18,7 @@ namespace ChessFight.PawnRush.Editor
     {
         const string LitName = "Universal Render Pipeline/Lit", GfxName = "ChessFight/Gfx Lit";
 
-        [MenuItem("ChessFight/Graphics/URP Lit materials -> Gfx Lit (for a build)")]
+        [MenuItem("ChessFight/Development/Graphics/URP Lit materials -> Gfx Lit (for a build)")]
         public static void ToGfx()
         {
             var lit = Shader.Find(LitName);
@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush.Editor
             Debug.Log($"[GfxConvert] {paths.Count} materials on Gfx Lit:\n{log}");
         }
 
-        [MenuItem("ChessFight/Graphics/Gfx Lit materials -> URP Lit")]
+        [MenuItem("ChessFight/Development/Graphics/Gfx Lit materials -> URP Lit")]
         public static void ToLit()
         {
             var lit = Shader.Find(LitName);

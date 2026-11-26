@@ -88,7 +88,7 @@ namespace ChessFight.PawnRush.Editor
         }
 
         /// <summary>Makes (or refreshes) the sky's material. Batch: -executeMethod ChessFight.PawnRush.Editor.GfxSetup.Build</summary>
-        [MenuItem("ChessFight/Graphics/Set up the sky material")]
+        [MenuItem("ChessFight/Development/Graphics/Set up the sky material")]
         public static void Build()
         {
             AssetDatabase.Refresh();

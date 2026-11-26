@@ -46,10 +46,10 @@ namespace ChessFight.PawnRush.Editor
         static float F(string name, float fallback) =>
             float.TryParse(Arg(name, null), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : fallback;
 
-        [MenuItem("ChessFight/Graphics/Bake the sections' indirect light")]
+        [MenuItem("ChessFight/Development/Graphics/Bake the sections' indirect light")]
         public static void Bake() => Main(keep: true);
 
-        [MenuItem("ChessFight/Graphics/Bake test (pictures only)")]
+        [MenuItem("ChessFight/Development/Graphics/Bake test (pictures only)")]
         public static void Test() => Main(keep: false);
 
         static void Main(bool keep)
@@ -248,7 +248,7 @@ namespace ChessFight.PawnRush.Editor
         // The Royal Observatory's dome sky as a night sky glows: only its stars and the Milky Way, not the dark between
         // (JY: "실제 밤하늘은 푸르수름하긴 하지만 별이 많은부분이 빛나고, 별이 없는부분은 빛이 안나잖아"). Stars: brighter than
         // their own few pixels round them; the band: brighter than its row's mean sky. Resources/Gfx/Glow/RO_DomeSky_Glow.png.
-        [MenuItem("ChessFight/Graphics/Make the observatory dome's star glow")]
+        [MenuItem("ChessFight/Development/Graphics/Make the observatory dome's star glow")]
         public static void StarGlow()
         {
             const string From = "Assets/Art/RoyalObservatory/Textures/RO_DomeSky_Albedo.png", Dir = "Assets/Resources/Gfx/Glow";

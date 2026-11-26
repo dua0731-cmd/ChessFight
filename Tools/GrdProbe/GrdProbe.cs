@@ -61,7 +61,7 @@ namespace ChessFight.PawnRush.Editor
         {
             if (Mode == "sweep")
             {
-                var all = new[] { "courses", "minigames", "sections", "giantchess", "sword", "arena", "lobby", "intro", "victory", "lose" };
+                var all = new[] { "courses", "minigames", "sections", "sword", "arena", "lobby", "intro", "victory", "lose" };
                 if (Only.Length > 0) all = all.Where(j => Only.Split(',').Contains(j)).ToArray();
                 return all;
             }
@@ -76,7 +76,6 @@ namespace ChessFight.PawnRush.Editor
                 case "courses": return CoursePrefabMenu.TestScene;
                 case "minigames": return MiniGamePrefabMenu.TestScene;
                 case "sections": return SectionPrefabMenu.TestScene;
-                case "giantchess": return "Assets/Scenes/GiantChessCourse.unity";
                 case "sword": return "Assets/Scenes/SwordFight.unity";
                 case "arena": return "Assets/Scenes/SkillTest/SwordFight_ArenaSkillTest/SwordFight_ArenaSkillTest.unity";
                 case "lobby": return "Assets/Scenes/Lobby.unity";
@@ -335,7 +334,6 @@ namespace ChessFight.PawnRush.Editor
                     case "courses": yield return CoursesJob(); break;
                     case "minigames": yield return MiniGamesJob(); break;
                     case "sections": yield return SceneShots(job, 6, true); break;
-                    case "giantchess": yield return SceneShots(job, 8, true); break;
                     default: yield return SceneShots(job, 8, false); break;
                 }
             }

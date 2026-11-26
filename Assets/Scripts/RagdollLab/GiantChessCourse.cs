@@ -14,7 +14,7 @@ namespace ChessFight.RagdollLab
     //
     // seoungtest R689 (승규 11-18 "자이언트 체스 코스 온라인 동기화"): the replay is a pure function of the seconds since the
     // chess started (Core GiantChessReplay: which game of the library, which move, which phase), so it runs two ways:
-    //   its own scene     (GiantChessCourse.unity) the offline test as before: twelve pawns of its own, bots, its camera,
+    //   its own scene     (GiantChessCourse.unity, removed from main on 2026-11-26) the offline test as before: twelve pawns of its own, bots, its camera,
     //                     a pausable clock that starts when the first pawn reaches the room, F3 a new random series
     //   a round section   (a RoyalLibraryMatch above it: Late_3-1_RoyalLibrary in a Pawn Rush round) the round's pawns, no
     //                     camera, input or gravity of its own; the game series comes from the section's seed and the

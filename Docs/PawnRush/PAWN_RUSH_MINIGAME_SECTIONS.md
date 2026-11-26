@@ -167,7 +167,7 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 | `PawnRushEditor/MiniGamePrefabMenu.cs` | 영속 자산 굽기·10프리팹·목록 등록·시험 씬 |
 | `PawnRushEditor/MiniGamePrefabValidation.cs` | 저장된 자산 참조, 실제 로드·문·초기화·대표 렌더 검사. (R543) `-miniGameTeamSize 3~6`으로 그 규모에서 검사(기본 5) |
 | `Core/MiniGameScale.cs` | (R543) 인원수별 규모 표 한 곳: `MiniGameScale` · `BoardGrid`(A 판) · `BellTowers`(E 탑 자리 · 간격). 게임별 배치는 Core `PlankLayout` · `EnPassantField` · `KnightRoad` · `KingRoad` · `CheckBlockGenerator.BudgetFor` |
-| `PawnRushEditor/MiniGameScaleCapture.cs` | (R543) 10방을 3 ~ 6 대 6 규모로 차례로 지어 위에서 본 그림 · 목록을 `Logs/MiniGameScale/`에 남김(메뉴 `Development → Mini-game Scale Pictures (3 to 6 a side)`, 배치 `RunBatch`) |
+| `PawnRushEditor/MiniGameScaleCapture.cs` | (R543) 10방을 3 ~ 6 대 6 규모로 차례로 지어 위에서 본 그림 · 목록을 `Logs/MiniGameScale/`에 남김(메뉴 `Development → Capture → Mini-game Scale Pictures (3 to 6 a side)`, 배치 `RunBatch`) |
 | `Tools/Test-NetworkCompile.ps1` | Unity 번들 Roslyn 사용, 실제 asmdef에 맞는 VFX·PawnRush.Editor 참조 검사 |
 
 ## 5. 확인 범위

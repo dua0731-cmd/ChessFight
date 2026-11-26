@@ -9,7 +9,7 @@ namespace ChessFight.PawnRush.Editor
 {
     /// <summary>
     /// R502 step 2 (the drawbridge remake, one user check per step): the phase-1 look on its own, before any
-    /// mini-game uses it. Builds Assets/Scenes/SeoungTest/R502_EarlyLookTest.unity: a floor and walls of the stone
+    /// mini-game uses it. Builds Assets/Scenes/R502_EarlyLookTest.unity: a floor and walls of the stone
     /// block module (the Tripo block shape dressed in the Tripo tower's stone, ArtSource/PawnRush/MiniGames/Early/
     /// Materials), a 4 m moat of the new moat water, a 1 m pawn for scale, a warm sun with soft shadows and the
     /// phase-1 volume (warm white balance, a little exposure and saturation, soft bloom; SSAO is the PC renderer's).
@@ -19,7 +19,7 @@ namespace ChessFight.PawnRush.Editor
     public static class EarlyLookTestMenu
     {
         const string Root = "Assets/Resources/PawnRushMiniGames/Early/R502/";
-        const string ScenePath = "Assets/Scenes/SeoungTest/R502_EarlyLookTest.unity";
+        const string ScenePath = "Assets/Scenes/R502_EarlyLookTest.unity";
         const string StoneMat = Root + "PR_Early_StoneBlock.mat";
         const string WaterMat = Root + "PR_Early_MoatWater.mat";
         const string LookPath = Root + "PR_Early_Look.asset";

@@ -300,7 +300,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 승규 님 요청(`seoungtest`): 소드 파이트 물리는 그대로 두고 폰 러쉬 기물만 점프 · 턱 오르기 · 내려가기를 고친다.
 
-- **나누는 방법:** 공유 튜닝 `Assets/Settings/RagdollTuning.asset`과 프리팹은 그대로다. 폰 러쉬 값은 코드 클래스 `RagdollLab/PawnRushPhysicsParams.cs`에 있고, `PawnRushCourseSkills`(코스 01 · `SeoungTest_PawnRush`처럼 `CourseSkills.PawnRush`가 켜진 씬에서만 생김)가 모든 기물의 `RagdollPawn.PawnRushPhysics`에 넣어 준다. 이 값이 없는 기물(소드 파이트 · 킹 러쉬 · 퀸 오브 더 힐 · 랩)은 코드가 전과 똑같이 돈다(`RagdollPawn.PawnRushPhysics.cs`, `RagdollPawn.cs`에 부르는 곳 6개, 모두 값이 없으면 그대로 통과).
+- **나누는 방법:** 공유 튜닝 `Assets/Settings/RagdollTuning.asset`과 프리팹은 그대로다. 폰 러쉬 값은 코드 클래스 `RagdollLab/PawnRushPhysicsParams.cs`에 있고, `PawnRushCourseSkills`(코스 01 · 구간 라운드처럼; `SeoungTest_PawnRush`는 2026-11-26에 main에서 지움 — `CourseSkills.PawnRush`가 켜진 씬에서만 생김)가 모든 기물의 `RagdollPawn.PawnRushPhysics`에 넣어 준다. 이 값이 없는 기물(소드 파이트 · 킹 러쉬 · 퀸 오브 더 힐 · 랩)은 코드가 전과 똑같이 돈다(`RagdollPawn.PawnRushPhysics.cs`, `RagdollPawn.cs`에 부르는 곳 6개, 모두 값이 없으면 그대로 통과).
 - **Play 중 조정:** Hierarchy `Pawn Rush skills (course)` → Inspector `Physics`.
 
 | 값 | 기본 | 하는 일 |

@@ -1,7 +1,7 @@
 # 왕의 서재 코스 맵 구조 (seoungtest R687, 2026-11-17)
 
 pr/2에서 가져온 코스(왕의 서재 → 거대 체스)를 그래픽 작업용으로 정리한 문서입니다.
-- 근거: `Assets/Prefabs/Obstacles/WarRoomComplete.prefab`(seoungtest에 가져온 그대로)와 `Assets/Scripts/RagdollLab/GiantChessCourse.cs`, `Assets/Scenes/GiantChessCourse.unity`.
+- 근거: `Assets/Prefabs/Obstacles/WarRoomComplete.prefab`(seoungtest에 가져온 그대로)와 `Assets/Scripts/RagdollLab/GiantChessCourse.cs`, `Assets/Scenes/GiantChessCourse.unity`(2026-11-26 정리 때 main에서 지움, Git 이력에 있음).
 - 좌표는 Unity 기준(미터, +Z가 진행 방향, Y가 위)입니다.
 - 게임 규칙과 장치 시간은 [WAR_ROOM_COMPLETE](WAR_ROOM_COMPLETE.md) · [GIANT_CHESS_COURSE](GIANT_CHESS_COURSE.md)(pr/2 쪽)에 있습니다.
 - 컨셉아트: [R687_GiantChessLibrary](ConceptArt/R687_GiantChessLibrary) — 고른 방향은 D "거인의 책상"(`GC_D*` 체스 방, `GC_E*` 앞 구간).

@@ -154,7 +154,7 @@ Play에서 PawnRushRound(또는 PawnRush_Sections)를 열고, 각 홀에서 ` �
 
 - **Gfx Lit.**
   - 에디터 Play에서는 URP Lit 재질이 실행 중에 Gfx Lit 쌍둥이로 바뀐다. 하지만 빌드에는 재질 파일이 쓰는 셰이더만 들어간다.
-  - 빌드에서도 그 재질들의 세부를 보이려면 `ChessFight/Graphics/URP Lit materials -> Gfx Lit (for a build)` 메뉴로 재질 파일을 바꿔야 한다. 팀 재질 파일이 많이 바뀌므로 사용자, 팀과 상의한 뒤에 한다.
+  - 빌드에서도 그 재질들의 세부를 보이려면 `ChessFight/Development/Graphics/URP Lit materials -> Gfx Lit (for a build)` 메뉴로 재질 파일을 바꿔야 한다. 팀 재질 파일이 많이 바뀌므로 사용자, 팀과 상의한 뒤에 한다.
   - 되돌리는 메뉴는 `Gfx Lit materials -> URP Lit`이다.
   - 안 하면 그 재질들만 URP Lit 그대로 나오고, 나머지 업그레이드는 작동한다.
 - **Lightmap Stripping**은 Custom(GraphicsSettings)을 유지한다.

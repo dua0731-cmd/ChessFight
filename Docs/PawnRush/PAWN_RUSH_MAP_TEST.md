@@ -2,7 +2,7 @@
 
 > **main 병합(R507, 2026-11-08):** 이 문서는 `claude/nifty-tesla-8212va`(팀원 songjiseong)의 `Docs/KingRush/`에서 main의 `Docs/PawnRush/`로 옮겼다. 병합하며 바뀐 것: 메뉴(**ChessFight → Pawn Rush → Open Map Test**, 맵 만들기 도구는 **Development → Map Authoring**), 코드 `Assets/Scripts/PawnRush/CarriageYard/` → `Assets/Scripts/PawnRush/`, 장애물 프리팹 `Assets/Prefabs/Obstacles/RoyalCarriageYard/` → `Assets/Prefabs/Obstacles/`(폴더 규칙 T7, 메타 · GUID 그대로). **이 문서의 R283~R288은 그 브랜치의 번호**로, main의 같은 번호(seoungtest 정원 작업 · 네트워크 R306 등)와 다른 요청이다. 왕실 마차뜰은 아직 7구간 판(`Open Section Test`)의 슬롯에 넣지 않았다([ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) §12 결정 1).
 
-앞으로 만들 **폰 러쉬 맵 프리팹**을 하나씩 열어, 자기 캐릭터(래그돌 폰) 하나로 직접 뛰어다니고 스킬을 써 보는 오프라인 작업 씬이다. `seoungtest`의 `SeoungTest_PawnRush`(코드로 지은 구역을 나란히 세움)와 따로, **프리팹 단위**로 맵을 시험한다. 코드 작성 · 리눅스 컴파일만 했고 **Unity · 사람 확인 전.**
+앞으로 만들 **폰 러쉬 맵 프리팹**을 하나씩 열어, 자기 캐릭터(래그돌 폰) 하나로 직접 뛰어다니고 스킬을 써 보는 오프라인 작업 씬이다. `seoungtest`의 `SeoungTest_PawnRush`(코드로 지은 구역을 나란히 세움; 2026-11-26부터 main에는 없고 seoungtest 브랜치에만 있음)와 따로, **프리팹 단위**로 맵을 시험한다. 코드 작성 · 리눅스 컴파일만 했고 **Unity · 사람 확인 전.**
 
 ## 1. 파일
 

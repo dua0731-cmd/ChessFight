@@ -18,7 +18,6 @@
 | SwordFight | `Assets/Scenes/SwordFight.unity` · 소드 파이트 경기 | Sword Fight → Open Test Scene |
 | SwordFight 스킬·아레나 시험 | `Assets/Scenes/SkillTest/SwordFight_*` · 기존 스킬/아레나 시험 | Sword Fight → Open Skill Test |
 | RagdollTest | `Assets/Scenes/RagdollTest.unity` · 공용 물리·기물 랩 | Development → Ragdoll Lab → Open Test Scene |
-| SeoungTest_PawnRush / SeoungTest_SwordFight | `Assets/Scenes/SeoungTest/` · 현재 맵 제작 샌드박스 | Development → Map Authoring |
 | ChessBoxingPrototype | `Assets/Prototype/ChessBoxing/Scenes/ChessBoxingPrototype.unity` · 독립 프로토타입 | Prototype → Chess Boxing |
 | PiecePreview | `Assets/Prototype/Previews/PiecePreview.unity` · 기물 미리보기 | Project에서 열기 |
 

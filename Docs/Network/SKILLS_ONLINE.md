@@ -529,7 +529,7 @@ Unity 편집기가 방장, 빌드 1~2개가 참가자인 로컬 시험이다. �
 - 매 프레임 효과가 색을 정한 뒤(`LateUpdate` 끝) `SkillTeamTint`가 상대 팀 것만 빨갛게 바꾼다: 투명 재질의 모든 색 속성(렌더러 property block), 파티클 색(시작 · 수명 · 속도 · 꼬리), 트레일 · 라인 색, 빛. **밝기와 알파는 그대로**, 색상만 #D9473F 쪽 빨강(채도 최소 0.62 — 흰 심도 연한 빨강). 맞은 몸이 때린 쪽 색으로 번쩍이는 것(`FlashBody`)과 내 화면 가장자리 물듦도 상대 것이면 빨강.
 - **그대로 두는 것:** 불투명 Lit 물체(룩의 돌 석상 · 날아가는 칼 · 판 조각 · 놋쇠)는 물건이라 제 색. 공기 굴절 · 먼지(모든 기물 공용 그릇)도 제 색.
 - 패킷 · 프로토콜 변화 없음(각 PC가 자기 화면에서만 칠함).
-- **로컬 시험 스크립트(R534):** 빌드 방장이 `-labScript <파일>`로 §10의 시간표를 직접 돌린다(참가자가 들어오고 2초 뒤). 빌드: `-executeMethod ChessFight.RagdollLab.Editor.SwordFightBuilder.BuildSandboxBatch`(승규 님 `SeoungTest_SwordFight`, 개발 빌드, `-labOut` 폴더, 기본 `Builds/SeoungSwordFight`).
+- **로컬 시험 스크립트(R534):** 빌드 방장이 `-labScript <파일>`로 §10의 시간표를 직접 돌린다(참가자가 들어오고 2초 뒤). 빌드: `-executeMethod ChessFight.RagdollLab.Editor.SwordFightBuilder.BuildSandboxBatch`(승규 님 `SeoungTest_SwordFight`, 개발 빌드, `-labOut` 폴더, 기본 `Builds/SeoungSwordFight`; 2026-11-26 R852에 `SeoungTest_SwordFight` 장면과 함께 `BuildSandboxBatch`를 main에서 지웠다 — 이 시험은 seoungtest 브랜치에서 한다).
 - 시험대 패널(`SwordFightSkillBed`)도 `panels off` · `-labCleanView`에 숨는다(R534, 촬영용).
 - **AI 로컬 시험(11-10, 사람 확인 아님):** AI가 빌드 2개(방장 = 백팀, 참가자 = 흑팀, 로컬 시험)로 퀸 · 킹 · 비숍 F를 양쪽이 번갈아 쓰며 두 화면을 연속 저장: 6가지 모두 쓴 팀 화면은 제 색(퀸 · 킹 금색, 비숍 흰 칼빛), 상대 팀 화면은 빨강. 결과 `Builds/SeoungSwordFight/R534_captures`(요약 PNG + GIF 6개, git 제외). 스크립트 `skill` 뒤 0.2초 `click`(F = 조준, 좌클릭 = 발동). 팀은 방장이 무작위로 뽑으므로 보고 줄의 `(white)/(black)`으로 확인.
 

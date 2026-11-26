@@ -67,7 +67,7 @@ namespace ChessFight.PawnRush.Editor
                 if (changed) { importer.SaveAndReimport(); remapped++; }
             }
             Debug.Log($"[PawnRush] 엔드게임 모델 가져오기: FBX {fbx}개, 재질 {mats.Count}개, 재질 연결 {remapped}개 → {Folder}. " +
-                      "시험 씬은 ChessFight > SeoungTest > Build Pawn Rush Test Scene으로 다시 지으면 모델이 붙습니다.");
+                      "작전실 구간을 다시 지으면 모델이 붙습니다.");
         }
 
         static void Copy(string from, string assetPath)

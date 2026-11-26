@@ -187,7 +187,7 @@ namespace ChessFight.Game
             if (gfxLit == null) gfxLit = Shader.Find("ChessFight/Gfx Lit");
             if (gfxLit == null && !Application.isEditor)
             {
-                if (!warned) Debug.LogWarning("[GameSurfaces] ChessFight/Gfx Lit is not in this build: URP Lit materials keep their plain look (the menu ChessFight/Graphics/URP Lit materials -> Gfx Lit puts it in a build)");
+                if (!warned) Debug.LogWarning("[GameSurfaces] ChessFight/Gfx Lit is not in this build: URP Lit materials keep their plain look (the menu ChessFight/Development/Graphics/URP Lit materials -> Gfx Lit puts it in a build)");
                 warned = true;
                 return 0;
             }

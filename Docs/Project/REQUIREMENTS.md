@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R852 · 2026-11-26 · main Unity 프로젝트 정리:** 사용자 "main 브랜치 유니티 프로젝트를 보기 좋게 정리 하려고 틀은 지금 틀을 유지하고 깔끔하게 삭제 할 거 삭제 하고 해" → "예를들어 에셋 씬에 남아 있는 자이언트 체스 코스, 안 쓰는 에셋 5개" + Development 메뉴 사진 "이런 부분" → "승테스트도 main에 없어도 돼". **결과:** SeoungTest 장면 둘 · `SeoungTest*.cs` 넷 · 샌드박스 메뉴 둘 · `BuildSandboxBatch` 지움(seoungtest 브랜치에는 그대로); 요거트 컵 모델 3개 · `SampleSceneProfile.asset` · `preset_weight.json` · `GiantChessCourse.unity` 지움, ChessFight 메뉴를 네 그룹으로 되돌리고 낱개 항목을 `Development/Capture/` · `Development/Graphics/` · `Development/Ragdoll Lab/`로 묶음. `Resources` · `_Recovery` · `InputSystem_Actions`는 그대로. **커밋:** main 커밋 · 푸시(사용자 "작업 한 거 다 main에 커밋 푸쉬"). **상태:** 자동 검사 통과, 사용자 Unity 확인 전.
+
 > **R851 · 2026-11-26 · seoungtest 작업을 main에:** 사용자 "승테스트에서 작업한 것을 main에 넣으시오". 대연회장 모델링 · 연출 · 소리(R835 ~ R849)와 스킬 효과음 교체(R845 ~ R847 · R850)를 main에 한 커밋으로 얹음. 사용자 선택: 커밋 안 된 R849도 같이, 스킬 효과음 교체도 같이. main에 넣지 않음: 안티앨리어싱 설정(`QualitySettings.asset`, R841 결정), `SeoungTestBanquetOnly.cs`(seoungtest 전용). 결과: seoungtest · main 커밋 · 푸시, `Test-NetworkCore` 115개 통과. 상태: 사용자 Unity 확인 전.
 
 > **R850 · 2026-11-26 · 무료 요금제 소리 마지막 4개 교체:** 사용자 요청 — 폰 걸음 · 밀침 · 도움과 칼 맞는 소리를 R847과 같은 방법으로 옛 소리에 가깝게 유료 요금제로 다시 만들어 같은 이름 · 같은 `.meta` GUID로 교체, "동전 소리는 나게 하지마". 이어서 "3번 6번 6번 8번 해서 옛 소리랑 다듬어". **결과:** 네 파일 교체(`r850_polish.py`로 옛 소리의 크기 곡선에 맞춰 다듬음), 사용자가 Unity에서 듣고 승인하기 전. (요청에는 R848로 적혀 있었으나 R848 · R849를 다른 작업이 써서 R850.)

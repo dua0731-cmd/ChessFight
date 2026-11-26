@@ -49,7 +49,7 @@ namespace ChessFight.PawnRush.Editor
                 EditorApplication.delayCall += CompleteExit;
         }
 
-        [MenuItem("ChessFight/Development/Mini-game Scale Pictures (3 to 6 a side)", false, 320)]
+        [MenuItem("ChessFight/Development/Capture/Mini-game Scale Pictures (3 to 6 a side)", false, 301)]
         public static void RunBatch()
         {
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

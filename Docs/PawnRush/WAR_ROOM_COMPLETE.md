@@ -52,7 +52,7 @@ RollingMapBridge에서 Lower Seconds(하강), Unfurl Seconds(수평 펼침), Dep
 [40경기 목록과 원본](GIANT_CHESS_GAME_LIST.md). 생성/재생 3검사(3,764반수·선택 10,000회), Gameplay45, 런타임9개 컴파일 통과. Unity 6 화면·물리 확인 대기. 이 코스의 기존 오프라인 시험 방식은 그대로이며 온라인 무작위 동기화 구현으로 표기하지 않는다.
 
 
-2026-11-02. `Assets/Scenes/GiantChessCourse.unity` → **Play → Enter**로 실행한다. 씬에는 `Assets/Resources/RoyalPalace/WarRoomComplete.prefab` 인스턴스 하나가 들어 있다. 같은 12명으로 작전실을 통과한 뒤 총지휘부의 거인 체스판에 진입한다. 오프라인 프로토타입이며 자동 랜덤 조립·멀티플레이는 미연결이다.
+2026-11-02(이 장면은 2026-11-26 정리 때 main에서 지웠다. 아래는 당시 기록이다). `Assets/Scenes/GiantChessCourse.unity` → **Play → Enter**로 실행한다. 씬에는 `Assets/Resources/RoyalPalace/WarRoomComplete.prefab` 인스턴스 하나가 들어 있다. 같은 12명으로 작전실을 통과한 뒤 총지휘부의 거인 체스판에 진입한다. 오프라인 프로토타입이며 자동 랜덤 조립·멀티플레이는 미연결이다.
 
 ## R122 컨셉 미니맵 기반 직선 프로토타입 (2026-11-05)
 

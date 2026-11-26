@@ -45,9 +45,11 @@ ChessFight 바로 아래는 네 그룹이다.
 | Development | 씬·맵 제작·공유 아트·네트워크·물리·VFX·설치·캡처 도구 |
 | Prototype | 구형 Course01·체스복싱·이전 시안 도구 |
 
-SeoungTest의 맵 제작 기능은 **Development → Map Authoring**에 보존했다.
+SeoungTest의 맵 제작 기능은 **Development → Map Authoring**에 보존했다(2026-11-26 R852: 사용자 "승테스트도 main에 없어도 돼" — SeoungTest 장면 둘 · `SeoungTestCourse` · `SeoungTestZone` · `SeoungTestMenu` · `SeoungTestAutoBuild`와 샌드박스 메뉴 둘을 main에서 지웠다. Map Authoring에는 맵 프리팹 시험 항목만 남는다. seoungtest 브랜치에는 그대로 있다).
 현재 맵과 스킬이 사용하는 공유 도구를 지우지 않고 개발 메뉴 아래로 모았다.
 정적 메뉴 검사에서는 실행 명령 81개·검증 함수 37개, 중복 경로·고아 검증 함수·Queen 메뉴 각각 0개였다.
+
+2026-11-26 R852: 그 뒤 생긴 `ChessFight/Graphics` · `ChessFight/Ragdoll Lab`을 Development 아래로 옮겨 다시 네 그룹으로 맞췄고, Development 바로 아래 낱개 그림 · 영상 항목은 `Development/Capture`에 모았다. 같은 날 참조 없는 에셋 5개와 `Assets/Scenes/GiantChessCourse.unity`를 지웠다(Git 이력에 있음).
 
 ## 4. Queen of the Hill 폐기
 

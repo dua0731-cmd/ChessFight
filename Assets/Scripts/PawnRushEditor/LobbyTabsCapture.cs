@@ -82,7 +82,7 @@ namespace ChessFight.PawnRush.Editor
                 EditorApplication.delayCall += CompleteExit;
         }
 
-        [MenuItem("ChessFight/Development/Lobby Tabs Capture (Play)", false, 300)]
+        [MenuItem("ChessFight/Development/Capture/Lobby Tabs (Play)", false, 300)]
         public static void RunMenu() => RunPlayBatch();
 
         public static void RunPlayBatch()

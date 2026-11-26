@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-26 R852 · main Unity 프로젝트 정리: 안 쓰는 에셋 5개(요거트 컵 3 · `SampleSceneProfile.asset` · `preset_weight.json`)와 `GiantChessCourse.unity` · SeoungTest 장면 둘과 `SeoungTest*.cs` 넷 지움, ChessFight 메뉴를 네 그룹으로 되돌리고 낱개 항목을 `Development/Capture` · `Graphics` · `Ragdoll Lab`으로 묶음(main 커밋 · 푸시, 사용자 Unity 확인 전).
 - 2026-11-26 R851 · seoungtest 작업(대연회장 모델링 · 연출 · 소리 R835 ~ R849, 스킬 효과음 교체 R845 ~ R847 · R850)을 main에 한 커밋으로 넣음. 안티앨리어싱 설정과 `SeoungTestBanquetOnly.cs`는 seoungtest에만 둠(사용자 Unity 확인 전).
 - 2026-11-26 R850 · 무료 요금제에서 만든 마지막 소리 4개(폰 `PawnDash` · `PawnBump` · `PawnCrouch`, 소드 파이트 `SwordHit`)를 유료 요금제로 다시 만들어 교체, 옛 소리의 크기 곡선에 맞춰 다듬음(`r850.py` · `r850_polish.py`, 작업판 `tDDwKPGgDnbm5TjY3t1Z`, 사용자 Unity 확인 전).
 - 2026-11-26 R849 · 대연회장 마술사 지팡이 끝 빛 · 반짝이와 마술사 몸빛 · 망토 별빛 · 빛 알갱이를 마법 예고음에 맞춰 넣음(`BanquetWandShow.cs`, 사용자 Unity 확인 전).

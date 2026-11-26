@@ -99,7 +99,7 @@ namespace ChessFight.PawnRush
         {
             Current = this;
             // R494 (승규 11-06 "open sect test에도 기물 물리엔진 수정 한 거 넣어주고"): a round is a Pawn Rush course, as
-            // course 01 (PawnRushCourse) and 승규 님's test scene (SeoungTestCourse) are. While it is loaded the ragdoll
+            // course 01 (PawnRushCourse) is (승규 님's test scene, SeoungTestCourse, was one too until it left main on 2026-11-26). While it is loaded the ragdoll
             // side (PawnRushCourseSkills) gives every pawn the Pawn Rush movement - PawnRushPhysicsParams: jump, gravity,
             // low lips, ledges, dive, getting up (seoungtest) - and the piece skills, F being the skill key.
             CourseSkills.PawnRush = true;
