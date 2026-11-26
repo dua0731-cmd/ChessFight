@@ -31,10 +31,30 @@ namespace ChessFight.RagdollLab
             return new Kit.Strip(kit, pal) { core = LightLine, coreShare = 1f, inkShare = 0f };
         }
 
+        // The lane's look (the queen's F and the rook's F). 11-26, players' feedback through 승규 님: "소드 파이트에서 조준
+        // 미리보기가 잘 안보인다 ... 퀸 f 스킬 룩 f 스킬" - until then the edge lines were 3 cm thinning to 1.5 cm at 14% while
+        // aiming (38% at the end of the windup), the middle one 2 cm at 7%, cream on the light oak squares. Still lines of
+        // light lying on the board, but wide and bright enough to read on either wood, with the way between them lit
+        // faintly and a line across its end to say how far it goes.
+        /// <summary>How wide the lane's two edge lines are, and its middle line (metres).</summary>
+        public static float LaneEdgeWidth = 0.055f, LaneMidWidth = 0.03f;
+        /// <summary>How much of their width the lines keep at the lane's far end (0..1).</summary>
+        public static float LaneEndWidth = 0.75f;
+        /// <summary>The lane's opacities at full charge: its edge lines (and the line across its end), its middle line,
+        /// and the light lying over the whole way between them.</summary>
+        public static float LaneEdge = 1.2f, LaneMid = 0.45f, LaneFill = 0.16f;
+        /// <summary>How much of that it has before any charge (while it is only aimed), 0..1.</summary>
+        public static float LaneAtRest = 0.7f;
+        /// <summary>The bishop's F: how wide its ring's line is with no one there and with someone to take (metres; the
+        /// X's lines are 0.8 of it), its opacity at full charge with no one there, and the radius of the red ring at the
+        /// feet of whoever it will take.</summary>
+        public static float BishopRingWidth = 0.045f, BishopGotWidth = 0.07f, BishopRing = 1.1f, BishopFoeRing = 0.5f;
+
         /// <summary>
-        /// A way along the board while it is aimed and wound up: two faint lines of light at the edges of what it takes and
-        /// a fainter one down its middle, from <c>start</c> to <c>reach</c> along <c>dir</c> from <c>from</c>, brighter as
-        /// <c>k</c> (0..1) comes up. Kept while asked for each frame.
+        /// A way along the board while it is aimed and wound up: two lines of light at the edges of what it takes, a
+        /// fainter one down its middle, a line across its far end and a faint light over the way between them, from
+        /// <c>start</c> to <c>reach</c> along <c>dir</c> from <c>from</c>, brighter as <c>k</c> (0..1) comes up. Kept
+        /// while asked for each frame.
         /// </summary>
         void LightLane(SwordFightSkills s, string key, float alpha, Func<(Vector3 from, Vector3 dir, float start, float reach, float half, float k)> shape)
         {
@@ -43,7 +63,8 @@ namespace ChessFight.RagdollLab
             kit.Keep(s, key, () =>
             {
                 var fx = new Kit.Fx();
-                for (int i = 0; i < 3; i++) fx.strips.Add(LineStrip());
+                // 0, 1: the edges; 2: the middle; 3: the line across the end; 4: the light over the way.
+                for (int i = 0; i < 5; i++) fx.strips.Add(LineStrip());
                 var line = new List<Vector3>();
                 fx.step = (x, d) =>
                 {
@@ -51,22 +72,45 @@ namespace ChessFight.RagdollLab
                     var (from, dir, start, reach, half, k) = shape();
                     dir = Kit.FlatDir(dir, Vector3.forward);
                     Vector3 side = Vector3.Cross(Vector3.up, dir);
+                    if (reach <= start + 0.1f)
+                    {
+                        foreach (var st in x.strips) st.Hide();
+                        return true;
+                    }
+                    float lit = alpha * (LaneAtRest + (1f - LaneAtRest) * Mathf.Clamp01(k));
                     for (int i = 0; i < 3; i++)
                     {
                         float off = i == 0 ? -half : i == 1 ? half : 0f;
                         line.Clear();
-                        if (reach > start + 0.1f)
-                            for (int j = 0; j <= 16; j++)
-                            {
-                                float a = start + (reach - start) * j / 16f;
-                                line.Add(Kit.FloorUnder(from + dir * a + side * off, 1.5f) + Vector3.up * 0.014f);
-                            }
+                        for (int j = 0; j <= 16; j++)
+                        {
+                            float a = start + (reach - start) * j / 16f;
+                            line.Add(Kit.FloorUnder(from + dir * a + side * off, 1.5f) + Vector3.up * 0.014f);
+                        }
                         var st = x.strips[i];
-                        if (line.Count < 2) { st.Hide(); continue; }
-                        st.Build(line, j => (i == 2 ? 0.02f : 0.03f) * (1f - 0.5f * j / 16f), kit.Eye, true);
-                        st.opacity = alpha * (i == 2 ? 0.18f : 0.38f) * (0.55f + 0.45f * k);
+                        float w = i == 2 ? LaneMidWidth : LaneEdgeWidth;
+                        st.Build(line, j => w * (1f - (1f - LaneEndWidth) * j / 16f), kit.Eye, true);
+                        st.opacity = Mathf.Clamp01(lit * (i == 2 ? LaneMid : LaneEdge));
                         st.Apply();
                     }
+                    // Where it ends: a line across, from one edge to the other.
+                    float capWidth = LaneEdgeWidth * LaneEndWidth;
+                    line.Clear();
+                    for (int j = 0; j <= 4; j++)
+                        line.Add(Kit.FloorUnder(from + dir * reach + side * Mathf.Lerp(-half, half, j / 4f), 1.5f) + Vector3.up * 0.014f);
+                    x.strips[3].Build(line, j => capWidth, kit.Eye, true);
+                    x.strips[3].opacity = Mathf.Clamp01(lit * LaneEdge);
+                    x.strips[3].Apply();
+                    // The way itself: one wide ribbon of the same light, just under the lines.
+                    line.Clear();
+                    for (int j = 0; j <= 16; j++)
+                    {
+                        float a = start + (reach - start) * j / 16f;
+                        line.Add(Kit.FloorUnder(from + dir * a, 1.5f) + Vector3.up * 0.011f);
+                    }
+                    x.strips[4].Build(line, j => half * 2f, kit.Eye, true);
+                    x.strips[4].opacity = Mathf.Clamp01(lit * LaneFill);
+                    x.strips[4].Apply();
                     return true;
                 };
                 return fx;
@@ -685,7 +729,11 @@ namespace ChessFight.RagdollLab
             kit.Keep(s, aim ? "bishop real aim" : "bishop real mark", () =>
             {
                 var fx = new Kit.Fx();
-                for (int i = 0; i < 3; i++) fx.strips.Add(LineStrip());
+                // 0: the ring; 1, 2: the X; 3: the ring at the feet of whoever it will take.
+                for (int i = 0; i < 4; i++) fx.strips.Add(LineStrip());
+                var glow = FloorGlow("Bishop aim light");
+                var block = new MaterialPropertyBlock();
+                fx.end = () => { if (glow != null) Destroy(glow); };
                 var pts = new List<Vector3>();
                 fx.step = (x, d) =>
                 {
@@ -694,7 +742,16 @@ namespace ChessFight.RagdollLab
                     Vector3 c = Kit.FloorUnder(aiming ? owner.AimPoint : owner.Point, 1.5f);
                     Vector3 dir = Kit.FlatDir(aiming ? owner.AimDir : owner.Dir, Vector3.forward);
                     float k = aiming ? 0.3f : Kit.Charge(owner.StageTime, S.bishopWindup);
-                    float got = owner.PinCandidate != null ? 1.6f : 1f;
+                    // 11-26 (승규 님: "비숍 f 도 상대 조준이 뜰 때 좀 더 잘보이게 해"): with someone there to take, the ring
+                    // and the X go red and thick and breathe, a pool of red light lies under them and a red ring at that
+                    // one's own feet - as the knight's fork squares say it (ForkFoe). Until then they were the same cream
+                    // lines only 1.6 times brighter (22% for 14% while aiming). With no one there: wider and brighter
+                    // too, as the queen's and the rook's lanes are now.
+                    var foe = owner.PinCandidate;
+                    bool got = foe != null;
+                    float breathe = 0.82f + 0.18f * Mathf.Sin(kit.Clock * 7f);
+                    float lit = alpha * (LaneAtRest + (1f - LaneAtRest) * Mathf.Clamp01(k));
+                    Color tint = got ? ForkFoe : LightLine;
                     float r = S.bishopRadius;
                     // The ring.
                     pts.Clear();
@@ -703,8 +760,9 @@ namespace ChessFight.RagdollLab
                         float ang = j / 40f * Mathf.PI * 2f;
                         pts.Add(Kit.FloorUnder(c + new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang)) * r, 1f) + Vector3.up * 0.014f);
                     }
-                    x.strips[0].Build(pts, j => 0.028f, kit.Eye, true);
-                    x.strips[0].opacity = alpha * 0.36f * got * (0.55f + 0.45f * k);
+                    TintStrip(x.strips[0], tint);
+                    x.strips[0].Build(pts, j => got ? BishopGotWidth : BishopRingWidth, kit.Eye, true);
+                    x.strips[0].opacity = got ? alpha * 0.95f * breathe : Mathf.Clamp01(lit * BishopRing);
                     x.strips[0].Apply();
                     // The X of its diagonals.
                     for (int i = 0; i < 2; i++)
@@ -712,10 +770,29 @@ namespace ChessFight.RagdollLab
                         Vector3 diag = Quaternion.AngleAxis(i == 0 ? 45f : -45f, Vector3.up) * dir;
                         pts.Clear();
                         for (int j = 0; j <= 10; j++) pts.Add(Kit.FloorUnder(c + diag * Mathf.Lerp(-r * 0.8f, r * 0.8f, j / 10f), 1f) + Vector3.up * 0.015f);
-                        x.strips[1 + i].Build(pts, j => 0.022f * (1f - 0.6f * Mathf.Abs(j / 10f - 0.5f) * 2f), kit.Eye, true);
-                        x.strips[1 + i].opacity = alpha * 0.3f * got * (0.55f + 0.45f * k);
+                        float w = got ? BishopGotWidth * 0.8f : BishopRingWidth * 0.8f;
+                        TintStrip(x.strips[1 + i], tint);
+                        x.strips[1 + i].Build(pts, j => w * (1f - 0.6f * Mathf.Abs(j / 10f - 0.5f) * 2f), kit.Eye, true);
+                        x.strips[1 + i].opacity = got ? alpha * 0.85f * breathe : Mathf.Clamp01(lit * BishopRing * 0.85f);
                         x.strips[1 + i].Apply();
                     }
+                    // Someone there: the pool of red light under the ring, and a ring at their own feet.
+                    ForkGlow(glow, block, got, c, dir, r * 2f, alpha, breathe);
+                    if (got && foe.Hips != null)
+                    {
+                        Vector3 feet = Kit.FloorUnder(foe.Hips.position, 1.5f);
+                        pts.Clear();
+                        for (int j = 0; j <= 24; j++)
+                        {
+                            float ang = j / 24f * Mathf.PI * 2f;
+                            pts.Add(Kit.FloorUnder(feet + new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang)) * BishopFoeRing, 1f) + Vector3.up * 0.016f);
+                        }
+                        TintStrip(x.strips[3], ForkFoe);
+                        x.strips[3].Build(pts, j => BishopGotWidth * 0.7f, kit.Eye, true);
+                        x.strips[3].opacity = alpha * 0.95f * breathe;
+                        x.strips[3].Apply();
+                    }
+                    else x.strips[3].Hide();
                     return true;
                 };
                 return fx;

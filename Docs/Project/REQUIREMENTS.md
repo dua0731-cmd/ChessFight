@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R853 · 2026-11-26 · 소드 파이트 퀸 F · 룩 F 조준 미리보기:** 사용자 "소드 파이트에서 조준 미리보기가 잘 안보인다는 피드백을 받았어 예를 들면 퀸 f 스킬 룩 f 스킬". **결과:** 두 스킬이 같이 쓰는 길 표시(`SwordFightSkillFx.LightLane`)의 양쪽 선을 3 → 5.5 cm, 조준 중 불투명도 14 → 52%로, 가운데 선 2 → 3 cm · 7 → 20%로 올리고, 길 끝 가로선과 길 전체의 옅은 빛 띠를 더함. 이어서 사용자 "비숍 f 도 상대 조준이 뜰 때 좀 더 잘보이게 해" → 비숍 F 조준 원 안에 상대가 걸리면 원 · X가 빨강 · 7 cm · 깜빡임, 원 아래 빨간 빛, 걸린 상대 발밑 빨간 고리(전에는 같은 크림 선이 1.6배 밝아질 뿐). 상대가 없을 때도 원 2.8 → 4.5 cm · 14 → 48%. 상대에게 숨김은 그대로. **커밋:** 안 함(작업 폴더). **상태:** 컴파일 통과, 사용자 Unity 확인 전.
+
 > **R852 · 2026-11-26 · main Unity 프로젝트 정리:** 사용자 "main 브랜치 유니티 프로젝트를 보기 좋게 정리 하려고 틀은 지금 틀을 유지하고 깔끔하게 삭제 할 거 삭제 하고 해" → "예를들어 에셋 씬에 남아 있는 자이언트 체스 코스, 안 쓰는 에셋 5개" + Development 메뉴 사진 "이런 부분" → "승테스트도 main에 없어도 돼". **결과:** SeoungTest 장면 둘 · `SeoungTest*.cs` 넷 · 샌드박스 메뉴 둘 · `BuildSandboxBatch` 지움(seoungtest 브랜치에는 그대로); 요거트 컵 모델 3개 · `SampleSceneProfile.asset` · `preset_weight.json` · `GiantChessCourse.unity` 지움, ChessFight 메뉴를 네 그룹으로 되돌리고 낱개 항목을 `Development/Capture/` · `Development/Graphics/` · `Development/Ragdoll Lab/`로 묶음. `Resources` · `_Recovery` · `InputSystem_Actions`는 그대로. **커밋:** main 커밋 · 푸시(사용자 "작업 한 거 다 main에 커밋 푸쉬"). **상태:** 자동 검사 통과, 사용자 Unity 확인 전.
 
 > **R851 · 2026-11-26 · seoungtest 작업을 main에:** 사용자 "승테스트에서 작업한 것을 main에 넣으시오". 대연회장 모델링 · 연출 · 소리(R835 ~ R849)와 스킬 효과음 교체(R845 ~ R847 · R850)를 main에 한 커밋으로 얹음. 사용자 선택: 커밋 안 된 R849도 같이, 스킬 효과음 교체도 같이. main에 넣지 않음: 안티앨리어싱 설정(`QualitySettings.asset`, R841 결정), `SeoungTestBanquetOnly.cs`(seoungtest 전용). 결과: seoungtest · main 커밋 · 푸시, `Test-NetworkCore` 115개 통과. 상태: 사용자 Unity 확인 전.
