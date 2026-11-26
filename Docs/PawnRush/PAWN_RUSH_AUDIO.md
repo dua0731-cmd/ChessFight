@@ -491,3 +491,7 @@ ElevenLabs 프롬프트:
 ## 12. 왕실 천문대 장치 소리 자리 (R725 ro-vfx, 11-20)
 
 **R742(11-21): 천문대 소리 22종이 들어감**(`RoyalObservatorySound.cs`, `Resources/RoyalObservatorySfx`, ElevenLabs · AI가 숫자로만 고름, 사용자 청취 전 — [듣기 페이지](https://claude.ai/artifact/KrnWCdo5Qi12kB7fgpKvhd), [OBSERVATORY_SFX -1절](PAWN_RUSH_OBSERVATORY_SFX.md)). 아래는 R725에 쓴 처음 계획: 유성우 · 태양 플레어 · 초점 광선 · 조리개와 화면 테두리 섬광(본인만)에 소리를 붙일 순간 · 코드 자리 · 파일 이름 · 프롬프트: [PAWN_RUSH_OBSERVATORY_SFX.md](PAWN_RUSH_OBSERVATORY_SFX.md).
+
+## 13. 대연회장 소리 설계 (R843, 11-26)
+
+설계만 있다(소리 파일 · 코드 없음): [대연회장 소리 설계](PAWN_RUSH_BANQUET_HALL_SFX.md) — 신호음 6 · 장치 소리 12 · 다듬기 5, 천문대(위 12절)와 같은 방식으로 만든다.
