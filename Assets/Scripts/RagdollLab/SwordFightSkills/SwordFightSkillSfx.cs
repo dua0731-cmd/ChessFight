@@ -87,7 +87,10 @@ namespace ChessFight.RagdollLab
             // The rook's louder (승규 님: "룩 사운드를 키워주고"): its low rumble reads quiet at the same level. So does the bishop's
             // thin flick (the A made in code: "B로해서 소리 키워줘", then "A로 해줘").
             // 10-29 later ("비숍 칼 휘두르는 사운드 다시"): the bishop's is a fuller blade now (pawn_swing.py bishop_d), so
-            // less of a lift than the thin flick had.
+            // less of a lift than the thin flick had. (The shipped SwingBishop.mp3 was the ElevenLabs take "SwingBishop G" of
+            // the R236 flow, not pawn_swing.py output; 2026-11-26 R845 it is a new take made on the paid plan.)
+            // 2026-11-26 R845: every ElevenLabs clip in this folder except SwordHit/SwingPawn/SwingRook (made in code) is a
+            // new take made on the paid plan, same names (Tools/Sfx/Regen2026, Docs/Skills/SOUND.md 'R845').
             { "SwingKing", 0.5f }, { "SwingQueen", 0.42f }, { "SwingRook", 0.7f }, { "SwingBishop", 0.75f },
             { "SwingKnight", 0.5f }, { "SwingPawn", 0.5f },
             // 10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): one sword hit for every piece (SwordFightPawn.FlashHit).

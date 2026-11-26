@@ -1,5 +1,24 @@
 # 폰 러쉬 스킬 효과음 — 시안 (R101 · 기물별 2차 R107) · 넣기 (R114)
 
+## R845 상업 사용을 위해 스킬 효과음 다시 만들기 — 15개 지움 · 68개 유료 요금제로 새로 만듦 (2026-11-26, 사용자 Unity 확인 전)
+
+**왜:** ElevenLabs 도움말에 따르면 유료 구독 밖(무료 요금제)에서 만든 효과음은 나중에 유료로 올려도 상업적으로 쓸 수 없다. 사용자는 **2026-10-29 22:42 KST**에 유료로 올렸다. 앞선 세션이 각 파일이 저장소에 처음 들어온 커밋 시각으로 나눴고(ElevenLabs 기록이 아님): 10-29 전 커밋 70개 + 10-30 00:12에 커밋된 10-29 작업 13개(22:42 전에 만든 것으로 봄) = 83개를 사용자가 "출시 불가"로 정했다. `Assets/Resources`의 다른 소리는 업그레이드 뒤에 만든 것이라 범위 밖.
+
+**지운 15개(파일 + `.meta`):** 재생 경로가 없음을 다시 확인한 뒤(clip 이름 · `SkillFxKind` / `SfFxKind`를 grep).
+- `PawnRushSkillSfx/`: `RookDash` · `RookLock` · `KnightDaze`(아무 코드도 안 틂), `RookHit` · `RookWall`(옛 룩 돌진 — `SkillFxKind.RookHit/RookStop/RookWall/RookBarricade/RookSlam`을 올리는 곳 없음, 룩은 사슬), `BishopThrow` · `BishopLand` · `BishopArm` · `BishopHum` · `BishopTrip` · `BishopEnd`(옛 X자 덫 — `bishopRope` 기본 켜짐, 끄는 씬 · 프리팹 없음).
+- `SwordFightSkillSfx/`: `BishopReach` · `BishopCatch` · `BishopSet`(옛 비숍 구조의 손 — 대각선 미끄럼으로 바뀜, 그 `SfFxKind`를 올리는 곳 없음), `QueenMiss`(올리는 곳 없음).
+- 코드: 두 `*SkillSfx.cs`의 `Level` 항목과 올라오지 않는 룩 돌진 `case` 다섯 줄을 뺌. 옛 X자 덫의 `Play(...)`는 둠(`bishopRope`를 끄면 소리 없이 지나감).
+
+**다시 만든 68개(이름 · `.meta` GUID 그대로):** `PawnRushSkillSfx/` 22개(비숍 밧줄 6 · 룩 사슬 9 + `SkillFail` · 나이트 5 · `RookTick`), `SwordFightSkillSfx/` 46개.
+- **요금제 · 날짜:** ElevenLabs **유료 요금제**(사용자 11-26 확인 — 커넥터의 사용량 도구는 권한이 없어 직접 확인 못 함), **2026-11-26 16:52 ~ 17:14 KST**, Sound Effects v2(`eleven_text_to_sound_v2`), 작업판 "R845 skill SFX regenerated on paid plan 2026-11-26"(`ULhjnpqP98wVoPRP9vI3`). 소리마다 후보 2개(사용자 결정) — 생성 약 150개 · 약 465 크레딧. 옛 작업판의 소리는 받지 않았다(모두 새 생성).
+- **프롬프트:** 옛 작업판 노드는 프롬프트 앞 20자만 보여 주고 세션 기록이 있는 것만 전문을 되찾을 수 있었다 — **정확히 되찾은 것 9개**(폰 러쉬 나이트 5 · `RookTick` · `KingStab` · `RookCollapse` · 소드 파이트 `QueenHit`), **59개는 앞 20자 · 문서 · 클래스 설명에서 다시 쓴 것**(`Tools/Sfx/Regen2026/spec_research.json`의 `prompt_source`). 모든 프롬프트 끝에 "no coins, no jingle, no bell, no chime, no ring"(사용자 11-26 "동전 소리는 나게 하지마"). `prompt_influence` 0.55(나이트 · 룩 틱은 기록대로 0.5), 길이는 옛 파일에 맞춤.
+- **후처리:** 옛것과 같게 — 사슬 10개 `Tools/Sfx/RookChain/process.py`(저역 통과 · 2 ~ 3반음 낮춤 · 앞 무음 자르기 · RMS), 나이트 · `RookTick` `export_unity.py`(첫 타격만 · −16), 밧줄 같은 사슬(옛 기록 없음), 소드 파이트 받은 그대로(옛것도 그대로였음).
+- **검사:** 모든 최종 클립 `coin.py` 동전 울림 0, 소드 파이트 띠용(`boing.py` 규칙) 0, 무음 0. 울려서 다시 만든 것: `ChainPull`(세 번째 쌍에서 통과) · `ChainRun` · `BishopDraw` · `CastBishop`(프롬프트를 더 둔하게). 떨어진 후보는 `ArtSource/SkillSfxRegen2026/takes/rejected/`.
+- **`SwingBishop`:** 코드로 만든 소리가 아니라 R236 작업판의 ElevenLabs 후보 "SwingBishop G"였다(스테레오 128k 0.60 s, `pawn_swing.py`는 모노 wav만 만듦) → 다시 만듦. 코드로 만든 `SwordHit.wav` · `SwingPawn.wav` · `SwingRook.wav`는 범위 밖.
+- **길이 · 타이밍:** 소드 파이트는 길이가 옛것과 같고, 폰 러쉬는 ±0.3 s 안(`BishopRopeRelease` 0.20 → 0.52 s · `BishopRopeReel` 0.45 → 0.79 s가 가장 차이 남). 가장 큰 곳의 시각은 여러 개가 옛것과 다르다(예: `ChainThrow` 0.01 → 0.28 s, `ChainRewind` 0.07 → 0.56 s, `KnightFlip` 0.23 → 0.41 s) — 불러올 때 앞 무음을 자르고 크기를 맞추므로(`Prepare`) `Level` 값은 그대로 두었다. 전부 `Tools/Sfx/Regen2026/picks.json`.
+- **출처 기록:** 후보 원본 `ArtSource/SkillSfxRegen2026/takes/폴더/이름_생성id.mp3`, 세션 id → 소리 `Tools/Sfx/Regen2026/sessions.json`, 노드 `nodes.json`, 고른 것 `picks.json`. 도구 · 순서: [Tools/Sfx/Regen2026/README.md](../../Tools/Sfx/Regen2026/README.md).
+- **사용자 확인 전:** 새 소리는 옛 소리와 다르게 들린다. 사용자가 Unity에서 들어 보고 승인해야 한다(특히 다시 쓴 59개의 느낌 · 크기 · 타이밍). 확인 목록: [VALIDATION R845](../Network/VALIDATION.md).
+
 ## R122 퀸 오브 더 힐 나이트 = 폰 러쉬 나이트 소리 (2026-10-13)
 
 승규 님 "퀸 오브 더 힐 나이트 스킬 소리 바꿔줘" → 퀸 오브 더 힐 나이트 5개(`KnightLock`·`KnightLeap`·`KnightLand`·`KnightFlatten`·`KnightFall`)를 이 문서의 폰 러쉬 나이트 E "묵직한 말" 파일(`KnightTurn`·`KnightLeap`·`KnightLand`·`KnightStomp`·`KnightDaze`)로 복사. 자세한 표는 [QUEEN_HILL §R122](QUEEN_HILL.md).
