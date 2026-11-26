@@ -39,6 +39,14 @@ namespace ChessFight.RagdollLab
     /// tab shows a piece's two slots (F, E; R and Q only while they hold something), every 4판 skill carries its grade
     /// and cooldown in its colour (초급 green, 중급 blue, 상급 violet), and under each piece's name its two grades.
     ///
+    /// Laid out again on 2026-11-26 (the user: "다시 스킬트리 UI 개편해줘. 더 직관적이고 쉽게. 스킬 슬롯을 1개, 2개, 3개까지 지정할
+    /// 수 있고, 지원스킬도 on/off할수 있어야해"): the two tabs on the title line; under them three lines - the sets, the set
+    /// in use, and the loadout's two rules as switches of their own ("칸 수" 1개 · 2개 · 3개 with their keys, "지원 스킬"
+    /// 켬 · 끔); the board's columns follow the count at once (a slot that no longer plays but holds a skill stays, dimmed,
+    /// "꺼짐"), and every piece's support (G) has a column of its own at the end, its description under the mouse. The
+    /// skill system's switch is gone: one a piece is the count 1, several a piece 2 or 3, and the growing system (the old
+    /// 2안) a switch of the "폐기된 스킬" tab only.
+    ///
     /// Every change is two numbers (PawnRushLoadout.Apply). Where this PC runs the skills itself (offline, a match's host)
     /// the window makes the change; elsewhere it is asked of the host (<see cref="Send"/>) and shows when the host's
     /// loadout comes back. In a room everyone opens it ("테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게"), and the room's
@@ -96,7 +104,10 @@ namespace ChessFight.RagdollLab
         int listPiece = -1;              // the list's tab: a board row (its piece), or -1 for every piece
         int dragId, pickId, hoverId, hoverNow, hoverSet = -1, hoverSetNow = -1;
         float scroll;
-        bool showOld, showSystems, showIdeas;
+        bool showOld, showIdeas;
+        int hoverSupport = -1, hoverSupportNow = -1;   // the board's support cell under the mouse (its row)
+        readonly string[] countText = new string[PawnRushLoadout.MaxNormal];
+        static readonly string[] SupportText = { "켬", "끔" };
         bool discarded;                  // the "폐기된 스킬" tab (else "4판 후보")
         int ideasHidden;
         // The set the slots are now (-1: changed by hand), and where each skill sits, kept until the loadout changes.
@@ -139,7 +150,10 @@ namespace ChessFight.RagdollLab
             CardHover = new Color(0.2f, 0.24f, 0.34f, 1f), CardEdge = new Color(1f, 1f, 1f, 0.2f), Edge = new Color(1f, 1f, 1f, 0.14f),
             Lit = new Color(1f, 0.85f, 0.3f, 1f), PickFill = new Color(1f, 0.85f, 0.3f, 0.14f), SlotEmpty = new Color(1f, 1f, 1f, 0.04f),
             RowTint = new Color(1f, 1f, 1f, 0.025f), Ink = new Color(0.95f, 0.96f, 0.98f), Faint = new Color(0.62f, 0.66f, 0.74f),
-            Warn = new Color(1f, 0.62f, 0.5f), Good = new Color(0.62f, 0.9f, 0.68f);
+            Warn = new Color(1f, 0.62f, 0.5f), Good = new Color(0.62f, 0.9f, 0.68f),
+            // The support's teal (the light that ties the two when it arrives, PawnRushSkillFx.Support.cs).
+            SupportTint = new Color(0.35f, 0.88f, 0.8f), SupportFill = new Color(0.12f, 0.24f, 0.25f, 1f),
+            SupportHover = new Color(0.17f, 0.31f, 0.32f, 1f), SupportEdge = new Color(0.35f, 0.88f, 0.8f, 0.5f);
 
         /// <summary>The loadout this PC last had, into <paramref name="skills"/> (call once the numbers are set).</summary>
         public static void LoadSaved(PawnRushSkillParams skills)
@@ -246,8 +260,9 @@ namespace ChessFight.RagdollLab
             pickId = 0;
             if (!Change(row * PawnRushLoadout.Slots + slot, id)) return;
             var piece = PawnRushLoadout.RowPieces[row];
-            string where = $"{ChessPieces.Name(piece)} {KeyOf(slot)}";
+            string where = $"{ChessPieces.Name(piece)} {KeyShort(slot)}";
             if (entry == null) Say($"{where} 칸을 비웠어요", false);
+            else if (!ShowsSlot(Skills.loadout, slot)) Say($"{where} ← {entry.name}. 이 칸은 꺼져 있어요 (위의 칸 수를 늘리면 돌아요)");
             else if (entry.Old && entry.home != piece)
                 Say($"{where} ← {entry.name}. {ChessPieces.Name(entry.home)}용으로 만든 옛 스킬이라 이펙트와 소리가 안 나올 수 있어요");
             else Say($"{where} ← {entry.name}", false);
@@ -284,7 +299,7 @@ namespace ChessFight.RagdollLab
         void Fill(Rect r, Color c)
         {
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = old * c;
             GUI.DrawTexture(r, white);
             GUI.color = old;
         }
@@ -363,6 +378,22 @@ namespace ChessFight.RagdollLab
         }
 
         string KeyOf(int slot) => KeyName != null ? KeyName(slot) : slot == 0 ? "F" : slot == 1 ? "E" : slot == 2 ? "R" : "Q";
+
+        /// <summary>A slot's key alone ("R" of "R (아직 코스 없음)").</summary>
+        string KeyShort(int slot)
+        {
+            string key = KeyOf(slot);
+            int cut = key.IndexOf(' ');
+            return cut > 0 ? key.Substring(0, cut) : key;
+        }
+
+        /// <summary>The keys of the first <paramref name="n"/> slots: "F E R".</summary>
+        string KeysUpTo(int n)
+        {
+            string keys = "";
+            for (int k = 0; k < n; k++) keys += (k > 0 ? " " : "") + KeyShort(k);
+            return keys;
+        }
 
         static Texture2D UnknownIcon()
         {
@@ -452,7 +483,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The set the slots are now (and where each skill sits), worked out again only when the loadout changed.</summary>
         void Refresh(PawnRushLoadout lo)
         {
-            int hash = lo.system;
+            int hash = lo.system * 7 + lo.NormalSlots;
             for (int row = 0; row < PawnRushLoadout.Rows; row++)
                 for (int k = 0; k < PawnRushLoadout.Slots; k++)
                     hash = unchecked(hash * 31 + lo.Raw(row, k));
@@ -472,7 +503,7 @@ namespace ChessFight.RagdollLab
                     int id = lo.Raw(row, k);
                     if (id == 0) continue;
                     placedRows[id] = (placedRows.TryGetValue(id, out int mask) ? mask : 0) | (1 << row);
-                    string here = $"{ChessPieces.Name(PawnRushLoadout.RowPieces[row])} {KeyOf(k)}";
+                    string here = $"{ChessPieces.Name(PawnRushLoadout.RowPieces[row])} {KeyShort(k)}" + (ShowsSlot(lo, k) ? "" : " 꺼짐");
                     placedAt[id] = placedAt.TryGetValue(id, out string before) ? (before.EndsWith("…") ? before : before + " …") : here;
                 }
         }
@@ -518,21 +549,74 @@ namespace ChessFight.RagdollLab
             pickId = 0;
         }
 
-        float DrawSets(PawnRushLoadout lo, float x0, float right, float y)
+        /// <summary>The two tabs (11-26): the 4판's candidates, and under "폐기된 스킬" everything before them (still usable).
+        /// Returns where they end.</summary>
+        float DrawTabs(float x, float y)
         {
-            // The two tabs (11-26): the 4판's candidates, and under "폐기된 스킬" everything before them (still usable).
-            float x = x0;
             const string NewTab = "4판 후보", OldTab = "폐기된 스킬";
-            float tw = TextW(NewTab, label) + 26f;
+            float tw = TextW(NewTab, label) + 28f;
             if (Chip(new Rect(x, y, tw, 28f), NewTab, !discarded) && discarded) SwitchTab(false);
             x += tw + 6f;
-            tw = TextW(OldTab, label) + 26f;
+            tw = TextW(OldTab, label) + 28f;
             if (Chip(new Rect(x, y, tw, 28f), OldTab, discarded) && !discarded) SwitchTab(true);
-            x += tw + 16f;
-            Fill(new Rect(x - 9f, y + 4f, 1f, 20f), Edge);
-            GUI.Label(new Rect(x, y, 40f, 28f), "<b>세트</b>", label);
-            x += 44f;
-            float setX = x;
+            return x + tw;
+        }
+
+        /// <summary>Boxes side by side as one switch, the lit one in gold; returns the one clicked (-1: none), and where
+        /// they end.</summary>
+        int Segments(float x, float y, float h, string[] texts, int lit, float minW, out float end)
+        {
+            int clicked = -1;
+            var e = Event.current;
+            var litRect = new Rect();
+            for (int i = 0; i < texts.Length; i++)
+            {
+                float w = Mathf.Max(minW, TextW(texts[i], label) + 28f);
+                var r = new Rect(x, y, w, h);
+                bool on = i == lit, mouse = r.Contains(e.mousePosition);
+                Fill(r, on ? new Color(1f, 0.85f, 0.3f, 0.2f) : mouse ? new Color(1f, 1f, 1f, 0.11f) : new Color(1f, 1f, 1f, 0.05f));
+                Frame(r, Edge);
+                if (on) litRect = r;
+                var old = label.normal.textColor;
+                var oldAlign = label.alignment;
+                label.normal.textColor = on ? Lit : Ink;
+                label.alignment = TextAnchor.MiddleCenter;
+                GUI.Label(r, texts[i], label);
+                label.alignment = oldAlign;
+                label.normal.textColor = old;
+                if (e.type == EventType.MouseDown && e.button == 0 && mouse)
+                {
+                    e.Use();
+                    clicked = i;
+                }
+                x += w - 1f;   // (the edges shared)
+            }
+            if (lit >= 0 && lit < texts.Length) Frame(litRect, Lit, 2f);
+            end = x + 1f;
+            return clicked;
+        }
+
+        /// <summary>How many of F, E and R every piece plays (several a piece; one a piece is the count 1).</summary>
+        void PickCount(PawnRushLoadout lo, int n)
+        {
+            bool same = lo.system == PawnRushLoadout.Many ? lo.slotCount == n : lo.system == PawnRushLoadout.One && n == 1;
+            if (same || !Change(PawnRushLoadout.OpSlots, n)) return;
+            Say($"기물마다 스킬 칸 {n}개 ({KeysUpTo(n)})", false);
+        }
+
+        void PickSupport(PawnRushLoadout lo, bool on)
+        {
+            if (lo.supportOn == on || !Change(PawnRushLoadout.OpSupport, on ? 1 : 0)) return;
+            Say(on ? "지원 스킬을 켰어요: 팀 선두가 G로 꼴찌를 데려와요" : "지원 스킬을 껐어요: G가 아무것도 하지 않아요", false);
+        }
+
+        /// <summary>The top: the sets (the tab's; "모두 비우기" at the end), the set in use in a line, then the loadout's two
+        /// rules - how many slots, and the support on or off (11-26). Returns where it ends.</summary>
+        float DrawSets(PawnRushLoadout lo, float x0, float right, float y)
+        {
+            const float labelW = 64f;
+            GUI.Label(new Rect(x0, y, labelW, 28f), "<b>세트</b>", label);
+            float x = x0 + labelW, setX = x;
             if (!discarded)
                 for (int i = 0; i < NewIds.Length; i++) x = SetChip(lo, x, y, 28f, NewIds[i], NewNames[i]) + 6f;
             else
@@ -546,7 +630,7 @@ namespace ChessFight.RagdollLab
             var clear = new Rect(right - cw, y, cw, 28f);
             if (clear.Contains(Event.current.mousePosition)) hoverSetNow = 2;
             if (Chip(clear, "모두 비우기", false)) PickSet(lo, 2);
-            y += 34f;
+            y += 32f;
             if (discarded && showOld)
             {
                 x = setX;
@@ -554,42 +638,58 @@ namespace ChessFight.RagdollLab
                 y += 30f;
             }
 
-            // The set in use (or the one under the mouse) in a line; the skill system's switch at its end.
-            string sys = lo.system == PawnRushLoadout.One ? "1안 · 칸 하나" : lo.system == PawnRushLoadout.Grow ? "2안 · 하나가 자람" : "3안 · 칸 여럿";
-            string sysText = $"방식: {sys} {(showSystems ? "▾" : "▸")}";
-            float sw = TextW(sysText, label) + 24f;
+            // The set in use (or the one under the mouse), in a line under the sets.
             string about = hoverSet >= 0
                 ? $"<color=#F2F4F8><b>{SetName(hoverSet)}</b></color>  {SetAbout(hoverSet)}{(hoverSet == 2 ? "" : hoverSet == activeSet ? "  (지금 이 세트)" : "  · 누르면 이 세트로")}"
                 : activeSet >= 0 ? $"<color=#FFD94D>지금: <b>{SetName(activeSet)}</b></color>  {SetAbout(activeSet)}"
                 : "<color=#FFD94D>지금: <b>직접 바꾼 구성</b></color>  어느 세트와도 달라요 (세트를 누르면 그대로 돌아가요)";
-            var aboutRect = new Rect(x0, y, right - x0 - sw - 12f, 24f);
-            GUI.Label(aboutRect, about, smallOne);
-            if (Chip(new Rect(right - sw, y, sw, 24f), sysText, showSystems)) showSystems = !showSystems;
-            y += 30f;
-            if (showSystems)
+            GUI.Label(new Rect(setX, y, right - setX, 20f), about, smallOne);
+            y += 26f;
+
+            // 칸 수: 1개 · 2개 · 3개 with their keys (the growing system, the old 2안, lights none: its switch is the
+            // "폐기된 스킬" tab's).
+            GUI.Label(new Rect(x0, y, labelW, 30f), "<b>칸 수</b>", label);
+            bool grow = lo.system == PawnRushLoadout.Grow;
+            for (int n = 1; n <= PawnRushLoadout.MaxNormal; n++) countText[n - 1] = $"{n}개  ·  {KeysUpTo(n)}";
+            int pick = Segments(x0 + labelW, y, 30f, countText, grow ? -1 : lo.NormalSlots - 1, 104f, out x);
+            if (pick >= 0) PickCount(lo, pick + 1);
+            if (discarded)
             {
-                GUI.Label(new Rect(x0, y, 70f, 24f), "스킬 방식", smallOne);
-                x = x0 + 74f;
-                string[] systems = { "1안 · 기물마다 칸 하나", "2안 · 하나가 강해짐", "3안 · 기물마다 칸 여럿" };
-                for (int i = 0; i < 3; i++)
-                {
-                    float bw = TextW(systems[i], label) + 24f;
-                    if (Chip(new Rect(x, y, bw, 24f), systems[i], lo.system == i + 1) && lo.system != i + 1) Change(PawnRushLoadout.OpSystem, i + 1);
-                    x += bw + 6f;
-                }
-                GUI.Label(new Rect(x + 6f, y, right - x - 6f, 24f), "세트를 고르면 저절로 맞춰져요", smallOne);
-                y += 30f;
+                const string GrowText = "자라는 방식 (옛 2안)";
+                float gw = TextW(GrowText, label) + 26f;
+                if (Chip(new Rect(x + 12f, y + 3f, gw, 24f), GrowText, grow))
+                    Change(PawnRushLoadout.OpSystem, grow ? PawnRushLoadout.Many : PawnRushLoadout.Grow);
+                x += 12f + gw;
             }
+            else
+            {
+                GUI.Label(new Rect(x + 12f, y, 110f, 30f), "4판 규칙은 2개", smallOne);
+                x += 12f + TextW("4판 규칙은 2개", smallOne);
+            }
+
+            // 지원 스킬: on or off for every piece (the team leader's G).
+            float sx = Mathf.Max(x + 28f, x0 + (right - x0) * 0.52f);
+            const string SupLabel = "<b>지원 스킬 (G)</b>";
+            float lw = TextW("지원 스킬 (G)", label) + 12f;
+            GUI.Label(new Rect(sx, y, lw, 30f), SupLabel, label);
+            int sup = Segments(sx + lw, y, 30f, SupportText, lo.supportOn ? 0 : 1, 58f, out float supEnd);
+            if (sup >= 0) PickSupport(lo, sup == 0);
+            float hintW = right - supEnd - 12f;
+            if (hintW > 40f) GUI.Label(new Rect(supEnd + 12f, y, hintW, 30f), Fit("팀 선두가 꼴찌를 데려오는 스킬", smallOne, hintW), smallOne);
+            y += 38f;
             return y;
         }
 
         // ---------------------------------------------------------------- the board
 
+        /// <summary>A slot plays under the loadout's rules (the growing system's second: what the first grows into).</summary>
         static bool ShowsSlot(PawnRushLoadout lo, int k) => lo.Plays(k) || (lo.system == PawnRushLoadout.Grow && k == 1);
 
-        /// <summary>A column of the board: in the 4판 tab the game's two slots (F, E), and R or Q only while one holds a
-        /// skill (11-26: "각 캐릭터당 스킬 슬롯은 2개고").</summary>
-        bool ColumnShown(PawnRushLoadout lo, int k) => ShowsSlot(lo, k) && (discarded || k < 2 || AnyIn(lo, k));
+        /// <summary>A column of the board: the slots that play (as many of F, E and R as the count; the growing system's
+        /// second), one that does not but holds a skill (dimmed, "꺼짐": it plays again with more slots), and Q - in the
+        /// 4판 tab only while it holds a skill (no ultimates in the 4판).</summary>
+        bool ColumnShown(PawnRushLoadout lo, int k) =>
+            k == PawnRushLoadout.UltSlot ? discarded || AnyIn(lo, k) : ShowsSlot(lo, k) || AnyIn(lo, k);
 
         // ---------------------------------------------------------------- the set 4판's grades
 
@@ -648,7 +748,7 @@ namespace ChessFight.RagdollLab
         string SetFourNote()
         {
             string cds = Skills != null ? $"초급 {Skills.s4Basic:0.#}초 · 중급 {Skills.s4Mid:0.#}초 · 상급 {Skills.s4High:0.#}초" : "초급 · 중급 · 상급";
-            return $"4판: 기물마다 두 칸 (F · E), 어느 등급이든 섞어 넣어요 ({cds}). 칸이 열리는 때 (1코스 · 2코스 미니게임 장소)는 아직 코스에 안 붙였어요.";
+            return $"등급은 어느 칸에든 섞어 넣어요 ({cds}). 칸이 열리는 때 (1 · 2코스 미니게임 장소)는 아직 코스에 안 붙었어요.";
         }
 
         /// <summary>The five pieces always; the king's row only while it holds a skill (no king in Pawn Rush).</summary>
@@ -662,46 +762,61 @@ namespace ChessFight.RagdollLab
 
         static string SystemNote(PawnRushLoadout lo) =>
             lo.system == PawnRushLoadout.One ? "1안: 기물마다 F 하나와 Q 궁극기 (팀 게이지). 빈 Q는 궁극기 없음."
-            : lo.system == PawnRushLoadout.Grow ? "2안: F가 미들게임 모양에서 엔드게임 모양(→)으로 자라요. 단계 2부터 → 칸 (코스: 미니게임 2 뒤)."
-            : "3안: 칸마다 쿨타임이 따로예요. 한 번에 스킬 하나만 돌아요. R은 시험 씬에서만 (온라인에는 키가 없어요).";
+            : lo.system == PawnRushLoadout.Grow ? "자라는 방식 (옛 2안): F가 미들게임 모양에서 엔드게임 모양(→)으로 자라요. 단계 2부터 → 칸 (코스: 미니게임 2 뒤)."
+            : "칸마다 쿨타임이 따로예요. 한 번에 스킬 하나만 돌아요. Q는 궁극기 칸 (넣었을 때).";
 
-        /// <summary>Every piece's slots under their keys; returns where they end (the notes under them included).</summary>
+        /// <summary>Every piece's slots under their keys, and its support (G) after them; returns where they end (the notes
+        /// under them included).</summary>
         float DrawBoard(PawnRushLoadout lo, Rect r, Event e)
         {
-            GUI.Label(new Rect(r.x, r.y, r.width, 22f), "<b>기물별 칸</b>  <size=11><color=#9EA9BD>칸을 누르면 오른쪽에서 넣을 스킬을 골라요</color></size>", label);
+            GUI.Label(new Rect(r.x, r.y, r.width, 22f), "<b>기물별 칸</b>  <size=11><color=#9EA9BD>칸을 누르고 오른쪽에서 스킬을 누르면 들어가요</color></size>", label);
             float y = r.y + 28f;
             bool grow = lo.system == PawnRushLoadout.Grow;
             int cols = 0;
             for (int k = 0; k < lo.SlotCount; k++) if (ColumnShown(lo, k)) colIndex[cols++] = k;
             int rows = 0;
             for (int row = 0; row < PawnRushLoadout.Rows; row++) if (ShowsRow(lo, row)) rowIndex[rows++] = row;
-            const float nameW = 88f, colGap = 8f;
+            const float nameW = 88f, colGap = 8f, supW = 128f, maxColW = 360f;
             float stageW = grow ? 112f : 0f;
-            // A column nobody uses is narrower, so the names in the others have room.
+            // A slot that does not play, and an empty Q, are narrower, so the names in the others have room.
             float weights = 0f;
             for (int c = 0; c < cols; c++)
             {
-                colW[c] = AnyIn(lo, colIndex[c]) || (grow && colIndex[c] == 1) ? 1f : 0.6f;
+                int k = colIndex[c];
+                colW[c] = !ShowsSlot(lo, k) || (k == PawnRushLoadout.UltSlot && !AnyIn(lo, k)) ? 0.6f : 1f;
                 weights += colW[c];
             }
-            float spread = r.width - nameW - stageW - colGap * (cols - 1), cx0 = r.x + nameW;
+            float spread = r.width - nameW - stageW - supW - colGap * cols, cx0 = r.x + nameW;
             for (int c = 0; c < cols; c++)
             {
-                colW[c] = spread * colW[c] / Mathf.Max(0.1f, weights);
+                colW[c] = Mathf.Min(maxColW, spread * colW[c] / Mathf.Max(0.1f, weights));
                 colX[c] = cx0;
                 cx0 += colW[c] + colGap;
             }
+            float supX = cx0;
 
-            // The columns' heads: the key, and what the slot is.
+            // The columns' heads: the key, and what the slot is; a slot that does not play, faint ("꺼짐").
             for (int c = 0; c < cols; c++)
             {
                 int k = colIndex[c];
-                bool grown = grow && k == 1;
-                GUI.Label(new Rect(colX[c] + 4f, y, 30f, 24f), grown ? "→" : KeyOf(k), keyHead);
-                string what = grown ? "자란 모양" : k == PawnRushLoadout.UltSlot ? (AnyIn(lo, k) ? "궁극기" : "궁극기 (없음)")
+                bool grown = grow && k == 1, off = !ShowsSlot(lo, k);
+                string key = KeyOf(k), big = grown ? "→" : KeyShort(k);
+                string rest = !grown && key.Length > big.Length ? key.Substring(big.Length).Trim(' ', '(', ')') : "";
+                string what = grown ? "자란 모양" : off ? "꺼짐 · 칸 수를 늘리면 돌아요"
+                    : k == PawnRushLoadout.UltSlot ? (AnyIn(lo, k) ? "궁극기" : "궁극기 (없음)")
                     : k == 0 ? "첫째 칸" : k == 1 ? "둘째 칸" : "셋째 칸";
+                if (rest.Length > 0 && !off) what += " · " + rest;
+                var oldKey = keyHead.normal.textColor;
+                if (off) keyHead.normal.textColor = Faint;
+                GUI.Label(new Rect(colX[c] + 4f, y, 30f, 24f), big, keyHead);
+                keyHead.normal.textColor = oldKey;
                 GUI.Label(new Rect(colX[c] + 30f, y + 2f, colW[c] - 32f, 22f), Fit(what, smallOne, colW[c] - 32f), smallOne);
             }
+            var oldHead = keyHead.normal.textColor;
+            keyHead.normal.textColor = lo.supportOn ? SupportTint : Faint;
+            GUI.Label(new Rect(supX + 4f, y, 30f, 24f), "G", keyHead);
+            keyHead.normal.textColor = oldHead;
+            GUI.Label(new Rect(supX + 30f, y + 2f, supW - 32f, 22f), Fit(lo.supportOn ? "지원 · 선두만" : "지원 · 꺼짐", smallOne, supW - 32f), smallOne);
             if (grow) GUI.Label(new Rect(r.xMax - stageW + 8f, y + 2f, stageW - 8f, 22f), "단계 (손으로)", smallOne);
             y += 28f;
 
@@ -723,7 +838,8 @@ namespace ChessFight.RagdollLab
                     GUI.Label(new Rect(r.x + 38f, ry + rowH * 0.5f + 4f, nameW - 38f, 16f), mix, smallOne);
                 }
                 for (int c = 0; c < cols; c++)
-                    DrawSlot(lo, row, colIndex[c], new Rect(colX[c], ry + 4f, colW[c], rowH - 8f), e);
+                    DrawSlot(lo, row, colIndex[c], new Rect(colX[c], ry + 4f, colW[c], rowH - 8f), e, !ShowsSlot(lo, colIndex[c]));
+                DrawSupport(lo, row, new Rect(supX, ry + 4f, supW, rowH - 8f), e);
                 if (grow) DrawStages(lo, row, new Rect(r.xMax - stageW + 8f, ry, stageW - 8f, rowH));
             }
 
@@ -750,7 +866,15 @@ namespace ChessFight.RagdollLab
             return false;
         }
 
-        void DrawSlot(PawnRushLoadout lo, int row, int k, Rect box, Event e)
+        void DrawSlot(PawnRushLoadout lo, int row, int k, Rect box, Event e, bool off)
+        {
+            var tint = GUI.color;
+            if (off) GUI.color = new Color(tint.r, tint.g, tint.b, tint.a * 0.42f);
+            DrawSlotCard(lo, row, k, box, e);
+            GUI.color = tint;
+        }
+
+        void DrawSlotCard(PawnRushLoadout lo, int row, int k, Rect box, Event e)
         {
             int id = lo.Raw(row, k);
             var entry = PawnRushSkillBook.Find(id);
@@ -815,6 +939,37 @@ namespace ChessFight.RagdollLab
                     listPiece = row;   // the list turns to this piece's skills
                     scroll = 0f;
                 }
+                e.Use();
+            }
+        }
+
+        /// <summary>A piece's support (G) on the board: its name, lit while the support is on (a click says where it is
+        /// switched: for every piece at once, at the top); a piece without one says so.</summary>
+        void DrawSupport(PawnRushLoadout lo, int row, Rect box, Event e)
+        {
+            var kind = PawnRushLoadout.RowPieces[row];
+            bool has = RagdollPawn.HasSupport(kind), on = has && lo.supportOn;
+            bool mouse = box.Contains(e.mousePosition);
+            Fill(box, on ? (mouse ? SupportHover : SupportFill) : mouse && has ? new Color(1f, 1f, 1f, 0.08f) : SlotEmpty);
+            Frame(box, on ? SupportEdge : Edge);
+            if (!has)
+            {
+                GUI.Label(box, "없음", emptyText);
+                return;
+            }
+            if (mouse) hoverSupportNow = row;
+            float tw = box.width - 14f, top = box.y + (box.height - 34f) * 0.5f;
+            var oldName = cardName.normal.textColor;
+            cardName.normal.textColor = on ? Ink : Faint;
+            GUI.Label(new Rect(box.x + 8f, top - 1f, tw, 20f), Fit(RagdollPawn.SupportName(kind), cardName, tw), cardName);
+            cardName.normal.textColor = oldName;
+            var oldSub = smallOne.normal.textColor;
+            smallOne.normal.textColor = on ? SupportTint : Faint;
+            GUI.Label(new Rect(box.x + 8f, top + 18f, tw, 16f), on ? "켬 · 꼴찌 데려오기" : "꺼짐", smallOne);
+            smallOne.normal.textColor = oldSub;
+            if (e.type == EventType.MouseDown && e.button == 0 && mouse)
+            {
+                Say("지원 스킬은 위의 '지원 스킬 (G)' 켬 · 끔으로 모든 기물이 함께 바뀌어요", false);
                 e.Use();
             }
         }
@@ -1053,12 +1208,17 @@ namespace ChessFight.RagdollLab
         {
             Fill(r, SlotEmpty);
             Frame(r, Edge);
+            if (hoverId == 0 && hoverSupport >= 0 && hoverSupport < PawnRushLoadout.Rows)
+            {
+                DrawSupportAbout(lo, r, PawnRushLoadout.RowPieces[hoverSupport]);
+                return;
+            }
             int id = hoverId != 0 ? hoverId : pickId != 0 ? pickId : selRow >= 0 ? lo.Raw(selRow, selSlot) : 0;
             var about = PawnRushSkillBook.Find(id);
             if (about == null)
             {
                 GUI.Label(new Rect(r.x + 12f, r.y + 10f, r.width - 24f, r.height - 20f),
-                    "① 왼쪽에서 칸을 누르고  ② 오른쪽에서 스킬을 누르면 들어가요.\n스킬을 끌어다 칸에 놓아도 돼요. 칸에 마우스를 올리면 × 로 비울 수 있어요.\n스킬에 마우스를 올리면 여기에 설명이 나와요.", small);
+                    "① 위에서 세트, 칸 수, 지원 스킬 켬 · 끔을 골라요.\n② 왼쪽에서 칸을 누르고  ③ 오른쪽에서 스킬을 누르면 들어가요 (끌어다 놓아도 돼요).\n칸에 마우스를 올리면 × 로 비워요. 스킬이나 지원에 마우스를 올리면 여기에 설명이 나와요.", small);
                 return;
             }
             // Its picture big at the left, and beside it the name, where it comes from and the whole description.
@@ -1078,6 +1238,24 @@ namespace ChessFight.RagdollLab
             small.normal.textColor = oldColor;
         }
 
+        /// <summary>What a piece's support does (the board's support cell under the mouse).</summary>
+        void DrawSupportAbout(PawnRushLoadout lo, Rect r, PieceKind kind)
+        {
+            float s = Mathf.Min(r.height - 16f, 88f);
+            var box = new Rect(r.x + 8f, r.y + 8f, s, s);
+            Fill(box, new Color(SupportTint.r, SupportTint.g, SupportTint.b, lo.supportOn ? 0.16f : 0.06f));
+            Frame(box, lo.supportOn ? SupportEdge : Edge);
+            GUI.Label(box, Glyph(kind), glyph);
+            float tx = r.x + s + 20f, tw = r.xMax - tx - 10f;
+            GUI.Label(new Rect(tx, r.y + 6f, tw, 20f), Fit(RagdollPawn.SupportName(kind), cardName, tw), cardName);
+            string meta = $"{ChessPieces.Name(kind)} 지원 스킬 · G · 팀 선두만 · " + (lo.supportOn ? "지금 켬" : "지금 꺼짐 (위에서 켜요)");
+            GUI.Label(new Rect(tx, r.y + 25f, tw, 16f), Fit(meta, smallOne, tw), smallOne);
+            var oldColor = small.normal.textColor;
+            small.normal.textColor = new Color(0.82f, 0.85f, 0.9f);
+            GUI.Label(new Rect(tx, r.y + 46f, tw, r.height - 50f), RagdollPawn.SupportHow(kind) + "\n" + RagdollPawn.SupportRule, small);
+            small.normal.textColor = oldColor;
+        }
+
         // ---------------------------------------------------------------- the window
 
         void OnGUI()
@@ -1091,6 +1269,7 @@ namespace ChessFight.RagdollLab
             Refresh(lo);
             hoverNow = 0;
             hoverSetNow = -1;
+            hoverSupportNow = -1;
             if (selRow >= 0 && !ShowsRow(lo, selRow)) selRow = selSlot = -1;
             if (selSlot >= 0 && !ColumnShown(lo, selSlot)) selRow = selSlot = -1;
             if (listPiece >= 0 && !ShowsRow(lo, listPiece)) listPiece = -1;
@@ -1102,8 +1281,10 @@ namespace ChessFight.RagdollLab
             Frame(area, Edge);
             float x0 = area.x + 16f, right = area.xMax - 16f, y = area.y + 12f;
 
-            // The title line: the name, why nothing can be changed (if so), (a room) the lock, the key that closes it.
-            GUI.Label(new Rect(x0, y, 300f, 26f), Title, title);
+            // The title line: the name, the two tabs, why nothing can be changed (if so), (a room) the lock, the key that
+            // closes it.
+            GUI.Label(new Rect(x0, y, 300f, 28f), Title, title);
+            float tabsEnd = DrawTabs(x0 + TextW(Title, title) + 22f, y);
             float hx = right - 64f;
             GUI.Label(new Rect(hx, y, 64f, 26f), $"{toggleKey} 닫기", smallRight);
             if (ShowLock != null && ShowLock())
@@ -1111,17 +1292,17 @@ namespace ChessFight.RagdollLab
                 string lockText = lo.hostOnly ? "방장만 바꾸기: 켬" : "방장만 바꾸기: 끔";
                 float lw = TextW(lockText, label) + 24f;
                 hx -= lw + 10f;
-                if (Chip(new Rect(hx, y, lw, 26f), lockText, lo.hostOnly)) Change(PawnRushLoadout.OpHostOnly, lo.hostOnly ? 0 : 1);
+                if (Chip(new Rect(hx, y, lw, 28f), lockText, lo.hostOnly)) Change(PawnRushLoadout.OpHostOnly, lo.hostOnly ? 0 : 1);
             }
             if (!Allowed(0))
             {
                 string why = LockedNote != null ? LockedNote(0) : "";
                 var oldWarn = smallOne.normal.textColor;
                 smallOne.normal.textColor = Warn;
-                GUI.Label(new Rect(x0 + 300f, y, hx - x0 - 310f, 26f), string.IsNullOrEmpty(why) ? "지금은 바꿀 수 없어요 (보기만)" : why, smallOne);
+                GUI.Label(new Rect(tabsEnd + 14f, y, Mathf.Max(10f, hx - tabsEnd - 24f), 28f), string.IsNullOrEmpty(why) ? "지금은 바꿀 수 없어요 (보기만)" : why, smallOne);
                 smallOne.normal.textColor = oldWarn;
             }
-            y += 36f;
+            y += 40f;
 
             y = DrawSets(lo, x0, right, y);
             Fill(new Rect(x0, y, right - x0, 1f), Edge);
@@ -1164,6 +1345,7 @@ namespace ChessFight.RagdollLab
             {
                 hoverId = hoverNow;
                 hoverSet = hoverSetNow;
+                hoverSupport = hoverSupportNow;
             }
             // The window's own clicks go no further.
             if ((e.type == EventType.MouseDown || e.type == EventType.MouseUp) && area.Contains(e.mousePosition)) e.Use();

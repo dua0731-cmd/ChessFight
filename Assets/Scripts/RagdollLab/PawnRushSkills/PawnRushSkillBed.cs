@@ -654,7 +654,8 @@ namespace ChessFight.RagdollLab
         /// with "데려오면 게이지 +15%" then; otherwise why not, or the support under way. The rescues so far after it.</summary>
         void SupportCard(RagdollPawn me)
         {
-            if (!RagdollPawn.HasSupport(me.Piece)) return;
+            // (Off in the skill tree, 11-26: no card at all.)
+            if (!RagdollPawn.HasSupport(me.Piece) || !skills.loadout.supportOn) return;
             int row = 0;
             for (int k = 0; k < me.SlotCount; k++)
                 if (me.SlotSkill(k) != 0) row++;
@@ -894,7 +895,8 @@ namespace ChessFight.RagdollLab
             GUILayout.BeginHorizontal();
             if (window != null && GUILayout.Button(window.Open ? $"스킬트리 닫기 ({window.toggleKey})" : $"스킬트리 열기 ({window.toggleKey})", window.Open ? selected : button, GUILayout.Height(24f), GUILayout.Width(150f)))
                 window.Toggle();
-            GUILayout.Label($"  방식 {skills.loadout.system}안" + (skills.loadout.system == PawnRushLoadout.Grow ? $" · 단계 {p1.SkillStageLevel}" : ""), small);
+            GUILayout.Label($"  칸 {skills.loadout.NormalSlots}개 · 지원 {(skills.loadout.supportOn ? "켬" : "끔")}"
+                            + (skills.loadout.system == PawnRushLoadout.Grow ? $" · 자라는 방식 단계 {p1.SkillStageLevel}" : ""), small);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(4f);
@@ -925,9 +927,9 @@ namespace ChessFight.RagdollLab
                 }
                 if (!anySkill) GUILayout.Label($"이 기물의 칸이 비어 있어요. 스킬트리({(window != null ? window.toggleKey : KeyCode.K)})에서 넣어요", small);
             }
-            if (RagdollPawn.HasSupport(p1.Piece))
+            if (RagdollPawn.HasSupport(p1.Piece) && skills.loadout.supportOn)
             {
-                // 11-22: the support slot (leader only).
+                // 11-22: the support slot (leader only; off in the skill tree, 11-26: not shown).
                 string why = p1.SupportWhyNot(out var lastOne);
                 GUILayout.Label($"<b>{supportKey} · 지원 {RagdollPawn.SupportName(p1.Piece)}</b>   "
                                 + (why == null ? $"<color=#4fd>→ {lastOne.DisplayName}</color>" : why)
@@ -946,9 +948,9 @@ namespace ChessFight.RagdollLab
             string extra = "";
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
-            GUILayout.Label(skills.loadout.system == PawnRushLoadout.Many
-                ? "3안: 스킬을 넣은 둘째 · 셋째 · 넷째 칸은 E · R · Q가 스킬 키 (빈 칸이면 랩의 원래 기능, R은 모두 리스폰)"
-                : "1안 · 2안: F는 일반 칸, Q는 궁극 칸 (넣었을 때). E와 마우스는 랩의 원래 기능 그대로", small);
+            int normal = skills.loadout.NormalSlots;
+            GUILayout.Label($"스킬 칸 {normal}개: " + (normal >= 3 ? "F · E · R" : normal == 2 ? "F · E" : "F")
+                            + " · Q는 궁극기 칸 (넣었을 때). 스킬이 없는 칸의 키는 랩의 원래 기능 (R은 모두 리스폰)", small);
             if (skills.loadout.system == PawnRushLoadout.Grow)
             {
                 // The set 2안-a: the middlegame shapes, or (after the second mini-game on the course) the endgame shapes.

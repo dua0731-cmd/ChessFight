@@ -228,8 +228,8 @@ namespace ChessFight.RagdollLab
         public const int DevFlyBytes = 4 + 1 + 8 + 1 + 1;   // 15
         // JY-skill-lab (the developers' skill tree, PawnRushLoadout). TypeLoadout: the loadout every piece plays by, the
         // host's to everyone - at once when it changes and now and again besides (a PC that has just come in): a number
-        // that goes up with every change (never 0), the system, whether only the room's manager changes it, the fifteen
-        // slots, the five stages. TypeLoadoutAsk: one change asked of the host (PawnRushLoadout.Apply's two numbers),
+        // that goes up with every change (never 0), the system, a byte of flags (1 only the room's manager changes it, 2 the
+        // support slot off, 4 * the slot count: 1..3, PawnRushLoadout.slotCount), the twenty-four slots, the six stages. TypeLoadoutAsk: one change asked of the host (PawnRushLoadout.Apply's two numbers),
         // numbered like DevClear so the host takes it once.
         public const byte TypeLoadout = 12;
         public const int LoadoutBytes = 4 + 1 + 8 + 1 + 1 + 1 + PawnRushLoadout.Rows * PawnRushLoadout.Slots + PawnRushLoadout.Rows;   // 46 (six rows since the king has one, four slots since the queen has R)
@@ -554,7 +554,8 @@ namespace ChessFight.RagdollLab
             w.Write(session);
             w.Write(rev);
             w.Write((byte)loadout.system);
-            w.Write((byte)(loadout.hostOnly ? 1 : 0));
+            int count = Mathf.Clamp(loadout.slotCount, 1, PawnRushLoadout.MaxNormal);
+            w.Write((byte)((loadout.hostOnly ? 1 : 0) | (loadout.supportOn ? 0 : 2) | (count << 2)));
             for (int row = 0; row < PawnRushLoadout.Rows; row++)
                 for (int slot = 0; slot < PawnRushLoadout.Slots; slot++)
                     w.Write((byte)Mathf.Clamp(loadout.Raw(row, slot), 0, 255));
@@ -571,9 +572,12 @@ namespace ChessFight.RagdollLab
             rev = r.ReadByte();
             int system = r.ReadByte();
             int flags = r.ReadByte();
-            if (rev == 0 || system < PawnRushLoadout.One || system > PawnRushLoadout.Many || flags > 1) return false;
+            int count = (flags >> 2) & 3;
+            if (rev == 0 || system < PawnRushLoadout.One || system > PawnRushLoadout.Many || (flags & ~0x0F) != 0 || count < 1) return false;
             into.system = system;
-            into.hostOnly = flags == 1;
+            into.hostOnly = (flags & 1) != 0;
+            into.supportOn = (flags & 2) == 0;
+            into.slotCount = count;
             for (int row = 0; row < PawnRushLoadout.Rows; row++)
                 for (int slot = 0; slot < PawnRushLoadout.Slots; slot++)
                     into.Set(row, slot, r.ReadByte());

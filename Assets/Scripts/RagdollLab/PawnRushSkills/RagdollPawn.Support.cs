@@ -79,6 +79,20 @@ namespace ChessFight.RagdollLab
             _ => "지원 없음",
         };
 
+        /// <summary>What a piece's support does, in a few lines (the skill tree's description, 11-26).</summary>
+        public static string SupportHow(PieceKind k) => k switch
+        {
+            PieceKind.Knight => "휘파람 1초 → 빈 말이 꼴찌에게 달려가요. 꼴찌가 F로 올라타 누르고 있으면 말이 선두 쪽으로 달려요 (점프 키 = 뛰어넘기, 이동 키 = 몰기).",
+            PieceKind.Rook => "G를 누르고 있는 동안 꼴찌 발밑에서 선두 쪽으로 도개교가 놓여요 (폭 3 m, 35 m/s). 위에 선 팀원도 같이 타고 적은 미끄러져요. 놓거나 밀려나면 끊겨요.",
+            PieceKind.Queen => "G를 누르고 있는 동안 꼴찌 15 m 위에서 선두까지 빛의 줄이 걸려 왕관 도르래로 미끄러져 와요 (45 m/s, 가장 빨라요). 적이 줄을 치면 끊겨요.",
+            PieceKind.Bishop => "주교관 드론이 꼴찌에게 날아가요. 꼴찌가 F로 매달리면 선두가 이동 키와 카메라로 몰아요 (6초까지, G = 내려놓기).",
+            PieceKind.Pawn => "G를 누르고 있는 동안 돌 폰이 10 m마다 지그재그로 솟아 꼴찌를 다음 폰으로 던져요. 적이 넘어뜨린 폰은 틈이 돼 떨어져요.",
+            _ => "지원 스킬이 없어요.",
+        };
+
+        /// <summary>When any support goes (the skill tree's description).</summary>
+        public const string SupportRule = "팀 선두만 · 꼴찌가 다른 구간에 있을 때 · 구간마다 한 번 · 꼴찌는 F로 받아요 · 도착하면 둘 다 잠깐 빨라져요";
+
         /// <summary>Which section of the race this piece is in now.</summary>
         public int SectionNow => RaceSection != null ? RaceSection(this)
                                  : Mathf.FloorToInt(Progress(this) / Mathf.Max(1f, PawnRushSkills != null ? PawnRushSkills.supSection : 100f));
@@ -159,6 +173,7 @@ namespace ChessFight.RagdollLab
             last = null;
             if (PawnRushSkills == null || team == Teams.None) return "팀 없음";
             if (!HasSupport(piece)) return "지원 없음";
+            if (PawnRushSkills.loadout != null && !PawnRushSkills.loadout.supportOn) return "지원 꺼짐";   // (the skill tree's switch, 11-26)
             if (supMate != null || supBy != null) return "지원 중";
             foreach (var p in All)
                 if (p != null && p != this && p.team == team && (p.supMate != null || p.supCarry)) return "팀이 지원 중";

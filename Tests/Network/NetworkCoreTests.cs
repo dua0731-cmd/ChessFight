@@ -1254,7 +1254,7 @@ public static class NetworkCoreTests
                 for (int id=1; id<=5; id++) Check(PawnRushSkillIds.Old(id)&&now.Skill(PawnRushSkillIds.OldPiece(id),0)==id,"an old skill's own piece: "+id);
                 Check(!PawnRushSkillIds.Old(0)&&!PawnRushSkillIds.Old(PawnRushSkillIds.EnPassant),"the new skills are not old");
                 Check(PawnRushSkillIds.Castle(PawnRushSkillIds.Castling)&&PawnRushSkillIds.Castle(PawnRushSkillIds.CastleSwap)&&!PawnRushSkillIds.Castle(PawnRushSkillIds.Ward)&&!PawnRushSkillIds.Old(PawnRushSkillIds.Squeeze)&&PawnRushSkillIds.Ward==44&&PawnRushSkillIds.Squeeze==49,"Queen of the Hill's six: their numbers, and the two castlings");
-                var mine=new PawnRushLoadout{system=PawnRushLoadout.Many};
+                var mine=new PawnRushLoadout{system=PawnRushLoadout.Many,slotCount=3};
                 mine.Set(0,0,PawnRushSkillIds.ChainPull); mine.Set(0,2,PawnRushSkillIds.Check); mine.Set(4,1,PawnRushSkillIds.TwoSteps); mine.Set(9,0,7); mine.Set(0,5,7); mine.SetStage(3,9);
                 Check(mine.SlotCount==4&&mine.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.ChainPull&&mine.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Check&&mine.Skill(PieceKind.Queen,1)==PawnRushSkillIds.TwoSteps&&mine.SlotOf(PieceKind.Pawn,PawnRushSkillIds.Check)==2,"any skill in any slot");
                 var back=PawnRushLoadout.Decode(mine.Encode());
@@ -1270,7 +1270,7 @@ public static class NetworkCoreTests
                 // A change as two numbers (what a client asks of the host), and the manager's lock.
                 var room=PawnRushLoadout.Preset(0);
                 Check(room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,PawnRushLoadout.Many)&&!room.Apply(PawnRushLoadout.OpSystem,7)&&room.system==PawnRushLoadout.Many,"the system");
-                Check(room.Apply(1,PawnRushSkillIds.Check)&&room.Skill(PieceKind.Pawn,1)==PawnRushSkillIds.Check&&!room.Apply(1,PawnRushSkillIds.Check)&&room.Apply(18,PawnRushSkillIds.Fork)&&room.Skill(PieceKind.Queen,2)==PawnRushSkillIds.Fork&&!room.Apply(3,999)&&!room.Apply(-1,1)&&!room.Apply(99,1),"a slot");
+                Check(room.Apply(1,PawnRushSkillIds.Check)&&room.Skill(PieceKind.Pawn,1)==PawnRushSkillIds.Check&&!room.Apply(1,PawnRushSkillIds.Check)&&room.Apply(18,PawnRushSkillIds.Fork)&&room.Skill(PieceKind.Queen,2)==0&&room.Apply(PawnRushLoadout.OpSlots,3)&&room.Skill(PieceKind.Queen,2)==PawnRushSkillIds.Fork&&!room.Apply(3,999)&&!room.Apply(-1,1)&&!room.Apply(99,1),"a slot");
                 Check(room.Apply(PawnRushLoadout.OpStage+3,2)&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpStage+3,2)&&room.Apply(PawnRushLoadout.OpStage,9)&&room.stages[0]==3,"a stage");
                 Check(room.Apply(PawnRushLoadout.OpPreset,1)&&room.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.EnPassant&&room.Skill(PieceKind.Pawn,1)==0&&room.system==PawnRushLoadout.Many&&room.stages[3]==2&&!room.Apply(PawnRushLoadout.OpPreset,1)&&!room.Apply(PawnRushLoadout.OpPreset,PawnRushLoadout.Presets),"a loadout that comes with the game fills the slots only");
                 Check(room.Apply(PawnRushLoadout.OpPreset,3)&&room.Skill(PieceKind.Queen,0)==PawnRushSkillIds.TwoHares&&room.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.TouchMove&&!room.Apply(PawnRushLoadout.OpPreset,3)&&!room.Apply(PawnRushLoadout.OpPreset,-1),"bundle A as a change");
@@ -1279,6 +1279,29 @@ public static class NetworkCoreTests
                 Check(room.Apply(PawnRushLoadout.OpHostOnly,1)&&room.hostOnly&&!room.Apply(PawnRushLoadout.OpHostOnly,1)&&!room.Allows(0,false)&&!room.Allows(PawnRushLoadout.OpPreset,false)&&room.Allows(0,true)&&room.Allows(PawnRushLoadout.OpHostOnly,true),"locked: the manager's alone");
                 var kept=PawnRushLoadout.Decode(room.Encode()); Check(kept.hostOnly&&kept.Same(room)&&!PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").hostOnly&&PawnRushLoadout.Decode("1|1,0,0,2,0,0,3,0,0,4,0,0,5,0,0|1,1,1,1,1").Same(now),"the lock in the text; a text from before it reads as open");
                 var held=new PawnRushLoadout(); held.CopyFrom(room); Check(held.hostOnly&&held.Apply(PawnRushLoadout.OpHostOnly,0)&&!held.hostOnly&&room.hostOnly,"the lock is copied, and opened again"); });
+            Test("JY-skill-lab: the skill tree's two rules (11-26) - one, two or three of F, E and R play, and the support slot's switch", () => {
+                var lo=PawnRushLoadout.Preset(16); lo.system=PawnRushLoadout.Many;
+                Check(PawnRushLoadout.OpSlots==33&&PawnRushLoadout.OpSupport==34&&PawnRushLoadout.MaxNormal==3&&PawnRushLoadout.GameSlots==2&&lo.slotCount==2&&lo.supportOn
+                      &&lo.NormalSlots==2&&lo.Plays(0)&&lo.Plays(1)&&!lo.Plays(2)&&lo.Plays(PawnRushLoadout.UltSlot),"the game's two slots, and the support on");
+                lo.Set(0,2,PawnRushSkillIds.Pit);
+                Check(lo.Skill(PieceKind.Pawn,2)==0&&lo.Apply(PawnRushLoadout.OpSlots,3)&&lo.Skill(PieceKind.Pawn,2)==PawnRushSkillIds.Pit&&!lo.Apply(PawnRushLoadout.OpSlots,3)
+                      &&lo.Apply(PawnRushLoadout.OpSlots,1)&&lo.Skill(PieceKind.Pawn,1)==0&&lo.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.StepsDiag&&lo.Raw(0,1)==PawnRushSkillIds.RopePassant&&lo.SlotOf(PieceKind.Pawn,PawnRushSkillIds.RopePassant)==-1,"three play R, one only F (the others kept)");
+                Check(!lo.Apply(PawnRushLoadout.OpSlots,0)&&!lo.Apply(PawnRushLoadout.OpSlots,4)&&lo.slotCount==1,"no count past the normal slots");
+                var one=PawnRushLoadout.Preset(9); one.system=PawnRushLoadout.One;
+                Check(!one.Apply(PawnRushLoadout.OpSlots,1)&&one.Apply(PawnRushLoadout.OpSlots,2)&&one.system==PawnRushLoadout.Many&&one.NormalSlots==2,"a count is several a piece's (one a piece is one slot already)");
+                var grow=PawnRushLoadout.Preset(10); grow.system=PawnRushLoadout.Grow; grow.SetStage(0,2);
+                Check(grow.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.PassedPawn&&grow.Apply(PawnRushLoadout.OpSlots,1)&&grow.system==PawnRushLoadout.Many&&grow.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.SteeredSteps,"a count leaves the growing system");
+                Check(lo.Apply(PawnRushLoadout.OpSupport,0)&&!lo.supportOn&&!lo.Apply(PawnRushLoadout.OpSupport,0)&&lo.Apply(PawnRushLoadout.OpPreset,13)&&!lo.supportOn&&lo.slotCount==1,"the support's switch; a set leaves both rules as they are");
+                var back=PawnRushLoadout.Decode(lo.Encode());
+                Check(back.Same(lo)&&back.slotCount==1&&!back.supportOn&&back.Skill(PieceKind.Pawn,0)==PawnRushSkillIds.Trip4,"both in the text and back");
+                string empty=string.Join(",",new int[PawnRushLoadout.Rows*PawnRushLoadout.Slots]);
+                var old=PawnRushLoadout.Decode("3|"+empty+"|1,1,1,1,1,1|1");
+                Check(old.system==PawnRushLoadout.Many&&old.hostOnly&&old.slotCount==PawnRushLoadout.GameSlots&&old.supportOn,"a text from before them: the game's two slots, the support on");
+                foreach (var junk in new[]{"3|"+empty+"|1,1,1,1,1,1|0|4|1","3|"+empty+"|1,1,1,1,1,1|0|0|1","3|"+empty+"|1,1,1,1,1,1|0|2|x","3|"+empty+"|1,1,1,1,1,1|0|2"})
+                    Check(PawnRushLoadout.Decode(junk).Same(PawnRushLoadout.Preset(0)),"not a loadout: "+junk);
+                var copy=new PawnRushLoadout(); copy.CopyFrom(lo); Check(copy.slotCount==1&&!copy.supportOn&&copy.Same(lo),"copied");
+                var room=PawnRushLoadout.Preset(0); room.Apply(PawnRushLoadout.OpHostOnly,1);
+                Check(!room.Allows(PawnRushLoadout.OpSlots,false)&&!room.Allows(PawnRushLoadout.OpSupport,false)&&room.Allows(PawnRushLoadout.OpSupport,true)&&room.Allows(PawnRushLoadout.OpSlots,true),"locked: the manager's alone"); });
             Test("R707: the throne contest - a team's majority on the platform runs its time, both at once stops it, clears shorten it", () => {
                 Check(PawnRushThrone.Target(0)==30&&PawnRushThrone.Target(1)==25&&PawnRushThrone.Target(2)==20&&PawnRushThrone.Target(-1)==30&&PawnRushThrone.Target(9)==PawnRushThrone.Least,"targets: 30 less 5 a clear");
                 Check(PawnRushThrone.Holder(4,6,0,6)==0&&PawnRushThrone.Holder(3,6,4,6)==1&&PawnRushThrone.Holder(4,6,4,6)==PawnRushThrone.Both&&PawnRushThrone.Holder(3,6,3,6)==PawnRushThrone.Nobody,"who holds, six a side");

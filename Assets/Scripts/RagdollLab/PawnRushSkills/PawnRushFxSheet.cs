@@ -222,6 +222,7 @@ namespace ChessFight.RagdollLab
                 int basis = PawnRushSkillIds.SetFour(shot.id) ? 13 : 12;
                 lo.CopyFrom(PawnRushLoadout.Preset(basis));
                 lo.Apply(PawnRushLoadout.OpSystem, PawnRushLoadout.SystemOf(basis));   // (a preset leaves the system as it was)
+                lo.Apply(PawnRushLoadout.OpSlots, PawnRushLoadout.MaxNormal);           // (every slot plays: a shot may be on R)
                 int row = Array.IndexOf(PawnRushLoadout.RowPieces, shot.piece);
                 if (row >= 0) lo.Apply(row * PawnRushLoadout.Slots + shot.slot, shot.id);
                 string keyName = shot.slot == 0 ? "F" : shot.slot == 1 ? "E" : shot.slot == 2 ? "R" : "Q";

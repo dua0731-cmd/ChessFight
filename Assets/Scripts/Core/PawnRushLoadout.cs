@@ -196,6 +196,12 @@ namespace ChessFight.Network
     // the skills in each piece's slots, and for system 2 the stage each piece's skill is at. Core: no Unity (it goes
     // into a text for the settings of this PC, and over a match from the host to everyone).
     //
+    // Since 2026-11-26 (the user: "스킬 슬롯을 1개, 2개, 3개까지 지정할 수 있고, 지원스킬도 on/off할수 있어야해") two rules of
+    // its own besides: how many of the normal slots (F, E, R) a piece plays with several a piece (slotCount; two, the
+    // game's: Docs/Skills/PAWN_RUSH_SKILL_SET4.md 1.1 "각 캐릭터당 스킬 슬롯은 2개고"), and whether the support slot (G, the
+    // team leader's call: RagdollPawn.Support.cs) plays at all (supportOn). A loadout that comes with the game changes
+    // neither; a count switches one a piece and the growing system to several a piece.
+    //
     // Over a match (the user: "테스트하는 우리 모두 개발자이기 때문에 모두가 열 수도 있게 하되, 방장이 직접 지정하는 것(다른
     // 인원들은 스킬 못 바꾸는 것)도 가능하게"): a change is two numbers (Apply: which thing, what value), so anyone's
     // change can be asked of the host; hostOnly says only the room's manager may change anything (Allows).
@@ -218,12 +224,23 @@ namespace ChessFight.Network
         public const int OpSystem = OpStage + Rows;       // 30: the system (1..3)
         public const int OpPreset = OpSystem + 1;         // 31: one of the loadouts that come with the game (Preset)
         public const int OpHostOnly = OpPreset + 1;       // 32: only the manager changes it (1) or everyone (0)
+        public const int OpSlots = OpHostOnly + 1;        // 33: how many of the normal slots play (1..3, several a piece)
+        public const int OpSupport = OpSlots + 1;         // 34: the support slot (G) plays (1) or not (0)
+
+        /// <summary>The normal slots, F, E and R (the ultimate's, Q, apart): the most <see cref="slotCount"/> plays.</summary>
+        public const int MaxNormal = Slots - 1;
+        /// <summary>The game's slot count (SET4 1.1: two a character), a new loadout's and an older text's.</summary>
+        public const int GameSlots = 2;
 
         public int system = One;
         public int[] slots = new int[Rows * Slots];
         public int[] stages = { 1, 1, 1, 1, 1, 1 };
         /// <summary>A room's: only its manager changes the loadout (everyone still sees it).</summary>
         public bool hostOnly;
+        /// <summary>How many of the normal slots (F, E, R, from the first) play with several a piece: 1..3.</summary>
+        public int slotCount = GameSlots;
+        /// <summary>The support slot (G: the team's leader brings its last runner up, RagdollPawn.Support.cs) plays.</summary>
+        public bool supportOn = true;
 
         public static int Row(PieceKind piece)
         {
@@ -235,13 +252,14 @@ namespace ChessFight.Network
         /// <summary>The slots a piece's row has (all four, whatever the system: Plays says which of them play).</summary>
         public int SlotCount => Slots;
 
-        /// <summary>Whether a slot plays under this system: all four with several skills a piece; with one a piece and with
-        /// the growing one, the first (F) and the ultimate's (Q) - since the sets 1안-a and 2안-a (11-21) every plan has its
-        /// ultimate slot. The growing system's second slot is what the first grows into, not a slot of its own.</summary>
-        public bool Plays(int slot) => slot >= 0 && slot < Slots && (system == Many || slot == 0 || slot == UltSlot);
+        /// <summary>Whether a slot plays under this system: with several skills a piece the first <see cref="slotCount"/> of F,
+        /// E and R and the ultimate's (Q); with one a piece and with the growing one, the first (F) and the ultimate's - since
+        /// the sets 1안-a and 2안-a (11-21) every plan has its ultimate slot. The growing system's second slot is what the
+        /// first grows into, not a slot of its own.</summary>
+        public bool Plays(int slot) => slot >= 0 && slot < Slots && (slot == UltSlot || slot < NormalSlots);
 
         /// <summary>How many normal slots play under this system (the ultimate's apart).</summary>
-        public int NormalSlots => system == Many ? Slots - 1 : 1;
+        public int NormalSlots => system == Many ? (slotCount < 1 ? 1 : slotCount > MaxNormal ? MaxNormal : slotCount) : 1;
 
         void Mend()
         {
@@ -259,6 +277,7 @@ namespace ChessFight.Network
                 stages = fresh;
             }
             if (system < One || system > Many) system = One;
+            if (slotCount < 1 || slotCount > MaxNormal) slotCount = GameSlots;
         }
 
         /// <summary>The skill in a row's slot as the window shows it (every slot, whatever the system).</summary>
@@ -337,6 +356,8 @@ namespace ChessFight.Network
             Mend();
             system = other.system;
             hostOnly = other.hostOnly;
+            slotCount = other.slotCount;
+            supportOn = other.supportOn;
             Array.Copy(other.slots, slots, slots.Length);
             Array.Copy(other.stages, stages, stages.Length);
         }
@@ -385,6 +406,16 @@ namespace ChessFight.Network
                     if (hostOnly == (value != 0)) return false;
                     hostOnly = value != 0;
                     return true;
+                case OpSlots:
+                    // Several a piece, the first so many of F, E and R (one a piece is one slot already).
+                    if (value < 1 || value > MaxNormal || (system == One && value == 1) || (system == Many && slotCount == value)) return false;
+                    system = Many;
+                    slotCount = value;
+                    return true;
+                case OpSupport:
+                    if (supportOn == (value != 0)) return false;
+                    supportOn = value != 0;
+                    return true;
                 default:
                     return false;
             }
@@ -392,12 +423,13 @@ namespace ChessFight.Network
 
         public bool Same(PawnRushLoadout other) => other != null && Encode() == other.Encode();
 
-        /// <summary>As one line of text: the system, the twenty-four slots, the six stages, and whether only the manager
-        /// changes it.</summary>
+        /// <summary>As one line of text: the system, the twenty-four slots, the six stages, whether only the manager
+        /// changes it, the slot count and whether the support plays.</summary>
         public string Encode()
         {
             Mend();
-            return system + "|" + string.Join(",", slots) + "|" + string.Join(",", stages) + "|" + (hostOnly ? "1" : "0");
+            return system + "|" + string.Join(",", slots) + "|" + string.Join(",", stages) + "|" + (hostOnly ? "1" : "0")
+                   + "|" + slotCount + "|" + (supportOn ? "1" : "0");
         }
 
         /// <summary>From <see cref="Encode"/>'s text; anything that is not one is the game as it is.</summary>
@@ -406,8 +438,11 @@ namespace ChessFight.Network
             var result = Preset(0);
             if (string.IsNullOrEmpty(text)) return result;
             var parts = text.Split('|');
-            // (Three parts: a text from before the lock was there.)
-            if ((parts.Length != 3 && parts.Length != 4) || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
+            // (Three parts: a text from before the lock was there; four, from before the slot count and the support's switch,
+            // which read as the game's two slots and the support on.)
+            if ((parts.Length != 3 && parts.Length != 4 && parts.Length != 6) || !int.TryParse(parts[0], out int system) || system < One || system > Many) return result;
+            int count = GameSlots;
+            if (parts.Length == 6 && (!int.TryParse(parts[4], out count) || count < 1 || count > MaxNormal || (parts[5] != "0" && parts[5] != "1"))) return result;
             var slotTexts = parts[1].Split(',');
             var stageTexts = parts[2].Split(',');
             // Older texts: three slots a row (F, E, Q: before the queen's third key, R), and before that five rows (before
@@ -417,7 +452,7 @@ namespace ChessFight.Network
                 : (slotTexts.Length == Rows * 3 && stageTexts.Length == Rows) || (slotTexts.Length == (Rows - 1) * 3 && stageTexts.Length == Rows - 1) ? 3
                 : 0;
             if (perRow == 0) return result;
-            var read = new PawnRushLoadout { system = system, hostOnly = parts.Length == 4 && parts[3] == "1" };
+            var read = new PawnRushLoadout { system = system, hostOnly = parts.Length >= 4 && parts[3] == "1", slotCount = count, supportOn = parts.Length != 6 || parts[5] == "1" };
             for (int i = 0; i < slotTexts.Length; i++)
             {
                 if (!int.TryParse(slotTexts[i], out int id) || id < 0 || id > 255) return result;

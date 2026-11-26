@@ -223,7 +223,8 @@ namespace ChessFight.Network
         // "묶임" on the bishop's pin).
         // skilllab25: the user's own ten (JY, 171..180, a seventeenth loadout), two more hindrances (납작이 10, 멈춤 11) and
         // their moments (S4Flat, JyStep ..).
-        public const string Protocol = "chessfight.dua0731.network.v59.skilllab25";
+        // skilllab26: the loadout's slot count (1..3) and the support slot's switch, in its flags byte (11-26).
+        public const string Protocol = "chessfight.dua0731.network.v59.skilllab26";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
