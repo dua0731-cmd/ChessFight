@@ -1,6 +1,8 @@
 # 폰 러쉬 대연회장 — 소리 설계 (R843, 2026-11-26)
 
-사용자 "대연회장 사운드 필요한 부분 설계 해". **설계만이다 — 소리 파일도 코드도 아직 없다.** 대연회장에는 지금 소리가 하나뿐이다(seoungtest의 벽난로 타는 소리, 아래 1절).
+사용자 "대연회장 사운드 필요한 부분 설계 해". 대연회장에는 이 설계 전에 소리가 하나뿐이었다(seoungtest의 벽난로 타는 소리, 아래 1절).
+
+> **R844 · 2026-11-26 · 1 · 2순위 18종을 만들어 넣음 (seoungtest 커밋 · 푸시 — 처음엔 사용자 "커밋 푸쉬 하지 말고"로 작업 폴더에만, "아직 사운드 안들어 갔는데?" 뒤 물어 푸시):** 6절 다섯 가지는 권하는 답대로 했다(악단 음악 없음 · 목소리 없음 · 도착 나팔 본인만 · seoungtest · 신호음은 사용자가 귀로). ElevenLabs flow "R844 대연회장 소리"(`qw0YQDFYqX3Q4pU1s5TP`, `eleven_text_to_sound_v2`)에서 18종 × 4 테이크. 반복음 여섯은 처음 1 ~ 2초로 나와 길이 · `loop` 설정을 넣어 다시 만들었다(처음 것은 `raw/short_first_takes`). 원본 · 프롬프트 · 굽는 스크립트 `ArtSource/PawnRush/BanquetHall/Sound/`(`prompts.md` · `bake.py` · `page.py`), 게임 파일 `Assets/Resources/BanquetHallSfx/Bh*.wav`, 코드 `Assets/Scripts/PawnRush/GrandBanquetHallSound.cs`(빌더가 Play 때 붙임). 장치 코드에 더한 것: `TableclothTrick.RollAt · PullAt · LayAt · Threw`, `ClocheLift.CycleAt`과 순간들, `CurtainPleat.CycleAt · ShutSeconds` — 움직임은 그대로, 보내는 것 없음, 프로토콜 그대로. 벽난로 소리도 `SectionSoundGate`를 거치게 했다(효과음 크기는 게이트가 곱함). **테이크는 AI가 파형 숫자로만 골랐다** — 들어 보는 페이지 https://claude.ai/artifact/6k3xV1LpiLyTiEpFJrUyyu 에서 신호음 여섯을 번호로 골라 주면 `picks.json` → `bake.py`로 바꾼다. 3순위 5종(막 만남 · 큰 샹들리에 · 손님 건배 · 콘트라베이스 · 초콜릿 발소리)과 '뚜껑 안에서 먹먹하게'는 아직 안 했다. 아무도 Unity에서 들어 보지 않았다.
 
 - 읽은 것: [설계 v0.4](PAWN_RUSH_BANQUET_HALL_DESIGN_v0.4.md)(R828 배치), main의 장치 코드(`GrandBanquetHallBuilder` · `BanquetMovers` · `BanquetDevices`), seoungtest의 모델 입히기 코드(`GrandBanquetHallDressing.*`, R837 · R838). 시간은 전부 코드의 수치다.
 - 방식은 [천문대 소리(R742)](PAWN_RUSH_OBSERVATORY_SFX.md)와 같다: 코드 한 파일, 공유 시계를 읽어 모든 PC가 같은 순간에 낸다, 보내는 것 없음.
@@ -148,4 +150,4 @@
 
 ## 8. 확인 상태
 
-설계 문서뿐이다. 소리를 만들지도, 코드를 쓰지도, 누가 듣지도 않았다. 시간 · 자리는 main의 코드에서 읽었고, seoungtest의 모델 입히기(부엌 문 · 벽난로 · 오르골 받침)는 코드로만 봤다(Unity에서 본 것 아님).
+R844: 1 · 2순위 18종을 만들어 코드에 넣었다(위 맨 앞 상자). Unity 밖 컴파일(PawnRush 어셈블리)만 통과했고, 소리를 Unity에서 들은 사람은 없다. 음높이(F장조 맞추기)는 아직 안 맞췄다 — 코드의 재생 속도(단의 종 0.84배, 무대 앞 등 1.26배)만 있다. 시간 · 자리는 main의 코드에서 읽었고, seoungtest의 모델 입히기(부엌 문 · 벽난로 · 오르골 받침)는 코드로만 봤다(Unity에서 본 것 아님).

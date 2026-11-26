@@ -303,6 +303,7 @@ namespace ChessFight.PawnRush
                 fire.Crackle.maxDistance = 32f;
                 fire.Crackle.volume = 0f;
                 fire.Crackle.dopplerLevel = 0f;
+                SectionSoundGate.Gate(fire.Crackle);   // R844: heard only in the hall, times the effects volume (the gate's)
                 fire.Crackle.Play();
                 fire.Crackle.time = i * clip.length * .31f;     // out of step with each other
                 fire.NextPop = NextPopIndex(fire.Crackle.time);
@@ -313,7 +314,7 @@ namespace ChessFight.PawnRush
         void Update()
         {
             float t = Time.unscaledTime;
-            float volume = LoadingScreenView.Showing ? 0f : .3f * GameSettings.Effects;
+            float volume = LoadingScreenView.Showing ? 0f : .3f;   // R844: the effects volume is SectionSoundGate's now
             foreach (var fire in fires)
             {
                 if (fire.Crackle != null) fire.Crackle.volume = volume;
