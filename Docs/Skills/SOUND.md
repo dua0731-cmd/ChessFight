@@ -1,5 +1,17 @@
 # 폰 러쉬 스킬 효과음 — 시안 (R101 · 기물별 2차 R107) · 넣기 (R114)
 
+## R846 소드 파이트 두 소리를 옛 소리에 가깝게 다시 — 나이트 좌클릭 `SwingKnight` · 킹 반격 시작 `CastKing` (2026-11-26, 사용자가 비교 페이지에서 고름 · Unity 확인 전)
+
+**왜:** 사용자가 R845 소리를 Unity에서 듣고 "킹 왕의 반격 할 때 이전과 같은 소리가 아니고 나이트 기본 공격이 예전 같은 소리가 아니야 소드 파이트는 이것만 바꾸면 될 듯". 처음에 킹 쪽을 막기 '쿵'(`KingParry`)으로 잘못 잡아 후보를 만들었다가, 사용자 "왕의 반격 할 때 처음으로 나오는 소리" → F를 눌러 막기 자세를 잡는 순간의 `CastKing`(`SwordFightSkills.cs`의 `Raise(SfFxKind.Cast, …)`)으로 바꿈. `KingParry`는 R845 그대로.
+- **옛 소리는 되돌리지 않음:** 옛 파일은 무료 요금제에서 만든 것이라(R845의 이유) 비교용으로만 썼다(`89314acf`의 파일, 저장소에 넣지 않음).
+- **무엇이 달랐나(숫자):** `SwingKnight` 옛것 = 60 ms 동안 차오르는 공기 '휙'(1 ~ 2 kHz 중심), R845 것 = 바로 '퍽' 하는 낮은 둔한 소리(250 ~ 500 Hz). `CastKing` 옛것 = 낮은 망토 '휙'이 0.1초 차올라 둔한 '쿵'(8 kHz 위 거의 없음), R845 것 = 에너지의 60 %가 8 kHz 위인 짧은 덩어리 반복(쨍한 짤랑임) — 잘못 만들어진 테이크.
+- **생성:** ElevenLabs Sound Effects v2, 유료 요금제(R845와 같은 계정), 2026-11-26, 작업판 "R846 sword fight KingParry and SwingKnight closer to the old takes 2026-11-26" `n9NLRO39rItNgk7wKJkv`. 길이를 옛것과 같게(`duration_seconds` 0.5 · 0.8) · `prompt_influence` 0.55. 첫 회는 길이를 안 정해 2초로 나와 쓰지 않음. 약 150 크레딧.
+  - `SwingKnight`: "Single fast sword swish through the air, a quick airy whoosh that swells and passes, crisp, close-mic, no impact, no thud, no metal ring, no coins" → **1번** `insBWdKdPNOfZOFLFmty`(사용자 고름).
+  - `CastKing`: "Heavy cloak swishing around quickly, a low soft whoosh rising into one dull deep wooden thud, low and warm, close-mic, no metal, no ring, no rattle, no jingle, no coins, no high hiss" → **4번** `vdvYrvSk9T0Exd6x8hkQ`(사용자 고름).
+  - 만들었지만 쓰지 않은 `KingParry` 후보 8개도 같이 보관.
+- **넣은 곳:** `Assets/Resources/SwordFightSkillSfx/SwingKnight.mp3` · `CastKing.mp3`를 받은 그대로 덮어씀(R845 소드 파이트와 같이 후처리 없음, `.meta` · GUID 그대로). 후보 원본 `ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R846/이름_생성id.mp3`. 비교 페이지 https://claude.ai/artifact/5RGjNxzSQveXwws9P4Y3q5
+- **사용자 확인 전:** 게임 안에서 들어 본 사람 없음 — [VALIDATION R846](../Network/VALIDATION.md).
+
 ## R845 상업 사용을 위해 스킬 효과음 다시 만들기 — 15개 지움 · 68개 유료 요금제로 새로 만듦 (2026-11-26, 사용자 Unity 확인 전)
 
 **왜:** ElevenLabs 도움말에 따르면 유료 구독 밖(무료 요금제)에서 만든 효과음은 나중에 유료로 올려도 상업적으로 쓸 수 없다. 사용자는 **2026-10-29 22:42 KST**에 유료로 올렸다. 앞선 세션이 각 파일이 저장소에 처음 들어온 커밋 시각으로 나눴고(ElevenLabs 기록이 아님): 10-29 전 커밋 70개 + 10-30 00:12에 커밋된 10-29 작업 13개(22:42 전에 만든 것으로 봄) = 83개를 사용자가 "출시 불가"로 정했다. `Assets/Resources`의 다른 소리는 업그레이드 뒤에 만든 것이라 범위 밖.

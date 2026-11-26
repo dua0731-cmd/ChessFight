@@ -21,3 +21,5 @@
 떨어진 후보는 `ArtSource/SkillSfxRegen2026/takes/rejected/`에 남김(ChainPull 4 · BishopDraw 2 · CastBishop 2 · ChainRun 2 — 동전 울림).
 
 순서: `python3 process.py` → `picks.json` 확인 → `python3 process.py --install`.
+
+R846(2026-11-26): `SwingKnight` · `CastKing`은 이 표의 테이크가 아니라 옛 소리에 맞춰 다시 만든 새 테이크다(작업판 `n9NLRO39rItNgk7wKJkv`, 후보 `ArtSource/SkillSfxRegen2026/takes/SwordFightSkillSfx/R846/`, 사용자가 고름). `picks.json`의 두 항목은 R845 때 기록 그대로 둔다 — `process.py --install`을 다시 돌리면 R845 테이크로 되돌아가니 주의. 기록: [SOUND.md 'R846'](../../../Docs/Skills/SOUND.md).
