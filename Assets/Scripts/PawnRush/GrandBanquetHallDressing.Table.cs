@@ -74,7 +74,10 @@ namespace ChessFight.PawnRush
         {
             d.gameObject.AddComponent<BanquetLiftShow>().Configure(d);
             var trick = d.GetComponentInChildren<TableclothTrick>(true);
-            if (trick != null) d.gameObject.AddComponent<BanquetGuestShow>().Configure(d, trick);
+            if (trick == null) return;
+            d.gameObject.AddComponent<BanquetGuestShow>().Configure(d, trick);
+            // R849: magic on the magician's wand and on him through the trick's cue (BanquetWandShow.cs)
+            d.gameObject.AddComponent<BanquetWandShow>().Configure(d, trick);
         };
     }
 

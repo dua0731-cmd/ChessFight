@@ -615,6 +615,13 @@ namespace ChessFight.PawnRush.Editor
                 held.Add(new Held(T + u, n + "_near", trickNear, new Vector3(20f, 4.4f, 20.5f), 50f));
                 held.Add(new Held(T + u, n + "_wide", new Vector3(10.5f, 9f, 17f), new Vector3(20f, 4.9f, 25.5f), 55f));
             }
+            // R849 the magic on the magician's wand and on him (BanquetWandShow): at rest, the cue early and late, the
+            // pull's flash and burst, the throw's smaller burst (the trick: cue 3.5 .. 5.5, pulled 5.5, thrown back 8.0)
+            foreach (var (u, n) in new[] { (2.0, "wand_01_rest"), (4.2, "wand_02_cue_early"), (5.35, "wand_03_cue_late"), (5.62, "wand_04_pull"), (8.15, "wand_05_throw") })
+            {
+                held.Add(new Held(T + u, n + "_close", new Vector3(24f, 8f, 22f), new Vector3(19f, 6.2f, 15.5f), 50f));
+                held.Add(new Held(T + u, n + "_wide", new Vector3(30f, 11f, 27f), new Vector3(19f, 5.4f, 16.5f), 58f));
+            }
             // The candle flame close (11-26, BanquetShowKit.NewFlame): a table candelabrum, a wall sconce, the great
             // chandelier's rim, a hanging chandelier (its candles lit without a rider for the picture).
             held.Add(new Held(T, "candle_01_table", new Vector3(17.2f, 8f, 20.4f), new Vector3(15.25f, 7.4f, 22.4f), 42f));
@@ -657,6 +664,9 @@ namespace ChessFight.PawnRush.Editor
                 Log("      " + h.name + ": drops running " + fountainShow.Falling + ", the surface slid " + F(fountainShow.Slid % 10f) + " m");
             var guests = content.GetComponent<BanquetGuestShow>();
             if (guests != null && h.name.StartsWith("guests", StringComparison.Ordinal)) Log("      " + h.name + ": guests turned up to " + F(guests.Moved) + " deg");
+            var wand = content.GetComponent<BanquetWandShow>();
+            if (wand != null && h.name.StartsWith("wand", StringComparison.Ordinal))
+                Log("      " + h.name + ": wand bright " + F(wand.Brightness) + ", sparks shown " + wand.Sparks);
             var dais = content.GetComponent<BanquetDaisShow>();
             if (dais != null && h.name.StartsWith("dais", StringComparison.Ordinal)) Log("      " + h.name + ": confetti in the air " + dais.Falling);
             var hallShow = content.GetComponent<BanquetHallShow>();
@@ -894,6 +904,10 @@ namespace ChessFight.PawnRush.Editor
                   guests.Guests == 9 && hall.Candles > 0 && hall.Banners > 0,
                   "waiters " + waiter.Waiters + "; great chandelier candles " + great.Candles + ", crystal meshes " + great.Skinned + "; head tables' candles " +
                   dais.Candles + ", confetti " + dais.Pieces + "; guests " + guests.Guests + "; sconce candles " + hall.Candles + ", banners " + hall.Banners);
+            var wand = content.GetComponent<BanquetWandShow>();
+            Check("P19 the magician's wand is found (its tip raised beside him) and carries the magic",
+                  wand != null && wand.Found && wand.TipInFrame.y > 3f && wand.TipInFrame.y < 9f,
+                  wand == null ? "no wand show" : "tip " + wand.TipInFrame.ToString("F2") + ", bright " + F(wand.Brightness) + ", sparks " + wand.Sparks);
         }
 
         static void Pictures()
