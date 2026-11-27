@@ -22,6 +22,12 @@ namespace ChessFight.RagdollLab
         JyWordState jyWord;
         RagdollPawn jyWordWho;
         float jyWordAt = -9f;
+        Vector3 jyWordSpot;
+        /// <summary>STAGING_REVIEW 공2: every word in one look, round 1's "콰당!" (the pale ones read as small blue ink).</summary>
+        static readonly Color JyWordColor = Kit.Hex("#FF6A3D");
+
+        /// <summary>A word is up near <paramref name="p"/> (공3: the hindrance labels there wait for it).</summary>
+        bool JyWordNear(Vector3 p, float radius) => jyWord != null && !jyWord.done && Clock - jyWordAt < 0.82f && (p - jyWordSpot).magnitude < radius;
         Material jyWhite;
 
         /// <summary>The knight's horseshoe (5.2): dark gold with a glossy black edge.</summary>
@@ -40,9 +46,10 @@ namespace ChessFight.RagdollLab
             var st = jyWord = new JyWordState();
             jyWordWho = who;
             jyWordAt = Clock;
+            jyWordSpot = at;
+            color = JyWordColor;
             var text = new Text3D(root, font, word, color, 1f);
             float roll = Random.Range(-8f, 8f);
-            Vector3 off = who != null ? at - who.Hips.position : Vector3.zero;
             var f = kit.Run(0.82f, (fx, d) =>
             {
                 if (st.done) return false;
@@ -51,7 +58,7 @@ namespace ChessFight.RagdollLab
                 float t = fx.age;
                 float pop = t < 0.1f ? 1.2f * Kit.EaseOut(t / 0.1f) : t < 0.18f ? Mathf.Lerp(1.2f, 1f, (t - 0.1f) / 0.08f) : 1f;
                 float outk = Mathf.Clamp01((t - 0.6f) / 0.2f);
-                Vector3 spot = who != null ? who.Hips.position + off : at;
+                Vector3 spot = at;   // (공3: it stays where it was hit, not riding on a body flying off)
                 float dist = Mathf.Max(1f, Vector3.Distance(cam.transform.position, spot));
                 float h = 0.07f * 2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
                 Vector3 p = spot + cam.transform.right * (h * 1.5f) + cam.transform.up * (h * 0.8f);
@@ -118,7 +125,7 @@ namespace ChessFight.RagdollLab
                 float k = GiantScaleOf(who);
                 float grow = Kit.EaseOutBack(Mathf.Clamp01(fx.age / 0.15f)) * (1f - Mathf.Clamp01((fx.age - seconds + 0.2f) / 0.2f));
                 Vector3 head = DrawnHead(who), up = HeadUp(who), face = FlatDir(who.Facing);
-                CmPlace(bump, head + up * (0.16f * k) + face * (0.1f * k), Quaternion.identity, Vector3.one * (0.13f * k * Mathf.Max(0.02f, grow)));
+                CmPlace(bump, head + up * (0.17f * k) + face * (0.11f * k), Quaternion.identity, Vector3.one * (0.22f * k * Mathf.Max(0.02f, grow)));
                 return true;
             });
             f.props.Add(bump);
@@ -273,12 +280,15 @@ namespace ChessFight.RagdollLab
             JyBump(by, 1.6f);
             if (who != null) JyBump(who, 2f);
             UltClip(UltClipId.Wah, 0.35f * lvl, 1.7f, 0.25f);   // ("아야")
-            kit.Run(0.4f, (fx, d) =>
+            kit.Run(0.9f, (fx, d) =>
             {
                 if (by == null) return false;
-                if (fx.age > 0.1f) WantPose(by, Quaternion.AngleAxis(14f * Mathf.Sin((fx.age - 0.1f) * 40f) * (1f - fx.age / 0.4f), Vector3.up), false);
+                // (STAGING_REVIEW 3.1: the aftertaste - a dazed head shake, then a rub)
+                if (fx.age > 0.15f) WantPose(by, Quaternion.AngleAxis(22f * Mathf.Sin((fx.age - 0.15f) * 30f) * (1f - fx.age / 0.9f), Vector3.up)
+                                             * Quaternion.AngleAxis(8f * Mathf.Sin(fx.age * 11f) * (1f - fx.age / 0.9f), FlatDir(by.Facing)), false);
                 return true;
             });
+            if (by != null) kit.AddSquash(by, Kit.SquashKind.Flatten, 0.08f);
         }
 
         // ---------------------------------------------------------------- 폰: 앙파상-밧줄
@@ -369,8 +379,8 @@ namespace ChessFight.RagdollLab
             float spin = Params != null ? Mathf.Max(0.1f, Params.jyRopeSpin) : 1f;
             var coil = CmProp(kit.meshTorus, HempRope, "Rope coil", 0.012f);
             var knot = CmProp(kit.meshBall, HempRope, "Rope knot", 0.014f);
-            var span = new RopeSpan(this, "Rope line");
-            var ribbon = new Kit.Strip(kit, HempRope) { core = HempRope.light, coreShare = 0.4f, inkShare = 0.12f };
+            var span = new RopeSpan(this, "Rope line", 0.07f, 0.016f);   // (STAGING_REVIEW 공1: 7 cm, inked, its twist seen)
+            var ribbon = new Kit.Strip(kit, HempRope) { core = HempRope.light, coreShare = 0.4f, inkShare = 0.2f };
             var pts = new List<Vector3>(24);
             bool flashed = false;
             int bounces = 0;
@@ -412,7 +422,7 @@ namespace ChessFight.RagdollLab
                         // Held: a coil at the hand, the knot hanging under it.
                         CmPlace(coil, hand + Vector3.down * 0.05f, Quaternion.LookRotation(FlatDir(by.Facing), Vector3.up), Vector3.one * 0.2f);
                         Vector3 k = hand + Vector3.down * (0.32f + 0.03f * Mathf.Sin(fx.age * 5f));
-                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.15f);
+                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.26f);
                         span.Place(hand, k, 0.02f, 1f);
                         ribbon.Hide();
                         break;
@@ -425,17 +435,18 @@ namespace ChessFight.RagdollLab
                         float a = (Clock - look.swingAt) * speed;
                         Vector3 centre = head + Vector3.up * 0.45f;
                         Vector3 k = centre + new Vector3(Mathf.Cos(a), 0.05f * Mathf.Sin(a * 2f), Mathf.Sin(a)) * r;
-                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.15f);
+                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.26f);
                         coil.Show(false);
                         span.Place(hand, k, 0.03f, 1f);
                         pts.Clear();
-                        for (int i = 0; i <= 10; i++)
+                        // (STAGING_REVIEW 3.1: the whole circle shows, a ribbon behind the knot most of the way round)
+                        for (int i = 0; i <= 20; i++)
                         {
-                            float b = a - i * 0.18f;
-                            pts.Add(centre + new Vector3(Mathf.Cos(b), 0f, Mathf.Sin(b)) * r);
+                            float b = a - i * 0.26f;
+                            pts.Add(centre + new Vector3(Mathf.Cos(b), 0.05f * Mathf.Sin(b * 2f), Mathf.Sin(b)) * r);
                         }
-                        ribbon.Build(pts, i => 0.12f * (1f - i / 10f), kit.Eye);
-                        ribbon.fade = 0.55f;
+                        ribbon.Build(pts, i => 0.17f * (1f - i / 22f), kit.Eye);
+                        ribbon.fade = 0.85f;
                         ribbon.Apply();
                         if (Clock - lastWhoosh > Mathf.Lerp(0.32f, 0.12f, c))
                         {
@@ -456,7 +467,7 @@ namespace ChessFight.RagdollLab
                         float t = Clock - look.flyAt;
                         Vector3 k = look.from + look.v0 * t + Vector3.down * (0.5f * Mathf.Max(0.01f, -Physics.gravity.y) * t * t);
                         look.knot = k;
-                        CmPlace(knot, k, Quaternion.Euler(t * 700f, 0f, 0f), Vector3.one * 0.17f);
+                        CmPlace(knot, k, Quaternion.Euler(t * 700f, 0f, 0f), Vector3.one * 0.28f);
                         span.Place(hand, k, Mathf.Lerp(0.6f, 0.15f, Mathf.Clamp01(t / 0.4f)) * (1f + 0.3f * Mathf.Sin(t * 30f)), 1f);
                         ribbon.Hide();
                         if (t > 3.5f) look.phase = 5;
@@ -472,7 +483,7 @@ namespace ChessFight.RagdollLab
                             break;
                         }
                         Vector3 waist = who.Hips.position + Vector3.up * 0.05f;
-                        CmPlace(knot, waist + FlatDir(hand - waist) * 0.3f, Quaternion.identity, Vector3.one * 0.15f);
+                        CmPlace(knot, waist + FlatDir(hand - waist) * 0.3f, Quaternion.identity, Vector3.one * 0.26f);
                         CmPlace(coil, waist, Quaternion.identity, new Vector3(0.36f, 0.18f, 0.36f) * GiantScaleOf(who));
                         span.Place(hand, waist + FlatDir(hand - waist) * 0.3f, 0.01f, 1f);
                         // Heels dug in: dust out of its feet as it is dragged.
@@ -493,7 +504,7 @@ namespace ChessFight.RagdollLab
                         if (t > 0.1f * (bounces + 1) && bounces < 2) bounces++;
                         float back = Mathf.Clamp01((t - 0.3f) / 0.8f);
                         Vector3 k = Vector3.Lerp(look.knot + Vector3.up * Mathf.Max(0f, hop), hand, back * back);
-                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.15f);
+                        CmPlace(knot, k, Quaternion.identity, Vector3.one * 0.26f);
                         span.Place(hand, k, 0.15f * (1f - back), 1f);
                         ribbon.Hide();
                         if (back >= 1f) look.phase = 5;
@@ -562,13 +573,18 @@ namespace ChessFight.RagdollLab
             // The pawn goes on dusting its hands (a little puff at each).
             if (by != null)
             {
-                kit.Run(0.5f, (fx, d) =>
+                // (STAGING_REVIEW 3.1: it hops once, clapping two clouds of dust off its hands as it goes on)
+                bool dusted = false;
+                kit.Run(0.6f, (fx, d) =>
                 {
                     if (by == null) return false;
-                    if (Random.value < 0.25f)
+                    float hop = Mathf.Clamp01((fx.age - 0.25f) / 0.3f);
+                    if (hop > 0f && hop < 1f) WantStretch(by, new Vector3(1f, 1f + 0.18f * Mathf.Sin(hop * Mathf.PI), 1f));
+                    if (!dusted && fx.age > 0.3f)
                     {
-                        CmPoof(by.bodies[(int)BodyId.HandL].position, CmDust, 1, 0.1f, 0.12f, 0.3f, 0.2f);
-                        CmPoof(by.bodies[(int)BodyId.HandR].position, CmDust, 1, 0.1f, 0.12f, 0.3f, 0.2f);
+                        dusted = true;
+                        CmPoof(by.bodies[(int)BodyId.HandL].position, CmDust, 4, 0.25f, 0.22f, 0.45f, 0.3f);
+                        CmPoof(by.bodies[(int)BodyId.HandR].position, CmDust, 4, 0.25f, 0.22f, 0.45f, 0.3f);
                     }
                     return true;
                 });
@@ -736,6 +752,8 @@ namespace ChessFight.RagdollLab
         void JyHorseshoeMarkFx(RagdollPawn by, JyMark mark)
         {
             var shoe = CmProp(SkillMeshes.Horseshoe(), CmShoeGold, "Stomp mark", 0.02f);
+            var holes = CmProp(SkillMeshes.HorseshoeHoles(), CmIron, "Stomp mark holes", 0.004f);
+            var badge = new Kit.Tile(kit, "Stomp badge");   // (STAGING_REVIEW 3.1: a badge, never a hook from the side)
             var ring = new Kit.Strip(kit, CmRed) { core = CmRed.light, coreShare = 0.3f, inkShare = 0.3f };
             var cell = new Kit.Tile(kit, "Stomp cell");
             var pts = new List<Vector3>(25);
@@ -748,7 +766,24 @@ namespace ChessFight.RagdollLab
                 Vector3 c = DrawnHead(who) + Vector3.up * (0.4f + 0.2f * k);
                 var cam = ViewCamera;
                 Quaternion facing = cam != null ? Quaternion.FromToRotation(Vector3.up, -cam.transform.forward) : Quaternion.Euler(-60f, 0f, 0f);
-                CmPlace(shoe, c, facing * Quaternion.Euler(0f, 180f + 20f * Mathf.Sin(fx.age * 2.2f), 0f), Vector3.one * (size * 0.85f));
+                Quaternion shoeTurn = facing * Quaternion.Euler(0f, 180f + 8f * Mathf.Sin(fx.age * 2.2f), 0f);
+                CmPlace(shoe, c, shoeTurn, Vector3.one * (size * 0.85f));
+                CmPlace(holes, c, shoeTurn, Vector3.one * (size * 0.85f));
+                if (cam != null)
+                {
+                    badge.Facing(c - cam.transform.forward * 0.03f, -cam.transform.forward, Vector2.one * (size * 0.95f));
+                    badge.shape = 1f;
+                    badge.inner = 0f;
+                    badge.fill = Kit.A(Kit.Hex("#7A5A18"), 0.95f);
+                    badge.ink = Kit.A(Kit.Hex("#0B0906"), 1f);
+                    badge.inkWidth = 0.05f;
+                    badge.core = Color.clear;
+                    badge.rim = Kit.A(Color.white, 0.35f);
+                    badge.rimWidth = 0.03f;
+                    badge.stripe = Color.clear;
+                    badge.fade = 1f;
+                    badge.Apply();
+                }
                 if (mark.lit)
                 {
                     float beat = 1f + 0.12f * Mathf.Sin(fx.age * 14f);
@@ -781,8 +816,10 @@ namespace ChessFight.RagdollLab
                 return true;
             });
             f.props.Add(shoe);
+            f.props.Add(holes);
             f.strips.Add(ring);
             f.tiles.Add(cell);
+            f.tiles.Add(badge);
         }
 
         /// <summary>The fork's shackle: a horseshoe-shaped iron round its ankles, staked into the floor, as long as it is tied.</summary>

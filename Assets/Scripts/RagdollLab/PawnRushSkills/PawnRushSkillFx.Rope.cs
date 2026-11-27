@@ -141,14 +141,16 @@ namespace ChessFight.RagdollLab
         {
             readonly Kit.Prop prop;
             readonly Mesh mesh;
+            readonly float thick;
             Vector3 builtFrom, builtTo;
             float builtSag = -1f;
 
-            public RopeSpan(PawnRushSkillFx fx, string name)
+            public RopeSpan(PawnRushSkillFx fx, string name, float thick = RopeThick, float ink = 0.008f)
             {
                 mesh = new Mesh { name = name };
                 mesh.MarkDynamic();
-                prop = fx.RopeProp(mesh, name);
+                this.thick = thick;
+                prop = fx.RopeProp(mesh, name, ink);
                 prop.Show(false);
             }
 
@@ -161,7 +163,7 @@ namespace ChessFight.RagdollLab
                 }
                 if (builtSag < 0f || (from - builtFrom).sqrMagnitude > 4e-6f || (to - builtTo).sqrMagnitude > 4e-6f || Mathf.Abs(sag - builtSag) > 0.002f)
                 {
-                    RopeLine(mesh, from, to, sag, RopeThick, false);
+                    RopeLine(mesh, from, to, sag, thick, false);
                     builtFrom = from;
                     builtTo = to;
                     builtSag = sag;

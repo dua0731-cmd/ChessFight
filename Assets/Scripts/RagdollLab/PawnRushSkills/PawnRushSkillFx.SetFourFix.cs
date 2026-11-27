@@ -31,6 +31,13 @@ namespace ChessFight.RagdollLab
         readonly Dictionary<RagdollPawn, S4ReturnLook> s4Returns = new Dictionary<RagdollPawn, S4ReturnLook>();
         Font s4Glyphs;
 
+        /// <summary>STAGING_REVIEW 공4: a grade stamp waits while the piece's skill is under way or it is on its way back.</summary>
+        void HookStampHold()
+        {
+            var me = this;
+            SkillGradeStamps.HoldFor = p => me != null && p != null && (p.PlanBusy || me.s4Returns.ContainsKey(p));
+        }
+
         void SetFourFixFx(SkillFxEvent e, float lvl)
         {
             switch (e.kind)
@@ -62,6 +69,7 @@ namespace ChessFight.RagdollLab
                     // The print, until the piece is back.
                     if (s4Returns.TryGetValue(by, out var old)) old.done = true;
                     var look = new S4ReturnLook { print = Ground(e.at + Vector3.up * 0.5f) + Vector3.up * 0.03f, face = FlatDir(e.dir), since = Clock };
+                    float printSize = skill == 4 ? 2.2f : 1.1f;   // (the giant's: big, as STAGING_REVIEW 3.1 asks)
                     s4Returns[by] = look;
                     bool ours = Viewer != null && Viewer.Team == by.Team && by.Team != Teams.None;
                     var pal = ours ? CmTeal : CmRed;
@@ -74,7 +82,7 @@ namespace ChessFight.RagdollLab
                         if (look.done || by == null) return false;
                         float t = Clock - look.since, pulse = 0.5f + 0.5f * Mathf.Sin(t * 5f);
                         float grow = Kit.EaseOutBack(Mathf.Clamp01(t / 0.25f));
-                        ring.Floor(look.print, look.face, Vector2.one * (1.1f * grow));
+                        ring.Floor(look.print, look.face, Vector2.one * (printSize * grow));
                         ring.shape = 1f;
                         ring.inner = 0.72f;
                         ring.fill = Kit.A(pal.main, 0.55f + 0.25f * pulse);
@@ -87,7 +95,7 @@ namespace ChessFight.RagdollLab
                         ring.Apply();
                         if (glyph != null)
                         {
-                            glyph.Place(look.print + Vector3.up * 0.02f, null, Mathf.Max(0.01f, grow), 0.7f + 0.3f * pulse);
+                            glyph.Place(look.print + Vector3.up * 0.02f, null, Mathf.Max(0.01f, grow * printSize / 1.1f), 0.7f + 0.3f * pulse);
                             glyph.root.rotation = Quaternion.LookRotation(Vector3.down, look.face);
                         }
                         return true;
@@ -136,6 +144,7 @@ namespace ChessFight.RagdollLab
                     if (!s4Returns.TryGetValue(by, out var look)) return;
                     look.phase = 2;
                     float fly = Mathf.Max(0.05f, e.size);
+                    if (skill == 4) break;   // (the giant flies home as a balloon let go: PawnRushSkillFx.SetFourJYC.cs)
                     UltClip(UltClipId.Wah, 0.7f * lvl, 0.75f);   // ("띠용—")
                     JyWord("띠용—", by.Hips.position, JyWordWhite, by);
                     kit.Run(fly + 0.05f, (fx, d) =>

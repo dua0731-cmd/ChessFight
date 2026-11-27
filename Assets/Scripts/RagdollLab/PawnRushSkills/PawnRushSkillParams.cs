@@ -1204,6 +1204,8 @@ namespace ChessFight.RagdollLab
         [Tooltip("준비 (초), 크기 (배), 커지기 (초), 길이 (초)")]
         public float jyGiantPrep = 0.5f, jyGiantScale = 4f, jyGiantGrow = 0.5f, jyGiantSeconds = 8f;
         [Header("JY · 룩 힘세지기 (상급)")]
+        [Tooltip("거대화가 끝나 바람 빠진 풍선처럼 쓴 자리로 날아 돌아오는 시간 (초, 연출 견주기 3.1)")]
+        public float jyGiantDeflate = 0.8f;
         [Tooltip("준비 (초), 길이 (초), 크기 (배), 밀리는 거리 (몫), 빠르기 (몫), 집는 거리 (m), 던지는 거리 (m), 던지는 높이 (m), 빠져나오기 (초)")]
         public float jyStrongPrep = 0.3f, jyStrongSeconds = 15f, jyStrongScale = 1.5f, jyStrongPush = 0.3f, jyStrongMove = 0.9f, jyStrongReach = 2f, jyStrongThrow = 4f, jyStrongThrowHigh = 1.5f, jyStrongEscape = 3f;
         [Header("JY · 룩 벨코즈 q 성벽 (중급) · 성벽 짓기 (상급)")]

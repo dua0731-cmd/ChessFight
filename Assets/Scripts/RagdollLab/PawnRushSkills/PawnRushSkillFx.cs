@@ -1424,6 +1424,7 @@ namespace ChessFight.RagdollLab
                 tm.color = c;
                 var mr = go.GetComponent<MeshRenderer>();
                 mr.sharedMaterial = font.material;
+                mr.sortingOrder = index < 0 ? 2 : 1;   // (STAGING_REVIEW 공2: the colour over its ink, at any distance)
                 mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 if (index >= 0)
                 {

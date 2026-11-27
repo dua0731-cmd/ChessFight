@@ -83,6 +83,7 @@ namespace ChessFight.RagdollLab
                         break;
                     }
                     SkillUses++;
+                    MarkHome4(4);   // (STAGING_REVIEW 3.1: the big print where it grew, as the way back's)
                     jyGiantHome = FeetPoint;
                     jyGiantFace = FlatDir(facing);
                     jyKicked.Clear();
@@ -120,17 +121,18 @@ namespace ChessFight.RagdollLab
                         Fx(SkillFxKind.JyGiant, o, o.Chest, away, 2);
                     }
                     if (planTime < s.jyGiantSeconds) break;
-                    // Over: it shrinks back to where it grew.
+                    // Over: let go like a balloon, it flies back shrinking into where it grew (the way back's flight).
                     Vector3 was = FeetPoint;
-                    Teleport(jyGiantHome + Vector3.up * standHeight, jyGiantFace);
-                    Fx(SkillFxKind.JyGiant, null, jyGiantHome, jyGiantFace, 3, 0.5f, was);
+                    Fx(SkillFxKind.JyGiant, null, jyGiantHome, jyGiantFace, 3, s.jyGiantDeflate, was);
+                    FlyHomeNow4(s.jyGiantDeflate);
+                    if (ret4Stage == Ret4None) Teleport(jyGiantHome + Vector3.up * standHeight, jyGiantFace);   // (on a client's copy)
                     planPhase = PlanPhase.Recovery;
                     planTime = 0f;
                     break;
                 }
                 case PlanPhase.Recovery:
                     planTime += dt;
-                    if (planTime < 0.3f) break;
+                    if (planTime < s.jyGiantDeflate + 0.1f) break;
                     EndPlanSkill();
                     StartCooldown(SetFourCooldown(PawnRushSkillIds.Giant, s));
                     break;
@@ -239,8 +241,10 @@ namespace ChessFight.RagdollLab
                 // Thrown: 4 m ahead along the aim, 1.5 m up, down it goes where it lands.
                 Vector3 to = FeetPoint + AimFlat() * s.jyStrongThrow;
                 o.EndFlight();
-                Vector3 v = ArcTo4(o.FeetPoint, to, s.jyStrongThrowHigh, out _);
+                float arcTop = Mathf.Max(0.2f, FeetPoint.y + s.jyStrongThrowHigh - Mathf.Max(o.FeetPoint.y, to.y));
+                Vector3 v = ArcTo4(o.FeetPoint, to, arcTop, out _);   // (STAGING_REVIEW 3.1: no higher than the spec's 1.5 m)
                 SkillHit(o, v, true, "힘세지기 (던지기)");
+                o.Launch(v);   // (the arc exactly: the hit's own push added to it)
                 Fx(SkillFxKind.JyStrong, o, o.Chest, AimFlat(), 3);
                 FeelHit(o, o.Chest, AimFlat(), FeelHard);
                 jyThrown = o;

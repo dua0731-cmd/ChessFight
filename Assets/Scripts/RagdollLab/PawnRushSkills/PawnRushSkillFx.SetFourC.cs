@@ -564,19 +564,21 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        static readonly Kit.Palette CmSandJoint = new Kit.Palette("#C9A774", "#E2C79A", "#A88450", "#5A4024");
+
         void S4LiftFx(SkillFxEvent e, float lvl)
         {
             float wide = Params != null ? Params.liftWide : 3f, tall = Params != null ? Params.liftTall : 4f, rise = Params != null ? Params.liftRise : 0.5f;
             float stand = Mathf.Max(0.3f, e.size), delay = Mathf.Max(0f, e.normal.x);   // (9.1: up once the rook is aside)
             Vector3 foot = e.at;
-            var tower = CmProp(S4cCylinderMesh(), CmKeep, "Lift tower", 0.016f);
+            var tower = CmProp(S4cCylinderMesh(), CmSand, "Lift tower", 0.02f);   // (STAGING_REVIEW 3.2: the walls' stone)
             const int N = 12;   // (USER_SKILLS 9.1: the battlements wall the top in; they rise as it does)
             var merlons = new Kit.Prop[N];
-            for (int i = 0; i < N; i++) merlons[i] = CmProp(S4CapMesh(), CmKeep, "Lift battlement", 0.014f);
+            for (int i = 0; i < N; i++) merlons[i] = CmProp(S4CapMesh(), CmSand, "Lift battlement", 0.014f);
             // A plinth at its foot and a cornice under the battlements; four dark windows half way up.
-            float[] courses = { 0.04f, 0.9f };
+            float[] courses = { 0.04f, 0.17f, 0.3f, 0.43f, 0.56f, 0.69f, 0.82f, 0.9f };   // (brick courses)
             var bands = new Kit.Prop[courses.Length];
-            for (int i = 0; i < bands.Length; i++) bands[i] = CmProp(S4cCylinderMesh(), CmKeepDark, "Lift course", 0.01f);
+            for (int i = 0; i < bands.Length; i++) bands[i] = CmProp(S4cCylinderMesh(), i == 0 || i == bands.Length - 1 ? CmKeepDark : CmSandJoint, "Lift course", 0.004f);
             var windows = new Kit.Prop[4];
             for (int i = 0; i < windows.Length; i++) windows[i] = CmProp(S4cCylinderMesh(), CmHole, "Lift window", 0.008f);
             CmPoof(foot + Vector3.up * 0.2f, CmDust, 10, wide * 0.7f, 0.4f, 0.5f, 0.4f);
@@ -599,7 +601,8 @@ namespace ChessFight.RagdollLab
                 {
                     float y = top - tall + tall * courses[i];
                     if (y < 0.02f) { bands[i].Show(false); continue; }
-                    CmPlace(bands[i], foot + Vector3.up * y, Quaternion.identity, new Vector3(wide * 0.5f + 0.05f, 0.22f, wide * 0.5f + 0.05f));
+                    bool edge = i == 0 || i == bands.Length - 1;
+                    CmPlace(bands[i], foot + Vector3.up * y, Quaternion.identity, edge ? new Vector3(wide * 0.5f + 0.05f, 0.22f, wide * 0.5f + 0.05f) : new Vector3(wide * 0.5f + 0.008f, 0.03f, wide * 0.5f + 0.008f));
                 }
                 for (int i = 0; i < windows.Length; i++)
                 {

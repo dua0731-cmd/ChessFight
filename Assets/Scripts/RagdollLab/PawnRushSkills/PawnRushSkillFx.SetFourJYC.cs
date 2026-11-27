@@ -50,6 +50,7 @@ namespace ChessFight.RagdollLab
         /// <summary>Every frame (UltGiants): the walls learn whose side this PC is on and where to send their tumbling.</summary>
         void JyWallsEachFrame()
         {
+            if (SkillGradeStamps.HoldFor == null) HookStampHold();
             var v = Viewer;
             PawnRushKitWall.ViewerTeam = v != null ? (int)v.Team : -1;
             PawnRushKitWall.OnCrumble = JyWallCrumbleFx;
@@ -58,7 +59,7 @@ namespace ChessFight.RagdollLab
         /// <summary>A wall tumbling down: stone-coloured dust along it and three or four bricks bouncing off and popping.</summary>
         void JyWallCrumbleFx(PawnRushKitWall w, Vector3 a, Vector3 b)
         {
-            if (w == null || kit == null) return;
+            if (w == null || kit == null || w.Hidden) return;
             float len = Flat(b - a).magnitude;
             int n = Mathf.Clamp(Mathf.CeilToInt(len / 1.5f), 1, 10);
             for (int i = 0; i <= n; i++) CmPoof(Vector3.Lerp(b, a, i / (float)n) + Vector3.up * 0.6f, CmRock, 2, 0.7f, 0.42f, 0.55f, 0.35f);
@@ -202,18 +203,23 @@ namespace ChessFight.RagdollLab
                     if (by == null) return;
                     if (jyGiants.TryGetValue(by, out var look)) look.phase = 2;
                     // Let go like a balloon: flapping and shrinking back into its footprint.
-                    Vector3 was = e.normal, home = Ground(e.at + Vector3.up * 0.5f);
+                    float deflate = Mathf.Max(0.3f, e.size);
                     UltClip(UltClipId.Wind, 0.8f * lvl, 1.6f);
-                    UltClip(UltClipId.Swell, 0.7f * lvl, 2.2f, 0.45f);   // ("푸슈우우욱… 뽁")
-                    for (int i = 0; i <= 6; i++) CmPoof(Vector3.Lerp(was, home, i / 6f) + Vector3.up * (1.5f + Mathf.Sin(i / 6f * Mathf.PI) * 2f), CmWhite, 1, 0.3f, 0.3f, 0.5f, 0.2f);
-                    kit.Run(0.5f, (fx, d) =>
+                    UltClip(UltClipId.Swell, 0.7f * lvl, 2.2f, deflate - 0.1f);   // ("푸슈우우욱… 뽁")
+                    JyWord("푸슈우우욱", by.Hips.position + Vector3.up * 1.5f, JyWordColor);
+                    // (STAGING_REVIEW 3.1: no white blink - it flaps about, shrinking, as it is pulled back into its print, a
+                    // puff of air out behind it all the way)
+                    kit.Run(deflate, (fx, d) =>
                     {
                         if (by == null) return false;
-                        float t = fx.age / 0.5f;
-                        WantGiant(by, Mathf.Lerp(scale * 0.6f, 1f, Kit.EaseIn(t)), 60f);
-                        WantPose(by, Quaternion.Euler(30f * Mathf.Sin(fx.age * 37f) * (1f - t), 0f, 30f * Mathf.Cos(fx.age * 29f) * (1f - t)), true);
+                        float t = Mathf.Clamp01(fx.age / deflate);
+                        WantGiant(by, Mathf.Lerp(scale, 1f, Kit.EaseIn(t)), 60f);
+                        float flap = 1f - 0.6f * t;
+                        WantPose(by, Quaternion.Euler(38f * Mathf.Sin(fx.age * 31f) * flap, fx.age * 540f, 34f * Mathf.Cos(fx.age * 23f) * flap), true);
+                        WantStretch(by, new Vector3(1f + 0.15f * Mathf.Sin(fx.age * 40f), 1f - 0.12f * Mathf.Sin(fx.age * 40f), 1f));
+                        if (Random.value < 0.5f) CmPoof(by.Hips.position - FlatDir(by.Facing) * 0.4f * GiantScaleOf(by), CmWhite, 1, 0.25f, 0.28f, 0.4f, 0.1f);
                         return true;
-                    }).end = () => { if (by != null) CmPoof(by.FeetPoint + Vector3.up * 0.2f, CmWhite, 3, 0.4f, 0.24f, 0.35f, 0.3f); };
+                    }).end = () => { if (by != null) CmPoof(by.FeetPoint + Vector3.up * 0.2f, CmWhite, 4, 0.5f, 0.26f, 0.35f, 0.3f); };
                     break;
                 }
             }
@@ -264,6 +270,7 @@ namespace ChessFight.RagdollLab
                 }
                 // Where it grew: a glowing footprint and its ring running down.
                 foot.Floor(home + Vector3.up * 0.03f, Vector3.forward, Vector2.one * 0.9f);
+                foot.fade = 0f;   // (STAGING_REVIEW 3.1: the way back's big print stands there instead)
                 foot.shape = 1f;
                 foot.inner = 0f;
                 foot.fill = Kit.A(CmGold.light, 0.55f + 0.2f * Mathf.Sin(t * 6f));
@@ -272,7 +279,6 @@ namespace ChessFight.RagdollLab
                 foot.core = Color.clear;
                 foot.rim = Color.clear;
                 foot.stripe = Color.clear;
-                foot.fade = 1f;
                 foot.Apply();
                 float share = Mathf.Clamp01(last / seconds);
                 pts.Clear();
@@ -280,9 +286,9 @@ namespace ChessFight.RagdollLab
                 for (int i = 0; i <= n; i++)
                 {
                     float a = Mathf.PI * 0.5f - i * Mathf.PI * 2f * share / n;
-                    pts.Add(home + new Vector3(Mathf.Cos(a), 0.05f, Mathf.Sin(a)) * 0.75f);
+                    pts.Add(home + new Vector3(Mathf.Cos(a), 0.05f, Mathf.Sin(a)) * 1.3f);
                 }
-                timer.Build(pts, i => 0.06f, kit.Eye, true);
+                timer.Build(pts, i => 0.09f, kit.Eye, true);
                 timer.Apply();
                 return true;
             });

@@ -55,6 +55,9 @@ namespace ChessFight.RagdollLab
             public float born;
         }
         readonly List<Piece> pieces = new List<Piece>();
+        // The wall as one once it has all risen (STAGING_REVIEW 3.1: its metres read as stakes in a row).
+        Transform wholeBody, wholeInk, wholeBand;
+        Renderer wholeBodyR, wholeBandR;
         MaterialPropertyBlock mpb;   // (made on first use: no Unity objects in a component's field initializers)
         static Material brickMat, brickClearMat, inkMat, bandRedMat, bandTealMat;
         static Texture2D brickTex, stripeTex;
@@ -209,13 +212,13 @@ namespace ChessFight.RagdollLab
             const int N = 128;
             brickTex = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "Wall bricks", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear };
             var px = new Color32[N * N];
-            var mortar = new Color32(92, 66, 44, 255);
+            var mortar = new Color32(196, 164, 116, 255);   // (STAGING_REVIEW 3.1: one step darker than the bricks, fine)
             var rnd = new System.Random(7);
             var tints = new Color32[16];
             for (int i = 0; i < tints.Length; i++)
             {
-                float k = 0.9f + 0.18f * (float)rnd.NextDouble();
-                tints[i] = new Color32((byte)Mathf.Clamp(222 * k, 0, 255), (byte)Mathf.Clamp(186 * k, 0, 255), (byte)Mathf.Clamp(128 * k, 0, 255), 255);
+                float k = 0.94f + 0.08f * (float)rnd.NextDouble();
+                tints[i] = new Color32((byte)Mathf.Clamp(240 * k, 0, 255), (byte)Mathf.Clamp(216 * k, 0, 255), (byte)Mathf.Clamp(168 * k, 0, 255), 255);
             }
             for (int y = 0; y < N; y++)
             {
@@ -225,9 +228,9 @@ namespace ChessFight.RagdollLab
                 for (int x = 0; x < N; x++)
                 {
                     int xs = (x + shift) % N, col = xs / (N / 2), xIn = xs % (N / 2);
-                    bool joint = yIn < 3 || xIn < 3;
+                    bool joint = yIn < 2 || xIn < 2;
                     var c = joint ? mortar : tints[(row * 2 + col) % tints.Length];
-                    if (!joint && (yIn == 3 || xIn == 3)) c = new Color32((byte)(c.r * 0.9f), (byte)(c.g * 0.9f), (byte)(c.b * 0.9f), 255);
+                    if (!joint && (yIn == 2 || xIn == 2)) c = new Color32((byte)(c.r * 0.95f), (byte)(c.g * 0.95f), (byte)(c.b * 0.95f), 255);
                     px[y * N + x] = c;
                 }
             }
@@ -259,6 +262,13 @@ namespace ChessFight.RagdollLab
             {
                 if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", tex);
                 m.mainTexture = tex;
+                // (STAGING_REVIEW 3.1: a wall turned from the sun went dark brown - a little of its own colour glows)
+                if (m.HasProperty("_EmissionColor"))
+                {
+                    m.EnableKeyword("_EMISSION");
+                    if (m.HasProperty("_EmissionMap")) m.SetTexture("_EmissionMap", tex);
+                    m.SetColor("_EmissionColor", color * 0.32f);
+                }
             }
             return m;
         }
@@ -336,6 +346,10 @@ namespace ChessFight.RagdollLab
             bool ours = Owner != null && ViewerTeam >= 0 && Owner.Team == ViewerTeam;
             float now = Time.time;
             float shake = Standing && left < 1f ? 0.03f : 0f;
+            // Settled: every piece up a while, none going down, no shaking - then one body.
+            bool settled = crumbleAt < 0f && shake <= 0f && (left > 0f || risen >= 1f);
+            for (int i = 0; i < n && settled; i++)
+                if (i >= pieces.Count || now - pieces[i].born < 0.35f) settled = false;
             for (int i = 0; i < pieces.Count; i++)
             {
                 var p = pieces[i];
@@ -369,9 +383,12 @@ namespace ChessFight.RagdollLab
                 p.root.localPosition = new Vector3(0f, 0f, -length * 0.5f + start + w * 0.5f) + jitter;
                 p.body.localScale = new Vector3(thick, h, w);
                 p.body.localPosition = new Vector3(0f, h * 0.5f, 0f);
-                p.inkBody.localScale = new Vector3(thick + 0.07f, h + 0.06f, w + 0.05f);
-                p.inkBody.localPosition = p.body.localPosition;
-                float th = Mathf.Min(0.38f, h * 0.25f), tw = w * 0.5f;
+                // The ink round the whole wall, not round each metre (STAGING_REVIEW 3.1: no stakes in a row): a piece's
+                // ink reaches past it only at the wall's two ends.
+                float inkFront = i == 0 ? 0.025f : 0f, inkBack = i == n - 1 ? 0.025f : 0f;
+                p.inkBody.localScale = new Vector3(thick + 0.07f, h + 0.06f, w + inkFront + inkBack);
+                p.inkBody.localPosition = p.body.localPosition + new Vector3(0f, 0f, (inkBack - inkFront) * 0.5f);
+                float th = Mathf.Min(0.32f, h * 0.2f), tw = w * 0.45f;
                 p.top.localScale = new Vector3(thick * 0.92f, th, tw);
                 p.top.localPosition = new Vector3(0f, h + th * 0.5f, 0f);
                 p.inkTop.localScale = new Vector3(thick * 0.92f + 0.06f, th + 0.05f, tw + 0.05f);
@@ -379,6 +396,9 @@ namespace ChessFight.RagdollLab
                 float bh = Mathf.Min(0.28f, h * 0.3f);
                 p.band.localScale = new Vector3(thick + 0.04f, bh, w);
                 p.band.localPosition = new Vector3(0f, bh * 0.5f, 0f);
+                p.body.gameObject.SetActive(!settled);
+                p.inkBody.gameObject.SetActive(!settled);
+                p.band.gameObject.SetActive(!settled);
                 var bodyMat = ours ? brickClearMat : brickMat;
                 if (p.bodyR.sharedMaterial != bodyMat)
                 {
@@ -398,6 +418,50 @@ namespace ChessFight.RagdollLab
                 mpb.SetVector("_MainTex_ST", new Vector4(w * 2f, 1f, -now * 0.8f, 0f));
                 p.bandR.SetPropertyBlock(mpb);
             }
+            FitWhole(settled, length, ours, now);
+        }
+
+        void FitWhole(bool on, float length, bool ours, float now)
+        {
+            if (!on)
+            {
+                if (wholeBody != null)
+                {
+                    wholeBody.gameObject.SetActive(false);
+                    wholeInk.gameObject.SetActive(false);
+                    wholeBand.gameObject.SetActive(false);
+                }
+                return;
+            }
+            if (wholeBody == null)
+            {
+                wholeBody = Cube(picture, brickMat, "Wall bricks (whole)", out wholeBodyR);
+                wholeInk = Cube(picture, inkMat, "Wall ink (whole)", out _);
+                wholeBand = Cube(picture, bandRedMat, "Wall band (whole)", out wholeBandR);
+            }
+            wholeBody.gameObject.SetActive(true);
+            wholeInk.gameObject.SetActive(true);
+            wholeBand.gameObject.SetActive(true);
+            float h = height;
+            wholeBody.localScale = new Vector3(thick, h, length);
+            wholeBody.localPosition = new Vector3(0f, h * 0.5f, 0f);
+            wholeInk.localScale = new Vector3(thick + 0.07f, h + 0.06f, length + 0.05f);
+            wholeInk.localPosition = wholeBody.localPosition;
+            float bh = Mathf.Min(0.28f, h * 0.3f);
+            wholeBand.localScale = new Vector3(thick + 0.04f, bh, length);
+            wholeBand.localPosition = new Vector3(0f, bh * 0.5f, 0f);
+            var bodyMat = ours ? brickClearMat : brickMat;
+            if (wholeBodyR.sharedMaterial != bodyMat) wholeBodyR.sharedMaterial = bodyMat;
+            var bandMat = ours ? bandTealMat : bandRedMat;
+            if (wholeBandR.sharedMaterial != bandMat) wholeBandR.sharedMaterial = bandMat;
+            mpb.Clear();
+            mpb.SetVector("_BaseMap_ST", new Vector4(length, h, 0f, 0f));
+            mpb.SetVector("_MainTex_ST", new Vector4(length, h, 0f, 0f));
+            wholeBodyR.SetPropertyBlock(mpb);
+            mpb.Clear();
+            mpb.SetVector("_BaseMap_ST", new Vector4(length * 2f, 1f, -now * 0.8f, 0f));
+            mpb.SetVector("_MainTex_ST", new Vector4(length * 2f, 1f, -now * 0.8f, 0f));
+            wholeBandR.SetPropertyBlock(mpb);
         }
 
         /// <summary>Lay it along a new line (the run grows it).</summary>

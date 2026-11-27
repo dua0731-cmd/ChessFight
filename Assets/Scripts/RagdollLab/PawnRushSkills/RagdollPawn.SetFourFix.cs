@@ -27,7 +27,7 @@ namespace ChessFight.RagdollLab
         const int Ret4None = 0, Ret4Marked = 1, Ret4Band = 2, Ret4Fly = 3;
         int ret4Stage, ret4Kind;
         Vector3 ret4Home, ret4Face, ret4From;
-        float ret4T;
+        float ret4T, ret4FlyFor;
         bool ret4Through;
         /// <summary>The skill under way stopped at an edge (its recovery is the teeter's time).</summary>
         bool teeter4;
@@ -103,7 +103,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             // The flight: a low arc onto the print, through everyone and every hit.
-            float T = Mathf.Max(0.1f, s.retFly), k = Mathf.Clamp01(ret4T / T);
+            float T = Mathf.Max(0.1f, ret4FlyFor > 0f ? ret4FlyFor : s.retFly), k = Mathf.Clamp01(ret4T / T);
             Vector3 goal = ret4Home + Vector3.up * standHeight;
             float lift = s.retArc + 0.05f * Flat(goal - ret4From).magnitude;
             Vector3 p = Vector3.Lerp(ret4From, goal, k) + Vector3.up * (lift * 4f * k * (1f - k));
@@ -116,7 +116,21 @@ namespace ChessFight.RagdollLab
             PassThrough4(false);
             HaltDash();
             ret4Stage = Ret4None;
+            ret4FlyFor = 0f;
             Fx(SkillFxKind.S4Return, null, ret4Home, ret4Face, ret4Kind * 10 + 3);
+        }
+
+        /// <summary>Straight into the flight home (no band), over <paramref name="seconds"/>: the giant let go like a balloon.</summary>
+        void FlyHomeNow4(float seconds)
+        {
+            if (ret4Stage != Ret4Marked || NetworkPuppet) return;
+            ret4Home = SafeHome4(ret4Home);
+            ret4Stage = Ret4Fly;
+            ret4T = 0f;
+            ret4FlyFor = Mathf.Max(0.1f, seconds);
+            ret4From = bodies[0].position;
+            PassThrough4(true);
+            Fx(SkillFxKind.S4Return, null, ret4From, FlatDir(ret4Home - ret4From), ret4Kind * 10 + 2, ret4FlyFor, ret4Home);
         }
 
         /// <summary>A reset (a respawn, a piece switch): no way back, the print gone.</summary>
