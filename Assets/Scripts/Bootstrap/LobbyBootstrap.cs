@@ -60,6 +60,8 @@ namespace ChessFight.Game
             hud = gameObject.AddComponent<NetworkHudView>();
             hud.Build(config.HudLayout, config.HudTheme, config.HudPanelSettings, config.HudReferenceResolution);
             WireHud();
+            // R862: the friend 1:1 chat - the friends card's "대화" and its window (LobbyFriendChat).
+            gameObject.AddComponent<LobbyFriendChat>().Attach(runtime, hud, () => Matching);
             // R651/R654: the lobby's music (LobbyMusic), on from the title screen; quiet while this PC is matching or
             // in a match room, and on from the start again when the lobby comes back after a match.
             hold = () => Matching;

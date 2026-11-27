@@ -190,6 +190,8 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - 행의 `초대` = `SteamMatchmaking.InviteUserToLobby`(오버레이 없음). 받는 쪽은 기존 `GameLobbyJoinRequested_t` 경로. `Steam 오버레이로 초대`는 예비 수단.
 - 매칭 중에는 파티가 잠기므로 카드가 자동으로 닫힌다.
 
+- (R862) 모든 줄(파티원 포함)에 `대화` 버튼 — 파티 없이 그 친구와 1:1 대화([§9-1](#9-1-친구-11-대화-r862-2026-11-27)). 안 읽은 줄 수가 버튼 배지와 상단 `친구 n ●n`에. 파티가 가득 차 초대를 못 할 때도 카드가 열린다.
+
 ## 7. 인트로·경기 HUD
 
 - `IntroHud.uxml`: (R63, [§11](#11-메뉴-디자인-c-그랜드-아레나-수정안-r63-2026-10-03)) 가운데 금색 `CHESS FIGHT`, "6 대 6 체스 말 대난투", 백팀·흑팀 줄, 호두나무 판 버튼 "클릭해서 시작"(R64부터 아무 키가 아니라 이 판을 클릭), Steam 상태와 이름, 버전. Esc는 설정 창([§12](#12-설정-창-r64-2026-10-05)).
@@ -285,6 +287,39 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - **아직 없음:** 욕설 거르기, 상대 차단. 퀸 오브 더 힐은 로비에서 아직 "준비 중"이라 경기가 열리지 않는다. 연결되면 따로 할 일 없이 채팅이 나온다.
 
 파일: `Game/ChatBox.cs`(화면·키, Steam 모름), `Resources/ChatHud.uxml`(이름 계약: `chat-screen`, `chat`, `chat-*`), 스타일은 `NetworkHud.uss` 맨 아래 "chat" 부분. 연결과 위치: `NetworkRuntime.Awake`(`Connect(Session.Chat, Session.CanChat, Session.Say)`)와 `Update`(`Where`). 로비 막기: `NetworkHudView.Build`의 `ChatBox.Blocker`.
+
+## 9-1. 친구 1:1 대화 (R862, 2026-11-27)
+
+사용자 요청(11-27, 일요일까지 다섯 가지 중 3번): **로비 친구 탭에서 Steam 친구를 눌러 파티 없이 1:1로 대화.** Steam 친구 메시지로 가서, 친구가 게임 밖이면 친구의 Steam 채팅에 뜨고, ChessFight 안이면 게임의 채팅에 뜬다. **사용자 Unity · Steam 확인 전**(두 Steam 계정이 있어야 볼 수 있음, [VALIDATION](../Network/VALIDATION.md) 맨 위).
+
+```text
+ ┌ 1:1 대화 ───────────────── ✕ ┐  ┌ FRIENDS · 친구 초대 ───────────┐
+ │ (캐) 캐슬링                    │  │ 이 게임 중                    2 │
+ │      이 게임 중 · 로비에서 대기 중 │  │ (캐) 캐슬링  로비에서…  [대화²][초대] │
+ │ Steam 친구 메시지로 가요 · …    │  │ (퀸) 퀸사이드 킹 러시…  [대화][내 파티]│
+ │ ▌한 판 할래?            21:04 │  │ …                              │
+ │            ㄱㄱ 지금 들어감▐    │  └────────────────────────────┘
+ │ [캐슬링님에게 보내기_   ][보내기] │   상단 버튼: 친구 3 ●2  ← 안 읽은 줄 합계
+ │ 3/80        Enter 보내기 · Esc 닫기 │
+ └────────────────────────────┘
+```
+
+| | 내용 |
+|---|---|
+| 여는 곳 | 친구 카드의 모든 친구 줄(파티원 포함)에 **`대화`** 버튼. 그 친구의 안 읽은 줄 수가 빨간 배지로 붙는다. 같은 버튼을 다시 누르면 닫힌다. 상단 `친구 n` 버튼 뒤에 안 읽은 줄 합계 `●n`. 파티가 가득 차 초대를 못 할 때도 친구 카드는 열린다(`FriendChatAvailable`) |
+| 창 | 자기 패널(정렬 40: 로비 HUD 0 · 이름 화면 20 위, 채팅 50 · 로딩 100 아래). 친구 카드가 열려 있으면 그 왼쪽(right 396), 닫히면 오른쪽 끝(right 24), 340 × 470. 머리: 친구 이름(스트리머 모드면 "플레이어 N", R792) · 상태 줄(이 게임 중 · 무엇을 하는지 / Steam 온라인 · 자리 비움 · 오프라인과 "Steam 채팅으로 받아요" 등, 5초마다 친구 목록에서) |
+| 줄 | 친구 말은 왼쪽 파랑, 내 말은 오른쪽 금색 말풍선, 밑에 시각(HH:mm). 최근 11줄, 마우스 휠로 이전 대화. 서식 없이 그림(`enableRichText = false`), 친구 말은 설정의 욕설 가리기를 따름, 글자 크기도 설정 → 채팅 크기 |
+| 보내기 | 입력 칸 + `보내기` 버튼. **Enter 보내기**(한글 조합 중이면 조합이 끝날 때까지 최대 30프레임 기다림, 채팅과 같음), 보낸 뒤 창은 열린 채 이어 쓰기. **Esc · ✕ 닫기**. 80자 · 1초에 한 줄(게임 채팅과 같은 규칙). 막히면 칸 아래 빨간 글씨 3초 |
+| 키 | 입력 칸에 커서가 있는 동안 `ChatBox.KeysHeld`가 참(`FriendChatWindow.KeysHeld`) → 로비 단축키(Enter 게임 시작 · F · M · Esc)와 음성 누르고 말하기가 기다린다. 칸 밖을 누르면 키는 로비로 돌아간다(채팅처럼 포커스를 되찾지 않음: 방 번호 칸을 빼앗지 않게) |
+| 숨김 | 로비 '플레이' 탭이 아닐 때, 매칭 중 · 방에 있을 때, 이름 화면 · 설정 창 · 씬 전환 중. 대화는 남고, 숨은 동안 온 줄은 안 읽음으로 센다 |
+| 받았을 때 | 그 친구 창이 열려 있으면 바로 읽음. 아니면 로비 토스트 "○○님의 메시지: 앞부분…"(28자) + 메뉴 소리 + 배지. **경기 씬**에서는 채팅([§9](#9-채팅-r61-2026-09-30))에 하늘색 `친구` 꼬리표를 단 줄로 뜬다(닫혀 있으면 떠 있다가 흐려지고, 열면 어느 채널에서나 보임). 경기 중 답장은 아직 없음 — 로비 친구 탭에서 |
+| 기록 | 이번 실행 동안 친구마다 최근 100줄, 대화 40개까지(그 넘으면 안 읽은 줄이 없는 가장 오래 조용한 대화부터 지움). 게임을 끄면 사라진다(진짜 기록은 Steam 채팅에 남음) |
+
+- **Steam 쪽**(`Network/SteamFriendChat.cs`, `NetworkRuntime.FriendChat`): 시작할 때 `SteamFriends.SetListenForFriendsMessages(true)`, 받으면 `GameConnectedFriendChatMsg_t` → `GetFriendMessage`(글 종류 `ChatMsg`만, 입력 중 표시 · 초대 등은 버림), 보내기는 `ReplyToFriendMessage`(아무 친구에게나, 먼저 말을 걸지 않았어도). **그냥 글**로 간다(`CFC1|` 같은 머리 없음): 게임 밖 친구가 Steam 채팅에서 그대로 읽게. 받는 쪽은 Steam 클라이언트에서 친 300자까지 받아 같은 규칙으로 다듬는다(`FriendChatText.MaxIncoming`). 받은 줄은 1:1 기록과 세션 채팅 로그(`ChatChannel.Friend`) 둘 다에 들어간다. 꺼질 때 듣기를 끈다.
+- **Steam 문서에 없는 것(두 계정으로 확인할 것)**: 듣기를 켠 동안 Steam 오버레이 · 클라이언트가 친구 메시지를 계속 보여 주는지, 게임 밖 친구에게 보낸 줄이 그의 Steam 채팅에 그대로 뜨는지, 내 줄이 내게 되돌아오는지(돌아오면 `GameConnectedFriendChatMsg_t`의 보낸 사람이 나라서 버린다). 오프라인 친구에게 보낸 줄이 다음 접속 때 가는지도.
+- **설정 → 채팅 끄기**는 경기 채팅을 숨기지만 1:1 창은 그대로 쓴다(친구가 Steam으로 보낸 개인 메시지라서). 채팅 받기(모두 / 파티 · 팀 / 파티만)도 친구 줄은 늘 보여 준다.
+- 파일: Core `FriendChat.cs`(`FriendChatBook` · `FriendChatText`, 검사 "R862 friend chat"), Core `Chat.cs`(`ChatChannel.Friend` — Tab 채널 순환에 들지 않고 `Encode`는 `f`라 아무도 못 읽음, `ChatText.Clean(text, max)`), Network `SteamFriendChat.cs`, Game `FriendChatWindow.cs` · `NetworkHudView.FriendChat.cs`(`대화` 버튼 · 배지 · 버튼 글) · `ChatBox.cs`(친구 줄), Bootstrap `LobbyFriendChat.cs`(창을 만들고 이음, `LobbyBootstrap.Awake`의 한 줄), `Resources/FriendChatHud.uxml`(이름 계약 `fc-*`) · `Resources/FriendChat.uss`(창 · 버튼 · 경기 채팅의 친구 줄).
+- **아직 없음**: 경기 안에서 답장(예: 채팅의 `친구` 채널로 마지막 보낸 사람에게), 친구 목록 밖의 사람과 대화, 차단, 기록 저장.
 
 ## 10. 결과 화면 (R62, 2026-10-01) — R76에서 바뀜
 

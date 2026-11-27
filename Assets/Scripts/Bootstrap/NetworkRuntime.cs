@@ -31,6 +31,10 @@ namespace ChessFight.Game
         public SteamMotion Motion { get; private set; }
         // Voice chat (Docs/Architecture/UI.md "음성 채팅", R131): Steam's microphone and the speakers.
         public SteamVoice Voice { get; private set; }
+        // R862: one-to-one chat with a Steam friend (Docs/Architecture/UI.md "친구 1:1 대화"), as Steam friend messages;
+        // the lobby's friends card opens it (LobbyBootstrap, FriendChatWindow), a match's chat box shows what arrives.
+        public SteamFriendChat FriendChat { get; private set; }
+        bool friendChatFailed;
         public IMoveInputSource Controls { get; private set; }
 
         // The active scene says whether local input may move the pawn: false while
@@ -270,6 +274,11 @@ namespace ChessFight.Game
             // A successful Steam retry needs the movement layer built after the fact.
             if (Motion == null && Session.Online) Motion = new SteamMotion(Session);
             if (Voice == null && Session.Online) StartVoice();
+            if (FriendChat == null && Session.Online && !friendChatFailed)
+            {
+                try { FriendChat = new SteamFriendChat(Session); }
+                catch (Exception e) { friendChatFailed = true; Debug.LogException(e); }
+            }
             try { UpdateVoice(); }
             catch (Exception e) { Debug.LogException(e); }
             // A leaderboard that fails must not take the session down with it.
@@ -475,6 +484,9 @@ namespace ChessFight.Game
             // The leaderboards' Steam calls go while Steam is still up.
             leaderboards?.Dispose();
             leaderboards = null;
+            // R862: stops listening for friend messages while Steam is still up.
+            FriendChat?.Dispose();
+            FriendChat = null;
             // Motion must go before the session: it unregisters from SessionChanged.
             Motion?.Dispose();
             Session?.Dispose();

@@ -52,7 +52,8 @@ namespace ChessFight.Game
         static ChatBox current;
         // True while the chat is open, and for a frame after it closes: the Esc or
         // Enter that closed it must not also leave a match or start a game.
-        public static bool KeysHeld => current != null && current.HoldsKeys;
+        // R862: also while the lobby's friend 1:1 window has the keyboard (FriendChatWindow).
+        public static bool KeysHeld => (current != null && current.HoldsKeys) || FriendChatWindow.KeysHeld;
         // A scene with a text field of its own (the lobby's room-number box) says
         // when the chat must stay shut.
         public static Func<bool> Blocker;
@@ -95,6 +96,9 @@ namespace ChessFight.Game
             if (ownedPanel != null) ownedPanel.sortingOrder = SortingOrder;
             // The chat covers the screen but must not take the clicks meant for the
             // scene's HUD under it: only its own panel does.
+            // R862: a friend's Steam message as it arrives (ChatChannel.Friend), styled in FriendChat.uss.
+            var friendStyle = Resources.Load<StyleSheet>("FriendChat");
+            if (friendStyle != null) root.styleSheets.Add(friendStyle);
             root.pickingMode = PickingMode.Ignore;
             box = root.Q<VisualElement>("chat");
             panel = root.Q<VisualElement>("chat-panel");
@@ -371,7 +375,8 @@ namespace ChessFight.Game
         void DrawPanel()
         {
             lines.Clear();
-            var all = log.In(channel).Where(Shown).ToList();
+            // R862: a friend's lines show whichever channel is chosen (they are answered from the lobby friends tab).
+            var all = log.Entries.Where(e => (e.Channel == channel || e.Channel == ChatChannel.Friend) && Shown(e)).ToList();
             int end = Mathf.Max(0, all.Count - scroll), start = Mathf.Max(0, end - PanelLines);
             for (int i = start; i < end; i++) lines.Add(Row(all[i]));
         }
@@ -385,7 +390,7 @@ namespace ChessFight.Game
             for (int i = Mathf.Max(0, all.Count - RecentLines); i < all.Count; i++)
             {
                 var e = all[i];
-                if (!Usable(e.Channel) || !Shown(e)) continue;
+                if (!(Usable(e.Channel) || e.Channel == ChatChannel.Friend) || !Shown(e)) continue;
                 var row = Row(e);
                 row.AddToClassList("chat-recent-line");
                 if (drawnBacking > 0f) row.style.backgroundColor = Backing(drawnBacking);
@@ -413,6 +418,8 @@ namespace ChessFight.Game
             row.AddToClassList("chat-line-" + Key(e.Channel));
             if (e.Notice) { row.AddToClassList("chat-line-notice"); row.Add(Text(e.Text, "chat-notice")); return row; }
             if (e.Mine) row.AddToClassList("chat-line-me");
+            // R862: "친구" before a friend's name (a Steam friend message, not a line of this room).
+            if (e.Channel == ChatChannel.Friend) row.Add(Text(Loc.T("친구"), "chat-friend-tag"));
             // The Steam name the line came from (R792: another player's as "플레이어 N" while streamer mode hides names - a
             // line kept from before it was turned on too; the view redraws on any settings change).
             var name = Text(e.Mine || e.Sender == 0 ? e.Name : StreamerMode.Name(e.Sender, e.Name, false), "chat-name");
@@ -438,11 +445,11 @@ namespace ChessFight.Game
             badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        static string Key(ChatChannel c) => c == ChatChannel.Party ? "party" : c == ChatChannel.Team ? "team" : "all";
+        static string Key(ChatChannel c) => c == ChatChannel.Party ? "party" : c == ChatChannel.Team ? "team" : c == ChatChannel.Friend ? "friend" : "all";
 
         // R674, settings → 채팅 받기: the channels whose lines from others are shown (my own lines and notices always are).
         static bool Hears(ChatChannel c) =>
-            GameSettings.ChatFrom == 0 || c == ChatChannel.Party || (GameSettings.ChatFrom == 1 && c == ChatChannel.Team);
+            GameSettings.ChatFrom == 0 || c == ChatChannel.Party || c == ChatChannel.Friend || (GameSettings.ChatFrom == 1 && c == ChatChannel.Team);
 
         static bool Shown(ChatEntry e) => e.Mine || e.Notice || Hears(e.Channel);
 

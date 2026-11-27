@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- R862: the 1:1 chat with one Steam friend (Game/FriendChatWindow.cs; Docs/Architecture/UI.md "친구 1:1 대화").
+         A panel of its own over the lobby, opened from a friend's "대화" button in the friends card; it stands left of
+         that card while the card is open, at the right edge otherwise. Styles: FriendChat.uss (the a-btn, avatar and
+         row classes come from NetworkHud.uss through NetworkTheme). Every name here is looked up by FriendChatWindow:
+         rename both or neither. The lines are added in code. -->
+    <ui:VisualElement name="fc-screen" class="fc-screen" picking-mode="Ignore">
+        <ui:VisualElement name="fc-window" class="fc-window">
+            <ui:VisualElement class="row fc-head">
+                <ui:VisualElement name="fc-avatar" class="avatar" picking-mode="Ignore">
+                    <ui:Label name="fc-letter" class="avatar-letter" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="grow fc-who" picking-mode="Ignore">
+                    <ui:Label text="1:1 대화" class="fc-kicker" picking-mode="Ignore" />
+                    <ui:Label name="fc-name" class="fc-name" picking-mode="Ignore" />
+                    <ui:Label name="fc-state" class="fc-state" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="fc-close" text="✕" class="a-btn a-sq" />
+            </ui:VisualElement>
+            <ui:Label text="Steam 친구 메시지로 가요 · 게임 밖의 친구는 Steam 채팅에서 받아요" class="fc-about" picking-mode="Ignore" />
+            <ui:VisualElement name="fc-lines" class="fc-lines" />
+            <ui:VisualElement class="row fc-entry">
+                <ui:VisualElement class="fc-input" picking-mode="Ignore">
+                    <ui:TextField name="fc-field" class="fc-field" max-length="80" />
+                    <ui:Label name="fc-placeholder" class="fc-placeholder" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="fc-send" text="보내기" class="a-btn a-sm fc-send" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row fc-foot" picking-mode="Ignore">
+                <ui:Label name="fc-hint" class="fc-hint" picking-mode="Ignore" />
+                <ui:VisualElement class="grow" picking-mode="Ignore" />
+                <ui:Label name="fc-scrolled" text="이전 대화" class="fc-hint" picking-mode="Ignore" />
+                <ui:Label text="Enter 보내기 · Esc 닫기" class="fc-keys" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

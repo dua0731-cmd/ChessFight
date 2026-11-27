@@ -610,7 +610,7 @@ namespace ChessFight.Game
             if (!modal && LegacyKeys.Down(KeyCode.F))
             {
                 if (FriendsOpen) { MenuSound.Play(MenuSound.Kind.Close); Close(friendsPanel); }
-                else if (canInvite) { MenuSound.Play(MenuSound.Kind.Open); OpenFriends(); }
+                else if (canInvite || FriendChatAvailable) { MenuSound.Play(MenuSound.Kind.Open); OpenFriends(); }
             }
             if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) { MenuSound.Play(MenuSound.Kind.Open); Open(modeModal); }
         }
@@ -674,7 +674,8 @@ namespace ChessFight.Game
 
         void OpenFriends()
         {
-            if (!canInvite) return;
+            // R862: also to chat with a friend while no invite can go (a full party).
+            if (!canInvite && !FriendChatAvailable) return;
             Close(detailsPanel);
             Close(partyPanel);
             Open(friendsPanel);
@@ -1286,6 +1287,7 @@ namespace ChessFight.Game
             text.Add(name); text.Add(state);
             row.Add(text);
 
+            AddTalkButton(row, friend.Id);   // R862: 1:1 chat (NetworkHudView.FriendChat.cs)
             if (partyIds.Contains(friend.Id))
             {
                 var member = new Label(Loc.T("내 파티"));
@@ -1328,7 +1330,7 @@ namespace ChessFight.Game
             if (details != null) details.text = model.Details;
             if (profile != null) profile.text = string.IsNullOrEmpty(model.PlayerName) ? "—" : model.PlayerName;
             if (version != null) version.text = model.Version;
-            SetText(friendsOpen, model.Online ? Loc.T("친구") + $" <color=#E2B866><b>{model.FriendsOnline}</b></color>" : Loc.T("친구"));
+            SetText(friendsOpen, FriendsButtonText(model.Online, model.FriendsOnline));   // R862: with the unread friend lines
 
             Show(offline, !model.Online);
             if (offlineText != null && !string.IsNullOrEmpty(model.Status) && !model.Online) offlineText.text = model.Status;

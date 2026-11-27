@@ -10,7 +10,9 @@ namespace ChessFight.Network
     // server: party lines go through the party lobby's Steam chat, match lines
     // through the match room's. Team lines travel through the match room as well,
     // and each PC shows only those of its own team.
-    public enum ChatChannel { Party, Team, All }
+    // R862: Friend - a Steam friend message (FriendChat, SteamFriendChat) shown in the match chat as it arrives; never
+    // chosen with Tab nor sent from the chat box (the lobby friends tab answers it).
+    public enum ChatChannel { Party, Team, All, Friend }
 
     // One line in the chat box: something a player said, or a notice such as
     // "○○ 님이 파티에 들어왔어요".
@@ -40,16 +42,19 @@ namespace ChessFight.Network
         public const string Prefix = "CFC1|";
 
         public static string Label(ChatChannel channel) =>
-            channel == ChatChannel.Party ? "파티" : channel == ChatChannel.All ? "전체" : "팀";
+            channel == ChatChannel.Party ? "파티" : channel == ChatChannel.All ? "전체" : channel == ChatChannel.Friend ? "친구" : "팀";
 
         // What a player typed, made into one line: control and invisible format
         // characters go, any run of white space becomes one space, and the line is
         // cut at MaxLength without splitting a surrogate pair. Empty means nothing
         // to send.
-        public static string Clean(string text)
+        public static string Clean(string text) => Clean(text, MaxLength);
+
+        // The same, cut at `max` (R862: a friend's Steam message may run longer, FriendChatText.MaxIncoming).
+        public static string Clean(string text, int max)
         {
-            if (string.IsNullOrEmpty(text)) return "";
-            var line = new StringBuilder(Math.Min(text.Length, MaxLength + 1));
+            if (string.IsNullOrEmpty(text) || max <= 0) return "";
+            var line = new StringBuilder(Math.Min(text.Length, max + 1));
             bool gap = false;
             foreach (char c in text)
             {
@@ -57,11 +62,11 @@ namespace ChessFight.Network
                 if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.Format) continue;
                 if (gap) { line.Append(' '); gap = false; }
                 line.Append(c);
-                if (line.Length > MaxLength) break;
+                if (line.Length > max) break;
             }
-            if (line.Length > MaxLength)
+            if (line.Length > max)
             {
-                int cut = char.IsHighSurrogate(line[MaxLength - 1]) ? MaxLength - 1 : MaxLength;
+                int cut = char.IsHighSurrogate(line[max - 1]) ? max - 1 : max;
                 line.Length = cut;
             }
             return line.ToString().TrimEnd();
@@ -73,7 +78,7 @@ namespace ChessFight.Network
             Prefix + Code(channel, team) + "|" + Clean(text);
 
         static char Code(ChatChannel channel, int team) =>
-            channel == ChatChannel.Party ? 'p' : channel == ChatChannel.All ? 'a' : team == 1 ? '1' : '0';
+            channel == ChatChannel.Party ? 'p' : channel == ChatChannel.All ? 'a' : channel == ChatChannel.Friend ? 'f' : team == 1 ? '1' : '0';
 
         // False for anything that is not a chat line, or one with nothing left to show.
         public static bool TryDecode(string wire, out ChatChannel channel, out int team, out string text)
@@ -127,7 +132,7 @@ namespace ChessFight.Network
         public const int Capacity = 50;
 
         readonly List<ChatEntry> entries = new List<ChatEntry>();
-        readonly int[] numbers = new int[3], unread = new int[3];
+        readonly int[] numbers = new int[4], unread = new int[4];
 
         // Changes whenever a line is added or a channel cleared, so a view redraws
         // only then.

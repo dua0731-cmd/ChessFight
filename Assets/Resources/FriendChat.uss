@@ -1,0 +1,59 @@
+/* R862: the friend 1:1 chat (Game/FriendChatWindow.cs, FriendChatHud.uxml) and the friend lines it adds to the
+   lobby's friends card and the match chat (ChatBox). Not named after the UXML: Resources.Load<StyleSheet> of a name
+   a UXML shares returns the UXML's inline style sub-asset instead (VoiceHud). */
+
+/* ---------- the window ---------- */
+.fc-screen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.fc-window { display: none; position: absolute; top: 94px; right: 24px; width: 340px; height: 470px; padding: 14px;
+             border-width: 1px; border-color: rgba(201, 154, 69, 0.45); background-color: rgba(22, 17, 13, 0.98); }
+.fc-window.fc-beside { right: 396px; }
+.fc-head { align-items: center; margin-bottom: 6px; }
+.fc-head > .a-sq { margin-left: 8px; }
+.fc-who { flex-basis: 0; min-width: 0; }
+.fc-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 3px; color: rgb(217, 174, 98); }
+.fc-name { font-size: 17px; -unity-font-style: bold; color: rgb(246, 236, 223); overflow: hidden; }
+.fc-state { font-size: 10px; color: rgb(185, 165, 140); }
+.fc-about { font-size: 10px; color: rgb(168, 149, 124); white-space: normal; margin-bottom: 6px; }
+.fc-lines { flex-grow: 1; justify-content: flex-end; overflow: hidden; padding: 6px 4px; background-color: rgba(0, 0, 0, 0.25); }
+.fc-empty { font-size: 12px; color: rgb(168, 149, 124); -unity-text-align: middle-center; white-space: normal; margin-bottom: 120px; }
+
+/* one line: theirs on the left, mine on the right in gold */
+.fc-line { flex-direction: column; align-items: flex-start; margin-top: 5px; flex-shrink: 0; }
+.fc-line-me { align-items: flex-end; }
+.fc-bubble { max-width: 86%; padding: 5px 9px; border-left-width: 2px; border-color: rgb(120, 196, 255);
+             background-color: rgba(60, 120, 180, 0.22); }
+.fc-line-me .fc-bubble { border-left-width: 0; border-right-width: 2px; border-color: rgb(255, 201, 61);
+                         background-color: rgba(255, 201, 61, 0.14); }
+.fc-text { font-size: 13px; color: rgb(241, 228, 210); white-space: normal; }
+.fc-time { font-size: 9px; color: rgb(150, 132, 110); margin: 1px 2px 0 2px; }
+.fc-size-0 .fc-text { font-size: 12px; }
+.fc-size-2 .fc-text { font-size: 16px; }
+
+/* the input line */
+.fc-entry { flex-shrink: 0; height: 40px; margin-top: 8px; padding: 0 0 0 8px; border-bottom-width: 2px;
+            border-color: rgb(120, 196, 255); background-color: rgba(12, 7, 4, 0.7); }
+.fc-input { flex-grow: 1; height: 100%; justify-content: center; }
+.fc-field { margin: 0; height: 30px; }
+.fc-field .unity-text-field__input { padding: 2px 4px; border-width: 0; border-radius: 0; font-size: 14px;
+                                     background-color: rgba(0, 0, 0, 0); color: rgb(255, 255, 255); }
+.fc-placeholder { position: absolute; left: 5px; top: 0; bottom: 0; font-size: 13px; -unity-text-align: middle-left;
+                  color: rgba(185, 165, 140, 0.85); }
+.fc-send { margin: 0 6px 0 6px; }
+.fc-foot { margin-top: 5px; }
+.fc-hint { font-size: 10px; color: rgb(185, 165, 140); margin-right: 8px; }
+.fc-hint-error { color: rgb(255, 179, 188); -unity-font-style: bold; }
+.fc-keys { font-size: 10px; color: rgb(150, 132, 110); }
+
+/* ---------- the friends card: the 대화 button and its unread badge ---------- */
+.fc-talk { width: 46px; min-height: 26px; margin: 0 4px 0 0; padding: 0; border-radius: 0; border-width: 1px; font-size: 12px;
+           -unity-font-style: bold; border-color: rgb(120, 196, 255); color: rgb(160, 214, 255); background-color: rgba(0, 0, 0, 0); }
+.fc-talk:hover { background-color: rgba(120, 196, 255, 0.16); }
+.fc-talk-on { background-color: rgba(120, 196, 255, 0.22); }
+.fc-badge { position: absolute; right: -6px; top: -7px; padding: 0 4px; border-radius: 7px; font-size: 9px; -unity-font-style: bold;
+            color: rgb(255, 255, 255); background-color: rgb(255, 77, 98); }
+
+/* ---------- the match chat (ChatBox): a friend's line as it arrives ---------- */
+.chat-line-friend { border-color: rgb(120, 196, 255); }
+.chat-name-friend { color: rgb(160, 214, 255); }
+.chat-friend-tag { flex-shrink: 0; margin-right: 6px; padding: 0 4px; font-size: 10px; -unity-font-style: bold;
+                   color: rgb(20, 30, 44); background-color: rgb(160, 214, 255); }

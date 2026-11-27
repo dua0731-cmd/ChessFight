@@ -3336,6 +3336,34 @@ public static class NetworkCoreTests
                 Check(log.In(ChatChannel.Team).Count() == ChatLog.Capacity && log.In(ChatChannel.Team).First().Text == "t1" && log.In(ChatChannel.Team).Last().Number == 51, "oldest dropped");
                 log.Clear(ChatChannel.Team); version = log.Version; log.Clear(ChatChannel.Team);
                 Check(!log.In(ChatChannel.Team).Any() && log.Version == version && log.Add(ChatChannel.Team, 7, "", "again", false, false, 6).Number == 1 && log.In(ChatChannel.Party).Count() == 3, "clear"); });
+            Test("R862 friend chat: one conversation per friend, unread per friend, the game's limits out and Steam's longer lines in", () => {
+                Check(FriendChatText.Outgoing("  안녕\n친구  ") == "안녕 친구" && FriendChatText.Outgoing(new string('a', 200)).Length == ChatText.MaxLength, "outgoing is a chat line");
+                Check(FriendChatText.Incoming(new string('b', 500)).Length == FriendChatText.MaxIncoming && FriendChatText.Incoming(" \n ") == "", "incoming keeps a Steam line up to its own limit");
+                Check(FriendChatText.Preview("짧은 말") == "짧은 말" && FriendChatText.Preview(new string('c', 60)) == new string('c', FriendChatText.PreviewLength) + "…", "preview");
+                Check(ChatText.Label(ChatChannel.Friend) == "친구" && !ChatText.TryDecode(ChatText.Encode(ChatChannel.Friend, 0, "hi"), out _, out _, out _), "a friend line never travels as lobby chat");
+                Check(ChatText.Next(ChatChannel.All, c => true) == ChatChannel.Party, "Tab never lands on the friend channel");
+                var book = new FriendChatBook();
+                Check(book.Add(0, false, "hi", 0) == null && book.Add(5, true, "   ", 0) == null && book.Version == 0, "nothing to add");
+                var first = book.Add(5, false, "같이 할래?", 1);
+                book.Add(5, true, "ㄱㄱ", 2);
+                book.Add(9, false, "gg", 3);
+                Check(first.Number == 1 && book.Lines(5).Count == 2 && book.Lines(5)[1].Number == 2 && book.Lines(5)[1].Mine && book.Lines(7).Count == 0, "lines per friend");
+                Check(book.Unread(5) == 1 && book.Unread(9) == 1 && book.TotalUnread == 2 && book.LastFrom == 9, "unread counts only the friend's lines");
+                Check(book.Recent.Count == 2 && book.Recent[0] == 9 && book.Recent[1] == 5, "latest conversation first");
+                int version = book.Version;
+                book.MarkRead(5);
+                Check(book.Unread(5) == 0 && book.TotalUnread == 1 && book.Version > version, "mark read");
+                version = book.Version; book.MarkRead(5);
+                Check(book.Version == version, "reading twice changes nothing");
+                book.Viewing = 9; book.Add(9, false, "한 판 더", 4);
+                Check(book.Unread(9) == 1, "a line in the conversation on screen is read as it comes");
+                for (int i = 0; i < FriendChatBook.Capacity + 5; i++) book.Add(5, false, "m" + i, 5);
+                Check(book.Lines(5).Count == FriendChatBook.Capacity && book.Lines(5)[0].Text == "m5" && book.Lines(5)[FriendChatBook.Capacity - 1].Number == 2 + FriendChatBook.Capacity + 5, "oldest dropped, numbers go on");
+                var many = new FriendChatBook();
+                many.Add(1, false, "unread, kept", 0);
+                for (ulong f = 2; f < 2 + FriendChatBook.ConversationsKept + 3; f++) { many.Add(f, true, "hi", 1); }
+                Check(many.Recent.Count == FriendChatBook.ConversationsKept && many.Lines(1).Count == 1 && many.Lines(2).Count == 0 &&
+                      many.Lines(1 + FriendChatBook.ConversationsKept + 3).Count == 1, "the quietest read conversations go first"); });
             Test("Result screen: crossing order, the winners' first four marked and the fourth clinches", () => {
                 var r = MatchResult.Example(0);
                 var order = r.FinishOrder();
