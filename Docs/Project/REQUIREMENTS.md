@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R888 · 2026-11-28 · 소드 파이트 결과 화면 백팀 얼굴 대비:** 사용자 "바탕은 흰색이고 백팀도 흰색이니 구분이 희미해 수정해". **결과:** 결과 화면에서 백팀 기물 얼굴 뒤 원을 크림색에서 진한 청동색으로 바꿈(`SwordFightMatch.Result.cs`). 컴파일 · 테스트 통과, 사용자 Unity 확인 전.
+
 > **R871 · 2026-11-27 · 소드 파이트 '장외!' 소리 넣기:** 사용자 "A2로 해서 bgm이랑 이질감 없이 적용해". 결과: A2 → `Resources/SwordFightSkillSfx/RingOut.wav`(`ArtSource/SwordFight/RingOutSfx/bake.py`: 앞 공백 자름 · 짧은 방 울림 · 페이드), 장외 도장과 함께 모든 화면에서 재생(`SwordFightMatch.Hud`, `SwordFightSkillSfx` Level 1.25 — 처음 0.8에서 사용자 "장외! 소리만 좀 키우자"로 올림), 음악 덕킹은 그대로. 커밋: 없음. 상태: **사용자 Unity 확인 전**.
 
 > **R869 · 2026-11-27 · 소드 파이트 '장외!' 소리 시안:** 사용자 "확인 했고 장외!가 나올 때 bgm이 살짝 작아지는 거 좋은데 장외! 문구가 나오는 사운드가 없어 시안 줘". 결과: 네 방향 × 4개 효과음 시안과 들어 보기 페이지(https://claude.ai/artifact/11FUs6jPe6CDUhz6sK5ZWx), 원본 `ArtSource/SwordFight/RingOutSfx/`. 게임 코드 변경 없음. 커밋: 없음. 상태: **사용자 선택 기다림**.

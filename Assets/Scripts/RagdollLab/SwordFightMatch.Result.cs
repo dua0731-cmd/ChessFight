@@ -32,7 +32,7 @@ namespace ChessFight.RagdollLab
         float resultAt = -1f;
         bool resultHidden, resultLeft;
 
-        Texture2D rWood, rBar, rRow, rRowTop, rGoldBtn, rWoodBtn, rMeTag, rGoldTag, rGlow, rDim, rCap;
+        Texture2D rWood, rBar, rRow, rRowTop, rGoldBtn, rWoodBtn, rMeTag, rGoldTag, rGlow, rDim, rCap, rPipW;
         GUIStyle rCell;
         // The stage: its scale, its corner on the screen, and the group being drawn (moved, faded).
         float rs = 1f, rox, roy, rdx, rdy, rfade = 1f;
@@ -238,6 +238,9 @@ namespace ChessFight.RagdollLab
             rGoldTag = Slab(16, 16, 4f, SwordFightShapes.Hex("#ffe48a"), SwordFightShapes.Hex("#f2b94a"), clear, 0f, clear, 0);
             rCap = Slab(16, 16, 4f, clear, clear, new Color(RCream.r, RCream.g, RCream.b, .8f), 1.5f, clear, 0);
             rGlow = Glow(128, new Color(1f, .82f, .45f, .55f));
+            // The white side's pip behind its faces: a deep bronze, not the match HUD's cream (pipW), on which the white
+            // pieces' own faces could hardly be told apart (user 11-28).
+            rPipW = Rounded(26, 26, 13f, SwordFightShapes.Hex("#8a6238"), SwordFightShapes.Hex("#e8c274"), 1.5f);
             rDim = new Texture2D(1, 1);
             rDim.SetPixel(0, 0, new Color(14 / 255f, 9 / 255f, 5 / 255f, .62f));
             rDim.Apply();
@@ -299,8 +302,9 @@ namespace ChessFight.RagdollLab
         {
             var old = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, rfade);
-            GUI.DrawTexture(S(x, y, size, size), team == 0 ? pipW : pipB);
             var face = PipFace(piece, team);
+            // the fallback icon keeps the HUD's cream pip, which it was drawn for
+            GUI.DrawTexture(S(x, y, size, size), team == 1 ? pipB : face != null ? rPipW : pipW);
             if (face != null) GUI.DrawTexture(S(x - size * .08f, y - size * .14f, size * 1.16f, size * 1.16f), face, ScaleMode.ScaleToFit, true);
             GUI.color = old;
             if (face == null) Icon(x + size * .11f, y + size * .11f, size * .78f, piece, team);

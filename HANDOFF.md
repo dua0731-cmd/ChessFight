@@ -12,6 +12,8 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 
 ## 0. 최근 기록 (2026-11-24 ~)
 
+> **R888 · 2026-11-28 · 소드 파이트 결과 화면 — 백팀 얼굴이 흰 원에 묻힘 (코드 · main 커밋 · 사용자 Unity 확인 전):** 사용자 "바탕은 흰색이고 백팀도 흰색이니 구분이 희미해 수정해". 결과: 결과 화면의 백팀 얼굴 뒤 원만 크림색 → 진한 청동색(`#8a6238`, 금색 테두리, `SwordFightMatch.Result.cs` `rPipW`). 흑팀 · 경기 중 HUD · 아이콘 대체 표시는 그대로. `Test-NetworkCompile.ps1` · `Test-NetworkCore.ps1` 통과.
+
 > **R871 · 2026-11-27 · 소드 파이트 '장외!' 소리 A2 넣음 (코드 · 소리, 커밋 안 함 · 사용자 Unity 확인 전):** 사용자 "A2로 해서 bgm이랑 이질감 없이 적용해"(R869 시안 중). 결과: `ArtSource/SwordFight/RingOutSfx/bake.py`가 A2를 다듬어 `Assets/Resources/SwordFightSkillSfx/RingOut.wav`(0.48 초, 앞 공백 자름 · 0.45 초 따뜻한 방 울림 -15 dB · 끝 페이드; 경기 음악보다 원래 덜 밝아 고음은 안 깎음). `SwordFightSkillSfx`가 다른 경기 소리와 같은 크기 맞춤(Prepare)을 거쳐 `Level` 1.25(처음 0.8, 사용자 "장외! 소리만 좀 키우자"로 올림 — 효과음 기본 볼륨에서 최대)로, `SwordFightMatch.Hud.StepFeed`가 장외 도장과 함께 모든 화면에서 가운데로 틀고, 음악은 전처럼 점수에 줄어든다(DuckPoint .45). 새 통신 없음. 전체 컴파일 통과. 남은 것: 사용자가 경기에서 크기 · 음악과 어울림 확인(VALIDATION R871).
 
 > **R869 · 2026-11-27 · 소드 파이트 '장외!' 도장 소리 시안 16개 (시안만, 게임 코드 변경 없음 · 사용자 선택 기다림):** 사용자 "확인 했고 장외!가 나올 때 bgm이 살짝 작아지는 거 좋은데 장외! 문구가 나오는 사운드가 없어 시안 줘". 결과: ElevenLabs 효과음 네 방향(A 나무 도장 쾅 · B 북 + 심벌 · C 코믹 휙 + 쿵 · D 징 + 칼 울림) × 4개, 188 크레딧. 들어 보기 페이지 https://claude.ai/artifact/11FUs6jPe6CDUhz6sK5ZWx (같은 크기로 재생, 게임처럼 도장이 튀어나옴). 원본 · 수치 · 프롬프트 `ArtSource/SwordFight/RingOutSfx/`(prompts.md). R868 결과 화면은 사용자가 Unity에서 확인('확인 했고'). 남은 것: 사용자가 번호를 고르면 `Resources/SwordFightSkillSfx/RingOut.wav`로 다듬어 장외 도장과 함께 모든 화면에서 재생.
