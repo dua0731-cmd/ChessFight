@@ -215,7 +215,7 @@ namespace ChessFight.Game
 
             // The stage: the board shows through; a drag across it turns the piece.
             var stage = Element("cx-stage", codexPage, PickingMode.Position);
-            Text(Loc.T("끌어서 돌려 보기"), "cx-hint", stage);
+            Text(Loc.T("드래그해서 돌려 보기"), "cx-hint", stage);
             stage.RegisterCallback<PointerDownEvent>(e =>
             {
                 spinning = true;
@@ -269,7 +269,7 @@ namespace ChessFight.Game
             Text("F", "cx-key", cxPrSkill);
             cxPrName = Text("", "cx-skill-name", cxPrSkill);
             cxPrLine = Text("", "cx-skill-line", pr);
-            cxPrNone = Text(Loc.T("이 모드에는 나오지 않아요"), "cx-none", pr);
+            cxPrNone = Text(Loc.T("이 모드에는 등장하지 않습니다"), "cx-none", pr);
 
             var sf = Element("cx-section", panel);
             var sfHead = Element("cx-mode-head", sf);
@@ -281,7 +281,7 @@ namespace ChessFight.Game
             cxSfSkillE = Element("cx-skill", sf);
             Text("E", "cx-key", cxSfSkillE);
             cxSfE = Text("", "cx-skill-name", cxSfSkillE);
-            cxSfNone = Text(Loc.T("고를 수 없는 기물이에요"), "cx-none", sf);
+            cxSfNone = Text(Loc.T("선택할 수 없는 기물입니다"), "cx-none", sf);
 
             Element("cx-grow", panel);
             var record = Pressable("", "cx-record", panel, () => SetTab(LobbyTab.Record));
@@ -295,10 +295,10 @@ namespace ChessFight.Game
         {
             bool rush = kind == PieceKind.Pawn || PawnRushPromotion.Pieces.Contains(kind);
             bool sword = SwordMatchRules.Pickable.Contains(kind);
-            if (kind == PieceKind.Pawn) return (Loc.T("폰 러쉬 시작 기물"), Loc.T("폰 러쉬에서 모두가 폰으로 출발 · 소드 파이트에서는 못 고름"));
-            if (rush && sword) return (Loc.T("두 모드"), Loc.T("폰 러쉬 승격 발판 · 소드 파이트 고르기"));
-            if (sword) return (Loc.T("소드 파이트 전용"), Loc.T("소드 파이트 고르기 · 폰 러쉬에는 나오지 않음"));
-            return (Loc.T("폰 러쉬 전용"), Loc.T("폰 러쉬 승격 발판 · 소드 파이트에서는 못 고름"));
+            if (kind == PieceKind.Pawn) return (Loc.T("폰 러쉬 시작 기물"), Loc.T("폰 러쉬에서 모두 폰으로 시작 · 소드 파이트 선택 불가"));
+            if (rush && sword) return (Loc.T("두 모드"), Loc.T("폰 러쉬 승격 가능 · 소드 파이트 선택 가능"));
+            if (sword) return (Loc.T("소드 파이트 전용"), Loc.T("소드 파이트 선택 가능 · 폰 러쉬 등장 안 함"));
+            return (Loc.T("폰 러쉬 전용"), Loc.T("폰 러쉬 승격 가능 · 소드 파이트 선택 불가"));
         }
 
         // The codex's piece and team, as a click on the list and the 백 / 흑 buttons would choose them.
@@ -414,7 +414,7 @@ namespace ChessFight.Game
                 }
             }
             // R745: the totals are backed up on Steam (the progress board); the list of recent matches is this PC's own.
-            Text(Loc.T("온라인 경기만 셈 · 판수는 Steam에 보관, 최근 경기 목록은 이 PC에만"), "rc-note", left);
+            Text(Loc.T("온라인 경기만 기록됩니다 · 통계는 Steam에, 최근 경기 목록은 이 PC에 저장됩니다"), "rc-note", left);
 
             var list = Element("lt-card rc-list", recordPage, PickingMode.Position);
             var head2 = Element("rc-list-head", list);
@@ -460,8 +460,8 @@ namespace ChessFight.Game
                 });
                 rcRows.Add(row);
             }
-            rcEmpty = Text(Loc.T("아직 기록이 없어요"), "rc-empty", rows);
-            rcEmptySub = Text(Loc.T("온라인 경기를 끝까지 하면 여기에 쌓여요"), "rc-empty-sub", rows);
+            rcEmpty = Text(Loc.T("아직 기록이 없습니다"), "rc-empty", rows);
+            rcEmptySub = Text(Loc.T("온라인 경기를 완료하면 여기에 기록됩니다"), "rc-empty-sub", rows);
             Text(Loc.F("최근 {0}판까지 보관", RecordBook.Kept), "rc-foot", list);
             BuildRecordDetail(list);
         }

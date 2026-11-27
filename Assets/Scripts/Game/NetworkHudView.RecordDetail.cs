@@ -87,8 +87,8 @@ namespace ChessFight.Game
 
             if (d == null || d.Empty)
             {
-                Text(Loc.T("이 판은 상세 기록이 없어요"), "rc-empty rd-none", recordDetail);
-                Text(Loc.T("상세 기록은 이 기능이 생긴 뒤(R742) 끝낸 온라인 경기부터 남아요"), "rc-empty-sub", recordDetail);
+                Text(Loc.T("이 경기는 상세 기록이 없습니다"), "rc-empty rd-none", recordDetail);
+                Text(Loc.T("상세 기록은 최근 업데이트 이후의 온라인 경기부터 저장됩니다"), "rc-empty-sub", recordDetail);
                 Show(recordDetail, true);
                 return;
             }
@@ -167,7 +167,7 @@ namespace ChessFight.Game
                 string to = last && end < 0 ? "" : " → " + MatchResult.Clock(d.LegEnd(i, end));
                 Text(MatchResult.Clock(leg.At) + to, "rd-leg-time", row);
             }
-            if (d.Legs.Count == 0) Text(Loc.T("구간 기록이 없어요"), "rd-leg-note", legs);
+            if (d.Legs.Count == 0) Text(Loc.T("구간 기록이 없습니다"), "rd-leg-note", legs);
 
             var mine = Element("rd-col", middle);
             Text(Loc.T("내 플레이"), "rd-title", mine);
@@ -234,7 +234,7 @@ namespace ChessFight.Game
                 Text(text, "rd-event-text", row);
                 Text(f.ByMe || !string.IsNullOrEmpty(f.Credit) ? Loc.T(f.Cause) : "", "rd-event-cause", row);
             }
-            if (involved.Count == 0) Text(Loc.T("떨어뜨리거나 떨어진 일이 없어요"), "rd-leg-note", events);
+            if (involved.Count == 0) Text(Loc.T("떨어뜨리거나 떨어진 기록이 없습니다"), "rd-leg-note", events);
 
             var roster = Element("rd-col", bottom);
             var head = Element("rd-sword-row rd-sword-head", roster);

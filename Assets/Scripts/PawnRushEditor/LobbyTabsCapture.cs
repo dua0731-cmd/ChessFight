@@ -70,10 +70,59 @@ namespace ChessFight.PawnRush.Editor
                 try { SettingsWindow.Open(); }
                 finally { RuntimePanels.CaptureTarget = null; }
             }),
+            // R865: the description panel (shown on hover) with each page's longest description, to see it fits.
+            ("8b_settings_desc_voice", () => SettingsDesc("소리", "음성 채팅")),
+            ("8c_settings_desc_keys", () => SettingsDesc("조작", "키 설정")),
+            ("8d_settings_desc_quality", () => SettingsDesc("화면", "그래픽 품질")),
+            ("8e_settings_desc_hud", () => SettingsDesc("게임플레이", "화면 표시")),
+            ("8f_settings_desc_access", () => SettingsDesc("접근성", "보기 편하게")),
             ("9_settings_quit", SettingsWindow.AskQuitNow),
         };
-        static readonly HashSet<string> SettingsShots = new HashSet<string> { "8_settings", "9_settings_quit" };
+        static readonly HashSet<string> SettingsShots = new HashSet<string>
+        {
+            "8_settings", "8b_settings_desc_voice", "8c_settings_desc_keys", "8d_settings_desc_quality",
+            "8e_settings_desc_hud", "8f_settings_desc_access", "9_settings_quit",
+        };
+
+        // R865: opens a page of the open settings window and shows its longest description as a hover would. The
+        // window keeps its schema private, so this reads it by reflection (capture tool only).
+        static void SettingsDesc(string tabName, string pageName)
+        {
+            const System.Reflection.BindingFlags any = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static
+                | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            var type = typeof(SettingsWindow);
+            object window = type.GetField("current", any)?.GetValue(null);
+            if (window == null) { errors.Add("settings window not open for " + tabName); return; }
+            var tabs = type.GetField("tabs", any)?.GetValue(window) as System.Collections.IList;
+            if (tabs == null) { errors.Add("settings tabs not found"); return; }
+            static object Get(object o, string field) => o.GetType().GetField(field, any)?.GetValue(o);
+            for (int t = 0; t < tabs.Count; t++)
+            {
+                if ((string)Get(tabs[t], "Name") != tabName) continue;
+                var pages = (Array)Get(tabs[t], "Pages");
+                for (int p = 0; p < pages.Length; p++)
+                {
+                    var page = pages.GetValue(p);
+                    if ((string)Get(page, "Name") != pageName) continue;
+                    type.GetField("tabIndex", any).SetValue(null, t);
+                    type.GetField("pageIndex", any).SetValue(null, p);
+                    type.GetMethod("ShowTab", any).Invoke(window, null);
+                    string label = "", desc = "";
+                    foreach (var section in (Array)Get(page, "Sections"))
+                        foreach (var item in (Array)Get(section, "Items"))
+                        {
+                            string d = Loc.T((string)Get(item, "Desc") ?? "");
+                            if (d.Length > desc.Length) { desc = d; label = Loc.T((string)Get(item, "Label") ?? ""); }
+                        }
+                    type.GetMethod("Describe", any).Invoke(window, new object[] { label, desc, null });
+                    lines.Add($"settings {tabName}/{pageName}: longest description '{label}' ({desc.Length} chars)");
+                    return;
+                }
+            }
+            errors.Add($"settings page not found: {tabName}/{pageName}");
+        }
         static RenderTexture settings;
+        static string switchTo;
 
         static LobbyTabsCapture()
         {
@@ -133,7 +182,11 @@ namespace ChessFight.PawnRush.Editor
             // R749: `-captureLanguage zh-Hans` (Run-LobbyTabsCapture.ps1 -Language) shows the pictures in that language.
             // Loc.Use only, never GameLanguage.Pick: nothing goes into PlayerPrefs, which this PC's open Editor shares.
             string language = CaptureLanguage();
-            if (language.Length > 0)
+            // R865: `-captureSwitch` builds the lobby in Korean and changes to the language just before the first
+            // picture, as a player who picks it in the settings does: what is already on screen must follow (Loc.Again).
+            switchTo = Array.IndexOf(Environment.GetCommandLineArgs(), "-captureSwitch") >= 0 && language.Length > 0 ? language : null;
+            if (switchTo != null) lines.Add("built in Korean, switching to " + switchTo + " before the first picture");
+            else if (language.Length > 0)
             {
                 if (Loc.Use(language)) lines.Add("language " + Loc.Lang);
                 else errors.Add("the string table has no column '" + language + "'");
@@ -436,6 +489,12 @@ namespace ChessFight.PawnRush.Editor
             {
                 if (EditorApplication.timeSinceStartup - beganAt > RuntimeLimit) throw new InvalidOperationException("capture took too long");
                 if (index >= Shots.Length) { Finish(errors.Count == 0 ? 0 : 1); return; }
+                if (held == 0 && index == 0 && switchTo != null)
+                {
+                    if (Loc.Use(switchTo)) lines.Add("language " + Loc.Lang + " (switched)");
+                    else errors.Add("the string table has no column '" + switchTo + "'");
+                    switchTo = null;
+                }
                 if (held == 0) Shots[index].show();
                 if (++held < (index == 0 ? FirstHold : HoldFrames)) return;
                 held = 0;

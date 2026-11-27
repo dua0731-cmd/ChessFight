@@ -84,12 +84,12 @@ namespace ChessFight.Game
 
             var rules = Element("lt-card rk-rules", left);
             Text(Loc.T("순위 규칙"), "a-label", rules);
-            Text(Loc.T("· 폰 러쉬 · 소드 파이트 순위는 따로 매겨요"), "rk-rule", rules);
-            Text(Loc.F("· 그 모드의 순위 판 {0}판 이상이면 순위에 올라가요", RankRules.MinGames), "rk-rule", rules);
-            Text(Loc.F("· 순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", RankRules.MinSide), "rk-rule", rules);
-            Text(Loc.T("· 누적 승률 순 · 같으면 판수 많은 쪽이 위"), "rk-rule", rules);
-            Text(Loc.T("· 시즌 없이 계속 쌓여요 · 나가거나 튕긴 판은 패"), "rk-rule", rules);
-            Text(Loc.F("· {0}일 안 하면 자리는 그대로, 흐리게 '쉬는 중'", RankRules.RestDays), "rk-rule rk-rule-dim", rules);
+            Text(Loc.T("· 폰 러쉬와 소드 파이트는 순위를 따로 집계합니다"), "rk-rule", rules);
+            Text(Loc.F("· 모드별로 순위 판을 {0}판 이상 하면 순위에 오릅니다", RankRules.MinGames), "rk-rule", rules);
+            Text(Loc.F("· 순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", RankRules.MinSide), "rk-rule", rules);
+            Text(Loc.T("· 누적 승률 순이며, 같으면 판수가 많은 쪽이 위입니다"), "rk-rule", rules);
+            Text(Loc.T("· 시즌 없이 누적되며, 이탈하면 패배로 처리됩니다"), "rk-rule", rules);
+            Text(Loc.F("· {0}일간 쉬어도 순위는 유지되며 '쉬는 중'으로 표시됩니다", RankRules.RestDays), "rk-rule rk-rule-dim", rules);
 
             var card = Element("lt-card rk-board", rankPage, PickingMode.Position);
             var head = Element("rk-head", card);
@@ -131,7 +131,7 @@ namespace ChessFight.Game
             rkPin = RankLine(rkPinBox);
             var foot = Element("rk-foot", card);
             rkFootLeft = Text("", "rk-foot-text", foot);
-            Text(Loc.T("Steam 순위표 · 판이 끝날 때마다 갱신"), "rk-foot-text", foot);
+            Text(Loc.T("Steam 순위표 · 경기가 끝날 때마다 갱신됩니다"), "rk-foot-text", foot);
         }
 
         RankRow RankLine(VisualElement parent)
@@ -243,11 +243,11 @@ namespace ChessFight.Game
                 rkMineOf.text = " / " + Loc.F("{0}판", own.Need);
                 // Beside the big number the label is narrow: broken where it reads well, not in the middle of a word
                 // (RankText.Need's sentence with a line break, a pattern of its own so each language breaks it itself).
-                rkMineRate.text = Loc.F("순위 판 {0}판 더 하면\n순위에 올라가요", Mathf.Max(1, own.ToGo));
+                rkMineRate.text = Loc.F("순위 판 {0}판을 더 하면\n순위에 오릅니다", Mathf.Max(1, own.ToGo));
                 rkMineFill.style.width = Length.Percent(100f * Mathf.Clamp01((float)own.Have / Mathf.Max(1, own.Need)));
                 rkMineNote.text = own.Games > 0
-                    ? Loc.F("지금 승률 {0}% · {1}\n{2}판이 되면 그때 승률로 순위에 들어가요", RankText.Rate(own.Wins, own.Games), Tally(own), RankRules.MinGames)
-                    : Loc.F("순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상인 판", RankRules.MinSide);
+                    ? Loc.F("현재 승률 {0}% · {1}\n{2}판을 채우면 그때 승률로 순위에 오릅니다", RankText.Rate(own.Wins, own.Games), Tally(own), RankRules.MinGames)
+                    : Loc.F("순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", RankRules.MinSide);
             }
             else
             {
@@ -345,23 +345,23 @@ namespace ChessFight.Game
             string status = "", sub = "";
             switch (shown.Status)
             {
-                case Rankings.Status.Offline: status = Loc.T("Steam에 연결되면 순위가 보여요"); break;
-                case Rankings.Status.Loading: status = Loc.T("순위를 불러오는 중이에요"); break;
+                case Rankings.Status.Offline: status = Loc.T("Steam에 연결하면 순위를 볼 수 있습니다"); break;
+                case Rankings.Status.Loading: status = Loc.T("순위를 불러오는 중입니다…"); break;
                 // The Steam side's reason (SteamLeaderboards' Korean), translated here where it is shown.
-                case Rankings.Status.Failed: status = shown.Error != "" ? Loc.T(shown.Error) : Loc.T("Steam 순위표를 받지 못했어요"); break;
+                case Rankings.Status.Failed: status = shown.Error != "" ? Loc.T(shown.Error) : Loc.T("Steam 순위표를 불러오지 못했습니다"); break;
                 default:
                     if (rkLines.Count > 0) break;
                     if (rankScope == RankScope.Around)
                     {
-                        status = under ? Loc.F("순위에 오르면 내 위아래 {0}명이 보여요", Rankings.AroundSpan) : Loc.T("곧 순위에 올라가요");
+                        status = under ? Loc.F("순위에 오르면 내 위아래 {0}명이 표시됩니다", Rankings.AroundSpan) : Loc.T("곧 순위에 오릅니다");
                         sub = under ? RankText.Need(own) : "";
                     }
-                    else if (pageMissing) status = Loc.T("순위를 불러오는 중이에요");
-                    else if (rankPageAt > 0) status = Loc.T("이 쪽에는 순위가 없어요");
+                    else if (pageMissing) status = Loc.T("순위를 불러오는 중입니다…");
+                    else if (rankPageAt > 0) status = Loc.T("이 페이지에는 순위가 없습니다");
                     else
                     {
-                        status = Loc.T("아직 순위에 오른 사람이 없어요");
-                        sub = Loc.F("순위 판 {0}판 이상이면 순위에 올라가요", RankRules.MinGames);
+                        status = Loc.T("아직 순위에 오른 플레이어가 없습니다");
+                        sub = Loc.F("순위 판을 {0}판 이상 하면 순위에 오릅니다", RankRules.MinGames);
                     }
                     break;
             }
@@ -438,10 +438,10 @@ namespace ChessFight.Game
         {
             switch (status)
             {
-                case Rankings.Status.Offline: return Loc.T("Steam에 연결되면 순위가 보여요");
-                case Rankings.Status.Loading: return Loc.T("순위를 불러오는 중이에요");
-                case Rankings.Status.Failed: return Loc.T("Steam 순위표를 받지 못했어요");
-                default: return Loc.T("곧 순위에 올라가요");
+                case Rankings.Status.Offline: return Loc.T("Steam에 연결하면 순위를 볼 수 있습니다");
+                case Rankings.Status.Loading: return Loc.T("순위를 불러오는 중입니다…");
+                case Rankings.Status.Failed: return Loc.T("Steam 순위표를 불러오지 못했습니다");
+                default: return Loc.T("곧 순위에 오릅니다");
             }
         }
     }

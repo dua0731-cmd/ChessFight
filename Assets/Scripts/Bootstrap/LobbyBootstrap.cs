@@ -286,10 +286,11 @@ namespace ChessFight.Game
                 Online = session.Online,
                 CanRetry = !session.Online,
                 PlayerName = session.Online ? session.Name(session.Self) : OfflineName(Loc.T("오프라인")),
-                Status = session.Online ? session.Status : (string.IsNullOrEmpty(session.Error) ? session.Status : session.Error),
+                // R865: the session keeps its line in the language it was set in; Again shows it in the one picked since.
+                Status = Loc.Again(session.Online ? session.Status : (string.IsNullOrEmpty(session.Error) ? session.Status : session.Error)),
                 Details = "Steam: " + (session.Online ? Loc.T("연결됨") : Loc.T("연결 안 됨 - Steam 실행 후 다시 연결")) + "\n" +
-                          Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
-                          Loc.F("입력: {0}", runtime.Controls?.DisplayName) + "\n" + Loc.F("버전 {0}", session.Build) +
+                          Line(Loc.Again(motion?.ConnectionStatus)) + Line(motion?.QualityLine) +
+                          Loc.F("입력: {0}", Loc.T(runtime.Controls?.DisplayName)) + "\n" + Loc.F("버전 {0}", session.Build) +
                           (Debug.isDebugBuild ? "\n" + Loc.T("F8 지연 시뮬레이터 · F9 탈주 기록 지우기") : NetworkRuntime.TestRules ? "\n" + Loc.T("F9 탈주 기록 지우기") : ""),
                 Version = $"v{session.Build} · STEAM",
                 FriendsOnline = friendsOnline,

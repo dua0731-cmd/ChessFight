@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ChessFight.Network
 {
@@ -163,6 +164,76 @@ namespace ChessFight.Network
 
         Dictionary<string, string>[] back;
 
+        // R865: a text made from a line with {0} {1} slots (Loc.F) in language `from`, made again in language `to`
+        // with the same values, or null when no such line fits. The values themselves are put through the table too
+        // ("입력: {0}" with a translated input name). Patterns with the most fixed text are tried first, and a
+        // pattern of slots only never matches. Built once per language, on first use.
+        public string Refill(string text, string from, string to)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            int c = Column(from);
+            if (c < 0) return null;
+            if (patterns == null) patterns = new List<KeyValuePair<Regex, string>>[codes.Length];
+            var list = patterns[c];
+            if (list == null)
+            {
+                var found = new List<KeyValuePair<int, KeyValuePair<Regex, string>>>();
+                foreach (var pair in rows)
+                {
+                    string shown = c == 0 ? pair.Key : pair.Value[c - 1];
+                    if (string.IsNullOrEmpty(shown) || shown.IndexOf('{') < 0) continue;
+                    var regex = SlotPattern(shown, out int fixedChars);
+                    if (regex != null && fixedChars >= 2)
+                        found.Add(new KeyValuePair<int, KeyValuePair<Regex, string>>(fixedChars, new KeyValuePair<Regex, string>(regex, pair.Key)));
+                }
+                found.Sort((a, b) => b.Key.CompareTo(a.Key));
+                list = patterns[c] = found.ConvertAll(f => f.Value);
+            }
+            foreach (var p in list)
+            {
+                var m = p.Key.Match(text);
+                if (!m.Success) continue;
+                var args = new List<object>();
+                for (int i = 0; ; i++)
+                {
+                    var g = m.Groups["s" + i];
+                    if (!g.Success) break;
+                    string value = g.Value;
+                    string ko = Contains(value) ? value : KoreanOf(value, from);
+                    args.Add(ko != null ? Get(ko, to) : value);
+                }
+                try { return string.Format(CultureInfo.InvariantCulture, Get(p.Value, to), args.ToArray()); }
+                catch (FormatException) { return null; }
+            }
+            return null;
+        }
+
+        List<KeyValuePair<Regex, string>>[] patterns;
+
+        // "{0}판 · {1}승" -> ^(?<s0>.+?)판 · (?<s1>.+?)승$; a slot used twice must hold the same text both times.
+        // Null when the slots are not 0, 1, 2 ... with none missing.
+        static Regex SlotPattern(string pattern, out int fixedChars)
+        {
+            fixedChars = 0;
+            var sb = new System.Text.StringBuilder("^");
+            var seen = new HashSet<int>();
+            int at = 0;
+            foreach (Match m in Regex.Matches(pattern, @"\{(\d+)\}"))
+            {
+                string literal = pattern.Substring(at, m.Index - at);
+                fixedChars += literal.Trim().Length;
+                sb.Append(Regex.Escape(literal));
+                int n = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                sb.Append(seen.Add(n) ? "(?<s" + n + ">.+?)" : @"\k<s" + n + ">");
+                at = m.Index + m.Length;
+            }
+            string tail = pattern.Substring(at);
+            fixedChars += tail.Trim().Length;
+            sb.Append(Regex.Escape(tail)).Append('$');
+            for (int i = 0; i < seen.Count; i++) if (!seen.Contains(i)) return null;
+            return seen.Count == 0 ? null : new Regex(sb.ToString(), RegexOptions.Singleline | RegexOptions.CultureInvariant);
+        }
+
         // The text in this language, or the Korean when the language has none yet (or the table does not know it).
         public string Get(string ko, string code)
         {
@@ -322,12 +393,28 @@ namespace ChessFight.Network
 
         // R756: words already on screen in the language before the last change, in the language now - for a label
         // built once (a tab, a button, a mode card) that no view draws again. Text the table does not know (a
-        // name, a number, a line with values put in) comes back as it was.
+        // name, a number) comes back as it was. R865: a line with values put in (Loc.F) is made again with the
+        // same values, and text kept from before an earlier change (a status line set two languages ago) is found
+        // in any column.
         public static string Again(string shown)
         {
             if (string.IsNullOrEmpty(shown)) return shown;
             var ko = Table.Contains(shown) ? shown : Table.KoreanOf(shown, Previous);
-            return ko == null ? shown : T(ko);
+            if (ko != null) return T(ko);
+            foreach (var code in Table.Codes)
+            {
+                ko = Table.KoreanOf(shown, code);
+                if (ko != null) return T(ko);
+            }
+            var again = Table.Refill(shown, Previous, Lang);
+            if (again != null) return again;
+            foreach (var code in Table.Codes)
+            {
+                if (code == Previous) continue;
+                again = Table.Refill(shown, code, Lang);
+                if (again != null) return again;
+            }
+            return shown;
         }
 
         // The same with values put into its {0} {1} slots. A translation whose slots do not fit falls back to the

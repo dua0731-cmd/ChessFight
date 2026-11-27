@@ -39,11 +39,11 @@ namespace ChessFight.Network
         {
             switch (piece)
             {
-                case PieceKind.Queen: return "둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다";
-                case PieceKind.Rook: return "사슬을 던져 적은 끌어오고 팀원은 옆으로 데려온다";
-                case PieceKind.Bishop: return "대각선 밧줄을 깔아 길을 막는다. 상대 견제용";
-                case PieceKind.Knight: return "높이 뛰어 꺾어 착지한다. 틈과 턱을 넘기 좋다";
-                default: return "두 칸을 빠르게 내딛는다";
+                case PieceKind.Queen: return "주변의 상대를 모두 밀쳐 냅니다. 몸싸움과 방해에 강합니다.";
+                case PieceKind.Rook: return "사슬을 던져 상대는 끌어오고, 팀원은 옆으로 데려옵니다.";
+                case PieceKind.Bishop: return "대각선으로 밧줄을 깔아 길을 막습니다. 상대를 견제할 때 좋습니다.";
+                case PieceKind.Knight: return "높이 뛰어올라 꺾어서 착지합니다. 틈과 턱을 넘기에 좋습니다.";
+                default: return "두 칸을 빠르게 내딛습니다.";
             }
         }
 

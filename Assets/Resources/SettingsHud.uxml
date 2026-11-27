@@ -51,7 +51,7 @@
                 <ui:Label text="ESC" class="s2-cap" picking-mode="Ignore" />
                 <ui:Label text="뒤로" picking-mode="Ignore" />
             </ui:Button>
-            <ui:Label text="바꾸는 즉시 저장돼요" class="s2-saved" picking-mode="Ignore" />
+            <ui:Label text="변경 사항은 자동으로 저장됩니다" class="s2-saved" picking-mode="Ignore" />
             <ui:VisualElement class="grow" picking-mode="Ignore" />
             <ui:Button name="s2-reset" class="row s2-foot-btn s2-reset">
                 <ui:Label text="DEL" class="s2-cap" picking-mode="Ignore" />

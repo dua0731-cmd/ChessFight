@@ -4418,7 +4418,7 @@ public static class NetworkCoreTests
                 Check(RankUpload.From(book, RankBoard.PawnRush) == null, "19 ranked matches: not yet, however many the others");
                 var short1 = RankCount.Of(book, RankBoard.PawnRush);
                 Check(!short1.Ranked && short1.Have == 19 && short1.Need == 20 && short1.ToGo == 1 &&
-                      RankText.Need(short1) == "순위 판 1판 더 하면 순위에 올라가요", "one to go");
+                      RankText.Need(short1) == "순위 판 1판을 더 하면 순위에 오릅니다", "one to go");
                 book.Add(new MatchRecord { Match = 200, Mode = pr, Result = RecordResult.Left, Piece = PieceKind.Rook, When = last, Ranked = true });
                 var line = RankUpload.From(book, RankBoard.PawnRush);
                 Check(line != null && line.Self && line.Games == 20 && line.Wins == 10 && line.LastDay == RankRules.Day(last) &&
@@ -4438,7 +4438,7 @@ public static class NetworkCoreTests
                 var drawn = RankCount.Of(book, RankBoard.SwordFight);
                 Check(drawn.Ranked && drawn.ToGo == 0 && drawn.Draws == 2 && drawn.Losses == 3 && RankRules.Permille(drawn.Wins, drawn.Games) == 750, "a draw is not a win (asked 11-21, kept)");
                 var none = RankCount.Of(new RecordBook(), RankBoard.SwordFight);
-                Check(none.Have == 0 && none.Need == 20 && RankText.Need(none) == "순위 판 20판 더 하면 순위에 올라가요", "nothing yet: 20 to go");
+                Check(none.Have == 0 && none.Need == 20 && RankText.Need(none) == "순위 판 20판을 더 하면 순위에 오릅니다", "nothing yet: 20 to go");
                 // The text: the ranked counts and marks are kept; an older book reads, with none of its matches ranked.
                 string text = book.Encode();
                 var copy = RecordBook.Decode(text);
@@ -4621,8 +4621,13 @@ public static class NetworkCoreTests
                     Check(Loc.F("틀린 {0}", "x") == "틀린 x", "a translation whose slots do not fit shows the Korean");
                     // R756: words already shown follow a change of language (a label built once).
                     Check(Loc.Previous == "ko" && Loc.Again("언어") == "Language" && Loc.Again("엘리트") == "엘리트" && Loc.Again("") == "", "Korean on screen to English");
-                    Check(Loc.Use("ru") && Loc.Previous == "en" && Loc.Again("Language") == "Язык" && Loc.Again("Hits 7, falls 3") == "Hits 7, falls 3", "English on screen to Russian");
-                    Check(Loc.Use("ko") && Loc.Again("Язык") == "언어" && Loc.Again("Language") == "Language", "Russian back to Korean; only the language left");
+                    // R865: a line with values (Loc.F) is made again with them; Russian has no text for it, so the Korean
+                    // pattern, as Loc.F itself would show.
+                    Check(Loc.Use("ru") && Loc.Previous == "en" && Loc.Again("Language") == "Язык" && Loc.Again("Hits 7, falls 3") == "낙하 3 · 맞음 7", "English on screen to Russian");
+                    // R865: text kept from two languages ago is found in any column (a status line drawn from what was set).
+                    Check(Loc.Use("ko") && Loc.Again("Язык") == "언어" && Loc.Again("Language") == "언어", "Russian back to Korean; an older language too");
+                    Check(Loc.Use("en") && Loc.Again("낙하 3 · 맞음 7") == "Hits 7, falls 3" && Loc.Again("낙하 3 · 맞음 7.5") == "Hits 7.5, falls 3", "Korean with values to English");
+                    Check(Loc.Again("틀린 x") == "틀린 x" && Loc.Again("낙하 3") == "낙하 3", "a translation that does not fit, or text that only starts like a line, stays");
                     Check(table.KoreanOf("Language", "en") == "언어" && table.KoreanOf("언어", "ko") == "언어" && table.KoreanOf("x", "en") == null && table.KoreanOf("Language", "xx") == null, "the line behind a translation");
                     Loc.Load(StringTable.Parse("ko\tja\n언어\t言語\n", null));
                     Check(Loc.Lang == "ko" && Loc.T("언어") == "언어", "a table without the language shown goes back to Korean");
@@ -4653,7 +4658,15 @@ public static class NetworkCoreTests
                 // R790: Russian has a column but is not ready yet, so Steam in Russian still starts in Korean.
                 Check(table.Has("ru") && !table.Ready("ru"), "Russian there, not ready yet");
                 Check(Languages.Choose("", Languages.FromSteam("russian"), "", table) == "ko", "a language not ready yet falls back to Korean");
-                Check(Languages.Choose("ko", Languages.FromSteam("english"), "", table) == "ko", "the settings' pick wins over Steam"); });
+                Check(Languages.Choose("ko", Languages.FromSteam("english"), "", table) == "ko", "the settings' pick wins over Steam");
+                // R865: the rank tab's rules carry values (Loc.F) and are built once; after a change of language they are
+                // made again from what is on screen (Loc.Again -> Refill), in the order languages are switched in game.
+                string rule = string.Format("· 모드별로 순위 판을 {0}판 이상 하면 순위에 오릅니다", 20);
+                string en = table.Refill(rule, "ko", "en"), zh = table.Refill(en, "en", "zh-Hans"), ru = table.Refill(zh, "zh-Hans", "ru");
+                Check(en == string.Format(table.Get("· 모드별로 순위 판을 {0}판 이상 하면 순위에 오릅니다", "en"), 20) && en.Contains("20") && en != rule, "a rule with a value: Korean to English: " + en);
+                Check(zh != null && zh.Contains("20") && ru != null && ru.Contains("20") && table.Refill(ru, "ru", "ko") == rule, "on to Chinese, Russian and back to Korean");
+                string vs = string.Format("· 순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", 2);
+                Check(table.Refill(vs, "ko", "en") == string.Format(table.Get("· 순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상", "en"), 2), "one value used twice"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

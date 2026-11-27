@@ -417,6 +417,6 @@ namespace ChessFight.Network
             rank <= 0 || total <= 0 ? "" : Loc.F("상위 {0}%", Math.Max(1, Math.Min(100, (int)Math.Ceiling(100.0 * rank / total))));
 
         // What a player short of a board still needs: "순위 판 14판 더 하면 순위에 올라가요".
-        public static string Need(RankCount count) => Loc.F("순위 판 {0}판 더 하면 순위에 올라가요", Math.Max(1, count.ToGo));
+        public static string Need(RankCount count) => Loc.F("순위 판 {0}판을 더 하면 순위에 오릅니다", Math.Max(1, count.ToGo));
     }
 }

@@ -9,14 +9,15 @@ ko	en	zh-Hans	ru
 설정	Settings	设置	Настройки
 설명	Description	说明	Описание
 뒤로	Back	返回	Назад
-바꾸는 즉시 저장돼요	Changes are saved right away	更改后立即保存	Изменения сохраняются сразу
+뒤로 이동	Move back	向后移动	Назад
+변경 사항은 자동으로 저장됩니다	Changes are saved automatically	更改会自动保存	Изменения сохраняются автоматически
 게임 나가기	Quit game	退出游戏	Выйти из игры
 플레이어	Player	玩家	Игрок
 STEAM 연결됨	STEAM ONLINE	STEAM 已连接	STEAM В СЕТИ
 STEAM 오프라인	STEAM OFFLINE	STEAM 离线	STEAM НЕ В СЕТИ
 {0} 기본값 복원	Reset {0}	恢复{0}默认值	Сброс: {0}
-줄 위에 마우스를 올리면 여기에 설명이 나와요.	Point at a line to see what it does here.	将鼠标移到某一行上，这里会显示说明。	Наведите на строку, чтобы увидеть здесь описание.
-설명이 필요 없는 항목이에요.	This one explains itself.	此项无需说明。	Здесь всё понятно без описания.
+항목에 마우스를 올리면 설명이 표시됩니다.	Hover over an option to see its description.	将鼠标悬停在选项上以查看说明。	Наведите курсор на параметр, чтобы увидеть описание.
+이 항목에는 설명이 없습니다.	No description for this option.	此选项没有说明。	У этого параметра нет описания.
 준비 중	Coming soon	即将推出	Скоро
 끔	Off	关	Выкл.
 켬	On	开	Вкл.
@@ -48,26 +49,26 @@ STEAM 오프라인	STEAM OFFLINE	STEAM 离线	STEAM НЕ В СЕТИ
 보기 편하게	Comfort	舒适观看	Комфорт
 # --- settings window: R792 (render scale, streamer mode, colour-blind mode; Core StreamerMode · ColourAid)
 렌더 해상도	Render resolution	渲染分辨率	Разрешение рендера
-경기 화면(3D)을 화면 크기의 이 비율로 그린 뒤 FSR로 늘려요. 낮추면 프레임이 크게 오르고 조금 흐려져요. 메뉴와 글자는 그대로 또렷해요. 바꾸지 않으면 '낮음'은 80 %, 나머지는 100 %.	Draws the 3D picture at this share of the screen size, then scales it up with FSR. Lower raises the frame rate a lot and blurs a little. Menus and text stay sharp. Left alone, 'Low' uses 80 % and the rest 100 %.	以屏幕尺寸的此比例绘制 3D 画面，再用 FSR 放大。调低可大幅提升帧率，画面会稍微变模糊。菜单和文字仍然清晰。未更改时，“低”为 80 %，其余为 100 %。	3D-картинка рисуется в этой доле от размера экрана и увеличивается с помощью FSR. Ниже — заметно больше кадров и немного размытия. Меню и текст остаются чёткими. Если не менять: «Низкое» — 80 %, остальные — 100 %.
+3D 화면을 그리는 해상도의 비율입니다. 낮추면 성능이 향상되지만 화면이 흐려질 수 있습니다.	The resolution scale of the 3D view. Lower values improve performance but may look blurrier.	3D 画面的渲染分辨率比例。调低可提升性能，但画面可能变模糊。	Масштаб разрешения 3D-изображения. Меньшие значения повышают производительность, но картинка может стать размытее.
 방송	Streaming	直播	Трансляция
 스트리머 모드	Streamer mode	主播模式	Режим стримера
-방송할 때 켜요. 아래에서 고른 것을 내 화면에서만 가려요. 다른 사람 화면은 그대로예요.	Turn it on while streaming. It hides what you pick below, on your screen only. Nobody else's screen changes.	直播时开启。只在你的画面上隐藏下面选中的内容，其他人的画面不变。	Включайте на время трансляции. Скрывает выбранное ниже только на вашем экране; у других ничего не меняется.
-다른 사람 이름 가리기	Hide other players' names	隐藏其他玩家名称	Скрывать имена других игроков
-다른 사람 이름이 "플레이어 3"처럼 보이고 Steam 프로필 사진도 가려요: 로비 · 친구 목록 · 방 · 경기 이름표 · 순위 · 결과 · 채팅 · 전적 · 순위표. 내 이름은 그대로. 켜 둔 동안 끝난 경기는 전적에도 그렇게 남아요.	Other players show as "Player 3" and their Steam pictures are hidden: lobby · friends list · room · name tags · standings · results · chat · history · leaderboards. Your own name stays. Matches finished while it is on stay that way in your history.	其他玩家显示为“玩家 3”，并隐藏其 Steam 头像：大厅 · 好友列表 · 房间 · 比赛名牌 · 排名 · 结果 · 聊天 · 战绩 · 排行榜。你自己的名称不变。开启期间结束的比赛在战绩中也会这样保存。	Другие игроки показываются как «Игрок 3», их аватары Steam скрыты: лобби · список друзей · комната · таблички с именами · позиции · итоги · чат · история · рейтинг. Ваше имя остаётся. Матчи, сыгранные в этом режиме, так и сохранятся в истории.
-방 번호 · 파티 코드 가리기	Hide room number · party code	隐藏房间号 · 队伍代码	Скрывать номер комнаты · код группы
-화면에 ●●●●로 보이고, 복사 버튼은 진짜 번호를 그대로 복사해요.	Shows as ●●●●; the copy button still copies the real number.	画面上显示为 ●●●●，复制按钮仍会复制真实号码。	Показывается как ●●●●; кнопка копирования по-прежнему копирует настоящий номер.
+방송 중 개인 정보가 화면에 노출되지 않도록 가립니다.	Hides personal information on screen while you stream.	直播时隐藏画面上的个人信息。	Скрывает личные данные на экране во время трансляции.
+다른 플레이어 이름 숨기기	Hide other players' names	隐藏其他玩家名称	Скрывать имена других игроков
+다른 플레이어의 이름과 프로필 사진을 숨깁니다.	Hides other players' names and profile pictures.	隐藏其他玩家的名称和头像。	Скрывает имена и аватары других игроков.
+방 번호 · 파티 코드 숨기기	Hide room number · party code	隐藏房间号 · 队伍代码	Скрывать номер комнаты · код группы
+방 번호와 파티 코드를 숨깁니다.	Hides room numbers and party codes.	隐藏房间号和队伍代码。	Скрывает номера комнат и коды групп.
 색약 모드	Colorblind mode	色弱模式	Режим для дальтоников
 적색약	Protanopia	红色弱	Протанопия
 녹색약	Deuteranopia	绿色弱	Дейтеранопия
 청색약	Tritanopia	蓝色弱	Тританопия
-경기 · 로비 화면의 색을 고쳐, 구분하기 어려운 색(적색약 · 녹색약: 빨강과 초록, 청색약: 파랑과 노랑)이 갈라져 보이게 해요. 상대 팀 스킬의 빨간색과 경고 색이 잘 보여요. 메뉴와 글자는 그대로예요.	Corrects the colors of the match and lobby pictures so that colors that are hard to tell apart (protanopia · deuteranopia: red and green, tritanopia: blue and yellow) separate. The enemy team's red skills and the warning colors stand out. Menus and text stay as they are.	校正比赛和大厅画面的颜色，让难以区分的颜色（红色弱 · 绿色弱：红与绿，蓝色弱：蓝与黄）分开显示。对方队伍技能的红色和警告色更容易看清。菜单和文字不变。	Корректирует цвета в матче и лобби, чтобы трудноразличимые цвета (протанопия · дейтеранопия: красный и зелёный, тританопия: синий и жёлтый) стали различимы. Красные умения соперников и предупреждающие цвета видны лучше. Меню и текст не меняются.
-색 보정 세기	Color correction strength	色彩校正强度	Сила коррекции цвета
-색약 모드의 세기.	How strong the colorblind mode is.	色弱模式的强度。	Насколько сильно действует режим для дальтоников.
+색각 이상이 있는 플레이어를 위해 화면 색을 보정합니다.	Adjusts on-screen colors for color vision deficiency.	为色觉障碍玩家校正画面颜色。	Корректирует цвета для игроков с нарушением цветового зрения.
+보정 강도	Correction strength	校正强度	Сила коррекции
+색약 모드의 보정 강도를 조절합니다.	Adjusts the strength of colorblind mode.	调整色弱模式的校正强度。	Сила коррекции режима для дальтоников.
 플레이어 {0}	Player {0}	玩家 {0}	Игрок {0}
 # --- settings window: the language line (R747)
 언어	Language	语言	Язык
 번역 중	in progress	翻译中	в работе
-게임 글자의 언어. 고르지 않으면 Steam에서 이 게임에 정한 언어를 따라요(번역이 끝난 언어만). 아직 번역이 없는 글자는 한국어로 보여요.	The language of the game's text. Until you pick one, the game follows the language set for it in Steam (once that translation is finished). Text not translated yet shows in Korean.	游戏文字的语言。未选择时，将使用 Steam 中为本游戏设置的语言（仅限已完成翻译的语言）。尚未翻译的文字会以韩语显示。	Язык текста в игре. Пока вы его не выбрали, игра берёт язык, заданный для неё в Steam (если перевод на него готов). Ещё не переведённый текст показывается на корейском.
+게임에 표시할 언어를 선택합니다. 선택하지 않으면 Steam 언어 설정을 따릅니다.	Choose the game's display language. If none is selected, the game follows your Steam language.	选择游戏的显示语言。未选择时将跟随 Steam 语言设置。	Выберите язык игры. Если язык не выбран, используется язык Steam.
 # ===== lobby (R748): LobbyBootstrap, NetworkHudView, its tabs, rank and record, Core RankText / RecordText
 # --- LobbyBootstrap.cs: toasts
 게임 모드: {0}	Game mode: {0}	游戏模式：{0}	Режим игры: {0}
@@ -95,6 +96,7 @@ STEAM 오프라인	STEAM OFFLINE	STEAM 离线	STEAM НЕ В СЕТИ
 연결됨	Connected	已连接	Подключено
 연결 안 됨 - Steam 실행 후 다시 연결	Not connected - start Steam, then reconnect	未连接 - 请启动 Steam 后重新连接	Нет подключения - запустите Steam и подключитесь снова
 입력: {0}	Input: {0}	输入：{0}	Ввод: {0}
+레거시 입력 (Input Manager)	Legacy input (Input Manager)	旧版输入 (Input Manager)	Классический ввод (Input Manager)
 버전 {0}	Version {0}	版本 {0}	Версия {0}
 F8 지연 시뮬레이터 · F9 탈주 기록 지우기	F8 lag simulator · F9 clear leave record	F8 延迟模拟器 · F9 清除逃跑记录	F8 симулятор задержки · F9 сброс истории выходов
 F9 탈주 기록 지우기	F9 clear leave record	F9 清除逃跑记录	F9 сброс истории выходов
@@ -207,23 +209,23 @@ Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нуж�
 팀 색으로 보기	Show team colors	以队伍颜色显示	Цвета команд
 백	White	白	Белые
 흑	Black	黑	Чёрные
-끌어서 돌려 보기	Drag to rotate	拖动旋转	Тяните, чтобы вращать
+드래그해서 돌려 보기	Drag to rotate	拖动以旋转	Перетащите, чтобы повернуть
 능력치	Stats	属性	Характеристики
 무게	Weight	重量	Вес
 오르기	Climb	攀爬	Лазание
 질주 가능	Can sprint	可冲刺	Умеет бегать
 눌림 · 비틀거림 면역	Can't be squashed or staggered	免疫压扁和踉跄	Не сплющивается и не шатается
-이 모드에는 나오지 않아요	Not in this mode	此模式中不出现	Нет в этом режиме
-고를 수 없는 기물이에요	This piece can't be picked	无法选择此棋子	Эту фигуру нельзя выбрать
+이 모드에는 등장하지 않습니다	Not available in this mode	不会在此模式中出现	В этом режиме недоступна
+선택할 수 없는 기물입니다	This piece can't be chosen	无法选择此棋子	Эту фигуру нельзя выбрать
 자세히 보기	Details	查看详情	Подробнее
 폰 러쉬 시작 기물	Pawn Rush starting piece	兵卒冲锋初始棋子	Стартовая фигура Пешечного рывка
-폰 러쉬에서 모두가 폰으로 출발 · 소드 파이트에서는 못 고름	Everyone starts as a pawn in Pawn Rush · can't be picked in Sword Fight	兵卒冲锋中所有人以兵出发 · 剑斗中无法选择	В Пешечном рывке все начинают пешкой · в Бою на мечах не выбрать
+폰 러쉬에서 모두 폰으로 시작 · 소드 파이트 선택 불가	Everyone starts as a pawn in Pawn Rush · not selectable in Sword Fight	兵卒冲锋中所有人以兵开局 · 剑斗中不可选择	В Пешечном рывке все начинают пешкой · в Бое на мечах не выбирается
 두 모드	Both modes	两种模式	Оба режима
-폰 러쉬 승격 발판 · 소드 파이트 고르기	Pawn Rush promotion pad · pickable in Sword Fight	兵卒冲锋升变踏板 · 剑斗中可选	Плита превращения в Пешечном рывке · выбор в Бою на мечах
+폰 러쉬 승격 가능 · 소드 파이트 선택 가능	Promotion in Pawn Rush · selectable in Sword Fight	兵卒冲锋中可升变 · 剑斗中可选择	Превращение в Пешечном рывке · выбирается в Бое на мечах
 소드 파이트 전용	Sword Fight only	剑斗专用	Только Бой на мечах
-소드 파이트 고르기 · 폰 러쉬에는 나오지 않음	Pickable in Sword Fight · not in Pawn Rush	剑斗中可选 · 兵卒冲锋中不出现	Выбор в Бою на мечах · нет в Пешечном рывке
+소드 파이트 선택 가능 · 폰 러쉬 등장 안 함	Selectable in Sword Fight · not in Pawn Rush	剑斗中可选择 · 不会在兵卒冲锋中出现	Выбирается в Бое на мечах · нет в Пешечном рывке
 폰 러쉬 전용	Pawn Rush only	兵卒冲锋专用	Только Пешечный рывок
-폰 러쉬 승격 발판 · 소드 파이트에서는 못 고름	Pawn Rush promotion pad · can't be picked in Sword Fight	兵卒冲锋升变踏板 · 剑斗中无法选择	Плита превращения в Пешечном рывке · в Бою на мечах не выбрать
+폰 러쉬 승격 가능 · 소드 파이트 선택 불가	Promotion in Pawn Rush · not selectable in Sword Fight	兵卒冲锋中可升变 · 剑斗中不可选择	Превращение в Пешечном рывке · в Бое на мечах не выбирается
 내 기록 · <color=#E2B866>{0}판 {1}승</color>	My record · <color=#E2B866>{0} · {1}W</color>	我的记录 · <color=#E2B866>{0} 场 {1} 胜</color>	Моя статистика · <color=#E2B866>{0} · {1} поб.</color>
 내 기록	My record	我的记录	Моя статистика
 전체 승률	Overall win rate	总胜率	Общий процент побед
@@ -233,9 +235,9 @@ Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нуж�
 내가 떨어뜨림	Knockouts	击落	Сбросы
 떨어짐	Falls	坠落	Падения
 한 판 최다 떨어뜨림	Most knockouts in a match	单场最多击落	Макс. сбросов за матч
-온라인 경기만 셈 · 판수는 Steam에 보관, 최근 경기 목록은 이 PC에만	Online matches only · totals are kept on Steam, the recent match list only on this PC	仅统计在线比赛 · 场次保存在 Steam，最近比赛列表仅保存在本机	Только онлайн-матчи · итоги хранятся в Steam, список последних матчей - только на этом ПК
-아직 기록이 없어요	No matches yet	暂无记录	Матчей пока нет
-온라인 경기를 끝까지 하면 여기에 쌓여요	Online matches you play to the end show up here	打完的在线比赛会记录在这里	Здесь появятся онлайн-матчи, сыгранные до конца
+온라인 경기만 기록됩니다 · 통계는 Steam에, 최근 경기 목록은 이 PC에 저장됩니다	Only online matches are recorded · totals are saved on Steam, recent matches on this PC	仅记录在线比赛 · 统计保存在 Steam，最近比赛列表保存在本机	Учитываются только онлайн-матчи · статистика хранится в Steam, список последних матчей — на этом ПК
+아직 기록이 없습니다	No records yet	暂无记录	Записей пока нет
+온라인 경기를 완료하면 여기에 기록됩니다	Finish an online match to see it here	完成在线比赛后将记录在此	Завершите онлайн-матч, и он появится здесь
 최근 {0}판까지 보관	Keeps the last {0} matches	保留最近 {0} 场	Хранятся последние матчи: {0}
 {0}판 · {1}승 {2}패	{0} matches · {1} W {2} L	{0} 场 · {1} 胜 {2} 负	Матчи: {0} · {1} В {2} П
 {0}무	{0} D	{0} 平	{0} Н
@@ -256,11 +258,11 @@ Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нуж�
 직선 사슬 견인	Chain Pull	直线锁链牵引	Притягивающая цепь
 교차 밧줄	Cross Rope	交叉绳索	Перекрёстный канат
 꺾어 도약	Knight's Leap	折跃	Прыжок коня
-두 칸을 빠르게 내딛는다	Dashes two squares forward	快速向前迈出两格	Быстрый рывок на две клетки вперёд
-둘레의 상대를 모두 밀쳐 낸다. 몸싸움과 방해에 강하다	Shoves away every rival around you. Strong in scrums and at getting in the way	推开周围所有对手。擅长贴身缠斗和阻挠	Отталкивает всех соперников вокруг. Хорош в толкотне и для помех
-사슬을 던져 적은 끌어오고 팀원은 옆으로 데려온다	Throws a chain that pulls enemies in and brings teammates to your side	掷出锁链，把敌人拉过来，把队友带到身边	Бросает цепь: врагов притягивает, союзников переносит к вам
-대각선 밧줄을 깔아 길을 막는다. 상대 견제용	Lays a diagonal rope that blocks the way. For holding rivals back	铺下斜向绳索挡住道路。用于牵制对手	Натягивает диагональный канат, перекрывая путь. Сдерживает соперников
-높이 뛰어 꺾어 착지한다. 틈과 턱을 넘기 좋다	Leaps high and lands at an angle. Good for clearing gaps and ledges	高高跃起并转折落地。适合越过缝隙和台阶	Высокий прыжок с приземлением под углом. Удобен для пропастей и уступов
+두 칸을 빠르게 내딛습니다.	Quickly steps two squares forward.	快速向前迈出两格。	Быстро делает шаг на две клетки.
+주변의 상대를 모두 밀쳐 냅니다. 몸싸움과 방해에 강합니다.	Shoves away every opponent around you. Great in scuffles.	推开周围所有对手。擅长肉搏和干扰。	Отталкивает всех соперников вокруг. Сильна в толкотне.
+사슬을 던져 상대는 끌어오고, 팀원은 옆으로 데려옵니다.	A chain that pulls opponents in and brings teammates to you.	掷出锁链，将对手拉过来，把队友带到身边。	Цепь притягивает соперников и переносит к вам союзников.
+대각선으로 밧줄을 깔아 길을 막습니다. 상대를 견제할 때 좋습니다.	Lays diagonal ropes that block the way for opponents.	沿对角线拉起绳索阻挡道路。适合牵制对手。	Диагональные канаты перекрывают путь соперникам.
+높이 뛰어올라 꺾어서 착지합니다. 틈과 턱을 넘기에 좋습니다.	Leaps high and lands at an angle. Great for crossing gaps and ledges.	高高跃起并转向落地。适合越过缝隙和台阶。	Высокий прыжок с поворотом — через пропасти и уступы.
 왕의 반격	Royal Riposte	王之反击	Ответный удар
 꼬치 베기	Skewer Slash	串刺斩	Сквозной удар
 열린 파일 포격	File Barrage	开放线炮击	Обстрел линии
@@ -273,14 +275,14 @@ Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нуж�
 대각선 미끄럼	Diagonal Slide	斜线滑行	Косой рывок
 벼랑 끝 역전	Cliff Save	绝境逆转	На краю
 # --- Core/Ranking.cs (RankText: the 순위 tab's numbers)
-{0}판 · {1}승	{0} matches · {1} W	{0} 场 · {1} 胜	{0} · {1} В
+{0}판 · {1}승	{0} · {1} W	{0} 场 · {1} 胜	{0} · {1} В
 {0}/{1}판	{0}/{1} matches	{0}/{1} 场	Матчи: {0}/{1}
-쉬는 중 · {0}일 전	Resting · {0} days ago	休息中 · {0} 天前	Отдых · {0} дн.
+쉬는 중 · {0}일 전	Resting · {0}d ago	休息中 · {0} 天前	Отдых · {0} дн.
 오늘	Today	今天	Сегодня
 어제	Yesterday	昨天	Вчера
 {0}일 전	{0} days ago	{0} 天前	{0} дн. назад
 상위 {0}%	Top {0}%	前 {0}%	Топ {0}%
-순위 판 {0}판 더 하면 순위에 올라가요	Play {0} more ranked matches to make the board	再打 {0} 场排位赛即可上榜	Ещё рейтинговых матчей до таблицы: {0}
+순위 판 {0}판을 더 하면 순위에 오릅니다	{0} more ranked matches to get ranked	再进行 {0} 场排位赛即可上榜	Ещё {0} рейтинговых матчей до рейтинга
 # --- Core/MatchRecords.cs (RecordText: the 전적 tab's lines)
 {0} 대 {1}	{0} vs {1}	{0} 对 {1}	{0} на {1}
 {0} · 시간 종료	{0} · Time up	{0} · 时间到	{0} · Время вышло
@@ -295,38 +297,38 @@ Steam 연결이 필요해요	Needs a Steam connection	需要连接 Steam	Нуж�
 # --- Game/NetworkHudView.Ranking.cs (the lobby's 순위 tab)
 모드별 내 순위	My rank by mode	我在各模式的排名	Мой рейтинг по режимам
 순위 규칙	Ranking rules	排名规则	Правила рейтинга
-· 폰 러쉬 · 소드 파이트 순위는 따로 매겨요	· Pawn Rush and Sword Fight are ranked separately	· 兵卒冲锋和剑斗分别排名	· У каждого режима свой рейтинг
-· 그 모드의 순위 판 {0}판 이상이면 순위에 올라가요	· {0} ranked matches of a mode put you on its board	· 某模式排位赛达到 {0} 场即可登上该模式排行榜	· От {0} рейтинговых матчей в режиме - вы в его таблице лидеров
-· 순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상	· Ranked = Quick match · no bots · {0} vs {0} or more	· 排位赛 = 随机匹配 · 无机器人 · {0} 对 {0} 及以上	· Рейтинговый = Быстрая игра · без ботов · от {0} на {0}
-· 누적 승률 순 · 같으면 판수 많은 쪽이 위	· Ordered by all-time win rate · ties go to more matches	· 按累计胜率排序 · 相同时场次多者在前	· По проценту побед · при равенстве выше тот, у кого больше матчей
-· 시즌 없이 계속 쌓여요 · 나가거나 튕긴 판은 패	· No seasons, it all adds up · leaving or dropping out counts as a loss	· 没有赛季，持续累计 · 退出或掉线的比赛记为失败	· Без сезонов · выход или обрыв связи = поражение
-· {0}일 안 하면 자리는 그대로, 흐리게 '쉬는 중'	· {0} days without a match: you keep your place, dimmed as 'Resting'	· {0} 天未比赛：名次保留，以灰色显示“休息中”	· {0} дн. без матчей: место сохраняется, строка тускнеет («Отдых»)
-순위표	Leaderboard	排行榜	Лидеры
-내 주변	Around me	我的附近	Рядом
+· 폰 러쉬와 소드 파이트는 순위를 따로 집계합니다	· Pawn Rush and Sword Fight are ranked separately	· 兵卒冲锋和剑斗分别排名	· У каждого режима свой рейтинг
+· 모드별로 순위 판을 {0}판 이상 하면 순위에 오릅니다	· Play {0}+ ranked matches in a mode to be ranked in it	· 在某模式中进行 {0} 场以上排位赛即可上榜	· Для рейтинга нужно {0}+ рейтинговых матчей
+· 순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상	· Ranked match: Quick match · no bots · {0} vs {0} or more	· 排位赛：随机匹配 · 无机器人 · {0} 对 {0} 及以上	· Рейтинговый матч: подбор · без ботов · {0} на {0}+
+· 누적 승률 순이며, 같으면 판수가 많은 쪽이 위입니다	· Ordered by overall win rate; ties go to whoever played more	· 按累计胜率排序，胜率相同时场数多者在前	· Порядок: % побед, затем число матчей
+· 시즌 없이 누적되며, 이탈하면 패배로 처리됩니다	· No seasons; leaving a match counts as a loss	· 无赛季，持续累计；中途退出记为失败	· Без сезонов; выход из матча — поражение
+· {0}일간 쉬어도 순위는 유지되며 '쉬는 중'으로 표시됩니다	· After {0} days away you keep your place, shown as 'Resting'	· {0} 天未游玩仍保留名次，并显示为“休息中”	· После {0} дн. без игр — «отдыхает», место сохраняется
+순위표	Rankings	排行榜	Лидеры
+내 주변	Nearby	我的附近	Рядом
 플레이어 · 가장 많이 쓴 기물	Player · most played piece	玩家 · 最常用棋子	Игрок · самая частая фигура
 누적 승률	Win rate	累计胜率	Процент побед
 순위 판 · 승	Ranked · Wins	排位赛 · 胜	Рейтинговые · Победы
 마지막 경기	Last match	最近比赛	Последний матч
-Steam 순위표 · 판이 끝날 때마다 갱신	Steam leaderboard · updated after every match	Steam 排行榜 · 每场比赛结束后更新	Таблица лидеров Steam · обновляется после каждого матча
+Steam 순위표 · 경기가 끝날 때마다 갱신됩니다	Steam leaderboard · updated after every match	Steam 排行榜 · 每场比赛结束后更新	Таблица лидеров Steam · обновляется после каждого матча
 {0}승 {1}패 {2}무	{0} W {1} L {2} D	{0} 胜 {1} 负 {2} 平	{0} В {1} П {2} Н
 {0}승 {1}패	{0} W {1} L	{0} 胜 {1} 负	{0} В {1} П
 {0}판	{0} matches	{0} 场	{0}
-순위 판 {0}판 더 하면\n순위에 올라가요	{0} more ranked\nmatches to go	再打 {0} 场排位赛\n即可上榜	Ещё рейтинговых\nматчей: {0}
-지금 승률 {0}% · {1}\n{2}판이 되면 그때 승률로 순위에 들어가요	Win rate now {0}% · {1}\nAt {2} matches you join the board at your win rate then	当前胜率 {0}% · {1}\n达到 {2} 场时按当时的胜率上榜	Сейчас побед {0}% · {1}\nНа {2}-м матче войдёте в таблицу с процентом на тот момент
-순위 판 = 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상인 판	Ranked = Quick match · no bots · {0} vs {0} or more	排位赛 = 随机匹配 · 无机器人 · {0} 对 {0} 及以上的比赛	Рейтинговый матч = Быстрая игра · без ботов · {0} на {0} и больше
+순위 판 {0}판을 더 하면\n순위에 오릅니다	{0} more ranked\nmatches to go	再进行 {0} 场排位赛\n即可上榜	Ещё {0} рейтинговых\nматчей до рейтинга
+현재 승률 {0}% · {1}\n{2}판을 채우면 그때 승률로 순위에 오릅니다	Win rate now {0}% · {1}\nAt {2} matches you're ranked with that win rate	当前胜率 {0}% · {1}\n满 {2} 场后按当时胜率上榜	Сейчас побед {0}% · {1}\nПосле {2} матчей вы попадёте в рейтинг с этим процентом
+순위 판: 랜덤 매칭 · 봇 없음 · {0} 대 {0} 이상	Ranked match: Quick match · no bots · {0} vs {0} or more	排位赛：随机匹配 · 无机器人 · {0} 对 {0} 及以上	Рейтинговый матч: быстрый подбор · без ботов · {0} на {0} и больше
 승률 <color=#F3EBDD>{0}%</color>	Win rate <color=#F3EBDD>{0}%</color>	胜率 <color=#F3EBDD>{0}%</color>	Доля побед <color=#F3EBDD>{0}%</color>
 {0}판 · {1}	{0} matches · {1}	{0} 场 · {1}	Матчи: {0} · {1}
 {0}판 {1}% · {2}	{0} matches {1}% · {2}	{0} 场 {1}% · {2}	Матчи: {0}, {1}% · {2}
-Steam에 연결되면 순위가 보여요	Connect to Steam to see the rankings	连接 Steam 后即可查看排名	Подключитесь к Steam, чтобы увидеть рейтинг
-순위를 불러오는 중이에요	Loading the rankings	正在加载排名	Загрузка рейтинга
-Steam 순위표를 받지 못했어요	Couldn't get the Steam leaderboard	未能获取 Steam 排行榜	Не удалось получить таблицу лидеров Steam
+Steam에 연결하면 순위를 볼 수 있습니다	Connect to Steam to see the rankings	连接 Steam 后即可查看排名	Подключитесь к Steam, чтобы увидеть рейтинг
+순위를 불러오는 중입니다…	Loading rankings…	正在加载排名…	Загрузка рейтинга…
+Steam 순위표를 불러오지 못했습니다	Couldn't load the Steam leaderboard	无法加载 Steam 排行榜	Не удалось загрузить таблицу лидеров Steam
 Steam 순위표를 열지 못했어요. 잠시 뒤에 다시 볼게요.	Couldn't open the Steam leaderboard. Trying again shortly.	无法打开 Steam 排行榜。稍后将重试。	Не удалось открыть таблицу лидеров Steam. Скоро попробуем снова.
 Steam 순위표를 받지 못했어요. 잠시 뒤에 다시 볼게요.	Couldn't get the Steam leaderboard. Trying again shortly.	未能获取 Steam 排行榜。稍后将重试。	Не удалось получить таблицу лидеров Steam. Скоро попробуем снова.
-순위에 오르면 내 위아래 {0}명이 보여요	Once you're on the board, the {0} players above and below you show here	上榜后会显示你上下各 {0} 名玩家	В таблице вы увидите соседей сверху и снизу (по {0})
-곧 순위에 올라가요	You'll be on the board soon	即将上榜	Скоро вы попадёте в таблицу
-이 쪽에는 순위가 없어요	Nothing on this page	此页没有排名	На этой странице пусто
-아직 순위에 오른 사람이 없어요	No one is on the board yet	还没有人上榜	В таблице пока никого нет
-순위 판 {0}판 이상이면 순위에 올라가요	{0} ranked matches put you on the board	排位赛达到 {0} 场即可上榜	Рейтинговых матчей для попадания в таблицу: {0}
+순위에 오르면 내 위아래 {0}명이 표시됩니다	Once you're ranked, the {0} players above and below you show here	上榜后将显示你上下各 {0} 名玩家	Когда вы попадёте в рейтинг, здесь будут по {0} игроков выше и ниже вас
+곧 순위에 오릅니다	Almost ranked	即将上榜	Скоро в рейтинге
+이 페이지에는 순위가 없습니다	No rankings on this page	此页面没有排名	На этой странице нет рейтинга
+아직 순위에 오른 플레이어가 없습니다	No ranked players yet	暂无上榜玩家	В рейтинге пока никого нет
+순위 판을 {0}판 이상 하면 순위에 오릅니다	Play {0}+ ranked matches to be ranked	进行 {0} 场以上排位赛即可上榜	Сыграйте {0}+ рейтинговых матчей, чтобы попасть в рейтинг
 {0} · 순위에 오른 친구 {1}명	{0} · {1} friends on the board	{0} · {1} 位好友上榜	{0} · друзей в таблице: {1}
 나 포함	incl. me	含我	вкл. меня
 아직 {0}명	{0} not ranked yet	还有 {0} 人未上榜	Ещё не в таблице: {0}
@@ -340,8 +342,8 @@ Steam 순위표를 받지 못했어요. 잠시 뒤에 다시 볼게요.	Couldn't
 순위 판	Ranked	排位赛	Рейтинговый матч
 Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
 폰 출발	Started as a pawn	以兵出发	Старт пешкой
-이 판은 상세 기록이 없어요	No details for this match	这场比赛没有详细记录	Нет подробностей об этом матче
-상세 기록은 이 기능이 생긴 뒤(R742) 끝낸 온라인 경기부터 남아요	Details are kept for online matches finished since this feature arrived (R742)	详细记录仅保存此功能推出（R742）后结束的在线比赛	Подробности сохраняются для онлайн-матчей, сыгранных после появления этой функции (R742)
+이 경기는 상세 기록이 없습니다	No detailed record for this match	此场比赛没有详细记录	Для этого матча нет подробной записи
+상세 기록은 최근 업데이트 이후의 온라인 경기부터 저장됩니다	Detailed records are kept for online matches played since a recent update	详细记录从最近一次更新后的在线比赛开始保存	Подробные записи сохраняются для онлайн-матчей после недавнего обновления
 먼저 10점	First to 10	先得 10 分	До 10 очков
 시간 종료	Time up	时间到	Время вышло
 서든데스	Sudden death	突然死亡	Внезапная смерть
@@ -355,7 +357,7 @@ Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
 승격: {0}	Promoted: {0}	升变：{0}	Превращение: {0}
 {0}위 도착	Finished #{0}	第 {0} 名到达	Финиш: {0}-е место
 떨어짐 없음	No falls	无坠落	Без падений
-구간 기록이 없어요	No section records	没有区段记录	Нет записей участков
+구간 기록이 없습니다	No section records	没有区段记录	Нет записей по участкам
 내 플레이	My play	我的表现	Моя игра
 체크포인트	Checkpoints	检查点	Чекпоинты
 스킬	Skills	技能	Навыки
@@ -376,7 +378,7 @@ Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
 {0} ← 나	{0} ← me	{0} ← 我	{0} ← я
 나 — 스스로	Me — on my own	我 — 自己掉落	Я — сам(а)
 나 ← {0}	Me ← {0}	我 ← {0}	Я ← {0}
-떨어뜨리거나 떨어진 일이 없어요	No knockouts or falls	没有击落或坠落	Ни сбросов, ни падений
+떨어뜨리거나 떨어진 기록이 없습니다	No knockouts or falls	没有击落或坠落记录	Ни сбитых, ни падений
 명단	Players	名单	Игроки
 # the fall feed's causes (SwordFightMatch.Hud CauseName; skill names are above)
 칼	Sword	剑	Меч
@@ -423,6 +425,7 @@ Tab 채널 · Enter 보내기 · Esc 닫기	Tab channel · Enter send · Esc clo
 Esc 로비로 나가기 · WASD 이동 · Space 점프\nEnter 채팅 · Tab(누르고 있기) 명단	Esc back to lobby · WASD move · Space jump\nEnter chat · Tab (hold) roster	Esc 返回大厅 · WASD 移动 · Space 跳跃\nEnter 聊天 · Tab（按住）名单	Esc в лобби · WASD движение · Space прыжок\nEnter чат · Tab (удерживать) список игроков
 나중에 언제든 바꿀 수 있어요	You can change it any time later	之后随时可以更改	Это можно изменить в любой момент
 내 이름	My name	我的名称	Моё имя
+내 이름표	My name tag	我的名牌	Моё имя
 이름을 입력하세요	Enter a name	请输入名称	Введите имя
 추천 이름	Suggested names	推荐名称	Предлагаемые имена
 추천	Suggest	推荐	Предложить
@@ -765,8 +768,8 @@ Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다	You can skip the tut
 # (R842, Game/SettingsWindow.cs: the tutorial again from the settings window)
 튜토리얼 다시 하기	Play the tutorial again	重玩教程	Пройти обучение снова
 다시 하기	Play again	重玩	Заново
-처음에 한 조작 튜토리얼을 다시 해요. 로비에서, 혼자일 때만 할 수 있어요. 도중에 Esc 메뉴에서 언제든 로비로 돌아올 수 있어요.	Plays the controls tutorial from your first launch again. Only from the lobby, while you are alone. You can return to the lobby from the Esc menu at any time.	重新游玩首次启动时的操作教程。只能在大厅且独自一人时进行。途中可随时通过 Esc 菜单返回大厅。	Запускает обучение управлению заново. Только из лобби и когда вы одни. Вернуться в лобби можно в любой момент через меню Esc.
-지금은 할 수 없어요. 로비에서, 파티에 혼자 있고 매칭 중이 아닐 때 눌러 주세요.	Not available right now. Use it in the lobby, alone in your party and not matchmaking.	现在无法进行。请在大厅、队伍中只有自己且未在匹配时使用。	Сейчас недоступно. Нажмите в лобби, когда вы одни в группе и не ищете матч.
+조작 튜토리얼을 다시 플레이합니다. 로비에서 혼자일 때만 시작할 수 있습니다.	Replay the controls tutorial. Available only in the lobby when you're on your own.	重新游玩操作教程。仅可在大厅中单人时开始。	Повторно пройти обучение управлению. Доступно только в лобби, когда вы одни.
+지금은 시작할 수 없습니다. 로비에서 혼자이고 매칭 중이 아닐 때 다시 시도해 주세요.	Can't start right now. Try again in the lobby when you're on your own and not matchmaking.	当前无法开始。请在大厅中单人且未在匹配时重试。	Сейчас запуск недоступен. Попробуйте снова в лобби, когда вы одни и не ищете матч.
 # --- Game/ChatBox.cs
 채팅에 연결되지 않았어요.	Chat isn't connected.	未连接到聊天。	Чат не подключён.
 {0}에 말하기	Say to {0}	对{0}说	Кому: {0}
@@ -779,141 +782,150 @@ Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다	You can skip the tut
 띄어쓰기는 한 칸	One space at a time	空格只能一个	Не больше одного пробела подряд
 쓸 수 없는 말	Not allowed	不可使用的词语	Запрещено
 # ===== settings window rows (R749): SettingsWindow item names, descriptions, options and notes; GameSettings key, display, frame, quality and monitor names
-Steam에 연결되면 들어가요 · 지금은 저장만	Joins in once you're on Steam · only saved for now	连接 Steam 后生效 · 目前仅保存设置	Включится после входа в Steam · пока только сохраняется
+Steam 연결 시 사용 가능	Available when connected to Steam	连接 Steam 后可用	Доступно при подключении к Steam
 Steam 음성 · 파티와 팀	Steam voice · party and team	Steam 语音 · 小队与队伍	Голос Steam · группа и команда
-끄면 듣지도 말하지도 않아요.	Turned off, you neither hear nor talk.	关闭后既听不到也不会发言。	Если выключить, вы не слышите и не говорите.
+음성 채팅을 켜거나 끕니다.	Turns voice chat on or off.	开启或关闭语音聊天。	Включает или выключает голосовой чат.
 파티 음성 자동 참여	Join party voice automatically	自动加入小队语音	Автовход в голос группы
-파티에 들어가면 파티원과 바로 이어져요. 로비에서도, 경기 중에도.	Joining a party connects you to its members right away. In the lobby and in matches.	加入小队后立即与队友连线。大厅和比赛中都有效。	При входе в группу вы сразу на связи с её участниками. В лобби и в матчах.
+파티에 참가하면 파티 음성 채팅에 자동으로 연결됩니다.	Automatically joins party voice chat when you join a party.	加入小队时自动加入小队语音。	Автоматически подключает к голосовому чату группы при входе в неё.
 팀 음성 자동 참여	Join team voice automatically	自动加入队伍语音	Автовход в голос команды
-경기 방에 들어가면 같은 팀과 이어져요. 파티가 없으면 팀 전체에게, 파티가 있으면 파티에게 말해요(경기 중 Tab을 누르고 있으면 나오는 기보지에서 바꿔요). 상대 팀 목소리는 들리지 않아요.	Entering a match room connects you to your team. Without a party you talk to the whole team, with one to your party (switch it on the scoresheet you get by holding Tab in a match). You never hear the other team.	进入比赛房间后与同队连线。没有小队时对全队说话，有小队时对小队说话（比赛中按住 Tab 打开棋谱即可切换）。听不到对方队伍的声音。	При входе в комнату матча вы на связи со своей командой. Без группы вы говорите всей команде, с группой — только группе (переключается в бланке партии, если удерживать Tab в матче). Соперников вы не слышите.
-마이크 켜기	Microphone on	开麦方式	Включение микрофона
+경기가 시작되면 팀 음성 채팅에 자동으로 연결됩니다. 대화 대상은 경기 중 Tab 키로 바꿀 수 있습니다.	Automatically joins team voice chat when a match starts. Hold Tab during a match to change who you talk to.	比赛开始时自动加入队伍语音。比赛中按住 Tab 可更改通话对象。	Автоматически подключает к голосовому чату команды в начале матча. Собеседников можно сменить, удерживая Tab в матче.
+입력 방식	Input mode	输入方式	Режим ввода
 누르고 말하기	Push to talk	按键说话	По нажатию
-자동으로 켜지기	Voice activated	自动开麦	По голосу
-누르고 말하기는 아래 키를 누르는 동안만, 자동으로 켜지기는 말소리가 기준을 넘을 때 내 목소리가 나가요.	Push to talk sends your voice only while you hold the key below; voice activated sends it when you're louder than the threshold.	按键说话只在按住下方按键时发送声音；自动开麦在声音超过阈值时发送。	«По нажатию» передаёт голос, только пока зажата клавиша ниже; «По голосу» — когда вы громче порога.
+음성 감지	Voice activity	语音激活	Активация голосом
+마이크를 켜는 방식을 선택합니다.	Choose how your microphone transmits.	选择麦克风的开启方式。	Выберите, как включается микрофон.
 누르고 말하기 키	Push-to-talk key	按键说话键	Клавиша голоса
-누르는 동안 내 목소리가 나가요.	Sends your voice while held.	按住时发送你的声音。	Передаёт ваш голос, пока зажата.
-켜지는 크기	Threshold	开麦阈值	Порог
-말해 보면 줄이 차올라요. 동그라미를 끌어 기준을 정하면 그보다 큰 소리만 나가요(키보드 소리를 막아요). 줄이 노랗게 바뀌면 지금 나가는 소리예요.	Speak and the bar fills up. Drag the circle to set a threshold: only sound louder than it goes out (keeps keyboard noise out). The bar turns yellow while sound is going out.	说话时音量条会上升。拖动圆点设定阈值，只有比它大的声音才会发送（可挡住键盘声）。音量条变黄表示正在发送声音。	Говорите — шкала заполняется. Перетащите кружок, чтобы задать порог: передаётся только звук громче него (отсекает шум клавиатуры). Пока звук передаётся, шкала жёлтая.
-마이크 확인	Mic check	麦克风测试	Проверка микрофона
-말해 보면 칸이 차올라요. "들어 보기"를 누르면 내 목소리가 나에게만 들려요(다른 사람에게는 안 가요).	Speak and the cells fill up. "Listen" plays your voice back to you only (no one else hears it).	说话时格子会亮起。点击“试听”只有你自己能听到自己的声音（不会发给别人）。	Говорите — ячейки заполняются. «Прослушать» воспроизводит ваш голос только вам (другие его не слышат).
+누르고 있는 동안 음성이 전송됩니다.	Hold to transmit your voice.	按住以发送语音。	Удерживайте, чтобы передавать голос.
+음성 감지 기준	Activation threshold	激活阈值	Порог активации
+이 기준보다 큰 소리만 전송됩니다. 키보드 소리 같은 잡음이 들어가지 않도록 조절하세요.	Only sound louder than this level is transmitted. Adjust it to keep out noise like typing.	仅发送高于此阈值的声音。调整阈值可避免键盘声等杂音。	Передаётся только звук громче этого порога. Настройте его, чтобы отсечь шум, например клавиатуры.
+마이크 테스트	Mic test	麦克风测试	Проверка микрофона
+마이크 입력을 확인합니다. "들어 보기"를 누르면 내 목소리를 들어 볼 수 있습니다.	Check your microphone input. Press "Listen" to hear yourself.	检查麦克风输入。点击"试听"可听到自己的声音。	Проверка микрофона. Нажмите «Прослушать», чтобы услышать себя.
 Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요.	Doesn't change in the Unity Editor, only in the built game.	在 Unity 编辑器中不会改变，仅在构建的游戏中生效。	В редакторе Unity не меняется, только в собранной игре.
 화면 모드	Display mode	显示模式	Режим экрана
-테두리 없는 창은 다른 창으로 빨리 넘어갈 수 있고, 전체 화면은 입력 지연이 조금 더 적어요.	Borderless window lets you switch to other windows quickly; fullscreen has slightly less input lag.	无边框窗口可以快速切换到其他窗口，全屏的输入延迟稍低。	Окно без рамки позволяет быстро переходить к другим окнам; в полноэкранном режиме задержка ввода чуть меньше.
+게임 화면의 표시 방식을 선택합니다.	Choose how the game window is displayed.	选择游戏画面的显示方式。	Выберите режим отображения игры.
 모니터	Monitor	显示器	Монитор
-게임을 띄울 모니터.	The monitor the game shows on.	显示游戏的显示器。	Монитор, на котором идёт игра.
+게임을 표시할 모니터를 선택합니다.	Choose the monitor to display the game on.	选择显示游戏的显示器。	Выберите монитор для игры.
 해상도	Resolution	分辨率	Разрешение
-창 모드와 전체 화면에서 쓰는 크기. 테두리 없는 창은 모니터 크기를 따라가요.	The size used in windowed and fullscreen. Borderless window follows the monitor's size.	窗口和全屏模式使用的尺寸。无边框窗口跟随显示器尺寸。	Размер в оконном и полноэкранном режимах. Окно без рамки берёт размер монитора.
+화면 해상도를 선택합니다. 테두리 없는 창에서는 모니터 해상도를 사용합니다.	Choose the screen resolution. Borderless window uses your monitor's resolution.	选择屏幕分辨率。无边框窗口使用显示器分辨率。	Выберите разрешение экрана. В окне без рамки используется разрешение монитора.
 시야 범위	Field of view	视野范围	Поле зрения
-경기 카메라에 보이는 넓이. 넓을수록 주변이 잘 보이지만 멀미가 날 수 있어요.	How wide the match camera sees. Wider shows more around you but may cause motion sickness.	比赛镜头可见的宽度。越宽越能看清周围，但可能会晕。	Ширина обзора камеры в матче. Чем шире, тем больше видно вокруг, но может укачивать.
+경기 중 카메라의 시야 범위를 조절합니다.	Adjusts the camera's field of view in matches.	调整比赛中镜头的视野范围。	Настраивает поле зрения камеры в матчах.
 프레임 제한	Frame limit	帧率限制	Лимит кадров
-1초에 그릴 최대 장면 수. 모니터 주사율에 맞추면 부드럽고 전기도 덜 써요. 수직 동기화가 켜져 있으면 주사율을 따라가요.	The most frames drawn per second. Matching your monitor's refresh rate is smooth and saves power. With VSync on, it follows the refresh rate.	每秒最多绘制的画面数。与显示器刷新率一致更流畅也更省电。开启垂直同步时跟随刷新率。	Максимум кадров в секунду. Под частоту монитора — плавно и экономит энергию. С верт. синхронизацией следует частоте обновления.
+초당 최대 프레임 수를 제한합니다.	Limits the maximum frames per second.	限制每秒最大帧数。	Ограничивает максимальное число кадров в секунду.
 수직 동기화	VSync	垂直同步	Верт. синхронизация
-화면이 가로로 찢어지는 것을 막아요. 켜면 입력이 조금 늦게 느껴질 수 있어요.	Stops the picture tearing sideways. With it on, input may feel slightly delayed.	防止画面横向撕裂。开启后输入可能感觉稍有延迟。	Убирает горизонтальные разрывы картинки. Когда включено, ввод может чуть запаздывать.
+화면 찢어짐을 방지합니다. 입력 지연이 약간 늘어날 수 있습니다.	Prevents screen tearing. May add slight input lag.	防止画面撕裂。可能会略微增加输入延迟。	Устраняет разрывы изображения. Может немного увеличить задержку ввода.
 밝기	Brightness	亮度	Яркость
-전체 밝기. 어두운 곳이 안 보이면 올리세요.	Overall brightness. Turn it up if you can't see in dark places.	整体亮度。暗处看不清时请调高。	Общая яркость. Повысьте, если в тёмных местах ничего не видно.
+화면 밝기를 조절합니다.	Adjusts screen brightness.	调整画面亮度。	Настраивает яркость экрана.
 낮음	Low	低	Низкое
 중간	Medium	中	Среднее
 높음	High	高	Высокое
 전체 품질	Overall quality	整体画质	Общее качество
-아래 항목을 한 번에 맞춰요. 아래를 하나라도 바꾸면 "사용자 지정"이 돼요. 낮음은 사양 낮은 PC용(Mobile 단계).	Sets everything below at once. Changing any of them makes it "Custom". Low is for low-end PCs (the Mobile tier).	一次性调整下方所有项目。改动其中任意一项即变为“自定义”。低适合配置较低的电脑（Mobile 级别）。	Задаёт всё ниже сразу. Изменение любого пункта даёт «Своё». «Низкое» — для слабых ПК (уровень Mobile).
+그래픽 설정을 한 번에 조절합니다.	Adjusts all graphics settings at once.	一次性调整所有画质设置。	Задаёт все настройки графики сразу.
 그림자	Shadows	阴影	Тени
-말과 장애물의 그림자. 프레임에 가장 크게 영향을 줘요.	Shadows of pieces and obstacles. Has the biggest effect on frame rate.	棋子和障碍物的阴影。对帧率影响最大。	Тени фигур и препятствий. Сильнее всего влияют на частоту кадров.
-계단 현상 줄이기	Anti-aliasing	抗锯齿	Сглаживание
-말과 체스판 가장자리의 지글거림을 줄여요(MSAA).	Smooths jagged edges on pieces and the chessboard (MSAA).	减少棋子和棋盘边缘的锯齿（MSAA）。	Сглаживает зубчатые края фигур и доски (MSAA).
+그림자 품질을 설정합니다. 성능에 가장 큰 영향을 줍니다.	Sets shadow quality. Has the biggest impact on performance.	设置阴影质量。对性能影响最大。	Качество теней. Сильнее всего влияет на производительность.
+안티 에일리어싱	Anti-aliasing	抗锯齿	Сглаживание
+물체 가장자리의 계단 현상을 줄입니다.	Smooths jagged edges.	减少物体边缘的锯齿。	Сглаживает зубчатые края объектов.
 배경 디테일	Background detail	背景细节	Детализация фона
-멀리 있는 성벽과 장식을 얼마나 자세히 그릴지.	How finely distant castle walls and decorations are drawn.	远处城墙和装饰的绘制精细程度。	Насколько подробно рисуются дальние стены замка и декор.
+멀리 있는 배경의 디테일을 설정합니다.	Sets the detail level of distant scenery.	设置远处背景的细节。	Детализация дальнего фона.
 보통	Normal	普通	Обычное
 빛 번짐	Bloom	泛光	Свечение
-금색 장식과 조명 주위가 은은하게 번져요. 끄면 스킬 번쩍임의 번짐도 함께 꺼져요.	Gold trim and lights glow softly. Turning it off also turns off the glow of skill flashes.	金色装饰和灯光周围柔和发光。关闭后技能闪光的光晕也会一并关闭。	Золотая отделка и огни мягко светятся. Если выключить, пропадёт и свечение вспышек навыков.
-사양이 낮은 PC는 "낮음"부터	Low-end PCs: start from "Low"	配置较低的电脑建议从“低”开始	Слабым ПК — начать с «Низкое»
-경기 화면 구석에 작게	Small, in a corner of the match screen	小字显示在比赛画面角落	Мелко, в углу экрана матча
-프레임 표시	Show FPS	显示帧率	Показывать FPS
-오른쪽 위에 초당 프레임 수.	Frames per second at the top right.	在右上角显示每秒帧数。	Кадры в секунду в правом верхнем углу.
+밝은 빛 주변에 빛 번짐 효과를 적용합니다.	Adds a glow around bright lights.	为明亮光源添加泛光效果。	Добавляет свечение вокруг ярких источников света.
+사양이 낮은 PC는 "낮음"을 권장합니다	"Low" is recommended for low-end PCs	配置较低的电脑建议使用“低”	Для слабых ПК рекомендуется «Низкое»
+경기 화면 구석에 표시됩니다	Shown in a corner of the match screen	显示在比赛画面角落	Отображается в углу экрана матча
+FPS 표시	Show FPS	显示帧率	Показывать FPS
+화면에 초당 프레임 수를 표시합니다.	Shows frames per second on screen.	在画面上显示每秒帧数。	Показывает число кадров в секунду.
 핑 표시	Show ping	显示延迟	Показывать пинг
-물리 계산을 맡은 PC와 주고받는 데 걸리는 시간. 끊김 경고는 끄더라도 그대로 떠요.	The round-trip time to the PC running the physics. Connection warnings still show with this off.	与负责物理计算的电脑往返所需的时间。即使关闭，断线警告仍会显示。	Время отклика до хоста физики. Предупреждения о связи видны и при выключенной опции.
-전체 소리	Master volume	总音量	Общая громкость
-모든 소리의 크기.	How loud everything is.	所有声音的大小。	Громкость всех звуков.
+화면에 네트워크 지연 시간을 표시합니다.	Shows your network latency on screen.	在画面上显示网络延迟。	Показывает сетевую задержку на экране.
+전체 볼륨	Master volume	总音量	Общая громкость
+게임 전체 볼륨을 조절합니다.	Adjusts the overall game volume.	调整游戏总音量。	Общая громкость игры.
 배경 음악	Music	背景音乐	Музыка
-로비, 매칭 화면(코스 공개 · 소드 파이트 입장), 경기 음악.	Lobby, match screens (course reveal · Sword Fight entrance) and match music.	大厅、匹配画面（赛道公布 · 剑斗入场）和比赛音乐。	Лобби, экраны подбора (показ трассы · вход в Бой на мечах) и музыка матча.
+배경 음악 볼륨을 조절합니다.	Adjusts music volume.	调整背景音乐音量。	Громкость музыки.
 효과음	Sound effects	音效	Звуковые эффекты
-점프 · 다이빙 · 발소리, 스킬, 장애물과 구간 소리, 매칭 화면 소리, 시작 로고 소리.	Jumps · dives · footsteps, skills, obstacles and sections, match screen sounds, the start logo.	跳跃 · 飞扑 · 脚步、技能、障碍和区段的声音、匹配画面声音、开场标志声音。	Прыжки · нырки · шаги, навыки, препятствия и участки, звуки экранов подбора, стартовый логотип.
-버튼 소리	Button sounds	按钮音效	Звуки кнопок
-로비 · 설정 창의 버튼 · 탭 · 창 열고 닫는 소리(R738). 매칭 화면 소리는 효과음 크기를 따라요.	Buttons · tabs · windows opening and closing in the lobby and settings (R738). Match screen sounds follow the sound effects volume.	大厅 · 设置窗口的按钮 · 标签 · 窗口开关声音（R738）。匹配画面声音跟随音效音量。	Кнопки · вкладки · открытие и закрытие окон в лобби и настройках (R738). Звуки экранов подбора следуют громкости эффектов.
-다른 사람 목소리 크기. 모두 같은 크기로 들려요.	How loud other people's voices are. Everyone is heard at the same volume.	其他人的语音音量。所有人听起来音量相同。	Громкость голосов других игроков. Все звучат одинаково громко.
-창이 뒤에 있으면 소리 끄기	Mute when in the background	窗口在后台时静音	Без звука в фоне
-다른 창을 보고 있을 때 게임 소리를 꺼요.	Mutes the game while you're looking at another window.	查看其他窗口时关闭游戏声音。	Выключает звук игры, пока вы в другом окне.
-경기 잡힘 알림음	Match found alert	匹配成功提示音	Сигнал найденного матча
-매칭이 잡혀 입장 화면이 열리면, 다른 창을 보고 있어도 6초 동안 그 소리가 들려요(위 항목이 켜져 있어도).	When a match is found and the entry screen opens, its sound plays for 6 seconds even if you're in another window (even with the option above on).	匹配成功并打开入场画面时，即使你在看其他窗口，也会播放 6 秒提示音（即使开启了上方选项）。	Когда матч найден и открывается экран входа, его звук играет 6 с, даже если вы в другом окне (даже с включённой опцией выше).
-마이크 크기	Mic volume	麦克风音量	Громкость микрофона
-내 목소리가 다른 사람에게 들리는 크기. 100이 원래 크기예요.	How loud your voice is for others. 100 is its normal level.	你的声音传给别人时的大小。100 为原始音量。	Как громко вас слышат другие. 100 — обычный уровень.
+효과음 볼륨을 조절합니다.	Adjusts sound effects volume.	调整音效音量。	Громкость звуковых эффектов.
+메뉴 효과음	Menu sounds	菜单音效	Звуки меню
+메뉴와 버튼 효과음 볼륨을 조절합니다.	Adjusts menu and button sound volume.	调整菜单和按钮音效音量。	Громкость звуков меню и кнопок.
+다른 플레이어 목소리의 볼륨을 조절합니다.	Adjusts other players' voice volume.	调整其他玩家语音的音量。	Громкость голосов других игроков.
+백그라운드에서 소리 끄기	Mute in background	后台时静音	Без звука в фоне
+게임 창이 비활성 상태일 때 소리를 끕니다.	Mutes the game when its window isn't in focus.	游戏窗口未激活时静音。	Отключает звук, когда окно игры неактивно.
+매칭 완료 알림음	Match found alert	匹配成功提示音	Сигнал о найденном матче
+매칭이 완료되면 게임 창이 비활성 상태여도 알림음을 재생합니다.	Plays an alert when a match is found, even if the game window isn't in focus.	匹配成功时，即使游戏窗口未激活也会播放提示音。	Воспроизводит сигнал, когда матч найден, даже если окно игры неактивно.
+마이크 볼륨	Mic volume	麦克风音量	Громкость микрофона
+다른 플레이어에게 전달되는 내 목소리 볼륨을 조절합니다.	Adjusts how loud your voice is for other players.	调整其他玩家听到的你的语音音量。	Громкость вашего голоса для других игроков.
 마우스 감도	Mouse sensitivity	鼠标灵敏度	Чувствительность мыши
 {0}배	{0}x	{0} 倍	{0}x
-시점이 도는 빠르기.	How fast the view turns.	视角转动的速度。	Скорость поворота камеры.
-상하 반전	Invert Y	上下反转	Инверсия Y
-마우스를 올리면 아래를 봐요.	Moving the mouse up looks down.	向上移动鼠标时视角向下。	Мышь вверх — взгляд вниз.
+마우스로 카메라를 돌리는 속도를 조절합니다.	Adjusts how fast the camera turns with the mouse.	调整用鼠标转动镜头的速度。	Скорость поворота камеры мышью.
+마우스 상하 반전	Invert mouse Y	鼠标上下反转	Инверсия мыши по Y
+마우스 상하 움직임을 반전합니다.	Inverts vertical mouse movement.	反转鼠标的上下移动。	Инвертирует вертикальное движение мыши.
 질주 방식	Sprint mode	冲刺方式	Режим бега
 누르고 있기	Hold	按住	Удержание
-한 번 눌러 켜기	Toggle	单击切换	Переключение
-한 번 눌러 켜기는 다시 누르거나 멈출 때까지 달려요.	With toggle, you keep running until you press it again or stop.	单击切换时会一直跑，直到再次按下或停下。	При переключении вы бежите, пока не нажмёте снова или не остановитесь.
-칸을 누르고 바꿀 키를 누르세요 · 겹치면 서로 바뀌어요 · Delete로 비우기	Click a box, then press the new key · a key already used swaps over · Delete clears	点击格子后按下新按键 · 与已有按键重复时会互换 · 按 Delete 清空	Нажмите на поле, затем новую клавишу · занятые клавиши меняются местами · Delete очищает
+눌러서 전환	Toggle	切换	Переключение
+질주 키를 누르고 있어야 달릴지, 한 번 눌러 전환할지 선택합니다.	Choose whether to hold the sprint key or press it once to toggle.	选择按住冲刺键还是按一次切换。	Выберите: удерживать клавишу бега или переключать нажатием.
+칸을 클릭한 뒤 새 키를 누르세요 · 중복된 키는 서로 교체됩니다 · Delete로 지우기	Click a box, then press the new key · duplicate keys are swapped · Delete clears	点击格子后按下新按键 · 重复的按键会互换 · 按 Delete 清除	Нажмите на поле, затем новую клавишу · повторяющиеся клавиши меняются местами · Delete очищает
 앞으로	Forward	前进	Вперёд
+앞으로 이동	Move forward	向前移动	Вперёд
+캐릭터를 앞으로 이동합니다.	Moves your character forward.	角色向前移动。	Движение персонажа вперёд.
+캐릭터를 뒤로 이동합니다.	Moves your character back.	角色向后移动。	Движение персонажа назад.
+캐릭터를 왼쪽으로 이동합니다.	Moves your character left.	角色向左移动。	Движение персонажа влево.
+캐릭터를 오른쪽으로 이동합니다.	Moves your character right.	角色向右移动。	Движение персонажа вправо.
+점프합니다.	Jump.	跳跃。	Прыжок.
+빠르게 달립니다. 질주 방식은 마우스 설정에서 바꿀 수 있습니다.	Run faster. You can change the sprint mode in Mouse settings.	快速奔跑。可在鼠标设置中更改冲刺方式。	Быстрый бег. Режим бега меняется в настройках мыши.
+채팅 입력창을 엽니다.	Opens the chat input.	打开聊天输入框。	Открывает поле ввода чата.
 왼쪽	Left	向左	Влево
+왼쪽으로 이동	Move left	向左移动	Влево
 오른쪽	Right	向右	Вправо
+오른쪽으로 이동	Move right	向右移动	Вправо
 점프	Jump	跳跃	Прыжок
 질주	Sprint	冲刺	Бег
 다이빙 · 칼 베기	Dive · Sword slash	飞扑 · 挥剑	Нырок · Удар мечом
-폰 러쉬: 앞으로 몸을 날려요(갈고리를 꺼냈으면 누르고 있다가 떼서 던져요). 소드 파이트: 칼을 휘둘러요.	Pawn Rush: throws yourself forward (with the hook out, hold then release to throw it). Sword Fight: swings your sword.	兵卒冲锋：向前飞扑（拿出钩爪时按住后松开即可投出）。剑斗：挥剑。	Пешечный рывок: бросок вперёд (с крюком в руках — удерживайте и отпустите, чтобы бросить его). Бой на мечах: взмах мечом.
+폰 러쉬에서는 앞으로 몸을 날리고, 소드 파이트에서는 칼을 휘두릅니다.	Dive forward in Pawn Rush; swing your sword in Sword Fight.	兵卒冲锋中向前飞扑，剑斗中挥剑。	В Пешечном рывке — бросок вперёд, в Бое на мечах — взмах мечом.
 잡기 · 조준 취소	Grab · Cancel aim	抓取 · 取消瞄准	Захват · Отмена прицела
-폰 러쉬: 누르는 동안 잡아요. 소드 파이트: 스킬 조준을 취소해요.	Pawn Rush: grabs while held. Sword Fight: cancels skill aiming.	兵卒冲锋：按住时抓取。剑斗：取消技能瞄准。	Пешечный рывок: захват, пока зажато. Бой на мечах: отмена прицеливания навыка.
+폰 러쉬에서는 상대나 물체를 붙잡고, 소드 파이트에서는 스킬 조준을 취소합니다.	Grab players or objects in Pawn Rush; cancel skill aiming in Sword Fight.	兵卒冲锋中抓住对手或物体，剑斗中取消技能瞄准。	В Пешечном рывке — захват игроков и предметов, в Бое на мечах — отмена прицеливания навыка.
 기물 스킬	Piece skill	棋子技能	Навык фигуры
-폰 러쉬: 내 기물의 스킬. 소드 파이트: F 스킬. 화면의 스킬 칸에도 이 키가 나와요.	Pawn Rush: your piece's skill. Sword Fight: the F skill. The skill box on screen shows this key too.	兵卒冲锋：你的棋子技能。剑斗：F 技能。画面上的技能格也会显示此按键。	Пешечный рывок: навык вашей фигуры. Бой на мечах: навык F. Эта клавиша видна и в ячейке навыка на экране.
+기물 고유 스킬을 사용합니다.	Use your piece's skill.	使用棋子的专属技能。	Использовать навык фигуры.
 두 번째 스킬	Second skill	第二技能	Второй навык
-소드 파이트: E 스킬. 폰 러쉬: 폰일 때 갈고리를 꺼내고 넣어요.	Sword Fight: the E skill. Pawn Rush: takes the hook out and puts it away as a pawn.	剑斗：E 技能。兵卒冲锋：作为兵时拿出或收起钩爪。	Бой на мечах: навык E. Пешечный рывок: пешка достаёт и убирает крюк.
+두 번째 스킬을 사용합니다. 폰 러쉬에서 폰은 갈고리를 꺼내거나 넣습니다.	Use your second skill. In Pawn Rush, pawns take out or put away the hook.	使用第二技能。兵卒冲锋中，兵可拿出或收起钩爪。	Второй навык. В Пешечном рывке пешка достаёт или убирает крюк.
 끼었을 때 되돌아가기	Back when stuck	卡住时返回	Назад, если застряли
-폰 러쉬: 5초 넘게 이동 키를 눌러도 제자리면 "끼었나요?"가 떠요. 그때 2초 누르고 있으면 지금 자리보다 뒤의 체크포인트로 돌아가요. 30초에 한 번, 잡혀 있을 때와 미니게임 방 안에서는 안 돼요.	Pawn Rush: push the move keys for over 5 s without getting anywhere and "Stuck?" appears. Hold this key for 2 s then to go back to a checkpoint behind where you are. Once every 30 s; not while held, nor inside a mini-game room.	兵卒冲锋：按住移动键超过 5 秒仍在原地时会出现"卡住了吗？"。此时按住此键 2 秒，就会回到当前位置后方的检查点。每 30 秒一次；被抓住时和小游戏房间内不可用。	Пешечный рывок: если больше 5 с жать клавиши движения и стоять на месте, появится «Застряли?». Тогда удерживайте эту клавишу 2 с, чтобы вернуться к контрольной точке позади вас. Раз в 30 с; не работает, когда вас схватили, и в комнатах мини-игр.
+폰 러쉬에서 지형에 끼었을 때 길게 눌러 지나온 체크포인트로 돌아갑니다. (30초마다 사용 가능)	In Pawn Rush, hold when stuck to return to a checkpoint you've passed. (Once every 30 seconds)	兵卒冲锋中卡住时长按，可返回已经过的检查点。（每 30 秒可用一次）	В Пешечном рывке удерживайте, если застряли, чтобы вернуться к пройденной контрольной точке. (Раз в 30 секунд)
 보조 스킬	Extra skill	辅助技能	Доп. навык
 채팅 열기	Open chat	打开聊天	Открыть чат
 경기 명단 (기보지)	Match roster (scoresheet)	比赛名单（棋谱）	Состав матча (бланк партии)
-경기 중 누르고 있는 동안만 열려요. 우리 팀 음성, 말하는 곳, 음소거.	Open only while held in a match. Our team's voice, who you talk to, mute.	仅在比赛中按住时打开。我方语音、发言对象、静音。	Открыт, только пока зажато в матче. Голос нашей команды, кому вы говорите, заглушение.
-음성 채팅: 누르는 동안 내 목소리가 나가요.	Voice chat: sends your voice while held.	语音聊天：按住时发送你的声音。	Голосовой чат: передаёт ваш голос, пока зажато.
+경기 중 누르고 있으면 경기 명단이 열립니다. 팀 음성 채팅과 음소거를 관리할 수 있습니다.	Hold during a match to open the roster, where you can manage team voice chat and muting.	比赛中按住可打开比赛名单，可管理队伍语音和静音。	Удерживайте в матче, чтобы открыть состав: там можно управлять голосовым чатом и заглушением.
 카메라 거리	Camera distance	镜头距离	Дистанция камеры
-경기를 시작할 때 말과 카메라 사이 거리. 경기 중에는 휠로 바꿔요. 한 번도 안 바꿨으면 폰 러쉬는 원래 거리(6 m)로 시작해요.	Distance between your piece and the camera when a match starts. Change it with the wheel in a match. If never changed, Pawn Rush starts at its usual distance (6 m).	比赛开始时棋子与镜头的距离。比赛中用滚轮调整。如果从未调整过，兵卒冲锋会以默认距离（6 m）开始。	Расстояние от фигуры до камеры в начале матча. В матче меняется колесом. Если не менять, Пешечный рывок начинается с обычного расстояния (6 м).
-질주할 때 시야 넓어짐	Wider view when sprinting	冲刺时视野变宽	Шире обзор при беге
-질주하는 동안 화면이 살짝 넓어져 빨라 보여요. 폰 러쉬와 소드 파이트 모두.	The view widens a little while you sprint so it feels faster. In both Pawn Rush and Sword Fight.	冲刺时画面稍微变宽，显得更快。兵卒冲锋和剑斗都有。	Во время бега обзор чуть расширяется, чтобы ощущалась скорость. В Пешечном рывке и Бое на мечах.
+경기 시작 시 카메라 거리를 설정합니다. 경기 중에는 마우스 휠로 조절할 수 있습니다.	Sets the camera distance at match start. Use the mouse wheel to adjust it during a match.	设置比赛开始时的镜头距离。比赛中可用鼠标滚轮调整。	Расстояние камеры в начале матча. В матче регулируется колесом мыши.
+질주 시 시야 확장	Wider view when sprinting	冲刺时视野扩大	Шире обзор при беге
+질주할 때 시야를 넓혀 속도감을 높입니다.	Widens the view while sprinting for a greater sense of speed.	冲刺时扩大视野，增强速度感。	Расширяет обзор при беге для ощущения скорости.
 카메라 흔들림	Camera shake	镜头晃动	Тряска камеры
-부딪힘, 스킬, 매칭 · 결과 화면의 흔들림 세기.	How strongly bumps, skills, the match screens and the results screen shake.	碰撞、技能、匹配画面与结果画面的晃动强度。	Сила тряски от столкновений, навыков, экранов подбора и экрана итогов.
-팀원 이름	Teammate names	队友名称	Имена союзников
+충돌과 스킬 등으로 인한 카메라 흔들림의 세기를 조절합니다.	Adjusts the strength of camera shake from impacts, skills and more.	调整碰撞、技能等造成的镜头晃动强度。	Сила тряски камеры от столкновений, навыков и т. п.
+팀원 이름표	Teammate name tags	队友名牌	Имена союзников
 항상	Always	始终	Всегда
 가까울 때만	Only when near	仅在附近时	Только вблизи
-팀원 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요. 벽에 가리면 보이지 않아요.	Name tags over teammates. Only when near: sharp up to 15 m, gone at 22 m. Hidden behind walls.	队友头顶的名牌。仅在附近时：15 m 内清晰，22 m 时消失。被墙挡住时不显示。	Имена над союзниками. Только вблизи: чётко до 15 м, исчезают на 22 м. Скрыты за стенами.
-상대 이름	Opponent names	对手名称	Имена соперников
-상대 머리 위 이름표. 가까울 때만: 15 m까지 또렷하고 22 m에서 사라져요.	Name tags over opponents. Only when near: sharp up to 15 m, gone at 22 m.	对手头顶的名牌。仅在附近时：15 m 内清晰，22 m 时消失。	Имена над соперниками. Только вблизи: чётко до 15 м, исчезают на 22 м.
-내 머리 위에도 이름표를 띄워요.	A name tag over your own head too.	在自己头顶也显示名牌。	Имя и над вашей головой.
-끄면 채팅이 숨고 열리지 않아요.	Turned off, chat is hidden and won't open.	关闭后聊天会隐藏且无法打开。	Если выключить, чат скрыт и не открывается.
-욕설 가리기	Hide swearing	屏蔽脏话	Скрывать брань
-흔한 욕을 ** 로 가려요. 내 화면에서만.	Covers common swear words with **. On your screen only.	用 ** 遮住常见脏话。仅在你的画面上。	Заменяет частую брань на **. Только на вашем экране.
+팀원 머리 위에 이름표를 표시합니다.	Shows name tags above teammates.	在队友头顶显示名牌。	Показывает имена над союзниками.
+상대 이름표	Opponent name tags	对手名牌	Имена соперников
+상대 머리 위에 이름표를 표시합니다.	Shows name tags above opponents.	在对手头顶显示名牌。	Показывает имена над соперниками.
+내 머리 위에 이름표를 표시합니다.	Shows a name tag above your own head.	在自己头顶显示名牌。	Показывает имя над вашей головой.
+채팅을 켜거나 끕니다.	Turns chat on or off.	开启或关闭聊天。	Включает или выключает чат.
+욕설 필터	Profanity filter	脏话过滤	Фильтр брани
+채팅의 욕설을 **로 가립니다.	Masks profanity in chat with **.	用 ** 屏蔽聊天中的脏话。	Скрывает брань в чате символами **.
 글자 크기	Text size	文字大小	Размер текста
 작게	Small	小	Мелкий
 크게	Large	大	Крупный
-채팅 글자 크기.	Chat text size.	聊天文字大小。	Размер текста чата.
-채팅 배경 진하기	Chat background opacity	聊天背景浓度	Непрозрачность фона чата
-경기 중 채팅 뒤에 까만 바탕을 깔아 글자를 읽기 쉽게 해요. 0이면 지금처럼 바탕 없이 글자만.	Puts a dark backing behind chat in matches so it's easier to read. At 0, just the text as now.	比赛中在聊天后方加上深色底，让文字更易读。为 0 时与现在一样只显示文字。	В матчах подкладывает тёмный фон под чат, чтобы легче читать. При 0 — только текст, как сейчас.
-채팅 받기	Show chat from	接收聊天	Показывать чат от
+채팅 글자 크기를 설정합니다.	Sets the chat text size.	设置聊天文字大小。	Размер текста чата.
+채팅 배경 불투명도	Chat background opacity	聊天背景不透明度	Непрозрачность фона чата
+경기 중 채팅창 배경의 불투명도를 조절합니다.	Adjusts the opacity of the chat background in matches.	调整比赛中聊天背景的不透明度。	Непрозрачность фона чата в матчах.
+표시할 채팅	Show chat from	显示聊天	Показывать чат от
 모두	Everyone	所有人	Все
 파티와 팀만	Party and team only	仅小队和队伍	Только группа и команда
 파티만	Party only	仅小队	Только группа
-다른 사람이 보낸 줄 중 어느 채널을 보여 줄지(전체 채널을 끄고 싶을 때). 내가 보낸 줄과 알림은 늘 보이고, 보내기는 그대로 돼요.	Which channels' lines from others to show (to turn off the all channel). Your own lines and notices always show, and sending still works.	显示他人发送的哪些频道消息（想关闭全体频道时使用）。你自己发的消息和通知始终显示，发送不受影响。	Какие каналы показывать в сообщениях других (чтобы выключить общий канал). Ваши сообщения и уведомления видны всегда, отправка работает.
-파티 초대 받기	Accept party invites from	接收小队邀请	Приглашения в группу от
+다른 플레이어의 채팅 중 표시할 채널을 선택합니다.	Choose which channels to show other players' messages from.	选择显示其他玩家哪些频道的消息。	Выберите, из каких каналов показывать сообщения других игроков.
+파티 초대 허용	Allow party invites from	允许小队邀请	Приглашения в группу от
 Steam 친구만	Steam friends only	仅 Steam 好友	Только друзья в Steam
-받지 않기	No one	不接收	Ни от кого
-누가 보낸 파티 초대를 게임 안(로비 수락 칸 · 채팅 알림)에 띄울지. Steam 자체 알림은 이 설정과 상관없이 와요.	Whose party invites show in the game (the lobby's accept box · chat notices). Steam's own notifications come regardless.	在游戏内（大厅接受栏 · 聊天通知）显示谁发来的小队邀请。Steam 自身的通知不受此设置影响。	Чьи приглашения в группу показывать в игре (поле принятия в лобби · уведомления в чате). Уведомления самого Steam приходят в любом случае.
+허용 안 함	No one	不允许	Ни от кого
+게임 안에서 파티 초대를 받을 대상을 선택합니다.	Choose whose party invites appear in the game.	选择在游戏内接收谁的小队邀请。	Выберите, чьи приглашения в группу показывать в игре.
 메뉴 크기	Menu size	菜单大小	Размер меню
-인트로, 로비, 채팅 같은 메뉴 화면의 크기. 이 설정 화면은 그대로예요.	Size of menu screens like the intro, lobby and chat. This settings window stays the same.	开场、大厅、聊天等菜单画面的大小。此设置窗口不变。	Размер экранов меню: заставка, лобби, чат. Это окно настроек не меняется.
+메뉴 화면의 크기를 조절합니다.	Adjusts the size of menu screens.	调整菜单画面的大小。	Размер экранов меню.
 화면 흔들림 줄이기	Reduce screen shake	减少画面晃动	Меньше тряски экрана
-카메라 흔들림, 매칭 화면의 흔들림, 질주 시야 넓어짐을 한 번에 꺼요.	Turns off camera shake, the match screens' shake and the sprint view widening in one go.	一次关闭镜头晃动、匹配画面的晃动和冲刺时视野变宽。	Сразу выключает тряску камеры, тряску экранов подбора и расширение обзора при беге.
+카메라 흔들림과 시야 확장 효과를 끕니다.	Turns off camera shake and view widening effects.	关闭镜头晃动和视野扩大效果。	Отключает тряску камеры и расширение обзора.
 번쩍임 줄이기	Reduce flashes	减少闪光	Меньше вспышек
-스킬과 칼이 부딪힐 때의 번쩍임, 미니게임의 빛, 매칭 · 결과 화면의 번쩍임, 버튼을 누를 때의 불꽃을 약하게 해요.	Softens the flashes of skills and clashing swords, the mini-games' light flashes, the flashes on the match screens and the results screen, and the sparks when buttons are pressed.	减弱技能和剑相撞时的闪光、小游戏的闪光、匹配画面与结果画面的闪光，以及按下按钮时的火花。	Смягчает вспышки навыков и столкновений мечей, световые вспышки мини-игр, вспышки экранов подбора и итогов и искры при нажатии кнопок.
-게임을 끝낼까요?	Quit the game?	要退出游戏吗？	Выйти из игры?
+번쩍이는 효과를 약하게 합니다. 빛에 민감한 경우 켜는 것을 권장합니다.	Reduces flashing effects. Recommended if you're sensitive to light.	减弱闪光效果。对光线敏感的玩家建议开启。	Ослабляет вспышки. Рекомендуется, если вы чувствительны к свету.
+게임을 종료할까요?	Quit the game?	要退出游戏吗？	Выйти из игры?
 게임 창이 닫혀요.	The game window will close.	游戏窗口将会关闭。	Окно игры закроется.
 취소	Cancel	取消	Отмена
 키를 누르세요…	Press a key…	请按下按键…	Нажмите клавишу…

@@ -3,7 +3,8 @@
 # LobbyTabsCapture.RunPlayBatch in batch Unity: the lobby stage and HUD with no Steam, a made-up party and record book.
 # Results: <copy>/Logs/LobbyTabsCapture (1_play.png ... 7_record_empty.png, lobby_tabs.txt).
 # R749: -Language zh-Hans (or en, any column of the string table) takes the pictures in that language.
-param([string]$Language = '')
+# R865: -Switch builds the lobby in Korean and changes to -Language before the first picture (a change in the settings).
+param([string]$Language = '', [switch]$Switch)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $Copy = 'C:\유니티\ChessFight_TestCopy'
@@ -23,6 +24,7 @@ Remove-Item -LiteralPath (Join-Path $logs 'LobbyTabsCapture') -Recurse -ErrorAct
 $unityLog = Join-Path $logs 'lobby_tabs_capture_unity.log'
 $arguments = @('-batchmode', '-projectPath', "`"$Copy`"", '-executeMethod', 'ChessFight.PawnRush.Editor.LobbyTabsCapture.RunPlayBatch', '-logFile', "`"$unityLog`"")
 if ($Language) { $arguments += @('-captureLanguage', $Language) }
+if ($Switch) { $arguments += '-captureSwitch' }
 Write-Host 'Capturing the lobby tabs in Unity (batch mode, Play)...'
 $unity = Start-Process -FilePath (Join-Path $UnityEditor 'Unity.exe') -ArgumentList $arguments -Wait -PassThru
 Write-Host "Unity exit code $($unity.ExitCode)"
