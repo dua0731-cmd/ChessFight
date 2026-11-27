@@ -1,0 +1,113 @@
+<title>장외! 소리 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap">
+<style>
+/* Layout: the game's dark arena strip with the stamp on top (sticky), then four direction cards of four takes each.
+   Single dark look on purpose: it is the match's own screen. */
+:root{
+  color-scheme:dark;
+  --page:#120c08; --card:#1d140d; --line:#3d2d1e; --text:#efe4d2; --soft:#b3a089; --brass:#d9ae62; --gold:#ffc93d;
+  --stampFill:#f4e2b0; --stampEdge:#3a2414; --warn:#ff9a6a;
+  --display:"Black Han Sans","Noto Sans KR",sans-serif; --body:"Noto Sans KR","Malgun Gothic",sans-serif;
+}
+body{background:var(--page);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(24px,4vw,34px);margin:0;color:var(--stampFill)}
+h2{font-family:var(--display);font-weight:400;font-size:21px;margin:0;color:var(--stampFill)}
+p{margin:0;max-width:68ch;color:var(--soft)}
+.arena{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;height:180px;border:1px solid var(--line);overflow:hidden;
+  background:radial-gradient(60% 80% at 50% 30%,#4a3320,#1a110a 70%),#1a110a}
+.arena::before{content:"";position:absolute;left:10%;right:10%;top:55%;bottom:-40%;opacity:.25;
+  background:repeating-conic-gradient(#caa66a 0 25%,#3a2616 0 50%) 0 0/12.5% 25%;transform:perspective(500px) rotateX(58deg);transform-origin:50% 0}
+.stamp{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotate(-6deg);text-align:center;opacity:0;pointer-events:none}
+.stamp b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(48px,11vw,84px);line-height:1;color:var(--stampFill);
+  text-shadow:0 5px 0 var(--stampEdge),3px 0 0 var(--stampEdge),-3px 0 0 var(--stampEdge),0 3px 0 var(--stampEdge),0 -3px 0 var(--stampEdge),2px 2px 0 var(--stampEdge),-2px -2px 0 var(--stampEdge),2px -2px 0 var(--stampEdge),-2px 2px 0 var(--stampEdge)}
+.stamp span{display:block;margin-top:6px;font-weight:700;font-size:15px;color:#fff4d6;text-shadow:0 2px 2px rgba(0,0,0,.6)}
+.now{position:absolute;left:12px;bottom:8px;font-size:13px;color:var(--soft)}
+.card{background:var(--card);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
+.head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.key{font-family:var(--display);color:var(--gold);font-size:22px}
+.takes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:640px){.takes{grid-template-columns:repeat(2,1fr)}}
+button.take{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid var(--line);background:#2a1d12;min-width:0}
+button.take:hover{border-color:var(--brass)}
+button.take:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.take.playing{border-color:var(--gold);background:#3a2814}
+.take strong{font-family:var(--display);font-weight:400;font-size:18px;color:var(--text)}
+.take small{font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
+.flag{font-size:11.5px;color:var(--warn)}
+.note{font-size:13px;color:var(--soft)}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>장외! 소리 시안 16개</h1>
+    <p>번호를 누르면 게임과 같은 모양으로 '장외!' 도장이 튀어나오며 소리가 납니다. 네 방향마다 4개씩이고, 모두 같은 크기(가장 큰 곳 -3 dB)로 맞춰 들려 드립니다. 마음에 드는 번호(예: A2)를 알려 주시면 그걸로 게임에 넣습니다.</p>
+    <p class="note">숫자는 참고용입니다: '침'은 소리가 가장 세게 나는 시점, '울림'은 그 뒤 꺼지기까지의 길이입니다. 도장은 처음 0.13초 안에 튀어나오므로 늦게 치는 소리는 게임에서 앞당겨 틀어야 합니다. AI는 소리를 들을 수 없어 고르지 않았습니다.</p>
+  </header>
+  <div class="arena" aria-live="polite">
+    <div class="stamp" id="stamp"><b>장외!</b><span>적군 더미 1 ← 떄이의 칼 · 백팀 +1</span></div>
+    <div class="now" id="now">번호를 누르세요</div>
+  </div>
+  <div id="cards" class="wrap" style="gap:14px"></div>
+</div>
+
+<script>
+const DATA = /*DATA*/[];
+const ctx = window.AudioContext ? new AudioContext() : null;
+const buffers = {};
+let current = null;
+async function buffer(id, src) {
+  if (buffers[id]) return buffers[id];
+  const bytes = Uint8Array.from(atob(src.split(',')[1]), c => c.charCodeAt(0));
+  return buffers[id] = await ctx.decodeAudioData(bytes.buffer);
+}
+function stampPop() {
+  const el = document.getElementById('stamp');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.animate([{opacity:1},{opacity:1,offset:.82},{opacity:0}], {duration:1100});
+    return;
+  }
+  el.animate([
+    {transform:'translate(-50%,-50%) rotate(-6deg) scale(1.8)', opacity:0},
+    {transform:'translate(-50%,-50%) rotate(-6deg) scale(0.95)', opacity:1, offset:.12},
+    {transform:'translate(-50%,-50%) rotate(-6deg) scale(1)', opacity:1, offset:.2},
+    {transform:'translate(-50%,-50%) rotate(-6deg) scale(1)', opacity:1, offset:.82},
+    {transform:'translate(-50%,-50%) rotate(-6deg) scale(1)', opacity:0}
+  ], {duration:1100, easing:'linear'});
+}
+async function play(card, t, btn) {
+  document.querySelectorAll('.take.playing').forEach(b => b.classList.remove('playing'));
+  btn.classList.add('playing');
+  document.getElementById('now').textContent = card.key + t.n + ' · ' + card.name;
+  stampPop();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') await ctx.resume();
+  if (current) { try { current.stop(); } catch (e) {} }
+  const src = ctx.createBufferSource();
+  src.buffer = await buffer(card.key + t.n, t.src);
+  const gain = ctx.createGain();
+  gain.gain.value = Math.pow(10, (-3 - t.peak) / 20);
+  src.connect(gain).connect(ctx.destination);
+  src.onended = () => btn.classList.remove('playing');
+  src.start();
+  current = src;
+}
+const root = document.getElementById('cards');
+for (const card of DATA) {
+  const box = document.createElement('section');
+  box.className = 'card';
+  box.innerHTML = `<div class="head"><span class="key">${card.key}</span><h2>${card.name}</h2></div><p>${card.note}</p><div class="takes"></div>`;
+  const row = box.querySelector('.takes');
+  for (const t of card.takes) {
+    const b = document.createElement('button');
+    b.className = 'take';
+    b.id = 'take-' + card.key + t.n;
+    b.innerHTML = `<strong>${card.key}${t.n}</strong><small>침 ${t.hit} ms · 울림 ${t.tail} ms</small>` + (t.flags.length ? `<span class="flag">${t.flags.join(' · ')}</span>` : '');
+    b.addEventListener('click', () => play(card, t, b));
+    row.appendChild(b);
+  }
+  root.appendChild(box);
+}
+</script>

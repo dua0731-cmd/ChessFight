@@ -99,6 +99,10 @@ namespace ChessFight.RagdollLab
             // take B (a whoosh into a dull wooden thunk). 10-30 (승규 님: "0.9까지 키워"), then
             // "좀 더 굵직하게": SwordHit.wav is B with more low body (Tools/Sfx/SwordFightSwing/sword_hit_thick.py).
             { "SwordHit", 0.9f },
+            // R871 (user 11-27: "장외! 문구가 나오는 사운드" → take A2, "bgm이랑 이질감 없이"): the 장외! stamp's wooden stamp
+            // thump, under the music's point duck (SwordFightMatch.Music DuckPoint)
+            // (ArtSource/SwordFight/RingOutSfx/bake.py; played by SwordFightMatch.Hud with the stamp, centred).
+            { "RingOut", 1.25f },   // 11-27 "장외! 소리만 좀 키우자": was 0.8; at the default effects volume (0.8) this is full level
             // R808 (승규 님 11-23: "피격에 따른 사용자에 피드백이 있어야함"): under this screen's own hits (cut or cut by), the same
             // clip a fourth lower for more body (SwordFightPawn.PlayCut); a cut stopped on a protected piece's shell rings
             // as the king's guard does, a little higher (SfFxKind.SwordBlocked).

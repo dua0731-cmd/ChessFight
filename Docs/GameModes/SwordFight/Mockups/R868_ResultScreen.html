@@ -1,0 +1,249 @@
+<title>소드 파이트 경기 종료 화면</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one dark column; each option is a 16:9 "game screen" drawn in the game's own walnut / brass / cream,
+   followed by the timing strip and the data table. Single dark look on purpose (the screens are the game's). */
+:root{
+  color-scheme:dark;
+  --page:#120c08; --panel:#1d140d; --line:#3d2d1e; --text:#efe4d2; --soft:#b3a089; --brass:#d9ae62; --gold:#ffc93d;
+  --walnut:#3a2616; --walnut-hi:#5a3a22; --ebony:#140d08; --cream:#f6ecd6; --ink:#2b1f17;
+  --me:#7fdfff; --foe:#ff8a98; --ok:#9bd08a; --new:#ffb45e; --sync:#ff8a98;
+  --display:"Black Han Sans","Noto Sans KR",sans-serif; --body:"Noto Sans KR","Malgun Gothic",sans-serif;
+}
+body{background:var(--page);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,4vw,38px);margin:0;color:var(--cream);text-wrap:balance}
+h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0;color:var(--cream)}
+p{margin:0;max-width:68ch;color:var(--soft)}
+.lead{color:var(--text)}
+.opt{display:flex;flex-direction:column;gap:10px}
+.opt-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+.pick{font-size:12px;font-weight:700;color:var(--ink);background:var(--gold);padding:2px 9px;border-radius:3px}
+.cost{font-size:13px;color:var(--brass)}
+
+/* ---------- the game screen ---------- */
+.screen{container-type:inline-size;aspect-ratio:16/9;max-width:100%;position:relative;overflow:hidden;border:1px solid var(--line);
+  background:radial-gradient(60% 55% at 50% 38%,#4a3320 0%,#22160d 45%,#0b0705 100%);color:var(--cream);font-size:1.25cqw;line-height:1.3}
+.screen::before{content:"";position:absolute;left:14%;right:14%;top:46%;bottom:-8%;opacity:.28;
+  background:repeating-conic-gradient(#caa66a 0 25%,#3a2616 0 50%) 0 0/12.5% 25%;transform:perspective(60cqw) rotateX(58deg);transform-origin:50% 0}
+.screen::after{content:"";position:absolute;inset:0;background:rgba(14,9,5,.5)}
+.screen>*{position:absolute;z-index:1}
+.word{font-family:var(--display);font-size:7cqw;line-height:1;background:linear-gradient(#fff,#fff2cf 38%,#f7d58a 52%,#d2922a);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 .35cqw 0 #3a2414)}
+.sub{color:#ffe7b8;font-family:var(--display);font-size:1.5cqw}
+.plate{background:linear-gradient(#4a301c,#26180e);border-top:.2cqw solid var(--gold);box-shadow:0 .6cqw 2cqw rgba(0,0,0,.5)}
+.bar{left:0;right:0;bottom:0;height:8.6%;background:linear-gradient(#3e2818,#1e130b);border-top:1px solid rgba(217,174,98,.5);
+  display:flex;align-items:center;gap:1.4cqw;padding:0 1.8cqw}
+.bar .count{margin-left:auto;color:#e3d2ba;font-size:1.1cqw}
+.bar::before{content:"";position:absolute;left:0;top:-.15cqw;height:.25cqw;width:62%;background:linear-gradient(90deg,#ffb72a,#ffe07a)}
+.btn{font-family:var(--display);font-size:1.5cqw;padding:.7cqw 1.7cqw .9cqw;border-radius:.5cqw;box-shadow:0 .35cqw 0 rgba(0,0,0,.55)}
+.btn.gold{background:linear-gradient(#ffe48a,#f2b94a);color:#2a1a00}
+.btn.wood{background:linear-gradient(#6b4428,#4a2e19);color:#f6ecdf;border:1px solid rgba(217,174,98,.5)}
+.tag{font-size:.95cqw;font-weight:700;padding:.1cqw .55cqw;border-radius:.25cqw;white-space:nowrap}
+.tag.me{background:var(--me);color:#06253a}
+.tag.mvp{background:var(--gold);color:#2a1a00}
+.label{font-size:.95cqw;letter-spacing:.12em;color:#c9b79f;font-weight:700}
+.pc{display:inline-grid;place-items:center;width:2.5cqw;height:2.5cqw;border-radius:50%;font-size:1.7cqw;line-height:1;flex:none;border:.15cqw solid #c9a04c}
+.pc.w{background:var(--cream);color:#2a2421}
+.pc.b{background:#2a2421;color:var(--cream)}
+.num{font-variant-numeric:tabular-nums}
+
+/* score table (A, and small in B) */
+.team{display:flex;flex-direction:column;gap:.45cqw;flex:1;min-width:0}
+.team-h{display:flex;align-items:baseline;gap:.8cqw;padding:0 .8cqw .3cqw;border-bottom:1px solid rgba(217,174,98,.35)}
+.team-h b{font-family:var(--display);font-weight:400;font-size:1.9cqw}
+.team-h .big{margin-left:auto;font-family:var(--display);font-size:3.2cqw;line-height:1}
+.team.win .big{color:var(--gold)} .team.lose{opacity:.82}
+.row{display:grid;grid-template-columns:2.5cqw 1fr 3.2cqw 3.2cqw 7.4cqw;align-items:center;gap:.7cqw;padding:.35cqw .8cqw;background:rgba(0,0,0,.24)}
+.row .nm{display:flex;align-items:center;gap:.5cqw;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden}
+.row .n{text-align:center;font-family:var(--display);font-size:1.6cqw}
+.row .w{color:#cdbda5;font-size:1.05cqw;white-space:nowrap}
+.row.top{background:linear-gradient(90deg,rgba(255,201,61,.3),rgba(255,201,61,.05));outline:1px solid rgba(255,201,61,.55)}
+.cols{display:grid;grid-template-columns:2.5cqw 1fr 3.2cqw 3.2cqw 7.4cqw;gap:.7cqw;padding:0 .8cqw}
+.cols span{text-align:center}
+
+/* A */
+.a .word{left:0;right:0;top:5%;text-align:center}
+.a .sub{left:0;right:0;top:19.5%;text-align:center}
+.a .board{left:9%;right:9%;top:27%;padding:1.4cqw 1.6cqw;display:flex;gap:2.2cqw}
+.a .blow{left:9%;right:9%;top:80.5%;display:flex;align-items:center;gap:1cqw;padding:.6cqw 1.2cqw;background:rgba(20,13,8,.82);border:1px solid rgba(217,174,98,.4)}
+
+/* B */
+.b .hero{left:4%;top:7%;width:31%;bottom:13%;display:flex;flex-direction:column;align-items:center;padding:1.4cqw 1.2cqw;gap:.6cqw;text-align:center}
+.b .ribbon{font-family:var(--display);font-size:1.6cqw;color:#2a1a00;background:linear-gradient(#ffe48a,#f2b94a);padding:.25cqw 1.6cqw;clip-path:polygon(4% 0,96% 0,100% 100%,0 100%)}
+.b .figure{flex:1;display:grid;place-items:center;width:100%;font-size:17cqw;line-height:1;color:var(--cream);
+  background:radial-gradient(50% 12% at 50% 90%,rgba(255,201,61,.5),transparent),radial-gradient(45% 45% at 50% 45%,rgba(255,220,150,.25),transparent);
+  text-shadow:0 .5cqw 0 #1a110a}
+.b .hero-name{font-family:var(--display);font-size:2.7cqw;display:flex;align-items:center;gap:.6cqw}
+.b .stats{display:flex;gap:1.6cqw;justify-content:center}
+.b .stats div{display:flex;flex-direction:column;align-items:center}
+.b .stats b{font-family:var(--display);font-weight:400;font-size:2.6cqw;color:var(--gold);line-height:1.1}
+.b .head{left:38%;right:4%;top:6%;display:flex;align-items:flex-end;gap:1.6cqw}
+.b .head .word{font-size:5.4cqw}
+.b .head .score{font-family:var(--display);font-size:3.6cqw;margin-left:auto;line-height:1}
+.b .awards{left:38%;right:4%;top:24%;display:grid;grid-template-columns:repeat(3,1fr);gap:1cqw}
+.award{padding:.9cqw 1cqw;display:flex;flex-direction:column;gap:.3cqw;min-width:0}
+.award h4{margin:0;font-family:var(--display);font-weight:400;font-size:1.7cqw;color:var(--gold)}
+.award .who{display:flex;align-items:center;gap:.5cqw;font-weight:700;white-space:nowrap}
+.award small{color:#cdbda5;font-size:1cqw}
+.b .board{left:38%;right:4%;top:48%;padding:1cqw 1.2cqw;display:flex;gap:1.6cqw}
+.b .row,.b .cols{grid-template-columns:2.5cqw 1fr 2.6cqw 2.6cqw}
+.b .row{padding:.22cqw .6cqw} .b .team-h .big{font-size:2.4cqw}
+
+/* C: three beats */
+.beats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.beat{display:flex;flex-direction:column;gap:6px;min-width:0}
+.beat .screen{font-size:2.3cqw}
+.beat figcaption,.beat .cap{font-size:13px;color:var(--soft)}
+.c1 .word{left:0;right:0;top:27%;text-align:center;font-size:15cqw;transform:rotate(-6deg)}
+.c1 .sub{left:0;right:0;top:60%;text-align:center;font-size:3.4cqw}
+.c2 .photo{left:17%;right:17%;top:9%;bottom:16%;background:var(--cream);padding:2cqw 2cqw 0;transform:rotate(-3deg);box-shadow:0 1.5cqw 4cqw rgba(0,0,0,.6);display:flex;flex-direction:column;color:var(--ink)}
+.c2 .shot{flex:1;background:radial-gradient(40% 50% at 62% 40%,#6b4a2c,#1b110a);display:flex;align-items:center;justify-content:center;gap:5cqw;font-size:13cqw;color:var(--cream);line-height:1}
+.c2 .shot i{font-style:normal;transform:rotate(58deg) translateY(2cqw);color:#2a2421;text-shadow:0 0 .4cqw #caa66a}
+.c2 .capt{padding:1.2cqw 0 1.6cqw;font-weight:700;font-size:2.4cqw;text-align:center}
+.c2 .stamp{left:8%;top:6%;font-family:var(--display);font-size:5cqw;color:#f4e2b0;transform:rotate(-8deg);text-shadow:0 .5cqw 0 #3a2414}
+.c3 .board{left:6%;right:6%;top:22%;bottom:16%;padding:2cqw;display:flex;gap:3cqw}
+.c3 .word{left:0;right:0;top:4%;text-align:center;font-size:9cqw}
+.c3 .line{height:1.6cqw;background:rgba(246,236,214,.22);margin-top:1.2cqw}
+.c3 .line.top{background:rgba(255,201,61,.6)}
+.c3 .bar{height:11%}
+
+/* timing strip */
+.time{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.time div{background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.time b{font-family:var(--display);font-weight:400;font-size:20px;color:var(--gold)}
+.time span{font-size:13px;color:var(--soft)}
+.time .now b{color:var(--brass)}
+
+.tbl{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--brass);background:var(--panel);font-size:13px}
+tr:last-child td{border-bottom:0}
+.st{font-weight:700;white-space:nowrap}
+.st.ok{color:var(--ok)} .st.new{color:var(--new)} .st.sync{color:var(--sync)}
+@media (max-width:700px){.beats{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header class="opt">
+    <h1>소드 파이트 경기 종료 화면 — 배치안 세 가지</h1>
+    <p class="lead">지금은 크림색 카드에 점수 두 줄만 나옵니다. 아래 세 안은 모두 폰 러시 결과 화면과 같은 호두나무 · 황동 차림이고, 숫자는 4 대 4 한 판을 가정한 예시입니다.</p>
+  </header>
+
+  <!-- ============ A ============ -->
+  <section class="opt">
+    <div class="opt-head"><h2>A. 점수판 중심</h2><span class="cost">가장 싸다 · 새 통신 없음</span></div>
+    <p>승패 글자 아래에 두 팀의 줄이 바로 나옵니다. 가장 많이 떨어뜨린 사람 줄만 금색으로 띄우고, 결정타는 한 줄로 적습니다.</p>
+    <div class="screen a">
+      <div class="word">승리!</div>
+      <div class="sub">먼저 10점 · 경기 시간 3:37</div>
+      <div class="board plate">
+        <div class="team win">
+          <div class="team-h"><b>백팀</b><span class="label">우리 팀</span><span class="big num">10</span></div>
+          <div class="cols label"><span></span><span></span><span>장외</span><span>떨어짐</span><span>주무기</span></div>
+          <div class="row top"><span class="pc w">♘</span><span class="nm">달빛기사 <span class="tag mvp">최고의 기물</span></span><span class="n num">5</span><span class="n num">1</span><span class="w">칼 3 · 스킬 2</span></div>
+          <div class="row"><span class="pc w">♕</span><span class="nm">승규 <span class="tag me">나</span></span><span class="n num">3</span><span class="n num">2</span><span class="w">꼬치 베기 2</span></div>
+          <div class="row"><span class="pc w">♖</span><span class="nm">민트초코</span><span class="n num">1</span><span class="n num">1</span><span class="w">성벽 붕괴 1</span></div>
+          <div class="row"><span class="pc w">♗</span><span class="nm">Rookie_J</span><span class="n num">0</span><span class="n num">2</span><span class="w">—</span></div>
+        </div>
+        <div class="team lose">
+          <div class="team-h"><b>흑팀</b><span class="label">상대 팀</span><span class="big num">6</span></div>
+          <div class="cols label"><span></span><span></span><span>장외</span><span>떨어짐</span><span>주무기</span></div>
+          <div class="row"><span class="pc b">♛</span><span class="nm">체크메이트</span><span class="n num">3</span><span class="n num">3</span><span class="w">칼 3</span></div>
+          <div class="row"><span class="pc b">♚</span><span class="nm">폰스타</span><span class="n num">2</span><span class="n num">2</span><span class="w">칼 1 · 스킬 1</span></div>
+          <div class="row"><span class="pc b">♞</span><span class="nm">비숍의꿈</span><span class="n num">0</span><span class="n num">2</span><span class="w">—</span></div>
+          <div class="row"><span class="pc b">♜</span><span class="nm">kkang</span><span class="n num">0</span><span class="n num">3</span><span class="w">—</span></div>
+        </div>
+      </div>
+      <div class="blow"><span class="label">결정타 3:37</span><span class="pc w">♘</span><b>달빛기사</b>의 칼 →<span class="pc b">♛</span><b>체크메이트</b><span class="w" style="margin-left:auto;color:#cdbda5">스스로 떨어진 1점은 팀 점수에만 들어갑니다</span></div>
+      <div class="bar"><span class="btn wood">결과판 숨기기 H</span><span class="count">12초 뒤 로비로</span><span class="btn gold">다시 매칭</span><span class="btn wood">로비로</span></div>
+    </div>
+  </section>
+
+  <!-- ============ B ============ -->
+  <section class="opt">
+    <div class="opt-head"><h2>B. 최고의 기물 무대</h2><span class="pick">선택됨 · 구현</span><span class="cost">새 통신 없음 · 화면 문구는 실제 게임과 같음</span></div>
+    <p>왼쪽에 이 판에서 가장 잘한 기물을 크게 세우고, 오른쪽에 상 세 개와 작은 점수판을 둡니다. "최고의 플레이"를 영상 대신 사람과 상으로 보여 주는 안입니다. 그림의 기물은 1차에서는 큰 아이콘, 2차에서 3D 기물로 바꿉니다.</p>
+    <div class="screen b">
+      <div class="hero plate">
+        <span class="ribbon">최고의 기물</span>
+        <div class="figure">♘</div>
+        <div class="hero-name">달빛기사</div>
+        <span class="label">백팀 · 나이트</span>
+        <div class="stats">
+          <div><b class="num">5</b><span class="label">장외</span></div>
+          <div><b class="num">1</b><span class="label">낙하</span></div>
+          <div><b class="num">3</b><span class="label">최다 연속</span></div>
+        </div>
+      </div>
+      <div class="head"><div class="word">승리</div><div class="sub">백팀 승리 · 먼저 10점</div><div class="score num"><span style="color:var(--gold)">10</span> : 6</div></div>
+      <div class="awards">
+        <div class="award plate"><h4>결정타</h4><div class="who"><span class="pc w">♘</span>달빛기사</div><small>승부를 끝낸 마지막 한 점 · 칼</small></div>
+        <div class="award plate"><h4>철벽</h4><div class="who"><span class="pc w">♖</span>민트초코</div><small>단 한 번만 떨어졌습니다</small></div>
+        <div class="award plate"><h4>자유 낙하</h4><div class="who"><span class="pc b">♜</span>kkang</div><small>스스로 떨어짐 2회</small></div>
+      </div>
+      <div class="board plate">
+        <div class="team win">
+          <div class="team-h"><b>백팀</b><span class="label">우리 팀</span><span class="big num">10</span></div>
+          <div class="cols label"><span></span><span></span><span>장외</span><span>낙하</span></div>
+          <div class="row top"><span class="pc w">♘</span><span class="nm">달빛기사 <span class="tag mvp">최고의 기물</span></span><span class="n num">5</span><span class="n num">1</span></div>
+          <div class="row"><span class="pc w">♕</span><span class="nm">승규 <span class="tag me">나</span></span><span class="n num">3</span><span class="n num">2</span></div>
+          <div class="row"><span class="pc w">♖</span><span class="nm">민트초코</span><span class="n num">1</span><span class="n num">1</span></div>
+          <div class="row"><span class="pc w">♗</span><span class="nm">Rookie_J</span><span class="n num">0</span><span class="n num">2</span></div>
+        </div>
+        <div class="team lose">
+          <div class="team-h"><b>흑팀</b><span class="label">상대 팀</span><span class="big num">6</span></div>
+          <div class="cols label"><span></span><span></span><span>장외</span><span>낙하</span></div>
+          <div class="row"><span class="pc b">♛</span><span class="nm">체크메이트</span><span class="n num">3</span><span class="n num">3</span></div>
+          <div class="row"><span class="pc b">♚</span><span class="nm">폰스타</span><span class="n num">2</span><span class="n num">2</span></div>
+          <div class="row"><span class="pc b">♞</span><span class="nm">비숍의꿈</span><span class="n num">0</span><span class="n num">2</span></div>
+          <div class="row"><span class="pc b">♜</span><span class="nm">kkang</span><span class="n num">0</span><span class="n num">3</span></div>
+        </div>
+      </div>
+      <div class="bar"><span class="btn wood">결과판 숨기기 H</span><span class="count">곧 로비로 돌아갑니다</span><span class="btn gold">로비로 돌아가기</span></div>
+    </div>
+  </section>
+
+  <!-- ============ C ============ -->
+  <section class="opt">
+    <div class="opt-head"><h2>C. 결정의 순간 (세 박자)</h2><span class="cost">가장 화려하다 · 사진 찍는 카메라가 새로 필요 · 일요일은 빠듯</span></div>
+    <p>마지막 점수가 난 순간을 카메라가 한 장 찍어 두었다가 사진처럼 내밀고, 그 뒤에 점수판이 나옵니다. 진짜 다시 보기 영상은 아니고 정지 사진 한 장입니다.</p>
+    <div class="beats">
+      <div class="beat"><div class="screen c1"><div class="word">승리!</div><div class="sub">10 : 6 · 먼저 10점</div></div><span class="cap">① 0 ~ 3초 · 슬로 모션 위에 승패 도장 (지금과 같음)</span></div>
+      <div class="beat"><div class="screen c2"><div class="stamp">결정타!</div><div class="photo"><div class="shot"><span>♘</span><i>♛</i></div><div class="capt">3:37 · 달빛기사의 칼 → 체크메이트</div></div></div><span class="cap">② 3 ~ 6초 · 마지막 장외를 찍은 사진 한 장</span></div>
+      <div class="beat"><div class="screen c3"><div class="word">승리!</div><div class="board plate"><div class="team"><div class="line top"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="team"><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div></div><div class="bar"></div></div><span class="cap">③ 6초부터 · A안의 점수판과 버튼</span></div>
+    </div>
+  </section>
+
+  <section class="opt">
+    <h2>나오는 순서 (추천안 B)</h2>
+    <div class="time">
+      <div class="now"><b>0초</b><span>마지막 장외. 1.5초 슬로 모션과 "백팀 승리" 도장, 승리 · 패배 음악 (지금 있는 것 그대로)</span></div>
+      <div><b>3.0초</b><span>호두나무 판이 화면을 쓸고 지나가며 승패 글자가 위로 올라붙음</span></div>
+      <div><b>3.6초</b><span>최고의 기물 카드가 왼쪽에서 들어옴</span></div>
+      <div><b>4.4초부터</b><span>상 카드 셋이 0.3초 간격으로 하나씩, 이어서 점수판</span></div>
+      <div><b>5.5초</b><span>버튼이 눌리기 시작, 12초 세기 시작</span></div>
+      <div><b>17.5초</b><span>아무도 안 누르면 로비로 (폰 러시와 같은 12초)</span></div>
+    </div>
+    <p>지금은 4초에 카드가 뜨고 버튼을 누를 때까지 계속 머뭅니다. 12초 뒤 자동으로 로비에 가는 것은 폰 러시에 맞춘 새 동작이라 결정이 필요합니다.</p>
+  </section>
+
+  <section class="opt">
+    <h2>무엇을 보여 줄 수 있나</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>보여 줄 것</th><th>어디서 오나</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>승패 · 점수 · 끝난 방식 · 경기 시간</td><td>경기 상태(모든 PC가 받음)</td><td class="st ok">지금 있음</td></tr>
+        <tr><td>사람별 장외 · 떨어짐</td><td>장외 알림 줄을 각 PC가 세고 있음(전적 상세가 이미 씀)</td><td class="st ok">지금 있음</td></tr>
+        <tr><td>결정타 · 선취점 · 주무기 · 혼자 떨어짐 · 연속 장외 · 버틴 시간</td><td>같은 장외 알림 줄에서 계산</td><td class="st new">계산만 추가</td></tr>
+        <tr><td>반격(킹) · 귀환 · 스킬 쓴 횟수</td><td>스킬 효과 신호(모든 화면이 받지만 한두 개 빠질 수 있음)</td><td class="st new">세는 코드 추가 · 순위 말고 재미 숫자로만</td></tr>
+        <tr><td>칼 맞힌 횟수 · 명중률 · 도움</td><td>방장만 정확히 앎(참가자 PC는 때린 사람을 추정)</td><td class="st sync">새 동기화 필요 · 프로토콜 올림</td></tr>
+        <tr><td>결정타 사진 (C안)</td><td>각 PC가 마지막 장외 순간에 한 장 찍음</td><td class="st new">새 카메라 필요</td></tr>
+        <tr><td>다시 보기 영상</td><td>물리 기록 재생 장치가 없음</td><td class="st sync">이번 범위 밖</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>

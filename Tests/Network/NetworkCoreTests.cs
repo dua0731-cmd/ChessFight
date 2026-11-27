@@ -4561,6 +4561,37 @@ public static class NetworkCoreTests
                 Check(!LobbyCode.TryRead("", out id) && !LobbyCode.TryRead(" · ", out id) && !LobbyCode.TryRead("0", out id), "nothing");
                 Check(!LobbyCode.TryRead("4268a906151", out id) && !LobbyCode.TryRead("99999999999999999999999", out id), "letters, too long"); });
             // R747: the string table - Korean is the key, a missing line or cell shows the Korean.
+            Test("R868 sword result: the line-up, the best piece and the awards from the ring-out lines; a PC that missed lines shows the scores only", () => {
+                var roster = new[] {
+                    new SwordResultPlayer { Id = 1, Name = "W1", Team = 0, Piece = PieceKind.Knight, Self = true },
+                    new SwordResultPlayer { Id = 2, Name = "W2", Team = 0, Piece = PieceKind.Queen },
+                    new SwordResultPlayer { Id = 3, Name = "B1", Team = 1, Piece = PieceKind.Rook },
+                    new SwordResultPlayer { Id = 4, Name = "B2", Team = 1, Piece = PieceKind.King } };
+                var lines = new List<SwordResultLine> {
+                    new SwordResultLine { Victim = 3, Credit = 1, VictimTeam = 1, Cause = SwordCause.Sword, CausePiece = PieceKind.Knight },
+                    new SwordResultLine { Victim = 4, Credit = 1, VictimTeam = 1, Cause = SwordCause.Skill, CausePiece = PieceKind.Knight },
+                    new SwordResultLine { Victim = 2, Credit = 0, VictimTeam = 0, Cause = SwordCause.Self },
+                    new SwordResultLine { Victim = 1, Credit = 3, VictimTeam = 0, Cause = SwordCause.Collapse, CausePiece = PieceKind.Rook },
+                    new SwordResultLine { Victim = 3, Credit = 1, VictimTeam = 1, Cause = SwordCause.Sword, CausePiece = PieceKind.Knight } };
+                var r = SwordResult.Build(roster, lines, 3, 2, 0);
+                var w1 = r.Find(1);
+                Check(r.Complete && w1.Knockouts == 3 && w1.Falls == 1 && w1.BestStreak == 2 && w1.MainCause == SwordCause.Sword, "W1: 3 ring-outs, 1 fall, 2 in a row, mostly the sword");
+                Check(r.Find(2).SelfFalls == 1 && r.Find(2).Falls == 1 && r.Find(3).Falls == 2 && r.Find(3).WallBreaks == 1, "own falls, falls and wall breaks counted");
+                Check(r.Best == 1 && r.Team(0).First().Id == 1 && r.Team(1).First().Id == 3, "W1 is the best piece and leads its team; B1 leads the other");
+                Check(r.Awards.Count == 3 && r.Awards[0].Award == SwordAward.FinishingBlow && r.Awards[0].Player == 1 && r.Awards[0].Cause == SwordCause.Sword,
+                      "the finishing blow is the last line's credit");
+                Check(r.Awards[1].Award == SwordAward.IronWall && r.Awards[1].Player == 1 && r.Awards[1].Count == 1, "iron wall: fewest falls, then most ring-outs");
+                Check(r.Awards[2].Award == SwordAward.FreeFall && r.Awards[2].Player == 2 && r.Awards[2].Count == 1, "free fall: the most falls on its own");
+                // a player who left before the end is still on the board from the lines that named it
+                var gone = SwordResult.Build(roster.Where(p => p.Id != 4), lines, 3, 2, 0);
+                Check(gone.Find(4) == null && gone.Players.Count == 3 && gone.Complete, "only the roster given (the HUD keeps leavers in its roster)");
+                // a PC back in the match mid-way: fewer lines than points
+                var late = SwordResult.Build(roster, lines.Skip(2).ToList(), 3, 2, 0);
+                Check(!late.Complete && late.Best == 0 && late.Awards.Count == 0, "missed lines: no best piece, no awards");
+                // only falls on their own: nobody is the best piece, and no finishing blow
+                var own = SwordResult.Build(roster, new List<SwordResultLine> { new SwordResultLine { Victim = 3, VictimTeam = 1, Cause = SwordCause.Self } }, 1, 0, 0);
+                Check(own.Complete && own.Best == 0 && !own.Awards.Any(a => a.Award == SwordAward.FinishingBlow) && own.Awards.Any(a => a.Award == SwordAward.FreeFall && a.Player == 3),
+                      "a fall on its own: no best piece, no finishing blow, a free fall"); });
             Test("localization: reading the table", () => {
                 var problems = new List<string>();
                 var table = StringTable.Parse("﻿# comment\r\nko\ten\tzh-Hans\r\n@ready\t1\t0\r\n언어\tLanguage\t语言\r\n" +

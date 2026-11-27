@@ -1113,13 +1113,13 @@ J 나이트의 길	J Knight's Path	J 骑士之路	J Путь коня
 {0} — 스스로	{0} — on their own	{0} — 自己掉落	{0} — сам
 {0} ← {1}의 {2}	{0} ← {1}'s {2}	{0} ← {1}的{2}	{0} ← {2} ({1})
 장외!	Ring out!	出界！	Вылет!
-{0} · 흰 팀 +1	{0} · White +1	{0} · 白队 +1	{0} · Белые +1
-{0} · 검은 팀 +1	{0} · Black +1	{0} · 黑队 +1	{0} · Чёрные +1
+{0} · 백팀 +1	{0} · White +1	{0} · 白队 +1	{0} · Белые +1
+{0} · 흑팀 +1	{0} · Black +1	{0} · 黑队 +1	{0} · Чёрные +1
 빼앗음!	Stolen!	夺取！	Отобрано!
 먼저 {0}점	First to {0}	先得 {0} 分	Первым до {0}
 4:00 종료	Full time	4:00 结束	Время вышло
-흰 팀 승리	White wins	白队获胜	Белые победили
-검은 팀 승리	Black wins	黑队获胜	Чёрные победили
+백팀 승리	White wins	白队获胜	Белые победили
+흑팀 승리	Black wins	黑队获胜	Чёрные победили
 반격!	Riposte!	反击！	Рипост!
 칼을 받아냄	Caught the blade	接住了剑	Клинок пойман
 귀환!	Return!	归来！	Возвращение!
@@ -1153,15 +1153,34 @@ Space · 더블클릭으로 확정	Space · double-click	Space · 双击确认	S
 클릭 · 1~5로 선택, Space나 더블클릭으로 확정	Click or 1-5 to select · Space or double-click to lock in	点击或按 1~5 选择 · 按 Space 或双击确认	Клик или 1-5 — выбор · Space или двойной клик — подтвердить
 {0}점	{0} points	{0} 分	Очки: {0}
 {0} — 무승부 {1} : {2}	{0} — Draw {1} : {2}	{0} — 平局 {1} : {2}	{0} — Ничья {1} : {2}
-{0} — 흰 팀 승리 {1} : {2}	{0} — White wins {1} : {2}	{0} — 白队获胜 {1} : {2}	{0} — Белые победили {1} : {2}
-{0} — 검은 팀 승리 {1} : {2}	{0} — Black wins {1} : {2}	{0} — 黑队获胜 {1} : {2}	{0} — Чёрные победили {1} : {2}
 비겼다.	It's a draw.	平局。	Ничья.
 우리 팀이 이겼다.	Our team won.	我方获胜。	Наша команда победила.
 우리 팀이 졌다.	Our team lost.	我方失败。	Наша команда проиграла.
 떨어뜨린 수가 점수.	Each knockout is a point.	击落数即为得分。	Каждый сброс — очко.
-흰 팀	White team	白队	Белые
-검은 팀	Black team	黑队	Чёрные
 장외로 얻은 점수 {0}	Knockout points {0}	出界得分 {0}	Очки за вылеты: {0}
+# --- RagdollLab/SwordFightMatch.Result.cs (R868 Sword Fight result screen: best piece, awards, line-up)
+최고의 기물	MVP	全场最佳	Лучший игрок
+이번 경기에는 상대를 장외시킨 기물이 없습니다.	No one knocked an opponent out this match.	本场比赛没有棋子将对手击出场外。	В этом матче никто не выбил соперника.
+경기 도중에 다시 들어와 개인 기록을 모두 받지 못했습니다.	You rejoined mid-match, so some player stats are missing.	你在比赛中途重新加入，部分个人数据缺失。	Вы вернулись в матч по ходу игры, поэтому часть статистики недоступна.
+장외	Ring-outs	击出	Выбивания
+낙하	Falls	掉落	Падения
+최다 연속	Best streak	最高连续	Лучшая серия
+스스로	Own fall	自己掉落	Сам упал
+결정타	Finishing Blow	致胜一击	Решающий удар
+철벽	Iron Wall	铁壁	Несокрушимый
+자유 낙하	Free Fall	自由落体	Свободное падение
+선취점	First Blood	首杀	Первая кровь
+연속 장외	On a Roll	连续击出	Серия
+성벽 파괴자	Demolisher	拆墙专家	Разрушитель
+승부를 끝낸 마지막 한 점 · {0}	Scored the winning point · {0}	拿下制胜一分 · {0}	Решающее очко · {0}
+한 번도 떨어지지 않았습니다	Never fell once	一次都没有掉落	Ни разу не упал
+단 한 번만 떨어졌습니다	Fell only once	只掉落了一次	Упал всего один раз
+스스로 떨어짐 {0}회	Fell off alone {0} times	自己掉落 {0} 次	Сам упал: {0}
+경기의 첫 장외 · {0}	First ring-out of the match · {0}	本场首次击出 · {0}	Первое выбивание матча · {0}
+떨어지지 않고 연속 장외 {0}회	{0} ring-outs in a row without falling	未掉落连续击出 {0} 次	{0} выбиваний подряд без падений
+성벽 붕괴로 장외 {0}회	{0} ring-outs by breaking the wall	以城墙崩塌击出 {0} 次	Выбиваний обрушением стены: {0}
+스스로 떨어진 점수는 상대 팀 점수에만 더해집니다.	A fall on your own scores for the other team only.	自己掉落的分数只计入对方队伍。	Самостоятельное падение приносит очко только команде соперника.
+곧 로비로 돌아갑니다	Returning to the lobby shortly	即将返回大厅	Скоро возвращение в лобби
 # --- Assets/Scripts/RagdollLabSteam/SteamSwordFightLink.cs
 소드파이트 호스트 연결이 끊어졌습니다.	Lost the connection to the Sword Fight host.	与剑斗主机的连接已断开。	Связь с хостом боя на мечах потеряна.
 # ===== waiting room start notes and the emote wheel (R754): MatchLoader StartNote, EmoteWheel moods, PieceEmotes names
@@ -1220,6 +1239,23 @@ Space · 더블클릭으로 확정	Space · double-click	Space · 双击确认	S
 알현실로! 시간이 다 되면 남은 사람은 모두 소환됩니다	To the throne room! When time runs out, everyone left is summoned	前往谒见厅！时间一到，其余的人都会被召唤	В тронный зал! Когда время выйдет, остальных призовут
 {0}  {1:0.0} / {2:0}초  ·  발판 {3}	{0}  {1:0.0} / {2:0} s  ·  Pad {3}	{0}  {1:0.0} / {2:0} 秒  ·  踏板 {3}	{0}  {1:0.0} / {2:0} с  ·  Плита {3}
 양 팀 집결!	Both teams assemble!	两队集结！	Обе команды в сборе!
+# --- Game/PracticeYardHud.cs, RagdollLab/PracticeYard/YardEagle.cs, NetworkHud.uxml (R870: the matchmaking practice yard - its screen, the eagles, the lobby card's button; 로비로 · 매칭 취소 · 상대를 찾는 중 are above)
+미니게임 둘러보기	Browse mini-games	浏览小游戏	Мини-игры
+매칭 연습장	Practice Yard	匹配练习场	Тренировочный двор
+연습장에서 할 것	Things to do here	练习场玩法	Чем заняться
+독수리 타기	Ride an eagle	骑乘雄鹰	Полёт на орле
+횃대 앞 금빛 고리에 잠깐 서 있으면 독수리 등에 탑니다. 횃대는 마당 · 3 m 벽 위 · 5 m 단 위 세 곳.	Stand in the gold ring in front of a perch for a moment to climb onto the eagle. There are three perches: in the yard, on the 3 m wall and on the 5 m platform.	在栖架前的金色圆环里站一会儿，就能骑上雄鹰。栖架共有三处：庭院里、3 米墙上、5 米平台上。	Постойте немного в золотом круге перед насестом, чтобы сесть на орла. Насестов три: во дворе, на 3-метровой стене и на 5-метровой площадке.
+조작 연습	Practise the moves	练习操作	Отработка движений
+튜토리얼의 턱 · 낮은 봉 · 벽 · 비탈 · 외나무다리가 그대로 있습니다.	The tutorial's hurdles, low bar, walls, slopes and narrow beam are all here.	教程中的矮栏、低杆、墙壁、斜坡和独木桥都还在。	Здесь есть всё из обучения: барьеры, низкая перекладина, стены, склоны и узкое бревно.
+마우스 방향 · {0} 날갯짓 · {1} 제자리 · {2}{3} 옆으로 · {4} 솟구치기 · {5} 급강하 · {6} 울음	Mouse steer · {0} Flap · {1} Hover · {2}{3} Sideways · {4} Soar up · {5} Dive · {6} Cry	鼠标 方向 · {0} 振翅 · {1} 悬停 · {2}{3} 侧移 · {4} 腾空 · {5} 俯冲 · {6} 鸣叫	Мышь направление · {0} Взмах · {1} Зависнуть · {2}{3} Вбок · {4} Взлёт · {5} Пике · {6} Крик
+{0} 길게: 내리기 (높으면 횃대로 돌아감) · R 처음 자리	Hold {0}: get off (from high up, it flies back to the perch first) · R Back to start	长按 {0}：下来（飞得高时会先飞回栖架）· R 回到起点	Удерживайте {0}: слезть (если высоко — орёл сначала вернётся на насест) · R На старт
+{0}{1}{2}{3} 이동 · {4} 점프 · {5} 질주 · {6} 몸 날리기 · {7} 잡기 · {8} 스킬 · R 처음 자리	{0}{1}{2}{3} Move · {4} Jump · {5} Sprint · {6} Dive · {7} Grab · {8} Skill · R Back to start	{0}{1}{2}{3} 移动 · {4} 跳跃 · {5} 冲刺 · {6} 飞扑 · {7} 抓取 · {8} 技能 · R 回到起点	{0}{1}{2}{3} Движение · {4} Прыжок · {5} Рывок · {6} Бросок · {7} Захват · {8} Навык · R На старт
+화면 클릭: 카메라 · Esc: 메뉴와 마우스 풀기	Click the screen: camera · Esc: menu and free the mouse	点击画面：控制镜头 · Esc：菜单并释放鼠标	Щелчок по экрану: камера · Esc: меню и свободная мышь
+독수리에 타는 중	Climbing on	正在骑上	Садимся
+독수리에 탔어요! 마우스로 방향을 잡고 날갯짓으로 날아 보세요	You're on the eagle! Steer with the mouse and flap to fly	骑上雄鹰了！用鼠标控制方向，振翅飞翔吧	Вы на орле! Направляйте мышью и машите крыльями
+내리는 중	Getting off	正在下来	Слезаем
+높아서 횃대로 돌아가 내려 줄게요	Too high - flying back to the perch to let you off	太高了，先飞回栖架再放你下来	Слишком высоко — орёл вернётся на насест и высадит вас
+독수리에서 내렸어요	Off the eagle	已从雄鹰上下来	Вы слезли с орла
 # --- Game/FriendChatWindow.cs, NetworkHudView.FriendChat.cs, Bootstrap/LobbyFriendChat.cs, Network/SteamFriendChat.cs (R862: the friend 1:1 chat)
 대화	Chat	聊天	Чат
 1:1 대화	DIRECT CHAT	私聊	ЛИЧНЫЙ ЧАТ

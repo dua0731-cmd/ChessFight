@@ -50,18 +50,21 @@ namespace ChessFight.RagdollLab
         readonly List<(float at, string title, string sub, float len)> stampQueue = new List<(float, string, string, float)>();
         bool endStamped;
 
-        // The team words live inside whole Loc keys ("흰 팀 승리", "{0} · 흰 팀 +1"), so each language words them its own way.
+        // The team words live inside whole Loc keys ("백팀 승리", "{0} · 백팀 +1"), so each language words them its own way.
         static bool IsWhite(int team) => team == 0;
         // The feed's cause as shown (CauseName stays Korean: the match record stores it).
         static string CauseShown(SwordFeed e) => Loc.T(CauseName(e));
 
         string NameOf(ulong id) => id != 0 && game.Fighters.TryGetValue(id, out var f) && f != null ? f.Pawn.DisplayName : "?";
 
-        static string CauseName(SwordFeed e)
+        static string CauseName(SwordFeed e) => MeansName(e.Cause, (PieceKind)e.CausePiece);
+
+        // R868: the same for a means alone (the result screen's main means, its finishing blow); "스스로" for none.
+        static string MeansName(SwordCause cause, PieceKind piece)
         {
-            var piece = (PieceKind)e.CausePiece;
-            switch (e.Cause)
+            switch (cause)
             {
+                case SwordCause.Self: return "스스로";
                 case SwordCause.Sword: return "칼";
                 case SwordCause.Skill: return SwordFightSkills.Name(piece);
                 case SwordCause.Edge: return SwordFightSkills.EdgeName(piece);
@@ -99,7 +102,7 @@ namespace ChessFight.RagdollLab
         void StepFeed()
         {
             NoteRecord();
-            if (view.FeedSeq < feedSeen) { recordKnockouts = recordFalls = 0; recordBy.Clear(); recordOf.Clear(); }   // a new round
+            if (view.FeedSeq < feedSeen) { recordKnockouts = recordFalls = 0; recordBy.Clear(); recordOf.Clear(); ResultReset(); }   // a new round
             foreach (var e in view.Feed)
             {
                 if (e.Seq <= feedSeen) continue;
@@ -110,6 +113,7 @@ namespace ChessFight.RagdollLab
                 // R742: every player's, and the line itself, for the record's detail.
                 if (e.Credit != 0) recordBy[e.Credit] = (recordBy.TryGetValue(e.Credit, out int by) ? by : 0) + 1;
                 recordOf[e.Victim] = (recordOf.TryGetValue(e.Victim, out int of) ? of : 0) + 1;
+                ResultLine(e);   // R868
                 var me = game.Local;
                 MatchRecords.Log?.Score(new DetailFall
                 {
@@ -122,7 +126,11 @@ namespace ChessFight.RagdollLab
                     Cause = e.Credit == 0 ? "스스로" : CauseName(e),
                 });
                 string who = e.Credit == 0 ? Loc.F("{0} — 스스로", NameOf(e.Victim)) : Loc.F("{0} ← {1}의 {2}", NameOf(e.Victim), NameOf(e.Credit), CauseShown(e));
-                Stamp(Loc.T("장외!"), IsWhite(1 - e.VictimTeam) ? Loc.F("{0} · 흰 팀 +1", who) : Loc.F("{0} · 검은 팀 +1", who), 1.1f);
+                Stamp(Loc.T("장외!"), IsWhite(1 - e.VictimTeam) ? Loc.F("{0} · 백팀 +1", who) : Loc.F("{0} · 흑팀 +1", who), 1.1f);
+                // R871 (user 11-27: "장외! 문구가 나오는 사운드가 없어" → take A2): the stamp's thump on every screen, centred
+                // (heard from the view's own camera), with the music's point duck under it.
+                var view0 = game.CameraRig != null ? game.CameraRig.Cam : Camera.main;
+                SwordFightSkillSfx.Moment("RingOut", view0 != null ? view0.transform.position : Vector3.zero, null);
                 if (e.Stolen != 255 && e.Credit != 0)
                 {
                     Stamp(Loc.T("빼앗음!"), $"{NameOf(e.Credit)} → {Loc.T(ChessPieces.Name((PieceKind)e.Stolen))}", 1.2f, 0.25f);
@@ -134,8 +142,9 @@ namespace ChessFight.RagdollLab
             if (view.Phase == SwordPhase.Result && !endStamped)
             {
                 endStamped = true;
+                ResultBegin();   // R868: the result screen's numbers, from every line of the match
                 string how = view.Phase == SwordPhase.Result && view.Clock < settings.Duration - 0.01 ? Loc.F("먼저 {0}점", settings.Target) : view.Clock > settings.Duration + 0.01 ? Loc.T("서든데스") : Loc.T("4:00 종료");
-                Stamp(view.Winner < 0 ? Loc.T("무승부") : IsWhite(view.Winner) ? Loc.T("흰 팀 승리") : Loc.T("검은 팀 승리"), $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
+                Stamp(view.Winner < 0 ? Loc.T("무승부") : IsWhite(view.Winner) ? Loc.T("백팀 승리") : Loc.T("흑팀 승리"), $"{view.White} : {view.Black} · {how}", 3.6f, 0.05f);
                 // R679: the winners' or the losers' music from the result on (a draw has none; nothing until its file exists)
                 var self = game.Local;
                 if (view.Winner >= 0 && self != null && self.Pawn != null)
@@ -296,6 +305,13 @@ namespace ChessFight.RagdollLab
             var me = game.Local;
             int myTeam = me != null ? me.Pawn.Team : 0;
 
+            // R868: the result screen takes the whole screen once it is up (the winner's stamp, the score panel and the
+            // name tags give way to it).
+            if (ResultUp)
+            {
+                DrawResult(w, h, myTeam);
+                return;
+            }
             DrawTags();
             DrawHitMarks(ui);   // R808
             DrawScore(w, ui);
@@ -313,7 +329,6 @@ namespace ChessFight.RagdollLab
                     break;
             }
             if (Time.time - stampAt < stampLen) BigStamp(w, h, stampTitle, stampSub, (Time.time - stampAt) / stampLen, ui);
-            if (view.Phase == SwordPhase.Result && PhaseTime > 4.0) DrawEndCard(w, h, ui, myTeam);
             if (debugView) Text(new Rect(14f, 70f * ui, 600f, 22f), "F12 판정 표시: 칼 원뿔(노랑) · 장외 선(빨강) · 떨어지기 시작(머리 위)", bodyStyle, Mathf.RoundToInt(13 * ui), Color.yellow, TextAnchor.MiddleLeft);
         }
 
@@ -603,35 +618,6 @@ namespace ChessFight.RagdollLab
             return r.xMax + 10f * ui;
         }
 
-        void DrawEndCard(float w, float h, float ui, int myTeam)
-        {
-            GUI.DrawTexture(new Rect(0f, 0f, w, h), dimTex);
-            float pw = Mathf.Min(560f * ui, w - 40f), ph = 300f * ui;
-            var r = new Rect(w * 0.5f - pw / 2f, h * 0.5f - ph / 2f, pw, ph);
-            Panel(r, panelTex);
-            string how = view.Clock > settings.Duration + 0.01 ? Loc.T("서든데스") : view.Clock < settings.Duration - 0.01 ? Loc.F("{0}점", settings.Target) : Loc.T("4:00 종료");
-            string title = view.Winner < 0 ? Loc.F("{0} — 무승부 {1} : {2}", how, view.White, view.Black)
-                : IsWhite(view.Winner) ? Loc.F("{0} — 흰 팀 승리 {1} : {2}", how, view.White, view.Black) : Loc.F("{0} — 검은 팀 승리 {1} : {2}", how, view.White, view.Black);
-            float x = r.x + 24f * ui, iw = pw - 48f * ui, y = r.y + 22f * ui;
-            Text(new Rect(x, y, iw, 38f * ui), title, displayStyle, Mathf.RoundToInt(28 * ui), Ink, TextAnchor.MiddleLeft);
-            y += 42f * ui;
-            string mine = view.Winner < 0 ? Loc.T("비겼다.") : view.Winner == myTeam ? Loc.T("우리 팀이 이겼다.") : Loc.T("우리 팀이 졌다.");
-            // R640: no steals any more (the line and the rows say only the falls).
-            Text(new Rect(x, y, iw, 22f * ui), mine + " " + Loc.T("떨어뜨린 수가 점수."), bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft, TextAnchor.MiddleLeft);
-            y += 34f * ui;
-            Row(x, ref y, iw, ui, Loc.T("흰 팀"), Loc.F("장외로 얻은 점수 {0}", view.OutsWhite));
-            Row(x, ref y, iw, ui, Loc.T("검은 팀"), Loc.F("장외로 얻은 점수 {0}", view.OutsBlack));
-            var br = new Rect(x, r.yMax - 64f * ui, 200f * ui, 42f * ui);
-            Panel(br, brassTex, 7);
-            Text(br, Loc.T("로비로 돌아가기"), bodyStyle, Mathf.RoundToInt(14 * ui), Ink);
-            if (GUI.Button(br, GUIContent.none, GUIStyle.none)) game.Exit();
-        }
-
-        void Row(float x, ref float y, float w, float ui, string head, string body)
-        {
-            Text(new Rect(x, y, 90f * ui, 26f * ui), head, bodyStyle, Mathf.RoundToInt(14 * ui), Ink, TextAnchor.MiddleLeft);
-            Text(new Rect(x + 90f * ui, y, w - 90f * ui, 26f * ui), body, bodyStyle, Mathf.RoundToInt(14 * ui), Ink, TextAnchor.MiddleLeft);
-            y += 32f * ui;
-        }
+        // R868: the plain cream end card (DrawEndCard) gave way to the result screen, SwordFightMatch.Result.cs.
     }
 }
