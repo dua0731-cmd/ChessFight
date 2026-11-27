@@ -132,6 +132,12 @@ namespace ChessFight.RagdollLab
         /// with <paramref name="follow"/> if given.</summary>
         void PopWord(string word, Vector3 at, Color color, float height, float life, RagdollPawn follow = null, float tilt = 0f)
         {
+            // (STAGING_REVIEW 공2 · 공3: one look for every sound word, one at a time, where it happened.)
+            if (word != "!" && word != "?")
+            {
+                JyWord(word, at, color, follow);
+                return;
+            }
             if (font == null || kit == null) return;
             var text = new Text3D(root, font, word, color, height);
             Vector3 off = follow != null ? at - follow.Hips.position : Vector3.zero;
@@ -291,8 +297,21 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Its name over the head in its colour, a bar under it running down with the time.</summary>
+        readonly HashSet<RagdollPawn> ccLabelled = new HashSet<RagdollPawn>();
+
+        /// <summary>How many labelled pieces stand within a metre of <paramref name="who"/> before it (공3: their labels go one
+        /// over the other).</summary>
+        int CcLabelRank(RagdollPawn who)
+        {
+            int rank = 0, mine = who.GetInstanceID();
+            foreach (var o in ccLabelled)
+                if (o != null && o != who && o.GetInstanceID() < mine && Flat(o.Hips.position - who.Hips.position).magnitude < 1.1f) rank++;
+            return rank;
+        }
+
         void CcLabel(CcLook look, float seconds)
         {
+            if (look.who != null) ccLabelled.Add(look.who);
             if (font == null) return;
             var who = look.who;
             Color c = CcColor(look.kind);
@@ -313,7 +332,8 @@ namespace ChessFight.RagdollLab
                 if (cam == null) return true;
                 float s = Mathf.Max(0.01f, Kit.EaseOutBack(Mathf.Clamp01(fx.age / 0.16f)) * (1f - outk));
                 if (S4cHidden(who)) s = 0.01f;   // (swallowed: out of sight)
-                Vector3 at = DrawnHead(who) + Vector3.up * 0.7f;
+                Vector3 at = DrawnHead(who) + Vector3.up * (0.7f + 0.34f * CcLabelRank(who));
+                if (JyWordNear(at, 2.5f)) s = 0.01f;   // (STAGING_REVIEW 공3: a word up here goes first)
                 text.Place(at, cam, s, 1f);
                 Vector3 right = cam.transform.right, up = cam.transform.up;
                 float half = 0.36f * s, frac = Mathf.Clamp01(left / total);
@@ -326,7 +346,11 @@ namespace ChessFight.RagdollLab
                 return true;
             });
             f.strips.Add(bar);
-            f.end = () => text.Destroy();
+            f.end = () =>
+            {
+                text.Destroy();
+                if (who != null) ccLabelled.Remove(who);
+            };
         }
 
         void CcFlop(CcLook look, float lvl)

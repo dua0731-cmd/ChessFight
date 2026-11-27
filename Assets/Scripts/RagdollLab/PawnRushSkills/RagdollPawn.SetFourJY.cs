@@ -206,6 +206,7 @@ namespace ChessFight.RagdollLab
                     // The headbutt: it flies a little and falls (physics, no hindrance).
                     Vector3 contact = Vector3.Lerp(bodies[(int)BodyId.Head].position, t.bodies[(int)BodyId.Head].position, 0.5f);
                     SkillHit(t, Throw4(skillDir, 1), true, "대각선 공격");
+                    t.Launch(Throw4(skillDir, 1) * 0.6f);   // (STAGING_REVIEW 3.1: only the light 2 m - the lunge's bump added more)
                     Fx(SkillFxKind.JyStep, t, contact, skillDir, 2);
                     FeelHit(t, contact, skillDir, FeelHard);
                     JyEndSteps(s);

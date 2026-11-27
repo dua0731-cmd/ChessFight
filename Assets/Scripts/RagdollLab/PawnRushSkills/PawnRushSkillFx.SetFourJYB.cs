@@ -111,6 +111,7 @@ namespace ChessFight.RagdollLab
             var blade = CmProp(CmBladeMesh(), CmHoly, "Holy sword", 0.018f);
             var hilt = CmProp(CmHiltMesh(), CmGold, "Holy sword hilt", 0.016f);
             var disc = new Kit.Strip(kit, CmGold) { core = CmGold.light, coreShare = 0.45f, inkShare = 0.15f };
+            var discFill = new Kit.Tile(kit, "Sword disc");   // (STAGING_REVIEW 3.1: a solid gold disc, 1.4 m)
             var ring = new List<Vector3>(25);
             var cell = new Kit.Tile(kit, "Sword landing");
             float lastWhoosh = -1f;
@@ -146,9 +147,20 @@ namespace ChessFight.RagdollLab
                     float a = i * Mathf.PI * 2f / 24f;
                     ring.Add(mid + (way * Mathf.Cos(a) + Vector3.up * Mathf.Sin(a)) * 0.7f);
                 }
-                disc.Build(ring, i => 0.07f, kit.Eye);
-                disc.fade = 0.7f;
+                disc.Build(ring, i => 0.08f, kit.Eye);
+                disc.fade = 0.9f;
                 disc.Apply();
+                discFill.Facing(mid, side, Vector2.one * 1.4f, Vector3.up);
+                discFill.shape = 1f;
+                discFill.inner = 0f;
+                discFill.fill = Kit.A(CmGold.light, 0.55f);
+                discFill.ink = Kit.A(CmGold.ink, 0.8f);
+                discFill.inkWidth = 0.04f;
+                discFill.core = Color.clear;
+                discFill.rim = Color.clear;
+                discFill.stripe = Color.clear;
+                discFill.fade = 1f;
+                discFill.Apply();
                 if (Clock - lastWhoosh > 0.16f)
                 {
                     lastWhoosh = Clock;
@@ -175,6 +187,7 @@ namespace ChessFight.RagdollLab
             f.props.Add(hilt);
             f.strips.Add(disc);
             f.tiles.Add(cell);
+            f.tiles.Add(discFill);
         }
 
         /// <summary>The cross: a beam from the sky, then down it slams (white stone, gold trim, 3 m), squashing 30% and
@@ -188,8 +201,9 @@ namespace ChessFight.RagdollLab
             float bind = Params != null ? Params.jyCrossBind : 2f;
             Vector3 foot = e.at, way = FlatDirOr(e.dir), side = Vector3.Cross(Vector3.up, way);
             Quaternion face = Quaternion.LookRotation(way, Vector3.up);
-            var pillar = CmProp(kit.RoundBox(new Vector3(0.5f, high, 0.5f), 0.06f), CmHoly, "Cross pillar", 0.03f);
-            var bar = CmProp(kit.RoundBox(new Vector3(wide, 0.5f, 0.5f), 0.06f), CmHoly, "Cross bar", 0.03f);
+            // (STAGING_REVIEW 3.1: white stone edged in gold, deep enough to see it is a block)
+            var pillar = CmProp(kit.RoundBox(new Vector3(0.55f, high, 0.62f), 0.07f), CmCrossStone, "Cross pillar", 0.045f);
+            var bar = CmProp(kit.RoundBox(new Vector3(wide, 0.55f, 0.62f), 0.07f), CmCrossStone, "Cross bar", 0.045f);
             var trim = CmProp(kit.RoundBox(new Vector3(0.58f, 0.12f, 0.58f), 0.03f), CmGold, "Cross trim", 0.016f);
             var beam = new Kit.Strip(kit, CmGold) { core = Color.white, coreShare = 0.5f, inkShare = 0.1f };
             var chainL = new Kit.Strip(kit, CmGold) { core = CmGold.light, coreShare = 0.4f, inkShare = 0.25f };
@@ -235,19 +249,25 @@ namespace ChessFight.RagdollLab
                 float gone = Mathf.Clamp01((t - seconds) / 0.4f);
                 bool blink = t > seconds - 1f && t < seconds && Mathf.Repeat((t - (seconds - 1f)) * 3f, 1f) > 0.7f;
                 float fall = (1f - drop) * 1.5f;
-                float sy = jelly * (1f - gone);
+                float sy = jelly * (1f - 0.85f * gone);
                 float sx = landed ? 1f + (1f - jelly) * 0.5f : 1f;
                 Vector3 baseAt = foot + Vector3.up * fall;
                 CmPlace(pillar, baseAt + Vector3.up * (high * 0.5f * sy), face, new Vector3(sx, Mathf.Max(0.02f, sy), sx));
                 CmPlace(bar, baseAt + Vector3.up * ((high - 0.8f) * sy), face, new Vector3(sx, Mathf.Max(0.02f, sy), 1f));
                 CmPlace(trim, baseAt + Vector3.up * 0.06f, face, new Vector3(sx, 1f, sx) * (1f - gone));
-                float fadeTo = ally ? 0.45f : 1f;
+                float fadeTo = ally ? 0.7f : 1f;
                 pillar.fade = bar.fade = trim.fade = t < 0.2f ? 0f : fadeTo;
                 if (blink)
                 {
                     pillar.fade = bar.fade = 0.15f;
                 }
-                if (gone > 0f && Random.value < 0.6f) CmPoof(baseAt + Vector3.up * (high * sy) + side * Random.Range(-wide * 0.4f, wide * 0.4f), CmGold, 1, 0.3f, 0.14f, 0.45f, 0.3f);
+                if (gone > 0f)
+                {
+                    // Blown away into gold dust from the top down (never falling over).
+                    pillar.fade = bar.fade = trim.fade = (ally ? 0.7f : 1f) * (1f - gone);
+                    for (int k = 0; k < 2; k++)
+                        CmPoof(baseAt + Vector3.up * (high * (1f - gone) * Random.Range(0.6f, 1f)) + side * Random.Range(-wide * 0.45f, wide * 0.45f), CmGold, 1, 0.35f, 0.16f, 0.5f, 0.8f);
+                }
                 // The light chains to the ankles while it is bound.
                 if (who != null && landed && since < bind)
                 {
@@ -284,6 +304,9 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- 케틀 궁
 
+        /// <summary>The cross's stone: white, edged in gold (STAGING_REVIEW 3.1).</summary>
+        static readonly Kit.Palette CmCrossStone = new Kit.Palette("#F6F1E6", "#FFFFFF", "#D8CDB6", "#B8862A");
+
         sealed class JyBowLook { public int phase; public float at; public Vector3 head; public RagdollPawn target, aimed; public float speed; }
         readonly Dictionary<RagdollPawn, JyBowLook> jyBows = new Dictionary<RagdollPawn, JyBowLook>();
 
@@ -317,8 +340,9 @@ namespace ChessFight.RagdollLab
                         l2.phase = 2;
                         l2.aimed = e.target;
                     }
-                    JyHit(e.target, e.at, 1, CmGold);
-                    JyWord("퍽", e.at, JyWordWood, e.target);
+                    if (by != null && jyBows.TryGetValue(by, out var taken)) taken.at = Clock;   // (the target jumps onto the taker)
+                    JyHit(e.target, e.at, 2, CmGold);
+                    JyWord("퍽!", e.at, JyWordWood, e.target);
                     UltClip(UltClipId.Tap, 0.8f * lvl, 0.8f);
                     break;
                 }
@@ -372,6 +396,8 @@ namespace ChessFight.RagdollLab
             var tail = new Kit.Strip(kit, CmGold) { core = Color.white, coreShare = 0.5f, inkShare = 0.15f };
             var ringA = new Kit.Strip(kit, CmRed) { core = Color.white, coreShare = 0.25f, inkShare = 0.3f };
             var ringB = new Kit.Strip(kit, CmRed) { core = Color.white, coreShare = 0.25f, inkShare = 0.3f };
+            var board = new Kit.Tile[3];
+            for (int i = 0; i < board.Length; i++) board[i] = new Kit.Tile(kit, "Bow target " + i);
             var pts = new List<Vector3>(32);
             var trail = new List<Vector3>(12);
             var dots = new Kit.Prop[8];
@@ -394,15 +420,17 @@ namespace ChessFight.RagdollLab
                         pts.Clear();
                         pts.Add(staff);
                         pts.Add(to);
-                        line.Build(pts, i => 0.05f, kit.Eye);
-                        line.fade = 0.7f;
+                        line.Build(pts, i => 0.08f, kit.Eye);   // (STAGING_REVIEW 공1: everyone must see it)
+                        line.fade = 0.9f;
                         line.Apply();
                         for (int i = 0; i < dots.Length; i++)
                         {
                             float u = Mathf.Repeat(fx.age * 0.8f + i / (float)dots.Length, 1f);
                             CmPlace(dots[i], Vector3.Lerp(staff, to, u), Quaternion.identity, Vector3.one * 0.12f);
                         }
-                        JyReticle(ringA, ringB, target, fx.age, 1f - 0.3f * k);
+                        JyTarget(board, target, fx.age, Mathf.Lerp(1.4f, 1f, Mathf.Clamp01(fx.age)));
+                        ringA.Hide();
+                        ringB.Hide();
                     }
                     if (fx.age >= nextBeep)
                     {
@@ -435,14 +463,20 @@ namespace ChessFight.RagdollLab
                         tail.Build(trail, i => 0.32f * (1f - i / (float)trail.Count), kit.Eye);
                         tail.Apply();
                     }
-                    if (target != null) JyReticle(ringA, ringB, target, fx.age, 0.7f);
+                    if (target != null) JyTarget(board, target, fx.age, 1f);
                     return fx.age < 7f;
                 }
-                // Hit or taken: the target bursts away.
+                // Hit or taken: the target on the one it hit, popping big, then gone.
                 comet.Show(false);
                 tail.Hide();
                 ringA.Hide();
                 ringB.Hide();
+                if (look.phase == 2 && look.aimed != null && Clock - look.at < 0.6f)
+                {
+                    float popK = 1f + 0.6f * Kit.EaseOut(Mathf.Clamp01((Clock - look.at) / 0.25f));
+                    JyTarget(board, look.aimed, fx.age, popK);
+                }
+                else foreach (var t in board) { t.fade = 0f; t.Apply(); }
                 return true;
             });
             f.props.Add(orb);
@@ -452,6 +486,33 @@ namespace ChessFight.RagdollLab
             f.strips.Add(tail);
             f.strips.Add(ringA);
             f.strips.Add(ringB);
+            foreach (var t in board) f.tiles.Add(t);
+        }
+
+        /// <summary>The target over a head: red, white and red rings 1 m across at <paramref name="size"/> 1, facing the
+        /// camera (STAGING_REVIEW 3.1).</summary>
+        void JyTarget(Kit.Tile[] board, RagdollPawn who, float age, float size)
+        {
+            var cam = ViewCamera;
+            if (cam == null || who == null) return;
+            Vector3 c = DrawnHead(who) + Vector3.up * (0.8f * GiantScaleOf(who));
+            Vector3 n = -cam.transform.forward;
+            for (int i = 0; i < board.Length; i++)
+            {
+                var t = board[i];
+                float r = size * (i == 0 ? 1f : i == 1 ? 0.66f : 0.33f);
+                t.Facing(c + n * (0.01f * i), n, Vector2.one * r, cam.transform.up);
+                t.shape = 1f;
+                t.inner = 0f;
+                t.fill = i == 1 ? Kit.A(Color.white, 0.95f) : Kit.A(CmRed.main, 0.95f);
+                t.ink = Kit.A(CmRed.ink, 1f);
+                t.inkWidth = 0.03f;
+                t.core = Color.clear;
+                t.rim = Color.clear;
+                t.stripe = Color.clear;
+                t.fade = 1f;
+                t.Apply();
+            }
         }
 
         /// <summary>A dashed line as point pairs a strip draws as separate dashes (every other gap empty).</summary>

@@ -62,9 +62,20 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- stamping
 
+        /// <summary>A piece whose skill has a beat still to come (its way back, its flight home): its stamp waits for it
+        /// (STAGING_REVIEW 공4: the "?" covered the queen landing). Set by the Pawn Rush effects.</summary>
+        public static System.Func<RagdollPawn, bool> HoldFor;
+        readonly Dictionary<RagdollPawn, (SkillGrade g, bool sword)> held = new Dictionary<RagdollPawn, (SkillGrade, bool)>();
+        readonly List<RagdollPawn> heldDone = new List<RagdollPawn>();
+
         public void Stamp(RagdollPawn pawn, SkillGrade g, bool sword)
         {
             if (pawn == null || g == SkillGrade.None) return;
+            if (HoldFor != null && HoldFor(pawn))
+            {
+                held[pawn] = (g, sword);
+                return;
+            }
             // Sword Fight shows no marks over the heads (10-25, 승규 님: "위에 아이콘이 뜨잖아 그거 다 지워줘").
             if (sword && !SwordFightSkillFx.HeadMarks) return;
             if (!Ready()) return;
@@ -155,6 +166,18 @@ namespace ChessFight.RagdollLab
         void LateUpdate()
         {
             clock += Time.captureFramerate > 0 ? 1f / Time.captureFramerate : Time.unscaledDeltaTime;
+            if (held.Count > 0)
+            {
+                heldDone.Clear();
+                foreach (var kv in held)
+                    if (kv.Key == null || HoldFor == null || !HoldFor(kv.Key)) heldDone.Add(kv.Key);
+                foreach (var p in heldDone)
+                {
+                    var h = held[p];
+                    held.Remove(p);
+                    if (p != null) Stamp(p, h.g, h.sword);
+                }
+            }
             if (live.Count == 0) return;
             var cam = ViewCamera();
             done.Clear();
