@@ -72,12 +72,69 @@ namespace ChessFight.Game
         static AudioClip SwordClip(string name)
         {
             if (name.StartsWith("Reveal")) return RevealClip(name);
+            if (name == "SwordMusic" || name == "SwordMusicLoop") return SwordBedClip(name == "SwordMusicLoop");
             string key = "Sword:" + name;
             if (RevealClips.TryGetValue(key, out var clip) && clip != null) return clip;
             clip = Resources.Load<AudioClip>(SwordSoundPath + name);
             if (clip != null && clip.loadState == AudioDataLoadState.Unloaded) clip.LoadAudioData();
             RevealClips[key] = clip;
             return clip;
+        }
+
+        // R863 (11-27, "소드 파이트 매칭 BGM 교체 — 기존 것을 둘 수도 있게"): the entrance music is a choice. A new take
+        // dropped in as Resources/SwordFightMusic/EntranceMusic + EntranceMusicLoop (both; the loop seamless after the
+        // first) plays in place of O1 (Loading/SwordPick/Sound/SwordMusic + SwordMusicLoop). Take the two files away and O1
+        // is back; O1's own files are never touched. Chosen once per run. The files there now are the user's take "Queens
+        // Before Steel" (11-27, 132 BPM, 60 s; ArtSource/SwordFight/Music/bake.py entrance): a quiet build for 30 s, then
+        // loud, its loud loop at -25 dB RMS (NewEntranceGain, bake.py's GAIN) - where O1 got to with the swell at the
+        // pick's end. The take builds by itself, so it gets no swell (O1 keeps BedSwell). The clash's duck, the level after
+        // the close and the hand-over to SwordMusicCarry are the same for both.
+        const string NewEntrancePath = "SwordFightMusic/";
+        const float NewEntranceGain = .7819f, NewDuckLow = .6f;
+        // The new take's beat grid (bake.py's: bar lines from 1.327 s at 132 BPM; its loop is whole bars, so the grid
+        // runs on through it): handed to SwordMusicCarry so the match music comes in on a downbeat (R863).
+        const double NewEntranceBar0 = 1.327, NewEntranceBar = 240.0 / 132.0;
+        // When the take's time 0 is (or would have been) on the audio clock, -1 while it is not playing.
+        double swordBedZeroDsp = -1;
+        static bool swordBedChosen, swordBedNew;
+        static AudioClip swordBedIntro, swordBedLoop;
+        static float swordBedGain = SwordMusicGain;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetSwordBed()
+        {
+            swordBedChosen = swordBedNew = false;
+            swordBedIntro = swordBedLoop = null;
+            swordBedGain = SwordMusicGain;
+        }
+
+        static AudioClip SwordBedClip(bool loop)
+        {
+            if (!swordBedChosen)
+            {
+                swordBedChosen = true;
+                var newIntro = Resources.Load<AudioClip>(NewEntrancePath + "EntranceMusic");
+                var newLoop = Resources.Load<AudioClip>(NewEntrancePath + "EntranceMusicLoop");
+                if (newIntro != null && newLoop != null)
+                {
+                    swordBedIntro = newIntro;
+                    swordBedLoop = newLoop;
+                    swordBedGain = NewEntranceGain;
+                    swordBedNew = true;
+                    Debug.Log("[ChessFight] 소드 파이트 입장 음악: 새 곡(Resources/SwordFightMusic/EntranceMusic)");
+                }
+                else
+                {
+                    if (newIntro != null || newLoop != null)
+                        Debug.Log("[ChessFight] 소드 파이트 새 입장 음악은 EntranceMusic과 EntranceMusicLoop 둘 다 있어야 합니다 — 기존 곡을 씁니다");
+                    swordBedIntro = Resources.Load<AudioClip>(SwordSoundPath + "SwordMusic");
+                    swordBedLoop = Resources.Load<AudioClip>(SwordSoundPath + "SwordMusicLoop");
+                    swordBedGain = SwordMusicGain;
+                }
+                foreach (var c in new[] { swordBedIntro, swordBedLoop })
+                    if (c != null && c.loadState == AudioDataLoadState.Unloaded) c.LoadAudioData();
+            }
+            return loop ? swordBedLoop : swordBedIntro;
         }
 
         static void WarmSwordClips()
@@ -240,6 +297,7 @@ namespace ChessFight.Game
                 if (swordMusicLoop == null) swordMusicLoop = MusicSource(true, swordMusicHolder);
                 double at = now + MusicLead;
                 float from = t + MusicLead;
+                swordBedZeroDsp = at - from;
                 swordMusic.clip = intro;
                 swordMusicLoop.clip = loop;
                 if (from < intro.length)
@@ -256,25 +314,30 @@ namespace ChessFight.Game
                 }
             }
             float close = swordSoundClose >= 0f ? swordSoundClose : (float)SwordPickDraft.CloseAt;
-            float swell = 1f + BedSwell * Mathf.Clamp01((Mathf.Min(t, close) - BedSwellFrom) / Mathf.Max(.01f, close - BedSwellFrom));
-            float after = swordSoundClose >= 0f && t >= swordSoundClose ? BedAfterClose : 1f;
+            float swell = swordBedNew ? 1f : 1f + BedSwell * Mathf.Clamp01((Mathf.Min(t, close) - BedSwellFrom) / Mathf.Max(.01f, close - BedSwellFrom));
+            // R863 (user: no dip from the peak into the match): the new take keeps its full level after the close and
+            // comes back to it after a lighter dip on the clash; O1 keeps its 0.85 after the close and its .3 -> .75 duck.
+            float after = swordSoundClose >= 0f && t >= swordSoundClose && !swordBedNew ? BedAfterClose : 1f;
             float duck = 1f;
             if (swordSoundClose >= 0f)
             {
+                float low = swordBedNew ? NewDuckLow : DuckLow, back = swordBedNew ? 1f : DuckBack;
                 float since = t - (swordSoundClose + TeamSeconds + ClashHit);
-                if (since >= -.05f) duck = Mathf.Clamp(DuckLow + (DuckBack - DuckLow) * (since - DuckHold) / DuckRise, DuckLow, DuckBack);
+                if (since >= -.05f) duck = Mathf.Clamp(low + (back - low) * (since - DuckHold) / DuckRise, low, back);
             }
             // R645: the screen going as the match starts: the music goes on, carried, until the flight round the map is over
             if (Hiding && swordSoundClose >= 0f)
             {
-                SwordMusicCarry.Carry(swordMusicHolder, SwordMusicGain * swell * after * duck);
+                if (swordBedNew && swordBedZeroDsp >= 0)
+                    SwordMusicCarry.Carry(swordMusicHolder, swordBedGain * swell * after * duck, swordBedZeroDsp + NewEntranceBar0, NewEntranceBar);
+                else SwordMusicCarry.Carry(swordMusicHolder, swordBedGain * swell * after * duck);
                 swordMusicHolder = null;
                 swordMusic = swordMusicLoop = null;
                 swordCarried = true;
                 return;
             }
             float fade = Hiding ? Mathf.Clamp01(1f - (Time.unscaledTime - hideAt) / FadeSeconds) : 1f;
-            swordMusic.volume = swordMusicLoop.volume = GameSettings.Music * SwordMusicGain * swell * after * duck * fade;
+            swordMusic.volume = swordMusicLoop.volume = GameSettings.Music * swordBedGain * swell * after * duck * fade;
         }
 
         void StopSwordSound()
@@ -287,6 +350,7 @@ namespace ChessFight.Game
             swordLockHeard = false;
             swordBedOn = false;
             swordCarried = false;
+            swordBedZeroDsp = -1;
             if (swordMusic != null) swordMusic.Stop();
             if (swordMusicLoop != null) swordMusicLoop.Stop();
             if (swordVoices == null) return;

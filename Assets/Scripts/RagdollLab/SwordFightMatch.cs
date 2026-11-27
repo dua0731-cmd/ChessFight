@@ -102,6 +102,7 @@ namespace ChessFight.RagdollLab
             SwordFightSkills.Fx += OnSkillFx;
             SwordFightSkills.Fx += OnRecordSkill;   // R742 (SwordFightMatch.Hud.cs)
             SwordFightEdgeFloor.KnockedLoose += OnKnockedLoose;
+            StartMusic();   // R863 (SwordFightMatch.Music.cs)
         }
 
         void OnDisable()
@@ -111,6 +112,7 @@ namespace ChessFight.RagdollLab
             SwordFightSkills.Fx -= OnSkillFx;
             SwordFightSkills.Fx -= OnRecordSkill;
             SwordFightEdgeFloor.KnockedLoose -= OnKnockedLoose;
+            StopMusicHooks();
         }
 
         void OnDestroy()
@@ -256,6 +258,7 @@ namespace ChessFight.RagdollLab
             StepPictures();
             StepFeed();
             StepClockSound();
+            StepMusic();
         }
 
         SwordMatchState HostView()

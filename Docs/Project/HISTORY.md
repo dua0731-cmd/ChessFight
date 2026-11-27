@@ -1,4 +1,5 @@
 # 변경 이력
+- 2026-11-27 R863 · 소드 파이트 경기 음악 자리(`Game/SwordFightMusic` · `SwordFightMatch.Music.cs`: 3·2·1 뒤 시작, 칼 · 스킬 · 점수에 덕킹, 결과에서 `ResultMusic`에 넘김)와 입장 음악 고르기(`Resources/SwordFightMusic/EntranceMusic(+Loop)`가 있으면 새 곡, 없으면 기존). 경기 음악은 사용자 테이크 "Chessboard Corsairs"를 `ArtSource/SwordFight/Music/bake.py`로 처음 32.9초 + 24마디 반복으로 잘라 넣음, 입장(매칭) 음악은 "Queens Before Steel"로 교체(12마디 반복). 커밋 안 함.
 - 2026-11-27 R862 · 친구 1:1 대화: 로비 친구 카드의 `대화` → 1:1 창(`Game/FriendChatWindow`), Steam 친구 메시지로 송수신(`Network/SteamFriendChat`), 친구별 기록 · 안 읽음 배지(Core `FriendChatBook`), 경기 채팅에 친구 줄(`ChatChannel.Friend`). 커밋 안 함, 사용자 Steam 확인 전(두 계정).
 
 - 2026-11-27 R860 · 룩 성벽길 회색 상자: 초반 장애물 칸의 초안 `Early_1-5_RookRampart`(코드로 짓는 성 · 장치 여섯 · 체크포인트 여덟), 사본 편집 모드 검사와 그림 열 장. 훈련장 높이 9 m · 깃발 턱 1.2 m로 고침. 사용자 Unity 확인 전.
