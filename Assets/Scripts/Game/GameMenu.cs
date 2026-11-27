@@ -48,6 +48,8 @@ namespace ChessFight.Game
         {
             if (host == null) return null;
             var menu = host.GetComponent<GameMenu>() ?? host.AddComponent<GameMenu>();
+            menu.Unpause();
+            menu.tutorial = false;
             menu.leave = leave;
             menu.online = online;
             menu.warning = online
@@ -56,6 +58,29 @@ namespace ChessFight.Game
             current = menu;
             return menu;
         }
+
+        // The tutorial's own menu (user 11-27: "현재 인게임 나가기 화면과 튜토리얼 나가기 화면이 같아서 분리"). The tutorial is
+        // played alone and offline, so this one pauses (Time.timeScale 0 while open), shows the lesson the player is on
+        // in place of "경기 진행 중", and its way out is "튜토리얼 건너뛰기": locked (dim, with `locked` saying when it
+        // opens) until `canLeave`, asked in gold rather than red because nothing is lost, and straight out once
+        // `finished`. `progress` is the line under the title ("3 / 10단계 · 질주").
+        public static GameMenu UseTutorial(GameObject host, Action leave, Func<bool> canLeave, Func<bool> finished,
+                                           Func<string> progress, Func<string> locked)
+        {
+            var menu = Use(host, leave, false);
+            if (menu == null) return null;
+            menu.tutorial = true;
+            menu.canLeave = canLeave;
+            menu.finished = finished;
+            menu.progress = progress;
+            menu.locked = locked;
+            return menu;
+        }
+
+        bool tutorial, paused;
+        float savedScale = 1f;
+        Func<bool> canLeave, finished;
+        Func<string> progress, locked;
 
         // A scene that has no menu yet gets this one (an offline playtest; a network match installs its own first).
         public static void UseIfNone(GameObject host, Action leave, bool online)
@@ -73,8 +98,40 @@ namespace ChessFight.Game
             if (current == this)
             {
                 GiveCursorBack();
+                Unpause();
                 current = null;
             }
+        }
+
+        // An enabled menu only: the tutorial's opening switches this component off (TutorialIntro.HoldMenu) after
+        // closing it, and a disabled component must not leave the game frozen.
+        void OnDisable() => Unpause();
+
+        void Pause()
+        {
+            if (!tutorial || paused) return;
+            paused = true;
+            savedScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+            Time.timeScale = 0f;
+        }
+
+        void Unpause()
+        {
+            if (!paused) return;
+            paused = false;
+            Time.timeScale = savedScale;
+        }
+
+        static string Ask(Func<string> line)
+        {
+            try { return line?.Invoke() ?? ""; }
+            catch (Exception e) { Debug.LogException(e); return ""; }
+        }
+
+        static bool Ask(Func<bool> check, bool fallback)
+        {
+            try { return check != null ? check() : fallback; }
+            catch (Exception e) { Debug.LogException(e); return fallback; }
         }
 
         void Update()
@@ -93,12 +150,13 @@ namespace ChessFight.Game
             if (open == value) return;
             open = value;
             confirm = false;
-            if (open) TakeCursor();
+            if (open) { TakeCursor(); Pause(); }
             else
             {
                 closedFrame = Time.frameCount;
                 if (SettingsWindow.IsOpen) SettingsWindow.Close();
                 GiveCursorBack();
+                Unpause();
             }
         }
 
@@ -211,6 +269,12 @@ namespace ChessFight.Game
             var keep = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f)) * keep;
             float sw = Screen.width / scale, sh = Screen.height / scale;
+            if (tutorial)
+            {
+                bool left = DrawTutorial(sw, sh, keep);
+                if (!left) GUI.matrix = keep;
+                return;
+            }
 
             string now = null;
             try { now = online ? OnlineCost?.Invoke() : null; }
@@ -263,6 +327,87 @@ namespace ChessFight.Game
                 if (Flat(new Rect(x + bw + 10, y, bw, 52), Loc.T("나가기"), Red, Color.clear, Color.white, null, TextAnchor.MiddleCenter)) { GUI.matrix = keep; Leave(); return; }
             }
             GUI.matrix = keep;
+        }
+
+        // The tutorial's menu: the same glass panel, all gold (nothing here costs anything). True once it has left.
+        bool DrawTutorial(float sw, float sh, Matrix4x4 keep)
+        {
+            var old = GUI.color;
+            bool done = Ask(finished, false), free = done || Ask(canLeave, true);
+            string line = Ask(progress), lockedNote = free ? "" : Ask(locked);
+            float w = 460f, x, iw;
+            if (!confirm)
+            {
+                float h = string.IsNullOrEmpty(lockedNote) ? 352f : 384f;
+                var panel = new Rect((sw - w) * .5f, (sh - h) * .5f, w, h);
+                Box(panel, Dark, new Color(Gold.r, Gold.g, Gold.b, .4f), 16f);
+                x = panel.x + 30; iw = w - 60;
+                Say(new Rect(x, panel.y + 26, iw, 40), Loc.T("튜토리얼"), title, Gold, TextAnchor.MiddleLeft);
+                // "일시정지": a gold pill with two bars - unlike a match, the tutorial waits for the player.
+                var pill = new Rect(panel.xMax - 30 - 104, panel.y + 34, 104, 26);
+                Box(pill, new Color(Gold.r, Gold.g, Gold.b, .16f), Color.clear, 13f);
+                Box(new Rect(pill.x + 12, pill.center.y - 5, 3, 10), Gold, Color.clear, 1f);
+                Box(new Rect(pill.x + 18, pill.center.y - 5, 3, 10), Gold, Color.clear, 1f);
+                sub.fontStyle = FontStyle.Bold;
+                sub.fontSize = 13;
+                Say(new Rect(pill.x + 28, pill.y, pill.width - 32, pill.height), Loc.T("일시정지"), sub, Gold, TextAnchor.MiddleLeft);
+                sub.fontStyle = FontStyle.Normal;
+                sub.fontSize = 14;
+                Say(new Rect(x, panel.y + 74, iw, 22), line, sub, Muted, TextAnchor.MiddleLeft);
+                float y = panel.y + 112;
+                if (Flat(new Rect(x, y, iw, 56), Loc.T("튜토리얼로 돌아가기"), Gold, Color.clear, new Color(.1f, .07f, .04f), "ESC")) SetOpen(false);
+                y += 64;
+                if (Flat(new Rect(x, y, iw, 52), Loc.T("설정"), Plate, PlateEdge, Cream, "›")) SettingsWindow.Open();
+                y += 52 + 14;
+                GUI.color = new Color(1f, 1f, 1f, .07f);
+                GUI.DrawTexture(new Rect(x, y, iw, 1), white);
+                GUI.color = old;
+                y += 14;
+                plain.fontSize = 16;
+                string exit = done ? Loc.T("로비로 가기") : Loc.T("튜토리얼 건너뛰기");
+                if (free)
+                {
+                    if (Flat(new Rect(x, y, iw, 48), exit, Color.clear, new Color(Gold.r, Gold.g, Gold.b, .45f), Cream))
+                    {
+                        if (done) { plain.fontSize = 18; GUI.matrix = keep; Leave(); return true; }
+                        confirm = true;
+                    }
+                }
+                else
+                {
+                    // Locked: drawn dim and not a button, with when it opens underneath.
+                    var r = new Rect(x, y, iw, 48);
+                    Box(r, Color.clear, new Color(Muted.r, Muted.g, Muted.b, .25f), 10f);
+                    Say(new Rect(r.x + 18, r.y, r.width - 36, r.height), exit, plain, new Color(Muted.r, Muted.g, Muted.b, .6f), TextAnchor.MiddleLeft);
+                    Say(new Rect(x, y + 54, iw, 22), lockedNote, sub, Muted, TextAnchor.MiddleLeft);
+                }
+                plain.fontSize = 18;
+                return false;
+            }
+
+            string[] lines =
+            {
+                Loc.T("로비로 돌아가고, 튜토리얼은 마친 것으로 처리돼요."),
+                Loc.T("설정의 '튜토리얼 다시 하기'로 언제든 다시 할 수 있어요."),
+            };
+            float ch = 196f + lines.Length * 46f;
+            var box = new Rect((sw - w) * .5f, (sh - ch) * .5f, w, ch);
+            Box(box, Dark, new Color(Gold.r, Gold.g, Gold.b, .5f), 16f);
+            x = box.x + 30; iw = w - 60;
+            Say(new Rect(x, box.y + 28, iw, 44), Loc.T("튜토리얼을 건너뛸까요?"), title, Bright, TextAnchor.MiddleLeft);
+            var note = new Rect(x, box.y + 90, iw, lines.Length * 46f + 16f);
+            Box(note, new Color(Gold.r, Gold.g, Gold.b, .07f), new Color(Gold.r, Gold.g, Gold.b, .25f), 10f);
+            for (int i = 0; i < lines.Length; i++)
+                Say(new Rect(note.x + 16, note.y + 8 + i * 46f, note.width - 32, 46), "• " + lines[i], red, Cream, TextAnchor.MiddleLeft);
+            float by = note.yMax + 18, bw = (iw - 10) / 2f;
+            if (Flat(new Rect(x, by, bw, 52), Loc.T("계속 배우기"), Plate, PlateEdge, Cream, null, TextAnchor.MiddleCenter)) confirm = false;
+            if (Flat(new Rect(x + bw + 10, by, bw, 52), Loc.T("로비로 가기"), Gold, Color.clear, new Color(.1f, .07f, .04f), null, TextAnchor.MiddleCenter))
+            {
+                GUI.matrix = keep;
+                Leave();
+                return true;
+            }
+            return false;
         }
     }
 }

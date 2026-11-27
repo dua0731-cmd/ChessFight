@@ -28,7 +28,8 @@ namespace ChessFight.RagdollLab
         /// <summary>GameSettings flag: the tutorial was finished or skipped at this PC (the intro reads it, grey box 3).</summary>
         public const string DoneKey = SceneNames.TutorialDone;
         /// <summary>The lesson number from which leaving (skipping) is allowed: after lesson 7 (user 11-24).</summary>
-        public const int SkipAfterLesson = 7;
+        // Was: skipping opened after lesson 7 (user 11-24). Now a first run is played to the end (user 11-27).
+        const string FirstRunLocked = "첫 튜토리얼은 끝까지 마쳐야 로비로 갈 수 있어요";
         const float HintAfter = 20f;
         const float PraiseFor = 1.3f;
         const float GoalWait = 3f;
@@ -103,7 +104,9 @@ namespace ChessFight.RagdollLab
             BuildKillFloor();
             BuildMoat();
             BuildMarker();
-            GameMenu.Use(gameObject, Leave, false);
+            // Its own Esc menu, not the match's (user 11-27): paused, the lesson on show. A first-time player cannot
+            // leave before the end (user 11-27 "처음 다운 받은 플레이어는 튜토리얼 나가기 못하게 막아"): skipping stays locked.
+            GameMenu.UseTutorial(gameObject, Leave, () => skipOpen, () => Finished, MenuLine, () => Loc.T(FirstRunLocked));
             // R842: played again from the settings window (done before): leaving is open from the start.
             if (GameSettings.Bool(DoneKey, false)) skipOpen = true;
         }
@@ -518,7 +521,6 @@ namespace ChessFight.RagdollLab
             var finished = lessons[current];
             lastDone = finished.number;
             doneTitle = finished.title;
-            if (finished.goal == Goal.Escape) skipOpen = true;  // lesson 7 is done: skipping opens (user 11-24)
             praiseUntil = Time.time + PraiseFor;
             CueDone();
             if (current + 1 < lessons.Count) Begin(current + 1);
@@ -638,7 +640,16 @@ namespace ChessFight.RagdollLab
             hasLast = false;
         }
 
-        // The Esc menu's leave: skipping opens after lesson 7.
+        // The Esc menu's line under its title: the lesson the player is on ("3-1단계 · 허들 넘기").
+        string MenuLine()
+        {
+            if (Finished) return Loc.T("모든 단계를 마쳤어요");
+            if (current < 0 || current >= lessons.Count) return "";
+            var lesson = lessons[current];
+            return Loc.F("{0}단계 · {1}", lesson.label, Loc.T(lesson.title));
+        }
+
+        // The Esc menu's leave: open only when the tutorial was done before (a replay) or is finished now.
         void Leave()
         {
             if (!skipOpen && !Finished)
@@ -872,8 +883,6 @@ namespace ChessFight.RagdollLab
                 Text(new Rect(x + tag + 10f * s, y, helpW, helpH), help, body, 17f, Cream, helpH > 26f * s ? TextAnchor.UpperLeft : TextAnchor.MiddleLeft);
             }
             fade = 1f;
-            if (lesson.number == 8 && lastDone == 7)
-                Toast(card.y - 54f * s, Loc.T("Esc 메뉴에서 튜토리얼을 건너뛸 수 있습니다"), Cream);
 
             // A lesson done: "좋아요!" pops in with the lesson's name, then fades.
             if (Time.time < praiseUntil)
@@ -882,7 +891,7 @@ namespace ChessFight.RagdollLab
                 Banner(h * .28f, Loc.T("성공!"), Loc.F("{0} 완료", Loc.T(doneTitle)), left / .3f, 1f + .25f * (1f - Mathf.Clamp01(gone / .15f)));
             }
             if (Time.time < fellUntil) Toast(h * .44f, Loc.T("체크포인트에서 다시 시작합니다"), Color.white);
-            if (Time.time < noSkipUntil) Toast(h * .44f + 54f * s, Loc.F("{0}단계를 완료하면 건너뛸 수 있습니다", SkipAfterLesson), Gold);
+            if (Time.time < noSkipUntil) Toast(h * .44f + 54f * s, Loc.T(FirstRunLocked), Gold);
             if (Time.time < overBarUntil && lessons[current].goal == Goal.UnderBar) Toast(h * .44f, Loc.T("다이빙으로 봉 아래를 통과해야 합니다"), Gold);
 
             // The stamina bar (the spawner draws it only with its help box, which is off here).

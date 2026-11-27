@@ -697,6 +697,18 @@ Steam 전송 오류: {0}	Steam send error: {0}	Steam 发送错误：{0}	Ошиб
 정말 나가시겠습니까?	Really leave?	确定要离开吗？	Точно выйти?
 남아서 계속하기	Stay in the match	留下继续	Остаться в матче
 나가기	Leave	离开	Выйти
+# --- Game/GameMenu.cs, the tutorial's own Esc menu (GameMenu.UseTutorial, TutorialCourse.MenuLine; user 11-27)
+일시정지	Paused	已暂停	Пауза
+튜토리얼로 돌아가기	Back to tutorial	返回教程	Вернуться к обучению
+튜토리얼 건너뛰기	Skip tutorial	跳过教程	Пропустить обучение
+로비로 가기	Go to lobby	前往大厅	В лобби
+튜토리얼을 건너뛸까요?	Skip the tutorial?	要跳过教程吗？	Пропустить обучение?
+로비로 돌아가고, 튜토리얼은 마친 것으로 처리돼요.	You'll return to the lobby, and the tutorial counts as finished.	将返回大厅，教程视为已完成。	Вы вернётесь в лобби, обучение будет засчитано как пройденное.
+설정의 '튜토리얼 다시 하기'로 언제든 다시 할 수 있어요.	You can replay it any time with 'Play the tutorial again' in Settings.	随时可在设置中通过“重玩教程”再次游玩。	Пройти его снова можно в любой момент: «Пройти обучение снова» в настройках.
+계속 배우기	Keep learning	继续学习	Продолжить обучение
+모든 단계를 마쳤어요	All steps complete	已完成全部步骤	Все шаги пройдены
+첫 튜토리얼은 끝까지 마쳐야 로비로 갈 수 있어요	Finish your first tutorial to go to the lobby	首次教程需完成后才能前往大厅	Первое обучение нужно пройти до конца, чтобы попасть в лобби
+{0}단계 · {1}	Step {0} · {1}	第 {0} 步 · {1}	Шаг {0} · {1}
 # --- Game/VoiceHud.cs (the scoresheet and talkers)
 {0} (나)	{0} (me)	{0}（我）	{0} (я)
 기 보 지	Scoresheet	棋谱	Бланк партии

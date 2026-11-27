@@ -1,4 +1,5 @@
 # 변경 이력
+- 2026-11-27 R861 · 튜토리얼 전용 Esc 메뉴(`GameMenu.UseTutorial`): 열면 일시정지 · 지금 단계 · 금색 확인 창, 처음 하는 플레이어는 끝까지 건너뛰기 잠김(다시 하기에서만 열림). 경기 메뉴는 그대로. Core 235 · 모의 115 · 전체 컴파일 통과, 사용자 Unity 확인 전.
 - 2026-11-27 R865 · 설정 창 문구를 상용 게임 말투로 다듬고(설명 '~해요' 문장, 내부 말 뺌, 항목 이름 정리 약 95줄) 바뀐 줄의 영어 · 간체 중국어 · 러시아어를 다시 씀(`SettingsWindow.cs` 문자열 · `SettingsHud.uxml` · `Strings.txt`). 이어서 설명 칸을 출시 게임식 짧은 '~합니다' 문장으로 다시 씀(설명 없던 키 7개 추가), 로비 도감 · 전적 · 순위 탭 문구 38줄도 같은 말투로. Core 235 · 세션 115 통과, 게임 중 언어를 바꿔도 값 든 문장 · 상태 줄이 따라 바뀜(Core `Loc.Again`), 사용자 Unity 확인.
 - 2026-11-27 R863 · 소드 파이트 경기 음악 자리(`Game/SwordFightMusic` · `SwordFightMatch.Music.cs`: 3·2·1 뒤 시작, 칼 · 스킬 · 점수에 덕킹, 결과에서 `ResultMusic`에 넘김)와 입장 음악 고르기(`Resources/SwordFightMusic/EntranceMusic(+Loop)`가 있으면 새 곡, 없으면 기존). 경기 음악은 사용자 테이크 "Chessboard Corsairs"를 `ArtSource/SwordFight/Music/bake.py`로 처음 32.9초 + 24마디 반복으로 잘라 넣음, 입장(매칭) 음악은 "Queens Before Steel"로 교체(12마디 반복). 커밋 안 함.
 - 2026-11-27 R862 · 친구 1:1 대화: 로비 친구 카드의 `대화` → 1:1 창(`Game/FriendChatWindow`), Steam 친구 메시지로 송수신(`Network/SteamFriendChat`), 친구별 기록 · 안 읽음 배지(Core `FriendChatBook`), 경기 채팅에 친구 줄(`ChatChannel.Friend`). 커밋 안 함, 사용자 Steam 확인 전(두 계정).
