@@ -5,7 +5,7 @@
 # R860: the rooks' rampart walk's (룩 성벽길) grey-box checks on a copy of this project, so the Editor can keep the original
 # open (Run-GrandBanquetHall.ps1's way). Brings the copy up to date with this folder (never the copy's own Library), then
 # runs RookRampartValidation.RunBatch there in batch mode with a graphics device: Edit mode only - the section checks, what
-# is there, which faces can be held, where each climb's top-out lands, the clock's functions at their marked times, and ten
+# is there, which faces can be held, where each climb's top-out lands, the clock's functions at their marked times, and 13
 # pictures with every mover where the shared clock has it. Results: <copy>/Logs/RookRampartValidation (rampart.txt, *.png),
 # Unity's log <copy>/Logs/rookrampart_unity.log. Not a play test with people and not online.
 #   ./Tools/Run-RookRampart.ps1

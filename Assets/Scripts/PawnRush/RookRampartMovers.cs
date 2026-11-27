@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The rooks' rampart walk's devices (룩 성벽길, R843 design v0.1, R859 2D explainer, R860 grey box): the siege ladders and
+    // The rooks' rampart walk's devices (룩 성벽길, R843 design v0.1, R859 2D explainer, R860 grey box, R866 1.5 times as
+    // big, the banner's and the ladders' climbers thrown off): the siege ladders and
     // their rook defenders, the murder holes, the siege towers and their drop-bridges, the rooks' drill square, the rook and
     // knight cranes and the king's banner. Every one is a pure function of the shared obstacle clock (RookRampartTimes, the
     // C# twin of ArtSource/PawnRush/RookRampart/rampart_layout.py); nothing here is sent. The movers are Obstacles built at
@@ -20,9 +21,11 @@ namespace ChessFight.PawnRush
         public static float Ease(float k) { k = Mathf.Clamp01(k); return k * k * (3f - 2f * k); }
 
         // ① The siege ladders: degrees from the ground on the wall's side - LEAN against the wall, 90 upright, FALLEN on the glacis.
-        public const float Lean = 75f, Fallen = 180f, PushCycle = 9f, Wind = .6f, Tip = .9f, Lie = .6f, Raise = 1.4f;
-        public static readonly float[] Ladders = { -18.5f, -15.5f, -12.5f, -9.5f, -6.5f, -3.5f };
-        public static readonly float[] PushAt = { 0f, 3f, 6f, 1.5f, 4.5f, 7.5f };
+        //    R866 (the castle 1.5 times as big): a 6.4 m ladder every 4 m, each pushed every 12 s - a rook (5.6 m at 0.84 m/s)
+        //    still gets up between two pushes.
+        public const float Lean = 75f, Fallen = 180f, PushCycle = 12f, Wind = .6f, Tip = 1f, Lie = .6f, Raise = 1.6f;
+        public static readonly float[] Ladders = { -26f, -22f, -18f, -14f, -10f, -6f };
+        public static readonly float[] PushAt = { 0f, 4f, 8f, 2f, 6f, 10f };
 
         public static float LadderAngle(int i, double t)
         {
@@ -52,7 +55,7 @@ namespace ChessFight.PawnRush
         public static float LadderPhase(int i, double t) => (float)Mod(t - PushAt[i], PushCycle);
 
         // ② The murder holes: 0 shut, 1 rattling (about to open), 2 open; light squares (i + j even) first.
-        public const float HoleRattle = .4f, HoleOpen = 1.2f, HoleShut = .6f, HoleCycle = 2f * (HoleRattle + HoleOpen + HoleShut);
+        public const float HoleRattle = .5f, HoleOpen = 1.5f, HoleShut = .8f, HoleCycle = 2f * (HoleRattle + HoleOpen + HoleShut);   // 3 m lids (R866)
 
         public static int Trapdoor(int i, int j, double t)
         {
@@ -64,7 +67,8 @@ namespace ChessFight.PawnRush
         }
 
         // ③ The siege towers: the z of its middle and the drop-bridge's angle (90 up, 0 down onto the wall).
-        public const float Boarding = 4f, Roll = 8f, BridgeMove = .6f, BridgeOpen = 3.4f, RollBack = 7.4f;
+        // R866: 25 m across the lower ward in 12 s, three ladders inside (a rook is up in 12 s).
+        public const float Boarding = 4f, Roll = 12f, BridgeMove = .6f, BridgeOpen = 3.4f, RollBack = 11f;
         public const float SiegeCycle = Boarding + Roll + BridgeMove + BridgeOpen + BridgeMove + RollBack;
 
         public static void Siege(double t, float delay, float z0, float z1, out float z, out float bridge)
@@ -87,7 +91,7 @@ namespace ChessFight.PawnRush
 
         // ④ The drill square: a rook rests at one end of its file or rank, its line glows, it slides to the other end, rests,
         //    glows, slides back. `s` 0 .. 1 from its start end; `state` 0 rest, 1 glowing, 2 sliding.
-        public const float RookRest = 2f, RookGlow = 1f, RookSpeed = 8f;
+        public const float RookRest = 2f, RookGlow = 1f, RookSpeed = 10f;   // R866: 28.8 m in 2.9 s
 
         public static float Slide(double t, float delay, float slide, out int state)
         {
@@ -104,7 +108,7 @@ namespace ChessFight.PawnRush
         }
 
         // ⑤ The rook crane: (crown's y, crown's z) - straight up, straight across, a stop at each end.
-        public const float RcBoard = 3.5f, RcUp = 1.8f, RcAcross = 1.2f, RcOff = 3f, RcDelay = 7.85f;
+        public const float RcBoard = 4f, RcUp = 2.4f, RcAcross = 1.5f, RcOff = 3.5f, RcDelay = 7.85f;   // R866: up 8 m, across 7.8 m
         public const float RcCycle = RcBoard + RcUp + RcAcross + RcOff + RcAcross + RcUp;
 
         public static void RookCrane(double t, float lo, float top, float zLow, float zHigh, out float y, out float z)
@@ -129,7 +133,7 @@ namespace ChessFight.PawnRush
 
         // ⑤ The knight crane (R859): a leap there, a 0.6 s turn, a leap back, a turn - it never waits. `s` 0 at the middle
         //    wall's edge .. 1 on the inner wall; `facing` degrees about the vertical, 0 north.
-        public const float KnightLeap = 3f, KnightTurn = .6f, KnightHop = 4f, KnightDelay = 4.2f;
+        public const float KnightLeap = 3.6f, KnightTurn = .7f, KnightHop = 5f, KnightDelay = 4.2f;   // R866: 19.5 m a leap
         public const float KnightCycle = 2f * (KnightTurn + KnightLeap);
 
         public static float KnightPhase(double t, out float facing)
@@ -153,7 +157,8 @@ namespace ChessFight.PawnRush
         }
 
         // ⑥ The king's banner: degrees out from the wall (0 flat, BILLOW at the gust's height).
-        public const float GustCycle = 7f, GustWarn = 1f, GustOut = .6f, GustHold = 1f, GustBack = .8f, Billow = 40f;
+        // R866: lengths of 4 m - the calm is 5.6 s (a rook climbs one in 4.7 s).
+        public const float GustCycle = 8f, GustWarn = 1f, GustOut = .6f, GustHold = 1f, GustBack = .8f, Billow = 40f;
 
         public static float BannerAngle(double t)
         {
@@ -216,13 +221,19 @@ namespace ChessFight.PawnRush
     {
         [SerializeField] int index;
         [SerializeField] NoClimbSurface unheld;
+        [SerializeField] float length = 6.4f, width = .55f;
+
+        readonly HashSet<ICharacterDriver> shaken = new HashSet<ICharacterDriver>();
+        long shakenPush = long.MinValue;
 
         public int Index => index;
 
-        public void Configure(int ladder, NoClimbSurface pastUpright)
+        public void Configure(int ladder, NoClimbSurface pastUpright, float lengthMetres, float widthMetres)
         {
             index = ladder;
             unheld = pastUpright;
+            length = lengthMetres;
+            width = widthMetres;
         }
 
         public float Angle(double time) => RookRampartTimes.LadderAngle(index, time);
@@ -236,7 +247,40 @@ namespace ChessFight.PawnRush
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
-            if (unheld != null) unheld.enabled = Angle(ObstacleClock.Now + phase) > 90f;
+            double now = ObstacleClock.Now + phase;
+            float angle = Angle(now);
+            if (unheld != null) unheld.enabled = angle > 90f;
+            // Past upright whoever is still on it lets go - climbing or hanging by the hands (R866: the banner's climbers
+            // held on by their hands once the face could not be climbed). Once each push, on the PC that simulates them.
+            if (!ObstacleClock.Authority || angle <= 90f || angle >= RookRampartTimes.Fallen - 1f) return;
+            long push = (long)Math.Floor((now - RookRampartTimes.PushAt[index]) / RookRampartTimes.PushCycle);
+            if (push != shakenPush) { shaken.Clear(); shakenPush = push; }
+            // The climbers' side is the ladder's local -z.
+            RampartShake.Off(transform.TransformPoint(new Vector3(0f, length * .5f, -.45f)), new Vector3(width * .5f + .45f, length * .5f, .75f),
+                             transform.rotation, StartRotation * new Vector3(0f, -.5f, -2.5f), .6f, shaken);
+        }
+    }
+
+    // Lets go everyone with a part in a box: a hit that drops whatever the character holds (the wall it climbs, a ledge in
+    // its hands) - IHitReceiver.ApplyHit with `drop`, which RagdollPawn.TakeHit turns into LetGo, climbing or not (a
+    // climbing pawn's body is placed kinematically, so ImportedObstacleActor's hits skip it). A network puppet ignores it.
+    public static class RampartShake
+    {
+        static readonly Collider[] near = new Collider[256];
+
+        public static int Off(Vector3 centre, Vector3 halfExtents, Quaternion turn, Vector3 push, float knockdown, HashSet<ICharacterDriver> done)
+        {
+            int n = Physics.OverlapBoxNonAlloc(centre, halfExtents, near, turn, ~0, QueryTriggerInteraction.Ignore), count = 0;
+            for (int i = 0; i < n; i++)
+            {
+                var driver = near[i].GetComponentInParent<ICharacterDriver>();
+                if (driver == null || !done.Add(driver)) continue;
+                var hits = near[i].GetComponentInParent<IHitReceiver>();
+                if (hits == null) continue;
+                hits.ApplyHit(push, knockdown, 0f, true);
+                count++;
+            }
+            return count;
         }
     }
 
@@ -245,6 +289,8 @@ namespace ChessFight.PawnRush
     //    warning, following it past upright, raised again.
     public sealed class LadderDefender : RampartMover
     {
+        public const float PoleLength = 4.6f;
+
         [SerializeField] int defender;
         [SerializeField] Transform pole;
         [SerializeField] float ladderLength = 5.15f, ladderFootZ = 9.77f, walkY = 3.5f, standZ = 13.2f;
@@ -286,12 +332,12 @@ namespace ChessFight.PawnRush
                        : at < upright + .8f ? 1f - RookRampartTimes.Ease((at - upright) / .8f) : 0f;
             // The ladder's top in this object's frame (built at y = walkY, z = standZ; the ladder's foot at y 0).
             float a = Mathf.Min(angle, 90f) * Mathf.Deg2Rad;
-            Vector3 hands = new Vector3(0f, 1.3f, .3f);
+            Vector3 hands = new Vector3(0f, 1.6f, .4f);
             Vector3 top = new Vector3(0f, ladderLength * Mathf.Sin(a) - walkY + .05f, ladderFootZ + ladderLength * Mathf.Cos(a) - standZ + .05f);
-            Vector3 up = hands + new Vector3(0f, 2.9f, -.75f);
+            Vector3 up = hands + new Vector3(0f, 3.6f, -1f);
             Vector3 tip = Vector3.Lerp(up, top, down);
             Vector3 d = (hands - tip).normalized;
-            pole.localPosition = tip + d * 1.8f;     // a 3.6 m pole: its tip at `tip`, its butt past the hands
+            pole.localPosition = tip + d * (PoleLength * .5f);     // its tip at `tip`, its butt past the hands
             pole.localRotation = Quaternion.FromToRotation(Vector3.up, d);
         }
     }
@@ -439,7 +485,7 @@ namespace ChessFight.PawnRush
     public sealed class DrillRook : RampartMover
     {
         [SerializeField] Vector3 travel;
-        [SerializeField] float delay, slide = 2.4f, reach = 1.35f, push = 6f, lift = 1.5f, knockdown = 1.2f;
+        [SerializeField] float delay, slide = 2.9f, reach = 1.8f, push = 7f, lift = 1.5f, knockdown = 1.2f;
         [SerializeField] Renderer line;
         [SerializeField] Material lineRest, lineGlow, lineSlide;
 
@@ -605,13 +651,61 @@ namespace ChessFight.PawnRush
 
     // ⑥ A length of the king's banner: hangs from its top edge (this object, local -y down the cloth) and billows out from
     //    the wall (local -x) on the gust. Past 35 degrees its face is flatter than a climber can hold (RagdollPawn's 55
-    //    degrees from level): whoever is on it lets go by itself.
+    //    degrees from level). R866 (the user: "깃발이 들리기만하고 떨어지지가 않아. 더 큰 깃발로 펄럭이게"): a climber
+    //    that lost the face held on by its hands, so from 35 degrees on everyone within a metre of the cloth's outer side -
+    //    climbing it or hanging on - is thrown off west along the walk (RampartShake). Whoever stands in front of a length
+    //    as it lifts is swept by the cloth itself (the plate); beside it, on the ledge or the walk, nobody is touched (the
+    //    design's rule: wait beside the banner). The picture is a chain of strips that ripples, gently in the calm and
+    //    hard in the gust (the collider stays one flat plate).
     public sealed class KingsBanner : RampartMover
     {
+        [SerializeField] Transform[] strips = new Transform[0];
+        [SerializeField] float length = 4f, width = 5.4f;
+
+        readonly HashSet<ICharacterDriver> shaken = new HashSet<ICharacterDriver>();
+        long shakenGust = long.MinValue;
+
+        public int Thrown { get; private set; }
+
+        public void Configure(Transform[] stripChain, float lengthMetres, float widthMetres)
+        {
+            strips = stripChain;
+            length = lengthMetres;
+            width = widthMetres;
+        }
+
         protected override void Local(double time, out Vector3 offset, out Quaternion turn)
         {
             offset = Vector3.zero;
             turn = Quaternion.Euler(0f, 0f, -RookRampartTimes.BannerAngle(time));
+        }
+
+        protected override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            if (!ObstacleClock.Authority) return;
+            double now = ObstacleClock.Now + phase;
+            if (RookRampartTimes.BannerAngle(now) < 90f - 55f) return;
+            long gust = (long)Math.Floor(now / RookRampartTimes.GustCycle);
+            if (gust != shakenGust) { shaken.Clear(); shakenGust = gust; }
+            // Local x -1.05 .. 0.15 (out from the cloth: a climber hanging by its hands hangs a metre out at 40 degrees), y
+            // from the hem to 0.15 under the rod (not the feet of whoever stands on the ledge's lip over the lower length).
+            Thrown += RampartShake.Off(transform.TransformPoint(new Vector3(-.45f, -length * .5f - .075f, 0f)), new Vector3(.6f, length * .5f - .075f, width * .5f + .3f),
+                                       transform.rotation, StartRotation * new Vector3(-3f, -1f, 0f), .6f, shaken);
+        }
+
+        void LateUpdate() => Flutter(ObstacleClock.Now + phase);
+
+        public void PoseFlutter(double time) => Flutter(time);
+
+        // Each strip turns a little from the one above it, on a wave running down the cloth.
+        void Flutter(double time)
+        {
+            bool windy = RookRampartTimes.Windy(time);
+            float amp = windy ? 9f : 2f, speed = windy ? 9f : 2.5f, t = (float)RookRampartTimes.Mod(time, 1000.0);
+            for (int i = 0; i < strips.Length; i++)
+                if (strips[i] != null)
+                    strips[i].localRotation = Quaternion.Euler(0f, 0f, -amp * Mathf.Sin(t * speed - i * .9f));
         }
     }
 

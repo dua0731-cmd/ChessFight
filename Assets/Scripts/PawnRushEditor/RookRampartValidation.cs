@@ -13,7 +13,8 @@ using T = ChessFight.PawnRush.RookRampartTimes;
 
 namespace ChessFight.PawnRush.Editor
 {
-    // Checks for the rooks' rampart walk's grey box (룩 성벽길, R860), in Edit mode only: the prefab built by RookRampartBuilder
+    // Checks for the rooks' rampart walk's grey box (룩 성벽길, R860; R866 at 1.5 times the size, with floors checked where
+    // the inner wall meets the gatehouse), in Edit mode only: the prefab built by RookRampartBuilder
     // in a scratch scene, the section checks (SectionValidator), what is there, which faces can be held (a ray at each face
     // the design climbs and at walls that must not be), where each climb's top-out lands (RagdollPawn.TryStartTopOut's probe:
     // 0.9 m up and climbHug + 0.4 m in from the top of the face, a floor at most 0.25 m over the anchor), and pictures with
@@ -56,7 +57,7 @@ namespace ChessFight.PawnRush.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(Path.Combine(Folder, Report), "R860 rooks' rampart walk checks (" +
+            File.WriteAllText(Path.Combine(Folder, Report), "R866 rooks' rampart walk checks (" +
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + "). Edit mode, not a play test: no pawn runs it.\n");
             failures.Clear();
             try { Run(); }
@@ -111,17 +112,18 @@ namespace ChessFight.PawnRush.Editor
             Log("");
             Log("== Faces: held or not (a ray at each, every mover where the clock has it at 4.0 s: ladders up, banner calm)");
             Pose(4.0);
-            // Ladder 1 (pushed at 0 s) leans on the wall at 4 s; ladder 4 is being hauled up then.
-            float lad = T.Ladders[0], bz = (B.BannerZ0 + B.BannerZ1) * .5f;
-            Face("H1 a siege ladder (1, against the wall)", V(lad, 2.2f, B.LadderFootZ - 1.2f), Vector3.forward, true);
-            Face("H2 siege tower A's first ladder (docked)", V(B.SiegeX[0] - .9f, B.Floors[0] + 1.4f, B.SiegeZ0 - 1.9f), Vector3.forward, true);
+            // Ladder 1 (pushed at 0 s) leans on the wall at 4 s; ladder 4 lies on the mound then. Tower A is still docked at
+            // the outer wall (it rolls from 4 s); the rays at its ladders come in at its open back.
+            float lad = T.Ladders[0], bz = (B.BannerZ0 + B.BannerZ1) * .5f, back = B.SiegeZ0 - B.SiegeW * .5f - .2f;
+            Face("H1 a siege ladder (1, against the wall, from the mound)", V(lad, B.Mound + 2.2f, B.LadderFootZ - 1.2f), Vector3.forward, true);
+            Face("H2 siege tower A's first ladder (docked)", V(B.SiegeX[0] - 1.5f, B.Floors[0] + 1.4f, back), Vector3.forward, true);
             Face("H4 the banner's lower length", V(B.GateHX0 - 3.5f, B.W3 + 1.4f, bz), Vector3.right, true);
             Face("H5 the banner's upper length (from the ledge)", V(B.GateHX0 - 1f, B.LedgeY + 1.2f, bz), Vector3.right, true);
-            Face("N1 the outer wall's face", V(-20f, 2f, 8f), Vector3.forward, false);
-            Face("N2 the middle wall's face (from the lower ward)", V(-25f, 4f, 44f), Vector3.forward, false);
-            Face("N3 the inner wall's face (from the ditch)", V(-36f, 0f, 60f), Vector3.forward, false);
-            Face("N4 the gatehouse's west face beside the banner", V(B.GateHX0 - 2f, B.W3 + 1.2f, 79f), Vector3.right, false);
-            Face("N5 a siege tower's side hide", V(B.SiegeX[0] - 3.5f, 6f, B.SiegeZ0), Vector3.right, false);
+            Face("N1 the outer wall's face (over the mound)", V(-20f, 3f, B.Face1 - 4f), Vector3.forward, false);
+            Face("N2 the middle wall's face (from the lower ward)", V(-25f, 4f, B.Wall2Face(-25f) - 3f), Vector3.forward, false);
+            Face("N3 the inner wall's face (from the ditch)", V(-36f, 0f, B.Wall3Face(-36f) - 4f), Vector3.forward, false);
+            Face("N4 the gatehouse's west face beside the banner", V(B.GateHX0 - 2f, B.W3 + 1.2f, B.BannerZ1 + 1.2f), Vector3.right, false);
+            Face("N5 a siege tower's side hide", V(B.SiegeX[0] - 3.5f, B.Floors[0] + 1.5f, B.SiegeZ0), Vector3.right, false);
             // The knight at its low end, just turned north (its mane faces the middle wall), and a drill rook resting at its end.
             Pose(T.KnightDelay + T.KnightTurn + .02);
             Face("H3 the knight's mane (low end, facing north)", V(B.KnightCraneX, B.KnightLowY + 2.6f, B.KnLowZ - 3f), Vector3.forward, true);
@@ -133,19 +135,25 @@ namespace ChessFight.PawnRush.Editor
             Log("");
             Log("== Top-outs (where the climb over each face's top lands)");
             Pose(4.0);
-            TopOut("T1 a siege ladder onto its crenel's sill", V(lad, B.LadderClimb + .3f, B.LadderFootZ - 1.2f), Vector3.forward, B.W1 + B.SillH, .2f);
-            TopOut("T2 siege tower A's first ladder onto its second floor", V(B.SiegeX[0] - .9f, B.Floors[1] + .25f, B.SiegeZ0 - 1.9f), Vector3.forward, B.Floors[1], .2f);
-            TopOut("T3 siege tower A's second ladder onto its top floor", V(B.SiegeX[0] + .9f, B.Floors[2] + .25f, B.SiegeZ0 - .3f), Vector3.forward, B.Floors[2], .2f);
-            TopOut("T4 the banner's lower length onto the ledge", V(B.GateHX0 - 3.5f, B.LedgeY - .3f, bz), Vector3.right, B.LedgeY, .2f);
-            TopOut("T5 the banner's upper length onto the roof", V(B.GateHX0 - 1f, B.GateY - .3f, bz), Vector3.right, B.GateY, .2f);
+            TopOut("T1 a siege ladder onto its crenel's sill", V(lad, B.Mound + B.LadderClimb + .3f, B.LadderFootZ - 1.2f), Vector3.forward, B.W1 + B.SillH, .2f);
+            TopOut("T2 siege tower A's first ladder onto its second floor", V(B.SiegeX[0] - 1.5f, B.Floors[1] + .25f, back), Vector3.forward, B.Floors[1], .2f);
+            TopOut("T3 siege tower A's second ladder onto its third floor", V(B.SiegeX[0] + 1.5f, B.Floors[2] + .25f, back), Vector3.forward, B.Floors[2], .2f);
+            TopOut("T4 siege tower A's third ladder onto its top floor", V(B.SiegeX[0] - 1.5f, B.Floors[3] + .25f, back), Vector3.forward, B.Floors[3], .2f);
+            TopOut("T5 the banner's lower length onto the ledge", V(B.GateHX0 - 3.5f, B.LedgeY - .3f, bz), Vector3.right, B.LedgeY, .2f);
+            TopOut("T6 the banner's upper length onto the roof", V(B.GateHX0 - 1f, B.GateY - .3f, bz), Vector3.right, B.GateY, .2f);
+
+            Log("");
+            Log("== Floors (a ray down: what is under the way where a wall meets the gatehouse, R866)");
+            Under("F1 the inner wall's walk at the gatehouse's foot, under the banner's north end", V(B.GateHX0 - .3f, B.W3 + 3f, B.BannerZ1), B.W3);
+            Under("F2 the inner wall's walk at the gatehouse's east corner", V(B.GateHX1 + .3f, B.W3 + 3f, B.BannerZ1), B.W3);
 
             Log("");
             Log("== Moves (the clock's functions at their marked times)");
-            Check("M1 ladder 1 leaning at 4 s, upright about 0.94 s, down at 1.8 s", Mathf.Abs(T.LadderAngle(0, 4.0) - 75f) < .01f
-                  && Mathf.Abs(T.LadderAngle(0, .94) - 90f) < 2f && Mathf.Abs(T.LadderAngle(0, 1.8) - 180f) < .01f,
-                  F(T.LadderAngle(0, 4.0)) + " / " + F(T.LadderAngle(0, .94)) + " / " + F(T.LadderAngle(0, 1.8)));
-            T.Siege(13.0, 0f, B.SiegeZ0, B.SiegeZ1(0), out float zA, out float bA);
-            Check("M2 siege tower A at the middle wall, its bridge down, at 13 s", Mathf.Abs(zA - B.SiegeZ1(0)) < .01f && bA < .01f, "z " + F(zA) + ", bridge " + F(bA));
+            Check("M1 ladder 1 leaning at 4 s, upright about 0.98 s, down at 1.9 s", Mathf.Abs(T.LadderAngle(0, 4.0) - 75f) < .01f
+                  && Mathf.Abs(T.LadderAngle(0, .98) - 90f) < 2f && Mathf.Abs(T.LadderAngle(0, 1.9) - 180f) < .01f,
+                  F(T.LadderAngle(0, 4.0)) + " / " + F(T.LadderAngle(0, .98)) + " / " + F(T.LadderAngle(0, 1.9)));
+            T.Siege(18.0, 0f, B.SiegeZ0, B.SiegeZ1(0), out float zA, out float bA);
+            Check("M2 siege tower A at the middle wall, its bridge down, at 18 s", Mathf.Abs(zA - B.SiegeZ1(0)) < .01f && bA < .01f, "z " + F(zA) + ", bridge " + F(bA));
             float gap = Wall2Gap();
             Check("M3 a docked tower's bridge reaches over the middle wall's sill", gap > .5f, "the bridge's tip " + F(gap) + " m past the wall's face");
             T.Knight(T.KnightDelay + T.KnightTurn + T.KnightLeap + .3, B.KnightLowY, B.W3, B.KnLowZ, B.KnHighZ, out float ky, out float kz, out float kf);
@@ -170,7 +178,17 @@ namespace ChessFight.PawnRush.Editor
             foreach (var r in frame.GetComponentsInChildren<DrillRook>(true)) r.PoseLine(time);
             foreach (var r in frame.GetComponentsInChildren<RookCrane>(true)) r.PoseRig(time);
             foreach (var k in frame.GetComponentsInChildren<KnightCrane>(true)) k.PoseRig(time);
+            foreach (var k in frame.GetComponentsInChildren<KingsBanner>(true)) k.PoseFlutter(time);
             Physics.SyncTransforms();
+        }
+
+        // What a ray straight down from `from` lands on: the floor at `expect` (not a crack to the ground below).
+        static void Under(string name, Vector3 from, float expect)
+        {
+            Vector3 o = frame.TransformPoint(from);
+            bool hit = Physics.Raycast(o, Vector3.down, out var floor, 40f, ~0, QueryTriggerInteraction.Ignore);
+            float at = hit ? frame.InverseTransformPoint(floor.point).y : float.NaN;
+            Check(name, hit && Mathf.Abs(at - expect) < .1f, hit ? floor.collider.name + " at y " + F(at) : "nothing under " + Vs(from));
         }
 
         // A face in front of `from` along `dir`: held (orange) or not, by the climb's own rule (RagdollPawn.ClimbableHit).
@@ -226,16 +244,22 @@ namespace ChessFight.PawnRush.Editor
             camera.nearClipPlane = .1f; camera.farClipPlane = 800f;
             Log("");
             Log("== Pictures (each at a clock time: where the shared clock puts every mover)");
-            Shot("rr_01_overview", 13.75, V(58f, 62f, -38f), V(-2f, 6f, 48f), 50f);
-            Shot("rr_02_from_the_glacis", 1.2, V(2f, 1.7f, -3f), V(-9f, 4f, 11f), 62f);
-            Shot("rr_03_siege_ladders", 1.2, V(-3f, 7.5f, -2f), V(-11f, 3f, 11f), 60f);
-            Shot("rr_04_murder_holes", .8, V(5f, 15f, 6.5f), V(5f, 3.5f, 15f), 60f);
-            Shot("rr_05_siege_towers", 13.0, V(5f, 13f, 21f), V(16f, 6.5f, 34f), 66f);
-            Shot("rr_06_drill_square", 7.6, V(0f, 38f, 30f), V(0f, 9f, 47f), 55f);
-            Shot("rr_07_cranes", 13.75, V(-37f, 22f, 51f), V(-27f, 12f, 62f), 60f);
-            Shot("rr_08_banner_calm", 4.5, V(-22f, 18f, 66f), V(-10f, 17f, 74f), 55f);
-            Shot("rr_09_banner_gust", 9.0, V(-22f, 18f, 66f), V(-10f, 17f, 74f), 55f);
-            Shot("rr_10_from_the_inner_wall", 13.75, V(-24f, 16.5f, 72f), V(0f, 10f, 46f), 70f);
+            // R866: every eye and target 1.5 times as far out as R860's (the plan is), the heights with the walls.
+            Shot("rr_01_overview", 13.75, V(87f, 93f, -57f), V(-3f, 9f, 72f), 50f);
+            Shot("rr_02_from_the_glacis", 1.2, V(3f, 1.7f, -4.5f), V(-13.5f, 6f, 16.5f), 62f);
+            Shot("rr_03_siege_ladders", 1.2, V(-4.5f, 11f, -3f), V(-16.5f, 4.5f, 16.5f), 60f);
+            Shot("rr_04_murder_holes", .8, V(7.5f, 22.5f, 9.75f), V(7.5f, 5.25f, 22.5f), 60f);
+            Shot("rr_05_siege_towers", 18.0, V(7.5f, 19.5f, 31.5f), V(24f, 9.75f, 51f), 66f);
+            Shot("rr_06_drill_square", 7.6, V(0f, 57f, 45f), V(0f, 13.5f, 70.5f), 55f);
+            Shot("rr_07_cranes", 13.75, V(-55.5f, 33f, 76.5f), V(-40.5f, 18f, 93f), 60f);
+            Shot("rr_08_banner_calm", 4.5, V(-33f, 27f, 99f), V(-15f, 25.5f, 111f), 55f);
+            Shot("rr_09_banner_gust", 10.0, V(-33f, 27f, 99f), V(-15f, 25.5f, 111f), 55f);
+            Shot("rr_10_from_the_inner_wall", 13.75, V(-36f, 24.75f, 108f), V(0f, 15f, 69f), 70f);
+            // A pawn's eye on the outer wall's walk (the scale the user asked for: the walk 9 m wide, the wall 6 m high).
+            Shot("rr_11_on_the_outer_walk", 4.0, V(-30f, B.W1 + 1.6f, B.Face1 + 5f), V(-6f, B.W1 + 1f, B.Face1 + 6f), 70f);
+            // The banner close up from the walk below it, calm and at the gust's height.
+            Shot("rr_12_banner_from_the_walk_calm", 4.5, V(B.GateHX0 - 11f, B.W3 + 1.6f, B.BannerZ0 - 1f), V(B.GateHX0, B.LedgeY, (B.BannerZ0 + B.BannerZ1) * .5f), 60f);
+            Shot("rr_13_banner_from_the_walk_gust", 10.0, V(B.GateHX0 - 11f, B.W3 + 1.6f, B.BannerZ0 - 1f), V(B.GateHX0, B.LedgeY, (B.BannerZ0 + B.BannerZ1) * .5f), 60f);
             Object.DestroyImmediate(camera.gameObject);
             Object.DestroyImmediate(sun.gameObject);
         }
@@ -277,7 +301,9 @@ namespace ChessFight.PawnRush.Editor
 
     // The rampart in Play Mode for 13 s, offline (the obstacle clock is the scene's time): every mover woken kinematic and
     // where the clock puts it, the murder holes' floors and the ladders' past-upright marks switched on time, no errors.
-    // Still nobody runs it.
+    // R866: stand-ins for climbers (ShakeProbe: a body that can be driven and hit, riding what it is put on) on ladder 1's
+    // climbing side and on the banner's lower length - each must be let go once a push or gust, and only past upright or
+    // at 35 degrees - and one waiting on the walk under the banner, which must not be. Still nobody runs it.
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.RookRampartPlayCheck.RunPlayBatch -logFile <file>
     // Results: Logs/RookRampartValidation/play.txt.
     [InitializeOnLoad]
@@ -292,6 +318,30 @@ namespace ChessFight.PawnRush.Editor
         static GameObject placed;
         static double began, placedAt;
         static int steps, ladderMismatch, holeMismatch;
+        static ShakeProbe onLadder, onBanner, besideOnLedge, besideOnWalk;
+
+        // A stand-in for a climber: RampartShake looks for a character (ICharacterDriver) that can be hit (IHitReceiver);
+        // this one only notes when it is told to let go.
+        sealed class ShakeProbe : MonoBehaviour, ICharacterDriver, IHitReceiver
+        {
+            public readonly List<double> Drops = new List<double>();
+            public void SetCommand(in CharacterCommand command) { }
+            public Transform FollowTarget => transform;
+            public void Teleport(Vector3 position, Quaternion rotation) { }
+            public void ApplyHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool dropFromWallOrRide)
+            {
+                if (dropFromWallOrRide) Drops.Add(ObstacleClock.Now);
+            }
+        }
+
+        static ShakeProbe Probe(string name, Transform parent, Vector3 localPosition, Vector3 size)
+        {
+            var go = new GameObject("R866 stand-in " + name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+            go.AddComponent<BoxCollider>().size = size;
+            return go.AddComponent<ShakeProbe>();
+        }
 
         static RookRampartPlayCheck()
         {
@@ -319,7 +369,7 @@ namespace ChessFight.PawnRush.Editor
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(Path.Combine(Folder, Report), "R860 rooks' rampart walk in Play (" +
+            File.WriteAllText(Path.Combine(Folder, Report), "R866 rooks' rampart walk in Play (" +
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + "), offline, no pawn.\n");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             SessionState.SetBool(ActiveKey, true);
@@ -334,6 +384,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 errors.Clear(); failures.Clear();
                 placed = null; steps = ladderMismatch = holeMismatch = 0;
+                onLadder = onBanner = besideOnLedge = besideOnWalk = null;
                 began = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
                 EditorApplication.update -= Tick;
@@ -359,6 +410,20 @@ namespace ChessFight.PawnRush.Editor
                     var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RookRampartValidation.SectionPrefab);
                     placed = Object.Instantiate(prefab);
                     placedAt = Time.timeAsDouble;
+                    // Ladder 1's climbers hug its -z side half way up; the banner's hug its west (-x) face. The one waiting
+                    // stands on the walk 1.2 m out from the lower length (the cloth lifts over it).
+                    var ladder = placed.GetComponentsInChildren<SiegeLadder>()[0];
+                    onLadder = Probe("on ladder 1", ladder.transform, new Vector3(0f, B.LadderL * .5f, -.35f), new Vector3(.4f, 1f, .3f));
+                    KingsBanner lower = null;
+                    foreach (var k in placed.GetComponentsInChildren<KingsBanner>())
+                        if (lower == null || k.transform.position.y < lower.transform.position.y) lower = k;
+                    onBanner = Probe("on the banner", lower.transform, new Vector3(-.35f, -2f, 0f), new Vector3(.3f, 1f, .4f));
+                    // Waiting beside the banner (the design's rule): on the ledge 1.5 m north of it, and on the walk there.
+                    float beside = B.BannerZ1 + 1.2f;
+                    besideOnLedge = Probe("beside the banner on the ledge", placed.transform,
+                                          new Vector3(B.GateHX0 - .6f, B.LedgeY + .91f, beside), new Vector3(.4f, 1.8f, .4f));
+                    besideOnWalk = Probe("beside the banner on the walk", placed.transform,
+                                         new Vector3(B.GateHX0 - B.LedgeDepth - .6f, B.W3 + .91f, beside), new Vector3(.4f, 1.8f, .4f));
                     return;
                 }
                 Sample();
@@ -429,8 +494,32 @@ namespace ChessFight.PawnRush.Editor
             Check("P5 ladder 1 at the clock's angle", Mathf.Abs(tilt - Mathf.Abs(90f - angle)) < 4f, "tilt from upright " + F(tilt) + " (clock angle " + F(angle) + ")");
             Check("P6 the ladders' past-upright marks on time", ladderMismatch == 0, ladderMismatch + " mismatches over " + steps + " frames");
             Check("P7 the murder holes' floors on time", holeMismatch == 0, holeMismatch + " mismatches over " + steps + " frames");
+            // The stand-ins (R866): let go once a push or a gust, and only past upright or at 35 degrees; beside the banner, never.
+            Func<double, float> gust = t => T.BannerAngle(t);
+            Check("P9 a stand-in on ladder 1 let go past upright, once a push", Dropped(onLadder, ladder.Angle, a => a > 90f && a < T.Fallen, T.PushAt[0], T.PushCycle),
+                  Drops(onLadder, ladder.Angle));
+            Check("P10 a stand-in on the banner's lower length thrown off at 35 degrees or more, once a gust", Dropped(onBanner, gust, a => a >= 34.9f, 0f, T.GustCycle),
+                  Drops(onBanner, gust));
+            Check("P11 a stand-in waiting beside the banner on the ledge left alone", besideOnLedge.Drops.Count == 0, Drops(besideOnLedge, gust));
+            Check("P12 a stand-in waiting beside the banner on the walk left alone", besideOnWalk.Drops.Count == 0, Drops(besideOnWalk, gust));
             foreach (var e in errors) Log("ERROR logged in Play: " + e.Split('\n')[0]);
             Check("P8 errors logged in Play", errors.Count == 0, errors.Count.ToString());
+        }
+
+        // At least one drop, each where `ok` says of the angle then, and no two in the same cycle (`start` + k `cycle`).
+        static bool Dropped(ShakeProbe probe, Func<double, float> angle, Func<float, bool> ok, float start, float cycle)
+        {
+            var cycles = new HashSet<long>();
+            foreach (var t in probe.Drops)
+                if (!ok(angle(t)) || !cycles.Add((long)Math.Floor((t - start) / cycle))) return false;
+            return probe.Drops.Count > 0;
+        }
+
+        static string Drops(ShakeProbe probe, Func<double, float> angle)
+        {
+            var parts = new List<string>();
+            foreach (var t in probe.Drops) parts.Add("clock " + F(t) + " s at " + F(angle(t)) + " deg");
+            return probe.Drops.Count + " let go" + (parts.Count > 0 ? ": " + string.Join(", ", parts) : "");
         }
 
         static void Stop()

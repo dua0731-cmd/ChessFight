@@ -1,0 +1,74 @@
+R866 rooks' rampart walk checks (2026-11-27 17:38). Edit mode, not a play test: no pawn runs it.
+
+== The section checks (SectionValidator)
+      구간 룩 성벽길 (Early_1-5_RookRampart)
+      장애물 덮음 검사 0곳
+      백팀 길 293.2 m, 가장 넓은 틈 0.05 m
+      뜻한 틈 4곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+      체크포인트 8개, 부활 자리 48곳
+      오를 수 없는 면 325개
+      입구 (0.0, 0.0, 0.0) → 출구 (0.0, 30.0, 147.0)
+PASS  E1 section checks: 0 errors
+PASS  E1 entry and exit: (0, 0, 0) -> (0, 30, 147)
+
+== What is there
+PASS  E2 siege ladders: 6 (expected 6)
+PASS  E2 rook defenders: 2 (expected 2)
+PASS  E2 murder holes: 1 (expected 1)
+PASS  E2 siege towers: 2 (expected 2)
+PASS  E2 drop-bridges: 2 (expected 2)
+PASS  E2 drill rooks: 4 (expected 4)
+PASS  E2 rook crane: 1 (expected 1)
+PASS  E2 knight crane: 1 (expected 1)
+PASS  E2 banner lengths: 2 (expected 2)
+PASS  E2 checkpoints: 8 (expected 8)
+PASS  E2 progress path: 1 (expected 1)
+
+== Faces: held or not (a ray at each, every mover where the clock has it at 4.0 s: ladders up, banner calm)
+PASS  H1 a siege ladder (1, against the wall, from the mound): RR siege ladder face at (-26, 3.7, 15.47), normal y 0.26 - held
+PASS  H2 siege tower A's first ladder (docked): RR siege tower A ladder 1 at (19.5, 7.4, 28.48), normal y 0.19 - held
+PASS  H4 the banner's lower length: RR king's banner lower cloth at (-16.29, 23.4, 111), normal y 0 - held
+PASS  H5 the banner's upper length (from the ledge): RR king's banner upper cloth at (-15.08, 27.2, 111), normal y 0 - held
+PASS  N1 the outer wall's face (over the mound): RR outer wall W at (-20, 3, 16.5), normal y 0 - not held
+PASS  N2 the middle wall's face (from the lower ward): RR middle wall W at (-25, 4, 70.17), normal y 0 - not held
+PASS  N3 the inner wall's face (from the ditch): RR inner wall W at (-36, 0, 101.06), normal y 0 - not held
+PASS  N4 the gatehouse's west face beside the banner: RR inner gatehouse at (-15, 23.2, 114.9), normal y 0 - not held
+PASS  N5 a siege tower's side hide: RR siege tower A hide W at (17.84, 7.5, 30), normal y 0 - not held
+PASS  H3 the knight's mane (low end, facing north): RR knight mane at (-36.75, 14.2, 83.39), normal y 0 - held
+PASS  N6 a drill rook (resting at its end): RR drill rook body at (-7.2, 15.8, 54.8), normal y 0 - not held
+PASS  N7 the banner's lower length at 40 degrees (too flat): RR king's banner lower cloth at (-18.44, 23.4, 111), normal y 0.64 - not held
+
+== Top-outs (where the climb over each face's top lands)
+PASS  T1 a siege ladder onto its crenel's sill: lands on RR outer wall W sill at y 7.1 (face RR siege ladder face)
+PASS  T2 siege tower A's first ladder onto its second floor: lands on RR siege tower A floor 2 at y 9.03 (face RR siege tower A ladder 1)
+PASS  T3 siege tower A's second ladder onto its third floor: lands on RR siege tower A floor 3 at y 12.07 (face RR siege tower A ladder 2)
+PASS  T4 siege tower A's third ladder onto its top floor: lands on RR siege tower A floor 4 at y 15.1 (face RR siege tower A ladder 3)
+PASS  T5 the banner's lower length onto the ledge: lands on RR banner ledge at y 26 (face RR king's banner lower cloth)
+PASS  T6 the banner's upper length onto the roof: lands on RR inner gatehouse at y 30 (face RR king's banner upper cloth)
+
+== Floors (a ray down: what is under the way where a wall meets the gatehouse, R866)
+PASS  F1 the inner wall's walk at the gatehouse's foot, under the banner's north end: RR inner wall W at y 22
+PASS  F2 the inner wall's walk at the gatehouse's east corner: RR inner wall E at y 22
+
+== Moves (the clock's functions at their marked times)
+PASS  M1 ladder 1 leaning at 4 s, upright about 0.98 s, down at 1.9 s: 75 / 90.16 / 180
+PASS  M2 siege tower A at the middle wall, its bridge down, at 18 s: z 55, bridge 0
+PASS  M3 a docked tower's bridge reaches over the middle wall's sill: the bridge's tip 3.6 m past the wall's face
+PASS  M4 the knight turning on the inner wall: z 104.42, facing 70.85
+PASS  M5 the banner at 40 degrees in the gust: 40
+
+== Pictures (each at a clock time: where the shared clock puts every mover)
+      picture rr_01_overview.png (clock 13.75 s)
+      picture rr_02_from_the_glacis.png (clock 1.2 s)
+      picture rr_03_siege_ladders.png (clock 1.2 s)
+      picture rr_04_murder_holes.png (clock 0.8 s)
+      picture rr_05_siege_towers.png (clock 18 s)
+      picture rr_06_drill_square.png (clock 7.6 s)
+      picture rr_07_cranes.png (clock 13.75 s)
+      picture rr_08_banner_calm.png (clock 4.5 s)
+      picture rr_09_banner_gust.png (clock 10 s)
+      picture rr_10_from_the_inner_wall.png (clock 13.75 s)
+      picture rr_11_on_the_outer_walk.png (clock 4 s)
+      picture rr_12_banner_from_the_walk_calm.png (clock 4.5 s)
+      picture rr_13_banner_from_the_walk_gust.png (clock 10 s)
+ALL PASS
