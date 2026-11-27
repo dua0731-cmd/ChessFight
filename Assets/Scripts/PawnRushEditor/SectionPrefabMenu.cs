@@ -196,6 +196,9 @@ namespace ChessFight.PawnRush.Editor
                     // R816: and the grand banquet hall (the slot's second draft).
                     var banquet = go.GetComponent<GrandBanquetHallSection>();
                     if (banquet != null && !banquet.HasContent) GrandBanquetHallBuilder.Build(banquet);
+                    // R860: and the rooks' rampart walk (a draft of the early obstacle slot).
+                    var rampart = go.GetComponent<RookRampartSection>();
+                    if (rampart != null && !rampart.HasContent) RookRampartBuilder.Build(rampart);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

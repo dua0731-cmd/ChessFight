@@ -1,0 +1,12 @@
+R860 rooks' rampart walk in Play (2026-11-27 11:02), offline, no pawn.
+
+== After 13.201 s in Play (clock 13.201 s, 120776 frames)
+PASS  P1 every mover woken kinematic: 20 movers, 0 not kinematic
+PASS  P2 siege tower A where the clock puts it: z 36.528 (clock 36.528)
+PASS  P3 the rook crane's crown where the clock puts it: (14.5, 58.5) (clock 14.5, 58.517)
+PASS  P4 the knight where the clock puts it: (13.138, 61.16) facing 0 (clock 13.27, 61.288, 0)
+PASS  P5 ladder 1 at the clock's angle: tilt from upright 15 (clock angle 75)
+PASS  P6 the ladders' past-upright marks on time: 0 mismatches over 120776 frames
+PASS  P7 the murder holes' floors on time: 0 mismatches over 120776 frames
+PASS  P8 errors logged in Play: 0
+ALL PASS

@@ -536,10 +536,12 @@ B5 = {
 P6 = L["GUST_CYCLE"]
 LOOP6 = 2 * P6
 FACE6, LEDGE, GY = L["GATEHOUSE"][0], L["LEDGE_Y"], L["GATE_Y"]
-CLOTH = FACE6 - 0.08                             # both lengths hang flat on the face, each from its top
-LOW_H, UP_H = (CLOTH, LEDGE - 0.05), (CLOTH, GY)
-OFF6 = 0.35                                      # a climber's middle off the cloth
+CLOTH = FACE6 - 0.08                             # the upper length hangs flat on the face from the roof's edge
 LEDGE_X = FACE6 - L["LEDGE_DEPTH"]
+# R860: the lower length hangs from the ledge's front edge (the climb's top-out lands 0.63 m in from a face's top).
+LOW_H, UP_H = ((LEDGE_X - 0.06) if L.get("LOWER_HUNG_OUT") else CLOTH, LEDGE - 0.05), (CLOTH, GY)
+OFF6 = 0.35                                      # a climber's middle off the cloth
+ON_LEDGE = LEDGE_X + 0.55                        # standing on the ledge
 BZ = L["BANNER_Z"]
 LIP, REACH = 1.25, 1.3                           # hands on the ledge's lip / on the roof's edge: this far below the top
 
@@ -570,9 +572,9 @@ def cloth_x(y, t):
 
 def mantle(track, t, z, p0):
     # From the lower length's top onto the ledge: hands on the lip, over it.
-    mid = (z, LEDGE - 0.3, LEDGE_X - 0.2)
+    mid = (z, LEDGE + 0.25, LEDGE_X + 0.15)
     track.move(t, t + 0.45, p0, mid)
-    track.move(t + 0.45, t + 0.8, mid, (z, LEDGE, FACE6 - 0.3))
+    track.move(t + 0.45, t + 0.8, mid, (z, LEDGE, ON_LEDGE))
     return t + 0.8
 
 
@@ -585,10 +587,10 @@ g6.stay(0.0, 3.0, (ASIDE, W3, WALK_X))
 g6.move(3.0, 4.0, (ASIDE, W3, WALK_X), (ZG, W3, CLOTH - OFF6))
 t = g6.add(4.0, 4.0 + (D_LOW - LIP) / CLIMB, climb_cloth(ZG, LOW_H, D_LOW, 4.0))
 t = mantle(g6, t, ZG, at_cloth(ZG, LOW_H, LIP, t))
-g6.move(t, t + 1.0, (ZG, LEDGE, FACE6 - 0.3), (ASIDE, LEDGE, FACE6 - 0.3))
+g6.move(t, t + 1.0, (ZG, LEDGE, ON_LEDGE), (ASIDE, LEDGE, ON_LEDGE))
 T_ASIDE = t + 1.0
-g6.stay(T_ASIDE, P6 + 3.4, (ASIDE, LEDGE, FACE6 - 0.3))
-g6.move(P6 + 3.4, P6 + 4.4, (ASIDE, LEDGE, FACE6 - 0.3), (ZG, LEDGE, CLOTH - OFF6))
+g6.stay(T_ASIDE, P6 + 3.4, (ASIDE, LEDGE, ON_LEDGE))
+g6.move(P6 + 3.4, P6 + 4.4, (ASIDE, LEDGE, ON_LEDGE), (ZG, LEDGE, CLOTH - OFF6))
 t = g6.add(P6 + 4.4, P6 + 4.4 + (D_UP - REACH) / CLIMB, climb_cloth(ZG, UP_H, D_UP, P6 + 4.4))
 p_top = at_cloth(ZG, UP_H, REACH, t)
 g6.move(t, t + 0.4, p_top, (ZG, GY - 0.25, FACE6 - 0.15))
@@ -614,11 +616,11 @@ f6.move(3.3, 3.9, p_l6, (ZB, W3, CLOTH - OFF6))
 t = f6.add(3.9, 3.9 + (D_LOW - LIP) / CLIMB, climb_cloth(ZB, LOW_H, D_LOW, 3.9))
 T_LEDGE_F = mantle(f6, t, ZB, at_cloth(ZB, LOW_H, LIP, t))
 T_G2 = P6 + L["GUST_WARN"]
-f6.stay(T_LEDGE_F, T_G2, (ZB, LEDGE, FACE6 - 0.3))
+f6.stay(T_LEDGE_F, T_G2, (ZB, LEDGE, ON_LEDGE))
 t_o6 = T_G2
 while cloth_x(LEDGE + 0.7, t_o6) - 0.3 > LEDGE_X:
     t_o6 += 0.01
-f6.add(T_G2, t_o6, lambda t: (ZB, LEDGE, min(FACE6 - 0.3, cloth_x(LEDGE + 0.7, t) - 0.3)), 2)
+f6.add(T_G2, t_o6, lambda t: (ZB, LEDGE, min(ON_LEDGE, cloth_x(LEDGE + 0.7, t) - 0.3)), 2)
 t_l62, p_l62 = fall(f6, t_o6, (ZB, LEDGE, LEDGE_X), -1.0, W3)
 f6.stay(t_l62, t_l62 + 1.5, p_l62, 3)
 f6.note(0.6, T_G1, "작은 깃발이 펄럭이는데 오름", "warn")

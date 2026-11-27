@@ -43,7 +43,8 @@ MAX_DROP = 8.0                                   # FallDistanceRespawn
 # ---------------------------------------------------------------- the levels
 GLACIS = WARD = 0.0                              # the approach in front of the outer wall; the lower ward behind it
 W1_Y, W2_Y, W3_Y, GATE_Y = 3.5, 9.0, 14.5, 20.0  # the three walls' walks and the inner gatehouse's roof
-BOARD_Y = W2_Y + 2.0                             # the great tower's roof, two steps over the middle wall's walk
+BOARD_Y = W2_Y                                   # the great tower's roof, level with the middle wall's walk (R860: a ramp up
+                                                 # 2 m had nowhere to go but where the siege towers' bridges land)
 DITCH_Y, BAILEY_Y, RIVER_Y = -6.0, 9.0, -32.0    # the rock-cut ditch's floor, the inner bailey, the river in the gorges
 SPUR_X = 46.0                                    # the spur's cliffs: |x| beyond this is the gorge
 WALK, PARAPET, MERLON_H, SILL_H, MERLON_L, CRENEL = 6.0, 1.0, 1.8, 0.9, 1.8, 1.2
@@ -300,10 +301,12 @@ def knight_crane(t):
 # first, then the banners billow out from the wall past the climbable angle - be on the ledge or over the top by then.
 GATEHOUSE = (-10.0, 10.0, 70.0, 82.0)            # x0, x1, z0, z1; roof GATE_Y; twin rook towers on its south face
 GATE_TOWERS = [(-6.5, 70.0, 4.0, GATE_Y + 2.5), (6.5, 70.0, 4.0, GATE_Y + 2.5)]
-BANNER_Z = (71.6, 75.2)
+BANNER_Z = (72.2, 75.8)                          # R860: 0.6 m north, clear of the gatehouse's south-west tower
 LEDGE_Y = (W3_Y + GATE_Y) / 2.0
-LEDGE_DEPTH = 0.6                                # the stone ledge runs the face's whole width: stand aside on it,
-LEDGE_Z = (GATEHOUSE[2] + 0.5, GATEHOUSE[3] - 0.5)    # the upper length billows out over the ledge in front of it
+LEDGE_DEPTH = 1.2                                # the stone ledge runs the face's whole width: stand aside on it, the upper
+LEDGE_Z = (72.0, GATEHOUSE[3] - 0.5)             # length billows out over the ledge in front of it. R860: 1.2 m deep, and the
+LOWER_HUNG_OUT = True                            # lower length hangs from its front edge - a climb's top-out lands 0.63 m in
+                                                 # from the face's top (RagdollPawn.TryStartTopOut), on the ledge
 GUST_CYCLE, GUST_WARN, GUST_OUT, GUST_HOLD, GUST_BACK = 7.0, 1.0, 0.6, 1.0, 0.8
 BILLOW = 40.0                                    # degrees out from the wall: the banner's face is then 50 from level
 
@@ -556,7 +559,7 @@ def draw(path):
         b = square_mid(idx, BOARD_N - 1) if kind == "file" else square_mid(BOARD_N - 1, idx)
         line([a, b], BLUE, 3.0, "6,3", 0.85)
         circle(a[0], a[1], 0.95, BLUE, INK, 1.0)
-    text(*P(0, 60.0), s="큰 탑 (룩의 훈련장, 지붕 11)", size=11, anchor="middle", weight="bold")
+    text(*P(0, 60.0), s="큰 탑 (룩의 훈련장, 지붕 9)", size=11, anchor="middle", weight="bold")
     gh = GATEHOUSE
     poly([(gh[0], gh[2]), (gh[1], gh[2]), (gh[1], gh[3]), (gh[0], gh[3])], STONE2, INK, 1.4)
     for x, z, r, top in GATE_TOWERS:
