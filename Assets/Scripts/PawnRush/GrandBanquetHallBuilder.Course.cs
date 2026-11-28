@@ -5,7 +5,8 @@ using Look = ChessFight.PawnRush.RoyalClockTowerLook;
 
 namespace ChessFight.PawnRush
 {
-    // What makes the grand banquet hall a section of the round: eight checkpoints, the floors that end a run (the dance
+    // What makes the grand banquet hall a section of the round: twelve checkpoints (R905: one before every pair of
+    // chandeliers - the loft's end and the three candle beams more), the floors that end a run (the dance
     // floor and the orchestra pit, the pantry), the progress path, the meant gaps (the rides and the leaps), the beats and
     // the signs. A fall of more than 8 m anywhere is the character's own FallDistanceRespawn.
     public static partial class GrandBanquetHallBuilder
@@ -25,7 +26,7 @@ namespace ChessFight.PawnRush
         // wherever the way comes onto that floor - offline the respawn is the bottom of the trigger's middle, and with the
         // triggers over whole floors (R733) that was inside the chocolate fountain (the user: "초코분수 체크포인트가 분수 안에
         // 있는지 태어나면 분수 속에 박히는 버그"), the great chandelier's column and behind the curtain. The six spots (online)
-        // stay in a row across the way at the same point. The round makes them 200 .. 207.
+        // stay in a row across the way at the same point. The round makes them 200 .. 211.
         static void Checkpoints(CourseBuilder b)
         {
             // (number, point, yaw = the way on, spots' width, box across x along in the checkpoint's own frame)
@@ -37,9 +38,29 @@ namespace ChessFight.PawnRush
             Cp(3, V(StageX1 - 2.2f, StageY, StageZ0 + 10f), 270f, 6f, StageZ1 - StageZ0, 4.4f); // the stage before the curtain
             Cp(4, V((HallX0 + BuffetX1) * .5f, BuffetY, 15.3f), 180f, 7f, BuffetX1 - HallX0, 3.4f); // the buffet north of the bowl
             Cp(5, V(-22f, LoftY, 2.8f), 90f, 5f, 5.6f, 20f);                                 // the loft from its ladder on
-            Cp(6, V(0f, GreatY, GreatZ - 2.2f), 0f, 6f, 2f * GreatR, 4f);                   // the great chandelier's south half
-            Cp(7, V(0f, BalconyY, BalconyZ0 + 2.4f), 0f, 6f, 2f * BalconyX, 4.8f);          // the king's balcony
+            // R905: every candle beam, so that whoever falls with a loose chandelier tries the other one from where it
+            // chose (a rider passing from rope to rope over a beam goes through its box too).
+            // The loft's own is 20 m west, by its ladder: one more at its end by the ropes, where the first pair is chosen.
+            int n = 6;
+            Cp(n++, V(0f, LoftY, ScreenZ - 1.8f), 0f, 6f, 8f, 3.2f);
+            bool great = false;
+            void Great()
+            {
+                Cp(n++, V(0f, GreatY, GreatZ - 2.2f), 0f, 6f, 2f * GreatR, 4f);              // the great chandelier's south half
+                great = true;
+            }
+            foreach (int k in BeamAfter)
+            {
+                if (!great && k >= FirstLine) Great();                                       // it hangs before rope FirstLine
+                Cp(n++, V(0f, BeamY(k), BeamZ(k)), 0f, 6f, 2f * BeamX, BeamW);
+            }
+            if (!great) Great();
+            Cp(n, V(0f, BalconyY, BalconyZ0 + 2.4f), 0f, 6f, 2f * BalconyX, 4.8f);          // the king's balcony
         }
+
+        // How many checkpoints the hall has: the six up to the loft's ladder, the loft's end by the ropes, the great
+        // chandelier, the candle beams, the balcony.
+        public static int CheckpointCount => 9 + BeamAfter.Length;
 
         // The dance floor and the orchestra pit end a run (whoever falls from the dais, a queen, the curtain or the buffet
         // goes back to its checkpoint; nobody climbs a queen from the floor), as does the pantry (a waiter's tray carried in
@@ -139,6 +160,8 @@ namespace ChessFight.PawnRush
                 }
                 P(BeatChandeliers, LinesX[0], RopeLow[k] - 1.1f, ScreenZ + RopeAlong[k] - RopeEnd(k));
                 P(BeatChandeliers, LinesX[0], RopeLow[k] - 1.1f, ScreenZ + RopeAlong[k] + RopeEnd(k));
+                // R905: onto the candle beam under the handover (the west end of it; either line goes on from it).
+                if (System.Array.IndexOf(BeamAfter, k) >= 0) P(BeatChandeliers, LinesX[0], BeamY(k), BeamZ(k));
             }
             // Off the last rope onto the king's balcony, and on to the exit at its back.
             P(BeatBalcony, LinesX[0], BalconyY, LandZ);
@@ -204,7 +227,9 @@ namespace ChessFight.PawnRush
             Look.Sign(at, "무대 앞의 초록 등이 켜질 때 무대로 건너 내린다", V(BanquetWaltz.BoardX, 12.4f, 56.1f), .7f, 180f);
             Look.Sign(at, "5. 무대 막: 콘트라베이스보다 높이(3.5 m) 올라 매달린다 · 막이 열리면 뷔페까지", V(-21.5f, 11.4f, 44f), .9f, -90f);
             Look.Sign(at, "6. 초콜릿 분수: 흘러내리는 초콜릿을 거슬러 한 층씩 오른다 · 꼭대기 남쪽에서 회랑의 사다리로 뛰어 붙기", V(-27.7f, 19.8f, 15.5f), .85f, 180f);
-            Look.Sign(at, "7. 샹들리에: 끝이 가까이 오면 우클릭 · 이웃 줄이 마주 올 때 옮겨 잡기 · 가운데 큰 샹들리에에서 쉰다", V(-8f, 23.4f, 5.6f), .9f);
+            // R905: the guessing stretch says so before the first choice.
+            Look.Sign(at, "7. 샹들리에: 두 개 중 하나는 줄이 풀려 있다 — 타고 한가운데를 지날 때 내려앉는다 · 내려앉은 샹들리에는 이 판 내내 그대로", V(-8f, 23.4f, 5.6f), .9f);
+            Look.Sign(at, "끝이 가까이 오면 우클릭 · 촛대 들보에서 줄을 고른다 · 촛불이 켜진 샹들리에는 누가 타고 건넌 것", V(-8f, 22.3f, 5.6f), .8f);
             Look.Sign(at, "8. 왕의 발코니: 마지막 샹들리에 끝에서 놓으면 도착", V(0f, BalconyY + 4.6f, BalconyZ0 - 2f), .9f);
         }
     }

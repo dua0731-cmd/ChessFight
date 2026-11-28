@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ChessFight.Game;
 using UnityEngine;
 
@@ -45,6 +46,29 @@ namespace ChessFight.PawnRush
             }
             if (hung > 0) Debug.Log("[대연회장 입히기] 매달린 샹들리에 " + hung + "개");
             d.SplitLods();      // (the after-dress actions run in no set order: these were hung after the hall's pass)
+        };
+
+        // R905 (main): the candle beams between the pairs of chandeliers and the chain a loose chandelier pays out have no
+        // models yet - the builder's grey shapes are drawn in the hall's own materials (a walnut board, gilt caps and
+        // chains, wax candles, crystal drops) until they have.
+        static readonly Dictionary<string, string> BeamMaterials = new Dictionary<string, string>
+        {
+            { "BH candle beam board", "BH_Walnut" }, { "BH candle beam cap", "BH_Gold" }, { "BH candle beam chain", "BH_Gold" },
+            { "BH candle beam candle", "BH_Wax" }, { "BH candle beam drop", "BH_Crystal" }, { "BH chandelier paid-out chain", "BH_Gold" },
+        };
+
+        static readonly Action<GrandBanquetHallDressing> CandleBeams = d =>
+        {
+            int painted = 0;
+            foreach (var r in d.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!BeamMaterials.TryGetValue(r.name, out var asset)) continue;
+                if (!d.materials.TryGetValue(asset, out var m)) d.materials[asset] = m = Resources.Load<Material>(MaterialFolder + asset);
+                if (m == null) continue;
+                r.sharedMaterial = m;
+                painted++;
+            }
+            if (painted > 0) Debug.Log("[대연회장 입히기] 촛대 들보와 풀린 줄 " + painted + "조각");
         };
 
         // A hanging chandelier's lamp and candles, lit while a piece rides it (ChandelierRideLights; the user 11-25:

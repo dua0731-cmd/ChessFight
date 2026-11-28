@@ -17,7 +17,8 @@ namespace ChessFight.PawnRush
     //   4 the waltz: jump onto a queen standing still in front of the dais, ride the dance round to the stage
     //   5 the stage curtain: climb it over the double basses and ride it open over the pit to the dessert buffet
     //   6 the chocolate fountain: climb against the flow, three tiers; leap from the top to the loft's ladder
-    //   7 the chandeliers: two lines from the loft, north over the dance floor by the great chandelier
+    //   7 the chandeliers: two lines from the loft, north over the dance floor by the great chandelier (R905: of each pair
+    //     one is loose and falls with its rider - the stretch where those behind catch up; candle beams to choose from)
     //   8 the king's balcony, where the last ropes end (the exit; R825: the champagne tower is gone)
     //
     // Section frame: x east, y up, z north (the way in), metres; entry (0, 0, 0) in the middle of the south doorway, exit
@@ -131,6 +132,29 @@ namespace ChessFight.PawnRush
         // A rope's pivot height: its end at the end of its swing is RopeLow.
         public static float PivotY(int k) => RopeLow[k] + RopeL[k] * Mathf.Cos(RopeSwing * Mathf.Deg2Rad);
 
+        // R905 (the user: "대계단의 '오징어 게임 다리'처럼 ... 시행착오를 거치게 되면서 뒷 사람들과 자연스럽게 거리가 좁혀지는
+        // 요소가 있어야 해 ... 샹들리에 쪽이 ... 뒷사람과 거리가 좁혀지는 구간으로서 작용됐으면 좋겠어"): the chandeliers are
+        // the hall's guessing stretch. Of the two chandeliers of a rank (the west line's and the east line's) one hangs fast
+        // and the other's winch is not latched (LooseChandeliers: from the section's seed, alike to look at); a loose one
+        // runs out with whoever rides it through the middle of its swing and hangs there, dark, for the rest of the round -
+        // whoever comes after sees which not to take. To choose a line, and to stand and watch the one in front choose, a
+        // candle beam hangs across both lines wherever a rope handed over to the next (a board with candles at its ends,
+        // a checkpoint): the loft, a beam, a beam, the great chandelier, a beam, the balcony - a choice before every rank.
+        // The ropes are where they were (their models and rods with them); a rider may still pass from rope to rope
+        // over a beam.
+        public static readonly int[] BeamAfter = { 0, 1, 3 };     // a beam where rope k hands over to rope k + 1
+        public const float BeamX = 4.6f, BeamW = 2.4f, BeamThick = .3f, BeamHoop = .55f;
+        // A beam's top: the next rope's end comes BeamHoop over it, as the ropes' ends do off the loft and the great
+        // chandelier (the rope before ends 0.5 m higher: a rider's feet pass 0.36 m over the board).
+        public static float BeamY(int k) => RopeLow[k + 1] - BeamHoop;
+        // Its middle along the hall: the middle of the handover (rope k's north end, rope k + 1's south end).
+        public static float BeamZ(int k) => ScreenZ + (RopeAlong[k] + RopeEnd(k) + RopeAlong[k + 1] - RopeEnd(k + 1)) * .5f;
+        // How far each rank's loose chandelier runs out. The last pair hangs over the dais's gallery (its hoop 5.6 m over
+        // the walk at the middle of its swing): 2.2 m takes its rider into the thin kill box over the gallery and leaves
+        // the chandelier 3.4 m over the walkers' floor; the others drop 5 m over the dance floor (the dancers' crowns
+        // are 9.7 m up, the lowest fallen hoop 11.5).
+        public static readonly float[] ChandelierSink = { 5f, 5f, 5f, 5f, 2.2f };
+
         // Grey-box colours over the clock tower's (orange climb, slate no, violet moves, green rest, red cue): people and
         // things that are only pictures, the cloth, chocolate, and the floors that end a run.
         static Material Figure => Arena.Lit("M_BanquetFigure", Arena.Hex("#9A9284"), 0f, .85f);
@@ -170,6 +194,7 @@ namespace ChessFight.PawnRush
             Buffet(b);
             Loft(b);
             Chandeliers(b);
+            CandleBeams(b);
             GreatChandelier(b);
             TheWay(b);
             Course(b);
@@ -570,20 +595,70 @@ namespace ChessFight.PawnRush
         // nothing itself.
         static void Chandeliers(CourseBuilder b)
         {
+            int ranks = RopeAlong.Length;
+            var ropes = new RopeLine[LinesX.Length][];
+            var phases = new float[LinesX.Length][];
+            var chains = new Transform[LinesX.Length * ranks];
             for (int lane = 0; lane < LinesX.Length; lane++)
-                for (int k = 0; k < RopeAlong.Length; k++)
+            {
+                ropes[lane] = new RopeLine[ranks];
+                phases[lane] = new float[ranks];
+                for (int k = 0; k < ranks; k++)
                 {
                     float x = LinesX[lane], z = ScreenZ + RopeAlong[k], y = PivotY(k);
                     var pivot = Root(b, "BH chandelier " + (lane == 0 ? "W" : "E") + (k + 1), V(x, y, z));
                     var rope = pivot.gameObject.AddComponent<RopeLine>();
-                    rope.Configure(RopeL[k], RopeSwing, RopePeriod, ((k + lane) % 2) * RopePeriod * .5f, 0f, null);
+                    phases[lane][k] = ((k + lane) % 2) * RopePeriod * .5f;
+                    rope.Configure(RopeL[k], RopeSwing, RopePeriod, phases[lane][k], 0f, null);
+                    ropes[lane][k] = rope;
                     var look = b.Group("BH chandelier look", pivot);
                     Picture(look, "BH chandelier", BanquetChandelierShape.Hanging(RopeL[k]));
                     look.gameObject.AddComponent<ChandelierLook>().Configure(rope);
                     YardKit.Cylinder(b.parent, "BH chandelier rod", V(x, (y + Ceiling) * .5f, z), Vector3.up, .09f, Ceiling - y, Brass, YardKit.Solid.None);
                     YardKit.Ball(b.parent, "BH chandelier swivel", V(x, y + .02f, z), .24f, Brass, YardKit.Solid.None);
                     YardKit.Cylinder(b.parent, "BH ceiling rose", V(x, Ceiling - .12f, z), Vector3.up, 1.1f, .24f, Brass, YardKit.Solid.None);
+                    // R905: the chain a loose chandelier's winch pays out, from the swivel down to where it hangs then
+                    // (LooseChandeliers stretches it; nothing of it shows while the chandelier hangs at its pivot).
+                    var chain = YardKit.Cylinder(b.parent, "BH chandelier paid-out chain", V(x, y - 1f, z), Vector3.up, 1f, 2f, Brass, YardKit.Solid.None);
+                    chain.SetActive(false);
+                    chains[lane * ranks + k] = chain.transform;
                 }
+            }
+            b.Group("BH loose chandeliers").gameObject.AddComponent<LooseChandeliers>()
+             .Configure(ropes[0], ropes[1], RopeL, phases[0], phases[1], RopeSwing, RopePeriod, ChandelierSink, chains, .09f);
+        }
+
+        // R905: the candle beams, where a rope hands over to the next: a board across both lines of ropes hung by four
+        // chains from the ceiling, its top a floor (green: a place to stand) and a checkpoint, three candles and crystal
+        // drops at each end beyond the lines (pictures). From it either chandelier of the next rank is taken - or a rider
+        // passes from rope to rope 0.36 m over it. No rail: the ropes come in over its south edge and leave over its north.
+        static void CandleBeams(CourseBuilder b)
+        {
+            foreach (int k in BeamAfter)
+            {
+                float y = BeamY(k), end = BeamX - .13f;   // the caps stand 1 cm proud of the board's ends (no faces in one plane)
+                var beam = Root(b, "BH candle beam " + (k + 1), V(0f, y, BeamZ(k)));
+                YardKit.Box(beam, "BH candle beam board", V(0f, -BeamThick * .5f, 0f), V(2f * BeamX, BeamThick, BeamW), Look.Rest, YardKit.Solid.Solid)
+                       .AddComponent<CourseFloor>();
+                // A gilt band along each long edge (a picture, 1 cm proud of the board all round).
+                foreach (float c in new[] { -1f, 1f })
+                    YardKit.Box(beam, "BH candle beam cap", V(0f, -BeamThick * .5f, c * (BeamW * .5f + .005f)), V(2f * BeamX - .3f, BeamThick + .02f, .03f),
+                                Brass, YardKit.Solid.None);
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    YardKit.Box(beam, "BH candle beam cap", V(s * end, .1f, 0f), V(.28f, .2f, BeamW + .2f), Brass, YardKit.Solid.None);
+                    foreach (float c in new[] { -.8f, 0f, .8f })
+                    {
+                        YardKit.Cylinder(beam, "BH candle beam candle", V(s * end, .5f, c), Vector3.up, .14f, .6f, Cloth, YardKit.Solid.None);
+                        YardKit.Ball(beam, "BH candle beam flame", V(s * end, .88f, c), .13f, Candle, YardKit.Solid.None);
+                    }
+                    for (float d = -.9f; d < .95f; d += .6f)
+                        YardKit.Ball(beam, "BH candle beam drop", V(s * end, -BeamThick - .14f, d), .17f, Crystal, YardKit.Solid.None);
+                    foreach (float c in new[] { -1f, 1f })
+                        YardKit.Cylinder(beam, "BH candle beam chain", V(s * (BeamX - .35f), (Ceiling - y) * .5f, c * (BeamW * .5f - .12f)), Vector3.up, .07f,
+                                         Ceiling - y, Brass, YardKit.Solid.None);
+                }
+            }
         }
 
         // The great chandelier in the middle of the hall, between the two lines of ropes: a still gilded corona 8.4 m

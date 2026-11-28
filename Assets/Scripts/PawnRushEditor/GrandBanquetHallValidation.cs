@@ -154,6 +154,8 @@ namespace ChessFight.PawnRush.Editor
                       "entry " + V(section.EntryLocal.position) + ", exit " + V(section.ExitLocal.position));
                 Faces();
                 WaltzArithmetic();
+                Beams();
+                LooseSeeds(section);
                 Log("      the balcony from z " + F(B.BalconyZ0) + ", the chandeliers' landing z " + F(B.LandZ) + ", the great chandelier at z " + F(B.GreatZ) + ", rope pivots z " +
                     F(B.ScreenZ + B.RopeAlong[0]) + " .. " + F(B.ScreenZ + B.RopeAlong[B.RopeAlong.Length - 1]) + ", ends " + F(B.RopeLow[0]) + " .. " + F(B.RopeLow[B.RopeLow.Length - 1]) + " m");
                 Check("E6 errors logged while building and checking", errors.Count == 0,
@@ -173,23 +175,73 @@ namespace ChessFight.PawnRush.Editor
                 ropes = content.GetComponentsInChildren<RopeLine>(true).Length, tricks = content.GetComponentsInChildren<TableclothTrick>(true).Length,
                 flows = content.GetComponentsInChildren<ChocolateFlow>(true).Length, lamps = content.GetComponentsInChildren<ClockLamp>(true).Length,
                 ripples = content.GetComponentsInChildren<ChocolateRipples>(true).Length, hoists = content.GetComponentsInChildren<HoistLine>(true).Length,
-                ladders = 0, posts = 0,
+                ladders = 0, posts = 0, beams = 0, loose = content.GetComponentsInChildren<LooseChandeliers>(true).Length,
                 great = content.Find("BH great chandelier") != null ? 1 : 0, cps = content.GetComponentsInChildren<CourseCheckpoint>(true).Length,
                 kills = content.GetComponentsInChildren<KillVolume>(true).Length, gaps = content.GetComponentsInChildren<IntendedGap>(true).Length;
             foreach (Transform t in content)
             {
                 if (t.name.EndsWith(" ladder") || t.name.StartsWith("BH fountain ladder")) ladders++;
                 if (t.name == "BH dumbwaiter post") posts++;
+                if (t.name.StartsWith("BH candle beam ")) beams++;
             }
             // R828: the loft's ladder is the only one (the fountain's are gone); the cloche lifts hang from a frame of three posts
-            // on four cables and two chains.
+            // on four cables and two chains. R905: a candle beam under each of the ropes' three handovers, each a checkpoint
+            // (eleven with the eight there were), and the loose chandeliers' part.
             Check(id + " what is there", waiters == 4 && cloches == 4 && couples == 10 && pleats == 20 && ropes == 10 && great == 1 && tricks == 1 && flows == 3 &&
-                  ripples == 3 && ladders == 1 && posts == 3 && hoists == 6 && lamps == 4 && cps == 8 && kills == 5 && gaps == 6,
+                  ripples == 3 && ladders == 1 && posts == 3 && hoists == 6 && lamps == 4 && cps == B.CheckpointCount && kills == 5 && gaps == 6 &&
+                  beams == B.BeamAfter.Length && loose == 1,
                   "waiters " + waiters + " (4), cloche lifts' parts " + cloches + " (2 platters + 2 cloches), their frame's posts " + posts + " (3) and hoist lines " + hoists +
                   " (4 cables + 2 chains), couples " + couples + " (10), pleats " + pleats + " (20), chandeliers " + ropes + " (10) and the great one " + great +
-                  " (1), tablecloth tricks " + tricks + " (1), chocolate tiers " + flows + " (3) with ripples " + ripples + " (3), ladders " + ladders +
-                  " (the loft's only), lamps " + lamps + " (4), checkpoints " + cps + " (8), kill volumes " + kills + " (5), meant gaps " + gaps + " (6); colliders " +
-                  content.GetComponentsInChildren<Collider>(true).Length);
+                  " (1), candle beams " + beams + " (" + B.BeamAfter.Length + "), loose chandeliers' part " + loose + " (1), tablecloth tricks " + tricks +
+                  " (1), chocolate tiers " + flows + " (3) with ripples " + ripples + " (3), ladders " + ladders +
+                  " (the loft's only), lamps " + lamps + " (4), checkpoints " + cps + " (" + B.CheckpointCount + "), kill volumes " + kills + " (5), meant gaps " + gaps +
+                  " (6); colliders " + content.GetComponentsInChildren<Collider>(true).Length);
+        }
+
+        // R905: each candle beam lies under a handover of both lines' ropes: the rope before ends over the board (a rider
+        // hangs along the rope, its feet 0.9 m from its hands: they pass a little over the board), the rope after comes
+        // BeamHoop over it.
+        static void Beams()
+        {
+            int bad = 0;
+            string detail = "";
+            float lean = Mathf.Cos(B.RopeSwing * Mathf.Deg2Rad);
+            foreach (int k in B.BeamAfter)
+            {
+                float y = B.BeamY(k), z = B.BeamZ(k), half = B.BeamW * .5f;
+                float arrive = B.ScreenZ + B.RopeAlong[k] + B.RopeEnd(k), leave = B.ScreenZ + B.RopeAlong[k + 1] - B.RopeEnd(k + 1);
+                bool floors = true;
+                foreach (float x in B.LinesX)
+                {
+                    bool hit = Physics.Raycast(frame.TransformPoint(new Vector3(x, y + 2f, z)), -frame.up, out var h, 4f, ~0, QueryTriggerInteraction.Ignore);
+                    floors &= hit && h.collider.name == "BH candle beam board" && Mathf.Abs(frame.InverseTransformPoint(h.point).y - y) < .02f;
+                }
+                float feet = B.RopeLow[k] - .9f * lean - y, hoop = B.RopeLow[k + 1] - y;
+                bool ok = floors && Mathf.Abs(arrive - z) < half && Mathf.Abs(leave - z) < half && Mathf.Abs(hoop - B.BeamHoop) < .001f && feet > .2f && feet < .8f;
+                if (!ok) bad++;
+                detail += " after rope " + (k + 1) + ": top " + F(y) + " m, z " + F(z - half) + ".." + F(z + half) + (floors ? "" : " (NOT under both lines)") +
+                          ", the rope before ends at z " + F(arrive) + " (a rider's feet " + F(feet) + " m over the board), the next at " + F(leave) +
+                          " (its hoop " + F(hoop) + " m over it);";
+            }
+            Check("E8 the candle beams lie under the ropes' handovers", bad == 0, B.BeamAfter.Length + " beams, " + bad + " wrong;" + detail);
+        }
+
+        // R905: which chandelier of each pair is loose comes from the section's seed alone (the same on every PC).
+        static void LooseSeeds(PawnRushSection section)
+        {
+            var loose = content.GetComponentInChildren<LooseChandeliers>(true);
+            if (loose == null) { Check("E9 the loose chandeliers: one of each pair, from the section's seed", false, "no LooseChandeliers"); return; }
+            string Pattern(int seed)
+            {
+                section.Configure(2, seed, 6, 0.0);
+                loose.OnSection(section);
+                string s = "";
+                for (int k = 0; k < loose.Ranks; k++) s += loose.WestLoose(k) ? "W" : "E";
+                return s;
+            }
+            string a = Pattern(816), other = Pattern(817), third = Pattern(4242), again = Pattern(816);
+            Check("E9 the loose chandeliers: one of each pair, from the section's seed", loose.Ranks == B.RopeAlong.Length && a == again,
+                  loose.Ranks + " pairs; the loose side of each with seed 816: " + a + ", 817: " + other + ", 4242: " + third + ", 816 again: " + again);
         }
 
         // A ray from a point toward a face: the first solid it meets must be one that can be held, or one that cannot.
@@ -311,6 +363,7 @@ namespace ChessFight.PawnRush.Editor
             {
                 failures.Clear(); errors.Clear(); pictures.Clear(); ranges.Clear(); shell.Clear(); lastZ.Clear(); lampLit.Clear();
                 stopping = judged = false; watchFrom = -1f; samples = 0f; wraps = 0; showNext = -1; showTaken = 0; heldNext = -1; watchClock = -1.0; watchStep = 0f; watchedTime = 0f;
+                looseStage = 0; looseSet = null; onLoose = onFast = null;
                 frame = content = null;
                 beganAt = EditorApplication.timeSinceStartup;
                 Application.logMessageReceived += OnLog;
@@ -352,6 +405,7 @@ namespace ChessFight.PawnRush.Editor
                 if (pictures.Count > 0) { pictures.Dequeue()(); return; }
                 if (Only == null && ShowPictures()) return;
                 if (HeldPictures()) return;
+                if (LooseTest()) return;
                 Finish();
             }
             catch (Exception e)
@@ -686,6 +740,133 @@ namespace ChessFight.PawnRush.Editor
         }
 
         static readonly Dictionary<string, float> lampLit = new Dictionary<string, float>();
+
+        // ------------------------------------------------------------------ R905: the loose chandeliers
+
+        // A stand-in for a pawn hanging from a chandelier's hoop: a body LooseChandeliers finds there (ILaunchable) and
+        // can make let go (IHitReceiver). It rides the chandelier's picture, which turns with the rope.
+        sealed class RideProbe : MonoBehaviour, ILaunchable, IHitReceiver
+        {
+            public int Drops;
+            public Vector3 LaunchFrom => transform.position;
+            public void Launch(Vector3 velocity) { }
+            public void ApplyHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool dropFromWallOrRide)
+            {
+                if (dropFromWallOrRide) Drops++;
+            }
+        }
+
+        const int LooseRank = 1;   // the second pair, between the first two candle beams
+        static int looseStage;
+        static float looseAt, looseHomeY;
+        static LooseChandeliers looseSet;
+        static RideProbe onLoose, onFast;
+
+        static RideProbe Rider(RopeLine rope, string name)
+        {
+            var look = rope.transform.Find("BH chandelier look");
+            var go = new GameObject("R905 stand-in " + name);
+            go.transform.SetParent(look != null ? look : rope.transform, false);
+            go.transform.localPosition = Vector3.down * (rope.Length + .45f);
+            go.AddComponent<SphereCollider>().radius = .25f;
+            return go.AddComponent<RideProbe>();
+        }
+
+        // True while it runs (after the pictures: the hall is left relieved). A stand-in is hung on each chandelier of the
+        // second pair. The loose one must run out as it passes the middle of its swing - its pivot down by its sink, its
+        // swing stopped, its rider told to let go once, its hoop out of reach - while the one hung fast swings on with its
+        // rider. Then the section's relief: wound back up, swinging, and a new rider on it for a whole swing brings
+        // nothing down.
+        static bool LooseTest()
+        {
+            if (content == null || looseStage >= 5) return false;
+            float now = Time.time;
+            if (looseStage == 0)
+            {
+                looseSet = content.GetComponentInChildren<LooseChandeliers>();
+                if (looseSet == null || looseSet.Ranks <= LooseRank)
+                {
+                    Check("P20 a loose chandelier runs out with its rider", false, "no LooseChandeliers in the hall");
+                    looseStage = 5;
+                    return false;
+                }
+                string sides = "";
+                for (int k = 0; k < looseSet.Ranks; k++) sides += looseSet.WestLoose(k) ? "W" : "E";
+                // (a held picture lit every candle for its shot: as in the game again - lit only on a ridden or proven one)
+                ChandelierRideLights.CandlesOnlyWhenRidden = true;
+                Log("");
+                Log("== Play: the loose chandeliers (R905); this round's loose side of each pair " + sides + ", a stand-in hung on both of pair " + (LooseRank + 1));
+                onLoose = Rider(looseSet.Loose(LooseRank), "on the loose one");
+                onFast = Rider(looseSet.Fast(LooseRank), "on the one hung fast");
+                looseHomeY = looseSet.Loose(LooseRank).transform.localPosition.y;
+                looseAt = now;
+                looseStage = 1;
+                return true;
+            }
+            var loose = looseSet.Loose(LooseRank);
+            var fast = looseSet.Fast(LooseRank);
+            if (looseStage == 1)
+            {
+                if (looseSet.Fallen(LooseRank))
+                {
+                    Log("      it gave way " + F(now - looseAt) + " s after the stand-ins were hung (a swing is " + F(B.RopePeriod) + " s)");
+                    looseAt = now;
+                    looseStage = 2;
+                }
+                else if (now - looseAt > B.RopePeriod + 1.5f)
+                {
+                    Check("P20 a loose chandelier runs out with its rider", false, "pair " + (LooseRank + 1) + "'s loose one still hangs " + F(now - looseAt) + " s after a stand-in was hung on it");
+                    looseStage = 5;
+                    return false;
+                }
+                return true;
+            }
+            if (looseStage == 2)
+            {
+                if (now - looseAt < LooseChandeliers.SinkSeconds + .9f) return true;
+                float sunk = looseHomeY - loose.transform.localPosition.y;
+                Vector3 end = frame.InverseTransformPoint(loose.Point(loose.Length, ObstacleClock.Now)), top = frame.InverseTransformPoint(loose.Top);
+                float sway = new Vector2(end.x - top.x, end.z - top.z).magnitude;
+                int others = 0;
+                for (int k = 0; k < looseSet.Ranks; k++) if (k != LooseRank && looseSet.Fallen(k)) others++;
+                Check("P20 a loose chandelier runs out with its rider through the middle of its swing; the one hung fast holds",
+                      Mathf.Abs(sunk - looseSet.Sink(LooseRank)) < .05f && sway < .05f && !loose.enabled && fast.enabled && onLoose.Drops == 1 && onFast.Drops == 0 &&
+                      looseSet.Falls == 1 && others == 0 && looseSet.Proven(LooseRank),
+                      "down " + F(sunk) + " m (its sink " + F(looseSet.Sink(LooseRank)) + "), its end " + F(sway) + " m off straight under its pivot, its hoop " +
+                      (loose.enabled ? "can still be taken" : "out of reach") + ", its rider told to let go " + onLoose.Drops + " time(s); the one hung fast " +
+                      (fast.enabled ? "swings on" : "is off") + (looseSet.Proven(LooseRank) ? " and is proven" : " but is NOT marked proven") + ", its rider told " + onFast.Drops + " time(s); fallen in all " + looseSet.Falls + ", other pairs' " + others);
+                if (!NoCapture)
+                {
+                    float z = B.ScreenZ + B.RopeAlong[LooseRank];
+                    Capture("hall_17_chandelier_fallen", new Vector3(13f, 21.5f, z - 13f), new Vector3(0f, 16.5f, z), Vector3.up, 60f, false, 1536, 1024, false);
+                    Capture("hall_18_from_a_candle_beam", new Vector3(0f, B.BeamY(B.BeamAfter[0]) + 1.7f, B.BeamZ(B.BeamAfter[0]) - .9f),
+                            new Vector3(0f, 17.5f, z + 6f), Vector3.up, 74f, false, 1536, 1024, false);
+                }
+                Object.Destroy(onLoose.gameObject);
+                looseSet.Relieve();
+                looseAt = now;
+                looseStage = 3;
+                return true;
+            }
+            if (looseStage == 3)
+            {
+                if (now - looseAt < LooseChandeliers.RaiseSeconds + .6f) return true;
+                float off = Mathf.Abs(looseHomeY - loose.transform.localPosition.y);
+                Check("P21 the relief winds a fallen chandelier back up", looseSet.Relieved && off < .02f && loose.enabled && !looseSet.Fallen(LooseRank),
+                      F(off) + " m off its pivot, its hoop " + (loose.enabled ? "to be taken again" : "still out of reach"));
+                onLoose = Rider(loose, "on the relieved one");
+                looseAt = now;
+                looseStage = 4;
+                return true;
+            }
+            if (now - looseAt < B.RopePeriod + .6f) return true;
+            Vector3 swung = frame.InverseTransformPoint(loose.Point(loose.Length, ObstacleClock.Now)) - frame.InverseTransformPoint(loose.Top);
+            Check("P22 relieved, every chandelier holds: a rider on the one that fell, for a whole swing", !looseSet.Fallen(LooseRank) && onLoose.Drops == 0 && looseSet.Falls == 1,
+                  "fallen " + (looseSet.Fallen(LooseRank) ? "again" : "no more") + ", its rider told to let go " + onLoose.Drops + " time(s), its end now " +
+                  F(new Vector2(swung.x, swung.z).magnitude) + " m off straight under its pivot");
+            looseStage = 5;
+            return false;
+        }
 
         static void Judge()
         {

@@ -94,6 +94,8 @@ namespace ChessFight.PawnRush
 
             // An easy way opens.
             foreach (var stones in section.GetComponentsInChildren<GuessBridge>(true)) { stones.Relieve(); ways++; }
+            // R905: the grand banquet hall's chandeliers all hold (the fallen ones are wound back up).
+            foreach (var loose in section.GetComponentsInChildren<LooseChandeliers>(true)) { loose.Relieve(); ways++; }
             // The reservoir's boats go; its bridge is one of ReliefWay's decks.
             foreach (var lanes in section.GetComponentsInChildren<BoatLanes>(true))
                 if (lanes.gameObject.activeSelf) { lanes.gameObject.SetActive(false); off++; }

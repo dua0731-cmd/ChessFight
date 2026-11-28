@@ -1,0 +1,285 @@
+R816 grand banquet hall checks (2026-11-28 23:39). Not a play test: no pawn runs it.
+
+== Edit: built in a scratch scene, every mover where it was built (the clock's 0)
+PASS  E1 what is there: waiters 4 (4), cloche lifts' parts 4 (2 platters + 2 cloches), their frame's posts 3 (3) and hoist lines 6 (4 cables + 2 chains), couples 10 (10), pleats 20 (20), chandeliers 10 (10) and the great one 1 (1), candle beams 3 (3), loose chandeliers' part 1 (1), tablecloth tricks 1 (1), chocolate tiers 3 (3) with ripples 3 (3), ladders 1 (the loft's only), lamps 4 (4), checkpoints 12 (12), kill volumes 5 (5), meant gaps 6 (6); colliders 213
+      구간 대연회장 (Mid_2-4_GrandBanquetHall)
+      장애물 덮음 검사 0곳
+      백팀 길 310.4 m, 가장 넓은 틈 0.00 m
+      뜻한 틈 6곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)
+      체크포인트 12개, 부활 자리 72곳
+      오를 수 없는 면 140개
+      입구 (0.0, 0.0, 0.0) → 출구 (0.0, 16.0, 72.0)
+PASS  E2 section checks (SectionValidator): no errors
+PASS  E3 entry and exit: entry (0, 0, 0), exit (0, 16, 72)
+      ok    the screens: BH screen S (cannot) at 2.8 m, wanted a face that cannot be climbed
+      ok    the counter's side: BH counter (cannot) at 1.4 m, wanted a face that cannot be climbed
+      ok    a plate stack (the second waiter's, by the counter): BH plate stack (can be held) at 2.067 m, wanted a face to climb
+      ok    a waiter's body: BH waiter body (cannot) at 1.2 m, wanted a face that cannot be climbed
+      ok    the pantry's wall over the table's east edge: BH pantry wall W (cannot) at 3.7 m, wanted a face that cannot be climbed
+      ok    the long table's east side: BH long table (cannot) at 2.6 m, wanted a face that cannot be climbed
+      ok    the guests' chairs (from the dance floor): BH guests' chairs (cannot) at 1.6 m, wanted a face that cannot be climbed
+      ok    a cloche's band (not climbed): BH cloche band (cannot) at 0.4 m, wanted a face that cannot be climbed
+      ok    the dumbwaiter's middle post (not climbed): BH dumbwaiter post (cannot) at 0.45 m, wanted a face that cannot be climbed
+      ok    the dumbwaiter's west post (not climbed): BH dumbwaiter post (cannot) at 0.45 m, wanted a face that cannot be climbed
+      ok    the dais's front: BH royal dais (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the queen's gown (couple 0, from the dais's edge): BH queen gown (can be held) at 0.9 m, wanted a face to climb
+      ok    the king (couple 0): BH king (cannot) at 1.8 m, wanted a face that cannot be climbed
+      ok    the stage's front: BH stage (cannot) at 1.5 m, wanted a face that cannot be climbed
+      ok    the curtain (shut): BH curtain (can be held) at 1.88 m, wanted a face to climb
+      ok    a double bass: BH double bass (cannot) at 2.1 m, wanted a face that cannot be climbed
+      ok    the buffet's east side: BH dessert buffet (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the buffet's north side (from the pit): BH dessert buffet (cannot) at 2.5 m, wanted a face that cannot be climbed
+      ok    chocolate tier 1 (its north side): BH chocolate tier 1 (can be held) at 2 m, wanted a face to climb
+      ok    chocolate tier 2: BH chocolate tier 2 (can be held) at 2 m, wanted a face to climb
+      ok    chocolate tier 3 (its north side): BH chocolate tier 3 (can be held) at 2 m, wanted a face to climb
+      ok    the loft's ladder: BH loft ladder board (can be held) at 1.7 m, wanted a face to climb
+      ok    the loft's face beside its ladder: BH loft face (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the head table's side: BH head table E (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the balcony's front (from the dais): BH balcony (cannot) at 2 m, wanted a face that cannot be climbed
+      ok    the dais's balustrade: BH balustrade (cannot) at 1.5 m, wanted a face that cannot be climbed
+      ok    the dais gallery's west end: BH gallery end W (cannot) at 1.7 m, wanted a face that cannot be climbed
+      ok    the passage's west end: BH passage end (cannot) at 3 m, wanted a face that cannot be climbed
+      ok    the loft's east end: BH loft end (cannot) at 2.6 m, wanted a face that cannot be climbed
+PASS  E4 faces to climb and faces that must not be: 29 rays, 0 wrong
+PASS  E7 the balustrade's openings (the boarding place, the cloches): boarding open, cloches open
+      queen 0 stands still 11 times a lap of 47.752 s; the corner radius 6.535 m
+PASS  E5 the waltz: queen 0 still at the dais at 0 s, at the stage later; couples apart: at 0 s -4.25, 53.7 (shoulders 1 m off the dais); at the stage at 8.36 s -18.1, 40.054 (0.6 m off it); two partners of different couples never closer than 6.976 m
+PASS  E8 the candle beams lie under the ropes' handovers: 3 beams, 0 wrong; after rope 1: top 19.5 m, z 13.906..16.306, the rope before ends at z 14.706 (a rider's feet 0.361 m over the board), the next at 15.506 (its hoop 0.55 m over it); after rope 2: top 19 m, z 22.962..25.362, the rope before ends at z 23.862 (a rider's feet 0.361 m over the board), the next at 24.462 (its hoop 0.55 m over it); after rope 4: top 17.3 m, z 49.5..51.9, the rope before ends at z 50.3 (a rider's feet 0.361 m over the board), the next at 51.1 (its hoop 0.55 m over it);
+PASS  E9 the loose chandeliers: one of each pair, from the section's seed: 5 pairs; the loose side of each with seed 816: WEWWW, 817: WEEWE, 4242: EWWEE, 816 again: WEWWW
+      the balcony from z 60.585, the chandeliers' landing z 61.385, the great chandelier at z 36.417, rope pivots z 10.528 .. 56.243, ends 20.55 .. 17.85 m
+PASS  E6 errors logged while building and checking: 0
+
+== Play: the hall alone, its entry on the origin, watched for 14 s of game time
+PASS  P1 what is there: waiters 4 (4), cloche lifts' parts 4 (2 platters + 2 cloches), their frame's posts 3 (3) and hoist lines 6 (4 cables + 2 chains), couples 10 (10), pleats 20 (20), chandeliers 10 (10) and the great one 1 (1), candle beams 3 (3), loose chandeliers' part 1 (1), tablecloth tricks 1 (1), chocolate tiers 3 (3) with ripples 3 (3), ladders 1 (the loft's only), lamps 4 (4), checkpoints 12 (12), kill volumes 5 (5), meant gaps 6 (6); colliders 213
+PASS  P2 waiters walk the lane (and are cut back to the kitchen): 4 of 4, 4 cuts back to the kitchen
+PASS  P3 cloche lifts: platters from the table to the dais, cloches shut on them below and open over them above: 4 of 4
+PASS  P4 chandeliers' ends swing 4.18 m each way (5.14 m for the second line): 10 of 10
+PASS  P5 the curtain opens: the south half's leading pleat goes to the buffet, the north one to the stage's end: south 16..39.5, north 40.6..49.55
+PASS  P6 the couples go round the whole floor: middles x -16.2..7.5, z 10.2..51.8
+PASS  P7 the tablecloth is pulled every 10 s: pulls 1 (nobody on the cloth: throws 0)
+PASS  P9 the boarding and alighting lamps light as queens stop: 4 of 4 lit at all; BH boarding lamp W 32.435 % BH boarding lamp E 32.435 % BH alighting lamp S 33.288 % BH alighting lamp N 33.288 %
+PASS  P10 the cloche lifts hang from the frame: cables and chains follow them from the table to the dais: 6 of 6 lines' hooks over the whole way, the farthest a line's end was from its hook or pulley 0 m
+PASS  P11 the chocolate's ripples run down the whole of each tier, rim to foot: 3 of 3; chocolate ripples 1 -0.08..2.753 of 2.833 m chocolate ripples 2 -0.08..2.754 of 2.834 m chocolate ripples 3 -0.08..2.753 of 2.833 m
+PASS  P12 the dressed table's show: the plates rock where they stand, the candles go out and are lit with the cloth: plates 5, tipped up to 3.413 deg, off their place 0 m, lifted 0..0.077 m; cloth meshes 9, ware 25; candles 50, burning 50..50 while the cloth lies and 0..0 while it is away
+PASS  P13 the stage's show: the curtain's pictures gather without lying through one another, the hems swing, light leaks and the stage lights follow: pleats 20 (skinned meshes 60), tassels 17 swinging up to 20.919 deg; overlap while still up to 0.015 m at the rail, 0.107 at the hem m, narrowest 0.3, hems lag up to 0.749 m, leak up to 1, stage lights 0..1 (shut 0); players 6 leaning up to 5.931 deg; 0.092 ms a frame setting 138 bones
+PASS  P14 the waltz's show: the queens' gowns flare and the partners rise with the beat: couples 10, partners 10, skinned gowns 60
+PASS  P16 the fountain's show: chocolate sheets over every tier and round the crown, drops down them, rings across the pools, the chocolate sliding: chocolate sheets 4 (the builder's ripple rings drawn as their swells: 12 hidden), drops 21, rings 12, chocolate surfaces 3
+PASS  P17 the shows' skinned pictures are each drawn by their part's LOD group: 211 skinned, 0 outside a LOD group
+PASS  P18 the waiters waddle, the great chandelier and the head tables' candles burn, the guests watch, the walls' sconces burn and banners stir: waiters 4; great chandelier candles 24, crystal meshes 3; head tables' candles 30, confetti 90; guests 9; sconce candles 84, banners 28
+PASS  P19 the magician's wand is found (its tip raised beside him) and carries the magic: tip (18.14, 6.23, 17.21), bright 0.396, sparks 18
+PASS  P15 the cloche lifts' show: the pulleys turn with the lines, steam rises as a cloche lifts off, the lifts jolt as they arrive: lifts 2, skinned frame meshes 2, pulleys turned up to 2245.994 deg, steam puffs up to 44, jolt up to 0.026 m
+      1902 frames watched
+      at the pictures: the trick 4.032 s into its 10 s, the cloth drawn at z 34, scale z 1
+      picture hall_00_top.png
+      picture hall_01_from_south_east.png
+      picture hall_02_from_east.png
+      picture hall_03_servery_waiters.png
+      picture hall_04_long_table.png
+      picture hall_05_cloches_dais.png
+      picture hall_06_waltz_from_dais.png
+      picture hall_07_stage_curtain.png
+      picture hall_08_buffet_fountain.png
+      picture hall_09_chandeliers.png
+      picture hall_10_balcony.png
+      picture hall_11_dais_gallery.png
+      picture hall_12_fountain_close.png
+      picture hall_13_from_the_loft.png
+      picture hall_14_chandelier_close.png
+      picture hall_15_great_chandelier.png
+      picture hall_16_cloche_lifts.png
+      the show at 8.164 s of the trick (wanted 8.1): candles burning 0 of 50, the cloth drawn 28.495 m south
+      picture show_07_lay_a_wide.png
+      picture show_07_lay_a_near.png
+      the show at 8.497 s of the trick (wanted 8.35): candles burning 7 of 50, the cloth drawn 16.925 m south
+      picture show_08_lay_b_wide.png
+      picture show_08_lay_b_near.png
+      the show at 8.83 s of the trick (wanted 8.7): candles burning 26 of 50, the cloth drawn 8.84 m south
+      picture show_09_lay_c_wide.png
+      picture show_09_lay_c_near.png
+      the show at 9.368 s of the trick (wanted 9.3): candles burning 44 of 50, the cloth drawn 1.781 m south
+      picture show_10_lay_d_wide.png
+      picture show_10_lay_d_near.png
+      the show at 9.896 s of the trick (wanted 9.85): candles burning 50 of 50, the cloth drawn 0.016 m south
+      picture show_11_lay_e_wide.png
+      picture show_11_lay_e_near.png
+      the show at 1.005 s of the trick (wanted 1): candles burning 50 of 50, the cloth drawn 0 m south
+      picture show_01_lying_wide.png
+      picture show_01_lying_near.png
+      the show at 5.203 s of the trick (wanted 5.2): candles burning 50 of 50, the cloth drawn 0 m south
+      picture show_02_drum_roll_wide.png
+      picture show_02_drum_roll_near.png
+      the show at 5.681 s of the trick (wanted 5.62): candles burning 50 of 50, the cloth drawn 2.835 m south
+      picture show_03_pull_a_wide.png
+      picture show_03_pull_a_near.png
+      the show at 5.972 s of the trick (wanted 5.82): candles burning 39 of 50, the cloth drawn 14.498 m south
+      picture show_04_pull_b_wide.png
+      picture show_04_pull_b_near.png
+      the show at 6.236 s of the trick (wanted 6.05): candles burning 16 of 50, the cloth drawn 30.908 m south
+      picture show_05_pull_c_wide.png
+      picture show_05_pull_c_near.png
+      the show at 6.6 s of the trick (wanted 6.6): candles burning 0 of 50, the cloth away
+      picture show_06_away_wide.png
+      picture show_06_away_near.png
+      stage_01_shut_wide at 3 s of the curtain: open 0, hem lag 0.36 m, overlap rail 0 / hem 0 m, narrowest 0.979, leak 0, stage lights 0
+      picture stage_01_shut_wide.png
+      stage_01_shut_seam at 3 s of the curtain: open 0, hem lag 0.36 m, overlap rail 0 / hem 0 m, narrowest 0.979, leak 0, stage lights 0
+      picture stage_01_shut_seam.png
+      stage_01_shut_south at 3 s of the curtain: open 0, hem lag 0.36 m, overlap rail 0 / hem 0 m, narrowest 0.979, leak 0, stage lights 0
+      picture stage_01_shut_south.png
+      stage_02_leak_wide at 5.7 s of the curtain: open 0, hem lag 0 m, overlap rail 0 / hem 0 m, narrowest 1, leak 0.908, stage lights 0
+      picture stage_02_leak_wide.png
+      stage_02_leak_seam at 5.7 s of the curtain: open 0, hem lag 0 m, overlap rail 0 / hem 0 m, narrowest 1, leak 0.908, stage lights 0
+      picture stage_02_leak_seam.png
+      stage_02_leak_south at 5.7 s of the curtain: open 0, hem lag 0 m, overlap rail 0 / hem 0 m, narrowest 1, leak 0.908, stage lights 0
+      picture stage_02_leak_south.png
+      stage_03_opening_a_wide at 6.9 s of the curtain: open 0.086, hem lag 0.482 m, overlap rail 0 / hem 0.001 m, narrowest 0.89, leak 0.802, stage lights 0
+      picture stage_03_opening_a_wide.png
+      stage_03_opening_a_seam at 6.9 s of the curtain: open 0.086, hem lag 0.482 m, overlap rail 0 / hem 0.001 m, narrowest 0.89, leak 0.802, stage lights 0
+      picture stage_03_opening_a_seam.png
+      stage_03_opening_a_south at 6.9 s of the curtain: open 0.086, hem lag 0.482 m, overlap rail 0 / hem 0.001 m, narrowest 0.89, leak 0.802, stage lights 0
+      picture stage_03_opening_a_south.png
+      stage_04_opening_b_wide at 8.3 s of the curtain: open 0.44, hem lag 0.044 m, overlap rail 0 / hem 0 m, narrowest 0.434, leak 0, stage lights 0.725
+      picture stage_04_opening_b_wide.png
+      stage_04_opening_b_seam at 8.3 s of the curtain: open 0.44, hem lag 0.044 m, overlap rail 0 / hem 0 m, narrowest 0.434, leak 0, stage lights 0.725
+      picture stage_04_opening_b_seam.png
+      stage_04_opening_b_south at 8.3 s of the curtain: open 0.44, hem lag 0.044 m, overlap rail 0 / hem 0 m, narrowest 0.434, leak 0, stage lights 0.725
+      picture stage_04_opening_b_south.png
+      stage_05_opening_c_wide at 10.2 s of the curtain: open 0.931, hem lag 0.3 m, overlap rail 0.108 / hem 0.09 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_05_opening_c_wide.png
+      stage_05_opening_c_seam at 10.2 s of the curtain: open 0.931, hem lag 0.3 m, overlap rail 0.108 / hem 0.09 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_05_opening_c_seam.png
+      stage_05_opening_c_south at 10.2 s of the curtain: open 0.931, hem lag 0.3 m, overlap rail 0.108 / hem 0.09 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_05_opening_c_south.png
+      stage_06_open_settling_wide at 11.5 s of the curtain: open 1, hem lag 0.072 m, overlap rail 0.015 / hem 0.017 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_06_open_settling_wide.png
+      stage_06_open_settling_seam at 11.5 s of the curtain: open 1, hem lag 0.072 m, overlap rail 0.015 / hem 0.017 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_06_open_settling_seam.png
+      stage_06_open_settling_south at 11.5 s of the curtain: open 1, hem lag 0.072 m, overlap rail 0.015 / hem 0.017 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_06_open_settling_south.png
+      stage_07_open_wide at 12.8 s of the curtain: open 1, hem lag 0.114 m, overlap rail 0.015 / hem 0.019 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_07_open_wide.png
+      stage_07_open_seam at 12.8 s of the curtain: open 1, hem lag 0.114 m, overlap rail 0.015 / hem 0.019 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_07_open_seam.png
+      stage_07_open_south at 12.8 s of the curtain: open 1, hem lag 0.114 m, overlap rail 0.015 / hem 0.019 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_07_open_south.png
+      stage_08_closing_wide at 13.8 s of the curtain: open 0.648, hem lag 0.749 m, overlap rail 0.14 / hem 0.29 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_08_closing_wide.png
+      stage_08_closing_seam at 13.8 s of the curtain: open 0.648, hem lag 0.749 m, overlap rail 0.14 / hem 0.29 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_08_closing_seam.png
+      stage_08_closing_south at 13.8 s of the curtain: open 0.648, hem lag 0.749 m, overlap rail 0.14 / hem 0.29 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_08_closing_south.png
+      stage_09_shut_settling_wide at 0.35 s of the curtain: open 0, hem lag 0.711 m, overlap rail 0 / hem 0.107 m, narrowest 0.544, leak 0, stage lights 0
+      picture stage_09_shut_settling_wide.png
+      stage_09_shut_settling_seam at 0.35 s of the curtain: open 0, hem lag 0.711 m, overlap rail 0 / hem 0.107 m, narrowest 0.544, leak 0, stage lights 0
+      picture stage_09_shut_settling_seam.png
+      stage_09_shut_settling_south at 0.35 s of the curtain: open 0, hem lag 0.711 m, overlap rail 0 / hem 0.107 m, narrowest 0.544, leak 0, stage lights 0
+      picture stage_09_shut_settling_south.png
+      stage_10_players_a at 11.2 s of the curtain: open 1, hem lag 0.362 m, overlap rail 0.015 / hem 0.026 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_10_players_a.png
+      stage_11_players_b at 12 s of the curtain: open 1, hem lag 0.227 m, overlap rail 0.015 / hem 0.028 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_11_players_b.png
+      stage_12_bassists at 12 s of the curtain: open 1, hem lag 0.227 m, overlap rail 0.015 / hem 0.028 m, narrowest 0.3, leak 0, stage lights 1
+      picture stage_12_bassists.png
+      waltz_01_beat_one: gowns out 5.514 %, partners up 0 m
+      picture waltz_01_beat_one.png
+      waltz_02_rise: gowns out 5.718 %, partners up 0.035 m
+      picture waltz_02_rise.png
+      waltz_03_gown_close: gowns out 5.514 %, partners up 0 m
+      picture waltz_03_gown_close.png
+      lift_01_rising_pulleys: steam puffs 0, pulleys turned 1123.012 deg, jolt 0 m
+      picture lift_01_rising_pulleys.png
+      lift_02_arriving: steam puffs 7, pulleys turned 2245.994 deg, jolt 0.022 m
+      picture lift_02_arriving.png
+      lift_03_steam: steam puffs 26, pulleys turned 2245.994 deg, jolt 0.001 m
+      picture lift_03_steam.png
+      lift_04_steam_late: steam puffs 44, pulleys turned 2245.994 deg, jolt 0 m
+      picture lift_04_steam_late.png
+      lift_05_steam_close: steam puffs 26, pulleys turned 2245.994 deg, jolt 0.001 m
+      picture lift_05_steam_close.png
+      lift_07_table_arrive_low: steam puffs 2, pulleys turned 2229.55 deg, jolt 0.024 m
+      picture lift_07_table_arrive_low.png
+      platter BH cloche platter W mesh BH2 platter_LOD0: top triangles facing up 0, down 0; root y 4.52
+        submeshes 2, renderer MeshRenderer enabled True visible True, materials BH_Gold (platter, both faces)/Universal Render Pipeline/Lit/q2000 BH_Silver (platter, both faces)/Universal Render Pipeline/Lit/q2000
+        submesh 0: 2186 triangles
+        submesh 1: 814 triangles
+      platter BH cloche platter E mesh BH2 platter_LOD0: top triangles facing up 332, down 18; root y 10.357
+        submeshes 2, renderer MeshRenderer enabled True visible True, materials BH_Gold (platter, both faces)/Universal Render Pipeline/Lit/q2000 BH_Silver (platter, both faces)/Universal Render Pipeline/Lit/q2000
+        submesh 0: 2186 triangles
+        submesh 1: 814 triangles
+      lift_08_platter_from_above: steam puffs 44, pulleys turned 2245.994 deg, jolt 0 m
+      picture lift_08_platter_from_above.png
+      lift_06_table_open: steam puffs 12, pulleys turned 2245.994 deg, jolt 0.013 m
+      picture lift_06_table_open.png
+      fountain_01_whole: drops running 5, the surface slid 5 m
+      picture fountain_01_whole.png
+      fountain_02_whole_later: drops running 9, the surface slid 5.495 m
+      picture fountain_02_whole_later.png
+      fountain_03_crown: drops running 5, the surface slid 5 m
+      picture fountain_03_crown.png
+      fountain_04_tier: drops running 9, the surface slid 5.495 m
+      picture fountain_04_tier.png
+      fountain_05_side_close: drops running 10, the surface slid 5.935 m
+      picture fountain_05_side_close.png
+      fountain_06_from_below: drops running 5, the surface slid 5.22 m
+      picture fountain_06_from_below.png
+      picture waiter_01_walk.png
+      picture waiter_02_walk_step.png
+      picture great_01_candles.png
+      picture great_02_crystals.png
+      dais_01_candelabra: confetti in the air 0
+      picture dais_01_candelabra.png
+      dais_02_balcony_shower: confetti in the air 90
+      picture dais_02_balcony_shower.png
+      guests_01_drum: guests turned up to 18.114 deg
+      picture guests_01_drum.png
+      guests_02_pull: guests turned up to 18.005 deg
+      picture guests_02_pull.png
+      guests_03_clap: guests turned up to 2.318 deg
+      picture guests_03_clap.png
+      hall_wall_01_sconces: banners' points out 0.122 m
+      picture hall_wall_01_sconces.png
+      picture table_01_drum_early_near.png
+      picture table_01_drum_early_wide.png
+      picture table_02_drum_late_near.png
+      picture table_02_drum_late_wide.png
+      picture table_03_pull_near.png
+      picture table_03_pull_wide.png
+      picture table_04_settling_near.png
+      picture table_04_settling_wide.png
+      wand_01_rest_close: wand bright 0.284, sparks shown 4
+      picture wand_01_rest_close.png
+      wand_01_rest_wide: wand bright 0.284, sparks shown 4
+      picture wand_01_rest_wide.png
+      wand_02_cue_early_close: wand bright 0.45, sparks shown 24
+      picture wand_02_cue_early_close.png
+      wand_02_cue_early_wide: wand bright 0.45, sparks shown 24
+      picture wand_02_cue_early_wide.png
+      wand_03_cue_late_close: wand bright 1.474, sparks shown 42
+      picture wand_03_cue_late_close.png
+      wand_03_cue_late_wide: wand bright 1.474, sparks shown 42
+      picture wand_03_cue_late_wide.png
+      wand_04_pull_close: wand bright 1.269, sparks shown 39
+      picture wand_04_pull_close.png
+      wand_04_pull_wide: wand bright 1.269, sparks shown 39
+      picture wand_04_pull_wide.png
+      wand_05_throw_close: wand bright 0.232, sparks shown 13
+      picture wand_05_throw_close.png
+      wand_05_throw_wide: wand bright 0.232, sparks shown 13
+      picture wand_05_throw_wide.png
+      picture candle_01_table.png
+      picture candle_02_sconce.png
+      picture candle_03_great.png
+      picture candle_04_hanging.png
+      hall_wall_02_banners: banners' points out 0.131 m
+      picture hall_wall_02_banners.png
+
+== Play: the loose chandeliers (R905); this round's loose side of each pair WEWWW, a stand-in hung on both of pair 2
+      it gave way 2.528 s after the stand-ins were hung (a swing is 5 s)
+PASS  P20 a loose chandelier runs out with its rider through the middle of its swing; the one hung fast holds: down 5 m (its sink 5), its end 0 m off straight under its pivot, its hoop out of reach, its rider told to let go 1 time(s); the one hung fast swings on and is proven, its rider told 0 time(s); fallen in all 1, other pairs' 0
+      picture hall_17_chandelier_fallen.png
+      picture hall_18_from_a_candle_beam.png
+PASS  P21 the relief winds a fallen chandelier back up: 0 m off its pivot, its hoop to be taken again
+PASS  P22 relieved, every chandelier holds: a rider on the one that fell, for a whole swing: fallen no more, its rider told to let go 0 time(s), its end now 2.815 m off straight under its pivot
+PASS  P8 errors logged in Play: 0
+
+Grand banquet hall result: PASS

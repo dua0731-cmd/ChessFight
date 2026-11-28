@@ -270,6 +270,21 @@ namespace ChessFight.PawnRush
             a.PlayOneShot(clip, VolumeOf(name));
         }
 
+        // R905 (LooseChandeliers): a loose chandelier's chain running out, then (`stopped`) its crystals clashing as the
+        // chain snaps taut. No takes of its own yet: the hoist's cable run fast and the swing's tinkle and the cloche's
+        // clang pitched down.
+        public void ChandelierFell(Vector3 at, bool stopped)
+        {
+            if (!ready) return;
+            if (!stopped)
+            {
+                Play("BhHoistLoop", at, 4f, 40f, 1.7f);
+                return;
+            }
+            Play("BhChandelierSwing", at, 4f, 40f, .62f);
+            Play("BhClocheShut", at, 4f, 40f, .7f);
+        }
+
         Vector3 At(float x, float y, float z) => frame.TransformPoint(new Vector3(x, y, z));
 
         // Whether `mark` (seconds into a cycle) was passed going from cycle time `from` to `to` (a wrap counts).

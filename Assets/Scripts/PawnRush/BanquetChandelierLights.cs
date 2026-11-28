@@ -42,6 +42,13 @@ namespace ChessFight.PawnRush
         public bool Ridden => Time.time < seenUntil;
         public int Flames => flames.Length;
 
+        // R905 (LooseChandeliers, main): `Out` - this chandelier's chain ran out: its candles are blown out and its lamp
+        // stays dark whoever is by it, for as long as it hangs down. `Safe` - the section's relief has made every
+        // chandelier hold: lit as if ridden, so that it is seen. `Proven` - someone has ridden this one through the middle
+        // of its swing this round and it held: its candles stay lit (the lamp is still only for a rider), so whoever
+        // comes after sees which of a pair was crossed on.
+        [System.NonSerialized] public bool Out, Safe, Proven;
+
         // Where the wicks of bh_b6_chandelier_model.py's hanging(L) stand, in the look's frame (Blender x, y, z is Unity
         // x, z, y here), and each candle's size: six on the upper band, four on the main band, eight on the S-arms.
         public static void Wicks(float ropeLength, List<Vector3> at, List<float> size)
@@ -153,7 +160,7 @@ namespace ChessFight.PawnRush
         void LateUpdate()
         {
             if (rope == null) return;
-            bool ridden = Ridden, burning = ridden || !CandlesOnlyWhenRidden;
+            bool ridden = !Out && (Ridden || Safe), burning = !Out && (ridden || Proven || !CandlesOnlyWhenRidden);
             float dt = Time.deltaTime;
             lamp = Mathf.MoveTowards(lamp, ridden ? 1f : 0f, dt / (ridden ? .12f : GoOut));
             burn = Mathf.MoveTowards(burn, burning ? 1f : 0f, dt / (burning ? LightUp : GoOut));
