@@ -704,7 +704,8 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-match .chat-line-party { border-color: rgb(95, 211, 163); }
 .chat-match .chat-line-team { border-color: rgb(106, 168, 240); }
 .chat-match .chat-line-all { border-color: rgb(239, 228, 210); }
-.chat-match .chat-line-me { border-color: rgb(242, 182, 50); background-color: rgba(72, 52, 22, 0.86); }
+/* 11-28: my own lines keep their channel's edge and name colour (only the warmer backing marks them as mine). */
+.chat-match .chat-line-me { background-color: rgba(72, 52, 22, 0.86); }
 .chat-match .chat-line-notice { border-color: rgb(242, 182, 50); background-color: rgba(20, 13, 8, 0.5); }
 .chat-match .chat-line .chat-text, .chat-match .chat-line .chat-notice { flex-grow: 0; flex-basis: auto; }
 .chat-match .chat-name { margin-right: 10px; font-size: 15px; }
@@ -713,7 +714,9 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-match .chat-name-party { color: rgb(143, 240, 200); }
 .chat-match .chat-name-team { color: rgb(142, 197, 255); }
 .chat-match .chat-name-all { color: rgb(239, 228, 210); }
-.chat-match .chat-name-me { color: rgb(242, 182, 50); }
+.chat-match .chat-text-party { color: rgb(170, 240, 205); }
+.chat-match .chat-text-team { color: rgb(172, 208, 255); }
+.chat-match .chat-text-all { color: rgb(239, 228, 210); }
 .chat-match .chat-text, .chat-match .chat-name, .chat-match .chat-notice { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
 
 /* closed: "Tab 채팅" and the unread count, no box */

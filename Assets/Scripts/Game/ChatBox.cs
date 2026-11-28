@@ -426,7 +426,10 @@ namespace ChessFight.Game
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);
-            row.Add(Text(GameSettings.Filter(e.Text), "chat-text"));
+            // 11-28: the words tinted by channel too, so party / team / everyone lines (mine included) read apart.
+            var words = Text(GameSettings.Filter(e.Text), "chat-text");
+            words.AddToClassList("chat-text-" + Key(e.Channel));
+            row.Add(words);
             return row;
         }
 
