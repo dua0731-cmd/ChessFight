@@ -397,7 +397,7 @@ Esc 목록으로	Esc: back to list	Esc 返回列表	Esc: к списку
 왕실 마차뜰	Royal Carriage Yard	王室马车庭院	Королевский каретный двор
 왕실 수로 정원	Royal Water Garden	王室水道花园	Королевский водный сад
 대계단 현관홀	Grand Stair Hall	大阶梯门厅	Зал с парадной лестницей
-왕의 서재 · 거인 체스	King's Library · Giant Chess	国王书房 · 巨型国际象棋	Королевская библиотека · Гигантские шахматы
+왕의 서재	King's Library	国王书房	Королевская библиотека
 왕의 서재와 거대 체스판	King's Library and Giant Chessboard	国王书房与巨型棋盘	Королевская библиотека и гигантская доска
 왕실 천문대 (회색 상자)	Royal Observatory (graybox)	王室天文台（灰盒）	Королевская обсерватория (заготовка)
 왕실 금고실	Royal Vault	王室金库	Королевское хранилище

@@ -91,6 +91,8 @@ namespace ChessFight.PawnRush
                 try { after(this); }
                 catch (Exception e) { Debug.LogException(e, this); }
             }
+            // R904: faces lying on other faces lifted a few mm (CoplanarNudges, CoplanarScan's bake), last
+            ChessFight.Gameplay.CoplanarNudges.Apply(transform, "BanquetHall/coplanar_nudges");
         }
 
         // What a zone does once the models hang: a static Action<GrandBanquetHallDressing> field in any partial file.

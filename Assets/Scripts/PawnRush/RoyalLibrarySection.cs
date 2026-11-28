@@ -31,7 +31,7 @@ namespace ChessFight.PawnRush
     public sealed class RoyalLibrarySection : MonoBehaviour, ISectionPart, ISectionNetPart
     {
         public const string Id = "Late_3-1_RoyalLibrary";
-        public const string DisplayName = "왕의 서재 · 거인 체스";
+        public const string DisplayName = "왕의 서재";
         public const string GroupName = "Section";
         public static readonly Vector3 Entry = new Vector3(0f, 0f, -151f), Exit = new Vector3(0f, 0f, 171f);
         const float FirstTable = -146f, BackWall = 169.9f, ThresholdHalfWidth = 6f;

@@ -1,0 +1,234 @@
+# R904 CoplanarScan bake (2026-11-28 23:06, Late_3-1_RoyalLibrary): <renderer path under RoyalLibraryDressing>\t<submesh>\t<the face's first index>\t<x y z, the mesh's frame>. Written by Tools/Run-CoplanarScan.ps1 -Bake; read by Gameplay CoplanarNudges.
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10587	0.00003 0 0.00006
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10857	0.00004 0 0.0001
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10863	0.00004 0 0.0001
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	11133	0.00004 0 0.0001
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	11139	0.00004 0 0.0001
+Closing royal folio -100/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	1563	0.00001 0 0.00003
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10587	0.00003 0 0.00007
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10857	0.00004 0 0.0001
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	10863	0.00004 0 0.0001
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	11133	0.00004 0 0.0001
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	11139	0.00004 0 0.0001
+Closing royal folio -76/Horizontal closing cover/RlFolioCover (model)/RlFolioCover/RlFolioCover	1	1563	0.00001 0 0.00003
+Headquarters - enclosed command chamber/Giant chess conservatory plant (-104, -22, 12)/RlConservatoryFern12 (model)/RlConservatoryFern12/RlConservatoryFern12	2	9303	0.00002 0.00002 0.00004
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5577	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5583	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5589	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5595	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5601	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5607	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5613	0 0 0.00006
+Library gallery houseplant (29, -22.5, -53)/RlBrassTub53 (model)/RlBrassTub53/RlBrassTub53	0	5619	0 0 0.00006
+Random GM replay preview 0.55/RlGalleryFrame (model)/RlGalleryFrame/RlGalleryFrame	1	1050	0.00001 0 0.00002
+RlChessDeck20 (model)#1/RlChessDeck20/RlChessDeck20	1	240	0 0 0.0001
+RlChessDeck20 (model)#1/RlChessDeck20/RlChessDeck20	1	255	0 0 0.0001
+RlChessDeck20 (model)#2/RlChessDeck20/RlChessDeck20	1	291	0 0.00002 -0.00005
+RlChessFinish (model)/RlChessFinish/RlChessFinish	2	105	0 0 0.00005
+RlChessFinish (model)/RlChessFinish/RlChessFinish	2	69	0 0.00004 0.00004
+RlChessFinish (model)/RlChessFinish/RlChessFinish	2	81	0 -0.00004 0.00004
+RlChessFinish (model)/RlChessFinish/RlChessFinish	2	87	0 0 -0.00009
+RlChessFinish (model)/RlChessFinish/RlChessFinish	2	9	0 0.00004 0.00004
+RlDeskC1 (model)/RlDeskC1/C1 leather	0	399	0 0 0.00005
+RlDeskC3 (model)/RlDeskC3/C3 leather_brown	0	480	0 0 0.00005
+RlDeskC3 (model)/RlDeskC3/C3 leather_brown	0	495	0 0 0.00005
+RlDeskC5 (model)/RlDeskC5/C5 parchment	0	177	0 0 0.00005
+RlDeskC5 (model)/RlDeskC5/C5 parchment	0	33	0 0 0.00005
+RlDeskC6 (model)/RlDeskC6/C6 leather	0	708	0.00001 0.00007 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	0	9	0 0 0.00005
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	1221	0 -0.00002 0.00005
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	1725	0 -0.00002 0.00005
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	1902	0 -0.00005 -0.00002
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2397	0.00002 -0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2400	0 -0.00005 -0.00002
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2403	0.00002 -0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2442	0.00005 -0.00002 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2448	0.00005 -0.00002 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2769	0 -0.00002 -0.00005
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	2817	0 0 -0.00005
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	513	-0.00002 0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	519	-0.00002 0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	534	0.00002 0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	540	0.00002 0.00005 0
+RlGalleryCeiling (model)/RlGalleryCeiling/RlGalleryCeiling	1	81	-0.00004 0 -0.00002
+RlGalleryFloor (model)/RlGalleryFloor/RlGalleryFloor	0	321	-0.00004 0 0.00004
+RlGalleryFloor (model)/RlGalleryFloor/RlGalleryFloor	0	348	0 0 0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	12627	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	13371	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	14709	-0.00002 0 0.00001
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	14742	-0.00002 0 -0.00001
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	14922	0 -0.00003 -0.00001
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	14964	-0.00001 -0.00004 0.00001
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	15372	0 -0.00002 0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	17034	0 -0.00005 -0.00013
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	17043	0 -0.00005 -0.00012
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	18579	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	18894	0 0 -0.00009
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	27747	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	29277	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	30093	-0.00002 0.00005 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	34047	0.00005 -0.00002 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	34050	0.00005 -0.00002 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	45597	0.00006 0.00002 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	46389	0.00007 0.00003 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	48237	0.00002 -0.00003 -0.00007
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	49482	0 -0.00003 -0.00007
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	49497	0 -0.00003 -0.00007
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	52473	0.00002 -0.00001 -0.00004
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	8712	0 0 0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	0	9051	0 0.00002 0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	10461	0 0 0.00009
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	11478	0 0 -0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	11487	0 0 0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	246	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	354	0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	366	-0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	402	-0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	5175	0 0 -0.00005
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	5199	0 0 -0.00009
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	1	5877	-0.00005 0 0
+RlGalleryWalls (model)/RlGalleryWalls/RlGalleryWalls	2	72	-0.00005 0 0
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	0	3	0 0 -0.00005
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	1113	0 0 -0.00005
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	11574	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	11997	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	12150	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	12174	0 0.00005 -0.00006
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	12837	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	12870	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	12990	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	13014	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	13677	0 0.00001 -0.00002
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	13686	0 -0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	13734	0 0.00003 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	13920	-0.00002 0 -0.00003
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	14160	-0.00003 0 -0.00004
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	3351	0 0.00002 -0.00005
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	3417	0 -0.00004 -0.00002
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	3423	0 -0.00005 0.00002
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	3429	0 0 -0.00005
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	3432	0 -0.00005 0
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	6927	0 -0.00005 0.00002
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	717	0.00004 0 -0.00002
+RlRoomCeiling (model)/RlRoomCeiling/RlRoomCeiling	1	8667	0 -0.00002 -0.00004
+RlRoomExitWalkway (model)/RlRoomExitWalkway/RlRoomExitWalkway	0	1008	0 0 -0.00005
+RlRoomExitWalkway (model)/RlRoomExitWalkway/RlRoomExitWalkway	0	1011	0 0 -0.00005
+RlRoomFloor (model)/RlRoomFloor/RlRoomFloor	0	99	0 0 0.00005
+RlRoomFootstools (model)/RlRoomFootstools/RlRoomFootstools	1	15228	-0.00002 0 -0.00002
+RlRoomFootstools (model)/RlRoomFootstools/RlRoomFootstools	1	15336	-0.00003 0 0
+RlRoomFootstools (model)/RlRoomFootstools/RlRoomFootstools	1	15339	-0.00003 0 0
+RlRoomOakTable (model)/RlRoomOakTable/RlRoomOakTable	0	171	0.00002 0 0.00004
+RlRoomOakTable (model)/RlRoomOakTable/RlRoomOakTable	1	831	0 0.00004 -0.00003
+RlRoomOakTable (model)/RlRoomOakTable/RlRoomOakTable	1	8559	0 0.00004 -0.00003
+RlRoomPortrait (model)/RlRoomPortrait/RlRoomPortrait	0	1053	0.00005 0 0
+RlRoomPortrait (model)/RlRoomPortrait/RlRoomPortrait	0	909	-0.00004 -0.00002 0
+RlRoomPortrait (model)/RlRoomPortrait/RlRoomPortrait	1	873	0.00005 0 0
+RlRoomReadingChaise (model)/RlRoomReadingChaise/RlRoomReadingChaise	0	24	0.00004 -0.00004 -0.00004
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	10467	-0.00004 0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	10491	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	10503	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	10761	-0.00004 0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	10797	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	11091	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	11934	0 0.00006 -0.00006
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	11937	0 0.00006 -0.00006
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	15723	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	19245	0 -0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	19251	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	21015	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	22779	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	28794	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	28815	0 -0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	30495	0.00004 0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	31395	0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	37470	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	38688	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	39906	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	42951	0.00003 -0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	45885	0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	47649	0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	49413	0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	51849	0 -0.00004 0.00004
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	53469	0 0 0.00005
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	59616	0 0.00001 0.00001
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	61488	0.00004 -0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	67236	0 0.00004 0.00004
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	67293	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	68079	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	68352	0.00004 0.00004 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	0	73692	0 -0.00004 -0.00004
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	1077	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	12639	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	12765	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	12795	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	15972	0 0 -0.00005
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16281	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16311	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16401	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16431	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16521	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16551	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16641	-0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	16794	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	21042	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	24324	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	24567	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	24684	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	555	0 -0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	585	0 -0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	1	6831	0.00005 0 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	2	10851	0 0 -0.00005
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	2	2589	0 -0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	2	2727	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	2	6354	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	2	7167	0 0.00005 0
+RlRoomWalls (model)/RlRoomWalls/RlRoomWalls	4	5052	0.00005 0 0
+RlStartTable (model)/RlStartTable/RlStartTable	0	417	0 0 -0.00005
+RlStartTable (model)/RlStartTable/RlStartTable	0	717	0 0 0.00005
+RlStartTable (model)/RlStartTable/RlStartTable	1	162	0.00005 0 0
+RlStartTable (model)/RlStartTable/RlStartTable	1	165	0.00005 0 0
+RlStartTable (model)/RlStartTable/RlStartTable	1	246	-0.00005 0 0
+RlStartTable (model)/RlStartTable/RlStartTable	1	249	-0.00005 0 0
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1026	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1029	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1086	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1089	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1146	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	1149	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	870	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	873	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	930	0 0 0.00005
+RlTwTableExit (model)/RlTwTableExit/RlTwTableExit	0	933	0 0 0.00005
+RlTypewriter (model)/RlTypewriter/RlTypewriter	0	21993	-0.00007 0 0
+RlTypewriter (model)/RlTypewriter/RlTypewriter	0	22002	0.00007 0 0
+RlTypewriter (model)/RlTypewriter/RlTypewriter	0	22041	0 0 -0.00005
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	30570	0 0 -0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	30573	0 0 -0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	30612	0 0 0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	30615	0 0 0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	31302	0 0 -0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	31305	0 0 -0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	31344	0 0 0.00003
+RlTypewriter (model)/RlTypewriter/RlTypewriter	1	31347	0 0 0.00003
+Royal library bookcase -119 105/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase -119 105/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	972	0 0.00007 0.00003
+Royal library bookcase -119 105/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	975	0 0.00007 0.00003
+Royal library bookcase -119 12/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase -119 12/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	972	0 0.00007 0.00003
+Royal library bookcase -119 12/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	975	0 0.00007 0.00003
+Royal library bookcase -119 145/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase -119 43/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase -119 43/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	972	0 0.00007 0.00003
+Royal library bookcase -119 43/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	975	0 0.00007 0.00003
+Royal library bookcase -35 -24/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	129	0.00005 0 0
+Royal library bookcase -35 -64/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	129	0.00005 0 0
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	1557	-0.00002 0.00005 0
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	1602	0.00005 -0.00002 0
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	1620	0 0.00011 0.00005
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	1623	0 0.00011 0.00005
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	972	0 0.00007 0.00003
+Royal library bookcase 119 123/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	975	0 0.00007 0.00003
+Royal library bookcase 119 28/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	4092	0 0.00002 0.00005
+Royal library bookcase 119 28/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	972	0 0.00007 0.00003
+Royal library bookcase 119 28/RlGalleryBookcase (model)/RlGalleryBookcase/RlGalleryBookcase	0	975	0 0.00007 0.00003

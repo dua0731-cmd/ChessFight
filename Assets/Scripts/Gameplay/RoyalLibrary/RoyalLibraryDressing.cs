@@ -110,6 +110,8 @@ namespace ChessFight.Gameplay
                 try { after(this); }
                 catch (Exception e) { Debug.LogException(e, this); }
             }
+            // R904: faces lying on other faces lifted a few mm (CoplanarNudges, CoplanarScan's bake), last
+            CoplanarNudges.Apply(transform, "RoyalLibrary/coplanar_nudges");
         }
 
         readonly Dictionary<(GameObject, Vector3), Mesh> reskinned = new Dictionary<(GameObject, Vector3), Mesh>();

@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   id: Late_3-1_RoyalLibrary
-  displayName: "왕의 서재 · 거인 체스"
+  displayName: "왕의 서재"
   kind: 0
   entry: {x: 0, y: 0, z: -151}
   exit: {x: 0, y: 0, z: 171}

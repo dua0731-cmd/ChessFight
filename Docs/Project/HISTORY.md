@@ -1,4 +1,5 @@
 # 변경 이력
+- 2026-11-28 R904 · 대연회장 · 왕의 서재 겹친 면 깜빡임: 점검 `CoplanarScan`(+ `Tools/Run-CoplanarScan.ps1 [-Bake]`) · FBX 가져오기 `CoplanarLiftImporter`(한 모델 안 면 4 mm) · 연회장 단 6 mm 좁힘 · 면 단위 굽기 `coplanar_nudges.txt` + Gameplay `CoplanarNudges`(5 mm). 사본 점검 겹침 0. 서재 이름 "왕의 서재". 하얗게 날아가던 버그(꼭짓점 속성 빠뜨림) 고침, 모델링 지침 §10 · PITFALLS 105에 규칙. 사용자 Unity 확인.
 - 2026-11-27 R871 · 소드 파이트 '장외!' 도장 소리: 시안 A2(나무 도장 쾅)를 짧은 방 울림과 함께 `RingOut.wav`로, 장외 도장과 함께 모든 화면에서 재생(음악 덕킹 그대로). 사용자 확인 전.
 - 2026-11-27 R869 · 소드 파이트 '장외!' 도장 소리 시안 16개(ElevenLabs 네 방향 × 4, 들어 보기 페이지, `ArtSource/SwordFight/RingOutSfx`). 게임 코드 변경 없음, 사용자 선택 기다림.
 - 2026-11-27 R868 · 소드 파이트 경기 종료 화면: 설계 v0.1(배치안 셋) 뒤 B안 구현 — 최고의 기물 · 상 셋(결정타 · 철벽 · 자유 낙하 …) · 두 팀 줄 · 결과판 숨기기 · 온라인 12초 뒤 로비, 화면 글에 시간 없음(Core `SwordResult` · `SwordFightMatch.Result.cs` · `Strings.txt`). 첫 화면 뒤 느낌표 · 주무기 뺌, 최고의 기물을 실제 경기 모형으로. 팀 이름 백팀 · 흑팀, 이름 글꼴 대체, 상 카드 · 점수판에도 실제 기물 얼굴. 새 통신 없음, 사용자 다시 확인 전.
